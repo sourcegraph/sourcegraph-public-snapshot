@@ -23,7 +23,7 @@ kubectl port-forward sourcegraph-frontend-xxxx 6060:6060
 The docker run command for the single-container server needs an additional publish flag to expose the debug port:
 
 ```bash script
-docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --publish 127.0.0.1:6060:6060 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.16.1
+docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --publish 127.0.0.1:6060:6060 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.18.0
 ```
 
 If Sourcegraph is deployed to a remote server, then access via an SSH tunnel using a tool
@@ -45,6 +45,21 @@ curl -sK -v http://localhost:6060/debug/pprof/heap > heap.out
 
 Once the `heap.out` file has been generated, share it with Sourcegraph support or your account manager for analysis.
 
+## Downloading the binary to use with `go tool pprof`
+
+If you want to use the downloaded profile with `go tool pprof` you need the binary that produced the profile data.
+
+You can use `kubectl` to download it:
+
+```bash script
+kubectl cp sourcegraph-frontend-xxxx:/usr/local/bin/frontend frontend-bin
+```
+
+Then you can use `go tool pprof`:
+
+```bash script
+go tool pprof frontend-bin heap.out
+```
 
 ## Debug ports
 

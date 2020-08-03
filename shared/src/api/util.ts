@@ -37,13 +37,10 @@ export function registerComlinkTransferHandlers(): void {
 export const syncSubscription = (subscriptionPromise: Promise<Remote<Unsubscribable & ProxyMarked>>): Subscription =>
     // We cannot pass the proxy subscription directly to Rx because it is a Proxy that looks like a function
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    new Subscription(async function (this: any) {
+    new Subscription(async () => {
         const subscriptionProxy = await subscriptionPromise
         await subscriptionProxy.unsubscribe()
         subscriptionProxy[releaseProxy]()
-
-        this._unsubscribe = null // Workaround: rxjs doesn't null out the reference to this callback
-        ;(subscriptionPromise as any) = null
     })
 
 /**
@@ -76,6 +73,11 @@ export const pretendRemote = <T>(object: Partial<T>): Remote<T> =>
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     (new Proxy(object, {
         get: (a, property) => {
+            if (property === 'then') {
+                // Promise.resolve(pretendRemote(..)) checks if this is a Promise
+                // we will let it know that no, this is not a Promise
+                return undefined
+            }
             if (property in a) {
                 if (typeof (a as any)[property] !== 'function') {
                     return Promise.resolve((a as any)[property])
@@ -83,6 +85,6 @@ export const pretendRemote = <T>(object: Partial<T>): Remote<T> =>
 
                 return (...args: any[]) => Promise.resolve((a as any)[property](...args))
             }
-            throw new Error(`unspecified property in the stub ${property.toString()}`)
+            throw new Error(`unspecified property in the stub: "${property.toString()}"`)
         },
     }) as unknown) as Remote<T>

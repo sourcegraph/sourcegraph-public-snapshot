@@ -1,14 +1,18 @@
-import { Observable } from 'rxjs'
-import ExtensionHostWorker from 'worker-loader?inline&name=extensionHostWorker.bundle.js!./main.worker.ts'
-import { EndpointPair } from '../../platform/context'
+// eslint-disable-next-line import/extensions
+import ExtensionHostWorker from './main.worker.ts'
+import { EndpointPair, ClosableEndpointPair } from '../../platform/context'
+import { Subscription } from 'rxjs'
 
 /**
  * Creates a web worker with the extension host and sets up a bidirectional MessageChannel-based communication channel.
+ *
+ * If a `workerBundleURL` is provided, it is used to create a new Worker(), instead of using the ExtensionHostWorker
+ * returned by worker-loader. This is useful to load the worker bundle from a different path.
  */
-export function createExtensionHostWorker(): { worker: ExtensionHostWorker; clientEndpoints: EndpointPair } {
+export function createExtensionHostWorker(workerBundleURL?: string): { worker: Worker; clientEndpoints: EndpointPair } {
     const clientAPIChannel = new MessageChannel()
     const extensionHostAPIChannel = new MessageChannel()
-    const worker = new ExtensionHostWorker()
+    const worker = workerBundleURL ? new Worker(workerBundleURL) : new ExtensionHostWorker()
     const workerEndpoints: EndpointPair = {
         proxy: clientAPIChannel.port2,
         expose: extensionHostAPIChannel.port2,
@@ -21,10 +25,7 @@ export function createExtensionHostWorker(): { worker: ExtensionHostWorker; clie
     return { worker, clientEndpoints }
 }
 
-export function createExtensionHost(): Observable<EndpointPair> {
-    return new Observable(subscriber => {
-        const { clientEndpoints, worker } = createExtensionHostWorker()
-        subscriber.next(clientEndpoints)
-        return () => worker.terminate()
-    })
+export function createExtensionHost(workerBundleURL?: string): ClosableEndpointPair {
+    const { clientEndpoints, worker } = createExtensionHostWorker(workerBundleURL)
+    return { endpoints: clientEndpoints, subscription: new Subscription(() => worker.terminate()) }
 }

@@ -181,9 +181,9 @@ Finally, **save the configuration**. You're done!
 
 ## Background permissions syncing
 
-Starting with 3.14, Sourcegraph supports syncing permissions in the background to better handle repository permissions at scale. Rather than syncing a user's permissions when they log in and potentially blocking them from seeing search results, Sourcegraph syncs these permissions asynchronously in the background, opportunistically refreshing them in a timely manner.
+Sourcegraph 3.17+ supports syncing permissions in the background by default to better handle repository permissions at scale for GitHub, GitLab, and Bitbucket Server code hosts, and has become the only permissions mirror option since Sourcegraph 3.19. Rather than syncing a user's permissions when they log in and potentially blocking them from seeing search results, Sourcegraph syncs these permissions asynchronously in the background, opportunistically refreshing them in a timely manner.
 
-Background permissions syncing is currently behind a feature flag in the [site configuration](../config/site_config.md):
+For older versions (Sourcegraph 3.14, 3.15, and 3.16), background permissions syncing is behind a feature flag in the [site configuration](../config/site_config.md):
 
 ```json
 "permissions.backgroundSync": {
@@ -191,15 +191,13 @@ Background permissions syncing is currently behind a feature flag in the [site c
 }
 ```
 
->NOTE: Support for GitHub has been added in 3.15. Previously, only GitLab and Bitbucket Server were supported.
-
-Background permissions syncing has the following benefits:
+Benefits of backround syncing:
 
 1. More predictable load on the code host API due to maintaining a schedule of permission updates.
 1. Permissions are quickly synced for new repositories added to the Sourcegraph instance.
 1. Users who sign up on the Sourcegraph instance can immediately get search results from the repositories they have access to on the code host.
 
-Since the syncing of permissions happens in the background, there are a few things to keep in mind:
+Considerations when enabling for the first time:
 
 1. While the initial sync for all repositories and users is happening, users can gradually see more and more search results from repositories they have access to.
 1. It takes time to complete the first sync. Depending on how many private repositories and users you have on the Sourcegraph instance, it can take from a few minutes to several hours. This is generally not a problem for fresh installations, since admins should only make the instance available after it's ready, but for existing installations, active users may not see the repositories they expect in search results because the initial permissions syncing hasn't finished yet.

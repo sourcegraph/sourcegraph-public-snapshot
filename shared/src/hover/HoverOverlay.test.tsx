@@ -8,7 +8,7 @@ import { HoverOverlay, HoverOverlayProps } from './HoverOverlay'
 import { NEVER } from 'rxjs'
 import { subtypeOf } from '../util/types'
 
-const renderShallow = (element: React.ReactElement<HoverOverlayProps<string>>): React.ReactElement => {
+const renderShallow = (element: React.ReactElement<HoverOverlayProps>): React.ReactElement => {
     const renderer = createRenderer()
     renderer.render(element)
     return renderer.getRenderOutput()
@@ -18,7 +18,7 @@ describe('HoverOverlay', () => {
     const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: () => Promise.resolve() }
     const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined, settings: NEVER }
     const history = H.createMemoryHistory({ keyLength: 0 })
-    const commonProps = subtypeOf<HoverOverlayProps<string>>()({
+    const commonProps = subtypeOf<HoverOverlayProps>()({
         location: history.location,
         telemetryService: NOOP_TELEMETRY_SERVICE,
         extensionsController: NOOP_EXTENSIONS_CONTROLLER,
@@ -126,12 +126,11 @@ describe('HoverOverlay', () => {
                         contents: [{ kind: MarkupKind.Markdown, value: 'v' }],
                         alerts: [
                             {
-                                type: 'a' as const,
-                                content: (
-                                    <>
-                                        b <small>c</small> <code>d</code>
-                                    </>
-                                ),
+                                summary: {
+                                    kind: MarkupKind.Markdown,
+                                    value: 'Testing `markdown` rendering.',
+                                },
+                                type: 'test-alert-dismissalType',
                             },
                         ],
                     }}

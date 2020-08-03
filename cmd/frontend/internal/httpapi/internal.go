@@ -14,14 +14,16 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -139,18 +141,24 @@ func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 // search specific endpoint is used rather than serving the entire site settings
 // from /.internal/configuration.
 func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
-	opts := struct {
-		LargeFiles []string
-		Symbols    bool
-	}{
-		LargeFiles: conf.Get().SearchLargeFiles,
-		Symbols:    conf.SymbolIndexEnabled(),
+	repo := r.URL.Query().Get("repo")
+	getVersion := func(branch string) (string, error) {
+		// Do not to trigger a repo-updater lookup since this is a batch job.
+		commitID, err := git.ResolveRevision(r.Context(), gitserver.Repo{Name: api.RepoName(repo)}, nil, branch, git.ResolveRevisionOptions{})
+		if err != nil && errcode.HTTP(err) == http.StatusNotFound {
+			// GetIndexOptions wants an empty rev for a missing rev or empty
+			// repo.
+			return "", nil
+		}
+		return string(commitID), err
 	}
-	err := json.NewEncoder(w).Encode(opts)
+
+	b, err := searchbackend.GetIndexOptions(&conf.Get().SiteConfiguration, repo, getVersion)
 	if err != nil {
-		return errors.Wrap(err, "encode")
+		return err
 	}
-	return nil
+	_, err = w.Write(b)
+	return err
 }
 
 type reposListServer struct {
@@ -178,67 +186,6 @@ type reposListServer struct {
 		// Enabled is true if horizontal indexed search is enabled.
 		Enabled() bool
 	}
-}
-
-// Deprecated: serveList used to be used by Zoekt to get the list of
-// repositories to index. Can be removed in 3.11.
-func (h *reposListServer) serveList(w http.ResponseWriter, r *http.Request) error {
-	var opt struct {
-		Hostname string
-		db.ReposListOptions
-	}
-	if err := json.NewDecoder(r.Body).Decode(&opt); err != nil {
-		return err
-	}
-
-	var names []string
-	if h.SourcegraphDotComMode {
-		res, err := h.Repos.ListDefault(r.Context())
-		if err != nil {
-			return errors.Wrap(err, "listing repos")
-		}
-		names = make([]string, len(res))
-		for i, r := range res {
-			names[i] = string(r.Name)
-		}
-	} else {
-		res, err := h.Repos.List(r.Context(), opt.ReposListOptions)
-		if err != nil {
-			return errors.Wrap(err, "listing repos")
-		}
-		names = make([]string, len(res))
-		for i, r := range res {
-			names[i] = string(r.Name)
-		}
-	}
-
-	if h.Indexers.Enabled() {
-		var err error
-		names, err = h.Indexers.ReposSubset(r.Context(), opt.Hostname, map[string]struct{}{}, names)
-		if err != nil {
-			return err
-		}
-	}
-
-	// BACKCOMPAT: Add a Name field that serializes to `URI` because
-	// zoekt-sourcegraph-indexserver expects one to exist (with the
-	// repository name). This is a legacy of the rename from "repo URI" to
-	// "repo name".
-	type repoWithBackcompatURIField struct {
-		Name string `json:"URI"`
-	}
-	res := make([]repoWithBackcompatURIField, len(names))
-	for i, name := range names {
-		res[i].Name = name
-	}
-
-	data, err := json.Marshal(res)
-	if err != nil {
-		return err
-	}
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(data)
-	return nil
 }
 
 // serveIndex is used by zoekt to get the list of repositories for it to
@@ -500,7 +447,7 @@ func serveGitResolveRevision(w http.ResponseWriter, r *http.Request) error {
 	spec := vars["Spec"]
 
 	// Do not to trigger a repo-updater lookup since this is a batch job.
-	commitID, err := git.ResolveRevision(r.Context(), gitserver.Repo{Name: name}, nil, spec, nil)
+	commitID, err := git.ResolveRevision(r.Context(), gitserver.Repo{Name: name}, nil, spec, git.ResolveRevisionOptions{})
 	if err != nil {
 		return err
 	}
@@ -518,7 +465,7 @@ func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 
 	// Ensure commit exists. Do not want to trigger a repo-updater lookup since this is a batch job.
 	repo := gitserver.Repo{Name: name}
-	commit, err := git.ResolveRevision(r.Context(), repo, nil, spec, nil)
+	commit, err := git.ResolveRevision(r.Context(), repo, nil, spec, git.ResolveRevisionOptions{})
 	if err != nil {
 		return err
 	}

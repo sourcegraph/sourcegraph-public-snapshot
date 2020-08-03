@@ -7,11 +7,11 @@ groups:
       - record: cadvisor_container_cpu_limit
         expr: avg by (name)(container_spec_cpu_quota) / avg by (name)(container_spec_cpu_period)
 
-      # Percentage of CPU cores the container consumed on average over a 5m period.
+      # Percentage of CPU cores the container consumed on average over a 1m period.
       # For example, if a container has a 4 CPU limit and this metric reports 50%,
-      # it means the container consumed 2 cores on average over that 5m period.
+      # it means the container consumed 2 cores on average over that 1m period.
       - record: cadvisor_container_cpu_usage_percentage_total
-        expr: (avg by (name)(rate(container_cpu_usage_seconds_total[5m])) / cadvisor_container_cpu_limit) * 100.0
+        expr: (avg by (name)(rate(container_cpu_usage_seconds_total[1m])) / cadvisor_container_cpu_limit) * 100.0
 
       # Percentage of memory usage the container is consuming.
       - record: cadvisor_container_memory_usage_percentage_total

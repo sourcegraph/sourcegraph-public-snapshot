@@ -10,26 +10,39 @@ import { Link } from '../../../../shared/src/components/Link'
 import { PageTitle } from '../../components/PageTitle'
 import { RouteComponentProps } from 'react-router'
 import { Timestamp } from '../../components/time/Timestamp'
-import { deleteLsifIndex, fetchLsifIndexes } from './backend'
+import { fetchLsifIndexes as defaultFetchLsifIndexes, deleteLsifIndex, Index } from './backend'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../components/alerts'
 import { Subject } from 'rxjs'
 import * as H from 'history'
 
-export interface LsifIndexNodeProps {
-    node: GQL.ILSIFIndex
+const Header: FunctionComponent<{}> = () => (
+    <thead>
+        <tr>
+            <th>Repository</th>
+            <th>Commit</th>
+            <th>State</th>
+            <th>Last Activity</th>
+            <th />
+        </tr>
+    </thead>
+)
+
+export interface IndexNodeProps {
+    node: Index
     onDelete: () => void
     history: H.History
+
+    /** Function that returns the current time (for stability in visual tests). */
+    now?: () => Date
 }
 
-const LsifIndexNode: FunctionComponent<LsifIndexNodeProps> = ({ node, onDelete, history }) => {
+const IndexNode: FunctionComponent<IndexNodeProps> = ({ node, onDelete, history, now }) => {
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
 
     const deleteIndex = async (): Promise<void> => {
-        const description = `commit ${node.inputCommit.slice(0, 7)}`
-
-        if (!window.confirm(`Delete index for commit ${description}?`)) {
+        if (!window.confirm('Are you sure you want to delete this index record?')) {
             return
         }
 
@@ -46,93 +59,113 @@ const LsifIndexNode: FunctionComponent<LsifIndexNodeProps> = ({ node, onDelete, 
     return deletionOrError && isErrorLike(deletionOrError) ? (
         <ErrorAlert prefix="Error deleting LSIF index" error={deletionOrError} history={history} />
     ) : (
-        <div className="w-100 list-group-item py-2 align-items-center lsif-data__main">
-            <div className="lsif-data__meta">
-                <div className="lsif-data__meta-root">
-                    Index for commit
-                    <code className="ml-1 mr-1 e2e-index-commit">
-                        {node.projectRoot ? (
-                            <Link to={node.projectRoot.commit.url}>
-                                <code>{node.projectRoot.commit.abbreviatedOID}</code>
-                            </Link>
-                        ) : (
-                            node.inputCommit.slice(0, 7)
-                        )}
-                    </code>
-                    rooted at
-                    <span className="ml-1 e2e-index-root">
-                        {node.projectRoot ? (
-                            <Link to={node.projectRoot.url}>
-                                <strong>{node.projectRoot.path || '/'}</strong>
-                            </Link>
-                        ) : (
-                            '/'
-                        )}
+        <tr>
+            <td>
+                {node.projectRoot ? (
+                    <Link to={node.projectRoot.repository.url}>
+                        <code>{node.projectRoot.repository.name}</code>
+                    </Link>
+                ) : (
+                    'unknown'
+                )}
+            </td>
+            <td>
+                <code>
+                    {node.projectRoot ? (
+                        <Link to={node.projectRoot.commit.url}>
+                            <code>{node.projectRoot.commit.abbreviatedOID}</code>
+                        </Link>
+                    ) : (
+                        node.inputCommit.slice(0, 7)
+                    )}
+                </code>
+            </td>
+            <td>
+                <Link to={`./indexes/${node.id}`}>
+                    {node.state === GQL.LSIFIndexState.PROCESSING ? (
+                        <span>Processing</span>
+                    ) : node.state === GQL.LSIFIndexState.COMPLETED ? (
+                        <span className="text-success">Completed</span>
+                    ) : node.state === GQL.LSIFIndexState.ERRORED ? (
+                        <span className="text-danger">Failed to process</span>
+                    ) : (
+                        <span>Waiting to process (#{node.placeInQueue} in line)</span>
+                    )}
+                </Link>
+            </td>
+            <td>
+                {node.finishedAt ? (
+                    <span>
+                        Completed <Timestamp date={node.finishedAt} now={now} noAbout={true} />
                     </span>
-                    <span className="ml-2">
-                        -
-                        <span className="ml-2">
-                            <Link to={`./indexes/${node.id}`}>
-                                {node.state === GQL.LSIFIndexState.PROCESSING ? (
-                                    <span>Processing</span>
-                                ) : node.state === GQL.LSIFIndexState.COMPLETED ? (
-                                    <span className="text-success">Processed</span>
-                                ) : node.state === GQL.LSIFIndexState.ERRORED ? (
-                                    <span className="text-danger">Failed to process</span>
-                                ) : (
-                                    <span>Waiting to process (#{node.placeInQueue} in line)</span>
-                                )}
-                            </Link>
-                        </span>
+                ) : node.startedAt ? (
+                    <span>
+                        Started <Timestamp date={node.startedAt} now={now} noAbout={true} />
                     </span>
-                </div>
-            </div>
-
-            <small className="text-muted lsif-data__meta-timestamp">
-                <Timestamp noAbout={true} date={node.finishedAt || node.startedAt || node.queuedAt} />
-
+                ) : (
+                    <span>
+                        Queued <Timestamp date={node.queuedAt} now={now} noAbout={true} />
+                    </span>
+                )}
+            </td>
+            <td>
                 <button
                     type="button"
-                    className="btn btn-sm btn-danger lsif-data__meta-delete"
+                    className="btn btn-sm btn-danger"
                     onClick={deleteIndex}
                     disabled={deletionOrError === 'loading'}
                     data-tooltip="Delete index"
                 >
                     <DeleteIcon className="icon-inline" />
                 </button>
-            </small>
-        </div>
+            </td>
+        </tr>
     )
 }
 
 interface Props extends RouteComponentProps<{}> {
     repo?: GQL.IRepository
+    fetchLsifIndexes?: typeof defaultFetchLsifIndexes
+
+    /** Function that returns the current time (for stability in visual tests). */
+    now?: () => Date
 }
 
 /**
  * The repository settings code intelligence page.
  */
-export const CodeIntelIndexesPage: FunctionComponent<Props> = ({ repo, ...props }) => {
+export const CodeIntelIndexesPage: FunctionComponent<Props> = ({
+    repo,
+    fetchLsifIndexes = defaultFetchLsifIndexes,
+    now,
+    ...props
+}) => {
     useEffect(() => eventLogger.logViewEvent('CodeIntelIndexes'), [])
 
     const filters: FilteredConnectionFilter[] = [
         {
-            label: 'Only current',
-            id: 'current',
-            tooltip: 'Show current indexes only',
-            args: { isLatestForRepo: true },
+            label: 'All',
+            id: 'all',
+            tooltip: 'Show all uploads',
+            args: {},
         },
         {
-            label: 'Only completed',
+            label: 'Completed',
             id: 'completed',
             tooltip: 'Show completed indexes only',
             args: { state: GQL.LSIFIndexState.COMPLETED },
         },
         {
-            label: 'All',
-            id: 'all',
-            tooltip: 'Show all indexes',
-            args: {},
+            label: 'Errored',
+            id: 'errored',
+            tooltip: 'Show errored indexes only',
+            args: { state: GQL.LSIFIndexState.ERRORED },
+        },
+        {
+            label: 'Queued',
+            id: 'queued',
+            tooltip: 'Show queued indexes only',
+            args: { state: GQL.LSIFIndexState.QUEUED },
         },
     ]
 
@@ -143,15 +176,15 @@ export const CodeIntelIndexesPage: FunctionComponent<Props> = ({ repo, ...props 
 
     const queryIndexes = useCallback(
         (args: FilteredConnectionQueryArgs) => fetchLsifIndexes({ repository: repo?.id, ...args }),
-        [repo?.id]
+        [repo?.id, fetchLsifIndexes]
     )
 
     return (
-        <div className="repo-settings-code-intelligence-page">
-            <PageTitle title="Code intelligence - auto-indexing" />
-            <h2>Code intelligence - auto-indexing</h2>
+        <div className="code-intel-indexes">
+            <PageTitle title="Precise code intelligence auto-index records" />
+            <h2>Precise code intelligence auto-index records</h2>
             <p>
-                Popular Go repositories will be indexed automatically via{' '}
+                Popular Go repositories are indexed automatically via{' '}
                 <a href="https://github.com/sourcegraph/lsif-go" target="_blank" rel="noreferrer noopener">
                     lsif-go
                 </a>{' '}
@@ -170,17 +203,19 @@ export const CodeIntelIndexesPage: FunctionComponent<Props> = ({ repo, ...props 
                 .
             </p>
 
-            <FilteredConnection<GQL.ILSIFIndex, Omit<LsifIndexNodeProps, 'node'>>
-                className="list-group list-group-flush mt-3"
+            <FilteredConnection<Index, Omit<IndexNodeProps, 'node'>>
+                className="mt-3"
+                listComponent="table"
+                listClassName="table"
                 noun="index"
                 pluralNoun="indexes"
+                headComponent={Header}
+                nodeComponent={IndexNode}
+                nodeComponentProps={{ onDelete: onDeleteCallback, history: props.history, now }}
                 queryConnection={queryIndexes}
-                nodeComponent={LsifIndexNode}
-                nodeComponentProps={{ onDelete: onDeleteCallback, history: props.history }}
                 updates={onDeleteSubject}
                 history={props.history}
                 location={props.location}
-                listClassName="list-group list-group-flush"
                 cursorPaging={true}
                 filters={filters}
             />

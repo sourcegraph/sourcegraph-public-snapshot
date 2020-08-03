@@ -14,10 +14,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/src-d/enry/v2"
 
 	"github.com/hashicorp/go-multierror"
@@ -201,27 +201,37 @@ func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
 // commonFileFilters are common filters used. It is used by DynamicFilters to
 // propose them if they match shown results.
 var commonFileFilters = []struct {
-	Regexp *lazyregexp.Regexp
-	Filter string
+	regexp      *lazyregexp.Regexp
+	regexFilter string
+	globFilter  string
 }{
 	// Exclude go tests
 	{
-		Regexp: lazyregexp.New(`_test\.go$`),
-		Filter: `-file:_test\.go$`,
+		regexp:      lazyregexp.New(`_test\.go$`),
+		regexFilter: `-file:_test\.go$`,
+		globFilter:  `-file:**_test.go`,
 	},
 	// Exclude go vendor
 	{
-		Regexp: lazyregexp.New(`(^|/)vendor/`),
-		Filter: `-file:(^|/)vendor/`,
+		regexp:      lazyregexp.New(`(^|/)vendor/`),
+		regexFilter: `-file:(^|/)vendor/`,
+		globFilter:  `-file:vendor/** -file:**/vendor/**`,
 	},
 	// Exclude node_modules
 	{
-		Regexp: lazyregexp.New(`(^|/)node_modules/`),
-		Filter: `-file:(^|/)node_modules/`,
+		regexp:      lazyregexp.New(`(^|/)node_modules/`),
+		regexFilter: `-file:(^|/)node_modules/`,
+		globFilter:  `-file:node_modules/** -file:**/node_modules/**`,
 	},
 }
 
-func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
+func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFilterResolver {
+
+	globbing := false
+	if settings, err := decodedViewerFinalSettings(ctx); err == nil {
+		globbing = getBoolPtr(settings.SearchGlobbing, false)
+	}
+
 	filters := map[string]*searchFilterResolver{}
 	repoToMatchCount := make(map[string]int)
 	add := func(value string, label string, count int, limitHit bool, kind string, score score) {
@@ -243,7 +253,13 @@ func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 	}
 
 	addRepoFilter := func(uri string, rev string, lineMatchCount int) {
-		filter := fmt.Sprintf(`repo:^%s$`, regexp.QuoteMeta(uri))
+		var filter string
+		if globbing {
+			filter = fmt.Sprintf(`repo:%s`, uri)
+		} else {
+			filter = fmt.Sprintf(`repo:^%s$`, regexp.QuoteMeta(uri))
+		}
+
 		if rev != "" {
 			// We don't need to quote rev. The only special characters we interpret
 			// are @ and :, both of which are disallowed in git refs
@@ -257,8 +273,14 @@ func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 
 	addFileFilter := func(fileMatchPath string, lineMatchCount int, limitHit bool) {
 		for _, ff := range commonFileFilters {
-			if ff.Regexp.MatchString(fileMatchPath) {
-				add(ff.Filter, ff.Filter, lineMatchCount, limitHit, "file", scoreDefault)
+			// use regexp to match file paths unconditionally, whether globbing is enabled or not,
+			// since we have no native library call to match `**` for globs.
+			if ff.regexp.MatchString(fileMatchPath) {
+				if globbing {
+					add(ff.globFilter, ff.globFilter, lineMatchCount, limitHit, "file", scoreDefault)
+				} else {
+					add(ff.regexFilter, ff.regexFilter, lineMatchCount, limitHit, "file", scoreDefault)
+				}
 			}
 		}
 	}
@@ -660,6 +682,55 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolv
 	return rr, err
 }
 
+// unionMerge performs a merge of file match results, merging line matches when
+// they occur in the same file, and taking care to update match counts.
+func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
+	var count int // count non-overlapping files when we merge.
+	var merged []SearchResultResolver
+	rightFileMatches := make(map[string]*FileMatchResolver)
+
+	// accumulate file matches for the right subexpression in a lookup.
+	for _, r := range right.SearchResults {
+		if fileMatch, ok := r.ToFileMatch(); ok {
+			rightFileMatches[fileMatch.uri] = fileMatch
+			continue
+		}
+		merged = append(merged, r)
+	}
+
+	for _, leftMatch := range left.SearchResults {
+		leftFileMatch, ok := leftMatch.ToFileMatch()
+		if !ok {
+			merged = append(merged, leftMatch)
+			continue
+		}
+
+		rightFileMatch := rightFileMatches[leftFileMatch.uri]
+		if rightFileMatch == nil {
+			// no overlap with existing matches.
+			merged = append(merged, leftMatch)
+			count++
+			continue
+		}
+
+		// merge line matches with a file match that already exists.
+		rightFileMatch.JLineMatches = append(rightFileMatch.JLineMatches, leftFileMatch.JLineMatches...)
+		rightFileMatch.MatchCount += leftFileMatch.MatchCount
+		rightFileMatch.JLimitHit = rightFileMatch.JLimitHit || leftFileMatch.JLimitHit
+		rightFileMatches[leftFileMatch.uri] = rightFileMatch
+	}
+
+	for _, v := range rightFileMatches {
+		merged = append(merged, v)
+	}
+
+	left.SearchResults = merged
+	left.searchResultsCommon.update(right.searchResultsCommon)
+	// set the count that tracks non-overlapping result count.
+	left.searchResultsCommon.resultCount = int32(count)
+	return left
+}
+
 // union returns the union of two sets of search results and merges common search data.
 func union(left, right *SearchResultsResolver) *SearchResultsResolver {
 	if right == nil {
@@ -668,53 +739,56 @@ func union(left, right *SearchResultsResolver) *SearchResultsResolver {
 	if left == nil {
 		return right
 	}
+
 	if left.SearchResults != nil && right.SearchResults != nil {
-		left.SearchResults = append(left.SearchResults, right.SearchResults...)
-		// merge common search data.
-		left.searchResultsCommon.update(right.searchResultsCommon)
-		return left
+		return unionMerge(left, right)
 	} else if right.SearchResults != nil {
 		return right
 	}
 	return left
 }
 
-// intersect returns the intersection of two sets of search result content
-// matches, based on whether a single file path contains content matches in both
-// sets.
-func intersect(left, right *SearchResultsResolver) (*SearchResultsResolver, error) {
-	if left == nil || right == nil {
-		return nil, nil
-	}
-
-	rFileMatches := make(map[string]*FileMatchResolver)
-
+// intersectMerge performs a merge of file match results, merging line matches
+// for files contained in both result sets, and updating counts.
+func intersectMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
+	rightFileMatches := make(map[string]*FileMatchResolver)
 	for _, r := range right.SearchResults {
 		if fileMatch, ok := r.ToFileMatch(); ok {
-			rFileMatches[fileMatch.uri] = fileMatch
+			rightFileMatches[fileMatch.uri] = fileMatch
 		}
 	}
 
 	var merged []SearchResultResolver
-	for _, ltmp := range left.SearchResults {
-		ltmpFileMatch, ok := ltmp.ToFileMatch()
+	for _, leftMatch := range left.SearchResults {
+		leftFileMatch, ok := leftMatch.ToFileMatch()
 		if !ok {
 			continue
 		}
 
-		rtmpFileMatch := rFileMatches[ltmpFileMatch.uri]
-		if rtmpFileMatch == nil {
+		rightFileMatch := rightFileMatches[leftFileMatch.uri]
+		if rightFileMatch == nil {
 			continue
 		}
 
-		ltmpFileMatch.JLineMatches = append(ltmpFileMatch.JLineMatches, rtmpFileMatch.JLineMatches...)
-		merged = append(merged, ltmp)
+		leftFileMatch.JLineMatches = append(leftFileMatch.JLineMatches, rightFileMatch.JLineMatches...)
+		leftFileMatch.MatchCount += rightFileMatch.MatchCount
+		leftFileMatch.JLimitHit = leftFileMatch.JLimitHit || rightFileMatch.JLimitHit
+		merged = append(merged, leftMatch)
 	}
 	left.SearchResults = merged
 	left.searchResultsCommon.update(right.searchResultsCommon)
 	// for intersect we want the newly computed intersection size.
 	left.searchResultsCommon.resultCount = int32(len(merged))
-	return left, nil
+	return left
+}
+
+// intersect returns the intersection of two sets of search result content
+// matches, based on whether a single file path contains content matches in both sets.
+func intersect(left, right *SearchResultsResolver) *SearchResultsResolver {
+	if left == nil || right == nil {
+		return nil
+	}
+	return intersectMerge(left, right)
 }
 
 // evaluateAnd performs set intersection on result sets. It collects results for
@@ -740,7 +814,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 	want := 5
 
 	var countStr string
-	query.VisitField(scopeParameters, "count", func(value string, _ bool) {
+	query.VisitField(scopeParameters, "count", func(value string, _ bool, _ query.Annotation) {
 		countStr = value
 	})
 	if countStr != "" {
@@ -758,16 +832,19 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 
 	var exhausted bool
 	for {
-		scopeParameters = query.MapParameter(scopeParameters, func(field, value string, negated bool) query.Node {
+		scopeParameters = query.MapParameter(scopeParameters, func(field, value string, negated bool, annotation query.Annotation) query.Node {
 			if field == "count" {
 				value = strconv.FormatInt(int64(tryCount), 10)
 			}
-			return query.Parameter{Field: field, Value: value, Negated: negated}
+			return query.Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 		})
 
 		result, err = r.evaluatePatternExpression(ctx, scopeParameters, operands[0])
 		if err != nil {
 			return nil, err
+		}
+		if result == nil {
+			return nil, nil
 		}
 		exhausted = !result.limitHit
 		for _, term := range operands[1:] {
@@ -777,10 +854,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 			}
 			if new != nil {
 				exhausted = exhausted && !new.limitHit
-				result, err = intersect(result, new)
-				if err != nil {
-					return nil, err
-				}
+				result = intersect(result, new)
 			}
 		}
 		if exhausted {
@@ -794,7 +868,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 		tryCount *= tryCount
 		if tryCount > maxResultsForRetry {
 			// We've capped out what we're willing to do, throw alert.
-			return &SearchResultsResolver{alert: alertForCappedAndExpression()}, nil
+			return alertForCappedAndExpression().wrap(), nil
 		}
 	}
 	result.limitHit = !exhausted
@@ -812,7 +886,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query
 
 	var countStr string
 	wantCount := defaultMaxSearchResults
-	query.VisitField(scopeParameters, "count", func(value string, _ bool) {
+	query.VisitField(scopeParameters, "count", func(value string, _ bool, _ query.Annotation) {
 		countStr = value
 	})
 	if countStr != "" {
@@ -823,7 +897,12 @@ func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query
 	if err != nil {
 		return nil, err
 	}
-	if result.searchResultsCommon.resultCount > int32(wantCount) {
+	if result == nil {
+		return nil, nil
+	}
+	// Do not rely on result.searchResultsCommon.resultCount because it may
+	// count non-content matches and there's no easy way to know.
+	if len(result.SearchResults) > wantCount {
 		result.SearchResults = result.SearchResults[:wantCount]
 		result.searchResultsCommon.resultCount = int32(wantCount)
 		return result, nil
@@ -836,7 +915,9 @@ func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query
 		}
 		if new != nil {
 			result = union(result, new)
-			if result.searchResultsCommon.resultCount > int32(wantCount) {
+			// Do not rely on result.searchResultsCommon.resultCount because it may
+			// count non-content matches and there's no easy way to know.
+			if len(result.SearchResults) > wantCount {
 				result.SearchResults = result.SearchResults[:wantCount]
 				result.searchResultsCommon.resultCount = int32(wantCount)
 				return result, nil
@@ -890,7 +971,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchResultsResolver, error) {
 	scopeParameters, pattern, err := query.PartitionSearchPattern(q)
 	if err != nil {
-		return &SearchResultsResolver{alert: alertForQuery("", err)}, nil
+		return alertForQuery("", err).wrap(), nil
 	}
 	if pattern == nil {
 		r.query.(*query.AndOrQuery).Query = scopeParameters
@@ -909,14 +990,6 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 	case *query.OrdinaryQuery:
 		return r.evaluateLeaf(ctx)
 	case *query.AndOrQuery:
-		// Get settings to check if `search.uppercase` is active. If so, run transformer.
-		settings, err := decodedViewerFinalSettings(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if v := settings.SearchUppercase; v != nil && *v {
-			q.Query = query.SearchUppercase(q.Query)
-		}
 		return r.evaluate(ctx, q.Query)
 	}
 	// Unreachable.
@@ -943,7 +1016,7 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 	if shouldShowAlert {
 		usedTime := time.Since(start)
 		suggestTime := longer(2, usedTime)
-		return &SearchResultsResolver{alert: alertForTimeout(usedTime, suggestTime, r)}, nil
+		return alertForTimeout(usedTime, suggestTime, r).wrap(), nil
 	}
 	return rr, err
 }
@@ -1117,9 +1190,27 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Te
 	return getPatternInfo(r.query, opts)
 }
 
+func isPatternNegated(q []query.Node) bool {
+	isNegated := false
+	patternsFound := 0
+	query.VisitPattern(q, func(_ string, negated bool, _ query.Annotation) {
+		patternsFound++
+		if patternsFound > 1 {
+			return
+		}
+		isNegated = negated
+	})
+
+	// we only support negation for queries that contain exactly 1 pattern.
+	if patternsFound > 1 {
+		return false
+	}
+	return isNegated
+}
+
 // processSearchPattern processes the search pattern for a query. It handles the interpretation of search patterns
 // as literal, regex, or structural patterns, and applies fuzzy regex matching if applicable.
-func processSearchPattern(q query.QueryInfo, opts *getPatternInfoOptions) (string, bool, bool) {
+func processSearchPattern(q query.QueryInfo, opts *getPatternInfoOptions) (string, bool, bool, bool) {
 	var pattern string
 	var pieces []string
 	var contentFieldSet bool
@@ -1127,6 +1218,12 @@ func processSearchPattern(q query.QueryInfo, opts *getPatternInfoOptions) (strin
 	isStructuralPat := false
 
 	patternValues := q.Values(query.FieldDefault)
+
+	isNegated := false
+	if andOrQuery, ok := q.(*query.AndOrQuery); ok {
+		isNegated = isPatternNegated(andOrQuery.Query)
+	}
+
 	if overridePattern := q.Values(query.FieldContent); len(overridePattern) > 0 {
 		patternValues = overridePattern
 		contentFieldSet = true
@@ -1172,12 +1269,12 @@ func processSearchPattern(q query.QueryInfo, opts *getPatternInfoOptions) (strin
 		pattern = "."
 	}
 
-	return pattern, isRegExp, isStructuralPat
+	return pattern, isRegExp, isStructuralPat, isNegated
 }
 
 // getPatternInfo gets the search pattern info for q
 func getPatternInfo(q query.QueryInfo, opts *getPatternInfoOptions) (*search.TextPatternInfo, error) {
-	pattern, isRegExp, isStructuralPat := processSearchPattern(q, opts)
+	pattern, isRegExp, isStructuralPat, isNegated := processSearchPattern(q, opts)
 
 	// Handle file: and -file: filters.
 	includePatterns, excludePatterns := q.RegexpPatterns(query.FieldFile)
@@ -1210,10 +1307,10 @@ func getPatternInfo(q query.QueryInfo, opts *getPatternInfoOptions) (*search.Tex
 		IsCaseSensitive:              q.IsCaseSensitive(),
 		FileMatchLimit:               opts.fileMatchLimit,
 		Pattern:                      pattern,
+		IsNegated:                    isNegated,
 		IncludePatterns:              includePatterns,
 		FilePatternsReposMustInclude: filePatternsReposMustInclude,
 		FilePatternsReposMustExclude: filePatternsReposMustExclude,
-		PathPatternsAreRegExps:       true,
 		Languages:                    languages,
 		PathPatternsAreCaseSensitive: q.IsCaseSensitive(),
 		CombyRule:                    strings.Join(combyRule, ""),
@@ -1561,10 +1658,12 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 						multiErr = multierror.Append(multiErr, errors.Wrap(err, "text search failed"))
 						multiErrMu.Unlock()
 					}
-					if len(fileResults) == 0 && fileCommon.limitHit {
+					if len(fileResults) == 0 {
 						// Still no results? Give up.
 						log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
-						fileCommon.limitHit = false // Ensure we don't display "Show more".
+						if fileCommon != nil {
+							fileCommon.limitHit = false // Ensure we don't display "Show more".
+						}
 					}
 				}
 				for _, r := range fileResults {
@@ -1602,7 +1701,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					FileMatchLimit:               old.FileMatchLimit,
 					IncludePatterns:              old.IncludePatterns,
 					ExcludePattern:               old.ExcludePattern,
-					PathPatternsAreRegExps:       old.PathPatternsAreRegExps,
+					PathPatternsAreRegExps:       true,
 					PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
 				}
 				args := search.TextParametersForCommitParameters{
@@ -1642,7 +1741,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					FileMatchLimit:               old.FileMatchLimit,
 					IncludePatterns:              old.IncludePatterns,
 					ExcludePattern:               old.ExcludePattern,
-					PathPatternsAreRegExps:       old.PathPatternsAreRegExps,
+					PathPatternsAreRegExps:       true,
 					PathPatternsAreCaseSensitive: old.PathPatternsAreCaseSensitive,
 				}
 				args := search.TextParametersForCommitParameters{
@@ -1721,6 +1820,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	multiErr, newAlert := alertForStructuralSearch(multiErr)
 	if newAlert != nil {
 		alert = newAlert // takes higher precedence
+	}
+
+	if len(results) == 0 && r.patternType != query.SearchTypeStructural && matchHoleRegexp.MatchString(r.originalQuery) {
+		alert = alertForStructuralSearchNotSet(r.originalQuery)
 	}
 
 	if len(missingRepoRevs) > 0 {

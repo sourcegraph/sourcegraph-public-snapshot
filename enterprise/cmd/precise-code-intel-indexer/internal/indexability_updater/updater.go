@@ -58,6 +58,8 @@ func (u *Updater) Stop() {
 }
 
 func (u *Updater) update(ctx context.Context) error {
+	start := time.Now().UTC()
+
 	stats, err := u.store.RepoUsageStatistics(ctx)
 	if err != nil {
 		return errors.Wrap(err, "store.RepoUsageStatistics")
@@ -71,6 +73,13 @@ func (u *Updater) update(ctx context.Context) error {
 
 			return err
 		}
+	}
+
+	// Anything we didn't update hasn't had any activity and didn't come back
+	// from RepoUsageStatitsics. Ensure we don't retain the last usage count
+	// for these repositories indefinitely.
+	if err := u.store.ResetIndexableRepositories(ctx, start); err != nil {
+		return errors.Wrap(err, "store.ResetIndexableRepositories")
 	}
 
 	return nil
@@ -95,7 +104,7 @@ func (u *Updater) queueRepository(ctx context.Context, repoUsageStatistics store
 		PreciseCount: &repoUsageStatistics.PreciseCount,
 	}
 
-	if err := u.store.UpdateIndexableRepository(ctx, indexableRepository); err != nil {
+	if err := u.store.UpdateIndexableRepository(ctx, indexableRepository, time.Now().UTC()); err != nil {
 		return errors.Wrap(err, "store.UpdateIndexableRepository")
 	}
 

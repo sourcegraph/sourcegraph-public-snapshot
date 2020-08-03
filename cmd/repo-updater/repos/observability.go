@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	multierror "github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-multierror"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -38,6 +37,14 @@ type observedSource struct {
 // SourceMetrics encapsulates the Prometheus metrics of a Source.
 type SourceMetrics struct {
 	ListRepos *metrics.OperationMetrics
+}
+
+// MustRegister registers all metrics in SourceMetrics in the given
+// prometheus.Registerer. It panics in case of failure.
+func (sm SourceMetrics) MustRegister(r prometheus.Registerer) {
+	r.MustRegister(sm.ListRepos.Count)
+	r.MustRegister(sm.ListRepos.Duration)
+	r.MustRegister(sm.ListRepos.Errors)
 }
 
 // NewSourceMetrics returns SourceMetrics that need to be registered
@@ -125,7 +132,8 @@ type StoreMetrics struct {
 	ListRepos              *metrics.OperationMetrics
 	UpsertExternalServices *metrics.OperationMetrics
 	ListExternalServices   *metrics.OperationMetrics
-	ListAllRepoNames       *metrics.OperationMetrics
+	SetClonedRepos         *metrics.OperationMetrics
+	CountNotClonedRepos    *metrics.OperationMetrics
 }
 
 // MustRegister registers all metrics in StoreMetrics in the given
@@ -138,7 +146,7 @@ func (sm StoreMetrics) MustRegister(r prometheus.Registerer) {
 		sm.UpsertRepos,
 		sm.ListExternalServices,
 		sm.UpsertExternalServices,
-		sm.ListAllRepoNames,
+		sm.SetClonedRepos,
 	} {
 		r.MustRegister(om.Count)
 		r.MustRegister(om.Duration)
@@ -234,18 +242,32 @@ func NewStoreMetrics() StoreMetrics {
 				Help: "Total number of errors when listing external_services",
 			}, []string{}),
 		},
-		ListAllRepoNames: &metrics.OperationMetrics{
+		SetClonedRepos: &metrics.OperationMetrics{
 			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Name: "src_repoupdater_store_list_all_repo_names_duration_seconds",
-				Help: "Time spent listing repo names",
+				Name: "src_repoupdater_store_set_cloned_repos_duration_seconds",
+				Help: "Time spent setting cloned repos",
 			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_list_all_repo_names_total",
-				Help: "Total number of listed repo names",
+				Name: "src_repoupdater_store_set_cloned_repos_total",
+				Help: "Total number of set cloned repos calls",
 			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_list_all_repo_names_errors_total",
-				Help: "Total number of errors when listing repo names",
+				Name: "src_repoupdater_store_set_cloned_repos_errors_total",
+				Help: "Total number of errors when setting cloned repos",
+			}, []string{}),
+		},
+		CountNotClonedRepos: &metrics.OperationMetrics{
+			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+				Name: "src_repoupdater_store_count_not_cloned_repos_duration_seconds",
+				Help: "Time spent counting not-cloned repos",
+			}, []string{}),
+			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_store_count_not_cloned_repos_total",
+				Help: "Total number of count not-cloned repos calls",
+			}, []string{}),
+			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_store_count_not_cloned_repos_errors_total",
+				Help: "Total number of errors when counting not-cloned repos",
 			}, []string{}),
 		},
 	}
@@ -393,25 +415,6 @@ func (o *ObservedStore) ListRepos(ctx context.Context, args StoreListReposArgs) 
 	return o.store.ListRepos(ctx, args)
 }
 
-// ListAllRepoNames calls into the inner Store and registers the observed results.
-func (o *ObservedStore) ListAllRepoNames(ctx context.Context) (names []api.RepoName, err error) {
-	tr, ctx := o.trace(ctx, "Store.ListAllRepoNames")
-
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
-		count := float64(len(names))
-
-		o.metrics.ListAllRepoNames.Observe(secs, count, &err)
-		logging.Log(o.log, "store.list-all-repo-names", &err, "count", len(names))
-
-		tr.LogFields(otlog.Int("count", len(names)))
-		tr.SetError(err)
-		tr.Finish()
-	}(time.Now())
-
-	return o.store.ListAllRepoNames(ctx)
-}
-
 // UpsertRepos calls into the inner Store and registers the observed results.
 func (o *ObservedStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 	tr, ctx := o.trace(ctx, "Store.UpsertRepos")
@@ -429,6 +432,42 @@ func (o *ObservedStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err er
 	}(time.Now())
 
 	return o.store.UpsertRepos(ctx, repos...)
+}
+
+// SetClonedRepos calls into the inner Store and registers the observed results.
+func (o *ObservedStore) SetClonedRepos(ctx context.Context, repoNames ...string) (err error) {
+	tr, ctx := o.trace(ctx, "Store.SetClonedRepos")
+	tr.LogFields(otlog.Int("count", len(repoNames)))
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		count := float64(len(repoNames))
+
+		o.metrics.SetClonedRepos.Observe(secs, count, &err)
+		logging.Log(o.log, "store.set-cloned-repos", &err, "count", len(repoNames))
+
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
+	return o.store.SetClonedRepos(ctx, repoNames...)
+}
+
+// CountNotClonedRepos calls into the inner Store and registers the observed results.
+func (o *ObservedStore) CountNotClonedRepos(ctx context.Context) (count uint64, err error) {
+	tr, ctx := o.trace(ctx, "Store.CountNotClonedRepos")
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+
+		o.metrics.CountNotClonedRepos.Observe(secs, float64(count), &err)
+		logging.Log(o.log, "store.count-not-cloned-repos", &err, "count", count)
+
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
+	return o.store.CountNotClonedRepos(ctx)
 }
 
 func (o *ObservedStore) trace(ctx context.Context, family string) (*trace.Trace, context.Context) {

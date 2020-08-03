@@ -9,14 +9,6 @@ import (
 	"github.com/src-d/enry/v2"
 )
 
-type UnsupportedError struct {
-	Msg string
-}
-
-func (e *UnsupportedError) Error() string {
-	return e.Msg
-}
-
 // exists traverses every node in nodes and returns early as soon as fn is satisfied.
 func exists(nodes []Node, fn func(node Node) bool) bool {
 	found := false
@@ -68,6 +60,18 @@ func containsAndOrExpression(nodes []Node) bool {
 	return exists(nodes, func(node Node) bool {
 		term, ok := node.(Operator)
 		return ok && (term.Kind == And || term.Kind == Or)
+	})
+}
+
+// containsNegatedPattern returns true if any search pattern is negated in nodes.
+func containsNegatedPattern(nodes []Node) bool {
+	return exists(nodes, func(node Node) bool {
+		if p, ok := node.(Pattern); ok {
+			if p.Negated {
+				return true
+			}
+		}
+		return false
 	})
 }
 
@@ -281,7 +285,8 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		return satisfies(isNotNegated)
 	case
 		FieldPatternType,
-		FieldContent:
+		FieldContent,
+		FieldVisibility:
 		return satisfies(isSingular, isNotNegated)
 	case
 		FieldRepoHasFile:
@@ -322,12 +327,20 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 func validate(nodes []Node) error {
 	var err error
 	seen := map[string]struct{}{}
-	VisitParameter(nodes, func(field, value string, negated bool) {
+	VisitParameter(nodes, func(field, value string, negated bool, _ Annotation) {
 		if err != nil {
 			return
 		}
 		err = validateField(field, value, negated, seen)
 		seen[field] = struct{}{}
+	})
+	VisitPattern(nodes, func(value string, _ bool, annotation Annotation) {
+		if annotation.Labels.isSet(Regexp) {
+			if err != nil {
+				return
+			}
+			_, err = regexp.Compile(value)
+		}
 	})
 	return err
 }

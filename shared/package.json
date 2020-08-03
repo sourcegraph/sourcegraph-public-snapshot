@@ -16,10 +16,10 @@
     "url": "https://github.com/sourcegraph/sourcegraph"
   },
   "scripts": {
-    "eslint": "eslint --cache './{dev,src}/**/*.ts?(x)'",
+    "eslint": "eslint --cache '**/*.[jt]s?(x)'",
     "stylelint": "stylelint 'src/**/*.scss'",
     "test": "jest",
-    "graphql": "gulp graphQLTypes",
+    "graphql": "gulp graphQlSchema",
     "schema": "gulp schema",
     "watch-schema": "gulp watchSchema"
   },

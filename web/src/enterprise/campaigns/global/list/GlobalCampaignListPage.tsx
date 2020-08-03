@@ -1,17 +1,19 @@
-import React, { useMemo } from 'react'
-import { queryCampaigns, queryCampaignsCount as _queryCampaignsCount } from './backend'
-import AddIcon from 'mdi-react/AddIcon'
-import { Link } from '../../../../../../shared/src/components/Link'
+import React, { useEffect, useCallback } from 'react'
+import { queryCampaigns as _queryCampaigns } from './backend'
 import { RouteComponentProps } from 'react-router'
-import { FilteredConnection, FilteredConnectionFilter } from '../../../../components/FilteredConnection'
-import { IUser, CampaignState } from '../../../../../../shared/src/graphql/schema'
-import { CampaignNode, CampaignNodeCampaign, CampaignNodeProps } from '../../list/CampaignNode'
-import { useObservable } from '../../../../../../shared/src/util/useObservable'
-import { Observable } from 'rxjs'
+import {
+    FilteredConnection,
+    FilteredConnectionFilter,
+    FilteredConnectionQueryArgs,
+} from '../../../../components/FilteredConnection'
+import { CampaignState, IUser } from '../../../../../../shared/src/graphql/schema'
+import { CampaignNode, CampaignNodeProps } from '../../list/CampaignNode'
+import { TelemetryProps } from '../../../../../../shared/src/telemetry/telemetryService'
+import { ListCampaign } from '../../../../graphql-operations'
 
-interface Props extends Pick<RouteComponentProps, 'history' | 'location'> {
-    authenticatedUser: IUser
-    queryCampaignsCount?: () => Observable<number>
+interface Props extends TelemetryProps, Pick<RouteComponentProps, 'history' | 'location'> {
+    authenticatedUser: Pick<IUser, 'siteAdmin'>
+    queryCampaigns?: typeof _queryCampaigns
 }
 
 const FILTERS: FilteredConnectionFilter[] = [
@@ -39,34 +41,40 @@ const FILTERS: FilteredConnectionFilter[] = [
  * A list of all campaigns on the Sourcegraph instance.
  */
 export const GlobalCampaignListPage: React.FunctionComponent<Props> = ({
-    queryCampaignsCount = _queryCampaignsCount,
+    queryCampaigns = _queryCampaigns,
     ...props
 }) => {
-    const totalCount = useObservable(useMemo(() => queryCampaignsCount(), [queryCampaignsCount]))
+    const queryConnection = useCallback(
+        (args: FilteredConnectionQueryArgs) =>
+            queryCampaigns({
+                first: args.first ?? null,
+                // The types for FilteredConnectionQueryArgs don't allow access to the filter arguments.
+                state: (args as { state: CampaignState | undefined }).state ?? null,
+                viewerCanAdminister: null,
+            }),
+        [queryCampaigns]
+    )
+    useEffect(() => props.telemetryService.logViewEvent('CampaignsListPage'), [props.telemetryService])
     return (
         <>
             <div className="d-flex justify-content-between align-items-end mb-3">
                 <div>
                     <h1 className="mb-2">
-                        Campaigns <span className="badge badge-info">Beta</span>
+                        Campaigns{' '}
+                        <sup>
+                            <span className="badge badge-info text-uppercase">Beta</span>
+                        </sup>
                     </h1>
                     <p className="mb-0">
                         Perform and track large-scale code changes.{' '}
                         <a href="https://docs.sourcegraph.com/user/campaigns">Learn how.</a>
                     </p>
                 </div>
-                {props.authenticatedUser.siteAdmin && (
-                    <Link to="/campaigns/create" className="btn btn-primary ml-3">
-                        <AddIcon className="icon-inline" /> New campaign
-                    </Link>
-                )}
             </div>
 
             <div className="card mt-4 mb-4">
                 <div className="card-body p-3">
-                    <h3>
-                        Welcome to campaigns <span className="badge badge-info">Beta</span>!
-                    </h3>
+                    <h3>Welcome to campaigns!</h3>
                     <p className="mb-1">
                         We're excited for you to use campaigns to remove legacy code, fix critical security issues, pay
                         down tech debt, and more. We look forward to hearing about campaigns you run inside your
@@ -78,19 +86,17 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = ({
                 </div>
             </div>
 
-            {typeof totalCount === 'number' && totalCount > 0 && (
-                <FilteredConnection<CampaignNodeCampaign, Omit<CampaignNodeProps, 'node'>>
-                    {...props}
-                    nodeComponent={CampaignNode}
-                    nodeComponentProps={{ history: props.history }}
-                    queryConnection={queryCampaigns}
-                    hideSearch={true}
-                    filters={FILTERS}
-                    noun="campaign"
-                    pluralNoun="campaigns"
-                    className="mb-3"
-                />
-            )}
+            <FilteredConnection<ListCampaign, Omit<CampaignNodeProps, 'node'>>
+                {...props}
+                nodeComponent={CampaignNode}
+                nodeComponentProps={{ history: props.history }}
+                queryConnection={queryConnection}
+                hideSearch={true}
+                filters={FILTERS}
+                noun="campaign"
+                pluralNoun="campaigns"
+                className="mb-3"
+            />
         </>
     )
 }

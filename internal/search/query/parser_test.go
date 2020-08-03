@@ -3,6 +3,7 @@ package query
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -15,84 +16,146 @@ func TestParseParameterList(t *testing.T) {
 		Input      string
 		Want       string
 		WantLabels labels
+		WantRange  string
 	}{
 		{
 			Name:       "Normal field:value",
 			Input:      `file:README.md`,
 			Want:       `{"field":"file","value":"README.md","negated":false}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":14}}`,
+			WantLabels: None,
+		},
+		{
+			Name:       "Normal field:value with trailing space",
+			Input:      `file:README.md    `,
+			Want:       `{"field":"file","value":"README.md","negated":false}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":14}}`,
 			WantLabels: None,
 		},
 		{
 			Name:       "First char is colon",
 			Input:      `:foo`,
 			Want:       `{"value":":foo","negated":false}`,
-			WantLabels: None,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":4}}`,
+			WantLabels: Regexp,
 		},
 		{
 			Name:       "Last char is colon",
 			Input:      `foo:`,
 			Want:       `{"value":"foo:","negated":false}`,
-			WantLabels: None,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":4}}`,
+			WantLabels: Regexp,
 		},
 		{
 			Name:       "Match first colon",
 			Input:      `file:bar:baz`,
 			Want:       `{"field":"file","value":"bar:baz","negated":false}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":12}}`,
 			WantLabels: None,
 		},
 		{
 			Name:       "No field, start with minus",
 			Input:      `-:foo`,
 			Want:       `{"value":"-:foo","negated":false}`,
-			WantLabels: None,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":5}}`,
+			WantLabels: Regexp,
 		},
 		{
 			Name:       "Minus prefix on field",
 			Input:      `-file:README.md`,
 			Want:       `{"field":"file","value":"README.md","negated":true}`,
-			WantLabels: None,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":15}}`,
+			WantLabels: Regexp,
+		},
+		{
+			Name:       "NOT prefix on file",
+			Input:      `NOT file:README.md`,
+			Want:       `{"field":"file","value":"README.md","negated":true}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":18}}`,
+			WantLabels: Regexp,
+		},
+		{
+			Name:       "NOT prefix on unsupported key-value pair",
+			Input:      `NOT foo:bar`,
+			Want:       `{"value":"foo:bar","negated":true}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":11}}`,
+			WantLabels: Regexp,
+		},
+		{
+			Name:       "NOT prefix on content",
+			Input:      `NOT content:bar`,
+			Want:       `{"field":"content","value":"bar","negated":true}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":15}}`,
+			WantLabels: Regexp,
+		},
+		{
+			Name:       "Double NOT",
+			Input:      `NOT NOT`,
+			Want:       `{"value":"NOT","negated":true}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":7}}`,
+			WantLabels: Regexp,
 		},
 		{
 			Name:       "Double minus prefix on field",
 			Input:      `--foo:bar`,
 			Want:       `{"value":"--foo:bar","negated":false}`,
-			WantLabels: None,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":9}}`,
+			WantLabels: Regexp,
 		},
 		{
 			Name:       "Minus in the middle is not a valid field",
 			Input:      `fie-ld:bar`,
 			Want:       `{"value":"fie-ld:bar","negated":false}`,
-			WantLabels: None,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":10}}`,
+			WantLabels: Regexp,
 		},
 		{
-			Name:       "Interpret escaped whitespace",
+			Name:       "Preserve escaped whitespace",
 			Input:      `a\ pattern`,
-			Want:       `{"value":"a pattern","negated":false}`,
-			WantLabels: None,
+			Want:       `{"value":"a\\ pattern","negated":false}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":10}}`,
+			WantLabels: Regexp,
 		},
 		{
 			Input:      `"quoted"`,
 			Want:       `{"value":"quoted","negated":false}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":8}}`,
 			WantLabels: Literal | Quoted,
 		},
 		{
 			Input:      `'\''`,
 			Want:       `{"value":"'","negated":false}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":4}}`,
 			WantLabels: Literal | Quoted,
 		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
 			parser := &parser{buf: []byte(tt.Input)}
-			result, err := parser.parseParameterList()
+			result, err := parser.parseLeavesRegexp()
 			if err != nil {
-				t.Fatal("Unexpected error")
+				t.Fatal(fmt.Sprintf("Unexpected error: %s", err))
 			}
 			resultNode := result[0]
 			got, _ := json.Marshal(resultNode)
+			// Check parsed values.
 			if diff := cmp.Diff(tt.Want, string(got)); diff != "" {
 				t.Error(diff)
 			}
+			// Check ranges.
+			switch n := resultNode.(type) {
+			case Pattern:
+				rangeStr := n.Annotation.Range.String()
+				if diff := cmp.Diff(tt.WantRange, rangeStr); diff != "" {
+					t.Error(diff)
+				}
+			case Parameter:
+				rangeStr := n.Annotation.Range.String()
+				if diff := cmp.Diff(tt.WantRange, rangeStr); diff != "" {
+					t.Error(diff)
+				}
+			}
+			// Check labels.
 			if patternNode, ok := resultNode.(Pattern); ok {
 				if diff := cmp.Diff(tt.WantLabels, patternNode.Annotation.Labels); diff != "" {
 					t.Error(diff)
@@ -220,8 +283,8 @@ func parseAndOrGrammar(in string) ([]Node, error) {
 		return nil, nil
 	}
 	parser := &parser{
-		buf: []byte(in),
-		// heuristics: map[heuristic]bool{parensAsPatterns: false},
+		buf:        []byte(in),
+		leafParser: SearchTypeRegex,
 	}
 	nodes, err := parser.parseOr()
 	if err != nil {
@@ -335,7 +398,7 @@ func TestParse(t *testing.T) {
 			Name:          "Paren reduction over operators",
 			Input:         "(((a b c))) and d",
 			WantGrammar:   Spec(`(and (concat "a" "b" "c") "d")`),
-			WantHeuristic: Diff(`(and (concat "(((a" "b" "c)))") "d")`),
+			WantHeuristic: Diff(`(and "(((a b c)))" "d")`),
 		},
 		// Partition parameters and concatenated patterns.
 		{
@@ -346,12 +409,17 @@ func TestParse(t *testing.T) {
 		{
 			Input:         "(a b c) and (d e f) and (g h i)",
 			WantGrammar:   Spec(`(and (concat "a" "b" "c") (concat "d" "e" "f") (concat "g" "h" "i"))`),
-			WantHeuristic: Diff(`(and (concat "(a" "b" "c)") (concat "(d" "e" "f)") (concat "(g" "h" "i)"))`),
+			WantHeuristic: `(and "(a b c)" "(d e f)" "(g h i)")`,
 		},
 		{
 			Input:         "(a) repo:foo (b)",
 			WantGrammar:   Spec(`(and "repo:foo" (concat "a" "b"))`),
 			WantHeuristic: Diff(`(and "repo:foo" (concat "(a)" "(b)"))`),
+		},
+		{
+			Input:         "repo:foo func( or func(.*)",
+			WantGrammar:   Spec(`expected operand at 15`),
+			WantHeuristic: Diff(`(and "repo:foo" (or "func(" "func(.*)"))`),
 		},
 		{
 			Input:         "repo:foo main { and bar {",
@@ -360,6 +428,11 @@ func TestParse(t *testing.T) {
 		},
 		{
 			Input:         "a b (repo:foo c d)",
+			WantGrammar:   `(concat "a" "b" (and "repo:foo" (concat "c" "d")))`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         "a b (c d repo:foo)",
 			WantGrammar:   `(concat "a" "b" (and "repo:foo" (concat "c" "d")))`,
 			WantHeuristic: Same,
 		},
@@ -455,37 +528,37 @@ func TestParse(t *testing.T) {
 			Name:          "nested paren reduction with whitespace",
 			Input:         "(((a b c))) d",
 			WantGrammar:   Spec(`(concat "a" "b" "c" "d")`),
-			WantHeuristic: Diff(`(concat "(((a" "b" "c)))" "d")`),
+			WantHeuristic: Diff(`(concat "(((a b c)))" "d")`),
 		},
 		{
 			Name:          "left paren reduction with whitespace",
 			Input:         "(a b) c d",
 			WantGrammar:   Spec(`(concat "a" "b" "c" "d")`),
-			WantHeuristic: Diff(`(concat "(a" "b)" "c" "d")`),
+			WantHeuristic: Diff(`(concat "(a b)" "c" "d")`),
 		},
 		{
 			Name:          "right paren reduction with whitespace",
 			Input:         "a b (c d)",
 			WantGrammar:   Spec(`(concat "a" "b" "c" "d")`),
-			WantHeuristic: Diff(`(concat "a" "b" "(c" "d)")`),
+			WantHeuristic: Diff(`(concat "a" "b" "(c d)")`),
 		},
 		{
 			Name:          "grouped paren reduction with whitespace",
 			Input:         "(a b) (c d)",
 			WantGrammar:   Spec(`(concat "a" "b" "c" "d")`),
-			WantHeuristic: Diff(`(concat "(a" "b)" "(c" "d)")`),
+			WantHeuristic: Diff(`(concat "(a b)" "(c d)")`),
 		},
 		{
 			Name:          "multiple grouped paren reduction with whitespace",
 			Input:         "(a b) (c d) (e f)",
 			WantGrammar:   Spec(`(concat "a" "b" "c" "d" "e" "f")`),
-			WantHeuristic: Diff(`(concat "(a" "b)" "(c" "d)" "(e" "f)")`),
+			WantHeuristic: Diff(`(concat "(a b)" "(c d)" "(e f)")`),
 		},
 		{
 			Name:          "interpolated grouped paren reduction",
 			Input:         "(a b) c d (e f)",
 			WantGrammar:   Spec(`(concat "a" "b" "c" "d" "e" "f")`),
-			WantHeuristic: Diff(`(concat "(a" "b)" "c" "d" "(e" "f)")`),
+			WantHeuristic: Diff(`(concat "(a b)" "c" "d" "(e f)")`),
 		},
 		{
 			Name:          "mixed interpolated grouped paren reduction",
@@ -507,10 +580,16 @@ func TestParse(t *testing.T) {
 			WantHeuristic: Diff(`"foo()bar"`),
 		},
 		{
+			Name:          "paren inside contiguous string",
+			Input:         "(x and regex(s)?)",
+			WantGrammar:   Spec(`(and "x" (concat "regex" "s" "?"))`),
+			WantHeuristic: Diff(`(and "x" "regex(s)?")`),
+		},
+		{
 			Name:          "paren containing whitespace inside contiguous string",
 			Input:         "foo(   )bar",
-			WantGrammar:   Diff(`(concat "foo" "bar")`),
-			WantHeuristic: Spec(`(concat "foo(" ")bar")`),
+			WantGrammar:   Spec(`(concat "foo" "bar")`),
+			WantHeuristic: Diff(`"foo(   )bar"`),
 		},
 		{
 			Name:          "nested empty paren",
@@ -522,7 +601,7 @@ func TestParse(t *testing.T) {
 			Name:          "interpolated nested empty paren",
 			Input:         "(()x(  )(())())",
 			WantGrammar:   Spec(`"x"`),
-			WantHeuristic: Diff(`(concat "(()x(" ")(())())")`),
+			WantHeuristic: Diff(`"(()x(  )(())())"`),
 		},
 		{
 			Name:          "empty paren on or",
@@ -537,16 +616,10 @@ func TestParse(t *testing.T) {
 			WantHeuristic: Diff(`(or "()" "(x)")`),
 		},
 		{
-			Name:          "empty left paren on or",
-			Input:         "() or (x)",
-			WantGrammar:   Spec(`"x"`),
-			WantHeuristic: Diff(`(or "()" "(x)")`),
-		},
-		{
 			Name:          "complex interpolated nested empty paren",
 			Input:         "(()x(  )(y or () or (f))())",
 			WantGrammar:   Spec(`(concat "x" (or "y" "f"))`),
-			WantHeuristic: Diff(`(concat "()" "x" "()" (or "y" "()" "f") "()")`),
+			WantHeuristic: Diff(`(concat "()" "x" "()" (or "y" "()" "(f)") "()")`),
 		},
 		{
 			Name:          "disable parens as patterns heuristic if containing recognized operator",
@@ -567,13 +640,13 @@ func TestParse(t *testing.T) {
 		},
 		{
 			Input:         `\ `,
-			WantGrammar:   `" "`,
+			WantGrammar:   `"\\ "`,
 			WantHeuristic: Same,
 		},
 		{
 			Input:         `\  \ `,
-			WantGrammar:   Spec(`(concat " " " ")`),
-			WantHeuristic: Diff(`(concat " " " ")`),
+			WantGrammar:   Spec(`(concat "\\ " "\\ ")`),
+			WantHeuristic: Diff(`(concat "\\ " "\\ ")`),
 		},
 		// Dangling parentheses heuristic.
 		{
@@ -659,8 +732,30 @@ func TestParse(t *testing.T) {
 		},
 		{
 			Input:         `repo:foo\ bar \:\\`,
-			WantGrammar:   `(and "repo:foo bar" ":\\")`,
+			WantGrammar:   `(and "repo:foo\\ bar" "\\:\\\\")`,
 			WantHeuristic: Same,
+		},
+		{
+			Input:         `a file:\.(ts(?:(?:)|x)|js(?:(?:)|x))(?m:$)`,
+			WantGrammar:   `(and "file:\\.(ts(?:(?:)|x)|js(?:(?:)|x))(?m:$)" "a")`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `(file:(a) file:(b))`,
+			WantGrammar:   `(and "file:(a)" "file:(b)")`,
+			WantHeuristic: Same,
+		},
+		// Fringe tests cases at the boundary of heuristics and invalid syntax.
+		{
+			Input:         `(0(F)(:())(:())(<0)0()`,
+			WantGrammar:   Spec(`unbalanced expression`),
+			WantHeuristic: `invalid query syntax`,
+		},
+		// The space-looking character below is U+00A0.
+		{
+			Input:         `00 (000)`,
+			WantGrammar:   `(concat "00" "000")`,
+			WantHeuristic: `invalid query syntax`,
 		},
 	}
 	for _, tt := range cases {
@@ -685,7 +780,7 @@ func TestParse(t *testing.T) {
 			var err error
 			result, err = parseAndOrGrammar(tt.Input) // Parse without heuristic.
 			check(result, err, string(tt.WantGrammar))
-			result, err = ParseAndOr(tt.Input)
+			result, err = ParseAndOr(tt.Input, SearchTypeRegex)
 			if tt.WantHeuristic == Same {
 				check(result, err, string(tt.WantGrammar))
 			} else {
@@ -785,157 +880,73 @@ func TestScanDelimited(t *testing.T) {
 	}
 }
 
-func TestParseLiteralSearch(t *testing.T) {
+func TestMergePatterns(t *testing.T) {
 	cases := []struct {
-		Input string
-		Want  string
+		input string
+		want  string
 	}{
 		{
-			Input: "",
-			Want:  "",
+			input: "foo()bar",
+			want:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":8}}`,
 		},
 		{
-			Input: " ",
-			Want:  "",
-		},
-		{
-			Input: "  ",
-			Want:  "",
-		},
-		{
-			Input: "a",
-			Want:  `"a"`,
-		},
-		{
-			Input: " a",
-			Want:  `"a"`,
-		},
-		{
-			Input: `a `,
-			Want:  `"a"`,
-		},
-		{
-			Input: ` a b`,
-			Want:  `(concat "a" "b")`,
-		},
-		{
-			Input: `a  b`,
-			Want:  `(concat "a" "b")`,
-		},
-		{
-			Input: `:`,
-			Want:  `":"`,
-		},
-		{
-			Input: `:=`,
-			Want:  `":="`,
-		},
-		{
-			Input: `:= range`,
-			Want:  `(concat ":=" "range")`,
-		},
-		{
-			Input: "`",
-			Want:  "\"`\"",
-		},
-		{
-			Input: `'`,
-			Want:  `"'"`,
-		},
-		{
-			Input: "file:a",
-			Want:  `"file:a"`,
-		},
-		{
-			Input: `"file:a"`,
-			Want:  `"\"file:a\""`,
-		},
-		{
-			Input: `"x foo:bar`,
-			Want:  `(concat "\"x" "foo:bar")`,
-		},
-		// -repo:c" is considered valid. "repo:b is a literal pattern.
-		{
-			Input: `"repo:b -repo:c"`,
-			Want:  `(and "-repo:c\"" "\"repo:b")`,
-		},
-		{
-			Input: `".*"`,
-			Want:  `"\".*\""`,
-		},
-		{
-			Input: `-pattern: ok`,
-			Want:  `(concat "-pattern:" "ok")`,
-		},
-		{
-			Input: `a:b "patterntype:regexp"`,
-			Want:  `(concat "a:b" "\"patterntype:regexp\"")`,
-		},
-		// Whitespace is removed. content: exists for preserving whitespace.
-		{
-			Input: `lang:go func  main`,
-			Want:  `(and "lang:go" (concat "func" "main"))`,
-		},
-		{
-			Input: `\n`,
-			Want:  `"\\n"`,
-		},
-		{
-			Input: `\t`,
-			Want:  `"\\t"`,
-		},
-		{
-			Input: `\\`,
-			Want:  `"\\\\"`,
-		},
-		{
-			Input: `foo\d "bar*"`,
-			Want:  `(concat "foo\\d" "\"bar*\"")`,
-		},
-		{
-			Input: `\d`,
-			Want:  `"\\d"`,
-		},
-		{
-			Input: `type:commit message:"a commit message" after:"10 days ago"`,
-			Want:  `(and "type:commit" "message:a commit message" "after:10 days ago")`,
-		},
-		{
-			Input: `type:commit message:"a commit message" after:"10 days ago" test test2`,
-			Want:  `(and "type:commit" "message:a commit message" "after:10 days ago" (concat "test" "test2"))`,
-		},
-		{
-			Input: `type:commit message:'a commit message' after:'10 days ago' test test2`,
-			Want:  `(and "type:commit" "message:a commit message" "after:10 days ago" (concat "test" "test2"))`,
-		},
-		{
-			Input: `type:commit message:"a com"mit message" after:"10 days ago"`,
-			Want:  `(and "type:commit" "message:a com" "after:10 days ago" (concat "mit" "message\""))`,
-		},
-		{
-			Input: `bar and (foo or x\) ()`,
-			Want:  `(or (and "bar" "(foo") (concat "x\\)" "()"))`,
-		},
-		// This test input should error because the single quote in 'after' is unclosed.
-		{
-			Input: `type:commit message:'a commit message' after:'10 days ago" test test2`,
-			Want:  "",
-		},
-		{
-			Input: `"quoted"`,
-			Want:  `"\"quoted\""`,
+			input: "()bar",
+			want:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":5}}`,
 		},
 	}
+
 	for _, tt := range cases {
-		t.Run("literal search parse", func(t *testing.T) {
-			result, _ := ParseLiteralSearch(tt.Input)
-			var resultStr []string
-			for _, node := range result {
-				resultStr = append(resultStr, node.String())
+		t.Run("merge pattern", func(t *testing.T) {
+			p := &parser{buf: []byte(tt.input), heuristics: parensAsPatterns}
+			nodes, err := p.parseLeavesRegexp()
+			got := nodes[0].(Pattern).Annotation.Range.String()
+			if err != nil {
+				t.Error(err)
 			}
-			got := strings.Join(resultStr, " ")
-			if diff := cmp.Diff(tt.Want, got); diff != "" {
+			if diff := cmp.Diff(tt.want, got); diff != "" {
 				t.Error(diff)
+			}
+		})
+	}
+}
+
+func TestMatchUnaryKeyword(t *testing.T) {
+	tests := []struct {
+		in   string
+		pos  int
+		want bool
+	}{
+		{
+			in:   "NOT bar",
+			pos:  0,
+			want: true,
+		},
+		{
+			in:   "foo NOT bar",
+			pos:  4,
+			want: true,
+		},
+		{
+			in:   "foo NOT",
+			pos:  4,
+			want: false,
+		},
+		{
+			in:   "fooNOT bar",
+			pos:  3,
+			want: false,
+		},
+		{
+			in:   "NOTbar",
+			pos:  0,
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.in, func(t *testing.T) {
+			p := &parser{buf: []byte(tt.in), pos: tt.pos}
+			if got := p.matchUnaryKeyword("NOT"); got != tt.want {
+				t.Errorf("matchUnaryKeyword() = %v, want %v", got, tt.want)
 			}
 		})
 	}

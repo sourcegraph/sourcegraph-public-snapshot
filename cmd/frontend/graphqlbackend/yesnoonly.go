@@ -8,8 +8,6 @@ const (
 	Yes     yesNoOnly = "yes"
 	No      yesNoOnly = "no"
 	Only    yesNoOnly = "only"
-	True    yesNoOnly = "true"
-	False   yesNoOnly = "false"
 	Invalid yesNoOnly = "invalid"
 )
 
@@ -24,9 +22,9 @@ func parseYesNoOnly(s string) yesNoOnly {
 	default:
 		if b, err := strconv.ParseBool(s); err == nil {
 			if b {
-				return True
+				return Yes
 			} else {
-				return False
+				return No
 			}
 		}
 		return Invalid

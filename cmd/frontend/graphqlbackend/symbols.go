@@ -67,7 +67,7 @@ func indexedSymbolsBranch(repository, commit string) string {
 		return ""
 	}
 
-	repo, ok := set[strings.ToLower(repository)]
+	repo, ok := set[repository]
 	if !ok || !repo.HasSymbols {
 		return ""
 	}
@@ -105,16 +105,10 @@ func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, branch s
 		}
 	}
 
-	// (and (repo NAME) (branch BRANCH) (symbol QUERY))
 	ands := []zoektquery.Q{
-		&zoektquery.RepoSet{Set: map[string]bool{
-			string(commit.repoResolver.repo.Name): true,
+		&zoektquery.RepoBranches{Set: map[string][]string{
+			string(commit.repoResolver.repo.Name): {branch},
 		}},
-		// TODO(keegancsmith) We could match multiple branches since this is a
-		// pattern. We need to introduce to zoekt either an exact branch or
-		// version (commit)
-		// search. https://github.com/sourcegraph/sourcegraph/issues/10593
-		&zoektquery.Branch{Pattern: branch},
 		&zoektquery.Symbol{Expr: query},
 	}
 	for _, p := range *includePatterns {

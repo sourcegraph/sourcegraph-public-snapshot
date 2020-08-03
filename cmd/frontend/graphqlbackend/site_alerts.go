@@ -2,9 +2,13 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Masterminds/semver"
 	"github.com/inconshreveable/log15"
@@ -16,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/prometheusutil"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -103,6 +108,9 @@ func init() {
 	// Notify when updates are available, if the instance can access the public internet.
 	AlertFuncs = append(AlertFuncs, updateAvailableAlert)
 
+	// Notify admins if critical alerts are firing.
+	AlertFuncs = append(AlertFuncs, observabilityActiveAlertsAlert(prometheusutil.PrometheusURL))
+
 	// Warn about invalid site configuration.
 	AlertFuncs = append(AlertFuncs, func(args AlertFuncArgs) []*Alert {
 		// 🚨 SECURITY: Only the site admin should care about the site configuration being invalid, as they
@@ -127,7 +135,7 @@ func init() {
 			return []*Alert{
 				{
 					TypeValue:    AlertTypeError,
-					MessageValue: `Update [**critical configuration**](/help/admin/management_console) to resolve problems: ` + err.Error(),
+					MessageValue: `Update [**site configuration**](/site-admin/configuration) to resolve problems: ` + err.Error(),
 				},
 			}
 		}
@@ -204,7 +212,8 @@ func outOfDateAlert(args AlertFuncArgs) []*Alert {
 		return nil
 	}
 	offline := globalUpdateStatus.Err != nil // Whether or not instance can connect to Sourcegraph.com for update checks
-	monthsOutOfDate, err := version.HowLongOutOfDate()
+	now := time.Now()
+	monthsOutOfDate, err := version.HowLongOutOfDate(now)
 	if err != nil {
 		log15.Error("failed to determine how out of date Sourcegraph is", "error", err)
 		return nil
@@ -261,4 +270,63 @@ func determineOutOfDateAlert(isAdmin bool, months int, offline bool) *Alert {
 		message := fmt.Sprintf("Sourcegraph is %d+ months out of date, you may be missing important security or bug fixes. Ask your site administrator to upgrade. ([changelog](http://about.sourcegraph.com/changelog))", months)
 		return &Alert{TypeValue: alertType, MessageValue: message, IsDismissibleWithKeyValue: key}
 	}
+}
+
+// observabilityActiveAlertsAlert directs admins to check Grafana if critical alerts are firing
+func observabilityActiveAlertsAlert(prometheusURL string) func(AlertFuncArgs) []*Alert {
+	return func(args AlertFuncArgs) []*Alert {
+		// true by default - change settings.schema.json if this changes
+		observabilitySiteAlertsDisabled := true
+		if args.ViewerFinalSettings != nil && args.ViewerFinalSettings.AlertsHideObservabilitySiteAlerts != nil {
+			observabilitySiteAlertsDisabled = *args.ViewerFinalSettings.AlertsHideObservabilitySiteAlerts
+		}
+
+		if !args.IsSiteAdmin || prometheusURL == "" || observabilitySiteAlertsDisabled {
+			return nil
+		}
+
+		// set up request to fetch status from prom-wrapper
+		promURL, err := url.Parse(prometheusURL)
+		if err != nil {
+			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Prometheus misconfigured: %s", err)}}
+		}
+		promURL.Path = "/prom-wrapper/alerts-status"
+		req, err := http.NewRequest("GET", promURL.String(), nil)
+		if err != nil {
+			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Prometheus misconfigured: %s", err)}}
+		}
+
+		// use a short timeout to avoid having this block problems from loading
+		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+		defer cancel()
+		resp, err := http.DefaultClient.Do(req.WithContext(ctx))
+		if err != nil {
+			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Unable to fetch alerts status: %s", err)}}
+		}
+		if resp.StatusCode != 200 {
+			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Unable to fetch alerts status: status %d", resp.StatusCode)}}
+		}
+
+		var alertsStatus map[string]int
+		defer resp.Body.Close()
+		if err := json.NewDecoder(resp.Body).Decode(&alertsStatus); err != nil {
+			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: err.Error()}}
+		}
+		criticalAlerts := alertsStatus["critical"]
+		servicesCritical := alertsStatus["services_critical"]
+		if criticalAlerts == 0 {
+			return nil
+		}
+		msg := fmt.Sprintf("%s across %s currently firing - [view alerts](/-/debug/grafana)",
+			pluralize(criticalAlerts, "critical alert", "critical alerts"),
+			pluralize(servicesCritical, "service", "services"))
+		return []*Alert{{TypeValue: AlertTypeError, MessageValue: msg}}
+	}
+}
+
+func pluralize(v int, singular, plural string) string {
+	if v == 1 {
+		return fmt.Sprintf("%d %s", v, singular)
+	}
+	return fmt.Sprintf("%d %s", v, plural)
 }

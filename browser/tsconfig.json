@@ -19,7 +19,7 @@
       },
     ],
   },
-  "include": ["./**/*", "./src/**/*.json", "src/types/**/*.d.ts"],
+  "include": ["**/*", ".*", "src/**/*.json", "src/types/**/*.d.ts"],
   "exclude": [
     "out",
     "node_modules",

@@ -14,6 +14,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/gosyntect"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -101,6 +102,7 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 		return Mocks.Code(p)
 	}
 	var prometheusStatus string
+	requestTime := prometheus.NewTimer(metricRequestHistogram)
 	tr, ctx := trace.New(ctx, "highlight.Code", "")
 	defer func() {
 		if prometheusStatus != "" {
@@ -112,6 +114,7 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 		}
 		tr.SetError(err)
 		tr.Finish()
+		requestTime.ObserveDuration()
 	}()
 
 	if !p.DisableTimeout {
@@ -233,14 +236,17 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 	return template.HTML(table), false, nil
 }
 
-var requestCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+// TODO (Dax): Determine if Histogram provides value and either use only histogram or counter, not both
+var requestCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "src_syntax_highlighting_requests",
 	Help: "Counts syntax highlighting requests and their success vs. failure rate.",
 }, []string{"status"})
 
-func init() {
-	prometheus.MustRegister(requestCounter)
-}
+var metricRequestHistogram = promauto.NewHistogram(
+	prometheus.HistogramOpts{
+		Name: "src_syntax_highlighting_duration_seconds",
+		Help: "time for a request to have syntax highlight",
+	})
 
 func firstCharacters(s string, n int) string {
 	v := []rune(s)

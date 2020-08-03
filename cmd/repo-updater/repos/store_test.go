@@ -41,6 +41,7 @@ func TestFakeStore(t *testing.T) {
 		{"ListRepos", testStoreListRepos},
 		{"ListRepos_Pagination", testStoreListReposPagination},
 		{"UpsertRepos", testStoreUpsertRepos},
+		{"SetClonedRepos", testStoreSetClonedRepos},
 	} {
 		t.Run(tc.name, tc.test(repos.NewObservedStore(
 			new(repos.FakeStore),
@@ -730,6 +731,255 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 				t.Fatalf("ListRepos:\n%s", diff)
 			}
 		}))
+
+		t.Run("it shouldn't modify the cloned column", transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			// UpsertRepos shouldn't set the cloned column to true
+			r := mkRepos(1, repositories...)[0]
+			r.Cloned = true
+			if err := tx.UpsertRepos(ctx, r); err != nil {
+				t.Fatalf("UpsertRepos error: %s", err)
+			}
+
+			count, err := tx.CountNotClonedRepos(ctx)
+			if err != nil {
+				t.Fatalf("CountNotClonedRepos error: %s", err)
+			}
+			if count != 1 {
+				t.Fatalf("Wrong number of not cloned repos: %d", count)
+			}
+
+			// UpsertRepos shouldn't set the cloned column to false either
+			if err := tx.SetClonedRepos(ctx, r.Name); err != nil {
+				t.Fatalf("SetClonedRepos error: %s", err)
+			}
+			r = r.Clone()
+			r.Cloned = false
+			if err := tx.UpsertRepos(ctx, r); err != nil {
+				t.Fatalf("UpsertRepos error: %s", err)
+			}
+
+			count, err = tx.CountNotClonedRepos(ctx)
+			if err != nil {
+				t.Fatalf("CountNotClonedRepos error: %s", err)
+			}
+			if count != 0 {
+				t.Fatalf("Wrong number of not cloned repos: %d", count)
+			}
+		}))
+	}
+}
+
+func isCloned(r *repos.Repo) bool {
+	return r.Cloned
+}
+
+func testStoreSetClonedRepos(store repos.Store) func(*testing.T) {
+	return func(t *testing.T) {
+		t.Helper()
+
+		var repositories repos.Repos
+		for i := 0; i < 3; i++ {
+			repositories = append(repositories, &repos.Repo{
+				Name:   fmt.Sprintf("github.com/%d/%d", i, i),
+				URI:    fmt.Sprintf("github.com/%d/%d", i, i),
+				Cloned: false,
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          fmt.Sprintf("%d", i),
+					ServiceType: extsvc.TypeGitHub,
+					ServiceID:   "http://github.com",
+				},
+				Sources: map[string]*repos.SourceInfo{
+					"extsvc:3": {
+						ID:       "extsvc:3",
+						CloneURL: "git@github.com:foo/bar.git",
+					},
+				},
+				Metadata: new(github.Repository),
+			})
+		}
+
+		check := func(t testing.TB, ctx context.Context, tx repos.Store, wantNames []string) {
+			t.Helper()
+
+			res, err := tx.ListRepos(ctx, repos.StoreListReposArgs{})
+			if err != nil {
+				t.Fatalf("ListRepos error: %s", err)
+			}
+
+			cloned := repos.Repos(res).Filter(isCloned).Names()
+			sort.Strings(cloned)
+
+			if got, want := cloned, wantNames; !cmp.Equal(got, want) {
+				t.Fatalf("got=%v, want=%v: %s", got, want, cmp.Diff(got, want))
+			}
+		}
+
+		ctx := context.Background()
+
+		t.Run("no repo name", func(t *testing.T) {
+			if err := store.SetClonedRepos(ctx); err != nil {
+				t.Fatalf("SetClonedRepos error: %s", err)
+			}
+		})
+
+		t.Run("many repo names", transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			stored := mkRepos(9, repositories...)
+
+			if err := tx.UpsertRepos(ctx, stored...); err != nil {
+				t.Fatalf("UpsertRepos error: %s", err)
+			}
+
+			sort.Sort(stored)
+
+			names := stored[:3].Names()
+			sort.Strings(names)
+
+			if err := tx.SetClonedRepos(ctx, names...); err != nil {
+				t.Fatalf("SetClonedRepos error: %s", err)
+			}
+			check(t, ctx, tx, names)
+
+			// setClonedRepositories should be idempotent and have the same behavior
+			// when called with the same repos
+			if err := tx.SetClonedRepos(ctx, names...); err != nil {
+				t.Fatalf("SetClonedRepos error: %s", err)
+			}
+			check(t, ctx, tx, names)
+
+			// when adding another repo to the list, the other repos must be set as well
+			names = stored[:4].Names()
+			sort.Strings(names)
+			if err := tx.SetClonedRepos(ctx, names...); err != nil {
+				t.Fatalf("SetClonedRepos error: %s", err)
+			}
+
+			check(t, ctx, tx, names)
+		}))
+
+		t.Run("repo names in mixed case", transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			stored := mkRepos(9, repositories...)
+			for i := range stored {
+				if i%2 == 0 {
+					stored[i].Name = strings.ToUpper(stored[i].Name)
+				}
+			}
+
+			if err := tx.UpsertRepos(ctx, stored...); err != nil {
+				t.Fatalf("UpsertRepos error: %s", err)
+			}
+
+			sort.Sort(stored)
+
+			originalNames := stored.Names()
+			sort.Strings(originalNames)
+
+			lowerCaseNames := make([]string, 0, len(originalNames))
+			for _, n := range originalNames {
+				lowerCaseNames = append(lowerCaseNames, strings.ToLower(n))
+			}
+
+			if err := tx.SetClonedRepos(ctx, lowerCaseNames...); err != nil {
+				t.Fatalf("SetClonedRepos error: %s", err)
+			}
+
+			check(t, ctx, tx, originalNames)
+		}))
+	}
+}
+
+func testStoreCountNotClonedRepos(store repos.Store) func(*testing.T) {
+	return func(t *testing.T) {
+		t.Helper()
+
+		var repositories repos.Repos
+		for i := 0; i < 3; i++ {
+			repositories = append(repositories, &repos.Repo{
+				Name:   fmt.Sprintf("github.com/%d/%d", i, i),
+				URI:    fmt.Sprintf("github.com/%d/%d", i, i),
+				Cloned: false,
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          fmt.Sprintf("%d", i),
+					ServiceType: extsvc.TypeGitHub,
+					ServiceID:   "http://github.com",
+				},
+				Sources: map[string]*repos.SourceInfo{
+					"extsvc:3": {
+						ID:       "extsvc:3",
+						CloneURL: "git@github.com:foo/bar.git",
+					},
+				},
+				Metadata: new(github.Repository),
+			})
+		}
+
+		ctx := context.Background()
+
+		t.Run("no cloned repos", func(t *testing.T) {
+			count, err := store.CountNotClonedRepos(ctx)
+			if err != nil {
+				t.Fatalf("CountNotClonedRepos error: %s", err)
+			}
+			if diff := cmp.Diff(count, uint64(0)); diff != "" {
+				t.Fatalf("CountNotClonedRepos:\n%s", diff)
+			}
+		})
+
+		t.Run("multiple cloned repos", transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			stored := mkRepos(10, repositories...)
+
+			if err := tx.UpsertRepos(ctx, stored...); err != nil {
+				t.Fatalf("UpsertRepos error: %s", err)
+			}
+
+			sort.Sort(stored)
+			cloned := stored[:3].Names()
+
+			if err := tx.SetClonedRepos(ctx, cloned...); err != nil {
+				t.Fatalf("SetClonedRepos error: %s", err)
+			}
+
+			sort.Strings(cloned)
+
+			count, err := tx.CountNotClonedRepos(ctx)
+			if err != nil {
+				t.Fatalf("CountNotClonedRepos error: %s", err)
+			}
+			if diff := cmp.Diff(count, uint64(7)); diff != "" {
+				t.Fatalf("CountNotClonedRepos:\n%s", diff)
+			}
+		}))
+
+		t.Run("deleted non cloned repos", transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			stored := mkRepos(10, repositories...)
+
+			if err := tx.UpsertRepos(ctx, stored...); err != nil {
+				t.Fatalf("UpsertRepos error: %s", err)
+			}
+
+			sort.Sort(stored)
+			cloned := stored[:3].Names()
+
+			if err := tx.SetClonedRepos(ctx, cloned...); err != nil {
+				t.Fatalf("SetClonedRepos error: %s", err)
+			}
+
+			sort.Strings(cloned)
+			deletedCloned := stored[8:].With(func(r *repos.Repo) {
+				r.DeletedAt = time.Now()
+			})
+
+			if err := tx.UpsertRepos(ctx, deletedCloned...); err != nil {
+				t.Fatalf("UpsertRepos error: %s", err)
+			}
+
+			count, err := tx.CountNotClonedRepos(ctx)
+			if err != nil {
+				t.Fatalf("CountNotClonedRepos error: %s", err)
+			}
+			if diff := cmp.Diff(count, uint64(5)); diff != "" {
+				t.Fatalf("CountNotClonedRepos:\n%s", diff)
+			}
+		}))
 	}
 }
 
@@ -1005,9 +1255,10 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Helper()
 
+		ctx := context.Background()
+
 		for _, tc := range testCases {
 			tc := tc
-			ctx := context.Background()
 
 			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
 				stored := tc.stored.Clone()
@@ -1030,6 +1281,35 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 				}
 			}))
 		}
+
+		t.Run("only include cloned", transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			stored := mkRepos(5, repositories...).Clone()
+			if err := tx.UpsertRepos(ctx, stored...); err != nil {
+				t.Fatalf("failed to setup store: %v", err)
+			}
+
+			sort.Sort(stored)
+
+			cloned := stored[:3]
+			if err := tx.SetClonedRepos(ctx, cloned.Names()...); err != nil {
+				t.Fatalf("failed to set cloned repos: %v", err)
+			}
+
+			args := repos.StoreListReposArgs{
+				ClonedOnly: true,
+			}
+
+			rs, err := tx.ListRepos(ctx, args)
+			if err != nil {
+				t.Errorf("failed to list repos: %v", err)
+			}
+
+			want := cloned.With(func(r *repos.Repo) {
+				r.Cloned = true
+			})
+
+			repos.Assert.ReposEqual(want...)(t, rs)
+		}))
 	}
 }
 

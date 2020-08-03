@@ -26,19 +26,19 @@ func NewJanitorMetrics(r prometheus.Registerer) JanitorMetrics {
 
 	orphanedFilesRemoved := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_bundle_manager_janitor_orphaned_files_removed_total",
-		Help: "Total number of files removed (with no corresponding successful database entry)",
+		Help: "Total number of bundle files removed (with no corresponding successful database entry)",
 	})
 	r.MustRegister(orphanedFilesRemoved)
 
 	evictedBundleFilesRemoved := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_bundle_manager_janitor_evicted_bundle_files_removed_total",
-		Help: "Total number of bundles files removed (after evicting them from the database)",
+		Help: "Total number of bundle files removed (after evicting them from the database)",
 	})
 	r.MustRegister(evictedBundleFilesRemoved)
 
 	uploadRecordsRemoved := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_bundle_manager_janitor_upload_records_removed_total",
-		Help: "Total number of processed upload records removed (with no corresponding bundle file)",
+		Help: "Total number of processed upload records removed",
 	})
 	r.MustRegister(uploadRecordsRemoved)
 

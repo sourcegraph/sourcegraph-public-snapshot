@@ -1,3 +1,5 @@
+import { PlatformName, getPlatformName } from '../../util/context'
+
 export const EXTENSION_MARKER_ID = 'sourcegraph-app-background'
 
 /**
@@ -19,6 +21,7 @@ export const NATIVE_INTEGRATION_ACTIVATED = 'sourcegraph:native-integration-acti
 export function injectExtensionMarker(): void {
     const extensionMarker = document.createElement('div')
     extensionMarker.id = EXTENSION_MARKER_ID
+    extensionMarker.dataset.platform = getPlatformName()
     extensionMarker.style.display = 'none'
     document.body.append(extensionMarker)
 }
@@ -37,10 +40,17 @@ export function signalBrowserExtensionInstalled(): void {
 
 function dispatchSourcegraphEvents(): void {
     // Send custom webapp <-> extension registration event in case webapp listener is attached first.
-    document.dispatchEvent(new CustomEvent<{}>('sourcegraph:browser-extension-registration'))
+    document.dispatchEvent(
+        new CustomEvent<{ platform: PlatformName }>('sourcegraph:browser-extension-registration', {
+            detail: { platform: getPlatformName() },
+        })
+    )
 }
 
-export const checkIsSourcegraph = (sourcegraphServerUrl: string): boolean =>
-    window.location.origin === sourcegraphServerUrl ||
-    /^https?:\/\/(www.)?sourcegraph.com/.test(location.href) ||
+export const checkIsSourcegraph = (
+    sourcegraphServerUrl: string,
+    { origin, href }: Pick<Location, 'origin' | 'href'> = window.location
+): boolean =>
+    origin === sourcegraphServerUrl ||
+    /^https?:\/\/(www\.)?sourcegraph\.com/.test(href) ||
     !!document.querySelector('#sourcegraph-chrome-webstore-item')

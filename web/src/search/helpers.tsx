@@ -12,7 +12,7 @@ import { isolatedFuzzySearchFiltersFilterType } from './input/interactive/filter
 import { InteractiveSearchProps, CaseSensitivityProps, PatternTypeProps } from '.'
 import { VersionContextProps } from '../../../shared/src/search/util'
 
-interface SubmitSearchParams
+export interface SubmitSearchParams
     extends Partial<Pick<ActivationProps, 'activation'>>,
         Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
         Pick<PatternTypeProps, 'patternType'>,
@@ -20,7 +20,7 @@ interface SubmitSearchParams
         VersionContextProps {
     history: H.History
     query: string
-    source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type' | 'scopePage'
+    source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type' | 'scopePage' | 'repogroupPage'
     searchParameters?: { key: string; value: string }[]
 }
 

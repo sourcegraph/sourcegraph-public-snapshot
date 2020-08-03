@@ -101,7 +101,7 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 				}),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf, nil)
+			githubSrc, err := NewGithubSource(svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -176,7 +176,7 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 				}),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf, nil)
+			githubSrc, err := NewGithubSource(svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -246,7 +246,7 @@ func TestGithubSource_UpdateChangeset(t *testing.T) {
 				}),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf, nil)
+			githubSrc, err := NewGithubSource(svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -320,7 +320,7 @@ func TestGithubSource_LoadChangesets(t *testing.T) {
 				}),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf, nil)
+			githubSrc, err := NewGithubSource(svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -427,7 +427,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 				}),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf, nil)
+			githubSrc, err := NewGithubSource(svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -485,7 +485,7 @@ func TestGithubSource_makeRepo(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			s, err := newGithubSource(&svc, test.schmea, nil, nil)
+			s, err := newGithubSource(&svc, test.schmea, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -685,7 +685,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 				Config: marshalJSON(t, tc.conf),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf, nil)
+			githubSrc, err := NewGithubSource(svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}

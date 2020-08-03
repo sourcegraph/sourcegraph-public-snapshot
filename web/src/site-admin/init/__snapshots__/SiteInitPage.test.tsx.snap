@@ -12,7 +12,7 @@ exports[`SiteInitPage normal 1`] = `
     >
       <img
         className="w-100 mb-3"
-        src="/img/sourcegraph-light-head-logo.svg"
+        src="/img/sourcegraph-light-head-logo.svg?v2"
       />
       <h2
         className="site-init-page__header"
@@ -23,7 +23,7 @@ exports[`SiteInitPage normal 1`] = `
         Create an admin account to start using Sourcegraph.
       </p>
       <form
-        className="signin-signup-form e2e-signup-form w-100 "
+        className="signin-signup-form test-signup-form w-100 "
         onInvalid={[Function]}
         onSubmit={[Function]}
       >
@@ -107,7 +107,7 @@ exports[`SiteInitPage unexpected authed user 1`] = `
     >
       <img
         className="w-100 mb-3"
-        src="/img/sourcegraph-light-head-logo.svg"
+        src="/img/sourcegraph-light-head-logo.svg?v2"
       />
       <p>
         You're signed in as 

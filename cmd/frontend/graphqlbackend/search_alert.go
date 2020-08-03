@@ -175,8 +175,9 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 	case len(repoGroupFilters) > 1:
 		// This is a rare case, so don't bother proposing queries.
 		return &searchAlert{
-			title:       "Expand your repository filters to see results",
-			description: "No repository exists in all specified groups and satisfies all of your repo: filters.",
+			prometheusType: "no_resolved_repos__more_than_one_repogroup",
+			title:          "No repository exists in all specified groups and satisfies all of your repo: filters.",
+			description:    "Expand your repository filters to see results",
 		}
 
 	case len(repoGroupFilters) == 1 && len(repoFilters) > 1:
@@ -221,8 +222,9 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 		}
 
 		return &searchAlert{
-			title:           "Expand your repository filters to see results",
-			description:     fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0]),
+			prometheusType:  "no_resolved_repos__try_remove_filters_for_repogroup",
+			title:           fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0]),
+			description:     "Expand your repository filters to see results",
 			proposedQueries: proposedQueries,
 		}
 
@@ -250,8 +252,9 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			patternType: r.patternType,
 		})
 		return &searchAlert{
-			title:           "Expand your repository filters to see results",
-			description:     fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0]),
+			prometheusType:  "no_resolved_repogroups",
+			title:           fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0]),
+			description:     "Expand your repository filters to see results",
 			proposedQueries: proposedQueries,
 		}
 
@@ -278,8 +281,9 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			query:       withoutRepoFields,
 		})
 		return &searchAlert{
-			title:           "Expand your repo: filters to see results",
-			description:     "No repositories satisfied all of your repo: filters.",
+			prometheusType:  "no_resolved_repos__suggest_add_remove_repos",
+			title:           "No repositories satisfied all of your repo: filters.",
+			description:     "Expand your repo: filters to see results",
 			proposedQueries: proposedQueries,
 		}
 
@@ -343,6 +347,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			})
 		}
 		return &searchAlert{
+			prometheusType:  "no_resolved_repos__generic",
 			title:           "No repositories satisfied your repo: filter",
 			description:     "Modify your repo: filter to see results",
 			proposedQueries: proposedQueries,
@@ -387,6 +392,12 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 		}
 	}
 
+	// If globbing is active we return a simple alert for now. The alert is still
+	// helpful but it doesn't contain any proposed queries.
+	if settings, err := decodedViewerFinalSettings(ctx); err != nil || getBoolPtr(settings.SearchGlobbing, false) {
+		return buildAlert(proposedQueries, description)
+	}
+
 	repos, _, _, _, _ := r.resolveRepositories(ctx, nil)
 	if len(repos) > 0 {
 		paths := make([]string, len(repos))
@@ -401,7 +412,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 		defer cancel()
 	outer:
 		for i, repoParent := range pathParentsByFrequency(paths) {
-			if i >= maxParentsToPropose || ctx.Err() == nil {
+			if i >= maxParentsToPropose || ctx.Err() != nil {
 				break
 			}
 			repoParentPattern := "^" + regexp.QuoteMeta(repoParent) + "/"
@@ -474,6 +485,12 @@ func alertForStructuralSearch(multiErr *multierror.Error) (newMultiErr *multierr
 					title:          "Structural search needs more memory",
 					description:    "Running your structural search may require more memory. If you are running the query on many repositories, try reducing the number of repositories with the `repo:` filter.",
 				}
+			} else if strings.Contains(err.Error(), "Out of memory") {
+				alert = &searchAlert{
+					prometheusType: "structural_search_needs_more_memory__give_searcher_more_memory",
+					title:          "Structural search needs more memory",
+					description:    `Running your structural search requires more memory. You could try reducing the number of repositories with the "repo:" filter. If you are an administrator, try double the memory allocated for the "searcher" service. If you're unsure, reach out to us at support@sourcegraph.com.`,
+				}
 			} else if strings.Contains(err.Error(), "no indexed repositories for structural search") {
 				var msg string
 				if envvar.SourcegraphDotComMode() {
@@ -492,6 +509,19 @@ func alertForStructuralSearch(multiErr *multierror.Error) (newMultiErr *multierr
 		}
 	}
 	return newMultiErr, alert
+}
+
+func alertForStructuralSearchNotSet(queryString string) *searchAlert {
+	return &searchAlert{
+		prometheusType: "structural_search_not_set",
+		title:          "No results",
+		description:    "It looks like you may have meant to run a structural search, but it is not toggled.",
+		proposedQueries: []*searchQueryDescription{{
+			description: "Activate structural search",
+			query:       queryString,
+			patternType: query.SearchTypeStructural,
+		}},
+	}
 }
 
 func alertForMissingRepoRevs(patternType query.SearchType, missingRepoRevs []*search.RepositoryRevisions) *searchAlert {
@@ -589,6 +619,14 @@ func addRegexpField(p syntax.ParseTree, field, pattern string) string {
 	return modified.String()
 }
 
+// Wrap an alert in a SearchResultsResolver. ElapsedMilliseconds() will
+// calculate a very large value for duration if start takes on the nil-value of
+// year 1. As a workaround, wrap instantiates start with time.now().
+// TODO(rvantonder): #10801.
+func (a searchAlert) wrap() *SearchResultsResolver {
+	return &SearchResultsResolver{alert: &a, start: time.Now()}
+}
+
 func (a searchAlert) Results(context.Context) (*SearchResultsResolver, error) {
 	alert := &searchAlert{
 		prometheusType:  a.prometheusType,
@@ -596,8 +634,7 @@ func (a searchAlert) Results(context.Context) (*SearchResultsResolver, error) {
 		description:     a.description,
 		proposedQueries: a.proposedQueries,
 	}
-	// ElapsedMilliseconds() will calculate a very large value for duration if start takes on the nil-value of year 1. As a workaround, instantiate start with time.now(). TODO(rvantonder): #10801.
-	return &SearchResultsResolver{alert: alert, start: time.Now()}, nil
+	return alert.wrap(), nil
 }
 
 func (searchAlert) Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {

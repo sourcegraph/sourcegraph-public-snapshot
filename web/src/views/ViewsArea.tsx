@@ -13,7 +13,9 @@ interface Props
         PatternTypeProps,
         CaseSensitivityProps,
         CopyQueryButtonProps,
-        VersionContextProps {}
+        VersionContextProps {
+    globbing: boolean
+}
 
 /**
  * The area that handles /views routes, displaying the requested view (contributed by an extension)

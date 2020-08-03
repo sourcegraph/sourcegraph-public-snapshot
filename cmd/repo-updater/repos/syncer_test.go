@@ -10,6 +10,7 @@ import (
 
 	"github.com/gitchander/permutation"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -55,7 +56,7 @@ func TestSyncer_Sync(t *testing.T) {
 			name:    "store list error aborts sync",
 			sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(&github, nil)),
 			store:   &repos.FakeStore{ListReposError: errors.New("boom")},
-			err:     "syncer.sync.streaming: syncer.storedExternalIDs: boom",
+			err:     "syncer.sync.store.list-repos: boom",
 		},
 		{
 			name:    "store upsert error aborts sync",
@@ -978,4 +979,78 @@ func TestDiff(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSync_Run(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// some ceremony to setup metadata on our test repos
+	svc := &repos.ExternalService{ID: 1, Kind: extsvc.KindGitHub}
+	mk := func(name string) *repos.Repo {
+		return &repos.Repo{
+			Name:     name,
+			Metadata: &github.Repository{},
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          name,
+				ServiceID:   "https://github.com",
+				ServiceType: svc.Kind,
+			},
+		}
+	}
+
+	// Our test will have 1 initial repo, and discover a new repo on sourcing.
+	stored := repos.Repos{mk("initial")}.With(repos.Opt.RepoSources(svc.URN()))
+	sourced := repos.Repos{mk("initial"), mk("new")}
+
+	syncer := &repos.Syncer{
+		Store:        &repos.FakeStore{},
+		Sourcer:      repos.NewFakeSourcer(nil, repos.NewFakeSource(svc, nil, sourced...)),
+		Synced:       make(chan repos.Diff),
+		SubsetSynced: make(chan repos.Diff),
+		Now:          time.Now,
+	}
+
+	// Initial repos in store
+	syncer.Store.UpsertRepos(ctx, stored...)
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		syncer.Run(ctx, func() time.Duration { return 0 })
+	}()
+
+	// Ignore fields store adds
+	ignore := cmpopts.IgnoreFields(repos.Repo{}, "ID", "CreatedAt", "UpdatedAt", "Sources")
+
+	// The first thing sent down Synced is the list of repos in store.
+	diff := <-syncer.Synced
+	if d := cmp.Diff(repos.Diff{Unmodified: stored}, diff, ignore); d != "" {
+		t.Fatalf("initial Synced mismatch (-want +got):\n%s", d)
+	}
+
+	// Next up it should find the new repo and send it down SubsetSynced
+	diff = <-syncer.SubsetSynced
+	if d := cmp.Diff(repos.Diff{Added: repos.Repos{mk("new")}}, diff, ignore); d != "" {
+		t.Fatalf("SubsetSynced mismatch (-want +got):\n%s", d)
+	}
+
+	// Finally we get the final diff, which will have everything listed as
+	// Unmodified since we added when we did SubsetSynced.
+	diff = <-syncer.Synced
+	if d := cmp.Diff(repos.Diff{Unmodified: sourced}, diff, ignore); d != "" {
+		t.Fatalf("final Synced mismatch (-want +got):\n%s", d)
+	}
+
+	// We check synced again to test us going around the Run loop 2 times in
+	// total.
+	diff = <-syncer.Synced
+	if d := cmp.Diff(repos.Diff{Unmodified: sourced}, diff, ignore); d != "" {
+		t.Fatalf("second final Synced mismatch (-want +got):\n%s", d)
+	}
+
+	// Cancel context and the run loop should stop
+	cancel()
+	<-done
 }

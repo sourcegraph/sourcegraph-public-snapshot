@@ -195,8 +195,6 @@ func SetupForTest(t TB) {
 	}
 
 	globalPrefix = "__test__" + t.Name()
-	// Make mutex fails faster
-	mutexTries = 1
 	c := pool.Get()
 	defer c.Close()
 

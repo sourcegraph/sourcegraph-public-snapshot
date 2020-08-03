@@ -1,6 +1,8 @@
 package correlation
 
 import (
+	"context"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/existence"
 )
@@ -9,13 +11,13 @@ import (
 // the git clone at the target commit. This is a necessary step as documents not in git will
 // not be the source of any queries (and take up unnecessary space in the converted index),
 // and may be the target of a definition or reference (and references a file we do not have).
-func prune(state *State, root string, getChildren existence.GetChildrenFunc) error {
+func prune(ctx context.Context, state *State, root string, getChildren existence.GetChildrenFunc) error {
 	paths := make([]string, 0, len(state.DocumentData))
 	for _, doc := range state.DocumentData {
 		paths = append(paths, doc.URI)
 	}
 
-	checker, err := existence.NewExistenceChecker(root, paths, getChildren)
+	checker, err := existence.NewExistenceChecker(ctx, root, paths, getChildren)
 	if err != nil {
 		return err
 	}
@@ -32,7 +34,7 @@ func prune(state *State, root string, getChildren existence.GetChildrenFunc) err
 	return nil
 }
 
-func pruneFromDefinitionReferences(state *State, definitionReferenceData map[string]datastructures.DefaultIDSetMap) {
+func pruneFromDefinitionReferences(state *State, definitionReferenceData map[int]datastructures.DefaultIDSetMap) {
 	for _, documentRanges := range definitionReferenceData {
 		for documentID := range documentRanges {
 			if _, ok := state.DocumentData[documentID]; !ok {

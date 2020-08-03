@@ -10,9 +10,9 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/slack"
 )
@@ -27,7 +27,11 @@ func StartCheckForUpcomingLicenseExpirations() {
 		panic("StartCheckForUpcomingLicenseExpirations called more than once")
 	}
 
-	client := slack.New(conf.Get().Dotcom.SlackLicenseExpirationWebhook)
+	dotcom := conf.Get().Dotcom
+	if dotcom == nil {
+		return
+	}
+	client := slack.New(dotcom.SlackLicenseExpirationWebhook)
 
 	t := time.NewTicker(1 * time.Hour)
 	for range t.C {

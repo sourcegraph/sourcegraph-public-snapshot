@@ -4,10 +4,10 @@ import (
 	"context"
 	"reflect"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/google/zoekt"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -57,7 +57,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 	}
 	defer func() { mockSearchFilesInRepo = nil }()
 
-	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{repos: &zoekt.RepoList{}}}
+	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{}}
 
 	q, err := query.ParseAndCheck("foo")
 	if err != nil {
@@ -132,7 +132,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	}})
 	defer conf.Mock(nil)
 
-	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{repos: &zoekt.RepoList{}}}
+	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{}}
 
 	q, err := query.ParseAndCheck("foo")
 	if err != nil {
@@ -224,4 +224,87 @@ func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 		r[i] = &search.RepositoryRevisions{Repo: &types.Repo{Name: api.RepoName(repoName)}, Revs: revs}
 	}
 	return r
+}
+
+func TestLimitSearcherRepos(t *testing.T) {
+	repos := func(names ...string) []*types.Repo {
+		var repos []*types.Repo
+		for _, name := range names {
+			repos = append(repos, &types.Repo{Name: api.RepoName(name)})
+		}
+		return repos
+	}
+
+	repoRevs := func(repoRevs ...string) []*search.RepositoryRevisions {
+		var result []*search.RepositoryRevisions
+		for _, repoRev := range repoRevs {
+			split := strings.Split(repoRev, "@")
+			repo, rev := split[0], split[1]
+
+			found := false
+			for _, existing := range result {
+				if string(existing.Repo.Name) == repo {
+					existing.Revs = append(existing.Revs, search.RevisionSpecifier{RevSpec: rev})
+					found = true
+					break
+				}
+			}
+			if found {
+				continue
+			}
+			result = append(result, &search.RepositoryRevisions{
+				Repo: &types.Repo{Name: api.RepoName(repo)},
+				Revs: []search.RevisionSpecifier{{RevSpec: rev}},
+			})
+		}
+		return result
+	}
+
+	tests := []struct {
+		name        string
+		limit       int
+		input       []*search.RepositoryRevisions
+		want        []*search.RepositoryRevisions
+		wantLimited []*types.Repo
+	}{
+		{
+			name:        "non_limited",
+			limit:       5,
+			input:       repoRevs("a@1", "a@2", "b@1", "c@1"),
+			want:        repoRevs("a@1", "a@2", "b@1", "c@1"),
+			wantLimited: nil,
+		},
+		{
+			name:        "limited",
+			limit:       5,
+			input:       repoRevs("a@1", "b@1", "c@1", "d@1", "e@1", "f@1", "g@1"),
+			want:        repoRevs("a@1", "b@1", "c@1", "d@1", "e@1"),
+			wantLimited: repos("f", "g"),
+		},
+		{
+			name:        "rev_limited",
+			limit:       6,
+			input:       repoRevs("a@1", "a@2", "b@1", "c@1", "d@1", "e@1", "f@1", "g@1"),
+			want:        repoRevs("a@1", "a@2", "b@1", "c@1", "d@1", "e@1"),
+			wantLimited: repos("f", "g"),
+		},
+		{
+			name:        "rev_limited_duplication",
+			limit:       6,
+			input:       repoRevs("a@1", "a@2", "b@1", "c@1", "d@1", "e@1", "f@1", "f@2", "g@1"),
+			want:        repoRevs("a@1", "a@2", "b@1", "c@1", "d@1", "e@1"),
+			wantLimited: repos("f", "g"),
+		},
+	}
+	for _, tst := range tests {
+		t.Run(tst.name, func(t *testing.T) {
+			got, gotLimited := limitSearcherRepos(tst.input, tst.limit)
+			if !reflect.DeepEqual(got, tst.want) {
+				t.Errorf("got %+v want %+v", got, tst.limit)
+			}
+			if !reflect.DeepEqual(gotLimited, tst.wantLimited) {
+				t.Errorf("got limited %+v want %+v", gotLimited, tst.wantLimited)
+			}
+		})
+	}
 }

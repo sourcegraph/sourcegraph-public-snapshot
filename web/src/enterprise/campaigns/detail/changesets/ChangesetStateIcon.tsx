@@ -1,18 +1,18 @@
-import { changesetStateIcons, changesetStatusColorClasses, changesetStageLabels } from './presentation'
-import { ChangesetState } from '../../../../../../shared/src/graphql/schema'
+import { changesetExternalStateIcons, changesetExternalStateColorClasses, changesetStateLabels } from './presentation'
+import { ChangesetExternalState } from '../../../../../../shared/src/graphql/schema'
 import React from 'react'
 import classNames from 'classnames'
 
 export interface ChangesetStateIconProps {
-    state: ChangesetState
+    externalState: ChangesetExternalState
 }
 
-export const ChangesetStateIcon: React.FunctionComponent<ChangesetStateIconProps> = ({ state }) => {
-    const Icon = changesetStateIcons[state]
+export const ChangesetStateIcon: React.FunctionComponent<ChangesetStateIconProps> = ({ externalState }) => {
+    const Icon = changesetExternalStateIcons[externalState]
     return (
         <Icon
-            className={classNames('mr-1 icon-inline', `text-${changesetStatusColorClasses[state]}`)}
-            data-tooltip={changesetStageLabels[state]}
+            className={classNames('mr-1 icon-inline', `text-${changesetExternalStateColorClasses[externalState]}`)}
+            data-tooltip={changesetStateLabels[externalState]}
         />
     )
 }

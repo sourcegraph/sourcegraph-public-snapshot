@@ -59,8 +59,10 @@ yarn-error.log
 /ui/assets/vs
 /ui/assets/*.html
 /ui/assets/*.map
+/ui/assets/*.txt
 /ui/assets/extension
 /ui/.tmp
+/ui/assets/scripts/
 *.json.actual
 
 eb-bundle.zip
@@ -91,7 +93,6 @@ cmd/src/debug
 cmd/gitserver/debug
 cmd/indexer/debug
 
-/dev/e2e/log.html
 /.gtm/
 
 # Web
@@ -107,6 +108,7 @@ package-lock.json
 /dist
 sourcegraph-webapp-*.tgz
 *.tsbuildinfo
+graphql-operations.ts
 
 # Extensions
 /packages/sourcegraph-extension-api/dist
@@ -136,3 +138,6 @@ storybook-static/
 # tilt files
 /dev/tilt/generated-cluster
 /dev/tilt/tilt-watch-targets
+
+# sonarqube
+.scannerwork

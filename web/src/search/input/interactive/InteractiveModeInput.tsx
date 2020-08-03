@@ -33,6 +33,7 @@ import { isSingularFilter } from '../../../../../shared/src/search/parser/filter
 import { VersionContextDropdown } from '../../../nav/VersionContextDropdown'
 import { VersionContextProps } from '../../../../../shared/src/search/util'
 import { VersionContext } from '../../../schema/site.schema'
+import { globbingEnabledFromSettings } from '../../../util/globbing'
 
 interface InteractiveModeProps
     extends SettingsCascadeProps,
@@ -52,6 +53,10 @@ interface InteractiveModeProps
     history: H.History
     navbarSearchState: QueryState
     onNavbarQueryChange: (userQuery: QueryState) => void
+
+    /** Whether globbing is enabled for filters. */
+    globbing: boolean
+
     /** Whether to hide the selected filters and add filter rows. */
     lowProfile: boolean
 
@@ -63,6 +68,9 @@ interface InteractiveModeProps
 
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
+
+    /** Whether to display the interactive mode input centered on the page, as on the search homepage. */
+    homepageMode?: boolean
 }
 
 interface InteractiveModeState {
@@ -193,8 +201,9 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
     }
 
     public render(): JSX.Element | null {
-        const isSearchHomepage =
-            this.props.location.pathname === '/search' && !parseSearchURLQuery(this.props.location.search)
+        const homepageMode =
+            this.props.homepageMode ||
+            (this.props.location.pathname === '/search' && !parseSearchURLQuery(this.props.location.search))
 
         let logoSource = '/.assets/img/sourcegraph-mark.svg'
         let logoLinkClassName = 'global-navbar__logo-link global-navbar__logo-animated'
@@ -202,10 +211,10 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
         const { branding } = window.context
         if (branding) {
             if (this.props.isLightTheme) {
-                if (branding.light && branding.light.symbol) {
+                if (branding.light?.symbol) {
                     logoSource = branding.light.symbol
                 }
-            } else if (branding.dark && branding.dark.symbol) {
+            } else if (branding.dark?.symbol) {
                 logoSource = branding.dark.symbol
             }
             if (branding.disableSymbolSpin) {
@@ -216,9 +225,9 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
         const logo = <img className="global-navbar__logo" src={logoSource} />
 
         return (
-            <div className="interactive-mode-input e2e-interactive-mode-input">
-                <div className={!isSearchHomepage ? 'interactive-mode-input__top-nav' : ''}>
-                    {!isSearchHomepage &&
+            <div className="interactive-mode-input test-interactive-mode-input">
+                <div className={!homepageMode ? 'interactive-mode-input__top-nav' : ''}>
+                    {!homepageMode &&
                         (this.props.authRequired ? (
                             <div className={logoLinkClassName}>{logo}</div>
                         ) : (
@@ -228,7 +237,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                         ))}
                     <div
                         className={`d-none d-sm-flex flex-row ${
-                            !isSearchHomepage ? 'interactive-mode-input__search-box-container' : ''
+                            !homepageMode ? 'interactive-mode-input__search-box-container' : ''
                         }`}
                     >
                         <Form onSubmit={this.onSubmit} className="flex-grow-1">
@@ -264,13 +273,14 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                             </div>
                         </Form>
                     </div>
-                    {!this.props.authRequired && !isSearchHomepage && (
+                    {!this.props.authRequired && !homepageMode && (
                         <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />
                     )}
                 </div>
                 {!this.props.lowProfile && (
                     <div>
                         <SelectedFiltersRow
+                            globbing={globbingEnabledFromSettings(this.props.settingsCascade)}
                             filtersInQuery={this.props.filtersInQuery}
                             navbarQuery={this.props.navbarSearchState}
                             onSubmit={this.onSubmit}
@@ -278,9 +288,9 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                             onFilterDeleted={this.onFilterDeleted}
                             toggleFilterEditable={this.toggleFilterEditable}
                             toggleFilterNegated={this.toggleFilterNegated}
-                            isHomepage={isSearchHomepage}
+                            isHomepage={homepageMode}
                         />
-                        <AddFilterRow onAddNewFilter={this.addNewFilter} isHomepage={isSearchHomepage} />
+                        <AddFilterRow onAddNewFilter={this.addNewFilter} isHomepage={homepageMode} />
                     </div>
                 )}
             </div>

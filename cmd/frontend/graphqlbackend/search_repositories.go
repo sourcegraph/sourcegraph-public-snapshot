@@ -101,7 +101,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 			// The high FileMatchLimit here is to make sure we get all the repo matches we can. Setting it to
 			// len(repos) could mean we miss some repos since there could be for example len(repos) file matches in
 			// the first repo and some more in other repos.
-			p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: math.MaxInt32, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+			p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: math.MaxInt32, IncludePatterns: []string{pattern}, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
 			q, err := query.ParseAndCheck("file:" + pattern)
 			if err != nil {
 				return nil, err
@@ -128,7 +128,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 
 	if len(args.PatternInfo.FilePatternsReposMustExclude) > 0 {
 		for _, pattern := range args.PatternInfo.FilePatternsReposMustExclude {
-			p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: math.MaxInt32, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+			p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: math.MaxInt32, IncludePatterns: []string{pattern}, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
 			q, err := query.ParseAndCheck("file:" + pattern)
 			if err != nil {
 				return nil, err

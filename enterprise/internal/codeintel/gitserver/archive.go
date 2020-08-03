@@ -17,7 +17,7 @@ func Archive(ctx context.Context, store store.Store, repositoryID int, commit st
 		return nil, err
 	}
 
-	if _, err := git.ResolveRevision(ctx, repo, nil, commit, nil); err != nil {
+	if _, err := git.ResolveRevision(ctx, repo, nil, commit, git.ResolveRevisionOptions{}); err != nil {
 		return nil, errors.Wrap(err, "git.ResolveRevision")
 	}
 

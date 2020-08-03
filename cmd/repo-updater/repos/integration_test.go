@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/inconshreveable/log15"
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
@@ -54,6 +54,8 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/UpsertRepos", testStoreUpsertRepos(store)},
 		{"DBStore/ListRepos", testStoreListRepos(store)},
 		{"DBStore/ListRepos/Pagination", testStoreListReposPagination(store)},
+		{"DBStore/SetClonedRepos", testStoreSetClonedRepos(store)},
+		{"DBStore/CountNotClonedRepos", testStoreCountNotClonedRepos(store)},
 		{"DBStore/Syncer/Sync", testSyncerSync(store)},
 		{"DBStore/Syncer/SyncSubset", testSyncSubset(store)},
 	} {

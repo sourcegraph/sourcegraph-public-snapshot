@@ -14,9 +14,11 @@ import { ThemeProps } from '../../../../shared/src/theme'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import classNames from 'classnames'
+import { dirname } from '../../util/path'
+import { FileDiffFields } from '../../graphql-operations'
 
 export interface FileDiffNodeProps extends ThemeProps {
-    node: GQL.IFileDiff
+    node: FileDiffFields
     lineNumbers: boolean
     className?: string
     location: H.Location
@@ -38,11 +40,12 @@ export interface FileDiffNodeProps extends ThemeProps {
 
 interface State {
     expanded: boolean
+    renderDeleted: boolean
 }
 
 /** A file diff. */
 export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> {
-    public state: State = { expanded: true }
+    public state: State = { expanded: true, renderDeleted: false }
 
     public render(): JSX.Element | null {
         const node = this.props.node
@@ -66,7 +69,7 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
 
         let stat: React.ReactFragment
         // If one of the files was binary, display file size change instead of DiffStat.
-        if ((node.oldFile && node.oldFile.binary) || (node.newFile && node.newFile.binary)) {
+        if (node.oldFile?.binary || node.newFile?.binary) {
             const sizeChange = (node.newFile?.byteSize ?? 0) - (node.oldFile?.byteSize ?? 0)
             const className = sizeChange >= 0 ? 'text-success' : 'text-danger'
             stat = <strong className={classNames(className, 'mr-2 code')}>{prettyBytes(sizeChange)}</strong>
@@ -96,8 +99,13 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                             )}
                         </button>
                         <div className="file-diff-node__header-path-stat align-items-baseline">
-                            {!node.oldPath && <span className="badge badge-success mr-2">Added file</span>}
-                            {!node.newPath && <span className="badge badge-danger mr-2">Deleted file</span>}
+                            {!node.oldPath && <span className="badge badge-success text-uppercase mr-2">Added</span>}
+                            {!node.newPath && <span className="badge badge-danger text-uppercase mr-2">Deleted</span>}
+                            {node.newPath && node.oldPath && node.newPath !== node.oldPath && (
+                                <span className="badge badge-warning text-uppercase mr-2">
+                                    {dirname(node.newPath) !== dirname(node.oldPath) ? 'Moved' : 'Renamed'}
+                                </span>
+                            )}
                             {stat}
                             <Link to={{ ...this.props.location, hash: anchor }} className="file-diff-node__header-path">
                                 {path}
@@ -117,8 +125,15 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                         </div>
                     </div>
                     {this.state.expanded &&
-                        ((node.oldFile && node.oldFile.binary) || (node.newFile && node.newFile.binary) ? (
+                        (node.oldFile?.binary || node.newFile?.binary ? (
                             <div className="text-muted m-2">Binary files can't be rendered.</div>
+                        ) : !node.newPath && !this.state.renderDeleted ? (
+                            <div className="text-muted m-2">
+                                <p className="mb-0">Deleted files aren't rendered by default.</p>
+                                <button type="button" className="btn btn-link m-0 p-0" onClick={this.setRenderDeleted}>
+                                    Click here to view.
+                                </button>
+                            </div>
                         ) : (
                             <FileDiffHunks
                                 {...this.props}
@@ -147,4 +162,6 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
     }
 
     private toggleExpand = (): void => this.setState(previousState => ({ expanded: !previousState.expanded }))
+
+    private setRenderDeleted = (): void => this.setState(() => ({ renderDeleted: true }))
 }

@@ -1,4 +1,5 @@
 import { from, Observable, of, throwError } from 'rxjs'
+import { fromFetch } from 'rxjs/fetch'
 import { map, mapTo, switchMap, catchError } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
@@ -12,7 +13,6 @@ import { isRepoNotFoundErrorLike } from '../../../../../shared/src/backend/error
 import { RepoSpec, FileSpec, ResolvedRevisionSpec } from '../../../../../shared/src/util/url'
 import { RevisionSpec, DiffSpec, BaseDiffSpec } from '.'
 import { checkOk } from '../../../../../shared/src/backend/fetch'
-import { fromFetch } from '../../../../../shared/src/graphql/fromFetch'
 
 interface PhabEntity {
     id: string // e.g. "48"
@@ -107,12 +107,12 @@ function createConduitRequestForm(): FormData {
  */
 export async function getPhabricatorCSS(sourcegraphURL: string): Promise<string> {
     const bundleUID = process.env.BUNDLE_UID!
-    const resp = await fetch(sourcegraphURL + `/.assets/extension/css/style.bundle.css?v=${bundleUID}`, {
+    const response = await fetch(sourcegraphURL + `/.assets/extension/css/style.bundle.css?v=${bundleUID}`, {
         method: 'GET',
         credentials: 'include',
         headers: new Headers({ Accept: 'text/html' }),
     })
-    return resp.text()
+    return response.text()
 }
 
 type ConduitResponse<T> =
@@ -129,18 +129,15 @@ export function queryConduitHelper<T>(endpoint: string, parameters: {}): Observa
     for (const [key, value] of Object.entries(parameters)) {
         form.set(`params[${key}]`, JSON.stringify(value))
     }
-    return fromFetch(
-        window.location.origin + endpoint,
-        {
-            method: 'POST',
-            body: form,
-            credentials: 'include',
-            headers: {
-                Accept: 'application/json',
-            },
+    return fromFetch(window.location.origin + endpoint, {
+        method: 'POST',
+        body: form,
+        credentials: 'include',
+        headers: {
+            Accept: 'application/json',
         },
-        response => checkOk(response).json()
-    ).pipe(
+        selector: response => checkOk(response).json(),
+    }).pipe(
         map((response: ConduitResponse<T>) => {
             if (response.error_code !== null) {
                 throw new Error(`error ${response.error_code}: ${response.error_info}`)

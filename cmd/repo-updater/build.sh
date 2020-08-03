@@ -18,7 +18,7 @@ export GOOS=linux
 export CGO_ENABLED=0
 
 for pkg in $path_to_package; do
-  go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION" -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$OUTPUT/$(basename "$pkg")" "$pkg"
+  go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION  -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$OUTPUT/$(basename "$pkg")" "$pkg"
 done
 
 docker build -f cmd/repo-updater/Dockerfile -t "$IMAGE" "$OUTPUT" \

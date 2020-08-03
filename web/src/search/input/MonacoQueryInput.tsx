@@ -31,6 +31,9 @@ export interface MonacoQueryInputProps
     onSubmit: () => void
     autoFocus?: boolean
     keyboardShortcutForFocus?: KeyboardShortcut
+
+    // Whether globbing is enabled for filters.
+    globbing: boolean
 }
 
 const SOURCEGRAPH_SEARCH = 'sourcegraphSearch' as const
@@ -50,7 +53,8 @@ const toUnsubscribable = (disposable: Monaco.IDisposable): Unsubscribable => ({
 function addSouregraphSearchCodeIntelligence(
     monaco: typeof Monaco,
     searchQueries: Observable<string>,
-    patternTypes: Observable<SearchPatternType>
+    patternTypes: Observable<SearchPatternType>,
+    globbing: Observable<boolean>
 ): Subscription {
     const subscriptions = new Subscription()
 
@@ -58,7 +62,7 @@ function addSouregraphSearchCodeIntelligence(
     monaco.languages.register({ id: SOURCEGRAPH_SEARCH })
 
     // Register providers
-    const providers = getProviders(searchQueries, patternTypes, fetchSuggestions)
+    const providers = getProviders(searchQueries, patternTypes, fetchSuggestions, globbing)
     subscriptions.add(toUnsubscribable(monaco.languages.setTokensProvider(SOURCEGRAPH_SEARCH, providers.tokens)))
     subscriptions.add(toUnsubscribable(monaco.languages.registerHoverProvider(SOURCEGRAPH_SEARCH, providers.hover)))
     subscriptions.add(
@@ -125,6 +129,13 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
     )
     private patternTypes = this.componentUpdates.pipe(
         map(({ patternType }) => patternType),
+        distinctUntilChanged(),
+        publishReplay(1),
+        refCount()
+    )
+
+    private globbing = this.componentUpdates.pipe(
+        map(({ globbing }) => globbing),
         distinctUntilChanged(),
         publishReplay(1),
         refCount()
@@ -231,7 +242,9 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
 
     private editorWillMount = (monaco: typeof Monaco): void => {
         // Register themes and code intelligence providers.
-        this.subscriptions.add(addSouregraphSearchCodeIntelligence(monaco, this.searchQueries, this.patternTypes))
+        this.subscriptions.add(
+            addSouregraphSearchCodeIntelligence(monaco, this.searchQueries, this.patternTypes, this.globbing)
+        )
     }
 
     private onEditorCreated = (editor: Monaco.editor.IStandaloneCodeEditor): void => {
@@ -300,8 +313,8 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
             throw new Error('Cannot unbind default Monaco keybindings')
         }
         for (const action of Object.keys(editor._actions)) {
-            // Keep ctrl+space to show all available completions
-            if (action === 'editor.action.triggerSuggest') {
+            // Keep ctrl+space to show all available completions. Keep ctrl+k to delete text on right of cursor.
+            if (action === 'editor.action.triggerSuggest' || action === 'deleteAllRight') {
                 continue
             }
             // Prefixing action ids with `-` to unbind the default actions.

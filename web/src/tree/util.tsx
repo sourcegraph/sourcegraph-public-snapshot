@@ -82,5 +82,5 @@ function gitTreeToTreeObject(entry: TreeEntryInfo): SingleChildGitTree {
 
 /** Determines whether a Tree has single-child directories as children, in order to determine whether to render a SingleChildTreeLayer or TreeLayer */
 export function hasSingleChild(tree: TreeEntryInfo[]): boolean {
-    return tree[0] && tree[0].isSingleChild
+    return tree[0]?.isSingleChild
 }

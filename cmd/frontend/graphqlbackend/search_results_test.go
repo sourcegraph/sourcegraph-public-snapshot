@@ -11,9 +11,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
@@ -34,7 +34,7 @@ func TestSearchResults(t *testing.T) {
 	limitOffset := &db.LimitOffset{Limit: maxReposToSearch() + 1}
 
 	getResults := func(t *testing.T, query, version string) []string {
-		r, err := (&schemaResolver{}).Search(&SearchArgs{Query: query, Version: version})
+		r, err := (&schemaResolver{}).Search(context.Background(), &SearchArgs{Query: query, Version: version})
 		if err != nil {
 			t.Fatal("Search:", err)
 		}
@@ -245,8 +245,11 @@ func TestSearchResults(t *testing.T) {
 	})
 
 	t.Run("test start time is not null when alert thrown", func(t *testing.T) {
+		mockDecodedViewerFinalSettings = &schema.Settings{}
+		defer func() { mockDecodedViewerFinalSettings = nil }()
+
 		for _, v := range searchVersions {
-			r, err := (&schemaResolver{}).Search(&SearchArgs{Query: `repo:*`, Version: v})
+			r, err := (&schemaResolver{}).Search(context.Background(), &SearchArgs{Query: `repo:*`, Version: v})
 			if err != nil {
 				t.Fatal("Search:", err)
 			}
@@ -327,9 +330,113 @@ func TestProcessSearchPattern(t *testing.T) {
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
 			q, _ := query.ParseAndCheck(tt.Pattern)
-			got, _, _ := processSearchPattern(q, tt.Opts)
+			got, _, _, _ := processSearchPattern(q, tt.Opts)
 			if got != tt.Want {
 				t.Fatalf("got %s\nwant %s", got, tt.Want)
+			}
+		})
+	}
+}
+
+func TestIsPatternNegated(t *testing.T) {
+	cases := []struct {
+		name    string
+		pattern string
+		want    bool
+	}{
+		{
+			name:    "simple negated pattern",
+			pattern: "-content:foo",
+			want:    true,
+		},
+		{
+			name:    "compound query with negated content as first term",
+			pattern: "-content:foo and bar",
+			want:    false,
+		},
+		{
+			name:    "compound query with negated content as last term",
+			pattern: "bar and -content:foo",
+			want:    false,
+		},
+		{
+			name:    "simple query with content field but without negation",
+			pattern: "content:foo",
+			want:    false,
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			q, err := query.ProcessAndOr(tt.pattern,
+				query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: false})
+			if err != nil {
+				t.Fatalf(err.Error())
+			}
+			got := isPatternNegated(q.(*query.AndOrQuery).Query)
+			if got != tt.want {
+				t.Fatalf("got %t\nwant %t", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestProcessSearchPatternAndOr(t *testing.T) {
+	cases := []struct {
+		name                string
+		pattern             string
+		searchType          query.SearchType
+		opts                *getPatternInfoOptions
+		wantPattern         string
+		wantIsRegExp        bool
+		wantIsStructuralPat bool
+		wantIsNegated       bool
+	}{
+		{
+			name:                "Simple content",
+			pattern:             `content:foo`,
+			searchType:          query.SearchTypeLiteral,
+			opts:                &getPatternInfoOptions{},
+			wantPattern:         "foo",
+			wantIsRegExp:        true,
+			wantIsStructuralPat: false,
+			wantIsNegated:       false,
+		},
+		{
+			name:                "Negated content",
+			pattern:             `-content:foo`,
+			searchType:          query.SearchTypeLiteral,
+			opts:                &getPatternInfoOptions{},
+			wantPattern:         "foo",
+			wantIsRegExp:        true,
+			wantIsStructuralPat: false,
+			wantIsNegated:       true,
+		},
+	}
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			q, err := query.ProcessAndOr(tt.pattern,
+				query.ParserOptions{SearchType: tt.searchType, Globbing: false})
+			if err != nil {
+				t.Fatalf(err.Error())
+			}
+
+			pattern, isRegExp, isStructuralPat, isNegated := processSearchPattern(q, tt.opts)
+
+			if want := tt.wantPattern; pattern != want {
+				t.Fatalf("got %s\nwant %s", pattern, want)
+			}
+
+			if want := tt.wantIsRegExp; isRegExp != want {
+				t.Fatalf("got %t\nwant %t", isRegExp, want)
+			}
+
+			if want := tt.wantIsStructuralPat; isStructuralPat != want {
+				t.Fatalf("got %t\nwant %t", isStructuralPat, want)
+			}
+
+			if want := tt.wantIsNegated; isNegated != want {
+				t.Fatalf("got %t\nwant %t", isNegated, want)
 			}
 		})
 	}
@@ -347,72 +454,61 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 
 	tests := map[string]search.TextPatternInfo{
 		"p": {
-			Pattern:                "p",
-			IsRegExp:               true,
-			PathPatternsAreRegExps: true,
+			Pattern:  "p",
+			IsRegExp: true,
 		},
 		"p1 p2": {
-			Pattern:                "(p1).*?(p2)",
-			IsRegExp:               true,
-			PathPatternsAreRegExps: true,
+			Pattern:  "(p1).*?(p2)",
+			IsRegExp: true,
 		},
 		"p case:yes": {
 			Pattern:                      "p",
 			IsRegExp:                     true,
 			IsCaseSensitive:              true,
-			PathPatternsAreRegExps:       true,
 			PathPatternsAreCaseSensitive: true,
 		},
 		"p file:f": {
-			Pattern:                "p",
-			IsRegExp:               true,
-			PathPatternsAreRegExps: true,
-			IncludePatterns:        []string{"f"},
+			Pattern:         "p",
+			IsRegExp:        true,
+			IncludePatterns: []string{"f"},
 		},
 		"p file:f1 file:f2": {
-			Pattern:                "p",
-			IsRegExp:               true,
-			PathPatternsAreRegExps: true,
-			IncludePatterns:        []string{"f1", "f2"},
+			Pattern:         "p",
+			IsRegExp:        true,
+			IncludePatterns: []string{"f1", "f2"},
 		},
 		"p -file:f": {
-			Pattern:                "p",
-			IsRegExp:               true,
-			PathPatternsAreRegExps: true,
-			ExcludePattern:         "f",
+			Pattern:        "p",
+			IsRegExp:       true,
+			ExcludePattern: "f",
 		},
 		"p -file:f1 -file:f2": {
-			Pattern:                "p",
-			IsRegExp:               true,
-			PathPatternsAreRegExps: true,
-			ExcludePattern:         "f1|f2",
+			Pattern:        "p",
+			IsRegExp:       true,
+			ExcludePattern: "f1|f2",
 		},
 		"p lang:graphql": {
-			Pattern:                "p",
-			IsRegExp:               true,
-			PathPatternsAreRegExps: true,
-			IncludePatterns:        []string{`\.graphql$|\.gql$|\.graphqls$`},
-			Languages:              []string{"graphql"},
+			Pattern:         "p",
+			IsRegExp:        true,
+			IncludePatterns: []string{`\.graphql$|\.gql$|\.graphqls$`},
+			Languages:       []string{"graphql"},
 		},
 		"p lang:graphql file:f": {
-			Pattern:                "p",
-			IsRegExp:               true,
-			PathPatternsAreRegExps: true,
-			IncludePatterns:        []string{"f", `\.graphql$|\.gql$|\.graphqls$`},
-			Languages:              []string{"graphql"},
+			Pattern:         "p",
+			IsRegExp:        true,
+			IncludePatterns: []string{"f", `\.graphql$|\.gql$|\.graphqls$`},
+			Languages:       []string{"graphql"},
 		},
 		"p -lang:graphql file:f": {
-			Pattern:                "p",
-			IsRegExp:               true,
-			PathPatternsAreRegExps: true,
-			IncludePatterns:        []string{"f"},
-			ExcludePattern:         `\.graphql$|\.gql$|\.graphqls$`,
+			Pattern:         "p",
+			IsRegExp:        true,
+			IncludePatterns: []string{"f"},
+			ExcludePattern:  `\.graphql$|\.gql$|\.graphqls$`,
 		},
 		"p -lang:graphql -file:f": {
-			Pattern:                "p",
-			IsRegExp:               true,
-			PathPatternsAreRegExps: true,
-			ExcludePattern:         `f|(\.graphql$|\.gql$|\.graphqls$)`,
+			Pattern:        "p",
+			IsRegExp:       true,
+			ExcludePattern: `f|(\.graphql$|\.gql$|\.graphqls$)`,
 		},
 	}
 	for queryStr, want := range tests {
@@ -462,6 +558,21 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		Repo:  repoMatch,
 	}
 
+	goTestFileMatch := &FileMatchResolver{
+		JPath: "/foo_test.go",
+		Repo:  repoMatch,
+	}
+
+	nodeModulesMatchSub := &FileMatchResolver{
+		JPath: "/anything/node_modules/testFile.md",
+		Repo:  repoMatch,
+	}
+
+	nodeModulesMatchRoot := &FileMatchResolver{
+		JPath: "/node_modules/testFile.md",
+		Repo:  repoMatch,
+	}
+
 	rev := "develop3.0"
 	fileMatchRev := &FileMatchResolver{
 		JPath:    "/testFile.md",
@@ -470,9 +581,10 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 	}
 
 	type testCase struct {
-		descr                     string
-		searchResults             []SearchResultResolver
-		expectedDynamicFilterStrs map[string]struct{}
+		descr                             string
+		searchResults                     []SearchResultResolver
+		expectedDynamicFilterStrsRegexp   map[string]struct{}
+		expectedDynamicFilterStrsGlobbing map[string]struct{}
 	}
 
 	tests := []testCase{
@@ -480,72 +592,151 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		{
 			descr:         "single repo match",
 			searchResults: []SearchResultResolver{repoMatch},
-			expectedDynamicFilterStrs: map[string]struct{}{
+			expectedDynamicFilterStrsRegexp: map[string]struct{}{
 				`repo:^testRepo$`: {},
+			},
+			expectedDynamicFilterStrsGlobbing: map[string]struct{}{
+				`repo:testRepo`: {},
 			},
 		},
 
 		{
 			descr:         "single file match without revision in query",
 			searchResults: []SearchResultResolver{fileMatch},
-			expectedDynamicFilterStrs: map[string]struct{}{
+			expectedDynamicFilterStrsRegexp: map[string]struct{}{
 				`repo:^testRepo$`: {},
 				`lang:markdown`:   {},
+			},
+			expectedDynamicFilterStrsGlobbing: map[string]struct{}{
+				`repo:testRepo`: {},
+				`lang:markdown`: {},
 			},
 		},
 
 		{
 			descr:         "single file match with specified revision",
 			searchResults: []SearchResultResolver{fileMatchRev},
-			expectedDynamicFilterStrs: map[string]struct{}{
+			expectedDynamicFilterStrsRegexp: map[string]struct{}{
 				`repo:^testRepo$@develop3.0`: {},
 				`lang:markdown`:              {},
+			},
+			expectedDynamicFilterStrsGlobbing: map[string]struct{}{
+				`repo:testRepo@develop3.0`: {},
+				`lang:markdown`:            {},
 			},
 		},
 		{
 			descr:         "file match from a language with two file extensions, using first extension",
 			searchResults: []SearchResultResolver{tsFileMatch},
-			expectedDynamicFilterStrs: map[string]struct{}{
+			expectedDynamicFilterStrsRegexp: map[string]struct{}{
 				`repo:^testRepo$`: {},
+				`lang:typescript`: {},
+			},
+			expectedDynamicFilterStrsGlobbing: map[string]struct{}{
+				`repo:testRepo`:   {},
 				`lang:typescript`: {},
 			},
 		},
 		{
 			descr:         "file match from a language with two file extensions, using second extension",
 			searchResults: []SearchResultResolver{tsxFileMatch},
-			expectedDynamicFilterStrs: map[string]struct{}{
+			expectedDynamicFilterStrsRegexp: map[string]struct{}{
 				`repo:^testRepo$`: {},
 				`lang:typescript`: {},
+			},
+			expectedDynamicFilterStrsGlobbing: map[string]struct{}{
+				`repo:testRepo`:   {},
+				`lang:typescript`: {},
+			},
+		},
+		{
+			descr:         "file match which matches one of the common file filters",
+			searchResults: []SearchResultResolver{nodeModulesMatchSub},
+			expectedDynamicFilterStrsRegexp: map[string]struct{}{
+				`repo:^testRepo$`:          {},
+				`-file:(^|/)node_modules/`: {},
+				`lang:markdown`:            {},
+			},
+			expectedDynamicFilterStrsGlobbing: map[string]struct{}{
+				`repo:testRepo`: {},
+				`-file:node_modules/** -file:**/node_modules/**`: {},
+				`lang:markdown`: {},
+			},
+		},
+		{
+			descr:         "file match which matches one of the common file filters",
+			searchResults: []SearchResultResolver{nodeModulesMatchRoot},
+			expectedDynamicFilterStrsRegexp: map[string]struct{}{
+				`repo:^testRepo$`:          {},
+				`-file:(^|/)node_modules/`: {},
+				`lang:markdown`:            {},
+			},
+			expectedDynamicFilterStrsGlobbing: map[string]struct{}{
+				`repo:testRepo`: {},
+				`-file:node_modules/** -file:**/node_modules/**`: {},
+				`lang:markdown`: {},
+			},
+		},
+		{
+			descr:         "file match which matches one of the common file filters",
+			searchResults: []SearchResultResolver{goTestFileMatch},
+			expectedDynamicFilterStrsRegexp: map[string]struct{}{
+				`repo:^testRepo$`:  {},
+				`-file:_test\.go$`: {},
+				`lang:go`:          {},
+			},
+			expectedDynamicFilterStrsGlobbing: map[string]struct{}{
+				`repo:testRepo`:    {},
+				`-file:**_test.go`: {},
+				`lang:go`:          {},
 			},
 		},
 
 		// If there are no search results, no filters should be displayed.
 		{
-			descr:                     "no results",
-			searchResults:             []SearchResultResolver{},
-			expectedDynamicFilterStrs: map[string]struct{}{},
+			descr:                             "no results",
+			searchResults:                     []SearchResultResolver{},
+			expectedDynamicFilterStrsRegexp:   map[string]struct{}{},
+			expectedDynamicFilterStrsGlobbing: map[string]struct{}{},
 		},
 		{
 			descr:         "values containing spaces are quoted",
 			searchResults: []SearchResultResolver{ignoreListFileMatch},
-			expectedDynamicFilterStrs: map[string]struct{}{
+			expectedDynamicFilterStrsRegexp: map[string]struct{}{
 				`repo:^testRepo$`:    {},
+				`lang:"ignore list"`: {},
+			},
+			expectedDynamicFilterStrsGlobbing: map[string]struct{}{
+				`repo:testRepo`:      {},
 				`lang:"ignore list"`: {},
 			},
 		},
 	}
 
+	mockDecodedViewerFinalSettings = &schema.Settings{}
+	defer func() { mockDecodedViewerFinalSettings = nil }()
+
+	var expectedDynamicFilterStrs map[string]struct{}
 	for _, test := range tests {
 		t.Run(test.descr, func(t *testing.T) {
-			actualDynamicFilters := (&SearchResultsResolver{SearchResults: test.searchResults}).DynamicFilters()
-			actualDynamicFilterStrs := make(map[string]struct{})
+			for _, globbing := range []bool{true, false} {
+				mockDecodedViewerFinalSettings.SearchGlobbing = &globbing
+				actualDynamicFilters := (&SearchResultsResolver{SearchResults: test.searchResults}).DynamicFilters(context.Background())
+				actualDynamicFilterStrs := make(map[string]struct{})
 
-			for _, filter := range actualDynamicFilters {
-				actualDynamicFilterStrs[filter.Value()] = struct{}{}
-			}
+				for _, filter := range actualDynamicFilters {
+					actualDynamicFilterStrs[filter.Value()] = struct{}{}
+				}
 
-			if diff := cmp.Diff(test.expectedDynamicFilterStrs, actualDynamicFilterStrs); diff != "" {
-				t.Errorf("mismatch (-want, +got):\n%s", diff)
+				if globbing {
+					expectedDynamicFilterStrs = test.expectedDynamicFilterStrsGlobbing
+				} else {
+					expectedDynamicFilterStrs = test.expectedDynamicFilterStrsRegexp
+				}
+
+				if diff := cmp.Diff(expectedDynamicFilterStrs, actualDynamicFilterStrs); diff != "" {
+					t.Errorf("mismatch (-want, +got):\n%s", diff)
+				}
 			}
 		})
 	}
@@ -869,7 +1060,7 @@ func TestSearchResultsHydration(t *testing.T) {
 
 	z := &searchbackend.Zoekt{
 		Client: &fakeSearcher{
-			repos:  &zoekt.RepoList{Repos: []*zoekt.RepoListEntry{zoektRepo}},
+			repos:  []*zoekt.RepoListEntry{zoektRepo},
 			result: &zoekt.SearchResult{Files: zoektFileMatches},
 		},
 		DisableCache: true,
@@ -1109,7 +1300,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 }
 
 func TestSearchResolver_evaluateWarning(t *testing.T) {
-	q, _ := query.ProcessAndOr("file:foo or file:bar")
+	q, _ := query.ProcessAndOr("file:foo or file:bar", query.ParserOptions{SearchType: query.SearchTypeRegex, Globbing: false})
 	wantPrefix := "I'm having trouble understanding that query."
 	andOrQuery, _ := q.(*query.AndOrQuery)
 	got, _ := (&searchResolver{}).evaluate(context.Background(), andOrQuery.Query)
@@ -1119,7 +1310,7 @@ func TestSearchResolver_evaluateWarning(t *testing.T) {
 		}
 	})
 
-	_, err := query.ProcessAndOr("file:foo or or or")
+	_, err := query.ProcessAndOr("file:foo or or or", query.ParserOptions{SearchType: query.SearchTypeRegex, Globbing: false})
 	gotAlert := alertForQuery("", err)
 	t.Run("warn for unsupported ambiguous and/or query", func(t *testing.T) {
 		if !strings.HasPrefix(gotAlert.description, wantPrefix) {

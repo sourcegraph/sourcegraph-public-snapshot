@@ -5,6 +5,7 @@
 @import './LazyMonacoQueryInput';
 @import './InfoDropdown';
 @import './interactive/InteractiveModeInput';
+@import './PrivateCodeCta';
 
 .search-page {
     display: flex;
@@ -15,6 +16,21 @@
     overflow: auto;
     padding-bottom: 4rem;
 
+    &__web-link {
+        color: #1c7cd6;
+    }
+
+    h5 {
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+
+    p {
+        font-weight: normal;
+        font-size: 14px;
+        line-height: 20px;
+    }
+
     &__logo {
         flex: 0 0 auto;
         display: flex;
@@ -24,9 +40,13 @@
         max-width: 90%;
     }
 
-    &__container {
+    &__cloud-tag-line {
+        margin-top: 1rem;
+    }
+
+    &__search-container {
         flex: 1 1 auto;
-        margin-top: 4rem;
+        margin-top: 1.5rem;
         width: 49rem;
         max-width: 90%;
         position: relative;
@@ -35,6 +55,10 @@
             .toggle-container__copy-query-button {
                 opacity: 1;
             }
+        }
+
+        &--with-repogroups {
+            flex-grow: 0;
         }
     }
 
@@ -48,12 +72,107 @@
         display: block;
         margin: 0.5rem 0;
     }
+
+    &__repogroup-content {
+        max-width: 90%;
+    }
+
+    &__repogroup-list {
+        &-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+            grid-auto-rows: minmax(4rem, auto);
+            gap: $spacer * 0.75;
+        }
+
+        &-icon {
+            width: 3rem;
+            height: 3rem;
+            object-fit: contain;
+        }
+    }
+
+    &__search-a-language {
+        margin-bottom: 3rem;
+    }
+
+    &__lang-link {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    &__help-content {
+        &-subheading {
+            margin-bottom: 1rem;
+        }
+    }
+
+    &__keyword-value-text {
+        color: #6078a9;
+        font-size: 12px;
+        line-height: 140%;
+    }
+
+    &__repogroup-listing-title {
+        font-size: 14px;
+        margin-bottom: 0.25rem;
+    }
+
+    &__repogroup-listing-description {
+        font-size: 14px;
+    }
+
+    &__lang-ref {
+        font-size: 12px;
+    }
 }
 
 .theme-light {
     .search-page {
         &__sign-in {
-            color: $color-light-text-4;
+            color: $gray-11;
+        }
+        &__cloud-tag-line {
+            color: $gray-11;
+        }
+    }
+}
+
+.theme-dark {
+    .search-page {
+        &__cloud-tag-line {
+            color: $gray-07;
+        }
+
+        h1,
+        h2 {
+            color: $gray-19;
+        }
+
+        h3,
+        h4,
+        h6 {
+            color: $gray-13;
+        }
+
+        h5 {
+            color: $gray-18;
+        }
+
+        strong {
+            color: $gray-11;
+        }
+
+        &__help-content {
+            color: $gray-11;
+        }
+
+        &__web-link {
+            color: #1c7cd6;
+        }
+
+        &__keyword-text {
+            color: #1c7cd6;
         }
     }
 }

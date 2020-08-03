@@ -708,7 +708,7 @@ func loadTrackingIssues(ctx context.Context, cli *graphql.Client, org string, is
 		for query, s := range data {
 			q := queries[query]
 
-			if s.PageInfo.HasNextPage {
+			if s.PageInfo.HasNextPage && len(s.Nodes) > 0 {
 				hasNextPage = true
 				q.cursor = s.PageInfo.EndCursor
 			} else {
@@ -750,7 +750,9 @@ func listTrackingIssues(ctx context.Context, cli *graphql.Client, issuesQuery st
 		issues, _ := unmarshalSearchNodes(data.Tracking.Nodes)
 
 		for _, issue := range issues {
-			all = append(all, NewTrackingIssue(issue))
+			if len(issue.Labels) > 1 { // Skip tracking issues that have only the "tracking" label
+				all = append(all, NewTrackingIssue(issue))
+			}
 		}
 
 		if data.Tracking.PageInfo.HasNextPage {

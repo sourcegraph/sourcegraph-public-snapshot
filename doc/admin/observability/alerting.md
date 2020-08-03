@@ -1,13 +1,112 @@
 # Alerts
 
-Alerts can be configured to notify site admins when there is something wrong or noteworthy on the Sourcegraph instance. 
+Alerts can be configured to notify site admins when there is something wrong or noteworthy on the Sourcegraph instance.
 
-Alerts are configured in Grafana. (Prometheus Alertmanager may also be used, but this documentation
-prefers Grafana.)
+## Understanding alerts
 
-## Set up alerts in Grafana
+See [alert solutions](alert_solutions.md) for possible solutions when alerts are firing.
 
-### Configure alert channels
+## Setting up alerting
+
+Visit your site configuration (e.g. `https://sourcegraph.example.com/site-admin/configuration`) to configure alerts using the `observability.alerts` field. As always, you can use `Ctrl+Space` at any time to get hints about allowed fields as well as relevant documentation inside the configuration editor.
+
+Once configured, Sourcegraph alerts will automatically be routed to the appropriate notification channels by severity level.
+
+### Example notifiers
+
+#### Slack
+
+```json
+"observability.alerts": [
+  {
+    "level": "critical",
+    "notifier": {
+      "type": "slack",
+      // Slack incoming webhook URL.
+      "url": "https://hooks.slack.com/services/xxxxxxxxx/xxxxxxxxxxx/xxxxxxxxxxxxxxxxxxxxxxxx",
+    }
+  }
+]
+```
+
+#### PagerDuty
+
+```json
+"observability.alerts": [
+  {
+    "level": "critical",
+    "notifier": {
+      "type": "pagerduty",
+      // Routing key for the PagerDuty Events API v2
+      "routingKey": "XXXXXXXX"
+    }
+  }
+]
+```
+
+#### Webhook
+
+```json
+"observability.alerts": [
+  {
+    "level": "critical",
+    "notifier": {
+      "type": "webhook",
+      // Webhook URL.
+      "url": "https://my.webhook.url"
+    }
+  }
+]
+```
+
+#### Email
+
+Note that to receive email notifications, the [`email.address`](../config/site_config.md#email-address) and [`email.smtp`](../config/site_config.md#email-smtp) fields must be configured in site configuration.
+
+```json
+"observability.alerts": [
+  {
+    "level": "critical",
+    "notifier": {
+      "type": "email",
+      // Address where alerts will be sent
+      "address": "sourcegraph@company.com"
+    }
+  }
+]
+```
+
+### Testing alerts
+
+Configured alerts can be tested using the Sourcegraph GraphQL API. Visit your API Console (e.g. `https://sourcegraph.example.com/api/console`) and use the following mutation to trigger an alert:
+
+```gql
+mutation {
+  triggerObservabilityTestAlert(
+    level: "critical"
+  ) { alwaysNil }
+}
+```
+
+The test alert may take up to a minute to fire. The triggered alert will automatically resolve itself as well.
+
+### Silencing alerts
+
+If there is an alert you are aware of and you wish to silence notifications for it, add an entry to the `observability.silenceAlerts` field. For example:
+
+```json
+{
+  "observability.silenceAlerts": [
+    "warning_gitserver_disk_space_remaining"
+  ]
+}
+```
+
+You can find the appropriate identifier for each alert in [alert solutions](./alert_solutions.md).
+
+## Setting up alerting: before Sourcegraph 3.17
+
+### Configure alert channels in Grafana
 
 Before configuring specific alerts in Grafana, you must set up alert channels. Each channel
 corresponds to an external service to which Grafana will push alerts.
@@ -56,7 +155,3 @@ After adding the appropriate notification channels, configure individual alerts 
 1. Verify your rule by clicking `Test Rule` or viewing `State History`.
 1. Return to the dashboard page by clicking the left arrow in the upper left. Save the dashboard by
    clicking the save icon in the upper right.
-
-### Understanding alerts
-
-See [alert solutions](alert_solutions.md) for possible solutions when alerts are firing.

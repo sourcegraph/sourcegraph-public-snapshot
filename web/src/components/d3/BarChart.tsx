@@ -153,7 +153,7 @@ export class BarChart<T extends BarChartSeries> extends React.Component<Props<T>
                 .data(series.slice().reverse())
                 .enter()
                 .append('g')
-                .attr('transform', (data, index) => 'translate(0,' + index * 20 + ')')
+                .attr('transform', (data, index) => `translate(0,${index * 20})`)
             legend
                 .append('rect')
                 .attr('x', width - 19)
@@ -188,12 +188,7 @@ function wrapLabel(text: Selection<any, any, any, any>, width: number): void {
         // currentLine holds the line as it grows, until it overflows.
         let currentLine: string[] = []
         // tspan holds the current <tspan> element as it grows, until it overflows.
-        let tspan = text
-            .text(null)
-            .append('tspan')
-            .attr('x', 0)
-            .attr('y', yAttribute)
-            .attr('dy', dyAttribute + 'em')
+        let tspan = text.text(null).append('tspan').attr('x', 0).attr('y', yAttribute).attr('dy', `${dyAttribute}em`)
 
         while (words.length) {
             currentWord = words.pop() || ''
@@ -208,7 +203,7 @@ function wrapLabel(text: Selection<any, any, any, any>, width: number): void {
                     .append('tspan')
                     .attr('x', 0)
                     .attr('y', yAttribute)
-                    .attr('dy', ++lineNumber * lineHeight + dyAttribute + 'em')
+                    .attr('dy', `${++lineNumber * lineHeight + dyAttribute}em`)
                     .text(currentWord)
             }
         }

@@ -1,6 +1,9 @@
 package apitest
 
-import "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+import (
+	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+)
 
 type GitTarget struct {
 	OID            string
@@ -22,6 +25,10 @@ type GitRef struct {
 type DiffRange struct{ StartLine, Lines int }
 
 type DiffStat struct{ Added, Deleted, Changed int32 }
+
+func (ds DiffStat) ToDiffStat() *diff.Stat {
+	return &diff.Stat{Added: ds.Added, Deleted: ds.Deleted, Changed: ds.Changed}
+}
 
 type FileDiffHunk struct {
 	Body, Section      string
@@ -63,6 +70,7 @@ type Patch struct {
 	Typename            string `json:"__typename"`
 	ID                  string
 	PublicationEnqueued bool
+	Publishable         bool
 	Repository          struct{ Name, URL string }
 	Diff                struct {
 		FileDiffs FileDiffs
@@ -95,23 +103,18 @@ type UserOrg struct {
 }
 
 type Campaign struct {
-	ID                  string
-	Name                string
-	Description         string
-	Branch              string
-	Author              User
-	ViewerCanAdminister bool
-	Namespace           UserOrg
-	CreatedAt           string
-	UpdatedAt           string
-	Status              struct {
-		State  string
-		Errors []string
-	}
+	ID                      string
+	Name                    string
+	Description             string
+	Branch                  string
+	Author                  User
+	ViewerCanAdminister     bool
+	Namespace               UserOrg
+	CreatedAt               string
+	UpdatedAt               string
 	Patches                 PatchConnection
 	HasUnpublishedPatches   bool
 	Changesets              ChangesetConnection
-	OpenChangesets          ChangesetConnection
 	ChangesetCountsOverTime []ChangesetCounts
 	DiffStat                DiffStat
 	PatchSet                PatchSet
@@ -135,17 +138,18 @@ type Repository struct {
 }
 
 type Changeset struct {
-	Typename    string `json:"__typename"`
-	ID          string
-	Repository  Repository
-	Campaigns   CampaignConnection
-	CreatedAt   string
-	UpdatedAt   string
-	NextSyncAt  string
-	Title       string
-	Body        string
-	State       string
-	ExternalURL struct {
+	Typename      string `json:"__typename"`
+	ID            string
+	Repository    Repository
+	Campaigns     CampaignConnection
+	CreatedAt     string
+	UpdatedAt     string
+	NextSyncAt    string
+	Title         string
+	Body          string
+	State         string
+	ExternalState string
+	ExternalURL   struct {
 		URL         string
 		ServiceType string
 	}
@@ -177,4 +181,69 @@ type ChangesetCounts struct {
 	OpenApproved         int32
 	OpenChangesRequested int32
 	OpenPending          int32
+}
+
+type CampaignSpec struct {
+	Typename string `json:"__typename"`
+	ID       string
+
+	OriginalInput string
+	ParsedInput   graphqlbackend.JSONValue
+
+	PreviewURL string
+
+	Namespace UserOrg
+	Creator   User
+
+	ChangesetSpecs ChangesetSpecConnection
+
+	ViewerCanAdminister bool
+
+	CreatedAt graphqlbackend.DateTime
+	ExpiresAt *graphqlbackend.DateTime
+}
+
+type ChangesetSpec struct {
+	Typename string `json:"__typename"`
+	ID       string
+
+	Description ChangesetSpecDescription
+
+	ExpiresAt *graphqlbackend.DateTime
+}
+
+type ChangesetSpecConnection struct {
+	Nodes      []ChangesetSpec
+	TotalCount int
+	PageInfo   struct {
+		HasNextPage bool
+		EndCursor   *string
+	}
+}
+
+type ChangesetSpecDescription struct {
+	Typename string `json:"__typename"`
+
+	BaseRepository Repository
+	ExternalID     string
+	BaseRef        string
+
+	HeadRepository Repository
+	HeadRef        string
+
+	Title string
+	Body  string
+
+	Commits []GitCommitDescription
+
+	Published bool
+
+	Diff struct {
+		FileDiffs FileDiffs
+	}
+}
+
+type GitCommitDescription struct {
+	Message string
+	Diff    string
 }

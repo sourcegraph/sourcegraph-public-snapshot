@@ -6,13 +6,11 @@ import { CompletionItemProviderRegistry } from './services/completion'
 import { ContributionRegistry } from './services/contribution'
 import { TextDocumentDecorationProviderRegistry } from './services/decoration'
 import { createViewerService } from './services/viewerService'
-import { ExtensionsService } from './services/extensionsService'
-import { TextDocumentHoverProviderRegistry } from './services/hover'
+import { IExtensionsService, ExtensionsService } from './services/extensionsService'
 import { LinkPreviewProviderRegistry } from './services/linkPreview'
 import { TextDocumentLocationProviderIDRegistry, TextDocumentLocationProviderRegistry } from './services/location'
 import { createModelService } from './services/modelService'
 import { NotificationsService } from './services/notifications'
-import { QueryTransformerRegistry } from './services/queryTransformer'
 import { PanelViewProviderRegistry } from './services/panelViews'
 import { createViewService } from './services/viewService'
 import { createWorkspaceService } from './services/workspaceService'
@@ -30,8 +28,15 @@ export class Services {
             | 'getScriptURLForExtension'
             | 'clientApplication'
             | 'sideloadedExtensionURL'
+            | 'createExtensionsService'
         >
-    ) {}
+    ) {
+        if (platformContext.createExtensionsService) {
+            this.extensions = platformContext.createExtensionsService(this.model)
+        } else {
+            this.extensions = new ExtensionsService(platformContext, this.model)
+        }
+    }
 
     public readonly commands = new CommandRegistry()
     public readonly context = createContextService(this.platformContext)
@@ -45,14 +50,12 @@ export class Services {
         this.platformContext.settings,
         this.context.data
     )
-    public readonly extensions = new ExtensionsService(this.platformContext, this.model)
+    public readonly extensions: IExtensionsService
     public readonly linkPreviews = new LinkPreviewProviderRegistry()
     public readonly textDocumentDefinition = new TextDocumentLocationProviderRegistry()
     public readonly textDocumentReferences = new TextDocumentLocationProviderRegistry<ReferenceParams>()
     public readonly textDocumentLocations = new TextDocumentLocationProviderIDRegistry()
-    public readonly textDocumentHover = new TextDocumentHoverProviderRegistry()
     public readonly textDocumentDecoration = new TextDocumentDecorationProviderRegistry()
-    public readonly queryTransformer = new QueryTransformerRegistry()
     public readonly panelViews = new PanelViewProviderRegistry()
     public readonly completionItems = new CompletionItemProviderRegistry()
     public readonly view = createViewService()

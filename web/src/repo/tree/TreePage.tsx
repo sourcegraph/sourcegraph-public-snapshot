@@ -57,7 +57,7 @@ const TreeEntry: React.FunctionComponent<{
             className={classNames(
                 'tree-entry',
                 isDir && 'font-weight-bold',
-                `e2e-tree-entry-${isDir ? 'directory' : 'file'}`
+                `test-tree-entry-${isDir ? 'directory' : 'file'}`
             )}
             title={filePath}
         >
@@ -79,7 +79,7 @@ const TreeEntriesSection: React.FunctionComponent<{
     entries: Pick<GQL.ITreeEntry, 'name' | 'isDirectory' | 'url'>[]
 }> = ({ title, parentPath, entries }) =>
     entries.length > 0 ? (
-        <section className="tree-page__section e2e-tree-entries">
+        <section className="tree-page__section test-tree-entries">
             <h3 className="tree-page__section-header">{title}</h3>
             <div className={entries.length > MIN_ENTRIES_FOR_COLUMN_LAYOUT ? 'tree-page__entries--columns' : undefined}>
                 {entries.map((entry, index) => (
@@ -163,6 +163,7 @@ interface Props
     revision: string
     location: H.Location
     history: H.History
+    globbing: boolean
 }
 
 export const TreePage: React.FunctionComponent<Props> = ({
@@ -279,12 +280,12 @@ export const TreePage: React.FunctionComponent<Props> = ({
     const emptyElement = showOlderCommits ? (
         <>No commits in this tree.</>
     ) : (
-        <div className="e2e-tree-page-no-recent-commits">
+        <div className="test-tree-page-no-recent-commits">
             No commits in this tree in the past year.
             <br />
             <button
                 type="button"
-                className="btn btn-secondary btn-sm e2e-tree-page-show-all-commits"
+                className="btn btn-secondary btn-sm test-tree-page-show-all-commits"
                 onClick={onShowOlderCommitsClicked}
             >
                 Show all commits

@@ -24,6 +24,10 @@ var tests = []test{
 		Name:  `Global search, repo search by name, case yes, nonzero result`,
 		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ String case:yes count:1 stable:yes`,
 	},
+	{
+		Name:  `True is an alias for yes when fork is set`,
+		Query: `fork:true repo:github\.com/rvantonderp/(beego-mux|sgtest-mux)`,
+	},
 	// Text search, focused to repo.
 	{
 		Name:  `Repo search, non-master branch, nonzero result`,
@@ -59,7 +63,7 @@ var tests = []test{
 	// Global simple text search.
 	{
 		Name:  `Global search, zero results`,
-		Query: `asdfalksd+jflaksjdfklas patterntype:literal`,
+		Query: `asdfalksd+jflaksjdfklas patterntype:literal -repo:sourcegraph`,
 	},
 	{
 		Name:  `Global search, double-quoted pattern, nonzero result`,
@@ -105,6 +109,14 @@ var tests = []test{
 		Name:  `Global search, structural, index only, nonzero result`,
 		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ make(:[1]) index:only patterntype:structural count:3`,
 	},
+	{
+		Name:  `Structural search quotes are interpreted literally`,
+		Query: `repo:^github\.com/rvantonderp/auth0-go-jwt-middleware$ file:^README\.md "This :[_] authenticated :[_]" patterntype:structural`,
+	},
+	{
+		Name:  `Alert to activate structural search mode`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ patterntype:literal i can't :[believe] it's not butter`,
+	},
 	// Repo search (part 2).
 	{
 		Name:  `Global search, archived excluded, zero results`,
@@ -134,6 +146,10 @@ var tests = []test{
 		Name:  `Global search, exclude counts for fork and archive`,
 		Query: `repo:mux|archive|caddy`,
 	},
+	{
+		Name:  `Repo visibility`,
+		Query: `repo:github.com/rvantonderp/adjust-go-wrk visibility:public`,
+	},
 	// And/Or queries.
 	{
 		Name:  `And operator, basic`,
@@ -156,12 +172,12 @@ var tests = []test{
 		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ \(\) or \(\) stable:yes type:file count:1 patterntype:regexp`,
 	},
 	{
-		Name:  `Literals, escaped and unescaped parens`,
-		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ (() or \(\)) stable:yes type:file count:1 patterntype:regexp`,
+		Name:  `Literals, escaped and unescaped parens, no group`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ () or \(\) stable:yes type:file count:1 patterntype:regexp`,
 	},
 	{
-		Name:  `Literals, escaped and unescaped parens, no group`,
-		Query: `repo:^github\.com/sourcegraph/sourcegraph$ () or \(\)`,
+		Name:  `Literals, escaped and unescaped parens, grouped`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ (() or \(\)) stable:yes type:file count:1 patterntype:regexp`,
 	},
 	{
 		Name:  `Literals, double paren`,
@@ -194,6 +210,78 @@ var tests = []test{
 	{
 		Name:  `Escaped whitespace sequences with 'and'`,
 		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ \ and /`,
+	},
+	{
+		Name:  `Concat converted to spaces for literal search`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ file:^client\.go caCertPool := or x509 Pool patterntype:literal`,
+	},
+	{
+		Name:  `Literal parentheses match pattern`,
+		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^cmd/adapter/adapter\.go main() and InitLogs() patterntype:literal`,
+	},
+	{
+		Name:  `Dangling right parens, heuristic for literal search`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ split) and main patterntype:literal`,
+	},
+	{
+		Name:  `Dangling right parens, heuristic for literal search, double parens`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ respObj.Size and data)) patterntype:literal`,
+	},
+	{
+		Name:  `Dangling right parens, heuristic for literal search, simple group before right paren`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ respObj.Size and (data)) patterntype:literal`,
+	},
+	{
+		Name:  `Dangling right parens, heuristic for literal search, cannot succeed, too confusing`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ (respObj.Size and (data))) patterntype:literal`,
+	},
+	{
+		Name:  `Confusing grouping raises alert`,
+		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^README\.md (bar and (foo or x\) ()) patterntype:literal`,
+	},
+	{
+		Name:  `Successful grouping removes alert`,
+		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^README\.md (bar and (foo or (x\) ())) patterntype:literal`,
+	},
+	{
+		Name:  `No dangling right paren with complex group for literal search`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ (respObj.Size and (data)) patterntype:literal`,
+	},
+	{
+		Name:  `Concat converted to .* for regexp search`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ file:^client\.go ca Pool or x509 Pool patterntype:regexp stable:yes type:file`,
+	},
+	{
+		Name:  `Structural search uses literal search parser`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ file:^client\.go :[[v]] := x509 and AppendCertsFromPEM(:[_]) patterntype:structural`,
+	},
+	{
+		Name:  `Union file matches per file and accurate counts`,
+		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^cmd/adapter/adapter\.go func or main`,
+	},
+	{
+		Name:  `Intersect file matches per file and accurate counts`,
+		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^cmd/adapter/adapter\.go func and main`,
+	},
+	{
+		Name:  `Simple combined union and intersect file matches per file and accurate counts`,
+		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^cmd/adapter/adapter\.go ((func main and package main) or return prom.NewClient)`,
+	},
+	{
+		Name:  `Complex union of intersect file matches per file and accurate counts`,
+		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^cmd/adapter/adapter\.go ((main and NamersFromConfig) or (genericPromClient and stopCh <-))`,
+	},
+	{
+		Name:  `Complex intersect of union file matches per file and accurate counts`,
+		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^cmd/adapter/adapter\.go ((func main or package main) and (baseURL or mprom))`,
+	},
+	{
+		Name:  `Intersect file matches per file against an empty result set`,
+		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^cmd/adapter/adapter\.go func and doesnotexist838338`,
+	},
+	{
+		Name:  `Dedupe union operation`,
+		Query: `file:cors_filter.go|ginkgo_dsl.go|funcs.go repo:rvantonderp/DirectXMan12-k8s-prometheus-adapter  :[[i]], :[[x]] := range :[src.] { :[[dst]][:[i]] = :[[x]] } or if strings.ToLower(:[s1]) == strings.ToLower(:[s2]) patterntype:structural`,
 	},
 }
 

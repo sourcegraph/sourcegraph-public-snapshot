@@ -12,6 +12,7 @@ const gqlSearch = `query Search($query: String!) {
 	search(query: $query) {
 		results {
 			limitHit
+			matchCount
 			results {
 				__typename
 				... on Repository {

@@ -6,12 +6,18 @@ import (
 	"os"
 	"path"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/highlight"
 )
 
 // FileContentFunc is a closure that returns the contents of a file and is used by the VirtualFileResolver.
 type FileContentFunc func(ctx context.Context) (string, error)
+
+func init() {
+	prometheus.MustRegister(highlightHistogram)
+}
 
 func NewVirtualFileResolver(stat os.FileInfo, fileContent FileContentFunc) *virtualFileResolver {
 	return &virtualFileResolver{
@@ -77,11 +83,18 @@ func (r *virtualFileResolver) Binary(ctx context.Context) (bool, error) {
 	return highlight.IsBinary([]byte(content)), nil
 }
 
+var highlightHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
+	Name: "virtual_fileserver_highlight_req",
+	Help: "This measures the time for highlighting requests",
+})
+
 func (r *virtualFileResolver) Highlight(ctx context.Context, args *HighlightArgs) (*highlightedFileResolver, error) {
 	content, err := r.Content(ctx)
 	if err != nil {
 		return nil, err
 	}
+	timer := prometheus.NewTimer(highlightHistogram)
+	defer timer.ObserveDuration()
 	return highlightContent(ctx, args, content, r.Path(), highlight.Metadata{
 		// TODO: Use `CanonicalURL` here for where to retrieve the file content, once we have a backend to retrieve such files.
 		Revision: fmt.Sprintf("Preview file diff %s", r.stat.Name()),

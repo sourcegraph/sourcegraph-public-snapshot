@@ -8,13 +8,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
@@ -60,10 +59,6 @@ type mockProvider struct {
 	fetchRepoPerms func(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error)
 }
 
-func (*mockProvider) RepoPerms(context.Context, *extsvc.Account, []*types.Repo) ([]authz.RepoPerms, error) {
-	return nil, nil
-}
-
 func (*mockProvider) FetchAccount(context.Context, *types.User, []*extsvc.Account) (*extsvc.Account, error) {
 	return nil, nil
 }
@@ -101,8 +96,12 @@ func (s *mockReposStore) UpsertRepos(context.Context, ...*repos.Repo) error {
 	return nil
 }
 
-func (s *mockReposStore) ListAllRepoNames(context.Context) ([]api.RepoName, error) {
-	return nil, nil
+func (s *mockReposStore) SetClonedRepos(ctx context.Context, repoNames ...string) error {
+	return nil
+}
+
+func (s *mockReposStore) CountNotClonedRepos(ctx context.Context) (uint64, error) {
+	return 0, nil
 }
 
 func TestPermsSyncer_syncUserPerms(t *testing.T) {
@@ -151,8 +150,6 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	}
 	permsStore := edb.NewPermsStore(nil, clock)
 	s := NewPermsSyncer(reposStore, permsStore, clock, nil)
-	s.metrics.syncDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{}, []string{"type", "success"})
-	s.metrics.syncErrors = prometheus.NewCounterVec(prometheus.CounterOpts{}, []string{"type"})
 
 	tests := []struct {
 		name     string
@@ -188,10 +185,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	}
 	newPermsSyncer := func(reposStore repos.Store) *PermsSyncer {
-		s := NewPermsSyncer(reposStore, edb.NewPermsStore(nil, clock), clock, nil)
-		s.metrics.syncDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{}, []string{"type", "success"})
-		s.metrics.syncErrors = prometheus.NewCounterVec(prometheus.CounterOpts{}, []string{"type"})
-		return s
+		return NewPermsSyncer(reposStore, edb.NewPermsStore(nil, clock), clock, nil)
 	}
 
 	t.Run("SetRepoPermissions is called when no authz provider", func(t *testing.T) {
@@ -416,7 +410,7 @@ func TestPermsSyncer_waitForRateLimit(t *testing.T) {
 
 	t.Run("not enough quota available", func(t *testing.T) {
 		rateLimiterRegistry := ratelimit.NewRegistry()
-		l := rateLimiterRegistry.GetRateLimiter("https://github.com/")
+		l := rateLimiterRegistry.Get("https://github.com/")
 		l.SetLimit(1)
 		s := NewPermsSyncer(nil, nil, nil, rateLimiterRegistry)
 

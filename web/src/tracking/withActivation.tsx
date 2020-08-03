@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import React from 'react'
 import { combineLatest, merge, Observable, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, first, map, scan, startWith, switchMap, tap } from 'rxjs/operators'
@@ -20,7 +20,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
     queryGraphQL(
         isSiteAdmin
             ? gql`
-                  query ActivationStatus {
+                  query SiteAdminActivationStatus {
                       externalServices {
                           totalCount
                       }
@@ -83,7 +83,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
  */
 const fetchReferencesLink = (): Observable<string | null> =>
     queryGraphQL(gql`
-        query {
+        query LinksForRepositories {
             repositories(cloned: true, first: 100, indexed: true) {
                 nodes {
                     url
@@ -119,6 +119,10 @@ const getActivationSteps = (authenticatedUser: GQL.IUser): ActivationStep[] => {
             id: 'ConnectedCodeHost',
             title: 'Add repositories',
             detail: 'Configure Sourcegraph to talk to your code host and fetch a list of your repositories.',
+            onClick: (event: React.MouseEvent<HTMLElement>, history: H.History) => {
+                event.preventDefault()
+                history.push('/site-admin/external-services/new')
+            },
             siteAdminOnly: true,
         },
         {

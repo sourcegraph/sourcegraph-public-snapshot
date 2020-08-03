@@ -89,7 +89,7 @@ exports[`HoverOverlay actions and hover present 1`] = `
   >
     <React.Fragment>
       <span
-        className="hover-overlay__content e2e-tooltip-content"
+        className="hover-overlay__content test-tooltip-content"
         dangerouslySetInnerHTML={
           Object {
             "__html": "<p>v</p>
@@ -109,7 +109,7 @@ exports[`HoverOverlay actions and hover present 1`] = `
           "id": "a",
         }
       }
-      className="hover-overlay__action e2e-tooltip-untitled"
+      className="hover-overlay__action test-tooltip-untitled"
       disabledDuringExecution={true}
       extensionsController={
         Object {
@@ -139,6 +139,7 @@ exports[`HoverOverlay actions and hover present 1`] = `
       telemetryService={
         Object {
           "log": [Function],
+          "logViewEvent": [Function],
         }
       }
       variant="actionItem"
@@ -186,7 +187,7 @@ exports[`HoverOverlay actions error, hover present 1`] = `
   >
     <React.Fragment>
       <span
-        className="hover-overlay__content e2e-tooltip-content"
+        className="hover-overlay__content test-tooltip-content"
         dangerouslySetInnerHTML={
           Object {
             "__html": "<p>v</p>
@@ -243,7 +244,7 @@ exports[`HoverOverlay actions present 1`] = `
           "title": "Some title",
         }
       }
-      className="hover-overlay__action e2e-tooltip-some-title"
+      className="hover-overlay__action test-tooltip-some-title"
       disabledDuringExecution={true}
       extensionsController={
         Object {
@@ -273,6 +274,7 @@ exports[`HoverOverlay actions present 1`] = `
       telemetryService={
         Object {
           "log": [Function],
+          "logViewEvent": [Function],
         }
       }
       variant="actionItem"
@@ -312,7 +314,7 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
           "id": "a",
         }
       }
-      className="hover-overlay__action e2e-tooltip-untitled"
+      className="hover-overlay__action test-tooltip-untitled"
       disabledDuringExecution={true}
       extensionsController={
         Object {
@@ -342,6 +344,7 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
       telemetryService={
         Object {
           "log": [Function],
+          "logViewEvent": [Function],
         }
       }
       variant="actionItem"
@@ -367,7 +370,7 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
   >
     <React.Fragment>
       <span
-        className="hover-overlay__content e2e-tooltip-content"
+        className="hover-overlay__content test-tooltip-content"
         dangerouslySetInnerHTML={
           Object {
             "__html": "<p>v</p>
@@ -383,23 +386,19 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
     <div
       className="hover-overlay__alert"
     >
+      <span
+        className="hover-overlay__content"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "<p>Testing <code>markdown</code> rendering.</p>
+",
+          }
+        }
+      />
       <div
-        className="hover-overlay__alert-content"
+        className="hover-overlay__alert-actions"
       >
-        <small>
-          <React.Fragment>
-            b 
-            <small>
-              c
-            </small>
-             
-            <code>
-              d
-            </code>
-          </React.Fragment>
-        </small>
         <a
-          className="hover-overlay__alert-close"
           href=""
           onClick={[Function]}
         >
@@ -420,7 +419,7 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
           "id": "a",
         }
       }
-      className="hover-overlay__action e2e-tooltip-untitled"
+      className="hover-overlay__action test-tooltip-untitled"
       disabledDuringExecution={true}
       extensionsController={
         Object {
@@ -450,6 +449,7 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
       telemetryService={
         Object {
           "log": [Function],
+          "logViewEvent": [Function],
         }
       }
       variant="actionItem"
@@ -515,7 +515,7 @@ exports[`HoverOverlay hover error, actions present 1`] = `
           "id": "a",
         }
       }
-      className="hover-overlay__action e2e-tooltip-untitled"
+      className="hover-overlay__action test-tooltip-untitled"
       disabledDuringExecution={true}
       extensionsController={
         Object {
@@ -545,6 +545,7 @@ exports[`HoverOverlay hover error, actions present 1`] = `
       telemetryService={
         Object {
           "log": [Function],
+          "logViewEvent": [Function],
         }
       }
       variant="actionItem"
@@ -595,7 +596,7 @@ exports[`HoverOverlay hover present 1`] = `
     className="hover-overlay__contents"
   >
     <span
-      className="hover-overlay__content e2e-tooltip-content"
+      className="hover-overlay__content test-tooltip-content"
       dangerouslySetInnerHTML={
         Object {
           "__html": "<p>v</p>
@@ -624,7 +625,7 @@ exports[`HoverOverlay hover present, actions loading 1`] = `
   >
     <React.Fragment>
       <span
-        className="hover-overlay__content e2e-tooltip-content"
+        className="hover-overlay__content test-tooltip-content"
         dangerouslySetInnerHTML={
           Object {
             "__html": "<p>v</p>
@@ -653,7 +654,7 @@ exports[`HoverOverlay multiple hovers present 1`] = `
     className="hover-overlay__contents"
   >
     <span
-      className="hover-overlay__content e2e-tooltip-content"
+      className="hover-overlay__content test-tooltip-content"
       dangerouslySetInnerHTML={
         Object {
           "__html": "<p>v</p>
@@ -663,7 +664,7 @@ exports[`HoverOverlay multiple hovers present 1`] = `
     />
     <hr />
     <span
-      className="hover-overlay__content e2e-tooltip-content"
+      className="hover-overlay__content test-tooltip-content"
       dangerouslySetInnerHTML={
         Object {
           "__html": "<p>v2</p>

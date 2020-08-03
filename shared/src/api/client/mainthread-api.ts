@@ -12,7 +12,7 @@ import { Services } from './services'
 export type MainThreadAPIDependencies = Pick<Services, 'commands' | 'workspace'>
 
 export const initMainThreadAPI = (
-    extentionHost: Remote<FlatExtHostAPI>,
+    extensionHost: Remote<FlatExtHostAPI>,
     platformContext: Pick<PlatformContext, 'updateSettings' | 'settings'>,
     dependencies: MainThreadAPIDependencies
 ): { api: MainThreadAPI; subscription: Subscription } => {
@@ -28,7 +28,7 @@ export const initMainThreadAPI = (
             .pipe(
                 switchMap(settings => {
                     if (isSettingsValid(settings)) {
-                        return extentionHost.syncSettingsData(settings)
+                        return extensionHost.syncSettingsData(settings)
                     }
                     return []
                 })
@@ -39,12 +39,12 @@ export const initMainThreadAPI = (
     // Workspace
     subscription.add(
         from(roots)
-            .pipe(concatMap(roots => extentionHost.syncRoots(roots)))
+            .pipe(concatMap(roots => extensionHost.syncRoots(roots)))
             .subscribe()
     )
     subscription.add(
         from(versionContext)
-            .pipe(concatMap(context => extentionHost.syncVersionContext(context)))
+            .pipe(concatMap(context => extensionHost.syncVersionContext(context)))
             .subscribe()
     )
 

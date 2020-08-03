@@ -10,8 +10,9 @@ import (
 
 func TestAndOrQuery_Validation(t *testing.T) {
 	cases := []struct {
-		input string
-		want  string
+		input      string
+		searchType SearchType // nil value is regexp
+		want       string
 	}{
 		{
 			input: "case:yes case:no",
@@ -45,10 +46,28 @@ func TestAndOrQuery_Validation(t *testing.T) {
 			input: "count:-1",
 			want:  "field count requires a positive number",
 		},
+		{
+			input: "+",
+			want:  "error parsing regexp: missing argument to repetition operator: `+`",
+		},
+		{
+			input: `\\\`,
+			want:  "error parsing regexp: trailing backslash at end of expression: ``",
+		},
+		{
+			input:      `-content:"foo"`,
+			want:       "The query contains a negated search pattern. Structural search does not support negated search patterns at the moment.",
+			searchType: SearchTypeStructural,
+		},
+		{
+			input:      `NOT foo`,
+			want:       "The query contains a negated search pattern. Structural search does not support negated search patterns at the moment.",
+			searchType: SearchTypeStructural,
+		},
 	}
 	for _, c := range cases {
 		t.Run("validate and/or query", func(t *testing.T) {
-			_, err := ProcessAndOr(c.input)
+			_, err := ProcessAndOr(c.input, ParserOptions{c.searchType, false})
 			if err == nil {
 				t.Fatal("expected test to fail")
 			}
@@ -85,7 +104,7 @@ func TestAndOrQuery_IsCaseSensitive(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			query, err := ProcessAndOr(c.input)
+			query, err := ProcessAndOr(c.input, ParserOptions{SearchTypeRegex, false})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -115,7 +134,7 @@ func TestAndOrQuery_RegexpPatterns(t *testing.T) {
 		},
 	}
 	t.Run("for regexp field", func(t *testing.T) {
-		query, err := ProcessAndOr(c.query)
+		query, err := ProcessAndOr(c.query, ParserOptions{SearchTypeRegex, false})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -130,7 +149,7 @@ func TestAndOrQuery_RegexpPatterns(t *testing.T) {
 }
 
 func TestAndOrQuery_CaseInsensitiveFields(t *testing.T) {
-	query, err := ProcessAndOr("repoHasFile:foo")
+	query, err := ProcessAndOr("repoHasFile:foo", ParserOptions{SearchTypeRegex, false})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -177,7 +196,7 @@ func TestPartitionSearchPattern(t *testing.T) {
 		},
 		{
 			input: "file:foo (x y)",
-			want:  `"file:foo" (concat "(x" "y)")`,
+			want:  `"file:foo" "(x y)"`,
 		},
 		{
 			input: "(file:foo x) y",
@@ -218,7 +237,7 @@ func TestPartitionSearchPattern(t *testing.T) {
 	}
 	for _, tt := range cases {
 		t.Run("partition search pattern", func(t *testing.T) {
-			q, _ := ParseAndOr(tt.input)
+			q, _ := ParseAndOr(tt.input, SearchTypeRegex)
 			scopeParameters, pattern, err := PartitionSearchPattern(q)
 			if err != nil {
 				if diff := cmp.Diff(tt.want, err.Error()); diff != "" {

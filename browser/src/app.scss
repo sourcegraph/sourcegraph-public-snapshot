@@ -26,6 +26,12 @@ $theme-colors-light: (
     display: flex;
 }
 
+// Note that we define this before selection highlights so that it will override
+// the styles of symbol that has both classes applied.
+.sourcegraph-document-highlight {
+    background-color: var(--secondary);
+}
+
 .selection-highlight,
 .selection-highlight span,
 .selection-highlight-sticky,

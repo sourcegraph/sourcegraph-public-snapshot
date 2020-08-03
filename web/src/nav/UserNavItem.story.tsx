@@ -26,29 +26,38 @@ const OpenUserNavItem: React.FunctionComponent<UserNavItem['props']> = props => 
     return <UserNavItem {...props} ref={openDropdown} />
 }
 
-add('Site admin', () => (
-    <MemoryRouter>
-        <OpenUserNavItem
-            authenticatedUser={{
-                username: 'alice',
-                avatarURL: null,
-                session: { __typename: 'Session', canSignOut: true },
-                settingsURL: '#',
-                siteAdmin: true,
-                organizations: {
-                    __typename: 'OrgConnection',
-                    totalCount: 3,
-                    nodes: [
-                        { id: '0', settingsURL: '#', displayName: 'Acme Corp' },
-                        { id: '1', settingsURL: '#', displayName: 'Beta Inc' },
-                    ] as GQL.IOrg[],
-                },
-            }}
-            isLightTheme={true}
-            themePreference={ThemePreference.Light}
-            location={H.createMemoryHistory().location}
-            onThemePreferenceChange={onThemePreferenceChange}
-            showDotComMarketing={true}
-        />
-    </MemoryRouter>
-))
+add(
+    'Site admin',
+    () => (
+        <MemoryRouter>
+            <OpenUserNavItem
+                authenticatedUser={{
+                    username: 'alice',
+                    avatarURL: null,
+                    session: { __typename: 'Session', canSignOut: true },
+                    settingsURL: '#',
+                    siteAdmin: true,
+                    organizations: {
+                        __typename: 'OrgConnection',
+                        totalCount: 3,
+                        nodes: [
+                            { id: '0', settingsURL: '#', displayName: 'Acme Corp' },
+                            { id: '1', settingsURL: '#', displayName: 'Beta Inc' },
+                        ] as GQL.IOrg[],
+                    },
+                }}
+                isLightTheme={true}
+                themePreference={ThemePreference.Light}
+                location={H.createMemoryHistory().location}
+                onThemePreferenceChange={onThemePreferenceChange}
+                showDotComMarketing={true}
+            />
+        </MemoryRouter>
+    ),
+    {
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=368%3A834',
+        },
+    }
+)

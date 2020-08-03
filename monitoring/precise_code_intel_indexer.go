@@ -17,6 +17,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 100},
 							PanelOptions:      PanelOptions().LegendFormat("indexes queued for processing"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -26,6 +27,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("index queue growth rate"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -36,6 +38,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -49,6 +52,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -58,6 +62,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("store operation"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -75,6 +80,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -84,6 +90,73 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							Owner:             ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+					},
+				},
+			},
+			{
+				Title:  "Index resetter - re-queues indexes that did not complete processing",
+				Hidden: true,
+				Rows: []Row{
+					{
+						{
+							Name:              "processing_indexes_reset",
+							Description:       "indexes reset to queued state every 5m",
+							Query:             `sum(increase(src_index_queue_resets_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("indexes"),
+							Owner:             ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "processing_indexes_reset_failures",
+							Description:       "indexes errored after repeated resets every 5m",
+							Query:             `sum(increase(src_index_queue_max_resets_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("indexes"),
+							Owner:             ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "index_resetter_errors",
+							Description:       "index resetter errors every 5m",
+							Query:             `sum(increase(src_index_queue_reset_errors_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							Owner:             ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+					},
+				},
+			},
+			{
+				Title:  "Janitor - synchronizes database and filesystem and keeps free space on disk",
+				Hidden: true,
+				Rows: []Row{
+					{
+						{
+							Name:              "janitor_errors",
+							Description:       "janitor errors every 5m",
+							Query:             `sum(increase(src_indexer_janitor_errors_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							Owner:             ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "janitor_indexes_removed",
+							Description:       "index records removed every 5m",
+							Query:             `sum(increase(src_indexer_janitor_index_records_removed_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("records removed"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -102,6 +175,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						{
@@ -111,6 +185,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}"),
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 					},
@@ -120,13 +195,49 @@ func PreciseCodeIntelIndexer() *Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on k8s or server)",
+				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("precise-code-intel-indexer"),
-						sharedContainerMemoryUsage("precise-code-intel-indexer"),
 						sharedContainerCPUUsage("precise-code-intel-indexer"),
+						sharedContainerMemoryUsage("precise-code-intel-indexer"),
+					},
+					{
+						sharedContainerRestarts("precise-code-intel-indexer"),
+						sharedContainerFsInodes("precise-code-intel-indexer"),
+					},
+				},
+			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage7d("precise-code-intel-indexer"),
+						sharedProvisioningMemoryUsage7d("precise-code-intel-indexer"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("precise-code-intel-indexer"),
+						sharedProvisioningMemoryUsage5m("precise-code-intel-indexer"),
+					},
+				},
+			},
+			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("precise-code-intel-indexer"),
+						sharedGoGcDuration("precise-code-intel-indexer"),
+					},
+				},
+			},
+			{
+				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedKubernetesPodsAvailable("precise-code-intel-indexer"),
 					},
 				},
 			},

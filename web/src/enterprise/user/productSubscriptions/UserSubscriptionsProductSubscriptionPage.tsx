@@ -81,28 +81,25 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<P
             ) : (
                 <>
                     <h2>Subscription {productSubscription.name}</h2>
-                    {(productSubscription.invoiceItem ||
-                        (productSubscription.activeLicense && productSubscription.activeLicense.info)) && (
+                    {(productSubscription.invoiceItem || productSubscription.activeLicense?.info) && (
                         <UserProductSubscriptionStatus
                             subscriptionName={productSubscription.name}
                             productNameWithBrand={
-                                productSubscription.activeLicense && productSubscription.activeLicense.info
+                                productSubscription.activeLicense?.info
                                     ? productSubscription.activeLicense.info.productNameWithBrand
                                     : productSubscription.invoiceItem!.plan.nameWithBrand
                             }
                             userCount={
-                                productSubscription.activeLicense && productSubscription.activeLicense.info
+                                productSubscription.activeLicense?.info
                                     ? productSubscription.activeLicense.info.userCount
                                     : productSubscription.invoiceItem!.userCount
                             }
                             expiresAt={
-                                productSubscription.activeLicense && productSubscription.activeLicense.info
+                                productSubscription.activeLicense?.info
                                     ? parseISO(productSubscription.activeLicense.info.expiresAt)
                                     : parseISO(productSubscription.invoiceItem!.expiresAt)
                             }
-                            licenseKey={
-                                productSubscription.activeLicense && productSubscription.activeLicense.licenseKey
-                            }
+                            licenseKey={productSubscription.activeLicense?.licenseKey ?? null}
                         />
                     )}
                     <div className="card mt-3">
@@ -153,12 +150,12 @@ function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscrip
             query ProductSubscription($uuid: String!) {
                 dotcom {
                     productSubscription(uuid: $uuid) {
-                        ...ProductSubscriptionFields
+                        ...ProductSubscriptionFieldsOnSubscriptionPage
                     }
                 }
             }
 
-            fragment ProductSubscriptionFields on ProductSubscription {
+            fragment ProductSubscriptionFieldsOnSubscriptionPage on ProductSubscription {
                 id
                 name
                 account {

@@ -49,6 +49,9 @@ type CommitsOptions struct {
 	// gitserver doesn't already contain a clone of the repository or if the
 	// commit must be fetched from the remote.
 	RemoteURLFunc func() (string, error)
+
+	// When true we opt out of attempting to fetch missing revisions
+	NoEnsureRevision bool
 }
 
 // logEntryPattern is the regexp pattern that matches entries in the output of the `git shortlog
@@ -56,7 +59,7 @@ type CommitsOptions struct {
 var logEntryPattern = lazyregexp.New(`^\s*([0-9]+)\s+(.*)$`)
 
 // getCommit returns the commit with the given id.
-func getCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (string, error), id api.CommitID) (*Commit, error) {
+func getCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (string, error), id api.CommitID, opt ResolveRevisionOptions) (*Commit, error) {
 	if Mocks.GetCommit != nil {
 		return Mocks.GetCommit(id)
 	}
@@ -65,7 +68,14 @@ func getCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (s
 		return nil, err
 	}
 
-	commits, err := commitLog(ctx, repo, CommitsOptions{Range: string(id), N: 1, RemoteURLFunc: remoteURLFunc})
+	commitOptions := CommitsOptions{
+		Range:            string(id),
+		N:                1,
+		RemoteURLFunc:    remoteURLFunc,
+		NoEnsureRevision: opt.NoEnsureRevision,
+	}
+
+	commits, err := commitLog(ctx, repo, commitOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -83,12 +93,12 @@ func getCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (s
 // The remoteURLFunc is called to get the Git remote URL if it's not set in repo and if it is
 // needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
 // the repository or if the commit must be fetched from the remote.
-func GetCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (string, error), id api.CommitID) (*Commit, error) {
+func GetCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (string, error), id api.CommitID, opt ResolveRevisionOptions) (*Commit, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: GetCommit")
 	span.SetTag("Commit", id)
 	defer span.Finish()
 
-	return getCommit(ctx, repo, remoteURLFunc, id)
+	return getCommit(ctx, repo, remoteURLFunc, id, opt)
 }
 
 // Commits returns all commits matching the options.
@@ -101,7 +111,7 @@ func Commits(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) ([]*C
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
-	if err := checkSpecArgSafety(string(opt.Range)); err != nil {
+	if err := checkSpecArgSafety(opt.Range); err != nil {
 		return nil, err
 	}
 
@@ -120,7 +130,7 @@ func HasCommitAfter(ctx context.Context, repo gitserver.Repo, date string, revsp
 		revspec = "HEAD"
 	}
 
-	commitid, err := ResolveRevision(ctx, repo, nil, revspec, &ResolveRevisionOptions{NoEnsureRevision: true})
+	commitid, err := ResolveRevision(ctx, repo, nil, revspec, ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
 		return false, err
 	}
@@ -152,7 +162,9 @@ func commitLog(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) (co
 
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = repo
-	cmd.EnsureRevision = opt.Range
+	if !opt.NoEnsureRevision {
+		cmd.EnsureRevision = opt.Range
+	}
 	retryer := &commandRetryer{
 		cmd:           cmd,
 		remoteURLFunc: opt.RemoteURLFunc,
@@ -167,12 +179,13 @@ func commitLog(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) (co
 
 // runCommitLog sends the git command to gitserver. It interprets missing
 // revision responses and converts them into RevisionNotFoundError.
-func runCommitLog(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) ([]*Commit, error) {
+// It is declared as a variable so that we can swap it out in tests
+var runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) ([]*Commit, error) {
 	data, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		data = bytes.TrimSpace(data)
-		if isBadObjectErr(string(stderr), string(opt.Range)) {
-			return nil, &gitserver.RevisionNotFoundError{Repo: cmd.Repo.Name, Spec: string(opt.Range)}
+		if isBadObjectErr(string(stderr), opt.Range) {
+			return nil, &gitserver.RevisionNotFoundError{Repo: cmd.Repo.Name, Spec: opt.Range}
 		}
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, data))
 	}
@@ -193,7 +206,7 @@ func runCommitLog(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) (
 }
 
 func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err error) {
-	if err := checkSpecArgSafety(string(opt.Range)); err != nil {
+	if err := checkSpecArgSafety(opt.Range); err != nil {
 		return nil, err
 	}
 

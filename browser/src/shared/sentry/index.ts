@@ -9,7 +9,7 @@ import { DEFAULT_SOURCEGRAPH_URL, getExtensionVersion, observeSourcegraphURL } f
 const IS_EXTENSION = true
 
 const isExtensionStackTrace = (stacktrace: Sentry.Stacktrace, extensionID: string): boolean =>
-    !!(stacktrace.frames && stacktrace.frames.some(({ filename }) => !!filename?.includes(extensionID)))
+    !!stacktrace.frames?.some(({ filename }) => !!filename?.includes(extensionID))
 
 const callSentryInit = once((extensionID: string) => {
     Sentry.init({
@@ -18,7 +18,7 @@ const callSentryInit = once((extensionID: string) => {
             // Filter out events if we can tell from the stack trace that
             // they didn't originate from extension code.
             let keep = true
-            if (event.exception && event.exception.values) {
+            if (event.exception?.values) {
                 keep = event.exception.values.some(
                     ({ stacktrace }) => !!(stacktrace && isExtensionStackTrace(stacktrace, extensionID))
                 )

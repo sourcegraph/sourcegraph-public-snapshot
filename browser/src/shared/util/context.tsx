@@ -28,7 +28,10 @@ export function getAssetsURL(sourcegraphURL: string): string {
     return assetsURL.endsWith('/') ? assetsURL : assetsURL + '/'
 }
 
-type PlatformName = NonNullable<typeof globalThis.SOURCEGRAPH_INTEGRATION> | 'firefox-extension' | 'chrome-extension'
+export type PlatformName =
+    | NonNullable<typeof globalThis.SOURCEGRAPH_INTEGRATION>
+    | 'firefox-extension'
+    | 'chrome-extension'
 
 export function getPlatformName(): PlatformName {
     if (window.SOURCEGRAPH_PHABRICATOR_EXTENSION) {
@@ -37,7 +40,7 @@ export function getPlatformName(): PlatformName {
     if (window.SOURCEGRAPH_INTEGRATION) {
         return window.SOURCEGRAPH_INTEGRATION
     }
-    return isFirefoxExtension() ? 'firefox-extension' : 'chrome-extension'
+    return isFirefox() ? 'firefox-extension' : 'chrome-extension'
 }
 
 export function getExtensionVersion(): string {
@@ -49,6 +52,6 @@ export function getExtensionVersion(): string {
     return 'NO_VERSION'
 }
 
-function isFirefoxExtension(): boolean {
+export function isFirefox(): boolean {
     return window.navigator.userAgent.includes('Firefox')
 }

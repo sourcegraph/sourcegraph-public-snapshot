@@ -170,7 +170,7 @@ const GitHubSchemaJSON = `{
       "type": "object",
       "properties": {
         "ttl": {
-          "description": "The TTL of how long to cache permissions data. This is 3 hours by default.\n\nDecreasing the TTL will increase the load on the code host API. If you have X private repositories on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur up to X*Y/100 API requests per cache refresh period (depending on user activity).\n\nIf set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).\n\nPublic repositories are cached once for all users per cache TTL period.",
+          "description": "DEPRECATED: The TTL of how long to cache permissions data. This is 3 hours by default.\n\nDecreasing the TTL will increase the load on the code host API. If you have X private repositories on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur up to X*Y/100 API requests per cache refresh period (depending on user activity).\n\nIf set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).\n\nPublic repositories are cached once for all users per cache TTL period.",
           "type": "string",
           "default": "3h"
         }

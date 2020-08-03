@@ -5,8 +5,8 @@ package query
 type Visitor interface {
 	VisitNodes(v Visitor, node []Node)
 	VisitOperator(v Visitor, kind operatorKind, operands []Node)
-	VisitParameter(v Visitor, field, value string, negated bool)
-	VisitPattern(v Visitor, value string, negated bool, Annotation Annotation)
+	VisitParameter(v Visitor, field, value string, negated bool, annotation Annotation)
+	VisitPattern(v Visitor, value string, negated bool, annotation Annotation)
 }
 
 // BaseVisitor is a visitor that recursively visits each node in a query. A
@@ -20,7 +20,7 @@ func (*BaseVisitor) VisitNodes(visitor Visitor, nodes []Node) {
 		case Pattern:
 			visitor.VisitPattern(visitor, v.Value, v.Negated, v.Annotation)
 		case Parameter:
-			visitor.VisitParameter(visitor, v.Field, v.Value, v.Negated)
+			visitor.VisitParameter(visitor, v.Field, v.Value, v.Negated, v.Annotation)
 		case Operator:
 			visitor.VisitOperator(visitor, v.Kind, v.Operands)
 		default:
@@ -33,9 +33,10 @@ func (*BaseVisitor) VisitOperator(visitor Visitor, kind operatorKind, operands [
 	visitor.VisitNodes(visitor, operands)
 }
 
-func (*BaseVisitor) VisitParameter(visitor Visitor, field, value string, negated bool) {}
+func (*BaseVisitor) VisitParameter(visitor Visitor, field, value string, negated bool, annotation Annotation) {
+}
 
-func (*BaseVisitor) VisitPattern(visitor Visitor, value string, negated bool, Annotation Annotation) {
+func (*BaseVisitor) VisitPattern(visitor Visitor, value string, negated bool, annotation Annotation) {
 }
 
 // ParameterVisitor is a helper visitor that only visits operators in a query,
@@ -54,22 +55,22 @@ func (s *OperatorVisitor) VisitOperator(visitor Visitor, kind operatorKind, oper
 // and supplies the parameter members via a callback.
 type ParameterVisitor struct {
 	BaseVisitor
-	callback func(field, value string, negated bool)
+	callback func(field, value string, negated bool, annotation Annotation)
 }
 
-func (s *ParameterVisitor) VisitParameter(visitor Visitor, field, value string, negated bool) {
-	s.callback(field, value, negated)
+func (s *ParameterVisitor) VisitParameter(visitor Visitor, field, value string, negated bool, annotation Annotation) {
+	s.callback(field, value, negated, annotation)
 }
 
 // PatternVisitor is a helper visitor that only visits patterns in a query,
 // and supplies the pattern members via a callback.
 type PatternVisitor struct {
 	BaseVisitor
-	callback func(value string, negated bool, Annotation Annotation)
+	callback func(value string, negated bool, annotation Annotation)
 }
 
-func (s *PatternVisitor) VisitPattern(visitor Visitor, value string, negated bool, Annotation Annotation) {
-	s.callback(value, negated, Annotation)
+func (s *PatternVisitor) VisitPattern(visitor Visitor, value string, negated bool, annotation Annotation) {
+	s.callback(value, negated, annotation)
 }
 
 // FieldVisitor is a helper visitor that only visits parameter fields in a
@@ -78,12 +79,12 @@ func (s *PatternVisitor) VisitPattern(visitor Visitor, value string, negated boo
 type FieldVisitor struct {
 	BaseVisitor
 	field    string
-	callback func(value string, negated bool)
+	callback func(value string, negated bool, annotation Annotation)
 }
 
-func (s *FieldVisitor) VisitParameter(visitor Visitor, field, value string, negated bool) {
+func (s *FieldVisitor) VisitParameter(visitor Visitor, field, value string, negated bool, annotation Annotation) {
 	if s.field == field {
-		s.callback(value, negated)
+		s.callback(value, negated, annotation)
 	}
 }
 
@@ -97,7 +98,7 @@ func VisitOperator(nodes []Node, callback func(kind operatorKind, operands []Nod
 // VisitParameter is a convenience function that calls callback on all parameter
 // nodes. callback supplies the node's field, value, and whether the value is
 // negated.
-func VisitParameter(nodes []Node, callback func(field, value string, negated bool)) {
+func VisitParameter(nodes []Node, callback func(field, value string, negated bool, annotation Annotation)) {
 	visitor := &ParameterVisitor{callback: callback}
 	visitor.VisitNodes(visitor, nodes)
 }
@@ -105,7 +106,7 @@ func VisitParameter(nodes []Node, callback func(field, value string, negated boo
 // VisitPattern is a convenience function that calls callback on all pattern
 // nodes. callback supplies the node's value value, and whether the value is
 // negated or quoted.
-func VisitPattern(nodes []Node, callback func(value string, negated bool, Annotation Annotation)) {
+func VisitPattern(nodes []Node, callback func(value string, negated bool, annotation Annotation)) {
 	visitor := &PatternVisitor{callback: callback}
 	visitor.VisitNodes(visitor, nodes)
 }
@@ -113,7 +114,7 @@ func VisitPattern(nodes []Node, callback func(value string, negated bool, Annota
 // VisitField convenience function that calls callback on all parameter nodes
 // whose field matches the field argument. callback supplies the node's value
 // and whether the value is negated.
-func VisitField(nodes []Node, field string, callback func(value string, negated bool)) {
+func VisitField(nodes []Node, field string, callback func(value string, negated bool, annotation Annotation)) {
 	visitor := &FieldVisitor{callback: callback, field: field}
 	visitor.VisitNodes(visitor, nodes)
 }

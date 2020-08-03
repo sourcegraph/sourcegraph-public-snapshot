@@ -1,11 +1,12 @@
 digraph architecture {
-    label="Sourcegraph Code Intelligence Architecture Overview"
+    label="Precise code intelligence architecture overview"
     rankdir=TD
     ratio=fill
-    concentrate=true
-    ranksep=1.4
+    ranksep=1.0
     nodesep=0.4
     stylesheet="/assets/architecture.css"
+    splines="compound"
+    compound=true
 
     graph [
         fontname="Iosevka"
@@ -31,87 +32,70 @@ digraph architecture {
         arrowsize=1.35
     ]
 
-    subgraph cluster_frontend {
-        label="Sourcegraph frontend"
-        rank="same"
+    subgraph cluster_services {
+        label=""
         graph [style="dotted"]
         node [fillcolor="1"]
 
-        frontend_graphqlbackend [
-            label="graphql backend"
-        ]
+        subgraph cluster_bundle_manager_services {
+            label=""
+            graph [style="dotted"]
+            node [fillcolor="2"]
 
-        frontend_gitserver_proxy [
-            label="gitserver proxy"
-        ]
+            bundle_manager [
+                label="Bundle manager"
+                URL="https://github.com/sourcegraph/sourcegraph/tree/master/enterprise/cmd/precise-code-intel-bundle-manager"
+            ]
 
-        frontend_config [
-            label="config"
-        ]
-    }
+            disk [
+                label="Disk"
+                shape="cylinder"
+                fillcolor="white"
+            ]
+        }
 
-    subgraph cluster_services {
-        label="Precise code intel system"
-        rank="same"
-        graph [style="dotted"]
-        node [fillcolor="2"]
-
-        api_server [
-            label="api server"
+        indexer [
+            label="Indexer"
             fillcolor="3"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/master/enterprise/cmd/precise-code-intel-api-server"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/master/enterprise/cmd/precise-code-intel-worker"
         ]
+
         worker [
-            label="worker"
+            label="Worker"
             fillcolor="4"
             URL="https://github.com/sourcegraph/sourcegraph/tree/master/enterprise/cmd/precise-code-intel-worker"
         ]
-        bundle_manager [
-            label="bundle manager"
-            fillcolor="5"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/master/enterprise/cmd/precise-code-intel-bundle-manager"
+    }
+
+    subgraph cluster_frontend {
+        label="Frontend"
+        graph [style="dotted"]
+        node [fillcolor="5"]
+
+        http_api [
+            label="LSIF upload endpoint"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/master/enterprise/internal/codeintel/httpapi"
+        ]
+
+        graphql_resolvers [
+            label="GraphQL resolvers"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/master/enterprise/internal/codeintel/resolvers/graphql"
         ]
     }
 
-    subgraph cluster_databases {
-        label="Databases"
-        rank="same"
-        graph [style="dotted"]
-        node [shape="cylinder"]
-
-        postgres [label="postgres"]
-        volume [label="volume"]
-    }
-
-    frontend_graphqlbackend -> {
-        api_server
-    } [
-        fillcolor="1"
+    dbs [
+        label="Postgres / Gitserver"
+        shape="cylinder"
+        fillcolor="6"
     ]
 
-    api_server -> {
-        bundle_manager,
-        postgres,
-        frontend_config
-    } [
-        fillcolor="3"
-    ]
+    graphql_resolvers:s -> bundle_manager:n [fillcolor="1"];
+    http_api:s -> bundle_manager:n [fillcolor="1"];
+    bundle_manager:s -> disk:n [fillcolor="2"];
 
-    worker -> {
-        bundle_manager,
-        postgres,
-        frontend_gitserver_proxy,
-        frontend_config
-    } [
-        fillcolor="4"
-    ]
-
-    bundle_manager -> {
-        api_server,
-        volume,
-        postgres,
-        frontend_config
-    } [
-        fillcolor="5"
-    ]
+    graphql_resolvers:s -> dbs:n [fillcolor="6"];
+    http_api:s -> dbs:n [fillcolor="6"];
+    bundle_manager:s -> dbs:n [fillcolor="6"];
+    indexer:s -> dbs:n [fillcolor="6"];
+    worker:s -> dbs:n [fillcolor="6"];
 }

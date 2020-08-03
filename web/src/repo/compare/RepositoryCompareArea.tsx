@@ -24,7 +24,7 @@ import {
     ResolvedRevisionSpec,
     RevisionSpec,
 } from '../../../../shared/src/util/url'
-import { getHover } from '../../backend/features'
+import { getHover, getDocumentHighlights } from '../../backend/features'
 import { HeroPage } from '../../components/HeroPage'
 import { WebHoverOverlay } from '../../components/shared'
 import { EventLoggerProps } from '../../tracking/eventLogger'
@@ -123,6 +123,8 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
                 filter(property('hoverOverlayElement', isDefined))
             ),
             getHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
+            getDocumentHighlights: hoveredToken =>
+                getDocumentHighlights(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
             getActions: context => getHoverActions(this.props, context),
             pinningEnabled: true,
         })

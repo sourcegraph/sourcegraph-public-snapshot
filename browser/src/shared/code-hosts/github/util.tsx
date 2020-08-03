@@ -2,7 +2,7 @@ import { RawRepoSpec } from '../../../../../shared/src/util/url'
 import { DiffResolvedRevSpec } from '../../repo'
 
 /**
- * getFileContainers returns the elements on the page which should be marked
+ * Returns the elements on the page which should be marked
  * up with tooltips & links:
  *
  * 1. blob view: a single file
@@ -52,7 +52,7 @@ function getPathNamesFromElement(element: HTMLElement): { headFilePath: string; 
 }
 
 /**
- * getDiffResolvedRev returns the base and head revision SHA, or null for non-diff views.
+ * Returns the base and head revision SHA, or null for non-diff views.
  */
 export function getDiffResolvedRevision(codeView: HTMLElement): DiffResolvedRevSpec | null {
     const { pageType } = parseURL()
@@ -209,8 +209,9 @@ export function getFilePath(): string {
     const url = new URL(permalink.href)
     // <empty>/<user>/<repo>/(blob|tree)/<commitID>/<path/to/file>
     // eslint-disable-next-line unicorn/no-unreadable-array-destructuring
-    const [, , , , , ...path] = url.pathname.split('/')
-    if (path.length === 0) {
+    const [, , , pageType, , ...path] = url.pathname.split('/')
+    // Check for page type because a tree page can be the repo root, so it shouldn't throw an error despite an empty path
+    if (pageType !== 'tree' && path.length === 0) {
         throw new Error(
             `Unable to determine the file path because the a.js-permalink-shortcut element's href's path was ${url.pathname} (it is expected to be of the form /<user>/<repo>/blob/<commitID>/<path/to/file>).`
         )

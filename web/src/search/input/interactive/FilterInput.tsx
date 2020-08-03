@@ -75,6 +75,11 @@ interface Props extends Pick<InteractiveSearchProps, 'filtersInQuery'> {
     isHomepage: boolean
 
     /**
+     * Whether globbing is enabled for filters.
+     */
+    globbing: boolean
+
+    /**
      * Callback that handles a filter input being submitted. Triggers a search
      * with the new query value.
      */
@@ -190,7 +195,7 @@ export class FilterInput extends React.Component<Props, State> {
                         const suggestions = fetchSuggestions(fullQuery).pipe(
                             map((suggestions): Suggestion[] =>
                                 suggestions
-                                    .map(createSuggestion)
+                                    .map(item => createSuggestion(item, props.globbing))
                                     .filter(isDefined)
                                     .map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true }))
                                     .filter(suggestion => {
@@ -395,7 +400,7 @@ export class FilterInput extends React.Component<Props, State> {
             <div
                 className={`${classNames(
                     'filter-input',
-                    `e2e-filter-input-${this.props.mapKey}`,
+                    `test-filter-input-${this.props.mapKey}`,
                     { 'filter-input--active-homepage': isEditableAndText && this.props.isHomepage },
                     { 'filter-input--active': isEditableAndText && !this.props.isHomepage }
                 )}`}
@@ -444,7 +449,7 @@ export class FilterInput extends React.Component<Props, State> {
                                     <div className="filter-input__input-wrapper">
                                         <input
                                             ref={this.inputEl}
-                                            className={`form-control form-control-sm filter-input__input-field e2e-filter-input__input-field-${this.props.mapKey}`}
+                                            className={`form-control form-control-sm filter-input__input-field test-filter-input__input-field-${this.props.mapKey}`}
                                             value={this.state.inputValue}
                                             onChange={this.onInputUpdate}
                                             onKeyDown={event => {
@@ -455,7 +460,7 @@ export class FilterInput extends React.Component<Props, State> {
                                         />
                                         {showSuggestions && (
                                             <ul
-                                                className="filter-input__suggestions e2e-filter-input__suggestions"
+                                                className="filter-input__suggestions test-filter-input__suggestions"
                                                 {...getMenuProps()}
                                             >
                                                 {this.state.suggestions === LOADING ? (
@@ -489,7 +494,7 @@ export class FilterInput extends React.Component<Props, State> {
                                     <button
                                         type="button"
                                         onClick={this.handleDiscard}
-                                        className={`btn btn-icon icon-inline e2e-filter-input__cancel-button-${this.props.mapKey}`}
+                                        className={`btn btn-icon icon-inline test-filter-input__cancel-button-${this.props.mapKey}`}
                                         aria-label="Cancel"
                                         data-tooltip="Cancel"
                                     >
@@ -507,7 +512,7 @@ export class FilterInput extends React.Component<Props, State> {
     private renderFiniteFilterForm(): JSX.Element {
         return (
             <Form onSubmit={this.onSubmitInput}>
-                <div className="filter-input__form e2e-filter-input-finite-form">
+                <div className="filter-input__form test-filter-input-finite-form">
                     <div className="filter-input__radio-button-container">
                         <span>{`${FilterTypeToProseNames[this.props.filterType]}:`}</span>
                         {isFiniteFilter(this.props.filterType) &&
@@ -515,7 +520,7 @@ export class FilterInput extends React.Component<Props, State> {
                                 <div key={value.value} className="filter-input__radio">
                                     <input
                                         type="radio"
-                                        className={`e2e-filter-input-radio-button-${value.value}`}
+                                        className={`test-filter-input-radio-button-${value.value}`}
                                         id={value.value}
                                         name={value.value}
                                         onChange={() => this.setState({ inputValue: value.value })}
@@ -532,7 +537,7 @@ export class FilterInput extends React.Component<Props, State> {
                     <button
                         type="button"
                         onClick={this.handleDiscard}
-                        className={`btn btn-icon icon-inline e2e-filter-input__cancel-button-${this.props.mapKey}`}
+                        className={`btn btn-icon icon-inline test-filter-input__cancel-button-${this.props.mapKey}`}
                         aria-label="Cancel"
                         data-tooltip="Cancel"
                     >
@@ -548,7 +553,7 @@ export class FilterInput extends React.Component<Props, State> {
             <div className="filter-input--uneditable d-flex">
                 <button
                     type="button"
-                    className={`filter-input__button-text btn text-nowrap e2e-filter-input__button-text-${this.props.mapKey}`}
+                    className={`filter-input__button-text btn text-nowrap test-filter-input__button-text-${this.props.mapKey}`}
                     onClick={this.onClickFilterChip}
                     data-tooltip="Edit filter"
                     aria-label="Edit filter"
@@ -560,7 +565,7 @@ export class FilterInput extends React.Component<Props, State> {
                 <button
                     type="button"
                     onClick={this.onClickDelete}
-                    className="btn btn-icon icon-inline e2e-filter-input__delete-button"
+                    className="btn btn-icon icon-inline test-filter-input__delete-button"
                     aria-label="Delete filter"
                     data-tooltip="Delete filter"
                 >

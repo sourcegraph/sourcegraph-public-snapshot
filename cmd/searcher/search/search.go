@@ -188,9 +188,13 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 		}
 	}(time.Now())
 
-	rg, err := compile(&p.PatternInfo)
-	if err != nil {
-		return nil, false, false, badRequestError{err.Error()}
+	// Compile pattern before fetching from store incase it is bad.
+	var rg *readerGrep
+	if !p.IsStructuralPat {
+		rg, err = compile(&p.PatternInfo)
+		if err != nil {
+			return nil, false, false, badRequestError{err.Error()}
+		}
 	}
 
 	if p.FetchTimeout == "" {

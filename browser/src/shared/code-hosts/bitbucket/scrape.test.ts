@@ -40,8 +40,8 @@ describe('Bitbucket scrape.ts', () => {
             })
             const fileInfo = getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(codeView)
             expect(fileInfo).toStrictEqual({
-                baseFilePath: undefined,
-                baseRawRepoName: undefined,
+                changeType: 'ADD',
+                baseFilePath: 'dir/new_file.go',
                 filePath: 'dir/new_file.go',
                 project: 'SOURCEGRAPH',
                 repoSlug: 'mux',
@@ -58,8 +58,8 @@ describe('Bitbucket scrape.ts', () => {
             })
             const fileInfo = getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(codeView)
             expect(fileInfo).toStrictEqual({
+                changeType: 'MODIFY',
                 baseFilePath: 'dir/mux.go',
-                baseRawRepoName: 'bitbucket.test/SOURCEGRAPH/mux',
                 filePath: 'dir/mux.go',
                 project: 'SOURCEGRAPH',
                 repoSlug: 'mux',
@@ -76,8 +76,8 @@ describe('Bitbucket scrape.ts', () => {
             })
             const fileInfo = getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(codeView)
             expect(fileInfo).toStrictEqual({
+                changeType: 'DELETE',
                 baseFilePath: 'dir/old_test.go',
-                baseRawRepoName: 'bitbucket.test/SOURCEGRAPH/mux',
                 filePath: 'dir/old_test.go', // TODO should really be undefined?
                 project: 'SOURCEGRAPH',
                 repoSlug: 'mux',
@@ -94,8 +94,8 @@ describe('Bitbucket scrape.ts', () => {
             })
             const fileInfo = getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(codeView)
             expect(fileInfo).toStrictEqual({
+                changeType: 'COPY',
                 baseFilePath: 'dir/mux.go',
-                baseRawRepoName: 'bitbucket.test/SOURCEGRAPH/mux',
                 filePath: 'dir/mux.1.go',
                 project: 'SOURCEGRAPH',
                 repoSlug: 'mux',
@@ -112,8 +112,8 @@ describe('Bitbucket scrape.ts', () => {
             })
             const fileInfo = getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(codeView)
             expect(fileInfo).toStrictEqual({
+                changeType: 'RENAME',
                 baseFilePath: 'dir/mux_test.go',
-                baseRawRepoName: 'bitbucket.test/SOURCEGRAPH/mux',
                 filePath: 'dir/mux_test_moved.go',
                 project: 'SOURCEGRAPH',
                 repoSlug: 'mux',
@@ -130,8 +130,8 @@ describe('Bitbucket scrape.ts', () => {
             })
             const fileInfo = getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(codeView)
             expect(fileInfo).toStrictEqual({
+                changeType: 'MOVE',
                 baseFilePath: 'dir/route.go',
-                baseRawRepoName: 'bitbucket.test/SOURCEGRAPH/mux',
                 filePath: 'dir/test-dir/route.go',
                 project: 'SOURCEGRAPH',
                 repoSlug: 'mux',

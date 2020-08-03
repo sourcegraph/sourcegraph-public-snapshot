@@ -1,5 +1,6 @@
 import { isEqual } from 'lodash'
 import { combineLatest, from, Observable, ObservableInput, of, Subscribable } from 'rxjs'
+import { fromFetch } from 'rxjs/fetch'
 import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
 import {
     ConfiguredExtension,
@@ -15,7 +16,6 @@ import { isDefined } from '../../../util/types'
 import { ModelService } from './modelService'
 import { checkOk } from '../../../backend/fetch'
 import { ExtensionManifest } from '../../../schema/extensionSchema'
-import { fromFetch } from '../../../graphql/fromFetch'
 
 /**
  * The information about an extension necessary to execute and activate it.
@@ -38,7 +38,7 @@ interface SideloadedExtensionManifest extends Omit<ExtensionManifest, 'url'> {
 }
 
 const getConfiguredSideloadedExtension = (baseUrl: string): Observable<ConfiguredExtension> =>
-    fromFetch(`${baseUrl}/package.json`, undefined, response => checkOk(response).json()).pipe(
+    fromFetch(`${baseUrl}/package.json`, { selector: response => checkOk(response).json() }).pipe(
         map(
             (response: SideloadedExtensionManifest): ConfiguredExtension => ({
                 id: response.name,
@@ -51,8 +51,13 @@ const getConfiguredSideloadedExtension = (baseUrl: string): Observable<Configure
         )
     )
 
-interface PartialContext extends Pick<PlatformContext, 'requestGraphQL' | 'getScriptURLForExtension' | 'settings'> {
+export interface PartialContext
+    extends Pick<PlatformContext, 'requestGraphQL' | 'getScriptURLForExtension' | 'settings'> {
     sideloadedExtensionURL: Subscribable<string | null>
+}
+
+export interface IExtensionsService {
+    activeExtensions: Subscribable<ExecutableExtension[]>
 }
 
 /**
@@ -61,7 +66,7 @@ interface PartialContext extends Pick<PlatformContext, 'requestGraphQL' | 'getSc
  * @internal This is an internal implementation detail and is different from the product feature called the
  * "extension registry" (where users can search for and enable extensions).
  */
-export class ExtensionsService {
+export class ExtensionsService implements IExtensionsService {
     constructor(
         private platformContext: PartialContext,
         private modelService: Pick<ModelService, 'activeLanguages'>,

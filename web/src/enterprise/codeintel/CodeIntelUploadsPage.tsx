@@ -10,29 +10,41 @@ import { Link } from '../../../../shared/src/components/Link'
 import { PageTitle } from '../../components/PageTitle'
 import { RouteComponentProps } from 'react-router'
 import { Timestamp } from '../../components/time/Timestamp'
-import { deleteLsifUpload, fetchLsifUploads } from './backend'
+import { fetchLsifUploads as defaultFetchLsifUploads, deleteLsifUpload, Upload } from './backend'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../components/alerts'
 import { Subject } from 'rxjs'
 import * as H from 'history'
 
-export interface LsifUploadNodeProps {
-    node: GQL.ILSIFUpload
+const Header: FunctionComponent<{}> = () => (
+    <thead>
+        <tr>
+            <th>Repository</th>
+            <th>Commit</th>
+            <th>Indexer</th>
+            <th>Root</th>
+            <th>State</th>
+            <th>Last Activity</th>
+            <th />
+        </tr>
+    </thead>
+)
+
+export interface UploadNodeProps {
+    node: Upload
     onDelete: () => void
     history: H.History
+
+    /** Function that returns the current time (for stability in visual tests). */
+    now?: () => Date
 }
 
-const LsifUploadNode: FunctionComponent<LsifUploadNodeProps> = ({ node, onDelete, history }) => {
+const UploadNode: FunctionComponent<UploadNodeProps> = ({ node, onDelete, history, now }) => {
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
 
     const deleteUpload = async (): Promise<void> => {
-        let description = `commit ${node.inputCommit.slice(0, 7)}`
-        if (node.inputRoot) {
-            description += ` rooted at ${node.inputRoot}`
-        }
-
-        if (!window.confirm(`Delete upload for commit ${description}?`)) {
+        if (!window.confirm('Are you sure you want to delete this upload?')) {
             return
         }
 
@@ -49,97 +61,131 @@ const LsifUploadNode: FunctionComponent<LsifUploadNodeProps> = ({ node, onDelete
     return deletionOrError && isErrorLike(deletionOrError) ? (
         <ErrorAlert prefix="Error deleting LSIF upload" error={deletionOrError} history={history} />
     ) : (
-        <div className="w-100 list-group-item py-2 align-items-center lsif-data__main">
-            <div className="lsif-data__meta">
-                <div className="lsif-data__meta-root">
-                    Upload for commit
-                    <code className="ml-1 mr-1 e2e-upload-commit">
-                        {node.projectRoot ? (
-                            <Link to={node.projectRoot.commit.url}>
-                                <code>{node.projectRoot.commit.abbreviatedOID}</code>
-                            </Link>
-                        ) : (
-                            node.inputCommit.slice(0, 7)
-                        )}
-                    </code>
-                    indexed by
-                    <span className="ml-1 mr-1">{node.inputIndexer}</span>
-                    rooted at
-                    <span className="ml-1 e2e-upload-root">
-                        {node.projectRoot ? (
-                            <Link to={node.projectRoot.url}>
-                                <strong>{node.projectRoot.path || '/'}</strong>
-                            </Link>
-                        ) : (
-                            node.inputRoot || '/'
-                        )}
+        <tr>
+            <td>
+                {node.projectRoot ? (
+                    <Link to={node.projectRoot.repository.url}>
+                        <code>{node.projectRoot.repository.name}</code>
+                    </Link>
+                ) : (
+                    'unknown'
+                )}
+            </td>
+            <td>
+                <code>
+                    {node.projectRoot ? (
+                        <Link to={node.projectRoot.commit.url}>
+                            <code>{node.projectRoot.commit.abbreviatedOID}</code>
+                        </Link>
+                    ) : (
+                        node.inputCommit.slice(0, 7)
+                    )}
+                </code>
+            </td>
+            <td>{node.inputIndexer}</td>
+            <td>
+                {node.projectRoot ? (
+                    <Link to={node.projectRoot.url}>
+                        <strong>{node.projectRoot.path || '/'}</strong>
+                    </Link>
+                ) : (
+                    node.inputRoot || '/'
+                )}
+            </td>
+            <td>
+                <Link to={`./uploads/${node.id}`}>
+                    {node.state === GQL.LSIFUploadState.UPLOADING ? (
+                        <span>Uploading</span>
+                    ) : node.state === GQL.LSIFUploadState.PROCESSING ? (
+                        <span>Processing</span>
+                    ) : node.state === GQL.LSIFUploadState.COMPLETED ? (
+                        <span className="text-success">Completed</span>
+                    ) : node.state === GQL.LSIFUploadState.ERRORED ? (
+                        <span className="text-danger">Failed to process</span>
+                    ) : (
+                        <span>Waiting to process (#{node.placeInQueue} in line)</span>
+                    )}
+                </Link>
+            </td>
+            <td>
+                {node.finishedAt ? (
+                    <span>
+                        Completed <Timestamp date={node.finishedAt} now={now} noAbout={true} />
                     </span>
-                    <span className="ml-2">
-                        -
-                        <span className="ml-2">
-                            <Link to={`./uploads/${node.id}`}>
-                                {node.state === GQL.LSIFUploadState.UPLOADING ? (
-                                    <span>Uploading</span>
-                                ) : node.state === GQL.LSIFUploadState.PROCESSING ? (
-                                    <span>Processing</span>
-                                ) : node.state === GQL.LSIFUploadState.COMPLETED ? (
-                                    <span className="text-success">Processed</span>
-                                ) : node.state === GQL.LSIFUploadState.ERRORED ? (
-                                    <span className="text-danger">Failed to process</span>
-                                ) : (
-                                    <span>Waiting to process (#{node.placeInQueue} in line)</span>
-                                )}
-                            </Link>
-                        </span>
+                ) : node.startedAt ? (
+                    <span>
+                        Started <Timestamp date={node.startedAt} now={now} noAbout={true} />
                     </span>
-                </div>
-            </div>
-
-            <small className="text-muted lsif-data__meta-timestamp">
-                <Timestamp noAbout={true} date={node.finishedAt || node.startedAt || node.uploadedAt} />
-
+                ) : (
+                    <span>
+                        Uploaded <Timestamp date={node.uploadedAt} now={now} noAbout={true} />
+                    </span>
+                )}
+            </td>
+            <td>
                 <button
                     type="button"
-                    className="btn btn-sm btn-danger lsif-data__meta-delete"
+                    className="btn btn-sm btn-danger"
                     onClick={deleteUpload}
                     disabled={deletionOrError === 'loading'}
                     data-tooltip="Delete upload"
                 >
                     <DeleteIcon className="icon-inline" />
                 </button>
-            </small>
-        </div>
+            </td>
+        </tr>
     )
 }
 
 interface Props extends RouteComponentProps<{}> {
     repo?: GQL.IRepository
+    fetchLsifUploads?: typeof defaultFetchLsifUploads
+
+    /** Function that returns the current time (for stability in visual tests). */
+    now?: () => Date
 }
 
 /**
  * The repository settings code intel uploads page.
  */
-export const CodeIntelUploadsPage: FunctionComponent<Props> = ({ repo, ...props }) => {
+export const CodeIntelUploadsPage: FunctionComponent<Props> = ({
+    repo,
+    fetchLsifUploads = defaultFetchLsifUploads,
+    now,
+    ...props
+}) => {
     useEffect(() => eventLogger.logViewEvent('CodeIntelUploads'), [])
 
     const filters: FilteredConnectionFilter[] = [
-        {
-            label: 'Only current',
-            id: 'current',
-            tooltip: 'Show current uploads only',
-            args: { isLatestForRepo: true },
-        },
-        {
-            label: 'Only completed',
-            id: 'completed',
-            tooltip: 'Show completed uploads only',
-            args: { state: GQL.LSIFUploadState.COMPLETED },
-        },
         {
             label: 'All',
             id: 'all',
             tooltip: 'Show all uploads',
             args: {},
+        },
+        {
+            label: 'Current',
+            id: 'current',
+            tooltip: 'Show current uploads only',
+            args: { isLatestForRepo: true },
+        },
+        {
+            label: 'Completed',
+            id: 'completed',
+            tooltip: 'Show completed uploads only',
+            args: { state: GQL.LSIFUploadState.COMPLETED },
+        },
+        {
+            label: 'Errored',
+            id: 'errored',
+            tooltip: 'Show errored uploads only',
+            args: { state: GQL.LSIFUploadState.ERRORED },
+        },
+        {
+            label: 'Queued',
+            id: 'queued',
+            tooltip: 'Show queued uploads only',
+            args: { state: GQL.LSIFUploadState.QUEUED },
         },
     ]
 
@@ -150,13 +196,13 @@ export const CodeIntelUploadsPage: FunctionComponent<Props> = ({ repo, ...props 
 
     const queryUploads = useCallback(
         (args: FilteredConnectionQueryArgs) => fetchLsifUploads({ repository: repo?.id, ...args }),
-        [repo?.id]
+        [repo?.id, fetchLsifUploads]
     )
 
     return (
-        <div className="repo-settings-code-intelligence-page">
-            <PageTitle title="Code intelligence - uploads" />
-            <h2>Code intelligence - precise code intel uploads</h2>
+        <div className="code-intel-uploads">
+            <PageTitle title="Precise code intelligence uploads" />
+            <h2>Precise code intelligence uploads</h2>
             <p>
                 Enable precise code intelligence by{' '}
                 <a
@@ -175,19 +221,22 @@ export const CodeIntelUploadsPage: FunctionComponent<Props> = ({ repo, ...props 
                 intelligence for historic and branch commits.
             </p>
 
-            <FilteredConnection<GQL.ILSIFUpload, Omit<LsifUploadNodeProps, 'node'>>
-                className="list-group list-group-flush mt-3"
+            <FilteredConnection<Upload, Omit<UploadNodeProps, 'node'>>
+                className="mt-3"
+                listComponent="table"
+                listClassName="table"
                 noun="upload"
                 pluralNoun="uploads"
+                headComponent={Header}
+                nodeComponent={UploadNode}
+                nodeComponentProps={{ onDelete: onDeleteCallback, history: props.history, now }}
                 queryConnection={queryUploads}
-                nodeComponent={LsifUploadNode}
-                nodeComponentProps={{ onDelete: onDeleteCallback, history: props.history }}
                 updates={onDeleteSubject}
                 history={props.history}
                 location={props.location}
-                listClassName="list-group list-group-flush"
                 cursorPaging={true}
                 filters={filters}
+                defaultFilter="current"
             />
         </div>
     )

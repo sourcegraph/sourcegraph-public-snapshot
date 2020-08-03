@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import React from 'react'
 import { Observable } from 'rxjs'
 import { PanelViewWithComponent, PanelViewProviderRegistrationOptions } from '../../api/client/services/panelViews'

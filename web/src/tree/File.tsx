@@ -60,7 +60,7 @@ export const File: React.FunctionComponent<FileProps> = props => (
                 )
             ) : (
                 <Link
-                    className="tree__row-contents"
+                    className="tree__row-contents test-tree-file-link"
                     to={props.entryInfo.url}
                     onClick={props.linkRowClick}
                     data-tree-path={props.entryInfo.path}

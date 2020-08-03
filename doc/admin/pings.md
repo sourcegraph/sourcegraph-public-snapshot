@@ -4,7 +4,7 @@ Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and
 
 ## Critical telemetry
 
-Critical telemetry includes only the high-level data below required for billing, support, updates, and security notices. This cannot be disabled.
+Critical telemetry includes only the high-level data below required for billing, support, updates, and security notices.
 
 - Randomly generated site identifier
 - The email address of the initial site installer (or if deleted, the first active site admin), to know who to contact regarding sales, product updates, security updates, and policy updates
@@ -16,7 +16,7 @@ Critical telemetry includes only the high-level data below required for billing,
 
 ## Other telemetry
 
-By default, Sourcegraph also aggregates usage and performance metrics for some product features. No personal or specific information is ever included. Starting in May 2020 (Sourcegraph version 3.16), Sourcegraph admins can disable the telemetry items below by setting the `DisableNonCriticalTelemetry` setting to `true` on the **Site-admin** > **Site configuration** page.
+By default, Sourcegraph also aggregates usage and performance metrics for some product features. No personal or specific information is ever included.
 
 - Whether the instance is deployed on localhost (true/false)
 - Which category of authentication provider is in use (built-in, OpenID Connect, an HTTP proxy, SAML, GitHub, GitLab)
@@ -36,6 +36,7 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
   - Code intelligence events (e.g., hover tooltips) 
   - Searches using each search mode (interactive search, plain-text search)
   - Searches using each search filter (e.g. "type:", "repo:", "file:", "lang:", etc.)
+<!-- depends-on-source: ~/cmd/frontend/internal/usagestats/campaigns.go -->
 - Campaign usage data
   - Total count of created campaigns
   - Total count of changesets created by campaigns

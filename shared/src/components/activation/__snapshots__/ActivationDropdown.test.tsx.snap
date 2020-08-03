@@ -60,11 +60,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
           "Consumer": Object {
             "$$typeof": Symbol(react.context),
             "_calculateChangedBits": null,
-            "_context": [Circular],
+            "_context": "[Cyclic structure]",
           },
           "Provider": Object {
             "$$typeof": Symbol(react.provider),
-            "_context": [Circular],
+            "_context": "[Cyclic structure]",
           },
           "_calculateChangedBits": null,
           "_currentRenderer": Object {},
@@ -87,12 +87,12 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
       set={[Function]}
     >
       <MenuButton
-        className="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center e2e-activation-nav-item-toggle"
+        className="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center test-activation-nav-item-toggle"
       >
         <button
           aria-controls="menu--1"
           aria-haspopup={true}
-          className="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center e2e-activation-nav-item-toggle"
+          className="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center test-activation-nav-item-toggle"
           data-reach-menu-button=""
           id="menu-button--menu--1"
           onKeyDown={[Function]}
@@ -173,7 +173,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
               background={false}
               backgroundPadding={0}
               circleRatio={1}
-              className="activation-dropdown-button__circular-progress-bar"
+              className="activation-dropdown-button__circular-progress-bar test-activation-progress-bar"
               classes={
                 Object {
                   "background": "CircularProgressbar-background",
@@ -200,7 +200,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
               value={0}
             >
               <svg
-                className="CircularProgressbar activation-dropdown-button__circular-progress-bar"
+                className="CircularProgressbar activation-dropdown-button__circular-progress-bar test-activation-progress-bar"
                 data-test-id="CircularProgressbar"
                 style={Object {}}
                 viewBox="0 0 100 100"
@@ -276,7 +276,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
               "current": <button
                 aria-controls="menu--1"
                 aria-haspopup="true"
-                class="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center e2e-activation-nav-item-toggle"
+                class="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center test-activation-nav-item-toggle"
                 data-reach-menu-button=""
                 id="menu-button--menu--1"
                 type="button"
@@ -300,7 +300,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                   class="activation-dropdown-button__progress-bar-container"
                 >
                   <svg
-                    class="CircularProgressbar activation-dropdown-button__circular-progress-bar"
+                    class="CircularProgressbar activation-dropdown-button__circular-progress-bar test-activation-progress-bar"
                     data-test-id="CircularProgressbar"
                     viewBox="0 0 100 100"
                   >
@@ -742,7 +742,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                     "current": <button
                       aria-controls="menu--1"
                       aria-haspopup="true"
-                      class="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center e2e-activation-nav-item-toggle"
+                      class="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center test-activation-nav-item-toggle"
                       data-reach-menu-button=""
                       id="menu-button--menu--1"
                       type="button"
@@ -766,7 +766,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                         class="activation-dropdown-button__progress-bar-container"
                       >
                         <svg
-                          class="CircularProgressbar activation-dropdown-button__circular-progress-bar"
+                          class="CircularProgressbar activation-dropdown-button__circular-progress-bar test-activation-progress-bar"
                           data-test-id="CircularProgressbar"
                           viewBox="0 0 100 100"
                         >
@@ -938,11 +938,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                               "Consumer": Object {
                                 "$$typeof": Symbol(react.context),
                                 "_calculateChangedBits": null,
-                                "_context": [Circular],
+                                "_context": "[Cyclic structure]",
                               },
                               "Provider": Object {
                                 "$$typeof": Symbol(react.provider),
-                                "_context": [Circular],
+                                "_context": "[Cyclic structure]",
                               },
                               "_calculateChangedBits": null,
                               "_currentRenderer": Object {},

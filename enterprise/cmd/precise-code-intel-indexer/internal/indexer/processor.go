@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/codeintelutils"
@@ -74,6 +75,8 @@ func (p *processor) upload(ctx context.Context, repoDir string, index store.Inde
 		Indexer:             "lsif-go",
 		File:                filepath.Join(repoDir, "dump.lsif"),
 		MaxPayloadSizeBytes: 100 * 1000 * 1000, // 100Mb
+		MaxRetries:          10,
+		RetryInterval:       time.Second * 250,
 	}
 
 	if _, err := codeintelutils.UploadIndex(opts); err != nil {

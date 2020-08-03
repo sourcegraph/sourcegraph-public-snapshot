@@ -1,8 +1,10 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
-Object {
-  "children": <Collapsible
+<li
+  className="list-group-item test-changeset-node"
+>
+  <Collapsible
     expandedButtonClassName="mb-3"
     title={
       <div
@@ -21,7 +23,7 @@ Object {
                 className="m-0 d-inline"
               >
                 <ChangesetStateIcon
-                  state="OPEN"
+                  externalState="OPEN"
                 />
                 <LinkOrSpan
                   rel="noopener noreferrer"
@@ -50,7 +52,6 @@ Object {
                 <ChangesetLabel
                   label={
                     Object {
-                      "__typename": "ChangesetLabel",
                       "color": "93ba13",
                       "description": "Something is broken",
                       "text": "bug",
@@ -72,54 +73,39 @@ Object {
                 </AnchorLink>
               </strong>
               <ChangesetLastSynced
-                campaignUpdates={
-                  Subject {
-                    "_isScalar": false,
-                    "closed": false,
-                    "hasError": false,
-                    "isStopped": false,
-                    "observers": Array [],
-                    "thrownError": null,
-                  }
-                }
+                campaignUpdates="[Subject]"
                 changeset={
                   Object {
                     "__typename": "ExternalChangeset",
                     "body": "We should remove lodash",
                     "checkState": "FAILED",
-                    "diff": Object {
-                      "fileDiffs": Object {
-                        "diffStat": Object {
-                          "added": 100,
-                          "changed": 200,
-                          "deleted": 100,
-                        },
-                        "nodes": Array [
-                          Object {
-                            "__typename": "FileDiff",
-                          },
-                        ],
-                      },
+                    "createdAt": "2020-01-01T00:00:00.000Z",
+                    "diffStat": Object {
+                      "added": 100,
+                      "changed": 200,
+                      "deleted": 100,
                     },
                     "externalID": "123",
+                    "externalState": "OPEN",
                     "externalURL": Object {
                       "url": "https://github.com/sourcegraph/sourcegraph/pull/111111",
                     },
+                    "id": "TestExternalChangeset",
                     "labels": Array [
                       Object {
-                        "__typename": "ChangesetLabel",
                         "color": "93ba13",
                         "description": "Something is broken",
                         "text": "bug",
                       },
                     ],
+                    "nextSyncAt": null,
                     "repository": Object {
-                      "__typename": "Repository",
+                      "id": "TestRepository",
                       "name": "sourcegraph",
                       "url": "github.com/sourcegraph/sourcegraph",
                     },
                     "reviewState": "PENDING",
-                    "state": "OPEN",
+                    "state": "UNPUBLISHED",
                     "title": "Remove lodash",
                     "updatedAt": "2020-01-01T00:00:00.000Z",
                   }
@@ -156,101 +142,27 @@ Object {
       cursorPaging={true}
       defaultFirst={15}
       hideSearch={true}
-      history={
-        Object {
-          "action": "POP",
-          "block": [Function],
-          "canGo": [Function],
-          "createHref": [Function],
-          "entries": Array [
-            Object {
-              "hash": "",
-              "key": undefined,
-              "pathname": "/",
-              "search": "",
-              "state": undefined,
-            },
-          ],
-          "go": [Function],
-          "goBack": [Function],
-          "goForward": [Function],
-          "index": 0,
-          "length": 1,
-          "listen": [Function],
-          "location": Object {
-            "hash": "",
-            "key": undefined,
-            "pathname": "/",
-            "search": "",
-            "state": undefined,
-          },
-          "push": [Function],
-          "replace": [Function],
-        }
-      }
+      history="[History]"
       listClassName="list-group list-group-flush"
-      location={
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/campaigns",
-          "search": "",
-          "state": undefined,
-        }
-      }
+      location="[Location path=/campaigns]"
       noSummaryIfAllNodesVisible={true}
       nodeComponent={[Function]}
       nodeComponentProps={
         Object {
           "extensionInfo": undefined,
-          "history": Object {
-            "action": "POP",
-            "block": [Function],
-            "canGo": [Function],
-            "createHref": [Function],
-            "entries": Array [
-              Object {
-                "hash": "",
-                "key": undefined,
-                "pathname": "/",
-                "search": "",
-                "state": undefined,
-              },
-            ],
-            "go": [Function],
-            "goBack": [Function],
-            "goForward": [Function],
-            "index": 0,
-            "length": 1,
-            "listen": [Function],
-            "location": Object {
-              "hash": "",
-              "key": undefined,
-              "pathname": "/",
-              "search": "",
-              "state": undefined,
-            },
-            "push": [Function],
-            "replace": [Function],
-          },
+          "history": "[History]",
           "isLightTheme": true,
           "lineNumbers": true,
-          "location": Object {
-            "hash": "",
-            "key": undefined,
-            "pathname": "/campaigns",
-            "search": "",
-            "state": undefined,
-          },
+          "location": "[Location path=/campaigns]",
           "persistLines": true,
         }
       }
       noun="changed file"
       pluralNoun="changed files"
       queryConnection={[Function]}
+      updateOnChange="TestRepository"
       useURLQuery={false}
     />
-  </Collapsible>,
-  "className": "list-group-item e2e-changeset-node",
-}
+  </Collapsible>
+</li>
 `;

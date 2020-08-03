@@ -205,8 +205,8 @@ export async function getGlobalSettings(
     }
     return {
         subjectID: globalSettingsSubject.id,
-        settingsID: globalSettingsSubject.latestSettings && globalSettingsSubject.latestSettings.id,
-        contents: (globalSettingsSubject.latestSettings && globalSettingsSubject.latestSettings.contents) || '',
+        settingsID: globalSettingsSubject.latestSettings?.id ?? null,
+        contents: globalSettingsSubject.latestSettings?.contents || '',
     }
 }
 
@@ -317,7 +317,7 @@ export async function loginToGitHub(driver: Driver, username: string, password: 
 }
 
 export async function loginToGitLab(driver: Driver, username: string, password: string): Promise<void> {
-    await driver.page.waitForSelector('input[name="user[login]"]', { timeout: 2000 })
+    await driver.page.waitForSelector('input[name="user[login]"]', { timeout: 10000 })
     await driver.replaceText({
         selector: '#user_login',
         newText: username,

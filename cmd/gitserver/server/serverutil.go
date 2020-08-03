@@ -34,6 +34,20 @@ func (dir GitDir) Path(elem ...string) string {
 	return filepath.Join(append([]string{string(dir)}, elem...)...)
 }
 
+// Set updates cmd so that it will run in dir.
+//
+// Note: GitDir is always a valid GIT_DIR, so we additionally set the
+// environment variable GIT_DIR. This is to avoid git doing discovery in case
+// of a bad repo, leading to hard to diagnose error messages.
+func (dir GitDir) Set(cmd *exec.Cmd) {
+	cmd.Dir = string(dir)
+	if cmd.Env == nil {
+		// Do not strip out existing env when setting.
+		cmd.Env = os.Environ()
+	}
+	cmd.Env = append(cmd.Env, "GIT_DIR="+string(dir))
+}
+
 func (s *Server) dir(name api.RepoName) GitDir {
 	path := string(protocol.NormalizeRepo(name))
 	return GitDir(filepath.Join(s.ReposDir, filepath.FromSlash(path), ".git"))
@@ -260,7 +274,7 @@ var repoRemoteURL = func(ctx context.Context, dir GitDir) (string, error) {
 	// logging around what this function does, so having to handle context
 	// failures in each case is verbose. Rather just prevent that.
 	cmd := exec.Command("git", "remote", "get-url", "origin")
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr

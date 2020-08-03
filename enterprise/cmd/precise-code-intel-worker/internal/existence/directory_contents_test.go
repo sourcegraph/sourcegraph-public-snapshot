@@ -1,6 +1,7 @@
 package existence
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -16,7 +17,7 @@ func TestDirectoryContents(t *testing.T) {
 	}
 
 	var requests [][]string
-	mockGetChildrenFunc := func(dirnames []string) (map[string][]string, error) {
+	mockGetChildrenFunc := func(ctx context.Context, dirnames []string) (map[string][]string, error) {
 		out := map[string][]string{}
 		for _, dirname := range dirnames {
 			out[dirname] = gitContentsOracle[dirname]
@@ -39,7 +40,7 @@ func TestDirectoryContents(t *testing.T) {
 		paths = append(paths, fmt.Sprintf("web/node_modules/%d/deeply/nested/lib/file.ts", i))
 	}
 
-	values, err := directoryContents("", paths, mockGetChildrenFunc)
+	values, err := directoryContents(context.Background(), "", paths, mockGetChildrenFunc)
 	if err != nil {
 		t.Fatalf("unexpected error getting directory contents: %s", err)
 	}
@@ -87,7 +88,7 @@ func TestDirectoryContentsWithRoot(t *testing.T) {
 	}
 
 	var requests [][]string
-	mockGetChildrenFunc := func(dirnames []string) (map[string][]string, error) {
+	mockGetChildrenFunc := func(ctx context.Context, dirnames []string) (map[string][]string, error) {
 		out := map[string][]string{}
 		for _, dirname := range dirnames {
 			out[dirname] = gitContentsOracle[dirname]
@@ -106,7 +107,7 @@ func TestDirectoryContentsWithRoot(t *testing.T) {
 		"web/shared/quux.generated.ts",
 	}
 
-	values, err := directoryContents("root", paths, mockGetChildrenFunc)
+	values, err := directoryContents(context.Background(), "root", paths, mockGetChildrenFunc)
 	if err != nil {
 		t.Fatalf("unexpected error getting directory contents: %s", err)
 	}

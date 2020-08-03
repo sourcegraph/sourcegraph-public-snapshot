@@ -30,15 +30,7 @@ exports[`UserNavItem simple 1`] = `
         }
       }
       isLightTheme={true}
-      location={
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
-        }
-      }
+      location="[Location path=/]"
       onThemePreferenceChange={[Function]}
       showDotComMarketing={true}
       themePreference="light"
@@ -69,7 +61,7 @@ exports[`UserNavItem simple 1`] = `
               <DropdownToggle
                 aria-haspopup={true}
                 caret={true}
-                className="bg-transparent d-flex align-items-center e2e-user-nav-item-toggle"
+                className="bg-transparent d-flex align-items-center test-user-nav-item-toggle"
                 color="secondary"
                 nav={true}
               >
@@ -80,7 +72,7 @@ exports[`UserNavItem simple 1`] = `
                     <a
                       aria-expanded={false}
                       aria-haspopup={true}
-                      className="bg-transparent d-flex align-items-center e2e-user-nav-item-toggle dropdown-toggle nav-link"
+                      className="bg-transparent d-flex align-items-center test-user-nav-item-toggle dropdown-toggle nav-link"
                       href="#"
                       onClick={[Function]}
                     >
@@ -209,7 +201,7 @@ exports[`UserNavItem simple 1`] = `
                         Theme
                       </div>
                       <select
-                        className="custom-select custom-select-sm e2e-theme-toggle"
+                        className="custom-select custom-select-sm test-theme-toggle"
                         onChange={[Function]}
                         value="light"
                       >

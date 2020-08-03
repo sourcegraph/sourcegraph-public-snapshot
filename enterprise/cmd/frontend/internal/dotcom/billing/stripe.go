@@ -6,7 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/app"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	stripe "github.com/stripe/stripe-go"
+	"github.com/stripe/stripe-go"
 )
 
 var (

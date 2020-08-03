@@ -38,6 +38,7 @@ import {
     CaseSensitivityProps,
     SmartSearchFieldProps,
     CopyQueryButtonProps,
+    RepogroupHomepageProps,
 } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -57,6 +58,8 @@ import { VersionContextProps } from '../../shared/src/search/util'
 import { VersionContext } from './schema/site.schema'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { Settings } from './schema/settings.schema'
+import { Remote } from 'comlink'
+import { FlatExtHostAPI } from '../../shared/src/api/contract'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -73,7 +76,8 @@ export interface LayoutProps
         InteractiveSearchProps,
         SmartSearchFieldProps,
         CopyQueryButtonProps,
-        VersionContextProps {
+        VersionContextProps,
+        RepogroupHomepageProps {
     exploreSections: readonly ExploreSectionDescriptor[]
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -114,12 +118,12 @@ export interface LayoutProps
         version: string,
         patternType: GQL.SearchPatternType,
         versionContext: string | undefined,
-        { extensionsController }: ExtensionsControllerProps<'services'>
+        extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
     ) => Observable<GQL.ISearchResults | ErrorLike>
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
     previousVersionContext: string | null
-
+    globbing: boolean
     isSourcegraphDotCom: boolean
     showCampaigns: boolean
     children?: never
@@ -130,10 +134,14 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
 
+    // Hack! Hardcode these routes into cmd/frontend/internal/app/ui/router.go
+    const repogroupPages = ['/refactor-python2-to-3', '/kubernetes', '/golang', '/react-hooks', '/android']
+    const isRepogroupPage = repogroupPages.includes(props.location.pathname)
+
     const needsSiteInit = window.context.needsSiteInit
     const isSiteInit = props.location.pathname === '/site-admin/init'
 
-    const hideGlobalSearchInput: GlobalNavbar['props']['hideGlobalSearchInput'] =
+    const hideGlobalSearchInput: boolean =
         props.location.pathname === '/stats' || props.location.pathname === '/search/query-builder'
 
     useScrollToLocationHash(props.location)
@@ -161,8 +169,15 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 <GlobalNavbar
                     {...props}
                     isSearchRelatedPage={isSearchRelatedPage}
-                    lowProfile={isSearchHomepage}
-                    hideGlobalSearchInput={hideGlobalSearchInput}
+                    variant={
+                        hideGlobalSearchInput
+                            ? 'no-search-input'
+                            : isSearchHomepage
+                            ? 'low-profile'
+                            : isRepogroupPage
+                            ? 'low-profile-with-logo'
+                            : 'default'
+                    }
                     hideNavLinks={false}
                 />
             )}

@@ -16,8 +16,9 @@ import (
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
@@ -200,15 +201,19 @@ func uniques(dayStart time.Time, period *UsageDuration) (*ActiveUsers, error) {
 		if err != nil && err != redis.ErrNil {
 			return nil, err
 		}
+	nextValue:
 		for _, id := range values {
-			bid := id.([]byte)
-			sid := string(bid)
+			sid := string(id.([]byte))
 			allUniqueUserIDs[sid] = true
-			if len(bid) != 36 { // id is a numerical Sourcegraph user id, not an anonymous user's UUID
-				registeredUserIDs[sid] = true
-			} else {
-				anonymousUserIDs[sid] = true
+
+			// If any character is not a digit, then treat it as an anonymous user ID.
+			for _, s := range sid {
+				if s < '0' || s > '9' {
+					anonymousUserIDs[sid] = true
+					continue nextValue
+				}
 			}
+			registeredUserIDs[sid] = true
 		}
 
 		d = d.AddDate(0, 0, -1)

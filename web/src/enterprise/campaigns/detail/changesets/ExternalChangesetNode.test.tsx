@@ -1,14 +1,14 @@
 import * as H from 'history'
 import React from 'react'
-import { createRenderer } from 'react-test-renderer/shallow'
 import { ExternalChangesetNode } from './ExternalChangesetNode'
 import {
     ChangesetReviewState,
     ChangesetState,
-    IExternalChangeset,
     ChangesetCheckState,
+    ChangesetExternalState,
 } from '../../../../../../shared/src/graphql/schema'
 import { Subject } from 'rxjs'
+import { shallow } from 'enzyme'
 
 jest.mock('mdi-react/AccountCheckIcon', () => 'AccountCheckIcon')
 jest.mock('mdi-react/AccountAlertIcon', () => 'AccountAlertIcon')
@@ -21,18 +21,19 @@ describe('ExternalChangesetNode', () => {
     const history = H.createMemoryHistory({ keyLength: 0 })
     const location = H.createLocation('/campaigns')
     test('renders an externalchangeset', () => {
-        const renderer = createRenderer()
-        renderer.render(
-            <ExternalChangesetNode
-                isLightTheme={true}
-                history={history}
-                location={location}
-                viewerCanAdminister={true}
-                node={
-                    {
+        expect(
+            shallow(
+                <ExternalChangesetNode
+                    isLightTheme={true}
+                    history={history}
+                    location={location}
+                    viewerCanAdminister={true}
+                    node={{
                         __typename: 'ExternalChangeset',
+                        id: 'TestExternalChangeset',
                         reviewState: ChangesetReviewState.PENDING,
-                        state: ChangesetState.OPEN,
+                        state: ChangesetState.UNPUBLISHED,
+                        externalState: ChangesetExternalState.OPEN,
                         externalURL: {
                             url: 'https://github.com/sourcegraph/sourcegraph/pull/111111',
                         },
@@ -40,36 +41,30 @@ describe('ExternalChangesetNode', () => {
                         body: 'We should remove lodash',
                         checkState: ChangesetCheckState.FAILED,
                         externalID: '123',
-                        diff: {
-                            fileDiffs: {
-                                diffStat: {
-                                    added: 100,
-                                    changed: 200,
-                                    deleted: 100,
-                                },
-                                nodes: [{ __typename: 'FileDiff' }],
-                            },
+                        diffStat: {
+                            added: 100,
+                            changed: 200,
+                            deleted: 100,
                         },
                         labels: [
                             {
-                                __typename: 'ChangesetLabel',
                                 color: '93ba13',
                                 description: 'Something is broken',
                                 text: 'bug',
                             },
                         ],
                         repository: {
-                            __typename: 'Repository',
                             name: 'sourcegraph',
                             url: 'github.com/sourcegraph/sourcegraph',
+                            id: 'TestRepository',
                         },
+                        createdAt: new Date('2020-01-01').toISOString(),
                         updatedAt: new Date('2020-01-01').toISOString(),
-                    } as IExternalChangeset
-                }
-                campaignUpdates={new Subject<void>()}
-            />
-        )
-        const result = renderer.getRenderOutput()
-        expect(result.props).toMatchSnapshot()
+                        nextSyncAt: null,
+                    }}
+                    campaignUpdates={new Subject<void>()}
+                />
+            )
+        ).toMatchSnapshot()
     })
 })

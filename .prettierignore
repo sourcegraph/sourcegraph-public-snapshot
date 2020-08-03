@@ -4,7 +4,7 @@ client/phabricator/scripts/loader.js
 browser/build
 **/package.json
 **/coverage
-cmd/frontend/db/schema.md
+internal/db/schema.md
 cmd/xlang-python/python-langserver/
 package-lock.json
 package.json
@@ -20,10 +20,11 @@ testdata
 .github/*
 doc/
 **/.cache
-shared/dev/**/*.js
 **/__snapshots__
 **/*.html
 client/contrib/GH2SG.bookmarklet.js
 docker-images/grafana/jsonnet/*.json
 docker-images/grafana/grafonnet-lib/
+docker-images/grafana/config/provisioning/dashboards/sourcegraph/
+storybook-static/
 !/.storybook/**

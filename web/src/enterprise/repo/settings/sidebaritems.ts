@@ -12,6 +12,7 @@ const codeIntelSettingsGroup = {
         {
             to: '/code-intelligence/indexes',
             label: 'Auto indexing',
+            condition: () => Boolean(window.context?.sourcegraphDotComMode),
         },
     ],
 }
@@ -31,7 +32,6 @@ export const enterpriseRepoSettingsSidebarGroups: RepoSettingsSideBarGroups = re
                         to: '/permissions',
                         exact: true,
                         label: 'Permissions',
-                        condition: () => !!window.context.site['permissions.backgroundSync']?.enabled,
                     },
                 ],
             },

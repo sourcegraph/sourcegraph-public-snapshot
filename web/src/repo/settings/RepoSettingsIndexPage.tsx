@@ -95,11 +95,7 @@ const TextSearchIndexedReference: React.FunctionComponent<{
                     &nbsp;&mdash; indexed at{' '}
                     <code>
                         <LinkOrSpan
-                            to={
-                                indexedRef.indexedCommit && indexedRef.indexedCommit.commit
-                                    ? indexedRef.indexedCommit.commit.url
-                                    : repo.url
-                            }
+                            to={indexedRef.indexedCommit?.commit ? indexedRef.indexedCommit.commit.url : repo.url}
                         >
                             {indexedRef.indexedCommit!.abbreviatedOID}
                         </LinkOrSpan>

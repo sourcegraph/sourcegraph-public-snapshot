@@ -29,14 +29,14 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
                 <h1 className="flex-grow-1 text-nowrap">
                     <InsightsIcon className="icon-inline" /> Insights{' '}
                     <sup>
-                        <span className="badge badge-primary">prototype</span>
+                        <span className="badge badge-primary text-uppercase">prototype</span>
                     </sup>
                 </h1>
                 {/* These buttons are just links until there is a proper configuration UI */}
                 <Link to="/user/settings" className="btn btn-secondary mr-1">
                     <GearIcon className="icon-inline" /> Configure insights
                 </Link>
-                <Link to="/extensions?query=insights" className="btn btn-secondary">
+                <Link to="/extensions?query=category:Insights" className="btn btn-secondary">
                     <PlusIcon className="icon-inline" /> Add more insights
                 </Link>
             </div>

@@ -7,10 +7,10 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -164,7 +164,7 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 		}
 		return grepo.URL, nil
 	}
-	return git.ResolveRevision(ctx, *gitserverRepo, remoteURLFunc, rev, nil)
+	return git.ResolveRevision(ctx, *gitserverRepo, remoteURLFunc, rev, git.ResolveRevisionOptions{})
 }
 
 func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *git.Commit, err error) {
@@ -197,7 +197,7 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 		}
 		return grepo.URL, nil
 	}
-	return git.GetCommit(ctx, *gitserverRepo, remoteURLFunc, commitID)
+	return git.GetCommit(ctx, *gitserverRepo, remoteURLFunc, commitID, git.ResolveRevisionOptions{})
 }
 
 func isIgnorableRepoUpdaterError(err error) bool {

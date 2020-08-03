@@ -29,7 +29,7 @@ interface State {
  */
 export class UserNavItem extends React.PureComponent<Props, State> {
     private supportsSystemTheme = Boolean(
-        window.matchMedia && window.matchMedia('not all and (prefers-color-scheme), (prefers-color-scheme)').matches
+        window.matchMedia?.('not all and (prefers-color-scheme), (prefers-color-scheme)').matches
     )
 
     public state: State = { isOpen: false }
@@ -47,7 +47,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
             <ButtonDropdown isOpen={this.state.isOpen} toggle={this.toggleIsOpen} className="py-0">
                 <DropdownToggle
                     caret={true}
-                    className="bg-transparent d-flex align-items-center e2e-user-nav-item-toggle"
+                    className="bg-transparent d-flex align-items-center test-user-nav-item-toggle"
                     nav={true}
                 >
                     {this.props.authenticatedUser.avatarURL ? (
@@ -75,7 +75,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                         <div className="d-flex align-items-center">
                             <div className="mr-2">Theme</div>
                             <select
-                                className="custom-select custom-select-sm e2e-theme-toggle"
+                                className="custom-select custom-select-sm test-theme-toggle"
                                 onChange={this.onThemeChange}
                                 value={this.props.themePreference}
                             >
@@ -98,10 +98,9 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                                 </small>
                             </div>
                         )}
-                        {this.props.keyboardShortcutForSwitchTheme &&
-                            this.props.keyboardShortcutForSwitchTheme.keybindings.map((keybinding, index) => (
-                                <Shortcut key={index} {...keybinding} onMatch={this.onThemeCycle} />
-                            ))}
+                        {this.props.keyboardShortcutForSwitchTheme?.keybindings.map((keybinding, index) => (
+                            <Shortcut key={index} {...keybinding} onMatch={this.onThemeCycle} />
+                        ))}
                     </div>
                     {this.props.authenticatedUser.organizations.nodes.length > 0 && (
                         <>
@@ -130,7 +129,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                             Help
                         </Link>
                     )}
-                    {this.props.authenticatedUser.session && this.props.authenticatedUser.session.canSignOut && (
+                    {this.props.authenticatedUser.session?.canSignOut && (
                         <a href="/-/sign-out" className="dropdown-item">
                             Sign out
                         </a>

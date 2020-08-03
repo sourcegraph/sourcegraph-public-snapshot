@@ -49,11 +49,11 @@ exports[`VersionContextDropdown renders the expanded version context dropdown, w
             "Consumer": Object {
               "$$typeof": Symbol(react.context),
               "_calculateChangedBits": null,
-              "_context": [Circular],
+              "_context": "[Cyclic structure]",
             },
             "Provider": Object {
               "$$typeof": Symbol(react.provider),
-              "_context": [Circular],
+              "_context": "[Cyclic structure]",
             },
             "_calculateChangedBits": null,
             "_currentRenderer": Object {},
@@ -452,11 +452,11 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
             "Consumer": Object {
               "$$typeof": Symbol(react.context),
               "_calculateChangedBits": null,
-              "_context": [Circular],
+              "_context": "[Cyclic structure]",
             },
             "Provider": Object {
               "$$typeof": Symbol(react.provider),
-              "_context": [Circular],
+              "_context": "[Cyclic structure]",
             },
             "_calculateChangedBits": null,
             "_currentRenderer": Object {},

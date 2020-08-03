@@ -9,13 +9,18 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	commitupdater "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/commit-updater"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/resetter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/server"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/worker"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commits"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -32,9 +37,12 @@ func main() {
 	sqliteutil.MustRegisterSqlite3WithPcre()
 
 	var (
-		bundleManagerURL   = mustGet(rawBundleManagerURL, "PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL")
-		workerPollInterval = mustParseInterval(rawWorkerPollInterval, "PRECISE_CODE_INTEL_WORKER_POLL_INTERVAL")
-		resetInterval      = mustParseInterval(rawResetInterval, "PRECISE_CODE_INTEL_RESET_INTERVAL")
+		bundleManagerURL      = mustGet(rawBundleManagerURL, "PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL")
+		workerPollInterval    = mustParseInterval(rawWorkerPollInterval, "PRECISE_CODE_INTEL_WORKER_POLL_INTERVAL")
+		workerConcurrency     = mustParseInt(rawWorkerConcurrency, "PRECISE_CODE_INTEL_WORKER_CONCURRENCY")
+		workerBudget          = mustParseInt64(rawWorkerBudget, "PRECISE_CODE_INTEL_WORKER_BUDGET")
+		resetInterval         = mustParseInterval(rawResetInterval, "PRECISE_CODE_INTEL_RESET_INTERVAL")
+		commitUpdaterInterval = mustParseInterval(rawCommitUpdaterInterval, "PRECISE_CODE_INTEL_COMMIT_UPDATER_INTERVAL")
 	)
 
 	observationContext := &observation.Context{
@@ -45,26 +53,30 @@ func main() {
 
 	store := store.NewObserved(mustInitializeStore(), observationContext)
 	MustRegisterQueueMonitor(observationContext.Registerer, store)
-	workerMetrics := worker.NewWorkerMetrics(prometheus.DefaultRegisterer)
+	workerMetrics := metrics.NewWorkerMetrics(observationContext)
 	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
 	server := server.New()
-
-	uploadResetter := resetter.UploadResetter{
-		Store:         store,
-		ResetInterval: resetInterval,
-		Metrics:       resetterMetrics,
-	}
-
+	uploadResetter := resetter.NewUploadResetter(store, resetInterval, resetterMetrics)
+	commitUpdater := commitupdater.NewUpdater(
+		store,
+		commits.NewUpdater(store, gitserver.DefaultClient),
+		commitupdater.UpdaterOptions{
+			Interval: commitUpdaterInterval,
+		},
+	)
 	worker := worker.NewWorker(
 		store,
 		bundles.New(bundleManagerURL),
 		gitserver.DefaultClient,
 		workerPollInterval,
+		workerConcurrency,
+		workerBudget,
 		workerMetrics,
 	)
 
 	go server.Start()
-	go uploadResetter.Run()
+	go uploadResetter.Start()
+	go commitUpdater.Start()
 	go worker.Start()
 	go debugserver.Start()
 
@@ -80,6 +92,8 @@ func main() {
 	}()
 
 	server.Stop()
+	uploadResetter.Stop()
+	commitUpdater.Stop()
 	worker.Stop()
 }
 
@@ -91,10 +105,9 @@ func mustInitializeStore() store.Store {
 		}
 	})
 
-	store, err := store.New(postgresDSN)
-	if err != nil {
-		log.Fatalf("failed to initialize store: %s", err)
+	if err := dbconn.ConnectToDB(postgresDSN); err != nil {
+		log.Fatalf("failed to connect to database: %s", err)
 	}
 
-	return store
+	return store.NewWithHandle(basestore.NewHandleWithDB(dbconn.Global))
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 // feederDB is a front to a sqlite DB that records ownerRepo processed, orgs created and whether
@@ -61,7 +62,8 @@ func (fdr *feederDB) declareRepo(ownerRepo string) (alreadyDone bool, err error)
 	var failed bool
 	var errType string
 
-	err = fdr.db.QueryRow("SELECT failed, errType FROM repos WHERE ownerRepo=?", ownerRepo).Scan(&failed, &errType)
+	err = fdr.db.QueryRow("SELECT failed, errType FROM repos WHERE ownerRepo=?", ownerRepo).Scan(&failed,
+		&dbutil.NullString{S: &errType})
 	if err != nil && err != sql.ErrNoRows {
 		return false, err
 	}

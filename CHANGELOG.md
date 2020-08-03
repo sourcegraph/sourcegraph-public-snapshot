@@ -13,16 +13,119 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Emails can be now be sent to SMTP servers with self-signed certificates, using `email.smtp.disableTLS`. [#12359](https://github.com/sourcegraph/sourcegraph/pull/12359)
+- Saved search emails now include a link to the user's saved searches page. [#11651](https://github.com/sourcegraph/sourcegraph/pull/11651)
+- Configured `observability.alerts` can now be tested using a GraphQL endpoint, `triggerObservabilityTestAlert`. [#12532](https://github.com/sourcegraph/sourcegraph/pull/12532)
+
+### Changed
+
+- [Background permissions syncing](https://docs.sourcegraph.com/admin/repo/permissions#background-permissions-syncing) (`permissions.backgroundSync`) has become the only option for mirroring repository permissions from code hosts. All relevant site configurations are deprecated.
+
+### Fixed
+
+- Fixed site admins are getting errors when visiting user settings page in OSS version. [#12313](https://github.com/sourcegraph/sourcegraph/pull/12313)
+- `github-proxy` now respects the environment variables `HTTP_PROXY`, `HTTPS_PROXY` and `NO_PROXY` (or the lowercase versions thereof). Other services already respect these variables, but this was missed. If you need a proxy to access github.com set the environment variable for the github-proxy container. [#12377](https://github.com/sourcegraph/sourcegraph/issues/12377)
+
+### Removed
+
+- Deprecated site settings `lightstepAccessToken` and `lightstepProject` have been removed. We now only support sending traces to Jaeger. Configure Jaeger with `observability.tracing` site setting.
+
+## 3.18.0
+
+### Added
+
+- To search across multiple revisions of the same repository, list multiple branch names (or other revspecs) separated by `:` in your query, as in `repo:myrepo@branch1:branch2:branch2`. To search all branches, use `repo:myrepo@*refs/heads/`. Previously this was only supported for diff and commit searches and only available via the experimental site setting `searchMultipleRevisionsPerRepository`.
+- The "Add repositories" page (/site-admin/external-services/new) now displays a dismissable notification explaining how and why we access code host data. [#11789](https://github.com/sourcegraph/sourcegraph/pull/11789).
+- New `observability.alerts` features:
+  - Notifications now provide more details about relevant alerts.
+  - Support for email and OpsGenie notifications has been added. Note that to receive email alerts, `email.address` and `email.smtp` must be configured.
+  - Some notifiers now have new options:
+    - PagerDuty notifiers: `severity` and `apiUrl`
+    - Webhook notifiers: `bearerToken`
+  - A new `disableSendResolved` option disables notifications for when alerts resolve themselves.
+- Recently firing critical alerts can now be displayed to admins via site alerts, use the flag `{ "alerts.hideObservabilitySiteAlerts": false }` to enable these alerts in user configuration.
+- Specific alerts can now be silenced using `observability.silenceAlerts`. [#12087](https://github.com/sourcegraph/sourcegraph/pull/12087)
+- Revisions listed in `experimentalFeatures.versionContext` will be indexed for faster searching. This is the first support towards indexing non-default branches. [#6728](https://github.com/sourcegraph/sourcegraph/issues/6728)
+- Revisions listed in `experimentalFeatures.versionContext` or `experimentalFeatures.search.index.branches` will be indexed for faster searching. This is the first support towards indexing non-default branches. [#6728](https://github.com/sourcegraph/sourcegraph/issues/6728)
+- Campaigns are now supported on GitLab.
+- Campaigns now support GitLab and allow users to create, update and track merge requests on GitLab instances.
+
+### Changed
+
+- Some monitoring alerts now have more useful descriptions. [#11542](https://github.com/sourcegraph/sourcegraph/pull/11542)
+- Searching `fork:true` or `archived:true` has the same behaviour as searching `fork:yes` or `archived:yes` respectively. Previously it incorrectly had the same behaviour as `fork:only` and `archived:only` respectively. [#11740](https://github.com/sourcegraph/sourcegraph/pull/11740)
+- Configuration for `observability.alerts` has changed and notifications are now provided by Prometheus Alertmanager. [#11832](https://github.com/sourcegraph/sourcegraph/pull/11832)
+  - Removed: `observability.alerts.id`.
+  - Removed: Slack notifiers no longer accept `mentionUsers`, `mentionGroups`, `mentionChannel`, and `token` options.
+-
+
+### Fixed
+
+- The single-container `sourcegraph/server` image now correctly reports its version.
+- An issue where repositories would not clone and index in some edge cases where the clones were deleted or not successful on gitserver. [#11602](https://github.com/sourcegraph/sourcegraph/pull/11602)
+- An issue where repositories previously deleted on gitserver would not immediately reclone on system startup. [#11684](https://github.com/sourcegraph/sourcegraph/issues/11684)
+- An issue where the sourcegraph/server Jaeger config was invalid. [#11661](https://github.com/sourcegraph/sourcegraph/pull/11661)
+- An issue where valid search queries were improperly hinted as being invalid in the search field. [#11688](https://github.com/sourcegraph/sourcegraph/pull/11688)
+- Reduce frontend memory spikes by limiting the number of goroutines launched by our GraphQL resolvers. [#11736](https://github.com/sourcegraph/sourcegraph/pull/11736)
+- Fixed a bug affecting Sourcegraph icon display in our Phabricator native integration [#11825](https://github.com/sourcegraph/sourcegraph/pull/11825).
+- Improve performance of site-admin repositories status page. [#11932](https://github.com/sourcegraph/sourcegraph/pull/11932)
+- An issue where search autocomplete for files didn't add the right path. [#12241](https://github.com/sourcegraph/sourcegraph/pull/12241)
+
+### Removed
+
+- Backwards compatibility for "critical configuration" (a type of configuration that was deprecated in December 2019) was removed. All critical configuration now belongs in site configuration.
+- Experimental feature setting `{ "experimentalFeatures": { "searchMultipleRevisionsPerRepository": true } }` will be removed in 3.19. It is now always on. Please remove references to it.
+- Removed "Cloning" tab in site-admin Repository Status page. [#12043](https://github.com/sourcegraph/sourcegraph/pull/12043)
+- The `blacklist` configuration option for Gitolite that was deprecated in 3.17 has been removed in 3.19. Use `exclude.pattern` instead. [#12345](https://github.com/sourcegraph/sourcegraph/pull/12345)
+
+## 3.17.3
+
+### Fixed
+
+- git: Command retrying made a copy that was never used [#11807](https://github.com/sourcegraph/sourcegraph/pull/11807)
+- frontend: Allow opt out of EnsureRevision when making a comparison query [#11811](https://github.com/sourcegraph/sourcegraph/pull/11811)
+- Fix Phabricator icon class [#11825](https://github.com/sourcegraph/sourcegraph/pull/11825)
+
+## 3.17.2
+
+### Fixed
+
+- An issue where repositories previously deleted on gitserver would not immediately reclone on system startup. [#11684](https://github.com/sourcegraph/sourcegraph/issues/11684)
+
+## 3.17.1
+
+### Added
+
+- Improved search indexing metrics
+
+### Changed
+
+- Some monitoring alerts now have more useful descriptions. [#11542](https://github.com/sourcegraph/sourcegraph/pull/11542)
+
+### Fixed
+
+- The single-container `sourcegraph/server` image now correctly reports its version.
+- An issue where repositories would not clone and index in some edge cases where the clones were deleted or not successful on gitserver. [#11602](https://github.com/sourcegraph/sourcegraph/pull/11602)
+- An issue where the sourcegraph/server Jaeger config was invalid. [#11661](https://github.com/sourcegraph/sourcegraph/pull/11661)
+
+## 3.17.0
+
+### Added
+
 - The search results page now shows a small UI notification if either repository forks or archives are excluded, when `fork` or `archived` options are not explicitly set. [#10624](https://github.com/sourcegraph/sourcegraph/pull/10624)
 - Prometheus metric `src_gitserver_repos_removed_disk_pressure` which is incremented everytime we remove a repository due to disk pressure. [#10900](https://github.com/sourcegraph/sourcegraph/pull/10900)
 - `gitolite.exclude` setting in [Gitolite external service config](https://docs.sourcegraph.com/admin/external_service/gitolite#configuration) now supports a regular expression via the `pattern` field. This is consistent with how we exclude in other external services. Additionally this is a replacement for the deprecated `blacklist` configuration. [#11403](https://github.com/sourcegraph/sourcegraph/pull/11403)
 - Notifications about Sourcegraph being out of date will now be shown to site admins and users (depending on how out-of-date it is).
+- Alerts are now configured using `observability.alerts` in the site configuration, instead of via the Grafana web UI. This does not yet support all Grafana notification channel types, and is not yet supported on `sourcegraph/server` ([#11473](https://github.com/sourcegraph/sourcegraph/issues/11473)). For more details, please refer to the [Sourcegraph alerting guide](https://docs.sourcegraph.com/admin/observability/alerting).
+- Experimental basic support for detecting if your Sourcegraph instance is over or under-provisioned has been added through a set of dashboards and warning-level alerts based on container utilization.
+- Query [operators](https://docs.sourcegraph.com/user/search/queries#operators) `and` and `or` are now enabled by default in all search modes for searching file content. [#11521](https://github.com/sourcegraph/sourcegraph/pull/11521)
 
 ### Changed
 
 - Repository search within a version context will link to the revision in the version context. [#10860](https://github.com/sourcegraph/sourcegraph/pull/10860)
 - Background permissions syncing becomes the default method to sync permissions from code hosts. Please [read our documentation for things to keep in mind before upgrading](https://docs.sourcegraph.com/admin/repo/permissions#background-permissions-syncing). [#10972](https://github.com/sourcegraph/sourcegraph/pull/10972)
 - The styling of the hover overlay was overhauled to never have badges or the close button overlap content while also always indicating whether the overlay is currently pinned. The styling on code hosts was also improved. [#10956](https://github.com/sourcegraph/sourcegraph/pull/10956)
+- Previously, it was required to quote most patterns in structural search. This is no longer a restriction and single and double quotes in structural search patterns are interpreted literally. Note: you may still use `content:"structural-pattern"` if the pattern without quotes conflicts with other syntax. [#11481](https://github.com/sourcegraph/sourcegraph/pull/11481)
 
 ### Fixed
 
@@ -34,11 +137,19 @@ All notable changes to Sourcegraph are documented in this file.
 - The Site-admin > Pings page no longer incorrectly indicates that pings are disabled when they aren't. [#11229](https://github.com/sourcegraph/sourcegraph/pull/11229)
 - Match counts are now accurately reported for indexed search. [#11242](https://github.com/sourcegraph/sourcegraph/pull/11242)
 - When background permissions syncing is enabled, it is now possible to only enforce permissions for repositories from selected code hosts (instead of enforcing permissions for repositories from all code hosts). [#11336](https://github.com/sourcegraph/sourcegraph/pull/11336)
+- When more than 200+ repository revisions in a search are unindexed (very rare), the remaining repositories are reported as missing instead of Sourcegraph issuing e.g. several thousand unindexed search requests which causes system slowness and ultimately times out - ensuring searches are still fast even if there are indexing issues on a deployment of Sourcegraph. This does not apply if `index:no` is present in the query.
 
 ### Removed
 
 - Automatic syncing of Campaign webhooks for Bitbucket Server. [#10962](https://github.com/sourcegraph/sourcegraph/pull/10962)
 - The `blacklist` configuration option for Gitolite is DEPRECATED and will be removed in 3.19. Use `exclude.pattern` instead.
+
+## 3.16.2
+
+### Fixed
+
+- Search: fix indexed search match count [#7fc96](https://github.com/sourcegraph/sourcegraph/commit/7fc96d319f49f55da46a7649ccf261aa7e8327c3)
+- Sort detected languages properly [#e7750](https://github.com/sourcegraph/sourcegraph/commit/e77507d060a40355e7b86fb093d21a7149ea03ac)
 
 ## 3.16.1
 

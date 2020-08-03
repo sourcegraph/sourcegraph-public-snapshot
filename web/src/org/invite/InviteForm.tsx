@@ -310,30 +310,27 @@ export class InviteForm extends React.PureComponent<Props, State> {
                         </Form>
                     </div>
                 </div>
-                {this.props.authenticatedUser &&
-                    this.props.authenticatedUser.siteAdmin &&
-                    !window.context.emailEnabled && (
-                        <DismissibleAlert className="alert-info" partialStorageKey="org-invite-email-config">
-                            <p className=" mb-0">
-                                Set <code>email.smtp</code> in{' '}
-                                <Link to="/site-admin/configuration">site configuration</Link> to send email
-                                notfications about invitations.
-                            </p>
-                        </DismissibleAlert>
-                    )}
-                {this.state.invited &&
-                    this.state.invited.map(({ username, sentInvitationEmail, invitationURL }, index) => (
-                        /* eslint-disable react/jsx-no-bind */
-                        <InvitedNotification
-                            key={index}
-                            className="alert alert-success invite-form__alert"
-                            username={username}
-                            sentInvitationEmail={sentInvitationEmail}
-                            invitationURL={invitationURL}
-                            onDismiss={() => this.dismissNotification(index)}
-                        />
-                        /* eslint-enable react/jsx-no-bind */
-                    ))}
+                {this.props.authenticatedUser?.siteAdmin && !window.context.emailEnabled && (
+                    <DismissibleAlert className="alert-info" partialStorageKey="org-invite-email-config">
+                        <p className=" mb-0">
+                            Set <code>email.smtp</code> in{' '}
+                            <Link to="/site-admin/configuration">site configuration</Link> to send email notfications
+                            about invitations.
+                        </p>
+                    </DismissibleAlert>
+                )}
+                {this.state.invited?.map(({ username, sentInvitationEmail, invitationURL }, index) => (
+                    /* eslint-disable react/jsx-no-bind */
+                    <InvitedNotification
+                        key={index}
+                        className="alert alert-success invite-form__alert"
+                        username={username}
+                        sentInvitationEmail={sentInvitationEmail}
+                        invitationURL={invitationURL}
+                        onDismiss={() => this.dismissNotification(index)}
+                    />
+                    /* eslint-enable react/jsx-no-bind */
+                ))}
                 {this.state.error && (
                     <ErrorAlert className="invite-form__alert" error={this.state.error} history={this.props.history} />
                 )}

@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
-func TestCriticalGetLatestDefault(t *testing.T) {
+func TestSiteGetLatestDefault(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -16,7 +16,7 @@ func TestCriticalGetLatestDefault(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	latest, err := CriticalGetLatest(ctx)
+	latest, err := SiteGetLatest(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -26,7 +26,7 @@ func TestCriticalGetLatestDefault(t *testing.T) {
 	}
 }
 
-func TestCriticalCreate_RejectInvalidJSON(t *testing.T) {
+func TestSiteCreate_RejectInvalidJSON(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -36,14 +36,14 @@ func TestCriticalCreate_RejectInvalidJSON(t *testing.T) {
 
 	malformedJSON := "[This is malformed.}"
 
-	_, err := CriticalCreateIfUpToDate(ctx, nil, malformedJSON)
+	_, err := SiteCreateIfUpToDate(ctx, nil, malformedJSON)
 
 	if err == nil || !strings.Contains(err.Error(), "invalid settings JSON") {
 		t.Fatalf("expected parse error after creating configuration with malformed JSON, got: %+v", err)
 	}
 }
 
-func TestCriticalCreateIfUpToDate(t *testing.T) {
+func TestSiteCreateIfUpToDate(t *testing.T) {
 	type input struct {
 		lastID   int32
 		contents string
@@ -160,7 +160,7 @@ func TestCriticalCreateIfUpToDate(t *testing.T) {
 			dbtesting.SetupGlobalTestDB(t)
 			ctx := context.Background()
 			for _, p := range test.sequence {
-				output, err := CriticalCreateIfUpToDate(ctx, &p.input.lastID, p.input.contents)
+				output, err := SiteCreateIfUpToDate(ctx, &p.input.lastID, p.input.contents)
 				if err != nil {
 					if err == p.expected.err {
 						continue
@@ -179,7 +179,7 @@ func TestCriticalCreateIfUpToDate(t *testing.T) {
 					t.Fatalf("returned configuration ID after creation - expected: %v, got:%v", p.expected.ID, output.ID)
 				}
 
-				latest, err := CriticalGetLatest(ctx)
+				latest, err := SiteGetLatest(ctx)
 				if err != nil {
 					t.Fatal(err)
 				}

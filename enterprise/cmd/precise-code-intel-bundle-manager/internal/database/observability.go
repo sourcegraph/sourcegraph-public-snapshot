@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -14,6 +14,7 @@ type ObservedDatabase struct {
 	database                    Database
 	filename                    string
 	existsOperation             *observation.Operation
+	rangesOperation             *observation.Operation
 	definitionsOperation        *observation.Operation
 	referencesOperation         *observation.Operation
 	hoverOperation              *observation.Operation
@@ -47,6 +48,11 @@ func NewObserved(database Database, filename string, observationContext *observa
 		existsOperation: observationContext.Operation(observation.Op{
 			Name:         "Database.Exists",
 			MetricLabels: []string{"exists"},
+			Metrics:      metrics,
+		}),
+		rangesOperation: observationContext.Operation(observation.Op{
+			Name:         "Database.Ranges",
+			MetricLabels: []string{"ranges"},
 			Metrics:      metrics,
 		}),
 		definitionsOperation: observationContext.Operation(observation.Op{
@@ -102,8 +108,22 @@ func (db *ObservedDatabase) Exists(ctx context.Context, path string) (_ bool, er
 	return db.database.Exists(ctx, path)
 }
 
+// Ranges calls into the inner Database and registers the observed results.
+func (db *ObservedDatabase) Ranges(ctx context.Context, path string, startLine, endLine int) (ranges []bundles.CodeIntelligenceRange, err error) {
+	ctx, endObservation := db.rangesOperation.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.String("filename", db.filename),
+			log.String("path", path),
+			log.Int("startLine", startLine),
+			log.Int("endLine", endLine),
+		},
+	})
+	defer func() { endObservation(float64(len(ranges)), observation.Args{}) }()
+	return db.database.Ranges(ctx, path, startLine, endLine)
+}
+
 // Definitions calls into the inner Database and registers the observed results.
-func (db *ObservedDatabase) Definitions(ctx context.Context, path string, line, character int) (definitions []client.Location, err error) {
+func (db *ObservedDatabase) Definitions(ctx context.Context, path string, line, character int) (definitions []bundles.Location, err error) {
 	ctx, endObservation := db.definitionsOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.String("filename", db.filename),
@@ -117,7 +137,7 @@ func (db *ObservedDatabase) Definitions(ctx context.Context, path string, line, 
 }
 
 // References calls into the inner Database and registers the observed results.
-func (db *ObservedDatabase) References(ctx context.Context, path string, line, character int) (references []client.Location, err error) {
+func (db *ObservedDatabase) References(ctx context.Context, path string, line, character int) (references []bundles.Location, err error) {
 	ctx, endObservation := db.referencesOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.String("filename", db.filename),
@@ -131,7 +151,7 @@ func (db *ObservedDatabase) References(ctx context.Context, path string, line, c
 }
 
 // Hover calls into the inner Database and registers the observed results.
-func (db *ObservedDatabase) Hover(ctx context.Context, path string, line, character int) (_ string, _ client.Range, _ bool, err error) {
+func (db *ObservedDatabase) Hover(ctx context.Context, path string, line, character int) (_ string, _ bundles.Range, _ bool, err error) {
 	ctx, endObservation := db.hoverOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.String("filename", db.filename),
@@ -145,7 +165,7 @@ func (db *ObservedDatabase) Hover(ctx context.Context, path string, line, charac
 }
 
 // Diagnostics calls into the inner Database and registers the observed results.
-func (db *ObservedDatabase) Diagnostics(ctx context.Context, prefix string, skip, take int) (diagnostics []client.Diagnostic, _ int, err error) {
+func (db *ObservedDatabase) Diagnostics(ctx context.Context, prefix string, skip, take int) (diagnostics []bundles.Diagnostic, _ int, err error) {
 	ctx, endObservation := db.hoverOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.String("filename", db.filename),
@@ -157,7 +177,7 @@ func (db *ObservedDatabase) Diagnostics(ctx context.Context, prefix string, skip
 }
 
 // MonikersByPosition calls into the inner Database and registers the observed results.
-func (db *ObservedDatabase) MonikersByPosition(ctx context.Context, path string, line, character int) (monikers [][]client.MonikerData, err error) {
+func (db *ObservedDatabase) MonikersByPosition(ctx context.Context, path string, line, character int) (monikers [][]bundles.MonikerData, err error) {
 	ctx, endObservation := db.monikersByPositionOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.String("filename", db.filename),
@@ -179,7 +199,7 @@ func (db *ObservedDatabase) MonikersByPosition(ctx context.Context, path string,
 }
 
 // MonikerResults calls into the inner Database and registers the observed results.
-func (db *ObservedDatabase) MonikerResults(ctx context.Context, tableName, scheme, identifier string, skip, take int) (locations []client.Location, _ int, err error) {
+func (db *ObservedDatabase) MonikerResults(ctx context.Context, tableName, scheme, identifier string, skip, take int) (locations []bundles.Location, _ int, err error) {
 	ctx, endObservation := db.monikerResultsOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.String("filename", db.filename),
@@ -193,7 +213,7 @@ func (db *ObservedDatabase) MonikerResults(ctx context.Context, tableName, schem
 }
 
 // PackageInformation calls into the inner Database and registers the observed results.
-func (db *ObservedDatabase) PackageInformation(ctx context.Context, path string, packageInformationID string) (_ client.PackageInformationData, _ bool, err error) {
+func (db *ObservedDatabase) PackageInformation(ctx context.Context, path string, packageInformationID string) (_ bundles.PackageInformationData, _ bool, err error) {
 	ctx, endObservation := db.packageInformationOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.String("filename", db.filename),

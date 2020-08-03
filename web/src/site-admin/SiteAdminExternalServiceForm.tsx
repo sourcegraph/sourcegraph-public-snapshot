@@ -7,13 +7,14 @@ import { Form } from '../components/Form'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import { AddExternalServiceOptions } from './externalServices'
 import { ErrorAlert, ErrorMessage } from '../components/alerts'
+import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { ThemeProps } from '../../../shared/src/theme'
 
-interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions'> {
+interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions'>, ThemeProps, TelemetryProps {
     history: H.History
     input: GQL.IAddExternalServiceInput
-    isLightTheme: boolean
     error?: ErrorLike
-    warning?: string
+    warning?: string | null
     mode: 'edit' | 'create'
     loading: boolean
     hideDisplayNameField?: boolean
@@ -38,11 +39,11 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                 )}
                 {this.props.hideDisplayNameField || (
                     <div className="form-group">
-                        <label className="font-weight-bold" htmlFor="e2e-external-service-form-display-name">
+                        <label className="font-weight-bold" htmlFor="test-external-service-form-display-name">
                             Display name:
                         </label>
                         <input
-                            id="e2e-external-service-form-display-name"
+                            id="test-external-service-form-display-name"
                             type="text"
                             className="form-control"
                             required={true}
@@ -71,7 +72,8 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                         onChange={this.onConfigChange}
                         history={this.props.history}
                         actions={this.props.editorActions}
-                        className="e2e-external-service-editor"
+                        className="test-external-service-editor"
+                        telemetryService={this.props.telemetryService}
                     />
                     <p className="form-text text-muted">
                         <small>Use Ctrl+Space for completion, and hover over JSON properties for documentation.</small>
@@ -81,8 +83,8 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                     type="submit"
                     className={`btn btn-primary mb-3 ${
                         this.props.mode === 'create'
-                            ? 'e2e-add-external-service-button'
-                            : 'e2e-update-external-service-button'
+                            ? 'test-add-external-service-button'
+                            : 'test-update-external-service-button'
                     }`}
                     disabled={this.props.loading}
                 >

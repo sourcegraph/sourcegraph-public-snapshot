@@ -63,15 +63,17 @@ selectors](scale.md#node-selector) for Sourcegraph on Kubernetes.
 
 ## High-availability updates
 
-Sourcegraph is designed to be a high-availability (HA) service. Updates require zero downtime and
-employ health checks to test the health of newly updated components before switching live traffic
-over to them. HA-enabling features include the following:
+Sourcegraph is designed to be a high-availability (HA) service, but upgrades by default require a 10m downtime
+window. If you need zero-downtime upgrades, please contact us. Services employ health checks to test the health
+of newly updated components before switching live traffic over to them by default. HA-enabling features include
+the following:
 
 - Replication: nearly all of the critical services within Sourcegraph are replicated. If a single instance of a
   service fails, that instance is restarted and removed from operation until it comes online again.
 - Updates are applied in a rolling fashion to each service such that a subset of instances are updated first while
   traffic continues to flow to the old instances. Once the health check determines the set of new instances is
-  healthy, traffic is directed to the new set and the old set is terminated.
+  healthy, traffic is directed to the new set and the old set is terminated. By default, some database operations
+  may fail during this time as migrations occur so a scheduled 10m downtime window is required.
 - Each service includes a health check that detects whether the service is in a healthy state. This check is specific to
   the service. These are used to check the health of new instances after an update and during regular operation to
   determine if an instance goes down.

@@ -17,13 +17,6 @@ import { GlobalAlert } from './GlobalAlert'
 import { Notices } from './Notices'
 import * as H from 'history'
 
-// This module is not in @types/semver yet. We can't use the top-level semver module because it uses
-// dynamic requires, which Webpack complains about.
-//
-// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-// @ts-ignore
-import semverParse from 'semver/functions/parse'
-
 interface Props extends SettingsCascadeProps {
     history: H.History
     isSiteAdmin: boolean
@@ -51,7 +44,7 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="global-alerts e2e-global-alert">
+            <div className="global-alerts test-global-alert">
                 {this.state.siteFlags && (
                     <>
                         {this.state.siteFlags.needsRepositoryConfiguration && (

@@ -220,7 +220,7 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
                         </small>
                     </p>
                 )
-            } else if (this.props.connection.pageInfo && this.props.connection.pageInfo.hasNextPage) {
+            } else if (this.props.connection.pageInfo?.hasNextPage) {
                 // No total count to show, but it will show a 'Show more' button.
             } else if (totalCount === 0) {
                 summary = this.props.emptyElement || (
@@ -315,6 +315,12 @@ interface FilteredConnectionDisplayProps extends ConnectionDisplayProps {
      * Filters are mutually exclusive.
      */
     filters?: FilteredConnectionFilter[]
+
+    /**
+     * The filter to select by default. If not supplied, this defaults to the first
+     * filter defined in the list.
+     */
+    defaultFilter?: string
 
     /** Called when a filter is selected and on initial render. */
     onFilterSelect?: (filterID: string | undefined) => void
@@ -458,7 +464,9 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
             loading: true,
             query: (!this.props.hideSearch && this.props.useURLQuery && searchParameters.get(QUERY_KEY)) || '',
             activeFilter:
-                (this.props.useURLQuery && getFilterFromURL(searchParameters, this.props.filters)) || undefined,
+                (this.props.useURLQuery &&
+                    getFilterFromURL(searchParameters, this.props.filters, this.props.defaultFilter)) ||
+                undefined,
             first: (this.props.useURLQuery && parseQueryInt(searchParameters, 'first')) || this.props.defaultFirst!,
             visible: (this.props.useURLQuery && parseQueryInt(searchParameters, 'visible')) || 0,
         }
@@ -696,7 +704,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         if (!filter) {
             filter = this.state.activeFilter
         }
-        const searchParameters = new URLSearchParams()
+        const searchParameters = new URLSearchParams(this.props.location.search)
         if (query) {
             searchParameters.set(QUERY_KEY, query)
         }
@@ -737,7 +745,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         const compactnessClass = `filtered-connection--${this.props.compact ? 'compact' : 'noncompact'}`
         return (
             <div
-                className={`filtered-connection e2e-filtered-connection ${compactnessClass} ${
+                className={`filtered-connection test-filtered-connection ${compactnessClass} ${
                     this.props.className || ''
                 }`}
             >
@@ -806,7 +814,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                     />
                 )}
                 {this.state.loading && (
-                    <span className="filtered-connection__loader e2e-filtered-connection__loader">
+                    <span className="filtered-connection__loader test-filtered-connection__loader">
                         <LoadingSpinner className="icon-inline" />
                     </span>
                 )}
@@ -859,12 +867,13 @@ function parseQueryInt(searchParameters: URLSearchParams, name: string): number 
 
 function getFilterFromURL(
     searchParameters: URLSearchParams,
-    filters: FilteredConnectionFilter[] | undefined
+    filters: FilteredConnectionFilter[] | undefined,
+    defaultFilterId: string | undefined
 ): FilteredConnectionFilter | undefined {
     if (filters === undefined || filters.length === 0) {
         return undefined
     }
-    const id = searchParameters.get('filter')
+    const id = searchParameters.get('filter') || defaultFilterId
     if (id !== null) {
         const filter = filters.find(filter => filter.id === id)
         if (filter) {

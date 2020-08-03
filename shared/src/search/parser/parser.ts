@@ -59,7 +59,14 @@ export interface Quoted {
     quotedValue: string
 }
 
-export type Token = { type: 'whitespace' } | Literal | Filter | Sequence | Quoted
+export type Token =
+    | { type: 'whitespace' }
+    | { type: 'openingParen' }
+    | { type: 'closingParen' }
+    | Literal
+    | Filter
+    | Sequence
+    | Quoted
 
 /**
  * Represents the failed result of running a {@link Parser} on a search query.
@@ -217,7 +224,7 @@ const pattern = <T = Literal>(regexp: RegExp, output?: T, expected?: string): Pa
 
 const whitespace = pattern(/\s+/, { type: 'whitespace' as const }, 'whitespace')
 
-const literal = pattern(/\S+/)
+const literal = pattern(/[^\s)]+/)
 
 const filterKeyword = pattern(/-?[A-Za-z]+(?=:)/)
 
@@ -225,11 +232,18 @@ const filterDelimiter = character(':')
 
 const filterValue = oneOf<Quoted | Literal>(quoted, literal)
 
+const openingParen = pattern(/\(/, { type: 'openingParen' as const })
+
+const closingParen = pattern(/\)/, { type: 'closingParen' as const })
+
 /**
  * Returns a {@link Parser} that succeeds if a token parsed by `parseToken`,
  * followed by whitespace or EOF, is found in the search query.
  */
-const followedByWhitespace = (parseToken: Parser<Exclude<Token, Sequence>>): Parser<Sequence> => (input, start) => {
+const followedBy = (
+    parseToken: Parser<Exclude<Token, Sequence>>,
+    parseNext: Parser<Exclude<Token, Sequence>>
+): Parser<Sequence> => (input, start) => {
     const members: Pick<ParseSuccess<Exclude<Token, Sequence>>, 'range' | 'token'>[] = []
     const tokenResult = parseToken(input, start)
     if (tokenResult.type === 'error') {
@@ -238,7 +252,7 @@ const followedByWhitespace = (parseToken: Parser<Exclude<Token, Sequence>>): Par
     members.push({ token: tokenResult.token, range: tokenResult.range })
     let { end } = tokenResult.range
     if (input[end] !== undefined) {
-        const separatorResult = whitespace(input, end)
+        const separatorResult = parseNext(input, end)
         if (separatorResult.type === 'error') {
             return separatorResult
         }
@@ -285,7 +299,16 @@ const filter: Parser<Filter> = (input, start) => {
 /**
  * A {@link Parser} for a Sourcegraph search query.
  */
-const searchQuery = zeroOrMore(oneOf<Token>(whitespace, ...[filter, quoted, literal].map(followedByWhitespace)))
+const searchQuery = zeroOrMore(
+    oneOf<Token>(
+        whitespace,
+        openingParen,
+        closingParen,
+        ...[filter, quoted, literal].map(token =>
+            followedBy(token, oneOf<{ type: 'whitespace' } | { type: 'closingParen' }>(whitespace, closingParen))
+        )
+    )
+)
 
 /**
  * Parses a search query string.

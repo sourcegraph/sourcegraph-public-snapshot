@@ -33,7 +33,7 @@ export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = 
         (node.target.commit.committer && node.target.commit.committer.date > node.target.commit.author.date
             ? node.target.commit.committer
             : node.target.commit.author)
-    const behindAhead = node.target.commit && node.target.commit.behindAhead
+    const behindAhead = node.target.commit?.behindAhead
     url = url !== undefined ? url : node.url
 
     return (
@@ -67,10 +67,10 @@ export const gitReferenceFragments = gql`
         target {
             commit {
                 author {
-                    ...SignatureFields
+                    ...SignatureFieldsForReferences
                 }
                 committer {
-                    ...SignatureFields
+                    ...SignatureFieldsForReferences
                 }
                 behindAhead(revspec: "HEAD") @include(if: $withBehindAhead) {
                     behind
@@ -80,7 +80,7 @@ export const gitReferenceFragments = gql`
         }
     }
 
-    fragment SignatureFields on Signature {
+    fragment SignatureFieldsForReferences on Signature {
         person {
             displayName
             user {

@@ -1,11 +1,11 @@
 import * as H from 'history'
-import React from 'react'
-import { Observable, Subject, Subscription } from 'rxjs'
-import { catchError, map, switchMap, tap } from 'rxjs/operators'
+import React, { useEffect, useCallback, useState } from 'react'
+import { Observable, concat } from 'rxjs'
+import { catchError, map, switchMap } from 'rxjs/operators'
 import { Markdown } from '../../../shared/src/components/Markdown'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../shared/src/util/errors'
+import { createAggregateError, ErrorLike, asError, isErrorLike } from '../../../shared/src/util/errors'
 import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { mutateGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
@@ -14,161 +14,135 @@ import { ThemeProps } from '../../../shared/src/theme'
 import { ExternalServiceCard } from '../components/ExternalServiceCard'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
 import { AddExternalServiceOptions } from './externalServices'
+import { useEventObservable } from '../../../shared/src/util/useObservable'
+import { TelemetryProps, TelemetryService } from '../../../shared/src/telemetry/telemetryService'
 
-interface Props extends ThemeProps {
+interface Props extends ThemeProps, TelemetryProps {
     history: H.History
     externalService: AddExternalServiceOptions
-    eventLogger: {
-        logViewEvent: (event: 'AddExternalService') => void
-        log: (event: 'AddExternalServiceFailed' | 'AddExternalServiceSucceeded', eventProperties?: any) => void
-    }
 }
 
-interface State {
-    displayName: string
-    config: string
-
-    /**
-     * Holds any error returned by the remote GraphQL endpoint on failed requests.
-     */
-    error?: Error
-
-    /**
-     * True if the form is currently being submitted
-     */
-    loading: boolean
-
-    /**
-     * Holds the externalService if creation was successful but produced a warning
-     */
-    externalService?: GQL.IExternalService
-}
+const LOADING = 'loading' as const
 
 /**
  * Page for adding a single external service
  */
-export class SiteAdminAddExternalServicePage extends React.Component<Props, State> {
-    constructor(props: Props) {
-        super(props)
-        this.state = {
-            loading: false,
-            displayName: props.externalService.defaultDisplayName,
-            config: props.externalService.defaultConfig,
-        }
-    }
+export const SiteAdminAddExternalServicePage: React.FunctionComponent<Props> = props => {
+    const [config, setConfig] = useState(props.externalService.defaultConfig)
+    const [displayName, setDisplayName] = useState(props.externalService.defaultDisplayName)
 
-    private submits = new Subject<GQL.IAddExternalServiceInput>()
-    private subscriptions = new Subscription()
+    useEffect(() => {
+        props.telemetryService.logViewEvent('AddExternalService')
+    }, [props.telemetryService])
 
-    public componentDidMount(): void {
-        this.props.eventLogger.logViewEvent('AddExternalService')
-        this.subscriptions.add(
-            this.submits
-                .pipe(
-                    tap(() => this.setState({ loading: true })),
+    const [nextSubmit, createdServiceOrError] = useEventObservable(
+        useCallback(
+            (
+                submits: Observable<GQL.IAddExternalServiceInput>
+            ): Observable<typeof LOADING | ErrorLike | GQL.IExternalService> =>
+                submits.pipe(
                     switchMap(input =>
-                        addExternalService(input, this.props.eventLogger).pipe(
-                            catchError(error => {
-                                console.error(error)
-                                this.setState({ error, loading: false })
-                                return []
-                            })
+                        concat(
+                            [LOADING],
+                            addExternalService(input, props.telemetryService).pipe(
+                                catchError(error => [asError(error)])
+                            )
                         )
                     )
-                )
-                .subscribe(externalService => {
-                    if (externalService.warning) {
-                        this.setState({ externalService, error: undefined, loading: false })
-                    } else {
-                        // Refresh site flags so that global site alerts
-                        // reflect the latest configuration.
-                        // eslint-disable-next-line rxjs/no-nested-subscribe, rxjs/no-ignored-subscription
-                        refreshSiteFlags().subscribe({ error: error => console.error(error) })
-                        this.setState({ loading: false })
-                        this.props.history.push('/site-admin/external-services/' + externalService.id)
-                    }
-                })
+                ),
+            [props.telemetryService]
         )
-    }
+    )
 
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
+    useEffect(() => {
+        if (createdServiceOrError && createdServiceOrError !== LOADING && !isErrorLike(createdServiceOrError)) {
+            // Refresh site flags so that global site alerts
+            // reflect the latest configuration.
+            // eslint-disable-next-line rxjs/no-nested-subscribe, rxjs/no-ignored-subscription
+            refreshSiteFlags().subscribe({ error: error => console.error(error) })
+            props.history.push('/site-admin/repositories?repositoriesUpdated')
+        }
+    }, [createdServiceOrError, props.history])
 
-    public render(): JSX.Element | null {
-        const createdExternalService = this.state.externalService
-        return (
-            <div className="add-external-service-page mt-3">
-                <PageTitle title="Add repositories" />
-                <h2>Add repositories</h2>
-                {createdExternalService?.warning ? (
-                    <div>
-                        <div className="mb-3">
-                            <ExternalServiceCard
-                                {...this.props.externalService}
-                                title={createdExternalService.displayName}
-                                shortDescription="Update this external service configuration to manage repository mirroring."
-                                to={`/site-admin/external-services/${createdExternalService.id}`}
-                            />
-                        </div>
-                        <div className="alert alert-warning">
-                            <h4>Warning</h4>
-                            <Markdown
-                                dangerousInnerHTML={renderMarkdown(createdExternalService.warning)}
-                                history={this.props.history}
-                            />
-                        </div>
-                    </div>
-                ) : (
-                    <div>
-                        <div className="mb-3">
-                            <ExternalServiceCard {...this.props.externalService} />
-                        </div>
-                        <h3>Instructions:</h3>
-                        <div className="mb-4">{this.props.externalService.instructions}</div>
-                        <SiteAdminExternalServiceForm
-                            {...this.props}
-                            error={this.state.error}
-                            input={this.getExternalServiceInput()}
-                            editorActions={this.props.externalService.editorActions}
-                            jsonSchema={this.props.externalService.jsonSchema}
-                            mode="create"
-                            onSubmit={this.onSubmit}
-                            onChange={this.onChange}
-                            loading={this.state.loading}
+    const getExternalServiceInput = useCallback(
+        (): GQL.IAddExternalServiceInput => ({
+            displayName,
+            config,
+            kind: props.externalService.kind,
+        }),
+        [displayName, config, props.externalService.kind]
+    )
+
+    const onChange = useCallback(
+        (input: GQL.IAddExternalServiceInput): void => {
+            setDisplayName(input.displayName)
+            setConfig(input.config)
+        },
+        [setDisplayName, setConfig]
+    )
+
+    const onSubmit = useCallback(
+        (event?: React.FormEvent<HTMLFormElement>): void => {
+            if (event) {
+                event.preventDefault()
+            }
+            nextSubmit(getExternalServiceInput())
+        },
+        [nextSubmit, getExternalServiceInput]
+    )
+
+    return (
+        <div className="add-external-service-page mt-3">
+            <PageTitle title="Add repositories" />
+            <h2>Add repositories</h2>
+            {createdServiceOrError &&
+            createdServiceOrError !== LOADING &&
+            !isErrorLike(createdServiceOrError) &&
+            createdServiceOrError.warning ? (
+                <div>
+                    <div className="mb-3">
+                        <ExternalServiceCard
+                            {...props.externalService}
+                            title={createdServiceOrError.displayName}
+                            shortDescription="Update this external service configuration to manage repository mirroring."
+                            to={`/site-admin/external-services/${createdServiceOrError.id}`}
                         />
                     </div>
-                )}
-            </div>
-        )
-    }
-
-    private getExternalServiceInput(): GQL.IAddExternalServiceInput {
-        return {
-            displayName: this.state.displayName,
-            config: this.state.config,
-            kind: this.props.externalService.kind,
-        }
-    }
-
-    private onChange = (input: GQL.IAddExternalServiceInput): void => {
-        this.setState({
-            displayName: input.displayName,
-            config: input.config,
-        })
-    }
-
-    private onSubmit = (event?: React.FormEvent<HTMLFormElement>): void => {
-        if (event) {
-            event.preventDefault()
-        }
-        this.submits.next(this.getExternalServiceInput())
-    }
+                    <div className="alert alert-warning">
+                        <h4>Warning</h4>
+                        <Markdown
+                            dangerousInnerHTML={renderMarkdown(createdServiceOrError.warning)}
+                            history={props.history}
+                        />
+                    </div>
+                </div>
+            ) : (
+                <div>
+                    <div className="mb-3">
+                        <ExternalServiceCard {...props.externalService} />
+                    </div>
+                    <h3>Instructions:</h3>
+                    <div className="mb-4">{props.externalService.instructions}</div>
+                    <SiteAdminExternalServiceForm
+                        {...props}
+                        error={isErrorLike(createdServiceOrError) ? createdServiceOrError : undefined}
+                        input={getExternalServiceInput()}
+                        editorActions={props.externalService.editorActions}
+                        jsonSchema={props.externalService.jsonSchema}
+                        mode="create"
+                        onSubmit={onSubmit}
+                        onChange={onChange}
+                        loading={createdServiceOrError === LOADING}
+                    />
+                </div>
+            )}
+        </div>
+    )
 }
 
 export function addExternalService(
     input: GQL.IAddExternalServiceInput,
-    eventLogger: Pick<Props['eventLogger'], 'log'>
+    eventLogger: TelemetryService
 ): Observable<GQL.IExternalService> {
     return mutateGraphQL(
         gql`

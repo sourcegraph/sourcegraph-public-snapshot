@@ -159,10 +159,9 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
                     id={this.props.id}
                     className={classNames(this.props.className, this.props.border !== false && 'border')}
                 />
-                {this.props.keyboardShortcutForFocus &&
-                    this.props.keyboardShortcutForFocus.keybindings.map((keybinding, index) => (
-                        <Shortcut key={index} {...keybinding} onMatch={this.focusInput} />
-                    ))}
+                {this.props.keyboardShortcutForFocus?.keybindings.map((keybinding, index) => (
+                    <Shortcut key={index} {...keybinding} onMatch={this.focusInput} />
+                ))}
             </>
         )
     }
@@ -178,11 +177,13 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
     }
 }
 
-window.MonacoEnvironment = {
-    getWorkerUrl(moduleId: string, label: string): string {
-        if (label === 'json') {
-            return window.context.assetsRoot + '/scripts/json.worker.bundle.js'
-        }
-        return window.context.assetsRoot + '/scripts/editor.worker.bundle.js'
-    },
+if (!window.MonacoEnvironment) {
+    window.MonacoEnvironment = {
+        getWorkerUrl(moduleId: string, label: string): string {
+            if (label === 'json') {
+                return window.context.assetsRoot + '/scripts/json.worker.bundle.js'
+            }
+            return window.context.assetsRoot + '/scripts/editor.worker.bundle.js'
+        },
+    }
 }

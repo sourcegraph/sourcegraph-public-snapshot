@@ -17,7 +17,7 @@ func FileExists(ctx context.Context, store store.Store, repositoryID int, commit
 		return false, err
 	}
 
-	if _, err := git.ResolveRevision(ctx, repo, nil, commit, nil); err != nil {
+	if _, err := git.ResolveRevision(ctx, repo, nil, commit, git.ResolveRevisionOptions{}); err != nil {
 		return false, errors.Wrap(err, "git.ResolveRevision")
 	}
 

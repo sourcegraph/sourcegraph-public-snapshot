@@ -18,6 +18,9 @@ import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettings
 import { requestGraphQlHelper } from '../backend/requestGraphQl'
 import { isHTTPAuthError } from '../../../../shared/src/backend/fetch'
 import { asError } from '../../../../shared/src/util/errors'
+import { InlineExtensionsService, shouldUseInlineExtensions } from './inlineExtensionsService'
+import { ModelService } from '../../../../shared/src/api/client/services/modelService'
+import { IExtensionsService, ExtensionsService } from '../../../../shared/src/api/client/services/extensionsService'
 
 export interface SourcegraphIntegrationURLs {
     /**
@@ -36,7 +39,7 @@ export interface SourcegraphIntegrationURLs {
 }
 
 /**
- * The PlatformContext provided in the browser extension and native integrations.
+ * The PlatformContext provided in the browser (for browser extensions and native integrations).
  */
 export interface BrowserPlatformContext extends PlatformContext {
     /**
@@ -46,7 +49,7 @@ export interface BrowserPlatformContext extends PlatformContext {
 }
 
 /**
- * Creates the {@link PlatformContext} for the browser extension.
+ * Creates the {@link PlatformContext} for the browser (for browser extensions and native integrations)
  */
 export function createPlatformContext(
     { urlToFile, getContext }: Pick<CodeHost, 'urlToFile' | 'getContext'>,
@@ -54,13 +57,13 @@ export function createPlatformContext(
     isExtension: boolean
 ): BrowserPlatformContext {
     const updatedViewerSettings = new ReplaySubject<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>>(1)
-    const requestGraphQL: PlatformContext['requestGraphQL'] = <T extends GQL.IQuery | GQL.IMutation>({
+    const requestGraphQL: PlatformContext['requestGraphQL'] = <T, V = object>({
         request,
         variables,
         mightContainPrivateInfo,
     }: {
         request: string
-        variables: {}
+        variables: V
         mightContainPrivateInfo: boolean
     }): Observable<GraphQLResult<T>> =>
         observeSourcegraphURL(isExtension).pipe(
@@ -74,7 +77,7 @@ export function createPlatformContext(
                         throw new PrivateRepoPublicSourcegraphComError(nameMatch ? nameMatch[1] : '')
                     }
                 }
-                return requestGraphQlHelper(isExtension, sourcegraphURL)<T>({ request, variables })
+                return requestGraphQlHelper(isExtension, sourcegraphURL)<T, V>({ request, variables })
             })
         )
 
@@ -167,6 +170,15 @@ export function createPlatformContext(
         sideloadedExtensionURL: isInPage
             ? new LocalStorageSubject<string | null>('sideloadedExtensionURL', null)
             : new ExtensionStorageSubject('sideloadedExtensionURL', null),
+        createExtensionsService(modelService: Pick<ModelService, 'activeLanguages'>): IExtensionsService {
+            // On Firefox extension, use the inline extensions service.
+            if (shouldUseInlineExtensions()) {
+                return new InlineExtensionsService()
+            }
+
+            // On all other platforms, use the standard extensions service.
+            return new ExtensionsService(this, modelService)
+        },
     }
     return context
 }

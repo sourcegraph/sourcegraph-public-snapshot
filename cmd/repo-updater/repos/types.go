@@ -93,42 +93,6 @@ func (e ExternalService) Configuration() (cfg interface{}, _ error) {
 	return extsvc.ParseConfig(e.Kind, e.Config)
 }
 
-// BaseURL will fetch the normalised base URL from the service if
-// supported.
-func (e ExternalService) BaseURL() (*url.URL, error) {
-	config, err := extsvc.ParseConfig(e.Kind, e.Config)
-	if err != nil {
-		return nil, errors.Wrap(err, "parsing config")
-	}
-
-	var rawURL string
-	switch c := config.(type) {
-	case *schema.AWSCodeCommitConnection:
-		return nil, errors.New("BaseURL unavailable for AWSCodeCommit")
-	case *schema.BitbucketServerConnection:
-		rawURL = c.Url
-	case *schema.GitHubConnection:
-		rawURL = c.Url
-	case *schema.GitLabConnection:
-		rawURL = c.Url
-	case *schema.GitoliteConnection:
-		rawURL = c.Host
-	case *schema.PhabricatorConnection:
-		rawURL = c.Url
-	case *schema.OtherExternalServiceConnection:
-		rawURL = c.Url
-	default:
-		return nil, fmt.Errorf("unknown external service type %T", config)
-	}
-
-	parsed, err := url.Parse(rawURL)
-	if err != nil {
-		return nil, errors.Wrap(err, "parsing service URL")
-	}
-
-	return extsvc.NormalizeBaseURL(parsed), nil
-}
-
 // Exclude changes the configuration of an external service to exclude the given
 // repos from being synced.
 func (e *ExternalService) Exclude(rs ...*Repo) error {
@@ -572,6 +536,8 @@ type Repo struct {
 	Archived bool
 	// Private is whether the repository is private.
 	Private bool
+	// Cloned is whether the repository is cloned.
+	Cloned bool
 	// CreatedAt is when this repository was created on Sourcegraph.
 	CreatedAt time.Time
 	// UpdatedAt is when this repository's metadata was last updated on Sourcegraph.
@@ -659,6 +625,10 @@ func (r *Repo) Update(n *Repo) (modified bool) {
 
 	if r.Archived != n.Archived {
 		r.Archived, modified = n.Archived, true
+	}
+
+	if r.Cloned != n.Cloned {
+		r.Cloned, modified = n.Cloned, true
 	}
 
 	if r.Fork != n.Fork {
@@ -957,16 +927,13 @@ type externalServiceLister interface {
 	ListExternalServices(context.Context, StoreListExternalServicesArgs) ([]*ExternalService, error)
 }
 
-// NewRateLimitSyncer returns a new syncer and attempts to perform an initial sync it. On error, an
-// empty syncer is returned which can still to handle syncs.
-func NewRateLimitSyncer(ctx context.Context, registry *ratelimit.Registry, serviceLister externalServiceLister) (*RateLimitSyncer, error) {
+// NewRateLimitSyncer returns a new syncer
+func NewRateLimitSyncer(registry *ratelimit.Registry, serviceLister externalServiceLister) *RateLimitSyncer {
 	r := &RateLimitSyncer{
 		registry:      registry,
 		serviceLister: serviceLister,
 	}
-
-	// We'll return r either way as we'll try again if a service is added or updated
-	return r, r.SyncRateLimiters(ctx)
+	return r
 }
 
 // RateLimitSyncer syncs rate limits based on external service configuration
@@ -1011,7 +978,7 @@ func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context) error {
 	}
 
 	for u, rl := range byURL {
-		l := r.registry.GetRateLimiter(u)
+		l := r.registry.Get(u)
 		l.SetLimit(rl.Limit)
 	}
 

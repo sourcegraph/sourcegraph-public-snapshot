@@ -19,6 +19,7 @@ func PreciseCodeIntelBundleManager() *Container {
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("database operation").Unit(Seconds),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -28,6 +29,7 @@ func PreciseCodeIntelBundleManager() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("database operation"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -41,6 +43,7 @@ func PreciseCodeIntelBundleManager() *Container {
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("reader operation").Unit(Seconds),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -50,6 +53,7 @@ func PreciseCodeIntelBundleManager() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("reader operation"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -62,6 +66,7 @@ func PreciseCodeIntelBundleManager() *Container {
 							Warning:         Alert{LessOrEqual: 25},
 							Critical:        Alert{LessOrEqual: 15},
 							PanelOptions:    PanelOptions().LegendFormat("{{instance}}").Unit(Percentage),
+							Owner:           ObservableOwnerCodeIntel,
 							PossibleSolutions: `
 								- **Provision more disk space:** Sourcegraph will begin deleting the oldest uploaded bundle files at 10% disk space remaining.
 							`,
@@ -81,6 +86,7 @@ func PreciseCodeIntelBundleManager() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -90,6 +96,7 @@ func PreciseCodeIntelBundleManager() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("files removed"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -99,6 +106,7 @@ func PreciseCodeIntelBundleManager() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("files removed"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -108,6 +116,7 @@ func PreciseCodeIntelBundleManager() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("files removed"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -119,15 +128,17 @@ func PreciseCodeIntelBundleManager() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("files removed"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "janitor_uploads_without_bundle_files",
-							Description:       "upload records removed (with no corresponding bundle file) every 5m",
+							Name:              "janitor_uploads_removed",
+							Description:       "upload records removed every 5m",
 							Query:             `sum(increase(src_bundle_manager_janitor_upload_records_removed_total[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("records removed"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -147,9 +158,45 @@ func PreciseCodeIntelBundleManager() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("precise-code-intel-bundle-manager"),
-						sharedContainerMemoryUsage("precise-code-intel-bundle-manager"),
 						sharedContainerCPUUsage("precise-code-intel-bundle-manager"),
+						sharedContainerMemoryUsage("precise-code-intel-bundle-manager"),
+					},
+					{
+						sharedContainerRestarts("precise-code-intel-bundle-manager"),
+						sharedContainerFsInodes("precise-code-intel-bundle-manager"),
+					},
+				},
+			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage7d("precise-code-intel-bundle-manager"),
+						sharedProvisioningMemoryUsage7d("precise-code-intel-bundle-manager"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("precise-code-intel-bundle-manager"),
+						sharedProvisioningMemoryUsage5m("precise-code-intel-bundle-manager"),
+					},
+				},
+			},
+			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("precise-code-intel-bundle-manager"),
+						sharedGoGcDuration("precise-code-intel-bundle-manager"),
+					},
+				},
+			},
+			{
+				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedKubernetesPodsAvailable("precise-code-intel-bundle-manager"),
 					},
 				},
 			},

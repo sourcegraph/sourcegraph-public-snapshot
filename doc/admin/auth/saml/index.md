@@ -12,7 +12,7 @@ Select your SAML identity provider for setup instructions:
 - [JumpCloud](jump_cloud.md)
 - [Other](generic.md)
 
-For advanced SAML configuration options, see the [`saml` auth provider documentation](../../config/critical_config.md#saml).
+For advanced SAML configuration options, see the [`saml` auth provider documentation](../../config/site_config.md#saml).
 
 > NOTE: Sourcegraph currently supports at most 1 SAML auth provider at a time (but you can configure additional auth providers of other types). This should not be an issue for 99% of customers.
 

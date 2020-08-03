@@ -5,33 +5,33 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 )
 
 // Store is the interface to Postgres for precise-code-intel features.
 type Store interface {
+	// Handle returns the underlying transactable database handle.
+	Handle() *basestore.TransactableHandle
+
+	// With creates a new store with the underlying database handle from the given store.
+	With(other basestore.ShareableStore) Store
+
 	// Transact returns a store whose methods operate within the context of a transaction.
 	// This method will return an error if the underlying store cannot be interface upgraded
 	// to a TxBeginner.
 	Transact(ctx context.Context) (Store, error)
-
-	// Savepoint creates a named position in the transaction from which all additional work
-	// can be discarded. The returned identifier can be passed to RollbackToSavepont to undo
-	// all the work since this call.
-	Savepoint(ctx context.Context) (string, error)
-
-	// RollbackToSavepoint throws away all the work on the underlying transaction since the
-	// savepoint with the given name was created.
-	RollbackToSavepoint(ctx context.Context, savepointID string) error
 
 	// Done commits underlying the transaction on a nil error value and performs a rollback
 	// otherwise. If an error occurs during commit or rollback of the transaction, the error
 	// is added to the resulting error value. If the store does not wrap a transaction the
 	// original error value is returned unchanged.
 	Done(err error) error
+
+	// Lock attempts to take an advisory lock on the given key. If successful, this method will
+	// return a true-valued flag along with a function that must be called to release the lock.
+	Lock(ctx context.Context, key int, blocking bool) (bool, UnlockFunc, error)
 
 	// GetUploadByID returns an upload by its identifier and boolean flag indicating its existence.
 	GetUploadByID(ctx context.Context, id int) (Upload, bool, error)
@@ -49,8 +49,8 @@ type Store interface {
 	// (the resulting array is deduplicated on update).
 	AddUploadPart(ctx context.Context, uploadID, partIndex int) error
 
-	// MarkQueued updates the state of the upload to queued.
-	MarkQueued(ctx context.Context, uploadID int) error
+	// MarkQueued updates the state of the upload to queued and updates the upload size.
+	MarkQueued(ctx context.Context, uploadID int, uploadSize *int) error
 
 	// MarkComplete updates the state of the upload to complete.
 	MarkComplete(ctx context.Context, id int) error
@@ -58,11 +58,11 @@ type Store interface {
 	// MarkErrored updates the state of the upload to errored and updates the failure summary data.
 	MarkErrored(ctx context.Context, id int, failureMessage string) error
 
-	// Dequeue selects the oldest queued upload and locks it with a transaction. If there is such an upload, the
-	// upload is returned along with a store instance which wraps the transaction. This transaction must be closed.
-	// If there is no such unlocked upload, a zero-value upload and nil store will be returned along with a false
-	// valued flag. This method must not be called from within a transaction.
-	Dequeue(ctx context.Context) (Upload, Store, bool, error)
+	// Dequeue selects the oldest queued upload smaller than the given maximum size and locks it with a transaction.
+	// If there is such an upload, the upload is returned along with a store instance which wraps the transaction.
+	// This transaction must be closed. If there is no such unlocked upload, a zero-value upload and nil store will
+	// be returned along with a false valued flag. This method must not be called from within a transaction.
+	Dequeue(ctx context.Context, maxSize int64) (Upload, Store, bool, error)
 
 	// Requeue updates the state of the upload to queued and adds a processing delay before the next dequeue attempt.
 	Requeue(ctx context.Context, id int, after time.Time) error
@@ -70,30 +70,34 @@ type Store interface {
 	// GetStates returns the states for the uploads with the given identifiers.
 	GetStates(ctx context.Context, ids []int) (map[int]string, error)
 
-	// DeleteUploadByID deletes an upload by its identifier. If the upload was visible at the tip of its repository's default branch,
-	// the visibility of all uploads for that repository are recalculated. The getTipCommit function is expected to return the newest
-	// commit on the default branch when invoked.
-	DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFn) (bool, error)
+	// DeleteUploadByID deletes an upload by its identifier. This method returns a true-valued flag if a record
+	// was deleted. The associated repository will be marked as dirty so that its commit graph will be updated in
+	// the background.
+	DeleteUploadByID(ctx context.Context, id int) (bool, error)
+
+	// DeleteUploadsWithoutRepository deletes uploads associated with repositories that were deleted at least
+	// DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of uploads
+	// that were removed for that repository.
+	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
 
 	// ResetStalled moves all unlocked uploads processing for more than `StalledUploadMaxAge` back to the queued state.
-	// This method returns a list of updated upload identifiers.
-	ResetStalled(ctx context.Context, now time.Time) ([]int, error)
-
-	// GetDumpIDs returns all dump ids in chronological order.
-	GetDumpIDs(ctx context.Context) ([]int, error)
+	// In order to prevent input that continually crashes worker instances, uploads that have been reset more than
+	// UploadMaxNumResets times will be marked as errored. This method returns a list of updated and errored upload
+	// identifiers.
+	ResetStalled(ctx context.Context, now time.Time) ([]int, []int, error)
 
 	// GetDumpByID returns a dump by its identifier and boolean flag indicating its existence.
 	GetDumpByID(ctx context.Context, id int) (Dump, bool, error)
 
-	// FindClosestDumps returns the set of dumps that can most accurately answer queries for the given repository, commit, file, and optional indexer.
-	FindClosestDumps(ctx context.Context, repositoryID int, commit, file, indexer string) ([]Dump, error)
+	// FindClosestDumps returns the set of dumps that can most accurately answer queries for the given repository, commit, path, and
+	// optional indexer. If rootMustEnclosePath is true, then only dumps with a root which is a prefix of path are returned. Otherwise,
+	// any dump with a root intersecting the given path is returned.
+	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) ([]Dump, error)
 
 	// DeleteOldestDump deletes the oldest dump that is not currently visible at the tip of its repository's default branch.
-	// This method returns the deleted dump's identifier and a flag indicating its (previous) existence.
+	// This method returns the deleted dump's identifier and a flag indicating its (previous) existence. The associated repository
+	// will be marked as dirty so that its commit graph will be updated in the background.
 	DeleteOldestDump(ctx context.Context) (int, bool, error)
-
-	// UpdateDumpsVisibleFromTip recalculates the visible_at_tip flag of all dumps of the given repository.
-	UpdateDumpsVisibleFromTip(ctx context.Context, repositoryID int, tipCommit string) error
 
 	// DeleteOverlapapingDumps deletes all completed uploads for the given repository with the same
 	// commit, root, and indexer. This is necessary to perform during conversions before changing
@@ -118,18 +122,38 @@ type Store interface {
 	// default branch.
 	PackageReferencePager(ctx context.Context, scheme, name, version string, repositoryID, limit int) (int, ReferencePager, error)
 
+	// HasRepository determines if there is LSIF data for the given repository.
+	HasRepository(ctx context.Context, repositoryID int) (bool, error)
+
 	// HasCommit determines if the given commit is known for the given repository.
 	HasCommit(ctx context.Context, repositoryID int, commit string) (bool, error)
 
-	// UpdateCommits upserts commits/parent-commit relations for the given repository ID.
-	UpdateCommits(ctx context.Context, repositoryID int, commits map[string][]string) error
+	// MarkRepositoryAsDirty marks the given repository's commit graph as out of date.
+	MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error
+
+	// DirtyRepositories returns a map from repository identifiers to a dirty token for each repository whose commit
+	// graph is out of date. This token should be passed to CalculateVisibleUploads in order to unmark the repository.
+	DirtyRepositories(ctx context.Context) (map[int]int, error)
+
+	// CalculateVisibleUploads uses the given commit graph and the tip commit of the default branch to determine the set
+	// of LSIF uploads that are visible for each commit, and the set of uploads which are visible at the tip. The decorated
+	// commit graph is serialized to Postgres for use by find closest dumps queries.
+	//
+	// If dirtyToken is supplied, the repository will be unmarked when the supplied token does matches the most recent
+	// token stored in the database, the flag will not be cleared as another request for update has come in since this
+	// token has been read.
+	CalculateVisibleUploads(ctx context.Context, repositoryID int, graph map[string][]string, tipCommit string, dirtyToken int) error
 
 	// IndexableRepositories returns the identifiers of all indexable repositories.
 	IndexableRepositories(ctx context.Context, opts IndexableRepositoryQueryOptions) ([]IndexableRepository, error)
 
 	// UpdateIndexableRepository updates the metadata for an indexable repository. If the repository is not
 	// already marked as indexable, a new record will be created.
-	UpdateIndexableRepository(ctx context.Context, indexableRepository UpdateableIndexableRepository) error
+	UpdateIndexableRepository(ctx context.Context, indexableRepository UpdateableIndexableRepository, now time.Time) error
+
+	// ResetIndexableRepositories zeroes the event counts for indexable repositories that have not been updated
+	// since lastUpdatedBefore.
+	ResetIndexableRepositories(ctx context.Context, lastUpdatedBefore time.Time) error
 
 	// GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
 	GetIndexByID(ctx context.Context, id int) (Index, bool, error)
@@ -164,9 +188,16 @@ type Store interface {
 	// DeleteIndexByID deletes an index by its identifier.
 	DeleteIndexByID(ctx context.Context, id int) (bool, error)
 
-	// ResetStalledIndexes moves all unlocked indexes processing for more than `StalledIndexMaxAge` back to the
-	// queued state. This method returns a list of updated index identifiers.
-	ResetStalledIndexes(ctx context.Context, now time.Time) ([]int, error)
+	// DeleteIndexesWithoutRepository deletes indexes associated with repositories that were deleted at least
+	// DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of indexes
+	// that were removed for that repository.
+	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
+
+	// ResetStalledIndexes moves all unlocked index processing for more than `StalledIndexMaxAge` back to the
+	// queued state. In order to prevent input that continually crashes indexer instances, indexes that have
+	// been reset more than IndexMaxNumResets times will be marked as errored. This method returns a list of
+	// updated and errored index identifiers.
+	ResetStalledIndexes(ctx context.Context, now time.Time) ([]int, []int, error)
 
 	// RepoUsageStatistics reads recent event log records and returns the number of search-based and precise
 	// code intelligence activity within the last week grouped by repository. The resulting slice is ordered
@@ -177,113 +208,77 @@ type Store interface {
 	RepoName(ctx context.Context, repositoryID int) (string, error)
 }
 
-// GetTipCommitFn returns the head commit for the given repository.
-type GetTipCommitFn func(repositoryID int) (string, error)
-
 type store struct {
-	db           dbutil.DB
-	savepointIDs []string
+	*basestore.Store
 }
 
 var _ Store = &store{}
 
 // New creates a new instance of store connected to the given Postgres DSN.
 func New(postgresDSN string) (Store, error) {
-	db, err := dbutil.NewDB(postgresDSN, "codeintel")
+	base, err := basestore.New(postgresDSN, "codeintel")
 	if err != nil {
 		return nil, err
 	}
 
-	return &store{db: db}, nil
+	return &store{Store: base}, nil
 }
 
-func NewWithHandle(db *sql.DB) Store {
-	return &store{db: db}
+func NewWithHandle(handle *basestore.TransactableHandle) Store {
+	return &store{Store: basestore.NewWithHandle(handle)}
+}
+
+func (s *store) With(other basestore.ShareableStore) Store {
+	return &store{Store: s.Store.With(other)}
+}
+
+func (s *store) Transact(ctx context.Context) (Store, error) {
+	return s.transact(ctx)
+}
+
+func (s *store) transact(ctx context.Context) (*store, error) {
+	txBase, err := s.Store.Transact(ctx)
+	return &store{Store: txBase}, err
 }
 
 // query performs QueryContext on the underlying connection.
 func (s *store) query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error) {
-	return s.db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	return s.Store.Query(ctx, query)
 }
 
 // queryForEffect performs a query and throws away the result.
 func (s *store) queryForEffect(ctx context.Context, query *sqlf.Query) error {
-	rows, err := s.query(ctx, query)
-	if err != nil {
-		return err
-	}
-	return closeRows(rows, nil)
+	return s.Store.Exec(ctx, query)
 }
 
 // scanStrings scans a slice of strings from the return value of `*store.query`.
 func scanStrings(rows *sql.Rows, queryErr error) (_ []string, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = closeRows(rows, err) }()
-
-	var values []string
-	for rows.Next() {
-		var value string
-		if err := rows.Scan(&value); err != nil {
-			return nil, err
-		}
-
-		values = append(values, value)
-	}
-
-	return values, nil
+	return basestore.ScanStrings(rows, queryErr)
 }
 
 // scanFirstString scans a slice of strings from the return value of `*store.query` and returns the first.
 func scanFirstString(rows *sql.Rows, err error) (string, bool, error) {
-	values, err := scanStrings(rows, err)
-	if err != nil || len(values) == 0 {
-		return "", false, err
-	}
-	return values[0], true, nil
+	return basestore.ScanFirstString(rows, err)
 }
 
 // scanInts scans a slice of ints from the return value of `*store.query`.
 func scanInts(rows *sql.Rows, queryErr error) (_ []int, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = closeRows(rows, err) }()
-
-	var values []int
-	for rows.Next() {
-		var value int
-		if err := rows.Scan(&value); err != nil {
-			return nil, err
-		}
-
-		values = append(values, value)
-	}
-
-	return values, nil
+	return basestore.ScanInts(rows, queryErr)
 }
 
 // scanFirstInt scans a slice of ints from the return value of `*store.query` and returns the first.
 func scanFirstInt(rows *sql.Rows, err error) (int, bool, error) {
-	values, err := scanInts(rows, err)
-	if err != nil || len(values) == 0 {
-		return 0, false, err
-	}
-	return values[0], true, nil
+	return basestore.ScanFirstInt(rows, err)
+}
+
+// scanFirstBool scans a slice of bools from the return value of `*store.query` and returns the first.
+func scanFirstBool(rows *sql.Rows, err error) (bool, bool, error) {
+	return basestore.ScanFirstBool(rows, err)
 }
 
 // closeRows closes the rows object and checks its error value.
 func closeRows(rows *sql.Rows, err error) error {
-	if closeErr := rows.Close(); closeErr != nil {
-		err = multierror.Append(err, closeErr)
-	}
-
-	if rowsErr := rows.Err(); rowsErr != nil {
-		err = multierror.Append(err, rowsErr)
-	}
-
-	return err
+	return basestore.CloseRows(rows, err)
 }
 
 // intsToQueries converts a slice of ints into a slice of queries.

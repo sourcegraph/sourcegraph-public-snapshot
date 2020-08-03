@@ -7,7 +7,7 @@ import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/err
 import { catchError, takeWhile, concatMap, repeatWhen, delay } from 'rxjs/operators'
 import { ErrorAlert } from '../../components/alerts'
 import { eventLogger } from '../../tracking/eventLogger'
-import { fetchLsifUpload, deleteLsifUpload } from './backend'
+import { fetchLsifUpload as defaultFetchUpload, deleteLsifUpload, Upload } from './backend'
 import { Link } from '../../../../shared/src/components/Link'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageTitle } from '../../components/PageTitle'
@@ -22,15 +22,19 @@ const REFRESH_INTERVAL_MS = 5000
 
 interface Props extends RouteComponentProps<{ id: string }> {
     repo?: GQL.IRepository
+    fetchLsifUpload?: typeof defaultFetchUpload
 
     /** Scheduler for the refresh timer */
     scheduler?: SchedulerLike
     history: H.History
+
+    /** Function that returns the current time (for stability in visual tests). */
+    now?: () => Date
 }
 
 const terminalStates = new Set([GQL.LSIFUploadState.COMPLETED, GQL.LSIFUploadState.ERRORED])
 
-function shouldReload(upload: GQL.ILSIFUpload | ErrorLike | null | undefined): boolean {
+function shouldReload(upload: Upload | ErrorLike | null | undefined): boolean {
     return !isErrorLike(upload) && !(upload && terminalStates.has(upload.state))
 }
 
@@ -44,6 +48,8 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
         params: { id },
     },
     history,
+    fetchLsifUpload = defaultFetchUpload,
+    now,
 }) => {
     useEffect(() => eventLogger.logViewEvent('CodeIntelUpload'))
 
@@ -61,7 +67,7 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
                     ),
                     takeWhile(shouldReload, true)
                 ),
-            [id, scheduler]
+            [id, scheduler, fetchLsifUpload]
         )
     )
 
@@ -70,7 +76,7 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
             return
         }
 
-        let description = `commit ${uploadOrError.inputCommit.slice(0, 7)}`
+        let description = `${uploadOrError.inputCommit.slice(0, 7)}`
         if (uploadOrError.inputRoot) {
             description += ` rooted at ${uploadOrError.inputRoot}`
         }
@@ -109,35 +115,37 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
                                 ? uploadOrError.projectRoot.commit.abbreviatedOID
                                 : uploadOrError.inputCommit.slice(0, 7)}{' '}
                             indexed by {uploadOrError.inputIndexer} rooted at{' '}
-                            {uploadOrError.projectRoot?.path || uploadOrError.inputRoot || '/'}
+                            {uploadOrError.projectRoot
+                                ? uploadOrError.projectRoot.path
+                                : uploadOrError.inputRoot || '/'}
                         </h2>
                     </div>
 
                     {uploadOrError.state === GQL.LSIFUploadState.UPLOADING ? (
                         <div className="alert alert-primary mb-4 mt-3">
                             <LoadingSpinner className="icon-inline" />{' '}
-                            <span className="e2e-upload-state">Still uploading...</span>
+                            <span className="test-upload-state">Still uploading...</span>
                         </div>
                     ) : uploadOrError.state === GQL.LSIFUploadState.PROCESSING ? (
                         <div className="alert alert-primary mb-4 mt-3">
                             <LoadingSpinner className="icon-inline" />{' '}
-                            <span className="e2e-upload-state">Upload is currently being processed...</span>
+                            <span className="test-upload-state">Upload is currently being processed...</span>
                         </div>
                     ) : uploadOrError.state === GQL.LSIFUploadState.COMPLETED ? (
                         <div className="alert alert-success mb-4 mt-3">
                             <CheckIcon className="icon-inline" />{' '}
-                            <span className="e2e-upload-state">Upload processed successfully.</span>
+                            <span className="test-upload-state">Upload processed successfully.</span>
                         </div>
                     ) : uploadOrError.state === GQL.LSIFUploadState.ERRORED ? (
                         <div className="alert alert-danger mb-4 mt-3">
                             <AlertCircleIcon className="icon-inline" />{' '}
-                            <span className="e2e-upload-state">Upload failed to complete:</span>{' '}
+                            <span className="test-upload-state">Upload failed to complete:</span>{' '}
                             <code>{uploadOrError.failure}</code>
                         </div>
                     ) : (
                         <div className="alert alert-primary mb-4 mt-3">
                             <ClockOutlineIcon className="icon-inline" />{' '}
-                            <span className="e2e-upload-state">
+                            <span className="test-upload-state">
                                 Upload is queued. There are {uploadOrError.placeInQueue} uploads ahead of this one.
                             </span>
                         </div>
@@ -149,8 +157,8 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
                                 <td>Repository</td>
                                 <td>
                                     {uploadOrError.projectRoot ? (
-                                        <Link to={uploadOrError.projectRoot.commit.repository.url}>
-                                            {uploadOrError.projectRoot.commit.repository.name}
+                                        <Link to={uploadOrError.projectRoot.repository.url}>
+                                            {uploadOrError.projectRoot.repository.name}
                                         </Link>
                                     ) : (
                                         repo?.name || 'unknown'
@@ -193,7 +201,7 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
                                 <td>Is latest for repo</td>
                                 <td>
                                     {uploadOrError.finishedAt ? (
-                                        <span className="e2e-is-latest-for-repo">
+                                        <span className="test-is-latest-for-repo">
                                             {uploadOrError.isLatestForRepo ? 'yes' : 'no'}
                                         </span>
                                     ) : (
@@ -205,7 +213,7 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
                             <tr>
                                 <td>Uploaded</td>
                                 <td>
-                                    <Timestamp date={uploadOrError.uploadedAt} noAbout={true} />
+                                    <Timestamp date={uploadOrError.uploadedAt} now={now} noAbout={true} />
                                 </td>
                             </tr>
 
@@ -213,7 +221,7 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
                                 <td>Began processing</td>
                                 <td>
                                     {uploadOrError.startedAt ? (
-                                        <Timestamp date={uploadOrError.startedAt} noAbout={true} />
+                                        <Timestamp date={uploadOrError.startedAt} now={now} noAbout={true} />
                                     ) : (
                                         <span className="text-muted">Upload has not yet started.</span>
                                     )}
@@ -229,7 +237,7 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
                                 </td>
                                 <td>
                                     {uploadOrError.finishedAt ? (
-                                        <Timestamp date={uploadOrError.finishedAt} noAbout={true} />
+                                        <Timestamp date={uploadOrError.finishedAt} now={now} noAbout={true} />
                                     ) : (
                                         <span className="text-muted">Upload has not yet completed.</span>
                                     )}
@@ -238,27 +246,19 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
                         </tbody>
                     </table>
 
-                    <div className="action-container">
-                        <div className="action-container__row">
-                            <div className="action-container__description">
-                                <h4 className="action-container__title">Delete this upload</h4>
-                                <div>
-                                    Deleting this upload make it immediately unavailable to answer code intelligence
-                                    queries.
-                                </div>
-                            </div>
-                            <div className="action-container__btn-container">
-                                <button
-                                    type="button"
-                                    className="btn btn-danger action-container__btn"
-                                    onClick={deleteUpload}
-                                    disabled={deletionOrError === 'loading'}
-                                    data-tooltip="Delete upload"
-                                >
-                                    <DeleteIcon className="icon-inline" />
-                                </button>
-                            </div>
-                        </div>
+                    <div className="mt-4 p-2 pt-2">
+                        <button
+                            type="button"
+                            className="btn btn-danger"
+                            onClick={deleteUpload}
+                            disabled={deletionOrError === 'loading'}
+                            aria-describedby="upload-delete-button-help"
+                        >
+                            <DeleteIcon className="icon-inline" /> Delete upload
+                        </button>
+                        <small id="upload-delete-button-help" className="form-text text-muted">
+                            Deleting this upload makes it immediately unavailable to answer code intelligence queries.
+                        </small>
                     </div>
                 </>
             )}

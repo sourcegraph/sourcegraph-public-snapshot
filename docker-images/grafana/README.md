@@ -1,8 +1,8 @@
 # Grafana image
 
-Vanilla Grafana image with one addition: embedded Sourcegraph provisioning.
+Vanilla Grafana image with provisioned Sourcegraph dashboards and config. For more details, refer to [the handbook](https://about.sourcegraph.com/handbook/engineering/distribution/observability/monitoring#grafana).
 
-# Image API
+## Image API
 
 ```shell script
 docker run  \

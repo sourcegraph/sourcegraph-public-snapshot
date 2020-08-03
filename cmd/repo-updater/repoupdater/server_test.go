@@ -561,7 +561,7 @@ func TestServer_StatusMessages(t *testing.T) {
 		{
 			name:            "all cloned",
 			gitserverCloned: []string{"foobar"},
-			stored:          []*repos.Repo{{Name: "foobar"}},
+			stored:          []*repos.Repo{{Name: "foobar", Cloned: true}},
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{},
 			},
@@ -582,7 +582,7 @@ func TestServer_StatusMessages(t *testing.T) {
 		},
 		{
 			name:            "subset cloned",
-			stored:          []*repos.Repo{{Name: "foobar"}, {Name: "barfoo"}},
+			stored:          []*repos.Repo{{Name: "foobar", Cloned: true}, {Name: "barfoo"}},
 			gitserverCloned: []string{"foobar"},
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
@@ -596,7 +596,7 @@ func TestServer_StatusMessages(t *testing.T) {
 		},
 		{
 			name:            "more cloned than stored",
-			stored:          []*repos.Repo{{Name: "foobar"}},
+			stored:          []*repos.Repo{{Name: "foobar", Cloned: true}},
 			gitserverCloned: []string{"foobar", "barfoo"},
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{},
@@ -619,7 +619,7 @@ func TestServer_StatusMessages(t *testing.T) {
 		{
 			name:            "case insensitivity",
 			gitserverCloned: []string{"foobar"},
-			stored:          []*repos.Repo{{Name: "FOOBar"}},
+			stored:          []*repos.Repo{{Name: "FOOBar", Cloned: true}},
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{},
 			},
@@ -627,7 +627,7 @@ func TestServer_StatusMessages(t *testing.T) {
 		{
 			name:            "case insensitivity to gitserver names",
 			gitserverCloned: []string{"FOOBar"},
-			stored:          []*repos.Repo{{Name: "FOOBar"}},
+			stored:          []*repos.Repo{{Name: "FOOBar", Cloned: true}},
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{},
 			},
@@ -653,7 +653,7 @@ func TestServer_StatusMessages(t *testing.T) {
 				Messages: []protocol.StatusMessage{
 					{
 						SyncError: &protocol.SyncError{
-							Message: "syncer.sync.streaming: syncer.storedExternalIDs: could not connect to database",
+							Message: "syncer.sync.store.list-repos: could not connect to database",
 						},
 					},
 				},
@@ -669,11 +669,15 @@ func TestServer_StatusMessages(t *testing.T) {
 			gitserverClient := &fakeGitserverClient{listClonedResponse: tc.gitserverCloned}
 
 			stored := tc.stored.Clone()
+			var cloned []string
 			for i, r := range stored {
 				r.ExternalRepo = api.ExternalRepoSpec{
 					ID:          strconv.Itoa(i),
 					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
+				}
+				if r.Cloned {
+					cloned = append(cloned, r.Name)
 				}
 			}
 
@@ -682,6 +686,11 @@ func TestServer_StatusMessages(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			err = store.SetClonedRepos(ctx, cloned...)
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			err = store.UpsertExternalServices(ctx, githubService)
 			if err != nil {
 				t.Fatal(err)
@@ -961,7 +970,6 @@ func TestRepoLookup(t *testing.T) {
 					Commit: "github.com/foo/bar/commit/{commit}",
 				},
 			}},
-			assert: repos.Assert.ReposEqual(githubRepository),
 		},
 		{
 			name: "not found - GitHub.com on Sourcegraph.com",
@@ -1051,7 +1059,6 @@ func TestRepoLookup(t *testing.T) {
 				},
 				ExternalRepo: gitlabRepository.ExternalRepo,
 			}},
-			assert: repos.Assert.ReposEqual(gitlabRepository),
 		},
 		{
 			name: "GithubDotcomSource on Sourcegraph.com ignores non-Github.com repos",
@@ -1078,6 +1085,7 @@ func TestRepoLookup(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			clock := clock
 			syncer := &repos.Syncer{
 				Store: store,
 				Now:   clock.Now,

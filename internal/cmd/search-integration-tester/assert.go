@@ -31,7 +31,7 @@ func assertUpdate(path string, got GQLResult) error {
 	if err != nil {
 		panic(fmt.Sprintf("could not marshal response %s", string(gotBytes)))
 	}
-	if update {
+	if update || updateAll {
 		if err := ioutil.WriteFile(path, gotBytes, 0640); err != nil {
 			return fmt.Errorf("failed to update golden file %q: %s", path, err)
 		}

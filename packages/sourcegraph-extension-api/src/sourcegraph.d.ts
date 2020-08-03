@@ -1245,6 +1245,28 @@ declare module 'sourcegraph' {
          * position or the current position itself.
          */
         range?: Range
+
+        /**
+         * Alerts that should be shown in this hover.
+         */
+        alerts?: Badged<HoverAlert>[]
+    }
+
+    export interface HoverAlert {
+        /**
+         * Text content to be shown on hovers. Since the alert is displayed inline,
+         * multiparagraph content will be rendered on one line. It's recommended to
+         * provide a brief message here, and place futher details in the badge or
+         * provide a link.
+         */
+        summary: MarkupContent
+
+        /**
+         * When an alert has a dismissal type, dismissing it will prevent all alerts
+         * of that type from being shown. If no type is provided, the alert is not
+         * dismissible.
+         */
+        type?: string
     }
 
     export interface HoverProvider {
@@ -1370,6 +1392,51 @@ declare module 'sourcegraph' {
         provideCompletionItems(document: TextDocument, position: Position): ProviderResult<CompletionList>
     }
 
+    /**
+     * A document highlight is a range inside a text document which deserves special attention.
+     * Usually a document highlight is visualized by changing the background color of its range.
+     */
+    export interface DocumentHighlight {
+        /**
+         * The range this highlight applies to.
+         */
+        range: Range
+
+        /**
+         * The highlight kind, default is text.
+         */
+        kind?: DocumentHighlightKind
+    }
+
+    /**
+     * A document highlight kind.
+     */
+    export enum DocumentHighlightKind {
+        Text = 'text',
+        Read = 'read',
+        Write = 'write',
+    }
+
+    /**
+     * A document highlight provider provides ranges to highlight in the current document like all
+     * occurrences of a variable or all exit-points of a function.
+     *
+     * Providers are queried for document highlights on symbol hovers in any document matching
+     * the document selector specified at registration time.
+     */
+    export interface DocumentHighlightProvider {
+        /**
+         * Provide document highlights for the given position and document.
+         *
+         * @param document The document in which the command was invoked.
+         * @param position The position at which the command was invoked.
+         *
+         * @returns An array of document highlights, or a thenable that resolves to document highlights.
+         * The lack of a result can be signaled by returning `undefined`, `null`, or an empty array.
+         */
+        provideDocumentHighlights(document: TextDocument, position: Position): ProviderResult<DocumentHighlight[]>
+    }
+
     export namespace languages {
         /**
          * Registers a hover provider, which returns a formatted hover message (intended for display in a tooltip)
@@ -1451,6 +1518,22 @@ declare module 'sourcegraph' {
         export function registerCompletionItemProvider(
             selector: DocumentSelector,
             provider: CompletionItemProvider
+        ): Unsubscribable
+
+        /**
+         * Registers a document highlight provider.
+         *
+         * Multiple providers can be registered with overlapping document selectors. In that case,
+         * providers are queried in parallel and the results are merged. A failing provider will not
+         * cause the whole operation to fail.
+         *
+         * @param selector A selector that defines the documents this provider applies to.
+         * @param provider A document hover provider.
+         * @returns An unsubscribable to unregister this provider.
+         */
+        export function registerDocumentHighlightProvider(
+            selector: DocumentSelector,
+            provider: DocumentHighlightProvider
         ): Unsubscribable
     }
 

@@ -31,7 +31,7 @@ import {
     toPositionOrRangeHash,
     toURIWithPath,
 } from '../../../../shared/src/util/url'
-import { getHover } from '../../backend/features'
+import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { EventLoggerProps } from '../../tracking/eventLogger'
@@ -169,6 +169,8 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 filter(property('hoverOverlayElement', isDefined))
             ),
             getHover: position => getHover(this.getLSPTextDocumentPositionParams(position), this.props),
+            getDocumentHighlights: position =>
+                getDocumentHighlights(this.getLSPTextDocumentPositionParams(position), this.props),
             getActions: context => getHoverActions(this.props, context),
             pinningEnabled: !singleClickGoToDefinition,
         })
@@ -477,7 +479,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         return (
             <div className={`blob ${this.props.className}`} ref={this.nextBlobElement}>
                 <code
-                    className={`blob__code ${this.props.wrapCode ? ' blob__code--wrapped' : ''} e2e-blob`}
+                    className={`blob__code ${this.props.wrapCode ? ' blob__code--wrapped' : ''} test-blob`}
                     ref={this.nextCodeViewElement}
                     dangerouslySetInnerHTML={{ __html: this.props.html }}
                 />

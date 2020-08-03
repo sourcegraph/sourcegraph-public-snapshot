@@ -17,6 +17,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 100},
 							PanelOptions:      PanelOptions().LegendFormat("uploads queued for processing"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -26,6 +27,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("upload queue growth rate"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -36,6 +38,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -49,6 +52,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -58,6 +62,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("store operation"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -75,6 +80,17 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("uploads"),
+							Owner:             ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "processing_uploads_reset_failures",
+							Description:       "uploads errored after repeated resets every 5m",
+							Query:             `sum(increase(src_upload_queue_max_resets_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("uploads"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -84,6 +100,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -102,6 +119,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 300},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -111,6 +129,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -123,6 +142,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -132,6 +152,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -145,9 +166,45 @@ func PreciseCodeIntelWorker() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("precise-code-intel-worker"),
-						sharedContainerMemoryUsage("precise-code-intel-worker"),
 						sharedContainerCPUUsage("precise-code-intel-worker"),
+						sharedContainerMemoryUsage("precise-code-intel-worker"),
+					},
+					{
+						sharedContainerRestarts("precise-code-intel-worker"),
+						sharedContainerFsInodes("precise-code-intel-worker"),
+					},
+				},
+			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage7d("precise-code-intel-worker"),
+						sharedProvisioningMemoryUsage7d("precise-code-intel-worker"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("precise-code-intel-worker"),
+						sharedProvisioningMemoryUsage5m("precise-code-intel-worker"),
+					},
+				},
+			},
+			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("precise-code-intel-worker"),
+						sharedGoGcDuration("precise-code-intel-worker"),
+					},
+				},
+			},
+			{
+				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedKubernetesPodsAvailable("precise-code-intel-worker"),
 					},
 				},
 			},

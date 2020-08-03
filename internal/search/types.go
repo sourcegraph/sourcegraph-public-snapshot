@@ -107,6 +107,7 @@ type TextParametersForCommitParameters struct {
 // sync with pkg/searcher/protocol.PatternInfo.
 type TextPatternInfo struct {
 	Pattern         string
+	IsNegated       bool
 	IsRegExp        bool
 	IsStructuralPat bool
 	CombyRule       string
@@ -122,7 +123,6 @@ type TextPatternInfo struct {
 	FilePatternsReposMustInclude []string
 	FilePatternsReposMustExclude []string
 
-	PathPatternsAreRegExps       bool
 	PathPatternsAreCaseSensitive bool
 
 	PatternMatchesContent bool
@@ -169,10 +169,7 @@ func (p *TextPatternInfo) String() string {
 		args = append(args, fmt.Sprintf("-repositoryPathPattern:%s", dec))
 	}
 
-	path := "glob"
-	if p.PathPatternsAreRegExps {
-		path = "f"
-	}
+	path := "f"
 	if p.PathPatternsAreCaseSensitive {
 		path = "F"
 	}

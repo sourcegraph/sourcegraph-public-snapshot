@@ -6,7 +6,6 @@ import {
     CompletionItemProvider,
     DefinitionProvider,
     DocumentSelector,
-    HoverProvider,
     Location,
     LocationProvider,
     ReferenceProvider,
@@ -16,23 +15,11 @@ import { ReferenceParams, TextDocumentPositionParams } from '../../protocol'
 import { syncSubscription } from '../../util'
 import { toProxyableSubscribable } from './common'
 import { ExtensionDocuments } from './documents'
-import { fromHover, fromLocation, toPosition, fromDocumentSelector } from './types'
+import { fromLocation, toPosition, fromDocumentSelector } from './types'
 
 /** @internal */
 export class ExtensionLanguageFeatures {
     constructor(private proxy: comlink.Remote<ClientLanguageFeaturesAPI>, private documents: ExtensionDocuments) {}
-
-    public registerHoverProvider(selector: DocumentSelector, provider: HoverProvider): Unsubscribable {
-        const providerFunction: comlink.Local<
-            Parameters<ClientLanguageFeaturesAPI['$registerHoverProvider']>[1]
-        > = comlink.proxy(async ({ textDocument, position }: TextDocumentPositionParams) =>
-            toProxyableSubscribable(
-                provider.provideHover(await this.documents.getSync(textDocument.uri), toPosition(position)),
-                hover => (hover ? fromHover(hover) : hover)
-            )
-        )
-        return syncSubscription(this.proxy.$registerHoverProvider(fromDocumentSelector(selector), providerFunction))
-    }
 
     public registerDefinitionProvider(selector: DocumentSelector, provider: DefinitionProvider): Unsubscribable {
         const providerFunction: comlink.Local<

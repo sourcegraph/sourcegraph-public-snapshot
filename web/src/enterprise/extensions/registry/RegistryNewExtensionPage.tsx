@@ -87,7 +87,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                 concat(
                     [{ publishersOrError: 'loading' }],
                     queryViewerRegistryPublishers().pipe(
-                        map(result => ({ publishersOrError: result, publisher: result[0] && result[0].id })),
+                        map(result => ({ publishersOrError: result, publisher: result[0]?.id })),
                         catchError(error => [{ publishersOrError: asError(error) }])
                     )
                 ).subscribe(

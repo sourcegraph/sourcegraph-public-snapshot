@@ -1,6 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import classNames from 'classnames'
-import H from 'history'
+import * as H from 'history'
 import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
@@ -120,8 +120,8 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
 
     public componentDidUpdate(previousProps: ActionItemProps, previousState: State): void {
         // If the tooltip changes while it's visible, we need to force-update it to show the new value.
-        const previousTooltip = previousProps.action.actionItem && previousProps.action.actionItem.description
-        const tooltip = this.props.action.actionItem && this.props.action.actionItem.description
+        const previousTooltip = previousProps.action.actionItem?.description
+        const tooltip = this.props.action.actionItem?.description
         const descriptionTooltipChanged = previousTooltip !== tooltip
 
         const errorTooltipChanged =

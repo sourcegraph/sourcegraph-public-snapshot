@@ -52,6 +52,12 @@ const SettingsSchemaJSON = `{
           "type": "boolean",
           "default": false,
           "!go": { "pointer": true }
+        },
+        "showRepogroupHomepage": {
+          "description": "Enables the repository group homepage ",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
         }
       },
       "group": "Experimental"
@@ -90,6 +96,12 @@ const SettingsSchemaJSON = `{
         "additionalProperties": false,
         "required": ["key", "description", "query"]
       }
+    },
+    "search.globbing": {
+      "description": "Enables globbing for supported field values",
+      "type": "boolean",
+      "default": false,
+      "!go": { "pointer": true }
     },
     "search.scopes": {
       "description": "Predefined search scopes",
@@ -171,6 +183,12 @@ const SettingsSchemaJSON = `{
       "type": "boolean",
       "default": true
     },
+    "alerts.hideObservabilitySiteAlerts": {
+      "description": "Disables observability-related site alert banners.",
+      "type": "boolean",
+      "default": true,
+      "!go": { "pointer": true }
+    },
     "extensions": {
       "description": "The Sourcegraph extensions to use. Enable an extension by adding a property ` + "`" + `\"my/extension\": true` + "`" + ` (where ` + "`" + `my/extension` + "`" + ` is the extension ID). Override a previously enabled extension and disable it by setting its value to ` + "`" + `false` + "`" + `.",
       "type": "object",
@@ -191,6 +209,12 @@ const SettingsSchemaJSON = `{
     },
     "search.uppercase": {
       "description": "When active, any uppercase characters in the pattern will make the entire query case-sensitive.",
+      "type": "boolean",
+      "default": false,
+      "!go": { "pointer": true }
+    },
+    "search.migrateParser": {
+      "description": "If true, uses the new and/or-compatible parser for all search queries. It is a flag to aid transition to the new parser.",
       "type": "boolean",
       "default": false,
       "!go": { "pointer": true }

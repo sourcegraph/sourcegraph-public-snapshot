@@ -247,7 +247,7 @@ export function checkIsGitHubEnterprise(): boolean {
 /**
  * Returns true if the current page is github.com.
  */
-export const checkIsGitHubDotCom = (): boolean => /^https?:\/\/(www.)?github.com/.test(window.location.href)
+export const checkIsGitHubDotCom = (url = window.location.href): boolean => /^https?:\/\/(www\.)?github\.com/.test(url)
 
 /**
  * Returns true if the current page is either github.com or GitHub Enterprise.
@@ -289,12 +289,16 @@ export const githubCodeHost: CodeHost = {
     textFieldResolvers: [commentTextFieldResolver],
     nativeTooltipResolvers: [nativeTooltipResolver],
     getContext: () => {
-        const repoHeaderHasPrivateMarker = !!document.querySelector('.repohead .private')
+        const repoHeaderHasPrivateMarker =
+            !!document.querySelector('.repohead .private') ||
+            !!document.querySelector('#js-repo-pjax-container h1 .octicon-lock')
         const parsedURL = parseURL()
         return {
             ...parsedURL,
             revision:
-                parsedURL.pageType === 'blob' || parsedURL.pageType === 'tree' ? resolveFileInfo().revision : undefined,
+                parsedURL.pageType === 'blob' || parsedURL.pageType === 'tree'
+                    ? resolveFileInfo().blob.revision
+                    : undefined,
             privateRepository: window.location.hostname !== 'github.com' || repoHeaderHasPrivateMarker,
         }
     },
@@ -402,7 +406,7 @@ export const githubCodeHost: CodeHost = {
 
         // Go to blob URL
         const fragment = target.position
-            ? `#L${target.position.line}${target.position.character ? ':' + target.position.character : ''}`
+            ? `#L${target.position.line}${target.position.character ? `:${target.position.character}` : ''}`
             : ''
         return `https://${target.rawRepoName}/blob/${revision}/${target.filePath}${fragment}`
     },

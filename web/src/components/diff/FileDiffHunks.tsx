@@ -15,6 +15,7 @@ import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec, toURIWithPath }
 import { ThemeProps } from '../../../../shared/src/theme'
 import { DiffHunk } from './DiffHunk'
 import { diffDomFunctions } from '../../repo/compare/dom-functions'
+import { FileDiffFields } from '../../graphql-operations'
 
 interface PartFileInfo {
     repoName: string
@@ -46,7 +47,7 @@ interface FileHunksProps extends ThemeProps {
     } & ExtensionsControllerProps
 
     /** The file's hunks. */
-    hunks: GQL.IFileDiffHunk[]
+    hunks: FileDiffFields['hunks']
 
     /** Whether to show line numbers. */
     lineNumbers: boolean

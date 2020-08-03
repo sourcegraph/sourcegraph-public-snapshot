@@ -1,19 +1,28 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`CampaignsMarketing renders 1`] = `
-Array [
+<CampaignsMarketing
+  body={
+    <div>
+      MY CUSTOM CONTENT
+    </div>
+  }
+>
   <section
     className="mt-3 mb-5"
   >
     <h1
       className="font-weight-bold display-4"
     >
-      Campaigns 
-      <span
-        className="badge badge-info"
-      >
-        Beta
-      </span>
+      Campaigns
+       
+      <sup>
+        <span
+          className="badge badge-info text-uppercase"
+        >
+          Beta
+        </span>
+      </sup>
     </h1>
     <h2
       className="mb-5"
@@ -26,16 +35,17 @@ Array [
       <iframe
         allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen={true}
+        className="percy-hide chromatic-ignore"
         frameBorder="0"
         height="315"
         src="https://www.youtube.com/embed/aqcCrqRB17w"
         width="560"
       />
     </div>
-  </section>,
+  </section>
   <div>
     MY CUSTOM CONTENT
-  </div>,
+  </div>
   <section
     className="my-3"
   >
@@ -65,6 +75,6 @@ Array [
       </a>
       . We look forward to hearing from you!
     </p>
-  </section>,
-]
+  </section>
+</CampaignsMarketing>
 `;

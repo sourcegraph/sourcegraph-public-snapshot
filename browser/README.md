@@ -5,7 +5,7 @@
 
 [![chrome version](https://img.shields.io/chrome-web-store/v/dgjhfomjieaadpoljlnidmbgkdffpack.svg?logo=Google%20Chrome&logoColor=white)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)
 [![chrome users](https://img.shields.io/chrome-web-store/users/dgjhfomjieaadpoljlnidmbgkdffpack.svg)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)
-[![chrome rating](https://img.shields.io/chrome-web-store/rating/dgjhfomjieaadpoljlnidmbgkdffpack.svg)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)\
+[![chrome rating](https://img.shields.io/chrome-web-store/rating/dgjhfomjieaadpoljlnidmbgkdffpack.svg)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)
 
 ## Overview
 
@@ -153,3 +153,61 @@ To release the latest commit on master, ensure your master is up-to-date and run
 ```sh
 git push origin master:bext/release
 ```
+
+## Manual build of the browser extension
+
+This describes the manual build process to produce the packed extension (xpi/zip) from scratch from the source code.
+
+Requires `node` version specified in [`.nvmrc`](../.nvmrc). In the steps below we use [`nvm`](https://github.com/nvm-sh/nvm) to automatically select the node version.
+
+Tested on Ubuntu 20.04 and Mac OS 10.15.5.
+
+### Obtain the source code
+
+#### A. Obtain the source code by cloning the repository
+
+Clone the public repository with `git clone`:
+
+```sh
+git clone git@github.com:sourcegraph/sourcegraph
+cd sourcegraph
+```
+
+#### B. Obtain the source code by downloading the zip
+
+Alternatively (instead of cloning the repository), you can obtain the source code as a zip for a particular commit hash or a branch.
+
+For example, to build from commit `e1547ea0e9`:
+
+```sh
+curl -OL https://github.com/sourcegraph/sourcegraph/archive/e1547ea0e9.zip
+unzip e1547ea0e9.zip
+cd sourcegraph-e1547ea0e99475dd748a4e3bb1a81cee71c0f7fd
+```
+
+### Install dependencies and build
+
+Use `nvm` to select the Node.js version specified in `.nvmrc`
+
+```sh
+nvm install
+```
+
+Install dependencies with `yarn` (install it globally with `npm i -g yarn` if needed) and build from the `browser` directory.
+
+```sh
+yarn
+cd browser
+yarn build
+```
+
+The build step automatically pulls in [sourcegraph/code-intel-extensions](https://github.com/sourcegraph/code-intel-extensions) as a dependency.
+
+The output will be in `browser/build`:
+
+- Firefox add-on:
+  - Packed: `browser/build/bundles/firefox-bundle.xpi`
+  - Unpacked: `browser/build/firefox`
+- Chrome extension:
+  - Packed: `browser/build/bundles/chrome-bundle.zip`
+  - Unpacked: `browser/build/chrome`

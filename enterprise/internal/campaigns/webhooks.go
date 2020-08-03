@@ -105,7 +105,7 @@ func (h Webhook) upsertChangesetEvent(
 	if tx, err = h.Store.Transact(ctx); err != nil {
 		return err
 	}
-	defer tx.Done(&err)
+	defer func() { err = tx.Done(err) }()
 
 	r, err := h.getRepoForPR(ctx, tx, pr, externalServiceID)
 	if err != nil {
@@ -167,7 +167,7 @@ func (h Webhook) upsertChangesetEvent(
 		ChangesetIDs: []int64{cs.ID},
 		Limit:        -1,
 	})
-	SetDerivedState(cs, events)
+	SetDerivedState(ctx, cs, events)
 	if err := tx.UpdateChangesets(ctx, cs); err != nil {
 		return err
 	}

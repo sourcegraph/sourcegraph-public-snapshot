@@ -25,6 +25,7 @@ const PARSER_STATE: Monaco.languages.IState = {
 }
 
 const alphabet = 'abcdefghijklmnopqrstuvwxyz'
+const specialCharacters = ':-*]'
 
 /**
  * Returns the providers used by the Monaco query input to provide syntax highlighting,
@@ -33,7 +34,8 @@ const alphabet = 'abcdefghijklmnopqrstuvwxyz'
 export function getProviders(
     searchQueries: Observable<string>,
     patternTypes: Observable<SearchPatternType>,
-    fetchSuggestions: (input: string) => Observable<SearchSuggestion[]>
+    fetchSuggestions: (input: string) => Observable<SearchSuggestion[]>,
+    globbing: Observable<boolean>
 ): SearchFieldProviders {
     const parsedQueries = searchQueries.pipe(
         map(rawQuery => {
@@ -43,7 +45,9 @@ export function getProviders(
         publishReplay(1),
         refCount()
     )
+
     const debouncedDynamicSuggestions = searchQueries.pipe(debounceTime(300), switchMap(fetchSuggestions), share())
+
     return {
         tokens: {
             getInitialState: () => PARSER_STATE,
@@ -70,15 +74,20 @@ export function getProviders(
         },
         completion: {
             // An explicit list of trigger characters is needed for the Monaco editor to show completions.
-            triggerCharacters: [':', '-', ...alphabet, ...alphabet.toUpperCase()],
+            triggerCharacters: [...specialCharacters, ...alphabet, ...alphabet.toUpperCase()],
             provideCompletionItems: (textModel, position, context, token) =>
-                parsedQueries
+                combineLatest([parsedQueries, globbing])
                     .pipe(
                         first(),
-                        switchMap(({ parsed }) =>
-                            parsed.type === 'error'
+                        switchMap(([parsedQueries, globbing]) =>
+                            parsedQueries.parsed.type === 'error'
                                 ? of(null)
-                                : getCompletionItems(parsed.token, position, debouncedDynamicSuggestions)
+                                : getCompletionItems(
+                                      parsedQueries.parsed.token,
+                                      position,
+                                      debouncedDynamicSuggestions,
+                                      globbing
+                                  )
                         ),
                         takeUntil(fromEventPattern(handler => token.onCancellationRequested(handler)))
                     )

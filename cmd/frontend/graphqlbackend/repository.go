@@ -7,15 +7,15 @@ import (
 	"sync"
 	"time"
 
-	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -186,7 +186,7 @@ func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver
 
 		if err == nil && exitCode == 0 {
 			// Check that our repo is not empty
-			_, err = git.ResolveRevision(ctx, *cachedRepo, nil, "HEAD", &git.ResolveRevisionOptions{NoEnsureRevision: true})
+			_, err = git.ResolveRevision(ctx, *cachedRepo, nil, "HEAD", git.ResolveRevisionOptions{NoEnsureRevision: true})
 		}
 
 		// If we fail to get the default branch due to cloning or being empty, we return nothing.
@@ -228,6 +228,10 @@ func (r *RepositoryResolver) Language(ctx context.Context) string {
 
 func (r *RepositoryResolver) Enabled() bool { return true }
 
+// No clients that we know of read this field. Additionally on performance profiles
+// the marshalling of timestamps is significant in our postgres client. So we
+// deprecate the fields and return fake data for created_at.
+// https://github.com/sourcegraph/sourcegraph/pull/4668
 func (r *RepositoryResolver) CreatedAt() DateTime {
 	return DateTime{Time: time.Now()}
 }
@@ -388,7 +392,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 		if err != nil {
 			return nil, err
 		}
-		_, err = git.ResolveRevision(ctx, *cachedRepo, nil, targetRef, &git.ResolveRevisionOptions{
+		_, err = git.ResolveRevision(ctx, *cachedRepo, nil, targetRef, git.ResolveRevisionOptions{
 			NoEnsureRevision: true,
 		})
 		if err != nil {

@@ -8,12 +8,14 @@ import { TelemetryService } from '../../../../shared/src/telemetry/telemetryServ
 import { storage } from '../../browser-extension/web-extension-api/storage'
 import { isInPage } from '../context'
 import { logUserEvent, logEvent } from '../backend/userEvents'
-import { observeSourcegraphURL } from '../util/context'
+import { observeSourcegraphURL, getPlatformName } from '../util/context'
 
 const uidKey = 'sourcegraphAnonymousUid'
 
 export class EventLogger implements TelemetryService {
     private uid: string | null = null
+
+    private platform = getPlatformName()
 
     /**
      * Buffered Observable for the latest Sourcegraph URL
@@ -78,7 +80,12 @@ export class EventLogger implements TelemetryService {
         const sourcegraphURL = await this.sourcegraphURLs.pipe(take(1)).toPromise()
         logUserEvent(userEvent, anonUserId, sourcegraphURL, this.requestGraphQL)
         logEvent(
-            { name: event, userCookieID: anonUserId, url: sourcegraphURL, argument: eventProperties },
+            {
+                name: event,
+                userCookieID: anonUserId,
+                url: sourcegraphURL,
+                argument: { platform: this.platform, ...eventProperties },
+            },
             this.requestGraphQL
         )
     }
@@ -101,5 +108,24 @@ export class EventLogger implements TelemetryService {
                 await this.logCodeIntelligenceEvent(eventName, GQL.UserEvent.CODEINTELINTEGRATIONREFS, eventProperties)
                 break
         }
+    }
+
+    /**
+     * Implements {@link TelemetryService}.
+     *
+     * @param pageTitle The title of the page being viewed.
+     */
+    public async logViewEvent(pageTitle: string): Promise<void> {
+        const anonUserId = await this.getAnonUserID()
+        const sourcegraphURL = await this.sourcegraphURLs.pipe(take(1)).toPromise()
+        logEvent(
+            {
+                name: `View${pageTitle}`,
+                userCookieID: anonUserId,
+                url: sourcegraphURL,
+                argument: { platform: this.platform },
+            },
+            this.requestGraphQL
+        )
     }
 }

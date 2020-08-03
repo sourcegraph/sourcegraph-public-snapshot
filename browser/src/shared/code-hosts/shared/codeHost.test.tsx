@@ -21,10 +21,10 @@ import {
     CodeIntelligenceProps,
     createGlobalDebugMount,
     createOverlayMount,
-    FileInfo,
     handleCodeHost,
     observeHoverOverlayMountLocation,
     HandleCodeHostOptions,
+    DiffOrBlobInfo,
 } from './codeHost'
 import { toCodeViewResolver } from './codeViews'
 import { DEFAULT_GRAPHQL_RESPONSES, mockRequestGraphQL } from './testHelpers'
@@ -32,6 +32,8 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { NotificationType } from '../../../../../shared/src/api/client/services/notifications'
 import { toPrettyBlobURL } from '../../../../../shared/src/util/url'
 import { MockIntersectionObserver } from './MockIntersectionObserver'
+import { pretendRemote } from '../../../../../shared/src/api/util'
+import { FlatExtHostAPI } from '../../../../../shared/src/api/contract'
 
 const RENDER = sinon.spy()
 
@@ -66,6 +68,7 @@ const createMockController = (services: Services): Controller => ({
     notifications: NEVER,
     executeCommand: () => Promise.resolve(),
     unsubscribe: noop,
+    extHostAPI: Promise.resolve(pretendRemote<FlatExtHostAPI>({})),
 })
 
 const createMockPlatformContext = (
@@ -201,10 +204,12 @@ describe('codeHost', () => {
             codeView.id = 'code'
             const toolbarMount = document.createElement('div')
             codeView.append(toolbarMount)
-            const fileInfo: FileInfo = {
-                rawRepoName: 'foo',
-                filePath: '/bar.ts',
-                commitID: '1',
+            const blobInfo: DiffOrBlobInfo = {
+                blob: {
+                    rawRepoName: 'foo',
+                    filePath: '/bar.ts',
+                    commitID: '1',
+                },
             }
             subscriptions.add(
                 handleCodeHost({
@@ -222,7 +227,7 @@ describe('codeHost', () => {
                                     getLineElementFromLineNumber: sinon.spy(),
                                     getLineNumberFromCodeElement: sinon.spy(),
                                 },
-                                resolveFileInfo: codeView => of(fileInfo),
+                                resolveFileInfo: codeView => of(blobInfo),
                                 getToolbarMount: () => toolbarMount,
                             }),
                         ],
@@ -271,10 +276,12 @@ describe('codeHost', () => {
                 })
                 const codeView = createTestElement()
                 codeView.id = 'code'
-                const fileInfo: FileInfo = {
-                    rawRepoName: 'foo',
-                    filePath: '/bar.ts',
-                    commitID: '1',
+                const blobInfo: DiffOrBlobInfo = {
+                    blob: {
+                        rawRepoName: 'foo',
+                        filePath: '/bar.ts',
+                        commitID: '1',
+                    },
                 }
                 // For this test, we pretend bar.ts only has one line of code
                 const line = document.createElement('div')
@@ -295,7 +302,7 @@ describe('codeHost', () => {
                                         getLineElementFromLineNumber: () => line,
                                         getLineNumberFromCodeElement: () => 1,
                                     },
-                                    resolveFileInfo: codeView => of(fileInfo),
+                                    resolveFileInfo: codeView => of(blobInfo),
                                 }),
                             ],
                         },
@@ -370,13 +377,17 @@ describe('codeHost', () => {
                 })
                 const codeView = createTestElement()
                 codeView.id = 'code'
-                const fileInfo: FileInfo = {
-                    rawRepoName: 'foo',
-                    filePath: '/bar.ts',
-                    commitID: '2',
-                    baseRawRepoName: 'foo',
-                    baseFilePath: '/bar.ts',
-                    baseCommitID: '1',
+                const diffInfo: DiffOrBlobInfo = {
+                    base: {
+                        rawRepoName: 'foo',
+                        filePath: '/bar.ts',
+                        commitID: '1',
+                    },
+                    head: {
+                        rawRepoName: 'foo',
+                        filePath: '/bar.ts',
+                        commitID: '2',
+                    },
                 }
                 codeView.innerHTML =
                     '<div line="1" part="head"><span class="code-element"></span></div>\n' +
@@ -404,7 +415,7 @@ describe('codeHost', () => {
                             codeViewResolvers: [
                                 toCodeViewResolver('#code', {
                                     dom,
-                                    resolveFileInfo: () => of(fileInfo),
+                                    resolveFileInfo: () => of(diffInfo),
                                 }),
                             ],
                         },
@@ -535,10 +546,12 @@ describe('codeHost', () => {
             codeView1.className = 'code'
             const codeView2 = createTestElement()
             codeView2.className = 'code'
-            const fileInfo: FileInfo = {
-                rawRepoName: 'foo',
-                filePath: '/bar.ts',
-                commitID: '1',
+            const blobInfo: DiffOrBlobInfo = {
+                blob: {
+                    rawRepoName: 'foo',
+                    filePath: '/bar.ts',
+                    commitID: '1',
+                },
             }
             const mutations = new BehaviorSubject<MutationRecordLike[]>([
                 { addedNodes: [document.body], removedNodes: [] },
@@ -560,7 +573,7 @@ describe('codeHost', () => {
                                     getLineElementFromLineNumber: sinon.spy(),
                                     getLineNumberFromCodeElement: sinon.spy(),
                                 },
-                                resolveFileInfo: codeView => of(fileInfo),
+                                resolveFileInfo: codeView => of(blobInfo),
                             }),
                         ],
                     },
@@ -635,9 +648,11 @@ describe('codeHost', () => {
                                 dom,
                                 resolveFileInfo: codeView =>
                                     of({
-                                        rawRepoName: 'foo',
-                                        filePath: '/bar.ts',
-                                        commitID: '1',
+                                        blob: {
+                                            rawRepoName: 'foo',
+                                            filePath: '/bar.ts',
+                                            commitID: '1',
+                                        },
                                     }),
                             }),
                         ],
@@ -679,9 +694,11 @@ describe('codeHost', () => {
                                 dom,
                                 resolveFileInfo: codeView =>
                                     of({
-                                        rawRepoName: 'foo',
-                                        filePath: '/bar.ts',
-                                        commitID: '1',
+                                        blob: {
+                                            rawRepoName: 'foo',
+                                            filePath: '/bar.ts',
+                                            commitID: '1',
+                                        },
                                     }),
                             }),
                         ],
@@ -736,9 +753,11 @@ describe('codeHost', () => {
                                 dom,
                                 resolveFileInfo: codeView =>
                                     of({
-                                        rawRepoName: 'foo',
-                                        filePath: '/bar.ts',
-                                        commitID: '1',
+                                        blob: {
+                                            rawRepoName: 'foo',
+                                            filePath: '/bar.ts',
+                                            commitID: '1',
+                                        },
                                     }),
                             }),
                         ],
@@ -768,10 +787,12 @@ describe('codeHost', () => {
             const { services } = await integrationTestContext(undefined, { roots: [], viewers: [] })
             const codeView = createTestElement()
             codeView.id = 'code'
-            const fileInfo: FileInfo = {
-                rawRepoName: 'github.com/foo',
-                filePath: '/bar.ts',
-                commitID: '1',
+            const blobInfo: DiffOrBlobInfo = {
+                blob: {
+                    rawRepoName: 'github.com/foo',
+                    filePath: '/bar.ts',
+                    commitID: '1',
+                },
             }
             subscriptions.add(
                 handleCodeHost({
@@ -789,7 +810,7 @@ describe('codeHost', () => {
                                     getLineElementFromLineNumber: sinon.spy(),
                                     getLineNumberFromCodeElement: sinon.spy(),
                                 },
-                                resolveFileInfo: () => of(fileInfo),
+                                resolveFileInfo: () => of(blobInfo),
                             }),
                         ],
                     },

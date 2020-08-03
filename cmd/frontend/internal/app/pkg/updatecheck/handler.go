@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/coreos/go-semver/semver"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
@@ -32,17 +34,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	//version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.16.1")
+	latestReleaseDockerServerImageBuild = newBuild("3.18.0")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.16.1")
+	latestReleaseKubernetesBuild = newBuild("3.18.0")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newBuild("3.14.2")
+	latestReleaseDockerComposeOrPureDocker = newBuild("3.18.0-1")
 )
 
 func getLatestRelease(deployType string) build {
@@ -424,22 +426,16 @@ func reserializeSearchUsage(payload json.RawMessage) (json.RawMessage, error) {
 }
 
 var (
-	requestCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_updatecheck_requests",
+	requestCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_updatecheck_server_requests",
 		Help: "Number of requests to the update check handler.",
 	})
-	requestHasUpdateCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_updatecheck_requests_has_update",
+	requestHasUpdateCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_updatecheck_server_requests_has_update",
 		Help: "Number of requests to the update check handler where an update is available.",
 	})
-	errorCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_updatecheck_errors",
+	errorCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_updatecheck_server_errors",
 		Help: "Number of errors that occur while publishing server pings.",
 	})
 )
-
-func init() {
-	prometheus.MustRegister(requestCounter)
-	prometheus.MustRegister(requestHasUpdateCounter)
-	prometheus.MustRegister(errorCounter)
-}

@@ -11,7 +11,7 @@ import schema from '../src/browser-extension/schema.json'
 
 /**
  * If true, add <all_urls> to the permissions in the manifest.
- * This is needed for e2e tests because it is not possible to accept the
+ * This is needed for e2e and integration tests because it is not possible to accept the
  * permission prompt with puppeteer.
  */
 const EXTENSION_PERMISSIONS_ALL_URLS = Boolean(
@@ -54,12 +54,23 @@ function copyExtensionAssets(toDirectory: string): void {
     shelljs.cp('build/dist/js/background.bundle.js', `${toDirectory}/js`)
     shelljs.cp('build/dist/js/inject.bundle.js', `${toDirectory}/js`)
     shelljs.cp('build/dist/js/options.bundle.js', `${toDirectory}/js`)
+    shelljs.cp('build/dist/js/extensionHostWorker.bundle.js', `${toDirectory}/js`)
     shelljs.cp('build/dist/css/style.bundle.css', `${toDirectory}/css`)
     shelljs.cp('build/dist/css/options-style.bundle.css', `${toDirectory}/css`)
     shelljs.cp('build/dist/css/options-style.bundle.css', `${toDirectory}/css`)
     shelljs.cp('-R', 'build/dist/img/*', `${toDirectory}/img`)
     shelljs.cp('build/dist/background.html', toDirectory)
     shelljs.cp('build/dist/options.html', toDirectory)
+}
+
+/**
+ * When building with inline (bundled) Sourcegraph extensions, copy the built Sourcegraph extensions into the output.
+ * They will be available as `web_accessible_resources`.
+ *
+ * The pre-requisite step is to first clone, build, and copy into `build/extensions`.
+ */
+function copyInlineExtensions(toDirectory: string): void {
+    shelljs.cp('-R', 'build/extensions', toDirectory)
 }
 
 export function copyIntegrationAssets(): void {
@@ -97,6 +108,8 @@ function writeSchema(environment: BuildEnv, browser: Browser, writeDirectory: st
 
 const version = utcVersion()
 
+const shouldBuildWithInlineExtensions = (browser: Browser): boolean => browser === 'firefox'
+
 function writeManifest(environment: BuildEnv, browser: Browser, writeDirectory: string): void {
     const manifest = {
         ...omit(extensionInfo, ['dev', 'prod', ...BROWSER_BLOCKLIST[browser]]),
@@ -111,6 +124,15 @@ function writeManifest(environment: BuildEnv, browser: Browser, writeDirectory: 
     if (browser === 'firefox') {
         manifest.permissions!.push('<all_urls>')
         delete manifest.storage
+    }
+
+    if (shouldBuildWithInlineExtensions(browser)) {
+        // Add the inline extensions to web accessible resources
+        manifest.web_accessible_resources = manifest.web_accessible_resources || []
+        manifest.web_accessible_resources.push('extensions/*')
+
+        // Revert the CSP to default, in order to remove the `blob` policy exception.
+        delete manifest.content_security_policy
     }
 
     delete manifest.$schema
@@ -142,6 +164,9 @@ function buildForBrowser(browser: Browser): (env: BuildEnv) => () => void {
             signale.await(`Building the ${title} ${environment} bundle`)
 
             copyExtensionAssets(buildDirectory)
+            if (shouldBuildWithInlineExtensions(browser)) {
+                copyInlineExtensions(buildDirectory)
+            }
 
             const zipDestination = path.resolve(process.cwd(), `${BUILDS_DIR}/bundles/${BROWSER_BUNDLE_ZIPS[browser]}`)
             if (zipDestination) {

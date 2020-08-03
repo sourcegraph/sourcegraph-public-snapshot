@@ -32,32 +32,28 @@ func TestValidate(t *testing.T) {
 
 func TestValidateCustom(t *testing.T) {
 	tests := map[string]struct {
-		rawCritical, rawSite string
-		wantProblem          string
-		wantErr              string
+		raw         string
+		wantProblem string
+		wantErr     string
 	}{
 		"unrecognized auth.providers": {
-			rawCritical: `{"auth.providers":[{"type":"asdf"}]}`,
-			rawSite:     "{}",
-			wantErr:     "tagged union type must have a",
+			raw:     `{"auth.providers":[{"type":"asdf"}]}`,
+			wantErr: "tagged union type must have a",
 		},
 		"valid externalURL": {
-			rawSite: `{"externalURL":"http://example.com"}`,
+			raw: `{"externalURL":"http://example.com"}`,
 		},
 		"valid externalURL ending with slash": {
-			rawSite: `{"externalURL":"http://example.com/"}`,
+			raw: `{"externalURL":"http://example.com/"}`,
 		},
 		"non-root externalURL": {
-			rawSite:     `{"externalURL":"http://example.com/sourcegraph"}`,
+			raw:         `{"externalURL":"http://example.com/sourcegraph"}`,
 			wantProblem: "externalURL must not be a non-root URL",
 		},
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			problems, err := validateCustomRaw(conftypes.RawUnified{
-				Critical: test.rawCritical,
-				Site:     test.rawSite,
-			})
+			problems, err := validateCustomRaw(conftypes.RawUnified{Site: test.raw})
 			if err != nil {
 				if test.wantErr == "" {
 					t.Fatalf("got unexpected error: %v", err)
@@ -67,7 +63,6 @@ func TestValidateCustom(t *testing.T) {
 				}
 				return
 			}
-
 			if test.wantProblem == "" {
 				if len(problems) > 0 {
 					t.Fatalf("unexpected problems: %v", problems)

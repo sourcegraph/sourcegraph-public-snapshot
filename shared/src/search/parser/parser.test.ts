@@ -505,4 +505,321 @@ describe('parseSearchQuery()', () => {
             },
             type: 'success',
         }))
+
+    test('parenthesized parameters', () => {
+        expect(parseSearchQuery('repo:a (file:b and c)')).toMatchObject({
+            range: {
+                end: 21,
+                start: 0,
+            },
+            token: {
+                members: [
+                    {
+                        range: {
+                            end: 6,
+                            start: 0,
+                        },
+                        token: {
+                            filterType: {
+                                range: {
+                                    end: 4,
+                                    start: 0,
+                                },
+                                token: {
+                                    type: 'literal',
+                                    value: 'repo',
+                                },
+                                type: 'success',
+                            },
+                            filterValue: {
+                                range: {
+                                    end: 6,
+                                    start: 5,
+                                },
+                                token: {
+                                    type: 'literal',
+                                    value: 'a',
+                                },
+                                type: 'success',
+                            },
+                            type: 'filter',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 7,
+                            start: 6,
+                        },
+                        token: {
+                            type: 'whitespace',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 8,
+                            start: 7,
+                        },
+                        token: {
+                            type: 'openingParen',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 14,
+                            start: 8,
+                        },
+                        token: {
+                            filterType: {
+                                range: {
+                                    end: 12,
+                                    start: 8,
+                                },
+                                token: {
+                                    type: 'literal',
+                                    value: 'file',
+                                },
+                                type: 'success',
+                            },
+                            filterValue: {
+                                range: {
+                                    end: 14,
+                                    start: 13,
+                                },
+                                token: {
+                                    type: 'literal',
+                                    value: 'b',
+                                },
+                                type: 'success',
+                            },
+                            type: 'filter',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 15,
+                            start: 14,
+                        },
+                        token: {
+                            type: 'whitespace',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 18,
+                            start: 15,
+                        },
+                        token: {
+                            type: 'literal',
+                            value: 'and',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 19,
+                            start: 18,
+                        },
+                        token: {
+                            type: 'whitespace',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 20,
+                            start: 19,
+                        },
+                        token: {
+                            type: 'literal',
+                            value: 'c',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 21,
+                            start: 20,
+                        },
+                        token: {
+                            type: 'closingParen',
+                        },
+                    },
+                ],
+                type: 'sequence',
+            },
+            type: 'success',
+        })
+    })
+
+    test('nested parenthesized parameters', () => {
+        expect(parseSearchQuery('(a and (b or c) and d)')).toMatchObject({
+            range: {
+                end: 22,
+                start: 0,
+            },
+            token: {
+                members: [
+                    {
+                        range: {
+                            end: 1,
+                            start: 0,
+                        },
+                        token: {
+                            type: 'openingParen',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 2,
+                            start: 1,
+                        },
+                        token: {
+                            type: 'literal',
+                            value: 'a',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 3,
+                            start: 2,
+                        },
+                        token: {
+                            type: 'whitespace',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 6,
+                            start: 3,
+                        },
+                        token: {
+                            type: 'literal',
+                            value: 'and',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 7,
+                            start: 6,
+                        },
+                        token: {
+                            type: 'whitespace',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 8,
+                            start: 7,
+                        },
+                        token: {
+                            type: 'openingParen',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 9,
+                            start: 8,
+                        },
+                        token: {
+                            type: 'literal',
+                            value: 'b',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 10,
+                            start: 9,
+                        },
+                        token: {
+                            type: 'whitespace',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 12,
+                            start: 10,
+                        },
+                        token: {
+                            type: 'literal',
+                            value: 'or',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 13,
+                            start: 12,
+                        },
+                        token: {
+                            type: 'whitespace',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 14,
+                            start: 13,
+                        },
+                        token: {
+                            type: 'literal',
+                            value: 'c',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 15,
+                            start: 14,
+                        },
+                        token: {
+                            type: 'closingParen',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 16,
+                            start: 15,
+                        },
+                        token: {
+                            type: 'whitespace',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 19,
+                            start: 16,
+                        },
+                        token: {
+                            type: 'literal',
+                            value: 'and',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 20,
+                            start: 19,
+                        },
+                        token: {
+                            type: 'whitespace',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 21,
+                            start: 20,
+                        },
+                        token: {
+                            type: 'literal',
+                            value: 'd',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 22,
+                            start: 21,
+                        },
+                        token: {
+                            type: 'closingParen',
+                        },
+                    },
+                ],
+                type: 'sequence',
+            },
+            type: 'success',
+        })
+    })
 })

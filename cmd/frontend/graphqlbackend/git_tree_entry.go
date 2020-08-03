@@ -13,11 +13,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -301,11 +301,11 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 	}
 
 	return EnterpriseResolvers.codeIntelResolver.GitBlobLSIFData(ctx, &GitBlobLSIFDataArgs{
-		Repository: r.Repository(),
-		Commit:     api.CommitID(r.Commit().OID()),
-		Path:       r.Path(),
-		ExactPath:  !r.stat.IsDir(),
-		ToolName:   toolName,
+		Repo:      r.Repository().Type(),
+		Commit:    api.CommitID(r.Commit().OID()),
+		Path:      r.Path(),
+		ExactPath: !r.stat.IsDir(),
+		ToolName:  toolName,
 	})
 }
 

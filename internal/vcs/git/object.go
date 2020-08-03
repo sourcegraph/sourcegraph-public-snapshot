@@ -16,6 +16,10 @@ type OID [20]byte
 
 func (oid OID) String() string { return hex.EncodeToString(oid[:]) }
 
+// 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is `git hash-object -t tree /dev/null`, which is used as the base
+// when computing the `git diff` of the root commit.
+const DevNullSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+
 // ObjectType is a valid Git object type (commit, tag, tree, and blob).
 type ObjectType string
 

@@ -7,27 +7,33 @@ import { Sequence } from './parser'
 export function getMonacoTokens(parsedQuery: Pick<Sequence, 'members'>): Monaco.languages.IToken[] {
     const tokens: Monaco.languages.IToken[] = []
     for (const { token, range } of parsedQuery.members) {
-        if (token.type === 'whitespace') {
-            tokens.push({
-                startIndex: range.start,
-                scopes: 'whitespace',
-            })
-        } else if (token.type === 'quoted' || token.type === 'literal') {
-            tokens.push({
-                startIndex: range.start,
-                scopes: 'identifier',
-            })
-        } else if (token.type === 'filter') {
-            tokens.push({
-                startIndex: token.filterType.range.start,
-                scopes: 'keyword',
-            })
-            if (token.filterValue) {
+        switch (token.type) {
+            case 'whitespace':
                 tokens.push({
-                    startIndex: token.filterValue.range.start,
+                    startIndex: range.start,
+                    scopes: 'whitespace',
+                })
+                break
+            case 'filter':
+                {
+                    tokens.push({
+                        startIndex: token.filterType.range.start,
+                        scopes: 'keyword',
+                    })
+                    if (token.filterValue) {
+                        tokens.push({
+                            startIndex: token.filterValue.range.start,
+                            scopes: 'identifier',
+                        })
+                    }
+                }
+                break
+            default:
+                tokens.push({
+                    startIndex: range.start,
                     scopes: 'identifier',
                 })
-            }
+                break
         }
     }
     return tokens

@@ -7,6 +7,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { ErrorLike, isErrorLike, asError } from '../../../shared/src/util/errors'
 import { NamespaceProps } from '../namespaces'
 import { createSavedSearch } from '../search/backend'
+import { eventLogger } from '../tracking/eventLogger'
 import { SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
 
 interface Props extends RouteComponentProps, NamespaceProps {
@@ -53,10 +54,12 @@ export class SavedSearchCreateForm extends React.Component<Props, State> {
                 .subscribe(createdOrError => {
                     this.setState({ createdOrError })
                     if (createdOrError === true) {
+                        eventLogger.log('SavedSearchCreated')
                         this.props.history.push(`${this.props.namespace.url}/searches`)
                     }
                 })
         )
+        eventLogger.logViewEvent('NewSavedSearchPage')
     }
 
     public render(): JSX.Element | null {

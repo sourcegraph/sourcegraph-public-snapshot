@@ -1,11 +1,5 @@
 import { ThemeProps } from '../../../../../../shared/src/theme'
-import {
-    IExternalChangeset,
-    ChangesetCheckState,
-    ChangesetState,
-    IRepositoryComparison,
-    GitRevSpec,
-} from '../../../../../../shared/src/graphql/schema'
+import { ChangesetCheckState, ChangesetExternalState } from '../../../../../../shared/src/graphql/schema'
 import { Observer } from 'rxjs'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '../../../../../../shared/src/util/url'
@@ -18,7 +12,7 @@ import {
     changesetCheckStateColors,
     changesetCheckStateTooltips,
     changesetReviewStateColors,
-    changesetStageLabels,
+    changesetStateLabels,
 } from './presentation'
 import * as H from 'history'
 import React, { useState, useCallback, useMemo } from 'react'
@@ -36,9 +30,10 @@ import { FileDiffConnection } from '../../../../components/diff/FileDiffConnecti
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
 import { tap, map } from 'rxjs/operators'
 import { ChangesetStateIcon } from './ChangesetStateIcon'
+import { ChangesetFields, GitRefSpecFields, ExternalChangesetFileDiffsFields } from '../../../../graphql-operations'
 
 export interface ExternalChangesetNodeProps extends ThemeProps {
-    node: IExternalChangeset
+    node: ChangesetFields & { __typename: 'ExternalChangeset' }
     viewerCanAdminister: boolean
     campaignUpdates?: Pick<Observer<void>, 'next'>
     history: H.History
@@ -57,11 +52,11 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
     location,
     extensionInfo,
 }) => {
-    const ReviewStateIcon = changesetReviewStateIcons[node.reviewState]
+    const ReviewStateIcon = node.reviewState && changesetReviewStateIcons[node.reviewState]
     const ChangesetCheckStateIcon = node.checkState
         ? changesetCheckStateIcons[node.checkState]
         : changesetCheckStateIcons[ChangesetCheckState.PENDING]
-    const changesetState = node.state
+    const changesetState = node.externalState
 
     const changesetNodeRow = (
         <div className="d-flex align-items-start m-1 ml-2">
@@ -69,11 +64,11 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                 <div className="d-flex flex-column">
                     <div className="m-0 mb-2">
                         <h3 className="m-0 d-inline">
-                            <ChangesetStateIcon state={changesetState} />
+                            <ChangesetStateIcon externalState={changesetState || ChangesetExternalState.OPEN} />
                             <LinkOrSpan
                                 /* Deleted changesets most likely don't exist on the codehost anymore and would return 404 pages */
                                 to={
-                                    node.externalURL && node.state !== ChangesetState.DELETED
+                                    node.externalURL && node.externalState !== ChangesetExternalState.DELETED
                                         ? node.externalURL.url
                                         : undefined
                                 }
@@ -81,7 +76,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                                 rel="noopener noreferrer"
                             >
                                 {node.title} (#{node.externalID}){' '}
-                                {node.externalURL && node.state !== ChangesetState.DELETED && (
+                                {node.externalURL && node.externalState !== ChangesetExternalState.DELETED && (
                                     <ExternalLinkIcon size="1rem" />
                                 )}
                             </LinkOrSpan>
@@ -120,27 +115,36 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                 </div>
             </div>
             <div className="flex-shrink-0 flex-grow-0 ml-1 align-items-end">
-                {node.diff?.fileDiffs && <DiffStat {...node.diff.fileDiffs.diffStat} expandedCounts={true} />}
+                {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} />}
             </div>
-            <div className="flex-shrink-0 flex-grow-0 ml-1 align-items-end">
-                <ReviewStateIcon
-                    className={
-                        node.state === ChangesetState.DELETED
-                            ? 'text-muted'
-                            : `text-${changesetReviewStateColors[node.reviewState]}`
-                    }
-                    data-tooltip={changesetStageLabels[node.reviewState]}
-                />
-            </div>
+            {ReviewStateIcon && node.reviewState && (
+                <div className="flex-shrink-0 flex-grow-0 ml-1 align-items-end">
+                    <ReviewStateIcon
+                        className={
+                            node.externalState === ChangesetExternalState.DELETED
+                                ? 'text-muted'
+                                : `text-${changesetReviewStateColors[node.reviewState]}`
+                        }
+                        data-tooltip={changesetStateLabels[node.reviewState]}
+                    />
+                </div>
+            )}
         </div>
     )
 
-    const [range, setRange] = useState<IRepositoryComparison['range']>()
+    const [range, setRange] = useState<
+        (NonNullable<ExternalChangesetFileDiffsFields['diff']> & { __typename: 'RepositoryComparison' })['range']
+    >()
 
     /** Fetches the file diffs for the changeset */
     const queryFileDiffs = useCallback(
         (args: FilteredConnectionQueryArgs) =>
-            queryExternalChangesetWithFileDiffs(node.id, { ...args, isLightTheme }).pipe(
+            queryExternalChangesetWithFileDiffs({
+                after: args.after ?? null,
+                first: args.first ?? null,
+                externalChangeset: node.id,
+                isLightTheme,
+            }).pipe(
                 map(changeset => {
                     if (!changeset.diff) {
                         throw new Error('The given changeset has no diff')
@@ -148,7 +152,9 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                     return changeset.diff
                 }),
                 tap(diff => {
-                    setRange(diff.range)
+                    if (diff.__typename === 'RepositoryComparison') {
+                        setRange(diff.range)
+                    }
                 }),
                 map(diff => diff.fileDiffs)
             ),
@@ -179,48 +185,42 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
     }, [extensionInfo, range, node.repository.id, node.repository.name])
 
     return (
-        <li className="list-group-item e2e-changeset-node">
-            {node.diff?.fileDiffs ? (
-                <Collapsible
-                    titleClassName="changeset-node__content flex-fill"
-                    expandedButtonClassName="mb-3"
-                    title={changesetNodeRow}
-                    wholeTitleClickable={false}
-                >
-                    <FileDiffConnection
-                        listClassName="list-group list-group-flush"
-                        noun="changed file"
-                        pluralNoun="changed files"
-                        queryConnection={queryFileDiffs}
-                        nodeComponent={FileDiffNode}
-                        nodeComponentProps={{
-                            history,
-                            location,
-                            isLightTheme,
-                            persistLines: true,
-                            extensionInfo: hydratedExtensionInfo,
-                            lineNumbers: true,
-                        }}
-                        updateOnChange={node.repository.id}
-                        defaultFirst={15}
-                        hideSearch={true}
-                        noSummaryIfAllNodesVisible={true}
-                        history={history}
-                        location={location}
-                        useURLQuery={false}
-                        cursorPaging={true}
-                    />
-                </Collapsible>
-            ) : (
-                <div className="changeset-node__content changeset-node__content--no-collapse flex-fill">
-                    {changesetNodeRow}
-                </div>
-            )}
+        <li className="list-group-item test-changeset-node">
+            <Collapsible
+                titleClassName="changeset-node__content flex-fill"
+                expandedButtonClassName="mb-3"
+                title={changesetNodeRow}
+                wholeTitleClickable={false}
+            >
+                <FileDiffConnection
+                    listClassName="list-group list-group-flush"
+                    noun="changed file"
+                    pluralNoun="changed files"
+                    queryConnection={queryFileDiffs}
+                    nodeComponent={FileDiffNode}
+                    nodeComponentProps={{
+                        history,
+                        location,
+                        isLightTheme,
+                        persistLines: true,
+                        extensionInfo: hydratedExtensionInfo,
+                        lineNumbers: true,
+                    }}
+                    updateOnChange={node.repository.id}
+                    defaultFirst={15}
+                    hideSearch={true}
+                    noSummaryIfAllNodesVisible={true}
+                    history={history}
+                    location={location}
+                    useURLQuery={false}
+                    cursorPaging={true}
+                />
+            </Collapsible>
         </li>
     )
 }
 
-function commitOIDForGitRevision(revision: GitRevSpec): string {
+function commitOIDForGitRevision(revision: GitRefSpecFields): string {
     switch (revision.__typename) {
         case 'GitObject':
             return revision.oid

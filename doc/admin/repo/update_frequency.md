@@ -13,7 +13,7 @@ After Sourcegraph has updated a repository's Git data, the global search index w
 If you wish to control how frequently repositories are discovered or how frequently Sourcegraph polls your code host for updates, tuning parameters are available in the site configuration:
 
 - [repoListUpdateInterval](../config/site_config.md#repoListUpdateInterval) controls how frequently we check the code host _for new repositories_ in minutes.
-- [gitMaxConcurrentClones](../config/site_config.md#gitMaxConcurrentClones) controls the maximum number of _concurrent_ cloning / pulling operations that Sourcegraph will perform.
+- [gitMaxConcurrentClones](../config/site_config.md#gitMaxConcurrentClones) controls the maximum number of _concurrent_ cloning / pulling operations per gitserver that Sourcegraph will perform.
 
 You may also choose to disable automatic Git updates entirely and instead [configure repository webhooks](webhooks.md).
 

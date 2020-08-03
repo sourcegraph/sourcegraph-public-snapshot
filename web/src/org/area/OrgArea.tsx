@@ -22,6 +22,7 @@ import { PatternTypeProps } from '../../search'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorMessage } from '../../components/alerts'
 import * as H from 'history'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
 function queryOrganization(args: { name: string }): Observable<GQL.IOrg> {
     return queryGraphQL(
@@ -73,6 +74,7 @@ interface Props
         PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps,
+        TelemetryProps,
         ExtensionsControllerProps,
         Omit<PatternTypeProps, 'setPatternType'> {
     orgAreaRoutes: readonly OrgAreaRoute[]
@@ -100,6 +102,7 @@ export interface OrgAreaPageProps
         PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps,
+        TelemetryProps,
         NamespaceProps,
         Omit<PatternTypeProps, 'setPatternType'> {
     /** The org that is the subject of the page. */
@@ -186,6 +189,7 @@ export class OrgArea extends React.Component<Props> {
             isLightTheme: this.props.isLightTheme,
             namespace: this.state.orgOrError,
             patternType: this.props.patternType,
+            telemetryService: this.props.telemetryService,
         }
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {

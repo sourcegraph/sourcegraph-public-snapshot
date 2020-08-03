@@ -692,7 +692,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 	cmdStart = time.Now()
 	cmd := exec.CommandContext(ctx, "git", req.Args...)
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	cmd.Stdout = stdoutW
 	cmd.Stderr = stderrW
 
@@ -1134,12 +1134,12 @@ func removeBadRefs(ctx context.Context, dir GitDir) {
 
 	args := append([]string{"branch", "-D"}, badRefs...)
 	cmd := exec.CommandContext(ctx, "git", args...)
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	_ = cmd.Run()
 
 	args = append([]string{"tag", "-d"}, badRefs...)
 	cmd = exec.CommandContext(ctx, "git", args...)
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	_ = cmd.Run()
 }
 
@@ -1206,7 +1206,7 @@ func setLastChanged(dir GitDir) error {
 func computeLatestCommitTimestamp(dir GitDir) (time.Time, error) {
 	now := time.Now() // return current time if we don't find a more accurate time
 	cmd := exec.Command("git", "rev-list", "--all", "--timestamp", "-n", "1")
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	output, err := cmd.Output()
 	// If we don't have a more specific stamp, we'll return the current time,
 	// and possibly an error.
@@ -1239,7 +1239,7 @@ func computeRefHash(dir GitDir) ([]byte, error) {
 	// Do not use CommandContext since this is a fast operation we do not want
 	// to interrupt.
 	cmd := exec.Command("git", "show-ref")
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	output, err := cmd.Output()
 	if err != nil {
 		// Ignore the failure for an empty repository: show-ref fails with
@@ -1304,7 +1304,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 			cmd = exec.Command("git", "remote", "set-url", "origin", "--", url)
 		}
 		if cmd != nil {
-			cmd.Dir = string(dir)
+			dir.Set(cmd)
 			if _, err := runCommand(ctx, cmd); err != nil {
 				log15.Error("Failed to update repository's Git remote URL.", "repo", repo, "error", err)
 			}
@@ -1331,7 +1331,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 			// Possibly deprecated refs for sourcegraph zap experiment?
 			"+refs/sourcegraph/*:refs/sourcegraph/*")
 	}
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 
 	// drop temporary pack files after a fetch. this function won't
 	// return until this fetch has completed or definitely-failed,

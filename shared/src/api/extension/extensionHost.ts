@@ -10,11 +10,12 @@ import { ExtensionContent } from './api/content'
 import { ExtensionContext } from './api/context'
 import { createDecorationType } from './api/decorations'
 import { ExtensionDocuments } from './api/documents'
+import { DocumentHighlightKind } from './api/documentHighlights'
 import { Extensions } from './api/extensions'
 import { ExtensionLanguageFeatures } from './api/languageFeatures'
-import { ExtensionSearch } from './api/search'
 import { ExtensionViewsApi } from './api/views'
 import { ExtensionWindows } from './api/windows'
+
 import { registerComlinkTransferHandlers } from '../util'
 import { initNewExtensionAPI } from './flatExtensionApi'
 import { SettingsCascade } from '../../settings/settings'
@@ -32,7 +33,6 @@ export interface InitData {
     /** fetched initial settings object */
     initialSettings: Readonly<SettingsCascade<object>>
 }
-
 /**
  * Starts the extension host, which runs extensions. It is a Web Worker or other similar isolated
  * JavaScript execution context. There is exactly 1 extension host, and it has zero or more
@@ -138,13 +138,17 @@ function createExtensionAPI(
     const windows = new ExtensionWindows(proxy, documents)
     const views = new ExtensionViewsApi(proxy.views)
     const languageFeatures = new ExtensionLanguageFeatures(proxy.languageFeatures, documents)
-    const search = new ExtensionSearch(proxy.search)
     const content = new ExtensionContent(proxy.content)
 
-    const { configuration, exposedToMain, workspace, state, commands } = initNewExtensionAPI(
-        proxy,
-        initData.initialSettings
-    )
+    const {
+        configuration,
+        exposedToMain,
+        workspace,
+        state,
+        commands,
+        search,
+        languages: { registerHoverProvider, registerDocumentHighlightProvider },
+    } = initNewExtensionAPI(proxy, initData.initialSettings, documents)
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {
@@ -177,6 +181,7 @@ function createExtensionAPI(
         Location,
         MarkupKind,
         NotificationType,
+        DocumentHighlightKind,
         app: {
             activeWindowChanges: windows.activeWindowChanges,
             get activeWindow(): sourcegraph.Window | undefined {
@@ -211,8 +216,8 @@ function createExtensionAPI(
         configuration,
 
         languages: {
-            registerHoverProvider: (selector: sourcegraph.DocumentSelector, provider: sourcegraph.HoverProvider) =>
-                languageFeatures.registerHoverProvider(selector, provider),
+            registerHoverProvider,
+            registerDocumentHighlightProvider,
 
             registerDefinitionProvider: (
                 selector: sourcegraph.DocumentSelector,
@@ -251,11 +256,7 @@ function createExtensionAPI(
             ) => languageFeatures.registerCompletionItemProvider(selector, provider),
         },
 
-        search: {
-            registerQueryTransformer: (provider: sourcegraph.QueryTransformer) =>
-                search.registerQueryTransformer(provider),
-        },
-
+        search,
         commands,
         content: {
             registerLinkPreviewProvider: (urlMatchPattern: string, provider: sourcegraph.LinkPreviewProvider) =>

@@ -1,61 +1,48 @@
 import { map } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../../../shared/src/graphql/schema'
-import { queryGraphQL } from '../../../../backend/graphql'
+import { dataOrThrowErrors, gql, requestGraphQL } from '../../../../../../shared/src/graphql/graphql'
 import { Observable } from 'rxjs'
+import { CampaignsVariables, CampaignsResult } from '../../../../graphql-operations'
+
+const ListCampaignFragment = gql`
+    fragment ListCampaign on Campaign {
+        id
+        name
+        description
+        createdAt
+        closedAt
+        author {
+            username
+        }
+        changesets {
+            stats {
+                open
+                closed
+                merged
+            }
+        }
+    }
+`
 
 export const queryCampaigns = ({
     first,
     state,
-    hasPatchSet,
     viewerCanAdminister,
-}: GQL.ICampaignsOnQueryArguments): Observable<GQL.ICampaignConnection> =>
-    queryGraphQL(
-        gql`
-            query Campaigns($first: Int, $state: CampaignState, $hasPatchSet: Boolean, $viewerCanAdminister: Boolean) {
-                campaigns(
-                    first: $first
-                    state: $state
-                    hasPatchSet: $hasPatchSet
-                    viewerCanAdminister: $viewerCanAdminister
-                ) {
+}: CampaignsVariables): Observable<CampaignsResult['campaigns']> =>
+    requestGraphQL<CampaignsResult, CampaignsVariables>({
+        request: gql`
+            query Campaigns($first: Int, $state: CampaignState, $viewerCanAdminister: Boolean) {
+                campaigns(first: $first, state: $state, viewerCanAdminister: $viewerCanAdminister) {
                     nodes {
-                        id
-                        name
-                        description
-                        url
-                        createdAt
-                        closedAt
-                        changesets {
-                            totalCount
-                            nodes {
-                                state
-                            }
-                        }
-                        patches {
-                            totalCount
-                        }
+                        ...ListCampaign
                     }
                     totalCount
                 }
             }
+
+            ${ListCampaignFragment}
         `,
-        { first, state, hasPatchSet, viewerCanAdminister }
-    ).pipe(
+        variables: { first, state, viewerCanAdminister },
+    }).pipe(
         map(dataOrThrowErrors),
         map(data => data.campaigns)
-    )
-
-export const queryCampaignsCount = (): Observable<number> =>
-    queryGraphQL(
-        gql`
-            query Campaigns {
-                campaigns(first: 1) {
-                    totalCount
-                }
-            }
-        `
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.campaigns.totalCount)
     )

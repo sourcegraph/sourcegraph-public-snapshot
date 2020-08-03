@@ -7,7 +7,7 @@ import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/err
 import { catchError, takeWhile, concatMap, repeatWhen, delay } from 'rxjs/operators'
 import { ErrorAlert } from '../../components/alerts'
 import { eventLogger } from '../../tracking/eventLogger'
-import { fetchLsifIndex, deleteLsifIndex } from './backend'
+import { fetchLsifIndex as defaultFetchLsifIndex, deleteLsifIndex, Index } from './backend'
 import { Link } from '../../../../shared/src/components/Link'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageTitle } from '../../components/PageTitle'
@@ -22,15 +22,19 @@ const REFRESH_INTERVAL_MS = 5000
 
 interface Props extends RouteComponentProps<{ id: string }> {
     repo?: GQL.IRepository
+    fetchLsifIndex?: typeof defaultFetchLsifIndex
 
     /** Scheduler for the refresh timer */
     scheduler?: SchedulerLike
     history: H.History
+
+    /** Function that returns the current time (for stability in visual tests). */
+    now?: () => Date
 }
 
 const terminalStates = new Set([GQL.LSIFIndexState.COMPLETED, GQL.LSIFIndexState.ERRORED])
 
-function shouldReload(index: GQL.ILSIFIndex | ErrorLike | null | undefined): boolean {
+function shouldReload(index: Index | ErrorLike | null | undefined): boolean {
     return !isErrorLike(index) && !(index && terminalStates.has(index.state))
 }
 
@@ -44,6 +48,8 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
         params: { id },
     },
     history,
+    fetchLsifIndex = defaultFetchLsifIndex,
+    now,
 }) => {
     useEffect(() => eventLogger.logViewEvent('CodeIntelIndex'))
 
@@ -61,7 +67,7 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
                     ),
                     takeWhile(shouldReload, true)
                 ),
-            [id, scheduler]
+            [id, scheduler, fetchLsifIndex]
         )
     )
 
@@ -70,9 +76,7 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
             return
         }
 
-        const description = `commit ${indexOrError.inputCommit.slice(0, 7)}`
-
-        if (!window.confirm(`Delete auto-index record for commit ${description}?`)) {
+        if (!window.confirm(`Delete auto-index record for commit ${indexOrError.inputCommit.slice(0, 7)}?`)) {
             return
         }
 
@@ -104,31 +108,30 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
                             Auto-index record for commit{' '}
                             {indexOrError.projectRoot
                                 ? indexOrError.projectRoot.commit.abbreviatedOID
-                                : indexOrError.inputCommit.slice(0, 7)}{' '}
-                            rooted at {indexOrError.projectRoot?.path || '/'}
+                                : indexOrError.inputCommit.slice(0, 7)}
                         </h2>
                     </div>
 
                     {indexOrError.state === GQL.LSIFIndexState.PROCESSING ? (
                         <div className="alert alert-primary mb-4 mt-3">
                             <LoadingSpinner className="icon-inline" />{' '}
-                            <span className="e2e-index-state">Index is currently being processed...</span>
+                            <span className="test-index-state">Index is currently being processed...</span>
                         </div>
                     ) : indexOrError.state === GQL.LSIFIndexState.COMPLETED ? (
                         <div className="alert alert-success mb-4 mt-3">
                             <CheckIcon className="icon-inline" />{' '}
-                            <span className="e2e-index-state">Index processed successfully.</span>
+                            <span className="test-index-state">Index processed successfully.</span>
                         </div>
                     ) : indexOrError.state === GQL.LSIFIndexState.ERRORED ? (
                         <div className="alert alert-danger mb-4 mt-3">
                             <AlertCircleIcon className="icon-inline" />{' '}
-                            <span className="e2e-index-state">Index failed to complete:</span>{' '}
+                            <span className="test-index-state">Index failed to complete:</span>{' '}
                             <code>{indexOrError.failure}</code>
                         </div>
                     ) : (
                         <div className="alert alert-primary mb-4 mt-3">
                             <ClockOutlineIcon className="icon-inline" />{' '}
-                            <span className="e2e-index-state">
+                            <span className="test-index-state">
                                 Index is queued. There are {indexOrError.placeInQueue} indexes ahead of this one.
                             </span>
                         </div>
@@ -140,8 +143,8 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
                                 <td>Repository</td>
                                 <td>
                                     {indexOrError.projectRoot ? (
-                                        <Link to={indexOrError.projectRoot.commit.repository.url}>
-                                            {indexOrError.projectRoot.commit.repository.name}
+                                        <Link to={indexOrError.projectRoot.repository.url}>
+                                            {indexOrError.projectRoot.repository.name}
                                         </Link>
                                     ) : (
                                         repo?.name || 'unknown'
@@ -165,7 +168,7 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
                             <tr>
                                 <td>Queued</td>
                                 <td>
-                                    <Timestamp date={indexOrError.queuedAt} noAbout={true} />
+                                    <Timestamp date={indexOrError.queuedAt} now={now} noAbout={true} />
                                 </td>
                             </tr>
 
@@ -173,7 +176,7 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
                                 <td>Began processing</td>
                                 <td>
                                     {indexOrError.startedAt ? (
-                                        <Timestamp date={indexOrError.startedAt} noAbout={true} />
+                                        <Timestamp date={indexOrError.startedAt} now={now} noAbout={true} />
                                     ) : (
                                         <span className="text-muted">Index has not yet started.</span>
                                     )}
@@ -189,7 +192,7 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
                                 </td>
                                 <td>
                                     {indexOrError.finishedAt ? (
-                                        <Timestamp date={indexOrError.finishedAt} noAbout={true} />
+                                        <Timestamp date={indexOrError.finishedAt} now={now} noAbout={true} />
                                     ) : (
                                         <span className="text-muted">Index has not yet completed.</span>
                                     )}
@@ -198,24 +201,19 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
                         </tbody>
                     </table>
 
-                    <div className="action-container">
-                        <div className="action-container__row">
-                            <div className="action-container__description">
-                                <h4 className="action-container__title">Delete this index</h4>
-                                <div>Deleting this index will remove it from the index queue.</div>
-                            </div>
-                            <div className="action-container__btn-container">
-                                <button
-                                    type="button"
-                                    className="btn btn-danger action-container__btn"
-                                    onClick={deleteIndex}
-                                    disabled={deletionOrError === 'loading'}
-                                    data-tooltip="Delete index"
-                                >
-                                    <DeleteIcon className="icon-inline" />
-                                </button>
-                            </div>
-                        </div>
+                    <div className="mt-4 p-2">
+                        <button
+                            type="button"
+                            className="btn btn-danger"
+                            onClick={deleteIndex}
+                            disabled={deletionOrError === 'loading'}
+                            aria-describedby="upload-delete-button-help"
+                        >
+                            <DeleteIcon className="icon-inline" /> Delete index
+                        </button>
+                        <small id="upload-delete-button-help" className="form-text text-muted">
+                            Deleting this index will remove it from the index queue.
+                        </small>
                     </div>
                 </>
             )}

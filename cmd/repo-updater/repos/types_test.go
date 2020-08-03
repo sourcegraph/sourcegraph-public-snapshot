@@ -680,7 +680,7 @@ func TestSyncRateLimiters(t *testing.T) {
 			}
 
 			// We should have the lower limit
-			l := reg.GetRateLimiter(baseURL)
+			l := reg.Get(baseURL)
 			if l == nil {
 				t.Fatalf("expected a limiter")
 			}

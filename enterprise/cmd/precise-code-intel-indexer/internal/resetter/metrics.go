@@ -1,18 +1,22 @@
 package resetter
 
-import "github.com/prometheus/client_golang/prometheus"
+import (
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+)
 
-type ResetterMetrics struct {
-	Count  prometheus.Counter
-	Errors prometheus.Counter
-}
-
-func NewResetterMetrics(r prometheus.Registerer) ResetterMetrics {
-	count := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_index_queue_resets_total",
+func NewResetterMetrics(r prometheus.Registerer) workerutil.ResetterMetrics {
+	indexResets := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "src_index_queue_reset_total",
 		Help: "Total number of indexes put back into queued state",
 	})
-	r.MustRegister(count)
+	r.MustRegister(indexResets)
+
+	indexResetFailures := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "src_index_queue_max_resets_total",
+		Help: "Total number of indexes that exceed the max number of resets",
+	})
+	r.MustRegister(indexResetFailures)
 
 	errors := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_index_queue_reset_errors_total",
@@ -20,8 +24,9 @@ func NewResetterMetrics(r prometheus.Registerer) ResetterMetrics {
 	})
 	r.MustRegister(errors)
 
-	return ResetterMetrics{
-		Count:  count,
-		Errors: errors,
+	return workerutil.ResetterMetrics{
+		RecordResets:        indexResets,
+		RecordResetFailures: indexResetFailures,
+		Errors:              errors,
 	}
 }

@@ -2,7 +2,7 @@ import * as comlink from 'comlink'
 import { from, merge, Subject, Subscription, of } from 'rxjs'
 import { concatMap, first } from 'rxjs/operators'
 import { ContextValues, Progress, ProgressOptions, Unsubscribable } from 'sourcegraph'
-import { EndpointPair, PlatformContext } from '../../platform/context'
+import { PlatformContext, ClosableEndpointPair } from '../../platform/context'
 import { ExtensionHostAPIFactory } from '../extension/api/api'
 import { InitData } from '../extension/extensionHost'
 import { ClientAPI } from './api/api'
@@ -11,7 +11,6 @@ import { createClientContent } from './api/content'
 import { ClientContext } from './api/context'
 import { ClientExtensions } from './api/extensions'
 import { ClientLanguageFeatures } from './api/languageFeatures'
-import { ClientSearch } from './api/search'
 import { ClientViews } from './api/views'
 import { ClientWindows } from './api/windows'
 import { Services } from './services'
@@ -26,6 +25,7 @@ import { ViewerUpdate } from './services/viewerService'
 import { registerComlinkTransferHandlers } from '../util'
 import { initMainThreadAPI } from './mainthread-api'
 import { isSettingsValid } from '../../settings/settings'
+import { FlatExtHostAPI } from '../contract'
 
 export interface ExtensionHostClientConnection {
     /**
@@ -53,16 +53,19 @@ export interface ActivatedExtension {
  * @param endpoints The Worker object to communicate with
  */
 export async function createExtensionHostClientConnection(
-    endpoints: EndpointPair,
+    endpointsPromise: Promise<ClosableEndpointPair>,
     services: Services,
     initData: Omit<InitData, 'initialSettings'>,
     platformContext: Pick<PlatformContext, 'settings' | 'updateSettings'>
-): Promise<Unsubscribable> {
+): Promise<{ subscription: Unsubscribable; api: comlink.Remote<FlatExtHostAPI> }> {
     const subscription = new Subscription()
 
     // MAIN THREAD
 
     registerComlinkTransferHandlers()
+
+    const { endpoints, subscription: endpointsSubscription } = await endpointsPromise
+    subscription.add(endpointsSubscription)
 
     /** Proxy to the exposed extension host API */
     const initializeExtensionHost = comlink.wrap<ExtensionHostAPIFactory>(endpoints.proxy)
@@ -131,13 +134,11 @@ export async function createExtensionHostClientConnection(
     subscription.add(clientCodeEditor)
 
     const clientLanguageFeatures = new ClientLanguageFeatures(
-        services.textDocumentHover,
         services.textDocumentDefinition,
         services.textDocumentReferences,
         services.textDocumentLocations,
         services.completionItems
     )
-    const clientSearch = new ClientSearch(services.queryTransformer)
     subscription.add(new ClientExtensions(proxy.extensions, services.extensions))
 
     const clientContent = createClientContent(services.linkPreviews)
@@ -149,7 +150,6 @@ export async function createExtensionHostClientConnection(
     const clientAPI: ClientAPI = {
         ping: () => 'pong',
         context: clientContext,
-        search: clientSearch,
         languageFeatures: clientLanguageFeatures,
         windows: clientWindows,
         codeEditor: clientCodeEditor,
@@ -157,7 +157,8 @@ export async function createExtensionHostClientConnection(
         content: clientContent,
         ...newAPI,
     }
+
     comlink.expose(clientAPI, endpoints.expose)
 
-    return subscription
+    return { subscription, api: proxy }
 }

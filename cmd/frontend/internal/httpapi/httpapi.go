@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/schema"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -98,7 +98,6 @@ func NewInternalHandler(m *mux.Router, schema *graphql.Schema, newCodeIntelUploa
 		Repos:                 backend.Repos,
 		Indexers:              search.Indexers(),
 	}
-	m.Get(apirouter.ReposList).Handler(trace.TraceRoute(handler(reposList.serveList)))
 	m.Get(apirouter.ReposIndex).Handler(trace.TraceRoute(handler(reposList.serveIndex)))
 	m.Get(apirouter.ReposListEnabled).Handler(trace.TraceRoute(handler(serveReposListEnabled)))
 	m.Get(apirouter.ReposGetByName).Handler(trace.TraceRoute(handler(serveReposGetByName)))

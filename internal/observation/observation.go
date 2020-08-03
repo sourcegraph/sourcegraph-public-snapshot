@@ -110,9 +110,9 @@ type Operation struct {
 	logFields    []log.Field
 }
 
-// FinishFn is the shape of the function returned by With and should be invoked within
+// FinishFunc is the shape of the function returned by With and should be invoked within
 // a defer directly before the observed function returns.
-type FinishFn func(count float64, args Args)
+type FinishFunc func(count float64, args Args)
 
 // Args configures the observation behavior of an invocation of an operation.
 type Args struct {
@@ -124,7 +124,7 @@ type Args struct {
 
 // With prepares the necessary timers, loggers, and metrics to observe the invocation of
 // an operation.
-func (op *Operation) With(ctx context.Context, err *error, args Args) (context.Context, FinishFn) {
+func (op *Operation) With(ctx context.Context, err *error, args Args) (context.Context, FinishFunc) {
 	start := time.Now()
 	tr, ctx := op.trace(ctx, args)
 

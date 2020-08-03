@@ -2,6 +2,26 @@
 
 set -euf -o pipefail
 
+bash_error="Please upgrade bash to version 4. Currently on ${BASH_VERSION}."
+
+if [[ ${BASH_VERSION:0:1} -lt 4 ]]; then
+  case ${OSTYPE} in
+    darwin)
+      echo "${bash_error}"
+      echo
+      echo "  brew install bash"
+      exit 1
+      ;;
+    linux-gnu)
+      echo "${bash_error}"
+      echo
+      echo "  Use your OS package manager to upgrade."
+      echo "  eg: apt-get install --only-upgrade bash OR yum -y update bash"
+      exit 1
+      ;;
+  esac
+fi
+
 unset CDPATH
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
@@ -58,6 +78,7 @@ export SRC_PROF_SERVICES
 export OVERRIDE_AUTH_SECRET=sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ
 export DEPLOY_TYPE=dev
 export CTAGS_COMMAND="${CTAGS_COMMAND:=cmd/symbols/universal-ctags-dev}"
+export CTAGS_PROCESSES=2
 export ZOEKT_HOST=localhost:3070
 export USE_ENHANCED_LANGUAGE_DETECTION=${USE_ENHANCED_LANGUAGE_DETECTION:-1}
 export GRAFANA_SERVER_URL=http://localhost:3370
@@ -133,7 +154,52 @@ trap 'kill $build_ts_pid; exit' EXIT
 build_ts_pid="$!"
 
 export PROCFILE=${PROCFILE:-dev/Procfile}
-printf >&2 "\nStarting all binaries...\n\n"
+
+only=""
+except=""
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+    -e | --except)
+      except="$2"
+      shift
+      ;;
+    -o | --only)
+      only="$2"
+      shift
+      ;;
+    *)
+      echo "Unknown parameter passed: $1"
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+if [ -n "${only}" ] || [ -n "${except}" ]; then
+  services=${only:-$except}
+
+  # "frontend,grafana,gitserver" -> "^(frontend|grafana|gitserver):"
+  services_pattern="^(${services//,/|}):"
+
+  if [ -n "${except}" ]; then
+    grep_args="-vE"
+  else
+    grep_args="-E"
+  fi
+
+  tmp_procfile=$(mktemp -t procfile_XXXXXXX)
+  grep ${grep_args} "${services_pattern}" "${PROCFILE}" >"${tmp_procfile}"
+  export PROCFILE=${tmp_procfile}
+fi
+
+if [ -n "${only}" ]; then
+  printf >&2 "\nStarting binaries %s...\n\n" "${only}"
+elif [ -n "${except}" ]; then
+  printf >&2 "\nStarting all binaries, except %s...\n\n" "${except}"
+else
+  printf >&2 "\nStarting all binaries...\n\n"
+fi
+
 export GOREMAN="goreman --set-ports=false --exit-on-error -f ${PROCFILE}"
 
 if ! [ "$(id -u)" = 0 ] && command -v authbind; then

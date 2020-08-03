@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 
-	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 )
 
@@ -77,7 +77,7 @@ func (r *GitCommitResolver) resolveCommit(ctx context.Context) {
 		}
 
 		var commit *git.Commit
-		commit, r.err = git.GetCommit(ctx, *cachedRepo, nil, api.CommitID(r.oid))
+		commit, r.err = git.GetCommit(ctx, *cachedRepo, nil, api.CommitID(r.oid), git.ResolveRevisionOptions{})
 		if r.err != nil {
 			return
 		}

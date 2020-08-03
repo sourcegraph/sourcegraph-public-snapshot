@@ -8,6 +8,28 @@ import { map } from 'rxjs/operators'
 import { Observable } from 'rxjs'
 import { queryGraphQL, mutateGraphQL } from '../../backend/graphql'
 
+// Create an expected subtype including only the fields that we use in this component so
+// that storybook tests do not need to define a full IGitTree type (which is very large).
+export type Upload = Omit<GQL.ILSIFUpload, '__typename' | 'projectRoot'> & {
+    projectRoot: {
+        url: string
+        path: string
+        repository: {
+            url: string
+            name: string
+        }
+        commit: {
+            url: string
+            oid: string
+            abbreviatedOID: string
+        }
+    } | null
+}
+
+export type UploadConnection = Omit<GQL.ILSIFUploadConnection, '__typename' | 'nodes'> & {
+    nodes: Upload[]
+}
+
 /**
  * Return LSIF uploads. If a repository is given, only uploads for that repository will be returned. Otherwise,
  * uploads across all repositories are returned.
@@ -19,7 +41,7 @@ export function fetchLsifUploads({
     isLatestForRepo,
     first,
     after,
-}: { repository?: string } & GQL.ILsifUploadsOnRepositoryArguments): Observable<GQL.ILSIFUploadConnection> {
+}: { repository?: string } & GQL.ILsifUploadsOnRepositoryArguments): Observable<UploadConnection> {
     if (!repository) {
         return queryGraphQL(
             gql`
@@ -41,12 +63,17 @@ export function fetchLsifUploads({
                             id
                             state
                             projectRoot {
-                                commit {
-                                    abbreviatedOID
-                                    url
-                                }
-                                path
                                 url
+                                path
+                                repository {
+                                    url
+                                    name
+                                }
+                                commit {
+                                    url
+                                    oid
+                                    abbreviatedOID
+                                }
                             }
                             inputCommit
                             inputRoot
@@ -74,7 +101,7 @@ export function fetchLsifUploads({
 
     return queryGraphQL(
         gql`
-            query LsifUploads(
+            query LsifUploadsWithRepo(
                 $repository: ID!
                 $state: LSIFUploadState
                 $isLatestForRepo: Boolean
@@ -96,12 +123,17 @@ export function fetchLsifUploads({
                                 id
                                 state
                                 projectRoot {
-                                    commit {
-                                        abbreviatedOID
-                                        url
-                                    }
-                                    path
                                     url
+                                    path
+                                    repository {
+                                        url
+                                        name
+                                    }
+                                    commit {
+                                        url
+                                        oid
+                                        abbreviatedOID
+                                    }
                                 }
                                 inputCommit
                                 inputRoot
@@ -138,7 +170,7 @@ export function fetchLsifUploads({
     )
 }
 
-export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpload | null> {
+export function fetchLsifUpload({ id }: { id: string }): Observable<Upload | null> {
     return queryGraphQL(
         gql`
             query LsifUpload($id: ID!) {
@@ -147,17 +179,17 @@ export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpl
                     ... on LSIFUpload {
                         id
                         projectRoot {
+                            url
+                            path
+                            repository {
+                                url
+                                name
+                            }
                             commit {
+                                url
                                 oid
                                 abbreviatedOID
-                                url
-                                repository {
-                                    name
-                                    url
-                                }
                             }
-                            path
-                            url
                         }
                         inputCommit
                         inputRoot
@@ -209,6 +241,28 @@ export function deleteLsifUpload({ id }: { id: string }): Observable<void> {
     )
 }
 
+// Create an expected subtype including only the fields that we use in this component so
+// that storybook tests do not need to define a full IGitTree type (which is very large).
+export type Index = Omit<GQL.ILSIFIndex, '__typename' | 'projectRoot'> & {
+    projectRoot: {
+        url: string
+        path: string
+        repository: {
+            url: string
+            name: string
+        }
+        commit: {
+            url: string
+            oid: string
+            abbreviatedOID: string
+        }
+    } | null
+}
+
+export type IndexConnection = Omit<GQL.ILSIFIndexConnection, '__typename' | 'nodes'> & {
+    nodes: Index[]
+}
+
 /**
  * Return LSIF indexes. If a repository is given, only indexes for that repository will be returned. Otherwise,
  * indexes across all repositories are returned.
@@ -219,7 +273,7 @@ export function fetchLsifIndexes({
     state,
     first,
     after,
-}: { repository?: string } & GQL.ILsifIndexesOnRepositoryArguments): Observable<GQL.ILSIFIndexConnection> {
+}: { repository?: string } & GQL.ILsifIndexesOnRepositoryArguments): Observable<IndexConnection> {
     if (!repository) {
         return queryGraphQL(
             gql`
@@ -229,12 +283,17 @@ export function fetchLsifIndexes({
                             id
                             state
                             projectRoot {
-                                commit {
-                                    abbreviatedOID
-                                    url
-                                }
-                                path
                                 url
+                                path
+                                repository {
+                                    url
+                                    name
+                                }
+                                commit {
+                                    url
+                                    oid
+                                    abbreviatedOID
+                                }
                             }
                             inputCommit
                             queuedAt
@@ -260,7 +319,13 @@ export function fetchLsifIndexes({
 
     return queryGraphQL(
         gql`
-            query LsifIndexes($repository: ID!, $state: LSIFIndexState, $first: Int, $after: String, $query: String) {
+            query LsifIndexesWithRepo(
+                $repository: ID!
+                $state: LSIFIndexState
+                $first: Int
+                $after: String
+                $query: String
+            ) {
                 node(id: $repository) {
                     __typename
                     ... on Repository {
@@ -269,12 +334,17 @@ export function fetchLsifIndexes({
                                 id
                                 state
                                 projectRoot {
-                                    commit {
-                                        abbreviatedOID
-                                        url
-                                    }
-                                    path
                                     url
+                                    path
+                                    repository {
+                                        url
+                                        name
+                                    }
+                                    commit {
+                                        url
+                                        oid
+                                        abbreviatedOID
+                                    }
                                 }
                                 inputCommit
                                 queuedAt
@@ -309,7 +379,7 @@ export function fetchLsifIndexes({
     )
 }
 
-export function fetchLsifIndex({ id }: { id: string }): Observable<GQL.ILSIFIndex | null> {
+export function fetchLsifIndex({ id }: { id: string }): Observable<Index | null> {
     return queryGraphQL(
         gql`
             query LsifIndex($id: ID!) {
@@ -318,17 +388,17 @@ export function fetchLsifIndex({ id }: { id: string }): Observable<GQL.ILSIFInde
                     ... on LSIFIndex {
                         id
                         projectRoot {
+                            url
+                            path
+                            repository {
+                                url
+                                name
+                            }
                             commit {
+                                url
                                 oid
                                 abbreviatedOID
-                                url
-                                repository {
-                                    name
-                                    url
-                                }
                             }
-                            path
-                            url
                         }
                         inputCommit
                         state

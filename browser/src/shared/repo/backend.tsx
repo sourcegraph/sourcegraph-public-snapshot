@@ -147,7 +147,12 @@ export const fetchBlobContentLines = memoizeObservable(
                 if (errors) {
                     if (errors.length === 1) {
                         const error = errors[0]
-                        const isFileContent = error.path.join('.') === 'repository.commit.file.content'
+                        const errorPath = error.path.join('.')
+
+                        // Originally this checked only for 'repository.commit.file.content'.
+                        // But if a file doesn't exist, the error path is 'repository.commit.file'
+                        const isFileContent =
+                            errorPath === 'repository.commit.file.content' || errorPath === 'repository.commit.file'
                         const isDNE = error.message.includes('does not exist')
 
                         // The error is the file DNE. Just ignore it and pass an empty array

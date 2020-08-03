@@ -23,7 +23,7 @@ import { ErrorAlert } from '../../../components/alerts'
 function queryUser(user: GQL.ID): Observable<GQL.IUser> {
     return queryGraphQL(
         gql`
-            query User($user: ID!) {
+            query UserForProfilePage($user: ID!) {
                 node(id: $user) {
                     ... on User {
                         id
@@ -161,21 +161,19 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                 <PageTitle title="Profile" />
                 <h2>Profile</h2>
 
-                {this.props.activation &&
-                    this.props.activation.completed &&
-                    percentageDone(this.props.activation.completed) < 100 && (
-                        <div className="card mb-3">
-                            <div className="card-body">
-                                <h3 className="mb-0">Almost there!</h3>
-                                <p className="mb-0">Complete the steps below to finish onboarding to Sourcegraph.</p>
-                            </div>
-                            <ActivationChecklist
-                                history={this.props.history}
-                                steps={this.props.activation.steps}
-                                completed={this.props.activation.completed}
-                            />
+                {this.props.activation?.completed && percentageDone(this.props.activation.completed) < 100 && (
+                    <div className="card mb-3">
+                        <div className="card-body">
+                            <h3 className="mb-0">Almost there!</h3>
+                            <p className="mb-0">Complete the steps below to finish onboarding to Sourcegraph.</p>
                         </div>
-                    )}
+                        <ActivationChecklist
+                            history={this.props.history}
+                            steps={this.props.activation.steps}
+                            completed={this.props.activation.completed}
+                        />
+                    </div>
+                )}
 
                 {isErrorLike(this.state.userOrError) && (
                     <ErrorAlert error={this.state.userOrError.message} history={this.props.history} />
@@ -187,7 +185,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                             <label htmlFor="user-settings-profile-page__form-username">Username</label>
                             <UsernameInput
                                 id="user-settings-profile-page__form-username"
-                                className="e2e-user-settings-profile-page-username"
+                                className="test-user-settings-profile-page-username"
                                 value={
                                     this.state.username === undefined
                                         ? this.state.userOrError.username
@@ -212,7 +210,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                             <input
                                 id="user-settings-profile-page__form-display-name"
                                 type="text"
-                                className="form-control e2e-user-settings-profile-page__display-name"
+                                className="form-control test-user-settings-profile-page__display-name"
                                 value={
                                     this.state.displayName === undefined
                                         ? this.state.userOrError.displayName || ''
@@ -231,7 +229,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                                 <input
                                     id="user-settings-profile-page__form-avatar-url"
                                     type="url"
-                                    className="form-control e2e-user-settings-profile-page__avatar_url"
+                                    className="form-control test-user-settings-profile-page__avatar_url"
                                     value={
                                         this.state.avatarURL === undefined
                                             ? this.state.userOrError.avatarURL || ''
@@ -250,7 +248,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                             )}
                         </div>
                         <button
-                            className="btn btn-primary user-settings-profile-page__button e2e-user-settings-profile-page-update-profile"
+                            className="btn btn-primary user-settings-profile-page__button test-user-settings-profile-page-update-profile"
                             type="submit"
                             disabled={this.state.loading}
                         >
@@ -262,7 +260,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                             </div>
                         )}
                         {this.state.saved && (
-                            <p className="alert alert-success user-settings-profile-page__alert e2e-user-settings-profile-page-alert-success">
+                            <p className="alert alert-success user-settings-profile-page__alert test-user-settings-profile-page-alert-success">
                                 Profile saved!
                             </p>
                         )}

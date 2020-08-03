@@ -10,12 +10,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/google/zoekt"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/db"
+	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -32,7 +33,7 @@ func TestSearch(t *testing.T) {
 		searchQuery                  string
 		searchVersion                string
 		reposListMock                func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
-		repoRevsMock                 func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error)
+		repoRevsMock                 func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error)
 		externalServicesListMock     func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error)
 		phabricatorGetRepoByNameMock func(repo api.RepoName) (*types.PhabricatorRepo, error)
 		wantResults                  Results
@@ -43,8 +44,8 @@ func TestSearch(t *testing.T) {
 			reposListMock: func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error) {
 				return nil, nil
 			},
-			repoRevsMock: func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
-				return api.CommitID(""), nil
+			repoRevsMock: func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+				return "", nil
 			},
 			externalServicesListMock: func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 				return nil, nil
@@ -66,8 +67,8 @@ func TestSearch(t *testing.T) {
 
 					nil
 			},
-			repoRevsMock: func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
-				return api.CommitID(""), nil
+			repoRevsMock: func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+				return "", nil
 			},
 			externalServicesListMock: func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 				return nil, nil
@@ -310,21 +311,18 @@ func TestDefaultRepositories(t *testing.T) {
 			getRawDefaultRepos := func(ctx context.Context) ([]*types.Repo, error) {
 				return drs, nil
 			}
-			indexedRepos := func(ctx context.Context, revs []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error) {
-				for _, r := range drs {
-					r2 := &search.RepositoryRevisions{
-						Repo: r,
-					}
-					if tc.indexedRepoNames[string(r.Name)] {
-						indexed = append(indexed, r2)
-					} else {
-						unindexed = append(unindexed, r2)
-					}
-				}
-				return indexed, unindexed, nil
+
+			var indexed []*zoekt.RepoListEntry
+			for name := range tc.indexedRepoNames {
+				indexed = append(indexed, &zoekt.RepoListEntry{Repository: zoekt.Repository{Name: name}})
 			}
+			z := &searchbackend.Zoekt{
+				Client:       &fakeSearcher{repos: indexed},
+				DisableCache: true,
+			}
+
 			ctx := context.Background()
-			drs, err := defaultRepositories(ctx, getRawDefaultRepos, indexedRepos, tc.excludePatterns)
+			drs, err := defaultRepositories(ctx, getRawDefaultRepos, z, tc.excludePatterns)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -365,12 +363,16 @@ func TestDetectSearchType(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(*testing.T) {
-			got, err := detectSearchType(test.version, test.patternType, test.input)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if got != test.want {
-				t.Errorf("failed %v, got %v, expected %v", test.name, got, test.want)
+			got, err := detectSearchType(test.version, test.patternType)
+			useNewParser := []bool{true, false}
+			for _, parserOpt := range useNewParser {
+				got = overrideSearchType(test.input, got, parserOpt)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if got != test.want {
+					t.Errorf("failed %v, got %v, expected %v", test.name, got, test.want)
+				}
 			}
 		})
 	}

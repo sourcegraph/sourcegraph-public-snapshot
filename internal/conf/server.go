@@ -80,9 +80,9 @@ func (s *Server) Write(ctx context.Context, input conftypes.RawUnified) error {
 	return nil
 }
 
-// Edits describes some JSON edits to apply to site or critical configuration.
+// Edits describes some JSON edits to apply to site configuration.
 type Edits struct {
-	Site, Critical []jsonx.Edit
+	Site []jsonx.Edit
 }
 
 // Edit invokes the provided function to compute edits to the site
@@ -108,10 +108,6 @@ func (s *Server) Edit(ctx context.Context, computeEdits func(current *Unified, r
 	}
 
 	// Apply edits and write out new configuration.
-	newCritical, err := jsonx.ApplyEdits(raw.Critical, edits.Critical...)
-	if err != nil {
-		return errors.Wrap(err, "jsonx.ApplyEdits Critical")
-	}
 	newSite, err := jsonx.ApplyEdits(raw.Site, edits.Site...)
 	if err != nil {
 		return errors.Wrap(err, "jsonx.ApplyEdits Site")
@@ -120,10 +116,7 @@ func (s *Server) Edit(ctx context.Context, computeEdits func(current *Unified, r
 	// TODO@ggilmore: Another race condition (also present in the existing library). Locks
 	// aren't held between applying the edits and writing the config file,
 	// so the newConfig could be outdated.
-	err = s.Write(ctx, conftypes.RawUnified{
-		Site:     newSite,
-		Critical: newCritical,
-	})
+	err = s.Write(ctx, conftypes.RawUnified{Site: newSite})
 	if err != nil {
 		return errors.Wrap(err, "conf.Write")
 	}

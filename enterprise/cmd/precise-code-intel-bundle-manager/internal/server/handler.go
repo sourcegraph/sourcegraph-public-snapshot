@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
+	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/mxk/go-flowrate/flowrate"
 	"github.com/opentracing/opentracing-go/ext"
@@ -18,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 	sqlitereader "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/sqlite"
-	"github.com/sourcegraph/sourcegraph/internal/tar"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
@@ -35,6 +35,7 @@ func (s *Server) handler() http.Handler {
 	mux.Path("/dbs/{id:[0-9]+}/{index:[0-9]+}").Methods("POST").HandlerFunc(s.handlePostDatabasePart)
 	mux.Path("/dbs/{id:[0-9]+}/stitch").Methods("POST").HandlerFunc(s.handlePostDatabaseStitch)
 	mux.Path("/dbs/{id:[0-9]+}/exists").Methods("GET").HandlerFunc(s.handleExists)
+	mux.Path("/dbs/{id:[0-9]+}/ranges").Methods("GET").HandlerFunc(s.handleRanges)
 	mux.Path("/dbs/{id:[0-9]+}/definitions").Methods("GET").HandlerFunc(s.handleDefinitions)
 	mux.Path("/dbs/{id:[0-9]+}/references").Methods("GET").HandlerFunc(s.handleReferences)
 	mux.Path("/dbs/{id:[0-9]+}/hover").Methods("GET").HandlerFunc(s.handleHover)
@@ -95,11 +96,13 @@ func (s *Server) handlePostUploadStitch(w http.ResponseWriter, r *http.Request) 
 		return paths.UploadPartFilename(s.bundleDir, id, int64(index))
 	}
 
-	if err := codeintelutils.StitchFiles(filename, makePartFilename, true); err != nil {
+	if err := codeintelutils.StitchFiles(filename, makePartFilename, false, false); err != nil {
 		log15.Error("Failed to stitch multipart upload", "err", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	_ = writeFileSize(w, filename)
 }
 
 // DELETE /uploads/{id:[0-9]+}
@@ -119,26 +122,21 @@ func (s *Server) handlePostDatabasePart(w http.ResponseWriter, r *http.Request) 
 // POST /dbs/{id:[0-9]+}/stitch
 func (s *Server) handlePostDatabaseStitch(w http.ResponseWriter, r *http.Request) {
 	id := idFromRequest(r)
-	dirname := paths.DBDir(s.bundleDir, id)
+	filename := paths.SQLiteDBFilename(s.bundleDir, idFromRequest(r))
 	makePartFilename := func(index int) string {
 		return paths.DBPartFilename(s.bundleDir, id, int64(index))
 	}
 
-	stitchedReader, err := codeintelutils.StitchFilesReader(makePartFilename, false)
-	if err != nil {
+	if err := codeintelutils.StitchFiles(filename, makePartFilename, true, false); err != nil {
 		log15.Error("Failed to stitch multipart database", "err", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if err := tar.Extract(dirname, stitchedReader); err != nil {
-		log15.Error("Failed to extract database archive", "err", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// Once we have a database, we no longer need the upload file
 	s.deleteUpload(w, r)
+
+	_ = writeFileSize(w, filename)
 }
 
 // GET /dbs/{id:[0-9]+}/exists
@@ -149,6 +147,17 @@ func (s *Server) handleExists(w http.ResponseWriter, r *http.Request) {
 			return nil, pkgerrors.Wrap(err, "db.Exists")
 		}
 		return exists, nil
+	})
+}
+
+// GET /dbs/{id:[0-9]+}/ranges
+func (s *Server) handleRanges(w http.ResponseWriter, r *http.Request) {
+	s.dbQuery(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
+		ranges, err := db.Ranges(ctx, getQuery(r, "path"), getQueryInt(r, "startLine"), getQueryInt(r, "endLine"))
+		if err != nil {
+			return nil, pkgerrors.Wrap(err, "db.Ranges")
+		}
+		return ranges, nil
 	})
 }
 
@@ -283,20 +292,45 @@ func (s *Server) handlePackageInformation(w http.ResponseWriter, r *http.Request
 // doUpload writes the HTTP request body to the path determined by the given
 // makeFilename function.
 func (s *Server) doUpload(w http.ResponseWriter, r *http.Request, makeFilename func(bundleDir string, id int64) string) bool {
-	targetFile, err := os.OpenFile(makeFilename(s.bundleDir, idFromRequest(r)), os.O_WRONLY|os.O_CREATE, 0666)
-	if err != nil {
-		log15.Error("Failed to open target file", "err", err)
-		http.Error(w, fmt.Sprintf("failed to open target file: %s", err.Error()), http.StatusInternalServerError)
-		return false
-	}
-	defer targetFile.Close()
+	filename := makeFilename(s.bundleDir, idFromRequest(r))
 
-	if _, err := io.Copy(targetFile, r.Body); err != nil {
+	if err := writeToFile(filename, r.Body); err != nil {
 		log15.Error("Failed to write payload", "err", err)
 		http.Error(w, fmt.Sprintf("failed to write payload: %s", err.Error()), http.StatusInternalServerError)
 		return false
 	}
 
+	return writeFileSize(w, filename)
+}
+
+func writeToFile(filename string, r io.Reader) (err error) {
+	targetFile, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0666)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if closeErr := targetFile.Close(); closeErr != nil {
+			err = multierror.Append(err, closeErr)
+		}
+	}()
+
+	_, err = io.Copy(targetFile, r)
+	return err
+}
+
+func writeFileSize(w http.ResponseWriter, filename string) bool {
+	fi, err := os.Stat(filename)
+	if err != nil {
+		log15.Error("Failed to stat file", "err", err)
+		http.Error(w, fmt.Sprintf("failed to stat file: %s", err.Error()), http.StatusInternalServerError)
+		return false
+	}
+
+	payload := map[string]int{
+		"size": int(fi.Size()),
+	}
+
+	writeJSON(w, payload)
 	return true
 }
 
@@ -306,12 +340,12 @@ func (s *Server) deleteUpload(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type dbQueryHandlerFn func(ctx context.Context, db database.Database) (interface{}, error)
+type dbQueryHandlerFunc func(ctx context.Context, db database.Database) (interface{}, error)
 
 // dbQuery invokes the given handler with the database instance chosen from the
 // route's id value and serializes the resulting value to the response writer. If an
 // error occurs it will be written to the body of a 500-level response.
-func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler dbQueryHandlerFn) {
+func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler dbQueryHandlerFunc) {
 	id := idFromRequest(r)
 
 	if err := s.dbQueryErr(w, r, handler); err != nil {
@@ -329,7 +363,7 @@ func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler dbQuery
 // queryBundleErr invokes the given handler with the database instance chosen from the
 // route's id value and serializes the resulting value to the response writer. If an
 // error occurs it will be returned.
-func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQueryHandlerFn) (err error) {
+func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQueryHandlerFunc) (err error) {
 	ctx := r.Context()
 	filename := paths.SQLiteDBFilename(s.bundleDir, idFromRequest(r))
 

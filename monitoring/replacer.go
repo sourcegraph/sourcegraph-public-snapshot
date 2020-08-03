@@ -19,9 +19,45 @@ func Replacer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("replacer"),
-						sharedContainerMemoryUsage("replacer"),
 						sharedContainerCPUUsage("replacer"),
+						sharedContainerMemoryUsage("replacer"),
+					},
+					{
+						sharedContainerRestarts("replacer"),
+						sharedContainerFsInodes("replacer"),
+					},
+				},
+			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage7d("replacer"),
+						sharedProvisioningMemoryUsage7d("replacer"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("replacer"),
+						sharedProvisioningMemoryUsage5m("replacer"),
+					},
+				},
+			},
+			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("replacer"),
+						sharedGoGcDuration("replacer"),
+					},
+				},
+			},
+			{
+				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedKubernetesPodsAvailable("replacer"),
 					},
 				},
 			},

@@ -123,7 +123,7 @@ func listGoPackagesInRepoImprecise(ctx context.Context, repoName api.RepoName) (
 	if err != nil {
 		return nil, err
 	}
-	commitID, err := git.ResolveRevision(ctx, *gitRepo, nil, "HEAD", nil)
+	commitID, err := git.ResolveRevision(ctx, *gitRepo, nil, "HEAD", git.ResolveRevisionOptions{})
 	if err != nil {
 		return nil, err
 	}

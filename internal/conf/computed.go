@@ -219,14 +219,6 @@ func SearchIndexEnabled() bool {
 	return DeployType() != DeploySingleDocker
 }
 
-func SymbolIndexEnabled() bool {
-	enabled := SearchIndexEnabled()
-	if v := Get().SearchIndexSymbolsEnabled; v != nil {
-		enabled = enabled && *v
-	}
-	return enabled
-}
-
 func CampaignsReadAccessEnabled() bool {
 	if v := Get().CampaignsReadAccessEnabled; v != nil {
 		return *v
@@ -323,14 +315,9 @@ func StructuralSearchEnabled() bool {
 func AndOrQueryEnabled() bool {
 	e := Get().ExperimentalFeatures
 	if e == nil || e.AndOrQuery == "" {
-		return false
+		return true
 	}
 	return e.AndOrQuery == "enabled"
-}
-
-func SearchMultipleRevisionsPerRepository() bool {
-	x := ExperimentalFeatures()
-	return x.SearchMultipleRevisionsPerRepository != nil && *x.SearchMultipleRevisionsPerRepository
 }
 
 func ExperimentalFeatures() schema.ExperimentalFeatures {
