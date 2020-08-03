@@ -3,14 +3,14 @@ import { CampaignChangesets } from './CampaignChangesets'
 import * as H from 'history'
 import { of, Subject } from 'rxjs'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../../shared/src/telemetry/telemetryService'
-import { shallow } from 'enzyme'
+import { mount } from 'enzyme'
 import { ChangesetExternalState, ChangesetState } from '../../../../graphql-operations'
 
 describe('CampaignChangesets', () => {
     const history = H.createMemoryHistory()
     test('renders', () =>
         expect(
-            shallow(
+            mount(
                 <CampaignChangesets
                     queryChangesets={() =>
                         of({
