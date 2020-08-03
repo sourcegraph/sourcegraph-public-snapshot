@@ -172,10 +172,7 @@ func Init(options ...Option) {
 func initTracer(opts *Options) {
 	globalTracer := newSwitchableTracer()
 	opentracing.SetGlobalTracer(globalTracer)
-	var (
-		jaegerEnabledMu sync.Mutex
-		jaegerEnabled   = false
-	)
+	jaegerEnabled := false
 
 	// Watch loop
 	conf.Watch(func() {
@@ -205,8 +202,6 @@ func initTracer(opts *Options) {
 		jaegerShouldBeEnabled := samplingStrategy == ot.TraceAll || samplingStrategy == ot.TraceSelective
 
 		// Set global tracer (Jaeger or No-op)
-		jaegerEnabledMu.Lock()
-		defer jaegerEnabledMu.Unlock()
 		if jaegerEnabled != jaegerShouldBeEnabled {
 			log15.Info("opentracing: Jaeger enablement change", "old", jaegerEnabled, "newValue", jaegerShouldBeEnabled)
 		}
