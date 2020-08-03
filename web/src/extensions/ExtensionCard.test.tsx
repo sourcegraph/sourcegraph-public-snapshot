@@ -32,6 +32,7 @@ describe('ExtensionCard', () => {
                             subject={{ id: 'u', viewerCanAdminister: false }}
                             settingsCascade={{ final: null, subjects: null }}
                             platformContext={NOOP_PLATFORM_CONTEXT}
+                            enabled={false}
                         />
                     </MemoryRouter>
                 )
