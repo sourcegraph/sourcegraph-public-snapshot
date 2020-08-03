@@ -285,7 +285,7 @@
     "got": "^11.5.1",
     "graphiql": "^1.0.3",
     "he": "^1.2.0",
-    "highlight.js": "^10.1.1",
+    "highlight.js": "^10.1.2",
     "highlightjs-graphql": "^1.0.1",
     "is-absolute-url": "^3.0.3",
     "lodash": "^4.17.15",
