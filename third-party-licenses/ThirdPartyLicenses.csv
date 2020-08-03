@@ -787,7 +787,6 @@ Yarn,psl,1.7.0,MIT,https://lupomontero.com/,Approved
 Yarn,pump,2.0.1,MIT,Unknown,Approved
 Yarn,pump,3.0.0,MIT,Unknown,Approved
 Yarn,pumpify,1.5.1,MIT,https://github.com/mafintosh/pumpify,Approved
-Yarn,punycode,1.4.1,MIT,https://mths.be/punycode,Approved
 Yarn,punycode,2.1.1,MIT,https://mths.be/punycode,Approved
 Yarn,qrcode-terminal,0.12.0,Apache*,https://github.com/gtanner/qrcode-terminal,Approved
 Yarn,qs,6.5.2,New BSD,https://github.com/ljharb/qs,Approved
@@ -831,7 +830,7 @@ Yarn,regenerator-runtime,0.13.5,MIT,Unknown,Approved
 Yarn,regexp.prototype.flags,1.3.0,MIT,Unknown,Approved
 Yarn,registry-auth-token,3.4.0,MIT,https://github.com/rexxars/registry-auth-token#readme,Approved
 Yarn,registry-url,3.1.0,MIT,sindresorhus.com,Approved
-Yarn,request,2.88.0,Apache 2.0,Unknown,Approved
+Yarn,request,2.88.2,Apache 2.0,Unknown,Approved
 Yarn,require-directory,2.1.1,MIT,https://github.com/troygoode/node-require-directory/,Approved
 Yarn,require-main-filename,1.0.1,ISC,https://github.com/yargs/require-main-filename#readme,Approved
 Yarn,resize-observer-polyfill,1.5.1,MIT,https://github.com/que-etc/resize-observer-polyfill,Approved
@@ -844,7 +843,7 @@ Yarn,retry,0.10.1,MIT,https://github.com/tim-kos/node-retry,Approved
 Yarn,retry,0.12.0,MIT,https://github.com/tim-kos/node-retry,Approved
 Yarn,rimraf,2.6.3,ISC,http://blog.izs.me/,Approved
 Yarn,run-queue,1.0.3,ISC,https://npmjs.com/package/run-queue,Approved
-Yarn,rxjs,6.6.0,Apache 2.0,https://github.com/ReactiveX/RxJS,Approved
+Yarn,rxjs,6.6.2,Apache 2.0,https://github.com/ReactiveX/RxJS,Approved
 Yarn,safe-buffer,5.1.2,MIT,https://github.com/feross/safe-buffer,Approved
 Yarn,safe-buffer,5.2.0,MIT,https://github.com/feross/safe-buffer,Approved
 Yarn,safer-buffer,2.1.2,MIT,https://github.com/ChALkeR,Approved
@@ -913,9 +912,9 @@ Yarn,tiny-relative-date,1.3.0,MIT,https://wildlyinaccurate.com/,Approved
 Yarn,tiny-warning,1.0.3,MIT,Unknown,Approved
 Yarn,to-fast-properties,2.0.0,MIT,sindresorhus.com,Approved
 Yarn,toggle-selection,1.0.6,MIT,sudodoki.name,Approved
-Yarn,tough-cookie,2.4.3,New BSD,https://github.com/salesforce/tough-cookie,Approved
+Yarn,tough-cookie,2.5.0,New BSD,https://github.com/salesforce/tough-cookie,Approved
 Yarn,ts-key-enum,2.0.3,MIT,https://gitlab.com/nfriend/ts-key-enum#readme,Approved
-Yarn,tslib,1.11.2,BSD Zero Clause License,https://www.typescriptlang.org/,Approved
+Yarn,tslib,1.13.0,BSD Zero Clause License,https://www.typescriptlang.org/,Approved
 Yarn,tslib,2.0.0,BSD Zero Clause License,https://www.typescriptlang.org/,Approved
 Yarn,tunnel-agent,0.6.0,Apache 2.0,http://www.futurealoof.com,Approved
 Yarn,tweetnacl,0.14.5,Unlicense,https://tweetnacl.js.org/,Approved
