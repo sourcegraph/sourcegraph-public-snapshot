@@ -179,7 +179,6 @@ func initTracer(opts *Options) {
 
 	// Watch loop
 	conf.Watch(func() {
-		opentracing.SetGlobalTracer(globalTracer)
 		siteConfig := conf.Get()
 
 		// Set sampling strategy
