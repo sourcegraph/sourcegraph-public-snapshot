@@ -29,6 +29,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 - Deprecated site settings `lightstepAccessToken` and `lightstepProject` have been removed. We now only support sending traces to Jaeger. Configure Jaeger with `observability.tracing` site setting.
+- Removed `CloneInProgress` option from GraphQL Repositories API. [#12560](https://github.com/sourcegraph/sourcegraph/pull/12560)
 
 ## 3.18.0
 
