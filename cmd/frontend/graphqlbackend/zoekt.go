@@ -431,6 +431,12 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 // canceled.
 func contextWithoutDeadline(cOld context.Context) (context.Context, context.CancelFunc) {
 	cNew, cancel := context.WithCancel(context.Background())
+
+	// Set trace context so we still get spans propagated
+	if tr := trace.TraceFromContext(cOld); tr != nil {
+		cNew = trace.ContextWithTrace(cNew, tr)
+	}
+
 	go func() {
 		select {
 		case <-cOld.Done():
@@ -441,11 +447,6 @@ func contextWithoutDeadline(cOld context.Context) (context.Context, context.Canc
 		case <-cNew.Done():
 		}
 	}()
-
-	// Set trace context so we still get spans propagated
-	if tr := trace.TraceFromContext(cOld); tr != nil {
-		cNew = trace.ContextWithTrace(cNew, tr)
-	}
 
 	return cNew, cancel
 }
