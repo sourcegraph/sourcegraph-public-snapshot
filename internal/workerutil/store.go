@@ -29,6 +29,11 @@ type Store interface {
 	// The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
 	Dequeue(ctx context.Context, conditions []*sqlf.Query) (record Record, tx Store, exists bool, err error)
 
+	// DequeueWithIndependentTransactionContext is like Dequeue, but will use a context.Background() for the underlying
+	// transaction context. This method allows the transaction to lexically outlive the code in which it was created. This
+	// is useful if a longer-running transaction is managed explicitly bewteen multiple goroutines.
+	DequeueWithIndependentTransactionContext(ctx context.Context, conditions []*sqlf.Query) (Record, Store, bool, error)
+
 	// Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
 	// the next dequeue of this record can be performed.
 	Requeue(ctx context.Context, id int, after time.Time) error
@@ -199,6 +204,17 @@ func (s *store) Transact(ctx context.Context) (*store, error) {
 //
 // The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
 func (s *store) Dequeue(ctx context.Context, conditions []*sqlf.Query) (record Record, _ Store, exists bool, err error) {
+	return s.dequeue(ctx, conditions, false)
+}
+
+// DequeueWithIndependentTransactionContext is like Dequeue, but will use a context.Background() for the underlying
+// transaction context. This method allows the transaction to lexically outlive the code in which it was created. This
+// is useful if a longer-running transaction is managed explicitly bewteen multiple goroutines.
+func (s *store) DequeueWithIndependentTransactionContext(ctx context.Context, conditions []*sqlf.Query) (Record, Store, bool, error) {
+	return s.dequeue(ctx, conditions, true)
+}
+
+func (s *store) dequeue(ctx context.Context, conditions []*sqlf.Query, independentTxCtx bool) (record Record, _ Store, exists bool, err error) {
 	if s.InTransaction() {
 		return nil, nil, false, ErrDequeueTransaction
 	}
