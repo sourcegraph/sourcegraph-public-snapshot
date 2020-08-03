@@ -168,11 +168,21 @@ func Init(options ...Option) {
 	initTracer(opts.serviceName)
 }
 
+type jaegerOpts struct {
+	Enabled bool
+	Debug   bool
+}
+
 // initTracer is a helper that should be called exactly once (from Init).
 func initTracer(serviceName string) {
 	globalTracer := newSwitchableTracer()
 	opentracing.SetGlobalTracer(globalTracer)
-	jaegerEnabled := false
+
+	// Initially everything is disabled since we haven't read conf yet.
+	oldOpts := jaegerOpts{
+		Enabled: false,
+		Debug:   false,
+	}
 
 	// Watch loop
 	conf.Watch(func() {
@@ -197,15 +207,19 @@ func initTracer(serviceName string) {
 		}
 		ot.SetTracePolicy(samplingStrategy)
 
-		// Determine whether Jaeger should be enabled
-		_, lastShouldLog := globalTracer.get()
-		jaegerShouldBeEnabled := samplingStrategy == ot.TraceAll || samplingStrategy == ot.TraceSelective
-
-		// Set global tracer (Jaeger or No-op)
-		if jaegerEnabled != jaegerShouldBeEnabled {
-			log15.Info("opentracing: Jaeger enablement change", "old", jaegerEnabled, "newValue", jaegerShouldBeEnabled)
+		opts := jaegerOpts{
+			Enabled: samplingStrategy == ot.TraceAll || samplingStrategy == ot.TraceSelective,
+			Debug:   shouldLog,
 		}
-		if jaegerShouldBeEnabled && (!jaegerEnabled || lastShouldLog != shouldLog) {
+
+		if opts == oldOpts {
+			return
+		}
+
+		oldOpts = opts
+
+		if opts.Enabled {
+			log15.Info("opentracing: Jaeger enabled")
 			cfg, err := jaegercfg.FromEnv()
 			cfg.ServiceName = serviceName
 			if err != nil {
@@ -227,13 +241,12 @@ func initTracer(serviceName string) {
 				log15.Warn("Could not initialize jaeger tracer", "error", err.Error())
 				return
 			}
-			globalTracer.set(tracer, closer, shouldLog)
+			globalTracer.set(tracer, closer, opts.Debug)
 			trace.SpanURL = jaegerSpanURL
-			jaegerEnabled = true
-		} else if !jaegerShouldBeEnabled && jaegerEnabled {
-			globalTracer.set(opentracing.NoopTracer{}, nil, shouldLog)
+		} else {
+			log15.Info("opentracing: Jaeger disabled")
+			globalTracer.set(opentracing.NoopTracer{}, nil, opts.Debug)
 			trace.SpanURL = trace.NoopSpanURL
-			jaegerEnabled = false
 		}
 	})
 }
