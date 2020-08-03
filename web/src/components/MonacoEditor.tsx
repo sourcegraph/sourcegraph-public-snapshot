@@ -57,6 +57,7 @@ monaco.editor.defineTheme(SOURCEGRAPH_LIGHT, {
     rules: [
         { token: 'identifier', foreground: '#2b3750' },
         { token: 'keyword', foreground: '#268bd2' },
+        { token: 'operator', foreground: '#C586C0' },
     ],
 })
 
