@@ -165,11 +165,11 @@ func Init(options ...Option) {
 		return
 	}
 
-	initTracer(opts)
+	initTracer(opts.serviceName)
 }
 
 // initTracer is a helper that should be called exactly once (from Init).
-func initTracer(opts *Options) {
+func initTracer(serviceName string) {
 	globalTracer := newSwitchableTracer()
 	opentracing.SetGlobalTracer(globalTracer)
 	jaegerEnabled := false
@@ -207,7 +207,7 @@ func initTracer(opts *Options) {
 		}
 		if jaegerShouldBeEnabled && (!jaegerEnabled || lastShouldLog != shouldLog) {
 			cfg, err := jaegercfg.FromEnv()
-			cfg.ServiceName = opts.serviceName
+			cfg.ServiceName = serviceName
 			if err != nil {
 				log15.Warn("Could not initialize jaeger tracer from env", "error", err.Error())
 				return
