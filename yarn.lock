@@ -2,12 +2,12 @@
 # yarn lockfile v1
 
 
-"@apidevtools/json-schema-ref-parser@9.0.1":
-  version "9.0.1"
-  resolved "https://registry.npmjs.org/@apidevtools/json-schema-ref-parser/-/json-schema-ref-parser-9.0.1.tgz#c0ed0bd21a7397d2d7a83b69565268f2d78f2d7a"
-  integrity sha512-Qsdz0W0dyK84BuBh5KZATWXOtVDXIF2EeNRzpyWblPUeAmnIokwWcwrpAm5pTPMjuWoIQt9C67X3Af1OlL6oSw==
+"@apidevtools/json-schema-ref-parser@9.0.6":
+  version "9.0.6"
+  resolved "https://registry.npmjs.org/@apidevtools/json-schema-ref-parser/-/json-schema-ref-parser-9.0.6.tgz#5d9000a3ac1fd25404da886da6b266adcd99cf1c"
+  integrity sha512-M3YgsLjI0lZxvrpeGVk9Ap032W6TPQkH6pRAZz81Ac3WUNF79VQooAFnp8umjvVzUmD93NkogxEwbSce7qMsUg==
   dependencies:
-    "@jsdevtools/ono" "^7.1.2"
+    "@jsdevtools/ono" "^7.1.3"
     call-me-maybe "^1.0.1"
     js-yaml "^3.13.1"
 
@@ -1970,10 +1970,10 @@
     "@types/yargs" "^15.0.0"
     chalk "^3.0.0"
 
-"@jsdevtools/ono@^7.1.2":
-  version "7.1.2"
-  resolved "https://registry.npmjs.org/@jsdevtools/ono/-/ono-7.1.2.tgz#373995bb40a6686589a7fcfec06b0e6e304ef6c6"
-  integrity sha512-qS/a24RA5FEoiJS9wiv6Pwg2c/kiUo3IVUQcfeM9JvsR6pM8Yx+yl/6xWYLckZCT5jpLNhslgjiA8p/XcGyMRQ==
+"@jsdevtools/ono@^7.1.3":
+  version "7.1.3"
+  resolved "https://registry.npmjs.org/@jsdevtools/ono/-/ono-7.1.3.tgz#9df03bbd7c696a5c58885c34aa06da41c8543796"
+  integrity sha512-4JQNk+3mVzK3xh2rqd6RB4J46qUR19azEHBneZyTZM+c456qOrbbM/5xcR8huNCCcbVt7+UmizG6GuUvPvKUYg==
 
 "@kwsites/file-exists@^1.1.1":
   version "1.1.1"
@@ -13989,12 +13989,12 @@ json-parse-better-errors@^1.0.0, json-parse-better-errors@^1.0.1, json-parse-bet
   resolved "https://registry.npmjs.org/json-parse-better-errors/-/json-parse-better-errors-1.0.2.tgz#bb867cfb3450e69107c131d1c514bab3dc8bcaa9"
   integrity sha512-mrqyZKfX5EhL7hvqcV6WG1yYjnjeuYDzDhhcAAUrq8Po85NBQBJP+ZDUT75qZQ98IkUoBqdkExkukOU7Ts2wrw==
 
-json-schema-ref-parser@^9.0.1:
-  version "9.0.1"
-  resolved "https://registry.npmjs.org/json-schema-ref-parser/-/json-schema-ref-parser-9.0.1.tgz#3c1fd01c159e3e6016190284752dcda93f8ea5b0"
-  integrity sha512-KLrCjRjW5hMXxsX4osVBWpwixXL9NtICfpyNNS0eHguN5mP/I4UatI7i7PFS8jU94b1NHF4EbirACdCn0RFPBA==
+json-schema-ref-parser@^9.0.1, json-schema-ref-parser@^9.0.6:
+  version "9.0.6"
+  resolved "https://registry.npmjs.org/json-schema-ref-parser/-/json-schema-ref-parser-9.0.6.tgz#fc89a5e6b853f2abe8c0af30d3874196526adb60"
+  integrity sha512-z0JGv7rRD3CnJbZY/qCpscyArdtLJhr/wRBmFUdoZ8xMjsFyNdILSprG2degqRLjBjyhZHAEBpGOxniO9rKTxA==
   dependencies:
-    "@apidevtools/json-schema-ref-parser" "9.0.1"
+    "@apidevtools/json-schema-ref-parser" "9.0.6"
 
 json-schema-to-typescript@^9.1.1:
   version "9.1.1"
