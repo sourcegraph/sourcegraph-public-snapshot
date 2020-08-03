@@ -165,7 +165,7 @@ func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResol
 	case symbolRequest:
 		return zoektSearch(ctx, s.args, s.repos, s.typ, since)
 	case fileRequest:
-		return zoektSearchHEADOnlyFiles(ctx, s.args, s.repos.repoRevs, false, since)
+		return zoektSearchHEADOnlyFiles(ctx, s.args, s.repos, false, since)
 	default:
 		return nil, false, nil, fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
 	}
