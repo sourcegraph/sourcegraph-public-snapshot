@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	intSecrets "github.com/sourcegraph/sourcegraph/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
@@ -38,8 +39,12 @@ func (*eventLogs) Insert(ctx context.Context, e *Event) error {
 	if argument == nil {
 		argument = json.RawMessage([]byte(`{}`))
 	}
+	argData, err := intSecrets.CryptObject.EncryptBytesIfPossible(argument)
+	if err != nil {
+		return err
+	}
 
-	_, err := dbconn.Global.ExecContext(
+	_, err = dbconn.Global.ExecContext(
 		ctx,
 		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp) VALUES($1, $2, $3, $4, $5, $6, $7, $8)",
 		e.Name,
@@ -47,7 +52,7 @@ func (*eventLogs) Insert(ctx context.Context, e *Event) error {
 		e.UserID,
 		e.AnonymousUserID,
 		e.Source,
-		argument,
+		argData,
 		version.Version(),
 		e.Timestamp.UTC(),
 	)
@@ -67,6 +72,12 @@ func (*eventLogs) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*typ
 	events := []*types.Event{}
 	for rows.Next() {
 		r := types.Event{}
+		args, secErr := intSecrets.CryptObject.DecryptIfPossible(r.Argument)
+		if secErr != nil {
+			return nil, err
+		}
+		r.Argument = args
+
 		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.UserID, &r.AnonymousUserID, &r.Source, &r.Argument, &r.Version, &r.Timestamp)
 		if err != nil {
 			return nil, err
