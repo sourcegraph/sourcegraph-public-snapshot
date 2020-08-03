@@ -10,10 +10,11 @@ import (
 	"github.com/efritz/glock"
 	sqlf "github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	storemocks "github.com/sourcegraph/sourcegraph/internal/workerutil/store/mocks"
 )
 
 func TestWorkerHandlerSuccess(t *testing.T) {
-	store := NewMockStore()
+	store := storemocks.NewMockStore()
 	handler := NewMockHandler()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
@@ -54,7 +55,7 @@ func TestWorkerHandlerSuccess(t *testing.T) {
 }
 
 func TestWorkerHandlerFailure(t *testing.T) {
-	store := NewMockStore()
+	store := storemocks.NewMockStore()
 	handler := NewMockHandler()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
@@ -104,7 +105,7 @@ func TestWorkerConcurrent(t *testing.T) {
 		name := fmt.Sprintf("numHandlers=%d", numHandlers)
 
 		t.Run(name, func(t *testing.T) {
-			store := NewMockStore()
+			store := storemocks.NewMockStore()
 			handler := NewMockHandlerWithHooks()
 			clock := glock.NewMockClock()
 			options := WorkerOptions{
@@ -191,7 +192,7 @@ func TestWorkerConcurrent(t *testing.T) {
 }
 
 func TestWorkerBlockingPreDequeueHook(t *testing.T) {
-	store := NewMockStore()
+	store := storemocks.NewMockStore()
 	handler := NewMockHandlerWithPreDequeue()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
@@ -220,7 +221,7 @@ func TestWorkerBlockingPreDequeueHook(t *testing.T) {
 }
 
 func TestWorkerConditionalPreDequeueHook(t *testing.T) {
-	store := NewMockStore()
+	store := storemocks.NewMockStore()
 	handler := NewMockHandlerWithPreDequeue()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
