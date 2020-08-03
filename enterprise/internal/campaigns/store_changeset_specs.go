@@ -362,7 +362,8 @@ func scanChangesetSpec(c *campaigns.ChangesetSpec, s scanner) error {
 		return errors.Wrap(err, "scanning campaign spec")
 	}
 
-	if err = json.Unmarshal(spec, &c.Spec); err != nil {
+	c.Spec = new(campaigns.ChangesetSpecDescription)
+	if err = json.Unmarshal(spec, c.Spec); err != nil {
 		return errors.Wrap(err, "scanChangesetSpec: failed to unmarshal spec")
 	}
 

@@ -90,7 +90,7 @@ func (r *changesetSpecResolver) Description(ctx context.Context) (graphqlbackend
 	}
 
 	descriptionResolver := &changesetDescriptionResolver{
-		desc:         &r.changesetSpec.Spec,
+		desc:         r.changesetSpec.Spec,
 		repoResolver: repo,
 	}
 

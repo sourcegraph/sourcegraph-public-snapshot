@@ -537,8 +537,8 @@ func TestService(t *testing.T) {
 				t.Fatalf("ChangesetSpec ID is 0")
 			}
 
-			var wantFields campaigns.ChangesetSpecDescription
-			if err := json.Unmarshal([]byte(spec.RawSpec), &wantFields); err != nil {
+			wantFields := &campaigns.ChangesetSpecDescription{}
+			if err := json.Unmarshal([]byte(spec.RawSpec), wantFields); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1241,7 +1241,7 @@ func createChangesetSpec(
 		UserID:         opts.user,
 		RepoID:         opts.repo,
 		CampaignSpecID: opts.campaignSpec,
-		Spec: campaigns.ChangesetSpecDescription{
+		Spec: &campaigns.ChangesetSpecDescription{
 			BaseRepository: graphqlbackend.MarshalRepositoryID(opts.repo),
 		},
 	}

@@ -1656,10 +1656,7 @@ type ChangesetSpec struct {
 
 	RawSpec string
 	// TODO(mrnugget): should we rename the "spec" column to "description"?
-	// TODO(mrnugget): should we make this a pointer? Otherwise we're passing
-	// around a really heavy struct all the time, since
-	// ChangesetSpecDescription includes the diff.
-	Spec ChangesetSpecDescription
+	Spec *ChangesetSpecDescription
 
 	DiffStatAdded   int32
 	DiffStatChanged int32

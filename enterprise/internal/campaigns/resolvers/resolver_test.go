@@ -881,7 +881,7 @@ func TestCreateCampaignSpec(t *testing.T) {
 	}
 
 	changesetSpec := &campaigns.ChangesetSpec{
-		Spec: campaigns.ChangesetSpecDescription{
+		Spec: &campaigns.ChangesetSpecDescription{
 			BaseRepository: graphqlbackend.MarshalRepositoryID(repo.ID),
 		},
 		RepoID: repo.ID,
@@ -1074,7 +1074,7 @@ func TestApplyCampaign(t *testing.T) {
 
 	changesetSpec := &campaigns.ChangesetSpec{
 		RawSpec: ct.NewRawChangesetSpecGitBranch(repoApiID, "d34db33f"),
-		Spec: campaigns.ChangesetSpecDescription{
+		Spec: &campaigns.ChangesetSpecDescription{
 			BaseRepository: repoApiID,
 		},
 		RepoID: repo.ID,
