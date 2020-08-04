@@ -821,7 +821,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		}
 
 		statePublished := cmpgn.ChangesetPublicationStatePublished
-		stateUnublished := cmpgn.ChangesetPublicationStateUnpublished
+		stateUnpublished := cmpgn.ChangesetPublicationStateUnpublished
 		stateQueued := cmpgn.ReconcilerStateQueued
 		stateCompleted := cmpgn.ReconcilerStateCompleted
 		stateOpen := cmpgn.ChangesetExternalStateOpen
@@ -843,7 +843,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			},
 			{
 				opts: ListChangesetsOpts{
-					PublicationState: &stateUnublished,
+					PublicationState: &stateUnpublished,
 				},
 				wantCount: 0,
 			},
