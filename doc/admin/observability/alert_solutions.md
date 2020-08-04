@@ -46,23 +46,23 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 2+ 90th percentile page load latency over all routes over 10m_ (`critical_frontend_page_load_latency`)
+- _frontend: 2s+ 90th percentile page load latency over all routes over 10m_ (`critical_frontend_page_load_latency`)
 
 **Possible solutions:**
 
 - Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
-- Trace a request to see what is the slowest part - refer to: https://docs.sourcegraph.com/admin/observability/tracing
+- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
 
 # frontend: blob_load_latency
 
 **Descriptions:**
 
-- _frontend: 2+ 90th percentile blob load latency over 10m_ (`critical_frontend_blob_load_latency`)
+- _frontend: 2s+ 90th percentile blob load latency over 10m_ (`critical_frontend_blob_load_latency`)
 
 **Possible solutions:**
 
 - Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
-- Trace a request to see what is the slowest part - refer to: https://docs.sourcegraph.com/admin/observability/tracing
+- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
 
 # frontend: 99th_percentile_search_codeintel_request_duration
 
