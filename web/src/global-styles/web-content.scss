@@ -28,10 +28,9 @@
         color: #329af0;
     }
 
-    .example-searches {
-        a {
-            color: $white;
-        }
+    // Search examples that link to the results page should use this class.
+    .search-query-link {
+        color: $white;
     }
 }
 
@@ -63,10 +62,8 @@
             color: #1c7cd6;
         }
 
-        .example-searches {
-            a {
-                color: $gray-19;
-            }
+        .search-query-link {
+            color: $gray-19;
         }
     }
 }

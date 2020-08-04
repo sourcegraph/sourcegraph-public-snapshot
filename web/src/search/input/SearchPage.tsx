@@ -133,13 +133,13 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                             ))}
                         </div>
                         <div className="search-page__help-content row mt-5">
-                            <div className="example-searches col-xs-12 col-lg-5 col-xl-6">
+                            <div className="col-xs-12 col-lg-5 col-xl-6">
                                 <h3 className="search-page__help-content-header">Example searches</h3>
                                 <ul className="list-group-flush p-0 mt-2">
                                     <li className="list-group-item px-0 pt-3 pb-2">
                                         <Link
                                             to="/search?q=lang:javascript+alert%28:%5Bvariable%5D%29&patternType=structural"
-                                            className="text-monospace mb-2"
+                                            className="search-query-link text-monospace mb-2"
                                             onClick={SearchExampleClicked(
                                                 '/search?q=lang:javascript+alert%28:%5Bvariable%5D%29&patternType=structural'
                                             )}
@@ -153,7 +153,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                     <li className="list-group-item px-0 pt-3 pb-2">
                                         <Link
                                             to="/search?q=repogroup:python+from+%5CB%5C.%5Cw%2B+import+%5Cw%2B&patternType=regexp"
-                                            className="text-monospace mb-2"
+                                            className="search-query-link text-monospace mb-2"
                                             onClick={SearchExampleClicked(
                                                 '/search?q=repogroup:python+from+%5CB%5C.%5Cw%2B+import+%5Cw%2B&patternType=regexp'
                                             )}
@@ -169,7 +169,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                     <li className="list-group-item px-0 pt-3 pb-2">
                                         <Link
                                             to='/search?q=repo:%5Egithub%5C.com/golang/go%24+type:diff+after:"1+week+ago"&patternType=literal"'
-                                            className="text-monospace mb-2"
+                                            className="search-query-link text-monospace mb-2"
                                             onClick={SearchExampleClicked(
                                                 '/search?q=repo:%5Egithub%5C.com/golang/go%24+type:diff+after:"1+week+ago"&patternType=literal"'
                                             )}
@@ -185,7 +185,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                     <li className="list-group-item px-0 pt-3 pb-2">
                                         <Link
                                             to='/search?q=file:pod.yaml+content:"kind:+ReplicationController"&patternType=literal'
-                                            className="text-monospace mb-2"
+                                            className="search-query-link text-monospace mb-2"
                                             onClick={SearchExampleClicked(
                                                 '/search?q=repo:%5Egithub%5C.com/golang/go%24+type:diff+after:"1+week+ago"&patternType=literal"'
                                             )}
