@@ -47,8 +47,12 @@ func newInternalProxyHandler() (func() http.Handler, error) {
 		base := mux.NewRouter().PathPrefix("/.internal-code-intel/").Subrouter()
 		base.StrictSlash(true)
 
-		base.Path("/git/{rest:.*}").Handler(reverseProxy(frontendOrigin))
-		base.Path("/index-queue/{rest:.*}").Handler(reverseProxy(indexerOrigin))
+		// Proxy only GET info/refs and git-upload-pack for gitservice (git clone/fetch)
+		base.Path("/git/{rest:.*/(?:info/refs|git-upload-pack)}").Methods("GET").Handler(reverseProxy(frontendOrigin))
+
+		// Proxy only the known routes in the index queue API
+		base.Path("/index-queue/{rest:(?:dequeue|complete|heartbeat)}").Handler(reverseProxy(indexerOrigin))
+
 		return internalProxyAuthTokenMiddleware(base)
 	}
 
@@ -101,8 +105,13 @@ func reverseProxy(target *url.URL) http.Handler {
 			http.Error(w, fmt.Sprintf("failed to perform proxy request: %s", err), http.StatusInternalServerError)
 			return
 		}
+		defer resp.Body.Close()
 
-		writeResponse(w, resp)
+		copyHeader(w.Header(), resp.Header)
+		w.WriteHeader(resp.StatusCode)
+		if _, err := io.Copy(w, resp.Body); err != nil {
+			log15.Error("Failed to write payload to client", "err", err)
+		}
 	})
 }
 
@@ -121,7 +130,7 @@ var getRest = func(r *http.Request) string {
 // 307 Temporary Redirect can be followed when making POST requests. This is necessary to
 // properly proxy git service operations without being redirected to an inaccessible API.
 func makeProxyRequest(r *http.Request, target *url.URL) (*http.Request, error) {
-	getBody, err := makeReaderFactory(r.Body)
+	content, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -131,41 +140,16 @@ func makeProxyRequest(r *http.Request, target *url.URL) (*http.Request, error) {
 	u.Host = target.Host
 	u.Path = path.Join("/", target.Path, getRest(r))
 
-	req, err := http.NewRequest(r.Method, u.String(), getBody())
+	fmt.Printf("Making request to %s\n", u)
+
+	req, err := http.NewRequest(r.Method, u.String(), bytes.NewReader(content))
 	if err != nil {
 		return nil, err
 	}
 
 	copyHeader(req.Header, r.Header)
-	req.GetBody = func() (io.ReadCloser, error) { return getBody(), nil }
+	req.GetBody = func() (io.ReadCloser, error) { return ioutil.NopCloser(bytes.NewReader(content)), nil }
 	return req, nil
-}
-
-// makeReaderFactory returns a function that returns a copy of the given reader on each
-// invocation.
-func makeReaderFactory(r io.Reader) (func() io.ReadCloser, error) {
-	content, err := ioutil.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-
-	factory := func() io.ReadCloser {
-		return ioutil.NopCloser(bytes.NewReader(content))
-	}
-
-	return factory, nil
-}
-
-// writeResponse writes the headers, status code, and body of the given response to the
-// given response writer.
-func writeResponse(w http.ResponseWriter, resp *http.Response) {
-	defer resp.Body.Close()
-	copyHeader(w.Header(), resp.Header)
-	w.WriteHeader(resp.StatusCode)
-
-	if _, err := io.Copy(w, resp.Body); err != nil {
-		log15.Error("Failed to write payload to client", "err", err)
-	}
 }
 
 // copyHeader adds the header values from src to dst.
