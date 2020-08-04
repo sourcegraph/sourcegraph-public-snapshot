@@ -74,8 +74,7 @@ func internalProxyAuthTokenMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// TODO(efritz) - add metrics
-// TODO(efritz) - add tracing
+// TODO(efritz) - add tracing, metrics
 var client = http.DefaultClient
 
 // reverseProxy creates an HTTP handler that will proxy requests to the given target URL. See
