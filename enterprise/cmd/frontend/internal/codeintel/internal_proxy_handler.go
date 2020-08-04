@@ -26,7 +26,7 @@ func makeInternalProxyHandlerFactory() (func() http.Handler, error) {
 		return nil, errors.Wrap(err, fmt.Sprintf("failed to parse internal API address '%s'", frontendenv.HTTPAddrInternal))
 	}
 	if host == "" {
-		host = "localhost"
+		host = "127.0.0.1"
 	}
 
 	frontendOrigin, err := url.Parse(fmt.Sprintf("http://%s:%s/.internal/git", host, port))
