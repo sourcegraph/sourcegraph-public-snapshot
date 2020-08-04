@@ -50,5 +50,5 @@ export function convertPlainTextToInteractiveQuery(
         }
     }
 
-    return { filtersInQuery: newFiltersInQuery, navbarQuery: newNavbarQuery }
+    return { filtersInQuery: newFiltersInQuery, navbarQuery: newNavbarQuery.trim() }
 }
