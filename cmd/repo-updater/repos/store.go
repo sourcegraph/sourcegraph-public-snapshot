@@ -167,7 +167,9 @@ SELECT
   config,
   created_at,
   updated_at,
-  deleted_at
+  deleted_at,
+  last_sync_at,
+  next_sync_at
 FROM external_services
 WHERE id > %s
 AND %s
@@ -247,7 +249,7 @@ func (s DBStore) UpsertExternalServices(ctx context.Context, svcs ...*ExternalSe
 	_, _, err = scanAll(rows, func(sc scanner) (last, count int64, err error) {
 		i++
 		err = scanExternalService(svcs[i], sc)
-		return int64(svcs[i].ID), 1, err
+		return svcs[i].ID, 1, err
 	})
 
 	return err
@@ -265,6 +267,8 @@ func upsertExternalServicesQuery(svcs []*ExternalService) *sqlf.Query {
 			s.CreatedAt.UTC(),
 			s.UpdatedAt.UTC(),
 			nullTimeColumn(s.DeletedAt.UTC()),
+			nullTimeColumn(s.LastSyncAt.UTC()),
+			nullTimeColumn(s.NextSyncAt.UTC()),
 		))
 	}
 
@@ -275,7 +279,7 @@ func upsertExternalServicesQuery(svcs []*ExternalService) *sqlf.Query {
 }
 
 const upsertExternalServicesQueryValueFmtstr = `
-  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s)
+  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s)
 `
 
 const upsertExternalServicesQueryFmtstr = `
@@ -287,7 +291,9 @@ INSERT INTO external_services (
   config,
   created_at,
   updated_at,
-  deleted_at
+  deleted_at,
+  last_sync_at,
+  next_sync_at
 )
 VALUES %s
 ON CONFLICT(id) DO UPDATE
@@ -297,7 +303,9 @@ SET
   config       = excluded.config,
   created_at   = excluded.created_at,
   updated_at   = excluded.updated_at,
-  deleted_at   = excluded.deleted_at
+  deleted_at   = excluded.deleted_at,
+  last_sync_at = excluded.last_sync_at,
+  next_sync_at = excluded.next_sync_at
 RETURNING *
 `
 
@@ -846,6 +854,8 @@ func scanExternalService(svc *ExternalService, s scanner) error {
 		&svc.CreatedAt,
 		&dbutil.NullTime{Time: &svc.UpdatedAt},
 		&dbutil.NullTime{Time: &svc.DeletedAt},
+		&dbutil.NullTime{Time: &svc.LastSyncAt},
+		&dbutil.NullTime{Time: &svc.NextSyncAt},
 	)
 }
 
