@@ -385,11 +385,11 @@ func TestTranslateGlobToRegex(t *testing.T) {
 		},
 		{
 			input: "**.go",
-			want:  ".*?\\.go$",
+			want:  "^.*?\\.go$",
 		},
 		{
 			input: "foo**",
-			want:  "^foo.*?",
+			want:  "^foo.*?$",
 		},
 		{
 			input: "re*o",
@@ -461,7 +461,7 @@ func TestTranslateGlobToRegex(t *testing.T) {
 		},
 		{
 			input: "foo/**",
-			want:  "^foo/.*?",
+			want:  "^foo/.*?$",
 		},
 		{
 			input: "[a-z0-9]",
@@ -510,7 +510,7 @@ func TestTranslateGlobToRegex(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		t.Run(c.want, func(t *testing.T) {
+		t.Run(c.input, func(t *testing.T) {
 			got, err := globToRegex(c.input)
 			if err != nil {
 				t.Fatal(err)
