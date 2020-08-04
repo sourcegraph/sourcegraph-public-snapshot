@@ -31,7 +31,7 @@ import (
 //
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
-func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook, bitbucketServerWebhook http.Handler, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, newCodeIntelInternalProxyHandler enterprise.NewCodeIntelInternalProxyHandler) http.Handler {
+func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook, bitbucketServerWebhook http.Handler, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler) http.Handler {
 	if m == nil {
 		m = apirouter.New(nil)
 	}

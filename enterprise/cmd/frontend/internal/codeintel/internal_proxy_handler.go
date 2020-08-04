@@ -13,17 +13,17 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	frontendenv "github.com/sourcegraph/sourcegraph/cmd/frontend/env"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
 var indexerURL = env.Get("PRECISE_CODE_INTEL_INDEX_MANAGER_URL", "", "HTTP address for the internal precise-code-intel-indexer-manager.")
-var internalProxyAuthToken = env.Get("PRECISE_CODE_INTEL_INTERNAL_PROXY_AUTH_TOKEN", "", "The auth token supplied by the cluster-external precise code intel services.")
+var internalProxyAuthToken = env.Get("PRECISE_CODE_INTEL_INTERNAL_PROXY_AUTH_TOKEN", "", "The auth token used to secure communication between the precise-code-intel-indexer service and the internal API provided by this proxy.")
 
 func makeInternalProxyHandlerFactory() (func() http.Handler, error) {
-	host, port, err := net.SplitHostPort(frontendenv.HTTPAddrInternal)
+	host, port, err := net.SplitHostPort(envvar.HTTPAddrInternal)
 	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("failed to parse internal API address '%s'", frontendenv.HTTPAddrInternal))
+		return nil, errors.Wrap(err, fmt.Sprintf("failed to parse internal API address '%s'", envvar.HTTPAddrInternal))
 	}
 	if host == "" {
 		host = "127.0.0.1"

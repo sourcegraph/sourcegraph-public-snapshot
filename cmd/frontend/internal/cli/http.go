@@ -36,7 +36,7 @@ func newExternalHTTPHandler(schema *graphql.Schema, githubWebhook, bitbucketServ
 
 	// HTTP API handler, the call order of middleware is LIFO.
 	r := router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter())
-	apiHandler := internalhttpapi.NewHandler(r, schema, githubWebhook, bitbucketServerWebhook, newCodeIntelUploadHandler, newCodeIntelInternalProxyHandler)
+	apiHandler := internalhttpapi.NewHandler(r, schema, githubWebhook, bitbucketServerWebhook, newCodeIntelUploadHandler)
 	if hooks.PostAuthMiddleware != nil {
 		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
 		apiHandler = hooks.PostAuthMiddleware(apiHandler)
