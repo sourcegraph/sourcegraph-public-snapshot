@@ -25,9 +25,8 @@ type Manager interface {
 	// Dequeue, Complete, or Heartbeat methods should not occur after this method has been called.
 	Stop()
 
-	// Stop will cause Start to exit after the current request. This method blocks until Start has
-	// returned. All active transactions known by the manager will be rolled back. Requests to the
-	// Dequeue, Complete, or Heartbeat methods should not occur after this method has been called.
+	// Dequeue pulls an unprocessed index record from the database and assigns the transaction that
+	// locks that record to the given indexer.
 	Dequeue(ctx context.Context, indexerName string) (store.Index, bool, error)
 
 	// Complete marks the target index record as complete or errored depending on the existence of
@@ -184,9 +183,8 @@ func (m *manager) Stop() {
 	<-m.finished
 }
 
-// Stop will cause Start to exit after the current request. This method blocks until Start has
-// returned. All active transactions known by the manager will be rolled back. Requests to the
-// Dequeue, Complete, or Heartbeat methods should not occur after this method has been called.
+// Dequeue pulls an unprocessed index record from the database and assigns the transaction that
+// locks that record to the given indexer.
 func (m *manager) Dequeue(ctx context.Context, indexerName string) (_ store.Index, dequeued bool, _ error) {
 	ctx, cancel := onecontext.Merge(ctx, m.ctx)
 	defer cancel()
