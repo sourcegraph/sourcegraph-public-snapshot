@@ -126,14 +126,13 @@ func globToRegex(value string) (string, error) {
 	l := len(r)
 	sb := strings.Builder{}
 
-	i := 0
-	// Add regex anchor "^" if glob does not start with *.
-	if r[i] != '*' {
-		sb.WriteRune('^')
-	}
-	for i = 0; i < l; i++ {
+	// Add regex anchor "^" as prefix to all patterns
+	sb.WriteRune('^')
+
+	for i := 0; i < l; i++ {
 		switch r[i] {
 		case '*':
+			// **
 			if i < l-1 && r[i+1] == '*' {
 				sb.WriteString(".*?")
 			} else {
@@ -179,11 +178,8 @@ func globToRegex(value string) (string, error) {
 			sb.WriteString(regexp.QuoteMeta(string(r[i])))
 		}
 	}
-
-	// add regex anchor "$" if glob doesn't end with *
-	if r[l-1] != '*' {
-		sb.WriteRune('$')
-	}
+	// add regex anchor '$' as suffix to all patterns
+	sb.WriteRune('$')
 	return sb.String(), nil
 }
 
