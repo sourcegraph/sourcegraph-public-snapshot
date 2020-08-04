@@ -308,6 +308,7 @@ func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec) (protocol.
 
 // actionType is an enum to distinguish between different reconcilerActions.
 type actionType string
+
 const (
 	actionNone    actionType = "none"
 	actionUpdate  actionType = "update"
