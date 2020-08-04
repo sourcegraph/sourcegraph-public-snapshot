@@ -64,5 +64,19 @@ describe('Search input helpers', () => {
                         }
             )
         })
+        test('converts query with parentheses', () => {
+            const newQuery = convertPlainTextToInteractiveQuery('function()')
+            expect(newQuery.navbarQuery === 'function' && newQuery.filtersInQuery === {})
+        })
+
+        test('converts query with parentheses', () => {
+            const newQuery = convertPlainTextToInteractiveQuery('0) {')
+            expect(newQuery.navbarQuery === '0) {' && newQuery.filtersInQuery === {})
+        })
+
+        test('converts query with closing parentheses', () => {
+            const newQuery = convertPlainTextToInteractiveQuery('\\)')
+            expect(newQuery.navbarQuery === '\\)' && newQuery.filtersInQuery === {})
+        })
     })
 })

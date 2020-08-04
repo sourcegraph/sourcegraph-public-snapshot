@@ -23,6 +23,7 @@ import (
 	"unicode"
 
 	"github.com/grafana-tools/sdk"
+	"github.com/prometheus/common/model"
 	"gopkg.in/yaml.v2"
 )
 
@@ -898,11 +899,12 @@ func main() {
 		SyntectServer(),
 		ZoektIndexServer(),
 		ZoektWebServer(),
+		Prometheus(),
 	}
 	var filelist []string
 	for _, container := range containers {
 		if err := container.validate(); err != nil {
-			log.Fatal(err)
+			log.Fatal(fmt.Sprintf("container %q: %+v", container.Name, err))
 		}
 		if grafanaDir != "" {
 			board := container.dashboard()
@@ -1034,9 +1036,10 @@ type promGroup struct {
 
 func (g *promGroup) AppendRow(alertQuery string, labels map[string]string, duration time.Duration) {
 	labels["alert_type"] = "builtin" // indicate alert is generated
-	var forDuration *time.Duration
+	var forDuration *model.Duration
 	if duration > 0 {
-		forDuration = &duration
+		d := model.Duration(duration)
+		forDuration = &d
 	}
 
 	alertName := prometheusAlertName(labels["level"], labels["service_name"], labels["name"])
@@ -1045,18 +1048,18 @@ func (g *promGroup) AppendRow(alertQuery string, labels map[string]string, durat
 		promRule{
 			Alert:  alertName,
 			Labels: labels,
-			Expr:   fmt.Sprintf(`%s > 0`, alertQuery),
+			Expr:   fmt.Sprintf(`%s >= 1`, alertQuery),
 			For:    forDuration,
 		},
 		// Record for generated alert, useful for indicating in Grafana dashboards if this alert
-		// is defined at all. Prometheus's ALERTS metric does not track alerts with state="inactive".
+		// is defined at all. Prometheus's ALERTS metric does not track alerts with alertstate="inactive".
 		//
 		// Since ALERTS{alertname="value"} does not exist if the alert has never fired, we add set
 		// the series to vector(0) instead.
 		promRule{
 			Record: "alert_count",
 			Labels: labels,
-			Expr:   fmt.Sprintf(`max(ALERTS{alertname=%q,state="firing"} OR on() vector(0))`, alertName),
+			Expr:   fmt.Sprintf(`max(ALERTS{alertname=%q,alertstate="firing"} OR on() vector(0))`, alertName),
 		})
 }
 
@@ -1069,7 +1072,7 @@ type promRule struct {
 	Expr   string
 
 	// for Alert only
-	For *time.Duration `yaml:",omitempty"`
+	For *model.Duration `yaml:",omitempty"`
 }
 
 // setPanelSize is a helper to set a panel's size.

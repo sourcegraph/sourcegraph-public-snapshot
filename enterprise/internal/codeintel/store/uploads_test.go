@@ -48,6 +48,7 @@ func TestGetUploadByID(t *testing.T) {
 	}
 
 	insertUploads(t, dbconn.Global, expected)
+	insertVisibleAtTip(t, dbconn.Global, 123, 1)
 
 	if upload, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
 		t.Fatalf("unexpected error getting upload: %s", err)
@@ -131,16 +132,17 @@ func TestGetUploads(t *testing.T) {
 
 	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, Commit: makeCommit(3331), UploadedAt: t1, Root: "sub1/", State: "queued"},
-		Upload{ID: 2, UploadedAt: t2, VisibleAtTip: true, State: "errored", FailureMessage: &failureMessage, Indexer: "lsif-tsc"},
+		Upload{ID: 2, UploadedAt: t2, State: "errored", FailureMessage: &failureMessage, Indexer: "lsif-tsc"},
 		Upload{ID: 3, Commit: makeCommit(3333), UploadedAt: t3, Root: "sub2/", State: "queued"},
 		Upload{ID: 4, UploadedAt: t4, State: "queued", RepositoryID: 51, RepositoryName: "foo bar x"},
-		Upload{ID: 5, Commit: makeCommit(3333), UploadedAt: t5, Root: "sub1/", VisibleAtTip: true, State: "processing", Indexer: "lsif-tsc"},
+		Upload{ID: 5, Commit: makeCommit(3333), UploadedAt: t5, Root: "sub1/", State: "processing", Indexer: "lsif-tsc"},
 		Upload{ID: 6, UploadedAt: t6, Root: "sub2/", State: "processing", RepositoryID: 52, RepositoryName: "foo bar y"},
-		Upload{ID: 7, UploadedAt: t7, Root: "sub1/", VisibleAtTip: true, Indexer: "lsif-tsc"},
-		Upload{ID: 8, UploadedAt: t8, VisibleAtTip: true, Indexer: "lsif-tsc"},
+		Upload{ID: 7, UploadedAt: t7, Root: "sub1/", Indexer: "lsif-tsc"},
+		Upload{ID: 8, UploadedAt: t8, Indexer: "lsif-tsc"},
 		Upload{ID: 9, UploadedAt: t9, State: "queued"},
 		Upload{ID: 10, UploadedAt: t10, Root: "sub1/", Indexer: "lsif-tsc"},
 	)
+	insertVisibleAtTip(t, dbconn.Global, 50, 2, 5, 7, 8)
 
 	testCases := []struct {
 		repositoryID   int
@@ -295,7 +297,7 @@ func TestInsertUploadQueued(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	store := rawTestStore()
+	store := testStore()
 
 	insertRepo(t, dbconn.Global, 50, "")
 
@@ -350,7 +352,7 @@ func TestMarkQueued(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	store := rawTestStore()
+	store := testStore()
 
 	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "uploading"})
 
@@ -375,7 +377,7 @@ func TestAddUploadPart(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	store := rawTestStore()
+	store := testStore()
 
 	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "uploading"})
 
@@ -401,7 +403,7 @@ func TestMarkComplete(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	store := rawTestStore()
+	store := testStore()
 
 	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "queued"})
 
@@ -423,7 +425,7 @@ func TestMarkErrored(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	store := rawTestStore()
+	store := testStore()
 
 	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "queued"})
 
@@ -689,7 +691,7 @@ func TestRequeue(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	store := rawTestStore()
+	store := testStore()
 
 	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "processing"})
 
@@ -745,21 +747,13 @@ func TestDeleteUploadByID(t *testing.T) {
 	store := testStore()
 
 	insertUploads(t, dbconn.Global,
-		Upload{ID: 1},
+		Upload{ID: 1, RepositoryID: 50},
 	)
 
-	var called bool
-	getTipCommit := func(ctx context.Context, repositoryID int) (string, error) {
-		called = true
-		return "", nil
-	}
-
-	if found, err := store.DeleteUploadByID(context.Background(), 1, getTipCommit); err != nil {
+	if found, err := store.DeleteUploadByID(context.Background(), 1); err != nil {
 		t.Fatalf("unexpected error deleting upload: %s", err)
 	} else if !found {
 		t.Fatalf("expected record to exist")
-	} else if called {
-		t.Fatalf("unexpected call to getTipCommit")
 	}
 
 	// Upload no longer exists
@@ -767,6 +761,21 @@ func TestDeleteUploadByID(t *testing.T) {
 		t.Fatalf("unexpected error getting upload: %s", err)
 	} else if exists {
 		t.Fatal("unexpected record")
+	}
+
+	repositoryIDs, err := store.DirtyRepositories(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error listing dirty repositories: %s", err)
+	}
+
+	var keys []int
+	for repositoryID := range repositoryIDs {
+		keys = append(keys, repositoryID)
+	}
+	sort.Ints(keys)
+
+	if len(keys) != 1 || keys[0] != 50 {
+		t.Errorf("expected repository to be marked dirty")
 	}
 }
 
@@ -777,58 +786,10 @@ func TestDeleteUploadByIDMissingRow(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	store := testStore()
 
-	getTipCommit := func(ctx context.Context, repositoryID int) (string, error) {
-		return "", nil
-	}
-
-	if found, err := store.DeleteUploadByID(context.Background(), 1, getTipCommit); err != nil {
+	if found, err := store.DeleteUploadByID(context.Background(), 1); err != nil {
 		t.Fatalf("unexpected error deleting upload: %s", err)
 	} else if found {
 		t.Fatalf("unexpected record")
-	}
-}
-
-func TestDeleteUploadByIDUpdatesVisibility(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	insertUploads(t, dbconn.Global,
-		Upload{ID: 1, Commit: makeCommit(4), Root: "sub1/", VisibleAtTip: true},
-		Upload{ID: 2, Commit: makeCommit(3), Root: "sub2/", VisibleAtTip: true},
-		Upload{ID: 3, Commit: makeCommit(2), Root: "sub1/", VisibleAtTip: false},
-		Upload{ID: 4, Commit: makeCommit(1), Root: "sub2/", VisibleAtTip: false},
-	)
-
-	if err := store.UpdateCommits(context.Background(), 50, map[string][]string{
-		makeCommit(1): {},
-		makeCommit(2): {makeCommit(1)},
-		makeCommit(3): {makeCommit(2)},
-		makeCommit(4): {makeCommit(3)},
-	}); err != nil {
-		t.Fatalf("unexpected error updating commits: %s", err)
-	}
-
-	var called bool
-	getTipCommit := func(ctx context.Context, repositoryID int) (string, error) {
-		called = true
-		return makeCommit(4), nil
-	}
-
-	if found, err := store.DeleteUploadByID(context.Background(), 1, getTipCommit); err != nil {
-		t.Fatalf("unexpected error deleting upload: %s", err)
-	} else if !found {
-		t.Fatalf("expected record to exist")
-	} else if !called {
-		t.Fatalf("expected call to getTipCommit")
-	}
-
-	expected := map[int]bool{2: true, 3: true, 4: false}
-	visibilities := getDumpVisibilities(t, dbconn.Global)
-	if diff := cmp.Diff(expected, visibilities); diff != "" {
-		t.Errorf("unexpected visibility (-want +got):\n%s", diff)
 	}
 }
 
@@ -940,5 +901,4 @@ func TestResetStalled(t *testing.T) {
 	if upload.NumResets != 2 {
 		t.Errorf("unexpected num resets. want=%d have=%d", 2, upload.NumResets)
 	}
-
 }

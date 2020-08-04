@@ -426,11 +426,18 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs) (opts ee
 	}
 
 	if args.State != nil {
-		state := *args.ExternalState
+		state := *args.State
 		if !state.Valid() {
 			return opts, false, errors.New("changeset state not valid")
 		}
-		opts.ExternalState = &state
+		// TODO: also apply args.State to opts.
+	}
+	if args.ExternalState != nil {
+		externalState := *args.ExternalState
+		if !externalState.Valid() {
+			return opts, false, errors.New("changeset external state not valid")
+		}
+		opts.ExternalState = &externalState
 	}
 	if args.ReviewState != nil {
 		state := *args.ReviewState

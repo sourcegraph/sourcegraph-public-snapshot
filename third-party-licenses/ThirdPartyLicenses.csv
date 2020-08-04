@@ -112,7 +112,7 @@ Yarn,balanced-match,1.0.0,MIT,https://github.com/juliangruber/balanced-match,App
 Yarn,bcrypt-pbkdf,1.0.2,New BSD,Unknown,Approved
 Yarn,bin-links,1.1.7,Artistic-2.0,https://github.com/npm/bin-links#readme,Approved
 Yarn,bluebird,3.7.2,MIT,https://github.com/petkaantonov/bluebird,Approved
-Yarn,bootstrap,4.4.1,MIT,https://getbootstrap.com/,Approved
+Yarn,bootstrap,4.5.0,MIT,https://getbootstrap.com/,Approved
 Yarn,boxen,1.3.0,MIT,sindresorhus.com,Approved
 Yarn,brace-expansion,1.1.11,MIT,https://github.com/juliangruber/brace-expansion,Approved
 Yarn,buffer-from,1.1.1,MIT,Unknown,Approved
@@ -306,6 +306,7 @@ Go,github.com/dgraph-io/ristretto,v0.0.2,Apache 2.0,"",Approved
 Go,github.com/dgrijalva/jwt-go,v3.2.0,MIT,"",Approved
 Go,github.com/dgryski/go-farm,v0.0.0-20200201041132-a6ae2369ad13,MIT,"",Approved
 Go,github.com/dhui/dktest,v0.3.2,Apache 2.0,"",Approved
+Go,github.com/dineshappavoo/basex,v0.0.0-20170425072625-481a6f6dc663,MIT,"",Approved
 Go,github.com/dnaeon/go-vcr,v1.0.1,MIT,"",Approved
 Go,github.com/docker/distribution,v2.7.1,Apache 2.0,"",Approved
 Go,github.com/docker/docker,v1.4.2-0.20200213202729-31a86c4ab209,"Apache 2.0,MIT,New BSD","",Approved
@@ -413,6 +414,7 @@ Go,github.com/jmespath/go-jmespath,v0.3.0,Apache 2.0,"",Approved
 Go,github.com/jmoiron/sqlx,v1.2.1-0.20190826204134-d7d95172beb5,MIT,"",Approved
 Go,github.com/joho/godotenv,v1.3.0,MIT,"",Approved
 Go,github.com/jonboulle/clockwork,v0.1.0,Apache 2.0,"",Approved
+Go,github.com/jordan-wright/email,v0.0.0-20200602115436-fd8a7622303e,MIT,"",Approved
 Go,github.com/json-iterator/go,v1.1.10,MIT,"",Approved
 Go,github.com/jstemmer/go-junit-report,v0.9.1,MIT,"",Approved
 Go,github.com/jtolds/gls,v4.20.0,MIT,"",Approved
@@ -494,7 +496,6 @@ Go,github.com/shurcooL/octicon,v0.0.0-20191102190552-cbb32d6a785c,MIT,"",Approve
 Go,github.com/shurcooL/sanitized_anchor_name,v1.0.0,MIT,"",Approved
 Go,github.com/shurcooL/vfsgen,v0.0.0-20181202132449-6a9ea43bcacd,MIT,"",Approved
 Go,github.com/sirupsen/logrus,v1.6.0,MIT,"",Approved
-Go,github.com/sloonz/go-qprintable,v0.0.0-20160203160305-775b3a4592d5,ISC,"",Approved
 Go,github.com/sourcegraph/annotate,v0.0.0-20160123013949-f4cad6c6324d,New BSD,"",Approved
 Go,github.com/sourcegraph/codeintelutils,v0.0.0-20200706141440-54ddac67b5b6,MIT,"",Approved
 Go,github.com/sourcegraph/ctxvfs,v0.0.0-20180418081416-2b65f1b1ea81,MIT,"",Approved
@@ -555,7 +556,6 @@ Go,google.golang.org/genproto,v0.0.0-20200409111301-baae70f3302d,Apache 2.0,"",A
 Go,google.golang.org/grpc,v1.30.0,Apache 2.0,"",Approved
 Go,gopkg.in/alexcesaro/statsd.v2,v2.0.0,MIT,"",Approved
 Go,gopkg.in/check.v1,v1.0.0-20200227125254-8fa46927fb4f,Simplified BSD,"",Approved
-Go,gopkg.in/jpoehls/gophermail.v0,v0.0.0-20160410235621-62941eab772c,MIT,"",Approved
 Go,gopkg.in/square/go-jose.v2,v2.5.1,"Apache 2.0,New BSD","",Approved
 Go,gopkg.in/src-d/go-git.v4,v4.13.1,Apache 2.0,"",Approved
 Go,gopkg.in/tomb.v1,v1.0.0-20141024135613-dd632973f1e7,New BSD,"",Approved
@@ -787,7 +787,6 @@ Yarn,psl,1.7.0,MIT,https://lupomontero.com/,Approved
 Yarn,pump,2.0.1,MIT,Unknown,Approved
 Yarn,pump,3.0.0,MIT,Unknown,Approved
 Yarn,pumpify,1.5.1,MIT,https://github.com/mafintosh/pumpify,Approved
-Yarn,punycode,1.4.1,MIT,https://mths.be/punycode,Approved
 Yarn,punycode,2.1.1,MIT,https://mths.be/punycode,Approved
 Yarn,qrcode-terminal,0.12.0,Apache*,https://github.com/gtanner/qrcode-terminal,Approved
 Yarn,qs,6.5.2,New BSD,https://github.com/ljharb/qs,Approved
@@ -811,7 +810,6 @@ Yarn,react-router,5.2.0,MIT,Unknown,Approved
 Yarn,react-router-dom,5.2.0,MIT,Unknown,Approved
 Yarn,react-smooth,1.0.5,MIT,https://github.com/recharts/react-smooth#readme,Approved
 Yarn,react-stripe-elements,6.1.2,MIT,https://www.stripe.com,Approved
-Yarn,react-textarea-autosize,7.1.2,MIT,httsps://andreypopp.com/,Approved
 Yarn,react-transition-group,2.9.0,New BSD,https://github.com/reactjs/react-transition-group#readme,Approved
 Yarn,react-visibility-sensor,5.1.1,MIT,Unknown,Approved
 Yarn,reactstrap,8.4.1,MIT,https://github.com/reactstrap/reactstrap#readme,Approved
@@ -832,7 +830,7 @@ Yarn,regenerator-runtime,0.13.5,MIT,Unknown,Approved
 Yarn,regexp.prototype.flags,1.3.0,MIT,Unknown,Approved
 Yarn,registry-auth-token,3.4.0,MIT,https://github.com/rexxars/registry-auth-token#readme,Approved
 Yarn,registry-url,3.1.0,MIT,sindresorhus.com,Approved
-Yarn,request,2.88.0,Apache 2.0,Unknown,Approved
+Yarn,request,2.88.2,Apache 2.0,Unknown,Approved
 Yarn,require-directory,2.1.1,MIT,https://github.com/troygoode/node-require-directory/,Approved
 Yarn,require-main-filename,1.0.1,ISC,https://github.com/yargs/require-main-filename#readme,Approved
 Yarn,resize-observer-polyfill,1.5.1,MIT,https://github.com/que-etc/resize-observer-polyfill,Approved
@@ -845,7 +843,7 @@ Yarn,retry,0.10.1,MIT,https://github.com/tim-kos/node-retry,Approved
 Yarn,retry,0.12.0,MIT,https://github.com/tim-kos/node-retry,Approved
 Yarn,rimraf,2.6.3,ISC,http://blog.izs.me/,Approved
 Yarn,run-queue,1.0.3,ISC,https://npmjs.com/package/run-queue,Approved
-Yarn,rxjs,6.6.0,Apache 2.0,https://github.com/ReactiveX/RxJS,Approved
+Yarn,rxjs,6.6.2,Apache 2.0,https://github.com/ReactiveX/RxJS,Approved
 Yarn,safe-buffer,5.1.2,MIT,https://github.com/feross/safe-buffer,Approved
 Yarn,safe-buffer,5.2.0,MIT,https://github.com/feross/safe-buffer,Approved
 Yarn,safer-buffer,2.1.2,MIT,https://github.com/ChALkeR,Approved
@@ -914,9 +912,9 @@ Yarn,tiny-relative-date,1.3.0,MIT,https://wildlyinaccurate.com/,Approved
 Yarn,tiny-warning,1.0.3,MIT,Unknown,Approved
 Yarn,to-fast-properties,2.0.0,MIT,sindresorhus.com,Approved
 Yarn,toggle-selection,1.0.6,MIT,sudodoki.name,Approved
-Yarn,tough-cookie,2.4.3,New BSD,https://github.com/salesforce/tough-cookie,Approved
+Yarn,tough-cookie,2.5.0,New BSD,https://github.com/salesforce/tough-cookie,Approved
 Yarn,ts-key-enum,2.0.3,MIT,https://gitlab.com/nfriend/ts-key-enum#readme,Approved
-Yarn,tslib,1.11.2,BSD Zero Clause License,https://www.typescriptlang.org/,Approved
+Yarn,tslib,1.13.0,BSD Zero Clause License,https://www.typescriptlang.org/,Approved
 Yarn,tslib,2.0.0,BSD Zero Clause License,https://www.typescriptlang.org/,Approved
 Yarn,tunnel-agent,0.6.0,Apache 2.0,http://www.futurealoof.com,Approved
 Yarn,tweetnacl,0.14.5,Unlicense,https://tweetnacl.js.org/,Approved

@@ -66,6 +66,7 @@ loop:
 		case unicode.IsSpace(r) && balanced == 0:
 			// Stop scanning a potential pattern when we see
 			// whitespace in a balanced state.
+			count = start
 			break loop
 		case r == '(':
 			balanced++
@@ -240,6 +241,12 @@ loop:
 		case p.matchKeyword(AND), p.matchKeyword(OR):
 			// Caller advances.
 			break loop
+		case p.matchUnaryKeyword(NOT):
+			parameter, err := p.parseNegatedLeafNode()
+			if err != nil {
+				return nil, err
+			}
+			nodes = append(nodes, parameter)
 		default:
 			parameter, ok, err := p.ParseParameter()
 			if err != nil {

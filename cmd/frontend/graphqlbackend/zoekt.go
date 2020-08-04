@@ -165,7 +165,7 @@ func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResol
 	case symbolRequest:
 		return zoektSearch(ctx, s.args, s.repos, s.typ, since)
 	case fileRequest:
-		return zoektSearchHEADOnlyFiles(ctx, s.args, s.repos.repoRevs, false, since)
+		return zoektSearchHEADOnlyFiles(ctx, s.args, s.repos, false, since)
 	default:
 		return nil, false, nil, fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
 	}
@@ -240,15 +240,6 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 	}
 	finalQuery := zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, queryExceptRepos)
 
-	tr, ctx := trace.New(ctx, "zoekt.Search", finalQuery.String())
-	defer func() {
-		tr.SetError(err)
-		if len(fm) > 0 {
-			tr.LazyPrintf("%d file matches", len(fm))
-		}
-		tr.Finish()
-	}()
-
 	k := zoektResultCountFactor(len(repos.repoBranches), args.PatternInfo)
 	searchOpts := zoektSearchOpts(k, args.PatternInfo)
 
@@ -263,15 +254,8 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		// We'll create a new context that gets cancelled if the other context is cancelled for any
 		// reason other than the deadline being exceeded. This essentially means the deadline for the new context
 		// will be `deadline + time for zoekt to cancel + network latency`.
-		cNew, cancel := context.WithCancel(context.Background())
-		go func(cOld context.Context) {
-			<-cOld.Done()
-			// cancel the new context if the old one is done for some reason other than the deadline passing.
-			if cOld.Err() != context.DeadlineExceeded {
-				cancel()
-			}
-		}(ctx)
-		ctx = cNew
+		var cancel context.CancelFunc
+		ctx, cancel = contextWithoutDeadline(ctx)
 		defer cancel()
 	}
 
@@ -443,6 +427,30 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 	return symbols
 }
 
+// contextWithoutDeadline returns a context which will cancel if the cOld is
+// canceled.
+func contextWithoutDeadline(cOld context.Context) (context.Context, context.CancelFunc) {
+	cNew, cancel := context.WithCancel(context.Background())
+
+	// Set trace context so we still get spans propagated
+	if tr := trace.TraceFromContext(cOld); tr != nil {
+		cNew = trace.ContextWithTrace(cNew, tr)
+	}
+
+	go func() {
+		select {
+		case <-cOld.Done():
+			// cancel the new context if the old one is done for some reason other than the deadline passing.
+			if cOld.Err() != context.DeadlineExceeded {
+				cancel()
+			}
+		case <-cNew.Done():
+		}
+	}()
+
+	return cNew, cancel
+}
+
 func noOpAnyChar(re *syntax.Regexp) {
 	if re.Op == syntax.OpAnyChar {
 		re.Op = syntax.OpAnyCharNotNL
@@ -500,6 +508,10 @@ func queryToZoektQuery(query *search.TextPatternInfo, typ indexedRequestType) (z
 			FileName: true,
 			Content:  true,
 		}
+	}
+
+	if query.IsNegated {
+		q = &zoektquery.Not{Child: q}
 	}
 
 	if typ == symbolRequest {

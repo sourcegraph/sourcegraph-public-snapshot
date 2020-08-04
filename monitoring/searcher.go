@@ -20,6 +20,15 @@ func Searcher() *Container {
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
+						{
+							Name:              "replica_traffic",
+							Description:       "requests per second over 10m",
+							Query:             "sum by(instance) (rate(searcher_service_request_total[10m]))",
+							Warning:           Alert{GreaterOrEqual: 5},
+							PanelOptions:      PanelOptions().LegendFormat("{{instance}}"),
+							Owner:             ObservableOwnerSearch,
+							PossibleSolutions: "none",
+						},
 						sharedFrontendInternalAPIErrorResponses("searcher"),
 					},
 				},
@@ -29,9 +38,12 @@ func Searcher() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("searcher"),
-						sharedContainerMemoryUsage("searcher"),
 						sharedContainerCPUUsage("searcher"),
+						sharedContainerMemoryUsage("searcher"),
+					},
+					{
+						sharedContainerRestarts("searcher"),
+						sharedContainerFsInodes("searcher"),
 					},
 				},
 			},
@@ -46,6 +58,25 @@ func Searcher() *Container {
 					{
 						sharedProvisioningCPUUsage5m("searcher"),
 						sharedProvisioningMemoryUsage5m("searcher"),
+					},
+				},
+			},
+			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("searcher"),
+						sharedGoGcDuration("searcher"),
+					},
+				},
+			},
+			{
+				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedKubernetesPodsAvailable("searcher"),
 					},
 				},
 			},

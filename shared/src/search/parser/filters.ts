@@ -73,8 +73,9 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         singular: true,
     },
     [FilterType.content]: {
-        description:
-            'Explicitly overrides the search pattern. Used for explicitly delineating the search pattern to search for in case of clashes.',
+        description: (negated: boolean): string =>
+            `${negated ? 'Exclude' : 'Include only'} results from files if their content matches the search pattern.`,
+        negatable: true,
         singular: true,
     },
     [FilterType.count]: {
@@ -85,7 +86,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         alias: 'f',
         negatable: true,
         description: negated =>
-            `${negated ? 'Exclude' : 'Include only'} results from files matching the given regex pattern.`,
+            `${negated ? 'Exclude' : 'Include only'} results from files matching the given search pattern.`,
         suggestions: 'File',
     },
     [FilterType.fork]: {
@@ -115,7 +116,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         alias: 'r',
         negatable: true,
         description: negated =>
-            `${negated ? 'Exclude' : 'Include only'} results from repositories matching the given regex pattern.`,
+            `${negated ? 'Exclude' : 'Include only'} results from repositories matching the given search pattern.`,
         suggestions: 'Repository',
     },
     [FilterType.repogroup]: {

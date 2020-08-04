@@ -356,24 +356,6 @@ Indexes:
 
 ```
 
-# Table "public.lsif_commits"
-```
-    Column     |  Type   |                         Modifiers                         
----------------+---------+-----------------------------------------------------------
- id            | integer | not null default nextval('lsif_commits_id_seq'::regclass)
- commit        | text    | not null
- parent_commit | text    | 
- repository_id | integer | not null
-Indexes:
-    "lsif_commits_pkey" PRIMARY KEY, btree (id)
-    "lsif_commits_repository_id_commit_parent_commit_unique" UNIQUE, btree (repository_id, commit, parent_commit)
-    "lsif_commits_repository_id_parent_commit" btree (repository_id, parent_commit)
-Check constraints:
-    "lsif_commits_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
-    "lsif_commits_parent_commit_valid_chars" CHECK (parent_commit ~ '^[a-z0-9]{40}$'::text)
-
-```
-
 # Table "public.lsif_dirty_repositories"
 ```
     Column     |  Type   | Modifiers 
@@ -479,7 +461,6 @@ Foreign-key constraints:
  id              | integer                  | not null default nextval('lsif_dumps_id_seq'::regclass)
  commit          | text                     | not null
  root            | text                     | not null default ''::text
- visible_at_tip  | boolean                  | not null default false
  uploaded_at     | timestamp with time zone | not null default now()
  state           | lsif_upload_state        | not null default 'queued'::lsif_upload_state
  failure_message | text                     | 
@@ -497,7 +478,6 @@ Indexes:
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::lsif_upload_state
     "lsif_uploads_state" btree (state)
     "lsif_uploads_uploaded_at" btree (uploaded_at)
-    "lsif_uploads_visible_repository_id_commit" btree (repository_id, commit) WHERE visible_at_tip
 Check constraints:
     "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
 Referenced by:
@@ -767,6 +747,7 @@ Indexes:
     "repo_cloned" btree (cloned)
     "repo_fork" btree (fork)
     "repo_metadata_gin_idx" gin (metadata)
+    "repo_name_idx" btree (lower(name::text) COLLATE "C")
     "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
     "repo_private" btree (private)
     "repo_sources_gin_idx" gin (sources)

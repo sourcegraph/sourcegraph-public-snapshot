@@ -156,9 +156,9 @@ const BitbucketServerSchemaJSON = `{
       "minItems": 1,
       "items": {
         "type": "string",
-        "pattern": "^[\\w-]+/[\\w.-]+$"
+        "pattern": "^~?[\\w-]+/[\\w.-]+$"
       },
-      "examples": [["myproject/myrepo", "myproject/myotherrepo"]]
+      "examples": [["myproject/myrepo", "myproject/myotherrepo", "~USER/theirrepo"]]
     },
     "exclude": {
       "description": "A list of repositories to never mirror from this Bitbucket Server instance. Takes precedence over \"repos\" and \"repositoryQuery\".\n\nSupports excluding by name ({\"name\": \"projectKey/repositorySlug\"}) or by ID ({\"id\": 42}).",
@@ -173,7 +173,7 @@ const BitbucketServerSchemaJSON = `{
           "name": {
             "description": "The name of a Bitbucket Server repo (\"projectKey/repositorySlug\") to exclude from mirroring.",
             "type": "string",
-            "pattern": "^[\\w-]+/[\\w.-]+$"
+            "pattern": "^~?[\\w-]+/[\\w.-]+$"
           },
           "id": {
             "description": "The ID of a Bitbucket Server repo (as returned by the Bitbucket Server instance's API) to exclude from mirroring.",
@@ -188,7 +188,12 @@ const BitbucketServerSchemaJSON = `{
       },
       "examples": [
         [{ "name": "myproject/myrepo" }, { "id": 42 }],
-        [{ "name": "myproject/myrepo" }, { "name": "myproject/myotherrepo" }, { "pattern": "^topsecretproject/.*" }]
+        [
+          { "name": "myproject/myrepo" },
+          { "name": "myproject/myotherrepo" },
+          { "name": "~USER/theirrepo" },
+          { "pattern": "^topsecretproject/.*" }
+        ]
       ]
     },
     "initialRepositoryEnablement": {

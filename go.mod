@@ -28,7 +28,6 @@ require (
 	github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 // indirect
 	github.com/dineshappavoo/basex v0.0.0-20170425072625-481a6f6dc663
 	github.com/dnaeon/go-vcr v1.0.1
-	github.com/dvyukov/go-fuzz v0.0.0-20200318091601-be3528f3a813 // indirect
 	github.com/efritz/glock v0.0.0-20181228234553-f184d69dff2c
 	github.com/efritz/go-genlib v0.0.0-20200616012750-c21aae2e13ac // indirect
 	github.com/efritz/go-mockgen v0.0.0-20200524175724-37e2c732ee40
@@ -97,8 +96,6 @@ require (
 	github.com/kylelemons/godebug v1.1.0
 	github.com/leanovate/gopter v0.2.8
 	github.com/lib/pq v1.7.0
-	github.com/lightstep/lightstep-tracer-common/golang/gogo v0.0.0-20200310182322-adf4263e074b // indirect
-	github.com/lightstep/lightstep-tracer-go v0.20.0
 	github.com/machinebox/graphql v0.2.2
 	github.com/matryer/is v1.3.0 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
@@ -127,7 +124,6 @@ require (
 	github.com/schollz/progressbar/v3 v3.3.4
 	github.com/segmentio/fasthash v1.0.2
 	github.com/sergi/go-diff v1.1.0
-	github.com/shirou/gopsutil v2.20.5+incompatible // indirect
 	github.com/shurcooL/github_flavored_markdown v0.0.0-20181002035957-2122de532470
 	github.com/shurcooL/go v0.0.0-20200502201357-93f07166e636 // indirect
 	github.com/shurcooL/highlight_diff v0.0.0-20181222201841-111da2e7d480 // indirect
@@ -190,17 +186,18 @@ replace (
 
 	// We need our fork until https://github.com/graph-gophers/graphql-go/pull/400 is merged upstream
 	// Our change limits the number of goroutines spawned by resolvers which was causing memory spikes on our frontend
-	github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20200723081120-8462b0b708c4
+	github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20200724075322-e542e8956484
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 
-	// prom-wrapper needs to be able to write alertmanager configuration with secrets - https://github.com/prometheus/alertmanager/pull/2316
-	github.com/prometheus/alertmanager => github.com/bobheadxi/alertmanager v0.21.1-0.20200702014640-a941b136043b
+	// prom-wrapper needs to be able to write alertmanager configuration with secrets, etc, which
+	// the alertmanager project is currently not planning on accepting changes for.
+	github.com/prometheus/alertmanager => github.com/bobheadxi/alertmanager v0.21.1-0.20200727091526-3e856a90b534
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.3.2-0.20200109173551-5cfddeb48b17
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0
 )
 
 // We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200724162241-6ed80895db7e
+replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200729195846-c908c13fd7a9
 
 replace github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
 

@@ -16,7 +16,6 @@ import { ContributableMenu, ReferenceParams, TextDocumentPositionParams } from '
 import { PrivateRepoPublicSourcegraphComError } from '../backend/errors'
 import { getContributedActionItems } from '../contributions/contributions'
 import { SuccessGraphQLResult } from '../graphql/graphql'
-import { IMutation, IQuery } from '../graphql/schema'
 import { PlatformContext, URLToFileContext } from '../platform/context'
 import { EMPTY_SETTINGS_CASCADE } from '../settings/settings'
 import { resetAllMemoizationCaches } from '../util/memoizeObservable'
@@ -71,11 +70,7 @@ beforeEach(() => {
     urlToFile = sinon.stub<Parameters<PlatformContext['urlToFile']>, string>().callsFake(toPrettyBlobURL)
 })
 
-const requestGraphQL: PlatformContext['requestGraphQL'] = <R extends IQuery | IMutation>({
-    variables,
-}: {
-    variables: { [key: string]: any }
-}) =>
+const requestGraphQL: PlatformContext['requestGraphQL'] = <R>({ variables }: { variables: { [key: string]: any } }) =>
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     of({
         data: {
@@ -86,7 +81,7 @@ const requestGraphQL: PlatformContext['requestGraphQL'] = <R extends IQuery | IM
                 },
             },
         },
-    } as SuccessGraphQLResult<R>)
+    } as SuccessGraphQLResult<any>)
 
 const scheduler = (): TestScheduler => new TestScheduler((actual, expected) => expect(actual).toStrictEqual(expected))
 
@@ -400,11 +395,7 @@ describe('getDefinitionURL', () => {
 
     describe('if there is exactly 1 location result', () => {
         it('resolves the raw repo name and passes it to urlToFile()', async () => {
-            const requestGraphQL = <R extends IQuery | IMutation>({
-                variables,
-            }: {
-                variables: any
-            }): Observable<SuccessGraphQLResult<R>> =>
+            const requestGraphQL = <R>({ variables }: { variables: any }): Observable<SuccessGraphQLResult<R>> =>
                 // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                 of({
                     data: {
@@ -415,7 +406,7 @@ describe('getDefinitionURL', () => {
                             },
                         },
                     },
-                } as SuccessGraphQLResult<R>)
+                } as SuccessGraphQLResult<any>)
             const urlToFile = sinon.spy(
                 (
                     _location: RepoSpec &
