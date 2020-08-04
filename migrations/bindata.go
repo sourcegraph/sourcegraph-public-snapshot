@@ -96,6 +96,8 @@
 // 1528395696_repo_name_index.up.sql (198B)
 // 1528395697_add_changeset_state_machine.down.sql (767B)
 // 1528395697_add_changeset_state_machine.up.sql (2.213kB)
+// 1528395698_add_sync_time_to_external_services.down.sql (149B)
+// 1528395698_add_sync_time_to_external_services.up.sql (177B)
 
 package migrations
 
@@ -2084,6 +2086,46 @@ func _1528395697_add_changeset_state_machineUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395698_add_sync_time_to_external_servicesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\x2f\x4e\x2d\x2a\xcb\x4c\x4e\x2d\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\xc8\x49\x2c\x2e\x89\x2f\xae\xcc\x4b\x8e\x4f\x2c\xb1\x26\xcb\x84\xbc\xd4\x0a\x24\x13\xb8\x9c\xfd\x7d\x7d\x3d\x43\xac\xb9\x00\x01\x00\x00\xff\xff\xc9\x74\xf8\xe1\x95\x00\x00\x00")
+
+func _1528395698_add_sync_time_to_external_servicesDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395698_add_sync_time_to_external_servicesDownSql,
+		"1528395698_add_sync_time_to_external_services.down.sql",
+	)
+}
+
+func _1528395698_add_sync_time_to_external_servicesDownSql() (*asset, error) {
+	bytes, err := _1528395698_add_sync_time_to_external_servicesDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395698_add_sync_time_to_external_services.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x74, 0x9f, 0xd4, 0xb7, 0x5b, 0xba, 0x62, 0x3f, 0x91, 0x53, 0x70, 0xb3, 0xe0, 0xa0, 0x5e, 0x1b, 0xcd, 0xf5, 0x8b, 0x2f, 0x7a, 0x62, 0xb9, 0xe9, 0xb8, 0xa7, 0x4b, 0xec, 0xa1, 0x2f, 0xde, 0xe}}
+	return a, nil
+}
+
+var __1528395698_add_sync_time_to_external_servicesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\x2f\x4e\x2d\x2a\xcb\x4c\x4e\x2d\x56\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\xc8\x49\x2c\x2e\x89\x2f\xae\xcc\x4b\x8e\x4f\x2c\x51\x28\xc9\xcc\x4d\x2d\x2e\x49\xcc\x2d\x50\x28\xcf\x2c\xc9\x00\x73\x15\xaa\xf2\xf3\x52\xad\x89\x37\x2f\x2f\xb5\x82\x18\xf3\xb8\x9c\xfd\x7d\x7d\x3d\x43\xac\xb9\x00\x01\x00\x00\xff\xff\x90\x5a\xce\x08\xb1\x00\x00\x00")
+
+func _1528395698_add_sync_time_to_external_servicesUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395698_add_sync_time_to_external_servicesUpSql,
+		"1528395698_add_sync_time_to_external_services.up.sql",
+	)
+}
+
+func _1528395698_add_sync_time_to_external_servicesUpSql() (*asset, error) {
+	bytes, err := _1528395698_add_sync_time_to_external_servicesUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395698_add_sync_time_to_external_services.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x92, 0xff, 0x5b, 0x8b, 0xa9, 0xa7, 0xca, 0xf7, 0x3b, 0x68, 0xdb, 0x4d, 0x49, 0x54, 0xd1, 0xa6, 0xb2, 0xfe, 0xf4, 0xe, 0x35, 0x6b, 0x32, 0xc1, 0x39, 0xaa, 0x94, 0x84, 0xe1, 0x24, 0x68, 0x96}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2271,6 +2313,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395696_repo_name_index.up.sql":                                       _1528395696_repo_name_indexUpSql,
 	"1528395697_add_changeset_state_machine.down.sql":                         _1528395697_add_changeset_state_machineDownSql,
 	"1528395697_add_changeset_state_machine.up.sql":                           _1528395697_add_changeset_state_machineUpSql,
+	"1528395698_add_sync_time_to_external_services.down.sql":                  _1528395698_add_sync_time_to_external_servicesDownSql,
+	"1528395698_add_sync_time_to_external_services.up.sql":                    _1528395698_add_sync_time_to_external_servicesUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2413,6 +2457,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395696_repo_name_index.up.sql":                                       {_1528395696_repo_name_indexUpSql, map[string]*bintree{}},
 	"1528395697_add_changeset_state_machine.down.sql":                         {_1528395697_add_changeset_state_machineDownSql, map[string]*bintree{}},
 	"1528395697_add_changeset_state_machine.up.sql":                           {_1528395697_add_changeset_state_machineUpSql, map[string]*bintree{}},
+	"1528395698_add_sync_time_to_external_services.down.sql":                  {_1528395698_add_sync_time_to_external_servicesDownSql, map[string]*bintree{}},
+	"1528395698_add_sync_time_to_external_services.up.sql":                    {_1528395698_add_sync_time_to_external_servicesUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
