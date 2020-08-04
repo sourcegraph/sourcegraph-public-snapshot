@@ -277,7 +277,7 @@ type SyncStore interface {
 	ListChangesetSyncData(context.Context, ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error)
 	GetChangeset(context.Context, GetChangesetOpts) (*campaigns.Changeset, error)
 	ListChangesets(context.Context, ListChangesetsOpts) (campaigns.Changesets, int64, error)
-	UpdateChangesets(ctx context.Context, cs ...*campaigns.Changeset) error
+	UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) error
 	UpsertChangesetEvents(ctx context.Context, cs ...*campaigns.ChangesetEvent) error
 	Transact(context.Context) (*Store, error)
 }
@@ -600,8 +600,10 @@ func syncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if err = tx.UpdateChangesets(ctx, cs...); err != nil {
-		return err
+	for _, c := range cs {
+		if err = tx.UpdateChangeset(ctx, c); err != nil {
+			return err
+		}
 	}
 
 	return tx.UpsertChangesetEvents(ctx, events...)

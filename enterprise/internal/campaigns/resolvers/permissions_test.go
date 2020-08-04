@@ -56,7 +56,7 @@ func TestPermissionLevels(t *testing.T) {
 		ExternalServiceType: "github",
 		ExternalID:          "1234",
 	}
-	if err := store.CreateChangesets(ctx, changeset); err != nil {
+	if err := store.CreateChangeset(ctx, changeset); err != nil {
 		t.Fatal(err)
 	}
 

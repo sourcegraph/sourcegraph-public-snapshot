@@ -730,9 +730,12 @@ func TestChangesetCountsOverTime(t *testing.T) {
 		},
 	}
 
-	err = store.CreateChangesets(ctx, changesets...)
-	if err != nil {
-		t.Fatal(err)
+	for _, c := range changesets {
+		if err = store.CreateChangeset(ctx, c); err != nil {
+			t.Fatal(err)
+		}
+
+		campaign.ChangesetIDs = append(campaign.ChangesetIDs, c.ID)
 	}
 
 	mockState := ct.MockChangesetSyncState(&protocol.RepoInfo{
@@ -746,9 +749,6 @@ func TestChangesetCountsOverTime(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, c := range changesets {
-		campaign.ChangesetIDs = append(campaign.ChangesetIDs, c.ID)
-	}
 	err = store.UpdateCampaign(ctx, campaign)
 	if err != nil {
 		t.Fatal(err)
