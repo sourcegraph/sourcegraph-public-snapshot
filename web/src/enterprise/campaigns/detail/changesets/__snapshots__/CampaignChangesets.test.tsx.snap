@@ -246,7 +246,8 @@ exports[`CampaignChangesets renders 1`] = `
                   "externalState": "OPEN",
                   "id": "0",
                   "nextSyncAt": null,
-                  "state": "SYNCED",
+                  "publicationState": "PUBLISHED",
+                  "reconcilerState": "COMPLETED",
                   "updatedAt": "2020-01-04T00:00:00.000Z",
                 },
               ],
@@ -320,7 +321,8 @@ exports[`CampaignChangesets renders 1`] = `
                   "externalState": "OPEN",
                   "id": "0",
                   "nextSyncAt": null,
-                  "state": "SYNCED",
+                  "publicationState": "PUBLISHED",
+                  "reconcilerState": "COMPLETED",
                   "updatedAt": "2020-01-04T00:00:00.000Z",
                 }
               }
@@ -355,7 +357,8 @@ exports[`CampaignChangesets renders 1`] = `
                     "externalState": "OPEN",
                     "id": "0",
                     "nextSyncAt": null,
-                    "state": "SYNCED",
+                    "publicationState": "PUBLISHED",
+                    "reconcilerState": "COMPLETED",
                     "updatedAt": "2020-01-04T00:00:00.000Z",
                   }
                 }
@@ -419,7 +422,8 @@ exports[`CampaignChangesets renders 1`] = `
                                   "externalState": "OPEN",
                                   "id": "0",
                                   "nextSyncAt": null,
-                                  "state": "SYNCED",
+                                  "publicationState": "PUBLISHED",
+                                  "reconcilerState": "COMPLETED",
                                   "updatedAt": "2020-01-04T00:00:00.000Z",
                                 }
                               }
