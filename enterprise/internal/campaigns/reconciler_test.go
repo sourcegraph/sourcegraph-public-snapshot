@@ -132,6 +132,7 @@ func TestReconcilerProcess(t *testing.T) {
 				published: true,
 			},
 			changeset: testChangesetOpts{
+				failureMessage:   "publication failed",
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 			},
 			sourcerMetadata: githubPR,

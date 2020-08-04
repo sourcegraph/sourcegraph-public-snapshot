@@ -1353,7 +1353,9 @@ type testChangesetOpts struct {
 	externalServiceType string
 	externalID          string
 	externalBranch      string
-	publicationState    campaigns.ChangesetPublicationState
+
+	publicationState campaigns.ChangesetPublicationState
+	failureMessage   string
 
 	createdByCampaign bool
 	ownedByCampaign   int64
@@ -1386,6 +1388,10 @@ func createChangeset(
 		OwnedByCampaignID: opts.ownedByCampaign,
 	}
 
+	if opts.failureMessage != "" {
+		changeset.FailureMessage = &opts.failureMessage
+	}
+
 	if opts.campaign != 0 {
 		changeset.CampaignIDs = []int64{opts.campaign}
 	}
@@ -1409,6 +1415,8 @@ type changesetAssertions struct {
 
 	title string
 	body  string
+
+	failureMessage *string
 }
 
 func assertChangeset(t *testing.T, c *campaigns.Changeset, a changesetAssertions) {
@@ -1444,6 +1452,23 @@ func assertChangeset(t *testing.T, c *campaigns.Changeset, a changesetAssertions
 
 	if have, want := c.ExternalID, a.externalID; have != want {
 		t.Fatalf("changeset ExternalID wrong. want=%s, have=%s", want, have)
+	}
+
+	if have, want := c.ExternalBranch, a.externalBranch; have != want {
+		t.Fatalf("changeset ExternalBranch wrong. want=%s, have=%s", want, have)
+	}
+
+	if want, have := a.failureMessage, c.FailureMessage; want == nil && have != nil {
+		t.Fatalf("expected no failure message, but have=%q", *have)
+	}
+
+	if want := c.FailureMessage; want != nil {
+		if c.FailureMessage == nil {
+			t.Fatalf("expected failure message %q but have none", *want)
+		}
+		if want, have := *a.failureMessage, *c.FailureMessage; have != want {
+			t.Fatalf("wrong failure message. want=%q, have=%q", want, have)
+		}
 	}
 
 	if have, want := c.ExternalBranch, a.externalBranch; have != want {

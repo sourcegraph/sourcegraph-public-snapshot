@@ -44,10 +44,10 @@ func main() {
 			     "baseRef":"refs/heads/master",
 
 			     "headRepository": "UmVwb3NpdG9yeToy",
-			     "headRef":"refs/heads/reconciler-testing-update-5555",
+			     "headRef":"refs/heads/what-is-up-reconciler",
 
-			     "title": "UPDATED This is the title of the PR",
-			     "body": "UPDATED And this is the body. What is **up**?",
+			     "title": "The reconciler created this PR",
+			     "body": "The reconciler also created this PR body",
 
 			     "published": true,
 
