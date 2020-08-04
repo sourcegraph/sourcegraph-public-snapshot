@@ -1,11 +1,18 @@
-import { python2To3Metadata } from './Python2To3'
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* import { python2To3Metadata } from './Python2To3'
 import { android } from './Android'
 import { kubernetes } from './Kubernetes'
 import { golang } from './Golang'
-import { reactHooks } from './ReactHooks'
+import { reactHooks } from './ReactHooks' */
+
+import { machinelearning } from './MachineLearning'
+import { codeexamples } from './CodeExamples'
+import { stanfordmed } from './MedSchool'
+import { clubsprojects } from './ClubProjects'
+
 import { RepogroupMetadata } from './types'
 
-export const repogroupList: RepogroupMetadata[] = [python2To3Metadata, kubernetes, golang, reactHooks, android]
+export const repogroupList: RepogroupMetadata[] = [machinelearning, codeexamples, stanfordmed, clubsprojects]
 
 export const homepageLanguageList: { name: string; filterName: string }[] = [
     { name: 'C', filterName: 'c' },
