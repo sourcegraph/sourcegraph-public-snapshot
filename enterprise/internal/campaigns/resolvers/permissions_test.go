@@ -440,8 +440,6 @@ func TestRepositoryPermissions(t *testing.T) {
 		t.Skip()
 	}
 
-	// now := time.Now().UTC().Truncate(time.Microsecond)
-
 	// We need to enable read access so that non-site-admin users can access
 	// the API and we can check for their admin rights.
 	// This can be removed once we enable campaigns for all users and only
@@ -499,6 +497,8 @@ func TestRepositoryPermissions(t *testing.T) {
 				ExternalState:       campaigns.ChangesetExternalStateOpen,
 				ExternalCheckState:  campaigns.ChangesetCheckStatePassed,
 				ExternalReviewState: campaigns.ChangesetReviewStateChangesRequested,
+				PublicationState:    campaigns.ChangesetPublicationStatePublished,
+				ReconcilerState:     campaigns.ReconcilerStateCompleted,
 				Metadata: &github.PullRequest{
 					BaseRefOid: changesetBaseRefOid,
 					HeadRefOid: changesetHeadRefOid,

@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -121,267 +121,191 @@ const lockQueryFmtStr = `
 SELECT pg_try_advisory_xact_lock(%s, %s)
 `
 
-// AlreadyExistError is returned by CreateChangesets in case a subset of the
-// given changesets already existed in the database and were not inserted but
-// returned
-type AlreadyExistError struct {
-	ChangesetIDs []int64
+// changesetColumns are used by by workerutil.Worker that loads changesets from
+// the database for processing by the reconciler.
+var changesetColumns = []*sqlf.Query{
+	sqlf.Sprintf("changesets.id"),
+	sqlf.Sprintf("changesets.repo_id"),
+	sqlf.Sprintf("changesets.created_at"),
+	sqlf.Sprintf("changesets.updated_at"),
+	sqlf.Sprintf("changesets.metadata"),
+	sqlf.Sprintf("changesets.campaign_ids"),
+	sqlf.Sprintf("changesets.external_id"),
+	sqlf.Sprintf("changesets.external_service_type"),
+	sqlf.Sprintf("changesets.external_branch"),
+	sqlf.Sprintf("changesets.external_deleted_at"),
+	sqlf.Sprintf("changesets.external_updated_at"),
+	sqlf.Sprintf("changesets.external_state"),
+	sqlf.Sprintf("changesets.external_review_state"),
+	sqlf.Sprintf("changesets.external_check_state"),
+	sqlf.Sprintf("changesets.created_by_campaign"),
+	sqlf.Sprintf("changesets.added_to_campaign"),
+	sqlf.Sprintf("changesets.diff_stat_added"),
+	sqlf.Sprintf("changesets.diff_stat_changed"),
+	sqlf.Sprintf("changesets.diff_stat_deleted"),
+	sqlf.Sprintf("changesets.sync_state"),
+	sqlf.Sprintf("changesets.owned_by_campaign_id"),
+	sqlf.Sprintf("changesets.current_spec_id"),
+	sqlf.Sprintf("changesets.previous_spec_id"),
+	sqlf.Sprintf("changesets.publication_state"),
+	sqlf.Sprintf("changesets.reconciler_state"),
+	sqlf.Sprintf("changesets.failure_message"),
+	sqlf.Sprintf("changesets.started_at"),
+	sqlf.Sprintf("changesets.finished_at"),
+	sqlf.Sprintf("changesets.process_after"),
+	sqlf.Sprintf("changesets.num_resets"),
 }
 
-func (e AlreadyExistError) Error() string {
-	return fmt.Sprintf("Changesets already exist: %v", e.ChangesetIDs)
-}
-
-// CreateChangesets creates the given Changesets. If a subset of the given
-// Changesets with the same RepoID and ExternalID already exists in the
-// database, it overwrites the fields of the affected changeset pointers with
-// the values contained in the database and returns an AlreadyExistError.
+// CreateChangesets creates the given Changesets in a loop.
+// If inserting one changeset fails, the error is returned. If you want to
+// ensure that all-or-none changesets are inserted, use a transaction.
 func (s *Store) CreateChangesets(ctx context.Context, cs ...*campaigns.Changeset) error {
-	q, err := s.createChangesetsQuery(cs)
-	if err != nil {
-		return err
-	}
-
-	exist := []int64{}
-	i := -1
-	err = s.query(ctx, q, func(sc scanner) (err error) {
-		i++
-
-		createdAt := cs[i].CreatedAt
-
-		err = scanChangeset(cs[i], sc)
-		if err != nil {
+	for _, c := range cs {
+		if err := s.CreateChangeset(ctx, c); err != nil {
 			return err
 		}
-
-		// Check whether the Changeset already existed in the database or not.
-		// We use CreatedAt for this, which `createChangesetsQuery` sets to
-		// now() if it wasn't set. If that value is not returned from the
-		// database we know that an already existing one is returned.
-		if cs[i].CreatedAt != createdAt {
-			exist = append(exist, cs[i].ID)
-		}
-
-		return err
-	})
-	if err != nil {
-		return err
 	}
-
-	if len(exist) != 0 {
-		return AlreadyExistError{ChangesetIDs: exist}
-	}
-
 	return nil
 }
 
-const changesetBatchQueryPrefix = `
-WITH batch AS (
-  SELECT * FROM ROWS FROM (
-  json_to_recordset(%s)
-  AS (
-      id                    bigint,
-      repo_id               integer,
-      created_at            timestamptz,
-      updated_at            timestamptz,
-      metadata              jsonb,
-      campaign_ids          jsonb,
-      external_id           text,
-      external_service_type text,
-      external_branch       text,
-      external_deleted_at   timestamptz,
-      external_updated_at   timestamptz,
-      external_state        text,
-      external_review_state text,
-      external_check_state  text,
-      created_by_campaign   boolean,
-      added_to_campaign     boolean,
-      diff_stat_added       integer,
-      diff_stat_changed     integer,
-      diff_stat_deleted     integer,
-      sync_state            jsonb
-    )
-  )
-  WITH ORDINALITY
-)
-`
-
-var createChangesetsQueryFmtstr = changesetBatchQueryPrefix + `,
--- source: enterprise/internal/campaigns/store.go:CreateChangesets
-changed AS (
-  INSERT INTO changesets (
-    repo_id,
-    created_at,
-    updated_at,
-    metadata,
-    campaign_ids,
-    external_id,
-    external_service_type,
-    external_branch,
-    external_deleted_at,
-    external_updated_at,
-    external_state,
-    external_review_state,
-    external_check_state,
-    created_by_campaign,
-    added_to_campaign,
-    diff_stat_added,
-    diff_stat_changed,
-    diff_stat_deleted,
-    sync_state
-  )
-  SELECT
-    repo_id,
-    created_at,
-    updated_at,
-    metadata,
-    campaign_ids,
-    external_id,
-    external_service_type,
-    external_branch,
-    external_deleted_at,
-    external_updated_at,
-    external_state,
-    external_review_state,
-    external_check_state,
-    created_by_campaign,
-    added_to_campaign,
-    diff_stat_added,
-    diff_stat_changed,
-    diff_stat_deleted,
-    sync_state
-  FROM batch
-  ON CONFLICT ON CONSTRAINT
-    changesets_repo_external_id_unique
-  DO NOTHING
-  RETURNING changesets.*
-)
-` + batchCreateChangesetsQuerySuffix
-
-const batchCreateChangesetsQuerySuffix = `
-SELECT
-  COALESCE(changed.id, existing.id) AS id,
-  COALESCE(changed.repo_id, existing.repo_id) AS repo_id,
-  COALESCE(changed.created_at, existing.created_at) AS created_at,
-  COALESCE(changed.updated_at, existing.updated_at) AS updated_at,
-  COALESCE(changed.metadata, existing.metadata) AS metadata,
-  COALESCE(changed.campaign_ids, existing.campaign_ids) AS campaign_ids,
-  COALESCE(changed.external_id, existing.external_id) AS external_id,
-  COALESCE(changed.external_service_type, existing.external_service_type) AS external_service_type,
-  COALESCE(changed.external_branch, existing.external_branch) AS external_branch,
-  COALESCE(changed.external_deleted_at, existing.external_deleted_at) AS external_deleted_at,
-  COALESCE(changed.external_updated_at, existing.external_updated_at) AS external_updated_at,
-  COALESCE(changed.external_state, existing.external_state) AS external_state,
-  COALESCE(changed.external_review_state, existing.external_review_state) AS external_review_state,
-  COALESCE(changed.external_check_state, existing.external_check_state) AS external_check_state,
-  COALESCE(changed.created_by_campaign, existing.created_by_campaign) AS created_by_campaign,
-  COALESCE(changed.added_to_campaign, existing.added_to_campaign) AS added_to_campaign,
-  COALESCE(changed.diff_stat_added, existing.diff_stat_added) AS diff_stat_added,
-  COALESCE(changed.diff_stat_changed, existing.diff_stat_changed) AS diff_stat_changed,
-  COALESCE(changed.diff_stat_deleted, existing.diff_stat_deleted) AS diff_stat_deleted,
-  COALESCE(changed.sync_state, existing.sync_state) AS sync_state
-FROM changed
-RIGHT JOIN batch ON batch.repo_id = changed.repo_id
-AND batch.external_id = changed.external_id
-LEFT JOIN changesets existing ON existing.repo_id = batch.repo_id
-AND existing.external_id = batch.external_id
-ORDER BY batch.ordinality
-`
-
-func (s *Store) createChangesetsQuery(cs []*campaigns.Changeset) (*sqlf.Query, error) {
-	now := s.now()
-	for _, c := range cs {
-		if c.CreatedAt.IsZero() {
-			c.CreatedAt = now
-		}
-
-		if c.UpdatedAt.IsZero() {
-			c.UpdatedAt = c.CreatedAt
-		}
+// CreateChangeset creates the given Changeset.
+func (s *Store) CreateChangeset(ctx context.Context, c *campaigns.Changeset) error {
+	q, err := s.createChangesetQuery(c)
+	if err != nil {
+		return err
 	}
-	return batchChangesetsQuery(createChangesetsQueryFmtstr, cs)
+
+	return s.query(ctx, q, func(sc scanner) error { return scanChangeset(c, sc) })
 }
 
-func batchChangesetsQuery(fmtstr string, cs []*campaigns.Changeset) (*sqlf.Query, error) {
-	type record struct {
-		ID                  int64                             `json:"id"`
-		RepoID              api.RepoID                        `json:"repo_id"`
-		CreatedAt           time.Time                         `json:"created_at"`
-		UpdatedAt           time.Time                         `json:"updated_at"`
-		Metadata            json.RawMessage                   `json:"metadata"`
-		CampaignIDs         json.RawMessage                   `json:"campaign_ids"`
-		ExternalID          string                            `json:"external_id"`
-		ExternalServiceType string                            `json:"external_service_type"`
-		ExternalBranch      string                            `json:"external_branch"`
-		ExternalDeletedAt   *time.Time                        `json:"external_deleted_at"`
-		ExternalUpdatedAt   *time.Time                        `json:"external_updated_at"`
-		ExternalState       *campaigns.ChangesetExternalState `json:"external_state"`
-		ExternalReviewState *campaigns.ChangesetReviewState   `json:"external_review_state"`
-		ExternalCheckState  *campaigns.ChangesetCheckState    `json:"external_check_state"`
-		CreatedByCampaign   bool                              `json:"created_by_campaign"`
-		AddedToCampaign     bool                              `json:"added_to_campaign"`
-		DiffStatAdded       *int32                            `json:"diff_stat_added"`
-		DiffStatChanged     *int32                            `json:"diff_stat_changed"`
-		DiffStatDeleted     *int32                            `json:"diff_stat_deleted"`
-		SyncState           json.RawMessage                   `json:"sync_state"`
-	}
+var createChangesetQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:CreateChangeset
+INSERT INTO changesets (
+  repo_id,
+  created_at,
+  updated_at,
+  metadata,
+  campaign_ids,
+  external_id,
+  external_service_type,
+  external_branch,
+  external_deleted_at,
+  external_updated_at,
+  external_state,
+  external_review_state,
+  external_check_state,
+  created_by_campaign,
+  added_to_campaign,
+  diff_stat_added,
+  diff_stat_changed,
+  diff_stat_deleted,
+  sync_state,
 
-	records := make([]record, 0, len(cs))
+  owned_by_campaign_id,
+  current_spec_id,
+  previous_spec_id,
+  publication_state,
+  reconciler_state,
+  failure_message,
+  started_at,
+  finished_at,
+  process_after,
+  num_resets
+)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+ON CONFLICT ON CONSTRAINT
+changesets_repo_external_id_unique
+DO NOTHING
+RETURNING
+  id,
+  repo_id,
+  created_at,
+  updated_at,
+  metadata,
+  campaign_ids,
+  external_id,
+  external_service_type,
+  external_branch,
+  external_deleted_at,
+  external_updated_at,
+  external_state,
+  external_review_state,
+  external_check_state,
+  created_by_campaign,
+  added_to_campaign,
+  diff_stat_added,
+  diff_stat_changed,
+  diff_stat_deleted,
+  sync_state,
 
-	for _, c := range cs {
-		metadata, err := jsonbColumn(c.Metadata)
-		if err != nil {
-			return nil, err
-		}
+  owned_by_campaign_id,
+  current_spec_id,
+  previous_spec_id,
+  publication_state,
+  reconciler_state,
+  failure_message,
+  started_at,
+  finished_at,
+  process_after,
+  num_resets
+`
 
-		campaignIDs, err := jsonSetColumn(c.CampaignIDs)
-		if err != nil {
-			return nil, err
-		}
-
-		syncState, err := json.Marshal(c.SyncState)
-		if err != nil {
-			return nil, err
-		}
-
-		r := record{
-			ID:                  c.ID,
-			RepoID:              c.RepoID,
-			CreatedAt:           c.CreatedAt,
-			UpdatedAt:           c.UpdatedAt,
-			Metadata:            metadata,
-			CampaignIDs:         campaignIDs,
-			ExternalID:          c.ExternalID,
-			ExternalServiceType: c.ExternalServiceType,
-			ExternalBranch:      c.ExternalBranch,
-			ExternalDeletedAt:   nullTimeColumn(c.ExternalDeletedAt),
-			ExternalUpdatedAt:   nullTimeColumn(c.ExternalUpdatedAt),
-			CreatedByCampaign:   c.CreatedByCampaign,
-			AddedToCampaign:     c.AddedToCampaign,
-			DiffStatAdded:       c.DiffStatAdded,
-			DiffStatChanged:     c.DiffStatChanged,
-			DiffStatDeleted:     c.DiffStatDeleted,
-			SyncState:           syncState,
-		}
-		if len(c.ExternalState) > 0 {
-			r.ExternalState = &c.ExternalState
-		}
-		if len(c.ExternalReviewState) > 0 {
-			r.ExternalReviewState = &c.ExternalReviewState
-		}
-		if len(c.ExternalCheckState) > 0 {
-			r.ExternalCheckState = &c.ExternalCheckState
-		}
-
-		records = append(records, r)
-	}
-
-	batch, err := json.MarshalIndent(records, "    ", "    ")
+func (s *Store) createChangesetQuery(c *campaigns.Changeset) (*sqlf.Query, error) {
+	metadata, err := jsonbColumn(c.Metadata)
 	if err != nil {
 		return nil, err
 	}
 
-	return sqlf.Sprintf(fmtstr, string(batch)), nil
+	campaignIDs, err := jsonSetColumn(c.CampaignIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	syncState, err := json.Marshal(c.SyncState)
+	if err != nil {
+		return nil, err
+	}
+
+	if c.CreatedAt.IsZero() {
+		c.CreatedAt = s.now()
+	}
+
+	if c.UpdatedAt.IsZero() {
+		c.UpdatedAt = c.CreatedAt
+	}
+
+	return sqlf.Sprintf(
+		createChangesetQueryFmtstr,
+		c.RepoID,
+		c.CreatedAt,
+		c.UpdatedAt,
+		metadata,
+		campaignIDs,
+		nullStringColumn(c.ExternalID),
+		c.ExternalServiceType,
+		nullStringColumn(c.ExternalBranch),
+		nullTimeColumn(c.ExternalDeletedAt),
+		nullTimeColumn(c.ExternalUpdatedAt),
+		nullStringColumn(string(c.ExternalState)),
+		nullStringColumn(string(c.ExternalReviewState)),
+		nullStringColumn(string(c.ExternalCheckState)),
+		c.CreatedByCampaign,
+		c.AddedToCampaign,
+		c.DiffStatAdded,
+		c.DiffStatChanged,
+		c.DiffStatDeleted,
+		syncState,
+		nullInt64Column(c.OwnedByCampaignID),
+		nullInt64Column(c.CurrentSpecID),
+		nullInt64Column(c.PreviousSpecID),
+		c.PublicationState,
+		c.ReconcilerState.ToDB(),
+		c.FailureMessage,
+		c.StartedAt,
+		c.FinishedAt,
+		c.ProcessAfter,
+		c.NumResets,
+	), nil
 }
 
 // DeleteChangeset deletes the Changeset with the given ID.
@@ -486,7 +410,18 @@ SELECT
   changesets.diff_stat_added,
   changesets.diff_stat_changed,
   changesets.diff_stat_deleted,
-  changesets.sync_state
+  changesets.sync_state,
+
+  changesets.owned_by_campaign_id,
+  changesets.current_spec_id,
+  changesets.previous_spec_id,
+  changesets.publication_state,
+  changesets.reconciler_state,
+  changesets.failure_message,
+  changesets.started_at,
+  changesets.finished_at,
+  changesets.process_after,
+  changesets.num_resets
 FROM changesets
 INNER JOIN repo ON repo.id = changesets.repo_id
 WHERE %s
@@ -568,6 +503,8 @@ func listChangesetSyncData(opts ListChangesetSyncDataOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("campaigns.closed_at IS NULL"),
 		sqlf.Sprintf("r.deleted_at IS NULL"),
+		sqlf.Sprintf("changesets.publication_state = %s", campaigns.ChangesetPublicationStatePublished),
+		sqlf.Sprintf("changesets.reconciler_state = %s", campaigns.ReconcilerStateCompleted.ToDB()),
 	}
 	if len(opts.ChangesetIDs) > 0 {
 		ids := make([]*sqlf.Query, 0, len(opts.ChangesetIDs))
@@ -590,6 +527,8 @@ type ListChangesetsOpts struct {
 	CampaignID           int64
 	IDs                  []int64
 	WithoutDeleted       bool
+	PublicationState     *campaigns.ChangesetPublicationState
+	ReconcilerState      *campaigns.ReconcilerState
 	ExternalState        *campaigns.ChangesetExternalState
 	ExternalReviewState  *campaigns.ChangesetReviewState
 	ExternalCheckState   *campaigns.ChangesetCheckState
@@ -640,7 +579,18 @@ SELECT
   changesets.diff_stat_added,
   changesets.diff_stat_changed,
   changesets.diff_stat_deleted,
-  changesets.sync_state
+  changesets.sync_state,
+
+  changesets.owned_by_campaign_id,
+  changesets.current_spec_id,
+  changesets.previous_spec_id,
+  changesets.publication_state,
+  changesets.reconciler_state,
+  changesets.failure_message,
+  changesets.started_at,
+  changesets.finished_at,
+  changesets.process_after,
+  changesets.num_resets
 FROM changesets
 INNER JOIN repo ON repo.id = changesets.repo_id
 WHERE %s
@@ -683,6 +633,12 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("changesets.external_deleted_at IS NULL"))
 	}
 
+	if opts.PublicationState != nil {
+		preds = append(preds, sqlf.Sprintf("changesets.publication_state = %s", *opts.PublicationState))
+	}
+	if opts.ReconcilerState != nil {
+		preds = append(preds, sqlf.Sprintf("changesets.reconciler_state = %s", (*opts.ReconcilerState).ToDB()))
+	}
 	if opts.ExternalState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.external_state = %s", *opts.ExternalState))
 	}
@@ -705,82 +661,148 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 
 // UpdateChangesets updates the given Changesets.
 func (s *Store) UpdateChangesets(ctx context.Context, cs ...*campaigns.Changeset) error {
-	q, err := s.updateChangesetsQuery(cs)
+	for _, c := range cs {
+		if err := s.UpdateChangeset(ctx, c); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// UpdateChangeset updates the given Changeset.
+func (s *Store) UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) error {
+	q, err := s.updateChangesetQuery(cs)
 	if err != nil {
 		return err
 	}
 
-	i := -1
 	return s.query(ctx, q, func(sc scanner) (err error) {
-		i++
-		return scanChangeset(cs[i], sc)
+		return scanChangeset(cs, sc)
 	})
 }
 
-const updateChangesetsQueryFmtstr = changesetBatchQueryPrefix + `,
--- source: enterprise/internal/campaigns/store.go:UpdateChangesets
-changed AS (
-  UPDATE changesets
-  SET
-    repo_id               = batch.repo_id,
-    created_at            = batch.created_at,
-    updated_at            = batch.updated_at,
-    metadata              = batch.metadata,
-    campaign_ids          = batch.campaign_ids,
-    external_id           = batch.external_id,
-    external_service_type = batch.external_service_type,
-    external_branch       = batch.external_branch,
-    external_deleted_at   = batch.external_deleted_at,
-    external_updated_at   = batch.external_updated_at,
-    external_state        = batch.external_state,
-    external_review_state = batch.external_review_state,
-    external_check_state  = batch.external_check_state,
-    created_by_campaign   = batch.created_by_campaign,
-    added_to_campaign     = batch.added_to_campaign,
-    diff_stat_added       = batch.diff_stat_added,
-    diff_stat_changed     = batch.diff_stat_changed,
-    diff_stat_deleted     = batch.diff_stat_deleted,
-    sync_state            = batch.sync_state
-  FROM batch
-  WHERE changesets.id = batch.id
-  RETURNING changesets.*
-)
-` + batchChangesetsQuerySuffix
+var updateChangesetQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store_changeset_specs.go:UpdateChangeset
+UPDATE changesets
+SET (
+  repo_id,
+  created_at,
+  updated_at,
+  metadata,
+  campaign_ids,
+  external_id,
+  external_service_type,
+  external_branch,
+  external_deleted_at,
+  external_updated_at,
+  external_state,
+  external_review_state,
+  external_check_state,
+  created_by_campaign,
+  added_to_campaign,
+  diff_stat_added,
+  diff_stat_changed,
+  diff_stat_deleted,
+  sync_state,
 
-const batchChangesetsQuerySuffix = `
-SELECT
-  changed.id,
-  changed.repo_id,
-  changed.created_at,
-  changed.updated_at,
-  changed.metadata,
-  changed.campaign_ids,
-  changed.external_id,
-  changed.external_service_type,
-  changed.external_branch,
-  changed.external_deleted_at,
-  changed.external_updated_at,
-  changed.external_state,
-  changed.external_review_state,
-  changed.external_check_state,
-  changed.created_by_campaign,
-  changed.added_to_campaign,
-  changed.diff_stat_added,
-  changed.diff_stat_changed,
-  changed.diff_stat_deleted,
-  changed.sync_state
-FROM changed
-LEFT JOIN batch ON batch.repo_id = changed.repo_id
-AND batch.external_id = changed.external_id
-ORDER BY batch.ordinality
+  owned_by_campaign_id,
+  current_spec_id,
+  previous_spec_id,
+  publication_state,
+  reconciler_state,
+  failure_message,
+  started_at,
+  finished_at,
+  process_after,
+  num_resets
+) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+WHERE id = %s
+RETURNING
+  id,
+  repo_id,
+  created_at,
+  updated_at,
+  metadata,
+  campaign_ids,
+  external_id,
+  external_service_type,
+  external_branch,
+  external_deleted_at,
+  external_updated_at,
+  external_state,
+  external_review_state,
+  external_check_state,
+  created_by_campaign,
+  added_to_campaign,
+  diff_stat_added,
+  diff_stat_changed,
+  diff_stat_deleted,
+  sync_state,
+
+  owned_by_campaign_id,
+  current_spec_id,
+  previous_spec_id,
+  publication_state,
+  reconciler_state,
+  failure_message,
+  started_at,
+  finished_at,
+  process_after,
+  num_resets
 `
 
-func (s *Store) updateChangesetsQuery(cs []*campaigns.Changeset) (*sqlf.Query, error) {
-	now := s.now()
-	for _, c := range cs {
-		c.UpdatedAt = now
+func (s *Store) updateChangesetQuery(c *campaigns.Changeset) (*sqlf.Query, error) {
+	metadata, err := jsonbColumn(c.Metadata)
+	if err != nil {
+		return nil, err
 	}
-	return batchChangesetsQuery(updateChangesetsQueryFmtstr, cs)
+
+	campaignIDs, err := jsonSetColumn(c.CampaignIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	syncState, err := json.Marshal(c.SyncState)
+	if err != nil {
+		return nil, err
+	}
+
+	c.UpdatedAt = s.now()
+
+	return sqlf.Sprintf(
+		updateChangesetQueryFmtstr,
+		c.RepoID,
+		c.CreatedAt,
+		c.UpdatedAt,
+		metadata,
+		campaignIDs,
+		nullStringColumn(c.ExternalID),
+		c.ExternalServiceType,
+		nullStringColumn(c.ExternalBranch),
+		nullTimeColumn(c.ExternalDeletedAt),
+		nullTimeColumn(c.ExternalUpdatedAt),
+		nullStringColumn(string(c.ExternalState)),
+		nullStringColumn(string(c.ExternalReviewState)),
+		nullStringColumn(string(c.ExternalCheckState)),
+		c.CreatedByCampaign,
+		c.AddedToCampaign,
+		c.DiffStatAdded,
+		c.DiffStatChanged,
+		c.DiffStatDeleted,
+		syncState,
+		nullInt64Column(c.OwnedByCampaignID),
+		nullInt64Column(c.CurrentSpecID),
+		nullInt64Column(c.PreviousSpecID),
+		c.PublicationState,
+		c.ReconcilerState.ToDB(),
+		c.FailureMessage,
+		c.StartedAt,
+		c.FinishedAt,
+		c.ProcessAfter,
+		c.NumResets,
+		// ID
+		c.ID,
+	), nil
 }
 
 // GetChangesetEventOpts captures the query options needed for getting a ChangesetEvent
@@ -1312,8 +1334,8 @@ type GetCampaignOpts struct {
 	NamespaceUserID int32
 	NamespaceOrgID  int32
 
-	CampaignSpecID   int64
-	CampaignSpecName string
+	CampaignSpecID int64
+	Name           string
 }
 
 // GetCampaign gets a campaign matching the given options.
@@ -1335,7 +1357,7 @@ func (s *Store) GetCampaign(ctx context.Context, opts GetCampaignOpts) (*campaig
 	return &c, nil
 }
 
-var getCampaignsQueryFmtstrPre = `
+var getCampaignsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:GetCampaign
 SELECT
   campaigns.id,
@@ -1351,9 +1373,6 @@ SELECT
   campaigns.closed_at,
   campaigns.campaign_spec_id
 FROM campaigns
-`
-
-var getCampaignsQueryFmtstrPost = `
 WHERE %s
 LIMIT 1
 `
@@ -1376,19 +1395,17 @@ func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("campaigns.namespace_org_id = %s", opts.NamespaceOrgID))
 	}
 
+	if opts.Name != "" {
+		preds = append(preds, sqlf.Sprintf("campaigns.name = %s", opts.Name))
+
+	}
+
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
-	var joinClause string
-	if opts.CampaignSpecName != "" {
-		joinClause = "JOIN campaign_specs ON campaigns.campaign_spec_id = campaign_specs.id"
-		cond := fmt.Sprintf(`campaign_specs.spec @> '{"name": %q}'`, opts.CampaignSpecName)
-		preds = append(preds, sqlf.Sprintf(cond))
-
-	}
 	return sqlf.Sprintf(
-		getCampaignsQueryFmtstrPre+joinClause+getCampaignsQueryFmtstrPost,
+		getCampaignsQueryFmtstr,
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -1533,7 +1550,7 @@ type scanner interface {
 type scanFunc func(scanner) (err error)
 
 func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
-	defer closeErr(rows, &err)
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
 		if err = scan(rows); err != nil {
@@ -1544,10 +1561,29 @@ func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
 	return rows.Err()
 }
 
-func closeErr(c io.Closer, err *error) {
-	if e := c.Close(); err != nil && *err == nil {
-		*err = e
+func scanFirstChangeset(rows *sql.Rows, err error) (*campaigns.Changeset, bool, error) {
+	changesets, err := scanChangesets(rows, err)
+	if err != nil || len(changesets) == 0 {
+		return &campaigns.Changeset{}, false, err
 	}
+	return changesets[0], true, nil
+}
+
+func scanChangesets(rows *sql.Rows, queryErr error) ([]*campaigns.Changeset, error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+
+	var cs []*campaigns.Changeset
+
+	return cs, scanAll(rows, func(sc scanner) (err error) {
+		var c campaigns.Changeset
+		if err = scanChangeset(&c, sc); err != nil {
+			return err
+		}
+		cs = append(cs, &c)
+		return nil
+	})
 }
 
 func scanChangeset(t *campaigns.Changeset, s scanner) error {
@@ -1557,6 +1593,8 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		externalState       string
 		externalReviewState string
 		externalCheckState  string
+		failureMessage      string
+		reconcilerState     string
 	)
 	err := s.Scan(
 		&t.ID,
@@ -1565,9 +1603,9 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		&t.UpdatedAt,
 		&metadata,
 		&dbutil.JSONInt64Set{Set: &t.CampaignIDs},
-		&t.ExternalID,
+		&dbutil.NullString{S: &t.ExternalID},
 		&t.ExternalServiceType,
-		&t.ExternalBranch,
+		&dbutil.NullString{S: &t.ExternalBranch},
 		&dbutil.NullTime{Time: &t.ExternalDeletedAt},
 		&dbutil.NullTime{Time: &t.ExternalUpdatedAt},
 		&dbutil.NullString{S: &externalState},
@@ -1579,6 +1617,16 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		&t.DiffStatChanged,
 		&t.DiffStatDeleted,
 		&syncState,
+		&dbutil.NullInt64{N: &t.OwnedByCampaignID},
+		&dbutil.NullInt64{N: &t.CurrentSpecID},
+		&dbutil.NullInt64{N: &t.PreviousSpecID},
+		&t.PublicationState,
+		&reconcilerState,
+		&dbutil.NullString{S: &failureMessage},
+		&t.StartedAt,
+		&t.FinishedAt,
+		&t.ProcessAfter,
+		&t.NumResets,
 	)
 	if err != nil {
 		return errors.Wrap(err, "scanning changeset")
@@ -1587,6 +1635,10 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 	t.ExternalState = campaigns.ChangesetExternalState(externalState)
 	t.ExternalReviewState = campaigns.ChangesetReviewState(externalReviewState)
 	t.ExternalCheckState = campaigns.ChangesetCheckState(externalCheckState)
+	if failureMessage != "" {
+		t.FailureMessage = &failureMessage
+	}
+	t.ReconcilerState = campaigns.ReconcilerState(strings.ToUpper(reconcilerState))
 
 	switch t.ExternalServiceType {
 	case extsvc.TypeGitHub:

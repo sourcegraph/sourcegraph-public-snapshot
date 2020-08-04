@@ -5,13 +5,16 @@ import (
 	"database/sql"
 	"fmt"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -60,7 +63,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 	t.Run("Create", func(t *testing.T) {
 		for i := 0; i < cap(campaigns); i++ {
 			c := &cmpgn.Campaign{
-				Name:           fmt.Sprintf("Upgrade ES-Lint %d", i),
+				Name:           fmt.Sprintf("test-campaign-%d", i),
 				Description:    "All the Javascripts are belong to us",
 				Branch:         "upgrade-es-lint",
 				AuthorID:       int32(i) + 50,
@@ -358,24 +361,10 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 			}
 		})
 
-		t.Run("ByCampaignSpecName", func(t *testing.T) {
+		t.Run("ByName", func(t *testing.T) {
 			want := campaigns[0]
 
-			campaignSpec := &cmpgn.CampaignSpec{
-				Spec:           cmpgn.CampaignSpecFields{Name: "the-name"},
-				NamespaceOrgID: want.NamespaceOrgID,
-			}
-			if err := s.CreateCampaignSpec(ctx, campaignSpec); err != nil {
-				t.Fatal(err)
-			}
-
-			want.CampaignSpecID = campaignSpec.ID
-			if err := s.UpdateCampaign(ctx, want); err != nil {
-				t.Fatal(err)
-			}
-
-			opts := GetCampaignOpts{CampaignSpecName: campaignSpec.Spec.Name}
-			have, err := s.GetCampaign(ctx, opts)
+			have, err := s.GetCampaign(ctx, GetCampaignOpts{Name: want.Name})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -499,6 +488,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	t.Run("Create", func(t *testing.T) {
 		var i int
 		for i = 0; i < cap(changesets); i++ {
+			failureMessage := fmt.Sprintf("failure-%d", i)
 			th := &cmpgn.Changeset{
 				RepoID:              repo.ID,
 				CreatedAt:           clock.now(),
@@ -512,6 +502,18 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				ExternalState:       cmpgn.ChangesetExternalStateOpen,
 				ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
 				ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
+
+				CurrentSpecID:     int64(i) + 1,
+				PreviousSpecID:    int64(i) + 1,
+				OwnedByCampaignID: int64(i) + 1,
+				PublicationState:  cmpgn.ChangesetPublicationStatePublished,
+
+				ReconcilerState: cmpgn.ReconcilerStateCompleted,
+				FailureMessage:  &failureMessage,
+				StartedAt:       clock.now(),
+				FinishedAt:      clock.now(),
+				ProcessAfter:    clock.now(),
+				NumResets:       18,
 			}
 
 			// Only set the diff stats on a subset to make sure that
@@ -544,6 +546,10 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				t.Fatal("changeset is deleted")
 			}
 
+			if !have.ReconcilerState.Valid() {
+				t.Fatalf("reconciler state is invalid: %s", have.ReconcilerState)
+			}
+
 			want := have.Clone()
 
 			want.ID = have.ID
@@ -552,6 +558,45 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 			if diff := cmp.Diff(have, want); diff != "" {
 				t.Fatal(diff)
+			}
+		}
+	})
+
+	t.Run("ReconcilerState database representation", func(t *testing.T) {
+		// campaigns.ReconcilerStates are defined as "enum" string constants.
+		// The string values are uppercase, because that way they can easily be
+		// serialized/deserialized in the GraphQL resolvers, since GraphQL
+		// expects the `ChangesetReconcilerState` values to be uppercase.
+		//
+		// But workerutil.Worker expects those values to be lowercase.
+		//
+		// So, what we do is to lowercase the Changeset.ReconcilerState value
+		// before it enters the database and uppercase it when it leaves the
+		// DB.
+		//
+		// If workerutils.Worker supports custom mappings for the state-machine
+		// states, we can remove this.
+
+		// This test ensures that the database representation is lowercase.
+
+		queryRawReconcilerState := func(ch *cmpgn.Changeset) (string, error) {
+			q := sqlf.Sprintf("SELECT reconciler_state FROM changesets WHERE id = %s", ch.ID)
+			rawState, ok, err := basestore.ScanFirstString(s.Query(ctx, q))
+			if err != nil || !ok {
+				return rawState, err
+			}
+			return rawState, nil
+		}
+
+		for _, ch := range changesets {
+			have, err := queryRawReconcilerState(ch)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			want := strings.ToLower(string(ch.ReconcilerState))
+			if have != want {
+				t.Fatalf("wrong database representation. want=%q, have=%q", want, have)
 			}
 		}
 	})
@@ -612,56 +657,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		var want []string
 		if diff := cmp.Diff(want, have); diff != "" {
 			t.Fatal(diff)
-		}
-	})
-
-	t.Run("CreateAlreadyExistingChangesets", func(t *testing.T) {
-		ids := changesets.IDs()
-		clones := make(cmpgn.Changesets, len(changesets))
-
-		for i, c := range changesets {
-			// Set only the fields on which we have a unique constraint
-			clones[i] = &cmpgn.Changeset{
-				RepoID:              c.RepoID,
-				ExternalID:          c.ExternalID,
-				ExternalServiceType: c.ExternalServiceType,
-			}
-		}
-
-		// Advance clock so store can determine whether Changeset was
-		// inserted or not
-		clock.add(1 * time.Second)
-
-		err := s.CreateChangesets(ctx, clones...)
-		ae, ok := err.(AlreadyExistError)
-		if !ok {
-			t.Fatalf("error is not AlreadyExistsError: %+v", err)
-		}
-
-		{
-			sort.Slice(ae.ChangesetIDs, func(i, j int) bool { return ae.ChangesetIDs[i] < ae.ChangesetIDs[j] })
-			sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
-
-			have, want := ae.ChangesetIDs, ids
-			if len(have) != len(want) {
-				t.Fatalf("%d changesets already exist, want: %d", len(have), len(want))
-			}
-
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
-		}
-
-		{
-			// Verify that we got the original changesets back
-			have, want := clones, changesets
-			if len(have) != len(want) {
-				t.Fatalf("created %d changesets, want: %d", len(have), len(want))
-			}
-
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
 		}
 	})
 
@@ -780,10 +775,10 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			for _, c := range changesets {
 				c.SetDeleted()
 				c.UpdatedAt = clock.now()
-			}
 
-			if err := s.UpdateChangesets(ctx, changesets...); err != nil {
-				t.Fatal(err)
+				if err := s.UpdateChangeset(ctx, c); err != nil {
+					t.Fatal(err)
+				}
 			}
 
 			have, _, err = s.ListChangesets(ctx, ListChangesetsOpts{WithoutDeleted: true})
@@ -824,6 +819,10 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			}
 		}
 
+		statePublished := cmpgn.ChangesetPublicationStatePublished
+		stateUnpublished := cmpgn.ChangesetPublicationStateUnpublished
+		stateQueued := cmpgn.ReconcilerStateQueued
+		stateCompleted := cmpgn.ReconcilerStateCompleted
 		stateOpen := cmpgn.ChangesetExternalStateOpen
 		stateClosed := cmpgn.ChangesetExternalStateClosed
 		stateApproved := cmpgn.ChangesetReviewStateApproved
@@ -835,6 +834,30 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			opts      ListChangesetsOpts
 			wantCount int
 		}{
+			{
+				opts: ListChangesetsOpts{
+					PublicationState: &statePublished,
+				},
+				wantCount: 3,
+			},
+			{
+				opts: ListChangesetsOpts{
+					PublicationState: &stateUnpublished,
+				},
+				wantCount: 0,
+			},
+			{
+				opts: ListChangesetsOpts{
+					ReconcilerState: &stateQueued,
+				},
+				wantCount: 0,
+			},
+			{
+				opts: ListChangesetsOpts{
+					ReconcilerState: &stateCompleted,
+				},
+				wantCount: 3,
+			},
 			{
 				opts: ListChangesetsOpts{
 					ExternalState: &stateOpen,
@@ -894,13 +917,13 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 					t.Fatal(err)
 				}
 				if len(have) != tc.wantCount {
-					t.Fatalf("have %d changesets. want %d", len(have), tc.wantCount)
+					t.Fatalf("opts: %+v. have %d changesets. want %d", tc.opts, len(have), tc.wantCount)
 				}
 			})
 		}
 	})
 
-	t.Run("Null changeset state", func(t *testing.T) {
+	t.Run("Null changeset external state", func(t *testing.T) {
 		cs := &cmpgn.Changeset{
 			RepoID:              repo.ID,
 			Metadata:            githubPR,
@@ -1023,6 +1046,18 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			c.Metadata = &bitbucketserver.PullRequest{ID: 1234}
 			c.ExternalServiceType = extsvc.TypeBitbucketServer
 
+			c.CurrentSpecID = c.CurrentSpecID + 1
+			c.PreviousSpecID = c.PreviousSpecID + 1
+			c.OwnedByCampaignID = c.OwnedByCampaignID + 1
+
+			c.PublicationState = cmpgn.ChangesetPublicationStatePublished
+			c.ReconcilerState = cmpgn.ReconcilerStateErrored
+			c.FailureMessage = nil
+			c.StartedAt = clock.now()
+			c.FinishedAt = clock.now()
+			c.ProcessAfter = clock.now()
+			c.NumResets = 99
+
 			have = append(have, c.Clone())
 
 			c.UpdatedAt = clock.now()
@@ -1084,6 +1119,9 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			t.Fatal(diff)
 		}
 
+		clock.add(1 * time.Second)
+		want = want[0:0]
+		have = have[0:0]
 		for _, c := range changesets {
 			c.Metadata = &gitlab.MergeRequest{ID: 1234, IID: 123}
 			c.ExternalServiceType = extsvc.TypeGitLab
@@ -1101,7 +1139,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		if diff := cmp.Diff(have, want); diff != "" {
 			t.Fatal(diff)
 		}
-
 	})
 }
 
@@ -1382,7 +1419,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		t.Fatal(err)
 	}
 
-	changesets := make([]*cmpgn.Changeset, 0, 3)
+	changesets := make(cmpgn.Changesets, 0, 3)
 	events := make([]*cmpgn.ChangesetEvent, 0)
 
 	for i := 0; i < cap(changesets); i++ {
@@ -1399,6 +1436,8 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 			ExternalState:       cmpgn.ChangesetExternalStateOpen,
 			ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
 			ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
+			PublicationState:    cmpgn.ChangesetPublicationStatePublished,
+			ReconcilerState:     cmpgn.ReconcilerStateCompleted,
 		})
 	}
 
@@ -1441,6 +1480,18 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 	err = s.UpsertChangesetEvents(ctx, events...)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	checkChangesetIDs := func(t *testing.T, hs []cmpgn.ChangesetSyncData, want []int64) {
+		t.Helper()
+
+		haveIDs := []int64{}
+		for _, sd := range hs {
+			haveIDs = append(haveIDs, sd.ChangesetID)
+		}
+		if diff := cmp.Diff(want, haveIDs); diff != "" {
+			t.Fatalf("wrong changesetIDs in changeset sync data (-want +got):\n%s", diff)
+		}
 	}
 
 	t.Run("success", func(t *testing.T) {
@@ -1492,31 +1543,13 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		if err != nil {
 			t.Fatal(err)
 		}
-		want := []cmpgn.ChangesetSyncData{
-			{
-				ChangesetID:           changesets[1].ID,
-				UpdatedAt:             clock.now(),
-				LatestEvent:           clock.now(),
-				ExternalUpdatedAt:     clock.now(),
-				RepoExternalServiceID: "https://example.com/",
-			},
-			{
-				// No events
-				ChangesetID:           changesets[2].ID,
-				UpdatedAt:             clock.now(),
-				ExternalUpdatedAt:     clock.now(),
-				RepoExternalServiceID: "https://example.com/",
-			},
-		}
-		if diff := cmp.Diff(want, hs); diff != "" {
-			t.Fatal(diff)
-		}
+		checkChangesetIDs(t, hs, changesets[1:].IDs())
 
 		// If a changeset has ANY open campaigns we should list it
 		// Attach cs1 to both an open and closed campaign
 		openCampaignID := changesets[1].CampaignIDs[0]
 		changesets[0].CampaignIDs = []int64{closedCampaignID, openCampaignID}
-		err = s.UpdateChangesets(ctx, changesets[0])
+		err = s.UpdateChangeset(ctx, changesets[0])
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1535,32 +1568,37 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		if err != nil {
 			t.Fatal(err)
 		}
-		want = []cmpgn.ChangesetSyncData{
-			{
-				ChangesetID:           changesets[0].ID,
-				UpdatedAt:             clock.now(),
-				LatestEvent:           clock.now(),
-				ExternalUpdatedAt:     clock.now(),
-				RepoExternalServiceID: "https://example.com/",
-			},
-			{
-				ChangesetID:           changesets[1].ID,
-				UpdatedAt:             clock.now(),
-				LatestEvent:           clock.now(),
-				ExternalUpdatedAt:     clock.now(),
-				RepoExternalServiceID: "https://example.com/",
-			},
-			{
-				// No events
-				ChangesetID:           changesets[2].ID,
-				UpdatedAt:             clock.now(),
-				ExternalUpdatedAt:     clock.now(),
-				RepoExternalServiceID: "https://example.com/",
-			},
+		checkChangesetIDs(t, hs, changesets.IDs())
+	})
+
+	t.Run("ignore processing changesets", func(t *testing.T) {
+		ch := changesets[0]
+		ch.PublicationState = cmpgn.ChangesetPublicationStatePublished
+		ch.ReconcilerState = cmpgn.ReconcilerStateProcessing
+		if err := s.UpdateChangeset(ctx, ch); err != nil {
+			t.Fatal(err)
 		}
-		if diff := cmp.Diff(want, hs); diff != "" {
-			t.Fatal(diff)
+
+		hs, err := s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{})
+		if err != nil {
+			t.Fatal(err)
 		}
+		checkChangesetIDs(t, hs, changesets[1:].IDs())
+	})
+
+	t.Run("ignore unpublished changesets", func(t *testing.T) {
+		ch := changesets[0]
+		ch.PublicationState = cmpgn.ChangesetPublicationStateUnpublished
+		ch.ReconcilerState = cmpgn.ReconcilerStateCompleted
+		if err := s.UpdateChangeset(ctx, ch); err != nil {
+			t.Fatal(err)
+		}
+
+		hs, err := s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		checkChangesetIDs(t, hs, changesets[1:].IDs())
 	})
 }
 

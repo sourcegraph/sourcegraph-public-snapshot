@@ -25,15 +25,18 @@ The campaigns feature introduces a lot of new names, GraphQL queries and mutatio
 | GraphQL type        | Go type              | Database table     | Description |
 | ------------------- | -------------------- | -------------------| ----------- |
 | `Campaign`          | `campaigns.Campaign`       | `campaigns`        | A campaign is a collection of changesets. The central entity. |
+| `ChangesetSpec`     | `campaigns.ChangesetSpec`  | `changeset_specs`  | A changeset spec describes the desired state of a changeset. |
+| `CampaignSpec`      | `campaigns.CampaignSpec`   | `campaign_specs`   | A campaign spec describes the desired state of a campaign. |
 | `ExternalChangeset` | `campaigns.Changeset`      | `changesets`       | Changeset is the unified name for pull requests/merge requests/etc. on code hosts.        |
 | `ChangesetEvent`    | `campaigns.ChangesetEvent` | `changeset_events` | A changeset event is an event on a code host, e.g. a comment or a review on a pull request on GitHub. They are created by syncing the changesets from the code host on a regular basis and by accepting webhook events and turning them into changeset events. |
 
 ## Database layout
 
-<object data="/dev/campaigns_database_layout.svg" type="image/svg+xml" style="width:100%; max-width: 800px">
-</object>
-
-(To re-generate the diagram from the `campaigns_database_layout.dot` file with Graphviz, run: `dot -Tsvg -o campaigns_database_layout.svg campaigns_database_layout.dot`.)
+<!-- TODO(mrnugget): Outdated
+<!-- <object data="/dev/campaigns_database_layout.svg" type="image/svg+xml" style="width:100%; max-width: 800px"> -->
+<!-- </object> -->
+<!--  -->
+<!-- (To re-generate the diagram from the `campaigns_database_layout.dot` file with Graphviz, run: `dot -Tsvg -o campaigns_database_layout.svg campaigns_database_layout.dot`.) -->
 
 ## Diving into the code as a backend developer
 
