@@ -104,6 +104,14 @@ func reverseProxy(target *url.URL) http.Handler {
 	})
 }
 
+// getRest returns the "rest" segment of the request's URL. This is a function variable so
+// we can swap it out easily during testing. The gorilla/mux does have a testing function to
+// set variables on a request context, but the context gets lost somewhere between construction
+// of the request and the default client's handling of the request.
+var getRest = func(r *http.Request) string {
+	return mux.Vars(r)["rest"]
+}
+
 // makeProxyRequest returns a new HTTP request object with the given HTTP request's headers
 // and body. The resulting request's URL is a URL constructed with the given target URL as
 // a base, and the text matching the "{rest:.*}" portion of the given request's route as the
@@ -119,7 +127,7 @@ func makeProxyRequest(r *http.Request, target *url.URL) (*http.Request, error) {
 	u := r.URL
 	u.Scheme = target.Scheme
 	u.Host = target.Host
-	u.Path = path.Join("/", target.Path, mux.Vars(r)["rest"])
+	u.Path = path.Join("/", target.Path, getRest(r))
 
 	req, err := http.NewRequest(r.Method, u.String(), getBody())
 	if err != nil {
