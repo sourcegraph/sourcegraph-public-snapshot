@@ -55,7 +55,7 @@ func enterpriseInit(
 	}
 
 	sourcer := repos.NewSourcer(cf)
-	go campaigns.RunWorkers(ctx, campaignsStore, clock, gitserver.DefaultClient, sourcer, 5*time.Second)
+	go campaigns.RunWorkers(ctx, campaignsStore, gitserver.DefaultClient, sourcer)
 
 	// Set up expired spec deletion
 	go func() {

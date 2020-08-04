@@ -188,13 +188,14 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                             )
                         ) : (
                             <div className="extensions-list__cards mt-1">
-                                {this.state.data.resultOrError.extensions.map((extension, index) => (
+                                {this.state.data.resultOrError.extensions.map(extension => (
                                     <ExtensionCard
-                                        key={index}
+                                        key={extension.id}
                                         subject={this.props.subject}
                                         node={extension}
                                         settingsCascade={this.props.settingsCascade}
                                         platformContext={this.props.platformContext}
+                                        enabled={isExtensionEnabled(this.props.settingsCascade.final, extension.id)}
                                     />
                                 ))}
                             </div>
