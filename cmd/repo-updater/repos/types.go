@@ -840,6 +840,18 @@ func (rs Repos) ExternalRepos() []api.ExternalRepoSpec {
 	return specs
 }
 
+// Sources returns a map of all the sources per repo id.
+func (rs Repos) Sources() map[api.RepoID][]SourceInfo {
+	sources := make(map[api.RepoID][]SourceInfo)
+	for i := range rs {
+		for _, info := range rs[i].Sources {
+			sources[rs[i].ID] = append(sources[rs[i].ID], *info)
+		}
+	}
+
+	return sources
+}
+
 func (rs Repos) Len() int {
 	return len(rs)
 }

@@ -54,8 +54,8 @@ func TestPermissionLevels(t *testing.T) {
 	userID := insertTestUser(t, dbconn.Global, "perm-level-user", false)
 
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", 1)
-	if err := reposStore.UpsertRepos(ctx, repo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGithubExternalService(t, reposStore))
+	if err := reposStore.InsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -484,8 +484,8 @@ func TestRepositoryPermissions(t *testing.T) {
 	repos := make([]*repos.Repo, 0, 2)
 	for i := 0; i < cap(repos); i++ {
 		name := fmt.Sprintf("github.com/sourcegraph/repo-%d", i)
-		r := newGitHubTestRepo(name, i)
-		if err := reposStore.UpsertRepos(ctx, r); err != nil {
+		r := newGitHubTestRepo(name, newGithubExternalService(t, reposStore))
+		if err := reposStore.InsertRepos(ctx, r); err != nil {
 			t.Fatal(err)
 		}
 		repos = append(repos, r)
