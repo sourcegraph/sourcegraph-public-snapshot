@@ -1,6 +1,7 @@
 package secrets
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -19,6 +20,19 @@ const (
 
 func ConfiguredToEncrypt() bool {
 	return isEncrypted
+}
+
+// gatherKeys splits the encryption string into its potential two components
+func gatherKeys(data []byte) (oldKey, newKey []byte) {
+	parts := bytes.Split(data, []byte(","))
+	if len(parts) > 2 {
+		panic("no more than two encryption keys should be specified.")
+	}
+	if len(parts) == 1 {
+		return parts[0], nil
+	}
+
+	return parts[0], parts[1]
 }
 
 func init() {
@@ -50,12 +64,18 @@ func init() {
 		if err != nil {
 			panic("failed to make secrets file read only.")
 		}
-		CryptObject.EncryptionKey = encryptionKey
+
+		newKey, _ := gatherKeys(encryptionKey)
+
+		CryptObject.EncryptionKey = newKey
 		return
 	}
 
 	// environment is second order
 	if cryptOK {
+		if len(envCryptKey) != validKeyLength {
+			panic(fmt.Sprintf("encryption key must be %d characters", validKeyLength))
+		}
 		CryptObject.EncryptionKey = []byte(envCryptKey)
 		return
 	}
@@ -76,7 +96,8 @@ func init() {
 		if err != nil {
 			panic("failed to make secrets file read only.")
 		}
-		CryptObject.EncryptionKey = b
+		newKey, _ := gatherKeys(b)
+		CryptObject.EncryptionKey = newKey
 	}
 
 	// wrapping in deploytype check so that we can still compile and test locally

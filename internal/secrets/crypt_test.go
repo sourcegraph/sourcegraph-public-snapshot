@@ -2,6 +2,7 @@ package secrets
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 )
 
@@ -232,4 +233,48 @@ func TestEncryptAndDecryptBytesIfPossible(t *testing.T) {
 	if decString == toEncrypt {
 		t.Fatalf("Received encrypted string, expected unencrypted.")
 	}
+}
+
+func Test_gatherKeys(t *testing.T) {
+	tests := []struct {
+		name       string
+		data       []byte
+		wantOldKey []byte
+		wantNewKey []byte
+	}{
+		// TODO: Add test cases.
+		{
+			"base-case",
+			[]byte("key123,key345"),
+			[]byte("key345"),
+			[]byte("key123"),
+		},
+		{
+			"no key set",
+			[]byte("key123"),
+			nil,
+			[]byte("key123"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotOldKey, gotNewKey := gatherKeys(tt.data)
+			if bytes.Equal(gotOldKey, tt.wantOldKey) {
+				t.Errorf("gatherKeys() oOldKey = %v, want %v", gotOldKey, tt.wantOldKey)
+			}
+			if bytes.Equal(gotNewKey, tt.wantNewKey) {
+				t.Errorf("gathrKeys() gotNewKey = %v, want %v", gotNewKey, tt.wantNewKey)
+			}
+		})
+	}
+
+	data := []byte("look mom, I am a key, me too")
+	defer func() {
+		p := recover()
+		if p == nil {
+			fmt.Println("t.Fail: should have panicked")
+		}
+	}()
+	gatherKeys(data)
+
 }

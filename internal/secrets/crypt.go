@@ -141,3 +141,15 @@ func (e *Encrypter) RotateKey(newKey []byte, encryptedValue string) (string, err
 	e.EncryptionKey = newKey
 	return e.encrypt(newKey, []byte(decrypted))
 }
+
+// // This function rotates the encryption used on an item by decryping and then recencrypting.
+// // Rotating keys updates the EncryptionKey within the Encrypter object
+// func (e *Encrypter) RotateKey(newE Encrypter, encryptedValue string) (string, error) {
+// 	decrypted, err := e.Decrypt(encryptedValue)
+// 	if err != nil {
+// 		return "", err
+// 	}
+
+// 	e.EncryptionKey = newKey
+// 	return e.encrypt(newKey, []byte(decrypted))
+// }
