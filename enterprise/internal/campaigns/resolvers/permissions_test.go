@@ -746,8 +746,16 @@ func testChangesetResponse(t *testing.T, s *graphql.Schema, ctx context.Context,
 		t.Fatalf("changeset has wrong typename. want=%q, have=%q", want, have)
 	}
 
+	if have, want := res.Node.PublicationState, string(campaigns.ChangesetPublicationStatePublished); have != want {
+		t.Fatalf("changeset has wrong publication state. want=%q, have=%q", want, have)
+	}
+
+	if have, want := res.Node.ReconcilerState, string(campaigns.ReconcilerStateCompleted); have != want {
+		t.Fatalf("changeset has wrong reconciler state. want=%q, have=%q", want, have)
+	}
+
 	if have, want := res.Node.ExternalState, string(campaigns.ChangesetExternalStateOpen); have != want {
-		t.Fatalf("changeset has wrong state. want=%q, have=%q", want, have)
+		t.Fatalf("changeset has wrong external state. want=%q, have=%q", want, have)
 	}
 
 	if have, want := res.Node.Campaigns.TotalCount, 1; have != want {
@@ -775,6 +783,8 @@ query {
     ... on HiddenExternalChangeset {
       id
 
+	  publicationState
+	  reconcilerState
 	  externalState
 	  createdAt
 	  updatedAt
@@ -786,6 +796,8 @@ query {
     ... on ExternalChangeset {
       id
 
+	  publicationState
+	  reconcilerState
 	  externalState
 	  createdAt
 	  updatedAt
