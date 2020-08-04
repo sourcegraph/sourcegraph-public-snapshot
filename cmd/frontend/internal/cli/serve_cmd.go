@@ -214,7 +214,7 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 	}
 
 	// The internal HTTP handler does not include the auth handlers.
-	internalHandler := newInternalHTTPHandler(schema)
+	internalHandler := newInternalHTTPHandler(schema, enterprise.NewCodeIntelUploadHandler)
 
 	// serve will serve externalHandler on l. It additionally handles graceful restarts.
 	srv := &httpServers{}

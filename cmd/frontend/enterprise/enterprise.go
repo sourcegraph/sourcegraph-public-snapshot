@@ -19,8 +19,9 @@ type Services struct {
 	CodeIntelResolver                graphqlbackend.CodeIntelResolver
 }
 
-// NewCodeIntelUploadHandler creates a new handler for the LSIF upload endpoint.
-type NewCodeIntelUploadHandler func() http.Handler
+// NewCodeIntelUploadHandler creates a new handler for the LSIF upload endpoint. The
+// resulting handler skips auth checks when the internal flag is true.
+type NewCodeIntelUploadHandler func(internal bool) http.Handler
 
 // NewCodeIntelInternalProxyHandler creates a new proxy handler for internal code intel routes
 // accessible from the precise-code-intel-indexer (deployed separately from the k8s cluster).
@@ -31,7 +32,7 @@ func DefaultServices() Services {
 	return Services{
 		GithubWebhook:                    makeNotFoundHandler("github webhook"),
 		BitbucketServerWebhook:           makeNotFoundHandler("bitbucket server webhook"),
-		NewCodeIntelUploadHandler:        func() http.Handler { return makeNotFoundHandler("code intel upload") },
+		NewCodeIntelUploadHandler:        func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
 		NewCodeIntelInternalProxyHandler: func() http.Handler { return makeNotFoundHandler("code intel internal proxy") },
 		AuthzResolver:                    graphqlbackend.DefaultAuthzResolver,
 		CampaignsResolver:                graphqlbackend.DefaultCampaignsResolver,

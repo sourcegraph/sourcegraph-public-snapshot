@@ -61,8 +61,8 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 		hunkCache,
 	))
 
-	enterpriseServices.NewCodeIntelUploadHandler = func() http.Handler {
-		return codeintelhttpapi.NewUploadHandler(store, bundleManagerClient, false)
+	enterpriseServices.NewCodeIntelUploadHandler = func(internal bool) http.Handler {
+		return codeintelhttpapi.NewUploadHandler(store, bundleManagerClient, internal)
 	}
 
 	newCodeIntelInternalProxyHandler, err := makeInternalProxyHandlerFactory()

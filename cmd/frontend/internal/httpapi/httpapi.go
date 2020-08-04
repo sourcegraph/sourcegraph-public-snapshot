@@ -51,7 +51,7 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook, bitbucketS
 
 	m.Get(apirouter.GitHubWebhooks).Handler(trace.TraceRoute(githubWebhook))
 	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.TraceRoute(bitbucketServerWebhook))
-	m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(newCodeIntelUploadHandler()))
+	m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(newCodeIntelUploadHandler(false)))
 
 	if envvar.SourcegraphDotComMode() {
 		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.TraceRoute(http.HandlerFunc(updatecheck.Handler)))
@@ -79,7 +79,7 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook, bitbucketS
 // 🚨 SECURITY: This handler should not be served on a publicly exposed port. 🚨
 // This handler is not guaranteed to provide the same authorization checks as
 // public API handlers.
-func NewInternalHandler(m *mux.Router, schema *graphql.Schema) http.Handler {
+func NewInternalHandler(m *mux.Router, schema *graphql.Schema, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler) http.Handler {
 	if m == nil {
 		m = apirouter.New(nil)
 	}
@@ -126,6 +126,8 @@ func NewInternalHandler(m *mux.Router, schema *graphql.Schema) http.Handler {
 	m.Get(apirouter.Configuration).Handler(trace.TraceRoute(handler(serveConfiguration)))
 	m.Get(apirouter.SearchConfiguration).Handler(trace.TraceRoute(handler(serveSearchConfiguration)))
 	m.Path("/ping").Methods("GET").Name("ping").HandlerFunc(handlePing)
+
+	m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(newCodeIntelUploadHandler(true)))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
