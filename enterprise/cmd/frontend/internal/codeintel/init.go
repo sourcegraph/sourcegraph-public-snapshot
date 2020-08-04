@@ -70,6 +70,6 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 		return err
 	}
 
-	enterpriseServices.NewCodeIntelInternalProxyHandler = newCodeIntelInternalProxyHandler
+	enterpriseServices.NewCodeIntelInternalProxyHandler = h
 	return nil
 }
