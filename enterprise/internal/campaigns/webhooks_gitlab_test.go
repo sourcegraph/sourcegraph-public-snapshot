@@ -942,7 +942,7 @@ func createGitLabChangeset(t *testing.T, ctx context.Context, store *Store, repo
 		ExternalID:          "1",
 		ExternalServiceType: extsvc.TypeGitLab,
 	}
-	if err := store.CreateChangesets(ctx, c); err != nil {
+	if err := store.CreateChangeset(ctx, c); err != nil {
 		t.Fatal(err)
 	}
 
