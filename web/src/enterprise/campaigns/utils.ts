@@ -1,13 +1,4 @@
-import {
-    ChangesetExternalState,
-    ChangesetCheckState,
-    ChangesetReviewState,
-    ChangesetState,
-} from '../../graphql-operations'
-
-export function isValidChangesetState(input: string): input is ChangesetState {
-    return Object.values<string>(ChangesetState).includes(input)
-}
+import { ChangesetExternalState, ChangesetCheckState, ChangesetReviewState } from '../../graphql-operations'
 
 export function isValidChangesetExternalState(input: string): input is ChangesetExternalState {
     return Object.values<string>(ChangesetExternalState).includes(input)
