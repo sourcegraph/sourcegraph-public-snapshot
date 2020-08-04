@@ -169,7 +169,8 @@ SELECT
   updated_at,
   deleted_at,
   last_sync_at,
-  next_sync_at
+  next_sync_at,
+  namespace_user_id
 FROM external_services
 WHERE id > %s
 AND %s
@@ -269,6 +270,7 @@ func upsertExternalServicesQuery(svcs []*ExternalService) *sqlf.Query {
 			nullTimeColumn(s.DeletedAt.UTC()),
 			nullTimeColumn(s.LastSyncAt.UTC()),
 			nullTimeColumn(s.NextSyncAt.UTC()),
+			nullInt32Column(s.NamespaceUserID),
 		))
 	}
 
@@ -279,7 +281,7 @@ func upsertExternalServicesQuery(svcs []*ExternalService) *sqlf.Query {
 }
 
 const upsertExternalServicesQueryValueFmtstr = `
-  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s)
+  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s)
 `
 
 const upsertExternalServicesQueryFmtstr = `
@@ -293,7 +295,8 @@ INSERT INTO external_services (
   updated_at,
   deleted_at,
   last_sync_at,
-  next_sync_at
+  next_sync_at,
+  namespace_user_id
 )
 VALUES %s
 ON CONFLICT(id) DO UPDATE
@@ -305,7 +308,8 @@ SET
   updated_at   = excluded.updated_at,
   deleted_at   = excluded.deleted_at,
   last_sync_at = excluded.last_sync_at,
-  next_sync_at = excluded.next_sync_at
+  next_sync_at = excluded.next_sync_at,
+  namespace_user_id = excluded.namespace_user_id
 RETURNING *
 `
 
@@ -799,6 +803,13 @@ func nullStringColumn(s string) *string {
 	return &s
 }
 
+func nullInt32Column(i int32) *int32 {
+	if i == 0 {
+		return nil
+	}
+	return &i
+}
+
 func metadataColumn(metadata interface{}) (msg json.RawMessage, err error) {
 	switch m := metadata.(type) {
 	case nil:
@@ -856,6 +867,7 @@ func scanExternalService(svc *ExternalService, s scanner) error {
 		&dbutil.NullTime{Time: &svc.DeletedAt},
 		&dbutil.NullTime{Time: &svc.LastSyncAt},
 		&dbutil.NullTime{Time: &svc.NextSyncAt},
+		&dbutil.NullInt32{N: &svc.NamespaceUserID},
 	)
 }
 

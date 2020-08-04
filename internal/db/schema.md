@@ -350,6 +350,8 @@ Check constraints:
  created_at   | timestamp with time zone | not null default now()
  updated_at   | timestamp with time zone | not null default now()
  deleted_at   | timestamp with time zone | 
+ last_sync_at | timestamp with time zone | 
+ next_sync_at | timestamp with time zone | 
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
 Check constraints:
