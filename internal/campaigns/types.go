@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	gitlabwebhooks "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/xeipuuv/gojsonschema"
@@ -342,7 +343,7 @@ func (c *Changeset) SetMetadata(meta interface{}) error {
 		c.ExternalID = strconv.FormatInt(int64(pr.IID), 10)
 		c.ExternalServiceType = extsvc.TypeGitLab
 		c.ExternalBranch = pr.SourceBranch
-		c.ExternalUpdatedAt = pr.UpdatedAt
+		c.ExternalUpdatedAt = pr.UpdatedAt.Time
 	default:
 		return errors.New("unknown changeset type")
 	}
@@ -383,7 +384,7 @@ func (c *Changeset) ExternalCreatedAt() time.Time {
 	case *bitbucketserver.PullRequest:
 		return unixMilliToTime(int64(m.CreatedDate))
 	case *gitlab.MergeRequest:
-		return m.CreatedAt
+		return m.CreatedAt.Time
 	default:
 		return time.Time{}
 	}
@@ -889,48 +890,56 @@ func (e *ChangesetEvent) Changeset() int64 {
 func (e *ChangesetEvent) Timestamp() time.Time {
 	var t time.Time
 
-	switch e := e.Metadata.(type) {
+	switch ev := e.Metadata.(type) {
 	case *github.AssignedEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.ClosedEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.IssueComment:
-		t = e.UpdatedAt
+		t = ev.UpdatedAt
 	case *github.RenamedTitleEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.MergedEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.PullRequestReview:
-		t = e.UpdatedAt
+		t = ev.UpdatedAt
 	case *github.PullRequestReviewComment:
-		t = e.UpdatedAt
+		t = ev.UpdatedAt
 	case *github.ReopenedEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.ReviewDismissedEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.ReviewRequestRemovedEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.ReviewRequestedEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.UnassignedEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.LabelEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.CommitStatus:
-		t = e.ReceivedAt
+		t = ev.ReceivedAt
 	case *github.CheckSuite:
-		return e.ReceivedAt
+		return ev.ReceivedAt
 	case *github.CheckRun:
-		return e.ReceivedAt
+		return ev.ReceivedAt
 	case *bitbucketserver.Activity:
-		t = unixMilliToTime(int64(e.CreatedDate))
+		t = unixMilliToTime(int64(ev.CreatedDate))
 	case *bitbucketserver.ParticipantStatusEvent:
-		t = unixMilliToTime(int64(e.CreatedDate))
+		t = unixMilliToTime(int64(ev.CreatedDate))
 	case *bitbucketserver.CommitStatus:
-		t = unixMilliToTime(int64(e.Status.DateAdded))
+		t = unixMilliToTime(int64(ev.Status.DateAdded))
 	case *gitlab.ReviewApproved:
-		return e.CreatedAt
+		return ev.CreatedAt.Time
 	case *gitlab.ReviewUnapproved:
+		return ev.CreatedAt.Time
+	case *gitlabwebhooks.MergeRequestCloseEvent,
+		*gitlabwebhooks.MergeRequestMergeEvent,
+		*gitlabwebhooks.MergeRequestReopenEvent,
+		*gitlabwebhooks.PipelineEvent:
+		// These events do not inherently have timestamps from GitLab, so we
+		// fall back to the event record we created when we received the
+		// webhook.
 		return e.CreatedAt
 	}
 
@@ -938,9 +947,27 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 }
 
 // Update updates the metadata of e with new metadata in o.
-func (e *ChangesetEvent) Update(o *ChangesetEvent) {
-	if e.ChangesetID != o.ChangesetID || e.Kind != o.Kind || e.Key != o.Key {
-		return
+func (e *ChangesetEvent) Update(o *ChangesetEvent) error {
+	if e.ChangesetID != o.ChangesetID {
+		return &changesetEventUpdateMismatchError{
+			field:    "ChangesetID",
+			original: e.ChangesetID,
+			revised:  o.ChangesetID,
+		}
+	}
+	if e.Kind != o.Kind {
+		return &changesetEventUpdateMismatchError{
+			field:    "Kind",
+			original: e.Kind,
+			revised:  o.Kind,
+		}
+	}
+	if e.Key != o.Key {
+		return &changesetEventUpdateMismatchError{
+			field:    "Key",
+			original: e.Key,
+			revised:  o.Key,
+		}
 	}
 
 	switch e := e.Metadata.(type) {
@@ -1278,9 +1305,41 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) {
 		// We always get the full event, so safe to replace it
 		*e = *o
 
+	case *gitlabwebhooks.MergeRequestCloseEvent:
+		o := o.Metadata.(*gitlabwebhooks.MergeRequestCloseEvent)
+		// We always get the full event, so safe to replace it
+		*e = *o
+
+	case *gitlabwebhooks.MergeRequestMergeEvent:
+		o := o.Metadata.(*gitlabwebhooks.MergeRequestMergeEvent)
+		// We always get the full event, so safe to replace it
+		*e = *o
+
+	case *gitlabwebhooks.MergeRequestReopenEvent:
+		o := o.Metadata.(*gitlabwebhooks.MergeRequestReopenEvent)
+		// We always get the full event, so safe to replace it
+		*e = *o
+
+	case *gitlabwebhooks.PipelineEvent:
+		o := o.Metadata.(*gitlabwebhooks.PipelineEvent)
+		// We always get the full event, so safe to replace it
+		*e = *o
+
 	default:
-		panic(errors.Errorf("unknown changeset event metadata %T", e))
+		return errors.Errorf("unknown changeset event metadata %T", e)
 	}
+
+	return nil
+}
+
+type changesetEventUpdateMismatchError struct {
+	field    string
+	original interface{}
+	revised  interface{}
+}
+
+func (e *changesetEventUpdateMismatchError) Error() string {
+	return fmt.Sprintf("%s '%v' on the revised changeset event does not match %s '%v' on the original changeset event", e.field, e.revised, e.field, e.original)
 }
 
 func updateGithubCheckRun(e, o *github.CheckRun) {
@@ -1417,6 +1476,12 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 		return ChangesetEventKindGitLabApproved
 	case *gitlab.ReviewUnapproved:
 		return ChangesetEventKindGitLabUnapproved
+	case *gitlabwebhooks.MergeRequestCloseEvent:
+		return ChangesetEventKindGitLabClosed
+	case *gitlabwebhooks.MergeRequestMergeEvent:
+		return ChangesetEventKindGitLabMerged
+	case *gitlabwebhooks.MergeRequestReopenEvent:
+		return ChangesetEventKindGitLabReopened
 	default:
 		panic(errors.Errorf("unknown changeset event kind for %T", e))
 	}
@@ -1482,6 +1547,12 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 			return new(gitlab.Pipeline), nil
 		case ChangesetEventKindGitLabUnapproved:
 			return new(gitlab.ReviewUnapproved), nil
+		case ChangesetEventKindGitLabClosed:
+			return new(gitlabwebhooks.MergeRequestCloseEvent), nil
+		case ChangesetEventKindGitLabMerged:
+			return new(gitlabwebhooks.MergeRequestMergeEvent), nil
+		case ChangesetEventKindGitLabReopened:
+			return new(gitlabwebhooks.MergeRequestReopenEvent), nil
 		}
 	}
 	return nil, errors.Errorf("unknown changeset event kind %q", k)
@@ -1530,7 +1601,10 @@ const (
 	ChangesetEventKindBitbucketServerDismissed ChangesetEventKind = "bitbucketserver:participant_status:unapproved"
 
 	ChangesetEventKindGitLabApproved   ChangesetEventKind = "gitlab:approved"
+	ChangesetEventKindGitLabClosed     ChangesetEventKind = "gitlab:closed"
+	ChangesetEventKindGitLabMerged     ChangesetEventKind = "gitlab:merged"
 	ChangesetEventKindGitLabPipeline   ChangesetEventKind = "gitlab:pipeline"
+	ChangesetEventKindGitLabReopened   ChangesetEventKind = "gitlab:reopened"
 	ChangesetEventKindGitLabUnapproved ChangesetEventKind = "gitlab:unapproved"
 )
 

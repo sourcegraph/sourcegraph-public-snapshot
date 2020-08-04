@@ -33,6 +33,7 @@ func TestIntegration(t *testing.T) {
 
 	t.Run("GitHubWebhook", testGitHubWebhook(db, userID))
 	t.Run("BitbucketWebhook", testBitbucketWebhook(db, userID))
+	t.Run("GitLabWebhook", testGitLabWebhook(db, userID))
 }
 
 func truncateTables(t *testing.T, db *sql.DB, tables ...string) {

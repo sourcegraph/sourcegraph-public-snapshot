@@ -264,80 +264,131 @@ func TestComputeBitbucketBuildStatus(t *testing.T) {
 }
 
 func TestComputeGitLabCheckState(t *testing.T) {
-	for name, tc := range map[string]struct {
-		mr   *gitlab.MergeRequest
-		want cmpgn.ChangesetCheckState
-	}{
-		"no pipelines at all": {
-			mr:   &gitlab.MergeRequest{},
-			want: cmpgn.ChangesetCheckStateUnknown,
-		},
-		"only a head pipeline": {
-			mr: &gitlab.MergeRequest{
-				HeadPipeline: &gitlab.Pipeline{
-					Status: gitlab.PipelineStatusPending,
+	t.Run("no events", func(t *testing.T) {
+		for name, tc := range map[string]struct {
+			mr   *gitlab.MergeRequest
+			want cmpgn.ChangesetCheckState
+		}{
+			"no pipelines at all": {
+				mr:   &gitlab.MergeRequest{},
+				want: cmpgn.ChangesetCheckStateUnknown,
+			},
+			"only a head pipeline": {
+				mr: &gitlab.MergeRequest{
+					HeadPipeline: &gitlab.Pipeline{
+						Status: gitlab.PipelineStatusPending,
+					},
+				},
+				want: cmpgn.ChangesetCheckStatePending,
+			},
+			"one pipeline only": {
+				mr: &gitlab.MergeRequest{
+					HeadPipeline: &gitlab.Pipeline{
+						Status: gitlab.PipelineStatusPending,
+					},
+					Pipelines: []*gitlab.Pipeline{
+						{
+							CreatedAt: gitlab.Time{Time: time.Unix(10, 0)},
+							Status:    gitlab.PipelineStatusFailed,
+						},
+					},
+				},
+				want: cmpgn.ChangesetCheckStateFailed,
+			},
+			"two pipelines in the expected order": {
+				mr: &gitlab.MergeRequest{
+					HeadPipeline: &gitlab.Pipeline{
+						Status: gitlab.PipelineStatusPending,
+					},
+					Pipelines: []*gitlab.Pipeline{
+						{
+							CreatedAt: gitlab.Time{Time: time.Unix(10, 0)},
+							Status:    gitlab.PipelineStatusFailed,
+						},
+						{
+							CreatedAt: gitlab.Time{Time: time.Unix(5, 0)},
+							Status:    gitlab.PipelineStatusSuccess,
+						},
+					},
+				},
+				want: cmpgn.ChangesetCheckStateFailed,
+			},
+			"two pipelines in an unexpected order": {
+				mr: &gitlab.MergeRequest{
+					HeadPipeline: &gitlab.Pipeline{
+						Status: gitlab.PipelineStatusPending,
+					},
+					Pipelines: []*gitlab.Pipeline{
+						{
+							CreatedAt: gitlab.Time{Time: time.Unix(5, 0)},
+							Status:    gitlab.PipelineStatusFailed,
+						},
+						{
+							CreatedAt: gitlab.Time{Time: time.Unix(10, 0)},
+							Status:    gitlab.PipelineStatusSuccess,
+						},
+					},
+				},
+				want: cmpgn.ChangesetCheckStatePassed,
+			},
+		} {
+			t.Run(name, func(t *testing.T) {
+				have := computeGitLabCheckState(time.Unix(0, 0), tc.mr, nil)
+				if have != tc.want {
+					t.Errorf("unexpected check state: have %s; want %s", have, tc.want)
+				}
+			})
+		}
+	})
+
+	t.Run("with events", func(t *testing.T) {
+		mr := &gitlab.MergeRequest{
+			HeadPipeline: &gitlab.Pipeline{
+				Status: gitlab.PipelineStatusPending,
+			},
+		}
+
+		events := []*cmpgn.ChangesetEvent{
+			{
+				Kind: cmpgn.ChangesetEventKindGitLabPipeline,
+				Metadata: &gitlab.Pipeline{
+					CreatedAt: gitlab.Time{Time: time.Unix(5, 0)},
+					Status:    gitlab.PipelineStatusSuccess,
 				},
 			},
-			want: cmpgn.ChangesetCheckStatePending,
-		},
-		"one pipeline only": {
-			mr: &gitlab.MergeRequest{
-				HeadPipeline: &gitlab.Pipeline{
-					Status: gitlab.PipelineStatusPending,
-				},
-				Pipelines: []*gitlab.Pipeline{
-					{
-						CreatedAt: time.Unix(10, 0),
-						Status:    gitlab.PipelineStatusFailed,
-					},
+			{
+				Kind: cmpgn.ChangesetEventKindGitLabPipeline,
+				Metadata: &gitlab.Pipeline{
+					CreatedAt: gitlab.Time{Time: time.Unix(4, 0)},
+					Status:    gitlab.PipelineStatusFailed,
 				},
 			},
-			want: cmpgn.ChangesetCheckStateFailed,
-		},
-		"two pipelines in the expected order": {
-			mr: &gitlab.MergeRequest{
-				HeadPipeline: &gitlab.Pipeline{
-					Status: gitlab.PipelineStatusPending,
-				},
-				Pipelines: []*gitlab.Pipeline{
-					{
-						CreatedAt: time.Unix(10, 0),
-						Status:    gitlab.PipelineStatusFailed,
-					},
-					{
-						CreatedAt: time.Unix(5, 0),
-						Status:    gitlab.PipelineStatusSuccess,
-					},
-				},
+		}
+
+		for name, tc := range map[string]struct {
+			events     []*cmpgn.ChangesetEvent
+			lastSynced time.Time
+			want       cmpgn.ChangesetCheckState
+		}{
+			"older events only": {
+				events:     events,
+				lastSynced: time.Unix(10, 0),
+				want:       cmpgn.ChangesetCheckStatePending,
 			},
-			want: cmpgn.ChangesetCheckStateFailed,
-		},
-		"two pipelines in an unexpected order": {
-			mr: &gitlab.MergeRequest{
-				HeadPipeline: &gitlab.Pipeline{
-					Status: gitlab.PipelineStatusPending,
-				},
-				Pipelines: []*gitlab.Pipeline{
-					{
-						CreatedAt: time.Unix(5, 0),
-						Status:    gitlab.PipelineStatusFailed,
-					},
-					{
-						CreatedAt: time.Unix(10, 0),
-						Status:    gitlab.PipelineStatusSuccess,
-					},
-				},
+			"newer events only": {
+				events:     events,
+				lastSynced: time.Unix(3, 0),
+				want:       cmpgn.ChangesetCheckStatePassed,
 			},
-			want: cmpgn.ChangesetCheckStatePassed,
-		},
-	} {
-		t.Run(name, func(t *testing.T) {
-			have := computeGitLabCheckState(tc.mr)
-			if have != tc.want {
-				t.Errorf("unexpected check state: have %s; want %s", have, tc.want)
-			}
-		})
-	}
+		} {
+			t.Run(name, func(t *testing.T) {
+				have := computeGitLabCheckState(tc.lastSynced, mr, tc.events)
+				if have != tc.want {
+					t.Errorf("unexpected check state: have %s; want %s", have, tc.want)
+				}
+			})
+		}
+	})
 }
 
 func TestComputeReviewState(t *testing.T) {
