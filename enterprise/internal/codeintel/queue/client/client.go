@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
@@ -53,7 +54,12 @@ var requestMeter = metrics.NewRequestMeter("precise_code_intel_index_manager", "
 // ot.Transport will propagate opentracing spans.
 var defaultTransport = &ot.Transport{
 	RoundTripper: requestMeter.Transport(&http.Transport{}, func(u *url.URL) string {
-		return u.Path // TODO - determine metric names here
+		// Extract the operation from a path like `/.internal-code-intel/index-queue/{operation}`
+		if segments := strings.Split(u.Path, "/"); len(segments) == 4 {
+			return segments[3]
+		}
+
+		return ""
 	}),
 }
 
