@@ -441,6 +441,17 @@ type Mutation {
 
     # Enqueue the given changeset for high-priority syncing.
     syncChangeset(changeset: ID!): EmptyResponse!
+
+    #
+    # OBSERVABILITY
+    #
+
+    # Set the status of a test alert of the specified parameters - useful for validating
+    # 'observability.alerts' configuration. Alerts may take up to a minute to fire.
+    triggerObservabilityTestAlert(
+        # Level of alert to test - either warning or critical.
+        level: String!
+    ): EmptyResponse!
 }
 
 # The type of the changeset spec.
@@ -699,8 +710,10 @@ type Campaign implements Node {
     # The changesets in this campaign that already exist on the code host.
     changesets(
         first: Int
-        # Only include changesets with the given state.
-        state: ChangesetState
+        # Only include changesets with the given reconciler state.
+        reconcilerState: ChangesetReconcilerState
+        # Only include changesets with the given publication state.
+        publicationState: ChangesetPublicationState
         # Only include changesets with the given external state.
         externalState: ChangesetExternalState
         # Only include changesets with the given review state.
@@ -758,16 +771,30 @@ type CampaignConnection {
     pageInfo: PageInfo!
 }
 
-# The internal state of a changeset on Sourcegraph.
-enum ChangesetState {
-    # The changeset has not yet been created on the code host and is not scheduled to be.
+# The publication state of a changeset on Sourcegraph
+enum ChangesetPublicationState {
+    # The changeset has not yet been created on the code host.
     UNPUBLISHED
-    # The changeset is currently being created or updated on the code host.
-    PUBLISHING
-    # An error occurred while publishing or syncing this changeset.
+    # The changeset has been created on the code host.
+    PUBLISHED
+}
+
+# The reconciler state of a changeset on Sourcegraph
+enum ChangesetReconcilerState {
+    # The changeset is enqueued for the reconciler to process it.
+    QUEUED
+
+    # The changeset reconciler is currently computing the delta between the
+    # If a delta exists, the reconciler tries to update the state of the
+    # changeset on the code host and on Sourcegraph to the desired state.
+    PROCESSING
+
+    # The changeset reconciler ran into a problem while processing the
+    # changeset.
     ERRORED
-    # The changeset is likely up to date and no changes are pending execution.
-    SYNCED
+
+    # The changeset is not enqueued for processing.
+    COMPLETED
 }
 
 # The state of a changeset on the code host on which it's hosted.
@@ -817,8 +844,11 @@ interface Changeset {
         state: CampaignState
     ): CampaignConnection!
 
-    # The state of the changeset.
-    state: ChangesetState!
+    # The publication state of the changeset.
+    publicationState: ChangesetPublicationState!
+
+    # The reconciler state of the changeset.
+    reconcilerState: ChangesetReconcilerState!
 
     # The external state of the changeset, or null when not yet published to the code host.
     externalState: ChangesetExternalState
@@ -846,8 +876,11 @@ type HiddenExternalChangeset implements Node & Changeset {
         state: CampaignState
     ): CampaignConnection!
 
-    # The state of the changeset.
-    state: ChangesetState!
+    # The publication state of the changeset.
+    publicationState: ChangesetPublicationState!
+
+    # The reconciler state of the changeset.
+    reconcilerState: ChangesetReconcilerState!
 
     # The external state of the changeset, or null when not yet opened.
     externalState: ChangesetExternalState
@@ -902,8 +935,11 @@ type ExternalChangeset implements Node & Changeset {
     # The body of the changeset.
     body: String!
 
-    # The state of the changeset.
-    state: ChangesetState!
+    # The publication state of the changeset.
+    publicationState: ChangesetPublicationState!
+
+    # The reconciler state of the changeset.
+    reconcilerState: ChangesetReconcilerState!
 
     # The external state of the changeset, or null when not yet published to the code host.
     externalState: ChangesetExternalState
@@ -1215,9 +1251,6 @@ type Query {
         names: [String!]
         # Include cloned repositories.
         cloned: Boolean = true
-        # Include repositories that are currently being cloned.
-        # DEPRECATED: This will be removed.
-        cloneInProgress: Boolean = true
         # Include repositories that are not yet cloned and for which cloning is not in progress.
         notCloned: Boolean = true
         # Include repositories that have a text search index.
@@ -3918,6 +3951,8 @@ type MonitoringAlert {
     name: String!
     # Name of the service that fired the alert.
     serviceName: String!
+    # Owner of the fired alert.
+    owner: String!
     # Average percentage of time (between [0, 1]) that the event was firing over the 12h of recorded data. e.g.
     # 1.0 if it was firing 100% of the time on average during that 12h window, 0.5 if it was firing 50% of the
     # time on average, etc.

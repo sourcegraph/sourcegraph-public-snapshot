@@ -3,9 +3,10 @@ import React from 'react'
 import { ExternalChangesetNode } from './ExternalChangesetNode'
 import {
     ChangesetReviewState,
-    ChangesetState,
     ChangesetCheckState,
     ChangesetExternalState,
+    ChangesetReconcilerState,
+    ChangesetPublicationState,
 } from '../../../../../../shared/src/graphql/schema'
 import { Subject } from 'rxjs'
 import { shallow } from 'enzyme'
@@ -32,7 +33,8 @@ describe('ExternalChangesetNode', () => {
                         __typename: 'ExternalChangeset',
                         id: 'TestExternalChangeset',
                         reviewState: ChangesetReviewState.PENDING,
-                        state: ChangesetState.UNPUBLISHED,
+                        publicationState: ChangesetPublicationState.PUBLISHED,
+                        reconcilerState: ChangesetReconcilerState.COMPLETED,
                         externalState: ChangesetExternalState.OPEN,
                         externalURL: {
                             url: 'https://github.com/sourcegraph/sourcegraph/pull/111111',

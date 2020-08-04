@@ -184,7 +184,13 @@ The following are two recommendations for installing these dependencies:
     curl -L https://github.com/comby-tools/comby/releases/download/0.11.3/comby-0.11.3-x86_64-linux.tar.gz | tar xvz
 
     # install watchman (you must put the binary and shared libraries on your $PATH and $LD_LIBRARY_PATH)
-    curl -L https://github.com/facebook/watchman/releases/download/v2020.07.13.00/watchman-v2020.07.13.00-linux.zip
+    curl -LO https://github.com/facebook/watchman/releases/download/v2020.07.13.00/watchman-v2020.07.13.00-linux.zip
+    unzip watchman-*-linux.zip
+    sudo mkdir -p /usr/local/{bin,lib} /usr/local/var/run/watchman
+    sudo cp bin/* /usr/local/bin
+    sudo cp lib/* /usr/local/lib
+    sudo chmod 755 /usr/local/bin/watchman
+    sudo chmod 2777 /usr/local/var/run/watchman
 
     # nvm (to manage Node.js)
     NVM_VERSION="$(curl https://api.github.com/repos/nvm-sh/nvm/releases/latest | jq -r .name)"
@@ -463,6 +469,14 @@ yarn
 cd web
 yarn
 ```
+
+### Node version out of date
+
+```bash
+Validating package.json...
+error @: The engine "node" is incompatible with this module. Expected version "^v14.7.0". Got "14.5.0"
+```
+If you see an error like this you need to upgrade the version of node installed. You can do this with `nvm use` and then following the prompts to install or update to the correct Node.js version. 
 
 #### dial tcp 127.0.0.1:3090: connect: connection refused
 
