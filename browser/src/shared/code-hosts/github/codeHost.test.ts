@@ -78,7 +78,7 @@ describe('github/codeHost', () => {
             beforeAll(() => {
                 jsdom.reconfigure({
                     url:
-                        'https://github.com/sourcegraph/sourcegraph/blob/main/browser/src/shared/code-hosts/code_intelligence.tsx',
+                        'https://github.com/sourcegraph/sourcegraph/blob/master/browser/src/shared/code-hosts/code_intelligence.tsx',
                 })
             })
             it('returns an URL to the Sourcegraph instance if the location has a viewState', () => {
@@ -140,7 +140,7 @@ describe('github/codeHost', () => {
                         { part: undefined }
                     )
                 ).toBe(
-                    'https://github.com/sourcegraph/sourcegraph/blob/main/browser/src/shared/code-hosts/code_intelligence.tsx#L5:12'
+                    'https://github.com/sourcegraph/sourcegraph/blob/master/browser/src/shared/code-hosts/code_intelligence.tsx#L5:12'
                 )
             })
         })

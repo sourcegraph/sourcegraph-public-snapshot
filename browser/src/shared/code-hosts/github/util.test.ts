@@ -31,11 +31,11 @@ describe('util', () => {
             },
             {
                 name: 'selections - single line',
-                url: 'https://github.com/sourcegraph/sourcegraph/blob/main/jest.config.base.js#L5',
+                url: 'https://github.com/sourcegraph/sourcegraph/blob/master/jest.config.base.js#L5',
             },
             {
                 name: 'selections - range',
-                url: 'https://github.com/sourcegraph/sourcegraph/blob/main/jest.config.base.js#L5-L12',
+                url: 'https://github.com/sourcegraph/sourcegraph/blob/master/jest.config.base.js#L5-L12',
             },
             {
                 name: 'snippet permalink',
