@@ -55,7 +55,7 @@ func newInternalProxyHandler() (func() http.Handler, error) {
 	return factory, nil
 }
 
-// internalProxyAuthTokenMiddleware rejects requests that do not have a basic password matching
+// internalProxyAuthTokenMiddleware rejects requests that do not have a basic auth password matching
 // the configured internal proxy auth token.
 func internalProxyAuthTokenMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
