@@ -46,12 +46,23 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 20+ 90th percentile page load latency over all routes over 10m_ (`critical_frontend_page_load_latency`)
+- _frontend: 2s+ 90th percentile page load latency over all routes over 10m_ (`critical_frontend_page_load_latency`)
 
 **Possible solutions:**
 
 - Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
-- Trace a request to see what is the slowest part - refer to: https://docs.sourcegraph.com/admin/observability/tracing
+- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
+
+# frontend: blob_load_latency
+
+**Descriptions:**
+
+- _frontend: 2s+ 90th percentile blob load latency over 10m_ (`critical_frontend_blob_load_latency`)
+
+**Possible solutions:**
+
+- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
+- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
 
 # frontend: 99th_percentile_search_codeintel_request_duration
 
@@ -450,6 +461,26 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of gitserver container in `docker-compose.yml`.
+
+# github-proxy: github_core_rate_limit_remaining
+
+**Descriptions:**
+
+- _github-proxy: less than 1000 remaining calls to GitHub before hitting the rate limit_ (`critical_github-proxy_github_core_rate_limit_remaining`)
+
+**Possible solutions:**
+
+Try restarting the pod to get a different public IP.
+
+# github-proxy: github_search_rate_limit_remaining
+
+**Descriptions:**
+
+- _github-proxy: less than 5 remaining calls to GitHub search before hitting the rate limit_ (`warning_github-proxy_github_search_rate_limit_remaining`)
+
+**Possible solutions:**
+
+Try restarting the pod to get a different public IP.
 
 # github-proxy: container_cpu_usage
 

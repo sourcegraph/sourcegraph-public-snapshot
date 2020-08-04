@@ -7,6 +7,33 @@ func GitHubProxy() *Container {
 		Description: "Proxies all requests to github.com, keeping track of and managing rate limits.",
 		Groups: []Group{
 			{
+				Title: "GitHub API monitoring",
+				Rows: []Row{
+					{
+						{
+							Name:              "github_core_rate_limit_remaining",
+							Description:       "remaining calls to GitHub before hitting the rate limit",
+							Query:             `src_github_rate_limit_remaining{resource="core"}`,
+							DataMayNotExist:   true,
+							Critical:          Alert{LessOrEqual: 1000},
+							PanelOptions:      PanelOptions().LegendFormat("calls remaining"),
+							Owner:             ObservableOwnerSearch,
+							PossibleSolutions: `Try restarting the pod to get a different public IP.`,
+						},
+						{
+							Name:              "github_search_rate_limit_remaining",
+							Description:       "remaining calls to GitHub search before hitting the rate limit",
+							Query:             `src_github_rate_limit_remaining{resource="search"}`,
+							DataMayNotExist:   true,
+							Warning:           Alert{LessOrEqual: 5},
+							PanelOptions:      PanelOptions().LegendFormat("calls remaining"),
+							Owner:             ObservableOwnerSearch,
+							PossibleSolutions: `Try restarting the pod to get a different public IP.`,
+						},
+					},
+				},
+			},
+			{
 				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{

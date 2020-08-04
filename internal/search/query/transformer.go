@@ -512,3 +512,12 @@ func Map(query []Node, fns ...func([]Node) []Node) []Node {
 	}
 	return query
 }
+
+func FuzzifyRegexPatterns(nodes []Node) []Node {
+	return MapParameter(nodes, func(field string, value string, negated bool, annotation Annotation) Node {
+		if field == FieldRepo || field == FieldFile || field == FieldRepoHasFile {
+			value = strings.TrimSuffix(value, "$")
+		}
+		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
+	})
+}
