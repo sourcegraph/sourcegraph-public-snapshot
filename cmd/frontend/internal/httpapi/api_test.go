@@ -21,6 +21,6 @@ func newTest() *httptestutil.Client {
 		enterpriseServices.GithubWebhook,
 		enterpriseServices.BitbucketServerWebhook,
 		enterpriseServices.NewCodeIntelUploadHandler,
-		enterpriseServices.NewCodeIntelIndexerProxyHandler,
+		enterpriseServices.NewCodeIntelInternalProxyHandler,
 	))
 }
