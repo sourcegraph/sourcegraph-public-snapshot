@@ -42,6 +42,16 @@ export interface Filter {
 }
 
 /**
+ * Represents an operator in a search query.
+ *
+ * Example: AND, OR, NOT.
+ */
+export interface Operator {
+    type: 'operator'
+    value: string
+}
+
+/**
  * Represents a sequence of tokens in a search query.
  */
 export interface Sequence {
@@ -63,6 +73,7 @@ export type Token =
     | { type: 'whitespace' }
     | { type: 'openingParen' }
     | { type: 'closingParen' }
+    | { type: 'operator' }
     | Literal
     | Filter
     | Sequence
@@ -226,6 +237,8 @@ const whitespace = pattern(/\s+/, { type: 'whitespace' as const }, 'whitespace')
 
 const literal = pattern(/[^\s)]+/)
 
+const operator = pattern(/(and|AND|or|OR|not|NOT)/, { type: 'operator' as const })
+
 const filterKeyword = pattern(/-?[A-Za-z]+(?=:)/)
 
 const filterDelimiter = character(':')
@@ -304,7 +317,7 @@ const searchQuery = zeroOrMore(
         whitespace,
         openingParen,
         closingParen,
-        ...[filter, quoted, literal].map(token =>
+        ...[operator, filter, quoted, literal].map(token =>
             followedBy(token, oneOf<{ type: 'whitespace' } | { type: 'closingParen' }>(whitespace, closingParen))
         )
     )
