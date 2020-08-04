@@ -224,7 +224,7 @@ const pattern = <T = Literal>(regexp: RegExp, output?: T, expected?: string): Pa
 
 const whitespace = pattern(/\s+/, { type: 'whitespace' as const }, 'whitespace')
 
-const literal = pattern(/\S+/)
+const literal = pattern(/[^\s)]+/)
 
 const filterKeyword = pattern(/-?[A-Za-z]+(?=:)/)
 
