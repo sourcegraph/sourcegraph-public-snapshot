@@ -20,9 +20,9 @@ import (
 
 const (
 	// It's local access token, don't worry.
-	authHeader = `token 1b13a0a1217377aa9a43d7cc46782f24b648ab0c`
+	authHeader = "token 1b13a0a1217377aa9a43d7cc46782f24b648ab0c"
 
-	graphqlEndpoint = `http://localhost:3082/.api/graphql`
+	graphqlEndpoint = "http://localhost:3082/.api/graphql" // CI:LOCALHOST_OK
 )
 
 func main() {
