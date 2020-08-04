@@ -15,6 +15,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Emails can be now be sent to SMTP servers with self-signed certificates, using `email.smtp.disableTLS`. [#12359](https://github.com/sourcegraph/sourcegraph/pull/12359)
 - Saved search emails now include a link to the user's saved searches page. [#11651](https://github.com/sourcegraph/sourcegraph/pull/11651)
+- Configured `observability.alerts` can now be tested using a GraphQL endpoint, `triggerObservabilityTestAlert`. [#12532](https://github.com/sourcegraph/sourcegraph/pull/12532)
 
 ### Changed
 
@@ -24,6 +25,11 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Fixed site admins are getting errors when visiting user settings page in OSS version. [#12313](https://github.com/sourcegraph/sourcegraph/pull/12313)
 - `github-proxy` now respects the environment variables `HTTP_PROXY`, `HTTPS_PROXY` and `NO_PROXY` (or the lowercase versions thereof). Other services already respect these variables, but this was missed. If you need a proxy to access github.com set the environment variable for the github-proxy container. [#12377](https://github.com/sourcegraph/sourcegraph/issues/12377)
+
+### Removed
+
+- Deprecated site settings `lightstepAccessToken` and `lightstepProject` have been removed. We now only support sending traces to Jaeger. Configure Jaeger with `observability.tracing` site setting.
+- Removed `CloneInProgress` option from GraphQL Repositories API. [#12560](https://github.com/sourcegraph/sourcegraph/pull/12560)
 
 ## 3.18.0
 

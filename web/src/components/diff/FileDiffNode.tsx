@@ -15,9 +15,10 @@ import { ExtensionsControllerProps } from '../../../../shared/src/extensions/con
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import classNames from 'classnames'
 import { dirname } from '../../util/path'
+import { FileDiffFields } from '../../graphql-operations'
 
 export interface FileDiffNodeProps extends ThemeProps {
-    node: GQL.IFileDiff
+    node: FileDiffFields
     lineNumbers: boolean
     className?: string
     location: H.Location

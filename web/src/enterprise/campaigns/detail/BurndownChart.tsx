@@ -11,9 +11,10 @@ import {
     YAxis,
     TooltipPayload,
 } from 'recharts'
-import { ICampaign, IChangesetCounts } from '../../../../../shared/src/graphql/schema'
+import { ChangesetCountsOverTimeFields } from '../../../graphql-operations'
 
-interface Props extends Pick<ICampaign, 'changesetCountsOverTime'> {
+interface Props {
+    changesetCountsOverTime: ChangesetCountsOverTimeFields[]
     history: H.History
     width?: string | number
 }
@@ -47,7 +48,7 @@ interface StateDefinition {
 }
 
 type DisplayableChangesetCounts = Pick<
-    IChangesetCounts,
+    ChangesetCountsOverTimeFields,
     'openPending' | 'openChangesRequested' | 'openApproved' | 'closed' | 'merged'
 >
 

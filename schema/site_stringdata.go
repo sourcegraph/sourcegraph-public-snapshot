@@ -594,17 +594,6 @@ const SiteSchemaJSON = `{
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
     },
-    "lightstepAccessToken": {
-      "description": "DEPRECATED. Use Jaeger (` + "`" + `\"observability.tracing\": { \"sampling\": \"selective\" }` + "`" + `), instead.",
-      "type": "string",
-      "group": "Misc."
-    },
-    "lightstepProject": {
-      "description": "DEPRECATED. Use Jaeger (` + "`" + `\"observability.tracing\": { \"sampling\": \"selective\" }` + "`" + `), instead.",
-      "type": "string",
-      "examples": ["myproject"],
-      "group": "Misc."
-    },
     "useJaeger": {
       "description": "DEPRECATED. Use ` + "`" + `\"observability.tracing\": { \"sampling\": \"all\" }` + "`" + `, instead. Enables Jaeger tracing.",
       "type": "boolean",

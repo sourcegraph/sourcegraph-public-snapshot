@@ -11,11 +11,7 @@ func init() {
 	dbtesting.DBNameSuffix = "codeintel"
 }
 
-func rawTestStore() *store {
-	return &store{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(dbconn.Global))}
-}
-
 func testStore() Store {
 	// Wrap in observed, as that's how it's used in production
-	return NewObserved(rawTestStore(), &observation.TestContext)
+	return NewObserved(&store{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(dbconn.Global))}, &observation.TestContext)
 }

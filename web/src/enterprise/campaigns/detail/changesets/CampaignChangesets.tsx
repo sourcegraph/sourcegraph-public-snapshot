@@ -3,8 +3,8 @@ import * as H from 'history'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ChangesetNodeProps, ChangesetNode } from './ChangesetNode'
 import { ThemeProps } from '../../../../../../shared/src/theme'
-import { FilteredConnection, FilteredConnectionQueryArgs, Connection } from '../../../../components/FilteredConnection'
-import { Observable, Subject, merge, of } from 'rxjs'
+import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
+import { Subject, merge, of } from 'rxjs'
 import { upperFirst, lowerCase } from 'lodash'
 import { queryChangesets as _queryChangesets } from '../backend'
 import { repeatWhen, delay, withLatestFrom, map, filter, switchMap } from 'rxjs/operators'
@@ -28,6 +28,7 @@ import { PlatformContextProps } from '../../../../../../shared/src/platform/cont
 import { TelemetryProps } from '../../../../../../shared/src/telemetry/telemetryService'
 import { property, isDefined } from '../../../../../../shared/src/util/types'
 import { useObservable } from '../../../../../../shared/src/util/useObservable'
+import { ChangesetFields } from '../../../../graphql-operations'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
     campaign: Pick<GQL.ICampaign, 'id' | 'closedAt' | 'viewerCanAdminister'>
@@ -37,7 +38,7 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
     changesetUpdates: Subject<void>
 
     /** For testing only. */
-    queryChangesets?: (campaignID: GQL.ID, args: FilteredConnectionQueryArgs) => Observable<Connection<GQL.Changeset>>
+    queryChangesets?: typeof _queryChangesets
 }
 
 function getLSPTextDocumentPositionParameters(
@@ -68,7 +69,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
     telemetryService,
     queryChangesets = _queryChangesets,
 }) => {
-    const [state, setState] = useState<GQL.ChangesetState | undefined>()
+    const [externalState, setExternalState] = useState<GQL.ChangesetExternalState | undefined>()
     const [reviewState, setReviewState] = useState<GQL.ChangesetReviewState | undefined>()
     const [checkState, setCheckState] = useState<GQL.ChangesetCheckState | undefined>()
 
@@ -76,12 +77,16 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
         (args: FilteredConnectionQueryArgs) =>
             merge(of(undefined), changesetUpdates).pipe(
                 switchMap(() =>
-                    queryChangesets(campaign.id, { ...args, state, reviewState, checkState }).pipe(
-                        repeatWhen(notifier => notifier.pipe(delay(5000)))
-                    )
+                    queryChangesets({
+                        first: args.first ?? null,
+                        campaign: campaign.id,
+                        externalState: externalState ?? null,
+                        reviewState: reviewState ?? null,
+                        checkState: checkState ?? null,
+                    }).pipe(repeatWhen(notifier => notifier.pipe(delay(5000))))
                 )
             ),
-        [campaign.id, state, reviewState, checkState, queryChangesets, changesetUpdates]
+        [campaign.id, externalState, reviewState, checkState, queryChangesets, changesetUpdates]
     )
 
     const containerElements = useMemo(() => new Subject<HTMLElement | null>(), [])
@@ -143,12 +148,14 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
             <label htmlFor="changeset-state-filter">State</label>
             <select
                 className="form-control mx-2"
-                value={state}
-                onChange={event => setState((event.target.value || undefined) as GQL.ChangesetState | undefined)}
+                value={externalState}
+                onChange={event =>
+                    setExternalState((event.target.value || undefined) as GQL.ChangesetExternalState | undefined)
+                }
                 id="changeset-state-filter"
             >
                 <option value="">All</option>
-                {Object.values(GQL.ChangesetState).map(state => (
+                {Object.values(GQL.ChangesetExternalState).map(state => (
                     <option value={state} key={state}>
                         {upperFirst(lowerCase(state))}
                     </option>
@@ -193,7 +200,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
         <>
             {changesetFiltersRow}
             <div className="list-group position-relative" ref={nextContainerElement}>
-                <FilteredConnection<GQL.Changeset, Omit<ChangesetNodeProps, 'node'>>
+                <FilteredConnection<ChangesetFields, Omit<ChangesetNodeProps, 'node'>>
                     className="mt-2"
                     nodeComponent={ChangesetNode}
                     nodeComponentProps={{

@@ -16,9 +16,8 @@ import (
 // path is a prefix are returned. These dump IDs should be subsequently passed to invocations of
 // Definitions, References, and Hover.
 func (api *codeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) ([]store.Dump, error) {
-	// See if we know about this commit. If not, we need to update our commits table
-	// and the visibility of the dumps in this repository.
-	if err := api.updateCommitsAndVisibility(ctx, repositoryID, commit); err != nil {
+	ok, err := api.updateCommitGraph(ctx, repositoryID, commit)
+	if err != nil || !ok {
 		return nil, err
 	}
 
@@ -56,32 +55,41 @@ func (api *codeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int,
 	return dumps, nil
 }
 
-// updateCommits updates the lsif_commits table with the current data known to gitserver, then updates the
-// visibility of all dumps for the given repository.
-func (api *codeIntelAPI) updateCommitsAndVisibility(ctx context.Context, repositoryID int, commit string) error {
+// updateCommitGraph will perform an update of the given repository's commit graph if it appears to be out
+// of date. If we know already know about this commit, we do not perform an update. Otherwise, it is likely
+// that a user is browsing a commit that was pushed after commit that owns the last index we processed. If
+// the repository has no index data at all, we skip the update and return false as there would be no useful
+// information available in the commit graph.
+func (api *codeIntelAPI) updateCommitGraph(ctx context.Context, repositoryID int, commit string) (bool, error) {
 	commitExists, err := api.store.HasCommit(ctx, repositoryID, commit)
 	if err != nil {
-		return errors.Wrap(err, "store.HasCommit")
+		return false, errors.Wrap(err, "store.HasCommit")
 	}
 	if commitExists {
-		return nil
+		return true, nil
 	}
 
-	newCommits, err := api.gitserverClient.CommitsNear(ctx, api.store, repositoryID, commit)
+	repositoryExists, err := api.store.HasRepository(ctx, repositoryID)
 	if err != nil {
-		return errors.Wrap(err, "gitserverClient.CommitsNear")
+		return false, errors.Wrap(err, "store.HasRepository")
 	}
-	if err := api.store.UpdateCommits(ctx, repositoryID, newCommits); err != nil {
-		return errors.Wrap(err, "store.UpdateCommits")
-	}
-
-	tipCommit, err := api.gitserverClient.Head(ctx, api.store, repositoryID)
-	if err != nil {
-		return errors.Wrap(err, "gitserverClient.Head")
-	}
-	if err := api.store.UpdateDumpsVisibleFromTip(ctx, repositoryID, tipCommit); err != nil {
-		return errors.Wrap(err, "store.UpdateDumpsVisibleFromTip")
+	if !repositoryExists {
+		return false, nil
 	}
 
-	return nil
+	// If we are not aware of this commit, we need to update our commits table and the
+	// visibility of the dumps in this repository.
+	if err := api.commitUpdater.Update(ctx, repositoryID, func(ctx context.Context) (bool, error) {
+		hasCommit, err := api.store.HasCommit(ctx, repositoryID, commit)
+		if err != nil {
+			return false, err
+		}
+
+		// Continue with the update if we don't have this commit
+		return !hasCommit, nil
+	}); err != nil {
+		return false, errors.Wrap(err, "commitUpdater.Update")
+	}
+
+	return true, nil
 }

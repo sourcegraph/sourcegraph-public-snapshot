@@ -71,9 +71,6 @@ type SearchImplementer interface {
 
 // NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
 func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
-	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
-	defer tr.Finish()
-
 	settings, err := decodedViewerFinalSettings(ctx)
 	if err != nil {
 		return nil, err

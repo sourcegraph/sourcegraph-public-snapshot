@@ -1,6 +1,7 @@
 package query
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 
@@ -470,6 +471,34 @@ func TestTranslateGlobToRegex(t *testing.T) {
 			input: "",
 			want:  "",
 		},
+		{
+			input: "[!a]",
+			want:  "^[^a]$",
+		},
+		{
+			input: "fo[a-b-c]",
+			want:  "^fo[a-b-c]$",
+		},
+		{
+			input: "[a-z--0]",
+			want:  "^[a-z--0]$",
+		},
+		{
+			input: "[^ab]",
+			want:  "^[//^ab]$",
+		},
+		{
+			input: "[^-z]",
+			want:  "^[//^-z]$",
+		},
+		{
+			input: "[a^b]",
+			want:  "^[a^b]$",
+		},
+		{
+			input: "[ab^]",
+			want:  "^[ab^]$",
+		},
 	}
 
 	for _, c := range cases {
@@ -481,6 +510,10 @@ func TestTranslateGlobToRegex(t *testing.T) {
 			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)
 			}
+
+			if _, err := regexp.Compile(got); err != nil {
+				t.Fatal(err)
+			}
 		})
 	}
 }
@@ -489,12 +522,13 @@ func TestTranslateBadGlobPattern(t *testing.T) {
 	cases := []struct {
 		input string
 	}{
-		{input: "fo[a-b-c]"},
 		{input: "fo\\o"},
 		{input: "fo[o"},
 		{input: "[z-a]"},
-		{input: "[a-z--0]"},
 		{input: "0[0300z0_0]\\"},
+		{input: "[!]"},
+		{input: "0["},
+		{input: "[]"},
 	}
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
