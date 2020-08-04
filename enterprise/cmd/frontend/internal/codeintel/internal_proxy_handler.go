@@ -47,9 +47,9 @@ func newInternalProxyHandler() (func() http.Handler, error) {
 		base := mux.NewRouter().PathPrefix("/.internal-code-intel/").Subrouter()
 		base.StrictSlash(true)
 
-		base.Path("/git/{rest:.*}").Handler(internalProxyAuthTokenMiddleware(reverseProxy(frontendOrigin)))
-		base.Path("/index-queue/{rest:.*}").Handler(internalProxyAuthTokenMiddleware(reverseProxy(indexerOrigin)))
-		return base
+		base.Path("/git/{rest:.*}").Handler(reverseProxy(frontendOrigin))
+		base.Path("/index-queue/{rest:.*}").Handler(reverseProxy(indexerOrigin))
+		return internalProxyAuthTokenMiddleware(base)
 	}
 
 	return factory, nil
