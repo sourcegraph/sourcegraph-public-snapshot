@@ -61,6 +61,9 @@ func internalProxyAuthTokenMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, token, ok := r.BasicAuth()
 		if !ok {
+			// This header is required to be present with 401 responses in order to prompt the client
+			// to retry the request with basic auth credentials. If we do not send this header, the
+			// git fetch/clone flow will break against the internal gitservice with a permanent 401.
 			w.Header().Add("WWW-Authenticate", `Basic realm="Sourcegraph"`)
 			w.WriteHeader(http.StatusUnauthorized)
 			return
