@@ -1118,6 +1118,41 @@ func TestServiceApplyCampaign(t *testing.T) {
 				t.Fatalf("expected changeset to be deleted but was not")
 			}
 		})
+
+		t.Run("missing repository permissions", func(t *testing.T) {
+			// Single repository filtered out by authzFilter
+			ct.AuthzFilterRepos(t, repos[1].ID)
+
+			campaignSpec := createCampaignSpec(t, ctx, store, "missing-permissions", admin.ID)
+
+			createChangesetSpec(t, ctx, store, testSpecOpts{
+				user:         admin.ID,
+				repo:         repos[0].ID,
+				campaignSpec: campaignSpec.ID,
+				externalID:   "1234",
+			})
+
+			createChangesetSpec(t, ctx, store, testSpecOpts{
+				user:         admin.ID,
+				repo:         repos[1].ID, // Filtered out by authzFilter
+				campaignSpec: campaignSpec.ID,
+				headRef:      "refs/heads/my-branch",
+			})
+
+			_, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+				CampaignSpecRandID: campaignSpec.RandID,
+			})
+			if err == nil {
+				t.Fatal("expected error, but got none")
+			}
+			notFoundErr, ok := err.(*db.RepoNotFoundErr)
+			if !ok {
+				t.Fatalf("expected RepoNotFoundErr but got: %s", err)
+			}
+			if notFoundErr.ID != repos[1].ID {
+				t.Fatalf("wrong repository ID in RepoNotFoundErr: %d", notFoundErr.ID)
+			}
+		})
 	})
 }
 
