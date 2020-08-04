@@ -96,7 +96,7 @@ func Frontend() *Container {
 							Query:           `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route!="raw",route!="blob",route!~"graphql.*"}[10m])))`,
 							DataMayNotExist: true,
 							Critical:        Alert{GreaterOrEqual: 2},
-							PanelOptions:    PanelOptions().LegendFormat("latency"),
+							PanelOptions:    PanelOptions().LegendFormat("latency").Unit(Seconds),
 							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
 								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
@@ -109,7 +109,7 @@ func Frontend() *Container {
 							Query:           `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route="blob"}[10m])))`,
 							DataMayNotExist: true,
 							Critical:        Alert{GreaterOrEqual: 2},
-							PanelOptions:    PanelOptions().LegendFormat("latency"),
+							PanelOptions:    PanelOptions().LegendFormat("latency").Unit(Seconds),
 							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
 								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
