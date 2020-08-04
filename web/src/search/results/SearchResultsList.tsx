@@ -432,7 +432,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                                             this.props.patternType,
                                                                             this.props.caseSensitive,
                                                                             this.props.versionContext,
-                                                                            this.props.filtersInQuery
+                                                                            {}
                                                                         )
                                                                     }
                                                                 >
