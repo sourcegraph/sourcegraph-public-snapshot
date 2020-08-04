@@ -120,6 +120,8 @@ func syncExternalService(ctx context.Context, svc *types.ExternalService) error 
 		CreatedAt:   svc.CreatedAt,
 		UpdatedAt:   svc.UpdatedAt,
 		DeletedAt:   svc.DeletedAt,
+		LastSyncAt:  svc.LastSyncAt,
+		NextSyncAt:  svc.NextSyncAt,
 	})
 	if err != nil && ctx.Err() == nil {
 		return err

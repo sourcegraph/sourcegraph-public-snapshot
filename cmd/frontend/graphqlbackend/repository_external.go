@@ -58,6 +58,8 @@ func newExternalServices(es ...api.ExternalService) []*types.ExternalService {
 			CreatedAt:   e.CreatedAt,
 			UpdatedAt:   e.UpdatedAt,
 			DeletedAt:   e.DeletedAt,
+			LastSyncAt:  e.LastSyncAt,
+			NextSyncAt:  e.NextSyncAt,
 		}
 
 		svcs = append(svcs, svc)

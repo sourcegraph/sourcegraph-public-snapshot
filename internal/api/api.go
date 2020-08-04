@@ -123,6 +123,8 @@ type ExternalService struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	DeletedAt   *time.Time
+	LastSyncAt  *time.Time
+	NextSyncAt  *time.Time
 }
 
 func cmp(a, b string) int {
