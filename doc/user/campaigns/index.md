@@ -39,8 +39,8 @@ The generic term **changeset** is used to refer to any of the following:
 
 - GitHub pull requests
 - Bitbucket Server pull requests
+- GitLab merge requests
 - Bitbucket Cloud pull requests (not yet supported)
-- GitLab merge requests (not yet supported)
 - Phabricator diffs (not yet supported)
 - Gerrit changes (not yet supported)
 

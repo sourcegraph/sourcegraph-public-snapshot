@@ -54,18 +54,6 @@ var changesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.num_resets"),
 }
 
-// CreateChangesets creates the given Changesets in a loop.
-// If inserting one changeset fails, the error is returned. If you want to
-// ensure that all-or-none changesets are inserted, use a transaction.
-func (s *Store) CreateChangesets(ctx context.Context, cs ...*campaigns.Changeset) error {
-	for _, c := range cs {
-		if err := s.CreateChangeset(ctx, c); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // CreateChangeset creates the given Changeset.
 func (s *Store) CreateChangeset(ctx context.Context, c *campaigns.Changeset) error {
 	q, err := s.createChangesetQuery(c)
@@ -552,16 +540,6 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 		listChangesetsQueryFmtstr+limitClause,
 		sqlf.Join(preds, "\n AND "),
 	)
-}
-
-// UpdateChangesets updates the given Changesets.
-func (s *Store) UpdateChangesets(ctx context.Context, cs ...*campaigns.Changeset) error {
-	for _, c := range cs {
-		if err := s.UpdateChangeset(ctx, c); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // UpdateChangeset updates the given Changeset.

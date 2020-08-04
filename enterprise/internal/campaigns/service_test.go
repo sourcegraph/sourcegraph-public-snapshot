@@ -68,7 +68,7 @@ func TestServicePermissionLevels(t *testing.T) {
 		}
 
 		changeset := testChangeset(rs[0].ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
-		if err := s.CreateChangesets(ctx, changeset); err != nil {
+		if err := s.CreateChangeset(ctx, changeset); err != nil {
 			t.Fatal(err)
 		}
 
@@ -288,7 +288,7 @@ func TestService(t *testing.T) {
 		}
 
 		changeset := testChangeset(rs[0].ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
-		if err = store.CreateChangesets(ctx, changeset); err != nil {
+		if err = store.CreateChangeset(ctx, changeset); err != nil {
 			t.Fatal(err)
 		}
 
@@ -326,8 +326,11 @@ func TestService(t *testing.T) {
 
 	t.Run("CloseOpenChangesets", func(t *testing.T) {
 		changeset1 := testChangeset(rs[0].ID, 0, campaigns.ChangesetExternalStateOpen)
+		if err = store.CreateChangeset(ctx, changeset1); err != nil {
+			t.Fatal(err)
+		}
 		changeset2 := testChangeset(rs[1].ID, 0, campaigns.ChangesetExternalStateOpen)
-		if err = store.CreateChangesets(ctx, changeset1, changeset2); err != nil {
+		if err = store.CreateChangeset(ctx, changeset2); err != nil {
 			t.Fatal(err)
 		}
 
@@ -843,7 +846,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 		MockSyncChangesets = func(_ context.Context, _ RepoStore, tx SyncStore, _ *httpcli.Factory, cs ...*campaigns.Changeset) error {
 			for _, c := range cs {
 				c.ExternalBranch = syncedBranchName
-				if err := tx.UpdateChangesets(ctx, c); err != nil {
+				if err := tx.UpdateChangeset(ctx, c); err != nil {
 					return err
 				}
 			}
@@ -1562,7 +1565,7 @@ func setChangesetPublished(t *testing.T, ctx context.Context, s *Store, c *campa
 	c.PublicationState = campaigns.ChangesetPublicationStatePublished
 	c.ReconcilerState = campaigns.ReconcilerStateCompleted
 
-	if err := s.UpdateChangesets(ctx, c); err != nil {
+	if err := s.UpdateChangeset(ctx, c); err != nil {
 		t.Fatalf("failed to update changeset: %s", err)
 	}
 }

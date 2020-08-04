@@ -100,16 +100,14 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				th.DiffStatDeleted = &deleted
 			}
 
+			if err := s.CreateChangeset(ctx, th); err != nil {
+				t.Fatal(err)
+			}
+
 			changesets = append(changesets, th)
 		}
 
-		err := s.CreateChangesets(ctx, changesets...)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		err = s.CreateChangesets(ctx, deletedRepoChangeset)
-		if err != nil {
+		if err := s.CreateChangeset(ctx, deletedRepoChangeset); err != nil {
 			t.Fatal(err)
 		}
 
@@ -513,7 +511,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			ExternalCheckState:  "",
 		}
 
-		err := s.CreateChangesets(ctx, cs)
+		err := s.CreateChangeset(ctx, cs)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -634,14 +632,15 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			c.ProcessAfter = clock.now()
 			c.NumResets = 99
 
-			have = append(have, c.Clone())
+			clone := c.Clone()
+			have = append(have, clone)
 
 			c.UpdatedAt = clock.now()
 			want = append(want, c)
-		}
 
-		if err := s.UpdateChangesets(ctx, have...); err != nil {
-			t.Fatal(err)
+			if err := s.UpdateChangeset(ctx, clone); err != nil {
+				t.Fatal(err)
+			}
 		}
 
 		if diff := cmp.Diff(have, want); diff != "" {
@@ -651,10 +650,11 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		for i := range have {
 			// Test that duplicates are not introduced.
 			have[i].CampaignIDs = append(have[i].CampaignIDs, have[i].CampaignIDs...)
-		}
 
-		if err := s.UpdateChangesets(ctx, have...); err != nil {
-			t.Fatal(err)
+			if err := s.UpdateChangeset(ctx, have[i]); err != nil {
+				t.Fatal(err)
+			}
+
 		}
 
 		if diff := cmp.Diff(have, want); diff != "" {
@@ -665,10 +665,11 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			// Test we can add to the set.
 			have[i].CampaignIDs = append(have[i].CampaignIDs, 42)
 			want[i].CampaignIDs = append(want[i].CampaignIDs, 42)
-		}
 
-		if err := s.UpdateChangesets(ctx, have...); err != nil {
-			t.Fatal(err)
+			if err := s.UpdateChangeset(ctx, have[i]); err != nil {
+				t.Fatal(err)
+			}
+
 		}
 
 		for i := range have {
@@ -685,10 +686,10 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			// Test we can remove from the set.
 			have[i].CampaignIDs = have[i].CampaignIDs[:0]
 			want[i].CampaignIDs = want[i].CampaignIDs[:0]
-		}
 
-		if err := s.UpdateChangesets(ctx, have...); err != nil {
-			t.Fatal(err)
+			if err := s.UpdateChangeset(ctx, have[i]); err != nil {
+				t.Fatal(err)
+			}
 		}
 
 		if diff := cmp.Diff(have, want); diff != "" {
@@ -702,14 +703,16 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			c.Metadata = &gitlab.MergeRequest{ID: 1234, IID: 123}
 			c.ExternalServiceType = extsvc.TypeGitLab
 
-			have = append(have, c.Clone())
+			clone := c.Clone()
+			have = append(have, clone)
 
 			c.UpdatedAt = clock.now()
 			want = append(want, c)
-		}
 
-		if err := s.UpdateChangesets(ctx, have...); err != nil {
-			t.Fatal(err)
+			if err := s.UpdateChangeset(ctx, clone); err != nil {
+				t.Fatal(err)
+			}
+
 		}
 
 		if diff := cmp.Diff(have, want); diff != "" {
@@ -762,7 +765,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 	events := make([]*cmpgn.ChangesetEvent, 0)
 
 	for i := 0; i < cap(changesets); i++ {
-		changesets = append(changesets, &cmpgn.Changeset{
+		ch := &cmpgn.Changeset{
 			RepoID:              repo.ID,
 			CreatedAt:           clock.now(),
 			UpdatedAt:           clock.now(),
@@ -777,12 +780,13 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 			ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
 			PublicationState:    cmpgn.ChangesetPublicationStatePublished,
 			ReconcilerState:     cmpgn.ReconcilerStateCompleted,
-		})
-	}
+		}
 
-	err := s.CreateChangesets(ctx, changesets...)
-	if err != nil {
-		t.Fatal(err)
+		if err := s.CreateChangeset(ctx, ch); err != nil {
+			t.Fatal(err)
+		}
+
+		changesets = append(changesets, ch)
 	}
 
 	// We need campaigns attached to each changeset
@@ -798,10 +802,9 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		}
 		cs.CampaignIDs = []int64{c.ID}
 
-	}
-
-	if err := s.UpdateChangesets(ctx, changesets...); err != nil {
-		t.Fatal(err)
+		if err := s.UpdateChangeset(ctx, cs); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	// The changesets, except one, get changeset events
@@ -816,8 +819,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 
 		events = append(events, e)
 	}
-	err = s.UpsertChangesetEvents(ctx, events...)
-	if err != nil {
+	if err := s.UpsertChangesetEvents(ctx, events...); err != nil {
 		t.Fatal(err)
 	}
 

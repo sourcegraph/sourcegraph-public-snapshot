@@ -518,7 +518,7 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 						ReconcilerState:  campaigns.ReconcilerStateCompleted,
 					}
 
-					if err = tx.CreateChangesets(ctx, newChangeset); err != nil {
+					if err = tx.CreateChangeset(ctx, newChangeset); err != nil {
 						return nil, err
 					}
 
@@ -566,7 +566,7 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 				ReconcilerState:  campaigns.ReconcilerStateQueued,
 			}
 
-			if err = tx.CreateChangesets(ctx, newChangeset); err != nil {
+			if err = tx.CreateChangeset(ctx, newChangeset); err != nil {
 				return nil, err
 			}
 			attachedChangesets[newChangeset.ID] = true
