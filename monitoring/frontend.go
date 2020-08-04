@@ -100,7 +100,7 @@ func Frontend() *Container {
 							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
 								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
-								- Trace a request to see what is the slowest part - refer to: https://docs.sourcegraph.com/admin/observability/tracing
+								- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
 							`,
 						},
 						{
