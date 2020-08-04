@@ -377,7 +377,7 @@ func TestTranslateGlobToRegex(t *testing.T) {
 	}{
 		{
 			input: "*",
-			want:  "^[^/]*?",
+			want:  "^[^/]*?$",
 		},
 		{
 			input: "*repo",

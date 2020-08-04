@@ -134,10 +134,18 @@ func globToRegex(value string) (string, error) {
 	for i = 0; i < l; i++ {
 		switch r[i] {
 		case '*':
+			// **
 			if i < l-1 && r[i+1] == '*' {
 				sb.WriteString(".*?")
 			} else {
+				// *
+				if i == 0 {
+					sb.WriteRune('^')
+				}
 				sb.WriteString("[^/]*?")
+				if i == l-1 {
+					sb.WriteRune('$')
+				}
 			}
 			// Skip repeated '*'.
 			for i < l-1 && r[i+1] == '*' {
