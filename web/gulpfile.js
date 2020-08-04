@@ -79,9 +79,7 @@ async function webpackDevelopmentServer() {
 /**
  * Builds everything.
  */
-const build = gulp.parallel(
-  gulp.series(gulp.parallel(schema, graphQlOperations, graphQlSchema), gulp.parallel(webpack))
-)
+const build = gulp.series(gulp.parallel(schema, graphQlOperations, graphQlSchema), gulp.parallel(webpack))
 
 /**
  * Watches everything and rebuilds on file changes.
