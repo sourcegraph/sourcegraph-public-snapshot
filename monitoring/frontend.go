@@ -281,7 +281,7 @@ func Frontend() *Container {
 						{
 							Name:            "search_api_alert_user_suggestions",
 							Description:     "search API alert user suggestions shown every 5m",
-							Query:           `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out",source="other"}[5m]))`,
+							Query:           `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out|no_results__suggest_quotes",source="other"}[5m]))`,
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 50},
 							PanelOptions:    PanelOptions().LegendFormat("{{alert_type}}"),
