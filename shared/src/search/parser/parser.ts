@@ -212,7 +212,11 @@ const character = (character: string): Parser<Literal> => (input, start) => {
  * Returns a {@link Parser} that will attempt to parse
  * tokens matching the given RegExp pattern in a search query.
  */
-const pattern = <T = Literal>(regexp: RegExp, output?: T, expected?: string): Parser<T> => {
+const pattern = <T extends Token = Literal>(
+    regexp: RegExp,
+    output?: T | ((input: string, range: CharacterRange) => T),
+    expected?: string
+): Parser<T> => {
     if (!regexp.source.startsWith('^')) {
         regexp = new RegExp(`^${regexp.source}`)
     }
@@ -225,10 +229,15 @@ const pattern = <T = Literal>(regexp: RegExp, output?: T, expected?: string): Pa
         if (!match) {
             return { type: 'error', expected: expected || `/${regexp.source}/`, at: start }
         }
+        const range = { start, end: start + match[0].length }
         return {
             type: 'success',
-            range: { start, end: start + match[0].length },
-            token: (output || { type: 'literal', value: match[0] }) as T,
+            range,
+            token: output
+                ? typeof output === 'function'
+                    ? output(input, range)
+                    : output
+                : ({ type: 'literal', value: match[0] } as T),
         }
     }
 }
@@ -237,7 +246,10 @@ const whitespace = pattern(/\s+/, { type: 'whitespace' as const }, 'whitespace')
 
 const literal = pattern(/[^\s)]+/)
 
-const operator = pattern(/(and|AND|or|OR|not|NOT)/, { type: 'operator' as const })
+const operator = pattern(
+    /(and|AND|or|OR|not|NOT)/,
+    (input, { start, end }): Operator => ({ type: 'operator', value: input.slice(start, end) })
+)
 
 const filterKeyword = pattern(/-?[A-Za-z]+(?=:)/)
 

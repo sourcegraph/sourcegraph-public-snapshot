@@ -610,6 +610,7 @@ describe('parseSearchQuery()', () => {
                         },
                         token: {
                             type: 'operator',
+                            value: 'and',
                         },
                     },
                     {
