@@ -341,21 +341,24 @@ Check constraints:
 
 # Table "public.external_services"
 ```
-    Column    |           Type           |                           Modifiers                            
---------------+--------------------------+----------------------------------------------------------------
- id           | bigint                   | not null default nextval('external_services_id_seq'::regclass)
- kind         | text                     | not null
- display_name | text                     | not null
- config       | text                     | not null
- created_at   | timestamp with time zone | not null default now()
- updated_at   | timestamp with time zone | not null default now()
- deleted_at   | timestamp with time zone | 
- last_sync_at | timestamp with time zone | 
- next_sync_at | timestamp with time zone | 
+      Column       |           Type           |                           Modifiers                            
+-------------------+--------------------------+----------------------------------------------------------------
+ id                | bigint                   | not null default nextval('external_services_id_seq'::regclass)
+ kind              | text                     | not null
+ display_name      | text                     | not null
+ config            | text                     | not null
+ created_at        | timestamp with time zone | not null default now()
+ updated_at        | timestamp with time zone | not null default now()
+ deleted_at        | timestamp with time zone | 
+ last_sync_at      | timestamp with time zone | 
+ next_sync_at      | timestamp with time zone | 
+ namespace_user_id | integer                  | 
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
 Check constraints:
     "check_non_empty_config" CHECK (btrim(config) <> ''::text)
+Foreign-key constraints:
+    "external_services_namepspace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -1034,6 +1037,7 @@ Referenced by:
     TABLE "discussion_comments" CONSTRAINT "discussion_comments_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "discussion_mail_reply_tokens" CONSTRAINT "discussion_mail_reply_tokens_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "discussion_threads" CONSTRAINT "discussion_threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
+    TABLE "external_services" CONSTRAINT "external_services_namepspace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "names" CONSTRAINT "names_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "org_invitations" CONSTRAINT "org_invitations_recipient_user_id_fkey" FOREIGN KEY (recipient_user_id) REFERENCES users(id)
     TABLE "org_invitations" CONSTRAINT "org_invitations_sender_user_id_fkey" FOREIGN KEY (sender_user_id) REFERENCES users(id)
