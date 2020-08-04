@@ -76,8 +76,11 @@ export function queryIndexOfScope(query: string, scope: string): number {
             break
         }
 
+        const boundAtStart = index === 0 || query[index - 1] === ' '
+        const boundAtEnd = index + scope.length === query.length || query[index + scope.length] === ' '
+
         // prevent matching scopes that are substrings of other scopes
-        if (index > 0 && query[index - 1] !== ' ') {
+        if (!boundAtStart || !boundAtEnd) {
             index = index + 1
         } else {
             break
