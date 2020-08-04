@@ -23,7 +23,7 @@ var internalProxyAuthToken = env.Get("PRECISE_CODE_INTEL_INTERNAL_PROXY_AUTH_TOK
 func makeInternalProxyHandlerFactory() (func() http.Handler, error) {
 	host, port, err := net.SplitHostPort(envvar.HTTPAddrInternal)
 	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("failed to parse internal API address '%s'", envvar.HTTPAddrInternal))
+		return nil, errors.Wrap(err, fmt.Sprintf("failed to parse internal API address %q", envvar.HTTPAddrInternal))
 	}
 	if host == "" {
 		host = "127.0.0.1"
