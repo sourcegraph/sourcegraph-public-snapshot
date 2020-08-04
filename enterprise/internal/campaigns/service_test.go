@@ -59,7 +59,7 @@ func TestServicePermissionLevels(t *testing.T) {
 		t.Fatalf("user cannot be site admin")
 	}
 
-	rs := createTestRepos(t, ctx, dbconn.Global)
+	rs, _ := createTestRepos(t, ctx, dbconn.Global, 1)
 
 	createTestData := func(t *testing.T, s *Store, svc *Service, author int32) (*campaigns.Campaign, *campaigns.Changeset, *campaigns.CampaignSpec) {
 		campaign := testCampaign(author)
@@ -713,7 +713,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 		t.Fatal("user is admin, want non-admin")
 	}
 
-	repos := createTestRepos(t, ctx, dbconn.Global)
+	repos, _ := createTestRepos(t, ctx, dbconn.Global, 4)
 
 	store := NewStore(dbconn.Global)
 	svc := NewService(store, httpcli.NewExternalHTTPClientFactory())
@@ -839,7 +839,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 		// We need to mock SyncChangesets because ApplyCampaign syncs
 		// changesets. Once that moves to the background, we can remove this
 		// mock.
-		syncedBranchName := "synced-branch-name"
+		syncedBranchName := "refs/heads/synced-branch-name"
 		MockSyncChangesets = func(_ context.Context, _ RepoStore, tx SyncStore, _ *httpcli.Factory, cs ...*campaigns.Changeset) error {
 			for _, c := range cs {
 				c.ExternalBranch = syncedBranchName
@@ -1225,8 +1225,17 @@ type testSpecOpts struct {
 	externalID string
 
 	// If this is set, the changesetSpec will be a "create commit on this
-	// branch" changeset.
+	// branch" changeset spec.
 	headRef string
+
+	// If this is set along with headRef, the changesetSpec will have published
+	// set.
+	published bool
+
+	title         string
+	body          string
+	commitMessage string
+	commitDiff    string
 }
 
 func createChangesetSpec(
@@ -1243,11 +1252,22 @@ func createChangesetSpec(
 		CampaignSpecID: opts.campaignSpec,
 		Spec: &campaigns.ChangesetSpecDescription{
 			BaseRepository: graphqlbackend.MarshalRepositoryID(opts.repo),
+
+			ExternalID: opts.externalID,
+			HeadRef:    opts.headRef,
+			Published:  opts.published,
+
+			Title: opts.title,
+			Body:  opts.body,
+
+			Commits: []campaigns.GitCommitDescription{
+				{
+					Message: opts.commitMessage,
+					Diff:    opts.commitDiff,
+				},
+			},
 		},
 	}
-
-	spec.Spec.ExternalID = opts.externalID
-	spec.Spec.HeadRef = opts.headRef
 
 	if err := store.CreateChangesetSpec(ctx, spec); err != nil {
 		t.Fatal(err)
@@ -1256,7 +1276,7 @@ func createChangesetSpec(
 	return spec
 }
 
-func createTestRepos(t *testing.T, ctx context.Context, db *sql.DB) []*repos.Repo {
+func createTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*repos.Repo, *repos.ExternalService) {
 	t.Helper()
 
 	rstore := repos.NewDBStore(db, sql.TxOptions{})
@@ -1274,7 +1294,7 @@ func createTestRepos(t *testing.T, ctx context.Context, db *sql.DB) []*repos.Rep
 	}
 
 	var rs []*repos.Repo
-	for i := 0; i < 4; i++ {
+	for i := 0; i < count; i++ {
 		r := testRepo(i, extsvc.TypeGitHub)
 		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
 
@@ -1286,26 +1306,57 @@ func createTestRepos(t *testing.T, ctx context.Context, db *sql.DB) []*repos.Rep
 		t.Fatal(err)
 	}
 
-	return rs
+	return rs, ext
 }
 
-func createChangesetWithSpec(
-	repoID api.RepoID,
-	campaign int64,
-	externalID string,
-	spec int64,
-	extState campaigns.ChangesetExternalState,
-) *campaigns.Changeset {
+type testChangesetOpts struct {
+	repo         api.RepoID
+	campaign     int64
+	currentSpec  int64
+	previousSpec int64
 
-	changeset := &campaigns.Changeset{
-		RepoID:              repoID,
-		ExternalServiceType: extsvc.TypeGitHub,
-		ExternalID:          externalID,
-		CurrentSpecID:       spec,
+	externalServiceType string
+	externalID          string
+	externalBranch      string
+	publicationState    campaigns.ChangesetPublicationState
+
+	createdByCampaign bool
+	ownedByCampaign   int64
+}
+
+func createChangeset(
+	t *testing.T,
+	ctx context.Context,
+	store *Store,
+	opts testChangesetOpts,
+) *campaigns.Changeset {
+	t.Helper()
+
+	if opts.externalServiceType == "" {
+		opts.externalServiceType = extsvc.TypeGitHub
 	}
 
-	if campaign != 0 {
-		changeset.CampaignIDs = []int64{campaign}
+	changeset := &campaigns.Changeset{
+		RepoID:         opts.repo,
+		CurrentSpecID:  opts.currentSpec,
+		PreviousSpecID: opts.previousSpec,
+
+		ExternalServiceType: opts.externalServiceType,
+		ExternalID:          opts.externalID,
+		ExternalBranch:      opts.externalBranch,
+
+		PublicationState: opts.publicationState,
+
+		CreatedByCampaign: opts.createdByCampaign,
+		OwnedByCampaignID: opts.ownedByCampaign,
+	}
+
+	if opts.campaign != 0 {
+		changeset.CampaignIDs = []int64{opts.campaign}
+	}
+
+	if err := store.CreateChangeset(ctx, changeset); err != nil {
+		t.Fatalf("creating changeset failed: %s", err)
 	}
 
 	return changeset
@@ -1320,6 +1371,9 @@ type changesetAssertions struct {
 	publicationState campaigns.ChangesetPublicationState
 	externalID       string
 	externalBranch   string
+
+	title string
+	body  string
 }
 
 func assertChangeset(t *testing.T, c *campaigns.Changeset, a changesetAssertions) {
@@ -1359,6 +1413,28 @@ func assertChangeset(t *testing.T, c *campaigns.Changeset, a changesetAssertions
 
 	if have, want := c.ExternalBranch, a.externalBranch; have != want {
 		t.Fatalf("changeset ExternalBranch wrong. want=%s, have=%s", want, have)
+	}
+
+	if want := a.title; want != "" {
+		have, err := c.Title()
+		if err != nil {
+			t.Fatalf("changeset.Title failed: %s", err)
+		}
+
+		if have != want {
+			t.Fatalf("changeset Title wrong. want=%s, have=%s", want, have)
+		}
+	}
+
+	if want := a.body; want != "" {
+		have, err := c.Body()
+		if err != nil {
+			t.Fatalf("changeset.Body failed: %s", err)
+		}
+
+		if have != want {
+			t.Fatalf("changeset Body wrong. want=%s, have=%s", want, have)
+		}
 	}
 }
 

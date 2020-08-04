@@ -53,7 +53,7 @@ func (r *reconciler) HandlerFunc() workerutil.HandlerFunc {
 // (through the HandlerFunc) will set the changeset's ReconcilerState to
 // errored and set its FailureMessage to the error.
 func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Changeset) error {
-	log15.Warn("Processing changeset", "changeset", ch.ID)
+	log15.Info("Processing changeset", "changeset", ch.ID)
 
 	action, err := determineAction(ctx, tx, ch)
 	if err != nil {
@@ -62,7 +62,7 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 
 	switch action.actionType {
 	case actionPublish:
-		log15.Warn("Publishing", "changeset", ch.ID)
+		log15.Info("Publishing", "changeset", ch.ID)
 		if err := r.publishChangeset(ctx, tx, ch, action.spec); err != nil {
 			return err
 		}
@@ -71,10 +71,10 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 		if err != nil {
 			return err
 		}
-		log15.Warn("Published changeset", "url", u)
+		log15.Info("Published changeset", "url", u)
 
 	case actionUpdate:
-		log15.Warn("Updating", "changeset", ch.ID, "delta", action.delta.String())
+		log15.Info("Updating", "changeset", ch.ID, "delta", action.delta.String())
 
 		if err := r.updateChangeset(ctx, tx, ch, action.spec, action.delta); err != nil {
 			return err
@@ -84,10 +84,10 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 			return err
 		}
 
-		log15.Warn("Updated changeset", "url", u)
+		log15.Info("Updated changeset", "url", u)
 
 	case actionNone:
-		log15.Warn("No action", "changeset", ch.ID)
+		log15.Info("No action", "changeset", ch.ID)
 
 	default:
 		return fmt.Errorf("Reconciler action %q not implemented", action.actionType)
@@ -159,7 +159,6 @@ func (r *reconciler) publishChangeset(ctx context.Context, tx *Store, ch *campai
 		return err
 	}
 
-	ch.ExternalBranch = ref
 	ch.CreatedByCampaign = true
 	ch.PublicationState = campaigns.ChangesetPublicationStatePublished
 	return tx.UpdateChangeset(ctx, ch)
@@ -205,7 +204,7 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 		Title:     spec.Spec.Title,
 		Body:      spec.Spec.Body,
 		BaseRef:   spec.Spec.BaseRef,
-		HeadRef:   spec.Spec.HeadRef,
+		HeadRef:   git.EnsureRefPrefix(spec.Spec.HeadRef),
 		Repo:      repo,
 		Changeset: ch,
 	}
@@ -349,6 +348,7 @@ func determineAction(ctx context.Context, tx *Store, ch *campaigns.Changeset) (r
 	if err != nil {
 		return action, err
 	}
+	action.spec = curr
 
 	if err := checkSpecAppliedToCampaign(ctx, tx, curr); err != nil {
 		return action, err
@@ -475,11 +475,6 @@ func CompareChangesetSpecs(previous, current *campaigns.ChangesetSpec) (*changes
 	delta := &changesetSpecDelta{}
 
 	if previous == nil {
-		delta.titleChanged = true
-		delta.bodyChanged = true
-		delta.baseRefChanged = true
-		delta.diffChanged = true
-		delta.commitMessageChanged = true
 		return delta, nil
 	}
 
