@@ -13,7 +13,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
@@ -580,7 +579,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 		// This test ensures that the database representation is lowercase.
 
-		queryRawReconcilerState := func(ch *campaigns.Changeset) (string, error) {
+		queryRawReconcilerState := func(ch *cmpgn.Changeset) (string, error) {
 			q := sqlf.Sprintf("SELECT reconciler_state FROM changesets WHERE id = %s", ch.ID)
 			rawState, ok, err := basestore.ScanFirstString(s.Query(ctx, q))
 			if err != nil || !ok {
@@ -1483,7 +1482,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		t.Fatal(err)
 	}
 
-	checkChangesetIDs := func(t *testing.T, hs []campaigns.ChangesetSyncData, want []int64) {
+	checkChangesetIDs := func(t *testing.T, hs []cmpgn.ChangesetSyncData, want []int64) {
 		t.Helper()
 
 		haveIDs := []int64{}
