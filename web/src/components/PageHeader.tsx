@@ -14,7 +14,7 @@ export const PageHeader: React.FunctionComponent<Props> = ({ title, icon, action
         <Breadcrumbs breadcrumbs={breadcrumbs} />
         <div className="d-flex align-items-center">
             <h1 className="flex-grow-1 text-nowrap">
-                {icon} {title}
+                {icon} {title}{' '}
                 {badge && (
                     <sup>
                         <span className="badge badge-info text-uppercase">{badge}</span>

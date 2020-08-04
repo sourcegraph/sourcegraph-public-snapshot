@@ -5,6 +5,7 @@ import { PageHeader } from './PageHeader'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import { text } from '@storybook/addon-knobs'
 import ClockOutlineIcon from 'mdi-react/ClockOutlineIcon'
+import { RepoHeaderBreadcrumbNavItem } from '../repo/RepoHeaderBreadcrumbNavItem'
 
 const { add } = storiesOf('web/PageHeader', module).addDecorator(story => (
     <>
@@ -17,7 +18,13 @@ const { add } = storiesOf('web/PageHeader', module).addDecorator(story => (
 
 add('Basic header', () => {
     const title = text('Title', 'Page name')
-    return <PageHeader title={title} breadcrumbs={[title]} icon={<PuzzleOutlineIcon />} />
+    return (
+        <PageHeader
+            title={title}
+            breadcrumbs={[{ key: '1', element: <RepoHeaderBreadcrumbNavItem>{title}</RepoHeaderBreadcrumbNavItem> }]}
+            icon={<PuzzleOutlineIcon size={32} />}
+        />
+    )
 })
 
 add(
@@ -28,8 +35,12 @@ add(
         return (
             <PageHeader
                 title={title}
-                breadcrumbs={['Level 2', 'Level 3', title]}
-                icon={<ClockOutlineIcon className="inline-icon" />}
+                breadcrumbs={[
+                    { key: '1', element: <RepoHeaderBreadcrumbNavItem>Level 2</RepoHeaderBreadcrumbNavItem> },
+                    { key: '2', element: <RepoHeaderBreadcrumbNavItem>Level 3</RepoHeaderBreadcrumbNavItem> },
+                    { key: '3', element: <RepoHeaderBreadcrumbNavItem>Page name</RepoHeaderBreadcrumbNavItem> },
+                ]}
+                icon={<ClockOutlineIcon size={32} className="inline-icon" />}
                 badge={badge}
             />
         )
