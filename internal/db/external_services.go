@@ -404,7 +404,8 @@ func (e *ExternalServicesStore) GetByID(ctx context.Context, id int64) (*types.E
 	return ess[0], nil
 }
 
-// List returns all or a user's external services.
+// List returns external services under given namespace.
+// If no namespace is given, it returns all external services.
 //
 // 🚨 SECURITY: The caller must ensure one of the following:
 // 	- The actor is a site admin
