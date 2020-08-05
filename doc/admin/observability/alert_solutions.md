@@ -4,6 +4,8 @@ This document contains possible solutions for when you find alerts are firing in
 If your alert isn't mentioned here, or if the solution doesn't help, [contact us](mailto:support@sourcegraph.com)
 for assistance.
 
+To learn more about Sourcegraph's alerting, see [our alerting documentation](https://docs.sourcegraph.com/admin/observability/alerting).
+
 <!-- DO NOT EDIT: generated via: go generate ./monitoring -->
 
 ## frontend: 99th_percentile_search_request_duration
@@ -11,6 +13,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 20s+ 99th percentile successful search request duration over 5m_
+
 **Possible solutions:**
 
 - **Get details on the exact queries that are slow** by configuring `"observability.logSlowSearches": 20,` in the site configuration and looking for `frontend` warning logs prefixed with `slow search request` for additional details.
@@ -33,6 +36,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 15s+ 90th percentile successful search request duration over 5m_
+
 **Possible solutions:**
 
 - **Get details on the exact queries that are slow** by configuring `"observability.logSlowSearches": 15,` in the site configuration and looking for `frontend` warning logs prefixed with `slow search request` for additional details.
@@ -57,6 +61,7 @@ for assistance.
 - _frontend: 5+ hard timeout search responses every 5m_
 
 - _frontend: 20+ hard timeout search responses every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -75,6 +80,7 @@ for assistance.
 - _frontend: 5+ hard error search responses every 5m_
 
 - _frontend: 20+ hard error search responses every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -91,6 +97,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 5+ partial timeout search responses every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -106,6 +113,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 50+ search alert user suggestions shown every 5m_
+
 **Possible solutions:**
 
 - This indicates your user`s are making syntax errors or similar user errors.
@@ -125,6 +133,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 2s+ 90th percentile page load latency over all routes over 10m_
+
 **Possible solutions:**
 
 - Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
@@ -145,6 +154,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 2s+ 90th percentile blob load latency over 10m_
+
 **Possible solutions:**
 
 - Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
@@ -165,6 +175,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 20s+ 99th percentile code-intel successful search request duration over 5m_
+
 **Possible solutions:**
 
 - **Get details on the exact queries that are slow** by configuring `"observability.logSlowSearches": 20,` in the site configuration and looking for `frontend` warning logs prefixed with `slow search request` for additional details.
@@ -187,6 +198,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 15s+ 90th percentile code-intel successful search request duration over 5m_
+
 **Possible solutions:**
 
 - **Get details on the exact queries that are slow** by configuring `"observability.logSlowSearches": 15,` in the site configuration and looking for `frontend` warning logs prefixed with `slow search request` for additional details.
@@ -211,6 +223,7 @@ for assistance.
 - _frontend: 5+ hard timeout search code-intel responses every 5m_
 
 - _frontend: 20+ hard timeout search code-intel responses every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -229,6 +242,7 @@ for assistance.
 - _frontend: 5+ hard error search code-intel responses every 5m_
 
 - _frontend: 20+ hard error search code-intel responses every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -245,6 +259,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 5+ partial timeout search code-intel responses every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -260,6 +275,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 50+ search code-intel alert user suggestions shown every 5m_
+
 **Possible solutions:**
 
 - This indicates a bug in Sourcegraph, please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose).
@@ -279,6 +295,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 50s+ 99th percentile successful search API request duration over 5m_
+
 **Possible solutions:**
 
 - **Get details on the exact queries that are slow** by configuring `"observability.logSlowSearches": 20,` in the site configuration and looking for `frontend` warning logs prefixed with `slow search request` for additional details.
@@ -302,6 +319,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 40s+ 90th percentile successful search API request duration over 5m_
+
 **Possible solutions:**
 
 - **Get details on the exact queries that are slow** by configuring `"observability.logSlowSearches": 15,` in the site configuration and looking for `frontend` warning logs prefixed with `slow search request` for additional details.
@@ -327,6 +345,7 @@ for assistance.
 - _frontend: 5+ hard timeout search API responses every 5m_
 
 - _frontend: 20+ hard timeout search API responses every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -345,6 +364,7 @@ for assistance.
 - _frontend: 5+ hard error search API responses every 5m_
 
 - _frontend: 20+ hard error search API responses every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -361,6 +381,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 5+ partial timeout search API responses every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -376,6 +397,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 50+ search API alert user suggestions shown every 5m_
+
 **Possible solutions:**
 
 - This indicates your user`s search API requests have syntax errors or a similar user error. Check the responses the API sends back for an explanation.
@@ -395,6 +417,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 20s+ 99th percentile successful precise code intel api query duration over 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -410,6 +433,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 20+ precise code intel api errors every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -425,6 +449,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 20s+ 99th percentile successful precise code intel database query duration over 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -440,6 +465,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 20+ precise code intel database errors every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -455,6 +481,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 5+ internal indexed search error responses every 5m_
+
 **Possible solutions:**
 
 - Check the Zoekt Web Server dashboard for indications it might be unhealthy.
@@ -474,6 +501,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 5+ internal unindexed search error responses every 5m_
+
 **Possible solutions:**
 
 - Check the Searcher dashboard for indications it might be unhealthy.
@@ -493,6 +521,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 25+ internal API error responses every 5m by route_
+
 **Possible solutions:**
 
 - May not be a substantial issue, check the `frontend` logs for potential causes.
@@ -512,6 +541,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 20s+ 99th percentile successful precise-code-intel-bundle-manager query duration over 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -527,6 +557,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 300s+ 99th percentile successful precise-code-intel-bundle-manager data transfer duration over 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -542,6 +573,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 5+ precise-code-intel-bundle-manager error responses every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -557,6 +589,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 20s+ 99th percentile successful gitserver query duration over 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -572,6 +605,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 5+ gitserver error responses every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -587,6 +621,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 0.1s+ 90th percentile successful update-check requests (sourcegraph.com only)_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -602,6 +637,7 @@ for assistance.
 **Descriptions:**
 
 - _frontend: 1+ warning test alert metric_
+
 **Possible solutions:**
 
 This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.
@@ -621,6 +657,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _frontend: 1+ critical test alert metric_
+
 **Possible solutions:**
 
 This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.
@@ -640,6 +677,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _frontend: 99%+ container cpu usage total (1m average) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -660,6 +698,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _frontend: 99%+ container memory usage by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -680,6 +719,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _frontend: 1+ container restarts every 5m by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:**
@@ -704,6 +744,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _frontend: 3e+06+ fs inodes in use by instance_
+
 **Possible solutions:**
 
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
@@ -724,6 +765,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _frontend: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -746,6 +788,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _frontend: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -768,6 +811,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _frontend: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -788,6 +832,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _frontend: 90%+ container memory usage (5m maximum) by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -808,6 +853,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _frontend: 10000+ maximum active goroutines for 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -823,6 +869,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _frontend: 2s+ maximum go garbage collection duration_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -838,6 +885,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _frontend: less than 90% percentage pods available for a service for 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -855,6 +903,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 - _gitserver: less than 25% disk space remaining by instance_
 
 - _gitserver: less than 15% disk space remaining by instance_
+
 **Possible solutions:**
 
 - **Provision more disk space:** Sourcegraph will begin deleting least-used repository clones at 10% disk space remaining which may result in decreased performance, users having to wait for repositories to clone, etc.
@@ -877,6 +926,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 - _gitserver: 50+ running git commands (signals load)_
 
 - _gitserver: 100+ running git commands (signals load)_
+
 **Possible solutions:**
 
 - **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
@@ -899,6 +949,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _gitserver: 25+ repository clone queue size_
+
 **Possible solutions:**
 
 - **If you just added several repositories**, the warning may be expected.
@@ -919,6 +970,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _gitserver: 25+ repository existence check queue size_
+
 **Possible solutions:**
 
 - **Check the code host status indicator for errors:** on the Sourcegraph app homepage, when signed in as an admin click the cloud icon in the top right corner of the page.
@@ -942,6 +994,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 - _gitserver: 1s+ echo command duration test_
 
 - _gitserver: 2s+ echo command duration test_
+
 **Possible solutions:**
 
 - **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
@@ -964,6 +1017,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _gitserver: 5+ frontend-internal API error responses every 5m by route_
+
 **Possible solutions:**
 
 - **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
@@ -989,6 +1043,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _gitserver: 99%+ container cpu usage total (1m average) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -1009,6 +1064,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _gitserver: 99%+ container memory usage by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -1029,6 +1085,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _gitserver: 1+ container restarts every 5m by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:**
@@ -1053,6 +1110,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _gitserver: 3e+06+ fs inodes in use by instance_
+
 **Possible solutions:**
 
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
@@ -1073,6 +1131,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _gitserver: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -1095,6 +1154,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _gitserver: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -1117,6 +1177,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _gitserver: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -1137,6 +1198,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _gitserver: 90%+ container memory usage (5m maximum) by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -1157,6 +1219,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _gitserver: 10000+ maximum active goroutines for 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1172,6 +1235,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _gitserver: 2s+ maximum go garbage collection duration_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1187,6 +1251,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _gitserver: less than 90% percentage pods available for a service for 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1202,6 +1267,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Descriptions:**
 
 - _github-proxy: less than 1000 remaining calls to GitHub before hitting the rate limit_
+
 **Possible solutions:**
 
 Try restarting the pod to get a different public IP.
@@ -1221,6 +1287,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _github-proxy: less than 5 remaining calls to GitHub search before hitting the rate limit_
+
 **Possible solutions:**
 
 Try restarting the pod to get a different public IP.
@@ -1240,6 +1307,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _github-proxy: 99%+ container cpu usage total (1m average) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -1260,6 +1328,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _github-proxy: 99%+ container memory usage by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -1280,6 +1349,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _github-proxy: 1+ container restarts every 5m by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:**
@@ -1304,6 +1374,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _github-proxy: 3e+06+ fs inodes in use by instance_
+
 **Possible solutions:**
 
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
@@ -1324,6 +1395,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _github-proxy: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -1346,6 +1418,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _github-proxy: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -1368,6 +1441,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _github-proxy: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -1388,6 +1462,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _github-proxy: 90%+ container memory usage (5m maximum) by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -1408,6 +1483,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _github-proxy: 10000+ maximum active goroutines for 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1423,6 +1499,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _github-proxy: 2s+ maximum go garbage collection duration_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1438,6 +1515,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _github-proxy: less than 90% percentage pods available for a service for 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1453,6 +1531,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 20s+ 99th percentile successful bundle database query duration over 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1468,6 +1547,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 20+ bundle database errors every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1483,6 +1563,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 20s+ 99th percentile successful bundle reader query duration over 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1498,6 +1579,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 20+ bundle reader errors every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1515,6 +1597,7 @@ Try restarting the pod to get a different public IP.
 - _precise-code-intel-bundle-manager: less than 25% disk space remaining by instance_
 
 - _precise-code-intel-bundle-manager: less than 15% disk space remaining by instance_
+
 **Possible solutions:**
 
 - **Provision more disk space:** Sourcegraph will begin deleting the oldest uploaded bundle files at 10% disk space remaining.
@@ -1535,6 +1618,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 20+ janitor errors every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1550,6 +1634,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 20+ upload files removed (due to age) every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1565,6 +1650,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 20+ upload and database part files removed (due to age) every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1580,6 +1666,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 20+ bundle files removed (due to low disk space) every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1595,6 +1682,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 20+ bundle and upload files removed (with no corresponding database entry) every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1610,6 +1698,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 20+ upload records removed every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1625,6 +1714,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 5+ frontend-internal API error responses every 5m by route_
+
 **Possible solutions:**
 
 - **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
@@ -1650,6 +1740,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 99%+ container cpu usage total (1m average) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -1670,6 +1761,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 99%+ container memory usage by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -1690,6 +1782,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 1+ container restarts every 5m by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:**
@@ -1714,6 +1807,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 3e+06+ fs inodes in use by instance_
+
 **Possible solutions:**
 
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
@@ -1734,6 +1828,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -1756,6 +1851,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -1778,6 +1874,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -1798,6 +1895,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 90%+ container memory usage (5m maximum) by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -1818,6 +1916,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 10000+ maximum active goroutines for 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1833,6 +1932,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 2s+ maximum go garbage collection duration_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1848,6 +1948,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: less than 90% percentage pods available for a service for 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1863,6 +1964,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-worker: 100+ upload queue size_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1878,6 +1980,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-worker: 5+ upload queue growth rate every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1893,6 +1996,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-worker: 20+ upload process errors every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1908,6 +2012,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-worker: 20s+ 99th percentile successful database query duration over 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1923,6 +2028,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-worker: 20+ database errors every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1938,6 +2044,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-worker: 20+ uploads reset to queued state every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1953,6 +2060,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-worker: 20+ uploads errored after repeated resets every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1968,6 +2076,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-worker: 20+ upload resetter errors every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1983,6 +2092,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-worker: 300s+ 99th percentile successful bundle manager data transfer duration over 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1998,6 +2108,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-worker: 5+ bundle manager error responses every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2013,6 +2124,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-worker: 20s+ 99th percentile successful gitserver query duration over 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2028,6 +2140,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-worker: 5+ gitserver error responses every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2043,6 +2156,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-worker: 5+ frontend-internal API error responses every 5m by route_
+
 **Possible solutions:**
 
 - **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
@@ -2068,6 +2182,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-worker: 99%+ container cpu usage total (1m average) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -2088,6 +2203,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-worker: 99%+ container memory usage by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -2108,6 +2224,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-worker: 1+ container restarts every 5m by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:**
@@ -2132,6 +2249,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-worker: 3e+06+ fs inodes in use by instance_
+
 **Possible solutions:**
 
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
@@ -2152,6 +2270,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-worker: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -2174,6 +2293,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-worker: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -2196,6 +2316,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-worker: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -2216,6 +2337,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-worker: 90%+ container memory usage (5m maximum) by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -2236,6 +2358,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-worker: 10000+ maximum active goroutines for 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2251,6 +2374,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-worker: 2s+ maximum go garbage collection duration_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2266,6 +2390,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-worker: less than 90% percentage pods available for a service for 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2281,6 +2406,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: 100+ index queue size_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2296,6 +2422,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: 5+ index queue growth rate every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2311,6 +2438,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: 20+ index process errors every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2326,6 +2454,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: 20s+ 99th percentile successful database query duration over 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2341,6 +2470,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: 20+ database errors every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2356,6 +2486,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: 20+ indexability updater errors every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2371,6 +2502,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: 20+ index scheduler errors every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2386,6 +2518,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: 20+ indexes reset to queued state every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2401,6 +2534,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: 20+ indexes errored after repeated resets every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2416,6 +2550,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: 20+ index resetter errors every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2431,6 +2566,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: 20+ janitor errors every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2446,6 +2582,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: 20+ index records removed every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2461,6 +2598,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: 20s+ 99th percentile successful gitserver query duration over 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2476,6 +2614,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: 5+ gitserver error responses every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2491,6 +2630,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: 5+ frontend-internal API error responses every 5m by route_
+
 **Possible solutions:**
 
 - **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
@@ -2516,6 +2656,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: 99%+ container cpu usage total (1m average) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -2536,6 +2677,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: 99%+ container memory usage by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -2556,6 +2698,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: 1+ container restarts every 5m by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:**
@@ -2580,6 +2723,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: 3e+06+ fs inodes in use by instance_
+
 **Possible solutions:**
 
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
@@ -2600,6 +2744,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -2622,6 +2767,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -2644,6 +2790,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -2664,6 +2811,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: 90%+ container memory usage (5m maximum) by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -2684,6 +2832,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: 10000+ maximum active goroutines for 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2699,6 +2848,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: 2s+ maximum go garbage collection duration_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2714,6 +2864,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _precise-code-intel-indexer: less than 90% percentage pods available for a service for 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2729,6 +2880,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _query-runner: 5+ frontend-internal API error responses every 5m by route_
+
 **Possible solutions:**
 
 - **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
@@ -2754,6 +2906,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _query-runner: 99%+ container memory usage by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -2774,6 +2927,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _query-runner: 99%+ container cpu usage total (1m average) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -2794,6 +2948,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _query-runner: 1+ container restarts every 5m by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:**
@@ -2818,6 +2973,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _query-runner: 3e+06+ fs inodes in use by instance_
+
 **Possible solutions:**
 
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
@@ -2838,6 +2994,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _query-runner: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -2860,6 +3017,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _query-runner: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -2882,6 +3040,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _query-runner: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -2902,6 +3061,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _query-runner: 90%+ container memory usage (5m maximum) by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -2922,6 +3082,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _query-runner: 10000+ maximum active goroutines for 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2937,6 +3098,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _query-runner: 2s+ maximum go garbage collection duration_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2952,6 +3114,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _query-runner: less than 90% percentage pods available for a service for 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -2967,6 +3130,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _replacer: 5+ frontend-internal API error responses every 5m by route_
+
 **Possible solutions:**
 
 - **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
@@ -2992,6 +3156,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _replacer: 99%+ container cpu usage total (1m average) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -3012,6 +3177,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _replacer: 99%+ container memory usage by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -3032,6 +3198,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _replacer: 1+ container restarts every 5m by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:**
@@ -3056,6 +3223,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _replacer: 3e+06+ fs inodes in use by instance_
+
 **Possible solutions:**
 
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
@@ -3076,6 +3244,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _replacer: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -3098,6 +3267,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _replacer: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -3120,6 +3290,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _replacer: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -3140,6 +3311,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _replacer: 90%+ container memory usage (5m maximum) by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -3160,6 +3332,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _replacer: 10000+ maximum active goroutines for 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -3175,6 +3348,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _replacer: 2s+ maximum go garbage collection duration_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -3190,6 +3364,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _replacer: less than 90% percentage pods available for a service for 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -3205,6 +3380,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _repo-updater: 5+ frontend-internal API error responses every 5m by route_
+
 **Possible solutions:**
 
 - **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
@@ -3230,6 +3406,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _repo-updater: 99%+ container cpu usage total (1m average) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -3250,6 +3427,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _repo-updater: 99%+ container memory usage by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -3270,6 +3448,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _repo-updater: 1+ container restarts every 5m by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:**
@@ -3294,6 +3473,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _repo-updater: 3e+06+ fs inodes in use by instance_
+
 **Possible solutions:**
 
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
@@ -3314,6 +3494,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _repo-updater: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -3336,6 +3517,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _repo-updater: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -3358,6 +3540,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _repo-updater: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -3378,6 +3561,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _repo-updater: 90%+ container memory usage (5m maximum) by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -3398,6 +3582,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _repo-updater: 10000+ maximum active goroutines for 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -3413,6 +3598,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _repo-updater: 2s+ maximum go garbage collection duration_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -3428,6 +3614,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _repo-updater: less than 90% percentage pods available for a service for 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -3443,6 +3630,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _searcher: 5+ unindexed search request errors every 5m by code_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -3458,6 +3646,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _searcher: 5+ requests per second over 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -3473,6 +3662,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _searcher: 5+ frontend-internal API error responses every 5m by route_
+
 **Possible solutions:**
 
 - **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
@@ -3498,6 +3688,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _searcher: 99%+ container cpu usage total (1m average) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -3518,6 +3709,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _searcher: 99%+ container memory usage by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -3538,6 +3730,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _searcher: 1+ container restarts every 5m by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:**
@@ -3562,6 +3755,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _searcher: 3e+06+ fs inodes in use by instance_
+
 **Possible solutions:**
 
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
@@ -3582,6 +3776,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _searcher: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -3604,6 +3799,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _searcher: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -3626,6 +3822,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _searcher: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -3646,6 +3843,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _searcher: 90%+ container memory usage (5m maximum) by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -3666,6 +3864,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _searcher: 10000+ maximum active goroutines for 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -3681,6 +3880,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _searcher: 2s+ maximum go garbage collection duration_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -3696,6 +3896,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _searcher: less than 90% percentage pods available for a service for 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -3711,6 +3912,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _symbols: 5+ store fetch failures every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -3726,6 +3928,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _symbols: 25+ current fetch queue size_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -3741,6 +3944,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _symbols: 5+ frontend-internal API error responses every 5m by route_
+
 **Possible solutions:**
 
 - **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
@@ -3766,6 +3970,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _symbols: 99%+ container cpu usage total (1m average) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -3786,6 +3991,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _symbols: 99%+ container memory usage by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -3806,6 +4012,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _symbols: 1+ container restarts every 5m by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:**
@@ -3830,6 +4037,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _symbols: 3e+06+ fs inodes in use by instance_
+
 **Possible solutions:**
 
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
@@ -3850,6 +4058,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _symbols: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -3872,6 +4081,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _symbols: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -3894,6 +4104,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _symbols: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -3914,6 +4125,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _symbols: 90%+ container memory usage (5m maximum) by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -3934,6 +4146,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _symbols: 10000+ maximum active goroutines for 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -3949,6 +4162,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _symbols: 2s+ maximum go garbage collection duration_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -3964,6 +4178,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _symbols: less than 90% percentage pods available for a service for 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -3979,6 +4194,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _syntect-server: 5+ syntax highlighting errors every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -3994,6 +4210,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _syntect-server: 5+ syntax highlighting panics every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -4009,6 +4226,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _syntect-server: 5+ syntax highlighting timeouts every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -4024,6 +4242,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _syntect-server: 1+ syntax highlighter worker deaths every 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -4039,6 +4258,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _syntect-server: 99%+ container cpu usage total (1m average) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -4059,6 +4279,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _syntect-server: 99%+ container memory usage by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -4079,6 +4300,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _syntect-server: 1+ container restarts every 5m by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:**
@@ -4103,6 +4325,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _syntect-server: 3e+06+ fs inodes in use by instance_
+
 **Possible solutions:**
 
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
@@ -4123,6 +4346,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _syntect-server: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -4145,6 +4369,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _syntect-server: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -4167,6 +4392,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _syntect-server: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -4187,6 +4413,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _syntect-server: 90%+ container memory usage (5m maximum) by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -4207,6 +4434,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _syntect-server: less than 90% percentage pods available for a service for 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -4224,6 +4452,7 @@ Try restarting the pod to get a different public IP.
 - _zoekt-indexserver: 15s+ average resolve revision duration over 5m_
 
 - _zoekt-indexserver: 30s+ average resolve revision duration over 5m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -4240,6 +4469,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _zoekt-indexserver: 99%+ container cpu usage total (1m average) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -4260,6 +4490,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _zoekt-indexserver: 99%+ container memory usage by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -4280,6 +4511,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _zoekt-indexserver: 1+ container restarts every 5m by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:**
@@ -4304,6 +4536,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _zoekt-indexserver: 3e+06+ fs inodes in use by instance_
+
 **Possible solutions:**
 
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
@@ -4324,6 +4557,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _zoekt-indexserver: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -4346,6 +4580,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _zoekt-indexserver: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -4368,6 +4603,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _zoekt-indexserver: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -4388,6 +4624,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _zoekt-indexserver: 90%+ container memory usage (5m maximum) by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -4408,6 +4645,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _zoekt-indexserver: less than 90% percentage pods available for a service for 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -4423,6 +4661,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _zoekt-webserver: 50s+ indexed search request errors every 5m by code_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -4438,6 +4677,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _zoekt-webserver: 99%+ container cpu usage total (1m average) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -4458,6 +4698,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _zoekt-webserver: 99%+ container memory usage by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -4478,6 +4719,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _zoekt-webserver: 1+ container restarts every 5m by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:**
@@ -4502,6 +4744,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _zoekt-webserver: 3e+06+ fs inodes in use by instance_
+
 **Possible solutions:**
 
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
@@ -4522,6 +4765,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _zoekt-webserver: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -4544,6 +4788,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _zoekt-webserver: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -4566,6 +4811,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _zoekt-webserver: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -4586,6 +4832,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _zoekt-webserver: 90%+ container memory usage (5m maximum) by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -4606,6 +4853,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _prometheus: 20000B+ prometheus metrics payload size_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -4621,6 +4869,7 @@ Try restarting the pod to get a different public IP.
 **Descriptions:**
 
 - _prometheus: 1+ failed alertmanager notifications rate over 1m_
+
 **Possible solutions:**
 
 Ensure that your `observability.alerts` configuration (in site configuration) is valid.
@@ -4640,6 +4889,7 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
 **Descriptions:**
 
 - _prometheus: 99%+ container cpu usage total (1m average) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -4660,6 +4910,7 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
 **Descriptions:**
 
 - _prometheus: 99%+ container memory usage by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -4680,6 +4931,7 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
 **Descriptions:**
 
 - _prometheus: 1+ container restarts every 5m by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:**
@@ -4704,6 +4956,7 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
 **Descriptions:**
 
 - _prometheus: 3e+06+ fs inodes in use by instance_
+
 **Possible solutions:**
 
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
@@ -4724,6 +4977,7 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
 **Descriptions:**
 
 - _prometheus: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -4746,6 +5000,7 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
 **Descriptions:**
 
 - _prometheus: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+
 **Possible solutions:**
 
 - If usage is high:
@@ -4768,6 +5023,7 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
 **Descriptions:**
 
 - _prometheus: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
@@ -4788,6 +5044,7 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
 **Descriptions:**
 
 - _prometheus: 90%+ container memory usage (5m maximum) by instance_
+
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
@@ -4808,6 +5065,7 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
 **Descriptions:**
 
 - _prometheus: less than 90% percentage pods available for a service for 10m_
+
 **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json

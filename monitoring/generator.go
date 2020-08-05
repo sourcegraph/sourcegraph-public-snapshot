@@ -818,6 +818,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 						prometheusAlertNames = append(prometheusAlertNames,
 							fmt.Sprintf("    \"%s\"", prometheusAlertName(alert.level, c.Name, o.Name)))
 					}
+					fmt.Fprint(&b, "\n")
 
 					if o.PossibleSolutions != "none" {
 						fmt.Fprintf(&b, "**Possible solutions:**\n\n")
