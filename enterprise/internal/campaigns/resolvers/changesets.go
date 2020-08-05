@@ -43,6 +43,17 @@ type changesetsConnectionResolver struct {
 	reposByID      map[api.RepoID]*types.Repo
 	next           int64
 	err            error
+
+	// allAccessibleChangesets contains all changesets in this connection,
+	// without any pagination.
+	// We need them for TotalCount and Stats and we need to load all, without a
+	// limit, because some might be filtered out by the authzFilter.
+	//
+	// NOTE: In the future, as an optimization, we can combine this with
+	// `changesets`, since changesets is a subset of `allAccessibleChangesets`.
+	allAccessibleChangesetsOnce sync.Once
+	allAccessibleChangesets     []*campaigns.Changeset
+	allAccessibleChangesetsErr  error
 }
 
 func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetResolver, error) {
@@ -83,29 +94,70 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 }
 
 func (r *changesetsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := r.opts
-	opts.Limit = -1
-
-	cs, _, err := r.store.ListChangesets(ctx, opts)
+	cs, err := r.computeAllAccessibleChangesets(ctx)
 	if err != nil {
 		return 0, err
 	}
+	return int32(len(cs)), nil
+}
 
-	// 🚨 SECURITY: If the opts do not leak information, we can return the
-	// number of changesets. Otherwise we have to filter the changesets by
-	// accessible repos.
-	if r.optsSafe {
-		return int32(len(cs)), nil
-	}
-
-	// 🚨 SECURITY: db.Repos.GetByIDs uses the authzFilter under the hood and
-	// filters out repositories that the user doesn't have access to.
-	rs, err := db.Repos.GetByIDs(ctx, cs.RepoIDs()...)
+func (r *changesetsConnectionResolver) Stats(ctx context.Context) (graphqlbackend.ChangesetsConnectionStatsResolver, error) {
+	cs, err := r.computeAllAccessibleChangesets(ctx)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
+	return newChangesetConnectionStats(cs), nil
+}
 
-	return int32(len(rs)), err
+// computeAllChangesets loads all changesets matched by r.opts, but without a
+// limit.
+// If r.optsSafe is true, it returns all of them. If not, it filters out the
+// ones to which the user doesn't have access.
+func (r *changesetsConnectionResolver) computeAllAccessibleChangesets(ctx context.Context) ([]*campaigns.Changeset, error) {
+	r.allAccessibleChangesetsOnce.Do(func() {
+		opts := r.opts
+		opts.Limit = -1
+
+		cs, _, err := r.store.ListChangesets(ctx, opts)
+		if err != nil {
+			r.allAccessibleChangesetsErr = err
+			return
+		}
+
+		// 🚨 SECURITY: If the opts do not leak information, we can return the
+		// number of changesets. Otherwise we have to filter the changesets by
+		// accessible repos.
+		if r.optsSafe {
+			r.allAccessibleChangesets = cs
+			return
+		}
+
+		// 🚨 SECURITY: db.Repos.GetByIDs uses the authzFilter under the hood and
+		// filters out repositories that the user doesn't have access to.
+		rs, err := db.Repos.GetByIDs(ctx, cs.RepoIDs()...)
+		if err != nil {
+			r.allAccessibleChangesetsErr = err
+			return
+		}
+
+		accessibleRepoIDs := map[api.RepoID]struct{}{}
+		for _, r := range rs {
+			accessibleRepoIDs[r.ID] = struct{}{}
+		}
+
+		var accessibleChangesets []*campaigns.Changeset
+		for _, c := range cs {
+			if _, ok := accessibleRepoIDs[c.RepoID]; !ok {
+				continue
+			}
+			accessibleChangesets = append(accessibleChangesets, c)
+		}
+
+		r.allAccessibleChangesets = accessibleChangesets
+		return
+	})
+
+	return r.allAccessibleChangesets, r.allAccessibleChangesetsErr
 }
 
 func (r *changesetsConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
@@ -124,7 +176,6 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*campaign
 			return
 		}
 
-		fmt.Printf("len(r.changesets)=%d\n", len(r.changesets))
 		changesetIDs := make([]int64, len(r.changesets))
 		for i, c := range r.changesets {
 			changesetIDs[i] = c.ID
@@ -160,44 +211,6 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*campaign
 	})
 
 	return r.changesets, r.reposByID, r.next, r.err
-}
-
-func (r *changesetsConnectionResolver) Stats(ctx context.Context) (graphqlbackend.ChangesetsConnectionStatsResolver, error) {
-	opts := r.opts
-	opts.Limit = -1
-
-	cs, _, err := r.store.ListChangesets(ctx, opts)
-	if err != nil {
-		return nil, err
-	}
-
-	// 🚨 SECURITY: If the opts do not leak information, we can return the
-	// number of changesets. Otherwise we have to filter the changesets by
-	// accessible repos.
-	if r.optsSafe {
-		return newChangesetConnectionStats(cs), nil
-	}
-
-	// 🚨 SECURITY: db.Repos.GetByIDs uses the authzFilter under the hood and
-	// filters out repositories that the user doesn't have access to.
-	rs, err := db.Repos.GetByIDs(ctx, cs.RepoIDs()...)
-	if err != nil {
-		return nil, err
-	}
-	accessibleReposIDs := make(map[api.RepoID]struct{}, len(rs))
-	for _, r := range rs {
-		accessibleReposIDs[r.ID] = struct{}{}
-	}
-
-	var visibleChangesets []*campaigns.Changeset
-	for _, c := range cs {
-		if _, ok := accessibleReposIDs[c.RepoID]; !ok {
-			continue
-		}
-		visibleChangesets = append(visibleChangesets, c)
-	}
-
-	return newChangesetConnectionStats(cs), nil
 }
 
 type changesetResolver struct {
