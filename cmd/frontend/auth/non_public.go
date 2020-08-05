@@ -126,6 +126,11 @@ func AllowAnonymousRequest(req *http.Request) bool {
 		}
 	}
 
+	// Permission is checked by a shared token
+	if strings.HasPrefix(req.URL.Path, "/.internal-code-intel") {
+		return true
+	}
+
 	apiRouteName := matchedRouteName(req, router.Router())
 	if apiRouteName == router.UI {
 		// Test against UI router. (Some of its handlers inject private data into the title or meta tags.)
