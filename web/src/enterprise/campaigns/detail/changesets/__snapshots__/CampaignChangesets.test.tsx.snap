@@ -2,13 +2,7 @@
 
 exports[`CampaignChangesets renders 1`] = `
 <CampaignChangesets
-  campaign={
-    Object {
-      "closedAt": null,
-      "id": "123",
-      "viewerCanAdminister": true,
-    }
-  }
+  campaignID="123"
   campaignUpdates="[Subject]"
   changesetUpdates="[Subject]"
   history="[History]"
@@ -21,6 +15,7 @@ exports[`CampaignChangesets renders 1`] = `
       "logViewEvent": [Function],
     }
   }
+  viewerCanAdminister={true}
 >
   <ChangesetFilterRow
     history="[History]"

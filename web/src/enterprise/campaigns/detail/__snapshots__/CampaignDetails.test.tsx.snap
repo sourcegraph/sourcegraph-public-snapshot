@@ -15,13 +15,6 @@ exports[`CampaignDetails creation form for empty manual campaign 1`] = `
 
 exports[`CampaignDetails creation form given existing patch set 1`] = `
 <CampaignDetails
-  authenticatedUser={
-    Object {
-      "avatarURL": null,
-      "id": "a",
-      "username": "alice",
-    }
-  }
   history="[History]"
   isLightTheme={true}
   location="[Location path=/?patchSet=p]"
@@ -75,13 +68,6 @@ exports[`CampaignDetails creation form given existing patch set 1`] = `
 exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
 <CampaignDetails
   _fetchCampaignById={[Function]}
-  authenticatedUser={
-    Object {
-      "avatarURL": null,
-      "id": "a",
-      "username": "alice",
-    }
-  }
   campaignID="c"
   history="[History]"
   isLightTheme={true}
@@ -187,58 +173,69 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
       </div>
     </div>
   </CampaignActionsBar>
-  <div
-    className="card mt-2"
+  <CampaignInfoCard
+    author={
+      Object {
+        "username": "alice",
+      }
+    }
+    createdAt="2020-01-01"
+    description="d"
+    history="[History]"
   >
     <div
-      className="card-header"
+      className="card mt-2"
     >
-      <strong>
-        <UserAvatar
-          className="icon-inline"
-          user={
-            Object {
-              "username": "alice",
+      <div
+        className="card-header"
+      >
+        <strong>
+          <UserAvatar
+            className="icon-inline"
+            user={
+              Object {
+                "username": "alice",
+              }
             }
-          }
-        />
+          />
+           
+          alice
+        </strong>
          
-        alice
-      </strong>
-       
-      started 
-      <Timestamp
-        date="2020-01-01"
-      >
-        <span
-          className="timestamp"
-          data-tooltip="2020-01-01"
+        started 
+        <Timestamp
+          date="2020-01-01"
         >
-          in almost 14 years
-        </span>
-      </Timestamp>
-    </div>
-    <div
-      className="card-body"
-    >
-      <Markdown
-        dangerousInnerHTML="<p>d</p>
-"
-        history="[History]"
+          <span
+            className="timestamp"
+            data-tooltip="2020-01-01"
+          >
+            in almost 14 years
+          </span>
+        </Timestamp>
+      </div>
+      <div
+        className="card-body"
       >
-        <div
-          className="markdown"
-          dangerouslySetInnerHTML={
-            Object {
-              "__html": "<p>d</p>
+        <Markdown
+          dangerousInnerHTML="<p>d</p>
+"
+          history="[History]"
+        >
+          <div
+            className="markdown"
+            dangerouslySetInnerHTML={
+              Object {
+                "__html": "<p>d</p>
 ",
+              }
             }
-          }
-          onClick={[Function]}
-        />
-      </Markdown>
+            onClick={[Function]}
+          />
+        </Markdown>
+      </div>
     </div>
-  </div>
+  </CampaignInfoCard>
   <h3
     className="mt-4 mb-2"
   >
@@ -262,38 +259,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
     Changesets
   </h3>
   <CampaignChangesets
-    campaign={
-      Object {
-        "__typename": "Campaign",
-        "author": Object {
-          "username": "alice",
-        },
-        "branch": "awesome-branch",
-        "changesetCountsOverTime": Array [],
-        "changesets": Object {
-          "stats": Object {
-            "closed": 0,
-            "merged": 0,
-            "total": 10,
-          },
-          "totalCount": 2,
-        },
-        "closedAt": null,
-        "createdAt": "2020-01-01",
-        "description": "d",
-        "diffStat": Object {
-          "__typename": "IDiffStat",
-          "added": 5,
-          "changed": 3,
-          "deleted": 2,
-        },
-        "hasUnpublishedPatches": false,
-        "id": "c",
-        "name": "n",
-        "updatedAt": "2020-01-01",
-        "viewerCanAdminister": false,
-      }
-    }
+    campaignID="c"
     campaignUpdates="[Subject]"
     changesetUpdates="[Subject]"
     history="[History]"
@@ -305,6 +271,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
         "logViewEvent": [Function],
       }
     }
+    viewerCanAdminister={false}
   />
 </CampaignDetails>
 `;
@@ -312,13 +279,6 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
 exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
 <CampaignDetails
   _fetchCampaignById={[Function]}
-  authenticatedUser={
-    Object {
-      "avatarURL": null,
-      "id": "a",
-      "username": "alice",
-    }
-  }
   campaignID="c"
   history="[History]"
   isLightTheme={true}
@@ -424,58 +384,69 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
       </div>
     </div>
   </CampaignActionsBar>
-  <div
-    className="card mt-2"
+  <CampaignInfoCard
+    author={
+      Object {
+        "username": "alice",
+      }
+    }
+    createdAt="2020-01-01"
+    description="d"
+    history="[History]"
   >
     <div
-      className="card-header"
+      className="card mt-2"
     >
-      <strong>
-        <UserAvatar
-          className="icon-inline"
-          user={
-            Object {
-              "username": "alice",
+      <div
+        className="card-header"
+      >
+        <strong>
+          <UserAvatar
+            className="icon-inline"
+            user={
+              Object {
+                "username": "alice",
+              }
             }
-          }
-        />
+          />
+           
+          alice
+        </strong>
          
-        alice
-      </strong>
-       
-      started 
-      <Timestamp
-        date="2020-01-01"
-      >
-        <span
-          className="timestamp"
-          data-tooltip="2020-01-01"
+        started 
+        <Timestamp
+          date="2020-01-01"
         >
-          in almost 14 years
-        </span>
-      </Timestamp>
-    </div>
-    <div
-      className="card-body"
-    >
-      <Markdown
-        dangerousInnerHTML="<p>d</p>
-"
-        history="[History]"
+          <span
+            className="timestamp"
+            data-tooltip="2020-01-01"
+          >
+            in almost 14 years
+          </span>
+        </Timestamp>
+      </div>
+      <div
+        className="card-body"
       >
-        <div
-          className="markdown"
-          dangerouslySetInnerHTML={
-            Object {
-              "__html": "<p>d</p>
+        <Markdown
+          dangerousInnerHTML="<p>d</p>
+"
+          history="[History]"
+        >
+          <div
+            className="markdown"
+            dangerouslySetInnerHTML={
+              Object {
+                "__html": "<p>d</p>
 ",
+              }
             }
-          }
-          onClick={[Function]}
-        />
-      </Markdown>
+            onClick={[Function]}
+          />
+        </Markdown>
+      </div>
     </div>
-  </div>
+  </CampaignInfoCard>
   <h3
     className="mt-4 mb-2"
   >
@@ -499,38 +470,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
     Changesets
   </h3>
   <CampaignChangesets
-    campaign={
-      Object {
-        "__typename": "Campaign",
-        "author": Object {
-          "username": "alice",
-        },
-        "branch": "awesome-branch",
-        "changesetCountsOverTime": Array [],
-        "changesets": Object {
-          "stats": Object {
-            "closed": 0,
-            "merged": 0,
-            "total": 10,
-          },
-          "totalCount": 2,
-        },
-        "closedAt": null,
-        "createdAt": "2020-01-01",
-        "description": "d",
-        "diffStat": Object {
-          "__typename": "IDiffStat",
-          "added": 5,
-          "changed": 3,
-          "deleted": 2,
-        },
-        "hasUnpublishedPatches": false,
-        "id": "c",
-        "name": "n",
-        "updatedAt": "2020-01-01",
-        "viewerCanAdminister": true,
-      }
-    }
+    campaignID="c"
     campaignUpdates="[Subject]"
     changesetUpdates="[Subject]"
     history="[History]"
@@ -542,6 +482,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
         "logViewEvent": [Function],
       }
     }
+    viewerCanAdminister={true}
   />
 </CampaignDetails>
 `;
