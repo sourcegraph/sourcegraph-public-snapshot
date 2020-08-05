@@ -33,6 +33,7 @@ monaco.editor.defineTheme(SOURCEGRAPH_DARK, {
     rules: [
         { token: 'identifier', foreground: '#f2f4f8' },
         { token: 'keyword', foreground: '#569cd6' },
+        { token: 'operator', foreground: '#da77f2' },
     ],
 })
 
@@ -57,6 +58,7 @@ monaco.editor.defineTheme(SOURCEGRAPH_LIGHT, {
     rules: [
         { token: 'identifier', foreground: '#2b3750' },
         { token: 'keyword', foreground: '#268bd2' },
+        { token: 'operator', foreground: '#ae3ec9' },
     ],
 })
 
