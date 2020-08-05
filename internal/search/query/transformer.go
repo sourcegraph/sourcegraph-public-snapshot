@@ -246,7 +246,6 @@ func mapGlobToRegex(nodes []Node) ([]Node, error) {
 				value = value[1:]
 			}
 			value, err = globToRegex(value)
-
 		}
 		if err != nil {
 			globErrors = append(globErrors, globError{field: field, err: err})
