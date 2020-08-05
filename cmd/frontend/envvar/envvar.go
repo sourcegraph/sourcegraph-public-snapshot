@@ -9,7 +9,7 @@ import (
 
 var HTTPAddrInternal = env.Get(
 	"SRC_HTTP_ADDR_INTERNAL",
-	"localhost:3090", // CI:LOCALHOST_OK
+	"0.0.0.0:3090",
 	"HTTP listen address for internal HTTP API. This should never be exposed externally, as it lacks certain authz checks.",
 )
 
