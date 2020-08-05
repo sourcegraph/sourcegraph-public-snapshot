@@ -1,9 +1,8 @@
 import * as H from 'history'
-import { isEqual, pick } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import * as React from 'react'
-import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
+import React, { useState, useEffect, useCallback } from 'react'
+import { Observable } from 'rxjs'
+import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
@@ -36,6 +35,9 @@ import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorMessage } from '../../components/alerts'
 import { Redirect } from 'react-router'
 import { toTreeURL } from '../../util/url'
+import { UpdateBreadcrumbsProps } from '../../components/Breadcrumbs'
+import { useEventObservable } from '../../../../shared/src/util/useObservable'
+import { FilePathBreadcrumb } from '../FilePathBreadcrumb'
 
 function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
     return makeRepoURI(parsed) + String(parsed.isLightTheme) + String(parsed.disableTimeout)
@@ -93,253 +95,206 @@ interface Props
         PlatformContextProps,
         EventLoggerProps,
         ExtensionsControllerProps,
-        ThemeProps {
+        ThemeProps,
+        UpdateBreadcrumbsProps {
     location: H.Location
     history: H.History
     repoID: GQL.ID
     authenticatedUser: GQL.IUser | null
 }
 
-interface State {
-    wrapCode: boolean
+export const BlobPage: React.FunctionComponent<Props> = props => {
+    const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
+    let renderMode = ToggleRenderedFileMode.getModeFromURL(props.location)
+    const { repoName, revision, commitID, filePath, isLightTheme, setBreadcrumb } = props
 
-    /**
-     * The blob data or error that happened.
-     * undefined while loading.
-     */
-    blobOrError?: GQL.File2 | ErrorLike
-}
-
-// eslint-disable-next-line react/no-unsafe
-export class BlobPage extends React.PureComponent<Props, State> {
-    private propsUpdates = new Subject<Props>()
-    private extendHighlightingTimeoutClicks = new Subject<void>()
-    private subscriptions = new Subscription()
-
-    constructor(props: Props) {
-        super(props)
-
-        this.state = {
-            wrapCode: ToggleLineWrap.getValue(),
-        }
-    }
-
-    private logViewEvent(): void {
+    // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
+    useEffect(() => {
         eventLogger.logViewEvent('Blob')
-    }
+    }, [repoName, commitID, filePath, isLightTheme, renderMode])
 
-    public componentDidMount(): void {
-        this.logViewEvent()
+    useEffect(
+        () =>
+            filePath &&
+            setBreadcrumb(
+                'filePath',
+                <FilePathBreadcrumb
+                    key="path"
+                    repoName={repoName}
+                    revision={revision}
+                    filePath={filePath}
+                    isDir={false}
+                />
+            ),
+        [filePath, revision, repoName, setBreadcrumb]
+    )
 
-        // Fetch repository revision.
-        this.subscriptions.add(
-            combineLatest([
-                this.propsUpdates.pipe(
-                    map(props => pick(props, 'repoName', 'commitID', 'filePath', 'isLightTheme')),
-                    distinctUntilChanged((a, b) => isEqual(a, b))
-                ),
-                this.extendHighlightingTimeoutClicks.pipe(mapTo(true), startWith(false)),
-            ])
-                .pipe(
-                    tap(() => this.setState({ blobOrError: undefined })),
-                    switchMap(([{ repoName, commitID, filePath, isLightTheme }, extendHighlightingTimeout]) =>
+    const [nextFetchWithDisabledTimeout, blobOrError] = useEventObservable(
+        useCallback(
+            (clicks: Observable<void>) =>
+                clicks.pipe(
+                    mapTo(true),
+                    startWith(false),
+                    switchMap(disableTimeout =>
                         fetchBlob({
                             repoName,
                             commitID,
                             filePath,
                             isLightTheme,
-                            disableTimeout: extendHighlightingTimeout,
-                        }).pipe(
-                            catchError((error): [ErrorLike] => {
-                                console.error(error)
-                                return [asError(error)]
-                            })
-                        )
-                    )
-                )
-                .subscribe(
-                    blobOrError => this.setState({ blobOrError }),
-                    error => console.error(error)
-                )
+                            disableTimeout,
+                        })
+                    ),
+                    catchError((error): [ErrorLike] => {
+                        console.error(error)
+                        return [asError(error)]
+                    })
+                ),
+            [repoName, commitID, filePath, isLightTheme]
         )
+    )
 
-        // Clear the Sourcegraph extensions model's component when the blob is no longer shown.
-        this.subscriptions.add(() => this.props.extensionsController.services.viewer.removeAllViewers())
+    const onExtendTimeoutClick = useCallback(
+        (event: React.MouseEvent): void => {
+            event.preventDefault()
+            nextFetchWithDisabledTimeout()
+        },
+        [nextFetchWithDisabledTimeout]
+    )
 
-        this.propsUpdates.next(this.props)
-    }
-
-    // Use UNSAFE_componentWillReceiveProps to avoid this.state.blobOrError being out of sync
-    // with props (see https://github.com/sourcegraph/sourcegraph/issues/5575).
-    public UNSAFE_componentWillReceiveProps(nextProps: Props): void {
-        this.propsUpdates.next(nextProps)
-        if (
-            this.props.repoName !== nextProps.repoName ||
-            this.props.commitID !== nextProps.commitID ||
-            this.props.filePath !== nextProps.filePath ||
-            ToggleRenderedFileMode.getModeFromURL(this.props.location) !==
-                ToggleRenderedFileMode.getModeFromURL(nextProps.location)
-        ) {
-            this.logViewEvent()
-        }
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    public render(): React.ReactNode {
-        let renderMode = ToggleRenderedFileMode.getModeFromURL(this.props.location)
-        // If url explicitly asks for a certain rendering mode, renderMode is set to that mode, else it checks:
-        // - If file contains richHTML and url does not include a line number: We render in richHTML.
-        // - If file does not contain richHTML or the url includes a line number: We render in code view.
-        if (!renderMode) {
-            renderMode =
-                this.state.blobOrError &&
-                !isErrorLike(this.state.blobOrError) &&
-                this.state.blobOrError.richHTML &&
-                !parseHash(this.props.location.hash).line
-                    ? 'rendered'
-                    : 'code'
-        }
-
-        // Always render these to avoid UI jitter during loading when switching to a new file.
-        const alwaysRender = (
-            <>
-                <PageTitle title={this.getPageTitle()} />
-                <RepoHeaderContributionPortal
-                    position="right"
-                    priority={20}
-                    element={
-                        <ToggleHistoryPanel
-                            key="toggle-blob-panel"
-                            location={this.props.location}
-                            history={this.props.history}
-                        />
-                    }
-                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
-                />
-                {renderMode === 'code' && (
-                    <RepoHeaderContributionPortal
-                        position="right"
-                        priority={99}
-                        element={<ToggleLineWrap key="toggle-line-wrap" onDidUpdate={this.onDidUpdateLineWrap} />}
-                        repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
-                    />
-                )}
-                <RepoHeaderContributionPortal
-                    position="right"
-                    priority={30}
-                    element={
-                        <GoToRawAction
-                            key="raw-action"
-                            repoName={this.props.repoName}
-                            revision={this.props.revision}
-                            filePath={this.props.filePath}
-                        />
-                    }
-                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
-                />
-                <BlobPanel
-                    {...this.props}
-                    position={
-                        lprToRange(parseHash(this.props.location.hash))
-                            ? lprToRange(parseHash(this.props.location.hash))!.start
-                            : undefined
-                    }
-                />
-            </>
-        )
-
-        if (isErrorLike(this.state.blobOrError)) {
-            // Be helpful if the URL was actually a tree and redirect.
-            // Some extensions may optimistically construct blob URLs because
-            // they cannot easily determine eagerly if a file path is a tree or a blob.
-            // We don't have error names on GraphQL errors.
-            if (/not a blob/i.test(this.state.blobOrError.message)) {
-                return <Redirect to={toTreeURL(this.props)} />
-            }
-            return (
-                <>
-                    {alwaysRender}
-                    <HeroPage
-                        icon={AlertCircleIcon}
-                        title="Error"
-                        subtitle={<ErrorMessage error={this.state.blobOrError} history={this.props.history} />}
-                    />
-                </>
-            )
-        }
-
-        if (!this.state.blobOrError) {
-            // Render placeholder for layout before content is fetched.
-            return <div className="blob-page__placeholder">{alwaysRender}</div>
-        }
-
-        return (
-            <>
-                {alwaysRender}
-                {this.state.blobOrError.richHTML && (
-                    <RepoHeaderContributionPortal
-                        position="right"
-                        priority={100}
-                        element={
-                            <ToggleRenderedFileMode
-                                key="toggle-rendered-file-mode"
-                                mode={renderMode || 'rendered'}
-                                location={this.props.location}
-                            />
-                        }
-                        repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
-                    />
-                )}
-                {this.state.blobOrError.richHTML && renderMode === 'rendered' && (
-                    <RenderedFile
-                        dangerousInnerHTML={this.state.blobOrError.richHTML}
-                        location={this.props.location}
-                        history={this.props.history}
-                    />
-                )}
-                {!this.state.blobOrError.richHTML && this.state.blobOrError.highlight.aborted && (
-                    <div className="blob-page__aborted">
-                        <div className="alert alert-info">
-                            Syntax-highlighting this file took too long. &nbsp;
-                            <button
-                                type="button"
-                                onClick={this.onExtendHighlightingTimeoutClick}
-                                className="btn btn-sm btn-primary"
-                            >
-                                Try again
-                            </button>
-                        </div>
-                    </div>
-                )}
-                {/* Render the (unhighlighted) blob also in the case highlighting timed out */}
-                {renderMode === 'code' && (
-                    <Blob
-                        {...this.props}
-                        className="blob-page__blob test-repo-blob"
-                        content={this.state.blobOrError.content}
-                        html={this.state.blobOrError.highlight.html}
-                        wrapCode={this.state.wrapCode}
-                        renderMode={renderMode}
-                    />
-                )}
-            </>
-        )
-    }
-
-    private onDidUpdateLineWrap = (value: boolean): void => this.setState({ wrapCode: value })
-
-    private onExtendHighlightingTimeoutClick = (): void => this.extendHighlightingTimeoutClicks.next()
-
-    private getPageTitle(): string {
-        const repoNameSplit = this.props.repoName.split('/')
-        const repoString = repoNameSplit.length > 2 ? repoNameSplit.slice(1).join('/') : this.props.repoName
-        if (this.props.filePath) {
-            const fileOrDirectory = this.props.filePath.split('/').pop()!
+    const getPageTitle = (): string => {
+        const repoNameSplit = repoName.split('/')
+        const repoString = repoNameSplit.length > 2 ? repoNameSplit.slice(1).join('/') : repoName
+        if (filePath) {
+            const fileOrDirectory = filePath.split('/').pop()!
             return `${fileOrDirectory} - ${repoString}`
         }
         return `${repoString}`
     }
+
+    // Clear the Sourcegraph extensions model's component when the blob is no longer shown.
+    useEffect(() => () => props.extensionsController.services.viewer.removeAllViewers(), [
+        props.extensionsController.services.viewer,
+    ])
+
+    // If url explicitly asks for a certain rendering mode, renderMode is set to that mode, else it checks:
+    // - If file contains richHTML and url does not include a line number: We render in richHTML.
+    // - If file does not contain richHTML or the url includes a line number: We render in code view.
+    if (!renderMode) {
+        renderMode =
+            blobOrError && !isErrorLike(blobOrError) && blobOrError.richHTML && !parseHash(props.location.hash).line
+                ? 'rendered'
+                : 'code'
+    }
+
+    // Always render these to avoid UI jitter during loading when switching to a new file.
+    const alwaysRender = (
+        <>
+            <PageTitle title={getPageTitle()} />
+            <RepoHeaderContributionPortal
+                position="right"
+                priority={20}
+                element={
+                    <ToggleHistoryPanel key="toggle-blob-panel" location={props.location} history={props.history} />
+                }
+                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+            />
+            {renderMode === 'code' && (
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={99}
+                    element={<ToggleLineWrap key="toggle-line-wrap" onDidUpdate={setWrapCode} />}
+                    repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                />
+            )}
+            <RepoHeaderContributionPortal
+                position="right"
+                priority={30}
+                element={
+                    <GoToRawAction key="raw-action" repoName={repoName} revision={props.revision} filePath={filePath} />
+                }
+                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+            />
+            <BlobPanel
+                {...props}
+                position={
+                    lprToRange(parseHash(props.location.hash))
+                        ? lprToRange(parseHash(props.location.hash))!.start
+                        : undefined
+                }
+            />
+        </>
+    )
+
+    if (isErrorLike(blobOrError)) {
+        // Be helpful if the URL was actually a tree and redirect.
+        // Some extensions may optimistically construct blob URLs because
+        // they cannot easily determine eagerly if a file path is a tree or a blob.
+        // We don't have error names on GraphQL errors.
+        if (/not a blob/i.test(blobOrError.message)) {
+            return <Redirect to={toTreeURL(props)} />
+        }
+        return (
+            <>
+                {alwaysRender}
+                <HeroPage
+                    icon={AlertCircleIcon}
+                    title="Error"
+                    subtitle={<ErrorMessage error={blobOrError} history={props.history} />}
+                />
+            </>
+        )
+    }
+
+    if (!blobOrError) {
+        // Render placeholder for layout before content is fetched.
+        return <div className="blob-page__placeholder">{alwaysRender}</div>
+    }
+
+    return (
+        <>
+            {alwaysRender}
+            {blobOrError.richHTML && (
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={100}
+                    element={
+                        <ToggleRenderedFileMode
+                            key="toggle-rendered-file-mode"
+                            mode={renderMode || 'rendered'}
+                            location={props.location}
+                        />
+                    }
+                    repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                />
+            )}
+            {blobOrError.richHTML && renderMode === 'rendered' && (
+                <RenderedFile
+                    dangerousInnerHTML={blobOrError.richHTML}
+                    location={props.location}
+                    history={props.history}
+                />
+            )}
+            {!blobOrError.richHTML && blobOrError.highlight.aborted && (
+                <div className="blob-page__aborted">
+                    <div className="alert alert-info">
+                        Syntax-highlighting this file took too long. &nbsp;
+                        <button type="button" onClick={onExtendTimeoutClick} className="btn btn-sm btn-primary">
+                            Try again
+                        </button>
+                    </div>
+                </div>
+            )}
+            {/* Render the (unhighlighted) blob also in the case highlighting timed out */}
+            {renderMode === 'code' && (
+                <Blob
+                    {...props}
+                    className="blob-page__blob test-repo-blob"
+                    content={blobOrError.content}
+                    html={blobOrError.highlight.html}
+                    wrapCode={wrapCode}
+                    renderMode={renderMode}
+                />
+            )}
+        </>
+    )
 }

@@ -43,6 +43,8 @@ import { getViewsForContainer } from '../../../../shared/src/api/client/services
 import { Settings } from '../../schema/settings.schema'
 import { ViewGrid } from './ViewGrid'
 import { VersionContextProps } from '../../../../shared/src/search/util'
+import { UpdateBreadcrumbsProps } from '../../components/Breadcrumbs'
+import { FilePathBreadcrumb } from '../FilePathBreadcrumb'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean
@@ -153,7 +155,8 @@ interface Props
         PatternTypeProps,
         CaseSensitivityProps,
         CopyQueryButtonProps,
-        VersionContextProps {
+        VersionContextProps,
+        UpdateBreadcrumbsProps {
     repoName: string
     repoID: GQL.ID
     repoDescription: string
@@ -176,6 +179,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
     patternType,
     caseSensitive,
     settingsCascade,
+    setBreadcrumb,
     ...props
 }) => {
     useEffect(() => {
@@ -185,6 +189,22 @@ export const TreePage: React.FunctionComponent<Props> = ({
             eventLogger.logViewEvent('Tree')
         }
     }, [filePath])
+
+    useEffect(
+        () =>
+            filePath &&
+            setBreadcrumb(
+                'treePath',
+                <FilePathBreadcrumb
+                    key="path"
+                    repoName={repoName}
+                    revision={revision}
+                    filePath={filePath}
+                    isDir={true}
+                />
+            ),
+        [repoName, revision, filePath, setBreadcrumb]
+    )
 
     const [showOlderCommits, setShowOlderCommits] = useState(false)
 
