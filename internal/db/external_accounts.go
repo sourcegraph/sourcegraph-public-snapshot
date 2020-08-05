@@ -122,7 +122,7 @@ WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND d
 
 	// Update the external account (it exists).
 
-	authData, err := intSecrets.CryptObject.EncryptBytes(*data.AuthData)
+	authData, err := intSecrets.CryptObject.EncryptBytesIfPossible(*data.AuthData)
 	if err != nil {
 		return err
 	}
