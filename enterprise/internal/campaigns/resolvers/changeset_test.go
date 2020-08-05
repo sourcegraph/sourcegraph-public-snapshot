@@ -231,15 +231,15 @@ fragment gitRef on GitRef {
 }
 
 fragment fileDiffNode on FileDiff {
-               oldPath
-               newPath
-               oldFile { name }
-               hunks {
-                 body
-                 oldRange { startLine, lines }
-                 newRange { startLine, lines }
-               }
-               stat { added, changed, deleted }
+    oldPath
+    newPath
+    oldFile { name }
+    hunks {
+      body
+      oldRange { startLine, lines }
+      newRange { startLine, lines }
+    }
+    stat { added, changed, deleted }
 }
 
 query($changeset: ID!) {
