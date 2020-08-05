@@ -8,7 +8,6 @@ import (
 
 	"github.com/dineshappavoo/basex"
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -35,15 +34,7 @@ func (s *Store) CreateCampaignSpec(ctx context.Context, c *campaigns.CampaignSpe
 	if err != nil {
 		return err
 	}
-	err = s.query(ctx, q, func(sc scanner) error {
-		return scanCampaignSpec(c, sc)
-	})
-
-	if err, ok := err.(*pq.Error); ok {
-		fmt.Printf("q: %s,\nargs: %s\n,pq error: %#v\n", q.Query(sqlf.PostgresBindVar), q.Args(), err)
-	}
-
-	return err
+	return s.query(ctx, q, func(sc scanner) error { return scanCampaignSpec(c, sc) })
 }
 
 var createCampaignSpecQueryFmtstr = `

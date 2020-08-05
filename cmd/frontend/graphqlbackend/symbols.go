@@ -54,13 +54,13 @@ func limitOrDefault(first *int32) int {
 // indexedSymbols checks to see if Zoekt has indexed symbols information for a
 // repository at a specific commit. If it has it returns the branch name (for
 // use when querying zoekt). Otherwise an empty string is returned.
-func indexedSymbolsBranch(repository, commit string) string {
+func indexedSymbolsBranch(ctx context.Context, repository, commit string) string {
 	z := search.Indexed()
 	if !z.Enabled() {
 		return ""
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 	set, err := z.ListAll(ctx)
 	if err != nil {
@@ -165,7 +165,9 @@ func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, branch s
 }
 
 func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *string, first *int32, includePatterns *[]string) (res []*symbolResolver, err error) {
-	if branch := indexedSymbolsBranch(string(commit.repoResolver.repo.Name), string(commit.oid)); branch != "" {
+	// TODO(keegancsmith) we should be able to use indexedSearchRequest here
+	// and remove indexedSymbolsBranch.
+	if branch := indexedSymbolsBranch(ctx, string(commit.repoResolver.repo.Name), string(commit.oid)); branch != "" {
 		return searchZoektSymbols(ctx, commit, branch, query, first, includePatterns)
 	}
 

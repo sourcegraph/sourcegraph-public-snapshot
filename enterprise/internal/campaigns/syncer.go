@@ -277,7 +277,7 @@ type SyncStore interface {
 	ListChangesetSyncData(context.Context, ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error)
 	GetChangeset(context.Context, GetChangesetOpts) (*campaigns.Changeset, error)
 	ListChangesets(context.Context, ListChangesetsOpts) (campaigns.Changesets, int64, error)
-	UpdateChangesets(ctx context.Context, cs ...*campaigns.Changeset) error
+	UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) error
 	UpsertChangesetEvents(ctx context.Context, cs ...*campaigns.ChangesetEvent) error
 	Transact(context.Context) (*Store, error)
 }
@@ -490,6 +490,11 @@ func (s *ChangesetSyncer) prioritizeChangesetsWithoutDiffStats(ctx context.Conte
 
 	ids := make([]int64, 0, len(changesets))
 	for _, cs := range changesets {
+		// TODO: This needs to go into ListChangesetsOpts
+		if cs.PublicationState != campaigns.ChangesetPublicationStatePublished ||
+			cs.ReconcilerState != campaigns.ReconcilerStateCompleted {
+			continue
+		}
 		ids = append(ids, cs.ID)
 	}
 	s.priorityNotify <- ids
@@ -509,9 +514,19 @@ func (s *ChangesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	return syncChangesets(ctx, s.ReposStore, s.SyncStore, s.HTTPFactory, cs)
 }
 
+// MockSyncChangesets can be set to mock SyncChangesets.
+//
+// Once Service.ApplyCampaign enqueues changesets to be synced in the
+// background it can be removed.
+var MockSyncChangesets func(ctx context.Context, repoStore RepoStore, syncStore SyncStore, cf *httpcli.Factory, cs ...*campaigns.Changeset) error
+
 // SyncChangesets refreshes the metadata of the given changesets and
 // updates them in the database.
 func SyncChangesets(ctx context.Context, repoStore RepoStore, syncStore SyncStore, cf *httpcli.Factory, cs ...*campaigns.Changeset) (err error) {
+	if MockSyncChangesets != nil {
+		return MockSyncChangesets(ctx, repoStore, syncStore, cf, cs...)
+	}
+
 	return syncChangesets(ctx, repoStore, syncStore, cf, cs...)
 }
 
@@ -585,8 +600,10 @@ func syncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if err = tx.UpdateChangesets(ctx, cs...); err != nil {
-		return err
+	for _, c := range cs {
+		if err = tx.UpdateChangeset(ctx, c); err != nil {
+			return err
+		}
 	}
 
 	return tx.UpsertChangesetEvents(ctx, events...)

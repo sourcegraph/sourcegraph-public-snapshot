@@ -67,10 +67,10 @@ export const gitReferenceFragments = gql`
         target {
             commit {
                 author {
-                    ...SignatureFields
+                    ...SignatureFieldsForReferences
                 }
                 committer {
-                    ...SignatureFields
+                    ...SignatureFieldsForReferences
                 }
                 behindAhead(revspec: "HEAD") @include(if: $withBehindAhead) {
                     behind
@@ -80,7 +80,7 @@ export const gitReferenceFragments = gql`
         }
     }
 
-    fragment SignatureFields on Signature {
+    fragment SignatureFieldsForReferences on Signature {
         person {
             displayName
             user {

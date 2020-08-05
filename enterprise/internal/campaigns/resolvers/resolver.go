@@ -425,12 +425,28 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs) (opts ee
 		opts.Limit = int(*args.First)
 	}
 
-	if args.State != nil {
-		state := *args.ExternalState
-		if !state.Valid() {
-			return opts, false, errors.New("changeset state not valid")
+	if args.PublicationState != nil {
+		publicationState := *args.PublicationState
+		if !publicationState.Valid() {
+			return opts, false, errors.New("changeset publication state not valid")
 		}
-		opts.ExternalState = &state
+		opts.PublicationState = &publicationState
+	}
+
+	if args.ReconcilerState != nil {
+		reconcilerState := *args.ReconcilerState
+		if !reconcilerState.Valid() {
+			return opts, false, errors.New("changeset reconciler state not valid")
+		}
+		opts.ReconcilerState = &reconcilerState
+	}
+
+	if args.ExternalState != nil {
+		externalState := *args.ExternalState
+		if !externalState.Valid() {
+			return opts, false, errors.New("changeset external state not valid")
+		}
+		opts.ExternalState = &externalState
 	}
 	if args.ReviewState != nil {
 		state := *args.ReviewState

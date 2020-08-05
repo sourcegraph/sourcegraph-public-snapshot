@@ -3,10 +3,10 @@ import React from 'react'
 import { ExternalChangesetNode } from './ExternalChangesetNode'
 import {
     ChangesetReviewState,
-    ChangesetState,
-    IExternalChangeset,
     ChangesetCheckState,
     ChangesetExternalState,
+    ChangesetReconcilerState,
+    ChangesetPublicationState,
 } from '../../../../../../shared/src/graphql/schema'
 import { Subject } from 'rxjs'
 import { shallow } from 'enzyme'
@@ -29,50 +29,41 @@ describe('ExternalChangesetNode', () => {
                     history={history}
                     location={location}
                     viewerCanAdminister={true}
-                    node={
-                        {
-                            __typename: 'ExternalChangeset',
-                            reviewState: ChangesetReviewState.PENDING,
-                            state: ChangesetState.UNPUBLISHED,
-                            externalState: ChangesetExternalState.OPEN,
-                            externalURL: {
-                                url: 'https://github.com/sourcegraph/sourcegraph/pull/111111',
+                    node={{
+                        __typename: 'ExternalChangeset',
+                        id: 'TestExternalChangeset',
+                        reviewState: ChangesetReviewState.PENDING,
+                        publicationState: ChangesetPublicationState.PUBLISHED,
+                        reconcilerState: ChangesetReconcilerState.COMPLETED,
+                        externalState: ChangesetExternalState.OPEN,
+                        externalURL: {
+                            url: 'https://github.com/sourcegraph/sourcegraph/pull/111111',
+                        },
+                        title: 'Remove lodash',
+                        body: 'We should remove lodash',
+                        checkState: ChangesetCheckState.FAILED,
+                        externalID: '123',
+                        diffStat: {
+                            added: 100,
+                            changed: 200,
+                            deleted: 100,
+                        },
+                        labels: [
+                            {
+                                color: '93ba13',
+                                description: 'Something is broken',
+                                text: 'bug',
                             },
-                            title: 'Remove lodash',
-                            body: 'We should remove lodash',
-                            checkState: ChangesetCheckState.FAILED,
-                            externalID: '123',
-                            diff: {
-                                fileDiffs: {
-                                    diffStat: {
-                                        added: 100,
-                                        changed: 200,
-                                        deleted: 100,
-                                    },
-                                    nodes: [{ __typename: 'FileDiff' }],
-                                },
-                            },
-                            diffStat: {
-                                added: 100,
-                                changed: 200,
-                                deleted: 100,
-                            },
-                            labels: [
-                                {
-                                    __typename: 'ChangesetLabel',
-                                    color: '93ba13',
-                                    description: 'Something is broken',
-                                    text: 'bug',
-                                },
-                            ],
-                            repository: {
-                                __typename: 'Repository',
-                                name: 'sourcegraph',
-                                url: 'github.com/sourcegraph/sourcegraph',
-                            },
-                            updatedAt: new Date('2020-01-01').toISOString(),
-                        } as IExternalChangeset
-                    }
+                        ],
+                        repository: {
+                            name: 'sourcegraph',
+                            url: 'github.com/sourcegraph/sourcegraph',
+                            id: 'TestRepository',
+                        },
+                        createdAt: new Date('2020-01-01').toISOString(),
+                        updatedAt: new Date('2020-01-01').toISOString(),
+                        nextSyncAt: null,
+                    }}
                     campaignUpdates={new Subject<void>()}
                 />
             )

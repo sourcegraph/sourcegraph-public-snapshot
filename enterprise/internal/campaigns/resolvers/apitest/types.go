@@ -138,18 +138,19 @@ type Repository struct {
 }
 
 type Changeset struct {
-	Typename      string `json:"__typename"`
-	ID            string
-	Repository    Repository
-	Campaigns     CampaignConnection
-	CreatedAt     string
-	UpdatedAt     string
-	NextSyncAt    string
-	Title         string
-	Body          string
-	State         string
-	ExternalState string
-	ExternalURL   struct {
+	Typename         string `json:"__typename"`
+	ID               string
+	Repository       Repository
+	Campaigns        CampaignConnection
+	CreatedAt        string
+	UpdatedAt        string
+	NextSyncAt       string
+	Title            string
+	Body             string
+	PublicationState string
+	ReconcilerState  string
+	ExternalState    string
+	ExternalURL      struct {
 		URL         string
 		ServiceType string
 	}

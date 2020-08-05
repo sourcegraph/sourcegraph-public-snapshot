@@ -42,6 +42,16 @@ export interface Filter {
 }
 
 /**
+ * Represents an operator in a search query.
+ *
+ * Example: AND, OR, NOT.
+ */
+export interface Operator {
+    type: 'operator'
+    value: string
+}
+
+/**
  * Represents a sequence of tokens in a search query.
  */
 export interface Sequence {
@@ -63,6 +73,7 @@ export type Token =
     | { type: 'whitespace' }
     | { type: 'openingParen' }
     | { type: 'closingParen' }
+    | { type: 'operator' }
     | Literal
     | Filter
     | Sequence
@@ -201,7 +212,11 @@ const character = (character: string): Parser<Literal> => (input, start) => {
  * Returns a {@link Parser} that will attempt to parse
  * tokens matching the given RegExp pattern in a search query.
  */
-const pattern = <T = Literal>(regexp: RegExp, output?: T, expected?: string): Parser<T> => {
+const pattern = <T extends Token = Literal>(
+    regexp: RegExp,
+    output?: T | ((input: string, range: CharacterRange) => T),
+    expected?: string
+): Parser<T> => {
     if (!regexp.source.startsWith('^')) {
         regexp = new RegExp(`^${regexp.source}`)
     }
@@ -214,10 +229,15 @@ const pattern = <T = Literal>(regexp: RegExp, output?: T, expected?: string): Pa
         if (!match) {
             return { type: 'error', expected: expected || `/${regexp.source}/`, at: start }
         }
+        const range = { start, end: start + match[0].length }
         return {
             type: 'success',
-            range: { start, end: start + match[0].length },
-            token: (output || { type: 'literal', value: match[0] }) as T,
+            range,
+            token: output
+                ? typeof output === 'function'
+                    ? output(input, range)
+                    : output
+                : ({ type: 'literal', value: match[0] } as T),
         }
     }
 }
@@ -225,6 +245,11 @@ const pattern = <T = Literal>(regexp: RegExp, output?: T, expected?: string): Pa
 const whitespace = pattern(/\s+/, { type: 'whitespace' as const }, 'whitespace')
 
 const literal = pattern(/[^\s)]+/)
+
+const operator = pattern(
+    /(and|AND|or|OR|not|NOT)/,
+    (input, { start, end }): Operator => ({ type: 'operator', value: input.slice(start, end) })
+)
 
 const filterKeyword = pattern(/-?[A-Za-z]+(?=:)/)
 
@@ -304,7 +329,7 @@ const searchQuery = zeroOrMore(
         whitespace,
         openingParen,
         closingParen,
-        ...[filter, quoted, literal].map(token =>
+        ...[operator, filter, quoted, literal].map(token =>
             followedBy(token, oneOf<{ type: 'whitespace' } | { type: 'closingParen' }>(whitespace, closingParen))
         )
     )

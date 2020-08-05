@@ -26,6 +26,13 @@ func TestParseParameterList(t *testing.T) {
 			WantLabels: None,
 		},
 		{
+			Name:       "Normal field:value with trailing space",
+			Input:      `file:README.md    `,
+			Want:       `{"field":"file","value":"README.md","negated":false}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":14}}`,
+			WantLabels: None,
+		},
+		{
 			Name:       "First char is colon",
 			Input:      `:foo`,
 			Want:       `{"value":":foo","negated":false}`,
