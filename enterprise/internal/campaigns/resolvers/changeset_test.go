@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
 func TestChangesetResolver(t *testing.T) {
@@ -54,8 +55,7 @@ func TestChangesetResolver(t *testing.T) {
 		createdByCampaign:   false,
 	})
 
-	githubPR := buildGithubPR(now, "12345", "OPEN", "Open GitHub PR", "Open GitHub PR Body", "open-pr")
-	publishedOpenChangeset := createChangeset(t, ctx, store, testChangesetOpts{
+	syncedGitHubChangeset := createChangeset(t, ctx, store, testChangesetOpts{
 		repo: repo.ID,
 		// We don't need a spec, because the resolver should take all the data
 		// out of the changeset.
@@ -64,10 +64,46 @@ func TestChangesetResolver(t *testing.T) {
 		externalID:          "12345",
 		externalBranch:      "open-pr",
 		externalState:       campaigns.ChangesetExternalStateOpen,
+		externalCheckState:  campaigns.ChangesetCheckStatePending,
+		externalReviewState: campaigns.ChangesetReviewStateChangesRequested,
 		publicationState:    campaigns.ChangesetPublicationStatePublished,
 		createdByCampaign:   false,
-		metadata:            githubPR,
+		metadata: &github.PullRequest{
+			ID:          "12345",
+			Title:       "GitHub PR Title",
+			Body:        "GitHub PR Body",
+			Number:      12345,
+			State:       "OPEN",
+			URL:         "https://github.com/sourcegraph/sourcegraph/pull/12345",
+			HeadRefName: "open-pr",
+			HeadRefOid:  "d34db33f",
+			BaseRefOid:  "f00b4r",
+			BaseRefName: "master",
+			TimelineItems: []github.TimelineItem{
+				{Type: "PullRequestCommit", Item: &github.PullRequestCommit{
+					Commit: github.Commit{
+						OID:           "d34db33f",
+						PushedDate:    now,
+						CommittedDate: now,
+					},
+				}},
+				{Type: "LabeledEvent", Item: &github.LabelEvent{
+					CreatedAt: now.Add(5 * time.Second),
+					Label: github.Label{
+						Name:        "cool-label",
+						Color:       "blue",
+						Description: "the best label in town",
+					},
+				}},
+			},
+			CreatedAt: now,
+			UpdatedAt: now,
+		},
 	})
+	events := syncedGitHubChangeset.Events()
+	if err := store.UpsertChangesetEvents(ctx, events...); err != nil {
+		t.Fatal(err)
+	}
 
 	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil)
 	if err != nil {
@@ -85,17 +121,30 @@ func TestChangesetResolver(t *testing.T) {
 				Title:      unpublishedSpec.Spec.Title,
 				Body:       unpublishedSpec.Spec.Body,
 				Repository: apitest.Repository{Name: repo.Name},
+				Labels:     []apitest.Label{},
 			},
 		},
 		{
-			changeset: publishedOpenChangeset,
+			changeset: syncedGitHubChangeset,
 			want: apitest.Changeset{
 				Typename:      "ExternalChangeset",
-				Title:         githubPR.Title,
-				Body:          githubPR.Body,
+				Title:         "GitHub PR Title",
+				Body:          "GitHub PR Body",
 				ExternalState: "OPEN",
 				ExternalID:    "12345",
+				CheckState:    "PENDING",
+				ReviewState:   "CHANGES_REQUESTED",
 				Repository:    apitest.Repository{Name: repo.Name},
+				ExternalURL: apitest.ExternalURL{
+					URL:         "https://github.com/sourcegraph/sourcegraph/pull/12345",
+					ServiceType: "github",
+				},
+				Events: apitest.ChangesetEventConnection{
+					TotalCount: 2,
+				},
+				Labels: []apitest.Label{
+					{Text: "cool-label", Color: "blue", Description: "the best label in town"},
+				},
 			},
 		},
 	}
@@ -127,10 +176,15 @@ query($changeset: ID!) {
 
       externalID
       externalState
-
+      reviewState
+      checkState
+      externalURL { url, serviceType }
       nextSyncAt
 
-	  repository { name }
+      repository { name }
+
+      events(first: 100) { totalCount }
+      labels { text, color, description }
     }
   }
 }

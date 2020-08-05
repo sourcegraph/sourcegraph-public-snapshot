@@ -109,6 +109,11 @@ type Repository struct {
 	Name string
 }
 
+type ExternalURL struct {
+	URL         string
+	ServiceType string
+}
+
 type Changeset struct {
 	Typename         string `json:"__typename"`
 	ID               string
@@ -123,19 +128,24 @@ type Changeset struct {
 	ReconcilerState  string
 	ExternalState    string
 	ExternalID       string
-	ExternalURL      struct {
-		URL         string
-		ServiceType string
-	}
-	ReviewState string
-	CheckState  string
-	Events      ChangesetEventConnection
-	Head        GitRef
-	Base        GitRef
+	ExternalURL      ExternalURL
+	ReviewState      string
+	CheckState       string
+	Events           ChangesetEventConnection
+	Head             GitRef
+	Base             GitRef
 
 	Diff struct {
 		FileDiffs FileDiffs
 	}
+
+	Labels []Label
+}
+
+type Label struct {
+	Text        string
+	Color       string
+	Description string
 }
 
 type ChangesetConnection struct {

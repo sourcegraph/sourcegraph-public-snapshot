@@ -228,6 +228,8 @@ type testChangesetOpts struct {
 	externalID          string
 	externalBranch      string
 	externalState       campaigns.ChangesetExternalState
+	externalReviewState campaigns.ChangesetReviewState
+	externalCheckState  campaigns.ChangesetCheckState
 
 	publicationState campaigns.ChangesetPublicationState
 	failureMessage   string
@@ -258,6 +260,8 @@ func createChangeset(
 		ExternalServiceType: opts.externalServiceType,
 		ExternalID:          opts.externalID,
 		ExternalBranch:      opts.externalBranch,
+		ExternalReviewState: opts.externalReviewState,
+		ExternalCheckState:  opts.externalCheckState,
 
 		PublicationState: opts.publicationState,
 
