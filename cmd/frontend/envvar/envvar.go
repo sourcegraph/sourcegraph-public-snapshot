@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
-var HTTPAddrInternal = env.Get("SRC_HTTP_ADDR_INTERNAL", "127.0.0.1:3090", "HTTP listen address for internal HTTP API. This should never be exposed externally, as it lacks certain authz checks.")
+var HTTPAddrInternal = env.Get("SRC_HTTP_ADDR_INTERNAL", "localhost:3090", "HTTP listen address for internal HTTP API. This should never be exposed externally, as it lacks certain authz checks.")
 
 var sourcegraphDotComMode, _ = strconv.ParseBool(env.Get("SOURCEGRAPHDOTCOM_MODE", "false", "run as Sourcegraph.com, with add'l marketing and redirects"))
 
