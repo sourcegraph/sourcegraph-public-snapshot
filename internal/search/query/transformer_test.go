@@ -728,6 +728,10 @@ func TestMapGlobToRegex(t *testing.T) {
 			input: "file:afile file:bfile file:**cfile",
 			want:  `(and "file:^.*?afile.*?$" "file:^.*?bfile.*?$" "file:^.*?cfile$")`,
 		},
+		{
+			input: "file:afile file:/bfile",
+			want:  `(and "file:^.*?afile.*?$" "file:^bfile$")`,
+		},
 	}
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
