@@ -12,15 +12,9 @@ It takes less than 5 minutes to run and install Sourcegraph using Docker:
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
 
-<script src=<a className="get-started-page__copytext" href="#">
-                                    <ClipboardArrowLeftOutlineIcon
-                                        onClick={() => this.copyDockerInstall()}
-                                        className="copytext icon-inline ml-1 medium"
-                                    />
-                                </a></script>
-                                <script src=<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.18.0</code></pre>
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.18.0</code></pre>
 
-Once the server is ready (logo is displayed in the terminal), navigate to the hostname or IP address on port `7080`.  Create the admin account, then you'll be guided through setting up Sourcegraph for code searching and navigation.
+Once the server is ready (logo is displayed in the terminal), navigate to the hostname or IP address on port `7080`. Create the admin account, then you'll be guided through setting up Sourcegraph for code searching and navigation.
 
 <!--
 TODO(ryan): Replace with updated screencast
@@ -38,7 +32,7 @@ For next steps and further configuration options, visit the [site administration
 <span class="virtual-br"></span>
 
 > NOTE: If you run Docker on an OS such as RHEL, Fedora, or CentOS with SELinux enabled, sVirt doesn't allow the Docker process
-to access `~/.sourcegraph/config` and `~/.sourcegraph/data`. In that case, you will see the following message:
+> to access `~/.sourcegraph/config` and `~/.sourcegraph/data`. In that case, you will see the following message:
 
 > `Failed to setup nginx:failed to generate nginx configuration to /etc/sourcegraph: open /etc/sourcegraph/nginx.conf: permission denied`.
 
