@@ -13,6 +13,8 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
+	"github.com/xeipuuv/gojsonschema"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -20,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/xeipuuv/gojsonschema"
 )
 
 // An ExternalServicesStore stores external services and their configuration.
@@ -56,12 +57,16 @@ type ExternalServiceKind struct {
 
 // ExternalServicesListOptions contains options for listing external services.
 type ExternalServicesListOptions struct {
-	Kinds []string
+	NamespaceUserID int32
+	Kinds           []string
 	*LimitOffset
 }
 
 func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
+	if o.NamespaceUserID > 0 {
+		conds = append(conds, sqlf.Sprintf(`namespace_user_id = %d`, o.NamespaceUserID))
+	}
 	if len(o.Kinds) > 0 {
 		kinds := make([]*sqlf.Query, 0, len(o.Kinds))
 		for _, kind := range o.Kinds {
@@ -282,8 +287,8 @@ func (e *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf
 
 	return dbconn.Global.QueryRowContext(
 		ctx,
-		"INSERT INTO external_services(kind, display_name, config, created_at, updated_at) VALUES($1, $2, $3, $4, $5) RETURNING id",
-		externalService.Kind, externalService.DisplayName, externalService.Config, externalService.CreatedAt, externalService.UpdatedAt,
+		"INSERT INTO external_services(kind, display_name, config, created_at, updated_at, namespace_user_id) VALUES($1, $2, $3, $4, $5, $6) RETURNING id",
+		externalService.Kind, externalService.DisplayName, externalService.Config, externalService.CreatedAt, externalService.UpdatedAt, externalService.NamespaceUserID,
 	).Scan(&externalService.ID)
 }
 
@@ -399,9 +404,11 @@ func (e *ExternalServicesStore) GetByID(ctx context.Context, id int64) (*types.E
 	return ess[0], nil
 }
 
-// List returns all external services.
+// List returns all or a user's external services.
 //
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+// 🚨 SECURITY: The caller must ensure one of the following:
+// 	- The actor is a site admin
+// 	- The opt.NamespaceUserID is same as authenticated user ID (i.e. actor.UID)
 func (e *ExternalServicesStore) List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
 	if Mocks.ExternalServices.List != nil {
 		return Mocks.ExternalServices.List(opt)

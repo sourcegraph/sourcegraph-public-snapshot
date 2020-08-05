@@ -17,10 +17,11 @@ import (
 
 func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 	tests := []struct {
-		name      string
-		kinds     []string
-		wantQuery string
-		wantArgs  []interface{}
+		name            string
+		namespaceUserID int32
+		kinds           []string
+		wantQuery       string
+		wantArgs        []interface{}
 	}{
 		{
 			name:      "no kind",
@@ -38,11 +39,18 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			wantQuery: "deleted_at IS NULL AND kind IN ($1 , $2)",
 			wantArgs:  []interface{}{extsvc.KindGitHub, extsvc.KindGitLab},
 		},
+		{
+			name:            "has namespace user ID",
+			namespaceUserID: 1,
+			wantQuery:       "deleted_at IS NULL AND namespace_user_id = $1",
+			wantArgs:        []interface{}{int32(1)},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			opts := ExternalServicesListOptions{
-				Kinds: test.kinds,
+				NamespaceUserID: test.namespaceUserID,
+				Kinds:           test.kinds,
 			}
 			q := sqlf.Join(opts.sqlConditions(), "AND")
 			if diff := cmp.Diff(test.wantQuery, q.Query(sqlf.PostgresBindVar)); diff != "" {
@@ -294,30 +302,72 @@ func TestExternalServicesStore_List(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
+	// Create test user
+	user, err := Users.Create(ctx, NewUser{
+		Email:           "alice@example.com",
+		Username:        "alice",
+		Password:        "password",
+		EmailIsVerified: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// Create a new external service
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
 	es := &types.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Kind:            extsvc.KindGitHub,
+		DisplayName:     "GITHUB #1",
+		Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		NamespaceUserID: &user.ID,
 	}
-	err := (&ExternalServicesStore{}).Create(ctx, confGet, es)
+	err = (&ExternalServicesStore{}).Create(ctx, confGet, es)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	ess, err := (&ExternalServicesStore{}).List(ctx, ExternalServicesListOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Run("list all external services", func(t *testing.T) {
+		ess, err := (&ExternalServicesStore{}).List(ctx, ExternalServicesListOptions{})
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	if len(ess) != 1 {
-		t.Fatalf("Want 1 external service but got %d", len(ess))
-	} else if diff := cmp.Diff(es, ess[0]); diff != "" {
-		t.Fatalf("(-want +got):\n%s", diff)
-	}
+		if len(ess) != 1 {
+			t.Fatalf("Want 1 external service but got %d", len(ess))
+		} else if diff := cmp.Diff(es, ess[0]); diff != "" {
+			t.Fatalf("(-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("list only test user's external services", func(t *testing.T) {
+		ess, err := (&ExternalServicesStore{}).List(ctx, ExternalServicesListOptions{
+			NamespaceUserID: user.ID,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(ess) != 1 {
+			t.Fatalf("Want 1 external service but got %d", len(ess))
+		} else if diff := cmp.Diff(es, ess[0]); diff != "" {
+			t.Fatalf("(-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("list non-exist user's external services", func(t *testing.T) {
+		ess, err := (&ExternalServicesStore{}).List(ctx, ExternalServicesListOptions{
+			NamespaceUserID: 404,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(ess) != 0 {
+			t.Fatalf("Want 0 external service but got %d", len(ess))
+		}
+	})
 }
 
 func TestExternalServicesStore_Count(t *testing.T) {
