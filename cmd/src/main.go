@@ -41,6 +41,7 @@ The commands are:
 	actions         runs actions to generate patch sets (experimental)
 	campaigns       manages campaigns (experimental)
 	lsif            manages LSIF data
+	serve-git       serves your local git repositories over HTTP for Sourcegraph to pull
 	version         display and compare the src-cli version against the recommended version for your instance
 
 Use "src [command] -h" for more information about a command.
