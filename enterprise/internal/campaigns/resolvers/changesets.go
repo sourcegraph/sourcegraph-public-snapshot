@@ -144,6 +144,7 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*campaign
 			return
 		}
 
+		fmt.Printf("len(r.changesets)=%d\n", len(r.changesets))
 		changesetIDs := make([]int64, len(r.changesets))
 		for i, c := range r.changesets {
 			changesetIDs[i] = c.ID
@@ -215,6 +216,11 @@ type changesetResolver struct {
 	nextSyncAtOnce      sync.Once
 	nextSyncAt          time.Time
 	nextSyncAtErr       error
+
+	// cache the current ChangesetSpec as it's accessed by multiple methods
+	specOnce sync.Once
+	spec     *campaigns.ChangesetSpec
+	specErr  error
 }
 
 const changesetIDKind = "Changeset"
@@ -284,6 +290,22 @@ func (r *changesetResolver) computeRepo() (*graphqlbackend.RepositoryResolver, e
 		}
 	})
 	return r.repo, r.repoErr
+}
+
+func (r *changesetResolver) hasSpec() bool {
+	return r.changeset.CurrentSpecID != 0
+}
+
+func (r *changesetResolver) computeSpec(ctx context.Context) (*campaigns.ChangesetSpec, error) {
+	r.specOnce.Do(func() {
+		if r.changeset.CurrentSpecID == 0 {
+			r.specErr = errors.New("Changeset has no ChangesetSpec")
+			return
+		}
+
+		r.spec, r.specErr = r.store.GetChangesetSpecByID(ctx, r.changeset.CurrentSpecID)
+	})
+	return r.spec, r.specErr
 }
 
 func (r *changesetResolver) computeEvents(ctx context.Context) ([]*campaigns.ChangesetEvent, error) {
@@ -388,17 +410,37 @@ func (r *changesetResolver) NextSyncAt(ctx context.Context) (*graphqlbackend.Dat
 	return &graphqlbackend.DateTime{Time: nextSyncAt}, nil
 }
 
-func (r *changesetResolver) Title() (string, error) {
-	if r.changeset == nil {
-		return "TODO: return from spec", nil
+func (r *changesetResolver) Title(ctx context.Context) (string, error) {
+	if r.changeset.PublicationState.Unpublished() {
+		spec, err := r.computeSpec(ctx)
+		if err != nil {
+			return "", err
+		}
+
+		if spec.Spec.IsImportingExisting() {
+			return "", errors.New("ChangesetSpec imports a changeset and has no title")
+		}
+
+		return spec.Spec.Title, nil
 	}
+
 	return r.changeset.Title()
 }
 
-func (r *changesetResolver) Body() (string, error) {
-	if r.changeset == nil {
-		return "TODO: return from spec", nil
+func (r *changesetResolver) Body(ctx context.Context) (string, error) {
+	if r.changeset.PublicationState.Unpublished() {
+		spec, err := r.computeSpec(ctx)
+		if err != nil {
+			return "", err
+		}
+
+		if spec.Spec.IsImportingExisting() {
+			return "", errors.New("ChangesetSpec imports a changeset and has no body")
+		}
+
+		return spec.Spec.Body, nil
 	}
+
 	return r.changeset.Body()
 }
 
@@ -411,10 +453,16 @@ func (r *changesetResolver) ReconcilerState() campaigns.ReconcilerState {
 }
 
 func (r *changesetResolver) ExternalState() *campaigns.ChangesetExternalState {
+	if r.changeset.PublicationState.Unpublished() {
+		return nil
+	}
 	return &r.changeset.ExternalState
 }
 
 func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
+	if r.changeset.PublicationState.Unpublished() {
+		return nil, nil
+	}
 	url, err := r.changeset.URL()
 	if err != nil {
 		return nil, err
@@ -423,10 +471,10 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 }
 
 func (r *changesetResolver) ReviewState(ctx context.Context) *campaigns.ChangesetReviewState {
-	if r.changeset.PublicationState.Published() {
-		return &r.changeset.ExternalReviewState
+	if r.changeset.PublicationState.Unpublished() {
+		return nil
 	}
-	return nil
+	return &r.changeset.ExternalReviewState
 }
 
 func (r *changesetResolver) CheckState() *campaigns.ChangesetCheckState {

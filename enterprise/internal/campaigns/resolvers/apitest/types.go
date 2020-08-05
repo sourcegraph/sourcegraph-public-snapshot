@@ -58,32 +58,6 @@ type FileDiffs struct {
 	Nodes []FileDiff
 }
 
-type PatchConnection struct {
-	Nodes      []Patch
-	TotalCount int
-	PageInfo   struct {
-		HasNextPage bool
-	}
-}
-
-type Patch struct {
-	Typename            string `json:"__typename"`
-	ID                  string
-	PublicationEnqueued bool
-	Publishable         bool
-	Repository          struct{ Name, URL string }
-	Diff                struct {
-		FileDiffs FileDiffs
-	}
-}
-
-type PatchSet struct {
-	ID         string
-	Patches    PatchConnection
-	PreviewURL string
-	DiffStat   DiffStat
-}
-
 type User struct {
 	ID         string
 	DatabaseID int32
@@ -112,12 +86,10 @@ type Campaign struct {
 	Namespace               UserOrg
 	CreatedAt               string
 	UpdatedAt               string
-	Patches                 PatchConnection
-	HasUnpublishedPatches   bool
+	URL                     string
 	Changesets              ChangesetConnection
 	ChangesetCountsOverTime []ChangesetCounts
 	DiffStat                DiffStat
-	PatchSet                PatchSet
 }
 
 type CampaignConnection struct {
