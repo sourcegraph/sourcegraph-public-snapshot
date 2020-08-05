@@ -816,7 +816,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 						}
 						fmt.Fprintf(&b, "\n- _%s_\n", c.alertDescription(o, alert.threshold))
 						prometheusAlertNames = append(prometheusAlertNames,
-							fmt.Sprintf("    \"%s\"", prometheusAlertName(alert.level, c.Name, o.Name)))
+							fmt.Sprintf("  \"%s\"", prometheusAlertName(alert.level, c.Name, o.Name)))
 					}
 					fmt.Fprint(&b, "\n")
 
@@ -827,12 +827,9 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 					}
 					// add silencing configuration as another solution
 					fmt.Fprintf(&b, "- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:\n\n")
-					fmt.Fprintf(&b, "```json\n%s\n```\n\n", fmt.Sprintf(`{
-  "observability.silenceAlerts": [
+					fmt.Fprintf(&b, "```json\n%s\n```\n\n", fmt.Sprintf(`"observability.silenceAlerts": [
 %s
-  ]
-}`, strings.Join(prometheusAlertNames, ",\n")))
-					fmt.Fprint(&b, "\n")
+]`, strings.Join(prometheusAlertNames, ",\n")))
 				}
 			}
 		}

@@ -23,13 +23,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_99th_percentile_search_request_duration"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_99th_percentile_search_request_duration"
+]
 ```
-
 
 ## frontend: 90th_percentile_search_request_duration
 
@@ -46,13 +43,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_90th_percentile_search_request_duration"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_90th_percentile_search_request_duration"
+]
 ```
-
 
 ## frontend: hard_timeout_search_responses
 
@@ -67,14 +61,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_hard_timeout_search_responses",
-    "critical_frontend_hard_timeout_search_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_hard_timeout_search_responses",
+  "critical_frontend_hard_timeout_search_responses"
+]
 ```
-
 
 ## frontend: hard_error_search_responses
 
@@ -89,14 +80,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_hard_error_search_responses",
-    "critical_frontend_hard_error_search_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_hard_error_search_responses",
+  "critical_frontend_hard_error_search_responses"
+]
 ```
-
 
 ## frontend: partial_timeout_search_responses
 
@@ -109,13 +97,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_partial_timeout_search_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_partial_timeout_search_responses"
+]
 ```
-
 
 ## frontend: search_alert_user_suggestions
 
@@ -129,13 +114,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_search_alert_user_suggestions"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_search_alert_user_suggestions"
+]
 ```
-
 
 ## frontend: page_load_latency
 
@@ -150,13 +132,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "critical_frontend_page_load_latency"
-  ]
-}
+"observability.silenceAlerts": [
+  "critical_frontend_page_load_latency"
+]
 ```
-
 
 ## frontend: blob_load_latency
 
@@ -171,13 +150,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "critical_frontend_blob_load_latency"
-  ]
-}
+"observability.silenceAlerts": [
+  "critical_frontend_blob_load_latency"
+]
 ```
-
 
 ## frontend: 99th_percentile_search_codeintel_request_duration
 
@@ -194,13 +170,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_99th_percentile_search_codeintel_request_duration"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_99th_percentile_search_codeintel_request_duration"
+]
 ```
-
 
 ## frontend: 90th_percentile_search_codeintel_request_duration
 
@@ -217,13 +190,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_90th_percentile_search_codeintel_request_duration"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_90th_percentile_search_codeintel_request_duration"
+]
 ```
-
 
 ## frontend: hard_timeout_search_codeintel_responses
 
@@ -238,14 +208,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_hard_timeout_search_codeintel_responses",
-    "critical_frontend_hard_timeout_search_codeintel_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_hard_timeout_search_codeintel_responses",
+  "critical_frontend_hard_timeout_search_codeintel_responses"
+]
 ```
-
 
 ## frontend: hard_error_search_codeintel_responses
 
@@ -260,14 +227,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_hard_error_search_codeintel_responses",
-    "critical_frontend_hard_error_search_codeintel_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_hard_error_search_codeintel_responses",
+  "critical_frontend_hard_error_search_codeintel_responses"
+]
 ```
-
 
 ## frontend: partial_timeout_search_codeintel_responses
 
@@ -280,13 +244,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_partial_timeout_search_codeintel_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_partial_timeout_search_codeintel_responses"
+]
 ```
-
 
 ## frontend: search_codeintel_alert_user_suggestions
 
@@ -300,13 +261,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_search_codeintel_alert_user_suggestions"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_search_codeintel_alert_user_suggestions"
+]
 ```
-
 
 ## frontend: 99th_percentile_search_api_request_duration
 
@@ -324,13 +282,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_99th_percentile_search_api_request_duration"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_99th_percentile_search_api_request_duration"
+]
 ```
-
 
 ## frontend: 90th_percentile_search_api_request_duration
 
@@ -348,13 +303,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_90th_percentile_search_api_request_duration"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_90th_percentile_search_api_request_duration"
+]
 ```
-
 
 ## frontend: hard_timeout_search_api_responses
 
@@ -369,14 +321,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_hard_timeout_search_api_responses",
-    "critical_frontend_hard_timeout_search_api_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_hard_timeout_search_api_responses",
+  "critical_frontend_hard_timeout_search_api_responses"
+]
 ```
-
 
 ## frontend: hard_error_search_api_responses
 
@@ -391,14 +340,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_hard_error_search_api_responses",
-    "critical_frontend_hard_error_search_api_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_hard_error_search_api_responses",
+  "critical_frontend_hard_error_search_api_responses"
+]
 ```
-
 
 ## frontend: partial_timeout_search_api_responses
 
@@ -411,13 +357,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_partial_timeout_search_api_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_partial_timeout_search_api_responses"
+]
 ```
-
 
 ## frontend: search_api_alert_user_suggestions
 
@@ -431,13 +374,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_search_api_alert_user_suggestions"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_search_api_alert_user_suggestions"
+]
 ```
-
 
 ## frontend: 99th_percentile_precise_code_intel_api_duration
 
@@ -450,13 +390,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_99th_percentile_precise_code_intel_api_duration"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_99th_percentile_precise_code_intel_api_duration"
+]
 ```
-
 
 ## frontend: precise_code_intel_api_errors
 
@@ -469,13 +406,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_precise_code_intel_api_errors"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_precise_code_intel_api_errors"
+]
 ```
-
 
 ## frontend: 99th_percentile_precise_code_intel_store_duration
 
@@ -488,13 +422,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_99th_percentile_precise_code_intel_store_duration"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_99th_percentile_precise_code_intel_store_duration"
+]
 ```
-
 
 ## frontend: precise_code_intel_store_errors
 
@@ -507,13 +438,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_precise_code_intel_store_errors"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_precise_code_intel_store_errors"
+]
 ```
-
 
 ## frontend: internal_indexed_search_error_responses
 
@@ -527,13 +455,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_internal_indexed_search_error_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_internal_indexed_search_error_responses"
+]
 ```
-
 
 ## frontend: internal_unindexed_search_error_responses
 
@@ -547,13 +472,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_internal_unindexed_search_error_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_internal_unindexed_search_error_responses"
+]
 ```
-
 
 ## frontend: internal_api_error_responses
 
@@ -567,13 +489,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_internal_api_error_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_internal_api_error_responses"
+]
 ```
-
 
 ## frontend: 99th_percentile_precise_code_intel_bundle_manager_query_duration
 
@@ -586,13 +505,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_99th_percentile_precise_code_intel_bundle_manager_query_duration"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_99th_percentile_precise_code_intel_bundle_manager_query_duration"
+]
 ```
-
 
 ## frontend: 99th_percentile_precise_code_intel_bundle_manager_transfer_duration
 
@@ -605,13 +521,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_99th_percentile_precise_code_intel_bundle_manager_transfer_duration"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_99th_percentile_precise_code_intel_bundle_manager_transfer_duration"
+]
 ```
-
 
 ## frontend: precise_code_intel_bundle_manager_error_responses
 
@@ -624,13 +537,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_precise_code_intel_bundle_manager_error_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_precise_code_intel_bundle_manager_error_responses"
+]
 ```
-
 
 ## frontend: 99th_percentile_gitserver_duration
 
@@ -643,13 +553,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_99th_percentile_gitserver_duration"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_99th_percentile_gitserver_duration"
+]
 ```
-
 
 ## frontend: gitserver_error_responses
 
@@ -662,13 +569,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_gitserver_error_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_gitserver_error_responses"
+]
 ```
-
 
 ## frontend: 90th_percentile_updatecheck_requests
 
@@ -681,13 +585,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_90th_percentile_updatecheck_requests"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_90th_percentile_updatecheck_requests"
+]
 ```
-
 
 ## frontend: observability_test_alert_warning
 
@@ -701,13 +602,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_observability_test_alert_warning"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_observability_test_alert_warning"
+]
 ```
-
 
 ## frontend: observability_test_alert_critical
 
@@ -721,13 +619,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "critical_frontend_observability_test_alert_critical"
-  ]
-}
+"observability.silenceAlerts": [
+  "critical_frontend_observability_test_alert_critical"
+]
 ```
-
 
 ## frontend: container_cpu_usage
 
@@ -742,13 +637,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_container_cpu_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_container_cpu_usage"
+]
 ```
-
 
 ## frontend: container_memory_usage
 
@@ -763,13 +655,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_container_memory_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_container_memory_usage"
+]
 ```
-
 
 ## frontend: container_restarts
 
@@ -788,13 +677,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_container_restarts"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_container_restarts"
+]
 ```
-
 
 ## frontend: fs_inodes_used
 
@@ -809,13 +695,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_fs_inodes_used"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_fs_inodes_used"
+]
 ```
-
 
 ## frontend: provisioning_container_cpu_usage_7d
 
@@ -832,13 +715,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_provisioning_container_cpu_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_provisioning_container_cpu_usage_7d"
+]
 ```
-
 
 ## frontend: provisioning_container_memory_usage_7d
 
@@ -855,13 +735,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_provisioning_container_memory_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_provisioning_container_memory_usage_7d"
+]
 ```
-
 
 ## frontend: provisioning_container_cpu_usage_5m
 
@@ -876,13 +753,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_provisioning_container_cpu_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_provisioning_container_cpu_usage_5m"
+]
 ```
-
 
 ## frontend: provisioning_container_memory_usage_5m
 
@@ -897,13 +771,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_provisioning_container_memory_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_provisioning_container_memory_usage_5m"
+]
 ```
-
 
 ## frontend: go_goroutines
 
@@ -916,13 +787,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_go_goroutines"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_go_goroutines"
+]
 ```
-
 
 ## frontend: go_gc_duration_seconds
 
@@ -935,13 +803,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_frontend_go_gc_duration_seconds"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_frontend_go_gc_duration_seconds"
+]
 ```
-
 
 ## frontend: pods_available_percentage
 
@@ -954,13 +819,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "critical_frontend_pods_available_percentage"
-  ]
-}
+"observability.silenceAlerts": [
+  "critical_frontend_pods_available_percentage"
+]
 ```
-
 
 ## gitserver: disk_space_remaining
 
@@ -976,14 +838,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_gitserver_disk_space_remaining",
-    "critical_gitserver_disk_space_remaining"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_gitserver_disk_space_remaining",
+  "critical_gitserver_disk_space_remaining"
+]
 ```
-
 
 ## gitserver: running_git_commands
 
@@ -1001,14 +860,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_gitserver_running_git_commands",
-    "critical_gitserver_running_git_commands"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_gitserver_running_git_commands",
+  "critical_gitserver_running_git_commands"
+]
 ```
-
 
 ## gitserver: repository_clone_queue_size
 
@@ -1023,13 +879,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_gitserver_repository_clone_queue_size"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_gitserver_repository_clone_queue_size"
+]
 ```
-
 
 ## gitserver: repository_existence_check_queue_size
 
@@ -1045,13 +898,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_gitserver_repository_existence_check_queue_size"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_gitserver_repository_existence_check_queue_size"
+]
 ```
-
 
 ## gitserver: echo_command_duration_test
 
@@ -1069,14 +919,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_gitserver_echo_command_duration_test",
-    "critical_gitserver_echo_command_duration_test"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_gitserver_echo_command_duration_test",
+  "critical_gitserver_echo_command_duration_test"
+]
 ```
-
 
 ## gitserver: frontend_internal_api_error_responses
 
@@ -1096,13 +943,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_gitserver_frontend_internal_api_error_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_gitserver_frontend_internal_api_error_responses"
+]
 ```
-
 
 ## gitserver: container_cpu_usage
 
@@ -1117,13 +961,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_gitserver_container_cpu_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_gitserver_container_cpu_usage"
+]
 ```
-
 
 ## gitserver: container_memory_usage
 
@@ -1138,13 +979,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_gitserver_container_memory_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_gitserver_container_memory_usage"
+]
 ```
-
 
 ## gitserver: container_restarts
 
@@ -1163,13 +1001,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_gitserver_container_restarts"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_gitserver_container_restarts"
+]
 ```
-
 
 ## gitserver: fs_inodes_used
 
@@ -1184,13 +1019,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_gitserver_fs_inodes_used"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_gitserver_fs_inodes_used"
+]
 ```
-
 
 ## gitserver: provisioning_container_cpu_usage_7d
 
@@ -1207,13 +1039,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_gitserver_provisioning_container_cpu_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_gitserver_provisioning_container_cpu_usage_7d"
+]
 ```
-
 
 ## gitserver: provisioning_container_memory_usage_7d
 
@@ -1230,13 +1059,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_gitserver_provisioning_container_memory_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_gitserver_provisioning_container_memory_usage_7d"
+]
 ```
-
 
 ## gitserver: provisioning_container_cpu_usage_5m
 
@@ -1251,13 +1077,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_gitserver_provisioning_container_cpu_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_gitserver_provisioning_container_cpu_usage_5m"
+]
 ```
-
 
 ## gitserver: provisioning_container_memory_usage_5m
 
@@ -1272,13 +1095,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_gitserver_provisioning_container_memory_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_gitserver_provisioning_container_memory_usage_5m"
+]
 ```
-
 
 ## gitserver: go_goroutines
 
@@ -1291,13 +1111,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_gitserver_go_goroutines"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_gitserver_go_goroutines"
+]
 ```
-
 
 ## gitserver: go_gc_duration_seconds
 
@@ -1310,13 +1127,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_gitserver_go_gc_duration_seconds"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_gitserver_go_gc_duration_seconds"
+]
 ```
-
 
 ## gitserver: pods_available_percentage
 
@@ -1329,13 +1143,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "critical_gitserver_pods_available_percentage"
-  ]
-}
+"observability.silenceAlerts": [
+  "critical_gitserver_pods_available_percentage"
+]
 ```
-
 
 ## github-proxy: github_core_rate_limit_remaining
 
@@ -1349,13 +1160,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "critical_github-proxy_github_core_rate_limit_remaining"
-  ]
-}
+"observability.silenceAlerts": [
+  "critical_github-proxy_github_core_rate_limit_remaining"
+]
 ```
-
 
 ## github-proxy: github_search_rate_limit_remaining
 
@@ -1369,13 +1177,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_github-proxy_github_search_rate_limit_remaining"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_github-proxy_github_search_rate_limit_remaining"
+]
 ```
-
 
 ## github-proxy: container_cpu_usage
 
@@ -1390,13 +1195,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_github-proxy_container_cpu_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_github-proxy_container_cpu_usage"
+]
 ```
-
 
 ## github-proxy: container_memory_usage
 
@@ -1411,13 +1213,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_github-proxy_container_memory_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_github-proxy_container_memory_usage"
+]
 ```
-
 
 ## github-proxy: container_restarts
 
@@ -1436,13 +1235,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_github-proxy_container_restarts"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_github-proxy_container_restarts"
+]
 ```
-
 
 ## github-proxy: fs_inodes_used
 
@@ -1457,13 +1253,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_github-proxy_fs_inodes_used"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_github-proxy_fs_inodes_used"
+]
 ```
-
 
 ## github-proxy: provisioning_container_cpu_usage_7d
 
@@ -1480,13 +1273,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_github-proxy_provisioning_container_cpu_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_github-proxy_provisioning_container_cpu_usage_7d"
+]
 ```
-
 
 ## github-proxy: provisioning_container_memory_usage_7d
 
@@ -1503,13 +1293,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_github-proxy_provisioning_container_memory_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_github-proxy_provisioning_container_memory_usage_7d"
+]
 ```
-
 
 ## github-proxy: provisioning_container_cpu_usage_5m
 
@@ -1524,13 +1311,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_github-proxy_provisioning_container_cpu_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_github-proxy_provisioning_container_cpu_usage_5m"
+]
 ```
-
 
 ## github-proxy: provisioning_container_memory_usage_5m
 
@@ -1545,13 +1329,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_github-proxy_provisioning_container_memory_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_github-proxy_provisioning_container_memory_usage_5m"
+]
 ```
-
 
 ## github-proxy: go_goroutines
 
@@ -1564,13 +1345,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_github-proxy_go_goroutines"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_github-proxy_go_goroutines"
+]
 ```
-
 
 ## github-proxy: go_gc_duration_seconds
 
@@ -1583,13 +1361,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_github-proxy_go_gc_duration_seconds"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_github-proxy_go_gc_duration_seconds"
+]
 ```
-
 
 ## github-proxy: pods_available_percentage
 
@@ -1602,13 +1377,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "critical_github-proxy_pods_available_percentage"
-  ]
-}
+"observability.silenceAlerts": [
+  "critical_github-proxy_pods_available_percentage"
+]
 ```
-
 
 ## precise-code-intel-bundle-manager: 99th_percentile_bundle_database_duration
 
@@ -1621,13 +1393,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-bundle-manager_99th_percentile_bundle_database_duration"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-bundle-manager_99th_percentile_bundle_database_duration"
+]
 ```
-
 
 ## precise-code-intel-bundle-manager: bundle_database_errors
 
@@ -1640,13 +1409,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-bundle-manager_bundle_database_errors"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-bundle-manager_bundle_database_errors"
+]
 ```
-
 
 ## precise-code-intel-bundle-manager: 99th_percentile_bundle_reader_duration
 
@@ -1659,13 +1425,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-bundle-manager_99th_percentile_bundle_reader_duration"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-bundle-manager_99th_percentile_bundle_reader_duration"
+]
 ```
-
 
 ## precise-code-intel-bundle-manager: bundle_reader_errors
 
@@ -1678,13 +1441,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-bundle-manager_bundle_reader_errors"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-bundle-manager_bundle_reader_errors"
+]
 ```
-
 
 ## precise-code-intel-bundle-manager: disk_space_remaining
 
@@ -1700,14 +1460,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-bundle-manager_disk_space_remaining",
-    "critical_precise-code-intel-bundle-manager_disk_space_remaining"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-bundle-manager_disk_space_remaining",
+  "critical_precise-code-intel-bundle-manager_disk_space_remaining"
+]
 ```
-
 
 ## precise-code-intel-bundle-manager: janitor_errors
 
@@ -1720,13 +1477,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-bundle-manager_janitor_errors"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-bundle-manager_janitor_errors"
+]
 ```
-
 
 ## precise-code-intel-bundle-manager: janitor_old_uploads_removed
 
@@ -1739,13 +1493,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-bundle-manager_janitor_old_uploads_removed"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-bundle-manager_janitor_old_uploads_removed"
+]
 ```
-
 
 ## precise-code-intel-bundle-manager: janitor_old_parts_removed
 
@@ -1758,13 +1509,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-bundle-manager_janitor_old_parts_removed"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-bundle-manager_janitor_old_parts_removed"
+]
 ```
-
 
 ## precise-code-intel-bundle-manager: janitor_old_dumps_removed
 
@@ -1777,13 +1525,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-bundle-manager_janitor_old_dumps_removed"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-bundle-manager_janitor_old_dumps_removed"
+]
 ```
-
 
 ## precise-code-intel-bundle-manager: janitor_orphans
 
@@ -1796,13 +1541,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-bundle-manager_janitor_orphans"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-bundle-manager_janitor_orphans"
+]
 ```
-
 
 ## precise-code-intel-bundle-manager: janitor_uploads_removed
 
@@ -1815,13 +1557,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-bundle-manager_janitor_uploads_removed"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-bundle-manager_janitor_uploads_removed"
+]
 ```
-
 
 ## precise-code-intel-bundle-manager: frontend_internal_api_error_responses
 
@@ -1841,13 +1580,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-bundle-manager_frontend_internal_api_error_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-bundle-manager_frontend_internal_api_error_responses"
+]
 ```
-
 
 ## precise-code-intel-bundle-manager: container_cpu_usage
 
@@ -1862,13 +1598,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-bundle-manager_container_cpu_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-bundle-manager_container_cpu_usage"
+]
 ```
-
 
 ## precise-code-intel-bundle-manager: container_memory_usage
 
@@ -1883,13 +1616,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-bundle-manager_container_memory_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-bundle-manager_container_memory_usage"
+]
 ```
-
 
 ## precise-code-intel-bundle-manager: container_restarts
 
@@ -1908,13 +1638,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-bundle-manager_container_restarts"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-bundle-manager_container_restarts"
+]
 ```
-
 
 ## precise-code-intel-bundle-manager: fs_inodes_used
 
@@ -1929,13 +1656,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-bundle-manager_fs_inodes_used"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-bundle-manager_fs_inodes_used"
+]
 ```
-
 
 ## precise-code-intel-bundle-manager: provisioning_container_cpu_usage_7d
 
@@ -1952,13 +1676,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-bundle-manager_provisioning_container_cpu_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-bundle-manager_provisioning_container_cpu_usage_7d"
+]
 ```
-
 
 ## precise-code-intel-bundle-manager: provisioning_container_memory_usage_7d
 
@@ -1975,13 +1696,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-bundle-manager_provisioning_container_memory_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-bundle-manager_provisioning_container_memory_usage_7d"
+]
 ```
-
 
 ## precise-code-intel-bundle-manager: provisioning_container_cpu_usage_5m
 
@@ -1996,13 +1714,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-bundle-manager_provisioning_container_cpu_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-bundle-manager_provisioning_container_cpu_usage_5m"
+]
 ```
-
 
 ## precise-code-intel-bundle-manager: provisioning_container_memory_usage_5m
 
@@ -2017,13 +1732,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-bundle-manager_provisioning_container_memory_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-bundle-manager_provisioning_container_memory_usage_5m"
+]
 ```
-
 
 ## precise-code-intel-bundle-manager: go_goroutines
 
@@ -2036,13 +1748,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-bundle-manager_go_goroutines"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-bundle-manager_go_goroutines"
+]
 ```
-
 
 ## precise-code-intel-bundle-manager: go_gc_duration_seconds
 
@@ -2055,13 +1764,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-bundle-manager_go_gc_duration_seconds"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-bundle-manager_go_gc_duration_seconds"
+]
 ```
-
 
 ## precise-code-intel-bundle-manager: pods_available_percentage
 
@@ -2074,13 +1780,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "critical_precise-code-intel-bundle-manager_pods_available_percentage"
-  ]
-}
+"observability.silenceAlerts": [
+  "critical_precise-code-intel-bundle-manager_pods_available_percentage"
+]
 ```
-
 
 ## precise-code-intel-worker: upload_queue_size
 
@@ -2093,13 +1796,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-worker_upload_queue_size"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_upload_queue_size"
+]
 ```
-
 
 ## precise-code-intel-worker: upload_queue_growth_rate
 
@@ -2112,13 +1812,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-worker_upload_queue_growth_rate"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_upload_queue_growth_rate"
+]
 ```
-
 
 ## precise-code-intel-worker: upload_process_errors
 
@@ -2131,13 +1828,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-worker_upload_process_errors"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_upload_process_errors"
+]
 ```
-
 
 ## precise-code-intel-worker: 99th_percentile_store_duration
 
@@ -2150,13 +1844,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-worker_99th_percentile_store_duration"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_99th_percentile_store_duration"
+]
 ```
-
 
 ## precise-code-intel-worker: store_errors
 
@@ -2169,13 +1860,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-worker_store_errors"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_store_errors"
+]
 ```
-
 
 ## precise-code-intel-worker: processing_uploads_reset
 
@@ -2188,13 +1876,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-worker_processing_uploads_reset"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_processing_uploads_reset"
+]
 ```
-
 
 ## precise-code-intel-worker: processing_uploads_reset_failures
 
@@ -2207,13 +1892,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-worker_processing_uploads_reset_failures"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_processing_uploads_reset_failures"
+]
 ```
-
 
 ## precise-code-intel-worker: upload_resetter_errors
 
@@ -2226,13 +1908,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-worker_upload_resetter_errors"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_upload_resetter_errors"
+]
 ```
-
 
 ## precise-code-intel-worker: 99th_percentile_bundle_manager_transfer_duration
 
@@ -2245,13 +1924,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-worker_99th_percentile_bundle_manager_transfer_duration"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_99th_percentile_bundle_manager_transfer_duration"
+]
 ```
-
 
 ## precise-code-intel-worker: bundle_manager_error_responses
 
@@ -2264,13 +1940,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-worker_bundle_manager_error_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_bundle_manager_error_responses"
+]
 ```
-
 
 ## precise-code-intel-worker: 99th_percentile_gitserver_duration
 
@@ -2283,13 +1956,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-worker_99th_percentile_gitserver_duration"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_99th_percentile_gitserver_duration"
+]
 ```
-
 
 ## precise-code-intel-worker: gitserver_error_responses
 
@@ -2302,13 +1972,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-worker_gitserver_error_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_gitserver_error_responses"
+]
 ```
-
 
 ## precise-code-intel-worker: frontend_internal_api_error_responses
 
@@ -2328,13 +1995,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-worker_frontend_internal_api_error_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_frontend_internal_api_error_responses"
+]
 ```
-
 
 ## precise-code-intel-worker: container_cpu_usage
 
@@ -2349,13 +2013,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-worker_container_cpu_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_container_cpu_usage"
+]
 ```
-
 
 ## precise-code-intel-worker: container_memory_usage
 
@@ -2370,13 +2031,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-worker_container_memory_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_container_memory_usage"
+]
 ```
-
 
 ## precise-code-intel-worker: container_restarts
 
@@ -2395,13 +2053,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-worker_container_restarts"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_container_restarts"
+]
 ```
-
 
 ## precise-code-intel-worker: fs_inodes_used
 
@@ -2416,13 +2071,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-worker_fs_inodes_used"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_fs_inodes_used"
+]
 ```
-
 
 ## precise-code-intel-worker: provisioning_container_cpu_usage_7d
 
@@ -2439,13 +2091,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-worker_provisioning_container_cpu_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_provisioning_container_cpu_usage_7d"
+]
 ```
-
 
 ## precise-code-intel-worker: provisioning_container_memory_usage_7d
 
@@ -2462,13 +2111,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-worker_provisioning_container_memory_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_provisioning_container_memory_usage_7d"
+]
 ```
-
 
 ## precise-code-intel-worker: provisioning_container_cpu_usage_5m
 
@@ -2483,13 +2129,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-worker_provisioning_container_cpu_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_provisioning_container_cpu_usage_5m"
+]
 ```
-
 
 ## precise-code-intel-worker: provisioning_container_memory_usage_5m
 
@@ -2504,13 +2147,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-worker_provisioning_container_memory_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_provisioning_container_memory_usage_5m"
+]
 ```
-
 
 ## precise-code-intel-worker: go_goroutines
 
@@ -2523,13 +2163,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-worker_go_goroutines"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_go_goroutines"
+]
 ```
-
 
 ## precise-code-intel-worker: go_gc_duration_seconds
 
@@ -2542,13 +2179,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-worker_go_gc_duration_seconds"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_go_gc_duration_seconds"
+]
 ```
-
 
 ## precise-code-intel-worker: pods_available_percentage
 
@@ -2561,13 +2195,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "critical_precise-code-intel-worker_pods_available_percentage"
-  ]
-}
+"observability.silenceAlerts": [
+  "critical_precise-code-intel-worker_pods_available_percentage"
+]
 ```
-
 
 ## precise-code-intel-indexer: index_queue_size
 
@@ -2580,13 +2211,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-indexer_index_queue_size"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_index_queue_size"
+]
 ```
-
 
 ## precise-code-intel-indexer: index_queue_growth_rate
 
@@ -2599,13 +2227,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-indexer_index_queue_growth_rate"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_index_queue_growth_rate"
+]
 ```
-
 
 ## precise-code-intel-indexer: index_process_errors
 
@@ -2618,13 +2243,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-indexer_index_process_errors"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_index_process_errors"
+]
 ```
-
 
 ## precise-code-intel-indexer: 99th_percentile_store_duration
 
@@ -2637,13 +2259,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-indexer_99th_percentile_store_duration"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_99th_percentile_store_duration"
+]
 ```
-
 
 ## precise-code-intel-indexer: store_errors
 
@@ -2656,13 +2275,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-indexer_store_errors"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_store_errors"
+]
 ```
-
 
 ## precise-code-intel-indexer: indexability_updater_errors
 
@@ -2675,13 +2291,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-indexer_indexability_updater_errors"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_indexability_updater_errors"
+]
 ```
-
 
 ## precise-code-intel-indexer: index_scheduler_errors
 
@@ -2694,13 +2307,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-indexer_index_scheduler_errors"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_index_scheduler_errors"
+]
 ```
-
 
 ## precise-code-intel-indexer: processing_indexes_reset
 
@@ -2713,13 +2323,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-indexer_processing_indexes_reset"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_processing_indexes_reset"
+]
 ```
-
 
 ## precise-code-intel-indexer: processing_indexes_reset_failures
 
@@ -2732,13 +2339,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-indexer_processing_indexes_reset_failures"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_processing_indexes_reset_failures"
+]
 ```
-
 
 ## precise-code-intel-indexer: index_resetter_errors
 
@@ -2751,13 +2355,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-indexer_index_resetter_errors"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_index_resetter_errors"
+]
 ```
-
 
 ## precise-code-intel-indexer: janitor_errors
 
@@ -2770,13 +2371,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-indexer_janitor_errors"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_janitor_errors"
+]
 ```
-
 
 ## precise-code-intel-indexer: janitor_indexes_removed
 
@@ -2789,13 +2387,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-indexer_janitor_indexes_removed"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_janitor_indexes_removed"
+]
 ```
-
 
 ## precise-code-intel-indexer: 99th_percentile_gitserver_duration
 
@@ -2808,13 +2403,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-indexer_99th_percentile_gitserver_duration"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_99th_percentile_gitserver_duration"
+]
 ```
-
 
 ## precise-code-intel-indexer: gitserver_error_responses
 
@@ -2827,13 +2419,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-indexer_gitserver_error_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_gitserver_error_responses"
+]
 ```
-
 
 ## precise-code-intel-indexer: frontend_internal_api_error_responses
 
@@ -2853,13 +2442,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-indexer_frontend_internal_api_error_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_frontend_internal_api_error_responses"
+]
 ```
-
 
 ## precise-code-intel-indexer: container_cpu_usage
 
@@ -2874,13 +2460,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-indexer_container_cpu_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_container_cpu_usage"
+]
 ```
-
 
 ## precise-code-intel-indexer: container_memory_usage
 
@@ -2895,13 +2478,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-indexer_container_memory_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_container_memory_usage"
+]
 ```
-
 
 ## precise-code-intel-indexer: container_restarts
 
@@ -2920,13 +2500,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-indexer_container_restarts"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_container_restarts"
+]
 ```
-
 
 ## precise-code-intel-indexer: fs_inodes_used
 
@@ -2941,13 +2518,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-indexer_fs_inodes_used"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_fs_inodes_used"
+]
 ```
-
 
 ## precise-code-intel-indexer: provisioning_container_cpu_usage_7d
 
@@ -2964,13 +2538,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-indexer_provisioning_container_cpu_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_provisioning_container_cpu_usage_7d"
+]
 ```
-
 
 ## precise-code-intel-indexer: provisioning_container_memory_usage_7d
 
@@ -2987,13 +2558,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-indexer_provisioning_container_memory_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_provisioning_container_memory_usage_7d"
+]
 ```
-
 
 ## precise-code-intel-indexer: provisioning_container_cpu_usage_5m
 
@@ -3008,13 +2576,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-indexer_provisioning_container_cpu_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_provisioning_container_cpu_usage_5m"
+]
 ```
-
 
 ## precise-code-intel-indexer: provisioning_container_memory_usage_5m
 
@@ -3029,13 +2594,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-indexer_provisioning_container_memory_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_provisioning_container_memory_usage_5m"
+]
 ```
-
 
 ## precise-code-intel-indexer: go_goroutines
 
@@ -3048,13 +2610,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-indexer_go_goroutines"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_go_goroutines"
+]
 ```
-
 
 ## precise-code-intel-indexer: go_gc_duration_seconds
 
@@ -3067,13 +2626,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_precise-code-intel-indexer_go_gc_duration_seconds"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_go_gc_duration_seconds"
+]
 ```
-
 
 ## precise-code-intel-indexer: pods_available_percentage
 
@@ -3086,13 +2642,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "critical_precise-code-intel-indexer_pods_available_percentage"
-  ]
-}
+"observability.silenceAlerts": [
+  "critical_precise-code-intel-indexer_pods_available_percentage"
+]
 ```
-
 
 ## query-runner: frontend_internal_api_error_responses
 
@@ -3112,13 +2665,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_query-runner_frontend_internal_api_error_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_query-runner_frontend_internal_api_error_responses"
+]
 ```
-
 
 ## query-runner: container_memory_usage
 
@@ -3133,13 +2683,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_query-runner_container_memory_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_query-runner_container_memory_usage"
+]
 ```
-
 
 ## query-runner: container_cpu_usage
 
@@ -3154,13 +2701,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_query-runner_container_cpu_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_query-runner_container_cpu_usage"
+]
 ```
-
 
 ## query-runner: container_restarts
 
@@ -3179,13 +2723,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_query-runner_container_restarts"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_query-runner_container_restarts"
+]
 ```
-
 
 ## query-runner: fs_inodes_used
 
@@ -3200,13 +2741,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_query-runner_fs_inodes_used"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_query-runner_fs_inodes_used"
+]
 ```
-
 
 ## query-runner: provisioning_container_cpu_usage_7d
 
@@ -3223,13 +2761,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_query-runner_provisioning_container_cpu_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_query-runner_provisioning_container_cpu_usage_7d"
+]
 ```
-
 
 ## query-runner: provisioning_container_memory_usage_7d
 
@@ -3246,13 +2781,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_query-runner_provisioning_container_memory_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_query-runner_provisioning_container_memory_usage_7d"
+]
 ```
-
 
 ## query-runner: provisioning_container_cpu_usage_5m
 
@@ -3267,13 +2799,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_query-runner_provisioning_container_cpu_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_query-runner_provisioning_container_cpu_usage_5m"
+]
 ```
-
 
 ## query-runner: provisioning_container_memory_usage_5m
 
@@ -3288,13 +2817,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_query-runner_provisioning_container_memory_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_query-runner_provisioning_container_memory_usage_5m"
+]
 ```
-
 
 ## query-runner: go_goroutines
 
@@ -3307,13 +2833,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_query-runner_go_goroutines"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_query-runner_go_goroutines"
+]
 ```
-
 
 ## query-runner: go_gc_duration_seconds
 
@@ -3326,13 +2849,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_query-runner_go_gc_duration_seconds"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_query-runner_go_gc_duration_seconds"
+]
 ```
-
 
 ## query-runner: pods_available_percentage
 
@@ -3345,13 +2865,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "critical_query-runner_pods_available_percentage"
-  ]
-}
+"observability.silenceAlerts": [
+  "critical_query-runner_pods_available_percentage"
+]
 ```
-
 
 ## replacer: frontend_internal_api_error_responses
 
@@ -3371,13 +2888,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_replacer_frontend_internal_api_error_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_replacer_frontend_internal_api_error_responses"
+]
 ```
-
 
 ## replacer: container_cpu_usage
 
@@ -3392,13 +2906,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_replacer_container_cpu_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_replacer_container_cpu_usage"
+]
 ```
-
 
 ## replacer: container_memory_usage
 
@@ -3413,13 +2924,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_replacer_container_memory_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_replacer_container_memory_usage"
+]
 ```
-
 
 ## replacer: container_restarts
 
@@ -3438,13 +2946,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_replacer_container_restarts"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_replacer_container_restarts"
+]
 ```
-
 
 ## replacer: fs_inodes_used
 
@@ -3459,13 +2964,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_replacer_fs_inodes_used"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_replacer_fs_inodes_used"
+]
 ```
-
 
 ## replacer: provisioning_container_cpu_usage_7d
 
@@ -3482,13 +2984,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_replacer_provisioning_container_cpu_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_replacer_provisioning_container_cpu_usage_7d"
+]
 ```
-
 
 ## replacer: provisioning_container_memory_usage_7d
 
@@ -3505,13 +3004,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_replacer_provisioning_container_memory_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_replacer_provisioning_container_memory_usage_7d"
+]
 ```
-
 
 ## replacer: provisioning_container_cpu_usage_5m
 
@@ -3526,13 +3022,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_replacer_provisioning_container_cpu_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_replacer_provisioning_container_cpu_usage_5m"
+]
 ```
-
 
 ## replacer: provisioning_container_memory_usage_5m
 
@@ -3547,13 +3040,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_replacer_provisioning_container_memory_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_replacer_provisioning_container_memory_usage_5m"
+]
 ```
-
 
 ## replacer: go_goroutines
 
@@ -3566,13 +3056,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_replacer_go_goroutines"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_replacer_go_goroutines"
+]
 ```
-
 
 ## replacer: go_gc_duration_seconds
 
@@ -3585,13 +3072,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_replacer_go_gc_duration_seconds"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_replacer_go_gc_duration_seconds"
+]
 ```
-
 
 ## replacer: pods_available_percentage
 
@@ -3604,13 +3088,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "critical_replacer_pods_available_percentage"
-  ]
-}
+"observability.silenceAlerts": [
+  "critical_replacer_pods_available_percentage"
+]
 ```
-
 
 ## repo-updater: frontend_internal_api_error_responses
 
@@ -3630,13 +3111,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_repo-updater_frontend_internal_api_error_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_repo-updater_frontend_internal_api_error_responses"
+]
 ```
-
 
 ## repo-updater: container_cpu_usage
 
@@ -3651,13 +3129,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_repo-updater_container_cpu_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_repo-updater_container_cpu_usage"
+]
 ```
-
 
 ## repo-updater: container_memory_usage
 
@@ -3672,13 +3147,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_repo-updater_container_memory_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_repo-updater_container_memory_usage"
+]
 ```
-
 
 ## repo-updater: container_restarts
 
@@ -3697,13 +3169,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_repo-updater_container_restarts"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_repo-updater_container_restarts"
+]
 ```
-
 
 ## repo-updater: fs_inodes_used
 
@@ -3718,13 +3187,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_repo-updater_fs_inodes_used"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_repo-updater_fs_inodes_used"
+]
 ```
-
 
 ## repo-updater: provisioning_container_cpu_usage_7d
 
@@ -3741,13 +3207,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_repo-updater_provisioning_container_cpu_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_repo-updater_provisioning_container_cpu_usage_7d"
+]
 ```
-
 
 ## repo-updater: provisioning_container_memory_usage_7d
 
@@ -3764,13 +3227,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_repo-updater_provisioning_container_memory_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_repo-updater_provisioning_container_memory_usage_7d"
+]
 ```
-
 
 ## repo-updater: provisioning_container_cpu_usage_5m
 
@@ -3785,13 +3245,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_repo-updater_provisioning_container_cpu_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_repo-updater_provisioning_container_cpu_usage_5m"
+]
 ```
-
 
 ## repo-updater: provisioning_container_memory_usage_5m
 
@@ -3806,13 +3263,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_repo-updater_provisioning_container_memory_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_repo-updater_provisioning_container_memory_usage_5m"
+]
 ```
-
 
 ## repo-updater: go_goroutines
 
@@ -3825,13 +3279,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_repo-updater_go_goroutines"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_repo-updater_go_goroutines"
+]
 ```
-
 
 ## repo-updater: go_gc_duration_seconds
 
@@ -3844,13 +3295,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_repo-updater_go_gc_duration_seconds"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_repo-updater_go_gc_duration_seconds"
+]
 ```
-
 
 ## repo-updater: pods_available_percentage
 
@@ -3863,13 +3311,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "critical_repo-updater_pods_available_percentage"
-  ]
-}
+"observability.silenceAlerts": [
+  "critical_repo-updater_pods_available_percentage"
+]
 ```
-
 
 ## searcher: unindexed_search_request_errors
 
@@ -3882,13 +3327,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_searcher_unindexed_search_request_errors"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_searcher_unindexed_search_request_errors"
+]
 ```
-
 
 ## searcher: replica_traffic
 
@@ -3901,13 +3343,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_searcher_replica_traffic"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_searcher_replica_traffic"
+]
 ```
-
 
 ## searcher: frontend_internal_api_error_responses
 
@@ -3927,13 +3366,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_searcher_frontend_internal_api_error_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_searcher_frontend_internal_api_error_responses"
+]
 ```
-
 
 ## searcher: container_cpu_usage
 
@@ -3948,13 +3384,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_searcher_container_cpu_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_searcher_container_cpu_usage"
+]
 ```
-
 
 ## searcher: container_memory_usage
 
@@ -3969,13 +3402,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_searcher_container_memory_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_searcher_container_memory_usage"
+]
 ```
-
 
 ## searcher: container_restarts
 
@@ -3994,13 +3424,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_searcher_container_restarts"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_searcher_container_restarts"
+]
 ```
-
 
 ## searcher: fs_inodes_used
 
@@ -4015,13 +3442,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_searcher_fs_inodes_used"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_searcher_fs_inodes_used"
+]
 ```
-
 
 ## searcher: provisioning_container_cpu_usage_7d
 
@@ -4038,13 +3462,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_searcher_provisioning_container_cpu_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_searcher_provisioning_container_cpu_usage_7d"
+]
 ```
-
 
 ## searcher: provisioning_container_memory_usage_7d
 
@@ -4061,13 +3482,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_searcher_provisioning_container_memory_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_searcher_provisioning_container_memory_usage_7d"
+]
 ```
-
 
 ## searcher: provisioning_container_cpu_usage_5m
 
@@ -4082,13 +3500,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_searcher_provisioning_container_cpu_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_searcher_provisioning_container_cpu_usage_5m"
+]
 ```
-
 
 ## searcher: provisioning_container_memory_usage_5m
 
@@ -4103,13 +3518,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_searcher_provisioning_container_memory_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_searcher_provisioning_container_memory_usage_5m"
+]
 ```
-
 
 ## searcher: go_goroutines
 
@@ -4122,13 +3534,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_searcher_go_goroutines"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_searcher_go_goroutines"
+]
 ```
-
 
 ## searcher: go_gc_duration_seconds
 
@@ -4141,13 +3550,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_searcher_go_gc_duration_seconds"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_searcher_go_gc_duration_seconds"
+]
 ```
-
 
 ## searcher: pods_available_percentage
 
@@ -4160,13 +3566,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "critical_searcher_pods_available_percentage"
-  ]
-}
+"observability.silenceAlerts": [
+  "critical_searcher_pods_available_percentage"
+]
 ```
-
 
 ## symbols: store_fetch_failures
 
@@ -4179,13 +3582,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_symbols_store_fetch_failures"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_symbols_store_fetch_failures"
+]
 ```
-
 
 ## symbols: current_fetch_queue_size
 
@@ -4198,13 +3598,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_symbols_current_fetch_queue_size"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_symbols_current_fetch_queue_size"
+]
 ```
-
 
 ## symbols: frontend_internal_api_error_responses
 
@@ -4224,13 +3621,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_symbols_frontend_internal_api_error_responses"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_symbols_frontend_internal_api_error_responses"
+]
 ```
-
 
 ## symbols: container_cpu_usage
 
@@ -4245,13 +3639,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_symbols_container_cpu_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_symbols_container_cpu_usage"
+]
 ```
-
 
 ## symbols: container_memory_usage
 
@@ -4266,13 +3657,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_symbols_container_memory_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_symbols_container_memory_usage"
+]
 ```
-
 
 ## symbols: container_restarts
 
@@ -4291,13 +3679,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_symbols_container_restarts"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_symbols_container_restarts"
+]
 ```
-
 
 ## symbols: fs_inodes_used
 
@@ -4312,13 +3697,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_symbols_fs_inodes_used"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_symbols_fs_inodes_used"
+]
 ```
-
 
 ## symbols: provisioning_container_cpu_usage_7d
 
@@ -4335,13 +3717,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_symbols_provisioning_container_cpu_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_symbols_provisioning_container_cpu_usage_7d"
+]
 ```
-
 
 ## symbols: provisioning_container_memory_usage_7d
 
@@ -4358,13 +3737,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_symbols_provisioning_container_memory_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_symbols_provisioning_container_memory_usage_7d"
+]
 ```
-
 
 ## symbols: provisioning_container_cpu_usage_5m
 
@@ -4379,13 +3755,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_symbols_provisioning_container_cpu_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_symbols_provisioning_container_cpu_usage_5m"
+]
 ```
-
 
 ## symbols: provisioning_container_memory_usage_5m
 
@@ -4400,13 +3773,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_symbols_provisioning_container_memory_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_symbols_provisioning_container_memory_usage_5m"
+]
 ```
-
 
 ## symbols: go_goroutines
 
@@ -4419,13 +3789,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_symbols_go_goroutines"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_symbols_go_goroutines"
+]
 ```
-
 
 ## symbols: go_gc_duration_seconds
 
@@ -4438,13 +3805,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_symbols_go_gc_duration_seconds"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_symbols_go_gc_duration_seconds"
+]
 ```
-
 
 ## symbols: pods_available_percentage
 
@@ -4457,13 +3821,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "critical_symbols_pods_available_percentage"
-  ]
-}
+"observability.silenceAlerts": [
+  "critical_symbols_pods_available_percentage"
+]
 ```
-
 
 ## syntect-server: syntax_highlighting_errors
 
@@ -4476,13 +3837,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_syntect-server_syntax_highlighting_errors"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_syntect-server_syntax_highlighting_errors"
+]
 ```
-
 
 ## syntect-server: syntax_highlighting_panics
 
@@ -4495,13 +3853,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_syntect-server_syntax_highlighting_panics"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_syntect-server_syntax_highlighting_panics"
+]
 ```
-
 
 ## syntect-server: syntax_highlighting_timeouts
 
@@ -4514,13 +3869,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_syntect-server_syntax_highlighting_timeouts"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_syntect-server_syntax_highlighting_timeouts"
+]
 ```
-
 
 ## syntect-server: syntax_highlighting_worker_deaths
 
@@ -4533,13 +3885,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_syntect-server_syntax_highlighting_worker_deaths"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_syntect-server_syntax_highlighting_worker_deaths"
+]
 ```
-
 
 ## syntect-server: container_cpu_usage
 
@@ -4554,13 +3903,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_syntect-server_container_cpu_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_syntect-server_container_cpu_usage"
+]
 ```
-
 
 ## syntect-server: container_memory_usage
 
@@ -4575,13 +3921,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_syntect-server_container_memory_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_syntect-server_container_memory_usage"
+]
 ```
-
 
 ## syntect-server: container_restarts
 
@@ -4600,13 +3943,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_syntect-server_container_restarts"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_syntect-server_container_restarts"
+]
 ```
-
 
 ## syntect-server: fs_inodes_used
 
@@ -4621,13 +3961,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_syntect-server_fs_inodes_used"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_syntect-server_fs_inodes_used"
+]
 ```
-
 
 ## syntect-server: provisioning_container_cpu_usage_7d
 
@@ -4644,13 +3981,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_syntect-server_provisioning_container_cpu_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_syntect-server_provisioning_container_cpu_usage_7d"
+]
 ```
-
 
 ## syntect-server: provisioning_container_memory_usage_7d
 
@@ -4667,13 +4001,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_syntect-server_provisioning_container_memory_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_syntect-server_provisioning_container_memory_usage_7d"
+]
 ```
-
 
 ## syntect-server: provisioning_container_cpu_usage_5m
 
@@ -4688,13 +4019,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_syntect-server_provisioning_container_cpu_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_syntect-server_provisioning_container_cpu_usage_5m"
+]
 ```
-
 
 ## syntect-server: provisioning_container_memory_usage_5m
 
@@ -4709,13 +4037,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_syntect-server_provisioning_container_memory_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_syntect-server_provisioning_container_memory_usage_5m"
+]
 ```
-
 
 ## syntect-server: pods_available_percentage
 
@@ -4728,13 +4053,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "critical_syntect-server_pods_available_percentage"
-  ]
-}
+"observability.silenceAlerts": [
+  "critical_syntect-server_pods_available_percentage"
+]
 ```
-
 
 ## zoekt-indexserver: average_resolve_revision_duration
 
@@ -4749,14 +4071,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_zoekt-indexserver_average_resolve_revision_duration",
-    "critical_zoekt-indexserver_average_resolve_revision_duration"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_zoekt-indexserver_average_resolve_revision_duration",
+  "critical_zoekt-indexserver_average_resolve_revision_duration"
+]
 ```
-
 
 ## zoekt-indexserver: container_cpu_usage
 
@@ -4771,13 +4090,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_zoekt-indexserver_container_cpu_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_zoekt-indexserver_container_cpu_usage"
+]
 ```
-
 
 ## zoekt-indexserver: container_memory_usage
 
@@ -4792,13 +4108,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_zoekt-indexserver_container_memory_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_zoekt-indexserver_container_memory_usage"
+]
 ```
-
 
 ## zoekt-indexserver: container_restarts
 
@@ -4817,13 +4130,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_zoekt-indexserver_container_restarts"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_zoekt-indexserver_container_restarts"
+]
 ```
-
 
 ## zoekt-indexserver: fs_inodes_used
 
@@ -4838,13 +4148,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_zoekt-indexserver_fs_inodes_used"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_zoekt-indexserver_fs_inodes_used"
+]
 ```
-
 
 ## zoekt-indexserver: provisioning_container_cpu_usage_7d
 
@@ -4861,13 +4168,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_zoekt-indexserver_provisioning_container_cpu_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_zoekt-indexserver_provisioning_container_cpu_usage_7d"
+]
 ```
-
 
 ## zoekt-indexserver: provisioning_container_memory_usage_7d
 
@@ -4884,13 +4188,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_zoekt-indexserver_provisioning_container_memory_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_zoekt-indexserver_provisioning_container_memory_usage_7d"
+]
 ```
-
 
 ## zoekt-indexserver: provisioning_container_cpu_usage_5m
 
@@ -4905,13 +4206,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_zoekt-indexserver_provisioning_container_cpu_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_zoekt-indexserver_provisioning_container_cpu_usage_5m"
+]
 ```
-
 
 ## zoekt-indexserver: provisioning_container_memory_usage_5m
 
@@ -4926,13 +4224,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_zoekt-indexserver_provisioning_container_memory_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_zoekt-indexserver_provisioning_container_memory_usage_5m"
+]
 ```
-
 
 ## zoekt-indexserver: pods_available_percentage
 
@@ -4945,13 +4240,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "critical_zoekt-indexserver_pods_available_percentage"
-  ]
-}
+"observability.silenceAlerts": [
+  "critical_zoekt-indexserver_pods_available_percentage"
+]
 ```
-
 
 ## zoekt-webserver: indexed_search_request_errors
 
@@ -4964,13 +4256,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_zoekt-webserver_indexed_search_request_errors"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_zoekt-webserver_indexed_search_request_errors"
+]
 ```
-
 
 ## zoekt-webserver: container_cpu_usage
 
@@ -4985,13 +4274,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_zoekt-webserver_container_cpu_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_zoekt-webserver_container_cpu_usage"
+]
 ```
-
 
 ## zoekt-webserver: container_memory_usage
 
@@ -5006,13 +4292,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_zoekt-webserver_container_memory_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_zoekt-webserver_container_memory_usage"
+]
 ```
-
 
 ## zoekt-webserver: container_restarts
 
@@ -5031,13 +4314,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_zoekt-webserver_container_restarts"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_zoekt-webserver_container_restarts"
+]
 ```
-
 
 ## zoekt-webserver: fs_inodes_used
 
@@ -5052,13 +4332,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_zoekt-webserver_fs_inodes_used"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_zoekt-webserver_fs_inodes_used"
+]
 ```
-
 
 ## zoekt-webserver: provisioning_container_cpu_usage_7d
 
@@ -5075,13 +4352,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_zoekt-webserver_provisioning_container_cpu_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_zoekt-webserver_provisioning_container_cpu_usage_7d"
+]
 ```
-
 
 ## zoekt-webserver: provisioning_container_memory_usage_7d
 
@@ -5098,13 +4372,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_zoekt-webserver_provisioning_container_memory_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_zoekt-webserver_provisioning_container_memory_usage_7d"
+]
 ```
-
 
 ## zoekt-webserver: provisioning_container_cpu_usage_5m
 
@@ -5119,13 +4390,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_zoekt-webserver_provisioning_container_cpu_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_zoekt-webserver_provisioning_container_cpu_usage_5m"
+]
 ```
-
 
 ## zoekt-webserver: provisioning_container_memory_usage_5m
 
@@ -5140,13 +4408,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_zoekt-webserver_provisioning_container_memory_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_zoekt-webserver_provisioning_container_memory_usage_5m"
+]
 ```
-
 
 ## prometheus: prometheus_metrics_bloat
 
@@ -5159,13 +4424,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_prometheus_prometheus_metrics_bloat"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_prometheus_prometheus_metrics_bloat"
+]
 ```
-
 
 ## prometheus: alertmanager_notifications_failed_total
 
@@ -5179,13 +4441,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_prometheus_alertmanager_notifications_failed_total"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_prometheus_alertmanager_notifications_failed_total"
+]
 ```
-
 
 ## prometheus: container_cpu_usage
 
@@ -5200,13 +4459,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_prometheus_container_cpu_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_prometheus_container_cpu_usage"
+]
 ```
-
 
 ## prometheus: container_memory_usage
 
@@ -5221,13 +4477,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_prometheus_container_memory_usage"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_prometheus_container_memory_usage"
+]
 ```
-
 
 ## prometheus: container_restarts
 
@@ -5246,13 +4499,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_prometheus_container_restarts"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_prometheus_container_restarts"
+]
 ```
-
 
 ## prometheus: fs_inodes_used
 
@@ -5267,13 +4517,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_prometheus_fs_inodes_used"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_prometheus_fs_inodes_used"
+]
 ```
-
 
 ## prometheus: provisioning_container_cpu_usage_7d
 
@@ -5290,13 +4537,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_prometheus_provisioning_container_cpu_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_prometheus_provisioning_container_cpu_usage_7d"
+]
 ```
-
 
 ## prometheus: provisioning_container_memory_usage_7d
 
@@ -5313,13 +4557,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_prometheus_provisioning_container_memory_usage_7d"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_prometheus_provisioning_container_memory_usage_7d"
+]
 ```
-
 
 ## prometheus: provisioning_container_cpu_usage_5m
 
@@ -5334,13 +4575,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_prometheus_provisioning_container_cpu_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_prometheus_provisioning_container_cpu_usage_5m"
+]
 ```
-
 
 ## prometheus: provisioning_container_memory_usage_5m
 
@@ -5355,13 +4593,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "warning_prometheus_provisioning_container_memory_usage_5m"
-  ]
-}
+"observability.silenceAlerts": [
+  "warning_prometheus_provisioning_container_memory_usage_5m"
+]
 ```
-
 
 ## prometheus: pods_available_percentage
 
@@ -5374,11 +4609,8 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
-{
-  "observability.silenceAlerts": [
-    "critical_prometheus_pods_available_percentage"
-  ]
-}
+"observability.silenceAlerts": [
+  "critical_prometheus_pods_available_percentage"
+]
 ```
-
 
