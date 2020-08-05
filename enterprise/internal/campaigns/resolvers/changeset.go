@@ -554,5 +554,8 @@ func (r *changesetLabelResolver) Color() string {
 }
 
 func (r *changesetLabelResolver) Description() *string {
+	if r.label.Description == "" {
+		return nil
+	}
 	return &r.label.Description
 }
