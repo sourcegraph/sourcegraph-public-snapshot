@@ -10,6 +10,11 @@ import (
 )
 
 func isEquivalent(q string) {
+	if query.ContainsAndOrKeyword(q) {
+		// Things containing operators will always differ--don't test.
+		return
+	}
+
 	var oldQuery, newQuery query.QueryInfo
 
 	newQuery, newErr := query.ProcessAndOr(q, query.ParserOptions{SearchType: query.SearchTypeRegex})
@@ -31,6 +36,7 @@ func isEquivalent(q string) {
 	newFields = newQuery.Fields()
 
 	if diff := cmp.Diff(oldFields.String(), newFields.String()); diff != "" {
+		fmt.Printf("Input: %s\n", q)
 		panic(fmt.Sprintf("-old, +new: %s", diff))
 	}
 }
