@@ -130,10 +130,6 @@ func (r *changesetResolver) computeRepo() (*graphqlbackend.RepositoryResolver, e
 	return r.repo, r.repoErr
 }
 
-func (r *changesetResolver) hasSpec() bool {
-	return r.changeset.CurrentSpecID != 0
-}
-
 func (r *changesetResolver) computeSpec(ctx context.Context) (*campaigns.ChangesetSpec, error) {
 	r.specOnce.Do(func() {
 		if r.changeset.CurrentSpecID == 0 {
@@ -250,16 +246,12 @@ func (r *changesetResolver) NextSyncAt(ctx context.Context) (*graphqlbackend.Dat
 
 func (r *changesetResolver) Title(ctx context.Context) (string, error) {
 	if r.changeset.PublicationState.Unpublished() {
-		spec, err := r.computeSpec(ctx)
+		desc, err := r.getBranchSpecDescription(ctx)
 		if err != nil {
 			return "", err
 		}
 
-		if spec.Spec.IsImportingExisting() {
-			return "", errors.New("ChangesetSpec imports a changeset and has no title")
-		}
-
-		return spec.Spec.Title, nil
+		return desc.Title, nil
 	}
 
 	return r.changeset.Title()
@@ -267,19 +259,28 @@ func (r *changesetResolver) Title(ctx context.Context) (string, error) {
 
 func (r *changesetResolver) Body(ctx context.Context) (string, error) {
 	if r.changeset.PublicationState.Unpublished() {
-		spec, err := r.computeSpec(ctx)
+		desc, err := r.getBranchSpecDescription(ctx)
 		if err != nil {
 			return "", err
 		}
 
-		if spec.Spec.IsImportingExisting() {
-			return "", errors.New("ChangesetSpec imports a changeset and has no body")
-		}
-
-		return spec.Spec.Body, nil
+		return desc.Body, nil
 	}
 
 	return r.changeset.Body()
+}
+
+func (r *changesetResolver) getBranchSpecDescription(ctx context.Context) (*campaigns.ChangesetSpecDescription, error) {
+	spec, err := r.computeSpec(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if spec.Spec.IsImportingExisting() {
+		return nil, errors.New("ChangesetSpec imports a changeset")
+	}
+
+	return spec.Spec, nil
 }
 
 func (r *changesetResolver) PublicationState() campaigns.ChangesetPublicationState {
@@ -375,15 +376,12 @@ func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.Repository
 			return nil, err
 		}
 
-		spec, err := r.computeSpec(ctx)
+		desc, err := r.getBranchSpecDescription(ctx)
 		if err != nil {
 			return nil, err
 		}
 
-		if spec.Spec.IsImportingExisting() {
-			return nil, errors.New("ChangesetSpec imports a changeset and has no title")
-		}
-		diff, err := spec.Spec.Diff()
+		diff, err := desc.Diff()
 		if err != nil {
 			return nil, errors.New("ChangesetSpec has no diff")
 		}
@@ -391,7 +389,7 @@ func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.Repository
 		return graphqlbackend.NewPreviewRepositoryComparisonResolver(
 			ctx,
 			repo,
-			spec.Spec.BaseRev,
+			desc.BaseRev,
 			diff,
 		)
 	}
