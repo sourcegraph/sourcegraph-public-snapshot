@@ -947,7 +947,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: less than 90% percentage pods available for a service for 10m_
+- _frontend: less than 90% percentage pods available for 10m_
 
 **Possible solutions:**
 
@@ -1322,7 +1322,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _gitserver: less than 90% percentage pods available for a service for 10m_
+- _gitserver: less than 90% percentage pods available for 10m_
 
 **Possible solutions:**
 
@@ -1595,7 +1595,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _github-proxy: less than 90% percentage pods available for a service for 10m_
+- _github-proxy: less than 90% percentage pods available for 10m_
 
 **Possible solutions:**
 
@@ -2067,7 +2067,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: less than 90% percentage pods available for a service for 10m_
+- _precise-code-intel-bundle-manager: less than 90% percentage pods available for 10m_
 
 **Possible solutions:**
 
@@ -2554,7 +2554,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-worker: less than 90% percentage pods available for a service for 10m_
+- _precise-code-intel-worker: less than 90% percentage pods available for 10m_
 
 **Possible solutions:**
 
@@ -3079,7 +3079,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: less than 90% percentage pods available for a service for 10m_
+- _precise-code-intel-indexer: less than 90% percentage pods available for 10m_
 
 **Possible solutions:**
 
@@ -3338,7 +3338,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _query-runner: less than 90% percentage pods available for a service for 10m_
+- _query-runner: less than 90% percentage pods available for 10m_
 
 **Possible solutions:**
 
@@ -3597,7 +3597,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _replacer: less than 90% percentage pods available for a service for 10m_
+- _replacer: less than 90% percentage pods available for 10m_
 
 **Possible solutions:**
 
@@ -3856,7 +3856,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: less than 90% percentage pods available for a service for 10m_
+- _repo-updater: less than 90% percentage pods available for 10m_
 
 **Possible solutions:**
 
@@ -4153,7 +4153,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _searcher: less than 90% percentage pods available for a service for 10m_
+- _searcher: less than 90% percentage pods available for 10m_
 
 **Possible solutions:**
 
@@ -4450,7 +4450,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _symbols: less than 90% percentage pods available for a service for 10m_
+- _symbols: less than 90% percentage pods available for 10m_
 
 **Possible solutions:**
 
@@ -4721,7 +4721,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _syntect-server: less than 90% percentage pods available for a service for 10m_
+- _syntect-server: less than 90% percentage pods available for 10m_
 
 **Possible solutions:**
 
@@ -4938,7 +4938,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _zoekt-indexserver: less than 90% percentage pods available for a service for 10m_
+- _zoekt-indexserver: less than 90% percentage pods available for 10m_
 
 **Possible solutions:**
 
@@ -5171,11 +5171,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _prometheus: 1+ failed alertmanager notifications rate over 1m_
+- _prometheus: 1+ failed alertmanager notifications over 1m_
 
 **Possible solutions:**
 
-- Ensure that your `observability.alerts` configuration (in site configuration) is valid.
+- Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -5367,7 +5367,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _prometheus: less than 90% percentage pods available for a service for 10m_
+- _prometheus: less than 90% percentage pods available for 10m_
 
 **Possible solutions:**
 
