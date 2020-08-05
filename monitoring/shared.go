@@ -237,7 +237,7 @@ var sharedGoGcDuration sharedObservable = func(containerName string) Observable 
 var sharedKubernetesPodsAvailable sharedObservable = func(containerName string) Observable {
 	return Observable{
 		Name:              "pods_available_percentage",
-		Description:       "percentage pods available for a service for 10m",
+		Description:       "percentage pods available for 10m",
 		Query:             fmt.Sprintf(`sum by(app) (up{app=~".*%[1]s"}) / count by (app) (up{app=~".*%[1]s"}) * 100`, containerName),
 		Critical:          Alert{LessOrEqual: 90, For: 10 * time.Minute},
 		DataMayNotExist:   true,
