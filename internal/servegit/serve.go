@@ -203,23 +203,9 @@ func (s *Serve) Repos() ([]Repo, error) {
 }
 
 func explainAddr(addr string) string {
-	_, port, err := net.SplitHostPort(addr)
-	if err != nil {
-		port = "3434"
-	}
-
 	return fmt.Sprintf(`Serving the repositories at http://%s.
 
-FIRST RUN NOTE: If 'src serve-git' has not yet been setup on Sourcegraph, then you
-need to configure Sourcegraph to sync with 'src serve-git'. Paste the following
-configuration as an Other External Service in Sourcegraph:
-
-  {
-    // url is the http url to 'src serve-git' (listening on %s)
-    // url should be reachable by Sourcegraph.
-    // "http://host.docker.internal:%s" works from Sourcegraph when using Docker for Desktop.
-    "url": "http://host.docker.internal:%s",
-    "repos": ["src-expose"] // This may change in versions later than 3.9
-  }
-`, addr, addr, port, port)
+See https://docs.sourcegraph.com/admin/external_service/src_serve_git for
+instructions to configure in Sourcegraph.
+`, addr)
 }

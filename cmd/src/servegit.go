@@ -23,6 +23,8 @@ By default 'src serve-git' will recursively serve your current directory on the 
 
 'src serve-git -list' will not start up the server. Instead it will write to stdout a list of
 repository names it would serve.
+
+Documentation at https://docs.sourcegraph.com/admin/external_service/src_serve_git
 `)
 	}
 	var (
