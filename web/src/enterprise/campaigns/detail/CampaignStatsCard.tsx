@@ -9,10 +9,10 @@ import { CampaignFields } from '../../../graphql-operations'
 interface CampaignStatsCardProps extends Pick<CampaignFields['changesets'], 'stats'> {}
 
 export const CampaignStatsCard: React.FunctionComponent<CampaignStatsCardProps> = ({ stats }) => {
-    const percentDone = stats.total === 0 ? 0 : (((stats.closed + stats.merged) / stats.total) * 100).toFixed(0)
-    const isDone = stats.closed + stats.merged === stats.total
+    const percentComplete = stats.total === 0 ? 0 : (((stats.closed + stats.merged) / stats.total) * 100).toFixed(0)
+    const isCompleted = stats.closed + stats.merged === stats.total
     let CampaignStatusIcon = ProgressCheckIcon
-    if (isDone) {
+    if (isCompleted) {
         CampaignStatusIcon = CheckCircleOutlineIcon
     }
     return (
@@ -24,12 +24,12 @@ export const CampaignStatsCard: React.FunctionComponent<CampaignStatsCardProps> 
                             <CampaignStatusIcon
                                 className={classNames(
                                     'icon-inline mr-2',
-                                    isDone && 'text-success',
-                                    !isDone && 'text-muted'
+                                    isCompleted && 'text-success',
+                                    !isCompleted && 'text-muted'
                                 )}
                             />
                         </h1>{' '}
-                        {percentDone}% complete
+                        {percentComplete}% complete
                     </div>
                     <div className="text-muted">{stats.total} changesets total</div>
                     <div className="d-flex align-items-center">
