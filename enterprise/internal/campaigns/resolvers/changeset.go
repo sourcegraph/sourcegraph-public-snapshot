@@ -316,10 +316,15 @@ func (r *changesetResolver) ReviewState(ctx context.Context) *campaigns.Changese
 }
 
 func (r *changesetResolver) CheckState() *campaigns.ChangesetCheckState {
+	if r.changeset.PublicationState.Unpublished() {
+		return nil
+	}
+
 	state := r.changeset.ExternalCheckState
 	if state == campaigns.ChangesetCheckStateUnknown {
 		return nil
 	}
+
 	return &state
 }
 

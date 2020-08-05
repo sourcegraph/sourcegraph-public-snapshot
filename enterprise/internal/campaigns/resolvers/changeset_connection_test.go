@@ -43,18 +43,13 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	spec := createChangesetSpec(t, ctx, store, testSpecOpts{
-		user:      userID,
-		repo:      repo.ID,
-		headRef:   "refs/heads/my-new-branch",
-		published: false,
-	})
 	changeset1 := createChangeset(t, ctx, store, testChangesetOpts{
-		repo:                repo.ID,
-		currentSpec:         spec.ID,
+		repo: repo.ID,
+		// We don't need a spec because we don't query for fields that would
+		// require it
+		currentSpec:         0,
 		externalServiceType: "github",
 		publicationState:    campaigns.ChangesetPublicationStateUnpublished,
-		createdByCampaign:   false,
 		ownedByCampaign:     campaign.ID,
 		campaign:            campaign.ID,
 	})
@@ -66,7 +61,6 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		externalBranch:      "open-pr",
 		externalState:       campaigns.ChangesetExternalStateOpen,
 		publicationState:    campaigns.ChangesetPublicationStatePublished,
-		createdByCampaign:   false,
 		ownedByCampaign:     campaign.ID,
 		campaign:            campaign.ID,
 	})
@@ -78,7 +72,6 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		externalBranch:      "merged-pr",
 		externalState:       campaigns.ChangesetExternalStateMerged,
 		publicationState:    campaigns.ChangesetPublicationStatePublished,
-		createdByCampaign:   false,
 		ownedByCampaign:     campaign.ID,
 		campaign:            campaign.ID,
 	})
@@ -108,9 +101,21 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		},
 		TotalCount: 3,
 		Nodes: []apitest.Changeset{
-			{Typename: "ExternalChangeset", ID: string(marshalChangesetID(changeset1.ID))},
-			{Typename: "ExternalChangeset", ID: string(marshalChangesetID(changeset2.ID))},
-			{Typename: "ExternalChangeset", ID: string(marshalChangesetID(changeset3.ID))},
+			{
+				Typename:   "ExternalChangeset",
+				ID:         string(marshalChangesetID(changeset1.ID)),
+				Repository: apitest.Repository{Name: repo.Name},
+			},
+			{
+				Typename:   "ExternalChangeset",
+				ID:         string(marshalChangesetID(changeset2.ID)),
+				Repository: apitest.Repository{Name: repo.Name},
+			},
+			{
+				Typename:   "ExternalChangeset",
+				ID:         string(marshalChangesetID(changeset3.ID)),
+				Repository: apitest.Repository{Name: repo.Name},
+			},
 		},
 	}
 
@@ -131,6 +136,8 @@ query($campaign: ID!){
 
           ... on ExternalChangeset {
             id
+			repository { name }
+			nextSyncAt
           }
         }
       }

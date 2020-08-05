@@ -81,9 +81,10 @@ func TestChangesetResolver(t *testing.T) {
 		{
 			changeset: unpublishedChangeset,
 			want: apitest.Changeset{
-				Typename: "ExternalChangeset",
-				Title:    unpublishedSpec.Spec.Title,
-				Body:     unpublishedSpec.Spec.Body,
+				Typename:   "ExternalChangeset",
+				Title:      unpublishedSpec.Spec.Title,
+				Body:       unpublishedSpec.Spec.Body,
+				Repository: apitest.Repository{Name: repo.Name},
 			},
 		},
 		{
@@ -94,6 +95,7 @@ func TestChangesetResolver(t *testing.T) {
 				Body:          githubPR.Body,
 				ExternalState: "OPEN",
 				ExternalID:    "12345",
+				Repository:    apitest.Repository{Name: repo.Name},
 			},
 		},
 	}
@@ -119,10 +121,16 @@ query($changeset: ID!) {
 
     ... on ExternalChangeset {
       id
+
       title
       body
-      externalState
+
       externalID
+      externalState
+
+      nextSyncAt
+
+	  repository { name }
     }
   }
 }
