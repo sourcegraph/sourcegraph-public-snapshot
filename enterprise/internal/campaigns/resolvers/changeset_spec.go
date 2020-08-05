@@ -90,7 +90,7 @@ func (r *changesetSpecResolver) Description(ctx context.Context) (graphqlbackend
 	}
 
 	descriptionResolver := &changesetDescriptionResolver{
-		desc:         &r.changesetSpec.Spec,
+		desc:         r.changesetSpec.Spec,
 		repoResolver: repo,
 	}
 
@@ -150,7 +150,7 @@ type changesetDescriptionResolver struct {
 }
 
 func (r *changesetDescriptionResolver) ToExistingChangesetReference() (graphqlbackend.ExistingChangesetReferenceResolver, bool) {
-	if r.desc.IsExisting() {
+	if r.desc.IsImportingExisting() {
 		return r, true
 	}
 	return nil, false

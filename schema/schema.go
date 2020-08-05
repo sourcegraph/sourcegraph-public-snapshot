@@ -635,6 +635,8 @@ type GitLabConnection struct {
 	Token string `json:"token"`
 	// Url description: URL of a GitLab instance, such as https://gitlab.example.com or (for GitLab.com) https://gitlab.com.
 	Url string `json:"url"`
+	// Webhooks description: An array of webhook configurations
+	Webhooks []*GitLabWebhook `json:"webhooks,omitempty"`
 }
 type GitLabNameTransformation struct {
 	// Regex description: The regex to match for the occurrences of its replacement.
@@ -655,6 +657,10 @@ type GitLabRateLimit struct {
 	Enabled bool `json:"enabled"`
 	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second.
 	RequestsPerHour float64 `json:"requestsPerHour"`
+}
+type GitLabWebhook struct {
+	// Secret description: The secret used to authenticate incoming webhook requests
+	Secret string `json:"secret"`
 }
 
 // GitoliteConnection description: Configuration for a connection to Gitolite.

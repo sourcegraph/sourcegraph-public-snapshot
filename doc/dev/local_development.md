@@ -470,6 +470,14 @@ cd web
 yarn
 ```
 
+### Node version out of date
+
+```bash
+Validating package.json...
+error @: The engine "node" is incompatible with this module. Expected version "^v14.7.0". Got "14.5.0"
+```
+If you see an error like this you need to upgrade the version of node installed. You can do this with `nvm use` and then following the prompts to install or update to the correct Node.js version. 
+
 #### dial tcp 127.0.0.1:3090: connect: connection refused
 
 This means the `frontend` server failed to start, for some reason. Look through
