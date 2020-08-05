@@ -1779,11 +1779,11 @@ Try restarting the pod to get a different public IP.
 
 **Descriptions:**
 
-- _prometheus: 1+ failed alertmanager notifications rate over 1m_ (`warning_prometheus_alertmanager_notifications_failed_total`)
+- _prometheus: 1+ failed alertmanager notifications over 1m_ (`warning_prometheus_alertmanager_notifications_failed_total`)
 
 **Possible solutions:**
 
-Ensure that your `observability.alerts` configuration (in site configuration) is valid.
+Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
 
 # prometheus: container_cpu_usage
 
