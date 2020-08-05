@@ -791,6 +791,8 @@ This document contains possible solutions for when you find alerts are firing in
 If your alert isn't mentioned here, or if the solution doesn't help, [contact us](mailto:support@sourcegraph.com)
 for assistance.
 
+To learn more about Sourcegraph's alerting, see [our alerting documentation](https://docs.sourcegraph.com/admin/observability/alerting).
+
 <!-- DO NOT EDIT: generated via: go generate ./monitoring -->
 
 `)
@@ -798,13 +800,10 @@ for assistance.
 		for _, g := range c.Groups {
 			for _, r := range g.Rows {
 				for _, o := range r {
-					if o.PossibleSolutions == "none" {
-						continue
-					}
-
-					fmt.Fprintf(&b, "# %s: %s\n\n", c.Name, o.Name)
+					fmt.Fprintf(&b, "## %s: %s\n\n", c.Name, o.Name)
 
 					fmt.Fprintf(&b, "**Descriptions:**\n")
+					var prometheusAlertNames []string
 					for _, alert := range []struct {
 						level     string
 						threshold Alert
@@ -815,14 +814,23 @@ for assistance.
 						if alert.threshold.isEmpty() {
 							continue
 						}
-						fmt.Fprintf(&b, "\n- _%s_ (`%s`)\n\n",
-							c.alertDescription(o, alert.threshold),
-							prometheusAlertName(alert.level, c.Name, o.Name))
+						fmt.Fprintf(&b, "\n- _%s_\n", c.alertDescription(o, alert.threshold))
+						prometheusAlertNames = append(prometheusAlertNames,
+							fmt.Sprintf("    \"%s\"", prometheusAlertName(alert.level, c.Name, o.Name)))
 					}
 
-					fmt.Fprintf(&b, "**Possible solutions:**\n\n")
-					possibleSolutions, _ := goMarkdown(o.PossibleSolutions)
-					fmt.Fprintf(&b, "%s\n\n", possibleSolutions)
+					if o.PossibleSolutions != "none" {
+						fmt.Fprintf(&b, "**Possible solutions:**\n\n")
+						possibleSolutions, _ := goMarkdown(o.PossibleSolutions)
+						fmt.Fprintf(&b, "%s\n\n", possibleSolutions)
+					}
+
+					fmt.Fprintf(&b, "**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:\n\n")
+					fmt.Fprintf(&b, "```json\n%s\n```\n\n", fmt.Sprintf(`{
+  "observability.silenceAlerts": [
+%s
+  ]
+}`, strings.Join(prometheusAlertNames, ",\n")))
 				}
 			}
 		}
