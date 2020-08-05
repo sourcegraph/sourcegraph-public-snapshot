@@ -80,14 +80,24 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
             merge(of(undefined), changesetUpdates).pipe(
                 switchMap(() =>
                     queryChangesets({
-                        ...changesetFilters,
+                        externalState: changesetFilters.externalState,
+                        reviewState: changesetFilters.reviewState,
+                        checkState: changesetFilters.checkState,
                         ...(onlyOpen ? { externalState: GQL.ChangesetExternalState.OPEN } : {}),
                         first: args.first ?? null,
                         campaign: campaignID,
                     }).pipe(repeatWhen(notifier => notifier.pipe(delay(5000))))
                 )
             ),
-        [campaignID, changesetFilters, queryChangesets, changesetUpdates, onlyOpen]
+        [
+            campaignID,
+            changesetFilters.externalState,
+            changesetFilters.reviewState,
+            changesetFilters.checkState,
+            queryChangesets,
+            changesetUpdates,
+            onlyOpen,
+        ]
     )
 
     const containerElements = useMemo(() => new Subject<HTMLElement | null>(), [])

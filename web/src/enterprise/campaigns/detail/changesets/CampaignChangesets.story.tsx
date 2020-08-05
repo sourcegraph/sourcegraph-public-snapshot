@@ -33,67 +33,68 @@ const { add } = storiesOf('web/campaigns/CampaignChangesets', module).addDecorat
     )
 })
 
-add('List of changesets', () => {
-    const now = new Date()
-    const history = H.createMemoryHistory()
-    const nodes: ChangesetFields[] = [
-        ...Object.values(ChangesetExternalState).map(
-            (externalState): ChangesetFields => ({
-                __typename: 'ExternalChangeset' as const,
-                id: 'somechangeset',
-                updatedAt: now.toISOString(),
-                nextSyncAt: addHours(now, 1).toISOString(),
-                externalState,
-                title: 'Changeset title on code host',
-                reconcilerState: ChangesetReconcilerState.COMPLETED,
-                publicationState: ChangesetPublicationState.PUBLISHED,
-                body: 'This changeset does the following things:\nIs awesome\nIs useful',
-                checkState: ChangesetCheckState.PENDING,
-                createdAt: now.toISOString(),
-                externalID: '123',
-                externalURL: {
-                    url: 'http://test.test/pr/123',
-                },
-                diffStat: {
-                    added: 10,
-                    changed: 20,
-                    deleted: 8,
-                },
-                labels: [],
-                repository: {
-                    id: 'repoid',
-                    name: 'github.com/sourcegraph/sourcegraph',
-                    url: 'http://test.test/sourcegraph/sourcegraph',
-                },
-                reviewState: ChangesetReviewState.COMMENTED,
-            })
-        ),
-        ...Object.values(ChangesetExternalState).map(
-            (externalState): ChangesetFields => ({
-                __typename: 'HiddenExternalChangeset' as const,
-                id: 'somechangeset',
-                updatedAt: now.toISOString(),
-                nextSyncAt: addHours(now, 1).toISOString(),
-                externalState,
-                createdAt: now.toISOString(),
-                reconcilerState: ChangesetReconcilerState.COMPLETED,
-                publicationState: ChangesetPublicationState.PUBLISHED,
-            })
-        ),
-    ]
-    return (
-        <CampaignChangesets
-            queryChangesets={() => of({ totalCount: nodes.length, nodes })}
-            extensionsController={undefined as any}
-            platformContext={undefined as any}
-            campaignID="campaignid"
-            viewerCanAdminister={boolean('viewerCanAdminister', true)}
-            campaignUpdates={new Subject()}
-            changesetUpdates={new Subject()}
-            telemetryService={NOOP_TELEMETRY_SERVICE}
-            history={history}
-            location={history.location}
-            isLightTheme={isLightTheme}
-        />
-    )
-})
+const now = new Date()
+const history = H.createMemoryHistory()
+const nodes: ChangesetFields[] = [
+    ...Object.values(ChangesetExternalState).map(
+        (externalState): ChangesetFields => ({
+            __typename: 'ExternalChangeset' as const,
+            id: 'somechangeset' + externalState,
+            updatedAt: now.toISOString(),
+            nextSyncAt: addHours(now, 1).toISOString(),
+            externalState,
+            title: 'Changeset title on code host',
+            reconcilerState: ChangesetReconcilerState.COMPLETED,
+            publicationState: ChangesetPublicationState.PUBLISHED,
+            body: 'This changeset does the following things:\nIs awesome\nIs useful',
+            checkState: ChangesetCheckState.PENDING,
+            createdAt: now.toISOString(),
+            externalID: '123',
+            externalURL: {
+                url: 'http://test.test/pr/123',
+            },
+            diffStat: {
+                added: 10,
+                changed: 20,
+                deleted: 8,
+            },
+            labels: [],
+            repository: {
+                id: 'repoid',
+                name: 'github.com/sourcegraph/sourcegraph',
+                url: 'http://test.test/sourcegraph/sourcegraph',
+            },
+            reviewState: ChangesetReviewState.COMMENTED,
+        })
+    ),
+    ...Object.values(ChangesetExternalState).map(
+        (externalState): ChangesetFields => ({
+            __typename: 'HiddenExternalChangeset' as const,
+            id: 'somehiddenchangeset' + externalState,
+            updatedAt: now.toISOString(),
+            nextSyncAt: addHours(now, 1).toISOString(),
+            externalState,
+            createdAt: now.toISOString(),
+            reconcilerState: ChangesetReconcilerState.COMPLETED,
+            publicationState: ChangesetPublicationState.PUBLISHED,
+        })
+    ),
+]
+const queryChangesets = () => of({ totalCount: nodes.length, nodes })
+const updates = new Subject<void>()
+
+add('List of changesets', () => (
+    <CampaignChangesets
+        queryChangesets={queryChangesets}
+        extensionsController={undefined as any}
+        platformContext={undefined as any}
+        campaignID="campaignid"
+        viewerCanAdminister={boolean('viewerCanAdminister', true)}
+        campaignUpdates={updates}
+        changesetUpdates={updates}
+        telemetryService={NOOP_TELEMETRY_SERVICE}
+        history={history}
+        location={history.location}
+        isLightTheme={isLightTheme}
+    />
+))
