@@ -16,6 +16,7 @@ import {
 } from '../../../../shared/src/util/searchTestHelpers'
 import { SearchResultsList, SearchResultsListProps } from './SearchResultsList'
 import { NEVER } from 'rxjs'
+import { FiltersToTypeAndValue, FilterType } from '../../../../shared/src/search/interactive/util'
 
 let VISIBILITY_CHANGED_CALLBACKS: ((isVisible: boolean) => void)[] = []
 
@@ -266,5 +267,50 @@ describe('SearchResultsList', () => {
         )
         scrollToBottom()
         expect(getByTestId(container, 'search-show-more-button')).toBeTruthy()
+    })
+
+    it('does not add filters to query in search suggestions link', () => {
+        const resultsOrError = mockResults({ resultCount: 0, limitHit: false })
+        resultsOrError.alert = {
+            __typename: 'SearchAlert',
+            title: 'Test title',
+            description: 'Test description',
+            proposedQueries: [
+                {
+                    __typename: 'SearchQueryDescription',
+                    description: 'test',
+                    query: 'repo:test1|test2',
+                },
+            ],
+        }
+
+        const filtersInQuery: FiltersToTypeAndValue = {
+            a: {
+                type: FilterType.repo,
+                value: 'test1',
+                editable: true,
+            },
+            b: {
+                type: FilterType.repo,
+                value: 'test2',
+                editable: true,
+            },
+        }
+
+        const props = {
+            ...defaultProps,
+            resultsOrError,
+            filtersInQuery,
+        }
+
+        const { container } = render(
+            <BrowserRouter>
+                <SearchResultsList {...props} />
+            </BrowserRouter>
+        )
+
+        const link = getByTestId(container, 'search-suggestions-link') as HTMLAnchorElement
+        expect(link).toBeTruthy()
+        expect(link.href).toStrictEqual('http://localhost/search?q=repo:test1%7Ctest2&patternType=regexp')
     })
 })

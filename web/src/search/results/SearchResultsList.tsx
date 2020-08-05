@@ -425,6 +425,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                             <li key={proposedQuery.query}>
                                                                 <Link
                                                                     className="btn btn-secondary btn-sm"
+                                                                    data-testid="search-suggestions-link"
                                                                     to={
                                                                         '/search?' +
                                                                         buildSearchURLQuery(
