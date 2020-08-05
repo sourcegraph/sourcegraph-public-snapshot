@@ -122,6 +122,7 @@ type Changeset struct {
 	PublicationState string
 	ReconcilerState  string
 	ExternalState    string
+	ExternalID       string
 	ExternalURL      struct {
 		URL         string
 		ServiceType string

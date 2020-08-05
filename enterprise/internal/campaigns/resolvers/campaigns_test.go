@@ -152,6 +152,7 @@ func TestCampaignResolver(t *testing.T) {
 					Title:         unpublishedSpec.Spec.Title,
 					Body:          unpublishedSpec.Spec.Body,
 					ExternalState: "",
+					ExternalID:    "",
 				},
 				{
 					Typename:      "ExternalChangeset",
@@ -159,6 +160,7 @@ func TestCampaignResolver(t *testing.T) {
 					Title:         openGitHubPR.Title,
 					Body:          openGitHubPR.Body,
 					ExternalState: "OPEN",
+					ExternalID:    "12345",
 				},
 				{
 					Typename:      "ExternalChangeset",
@@ -166,6 +168,7 @@ func TestCampaignResolver(t *testing.T) {
 					Title:         mergedGitHubPR.Title,
 					Body:          mergedGitHubPR.Body,
 					ExternalState: "MERGED",
+					ExternalID:    "56789",
 				},
 			},
 		},
@@ -192,7 +195,7 @@ query($campaign: ID!){
 
       changesets {
         totalCount
-		stats { unpublished, open, merged, closed, total }
+        stats { unpublished, open, merged, closed, total }
         nodes {
           __typename
 
@@ -201,6 +204,7 @@ query($campaign: ID!){
             title
             body
             externalState
+            externalID
           }
         }
       }

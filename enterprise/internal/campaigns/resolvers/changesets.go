@@ -378,7 +378,7 @@ func (r *changesetResolver) ID() graphql.ID {
 }
 
 func (r *changesetResolver) ExternalID() *string {
-	if r.changeset == nil {
+	if r.changeset.PublicationState.Unpublished() {
 		return nil
 	}
 	return &r.changeset.ExternalID
