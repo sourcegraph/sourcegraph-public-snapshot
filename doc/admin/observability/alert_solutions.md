@@ -36,7 +36,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 50+ search alert user suggestions shown every 5m_ (`warning_frontend_search_alert_user_suggestions`)
+- _frontend: 25%+ search alert user suggestions shown every 5m_ (`warning_frontend_search_alert_user_suggestions`)
 
 **Possible solutions:**
 
@@ -94,7 +94,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 50+ search code-intel alert user suggestions shown every 5m_ (`warning_frontend_search_codeintel_alert_user_suggestions`)
+- _frontend: 25%+ search code-intel alert user suggestions shown every 5m_ (`warning_frontend_search_codeintel_alert_user_suggestions`)
 
 **Possible solutions:**
 
@@ -132,7 +132,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 50+ search API alert user suggestions shown every 5m_ (`warning_frontend_search_api_alert_user_suggestions`)
+- _frontend: 50%+ search API alert user suggestions shown every 5m_ (`warning_frontend_search_api_alert_user_suggestions`)
 
 **Possible solutions:**
 
@@ -142,7 +142,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 5+ internal indexed search error responses every 5m_ (`warning_frontend_internal_indexed_search_error_responses`)
+- _frontend: 10%+ internal indexed search error responses every 5m_ (`warning_frontend_internal_indexed_search_error_responses`)
 
 **Possible solutions:**
 
@@ -152,7 +152,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 5+ internal unindexed search error responses every 5m_ (`warning_frontend_internal_unindexed_search_error_responses`)
+- _frontend: 10%+ internal unindexed search error responses every 5m_ (`warning_frontend_internal_unindexed_search_error_responses`)
 
 **Possible solutions:**
 
@@ -162,7 +162,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 25+ internal API error responses every 5m by route_ (`warning_frontend_internal_api_error_responses`)
+- _frontend: 10%+ internal API error responses every 5m by route_ (`warning_frontend_internal_api_error_responses`)
 
 **Possible solutions:**
 
