@@ -65,11 +65,5 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 		return codeintelhttpapi.NewUploadHandler(store, bundleManagerClient, internal)
 	}
 
-	h, err := newInternalProxyHandler()
-	if err != nil {
-		return err
-	}
-
-	enterpriseServices.NewCodeIntelInternalProxyHandler = h
 	return nil
 }
