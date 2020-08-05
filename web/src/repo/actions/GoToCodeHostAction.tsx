@@ -127,7 +127,8 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
             }
             // Add range or position path to the code host URL.
             if (this.props.range) {
-                url += `#L${this.props.range.start.line}-L${this.props.range.end.line}`
+                const rangeEndPrefix = externalURL.serviceType === 'github' ? 'L' : ''
+                url += `#L${this.props.range.start.line}-${rangeEndPrefix}${this.props.range.end.line}`
             } else if (this.props.position) {
                 url += `#L${this.props.position.line}`
             }
