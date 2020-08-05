@@ -1318,3 +1318,131 @@ func TestSearchResolver_evaluateWarning(t *testing.T) {
 		}
 	})
 }
+
+func TestGetExactFilePatterns(t *testing.T) {
+	tests := []struct {
+		in   string
+		want map[string]struct{}
+	}{
+		{
+			in:   "file:foo.bar file:*.bas",
+			want: map[string]struct{}{"foo.bar": {}},
+		},
+		{
+			in:   "file:foo.bar file:foo.bas",
+			want: map[string]struct{}{"foo.bar": {}, "foo.bas": {}},
+		},
+		{
+			in:   "file:*.bar",
+			want: map[string]struct{}{},
+		},
+		{
+			in:   "repo:github.com/foo/bar file:foo.bar",
+			want: map[string]struct{}{"foo.bar": {}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.in, func(t *testing.T) {
+			q, err := query.ProcessAndOr(tt.in, query.ParserOptions{Globbing: true, SearchType: query.SearchTypeLiteral})
+			if err != nil {
+				t.Fatal(err)
+			}
+			r := searchResolver{query: q, originalQuery: tt.in}
+			if got := r.getExactFilePatterns(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getExactFilePatterns() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+type mockSearchResultURIGetter struct {
+	repo string
+	file string
+}
+
+func (m mockSearchResultURIGetter) searchResultURIs() (string, string) {
+	return m.repo, m.file
+}
+
+func TestCompareSearchResultsAndOr(t *testing.T) {
+	tests := []struct {
+		a                 searchResultURIGetter
+		b                 searchResultURIGetter
+		exactFilePatterns map[string]struct{}
+		want              bool
+	}{
+		{
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
+			b:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
+			exactFilePatterns: map[string]struct{}{"file": {}},
+			want:              false,
+		},
+		{
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
+			b:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
+			exactFilePatterns: map[string]struct{}{"file": {}},
+			want:              true,
+		},
+		{
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
+			b:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
+			exactFilePatterns: map[string]struct{}{},
+			want:              true,
+		},
+		{
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
+			b:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
+			exactFilePatterns: map[string]struct{}{"afile": {}},
+			want:              true,
+		},
+		{
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
+			b:                 mockSearchResultURIGetter{repo: "brepo", file: "file"},
+			exactFilePatterns: map[string]struct{}{"file": {}},
+			want:              true,
+		},
+		{
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
+			b:                 mockSearchResultURIGetter{repo: "arepo", file: "dir1/file"},
+			exactFilePatterns: map[string]struct{}{"file": {}},
+			want:              false,
+		},
+		{
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: "dir1/file"},
+			b:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
+			exactFilePatterns: map[string]struct{}{"file": {}},
+			want:              true,
+		},
+		{
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: "dir2/file"},
+			b:                 mockSearchResultURIGetter{repo: "arepo", file: "dir1/file"},
+			exactFilePatterns: map[string]struct{}{"file": {}},
+			want:              false,
+		},
+		{
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: "dir1/file"},
+			b:                 mockSearchResultURIGetter{repo: "arepo", file: "dir2/file"},
+			exactFilePatterns: map[string]struct{}{"file": {}},
+			want:              true,
+		},
+		{
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
+			b:                 mockSearchResultURIGetter{repo: "arepo", file: "bfile"},
+			exactFilePatterns: nil,
+			want:              true,
+		},
+		{
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: "bfile"},
+			b:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
+			exactFilePatterns: nil,
+			want:              false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run("test", func(t *testing.T) {
+			if got := compareSearchResultsAndOr(tt.a, tt.b, tt.exactFilePatterns); got != tt.want {
+				t.Errorf("compareSearchResultsAndOr() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

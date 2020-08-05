@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"path"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"sort"
@@ -981,7 +982,7 @@ func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchR
 	if err != nil {
 		return nil, err
 	}
-	sortResults(result.SearchResults)
+	r.sortResultsAndOr(ctx, result.SearchResults)
 	return result, nil
 }
 
@@ -1841,7 +1842,11 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		multiErr = nil
 	}
 
-	sortResults(results)
+	if _, isAndOr := r.query.(*query.AndOrQuery); isAndOr {
+		r.sortResultsAndOr(ctx, results)
+	} else {
+		sortResults(results)
+	}
 
 	resultsResolver := SearchResultsResolver{
 		start:               start,
@@ -1870,14 +1875,19 @@ func isContextError(ctx context.Context, err error) bool {
 //
 // Note: Any new result types added here also need to be handled properly in search_results.go:301 (sparklines)
 type SearchResultResolver interface {
+	searchResultURIGetter
+
 	ToRepository() (*RepositoryResolver, bool)
 	ToFileMatch() (*FileMatchResolver, bool)
 	ToCommitSearchResult() (*commitSearchResultResolver, bool)
 	ToCodemodResult() (*codemodResultResolver, bool)
 
-	// SearchResultURIs returns the repo name and file uri respectiveley
-	searchResultURIs() (string, string)
 	resultCount() int32
+}
+
+type searchResultURIGetter interface {
+	// SearchResultURIs returns the repo name and file uri respectively
+	searchResultURIs() (string, string)
 }
 
 // compareSearchResults checks to see if a is less than b.
@@ -1889,12 +1899,66 @@ func compareSearchResults(a, b SearchResultResolver) bool {
 	if arepo == brepo {
 		return afile < bfile
 	}
-
 	return arepo < brepo
 }
 
 func sortResults(r []SearchResultResolver) {
 	sort.Slice(r, func(i, j int) bool { return compareSearchResults(r[i], r[j]) })
+}
+
+// compareSearchResultsAndOr is like compareSearchResults, but overrides sorting in alphabetical order if
+// one of the filenames is contained in exactFilePatterns.
+func compareSearchResultsAndOr(a, b searchResultURIGetter, exactFilePatterns map[string]struct{}) bool {
+	arepo, afile := a.searchResultURIs()
+	brepo, bfile := b.searchResultURIs()
+
+	if arepo == brepo {
+		if exactFilePatterns == nil || len(exactFilePatterns) == 0 {
+			return afile < bfile
+		}
+		_, aMatch := exactFilePatterns[filepath.Base(afile)]
+		_, bMatch := exactFilePatterns[filepath.Base(bfile)]
+		if aMatch || bMatch {
+			if aMatch && bMatch {
+				return afile < bfile
+			}
+			if aMatch {
+				return true
+			}
+			return false
+		}
+		return afile < bfile
+	}
+	return arepo < brepo
+}
+
+// getExactFilePatterns returns the set of file patterns without glob syntax.
+func (r *searchResolver) getExactFilePatterns() map[string]struct{} {
+	m := map[string]struct{}{}
+	query.VisitField(
+		r.query.(*query.AndOrQuery).Query,
+		query.FieldFile,
+		func(value string, negated bool, annotation query.Annotation) {
+			originalValue := r.originalQuery[annotation.Range.Start.Column+query.FieldFileOffset : annotation.Range.End.Column]
+			if !negated && query.ContainsNoGlobSymbols(originalValue) {
+				m[originalValue] = struct{}{}
+			}
+		})
+	return m
+}
+
+// sortResultsAndOr is like sortResults, but fine tunes the comparison function by taking into account:
+// - the original query
+// - whether globbing is active
+//
+// If globbing is active and the original query contains exact file patterns (no glob syntax), results with
+// exact matches will appear first within their repository.
+func (r *searchResolver) sortResultsAndOr(ctx context.Context, rr []SearchResultResolver) {
+	var exactPatterns map[string]struct{}
+	if settings, err := decodedViewerFinalSettings(ctx); err != nil || getBoolPtr(settings.SearchGlobbing, false) {
+		exactPatterns = r.getExactFilePatterns()
+	}
+	sort.Slice(rr, func(i, j int) bool { return compareSearchResultsAndOr(rr[i], rr[j], exactPatterns) })
 }
 
 // orderedFuzzyRegexp interpolate a lazy 'match everything' regexp pattern
