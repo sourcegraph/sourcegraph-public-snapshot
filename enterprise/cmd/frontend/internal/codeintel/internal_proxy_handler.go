@@ -21,6 +21,20 @@ var indexerURL = env.Get("PRECISE_CODE_INTEL_INDEX_MANAGER_URL", "", "HTTP addre
 var internalProxyAuthToken = env.Get("PRECISE_CODE_INTEL_INTERNAL_PROXY_AUTH_TOKEN", "", "The auth token used to secure communication between the precise-code-intel-indexer service and the internal API provided by this proxy.")
 
 func newInternalProxyHandler() (func() http.Handler, error) {
+	if indexerURL == "" {
+		factory := func() http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusNotFound)
+			})
+		}
+
+		return factory, nil
+	}
+
+	if internalProxyAuthToken == "" {
+		return nil, fmt.Errorf("invalid value for PRECISE_CODE_INTEL_INTERNAL_PROXY_AUTH_TOKEN: no value supplied")
+	}
+
 	host, port, err := net.SplitHostPort(envvar.HTTPAddrInternal)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("failed to parse internal API address %q", envvar.HTTPAddrInternal))
@@ -31,9 +45,6 @@ func newInternalProxyHandler() (func() http.Handler, error) {
 		return nil, errors.Wrap(err, "failed to construct the origin for the internal frontend")
 	}
 
-	if indexerURL == "" {
-		return nil, fmt.Errorf("invalid value for PRECISE_CODE_INTEL_INDEX_MANAGER_URL: no value supplied")
-	}
 	indexerOrigin, err := url.Parse(indexerURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to construct the origin for the precise-code-intel-index-manager")

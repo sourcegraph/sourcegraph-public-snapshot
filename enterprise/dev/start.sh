@@ -37,6 +37,7 @@ export SOURCEGRAPH_LICENSE_GENERATION_KEY
 
 export PRECISE_CODE_INTEL_INDEX_MANAGER_URL=http://localhost:3189
 export PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL=http://localhost:3187
+export PRECISE_CODE_INTEL_INTERNAL_PROXY_AUTH_TOKEN=hunter2
 export PRECISE_CODE_INTEL_BUNDLE_DIR=$HOME/.sourcegraph/lsif-storage
 
 export WATCH_ADDITIONAL_GO_DIRS="enterprise/cmd enterprise/dev enterprise/internal"
