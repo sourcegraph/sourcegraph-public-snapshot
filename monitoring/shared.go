@@ -127,8 +127,7 @@ var sharedContainerFsInodes sharedObservable = func(containerName string) Observ
 		Owner:           ObservableOwnerDistribution,
 		PossibleSolutions: `
 			- Refer to your OS or cloud provider's documentation for how to increase inodes.
-			- **Kubernetes:** consider provisioning more machines with less resources.
-`,
+			- **Kubernetes:** consider provisioning more machines with less resources.`,
 	}
 }
 
