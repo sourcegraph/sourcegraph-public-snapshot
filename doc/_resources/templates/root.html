@@ -4,9 +4,9 @@
     <title>{{block "title" .}}Home{{end}} - Sourcegraph docs</title>
     <link rel="icon" type="image/png" href="https://about.sourcegraph.com/sourcegraph-mark.png" />
     <link rel="stylesheet" href="{{asset "bootstrap.min.css"}}?4.3.1" />
-    <link rel="stylesheet" href="{{asset "layout.css"}}?19" />
-    <link rel="stylesheet" href="{{asset "search.css"}}?19" />
-    <link rel="stylesheet" href="{{asset "content.css"}}?19" />
+    <link rel="stylesheet" href="{{asset "layout.css"}}?20" />
+    <link rel="stylesheet" href="{{asset "search.css"}}?20" />
+    <link rel="stylesheet" href="{{asset "content.css"}}?20" />
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
     {{block "head" .}}{{end}}
 </head>
@@ -40,16 +40,19 @@
         </div>
     </div>
     {{block "content" .}}{{end}}
-                    <div class="footer__postscript d-flex justify-content-between pt-4 pb-2 small">
-                        <ul class="nav">
-                            <li class="nav-item text-muted mr-3">© 2020 Sourcegraph</li>
-                            <li class="nav-item"><a class="nav-link" href="https://about.sourcegraph.com/terms">Terms</a></li>
-                            <li class="nav-item"><a class="nav-link" href="https://about.sourcegraph.com/security">Security</a></li>
-                            <li class="nav-item"><a class="nav-link" href="https://about.sourcegraph.com/privacy">Privacy</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </footer>
+    {{/* Keep up-to-date with Sourcegraph.com */}}
+    <div class="footer-container column large-12">
+      <div class="footer__container pl-3">
+          <footer class="footer pt-6 pb-2">
+                  <div class="footer__postscript d-flex justify-content-between pt-4 pb-2 small">
+                      <ul class="nav">
+                          <li class="nav-item text-muted mt-2 mr-3">© 2020 Sourcegraph</li>
+                          <li class="nav-item"><a class="nav-link" href="https://about.sourcegraph.com/terms">Terms</a></li>
+                          <li class="nav-item"><a class="nav-link" href="https://about.sourcegraph.com/security">Security</a></li>
+                          <li class="nav-item"><a class="nav-link" href="https://about.sourcegraph.com/privacy">Privacy</a></li>
+                      </ul>
+                  </div>
+          </footer>
         </div>
     </div>
 
