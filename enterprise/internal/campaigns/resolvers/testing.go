@@ -47,8 +47,9 @@ index 6f8b5d9..17400bc 100644
 
 // testDiffGraphQL is the parsed representation of testDiff.
 var testDiffGraphQL = apitest.FileDiffs{
-	RawDiff:  testDiff,
-	DiffStat: apitest.DiffStat{Changed: 2},
+	TotalCount: 2,
+	RawDiff:    testDiff,
+	DiffStat:   apitest.DiffStat{Changed: 2},
 	PageInfo: struct {
 		HasNextPage bool
 		EndCursor   string
@@ -311,6 +312,9 @@ type testSpecOpts struct {
 	body          string
 	commitMessage string
 	commitDiff    string
+
+	baseRev string
+	baseRef string
 }
 
 func createChangesetSpec(
@@ -327,6 +331,9 @@ func createChangesetSpec(
 		CampaignSpecID: opts.campaignSpec,
 		Spec: &campaigns.ChangesetSpecDescription{
 			BaseRepository: graphqlbackend.MarshalRepositoryID(opts.repo),
+
+			BaseRev: opts.baseRev,
+			BaseRef: opts.baseRef,
 
 			ExternalID: opts.externalID,
 			HeadRef:    opts.headRef,

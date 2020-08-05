@@ -55,7 +55,8 @@ type FileDiffs struct {
 		HasNextPage bool
 		EndCursor   string
 	}
-	Nodes []FileDiff
+	Nodes      []FileDiff
+	TotalCount int
 }
 
 type User struct {
@@ -135,11 +136,14 @@ type Changeset struct {
 	Head             GitRef
 	Base             GitRef
 
-	Diff struct {
-		FileDiffs FileDiffs
-	}
+	Diff Comparison
 
 	Labels []Label
+}
+
+type Comparison struct {
+	Typename  string `json:"__typename"`
+	FileDiffs FileDiffs
 }
 
 type Label struct {

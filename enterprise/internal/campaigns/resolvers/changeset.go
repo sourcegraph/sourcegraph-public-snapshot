@@ -369,13 +369,31 @@ func (r *changesetResolver) Events(ctx context.Context, args *struct {
 }
 
 func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.RepositoryComparisonInterface, error) {
-	// TODO: Return previewRepositoryConnection from the spec, when changeset doesn't yet exist on the codehost.
-	if r.changeset == nil {
+	if r.changeset.PublicationState.Unpublished() {
 		repo, err := r.computeRepo()
 		if err != nil {
 			return nil, err
 		}
-		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, repo, r.changeset.SyncState.BaseRefOid, "")
+
+		spec, err := r.computeSpec(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		if spec.Spec.IsImportingExisting() {
+			return nil, errors.New("ChangesetSpec imports a changeset and has no title")
+		}
+		diff, err := spec.Spec.Diff()
+		if err != nil {
+			return nil, errors.New("ChangesetSpec has no diff")
+		}
+
+		return graphqlbackend.NewPreviewRepositoryComparisonResolver(
+			ctx,
+			repo,
+			spec.Spec.BaseRev,
+			diff,
+		)
 	}
 
 	// Only return diffs for open changesets, otherwise we can't guarantee that
@@ -428,6 +446,10 @@ func (r *changesetResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffS
 }
 
 func (r *changesetResolver) Head(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {
+	if r.changeset.PublicationState.Unpublished() {
+		return nil, nil
+	}
+
 	name, err := r.changeset.HeadRef()
 	if err != nil {
 		return nil, err
@@ -464,6 +486,10 @@ func (r *changesetResolver) Head(ctx context.Context) (*graphqlbackend.GitRefRes
 }
 
 func (r *changesetResolver) Base(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {
+	if r.changeset.PublicationState.Unpublished() {
+		return nil, nil
+	}
+
 	name, err := r.changeset.BaseRef()
 	if err != nil {
 		return nil, err

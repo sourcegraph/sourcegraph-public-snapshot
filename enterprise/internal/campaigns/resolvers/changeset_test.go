@@ -12,10 +12,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestChangesetResolver(t *testing.T) {
@@ -37,6 +39,17 @@ func TestChangesetResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// We use the same mocks for both changesets, even though the unpublished
+	// changesets doesn't have a HeadRev (since no commit has been made). The
+	// PreviewRepositoryComparison uses a subset of the mocks, though.
+	baseRev := "53339e93a17b7934abf3bc4aae3565c15a0631a9"
+	headRev := "fa9e174e4847e5f551b31629542377395d6fc95a"
+	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+		return api.CommitID(spec), nil
+	}
+	defer func() { git.Mocks.ResolveRevision = nil }()
+	mockRepoComparison(t, baseRev, headRev, testDiff)
+
 	unpublishedSpec := createChangesetSpec(t, ctx, store, testSpecOpts{
 		user:          userID,
 		repo:          repo.ID,
@@ -46,6 +59,8 @@ func TestChangesetResolver(t *testing.T) {
 		body:          "ChangesetSpec Body",
 		commitMessage: "The commit message",
 		commitDiff:    testDiff,
+		baseRev:       baseRev,
+		baseRef:       "refs/heads/master",
 	})
 	unpublishedChangeset := createChangeset(t, ctx, store, testChangesetOpts{
 		repo:                repo.ID,
@@ -76,8 +91,8 @@ func TestChangesetResolver(t *testing.T) {
 			State:       "OPEN",
 			URL:         "https://github.com/sourcegraph/sourcegraph/pull/12345",
 			HeadRefName: "open-pr",
-			HeadRefOid:  "d34db33f",
-			BaseRefOid:  "f00b4r",
+			HeadRefOid:  headRev,
+			BaseRefOid:  baseRev,
 			BaseRefName: "master",
 			TimelineItems: []github.TimelineItem{
 				{Type: "PullRequestCommit", Item: &github.PullRequestCommit{
@@ -122,6 +137,10 @@ func TestChangesetResolver(t *testing.T) {
 				Body:       unpublishedSpec.Spec.Body,
 				Repository: apitest.Repository{Name: repo.Name},
 				Labels:     []apitest.Label{},
+				Diff: apitest.Comparison{
+					Typename:  "PreviewRepositoryComparison",
+					FileDiffs: testDiffGraphQL,
+				},
 			},
 		},
 		{
@@ -145,6 +164,38 @@ func TestChangesetResolver(t *testing.T) {
 				Labels: []apitest.Label{
 					{Text: "cool-label", Color: "blue", Description: "the best label in town"},
 				},
+				Head: apitest.GitRef{
+					Name:        "refs/heads/open-pr",
+					Prefix:      "refs/heads/",
+					RefType:     "GIT_BRANCH",
+					DisplayName: "open-pr",
+					AbbrevName:  "open-pr",
+					URL:         "/github.com/sourcegraph/sourcegraph@open-pr",
+					Repository:  struct{ ID string }{ID: "UmVwb3NpdG9yeTox"},
+					Target: apitest.GitTarget{
+						OID:            headRev,
+						AbbreviatedOID: headRev[:7],
+						TargetType:     "GIT_COMMIT",
+					},
+				},
+				Base: apitest.GitRef{
+					Name:        "refs/heads/master",
+					Prefix:      "refs/heads/",
+					RefType:     "GIT_BRANCH",
+					DisplayName: "master",
+					AbbrevName:  "master",
+					URL:         "/github.com/sourcegraph/sourcegraph@master",
+					Repository:  struct{ ID string }{ID: "UmVwb3NpdG9yeTox"},
+					Target: apitest.GitTarget{
+						OID:            baseRev,
+						AbbreviatedOID: baseRev[:7],
+						TargetType:     "GIT_COMMIT",
+					},
+				},
+				Diff: apitest.Comparison{
+					Typename:  "RepositoryComparison",
+					FileDiffs: testDiffGraphQL,
+				},
 			},
 		},
 	}
@@ -164,6 +215,33 @@ func TestChangesetResolver(t *testing.T) {
 }
 
 const queryChangeset = `
+fragment gitRef on GitRef {
+    name
+    abbrevName
+    displayName
+    prefix
+    type
+    repository { id }
+    url
+    target {
+        oid
+        abbreviatedOID
+        type
+    }
+}
+
+fragment fileDiffNode on FileDiff {
+               oldPath
+               newPath
+               oldFile { name }
+               hunks {
+                 body
+                 oldRange { startLine, lines }
+                 newRange { startLine, lines }
+               }
+               stat { added, changed, deleted }
+}
+
 query($changeset: ID!) {
   node(id: $changeset) {
     __typename
@@ -185,6 +263,35 @@ query($changeset: ID!) {
 
       events(first: 100) { totalCount }
       labels { text, color, description }
+
+      head { ...gitRef }
+      base { ...gitRef }
+
+      diff {
+        __typename
+
+        ... on RepositoryComparison {
+          fileDiffs {
+             totalCount
+             rawDiff
+             diffStat { added, changed, deleted }
+             nodes {
+               ... fileDiffNode
+             }
+          }
+        }
+
+        ... on PreviewRepositoryComparison {
+          fileDiffs {
+             totalCount
+             rawDiff
+             diffStat { added, changed, deleted }
+             nodes {
+               ... fileDiffNode
+             }
+          }
+        }
+      }
     }
   }
 }
