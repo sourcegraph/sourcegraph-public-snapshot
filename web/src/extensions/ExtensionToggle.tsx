@@ -16,6 +16,7 @@ interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettin
     extension: Pick<ConfiguredRegistryExtension, 'id'>
 
     className?: string
+    id?: string
 }
 
 /**
@@ -93,6 +94,7 @@ export class ExtensionToggle extends React.PureComponent<Props> {
                 onToggle={this.onToggle}
                 title={title}
                 className={this.props.className}
+                id={this.props.id}
             />
         )
     }

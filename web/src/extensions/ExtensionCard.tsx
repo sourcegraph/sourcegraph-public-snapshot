@@ -88,6 +88,7 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard(props) {
                                             settingsCascade={props.settingsCascade}
                                             platformContext={props.platformContext}
                                             className="extension-card__toggle"
+                                            id={`extension-toggle-${node.id}`}
                                         />
                                     ) : (
                                         <ExtensionConfigurationState
