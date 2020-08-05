@@ -137,6 +137,13 @@ func TestCampaignResolver(t *testing.T) {
 		Author:      apitest.User{DatabaseID: userID, SiteAdmin: true},
 		URL:         "/campaigns/" + campaignApiID,
 		Changesets: apitest.ChangesetConnection{
+			Stats: apitest.ChangesetConnectionStats{
+				Unpublished: 1,
+				Open:        1,
+				Merged:      1,
+				Closed:      0,
+				Total:       3,
+			},
 			TotalCount: 3,
 			Nodes: []apitest.Changeset{
 				{
@@ -185,6 +192,7 @@ query($campaign: ID!){
 
       changesets {
         totalCount
+		stats { unpublished, open, merged, closed, total }
         nodes {
           __typename
 

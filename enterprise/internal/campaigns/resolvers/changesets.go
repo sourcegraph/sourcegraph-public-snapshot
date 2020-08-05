@@ -26,26 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-type changesetsConnectionStatsResolver struct {
-	unpublished, open, merged, closed, total int32
-}
-
-func (r *changesetsConnectionStatsResolver) Unpublished() int32 {
-	return r.unpublished
-}
-func (r *changesetsConnectionStatsResolver) Open() int32 {
-	return r.open
-}
-func (r *changesetsConnectionStatsResolver) Merged() int32 {
-	return r.merged
-}
-func (r *changesetsConnectionStatsResolver) Closed() int32 {
-	return r.closed
-}
-func (r *changesetsConnectionStatsResolver) Total() int32 {
-	return r.total
-}
-
 type changesetsConnectionResolver struct {
 	store       *ee.Store
 	httpFactory *httpcli.Factory
@@ -183,8 +163,41 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*campaign
 }
 
 func (r *changesetsConnectionResolver) Stats(ctx context.Context) (graphqlbackend.ChangesetsConnectionStatsResolver, error) {
-	// TODO: Implement.
-	return &changesetsConnectionStatsResolver{}, nil
+	opts := r.opts
+	opts.Limit = -1
+
+	cs, _, err := r.store.ListChangesets(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: If the opts do not leak information, we can return the
+	// number of changesets. Otherwise we have to filter the changesets by
+	// accessible repos.
+	if r.optsSafe {
+		return newChangesetConnectionStats(cs), nil
+	}
+
+	// 🚨 SECURITY: db.Repos.GetByIDs uses the authzFilter under the hood and
+	// filters out repositories that the user doesn't have access to.
+	rs, err := db.Repos.GetByIDs(ctx, cs.RepoIDs()...)
+	if err != nil {
+		return nil, err
+	}
+	accessibleReposIDs := make(map[api.RepoID]struct{}, len(rs))
+	for _, r := range rs {
+		accessibleReposIDs[r.ID] = struct{}{}
+	}
+
+	var visibleChangesets []*campaigns.Changeset
+	for _, c := range cs {
+		if _, ok := accessibleReposIDs[c.RepoID]; !ok {
+			continue
+		}
+		visibleChangesets = append(visibleChangesets, c)
+	}
+
+	return newChangesetConnectionStats(cs), nil
 }
 
 type changesetResolver struct {
@@ -688,4 +701,48 @@ func (r *changesetLabelResolver) Color() string {
 
 func (r *changesetLabelResolver) Description() *string {
 	return &r.label.Description
+}
+
+func newChangesetConnectionStats(cs []*campaigns.Changeset) *changesetsConnectionStatsResolver {
+	stats := &changesetsConnectionStatsResolver{
+		total: int32(len(cs)),
+	}
+
+	for _, c := range cs {
+		if c.PublicationState.Unpublished() {
+			stats.unpublished++
+			continue
+		}
+
+		switch c.ExternalState {
+		case campaigns.ChangesetExternalStateClosed:
+			stats.closed++
+		case campaigns.ChangesetExternalStateMerged:
+			stats.merged++
+		case campaigns.ChangesetExternalStateOpen:
+			stats.open++
+		}
+	}
+
+	return stats
+}
+
+type changesetsConnectionStatsResolver struct {
+	unpublished, open, merged, closed, total int32
+}
+
+func (r *changesetsConnectionStatsResolver) Unpublished() int32 {
+	return r.unpublished
+}
+func (r *changesetsConnectionStatsResolver) Open() int32 {
+	return r.open
+}
+func (r *changesetsConnectionStatsResolver) Merged() int32 {
+	return r.merged
+}
+func (r *changesetsConnectionStatsResolver) Closed() int32 {
+	return r.closed
+}
+func (r *changesetsConnectionStatsResolver) Total() int32 {
+	return r.total
 }

@@ -143,6 +143,15 @@ type ChangesetConnection struct {
 	PageInfo   struct {
 		HasNextPage bool
 	}
+	Stats ChangesetConnectionStats
+}
+
+type ChangesetConnectionStats struct {
+	Unpublished int
+	Open        int
+	Merged      int
+	Closed      int
+	Total       int
 }
 
 type ChangesetCounts struct {
