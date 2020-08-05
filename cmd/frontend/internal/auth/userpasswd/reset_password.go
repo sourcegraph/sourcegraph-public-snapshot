@@ -79,23 +79,33 @@ func HandleResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 
 // If the instance is configured to do so, send the password reset link directly
 // to the user, rather than requiring the admin to send it to them
-func HandleResetPasswordEmail(ctx context.Context, e string) error {
-	usr, err := db.Users.GetByVerifiedEmail(ctx, e)
-	if err != nil {
-		// TODO: throw the correct error
-		return nil
-	}
+func HandleResetPasswordEmail(ctx context.Context, id int32) (string, error) {
 
-	resetURL, err := backend.MakePasswordResetURL(ctx, usr.ID)
+	ru, err := backend.MakePasswordResetURL(ctx, id)
 	if err != nil {
 		// TODO: Throw the correct error
-		return nil
+		return "", nil
 	}
 
 	if !conf.CanSendEmail() {
 		// TODO: Throw the correct error
-		return nil
+		return "", nil
 	}
+
+	e, _, err := db.UserEmails.GetPrimaryEmail(ctx, id)
+	if err != nil {
+		// TODO: Throw the correct error
+		return "", nil
+	}
+
+	usr, err := db.Users.GetByID(ctx, id)
+	if err != nil {
+		// TODO: Throw the correct error
+		return "", nil
+	}
+
+	rus := globals.ExternalURL().ResolveReference(ru).String()
+
 	if err := txemail.Send(ctx, txemail.Message{
 		To:       []string{e},
 		Template: resetPasswordEmailTemplates,
@@ -104,12 +114,12 @@ func HandleResetPasswordEmail(ctx context.Context, e string) error {
 			URL      string
 		}{
 			Username: usr.Username,
-			URL:      globals.ExternalURL().ResolveReference(resetURL).String(),
+			URL:      rus,
 		},
 	}); err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	return rus, nil
 }
 
 var resetPasswordEmailTemplates = txemail.MustValidate(txtypes.Templates{

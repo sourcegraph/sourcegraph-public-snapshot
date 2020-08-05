@@ -44,6 +44,7 @@ func (*schemaResolver) CreateUser(ctx context.Context, args *struct {
 	}); err != nil {
 		log15.Error("Failed to grant user pending permissions", "userID", user.ID, "error", err)
 	}
+
 	return &createUserResult{user: user}, nil
 }
 
@@ -61,13 +62,19 @@ func (r *createUserResult) ResetPasswordURL(ctx context.Context) (*string, error
 		return nil, nil
 	}
 
-	// This method modifies the DB, which is somewhat counterintuitive for a "value" type from an
-	// implementation POV. Its behavior is justified because it is convenient and intuitive from the
-	// POV of the API consumer.
-	resetURL, err := backend.MakePasswordResetURL(ctx, r.user.ID)
+	// TODO: Only do this if email is configured
+	ru, err := userpasswd.HandleResetPasswordEmail(ctx, r.user.ID)
+
 	if err != nil {
-		return nil, err
+		// If we failed to send an email, then just generate a fresh password reset URL
+		// This method modifies the DB, which is somewhat counterintuitive for a "value" type from an
+		// implementation POV. Its behavior is justified because it is convenient and intuitive from the
+		// POV of the API consumer.
+		resetURL, err := backend.MakePasswordResetURL(ctx, r.user.ID)
+		if err != nil {
+			return nil, err
+		}
+		ru = globals.ExternalURL().ResolveReference(resetURL).String()
 	}
-	urlStr := globals.ExternalURL().ResolveReference(resetURL).String()
-	return &urlStr, nil
+	return &ru, nil
 }
