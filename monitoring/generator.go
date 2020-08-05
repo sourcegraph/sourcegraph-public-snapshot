@@ -820,18 +820,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 					}
 					fmt.Fprint(&b, "\n")
 
+					fmt.Fprintf(&b, "**Possible solutions:**\n\n")
 					if o.PossibleSolutions != "none" {
-						fmt.Fprintf(&b, "**Possible solutions:**\n\n")
 						possibleSolutions, _ := goMarkdown(o.PossibleSolutions)
-						fmt.Fprintf(&b, "%s\n\n", possibleSolutions)
+						fmt.Fprintf(&b, "%s\n", possibleSolutions)
 					}
-
-					fmt.Fprintf(&b, "**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:\n\n")
+					// add silencing configuration as another solution
+					fmt.Fprintf(&b, "- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:\n\n")
 					fmt.Fprintf(&b, "```json\n%s\n```\n\n", fmt.Sprintf(`{
   "observability.silenceAlerts": [
 %s
   ]
 }`, strings.Join(prometheusAlertNames, ",\n")))
+					fmt.Fprint(&b, "\n")
 				}
 			}
 		}
@@ -866,6 +867,12 @@ func goMarkdown(m string) (string, error) {
 		}
 		m = strings.Join(lines[:len(lines)-1], "\n")
 	}
+
+	// If result is not a list, make it a list, so we can add items.
+	if !strings.HasPrefix(m, "-") && !strings.HasPrefix(m, "*") {
+		m = fmt.Sprintf("- %s", m)
+	}
+
 	return m, nil
 }
 

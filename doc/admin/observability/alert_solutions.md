@@ -20,8 +20,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 - **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the `indexed-search.Deployment.yaml` if regularly hitting max CPU utilization.
 - **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml` if regularly hitting max CPU utilization.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -30,6 +29,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
   ]
 }
 ```
+
 
 ## frontend: 90th_percentile_search_request_duration
 
@@ -43,8 +43,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 - **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the `indexed-search.Deployment.yaml` if regularly hitting max CPU utilization.
 - **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml` if regularly hitting max CPU utilization.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -54,6 +53,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 }
 ```
 
+
 ## frontend: hard_timeout_search_responses
 
 **Descriptions:**
@@ -62,7 +62,9 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - _frontend: 20+ hard timeout search responses every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -73,6 +75,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 }
 ```
 
+
 ## frontend: hard_error_search_responses
 
 **Descriptions:**
@@ -81,7 +84,9 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - _frontend: 20+ hard error search responses every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -92,13 +97,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 }
 ```
 
+
 ## frontend: partial_timeout_search_responses
 
 **Descriptions:**
 
 - _frontend: 5+ partial timeout search responses every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -107,6 +115,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
   ]
 }
 ```
+
 
 ## frontend: search_alert_user_suggestions
 
@@ -117,8 +126,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - This indicates your user`s are making syntax errors or similar user errors.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -127,6 +135,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
   ]
 }
 ```
+
 
 ## frontend: page_load_latency
 
@@ -138,8 +147,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
 - Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -148,6 +156,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
   ]
 }
 ```
+
 
 ## frontend: blob_load_latency
 
@@ -159,8 +168,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
 - Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -169,6 +177,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
   ]
 }
 ```
+
 
 ## frontend: 99th_percentile_search_codeintel_request_duration
 
@@ -182,8 +191,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 - **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the `indexed-search.Deployment.yaml` if regularly hitting max CPU utilization.
 - **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml` if regularly hitting max CPU utilization.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -192,6 +200,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
   ]
 }
 ```
+
 
 ## frontend: 90th_percentile_search_codeintel_request_duration
 
@@ -205,8 +214,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 - **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the `indexed-search.Deployment.yaml` if regularly hitting max CPU utilization.
 - **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml` if regularly hitting max CPU utilization.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -216,6 +224,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 }
 ```
 
+
 ## frontend: hard_timeout_search_codeintel_responses
 
 **Descriptions:**
@@ -224,7 +233,9 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - _frontend: 20+ hard timeout search code-intel responses every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -235,6 +246,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 }
 ```
 
+
 ## frontend: hard_error_search_codeintel_responses
 
 **Descriptions:**
@@ -243,7 +255,9 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - _frontend: 20+ hard error search code-intel responses every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -254,13 +268,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 }
 ```
 
+
 ## frontend: partial_timeout_search_codeintel_responses
 
 **Descriptions:**
 
 - _frontend: 5+ partial timeout search code-intel responses every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -269,6 +286,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
   ]
 }
 ```
+
 
 ## frontend: search_codeintel_alert_user_suggestions
 
@@ -279,8 +297,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - This indicates a bug in Sourcegraph, please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose).
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -289,6 +306,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
   ]
 }
 ```
+
 
 ## frontend: 99th_percentile_search_api_request_duration
 
@@ -303,8 +321,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 - **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the `indexed-search.Deployment.yaml` if regularly hitting max CPU utilization.
 - **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml` if regularly hitting max CPU utilization.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -313,6 +330,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
   ]
 }
 ```
+
 
 ## frontend: 90th_percentile_search_api_request_duration
 
@@ -327,8 +345,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 - **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the `indexed-search.Deployment.yaml` if regularly hitting max CPU utilization.
 - **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml` if regularly hitting max CPU utilization.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -338,6 +355,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 }
 ```
 
+
 ## frontend: hard_timeout_search_api_responses
 
 **Descriptions:**
@@ -346,7 +364,9 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - _frontend: 20+ hard timeout search API responses every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -357,6 +377,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 }
 ```
 
+
 ## frontend: hard_error_search_api_responses
 
 **Descriptions:**
@@ -365,7 +386,9 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - _frontend: 20+ hard error search API responses every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -376,13 +399,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 }
 ```
 
+
 ## frontend: partial_timeout_search_api_responses
 
 **Descriptions:**
 
 - _frontend: 5+ partial timeout search API responses every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -391,6 +417,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
   ]
 }
 ```
+
 
 ## frontend: search_api_alert_user_suggestions
 
@@ -401,8 +428,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - This indicates your user`s search API requests have syntax errors or a similar user error. Check the responses the API sends back for an explanation.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -412,13 +438,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 }
 ```
 
+
 ## frontend: 99th_percentile_precise_code_intel_api_duration
 
 **Descriptions:**
 
 - _frontend: 20s+ 99th percentile successful precise code intel api query duration over 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -428,13 +457,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 }
 ```
 
+
 ## frontend: precise_code_intel_api_errors
 
 **Descriptions:**
 
 - _frontend: 20+ precise code intel api errors every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -444,13 +476,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 }
 ```
 
+
 ## frontend: 99th_percentile_precise_code_intel_store_duration
 
 **Descriptions:**
 
 - _frontend: 20s+ 99th percentile successful precise code intel database query duration over 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -460,13 +495,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 }
 ```
 
+
 ## frontend: precise_code_intel_store_errors
 
 **Descriptions:**
 
 - _frontend: 20+ precise code intel database errors every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -475,6 +513,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
   ]
 }
 ```
+
 
 ## frontend: internal_indexed_search_error_responses
 
@@ -485,8 +524,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - Check the Zoekt Web Server dashboard for indications it might be unhealthy.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -495,6 +533,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
   ]
 }
 ```
+
 
 ## frontend: internal_unindexed_search_error_responses
 
@@ -505,8 +544,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - Check the Searcher dashboard for indications it might be unhealthy.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -515,6 +553,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
   ]
 }
 ```
+
 
 ## frontend: internal_api_error_responses
 
@@ -525,8 +564,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - May not be a substantial issue, check the `frontend` logs for potential causes.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -536,13 +574,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 }
 ```
 
+
 ## frontend: 99th_percentile_precise_code_intel_bundle_manager_query_duration
 
 **Descriptions:**
 
 - _frontend: 20s+ 99th percentile successful precise-code-intel-bundle-manager query duration over 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -552,13 +593,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 }
 ```
 
+
 ## frontend: 99th_percentile_precise_code_intel_bundle_manager_transfer_duration
 
 **Descriptions:**
 
 - _frontend: 300s+ 99th percentile successful precise-code-intel-bundle-manager data transfer duration over 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -568,13 +612,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 }
 ```
 
+
 ## frontend: precise_code_intel_bundle_manager_error_responses
 
 **Descriptions:**
 
 - _frontend: 5+ precise-code-intel-bundle-manager error responses every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -584,13 +631,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 }
 ```
 
+
 ## frontend: 99th_percentile_gitserver_duration
 
 **Descriptions:**
 
 - _frontend: 20s+ 99th percentile successful gitserver query duration over 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -600,13 +650,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 }
 ```
 
+
 ## frontend: gitserver_error_responses
 
 **Descriptions:**
 
 - _frontend: 5+ gitserver error responses every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -616,13 +669,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 }
 ```
 
+
 ## frontend: 90th_percentile_updatecheck_requests
 
 **Descriptions:**
 
 - _frontend: 0.1s+ 90th percentile successful update-check requests (sourcegraph.com only)_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -632,6 +688,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 }
 ```
 
+
 ## frontend: observability_test_alert_warning
 
 **Descriptions:**
@@ -640,9 +697,8 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -652,6 +708,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 }
 ```
 
+
 ## frontend: observability_test_alert_critical
 
 **Descriptions:**
@@ -660,9 +717,8 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 
 **Possible solutions:**
 
-This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -671,6 +727,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
   ]
 }
 ```
+
 
 ## frontend: container_cpu_usage
 
@@ -682,8 +739,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the frontend container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -692,6 +748,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
   ]
 }
 ```
+
 
 ## frontend: container_memory_usage
 
@@ -703,8 +760,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of frontend container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -713,6 +769,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
   ]
 }
 ```
+
 
 ## frontend: container_restarts
 
@@ -728,8 +785,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' frontend` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the frontend container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs frontend` (note this will include logs from the previous and currently running container).
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -739,6 +795,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 }
 ```
 
+
 ## frontend: fs_inodes_used
 
 **Descriptions:**
@@ -747,10 +804,9 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 
 **Possible solutions:**
 
-		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-		- **Kubernetes:** consider provisioning more machines with less resources.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+			- **Kubernetes:** consider provisioning more machines with less resources.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -759,6 +815,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
   ]
 }
 ```
+
 
 ## frontend: provisioning_container_cpu_usage_7d
 
@@ -772,8 +829,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the frontend container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -782,6 +838,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
   ]
 }
 ```
+
 
 ## frontend: provisioning_container_memory_usage_7d
 
@@ -795,8 +852,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider decreasing `memory:` of frontend container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -805,6 +861,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
   ]
 }
 ```
+
 
 ## frontend: provisioning_container_cpu_usage_5m
 
@@ -816,8 +873,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the frontend container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -826,6 +882,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
   ]
 }
 ```
+
 
 ## frontend: provisioning_container_memory_usage_5m
 
@@ -837,8 +894,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of frontend container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -848,13 +904,16 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 }
 ```
 
+
 ## frontend: go_goroutines
 
 **Descriptions:**
 
 - _frontend: 10000+ maximum active goroutines for 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -864,13 +923,16 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 }
 ```
 
+
 ## frontend: go_gc_duration_seconds
 
 **Descriptions:**
 
 - _frontend: 2s+ maximum go garbage collection duration_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -880,13 +942,16 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 }
 ```
 
+
 ## frontend: pods_available_percentage
 
 **Descriptions:**
 
 - _frontend: less than 90% percentage pods available for a service for 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -895,6 +960,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
   ]
 }
 ```
+
 
 ## gitserver: disk_space_remaining
 
@@ -907,8 +973,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Possible solutions:**
 
 - **Provision more disk space:** Sourcegraph will begin deleting least-used repository clones at 10% disk space remaining which may result in decreased performance, users having to wait for repositories to clone, etc.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -918,6 +983,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
   ]
 }
 ```
+
 
 ## gitserver: running_git_commands
 
@@ -932,8 +998,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 - **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
 - **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../install/docker-compose/migrate.md) which offers better scalability and resource isolation.
 - **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../install/resource_estimator.md).
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -943,6 +1008,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
   ]
 }
 ```
+
 
 ## gitserver: repository_clone_queue_size
 
@@ -954,8 +1020,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 
 - **If you just added several repositories**, the warning may be expected.
 - **Check which repositories need cloning**, by visiting e.g. https://sourcegraph.example.com/site-admin/repositories?filter=not-cloned
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -964,6 +1029,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
   ]
 }
 ```
+
 
 ## gitserver: repository_existence_check_queue_size
 
@@ -976,8 +1042,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 - **Check the code host status indicator for errors:** on the Sourcegraph app homepage, when signed in as an admin click the cloud icon in the top right corner of the page.
 - **Check if the issue continues to happen after 30 minutes**, it may be temporary.
 - **Check the gitserver logs for more information.**
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -986,6 +1051,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
   ]
 }
 ```
+
 
 ## gitserver: echo_command_duration_test
 
@@ -1000,8 +1066,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 - **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
 - **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../install/docker-compose/migrate.md) which offers better scalability and resource isolation.
 - **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../install/resource_estimator.md).
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1011,6 +1076,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
   ]
 }
 ```
+
 
 ## gitserver: frontend_internal_api_error_responses
 
@@ -1027,8 +1093,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs gitserver` for logs indicating request failures to `frontend` or `frontend-internal`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1037,6 +1102,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
   ]
 }
 ```
+
 
 ## gitserver: container_cpu_usage
 
@@ -1048,8 +1114,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1058,6 +1123,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
   ]
 }
 ```
+
 
 ## gitserver: container_memory_usage
 
@@ -1069,8 +1135,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of gitserver container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1079,6 +1144,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
   ]
 }
 ```
+
 
 ## gitserver: container_restarts
 
@@ -1094,8 +1160,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' gitserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the gitserver container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs gitserver` (note this will include logs from the previous and currently running container).
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1105,6 +1170,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 }
 ```
 
+
 ## gitserver: fs_inodes_used
 
 **Descriptions:**
@@ -1113,10 +1179,9 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 
 **Possible solutions:**
 
-		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-		- **Kubernetes:** consider provisioning more machines with less resources.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+			- **Kubernetes:** consider provisioning more machines with less resources.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1125,6 +1190,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
   ]
 }
 ```
+
 
 ## gitserver: provisioning_container_cpu_usage_7d
 
@@ -1138,8 +1204,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the gitserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1148,6 +1213,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
   ]
 }
 ```
+
 
 ## gitserver: provisioning_container_memory_usage_7d
 
@@ -1161,8 +1227,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider decreasing `memory:` of gitserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1171,6 +1236,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
   ]
 }
 ```
+
 
 ## gitserver: provisioning_container_cpu_usage_5m
 
@@ -1182,8 +1248,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1192,6 +1257,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
   ]
 }
 ```
+
 
 ## gitserver: provisioning_container_memory_usage_5m
 
@@ -1203,8 +1269,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of gitserver container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1214,13 +1279,16 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 }
 ```
 
+
 ## gitserver: go_goroutines
 
 **Descriptions:**
 
 - _gitserver: 10000+ maximum active goroutines for 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1230,13 +1298,16 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 }
 ```
 
+
 ## gitserver: go_gc_duration_seconds
 
 **Descriptions:**
 
 - _gitserver: 2s+ maximum go garbage collection duration_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1246,13 +1317,16 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 }
 ```
 
+
 ## gitserver: pods_available_percentage
 
 **Descriptions:**
 
 - _gitserver: less than 90% percentage pods available for a service for 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1262,6 +1336,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 }
 ```
 
+
 ## github-proxy: github_core_rate_limit_remaining
 
 **Descriptions:**
@@ -1270,9 +1345,8 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 
 **Possible solutions:**
 
-Try restarting the pod to get a different public IP.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- Try restarting the pod to get a different public IP.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1282,6 +1356,7 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## github-proxy: github_search_rate_limit_remaining
 
 **Descriptions:**
@@ -1290,9 +1365,8 @@ Try restarting the pod to get a different public IP.
 
 **Possible solutions:**
 
-Try restarting the pod to get a different public IP.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- Try restarting the pod to get a different public IP.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1301,6 +1375,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## github-proxy: container_cpu_usage
 
@@ -1312,8 +1387,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1322,6 +1396,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## github-proxy: container_memory_usage
 
@@ -1333,8 +1408,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1343,6 +1417,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## github-proxy: container_restarts
 
@@ -1358,8 +1433,7 @@ Try restarting the pod to get a different public IP.
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' github-proxy` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the github-proxy container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs github-proxy` (note this will include logs from the previous and currently running container).
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1369,6 +1443,7 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## github-proxy: fs_inodes_used
 
 **Descriptions:**
@@ -1377,10 +1452,9 @@ Try restarting the pod to get a different public IP.
 
 **Possible solutions:**
 
-		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-		- **Kubernetes:** consider provisioning more machines with less resources.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+			- **Kubernetes:** consider provisioning more machines with less resources.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1389,6 +1463,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## github-proxy: provisioning_container_cpu_usage_7d
 
@@ -1402,8 +1477,7 @@ Try restarting the pod to get a different public IP.
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the github-proxy container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1412,6 +1486,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## github-proxy: provisioning_container_memory_usage_7d
 
@@ -1425,8 +1500,7 @@ Try restarting the pod to get a different public IP.
 	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider decreasing `memory:` of github-proxy container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1435,6 +1509,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## github-proxy: provisioning_container_cpu_usage_5m
 
@@ -1446,8 +1521,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1456,6 +1530,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## github-proxy: provisioning_container_memory_usage_5m
 
@@ -1467,8 +1542,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1478,13 +1552,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## github-proxy: go_goroutines
 
 **Descriptions:**
 
 - _github-proxy: 10000+ maximum active goroutines for 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1494,13 +1571,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## github-proxy: go_gc_duration_seconds
 
 **Descriptions:**
 
 - _github-proxy: 2s+ maximum go garbage collection duration_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1510,13 +1590,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## github-proxy: pods_available_percentage
 
 **Descriptions:**
 
 - _github-proxy: less than 90% percentage pods available for a service for 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1526,13 +1609,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-bundle-manager: 99th_percentile_bundle_database_duration
 
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 20s+ 99th percentile successful bundle database query duration over 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1542,13 +1628,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-bundle-manager: bundle_database_errors
 
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 20+ bundle database errors every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1558,13 +1647,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-bundle-manager: 99th_percentile_bundle_reader_duration
 
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 20s+ 99th percentile successful bundle reader query duration over 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1574,13 +1666,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-bundle-manager: bundle_reader_errors
 
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 20+ bundle reader errors every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1589,6 +1684,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## precise-code-intel-bundle-manager: disk_space_remaining
 
@@ -1601,8 +1697,7 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - **Provision more disk space:** Sourcegraph will begin deleting the oldest uploaded bundle files at 10% disk space remaining.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1613,13 +1708,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-bundle-manager: janitor_errors
 
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 20+ janitor errors every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1629,13 +1727,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-bundle-manager: janitor_old_uploads_removed
 
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 20+ upload files removed (due to age) every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1645,13 +1746,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-bundle-manager: janitor_old_parts_removed
 
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 20+ upload and database part files removed (due to age) every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1661,13 +1765,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-bundle-manager: janitor_old_dumps_removed
 
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 20+ bundle files removed (due to low disk space) every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1677,13 +1784,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-bundle-manager: janitor_orphans
 
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 20+ bundle and upload files removed (with no corresponding database entry) every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1693,13 +1803,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-bundle-manager: janitor_uploads_removed
 
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 20+ upload records removed every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1708,6 +1821,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## precise-code-intel-bundle-manager: frontend_internal_api_error_responses
 
@@ -1724,8 +1838,7 @@ Try restarting the pod to get a different public IP.
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs precise-code-intel-bundle-manager` for logs indicating request failures to `frontend` or `frontend-internal`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1734,6 +1847,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## precise-code-intel-bundle-manager: container_cpu_usage
 
@@ -1745,8 +1859,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1755,6 +1868,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## precise-code-intel-bundle-manager: container_memory_usage
 
@@ -1766,8 +1880,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-bundle-manager container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1776,6 +1889,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## precise-code-intel-bundle-manager: container_restarts
 
@@ -1791,8 +1905,7 @@ Try restarting the pod to get a different public IP.
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-bundle-manager` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-bundle-manager` (note this will include logs from the previous and currently running container).
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1802,6 +1915,7 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-bundle-manager: fs_inodes_used
 
 **Descriptions:**
@@ -1810,10 +1924,9 @@ Try restarting the pod to get a different public IP.
 
 **Possible solutions:**
 
-		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-		- **Kubernetes:** consider provisioning more machines with less resources.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+			- **Kubernetes:** consider provisioning more machines with less resources.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1822,6 +1935,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## precise-code-intel-bundle-manager: provisioning_container_cpu_usage_7d
 
@@ -1835,8 +1949,7 @@ Try restarting the pod to get a different public IP.
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1845,6 +1958,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## precise-code-intel-bundle-manager: provisioning_container_memory_usage_7d
 
@@ -1858,8 +1972,7 @@ Try restarting the pod to get a different public IP.
 	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider decreasing `memory:` of precise-code-intel-bundle-manager container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1868,6 +1981,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## precise-code-intel-bundle-manager: provisioning_container_cpu_usage_5m
 
@@ -1879,8 +1993,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1889,6 +2002,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## precise-code-intel-bundle-manager: provisioning_container_memory_usage_5m
 
@@ -1900,8 +2014,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-bundle-manager container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1911,13 +2024,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-bundle-manager: go_goroutines
 
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 10000+ maximum active goroutines for 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1927,13 +2043,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-bundle-manager: go_gc_duration_seconds
 
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: 2s+ maximum go garbage collection duration_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1943,13 +2062,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-bundle-manager: pods_available_percentage
 
 **Descriptions:**
 
 - _precise-code-intel-bundle-manager: less than 90% percentage pods available for a service for 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1959,13 +2081,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-worker: upload_queue_size
 
 **Descriptions:**
 
 - _precise-code-intel-worker: 100+ upload queue size_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1975,13 +2100,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-worker: upload_queue_growth_rate
 
 **Descriptions:**
 
 - _precise-code-intel-worker: 5+ upload queue growth rate every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -1991,13 +2119,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-worker: upload_process_errors
 
 **Descriptions:**
 
 - _precise-code-intel-worker: 20+ upload process errors every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2007,13 +2138,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-worker: 99th_percentile_store_duration
 
 **Descriptions:**
 
 - _precise-code-intel-worker: 20s+ 99th percentile successful database query duration over 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2023,13 +2157,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-worker: store_errors
 
 **Descriptions:**
 
 - _precise-code-intel-worker: 20+ database errors every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2039,13 +2176,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-worker: processing_uploads_reset
 
 **Descriptions:**
 
 - _precise-code-intel-worker: 20+ uploads reset to queued state every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2055,13 +2195,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-worker: processing_uploads_reset_failures
 
 **Descriptions:**
 
 - _precise-code-intel-worker: 20+ uploads errored after repeated resets every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2071,13 +2214,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-worker: upload_resetter_errors
 
 **Descriptions:**
 
 - _precise-code-intel-worker: 20+ upload resetter errors every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2087,13 +2233,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-worker: 99th_percentile_bundle_manager_transfer_duration
 
 **Descriptions:**
 
 - _precise-code-intel-worker: 300s+ 99th percentile successful bundle manager data transfer duration over 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2103,13 +2252,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-worker: bundle_manager_error_responses
 
 **Descriptions:**
 
 - _precise-code-intel-worker: 5+ bundle manager error responses every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2119,13 +2271,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-worker: 99th_percentile_gitserver_duration
 
 **Descriptions:**
 
 - _precise-code-intel-worker: 20s+ 99th percentile successful gitserver query duration over 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2135,13 +2290,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-worker: gitserver_error_responses
 
 **Descriptions:**
 
 - _precise-code-intel-worker: 5+ gitserver error responses every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2150,6 +2308,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## precise-code-intel-worker: frontend_internal_api_error_responses
 
@@ -2166,8 +2325,7 @@ Try restarting the pod to get a different public IP.
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs precise-code-intel-worker` for logs indicating request failures to `frontend` or `frontend-internal`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2176,6 +2334,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## precise-code-intel-worker: container_cpu_usage
 
@@ -2187,8 +2346,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2197,6 +2355,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## precise-code-intel-worker: container_memory_usage
 
@@ -2208,8 +2367,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2218,6 +2376,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## precise-code-intel-worker: container_restarts
 
@@ -2233,8 +2392,7 @@ Try restarting the pod to get a different public IP.
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-worker` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-worker container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-worker` (note this will include logs from the previous and currently running container).
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2244,6 +2402,7 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-worker: fs_inodes_used
 
 **Descriptions:**
@@ -2252,10 +2411,9 @@ Try restarting the pod to get a different public IP.
 
 **Possible solutions:**
 
-		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-		- **Kubernetes:** consider provisioning more machines with less resources.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+			- **Kubernetes:** consider provisioning more machines with less resources.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2264,6 +2422,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## precise-code-intel-worker: provisioning_container_cpu_usage_7d
 
@@ -2277,8 +2436,7 @@ Try restarting the pod to get a different public IP.
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2287,6 +2445,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## precise-code-intel-worker: provisioning_container_memory_usage_7d
 
@@ -2300,8 +2459,7 @@ Try restarting the pod to get a different public IP.
 	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider decreasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2310,6 +2468,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## precise-code-intel-worker: provisioning_container_cpu_usage_5m
 
@@ -2321,8 +2480,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2331,6 +2489,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## precise-code-intel-worker: provisioning_container_memory_usage_5m
 
@@ -2342,8 +2501,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2353,13 +2511,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-worker: go_goroutines
 
 **Descriptions:**
 
 - _precise-code-intel-worker: 10000+ maximum active goroutines for 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2369,13 +2530,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-worker: go_gc_duration_seconds
 
 **Descriptions:**
 
 - _precise-code-intel-worker: 2s+ maximum go garbage collection duration_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2385,13 +2549,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-worker: pods_available_percentage
 
 **Descriptions:**
 
 - _precise-code-intel-worker: less than 90% percentage pods available for a service for 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2401,13 +2568,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-indexer: index_queue_size
 
 **Descriptions:**
 
 - _precise-code-intel-indexer: 100+ index queue size_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2417,13 +2587,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-indexer: index_queue_growth_rate
 
 **Descriptions:**
 
 - _precise-code-intel-indexer: 5+ index queue growth rate every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2433,13 +2606,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-indexer: index_process_errors
 
 **Descriptions:**
 
 - _precise-code-intel-indexer: 20+ index process errors every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2449,13 +2625,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-indexer: 99th_percentile_store_duration
 
 **Descriptions:**
 
 - _precise-code-intel-indexer: 20s+ 99th percentile successful database query duration over 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2465,13 +2644,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-indexer: store_errors
 
 **Descriptions:**
 
 - _precise-code-intel-indexer: 20+ database errors every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2481,13 +2663,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-indexer: indexability_updater_errors
 
 **Descriptions:**
 
 - _precise-code-intel-indexer: 20+ indexability updater errors every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2497,13 +2682,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-indexer: index_scheduler_errors
 
 **Descriptions:**
 
 - _precise-code-intel-indexer: 20+ index scheduler errors every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2513,13 +2701,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-indexer: processing_indexes_reset
 
 **Descriptions:**
 
 - _precise-code-intel-indexer: 20+ indexes reset to queued state every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2529,13 +2720,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-indexer: processing_indexes_reset_failures
 
 **Descriptions:**
 
 - _precise-code-intel-indexer: 20+ indexes errored after repeated resets every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2545,13 +2739,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-indexer: index_resetter_errors
 
 **Descriptions:**
 
 - _precise-code-intel-indexer: 20+ index resetter errors every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2561,13 +2758,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-indexer: janitor_errors
 
 **Descriptions:**
 
 - _precise-code-intel-indexer: 20+ janitor errors every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2577,13 +2777,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-indexer: janitor_indexes_removed
 
 **Descriptions:**
 
 - _precise-code-intel-indexer: 20+ index records removed every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2593,13 +2796,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-indexer: 99th_percentile_gitserver_duration
 
 **Descriptions:**
 
 - _precise-code-intel-indexer: 20s+ 99th percentile successful gitserver query duration over 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2609,13 +2815,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-indexer: gitserver_error_responses
 
 **Descriptions:**
 
 - _precise-code-intel-indexer: 5+ gitserver error responses every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2624,6 +2833,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## precise-code-intel-indexer: frontend_internal_api_error_responses
 
@@ -2640,8 +2850,7 @@ Try restarting the pod to get a different public IP.
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs precise-code-intel-indexer` for logs indicating request failures to `frontend` or `frontend-internal`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2650,6 +2859,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## precise-code-intel-indexer: container_cpu_usage
 
@@ -2661,8 +2871,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2671,6 +2880,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## precise-code-intel-indexer: container_memory_usage
 
@@ -2682,8 +2892,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2692,6 +2901,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## precise-code-intel-indexer: container_restarts
 
@@ -2707,8 +2917,7 @@ Try restarting the pod to get a different public IP.
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-indexer` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-indexer container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-indexer` (note this will include logs from the previous and currently running container).
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2718,6 +2927,7 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-indexer: fs_inodes_used
 
 **Descriptions:**
@@ -2726,10 +2936,9 @@ Try restarting the pod to get a different public IP.
 
 **Possible solutions:**
 
-		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-		- **Kubernetes:** consider provisioning more machines with less resources.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+			- **Kubernetes:** consider provisioning more machines with less resources.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2738,6 +2947,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## precise-code-intel-indexer: provisioning_container_cpu_usage_7d
 
@@ -2751,8 +2961,7 @@ Try restarting the pod to get a different public IP.
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2761,6 +2970,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## precise-code-intel-indexer: provisioning_container_memory_usage_7d
 
@@ -2774,8 +2984,7 @@ Try restarting the pod to get a different public IP.
 	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider decreasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2784,6 +2993,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## precise-code-intel-indexer: provisioning_container_cpu_usage_5m
 
@@ -2795,8 +3005,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2805,6 +3014,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## precise-code-intel-indexer: provisioning_container_memory_usage_5m
 
@@ -2816,8 +3026,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2827,13 +3036,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-indexer: go_goroutines
 
 **Descriptions:**
 
 - _precise-code-intel-indexer: 10000+ maximum active goroutines for 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2843,13 +3055,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-indexer: go_gc_duration_seconds
 
 **Descriptions:**
 
 - _precise-code-intel-indexer: 2s+ maximum go garbage collection duration_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2859,13 +3074,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## precise-code-intel-indexer: pods_available_percentage
 
 **Descriptions:**
 
 - _precise-code-intel-indexer: less than 90% percentage pods available for a service for 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2874,6 +3092,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## query-runner: frontend_internal_api_error_responses
 
@@ -2890,8 +3109,7 @@ Try restarting the pod to get a different public IP.
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs query-runner` for logs indicating request failures to `frontend` or `frontend-internal`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2900,6 +3118,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## query-runner: container_memory_usage
 
@@ -2911,8 +3130,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of query-runner container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2921,6 +3139,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## query-runner: container_cpu_usage
 
@@ -2932,8 +3151,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2942,6 +3160,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## query-runner: container_restarts
 
@@ -2957,8 +3176,7 @@ Try restarting the pod to get a different public IP.
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' query-runner` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the query-runner container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs query-runner` (note this will include logs from the previous and currently running container).
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2968,6 +3186,7 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## query-runner: fs_inodes_used
 
 **Descriptions:**
@@ -2976,10 +3195,9 @@ Try restarting the pod to get a different public IP.
 
 **Possible solutions:**
 
-		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-		- **Kubernetes:** consider provisioning more machines with less resources.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+			- **Kubernetes:** consider provisioning more machines with less resources.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -2988,6 +3206,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## query-runner: provisioning_container_cpu_usage_7d
 
@@ -3001,8 +3220,7 @@ Try restarting the pod to get a different public IP.
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the query-runner container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3011,6 +3229,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## query-runner: provisioning_container_memory_usage_7d
 
@@ -3024,8 +3243,7 @@ Try restarting the pod to get a different public IP.
 	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider decreasing `memory:` of query-runner container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3034,6 +3252,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## query-runner: provisioning_container_cpu_usage_5m
 
@@ -3045,8 +3264,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3055,6 +3273,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## query-runner: provisioning_container_memory_usage_5m
 
@@ -3066,8 +3285,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of query-runner container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3077,13 +3295,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## query-runner: go_goroutines
 
 **Descriptions:**
 
 - _query-runner: 10000+ maximum active goroutines for 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3093,13 +3314,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## query-runner: go_gc_duration_seconds
 
 **Descriptions:**
 
 - _query-runner: 2s+ maximum go garbage collection duration_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3109,13 +3333,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## query-runner: pods_available_percentage
 
 **Descriptions:**
 
 - _query-runner: less than 90% percentage pods available for a service for 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3124,6 +3351,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## replacer: frontend_internal_api_error_responses
 
@@ -3140,8 +3368,7 @@ Try restarting the pod to get a different public IP.
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs replacer` for logs indicating request failures to `frontend` or `frontend-internal`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3150,6 +3377,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## replacer: container_cpu_usage
 
@@ -3161,8 +3389,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the replacer container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3171,6 +3398,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## replacer: container_memory_usage
 
@@ -3182,8 +3410,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of replacer container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3192,6 +3419,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## replacer: container_restarts
 
@@ -3207,8 +3435,7 @@ Try restarting the pod to get a different public IP.
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' replacer` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the replacer container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs replacer` (note this will include logs from the previous and currently running container).
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3218,6 +3445,7 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## replacer: fs_inodes_used
 
 **Descriptions:**
@@ -3226,10 +3454,9 @@ Try restarting the pod to get a different public IP.
 
 **Possible solutions:**
 
-		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-		- **Kubernetes:** consider provisioning more machines with less resources.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+			- **Kubernetes:** consider provisioning more machines with less resources.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3238,6 +3465,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## replacer: provisioning_container_cpu_usage_7d
 
@@ -3251,8 +3479,7 @@ Try restarting the pod to get a different public IP.
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the replacer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3261,6 +3488,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## replacer: provisioning_container_memory_usage_7d
 
@@ -3274,8 +3502,7 @@ Try restarting the pod to get a different public IP.
 	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider decreasing `memory:` of replacer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3284,6 +3511,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## replacer: provisioning_container_cpu_usage_5m
 
@@ -3295,8 +3523,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the replacer container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3305,6 +3532,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## replacer: provisioning_container_memory_usage_5m
 
@@ -3316,8 +3544,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of replacer container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3327,13 +3554,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## replacer: go_goroutines
 
 **Descriptions:**
 
 - _replacer: 10000+ maximum active goroutines for 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3343,13 +3573,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## replacer: go_gc_duration_seconds
 
 **Descriptions:**
 
 - _replacer: 2s+ maximum go garbage collection duration_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3359,13 +3592,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## replacer: pods_available_percentage
 
 **Descriptions:**
 
 - _replacer: less than 90% percentage pods available for a service for 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3374,6 +3610,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## repo-updater: frontend_internal_api_error_responses
 
@@ -3390,8 +3627,7 @@ Try restarting the pod to get a different public IP.
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs repo-updater` for logs indicating request failures to `frontend` or `frontend-internal`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3400,6 +3636,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## repo-updater: container_cpu_usage
 
@@ -3411,8 +3648,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the repo-updater container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3421,6 +3657,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## repo-updater: container_memory_usage
 
@@ -3432,8 +3669,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of repo-updater container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3442,6 +3678,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## repo-updater: container_restarts
 
@@ -3457,8 +3694,7 @@ Try restarting the pod to get a different public IP.
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' repo-updater` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the repo-updater container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs repo-updater` (note this will include logs from the previous and currently running container).
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3468,6 +3704,7 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## repo-updater: fs_inodes_used
 
 **Descriptions:**
@@ -3476,10 +3713,9 @@ Try restarting the pod to get a different public IP.
 
 **Possible solutions:**
 
-		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-		- **Kubernetes:** consider provisioning more machines with less resources.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+			- **Kubernetes:** consider provisioning more machines with less resources.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3488,6 +3724,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## repo-updater: provisioning_container_cpu_usage_7d
 
@@ -3501,8 +3738,7 @@ Try restarting the pod to get a different public IP.
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the repo-updater container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3511,6 +3747,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## repo-updater: provisioning_container_memory_usage_7d
 
@@ -3524,8 +3761,7 @@ Try restarting the pod to get a different public IP.
 	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider decreasing `memory:` of repo-updater container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3534,6 +3770,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## repo-updater: provisioning_container_cpu_usage_5m
 
@@ -3545,8 +3782,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the repo-updater container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3555,6 +3791,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## repo-updater: provisioning_container_memory_usage_5m
 
@@ -3566,8 +3803,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of repo-updater container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3577,13 +3813,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## repo-updater: go_goroutines
 
 **Descriptions:**
 
 - _repo-updater: 10000+ maximum active goroutines for 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3593,13 +3832,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## repo-updater: go_gc_duration_seconds
 
 **Descriptions:**
 
 - _repo-updater: 2s+ maximum go garbage collection duration_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3609,13 +3851,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## repo-updater: pods_available_percentage
 
 **Descriptions:**
 
 - _repo-updater: less than 90% percentage pods available for a service for 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3625,13 +3870,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## searcher: unindexed_search_request_errors
 
 **Descriptions:**
 
 - _searcher: 5+ unindexed search request errors every 5m by code_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3641,13 +3889,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## searcher: replica_traffic
 
 **Descriptions:**
 
 - _searcher: 5+ requests per second over 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3656,6 +3907,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## searcher: frontend_internal_api_error_responses
 
@@ -3672,8 +3924,7 @@ Try restarting the pod to get a different public IP.
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs searcher` for logs indicating request failures to `frontend` or `frontend-internal`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3682,6 +3933,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## searcher: container_cpu_usage
 
@@ -3693,8 +3945,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the searcher container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3703,6 +3954,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## searcher: container_memory_usage
 
@@ -3714,8 +3966,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of searcher container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3724,6 +3975,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## searcher: container_restarts
 
@@ -3739,8 +3991,7 @@ Try restarting the pod to get a different public IP.
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' searcher` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the searcher container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs searcher` (note this will include logs from the previous and currently running container).
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3750,6 +4001,7 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## searcher: fs_inodes_used
 
 **Descriptions:**
@@ -3758,10 +4010,9 @@ Try restarting the pod to get a different public IP.
 
 **Possible solutions:**
 
-		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-		- **Kubernetes:** consider provisioning more machines with less resources.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+			- **Kubernetes:** consider provisioning more machines with less resources.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3770,6 +4021,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## searcher: provisioning_container_cpu_usage_7d
 
@@ -3783,8 +4035,7 @@ Try restarting the pod to get a different public IP.
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the searcher container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3793,6 +4044,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## searcher: provisioning_container_memory_usage_7d
 
@@ -3806,8 +4058,7 @@ Try restarting the pod to get a different public IP.
 	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider decreasing `memory:` of searcher container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3816,6 +4067,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## searcher: provisioning_container_cpu_usage_5m
 
@@ -3827,8 +4079,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the searcher container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3837,6 +4088,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## searcher: provisioning_container_memory_usage_5m
 
@@ -3848,8 +4100,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of searcher container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3859,13 +4110,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## searcher: go_goroutines
 
 **Descriptions:**
 
 - _searcher: 10000+ maximum active goroutines for 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3875,13 +4129,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## searcher: go_gc_duration_seconds
 
 **Descriptions:**
 
 - _searcher: 2s+ maximum go garbage collection duration_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3891,13 +4148,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## searcher: pods_available_percentage
 
 **Descriptions:**
 
 - _searcher: less than 90% percentage pods available for a service for 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3907,13 +4167,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## symbols: store_fetch_failures
 
 **Descriptions:**
 
 - _symbols: 5+ store fetch failures every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3923,13 +4186,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## symbols: current_fetch_queue_size
 
 **Descriptions:**
 
 - _symbols: 25+ current fetch queue size_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3938,6 +4204,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## symbols: frontend_internal_api_error_responses
 
@@ -3954,8 +4221,7 @@ Try restarting the pod to get a different public IP.
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs symbols` for logs indicating request failures to `frontend` or `frontend-internal`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3964,6 +4230,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## symbols: container_cpu_usage
 
@@ -3975,8 +4242,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the symbols container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -3985,6 +4251,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## symbols: container_memory_usage
 
@@ -3996,8 +4263,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4006,6 +4272,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## symbols: container_restarts
 
@@ -4021,8 +4288,7 @@ Try restarting the pod to get a different public IP.
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' symbols` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the symbols container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs symbols` (note this will include logs from the previous and currently running container).
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4032,6 +4298,7 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## symbols: fs_inodes_used
 
 **Descriptions:**
@@ -4040,10 +4307,9 @@ Try restarting the pod to get a different public IP.
 
 **Possible solutions:**
 
-		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-		- **Kubernetes:** consider provisioning more machines with less resources.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+			- **Kubernetes:** consider provisioning more machines with less resources.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4052,6 +4318,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## symbols: provisioning_container_cpu_usage_7d
 
@@ -4065,8 +4332,7 @@ Try restarting the pod to get a different public IP.
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the symbols container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4075,6 +4341,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## symbols: provisioning_container_memory_usage_7d
 
@@ -4088,8 +4355,7 @@ Try restarting the pod to get a different public IP.
 	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider decreasing `memory:` of symbols container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4098,6 +4364,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## symbols: provisioning_container_cpu_usage_5m
 
@@ -4109,8 +4376,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the symbols container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4119,6 +4385,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## symbols: provisioning_container_memory_usage_5m
 
@@ -4130,8 +4397,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4141,13 +4407,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## symbols: go_goroutines
 
 **Descriptions:**
 
 - _symbols: 10000+ maximum active goroutines for 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4157,13 +4426,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## symbols: go_gc_duration_seconds
 
 **Descriptions:**
 
 - _symbols: 2s+ maximum go garbage collection duration_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4173,13 +4445,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## symbols: pods_available_percentage
 
 **Descriptions:**
 
 - _symbols: less than 90% percentage pods available for a service for 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4189,13 +4464,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## syntect-server: syntax_highlighting_errors
 
 **Descriptions:**
 
 - _syntect-server: 5+ syntax highlighting errors every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4205,13 +4483,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## syntect-server: syntax_highlighting_panics
 
 **Descriptions:**
 
 - _syntect-server: 5+ syntax highlighting panics every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4221,13 +4502,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## syntect-server: syntax_highlighting_timeouts
 
 **Descriptions:**
 
 - _syntect-server: 5+ syntax highlighting timeouts every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4237,13 +4521,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## syntect-server: syntax_highlighting_worker_deaths
 
 **Descriptions:**
 
 - _syntect-server: 1+ syntax highlighter worker deaths every 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4252,6 +4539,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## syntect-server: container_cpu_usage
 
@@ -4263,8 +4551,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the syntect-server container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4273,6 +4560,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## syntect-server: container_memory_usage
 
@@ -4284,8 +4572,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4294,6 +4581,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## syntect-server: container_restarts
 
@@ -4309,8 +4597,7 @@ Try restarting the pod to get a different public IP.
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' syntect-server` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the syntect-server container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs syntect-server` (note this will include logs from the previous and currently running container).
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4320,6 +4607,7 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## syntect-server: fs_inodes_used
 
 **Descriptions:**
@@ -4328,10 +4616,9 @@ Try restarting the pod to get a different public IP.
 
 **Possible solutions:**
 
-		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-		- **Kubernetes:** consider provisioning more machines with less resources.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+			- **Kubernetes:** consider provisioning more machines with less resources.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4340,6 +4627,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## syntect-server: provisioning_container_cpu_usage_7d
 
@@ -4353,8 +4641,7 @@ Try restarting the pod to get a different public IP.
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the syntect-server container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4363,6 +4650,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## syntect-server: provisioning_container_memory_usage_7d
 
@@ -4376,8 +4664,7 @@ Try restarting the pod to get a different public IP.
 	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider decreasing `memory:` of syntect-server container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4386,6 +4673,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## syntect-server: provisioning_container_cpu_usage_5m
 
@@ -4397,8 +4685,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the syntect-server container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4407,6 +4694,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## syntect-server: provisioning_container_memory_usage_5m
 
@@ -4418,8 +4706,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4429,13 +4716,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## syntect-server: pods_available_percentage
 
 **Descriptions:**
 
 - _syntect-server: less than 90% percentage pods available for a service for 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4445,6 +4735,7 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## zoekt-indexserver: average_resolve_revision_duration
 
 **Descriptions:**
@@ -4453,7 +4744,9 @@ Try restarting the pod to get a different public IP.
 
 - _zoekt-indexserver: 30s+ average resolve revision duration over 5m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4463,6 +4756,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## zoekt-indexserver: container_cpu_usage
 
@@ -4474,8 +4768,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4484,6 +4777,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## zoekt-indexserver: container_memory_usage
 
@@ -4495,8 +4789,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4505,6 +4798,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## zoekt-indexserver: container_restarts
 
@@ -4520,8 +4814,7 @@ Try restarting the pod to get a different public IP.
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' zoekt-indexserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the zoekt-indexserver container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs zoekt-indexserver` (note this will include logs from the previous and currently running container).
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4531,6 +4824,7 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## zoekt-indexserver: fs_inodes_used
 
 **Descriptions:**
@@ -4539,10 +4833,9 @@ Try restarting the pod to get a different public IP.
 
 **Possible solutions:**
 
-		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-		- **Kubernetes:** consider provisioning more machines with less resources.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+			- **Kubernetes:** consider provisioning more machines with less resources.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4551,6 +4844,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## zoekt-indexserver: provisioning_container_cpu_usage_7d
 
@@ -4564,8 +4858,7 @@ Try restarting the pod to get a different public IP.
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4574,6 +4867,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## zoekt-indexserver: provisioning_container_memory_usage_7d
 
@@ -4587,8 +4881,7 @@ Try restarting the pod to get a different public IP.
 	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider decreasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4597,6 +4890,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## zoekt-indexserver: provisioning_container_cpu_usage_5m
 
@@ -4608,8 +4902,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4618,6 +4911,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## zoekt-indexserver: provisioning_container_memory_usage_5m
 
@@ -4629,8 +4923,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4640,13 +4933,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## zoekt-indexserver: pods_available_percentage
 
 **Descriptions:**
 
 - _zoekt-indexserver: less than 90% percentage pods available for a service for 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4656,13 +4952,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## zoekt-webserver: indexed_search_request_errors
 
 **Descriptions:**
 
 - _zoekt-webserver: 50s+ indexed search request errors every 5m by code_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4671,6 +4970,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## zoekt-webserver: container_cpu_usage
 
@@ -4682,8 +4982,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4692,6 +4991,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## zoekt-webserver: container_memory_usage
 
@@ -4703,8 +5003,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4713,6 +5012,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## zoekt-webserver: container_restarts
 
@@ -4728,8 +5028,7 @@ Try restarting the pod to get a different public IP.
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' zoekt-webserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the zoekt-webserver container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs zoekt-webserver` (note this will include logs from the previous and currently running container).
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4739,6 +5038,7 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## zoekt-webserver: fs_inodes_used
 
 **Descriptions:**
@@ -4747,10 +5047,9 @@ Try restarting the pod to get a different public IP.
 
 **Possible solutions:**
 
-		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-		- **Kubernetes:** consider provisioning more machines with less resources.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+			- **Kubernetes:** consider provisioning more machines with less resources.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4759,6 +5058,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## zoekt-webserver: provisioning_container_cpu_usage_7d
 
@@ -4772,8 +5072,7 @@ Try restarting the pod to get a different public IP.
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4782,6 +5081,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## zoekt-webserver: provisioning_container_memory_usage_7d
 
@@ -4795,8 +5095,7 @@ Try restarting the pod to get a different public IP.
 	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider decreasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4805,6 +5104,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## zoekt-webserver: provisioning_container_cpu_usage_5m
 
@@ -4816,8 +5116,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4826,6 +5125,7 @@ Try restarting the pod to get a different public IP.
   ]
 }
 ```
+
 
 ## zoekt-webserver: provisioning_container_memory_usage_5m
 
@@ -4837,8 +5137,7 @@ Try restarting the pod to get a different public IP.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4848,13 +5147,16 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## prometheus: prometheus_metrics_bloat
 
 **Descriptions:**
 
 - _prometheus: 20000B+ prometheus metrics payload size_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4864,6 +5166,7 @@ Try restarting the pod to get a different public IP.
 }
 ```
 
+
 ## prometheus: alertmanager_notifications_failed_total
 
 **Descriptions:**
@@ -4872,9 +5175,8 @@ Try restarting the pod to get a different public IP.
 
 **Possible solutions:**
 
-Ensure that your `observability.alerts` configuration (in site configuration) is valid.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- Ensure that your `observability.alerts` configuration (in site configuration) is valid.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4883,6 +5185,7 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
   ]
 }
 ```
+
 
 ## prometheus: container_cpu_usage
 
@@ -4894,8 +5197,7 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the prometheus container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4904,6 +5206,7 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
   ]
 }
 ```
+
 
 ## prometheus: container_memory_usage
 
@@ -4915,8 +5218,7 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of prometheus container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4925,6 +5227,7 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
   ]
 }
 ```
+
 
 ## prometheus: container_restarts
 
@@ -4940,8 +5243,7 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' prometheus` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the prometheus container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs prometheus` (note this will include logs from the previous and currently running container).
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4951,6 +5253,7 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
 }
 ```
 
+
 ## prometheus: fs_inodes_used
 
 **Descriptions:**
@@ -4959,10 +5262,9 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
 
 **Possible solutions:**
 
-		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-		- **Kubernetes:** consider provisioning more machines with less resources.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+			- **Kubernetes:** consider provisioning more machines with less resources.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4971,6 +5273,7 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
   ]
 }
 ```
+
 
 ## prometheus: provisioning_container_cpu_usage_7d
 
@@ -4984,8 +5287,7 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the prometheus container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -4994,6 +5296,7 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
   ]
 }
 ```
+
 
 ## prometheus: provisioning_container_memory_usage_7d
 
@@ -5007,8 +5310,7 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
 	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider decreasing `memory:` of prometheus container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -5017,6 +5319,7 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
   ]
 }
 ```
+
 
 ## prometheus: provisioning_container_cpu_usage_5m
 
@@ -5028,8 +5331,7 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the prometheus container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -5038,6 +5340,7 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
   ]
 }
 ```
+
 
 ## prometheus: provisioning_container_memory_usage_5m
 
@@ -5049,8 +5352,7 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of prometheus container in `docker-compose.yml`.
-
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -5060,13 +5362,16 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
 }
 ```
 
+
 ## prometheus: pods_available_percentage
 
 **Descriptions:**
 
 - _prometheus: less than 90% percentage pods available for a service for 10m_
 
-**Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
 {
@@ -5075,4 +5380,5 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
   ]
 }
 ```
+
 
