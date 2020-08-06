@@ -16,8 +16,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -43,8 +47,9 @@ index 6f8b5d9..17400bc 100644
 
 // testDiffGraphQL is the parsed representation of testDiff.
 var testDiffGraphQL = apitest.FileDiffs{
-	RawDiff:  testDiff,
-	DiffStat: apitest.DiffStat{Changed: 2},
+	TotalCount: 2,
+	RawDiff:    testDiff,
+	DiffStat:   apitest.DiffStat{Changed: 2},
 	PageInfo: struct {
 		HasNextPage bool
 		EndCursor   string
@@ -201,4 +206,177 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 		return a, nil
 	}
 	t.Cleanup(func() { git.Mocks.MergeBase = nil })
+}
+
+func addChangeset(t *testing.T, ctx context.Context, s *ee.Store, c *campaigns.Campaign, changeset int64) {
+	t.Helper()
+
+	c.ChangesetIDs = append(c.ChangesetIDs, changeset)
+	if err := s.UpdateCampaign(ctx, c); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// This is duplicated from campaigns/service_test.go, we need to find a place
+// to put these helpers.
+type testChangesetOpts struct {
+	repo         api.RepoID
+	campaign     int64
+	currentSpec  int64
+	previousSpec int64
+
+	externalServiceType string
+	externalID          string
+	externalBranch      string
+	externalState       campaigns.ChangesetExternalState
+	externalReviewState campaigns.ChangesetReviewState
+	externalCheckState  campaigns.ChangesetCheckState
+
+	publicationState campaigns.ChangesetPublicationState
+	failureMessage   string
+
+	createdByCampaign bool
+	ownedByCampaign   int64
+
+	metadata interface{}
+}
+
+func createChangeset(
+	t *testing.T,
+	ctx context.Context,
+	store *ee.Store,
+	opts testChangesetOpts,
+) *campaigns.Changeset {
+	t.Helper()
+
+	if opts.externalServiceType == "" {
+		opts.externalServiceType = extsvc.TypeGitHub
+	}
+
+	changeset := &campaigns.Changeset{
+		RepoID:         opts.repo,
+		CurrentSpecID:  opts.currentSpec,
+		PreviousSpecID: opts.previousSpec,
+
+		ExternalServiceType: opts.externalServiceType,
+		ExternalID:          opts.externalID,
+		ExternalBranch:      opts.externalBranch,
+		ExternalReviewState: opts.externalReviewState,
+		ExternalCheckState:  opts.externalCheckState,
+
+		PublicationState: opts.publicationState,
+
+		CreatedByCampaign: opts.createdByCampaign,
+		OwnedByCampaignID: opts.ownedByCampaign,
+
+		Metadata: opts.metadata,
+	}
+
+	if opts.failureMessage != "" {
+		changeset.FailureMessage = &opts.failureMessage
+	}
+
+	if string(opts.externalState) != "" {
+		changeset.ExternalState = opts.externalState
+	}
+
+	if opts.campaign != 0 {
+		changeset.CampaignIDs = []int64{opts.campaign}
+	}
+
+	if err := store.CreateChangeset(ctx, changeset); err != nil {
+		t.Fatalf("creating changeset failed: %s", err)
+	}
+
+	return changeset
+}
+
+type testSpecOpts struct {
+	user         int32
+	repo         api.RepoID
+	campaignSpec int64
+
+	// If this is non-blank, the changesetSpec will be an import/track spec for
+	// the changeset with the given externalID in the given repo.
+	externalID string
+
+	// If this is set, the changesetSpec will be a "create commit on this
+	// branch" changeset spec.
+	headRef string
+
+	// If this is set along with headRef, the changesetSpec will have published
+	// set.
+	published bool
+
+	title         string
+	body          string
+	commitMessage string
+	commitDiff    string
+
+	baseRev string
+	baseRef string
+}
+
+func createChangesetSpec(
+	t *testing.T,
+	ctx context.Context,
+	store *ee.Store,
+	opts testSpecOpts,
+) *campaigns.ChangesetSpec {
+	t.Helper()
+
+	spec := &campaigns.ChangesetSpec{
+		UserID:         opts.user,
+		RepoID:         opts.repo,
+		CampaignSpecID: opts.campaignSpec,
+		Spec: &campaigns.ChangesetSpecDescription{
+			BaseRepository: graphqlbackend.MarshalRepositoryID(opts.repo),
+
+			BaseRev: opts.baseRev,
+			BaseRef: opts.baseRef,
+
+			ExternalID: opts.externalID,
+			HeadRef:    opts.headRef,
+			Published:  opts.published,
+
+			Title: opts.title,
+			Body:  opts.body,
+
+			Commits: []campaigns.GitCommitDescription{
+				{
+					Message: opts.commitMessage,
+					Diff:    opts.commitDiff,
+				},
+			},
+		},
+	}
+
+	if err := store.CreateChangesetSpec(ctx, spec); err != nil {
+		t.Fatal(err)
+	}
+
+	return spec
+}
+
+// This is taken from reconciler_test.go
+func buildGithubPR(now time.Time, externalID, state, title, body, headRef string) *github.PullRequest {
+	return &github.PullRequest{
+		ID:          externalID,
+		Title:       title,
+		Body:        body,
+		HeadRefName: git.AbbreviateRef(headRef),
+		Number:      12345,
+		State:       "OPEN",
+		TimelineItems: []github.TimelineItem{
+			{Type: "PullRequestCommit", Item: &github.PullRequestCommit{
+				Commit: github.Commit{
+					OID:           "new-f00bar",
+					PushedDate:    now,
+					CommittedDate: now,
+				},
+			}},
+		},
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
 }

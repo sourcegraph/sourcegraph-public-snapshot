@@ -645,6 +645,7 @@ func ComputeLabels(c *campaigns.Changeset, events ChangesetEvents) []campaigns.C
 				delete(set, e.Label.Name)
 				continue
 			}
+
 			set[e.Label.Name] = campaigns.ChangesetLabel{
 				Name:        e.Label.Name,
 				Color:       e.Label.Color,

@@ -538,6 +538,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		testCampaignResponse(t, s, userCtx, input, wantCampaignResponse{
 			changesetTypes:  map[string]int{"ExternalChangeset": 2},
 			changesetsCount: 2,
+			changesetStats:  apitest.ChangesetConnectionStats{Open: 2, Total: 2},
 			campaignDiffStat: apitest.DiffStat{
 				Added:   2 * changesetDiffStat.Added,
 				Changed: 2 * changesetDiffStat.Changed,
@@ -562,6 +563,7 @@ func TestRepositoryPermissions(t *testing.T) {
 				"HiddenExternalChangeset": 1,
 			},
 			changesetsCount: 2,
+			changesetStats:  apitest.ChangesetConnectionStats{Open: 2, Total: 2},
 			campaignDiffStat: apitest.DiffStat{
 				Added:   1 * changesetDiffStat.Added,
 				Changed: 1 * changesetDiffStat.Changed,
@@ -588,6 +590,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		}
 		wantCheckStateResponse := want
 		wantCheckStateResponse.changesetsCount = 1
+		wantCheckStateResponse.changesetStats = apitest.ChangesetConnectionStats{Open: 1, Total: 1}
 		wantCheckStateResponse.changesetTypes = map[string]int{
 			"ExternalChangeset": 1,
 			// No HiddenExternalChangeset
@@ -598,12 +601,7 @@ func TestRepositoryPermissions(t *testing.T) {
 			"campaign":    string(campaigns.MarshalCampaignID(campaign.ID)),
 			"reviewState": string(campaigns.ChangesetReviewStateChangesRequested),
 		}
-		wantReviewStateResponse := want
-		wantReviewStateResponse.changesetsCount = 1
-		wantReviewStateResponse.changesetTypes = map[string]int{
-			"ExternalChangeset": 1,
-			// No HiddenExternalChangeset
-		}
+		wantReviewStateResponse := wantCheckStateResponse
 		testCampaignResponse(t, s, userCtx, input, wantReviewStateResponse)
 	})
 
@@ -672,6 +670,7 @@ func TestRepositoryPermissions(t *testing.T) {
 type wantCampaignResponse struct {
 	changesetTypes   map[string]int
 	changesetsCount  int
+	changesetStats   apitest.ChangesetConnectionStats
 	campaignDiffStat apitest.DiffStat
 }
 
@@ -687,6 +686,10 @@ func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, 
 
 	if diff := cmp.Diff(w.changesetsCount, response.Node.Changesets.TotalCount); diff != "" {
 		t.Fatalf("unexpected changesets total count (-want +got):\n%s", diff)
+	}
+
+	if diff := cmp.Diff(w.changesetStats, response.Node.Changesets.Stats); diff != "" {
+		t.Fatalf("unexpected changesets stats (-want +got):\n%s", diff)
 	}
 
 	changesetTypes := map[string]int{}
@@ -710,6 +713,7 @@ query($campaign: ID!, $reviewState: ChangesetReviewState, $checkState: Changeset
 
       changesets(first: 100, reviewState: $reviewState, checkState: $checkState) {
         totalCount
+		stats { unpublished, open, merged, closed, total }
         nodes {
           __typename
           ... on HiddenExternalChangeset {

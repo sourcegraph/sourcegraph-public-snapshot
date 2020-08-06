@@ -118,7 +118,9 @@ func (s ChangesetPublicationState) Valid() bool {
 func (s ChangesetPublicationState) Published() bool { return s == ChangesetPublicationStatePublished }
 
 // Unpublished returns true if the given state is ChangesetPublicationStateUnpublished.
-func (s ChangesetPublicationState) Unpublished() bool { return s == ChangesetPublicationStatePublished }
+func (s ChangesetPublicationState) Unpublished() bool {
+	return s == ChangesetPublicationStateUnpublished
+}
 
 // ReconcilerState defines the possible states of a Reconciler.
 type ReconcilerState string
