@@ -849,69 +849,6 @@ func TestSearchRevspecs(t *testing.T) {
 	}
 }
 
-func TestCompareSearchResultsREMOVEME(t *testing.T) {
-	type testCase struct {
-		a       SearchResultResolver
-		b       SearchResultResolver
-		aIsLess bool
-	}
-
-	tests := []testCase{{
-		// Different repo matches
-		a: &RepositoryResolver{
-			repo: &types.Repo{Name: api.RepoName("a")},
-		},
-		b: &RepositoryResolver{
-			repo: &types.Repo{Name: api.RepoName("b")},
-		},
-		aIsLess: true,
-	}, {
-		// Repo match vs file match in same repo
-		a: &FileMatchResolver{
-			Repo: &RepositoryResolver{repo: &types.Repo{Name: "a"}},
-
-			JPath: "a",
-		},
-		b: &RepositoryResolver{
-			repo: &types.Repo{Name: api.RepoName("a")},
-		},
-		aIsLess: false,
-	}, {
-		// Same repo, different files
-		a: &FileMatchResolver{
-			Repo: &RepositoryResolver{repo: &types.Repo{Name: "a"}},
-
-			JPath: "a",
-		},
-		b: &FileMatchResolver{
-			Repo: &RepositoryResolver{repo: &types.Repo{Name: "a"}},
-
-			JPath: "b",
-		},
-		aIsLess: true,
-	}, {
-		// different repo, same file name
-		a: &FileMatchResolver{
-			Repo: &RepositoryResolver{repo: &types.Repo{Name: "a"}},
-
-			JPath: "a",
-		},
-		b: &FileMatchResolver{
-			Repo: &RepositoryResolver{repo: &types.Repo{Name: "b"}},
-
-			JPath: "a",
-		},
-		aIsLess: true,
-	}}
-
-	for i, test := range tests {
-		got := compareSearchResults(test.a, test.b, nil)
-		if got != test.aIsLess {
-			t.Errorf("[%d] incorrect comparison. got %t, expected %t", i, got, test.aIsLess)
-		}
-	}
-}
-
 func TestLonger(t *testing.T) {
 	N := 2
 	noise := time.Nanosecond
