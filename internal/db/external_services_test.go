@@ -406,7 +406,12 @@ func TestExternalServicesStore_DistinctKinds(t *testing.T) {
 		{
 			Kind:        extsvc.KindGitLab,
 			DisplayName: "GITLAB #1",
-			Config:      `{"url": "https://github.com", "projectQuery": ["none"], "token": "def"}`,
+			Config:      `{"url": "https://github.com", "projectQuery": ["none"], "token": "abc"}`,
+		},
+		{
+			Kind:        extsvc.KindOther,
+			DisplayName: "OTHER #1",
+			Config:      `{"repos": []}`,
 		},
 	}
 	for _, es := range ess {
@@ -414,6 +419,12 @@ func TestExternalServicesStore_DistinctKinds(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+	}
+
+	// Delete the last external service which should be excluded from the result
+	err := ExternalServices.Delete(ctx, ess[3].ID)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	kinds, err := ExternalServices.DistinctKinds(ctx)

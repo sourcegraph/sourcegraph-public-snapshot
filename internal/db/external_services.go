@@ -421,9 +421,10 @@ func (e *ExternalServicesStore) List(ctx context.Context, opt ExternalServicesLi
 // DistinctKinds returns the distinct list of external services kinds that are stored in the database.
 func (e *ExternalServicesStore) DistinctKinds(ctx context.Context) ([]string, error) {
 	q := sqlf.Sprintf(`
-SELECT ARRAY(
-	SELECT DISTINCT(kind)::TEXT FROM external_services
-)`)
+SELECT ARRAY_AGG(DISTINCT(kind)::TEXT)
+FROM external_services
+WHERE deleted_at IS NULL
+`)
 
 	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
