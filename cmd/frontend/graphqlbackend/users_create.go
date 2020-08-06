@@ -62,11 +62,11 @@ func (r *createUserResult) ResetPasswordURL(ctx context.Context) (*string, error
 		return nil, nil
 	}
 
-	// TODO: Only do this if email is configured
+	// Try sending the user an email. This function handles checking for email being enabled
 	ru, err := userpasswd.HandleResetPasswordEmail(ctx, r.user.ID)
 
 	if err != nil {
-		// If we failed to send an email, then just generate a fresh password reset URL
+		// If we failed to send an email for any reason, then just generate a fresh password reset URL
 		// This method modifies the DB, which is somewhat counterintuitive for a "value" type from an
 		// implementation POV. Its behavior is justified because it is convenient and intuitive from the
 		// POV of the API consumer.
