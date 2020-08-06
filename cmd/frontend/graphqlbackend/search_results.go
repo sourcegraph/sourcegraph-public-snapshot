@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 	"path"
-	"path/filepath"
 	"reflect"
 	"regexp"
 	"sort"
@@ -982,7 +981,7 @@ func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchR
 	if err != nil {
 		return nil, err
 	}
-	r.upsortExactMatches(ctx, result.SearchResults)
+	r.sortResults(ctx, result.SearchResults)
 	return result, nil
 }
 
@@ -1842,11 +1841,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		multiErr = nil
 	}
 
-	if _, isAndOr := r.query.(*query.AndOrQuery); isAndOr {
-		r.upsortExactMatches(ctx, results)
-	} else {
-		sortResults(results)
-	}
+	r.sortResults(ctx, results)
 
 	resultsResolver := SearchResultsResolver{
 		start:               start,
@@ -1890,53 +1885,39 @@ type searchResultURIGetter interface {
 	searchResultURIs() (string, string)
 }
 
-// compareSearchResults checks to see if a is less than b.
-// It is implemented separately for easier testing.
-func compareSearchResults(a, b SearchResultResolver) bool {
+// compareSearchResults sorts alphabetically unless one of the filenames is contained in exactFilePatterns,
+// in which case exact matches are sorted by length of their file path and then alphabetically.
+func compareSearchResults(a, b searchResultURIGetter, exactFilePatterns map[string]struct{}) bool {
 	arepo, afile := a.searchResultURIs()
 	brepo, bfile := b.searchResultURIs()
 
 	if arepo == brepo {
-		return afile < bfile
-	}
-	return arepo < brepo
-}
-
-func sortResults(r []SearchResultResolver) {
-	sort.Slice(r, func(i, j int) bool { return compareSearchResults(r[i], r[j]) })
-}
-
-// searchResultIsLess is like compareSearchResults, but overrides sorting in alphabetical order if
-// one of the filenames is contained in exactFilePatterns, in which case exact matches are sorted by
-// length of their file path and then alphabetically.
-func searchResultIsLess(a, b searchResultURIGetter, exactFilePatterns map[string]struct{}) bool {
-	arepo, afile := a.searchResultURIs()
-	brepo, bfile := b.searchResultURIs()
-
-	if arepo == brepo {
-		if exactFilePatterns == nil || len(exactFilePatterns) == 0 {
+		if len(exactFilePatterns) == 0 {
 			return afile < bfile
 		}
-		_, aMatch := exactFilePatterns[filepath.Base(afile)]
-		_, bMatch := exactFilePatterns[filepath.Base(bfile)]
+		_, aMatch := exactFilePatterns[path.Base(afile)]
+		_, bMatch := exactFilePatterns[path.Base(bfile)]
 		if aMatch || bMatch {
 			if aMatch && bMatch {
-				if len(afile) < len(bfile) {
-					return true
-				}
-				if len(bfile) < len(afile) {
-					return false
+				if len(afile) != len(bfile) {
+					return len(afile) < len(bfile)
 				}
 				return afile < bfile
 			}
-			if aMatch {
-				return true
-			}
-			return false
+			// prefer exact match
+			return aMatch
 		}
 		return afile < bfile
 	}
 	return arepo < brepo
+}
+
+func (r *searchResolver) sortResults(ctx context.Context, rr []SearchResultResolver) {
+	var exactPatterns map[string]struct{}
+	if settings, err := decodedViewerFinalSettings(ctx); err != nil || getBoolPtr(settings.SearchGlobbing, false) {
+		exactPatterns = r.getExactFilePatterns()
+	}
+	sort.Slice(rr, func(i, j int) bool { return compareSearchResults(rr[i], rr[j], exactPatterns) })
 }
 
 // getExactFilePatterns returns the set of file patterns without glob syntax.
@@ -1952,16 +1933,6 @@ func (r *searchResolver) getExactFilePatterns() map[string]struct{} {
 			}
 		})
 	return m
-}
-
-// upsortExactMatches is like sortResults, but results within repositories are partitioned in exact
-// matches for file patterns and other matches. See searchResultIsLess for more details.
-func (r *searchResolver) upsortExactMatches(ctx context.Context, rr []SearchResultResolver) {
-	var exactPatterns map[string]struct{}
-	if settings, err := decodedViewerFinalSettings(ctx); err != nil || getBoolPtr(settings.SearchGlobbing, false) {
-		exactPatterns = r.getExactFilePatterns()
-	}
-	sort.Slice(rr, func(i, j int) bool { return searchResultIsLess(rr[i], rr[j], exactPatterns) })
 }
 
 // orderedFuzzyRegexp interpolate a lazy 'match everything' regexp pattern

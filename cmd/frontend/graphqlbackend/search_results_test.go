@@ -849,7 +849,7 @@ func TestSearchRevspecs(t *testing.T) {
 	}
 }
 
-func TestCompareSearchResults(t *testing.T) {
+func TestCompareSearchResultsREMOVEME(t *testing.T) {
 	type testCase struct {
 		a       SearchResultResolver
 		b       SearchResultResolver
@@ -905,7 +905,7 @@ func TestCompareSearchResults(t *testing.T) {
 	}}
 
 	for i, test := range tests {
-		got := compareSearchResults(test.a, test.b)
+		got := compareSearchResults(test.a, test.b, nil)
 		if got != test.aIsLess {
 			t.Errorf("[%d] incorrect comparison. got %t, expected %t", i, got, test.aIsLess)
 		}
@@ -1364,7 +1364,7 @@ func (m mockSearchResultURIGetter) searchResultURIs() (string, string) {
 	return m.repo, m.file
 }
 
-func TestCompareSearchResultsAndOr(t *testing.T) {
+func TestCompareSearchResults(t *testing.T) {
 	tests := []struct {
 		a                 searchResultURIGetter
 		b                 searchResultURIGetter
@@ -1452,8 +1452,8 @@ func TestCompareSearchResultsAndOr(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run("test", func(t *testing.T) {
-			if got := searchResultIsLess(tt.a, tt.b, tt.exactFilePatterns); got != tt.want {
-				t.Errorf("searchResultIsLess() = %v, want %v", got, tt.want)
+			if got := compareSearchResults(tt.a, tt.b, tt.exactFilePatterns); got != tt.want {
+				t.Errorf("compareSearchResults() = %v, want %v", got, tt.want)
 			}
 		})
 	}
