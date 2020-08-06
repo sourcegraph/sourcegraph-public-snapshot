@@ -7,6 +7,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // Index is a subset of the lsif_indexes table and stores both processed and unprocessed
@@ -350,12 +351,12 @@ func (s *store) ResetStalledIndexes(ctx context.Context, now time.Time) ([]int, 
 	return s.makeIndexWorkQueueStore().ResetStalled(ctx)
 }
 
-func (s *store) makeIndexWorkQueueStore() workerutil.Store {
+func (s *store) makeIndexWorkQueueStore() dbworkerstore.Store {
 	return WorkerutilIndexStore(s)
 }
 
-func WorkerutilIndexStore(s Store) workerutil.Store {
-	return workerutil.NewStore(s.Handle(), workerutil.StoreOptions{
+func WorkerutilIndexStore(s Store) dbworkerstore.Store {
+	return dbworkerstore.NewStore(s.Handle(), dbworkerstore.StoreOptions{
 		TableName:         "lsif_indexes",
 		ViewName:          "lsif_indexes_with_repository_name u",
 		ColumnExpressions: indexColumnsWithNullRank,
