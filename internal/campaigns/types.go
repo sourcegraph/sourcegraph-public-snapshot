@@ -149,7 +149,7 @@ func (s ReconcilerState) Valid() bool {
 // ToDB returns the database representation of the reconciler state. That's
 // needed because we want to use UPPERCASE ReconcilerStates in the application
 // and GraphQL layer, but need to use lowercase in the database to make it work
-// with workerutils.Worker.
+// with workerutil.Worker.
 func (s ReconcilerState) ToDB() string { return strings.ToLower(string(s)) }
 
 // ChangesetExternalState defines the possible states of a Changeset on a code host.
@@ -276,7 +276,7 @@ type Changeset struct {
 
 	PublicationState ChangesetPublicationState // "unpublished", "published"
 
-	// All of the following fields are used by workerutils.Worker.
+	// All of the following fields are used by workerutil.Worker.
 	ReconcilerState ReconcilerState
 	FailureMessage  *string
 	StartedAt       time.Time

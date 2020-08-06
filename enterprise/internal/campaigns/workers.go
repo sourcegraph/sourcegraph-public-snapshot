@@ -18,7 +18,7 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-// RunWorkers starts a workerutil.NewWorker that fetches enqueued changesets
+// RunWorkers starts a dbworker.NewWorker that fetches enqueued changesets
 // from the database and passes them to the changeset reconciler for
 // processing.
 func RunWorkers(

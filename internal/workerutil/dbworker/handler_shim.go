@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-// handlerShim converts a workerutil.Store into a Handler.
+// handlerShim converts a Handler into a workerutil.Handler.
 type handlerShim struct {
 	Handler
 }

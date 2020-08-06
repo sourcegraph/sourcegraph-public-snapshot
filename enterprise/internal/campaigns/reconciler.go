@@ -32,7 +32,7 @@ type reconciler struct {
 	store           *Store
 }
 
-// HandlerFunc returns a workerutil.HandlerFunc that can be passed to a
+// HandlerFunc returns a dbworker.HandlerFunc that can be passed to a
 // workerutil.Worker to process queued changesets.
 func (r *reconciler) HandlerFunc() dbworker.HandlerFunc {
 	return func(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) error {
