@@ -20,7 +20,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 - **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the `indexed-search.Deployment.yaml` if regularly hitting max CPU utilization.
 - **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml` if regularly hitting max CPU utilization.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -40,7 +40,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 - **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the `indexed-search.Deployment.yaml` if regularly hitting max CPU utilization.
 - **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml` if regularly hitting max CPU utilization.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -58,7 +58,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -77,7 +77,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -94,7 +94,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -111,7 +111,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - This indicates your user`s are making syntax errors or similar user errors.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -129,7 +129,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
 - Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -147,7 +147,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
 - Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -167,7 +167,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 - **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the `indexed-search.Deployment.yaml` if regularly hitting max CPU utilization.
 - **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml` if regularly hitting max CPU utilization.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -187,7 +187,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 - **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the `indexed-search.Deployment.yaml` if regularly hitting max CPU utilization.
 - **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml` if regularly hitting max CPU utilization.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -205,7 +205,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -224,7 +224,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -241,7 +241,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -258,7 +258,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - This indicates a bug in Sourcegraph, please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -279,7 +279,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 - **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the `indexed-search.Deployment.yaml` if regularly hitting max CPU utilization.
 - **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml` if regularly hitting max CPU utilization.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -300,7 +300,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 - **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the `indexed-search.Deployment.yaml` if regularly hitting max CPU utilization.
 - **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml` if regularly hitting max CPU utilization.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -318,7 +318,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -337,7 +337,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -354,7 +354,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -371,7 +371,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - This indicates your user`s search API requests have syntax errors or a similar user error. Check the responses the API sends back for an explanation.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -387,7 +387,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -403,7 +403,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -419,7 +419,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -435,7 +435,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -452,7 +452,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - Check the Zoekt Web Server dashboard for indications it might be unhealthy.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -469,7 +469,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - Check the Searcher dashboard for indications it might be unhealthy.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -486,7 +486,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - May not be a substantial issue, check the `frontend` logs for potential causes.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -502,7 +502,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -518,7 +518,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -534,7 +534,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -550,7 +550,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -566,7 +566,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -582,7 +582,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -599,7 +599,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -616,7 +616,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -634,7 +634,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the frontend container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -652,7 +652,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of frontend container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -674,7 +674,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' frontend` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the frontend container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs frontend` (note this will include logs from the previous and currently running container).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -692,7 +692,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 			- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -712,7 +712,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the frontend container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -732,7 +732,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider increasing `memory:` of frontend container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -750,7 +750,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the frontend container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -768,7 +768,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of frontend container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -784,7 +784,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -800,7 +800,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -816,7 +816,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -835,7 +835,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - **Provision more disk space:** Sourcegraph will begin deleting least-used repository clones at 10% disk space remaining which may result in decreased performance, users having to wait for repositories to clone, etc.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -857,7 +857,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
 - **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../install/docker-compose/migrate.md) which offers better scalability and resource isolation.
 - **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../install/resource_estimator.md).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -876,7 +876,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **If you just added several repositories**, the warning may be expected.
 - **Check which repositories need cloning**, by visiting e.g. https://sourcegraph.example.com/site-admin/repositories?filter=not-cloned
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -895,7 +895,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Check the code host status indicator for errors:** on the Sourcegraph app homepage, when signed in as an admin click the cloud icon in the top right corner of the page.
 - **Check if the issue continues to happen after 30 minutes**, it may be temporary.
 - **Check the gitserver logs for more information.**
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -916,7 +916,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
 - **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../install/docker-compose/migrate.md) which offers better scalability and resource isolation.
 - **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../install/resource_estimator.md).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -940,7 +940,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs gitserver` for logs indicating request failures to `frontend` or `frontend-internal`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -958,7 +958,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -976,7 +976,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of gitserver container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -998,7 +998,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' gitserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the gitserver container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs gitserver` (note this will include logs from the previous and currently running container).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1016,7 +1016,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 			- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1036,7 +1036,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the gitserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1054,7 +1054,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider decreasing `memory:` of gitserver container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1072,7 +1072,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1088,7 +1088,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1104,7 +1104,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1120,7 +1120,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1137,7 +1137,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - Try restarting the pod to get a different public IP.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1154,7 +1154,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - Try restarting the pod to get a different public IP.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1172,7 +1172,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1190,7 +1190,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1212,7 +1212,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' github-proxy` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the github-proxy container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs github-proxy` (note this will include logs from the previous and currently running container).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1230,7 +1230,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 			- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1250,7 +1250,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the github-proxy container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1270,7 +1270,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1288,7 +1288,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1306,7 +1306,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1322,7 +1322,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1338,7 +1338,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1354,7 +1354,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1370,7 +1370,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1386,7 +1386,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1402,7 +1402,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1418,7 +1418,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1437,7 +1437,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - **Provision more disk space:** Sourcegraph will begin deleting the oldest uploaded bundle files at 10% disk space remaining.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1454,7 +1454,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1470,7 +1470,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1486,7 +1486,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1502,7 +1502,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1518,7 +1518,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1534,7 +1534,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1557,7 +1557,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs precise-code-intel-bundle-manager` for logs indicating request failures to `frontend` or `frontend-internal`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1575,7 +1575,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1593,7 +1593,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-bundle-manager container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1615,7 +1615,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-bundle-manager` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-bundle-manager` (note this will include logs from the previous and currently running container).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1633,7 +1633,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 			- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1653,7 +1653,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1673,7 +1673,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-bundle-manager container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1691,7 +1691,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1709,7 +1709,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-bundle-manager container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1725,7 +1725,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1741,7 +1741,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1757,7 +1757,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1773,7 +1773,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1789,7 +1789,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1805,7 +1805,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1821,7 +1821,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1837,7 +1837,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1853,7 +1853,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1869,7 +1869,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1885,7 +1885,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1901,7 +1901,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1917,7 +1917,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1933,7 +1933,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1949,7 +1949,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1972,7 +1972,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs precise-code-intel-worker` for logs indicating request failures to `frontend` or `frontend-internal`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -1990,7 +1990,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2008,7 +2008,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2030,7 +2030,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-worker` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-worker container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-worker` (note this will include logs from the previous and currently running container).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2048,7 +2048,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 			- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2068,7 +2068,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2088,7 +2088,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2106,7 +2106,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2124,7 +2124,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2140,7 +2140,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2156,7 +2156,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2172,7 +2172,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2188,7 +2188,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2204,7 +2204,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2220,7 +2220,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2236,7 +2236,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2252,7 +2252,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2268,7 +2268,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2284,7 +2284,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2300,7 +2300,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2316,7 +2316,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2332,7 +2332,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2348,7 +2348,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2364,7 +2364,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2380,7 +2380,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2396,7 +2396,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2419,7 +2419,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs precise-code-intel-indexer` for logs indicating request failures to `frontend` or `frontend-internal`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2437,7 +2437,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2455,7 +2455,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2477,7 +2477,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-indexer` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-indexer container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-indexer` (note this will include logs from the previous and currently running container).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2495,7 +2495,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 			- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2515,7 +2515,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2535,7 +2535,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2553,7 +2553,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2571,7 +2571,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2587,7 +2587,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2603,7 +2603,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2619,7 +2619,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2642,7 +2642,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs query-runner` for logs indicating request failures to `frontend` or `frontend-internal`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2660,7 +2660,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of query-runner container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2678,7 +2678,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2700,7 +2700,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' query-runner` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the query-runner container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs query-runner` (note this will include logs from the previous and currently running container).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2718,7 +2718,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 			- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2738,7 +2738,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the query-runner container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2758,7 +2758,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider increasing `memory:` of query-runner container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2776,7 +2776,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2794,7 +2794,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of query-runner container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2810,7 +2810,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2826,7 +2826,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2842,7 +2842,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2865,7 +2865,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs replacer` for logs indicating request failures to `frontend` or `frontend-internal`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2883,7 +2883,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the replacer container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2901,7 +2901,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of replacer container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2923,7 +2923,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' replacer` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the replacer container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs replacer` (note this will include logs from the previous and currently running container).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2941,7 +2941,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 			- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2961,7 +2961,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the replacer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2981,7 +2981,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider increasing `memory:` of replacer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -2999,7 +2999,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the replacer container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3017,7 +3017,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of replacer container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3033,7 +3033,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3049,7 +3049,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3065,7 +3065,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3088,7 +3088,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs repo-updater` for logs indicating request failures to `frontend` or `frontend-internal`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3106,7 +3106,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the repo-updater container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3124,7 +3124,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of repo-updater container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3146,7 +3146,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' repo-updater` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the repo-updater container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs repo-updater` (note this will include logs from the previous and currently running container).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3164,7 +3164,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 			- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3184,7 +3184,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the repo-updater container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3204,7 +3204,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider increasing `memory:` of repo-updater container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3222,7 +3222,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the repo-updater container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3240,7 +3240,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of repo-updater container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3256,7 +3256,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3272,7 +3272,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3288,7 +3288,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3304,7 +3304,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3320,7 +3320,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3343,7 +3343,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs searcher` for logs indicating request failures to `frontend` or `frontend-internal`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3361,7 +3361,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the searcher container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3379,7 +3379,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of searcher container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3401,7 +3401,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' searcher` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the searcher container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs searcher` (note this will include logs from the previous and currently running container).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3419,7 +3419,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 			- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3439,7 +3439,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the searcher container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3459,7 +3459,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider increasing `memory:` of searcher container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3477,7 +3477,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the searcher container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3495,7 +3495,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of searcher container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3511,7 +3511,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3527,7 +3527,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3543,7 +3543,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3559,7 +3559,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3575,7 +3575,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3598,7 +3598,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs symbols` for logs indicating request failures to `frontend` or `frontend-internal`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3616,7 +3616,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the symbols container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3634,7 +3634,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3656,7 +3656,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' symbols` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the symbols container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs symbols` (note this will include logs from the previous and currently running container).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3674,7 +3674,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 			- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3694,7 +3694,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the symbols container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3714,7 +3714,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3732,7 +3732,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the symbols container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3750,7 +3750,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3766,7 +3766,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3782,7 +3782,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3798,7 +3798,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3814,7 +3814,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3830,7 +3830,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3846,7 +3846,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3862,7 +3862,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3880,7 +3880,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the syntect-server container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3898,7 +3898,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3920,7 +3920,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' syntect-server` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the syntect-server container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs syntect-server` (note this will include logs from the previous and currently running container).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3938,7 +3938,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 			- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3958,7 +3958,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the syntect-server container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3978,7 +3978,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -3996,7 +3996,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the syntect-server container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4014,7 +4014,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4030,7 +4030,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4048,7 +4048,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4067,7 +4067,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4085,7 +4085,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4107,7 +4107,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' zoekt-indexserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the zoekt-indexserver container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs zoekt-indexserver` (note this will include logs from the previous and currently running container).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4125,7 +4125,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 			- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4145,7 +4145,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4165,7 +4165,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4183,7 +4183,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4201,7 +4201,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4217,7 +4217,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4233,7 +4233,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4251,7 +4251,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4269,7 +4269,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4291,7 +4291,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' zoekt-webserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the zoekt-webserver container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs zoekt-webserver` (note this will include logs from the previous and currently running container).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4309,7 +4309,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 			- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4329,7 +4329,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4349,7 +4349,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4367,7 +4367,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4385,7 +4385,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4401,7 +4401,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4418,7 +4418,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4436,7 +4436,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the prometheus container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4454,7 +4454,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of prometheus container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4476,7 +4476,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' prometheus` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the prometheus container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs prometheus` (note this will include logs from the previous and currently running container).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4494,7 +4494,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 			- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4514,7 +4514,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider descreasing `cpus:` of the prometheus container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4534,7 +4534,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 	- **Docker Compose:** Consider increasing `memory:` of prometheus container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4552,7 +4552,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the prometheus container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4570,7 +4570,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of prometheus container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
@@ -4586,7 +4586,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
