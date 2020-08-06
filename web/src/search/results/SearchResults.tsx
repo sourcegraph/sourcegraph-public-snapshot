@@ -30,7 +30,6 @@ import { SearchResultsFilterBars, SearchScopeWithOptionalName } from './SearchRe
 import { SearchResultsList } from './SearchResultsList'
 import { SearchResultTypeTabs } from './SearchResultTypeTabs'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
-import { convertPlainTextToInteractiveQuery } from '../input/helpers'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { VersionContext } from '../../schema/site.schema'
 import AlertOutlineIcon from 'mdi-react/AlertOutlineIcon'
@@ -114,17 +113,14 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         if (!patternType) {
             // If the patternType query parameter does not exist in the URL or is invalid, redirect to a URL which
             // has patternType=regexp appended. This is to ensure old URLs before requiring patternType still work.
-
-            const query = parseSearchURLQuery(this.props.location.search) || ''
-            const { navbarQuery, filtersInQuery } = convertPlainTextToInteractiveQuery(query)
+            const query = parseSearchURLQuery(this.props.location.search) ?? ''
             const newLocation =
                 '/search?' +
                 buildSearchURLQuery(
-                    navbarQuery,
+                    query,
                     GQL.SearchPatternType.regexp,
                     this.props.caseSensitive,
-                    this.props.versionContext,
-                    filtersInQuery
+                    this.props.versionContext
                 )
             this.props.history.replace(newLocation)
         }

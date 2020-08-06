@@ -8,26 +8,39 @@ import (
 
 	"github.com/dineshappavoo/basex"
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
-const campaignSpecInsertCols = `
-  rand_id,
-  raw_spec,
-  spec,
-  namespace_user_id,
-  namespace_org_id,
-  user_id,
-  created_at,
-  updated_at
-`
-const campaignSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s)`
+// campaignSpecColumns are used by the campaignSpec related Store methods to insert,
+// update and query campaigns.
+var campaignSpecColumns = []*sqlf.Query{
+	sqlf.Sprintf("campaign_specs.id"),
+	sqlf.Sprintf("campaign_specs.rand_id"),
+	sqlf.Sprintf("campaign_specs.raw_spec"),
+	sqlf.Sprintf("campaign_specs.spec"),
+	sqlf.Sprintf("campaign_specs.namespace_user_id"),
+	sqlf.Sprintf("campaign_specs.namespace_org_id"),
+	sqlf.Sprintf("campaign_specs.user_id"),
+	sqlf.Sprintf("campaign_specs.created_at"),
+	sqlf.Sprintf("campaign_specs.updated_at"),
+}
 
-const campaignSpecCols = `
-  id,` + campaignSpecInsertCols
+// campaignSpecInsertColumns is the list of campaign_specs columns that are
+// modified when updating/inserting campaign specs.
+var campaignSpecInsertColumns = []*sqlf.Query{
+	sqlf.Sprintf("rand_id"),
+	sqlf.Sprintf("raw_spec"),
+	sqlf.Sprintf("spec"),
+	sqlf.Sprintf("namespace_user_id"),
+	sqlf.Sprintf("namespace_org_id"),
+	sqlf.Sprintf("user_id"),
+	sqlf.Sprintf("created_at"),
+	sqlf.Sprintf("updated_at"),
+}
+
+const campaignSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s)`
 
 // CreateCampaignSpec creates the given CampaignSpec.
 func (s *Store) CreateCampaignSpec(ctx context.Context, c *campaigns.CampaignSpec) error {
@@ -35,22 +48,14 @@ func (s *Store) CreateCampaignSpec(ctx context.Context, c *campaigns.CampaignSpe
 	if err != nil {
 		return err
 	}
-	err = s.query(ctx, q, func(sc scanner) error {
-		return scanCampaignSpec(c, sc)
-	})
-
-	if err, ok := err.(*pq.Error); ok {
-		fmt.Printf("q: %s,\nargs: %s\n,pq error: %#v\n", q.Query(sqlf.PostgresBindVar), q.Args(), err)
-	}
-
-	return err
+	return s.query(ctx, q, func(sc scanner) error { return scanCampaignSpec(c, sc) })
 }
 
 var createCampaignSpecQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_campaign_specs.go:CreateCampaignSpec
-INSERT INTO campaign_specs (` + campaignSpecInsertCols + `)
+INSERT INTO campaign_specs (%s)
 VALUES ` + campaignSpecInsertColsFmt + `
-RETURNING` + campaignSpecCols + `;`
+RETURNING %s`
 
 func (s *Store) createCampaignSpecQuery(c *campaigns.CampaignSpec) (*sqlf.Query, error) {
 	spec, err := jsonbColumn(c.Spec)
@@ -74,6 +79,7 @@ func (s *Store) createCampaignSpecQuery(c *campaigns.CampaignSpec) (*sqlf.Query,
 
 	return sqlf.Sprintf(
 		createCampaignSpecQueryFmtstr,
+		sqlf.Join(campaignSpecInsertColumns, ", "),
 		c.RandID,
 		c.RawSpec,
 		spec,
@@ -82,6 +88,7 @@ func (s *Store) createCampaignSpecQuery(c *campaigns.CampaignSpec) (*sqlf.Query,
 		c.UserID,
 		c.CreatedAt,
 		c.UpdatedAt,
+		sqlf.Join(campaignSpecColumns, ", "),
 	), nil
 }
 
@@ -100,9 +107,9 @@ func (s *Store) UpdateCampaignSpec(ctx context.Context, c *campaigns.CampaignSpe
 var updateCampaignSpecQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_campaign_specs.go:UpdateCampaignSpec
 UPDATE campaign_specs
-SET (` + campaignSpecInsertCols + `) = ` + campaignSpecInsertColsFmt + `
+SET (%s) = ` + campaignSpecInsertColsFmt + `
 WHERE id = %s
-RETURNING ` + campaignSpecCols
+RETURNING %s`
 
 func (s *Store) updateCampaignSpecQuery(c *campaigns.CampaignSpec) (*sqlf.Query, error) {
 	spec, err := jsonbColumn(c.Spec)
@@ -114,6 +121,7 @@ func (s *Store) updateCampaignSpecQuery(c *campaigns.CampaignSpec) (*sqlf.Query,
 
 	return sqlf.Sprintf(
 		updateCampaignSpecQueryFmtstr,
+		sqlf.Join(campaignSpecInsertColumns, ", "),
 		c.RandID,
 		c.RawSpec,
 		spec,
@@ -123,6 +131,7 @@ func (s *Store) updateCampaignSpecQuery(c *campaigns.CampaignSpec) (*sqlf.Query,
 		c.CreatedAt,
 		c.UpdatedAt,
 		c.ID,
+		sqlf.Join(campaignSpecColumns, ", "),
 	), nil
 }
 
@@ -174,8 +183,7 @@ func (s *Store) GetCampaignSpec(ctx context.Context, opts GetCampaignSpecOpts) (
 
 var getCampaignSpecsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_campaign_specs.go:GetCampaignSpec
-SELECT ` + campaignSpecCols + `
-FROM campaign_specs
+SELECT %s FROM campaign_specs
 WHERE %s
 LIMIT 1
 `
@@ -194,7 +202,11 @@ func getCampaignSpecQuery(opts *GetCampaignSpecOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
-	return sqlf.Sprintf(getCampaignSpecsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+	return sqlf.Sprintf(
+		getCampaignSpecsQueryFmtstr,
+		sqlf.Join(campaignSpecColumns, ", "),
+		sqlf.Join(preds, "\n AND "),
+	)
 }
 
 // ListCampaignSpecsOpts captures the query options needed for
@@ -228,7 +240,7 @@ func (s *Store) ListCampaignSpecs(ctx context.Context, opts ListCampaignSpecsOpt
 
 var listCampaignSpecsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_campaign_specs.go:ListCampaignSpecs
-SELECT ` + campaignSpecCols + ` FROM campaign_specs
+SELECT %s FROM campaign_specs
 WHERE %s
 ORDER BY id ASC
 `
@@ -250,6 +262,7 @@ func listCampaignSpecsQuery(opts *ListCampaignSpecsOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		listCampaignSpecsQueryFmtstr+limitClause,
+		sqlf.Join(campaignSpecColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }

@@ -192,7 +192,7 @@ var sharedProvisioningMemoryUsage7d sharedObservable = func(containerName string
 		Description:     "container memory usage (7d maximum) by instance",
 		Query:           fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[7d])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
-		Warning:         Alert{LessOrEqual: 30, GreaterOrEqual: 80, For: 7 * 24 * time.Hour},
+		Warning:         Alert{LessOrEqual: 30, GreaterOrEqual: 80, For: 14 * 24 * time.Hour},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Max(100).Min(0),
 		Owner:           ObservableOwnerDistribution,
 		PossibleSolutions: strings.Replace(`
@@ -237,7 +237,7 @@ var sharedGoGcDuration sharedObservable = func(containerName string) Observable 
 var sharedKubernetesPodsAvailable sharedObservable = func(containerName string) Observable {
 	return Observable{
 		Name:              "pods_available_percentage",
-		Description:       "percentage pods available for a service for 10m",
+		Description:       "percentage pods available for 10m",
 		Query:             fmt.Sprintf(`sum by(app) (up{app=~".*%[1]s"}) / count by (app) (up{app=~".*%[1]s"}) * 100`, containerName),
 		Critical:          Alert{LessOrEqual: 90, For: 10 * time.Minute},
 		DataMayNotExist:   true,

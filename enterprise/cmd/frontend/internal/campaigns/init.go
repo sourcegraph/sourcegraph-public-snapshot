@@ -23,13 +23,14 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 	repositories := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	enterpriseServices.CampaignsResolver = resolvers.NewResolver(dbconn.Global)
-	enterpriseServices.GithubWebhook = campaigns.NewGitHubWebhook(campaignsStore, repositories, msResolutionClock)
+	enterpriseServices.GitHubWebhook = campaigns.NewGitHubWebhook(campaignsStore, repositories, msResolutionClock)
 	enterpriseServices.BitbucketServerWebhook = campaigns.NewBitbucketServerWebhook(
 		campaignsStore,
 		repositories,
 		msResolutionClock,
 		"sourcegraph-"+globalState.SiteID,
 	)
+	enterpriseServices.GitLabWebhook = campaigns.NewGitLabWebhook(campaignsStore, repositories, msResolutionClock)
 
 	return nil
 }

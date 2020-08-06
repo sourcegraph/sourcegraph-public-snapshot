@@ -99,13 +99,14 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
                       },
                     ],
                     "nextSyncAt": null,
+                    "publicationState": "PUBLISHED",
+                    "reconcilerState": "COMPLETED",
                     "repository": Object {
                       "id": "TestRepository",
                       "name": "sourcegraph",
                       "url": "github.com/sourcegraph/sourcegraph",
                     },
                     "reviewState": "PENDING",
-                    "state": "UNPUBLISHED",
                     "title": "Remove lodash",
                     "updatedAt": "2020-01-01T00:00:00.000Z",
                   }

@@ -1,0 +1,69 @@
+.web-content {
+    --link-color: #329af0;
+    color: $gray-06;
+
+    h1,
+    h2,
+    h3 {
+        color: $gray-08;
+        font-weight: normal;
+    }
+
+    h4 {
+        color: $gray-06;
+        font-weight: normal;
+    }
+
+    h5,
+    h6 {
+        color: $gray-04;
+        font-weight: normal;
+    }
+
+    strong {
+        color: $gray-11;
+    }
+
+    .search-keyword {
+        color: #329af0;
+    }
+
+    // Search examples that link to the results page should use this class.
+    .search-query-link {
+        color: $white;
+    }
+}
+
+.theme-light {
+    .web-content {
+        --link-color: #1c7cd6;
+        color: #2b3750;
+
+        h1,
+        h2 {
+            color: $gray-17;
+        }
+
+        h3,
+        h4,
+        h6 {
+            color: $gray-15;
+        }
+
+        h5 {
+            color: $gray-13;
+        }
+
+        strong {
+            color: $gray-11;
+        }
+
+        .search-keyword {
+            color: #1c7cd6;
+        }
+
+        .search-query-link {
+            color: $gray-19;
+        }
+    }
+}

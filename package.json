@@ -7,7 +7,7 @@
     "url": "https://github.com/sourcegraph/sourcegraph"
   },
   "engines": {
-    "node": "^v14.5.0",
+    "node": "^v14.7.0",
     "yarn": "^1.10.1"
   },
   "scripts": {
@@ -18,8 +18,9 @@
     "all:tsgql": "yarn --cwd web run tsgql validate -p . --exitOnWarn && yarn --cwd shared run tsgql validate -p . --exitOnWarn && yarn --cwd browser run tsgql validate -p . --exitOnWarn",
     "build-ts": "tsc -b .",
     "graphql-lint": "graphql-schema-linter --old-implements-syntax --comment-descriptions cmd/frontend/graphqlbackend/schema.graphql",
-    "prepublish": "gulp generate",
     "build-web": "yarn --cwd web run build",
+    "generate": "gulp generate",
+    "watch-generate": "gulp watchGenerate",
     "test": "jest --testPathIgnorePatterns end-to-end regression integration storybook",
     "test-integration": "TS_NODE_PROJECT=web/src/integration/tsconfig.json NODE_NO_WARNINGS=1 mocha ./web/src/integration/**/*.test.ts",
     "cover-integration": "nyc --hook-require=false yarn test-integration",
@@ -129,7 +130,7 @@
     "@types/mime-types": "2.1.0",
     "@types/mini-css-extract-plugin": "0.9.1",
     "@types/mkdirp-promise": "5.0.0",
-    "@types/mocha": "8.0.0",
+    "@types/mocha": "8.0.1",
     "@types/mockdate": "2.0.0",
     "@types/mz": "2.7.1",
     "@types/node": "13.13.5",
@@ -212,7 +213,7 @@
     "mime-types": "^2.1.27",
     "mini-css-extract-plugin": "^0.9.0",
     "mkdirp-promise": "^5.0.1",
-    "mocha": "^8.0.1",
+    "mocha": "^8.1.0",
     "mockdate": "^3.0.2",
     "monaco-editor-webpack-plugin": "^1.8.2",
     "mz": "^2.7.0",
@@ -224,7 +225,7 @@
     "postcss-focus-visible": "^5.0.0",
     "postcss-loader": "^3.0.0",
     "prettier": "^2.0.5",
-    "puppeteer": "5.1.0",
+    "puppeteer": "5.2.1",
     "puppeteer-firefox": "^0.5.1",
     "react-docgen-typescript-webpack-plugin": "^1.1.0",
     "react-hot-loader": "^4.12.21",

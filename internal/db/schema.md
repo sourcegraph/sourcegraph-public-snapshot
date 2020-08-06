@@ -77,6 +77,8 @@ Foreign-key constraints:
     "campaigns_campaign_spec_id_fkey" FOREIGN KEY (campaign_spec_id) REFERENCES campaign_specs(id) DEFERRABLE
     "campaigns_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
     "campaigns_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+Referenced by:
+    TABLE "changesets" CONSTRAINT "changesets_owned_by_campaign_id_fkey" FOREIGN KEY (owned_by_campaign_id) REFERENCES campaigns(id) DEFERRABLE
 Triggers:
     trig_delete_campaign_reference_on_changesets AFTER DELETE ON campaigns FOR EACH ROW EXECUTE PROCEDURE delete_campaign_reference_on_changesets()
 
@@ -129,7 +131,8 @@ Foreign-key constraints:
     "changeset_specs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     "changeset_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) DEFERRABLE
 Referenced by:
-    TABLE "changesets" CONSTRAINT "changesets_changeset_spec_id_fkey" FOREIGN KEY (changeset_spec_id) REFERENCES changeset_specs(id) DEFERRABLE
+    TABLE "changesets" CONSTRAINT "changesets_changeset_spec_id_fkey" FOREIGN KEY (current_spec_id) REFERENCES changeset_specs(id) DEFERRABLE
+    TABLE "changesets" CONSTRAINT "changesets_previous_spec_id_fkey" FOREIGN KEY (previous_spec_id) REFERENCES changeset_specs(id) DEFERRABLE
 
 ```
 
@@ -142,8 +145,8 @@ Referenced by:
  repo_id               | integer                  | not null
  created_at            | timestamp with time zone | not null default now()
  updated_at            | timestamp with time zone | not null default now()
- metadata              | jsonb                    | not null default '{}'::jsonb
- external_id           | text                     | not null
+ metadata              | jsonb                    | default '{}'::jsonb
+ external_id           | text                     | 
  external_service_type | text                     | not null
  external_deleted_at   | timestamp with time zone | 
  external_branch       | text                     | 
@@ -157,7 +160,16 @@ Referenced by:
  diff_stat_changed     | integer                  | 
  diff_stat_deleted     | integer                  | 
  sync_state            | jsonb                    | not null default '{}'::jsonb
- changeset_spec_id     | bigint                   | 
+ current_spec_id       | bigint                   | 
+ previous_spec_id      | bigint                   | 
+ publication_state     | text                     | default 'UNPUBLISHED'::text
+ owned_by_campaign_id  | bigint                   | 
+ reconciler_state      | text                     | default 'queued'::text
+ failure_message       | text                     | 
+ started_at            | timestamp with time zone | 
+ finished_at           | timestamp with time zone | 
+ process_after         | timestamp with time zone | 
+ num_resets            | integer                  | not null default 0
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -167,7 +179,9 @@ Check constraints:
     "changesets_external_service_type_not_blank" CHECK (external_service_type <> ''::text)
     "changesets_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
 Foreign-key constraints:
-    "changesets_changeset_spec_id_fkey" FOREIGN KEY (changeset_spec_id) REFERENCES changeset_specs(id) DEFERRABLE
+    "changesets_changeset_spec_id_fkey" FOREIGN KEY (current_spec_id) REFERENCES changeset_specs(id) DEFERRABLE
+    "changesets_owned_by_campaign_id_fkey" FOREIGN KEY (owned_by_campaign_id) REFERENCES campaigns(id) DEFERRABLE
+    "changesets_previous_spec_id_fkey" FOREIGN KEY (previous_spec_id) REFERENCES changeset_specs(id) DEFERRABLE
     "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
     TABLE "changeset_events" CONSTRAINT "changeset_events_changeset_id_fkey" FOREIGN KEY (changeset_id) REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE
@@ -327,19 +341,24 @@ Check constraints:
 
 # Table "public.external_services"
 ```
-    Column    |           Type           |                           Modifiers                            
---------------+--------------------------+----------------------------------------------------------------
- id           | bigint                   | not null default nextval('external_services_id_seq'::regclass)
- kind         | text                     | not null
- display_name | text                     | not null
- config       | text                     | not null
- created_at   | timestamp with time zone | not null default now()
- updated_at   | timestamp with time zone | not null default now()
- deleted_at   | timestamp with time zone | 
+      Column       |           Type           |                           Modifiers                            
+-------------------+--------------------------+----------------------------------------------------------------
+ id                | bigint                   | not null default nextval('external_services_id_seq'::regclass)
+ kind              | text                     | not null
+ display_name      | text                     | not null
+ config            | text                     | not null
+ created_at        | timestamp with time zone | not null default now()
+ updated_at        | timestamp with time zone | not null default now()
+ deleted_at        | timestamp with time zone | 
+ last_sync_at      | timestamp with time zone | 
+ next_sync_at      | timestamp with time zone | 
+ namespace_user_id | integer                  | 
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
 Check constraints:
     "check_non_empty_config" CHECK (btrim(config) <> ''::text)
+Foreign-key constraints:
+    "external_services_namepspace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -1018,6 +1037,7 @@ Referenced by:
     TABLE "discussion_comments" CONSTRAINT "discussion_comments_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "discussion_mail_reply_tokens" CONSTRAINT "discussion_mail_reply_tokens_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "discussion_threads" CONSTRAINT "discussion_threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
+    TABLE "external_services" CONSTRAINT "external_services_namepspace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "names" CONSTRAINT "names_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "org_invitations" CONSTRAINT "org_invitations_recipient_user_id_fkey" FOREIGN KEY (recipient_user_id) REFERENCES users(id)
     TABLE "org_invitations" CONSTRAINT "org_invitations_sender_user_id_fkey" FOREIGN KEY (sender_user_id) REFERENCES users(id)

@@ -22,7 +22,10 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 	changesetSpecs := make([]*cmpgn.ChangesetSpec, 0, 3)
 	for i := 0; i < cap(changesetSpecs); i++ {
 		c := &cmpgn.ChangesetSpec{
-			RawSpec:        `{}`,
+			RawSpec: `{"externalID":"12345"}`,
+			Spec: &cmpgn.ChangesetSpecDescription{
+				ExternalID: "123456",
+			},
 			UserID:         int32(i + 1234),
 			CampaignSpecID: int64(i + 910),
 			RepoID:         repo.ID,
@@ -43,6 +46,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 	// ChangesetSpecs whose repository has been (soft-)deleted.
 	changesetSpecDeletedRepo := &cmpgn.ChangesetSpec{
 		UserID:         int32(424242),
+		Spec:           &cmpgn.ChangesetSpecDescription{},
 		CampaignSpecID: int64(424242),
 		RawSpec:        `{}`,
 		RepoID:         deletedRepo.ID,

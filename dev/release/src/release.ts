@@ -252,7 +252,7 @@ Key dates:
 
             const message = `:captain: Release \`${version}\` has been cut :captain:
 
-- Please ensure \`CHANGELOG.md\` on \`master\` is up-to-date.
+- Please ensure \`CHANGELOG.md\` on \`main\` is up-to-date.
 - Run this release locally with \`IMAGE=sourcegraph/server:${version} ./dev/run-server-image.sh\`
 - It will be deployed to k8s.sgdev.org within approximately one hour (https://k8s.sgdev.org/site-admin/updates)
 - ${releaseBlockerMessage}
@@ -313,7 +313,7 @@ Key dates:
                 {
                     owner: 'sourcegraph',
                     repo: 'sourcegraph',
-                    base: 'master',
+                    base: 'main',
                     head: `publish-${parsedVersion.version}`,
                     commitMessage: `Update latest release to ${parsedVersion.version}`,
                     bashEditCommands: [
