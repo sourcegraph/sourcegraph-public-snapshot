@@ -1,10 +1,15 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useCallback } from 'react'
 import { queryCampaigns as _queryCampaigns } from './backend'
 import { RouteComponentProps } from 'react-router'
-import { FilteredConnection, FilteredConnectionFilter } from '../../../../components/FilteredConnection'
-import { IUser, CampaignState } from '../../../../../../shared/src/graphql/schema'
-import { CampaignNode, CampaignNodeCampaign, CampaignNodeProps } from '../../list/CampaignNode'
+import {
+    FilteredConnection,
+    FilteredConnectionFilter,
+    FilteredConnectionQueryArgs,
+} from '../../../../components/FilteredConnection'
+import { CampaignState, IUser } from '../../../../../../shared/src/graphql/schema'
+import { CampaignNode, CampaignNodeProps } from '../../list/CampaignNode'
 import { TelemetryProps } from '../../../../../../shared/src/telemetry/telemetryService'
+import { ListCampaign } from '../../../../graphql-operations'
 
 interface Props extends TelemetryProps, Pick<RouteComponentProps, 'history' | 'location'> {
     authenticatedUser: Pick<IUser, 'siteAdmin'>
@@ -39,6 +44,16 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = ({
     queryCampaigns = _queryCampaigns,
     ...props
 }) => {
+    const queryConnection = useCallback(
+        (args: FilteredConnectionQueryArgs) =>
+            queryCampaigns({
+                first: args.first ?? null,
+                // The types for FilteredConnectionQueryArgs don't allow access to the filter arguments.
+                state: (args as { state: CampaignState | undefined }).state ?? null,
+                viewerCanAdminister: null,
+            }),
+        [queryCampaigns]
+    )
     useEffect(() => props.telemetryService.logViewEvent('CampaignsListPage'), [props.telemetryService])
     return (
         <>
@@ -71,11 +86,11 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = ({
                 </div>
             </div>
 
-            <FilteredConnection<CampaignNodeCampaign, Omit<CampaignNodeProps, 'node'>>
+            <FilteredConnection<ListCampaign, Omit<CampaignNodeProps, 'node'>>
                 {...props}
                 nodeComponent={CampaignNode}
                 nodeComponentProps={{ history: props.history }}
-                queryConnection={queryCampaigns}
+                queryConnection={queryConnection}
                 hideSearch={true}
                 filters={FILTERS}
                 noun="campaign"

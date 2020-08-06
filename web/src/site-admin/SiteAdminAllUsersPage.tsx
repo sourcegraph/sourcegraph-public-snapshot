@@ -50,7 +50,7 @@ const nukeDetails = `
 
 Beware this includes e.g. deleting extensions authored by the user, deleting ANY settings authored or updated by the user, etc.
 
-For more information about what data is deleted, see https://github.com/sourcegraph/sourcegraph/blob/master/doc/admin/user_data_deletion.md
+For more information about what data is deleted, see https://github.com/sourcegraph/sourcegraph/blob/main/doc/admin/user_data_deletion.md
 
 Are you ABSOLUTELY certain you wish to delete this user and all associated data?`
 

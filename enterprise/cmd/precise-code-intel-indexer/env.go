@@ -22,6 +22,10 @@ var (
 	rawIndexMinimumSearchRatio          = env.Get("PRECISE_CODE_INTEL_INDEX_MINIMUM_SEARCH_RATIO", "50", "Minimum ratio of search events to total events to trigger indexing for a repo.")
 	rawIndexMinimumPreciseCount         = env.Get("PRECISE_CODE_INTEL_INDEX_MINIMUM_PRECISE_COUNT", "1", "Minimum number of precise events to trigger indexing for a repo.")
 	rawDisableJanitor                   = env.Get("PRECISE_CODE_INTEL_DISABLE_JANITOR", "false", "Set to true to disable the janitor process during system migrations.")
+	rawMaxTransactions                  = env.Get("PRECISE_CODE_INTEL_MAXIMUM_TRANSACTIONS", "10", "Number of index jobs that can be active at once.")
+	rawRequeueDelay                     = env.Get("PRECISE_CODE_INTEL_REQUEUE_DELAY", "1m", "The requeue delay of index jobs assigned to an unreachable indexer.")
+	rawCleanupInterval                  = env.Get("PRECISE_CODE_INTEL_CLEANUP_INTERVAL", "10s", "Interval between cleanup runs.")
+	rawMissedHeartbeats                 = env.Get("PRECISE_CODE_INTEL_MAXIMUM_MISSED_HEARTBEATS", "5", "The number of heartbeats an indexer must miss to be considered unreachable.")
 )
 
 // mustGet returns the non-empty version of the given raw value fatally logs on failure.

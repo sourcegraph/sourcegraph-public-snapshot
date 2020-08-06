@@ -15,11 +15,11 @@ interface Props {
 export const CampaignActionsBar: React.FunctionComponent<Props> = ({ campaign }) => {
     const campaignClosed = !!campaign.closedAt
 
-    // const percentComplete = (
-    //     (((campaign.changesets.stats.closed as number) + (campaign.changesets.stats.merged as number)) /
-    //         campaign.changesets.stats.total) *
-    //     100
-    // ).toFixed(0)
+    const percentComplete = (campaign.changesets.stats.total === 0
+        ? 0
+        : ((campaign.changesets.stats.closed + campaign.changesets.stats.merged) / campaign.changesets.stats.total) *
+          100
+    ).toFixed(0)
 
     return (
         <>
@@ -36,7 +36,7 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({ campaign })
                     <div>
                         <CampaignStateBadge isClosed={campaignClosed} />
                         <small className="text-muted">
-                            {0}% complete. {campaign.changesets.totalCount} changesets total
+                            {percentComplete}% complete. {campaign.changesets.totalCount} changesets total
                         </small>
                     </div>
                 </div>

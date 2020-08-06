@@ -146,6 +146,10 @@ var tests = []test{
 		Name:  `Global search, exclude counts for fork and archive`,
 		Query: `repo:mux|archive|caddy`,
 	},
+	{
+		Name:  `Repo visibility`,
+		Query: `repo:github.com/rvantonderp/adjust-go-wrk visibility:public`,
+	},
 	// And/Or queries.
 	{
 		Name:  `And operator, basic`,

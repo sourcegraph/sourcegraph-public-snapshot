@@ -3,14 +3,14 @@ import { CampaignNode } from './CampaignNode'
 import { parseISO } from 'date-fns'
 import { createMemoryHistory } from 'history'
 import { mount } from 'enzyme'
+import { ListCampaign } from '../../../graphql-operations'
 
 const now = parseISO('2019-01-01T23:15:01Z')
 
 jest.mock('../icons', () => ({ CampaignsIcon: 'CampaignsIcon' }))
 
 describe('CampaignNode', () => {
-    const node = {
-        __typename: 'Campaign',
+    const node: ListCampaign = {
         id: '123',
         name: 'Upgrade lodash to v4',
         description: `
@@ -19,7 +19,6 @@ describe('CampaignNode', () => {
 - and renders in markdown
         `,
         changesets: { stats: { merged: 0, open: 1, closed: 3 } },
-        patches: { totalCount: 2 },
         createdAt: '2019-12-04T23:15:01Z',
         closedAt: null,
         author: {

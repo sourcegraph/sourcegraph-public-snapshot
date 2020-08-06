@@ -46,80 +46,66 @@ func translateCharacterClass(r []rune, startIx int) (int, string, error) {
 	sb := strings.Builder{}
 	i := startIx
 	lenR := len(r)
-Loop:
+
+	switch r[i] {
+	case '!':
+		if i < lenR-1 && r[i+1] == ']' {
+			// the character class cannot contain just "!"
+			return -1, "", ErrBadGlobPattern
+		}
+		sb.WriteRune('^')
+		i++
+	case '^':
+		sb.WriteString("//^")
+		i++
+	}
+
 	for i < lenR {
-		switch r[i] {
-		case '!':
-			if i == startIx {
-				sb.WriteRune('^')
-			} else {
-				sb.WriteRune(r[i])
-			}
-			i++
-		case ']':
+		if r[i] == ']' {
 			if i > startIx {
-				break Loop
+				break
 			}
 			sb.WriteRune(r[i])
 			i++
-		default: // translate character range lo-hi.
-
-			// '-' is treated literally at the start and end of
-			// of a character class.
-			if r[i] == '-' {
-				if i == lenR-1 {
-					// no closing bracket
-					return -1, "", ErrBadGlobPattern
-				}
-
-				if i > startIx && r[i+1] != ']' {
-					// '-' cannot be the lower end of a range
-					// unless it is the first character within
-					// the character class.
-					return -1, "", ErrBadGlobPattern
-				}
-			}
-			lo := r[i]
-			sb.WriteRune(r[i]) // lo
-			i++
-
-			if i == lenR {
-				// no closing bracket
-				return -1, "", ErrBadGlobPattern
-			}
-
-			// lo = hi
-			if r[i] != '-' {
-				continue
-			}
-
-			sb.WriteRune(r[i]) // -
-			i++
-
-			if i == lenR {
-				// no closing bracket
-				return -1, "", ErrBadGlobPattern
-			}
-
-			if r[i] == ']' {
-				continue
-			}
-
-			hi := r[i]
-			if lo > hi {
-				// range is reversed
-				return -1, "", ErrBadGlobPattern
-			}
-			sb.WriteRune(r[i]) // hi
-			i++
+			continue
 		}
+
+		lo := r[i]
+		sb.WriteRune(r[i]) // lo
+		i++
+		if i == lenR {
+			// no closing bracket
+			return -1, "", ErrBadGlobPattern
+		}
+
+		// lo = hi
+		if r[i] != '-' {
+			continue
+		}
+
+		sb.WriteRune(r[i]) // -
+		i++
+		if i == lenR {
+			// no closing bracket
+			return -1, "", ErrBadGlobPattern
+		}
+
+		if r[i] == ']' {
+			continue
+		}
+
+		hi := r[i]
+		if lo > hi {
+			// range is reversed
+			return -1, "", ErrBadGlobPattern
+		}
+		sb.WriteRune(r[i]) // hi
+		i++
 	}
 	if i == lenR {
 		return -1, "", ErrBadGlobPattern
 	}
-
 	return i - startIx, sb.String(), nil
-
 }
 
 var globSpecialSymbols = map[rune]struct{}{
@@ -140,14 +126,13 @@ func globToRegex(value string) (string, error) {
 	l := len(r)
 	sb := strings.Builder{}
 
-	i := 0
-	// Add regex anchor "^" if glob does not start with *.
-	if r[i] != '*' {
-		sb.WriteRune('^')
-	}
-	for i = 0; i < l; i++ {
+	// Add regex anchor "^" as prefix to all patterns
+	sb.WriteRune('^')
+
+	for i := 0; i < l; i++ {
 		switch r[i] {
 		case '*':
+			// **
 			if i < l-1 && r[i+1] == '*' {
 				sb.WriteString(".*?")
 			} else {
@@ -174,6 +159,9 @@ func globToRegex(value string) (string, error) {
 			}
 			sb.WriteRune(r[i])
 		case '[':
+			if i == l-1 {
+				return "", ErrBadGlobPattern
+			}
 			sb.WriteRune('[')
 			i++
 
@@ -190,11 +178,8 @@ func globToRegex(value string) (string, error) {
 			sb.WriteString(regexp.QuoteMeta(string(r[i])))
 		}
 	}
-
-	// add regex anchor "$" if glob doesn't end with *
-	if r[l-1] != '*' {
-		sb.WriteRune('$')
-	}
+	// add regex anchor '$' as suffix to all patterns
+	sb.WriteRune('$')
 	return sb.String(), nil
 }
 
@@ -522,4 +507,13 @@ func Map(query []Node, fns ...func([]Node) []Node) []Node {
 		query = fn(query)
 	}
 	return query
+}
+
+func FuzzifyRegexPatterns(nodes []Node) []Node {
+	return MapParameter(nodes, func(field string, value string, negated bool, annotation Annotation) Node {
+		if field == FieldRepo || field == FieldFile || field == FieldRepoHasFile {
+			value = strings.TrimSuffix(value, "$")
+		}
+		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
+	})
 }

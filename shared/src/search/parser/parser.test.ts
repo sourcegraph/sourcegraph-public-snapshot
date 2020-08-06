@@ -609,7 +609,7 @@ describe('parseSearchQuery()', () => {
                             start: 15,
                         },
                         token: {
-                            type: 'literal',
+                            type: 'operator',
                             value: 'and',
                         },
                     },
@@ -690,8 +690,7 @@ describe('parseSearchQuery()', () => {
                             start: 3,
                         },
                         token: {
-                            type: 'literal',
-                            value: 'and',
+                            type: 'operator',
                         },
                     },
                     {
@@ -737,8 +736,7 @@ describe('parseSearchQuery()', () => {
                             start: 10,
                         },
                         token: {
-                            type: 'literal',
-                            value: 'or',
+                            type: 'operator',
                         },
                     },
                     {
@@ -784,8 +782,7 @@ describe('parseSearchQuery()', () => {
                             start: 16,
                         },
                         token: {
-                            type: 'literal',
-                            value: 'and',
+                            type: 'operator',
                         },
                     },
                     {

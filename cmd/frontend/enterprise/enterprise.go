@@ -10,7 +10,8 @@ import (
 // Services is a bag of HTTP handlers and factory functions that are registered by the
 // enterprise frontend setup hook.
 type Services struct {
-	GithubWebhook             http.Handler
+	GitHubWebhook             http.Handler
+	GitLabWebhook             http.Handler
 	BitbucketServerWebhook    http.Handler
 	NewCodeIntelUploadHandler NewCodeIntelUploadHandler
 	AuthzResolver             graphqlbackend.AuthzResolver
@@ -25,7 +26,8 @@ type NewCodeIntelUploadHandler func(internal bool) http.Handler
 // DefaultServices creates a new Services value that has default implementations for all services.
 func DefaultServices() Services {
 	return Services{
-		GithubWebhook:             makeNotFoundHandler("github webhook"),
+		GitHubWebhook:             makeNotFoundHandler("github webhook"),
+		GitLabWebhook:             makeNotFoundHandler("gitlab webhook"),
 		BitbucketServerWebhook:    makeNotFoundHandler("bitbucket server webhook"),
 		NewCodeIntelUploadHandler: func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
 		AuthzResolver:             graphqlbackend.DefaultAuthzResolver,
