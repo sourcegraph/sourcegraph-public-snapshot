@@ -1365,7 +1365,6 @@ func TestCompareSearchResults(t *testing.T) {
 			exactFilePatterns: map[string]struct{}{"file": {}},
 			aIsLess:           true,
 		},
-		// file matches (different repos)
 		{
 			name:              "different repo, 1 exact match",
 			a:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
