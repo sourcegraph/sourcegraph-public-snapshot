@@ -12,6 +12,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -235,23 +236,50 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	})
 
 	t.Run("Count", func(t *testing.T) {
-		count, err := s.CountChangesets(ctx, CountChangesetsOpts{})
-		if err != nil {
-			t.Fatal(err)
-		}
+		t.Run("No options", func(t *testing.T) {
+			count, err := s.CountChangesets(ctx, CountChangesetsOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		if have, want := count, len(changesets); have != want {
-			t.Fatalf("have count: %d, want: %d", have, want)
-		}
+			if have, want := count, len(changesets); have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
 
-		count, err = s.CountChangesets(ctx, CountChangesetsOpts{CampaignID: 1})
-		if err != nil {
-			t.Fatal(err)
-		}
+		})
 
-		if have, want := count, 1; have != want {
-			t.Fatalf("have count: %d, want: %d", have, want)
-		}
+		t.Run("CampaignID", func(t *testing.T) {
+			count, err := s.CountChangesets(ctx, CountChangesetsOpts{CampaignID: 1})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := count, 1; have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
+		})
+
+		t.Run("ReconcilerState", func(t *testing.T) {
+			completed := campaigns.ReconcilerStateCompleted
+			countCompleted, err := s.CountChangesets(ctx, CountChangesetsOpts{ReconcilerState: &completed})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := countCompleted, len(changesets); have != want {
+				t.Fatalf("have countCompleted: %d, want: %d", have, want)
+			}
+
+			processing := campaigns.ReconcilerStateProcessing
+			countProcessing, err := s.CountChangesets(ctx, CountChangesetsOpts{ReconcilerState: &processing})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := countProcessing, 0; have != want {
+				t.Fatalf("have countProcessing: %d, want: %d", have, want)
+			}
+		})
 	})
 
 	t.Run("List", func(t *testing.T) {
