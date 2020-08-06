@@ -33,6 +33,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Any request with `?trace=1` as a URL query parameter will enable Jaeger tracing (if Jaeger is enabled). [#12291](https://github.com/sourcegraph/sourcegraph/pull/12291)
 - Password reset emails will now be automatically sent to users created by a site admin if email sending is configured and password reset is enabled. Previously, site admins needed to manually send the user this password reset link. [#12803](https://github.com/sourcegraph/sourcegraph/pull/12803)
 - Syntax highlighting for `and` and `or` search operators. [#12694](https://github.com/sourcegraph/sourcegraph/pull/12694)
+- `content:` filters can now be negated (`-content:`) for literal and regular expression patterns on indexed repositories.
+- `NOT`, a new query operator, is now available as an alternative to `-` on supported keywords. 
 
 ### Changed
 
