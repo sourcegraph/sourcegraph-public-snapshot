@@ -26,7 +26,7 @@ func (u *users) IsPassword(ctx context.Context, id int32, password string) (bool
 }
 
 var (
-	passwordResetRateLimit    = "0 hours"
+	passwordResetRateLimit    = "1 minute"
 	ErrPasswordResetRateLimit = errors.New("password reset rate limit reached")
 )
 
