@@ -82,6 +82,7 @@ func TestChangesetResolver(t *testing.T) {
 		externalCheckState:  campaigns.ChangesetCheckStatePending,
 		externalReviewState: campaigns.ChangesetReviewStateChangesRequested,
 		publicationState:    campaigns.ChangesetPublicationStatePublished,
+		reconcilerState:     campaigns.ReconcilerStateCompleted,
 		createdByCampaign:   false,
 		metadata: &github.PullRequest{
 			ID:          "12345",
@@ -119,6 +120,16 @@ func TestChangesetResolver(t *testing.T) {
 	if err := store.UpsertChangesetEvents(ctx, events...); err != nil {
 		t.Fatal(err)
 	}
+	campaign := &campaigns.Campaign{
+		Name:            "my-unique-name",
+		NamespaceUserID: userID,
+		AuthorID:        userID,
+	}
+	if err := store.CreateCampaign(ctx, campaign); err != nil {
+		t.Fatal(err)
+	}
+	// Associate the changeset with a campaign, so it's considered in syncer logic.
+	addChangeset(t, ctx, store, campaign, syncedGitHubChangeset.ID)
 
 	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil)
 	if err != nil {
@@ -136,6 +147,8 @@ func TestChangesetResolver(t *testing.T) {
 				Title:      unpublishedSpec.Spec.Title,
 				Body:       unpublishedSpec.Spec.Body,
 				Repository: apitest.Repository{Name: repo.Name},
+				// Not scheduled for sync, because it's not published.
+				NextSyncAt: "",
 				Labels:     []apitest.Label{},
 				Diff: apitest.Comparison{
 					Typename:  "PreviewRepositoryComparison",
@@ -153,6 +166,7 @@ func TestChangesetResolver(t *testing.T) {
 				ExternalID:    "12345",
 				CheckState:    "PENDING",
 				ReviewState:   "CHANGES_REQUESTED",
+				NextSyncAt:    marshalDateTime(t, now.Add(8*time.Hour)),
 				Repository:    apitest.Repository{Name: repo.Name},
 				ExternalURL: apitest.ExternalURL{
 					URL:         "https://github.com/sourcegraph/sourcegraph/pull/12345",
