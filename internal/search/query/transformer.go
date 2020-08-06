@@ -202,7 +202,7 @@ func (g globError) Error() string {
 func reporevToRegex(value string) (string, error) {
 	reporev := strings.SplitN(value, "@", 2)
 	repo := reporev[0]
-	if ContainsNoGlobSymbols(repo) {
+	if ContainsNoGlobSyntax(repo) {
 		repo = fuzzifyGlobPattern(repo)
 	}
 	repo, err := globToRegex(repo)
@@ -218,7 +218,7 @@ func reporevToRegex(value string) (string, error) {
 
 var globSyntax = lazyregexp.New(`[][*?/]`)
 
-func ContainsNoGlobSymbols(value string) bool {
+func ContainsNoGlobSyntax(value string) bool {
 	return !globSyntax.MatchString(value)
 }
 
@@ -239,7 +239,7 @@ func mapGlobToRegex(nodes []Node) ([]Node, error) {
 		case FieldRepo:
 			value, err = reporevToRegex(value)
 		case FieldFile, FieldRepoHasFile:
-			if ContainsNoGlobSymbols(value) {
+			if ContainsNoGlobSyntax(value) {
 				value = fuzzifyGlobPattern(value)
 			}
 			value, err = globToRegex(value)

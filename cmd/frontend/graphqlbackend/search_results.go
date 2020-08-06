@@ -1928,7 +1928,7 @@ func (r *searchResolver) getExactFilePatterns() map[string]struct{} {
 		query.FieldFile,
 		func(value string, negated bool, annotation query.Annotation) {
 			originalValue := r.originalQuery[annotation.Range.Start.Column+len(query.FieldFile)+1 : annotation.Range.End.Column]
-			if !negated && query.ContainsNoGlobSymbols(originalValue) {
+			if !negated && query.ContainsNoGlobSyntax(originalValue) {
 				m[originalValue] = struct{}{}
 			}
 		})

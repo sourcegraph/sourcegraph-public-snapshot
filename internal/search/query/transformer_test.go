@@ -677,8 +677,8 @@ func TestContainsNoGlobSyntax(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.in, func(t *testing.T) {
-			if got := ContainsNoGlobSymbols(tt.in); got != tt.want {
-				t.Errorf("ContainsNoGlobSymbols() = %v, want %v", got, tt.want)
+			if got := ContainsNoGlobSyntax(tt.in); got != tt.want {
+				t.Errorf("ContainsNoGlobSyntax() = %v, want %v", got, tt.want)
 			}
 		})
 	}
