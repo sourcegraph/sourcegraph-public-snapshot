@@ -1452,8 +1452,8 @@ func TestCompareSearchResultsAndOr(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run("test", func(t *testing.T) {
-			if got := compareSearchResultsAndOr(tt.a, tt.b, tt.exactFilePatterns); got != tt.want {
-				t.Errorf("compareSearchResultsAndOr() = %v, want %v", got, tt.want)
+			if got := searchResultIsLess(tt.a, tt.b, tt.exactFilePatterns); got != tt.want {
+				t.Errorf("searchResultIsLess() = %v, want %v", got, tt.want)
 			}
 		})
 	}

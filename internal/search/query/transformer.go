@@ -216,10 +216,10 @@ func reporevToRegex(value string) (string, error) {
 	return value, nil
 }
 
-var globSymbols = lazyregexp.New(`[][*?/]`)
+var globSyntax = lazyregexp.New(`[][*?/]`)
 
 func ContainsNoGlobSymbols(value string) bool {
-	return !globSymbols.MatchString(value)
+	return !globSyntax.MatchString(value)
 }
 
 func fuzzifyGlobPattern(value string) string {

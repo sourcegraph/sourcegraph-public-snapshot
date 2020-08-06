@@ -27,8 +27,6 @@ const (
 	FieldContent            = "content"
 	FieldVisibility         = "visibility"
 
-	FieldFileOffset = len(FieldFile) + 1
-
 	// For diff and commit search only:
 	FieldBefore    = "before"
 	FieldAfter     = "after"
