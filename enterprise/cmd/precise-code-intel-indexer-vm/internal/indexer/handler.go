@@ -67,8 +67,19 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 	return nil
 }
 
-// makeTempDir is a wrapper aorund ioutil.TempDir that can be replaced during unit tests.
-var makeTempDir = func() (string, error) { return ioutil.TempDir("", "") }
+// makeTempDir is a wrapper around ioutil.TempDir that can be replaced during unit tests.
+var makeTempDir = func() (string, error) {
+	// TMPDIR is set in the dev Procfile to avoid requiring developers to explicitly
+	// allow bind mounts of the host's /tmp. If this directory doesn't exist, ioutil.TempDir
+	// below will fail.
+	if tmpdir := os.Getenv("TMPDIR"); tmpdir != "" {
+		if err := os.MkdirAll(tmpdir, os.ModePerm); err != nil {
+			return "", err
+		}
+	}
+
+	return ioutil.TempDir("", "")
+}
 
 // fetchRepository creates a temporary directory and performs a git checkout with the given repository
 // and commit. If there is an error, the temporary directory is removed.
