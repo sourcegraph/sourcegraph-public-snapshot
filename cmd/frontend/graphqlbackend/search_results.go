@@ -1899,6 +1899,7 @@ func compareSearchResults(a, b searchResultURIGetter, exactFilePatterns map[stri
 		_, bMatch := exactFilePatterns[path.Base(bfile)]
 		if aMatch || bMatch {
 			if aMatch && bMatch {
+				// Prefer shorter file names (ie root files come first)
 				if len(afile) != len(bfile) {
 					return len(afile) < len(bfile)
 				}
