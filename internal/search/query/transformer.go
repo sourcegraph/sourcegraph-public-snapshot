@@ -505,6 +505,26 @@ func substituteConcat(nodes []Node, separator string) []Node {
 	return new
 }
 
+// TrailingParensToLiteral is a heuristic used in the context of regular
+// expression search. It checks whether any pattern is annotated with a label
+// HeusticDanglingParens. This label implies that the regular expression is not
+// well-formed, for example, "foo.*bar(" or "foo(.*bar". As a special case for
+// usability we escape a trailing parenthesis and treat it literally. Any other
+// forms are ignored, and will likely not pass validation.
+func TrailingParensToLiteral(nodes []Node) []Node {
+	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
+		if annotation.Labels.isSet(HeuristicDanglingParens) && strings.HasSuffix(value, "(") {
+			value = strings.TrimSuffix(value, "(")
+			value += `\(`
+		}
+		return Pattern{
+			Value:      value,
+			Negated:    negated,
+			Annotation: annotation,
+		}
+	})
+}
+
 // EmptyGroupsToLiteral is a heuristic used in the context of regular expression
 // search. It labels any pattern containing "()" as a literal pattern since in
 // regex it implies the empty string, which is meaningless as a search query and
