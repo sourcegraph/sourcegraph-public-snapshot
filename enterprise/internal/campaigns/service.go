@@ -785,14 +785,8 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 	return campaign, nil
 }
 
-// ErrDeleteProcessingCampaign is returned by DeleteCampaign if the Campaign
-// has been published at the time of deletion but its ChangesetJobs have not
-// finished execution.
-var ErrDeleteProcessingCampaign = errors.New("cannot delete a Campaign while changesets are being created on codehosts")
-
 // DeleteCampaign deletes the Campaign with the given ID if it hasn't been
-// deleted yet. If closeChangesets is true, the changesets associated with the
-// Campaign will be closed on the codehosts.
+// deleted yet.
 func (s *Service) DeleteCampaign(ctx context.Context, id int64) (err error) {
 	traceTitle := fmt.Sprintf("campaign: %d", id)
 	tr, ctx := trace.New(ctx, "service.DeleteCampaign", traceTitle)
@@ -810,23 +804,7 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64) (err error) {
 		return err
 	}
 
-	transaction := func() (err error) {
-		tx, err := s.store.Transact(ctx)
-		if err != nil {
-			return err
-		}
-		defer func() { err = tx.Done(err) }()
-
-		// TODO: Implement logic to find changesets in PUBLISHING state.
-		processing := false
-		if processing {
-			return ErrDeleteProcessingCampaign
-		}
-
-		return tx.DeleteCampaign(ctx, id)
-	}
-
-	return transaction()
+	return s.store.DeleteCampaign(ctx, id)
 }
 
 // CloseOpenChangesets closes the given Changesets on their respective codehosts and syncs them.

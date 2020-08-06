@@ -216,6 +216,11 @@ func TestService(t *testing.T) {
 		if err := svc.DeleteCampaign(ctx, campaign.ID); err != nil {
 			t.Fatalf("campaign not deleted: %s", err)
 		}
+
+		_, err = store.GetCampaign(ctx, GetCampaignOpts{ID: campaign.ID})
+		if err != nil && err != ErrNoResults {
+			t.Fatalf("want campaign to be deleted, but was not: %e", err)
+		}
 	})
 
 	t.Run("CloseCampaign", func(t *testing.T) {
