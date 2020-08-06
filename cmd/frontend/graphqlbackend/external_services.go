@@ -174,6 +174,8 @@ type ExternalServicesArgs struct {
 	graphqlutil.ConnectionArgs
 }
 
+var errMustBeSiteAdminOrSameUser = errors.New("must be site admin or the namespace is same as the authenticated user")
+
 func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalServicesArgs) (*externalServiceConnectionResolver, error) {
 	var namespaceUserID int32
 	if args.Namespace != nil {
@@ -196,7 +198,7 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 		// NOTE: We do not directly return the err here because it contains the desired username,
 		// which then allows attacker to brute force over our database ID and get corresponding
 		// username.
-		return nil, backend.ErrMustBeSiteAdmin
+		return nil, errMustBeSiteAdminOrSameUser
 	}
 
 	opt := db.ExternalServicesListOptions{

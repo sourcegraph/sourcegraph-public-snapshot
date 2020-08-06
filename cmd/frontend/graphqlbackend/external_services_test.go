@@ -240,7 +240,7 @@ func TestExternalServices(t *testing.T) {
 			result, err := (&schemaResolver{}).ExternalServices(context.Background(), &ExternalServicesArgs{
 				Namespace: &id,
 			})
-			if want := backend.ErrMustBeSiteAdmin; err != want {
+			if want := errMustBeSiteAdminOrSameUser; err != want {
 				t.Errorf("err: want %q but got %v", want, err)
 			}
 			if result != nil {
