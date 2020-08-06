@@ -3,6 +3,7 @@ package userpasswd
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -80,28 +81,25 @@ func HandleResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 // If the instance is configured to do so, send the password reset link directly
 // to the user, rather than requiring the admin to send it to them
 func HandleResetPasswordEmail(ctx context.Context, id int32) (string, error) {
-
 	ru, err := backend.MakePasswordResetURL(ctx, id)
-	if err != nil {
-		// TODO: Throw the correct error
-		return "", nil
+	if err == db.ErrPasswordResetRateLimit {
+		return "", errors.New("too many password reset requests. try again in a few minutes")
+	} else if err != nil {
+		return "", errors.New("could not reset password")
 	}
 
 	if !conf.CanSendEmail() {
-		// TODO: Throw the correct error
-		return "", nil
+		return "", errors.New("unable to reset password because email sending is not configured on this site")
 	}
 
 	e, _, err := db.UserEmails.GetPrimaryEmail(ctx, id)
 	if err != nil {
-		// TODO: Throw the correct error
-		return "", nil
+		return "", errors.New("failed to lookup user email")
 	}
 
 	usr, err := db.Users.GetByID(ctx, id)
 	if err != nil {
-		// TODO: Throw the correct error
-		return "", nil
+		return "", errors.New("failed to lookup user")
 	}
 
 	rus := globals.ExternalURL().ResolveReference(ru).String()
