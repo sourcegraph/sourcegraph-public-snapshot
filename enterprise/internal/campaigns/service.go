@@ -119,12 +119,7 @@ func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpe
 		return nil, err
 	}
 
-	repoIDs := make([]api.RepoID, 0, len(cs))
-	for _, c := range cs {
-		repoIDs = append(repoIDs, c.RepoID)
-	}
-
-	accessibleReposByID, err := accessibleRepos(ctx, repoIDs)
+	accessibleReposByID, err := cs.RepoIDs().AccessibleRepos(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -347,14 +342,9 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 
 	// We load all the repositories involved, checking for repository permissions
 	// under the hood.
-	repoIDs := make([]api.RepoID, 0, len(newChangesetSpecs)+len(changesets))
-	for _, spec := range newChangesetSpecs {
-		repoIDs = append(repoIDs, spec.RepoID)
-	}
-	for _, changeset := range changesets {
-		repoIDs = append(repoIDs, changeset.RepoID)
-	}
-	accessibleReposByID, err := accessibleRepos(ctx, repoIDs)
+	repoIDs := newChangesetSpecs.RepoIDs()
+	repoIDs = append(repoIDs, changesets.RepoIDs()...)
+	accessibleReposByID, err := repoIDs.AccessibleRepos(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -828,7 +818,7 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs campaigns.Changese
 		return nil
 	}
 
-	accessibleReposByID, err := accessibleRepos(ctx, cs.RepoIDs())
+	accessibleReposByID, err := cs.RepoIDs().AccessibleRepos(ctx)
 	if err != nil {
 		return err
 	}
@@ -940,25 +930,6 @@ func validateCampaignBranch(branch string) error {
 		return ErrCampaignBranchInvalid
 	}
 	return nil
-}
-
-// accessibleRepos collects the RepoIDs of the changesets and returns a set of
-// the api.RepoID for which the subset of repositories for which the actor in
-// ctx has read permissions.
-func accessibleRepos(ctx context.Context, ids []api.RepoID) (map[api.RepoID]*types.Repo, error) {
-	// 🚨 SECURITY: We use db.Repos.GetByIDs to filter out repositories the
-	// user doesn't have access to.
-	accessibleRepos, err := db.Repos.GetByIDs(ctx, ids...)
-	if err != nil {
-		return nil, err
-	}
-
-	accessibleRepoIDs := make(map[api.RepoID]*types.Repo, len(accessibleRepos))
-	for _, r := range accessibleRepos {
-		accessibleRepoIDs[r.ID] = r
-	}
-
-	return accessibleRepoIDs, nil
 }
 
 // checkNamespaceAccess checks whether the current user in the ctx has access

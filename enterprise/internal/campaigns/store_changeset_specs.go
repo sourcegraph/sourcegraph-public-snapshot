@@ -265,10 +265,10 @@ type ListChangesetSpecsOpts struct {
 }
 
 // ListChangesetSpecs lists ChangesetSpecs with the given filters.
-func (s *Store) ListChangesetSpecs(ctx context.Context, opts ListChangesetSpecsOpts) (cs []*campaigns.ChangesetSpec, next int64, err error) {
+func (s *Store) ListChangesetSpecs(ctx context.Context, opts ListChangesetSpecsOpts) (cs campaigns.ChangesetSpecs, next int64, err error) {
 	q := listChangesetSpecsQuery(&opts)
 
-	cs = make([]*campaigns.ChangesetSpec, 0, opts.Limit)
+	cs = make(campaigns.ChangesetSpecs, 0, opts.Limit)
 	err = s.query(ctx, q, func(sc scanner) error {
 		var c campaigns.ChangesetSpec
 		if err := scanChangesetSpec(&c, sc); err != nil {
