@@ -129,6 +129,8 @@ func (r *changesetsConnectionResolver) computeAllAccessibleChangesets(ctx contex
 			return
 		}
 
+		// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
+		// filters out repositories that the user doesn't have access to.
 		accessibleRepos, err := db.Repos.GetRepoIDsSet(ctx, cs.RepoIDs()...)
 		if err != nil {
 			r.allAccessibleChangesetsErr = err
@@ -169,6 +171,8 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) (campaigns.C
 			return
 		}
 
+		// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
+		// filters out repositories that the user doesn't have access to.
 		r.reposByID, r.err = db.Repos.GetRepoIDsSet(ctx, r.changesets.RepoIDs()...)
 	})
 

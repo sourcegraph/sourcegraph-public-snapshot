@@ -119,6 +119,8 @@ func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpe
 		return nil, err
 	}
 
+	// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
+	// filters out repositories that the user doesn't have access to.
 	accessibleReposByID, err := db.Repos.GetRepoIDsSet(ctx, cs.RepoIDs()...)
 	if err != nil {
 		return nil, err
@@ -344,6 +346,8 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	// under the hood.
 	repoIDs := newChangesetSpecs.RepoIDs()
 	repoIDs = append(repoIDs, changesets.RepoIDs()...)
+	// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
+	// filters out repositories that the user doesn't have access to.
 	accessibleReposByID, err := db.Repos.GetRepoIDsSet(ctx, repoIDs...)
 	if err != nil {
 		return nil, err
@@ -818,6 +822,8 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs campaigns.Changese
 		return nil
 	}
 
+	// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
+	// filters out repositories that the user doesn't have access to.
 	accessibleReposByID, err := db.Repos.GetRepoIDsSet(ctx, cs.RepoIDs()...)
 	if err != nil {
 		return err
