@@ -60,9 +60,9 @@ Click the <img src=../img/brackets.png> toggle to activate structural search. St
 
 Note: It is not possible to perform case-insensitive matching with structural search.
 
-## Keywords (all searches)
+## Keywords 
 
-The following keywords can be used on all searches (using [RE2 syntax](https://golang.org/s/re2syntax) any place a regex is accepted):
+Unless stated otherwise, the following keywords can be used on all searches (using [RE2 syntax](https://golang.org/s/re2syntax) any place a regex is accepted):
 
 | Keyword | Description | Examples |
 | --- | --- | --- |
@@ -108,6 +108,12 @@ Returns results for files containing matches on the left _and_ right side of the
 | `or`, `OR` | [`conf.Get( or log15.Error(`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+conf.Get%28+or+log15.Error%28&patternType=regexp), [<code>conf.Get( or log15.Error( or after   </code>](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+conf.Get%28+or+log15.Error%28+or+after&patternType=regexp)|
 
 Returns file content matching either on the left or right side, or both (set union). The number of results reports the number of matches of both strings.
+
+| Operator | Example |
+| --- | --- |
+| `not`, `NOT` | [`panic not file:main.go lang:go`](https://sourcegraph.com/search?q=panic+not+file:main.go+lang:go&patternType=literal),
+
+`NOT <keyword>:` is equivalent to `-<keyword>:`. `NOT` can only stand before negatable keywords, such as `file`, `content`, `lang`, `repohasfile`, and `repo`. 
 
 ### Operator precedence and groups
 
