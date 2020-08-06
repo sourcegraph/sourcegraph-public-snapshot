@@ -486,11 +486,15 @@ func (cs Changesets) IDs() []int64 {
 	return ids
 }
 
-// IDs returns the RepoIDs of all changesets in the slice.
+// IDs returns the unique RepoIDs of all changesets in the slice.
 func (cs Changesets) RepoIDs() []api.RepoID {
-	repoIDs := make([]api.RepoID, len(cs))
-	for i, c := range cs {
-		repoIDs[i] = c.RepoID
+	repoIDMap := make(map[api.RepoID]struct{})
+	for _, c := range cs {
+		repoIDMap[c.RepoID] = struct{}{}
+	}
+	repoIDs := make([]api.RepoID, len(repoIDMap))
+	for id := range repoIDMap {
+		repoIDs = append(repoIDs, id)
 	}
 	return repoIDs
 }
