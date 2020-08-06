@@ -1907,7 +1907,8 @@ func sortResults(r []SearchResultResolver) {
 }
 
 // compareSearchResultsAndOr is like compareSearchResults, but overrides sorting in alphabetical order if
-// one of the filenames is contained in exactFilePatterns.
+// one of the filenames is contained in exactFilePatterns, in which case exact matches are sorted by
+// length of their file path and then alphabetically.
 func compareSearchResultsAndOr(a, b searchResultURIGetter, exactFilePatterns map[string]struct{}) bool {
 	arepo, afile := a.searchResultURIs()
 	brepo, bfile := b.searchResultURIs()
