@@ -155,10 +155,8 @@ type Label struct {
 type ChangesetConnection struct {
 	Nodes      []Changeset
 	TotalCount int
-	PageInfo   struct {
-		HasNextPage bool
-	}
-	Stats ChangesetConnectionStats
+	PageInfo   PageInfo
+	Stats      ChangesetConnectionStats
 }
 
 type ChangesetConnectionStats struct {
@@ -243,4 +241,8 @@ type ChangesetSpecDescription struct {
 type GitCommitDescription struct {
 	Message string
 	Diff    string
+}
+
+type PageInfo struct {
+	HasNextPage bool
 }
