@@ -1,4 +1,4 @@
-package workerutil
+package store
 
 import "errors"
 

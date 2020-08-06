@@ -32,19 +32,19 @@ import { PrivateCodeCta } from '../search/input/PrivateCodeCta'
 
 export interface RepogroupPageProps
     extends SettingsCascadeProps<Settings>,
-        ThemeProps,
-        ThemePreferenceProps,
-        ActivationProps,
-        PatternTypeProps,
-        CaseSensitivityProps,
-        KeyboardShortcutsProps,
-        EventLoggerProps,
-        ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
-        InteractiveSearchProps,
-        SmartSearchFieldProps,
-        CopyQueryButtonProps,
-        VersionContextProps {
+    ThemeProps,
+    ThemePreferenceProps,
+    ActivationProps,
+    PatternTypeProps,
+    CaseSensitivityProps,
+    KeyboardShortcutsProps,
+    EventLoggerProps,
+    ExtensionsControllerProps<'executeCommand' | 'services'>,
+    PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+    InteractiveSearchProps,
+    SmartSearchFieldProps,
+    CopyQueryButtonProps,
+    VersionContextProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -91,7 +91,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
     }
 
     return (
-        <div className="repogroup-page">
+        <div className="web-content repogroup-page">
             <PageTitle title={props.repogroupMetadata.title} />
             <RepogroupPageLogo
                 className="repogroup-page__logo"
@@ -100,7 +100,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
             />
             <div className="repogroup-page__subheading">
                 <span className="text-monospace">
-                    <span className="repogroup-page__keyword-text">repogroup:</span>
+                    <span className="search-keyword">repogroup:</span>
                     {props.repogroupMetadata.name}
                 </span>
             </div>
@@ -124,13 +124,13 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                             <h3 className="mb-3">{example.title}</h3>
                             <p>{example.description}</p>
                             <div className="d-flex mb-4">
-                                <div className="repogroup-page__example-bar form-control text-monospace ">
-                                    <span className="repogroup-page__keyword-text">repogroup:</span>
+                                <small className="repogroup-page__example-bar form-control text-monospace ">
+                                    <span className="search-keyword">repogroup:</span>
                                     {props.repogroupMetadata.name} {example.exampleQuery}
-                                </div>
+                                </small>
                                 <div className="d-flex">
                                     <button
-                                        className="repogroup-page__example-search-button btn btn-primary search-button__btn test-search-button btn-secondary"
+                                        className="btn btn-primary btn-sm search-button__btn test-search-button btn-secondary"
                                         type="button"
                                         aria-label="Search"
                                         onClick={onSubmitExample(
@@ -151,16 +151,16 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                     </div>
                     <div className="order-2-lg order-1-xs">
                         <div className="repogroup-page__repo-card card">
-                            <h2 className="font-weight-normal">
+                            <h2 className="web-content__title">
                                 <SourceRepositoryMultipleIcon className="icon-inline mr-2" />
                                 Repositories
                             </h2>
                             <p>
                                 Using the syntax{' '}
-                                <span className="text-monospace">
-                                    <span className="repogroup-page__keyword-text">repogroup:</span>
+                                <code>
+                                    <span className="search-keyword ">repogroup:</span>
                                     {props.repogroupMetadata.name}
-                                </span>{' '}
+                                </code>{' '}
                                 in a query will search these repositories:
                             </p>
                             <div className="repogroup-page__repo-list row">
@@ -195,7 +195,7 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
                 <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
                     <GithubIcon className="icon-inline repogroup-page__repo-list-icon" />
                 </a>
-                <Link to={`/${repo}`} className="text-monospace repogroup-page__web-link">
+                <Link to={`/${repo}`} className="text-monospace search-keyword">
                     {displayRepoName(repo)}
                 </Link>
             </>
@@ -205,7 +205,7 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
                 <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
                     <GitlabIcon className="icon-inline repogroup-page__repo-list-icon" />
                 </a>
-                <Link to={`/${repo}`} className="text-monospace repogroup-page__web-link">
+                <Link to={`/${repo}`} className="text-monospace search-keyword">
                     {displayRepoName(repo)}
                 </Link>
             </>
@@ -215,7 +215,7 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
                 <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
                     <BitbucketIcon className="icon-inline repogroup-page__repo-list-icon" />
                 </a>
-                <Link to={`/${repo}`} className="text-monospace repogroup-page__web-link">
+                <Link to={`/${repo}`} className="text-monospace search-keyword">
                     {displayRepoName(repo)}
                 </Link>
             </>

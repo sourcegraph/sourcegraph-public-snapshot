@@ -35,20 +35,20 @@ import { PrivateCodeCta } from './PrivateCodeCta'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
-        ThemeProps,
-        ThemePreferenceProps,
-        ActivationProps,
-        PatternTypeProps,
-        CaseSensitivityProps,
-        KeyboardShortcutsProps,
-        EventLoggerProps,
-        ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
-        InteractiveSearchProps,
-        SmartSearchFieldProps,
-        CopyQueryButtonProps,
-        VersionContextProps,
-        RepogroupHomepageProps {
+    ThemeProps,
+    ThemePreferenceProps,
+    ActivationProps,
+    PatternTypeProps,
+    CaseSensitivityProps,
+    KeyboardShortcutsProps,
+    EventLoggerProps,
+    ExtensionsControllerProps<'executeCommand' | 'services'>,
+    PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+    InteractiveSearchProps,
+    SmartSearchFieldProps,
+    CopyQueryButtonProps,
+    VersionContextProps,
+    RepogroupHomepageProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -82,17 +82,17 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
             () =>
                 codeInsightsEnabled
                     ? getViewsForContainer(
-                          ContributableViewContainer.Homepage,
-                          {},
-                          props.extensionsController.services.view
-                      )
+                        ContributableViewContainer.Homepage,
+                        {},
+                        props.extensionsController.services.view
+                    )
                     : EMPTY,
             [codeInsightsEnabled, props.extensionsController.services.view]
         )
     )
-
+    console.log('###', props)
     return (
-        <div className="search-page">
+        <div className="web-content search-page">
             <BrandLogo className="search-page__logo" isLightTheme={props.isLightTheme} />
             {props.isSourcegraphDotCom && <div className="search-page__cloud-tag-line">Search public code</div>}
             <div
@@ -108,10 +108,10 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                     <div className="search-page__repogroup-content container-fluid mt-5">
                         <div className="d-flex align-items-baseline mb-3">
                             <h3 className="search-page__help-content-header mr-2">Search in repository groups</h3>
-                            <span className="text-monospace font-weight-normal search-page__lang-ref">
-                                <span className="search-page__keyword-text">repogroup:</span>
+                            <small className="text-monospace font-weight-normal small">
+                                <span className="search-keyword">repogroup:</span>
                                 <i>name</i>
-                            </span>
+                            </small>
                         </div>
                         <div className="search-page__repogroup-list-cards">
                             {repogroupList.map(repogroup => (
@@ -123,31 +123,28 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                     <div className="d-flex flex-column">
                                         <Link
                                             to={repogroup.url}
-                                            className="search-page__repogroup-listing-title search-page__web-link font-weight-bold"
+                                            className="search-page__repogroup-listing-title font-weight-bold"
                                         >
                                             {repogroup.title}
                                         </Link>
-                                        <p className="search-page__repogroup-listing-description">
-                                            {repogroup.homepageDescription}
-                                        </p>
+                                        <p>{repogroup.homepageDescription}</p>
                                     </div>
                                 </div>
                             ))}
                         </div>
                         <div className="search-page__help-content row mt-5">
-                            <div className="search-page__example-searches col-xs-12 col-lg-5 col-xl-6">
+                            <div className="col-xs-12 col-lg-5 col-xl-6">
                                 <h3 className="search-page__help-content-header">Example searches</h3>
                                 <ul className="list-group-flush p-0 mt-2">
                                     <li className="list-group-item px-0 pt-3 pb-2">
                                         <Link
                                             to="/search?q=lang:javascript+alert%28:%5Bvariable%5D%29&patternType=structural"
-                                            className="text-monospace mb-2"
+                                            className="search-query-link text-monospace mb-2"
                                             onClick={SearchExampleClicked(
                                                 '/search?q=lang:javascript+alert%28:%5Bvariable%5D%29&patternType=structural'
                                             )}
                                         >
-                                            <span className="search-page__keyword-text">lang:</span>javascript
-                                            alert(:[variable])
+                                            <span className="search-keyword">lang:</span>javascript alert(:[variable])
                                         </Link>{' '}
                                         <p className="mt-2">
                                             Find usages of the alert() method that displays an alert box.
@@ -156,13 +153,13 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                     <li className="list-group-item px-0 pt-3 pb-2">
                                         <Link
                                             to="/search?q=repogroup:python+from+%5CB%5C.%5Cw%2B+import+%5Cw%2B&patternType=regexp"
-                                            className="text-monospace mb-2"
+                                            className="search-query-link text-monospace mb-2"
                                             onClick={SearchExampleClicked(
                                                 '/search?q=repogroup:python+from+%5CB%5C.%5Cw%2B+import+%5Cw%2B&patternType=regexp'
                                             )}
                                         >
-                                            <span className="search-page__keyword-text">repogroup:</span>python from
-                                            \B\.\w+ import \w+
+                                            <span className="search-keyword">repogroup:</span>python from \B\.\w+ import
+                                            \w+
                                         </Link>{' '}
                                         <p className="mt-2">
                                             Search for explicit imports with one or more leading dots that indicate
@@ -172,15 +169,14 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                     <li className="list-group-item px-0 pt-3 pb-2">
                                         <Link
                                             to='/search?q=repo:%5Egithub%5C.com/golang/go%24+type:diff+after:"1+week+ago"&patternType=literal"'
-                                            className="text-monospace mb-2"
+                                            className="search-query-link text-monospace mb-2"
                                             onClick={SearchExampleClicked(
                                                 '/search?q=repo:%5Egithub%5C.com/golang/go%24+type:diff+after:"1+week+ago"&patternType=literal"'
                                             )}
                                         >
-                                            <span className="search-page__keyword-text">repo:</span>
-                                            ^github\.com/golang/go${' '}
-                                            <span className="search-page__keyword-text">type:</span>
-                                            diff <span className="search-page__keyword-text">after:</span>"1 week ago"
+                                            <span className="search-keyword">repo:</span>
+                                            ^github\.com/golang/go$ <span className="search-keyword">type:</span>
+                                            diff <span className="search-keyword">after:</span>"1 week ago"
                                         </Link>{' '}
                                         <p className="mt-2">
                                             Browse diffs for recent code changes in the 'golang/go' GitHub repository.
@@ -189,13 +185,13 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                     <li className="list-group-item px-0 pt-3 pb-2">
                                         <Link
                                             to='/search?q=file:pod.yaml+content:"kind:+ReplicationController"&patternType=literal'
-                                            className="text-monospace mb-2"
+                                            className="search-query-link text-monospace mb-2"
                                             onClick={SearchExampleClicked(
                                                 '/search?q=repo:%5Egithub%5C.com/golang/go%24+type:diff+after:"1+week+ago"&patternType=literal"'
                                             )}
                                         >
-                                            <span className="search-page__keyword-text">file:</span>pod.yaml{' '}
-                                            <span className="search-page__keyword-text">content:</span>"kind:
+                                            <span className="search-keyword">file:</span>pod.yaml{' '}
+                                            <span className="search-keyword">content:</span>"kind:
                                             ReplicationController"
                                         </Link>{' '}
                                         <p className="mt-2">
@@ -209,10 +205,10 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                 <div className="align-items-baseline mb-4">
                                     <h3 className="search-page__help-content-header">
                                         Search a language{' '}
-                                        <span className="text-monospace font-weight-normal search-page__lang-ref">
-                                            <span className="search-page__keyword-text ml-1">lang:</span>
-                                            <i className="search-page__keyword-value-text">name</i>
-                                        </span>
+                                        <small className="text-monospace font-weight-normal">
+                                            <span className="search-keyword ml-1">lang:</span>
+                                            <i>name</i>
+                                        </small>
                                     </h3>
                                 </div>
                                 <div className="d-flex row-cols-2 mt-2">
@@ -221,7 +217,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                             .slice(0, Math.ceil(homepageLanguageList.length / 2))
                                             .map(language => (
                                                 <Link
-                                                    className="search-page__web-link search-page__lang-link text-monospace mb-3"
+                                                    className="search-keyword search-page__lang-link text-monospace mb-3"
                                                     to={`/search?q=lang:${language.filterName}`}
                                                     key={language.name}
                                                 >
@@ -237,7 +233,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                             )
                                             .map(language => (
                                                 <Link
-                                                    className="search-page__web-link search-page__lang-link text-monospace mb-3"
+                                                    className="search-keyword search-page__lang-link text-monospace mb-3"
                                                     to={`/search?q=lang:${language.filterName}`}
                                                     key={language.name}
                                                     onClick={LanguageExampleClicked(language.filterName)}

@@ -104,11 +104,12 @@ export const changesetFieldsFragment = gql`
     fragment ChangesetFields on Changeset {
         __typename
 
-        state
         createdAt
         updatedAt
         nextSyncAt
         externalState
+        publicationState
+        reconcilerState
         ... on HiddenExternalChangeset {
             id
         }

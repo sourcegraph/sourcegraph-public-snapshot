@@ -123,12 +123,13 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 
 		// Upload storybook to Chromatic
 		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
-		if c.branch == "master" || c.releaseBranch || c.isBextReleaseBranch {
+		if !c.isPR() {
 			chromaticCommand += " --auto-accept-changes"
 		}
 		pipeline.AddStep(":chromatic:",
 			bk.AutomaticRetry(5),
 			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("yarn gulp generate"),
 			bk.Cmd(chromaticCommand))
 
 		// Shared tests
@@ -283,7 +284,7 @@ func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 				addDockerImage(c, dockerImage, false)(pipeline)
 			}
 			pipeline.AddWait()
-		case c.branch == "master":
+		case c.branch == "master" || c.branch == "main":
 			for _, dockerImage := range allDockerImages {
 				addDockerImage(c, dockerImage, true)(pipeline)
 			}

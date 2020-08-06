@@ -80,18 +80,24 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 		}
 
 		switch e.Kind {
-		case campaigns.ChangesetEventKindGitHubClosed, campaigns.ChangesetEventKindBitbucketServerDeclined:
+		case campaigns.ChangesetEventKindGitHubClosed,
+			campaigns.ChangesetEventKindBitbucketServerDeclined,
+			campaigns.ChangesetEventKindGitLabClosed:
 			// Merged is a final state. We can ignore everything after.
 			if currentExtState != campaigns.ChangesetExternalStateMerged {
 				currentExtState = campaigns.ChangesetExternalStateClosed
 				pushStates(et)
 			}
 
-		case campaigns.ChangesetEventKindGitHubMerged, campaigns.ChangesetEventKindBitbucketServerMerged:
+		case campaigns.ChangesetEventKindGitHubMerged,
+			campaigns.ChangesetEventKindBitbucketServerMerged,
+			campaigns.ChangesetEventKindGitLabMerged:
 			currentExtState = campaigns.ChangesetExternalStateMerged
 			pushStates(et)
 
-		case campaigns.ChangesetEventKindGitHubReopened, campaigns.ChangesetEventKindBitbucketServerReopened:
+		case campaigns.ChangesetEventKindGitHubReopened,
+			campaigns.ChangesetEventKindBitbucketServerReopened,
+			campaigns.ChangesetEventKindGitLabReopened:
 			// Merged is a final state. We can ignore everything after.
 			if currentExtState != campaigns.ChangesetExternalStateMerged {
 				currentExtState = campaigns.ChangesetExternalStateOpen

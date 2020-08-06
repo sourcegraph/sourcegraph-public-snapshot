@@ -298,14 +298,16 @@ func TestChangesetEvents(t *testing.T) {
 			{ID: 22},
 		}
 
+		mr := &gitlab.MergeRequest{
+			Notes:     notes,
+			Pipelines: pipelines,
+		}
+
 		cases = append(cases, testCase{
 			name: "gitlab",
 			changeset: Changeset{
-				ID: 1234,
-				Metadata: &gitlab.MergeRequest{
-					Notes:     notes,
-					Pipelines: pipelines,
-				},
+				ID:       1234,
+				Metadata: mr,
 			},
 			events: []*ChangesetEvent{
 				{
@@ -498,7 +500,7 @@ func TestChangeset_SetMetadata(t *testing.T) {
 			meta: &gitlab.MergeRequest{
 				IID:          12345,
 				SourceBranch: "branch",
-				UpdatedAt:    time.Unix(10, 0),
+				UpdatedAt:    gitlab.Time{Time: time.Unix(10, 0)},
 			},
 			want: &Changeset{
 				ExternalID:          "12345",
@@ -566,7 +568,7 @@ func TestChangeset_ExternalCreatedAt(t *testing.T) {
 			CreatedAt: want,
 		},
 		"GitLab": &gitlab.MergeRequest{
-			CreatedAt: want,
+			CreatedAt: gitlab.Time{Time: want},
 		},
 	} {
 		t.Run(name, func(t *testing.T) {

@@ -6,10 +6,11 @@ import (
 
 	"github.com/efritz/glock"
 	"github.com/prometheus/client_golang/prometheus"
+	storemocks "github.com/sourcegraph/sourcegraph/internal/workerutil/store/mocks"
 )
 
 func TestResetter(t *testing.T) {
-	store := NewMockStore()
+	store := storemocks.NewMockStore()
 	clock := glock.NewMockClock()
 	options := ResetterOptions{
 		Interval: time.Second,

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"math/rand"
 	"regexp"
 	regexpsyntax "regexp/syntax"
 	"sort"
@@ -43,6 +42,8 @@ import (
 // logic that spans out into all the other search_* files.
 var mockResolveRepositories func(effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*search.RepositoryRevisions, excludedRepos *excludedRepos, overLimit bool, err error)
 
+var disallowLogQuery = lazyregexp.New(`(type:symbol|type:commit|type:diff)`)
+
 func maxReposToSearch() int {
 	switch max := conf.Get().MaxReposToSearch; {
 	case max <= 0:
@@ -71,9 +72,6 @@ type SearchImplementer interface {
 
 // NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
 func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
-	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
-	defer tr.Finish()
-
 	settings, err := decodedViewerFinalSettings(ctx)
 	if err != nil {
 		return nil, err
@@ -92,8 +90,8 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 	}
 
 	if envvar.SourcegraphDotComMode() {
-		// Instrumentation to log 1 in 10 search inputs for differential testing, see #12477.
-		if rand.Intn(10) == 0 {
+		// Instrumentation to log search inputs for differential testing, see #12477.
+		if !disallowLogQuery.MatchString(args.Query) {
 			log15.Info("search input", "type", searchType, "magic-887c6d4c", args.Query)
 		}
 	}
