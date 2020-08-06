@@ -11,6 +11,7 @@ import (
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
@@ -128,7 +129,7 @@ func (r *changesetsConnectionResolver) computeAllAccessibleChangesets(ctx contex
 			return
 		}
 
-		accessibleRepos, err := cs.RepoIDs().AccessibleRepos(ctx)
+		accessibleRepos, err := db.Repos.GetRepoIDsSet(ctx, cs.RepoIDs()...)
 		if err != nil {
 			r.allAccessibleChangesetsErr = err
 			return
@@ -168,7 +169,7 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) (campaigns.C
 			return
 		}
 
-		r.reposByID, r.err = r.changesets.RepoIDs().AccessibleRepos(ctx)
+		r.reposByID, r.err = db.Repos.GetRepoIDsSet(ctx, r.changesets.RepoIDs()...)
 	})
 
 	return r.changesets, r.reposByID, r.err

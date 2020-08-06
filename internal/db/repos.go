@@ -117,6 +117,20 @@ func (s *repos) GetByIDs(ctx context.Context, ids ...api.RepoID) ([]*types.Repo,
 	return s.getReposBySQL(ctx, true, q)
 }
 
+func (s *repos) GetRepoIDsSet(ctx context.Context, ids ...api.RepoID) (map[api.RepoID]*types.Repo, error) {
+	repos, err := s.GetByIDs(ctx, ids...)
+	if err != nil {
+		return nil, err
+	}
+
+	repoMap := make(map[api.RepoID]*types.Repo, len(repos))
+	for _, r := range repos {
+		repoMap[r.ID] = r
+	}
+
+	return repoMap, nil
+}
+
 func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
 	if Mocks.Repos.Count != nil {
 		return Mocks.Repos.Count(ctx, opt)

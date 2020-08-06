@@ -1,7 +1,6 @@
 package campaigns
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -17,9 +16,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -477,37 +474,16 @@ func (c *Changeset) URL() (s string, err error) {
 	}
 }
 
-// RepoIDs is a slice of RepoIDs.
-type RepoIDs []api.RepoID
-
-// AccessibleRepos returns the subset of repositories for which the actor in
-// ctx has read permissions.
-func (rs RepoIDs) AccessibleRepos(ctx context.Context) (map[api.RepoID]*types.Repo, error) {
-	// 🚨 SECURITY: We use db.Repos.GetByIDs to filter out repositories the
-	// user doesn't have access to.
-	accessibleRepos, err := db.Repos.GetByIDs(ctx, rs...)
-	if err != nil {
-		return nil, err
-	}
-
-	accessibleRepoIDs := make(map[api.RepoID]*types.Repo, len(accessibleRepos))
-	for _, r := range accessibleRepos {
-		accessibleRepoIDs[r.ID] = r
-	}
-
-	return accessibleRepoIDs, nil
-}
-
 // ChangesetSpecs is a slice of *ChangesetSpecs.
 type ChangesetSpecs []*ChangesetSpec
 
 // IDs returns the unique RepoIDs of all changeset specs in the slice.
-func (cs ChangesetSpecs) RepoIDs() RepoIDs {
+func (cs ChangesetSpecs) RepoIDs() []api.RepoID {
 	repoIDMap := make(map[api.RepoID]struct{})
 	for _, c := range cs {
 		repoIDMap[c.RepoID] = struct{}{}
 	}
-	repoIDs := make(RepoIDs, 0)
+	repoIDs := make([]api.RepoID, 0)
 	for id := range repoIDMap {
 		repoIDs = append(repoIDs, id)
 	}
@@ -527,12 +503,12 @@ func (cs Changesets) IDs() []int64 {
 }
 
 // IDs returns the unique RepoIDs of all changesets in the slice.
-func (cs Changesets) RepoIDs() RepoIDs {
+func (cs Changesets) RepoIDs() []api.RepoID {
 	repoIDMap := make(map[api.RepoID]struct{})
 	for _, c := range cs {
 		repoIDMap[c.RepoID] = struct{}{}
 	}
-	repoIDs := make(RepoIDs, len(repoIDMap))
+	repoIDs := make([]api.RepoID, len(repoIDMap))
 	for id := range repoIDMap {
 		repoIDs = append(repoIDs, id)
 	}

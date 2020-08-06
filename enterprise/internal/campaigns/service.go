@@ -119,7 +119,7 @@ func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpe
 		return nil, err
 	}
 
-	accessibleReposByID, err := cs.RepoIDs().AccessibleRepos(ctx)
+	accessibleReposByID, err := db.Repos.GetRepoIDsSet(ctx, cs.RepoIDs()...)
 	if err != nil {
 		return nil, err
 	}
@@ -344,7 +344,7 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	// under the hood.
 	repoIDs := newChangesetSpecs.RepoIDs()
 	repoIDs = append(repoIDs, changesets.RepoIDs()...)
-	accessibleReposByID, err := repoIDs.AccessibleRepos(ctx)
+	accessibleReposByID, err := db.Repos.GetRepoIDsSet(ctx, repoIDs...)
 	if err != nil {
 		return nil, err
 	}
@@ -818,7 +818,7 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs campaigns.Changese
 		return nil
 	}
 
-	accessibleReposByID, err := cs.RepoIDs().AccessibleRepos(ctx)
+	accessibleReposByID, err := db.Repos.GetRepoIDsSet(ctx, cs.RepoIDs()...)
 	if err != nil {
 		return err
 	}

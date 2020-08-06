@@ -11,6 +11,7 @@ import (
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
@@ -90,9 +91,9 @@ func (r *changesetSpecConnectionResolver) compute(ctx context.Context) (campaign
 			return
 		}
 
-		// 🚨 SECURITY: RepoIDs.AccessibleRepos uses the authzFilter under the hood and
+		// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
 		// filters out repositories that the user doesn't have access to.
-		r.reposByID, r.err = r.changesetSpecs.RepoIDs().AccessibleRepos(ctx)
+		r.reposByID, r.err = db.Repos.GetRepoIDsSet(ctx, r.changesetSpecs.RepoIDs()...)
 	})
 
 	return r.changesetSpecs, r.reposByID, r.next, r.err
