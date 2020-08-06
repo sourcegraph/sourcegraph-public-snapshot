@@ -1913,12 +1913,12 @@ func compareSearchResults(a, b searchResultURIGetter, exactFilePatterns map[stri
 	return arepo < brepo
 }
 
-func (r *searchResolver) sortResults(ctx context.Context, rr []SearchResultResolver) {
+func (r *searchResolver) sortResults(ctx context.Context, results []SearchResultResolver) {
 	var exactPatterns map[string]struct{}
 	if settings, err := decodedViewerFinalSettings(ctx); err != nil || getBoolPtr(settings.SearchGlobbing, false) {
 		exactPatterns = r.getExactFilePatterns()
 	}
-	sort.Slice(rr, func(i, j int) bool { return compareSearchResults(rr[i], rr[j], exactPatterns) })
+	sort.Slice(results, func(i, j int) bool { return compareSearchResults(results[i], results[j], exactPatterns) })
 }
 
 // getExactFilePatterns returns the set of file patterns without glob syntax.
