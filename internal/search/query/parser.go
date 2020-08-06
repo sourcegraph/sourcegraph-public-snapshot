@@ -548,11 +548,7 @@ func (p *parser) ParsePattern() Pattern {
 	value, advance, sawDanglingParen := ScanValue(p.buf[p.pos:], isSet(p.heuristics, allowDanglingParens))
 	var labels labels
 	if sawDanglingParen {
-		// If we saw a dangling parenthesis, this is not a well-formed
-		// regular expression and we will interpret it as a literal.
-		// TODO(rvantonder): Try to still support a trailing parentheses
-		// combined with regex, like "foo.*bar(".
-		labels = HeuristicDanglingParens | Literal
+		labels = HeuristicDanglingParens | Regexp
 	} else {
 		labels = Regexp
 	}
@@ -965,7 +961,7 @@ func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 		}
 		query = substituteConcat(query, " ")
 	case SearchTypeRegex:
-		query = EmptyGroupsToLiteral(query)
+		query = Map(query, EmptyGroupsToLiteral, TrailingParensToLiteral)
 	}
 
 	if options.Globbing {
