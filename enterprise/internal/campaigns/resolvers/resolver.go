@@ -395,7 +395,7 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 
 	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx)
 	if authErr != nil && authErr != backend.ErrMustBeSiteAdmin {
-		return nil, err
+		return nil, authErr
 	}
 	isSiteAdmin := authErr != backend.ErrMustBeSiteAdmin
 	if !isSiteAdmin {
@@ -414,7 +414,11 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 		default:
 			err = errors.Errorf("Invalid namespace %q", args.Namespace)
 		}
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	return &campaignsConnectionResolver{
 		store:       r.store,
 		httpFactory: r.httpFactory,
