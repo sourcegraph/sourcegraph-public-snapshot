@@ -124,7 +124,7 @@ func GitServer() *Container {
 							Owner:           ObservableOwnerDistribution,
 							PossibleSolutions: strings.Replace(`
 								- If usage is high:
-									- **Kubernetes:** Consider increasing memory limits in 'Deployment.yaml' for the {{CONTAINER_NAME}} service.
+									- **Kubernetes:** Consider increasing memory limits in the 'Deployment.yaml' for the {{CONTAINER_NAME}} service.
 									- **Docker Compose:** Consider increasing 'memory:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
 								- If usage is low, consider decreasing the above values.
 							`, "{{CONTAINER_NAME}}", "gitserver", -1),

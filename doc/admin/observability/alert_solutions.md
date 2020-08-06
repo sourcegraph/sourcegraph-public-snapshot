@@ -245,7 +245,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the frontend service.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the frontend service.
 	- **Docker Compose:** Consider increasing `cpus:` of the frontend container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -258,7 +258,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the frontend service.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the frontend service.
 	- **Docker Compose:** Consider increasing `memory:` of the frontend container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -423,7 +423,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the gitserver service.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the gitserver service.
 	- **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -436,7 +436,7 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the gitserver service.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the gitserver service.
 	- **Docker Compose:** Consider increasing `memory:` of the gitserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -528,7 +528,7 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the github-proxy service.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the github-proxy service.
 	- **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -541,7 +541,7 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the github-proxy service.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the github-proxy service.
 	- **Docker Compose:** Consider increasing `memory:` of the github-proxy container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -653,7 +653,7 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the precise-code-intel-bundle-manager service.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the precise-code-intel-bundle-manager service.
 	- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -666,7 +666,7 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the precise-code-intel-bundle-manager service.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the precise-code-intel-bundle-manager service.
 	- **Docker Compose:** Consider increasing `memory:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -765,7 +765,7 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the precise-code-intel-worker service.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the precise-code-intel-worker service.
 	- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -778,7 +778,7 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the precise-code-intel-worker service.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the precise-code-intel-worker service.
 	- **Docker Compose:** Consider increasing `memory:` of the precise-code-intel-worker container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -877,7 +877,7 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the precise-code-intel-indexer service.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the precise-code-intel-indexer service.
 	- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -890,7 +890,7 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the precise-code-intel-indexer service.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the precise-code-intel-indexer service.
 	- **Docker Compose:** Consider increasing `memory:` of the precise-code-intel-indexer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -989,7 +989,7 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the query-runner service.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the query-runner service.
 	- **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -1002,7 +1002,7 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the query-runner service.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the query-runner service.
 	- **Docker Compose:** Consider increasing `memory:` of the query-runner container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -1101,7 +1101,7 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the replacer service.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the replacer service.
 	- **Docker Compose:** Consider increasing `cpus:` of the replacer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -1114,7 +1114,7 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the replacer service.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the replacer service.
 	- **Docker Compose:** Consider increasing `memory:` of the replacer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -1213,7 +1213,7 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the repo-updater service.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the repo-updater service.
 	- **Docker Compose:** Consider increasing `cpus:` of the repo-updater container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -1226,7 +1226,7 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the repo-updater service.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the repo-updater service.
 	- **Docker Compose:** Consider increasing `memory:` of the repo-updater container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -1325,7 +1325,7 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the searcher service.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the searcher service.
 	- **Docker Compose:** Consider increasing `cpus:` of the searcher container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -1338,7 +1338,7 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the searcher service.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the searcher service.
 	- **Docker Compose:** Consider increasing `memory:` of the searcher container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -1437,7 +1437,7 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the symbols service.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the symbols service.
 	- **Docker Compose:** Consider increasing `cpus:` of the symbols container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -1450,7 +1450,7 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the symbols service.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the symbols service.
 	- **Docker Compose:** Consider increasing `memory:` of the symbols container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -1533,7 +1533,7 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the syntect-server service.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the syntect-server service.
 	- **Docker Compose:** Consider increasing `cpus:` of the syntect-server container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -1546,7 +1546,7 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the syntect-server service.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the syntect-server service.
 	- **Docker Compose:** Consider increasing `memory:` of the syntect-server container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -1629,7 +1629,7 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the zoekt-indexserver service.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the zoekt-indexserver service.
 	- **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -1642,7 +1642,7 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the zoekt-indexserver service.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the zoekt-indexserver service.
 	- **Docker Compose:** Consider increasing `memory:` of the zoekt-indexserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -1725,7 +1725,7 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the zoekt-webserver service.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the zoekt-webserver service.
 	- **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -1738,7 +1738,7 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the zoekt-webserver service.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the zoekt-webserver service.
 	- **Docker Compose:** Consider increasing `memory:` of the zoekt-webserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -1831,7 +1831,7 @@ Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the prometheus service.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the prometheus service.
 	- **Docker Compose:** Consider increasing `cpus:` of the prometheus container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
@@ -1844,7 +1844,7 @@ Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the prometheus service.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the prometheus service.
 	- **Docker Compose:** Consider increasing `memory:` of the prometheus container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
