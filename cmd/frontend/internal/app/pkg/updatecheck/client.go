@@ -277,18 +277,10 @@ func authProviderTypes() []string {
 	return types
 }
 
-func externalServiceKinds(ctx context.Context) (_ []string, err error) {
+func externalServiceKinds(ctx context.Context) (kinds []string, err error) {
 	defer recordOperation("externalServiceKinds")(&err)
-
-	services, err := db.ExternalServices.List(ctx, db.ExternalServicesListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	kinds := make([]string, len(services))
-	for i, s := range services {
-		kinds[i] = s.Kind
-	}
-	return kinds, nil
+	kinds, err = db.ExternalServices.DistinctKinds(ctx)
+	return kinds, err
 }
 
 // check performs an update check. It returns the result and updates the global state
