@@ -10,6 +10,7 @@ import { kubernetes } from './repogroups/Kubernetes'
 import { golang } from './repogroups/Golang'
 import { reactHooks } from './repogroups/ReactHooks'
 import { android } from './repogroups/Android'
+import { ParentBreadcrumbProps, RootBreadcrumbProps } from './components/Breadcrumbs'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
 const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')
@@ -18,7 +19,9 @@ const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea')
 
 interface LayoutRouteComponentProps<Params extends { [K in keyof Params]?: string }>
     extends RouteComponentProps<Params>,
-        Omit<LayoutProps, 'match'> {}
+        Omit<LayoutProps, 'match'>,
+        ParentBreadcrumbProps,
+        RootBreadcrumbProps {}
 
 export interface LayoutRouteProps<Params extends { [K in keyof Params]?: string }> {
     path: string

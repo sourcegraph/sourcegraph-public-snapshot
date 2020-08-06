@@ -1,6 +1,6 @@
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -35,7 +35,7 @@ import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorMessage } from '../../components/alerts'
 import { Redirect } from 'react-router'
 import { toTreeURL } from '../../util/url'
-import { UpdateBreadcrumbsProps } from '../../components/Breadcrumbs'
+import { ParentBreadcrumbProps } from '../../components/Breadcrumbs'
 import { useEventObservable } from '../../../../shared/src/util/useObservable'
 import { FilePathBreadcrumb } from '../FilePathBreadcrumb'
 
@@ -96,7 +96,7 @@ interface Props
         EventLoggerProps,
         ExtensionsControllerProps,
         ThemeProps,
-        UpdateBreadcrumbsProps {
+        ParentBreadcrumbProps {
     location: H.Location
     history: H.History
     repoID: GQL.ID
@@ -106,17 +106,17 @@ interface Props
 export const BlobPage: React.FunctionComponent<Props> = props => {
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = ToggleRenderedFileMode.getModeFromURL(props.location)
-    const { repoName, revision, commitID, filePath, isLightTheme, setBreadcrumb } = props
+    const { repoName, revision, commitID, filePath, isLightTheme, parentBreadcrumb } = props
 
     // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
     useEffect(() => {
         eventLogger.logViewEvent('Blob')
     }, [repoName, commitID, filePath, isLightTheme, renderMode])
 
-    useEffect(
+    const breadcrumb = useMemo(
         () =>
             filePath &&
-            setBreadcrumb(
+            parentBreadcrumb.setChildBreadcrumb(
                 'filePath',
                 <FilePathBreadcrumb
                     key="path"
@@ -126,8 +126,10 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                     isDir={false}
                 />
             ),
-        [filePath, revision, repoName, setBreadcrumb]
+        [filePath, revision, repoName, parentBreadcrumb]
     )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => parentBreadcrumb.removeChildBreadcrumb, [])
 
     const [nextFetchWithDisabledTimeout, blobOrError] = useEventObservable(
         useCallback(

@@ -43,7 +43,7 @@ import { getViewsForContainer } from '../../../../shared/src/api/client/services
 import { Settings } from '../../schema/settings.schema'
 import { ViewGrid } from './ViewGrid'
 import { VersionContextProps } from '../../../../shared/src/search/util'
-import { UpdateBreadcrumbsProps } from '../../components/Breadcrumbs'
+import { ParentBreadcrumbProps } from '../../components/Breadcrumbs'
 import { FilePathBreadcrumb } from '../FilePathBreadcrumb'
 
 const TreeEntry: React.FunctionComponent<{
@@ -156,7 +156,7 @@ interface Props
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps,
-        UpdateBreadcrumbsProps {
+        ParentBreadcrumbProps {
     repoName: string
     repoID: GQL.ID
     repoDescription: string
@@ -179,7 +179,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
     patternType,
     caseSensitive,
     settingsCascade,
-    setBreadcrumb,
+    parentBreadcrumb,
     ...props
 }) => {
     useEffect(() => {
@@ -190,10 +190,10 @@ export const TreePage: React.FunctionComponent<Props> = ({
         }
     }, [filePath])
 
-    useEffect(
+    const breadcrumb = useMemo(
         () =>
             filePath &&
-            setBreadcrumb(
+            parentBreadcrumb.setChildBreadcrumb(
                 'treePath',
                 <FilePathBreadcrumb
                     key="path"
@@ -203,8 +203,10 @@ export const TreePage: React.FunctionComponent<Props> = ({
                     isDir={true}
                 />
             ),
-        [repoName, revision, filePath, setBreadcrumb]
+        [filePath, parentBreadcrumb, repoName, revision]
     )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => parentBreadcrumb.removeChildBreadcrumb, [])
 
     const [showOlderCommits, setShowOlderCommits] = useState(false)
 

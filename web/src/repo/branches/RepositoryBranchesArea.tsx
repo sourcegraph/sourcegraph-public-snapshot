@@ -7,7 +7,7 @@ import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepositoryBranchesAllPage } from './RepositoryBranchesAllPage'
 import { RepositoryBranchesNavbar } from './RepositoryBranchesNavbar'
 import { RepositoryBranchesOverviewPage } from './RepositoryBranchesOverviewPage'
-import { UpdateBreadcrumbsProps } from '../../components/Breadcrumbs'
+import { ParentBreadcrumbProps } from '../../components/Breadcrumbs'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -17,7 +17,7 @@ const NotFoundPage: React.FunctionComponent = () => (
     />
 )
 
-interface Props extends RouteComponentProps<{}>, UpdateBreadcrumbsProps {
+interface Props extends RouteComponentProps<{}>, ParentBreadcrumbProps {
     repo: GQL.IRepository
 }
 
@@ -34,19 +34,22 @@ export interface RepositoryBranchesAreaPageProps {
 /**
  * Renders pages related to repository branches.
  */
-export const RepositoryBranchesArea: React.FunctionComponent<Props> = ({ setBreadcrumb, repo, match }) => {
+export const RepositoryBranchesArea: React.FunctionComponent<Props> = ({
+    setChildBreadcrumb,
+    removeChildBreadcrumb,
+    repo,
+    match,
+}) => {
     const transferProps: { repo: GQL.IRepository } = {
         repo,
     }
 
-    useEffect(
-        () =>
-            setBreadcrumb(
-                'branches',
-                <RepoHeaderBreadcrumbNavItem key="branches">Branches</RepoHeaderBreadcrumbNavItem>
-            ),
-        [setBreadcrumb]
+    const breadcrumb = setChildBreadcrumb(
+        'branches',
+        <RepoHeaderBreadcrumbNavItem key="branches">Branches</RepoHeaderBreadcrumbNavItem>
     )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => removeChildBreadcrumb, [])
 
     return (
         <div className="repository-branches-area container">

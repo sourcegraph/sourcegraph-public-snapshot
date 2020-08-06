@@ -16,7 +16,7 @@ import { EventLoggerProps } from '../tracking/eventLogger'
 import { ActionButtonDescriptor } from '../util/contributions'
 import { ResolvedRevision } from './backend'
 import { RepositoriesPopover } from './RepositoriesPopover'
-import { Breadcrumbs, UpdateBreadcrumbsProps, BreadcrumbsProps } from '../components/Breadcrumbs'
+import { Breadcrumbs, ParentBreadcrumbProps, RootBreadcrumbProps } from '../components/Breadcrumbs'
 /**
  * Stores the list of RepoHeaderContributions, manages addition/deletion, and ensures they are sorted.
  *
@@ -124,12 +124,7 @@ export interface RepoHeaderContext {
 
 export interface RepoHeaderActionButton extends ActionButtonDescriptor<RepoHeaderContext> {}
 
-interface Props
-    extends PlatformContextProps,
-        ExtensionsControllerProps,
-        EventLoggerProps,
-        UpdateBreadcrumbsProps,
-        BreadcrumbsProps {
+interface Props extends PlatformContextProps, ExtensionsControllerProps, EventLoggerProps, RootBreadcrumbProps {
     /**
      * An array of render functions for action buttons that can be configured *in addition* to action buttons
      * contributed through {@link RepoHeaderContributionsLifecycleProps} and through extensions.
@@ -174,7 +169,7 @@ interface Props
  */
 export const RepoHeader: React.FunctionComponent<Props> = ({
     onLifecyclePropsChange,
-    setBreadcrumb,
+    rootBreadcrumb,
     resolvedRev,
     repo,
     ...props
@@ -187,30 +182,7 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
     useEffect(() => {
         onLifecyclePropsChange(repoHeaderContributionStore.props)
     }, [onLifecyclePropsChange, repoHeaderContributionStore])
-    const [repoDirectory, repoBase] = splitPath(displayRepoName(repo.name))
-    const { history, location } = props
-    useEffect(
-        () =>
-            setBreadcrumb(
-                'repo',
-                <>
-                    <Link
-                        to={resolvedRev && !isErrorLike(resolvedRev) ? resolvedRev.rootTreeURL : repo.url}
-                        className="repo-header__repo"
-                    >
-                        {repoDirectory ? `${repoDirectory}/` : ''}
-                        <span className="repo-header__repo-basename">{repoBase}</span>
-                    </Link>
-                    <button type="button" id="repo-popover" className="btn btn-link px-0">
-                        <MenuDownIcon className="icon-inline" />
-                    </button>
-                    <UncontrolledPopover placement="bottom-start" target="repo-popover" trigger="legacy">
-                        <RepositoriesPopover currentRepo={repo.id} history={history} location={location} />
-                    </UncontrolledPopover>
-                </>
-            ),
-        [history, location, setBreadcrumb, repo.id, repo.url, repoBase, repoDirectory, resolvedRev]
-    )
+
     const context: RepoHeaderContext = {
         repoName: repo.name,
         encodedRev: props.revision,
@@ -221,7 +193,7 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
         <nav className="repo-header navbar navbar-expand">
             <div className="d-flex align-items-center">
                 {/* Breadcrump for the nav elements */}
-                <Breadcrumbs breadcrumbs={props.breadcrumbs} />
+                <Breadcrumbs root={rootBreadcrumb} />
             </div>
             <ul className="navbar-nav">
                 {leftActions.map((a, index) => (

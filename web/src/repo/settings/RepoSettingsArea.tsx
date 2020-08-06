@@ -14,7 +14,7 @@ import { ErrorMessage } from '../../components/alerts'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import * as H from 'history'
 import { useObservable } from '../../../../shared/src/util/useObservable'
-import { UpdateBreadcrumbsProps } from '../../components/Breadcrumbs'
+import { ParentBreadcrumbProps } from '../../components/Breadcrumbs'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -24,14 +24,14 @@ const NotFoundPage: React.FunctionComponent = () => (
     />
 )
 
-export interface RepoSettingsAreaRouteContext {
+export interface RepoSettingsAreaRouteContext extends ParentBreadcrumbProps {
     repo: GQL.IRepository
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
 }
 
 export interface RepoSettingsAreaRoute extends RouteDescriptor<RepoSettingsAreaRouteContext> {}
 
-interface Props extends RouteComponentProps<{}>, UpdateBreadcrumbsProps {
+interface Props extends RouteComponentProps<{}>, ParentBreadcrumbProps {
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: RepoSettingsSideBarGroups
     repo: GQL.IRepository
@@ -44,12 +44,14 @@ interface Props extends RouteComponentProps<{}>, UpdateBreadcrumbsProps {
  * Renders a layout of a sidebar and a content area to display pages related to
  * a repository's settings.
  */
-export const RepoSettingsArea: React.FunctionComponent<Props> = ({ setBreadcrumb, ...props }) => {
+export const RepoSettingsArea: React.FunctionComponent<Props> = ({ parentBreadcrumb, ...props }) => {
     const repoName = props.repo.name
     const repoOrError = useObservable(
         useMemo(() => fetchRepository(repoName).pipe(catchError(error => of<ErrorLike>(asError(error)))), [repoName])
     )
-    useEffect(() => setBreadcrumb('settings', 'Settings'), [setBreadcrumb])
+
+    const breadcrumb = useMemo(() => parentBreadcrumb.setChildBreadcrumb('settings', <>Settings</>), [parentBreadcrumb])
+    useEffect(() => parentBreadcrumb.removeChildBreadcrumb, [parentBreadcrumb.removeChildBreadcrumb])
 
     if (repoOrError === undefined) {
         return null
@@ -82,6 +84,7 @@ export const RepoSettingsArea: React.FunctionComponent<Props> = ({ setBreadcrumb
     const context: RepoSettingsAreaRouteContext = {
         repo: repoOrError,
         onDidUpdateRepository: props.onDidUpdateRepository,
+        parentBreadcrumb: breadcrumb,
     }
 
     return (

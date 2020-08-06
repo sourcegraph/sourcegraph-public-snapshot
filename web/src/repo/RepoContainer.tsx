@@ -44,9 +44,14 @@ import { QueryState } from '../search/helpers'
 import { FiltersToTypeAndValue, FilterType } from '../../../shared/src/search/interactive/util'
 import * as H from 'history'
 import { VersionContextProps } from '../../../shared/src/search/util'
-import { UpdateBreadcrumbsProps, useBreadcrumbs } from '../components/Breadcrumbs'
+import { ParentBreadcrumbProps, useRootBreadcrumb, RootBreadcrumbProps } from '../components/Breadcrumbs'
 import { useObservable, useEventObservable } from '../../../shared/src/util/useObservable'
 import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
+import { Link } from '../../../shared/src/components/Link'
+import { splitPath, displayRepoName } from '../../../shared/src/components/RepoFileLink'
+import MenuDownIcon from 'mdi-react/MenuDownIcon'
+import { UncontrolledPopover } from 'reactstrap'
+import { RepositoriesPopover } from './RepositoriesPopover'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -63,7 +68,7 @@ export interface RepoContainerContext
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps,
-        UpdateBreadcrumbsProps {
+        ParentBreadcrumbProps {
     repo: GQL.IRepository
     authenticatedUser: GQL.IUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -97,7 +102,9 @@ interface RepoContainerProps
         CaseSensitivityProps,
         InteractiveSearchProps,
         CopyQueryButtonProps,
-        VersionContextProps {
+        VersionContextProps,
+        ParentBreadcrumbProps,
+        RootBreadcrumbProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
@@ -113,43 +120,41 @@ interface RepoContainerProps
  * Renders a horizontal bar and content for a repository page.
  */
 export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props => {
+    const { history, location } = props
+
     const { repoName, revision, rawRevision, filePath, commitRange, position, range } = parseBrowserRepoURL(
         location.pathname + location.search + location.hash
     )
 
     // Fetch repository upon mounting the component.
-    const initialRepoOrError = useObservable(
+    const initialRepo = useObservable(
         useMemo(
             () =>
                 fetchRepository({ repoName }).pipe(
-                    catchError(
-                        (error): ObservableInput<ErrorLike> => {
-                            const redirect = isRepoSeeOtherErrorLike(error)
-                            if (redirect) {
-                                redirectToExternalHost(redirect)
-                                return NEVER
-                            }
-                            return of(asError(error))
+                    catchError(error => {
+                        const redirect = isRepoSeeOtherErrorLike(error)
+                        if (redirect) {
+                            redirectToExternalHost(redirect)
+                            return NEVER
                         }
-                    )
+                        throw error
+                    })
                 ),
             [repoName]
         )
     )
 
     // Allow partial updates of the repository from components further down the tree.
-    const [nextRepoOrErrorUpdate, repoOrError] = useEventObservable(
+    const [nextRepoUpdate, repo] = useEventObservable(
         useCallback(
             (repoOrErrorUpdates: Observable<Partial<GQL.IRepository>>) =>
                 repoOrErrorUpdates.pipe(
-                    map((update): GQL.IRepository | ErrorLike | undefined =>
-                        isErrorLike(initialRepoOrError) || initialRepoOrError === undefined
-                            ? initialRepoOrError
-                            : { ...initialRepoOrError, ...update }
+                    map((update): GQL.IRepository | undefined =>
+                        initialRepo === undefined ? initialRepo : { ...initialRepo, ...update }
                     ),
-                    startWith(initialRepoOrError)
+                    startWith(initialRepo)
                 ),
-            [initialRepoOrError]
+            [initialRepo]
         )
     )
 
@@ -177,9 +182,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     const [repoHeaderContributionsLifecycleProps, setRepoHeaderContributionsLifecycleProps] = useState<
         RepoHeaderContributionsLifecycleProps
     >()
-
-    // The breadcrumbs and breadcrumb props for the repo header.
-    const { breadcrumbs, setBreadcrumb } = useBreadcrumbs()
 
     // Update the workspace roots service to reflect the current repo / resolved revision
     useEffect(() => {
@@ -244,37 +246,68 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         interactiveSearchMode,
     ])
 
-    if (!repoOrError) {
+    const breadcrumb = useMemo(() => {
+        if (!repo) {
+            return
+        }
+        const [repoDirectory, repoBase] = splitPath(displayRepoName(repo.name))
+        return props.parentBreadcrumb.setChildBreadcrumb(
+            'repo',
+            <>
+                <Link
+                    to={
+                        resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
+                            ? resolvedRevisionOrError.rootTreeURL
+                            : repo.url
+                    }
+                    className="repo-header__repo"
+                >
+                    {repoDirectory ? `${repoDirectory}/` : ''}
+                    <span className="repo-header__repo-basename">{repoBase}</span>
+                </Link>
+                <button type="button" id="repo-popover" className="btn btn-link px-0">
+                    <MenuDownIcon className="icon-inline" />
+                </button>
+                <UncontrolledPopover placement="bottom-start" target="repo-popover" trigger="legacy">
+                    <RepositoriesPopover currentRepo={repo.id} history={history} location={location} />
+                </UncontrolledPopover>
+            </>
+        )
+    }, [repo, props.parentBreadcrumb, resolvedRevisionOrError, history, location])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => props.parentBreadcrumb.removeChildBreadcrumb, [])
+
+    if (!repo || !breadcrumb) {
         // Render nothing while loading
         return null
     }
 
-    const viewerCanAdminister = !!props.authenticatedUser && props.authenticatedUser.siteAdmin
+    // const viewerCanAdminister = !!props.authenticatedUser && props.authenticatedUser.siteAdmin
 
-    if (isErrorLike(repoOrError)) {
-        // Display error page
-        if (isRepoNotFoundErrorLike(repoOrError)) {
-            return <RepositoryNotFoundPage repo={repoName} viewerCanAdminister={viewerCanAdminister} />
-        }
-        return (
-            <HeroPage
-                icon={AlertCircleIcon}
-                title="Error"
-                subtitle={<ErrorMessage error={repoOrError} history={props.history} />}
-            />
-        )
-    }
+    // if (isErrorLike(repo)) {
+    //     // Display error page
+    //     if (isRepoNotFoundErrorLike(repo)) {
+    //         return <RepositoryNotFoundPage repo={repoName} viewerCanAdminister={viewerCanAdminister} />
+    //     }
+    //     return (
+    //         <HeroPage
+    //             icon={AlertCircleIcon}
+    //             title="Error"
+    //             subtitle={<ErrorMessage error={repo} history={props.history} />}
+    //         />
+    //     )
+    // }
 
-    const repoMatchURL = `/${repoOrError.name}`
+    const repoMatchURL = `/${repo.name}`
 
     const context: RepoContainerContext = {
         ...props,
         ...repoHeaderContributionsLifecycleProps,
-        setBreadcrumb,
-        repo: repoOrError,
+        parentBreadcrumb: breadcrumb,
+        repo,
         routePrefix: repoMatchURL,
         onDidUpdateExternalLinks: setExternalLinks,
-        onDidUpdateRepository: nextRepoOrErrorUpdate,
+        onDidUpdateRepository: nextRepoUpdate,
     }
 
     return (
@@ -283,10 +316,8 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 {...props}
                 actionButtons={props.repoHeaderActionButtons}
                 revision={revision}
-                repo={repoOrError}
+                repo={repo}
                 resolvedRev={resolvedRevisionOrError}
-                breadcrumbs={breadcrumbs}
-                setBreadcrumb={setBreadcrumb}
                 onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
                 contributions={[
                     {
@@ -295,9 +326,9 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                         element: (
                             <GoToCodeHostAction
                                 key="go-to-code-host"
-                                repo={repoOrError}
+                                repo={repo}
                                 // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
-                                revision={rawRevision || repoOrError.defaultBranch?.displayName || 'HEAD'}
+                                revision={rawRevision || repo.defaultBranch?.displayName || 'HEAD'}
                                 filePath={filePath}
                                 commitRange={commitRange}
                                 position={position}

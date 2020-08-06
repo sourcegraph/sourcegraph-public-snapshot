@@ -34,7 +34,7 @@ import { RepositoryCompareOverviewPage } from './RepositoryCompareOverviewPage'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorMessage } from '../../components/alerts'
 import * as H from 'history'
-import { UpdateBreadcrumbsProps } from '../../components/Breadcrumbs'
+import { ParentBreadcrumbProps } from '../../components/Breadcrumbs'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -51,7 +51,7 @@ interface RepositoryCompareAreaProps
         EventLoggerProps,
         ExtensionsControllerProps,
         ThemeProps,
-        UpdateBreadcrumbsProps {
+        ParentBreadcrumbProps {
     repo: GQL.IRepository
     history: H.History
 }

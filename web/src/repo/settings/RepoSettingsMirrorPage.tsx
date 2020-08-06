@@ -18,6 +18,7 @@ import { ActionContainer, BaseActionContainer } from './components/ActionContain
 import { ErrorAlert } from '../../components/alerts'
 import { asError } from '../../../../shared/src/util/errors'
 import * as H from 'history'
+import { ParentBreadcrumbProps } from '../../components/Breadcrumbs'
 
 interface UpdateMirrorRepositoryActionContainerProps {
     repo: GQL.IRepository
@@ -238,7 +239,7 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
     private checkMirrorRepositoryConnection = (): void => this.checkRequests.next()
 }
 
-interface Props extends RouteComponentProps<{}> {
+interface Props extends RouteComponentProps<{}>, ParentBreadcrumbProps {
     repo: GQL.IRepository
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
     history: H.History
@@ -277,6 +278,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('RepoSettingsMirror')
+        this.props.parentBreadcrumb.setChildBreadcrumb('repo-settings-mirror', <>Mirror settings</>)
 
         this.subscriptions.add(
             this.repoUpdates.pipe(switchMap(() => fetchRepository(this.props.repo.name))).subscribe(

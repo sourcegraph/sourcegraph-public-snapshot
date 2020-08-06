@@ -37,7 +37,7 @@ import * as H from 'history'
 import { VersionContextProps } from '../../../shared/src/search/util'
 import { RevisionSpec } from '../../../shared/src/util/url'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
-import { UpdateBreadcrumbsProps } from '../components/Breadcrumbs'
+import { ParentBreadcrumbProps } from '../components/Breadcrumbs'
 
 /** Props passed to sub-routes of {@link RepoRevisionContainer}. */
 export interface RepoRevisionContainerContext
@@ -57,7 +57,7 @@ export interface RepoRevisionContainerContext
         CopyQueryButtonProps,
         VersionContextProps,
         RevisionSpec,
-        UpdateBreadcrumbsProps {
+        ParentBreadcrumbProps {
     repo: GQL.IRepository
     resolvedRev: ResolvedRevision
 
@@ -84,7 +84,7 @@ interface RepoRevisionContainerProps
         CopyQueryButtonProps,
         VersionContextProps,
         RevisionSpec,
-        UpdateBreadcrumbsProps {
+        ParentBreadcrumbProps {
     routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
@@ -108,14 +108,14 @@ interface RepoRevisionContainerProps
  * blob and tree pages are revisioned, but the repository settings page is not.)
  */
 export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContainerProps> = ({
-    setBreadcrumb,
+    parentBreadcrumb,
     ...props
 }) => {
-    useEffect(() => {
+    const breadcrumb = useMemo(() => {
         if (!props.resolvedRevisionOrError || isErrorLike(props.resolvedRevisionOrError)) {
             return
         }
-        return setBreadcrumb(
+        return parentBreadcrumb.setChildBreadcrumb(
             'revision',
             <div className="d-flex align-items-center" key="repo-revision">
                 <span className="test-revision">
@@ -142,16 +142,16 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
             </div>
         )
     }, [
-        props.revision,
         props.resolvedRevisionOrError,
+        props.revision,
         props.repo.id,
         props.repo.name,
-        setBreadcrumb,
         props.history,
         props.location,
+        parentBreadcrumb,
     ])
 
-    if (!props.resolvedRevisionOrError) {
+    if (!props.resolvedRevisionOrError || !breadcrumb) {
         // Render nothing while loading
         return null
     }
@@ -198,7 +198,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
 
     const context: RepoRevisionContainerContext = {
         ...props,
-        setBreadcrumb,
+        parentBreadcrumb: breadcrumb,
         resolvedRev: props.resolvedRevisionOrError,
     }
 

@@ -1,50 +1,69 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useMemo, useState } from 'react'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
-export interface Breadcrumb {
-    key: string
-    element: React.ReactNode | null
+export interface BreadcrumbNode {
+    readonly next: BreadcrumbNode | null
+    readonly key: string
+    readonly element: JSX.Element | null
 }
 
-export interface BreadcrumbsProps {
-    breadcrumbs: Breadcrumb[]
+export interface ParentBreadcrumbProps {
+    parentBreadcrumb: UpdateableBreadcrumb
 }
 
-export interface UpdateBreadcrumbsProps {
-    setBreadcrumb: (key: string, element: React.ReactNode) => () => void
+export interface RootBreadcrumbProps {
+    rootBreadcrumb: BreadcrumbNode
 }
 
-export const useBreadcrumbs = (): BreadcrumbsProps & UpdateBreadcrumbsProps => {
-    const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([])
-    const setBreadcrumb = useCallback((key: string, element: React.ReactNode) => {
-        console.log('setBreadcrumb', key, element)
-        setBreadcrumbs(breadcrumbs => {
-            const index = breadcrumbs.findIndex(breadcrumb => breadcrumb.key === key)
-            if (index === -1) {
-                return [...breadcrumbs, { key, element }]
-            }
-            return [...breadcrumbs.slice(0, index), { key, element }, ...breadcrumbs.slice(index + 1)]
-        })
-        return () => {
-            // Replace with null (but remember order in case the key gets set again)
-            setBreadcrumb(key, null)
-        }
-    }, [])
-    useEffect(() => console.log(breadcrumbs), [breadcrumbs])
+export interface UpdateableBreadcrumb {
+    breadcrumb: BreadcrumbNode
+    setChildBreadcrumb: (key: string, element: JSX.Element) => UpdateableBreadcrumb
+    removeChildBreadcrumb: () => void
+}
+
+function createUpdateableBreadcrumb(
+    breadcrumb: BreadcrumbNode,
+    setBreadcrumb: (breadcrumb: BreadcrumbNode) => void
+): UpdateableBreadcrumb {
     return {
-        breadcrumbs,
-        setBreadcrumb,
+        breadcrumb,
+        setChildBreadcrumb: (key, element) => {
+            const next = { key, element, next: null }
+            setBreadcrumb({ ...breadcrumb, next })
+            return createUpdateableBreadcrumb(next, updatedChild =>
+                setBreadcrumb({ ...breadcrumb, next: updatedChild })
+            )
+        },
+        removeChildBreadcrumb: () => {
+            setBreadcrumb({ ...breadcrumb, next: null })
+        },
     }
 }
 
-export const Breadcrumbs: React.FunctionComponent<BreadcrumbsProps> = ({ breadcrumbs }) => (
+export const useRootBreadcrumb = (): UpdateableBreadcrumb => {
+    const [rootBreadcrumb, setRootBreadcrumb] = useState<BreadcrumbNode>(() => ({
+        key: 'home',
+        element: <>Home</>,
+        next: null,
+    }))
+    return useMemo(() => createUpdateableBreadcrumb(rootBreadcrumb, setRootBreadcrumb), [rootBreadcrumb])
+}
+
+export const Breadcrumbs: React.FunctionComponent<{ root: BreadcrumbNode }> = ({ root }) => (
     <>
-        {breadcrumbs
-            .filter(({ element }) => element !== null)
-            .map(({ element, key }, index) => (
-                <React.Fragment key={key}>
-                    {index !== 0 && <ChevronRightIcon />} {element}
-                </React.Fragment>
-            ))}
+        {root.element}
+        {mapBreadcrumbs(root.next, ({ element, key }) => (
+            <React.Fragment key={key}>
+                <ChevronRightIcon /> {element}
+            </React.Fragment>
+        ))}
     </>
 )
+
+function mapBreadcrumbs(node: BreadcrumbNode | null, iteratee: (node: BreadcrumbNode) => void): void {
+    if (!node) {
+        return
+    }
+    iteratee(node)
+    mapBreadcrumbs(node.next, iteratee)
+}

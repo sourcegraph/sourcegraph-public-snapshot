@@ -13,8 +13,9 @@ import { ErrorAlert } from '../../components/alerts'
 import { defaultExternalServices } from '../../site-admin/externalServices'
 import { asError } from '../../../../shared/src/util/errors'
 import * as H from 'history'
+import { ParentBreadcrumbProps } from '../../components/Breadcrumbs'
 
-interface Props extends RouteComponentProps<{}> {
+interface Props extends RouteComponentProps<{}>, ParentBreadcrumbProps {
     repo: GQL.IRepository
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
     history: H.History
@@ -48,7 +49,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('RepoSettings')
-
+        this.props.parentBreadcrumb.setChildBreadcrumb('repoSettings', <>Options</>)
         this.subscriptions.add(
             this.repoUpdates.pipe(switchMap(() => fetchRepository(this.props.repo.name))).subscribe(
                 repo => this.setState({ repo }),

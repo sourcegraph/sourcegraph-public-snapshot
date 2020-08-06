@@ -60,6 +60,7 @@ import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { Settings } from './schema/settings.schema'
 import { Remote } from 'comlink'
 import { FlatExtHostAPI } from '../../shared/src/api/contract'
+import { useRootBreadcrumb } from './components/Breadcrumbs'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -144,6 +145,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const hideGlobalSearchInput: boolean =
         props.location.pathname === '/stats' || props.location.pathname === '/search/query-builder'
 
+    const breadcrumb = useRootBreadcrumb()
+
     useScrollToLocationHash(props.location)
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
@@ -188,14 +191,23 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                         {/* eslint-disable react/jsx-no-bind */}
                         {props.routes.map(
                             ({ render, condition = () => true, ...route }) =>
-                                condition(props) && (
+                                condition({
+                                    ...props,
+                                    parentBreadcrumb: breadcrumb,
+                                    rootBreadcrumb: breadcrumb.breadcrumb,
+                                }) && (
                                     <Route
                                         {...route}
                                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                         component={undefined}
                                         render={routeComponentProps => (
                                             <div className="layout__app-router-container">
-                                                {render({ ...props, ...routeComponentProps })}
+                                                {render({
+                                                    ...props,
+                                                    ...routeComponentProps,
+                                                    parentBreadcrumb: breadcrumb,
+                                                    rootBreadcrumb: breadcrumb.breadcrumb,
+                                                })}
                                             </div>
                                         )}
                                     />
