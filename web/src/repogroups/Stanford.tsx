@@ -10,11 +10,7 @@ export const stanford: RepogroupMetadata = {
     examples: [
         {
             title: 'Explore Stanford machine learning projects.',
-            exampleQuery: (
-                <>
-                    machine learning
-                </>
-            ),
+            exampleQuery: <>machine learning</>,
             patternType: SearchPatternType.literal,
             rawQuery: 'machine learning',
         },
@@ -59,12 +55,8 @@ export const stanford: RepogroupMetadata = {
             rawQuery: 'file:README.txt',
         },
         {
-            title: 'Perform a general search if you\'re unsure of an organization or project name.',
-            exampleQuery: (
-                <>
-                    space initiative
-                </>
-            ),
+            title: "Perform a general search if you're unsure of an organization or project name.",
+            exampleQuery: <>space initiative</>,
             patternType: SearchPatternType.literal,
             rawQuery: 'space initiative',
         },
@@ -77,9 +69,9 @@ export const stanford: RepogroupMetadata = {
             ),
             patternType: SearchPatternType.literal,
             rawQuery: 'repo:/RedHeadedStranger99/',
-        }
-
+        },
     ],
     homepageDescription: 'Explore Stanford open-source code.',
-    homepageIcon: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/b7/Stanford_University_seal_2003.svg/1200px-Stanford_University_seal_2003.svg.png',
+    homepageIcon:
+        'https://upload.wikimedia.org/wikipedia/en/thumb/b/b7/Stanford_University_seal_2003.svg/1200px-Stanford_University_seal_2003.svg.png',
 }

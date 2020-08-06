@@ -19,7 +19,7 @@ const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea')
 
 interface LayoutRouteComponentProps<Params extends { [K in keyof Params]?: string }>
     extends RouteComponentProps<Params>,
-    Omit<LayoutProps, 'match'> { }
+        Omit<LayoutProps, 'match'> {}
 
 export interface LayoutRouteProps<Params extends { [K in keyof Params]?: string }> {
     path: string
@@ -53,8 +53,8 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             window.context.sourcegraphDotComMode && !props.authenticatedUser ? (
                 <Redirect to="https://about.sourcegraph.com" />
             ) : (
-                    <Redirect to="/search" />
-                ),
+                <Redirect to="/search" />
+            ),
         exact: true,
     },
     {
@@ -63,8 +63,8 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             parseSearchURLQuery(props.location.search) ? (
                 <SearchResults {...props} deployType={window.context.deployType} />
             ) : (
-                    <SearchPage {...props} />
-                ),
+                <SearchPage {...props} />
+            ),
         exact: true,
     },
     {
@@ -204,5 +204,5 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/:repoRevAndRest+',
         render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
-    }
+    },
 ]

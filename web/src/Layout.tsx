@@ -63,21 +63,21 @@ import { FlatExtHostAPI } from '../../shared/src/api/contract'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
-    SettingsCascadeProps<Settings>,
-    PlatformContextProps,
-    ExtensionsControllerProps,
-    KeyboardShortcutsProps,
-    ThemeProps,
-    EventLoggerProps,
-    ThemePreferenceProps,
-    ActivationProps,
-    PatternTypeProps,
-    CaseSensitivityProps,
-    InteractiveSearchProps,
-    SmartSearchFieldProps,
-    CopyQueryButtonProps,
-    VersionContextProps,
-    RepogroupHomepageProps {
+        SettingsCascadeProps<Settings>,
+        PlatformContextProps,
+        ExtensionsControllerProps,
+        KeyboardShortcutsProps,
+        ThemeProps,
+        EventLoggerProps,
+        ThemePreferenceProps,
+        ActivationProps,
+        PatternTypeProps,
+        CaseSensitivityProps,
+        InteractiveSearchProps,
+        SmartSearchFieldProps,
+        CopyQueryButtonProps,
+        VersionContextProps,
+        RepogroupHomepageProps {
     exploreSections: readonly ExploreSectionDescriptor[]
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -173,10 +173,10 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                         hideGlobalSearchInput
                             ? 'no-search-input'
                             : isSearchHomepage
-                                ? 'low-profile'
-                                : isRepogroupPage
-                                    ? 'low-profile-with-logo'
-                                    : 'default'
+                            ? 'low-profile'
+                            : isRepogroupPage
+                            ? 'low-profile-with-logo'
+                            : 'default'
                     }
                     hideNavLinks={false}
                 />
