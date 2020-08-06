@@ -57,14 +57,21 @@ type ExternalServiceKind struct {
 
 // ExternalServicesListOptions contains options for listing external services.
 type ExternalServicesListOptions struct {
+	// When true, only include external services not under any namespace (i.e. owned by all site admins),
+	// and value of NamespaceUserID is ignored.
+	NoNamespace bool
+	// When specified, only include external services under given user namespace.
 	NamespaceUserID int32
-	Kinds           []string
+	// When specified, only include external services with given list of kinds.
+	Kinds []string
 	*LimitOffset
 }
 
 func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
-	if o.NamespaceUserID > 0 {
+	if o.NoNamespace {
+		conds = append(conds, sqlf.Sprintf(`namespace_user_id IS NULL`))
+	} else if o.NamespaceUserID > 0 {
 		conds = append(conds, sqlf.Sprintf(`namespace_user_id = %d`, o.NamespaceUserID))
 	}
 	if len(o.Kinds) > 0 {
