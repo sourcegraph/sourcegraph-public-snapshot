@@ -70,12 +70,13 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 		}
 
 		resolvers = append(resolvers, &changesetResolver{
-			store:                r.store,
-			httpFactory:          r.httpFactory,
-			changeset:            c,
-			preloadedRepo:        repo,
-			attemptedPreloadRepo: true,
-			preloadedNextSyncAt:  preloadedNextSyncAt,
+			store:                      r.store,
+			httpFactory:                r.httpFactory,
+			changeset:                  c,
+			preloadedRepo:              repo,
+			attemptedPreloadRepo:       true,
+			attemptedPreloadNextSyncAt: true,
+			preloadedNextSyncAt:        preloadedNextSyncAt,
 		})
 	}
 

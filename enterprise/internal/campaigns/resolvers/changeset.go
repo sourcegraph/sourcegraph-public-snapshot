@@ -49,6 +49,7 @@ type changesetResolver struct {
 	events     ee.ChangesetEvents
 	eventsErr  error
 
+	attemptedPreloadNextSyncAt bool
 	// When the next sync is scheduled
 	preloadedNextSyncAt *time.Time
 	nextSyncAtOnce      sync.Once
@@ -160,8 +161,10 @@ func (r *changesetResolver) computeEvents(ctx context.Context) ([]*campaigns.Cha
 
 func (r *changesetResolver) computeNextSyncAt(ctx context.Context) (time.Time, error) {
 	r.nextSyncAtOnce.Do(func() {
-		if r.preloadedNextSyncAt != nil {
-			r.nextSyncAt = *r.preloadedNextSyncAt
+		if r.attemptedPreloadNextSyncAt {
+			if r.preloadedNextSyncAt != nil {
+				r.nextSyncAt = *r.preloadedNextSyncAt
+			}
 		} else {
 			syncData, err := r.store.ListChangesetSyncData(ctx, ee.ListChangesetSyncDataOpts{ChangesetIDs: []int64{r.changeset.ID}})
 			if err != nil {
