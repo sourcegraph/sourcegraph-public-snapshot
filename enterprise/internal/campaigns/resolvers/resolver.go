@@ -76,13 +76,7 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, err
 	}
 
-	return &changesetResolver{
-		store:                r.store,
-		httpFactory:          r.httpFactory,
-		changeset:            changeset,
-		attemptedPreloadRepo: true,
-		preloadedRepo:        repo,
-	}, nil
+	return NewChangesetResolver(r.store, r.httpFactory, changeset, repo), nil
 }
 
 func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignResolver, error) {

@@ -10,6 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
@@ -86,12 +88,11 @@ func (r *changesetEventResolver) CreatedAt() graphqlbackend.DateTime {
 }
 
 func (r *changesetEventResolver) Changeset(ctx context.Context) (graphqlbackend.ExternalChangesetResolver, error) {
-	return &changesetResolver{
-		store:       r.store,
-		httpFactory: r.httpFactory,
-		changeset:   r.changeset,
-		repoCtx:     ctx,
-	}, nil
+	repo, err := db.Repos.Get(ctx, r.changeset.RepoID)
+	if err != nil && !errcode.IsNotFound(err) {
+		return nil, err
+	}
+	return NewChangesetResolver(r.store, r.httpFactory, r.changeset, repo), nil
 }
 
 type changesetCountsResolver struct {
