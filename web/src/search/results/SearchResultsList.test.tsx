@@ -309,7 +309,7 @@ describe('SearchResultsList', () => {
             </BrowserRouter>
         )
 
-        const link = getByTestId(container, 'search-suggestions-link') as HTMLAnchorElement
+        const link = getByTestId(container, 'proposed-query-link') as HTMLAnchorElement
         expect(link).toBeTruthy()
         expect(link.href).toStrictEqual('http://localhost/search?q=repo:test1%7Ctest2&patternType=regexp')
     })
