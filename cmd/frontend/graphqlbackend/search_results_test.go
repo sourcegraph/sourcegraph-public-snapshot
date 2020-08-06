@@ -1426,6 +1426,18 @@ func TestCompareSearchResultsAndOr(t *testing.T) {
 			want:              true,
 		},
 		{
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: "dir1/file"},
+			b:                 mockSearchResultURIGetter{repo: "arepo", file: "adir1/file"},
+			exactFilePatterns: map[string]struct{}{"file": {}},
+			want:              true,
+		},
+		{
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: "adir1/file"},
+			b:                 mockSearchResultURIGetter{repo: "arepo", file: "dir1/file"},
+			exactFilePatterns: map[string]struct{}{"file": {}},
+			want:              false,
+		},
+		{
 			a:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
 			b:                 mockSearchResultURIGetter{repo: "arepo", file: "bfile"},
 			exactFilePatterns: nil,

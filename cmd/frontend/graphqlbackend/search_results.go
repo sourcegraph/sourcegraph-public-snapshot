@@ -1920,6 +1920,12 @@ func compareSearchResultsAndOr(a, b searchResultURIGetter, exactFilePatterns map
 		_, bMatch := exactFilePatterns[filepath.Base(bfile)]
 		if aMatch || bMatch {
 			if aMatch && bMatch {
+				if len(afile) < len(bfile) {
+					return true
+				}
+				if len(bfile) < len(afile) {
+					return false
+				}
 				return afile < bfile
 			}
 			if aMatch {

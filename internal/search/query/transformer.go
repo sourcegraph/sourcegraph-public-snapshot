@@ -242,9 +242,6 @@ func mapGlobToRegex(nodes []Node) ([]Node, error) {
 			if ContainsNoGlobSymbols(value) {
 				value = fuzzifyGlobPattern(value)
 			}
-			if len(value) > 0 && value[0] == '/' {
-				value = value[1:]
-			}
 			value, err = globToRegex(value)
 		}
 		if err != nil {
