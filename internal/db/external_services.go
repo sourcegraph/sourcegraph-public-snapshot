@@ -547,7 +547,7 @@ func (e *ExternalServicesStore) ListOtherExternalServicesConnections(ctx context
 
 func (*ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*types.ExternalService, error) {
 	q := sqlf.Sprintf(`
-		SELECT id, kind, display_name, config, created_at, updated_at
+		SELECT id, kind, display_name, config, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id
 		FROM external_services
 		WHERE (%s)
 		ORDER BY id DESC
@@ -564,9 +564,27 @@ func (*ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, lim
 
 	var results []*types.ExternalService
 	for rows.Next() {
-		var h types.ExternalService
-		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &h.CreatedAt, &h.UpdatedAt); err != nil {
+		var (
+			h              types.ExternalService
+			deletedAt      sql.NullTime
+			lastSyncAt     sql.NullTime
+			nextSyncAt     sql.NullTime
+			namepaceUserID sql.NullInt32
+		)
+		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namepaceUserID); err != nil {
 			return nil, err
+		}
+		if deletedAt.Valid {
+			h.DeletedAt = &deletedAt.Time
+		}
+		if lastSyncAt.Valid {
+			h.LastSyncAt = &lastSyncAt.Time
+		}
+		if nextSyncAt.Valid {
+			h.NextSyncAt = &nextSyncAt.Time
+		}
+		if namepaceUserID.Valid {
+			h.NamespaceUserID = &namepaceUserID.Int32
 		}
 		results = append(results, &h)
 	}

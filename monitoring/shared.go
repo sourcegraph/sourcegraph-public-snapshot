@@ -197,8 +197,8 @@ var sharedProvisioningMemoryUsage7d sharedObservable = func(containerName string
 		Owner:           ObservableOwnerDistribution,
 		PossibleSolutions: strings.Replace(`
 			- If usage is high:
-				- **Kubernetes:** Consider decreasing memory limit in relevant 'Deployment.yaml'.
-				- **Docker Compose:** Consider decreasing 'memory:' of {{CONTAINER_NAME}} container in 'docker-compose.yml'.
+				- **Kubernetes:** Consider increasing memory limit in relevant 'Deployment.yaml'.
+				- **Docker Compose:** Consider increasing 'memory:' of {{CONTAINER_NAME}} container in 'docker-compose.yml'.
 			- If usage is low, consider decreasing the above values.
 		`, "{{CONTAINER_NAME}}", containerName, -1),
 	}

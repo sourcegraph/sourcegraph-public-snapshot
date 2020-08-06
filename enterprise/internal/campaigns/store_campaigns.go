@@ -8,6 +8,40 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
+// campaignColumns are used by the campaign related Store methods to insert,
+// update and query campaigns.
+var campaignColumns = []*sqlf.Query{
+	sqlf.Sprintf("campaigns.id"),
+	sqlf.Sprintf("campaigns.name"),
+	sqlf.Sprintf("campaigns.description"),
+	sqlf.Sprintf("campaigns.branch"),
+	sqlf.Sprintf("campaigns.author_id"),
+	sqlf.Sprintf("campaigns.namespace_user_id"),
+	sqlf.Sprintf("campaigns.namespace_org_id"),
+	sqlf.Sprintf("campaigns.created_at"),
+	sqlf.Sprintf("campaigns.updated_at"),
+	sqlf.Sprintf("campaigns.changeset_ids"),
+	sqlf.Sprintf("campaigns.closed_at"),
+	sqlf.Sprintf("campaigns.campaign_spec_id"),
+}
+
+// campaignInsertColumns is the list of campaign columns that are modified in
+// CreateCampaign and UpdateCampaign.
+// update and query campaigns.
+var campaignInsertColumns = []*sqlf.Query{
+	sqlf.Sprintf("name"),
+	sqlf.Sprintf("description"),
+	sqlf.Sprintf("branch"),
+	sqlf.Sprintf("author_id"),
+	sqlf.Sprintf("namespace_user_id"),
+	sqlf.Sprintf("namespace_org_id"),
+	sqlf.Sprintf("created_at"),
+	sqlf.Sprintf("updated_at"),
+	sqlf.Sprintf("changeset_ids"),
+	sqlf.Sprintf("closed_at"),
+	sqlf.Sprintf("campaign_spec_id"),
+}
+
 // CreateCampaign creates the given Campaign.
 func (s *Store) CreateCampaign(ctx context.Context, c *campaigns.Campaign) error {
 	q, err := s.createCampaignQuery(c)
@@ -22,33 +56,9 @@ func (s *Store) CreateCampaign(ctx context.Context, c *campaigns.Campaign) error
 
 var createCampaignQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:CreateCampaign
-INSERT INTO campaigns (
-  name,
-  description,
-  branch,
-  author_id,
-  namespace_user_id,
-  namespace_org_id,
-  created_at,
-  updated_at,
-  changeset_ids,
-  closed_at,
-  campaign_spec_id
-)
+INSERT INTO campaigns (%s)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-RETURNING
-  id,
-  name,
-  description,
-  branch,
-  author_id,
-  namespace_user_id,
-  namespace_org_id,
-  created_at,
-  updated_at,
-  changeset_ids,
-  closed_at,
-  campaign_spec_id
+RETURNING %s
 `
 
 func (s *Store) createCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) {
@@ -67,6 +77,7 @@ func (s *Store) createCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) 
 
 	return sqlf.Sprintf(
 		createCampaignQueryFmtstr,
+		sqlf.Join(campaignInsertColumns, ", "),
 		c.Name,
 		c.Description,
 		c.Branch,
@@ -78,6 +89,7 @@ func (s *Store) createCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) 
 		changesetIDs,
 		nullTimeColumn(c.ClosedAt),
 		nullInt64Column(c.CampaignSpecID),
+		sqlf.Join(campaignColumns, ", "),
 	), nil
 }
 
@@ -94,32 +106,9 @@ func (s *Store) UpdateCampaign(ctx context.Context, c *campaigns.Campaign) error
 var updateCampaignQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:UpdateCampaign
 UPDATE campaigns
-SET (
-  name,
-  description,
-  branch,
-  author_id,
-  namespace_user_id,
-  namespace_org_id,
-  updated_at,
-  changeset_ids,
-  closed_at,
-  campaign_spec_id
-) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
-RETURNING
-  id,
-  name,
-  description,
-  branch,
-  author_id,
-  namespace_user_id,
-  namespace_org_id,
-  created_at,
-  updated_at,
-  changeset_ids,
-  closed_at,
-  campaign_spec_id
+RETURNING %s
 `
 
 func (s *Store) updateCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) {
@@ -132,17 +121,20 @@ func (s *Store) updateCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) 
 
 	return sqlf.Sprintf(
 		updateCampaignQueryFmtstr,
+		sqlf.Join(campaignInsertColumns, ", "),
 		c.Name,
 		c.Description,
 		c.Branch,
 		c.AuthorID,
 		nullInt32Column(c.NamespaceUserID),
 		nullInt32Column(c.NamespaceOrgID),
+		c.CreatedAt,
 		c.UpdatedAt,
 		changesetIDs,
 		nullTimeColumn(c.ClosedAt),
 		nullInt64Column(c.CampaignSpecID),
 		c.ID,
+		sqlf.Join(campaignColumns, ", "),
 	), nil
 }
 
@@ -233,20 +225,7 @@ func (s *Store) GetCampaign(ctx context.Context, opts GetCampaignOpts) (*campaig
 
 var getCampaignsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:GetCampaign
-SELECT
-  campaigns.id,
-  campaigns.name,
-  campaigns.description,
-  campaigns.branch,
-  campaigns.author_id,
-  campaigns.namespace_user_id,
-  campaigns.namespace_org_id,
-  campaigns.created_at,
-  campaigns.updated_at,
-  campaigns.changeset_ids,
-  campaigns.closed_at,
-  campaigns.campaign_spec_id
-FROM campaigns
+SELECT %s FROM campaigns
 WHERE %s
 LIMIT 1
 `
@@ -280,6 +259,7 @@ func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		getCampaignsQueryFmtstr,
+		sqlf.Join(campaignColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -319,20 +299,7 @@ func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs [
 
 var listCampaignsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:ListCampaigns
-SELECT
-  id,
-  name,
-  description,
-  branch,
-  author_id,
-  namespace_user_id,
-  namespace_org_id,
-  created_at,
-  updated_at,
-  changeset_ids,
-  closed_at,
-  campaign_spec_id
-FROM campaigns
+SELECT %s FROM campaigns
 WHERE %s
 ORDER BY id ASC
 LIMIT %s
@@ -365,6 +332,7 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		listCampaignsQueryFmtstr,
+		sqlf.Join(campaignColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 		opts.Limit,
 	)
