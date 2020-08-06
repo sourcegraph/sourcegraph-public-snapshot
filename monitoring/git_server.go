@@ -1,5 +1,10 @@
 package main
 
+import (
+	"fmt"
+	"time"
+)
+
 func GitServer() *Container {
 	return &Container{
 		Name:        "gitserver",
@@ -106,6 +111,21 @@ func GitServer() *Container {
 				Rows: []Row{
 					{
 						sharedProvisioningCPUUsage7d("gitserver"),
+						{
+							Name:            "provisioning_container_memory_usage_7d",
+							Description:     "container memory usage (7d maximum) by instance",
+							Query:           fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[7d])`, promCadvisorContainerMatchers("gitserver")),
+							DataMayNotExist: true,
+							// gitserver generally uses up all the memory it gets, so
+							// alerting on long-term high memory usage is not very useful
+							Warning:      Alert{LessOrEqual: 30, For: 14 * 24 * time.Hour},
+							PanelOptions: PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Max(100).Min(0),
+							Owner:        ObservableOwnerDistribution,
+							PossibleSolutions: `
+								- **Kubernetes:** Consider decreasing memory limit in relevant 'Deployment.yaml'.
+								- **Docker Compose:** Consider decreasing 'memory:' of gitserver container in 'docker-compose.yml'.
+							`,
+						},
 					},
 					{
 						sharedProvisioningCPUUsage5m("gitserver"),
