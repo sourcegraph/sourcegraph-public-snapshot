@@ -129,77 +129,29 @@ func TestChangesetConnectionResolver(t *testing.T) {
 	}
 
 	tests := []struct {
-		First           int
-		unsafeOpts      bool
+		firstParam      int
+		useUnsafeOpts   bool
 		wantHasNextPage bool
 		wantTotalCount  int
 		wantOpen        int
 		wantNodes       []apitest.Changeset
 	}{
-		{
-			First:           1,
-			wantHasNextPage: true,
-			wantTotalCount:  4,
-			wantOpen:        2,
-			wantNodes:       nodes[:1],
-		},
-		{
-			First:           2,
-			wantHasNextPage: true,
-			wantTotalCount:  4,
-			wantOpen:        2,
-			wantNodes:       nodes[:2],
-		},
-		{
-			First:           3,
-			wantHasNextPage: true,
-			wantTotalCount:  4,
-			wantOpen:        2,
-			wantNodes:       nodes[:3],
-		},
-		{
-			First:           4,
-			wantHasNextPage: false,
-			wantTotalCount:  4,
-			wantOpen:        2,
-			wantNodes:       nodes[:4],
-		},
-		{
-			First:           1,
-			unsafeOpts:      true,
-			wantHasNextPage: true,
-			// Expect only 3 changesets to be returned when an unsafe filter is applied.
-			wantTotalCount: 3,
-			wantOpen:       1,
-			wantNodes:      nodes[:1],
-		},
-		{
-			First:           2,
-			unsafeOpts:      true,
-			wantHasNextPage: true,
-			wantTotalCount:  3,
-			wantOpen:        1,
-			wantNodes:       nodes[:2],
-		},
-		{
-			First:           3,
-			unsafeOpts:      true,
-			wantHasNextPage: false,
-			wantTotalCount:  3,
-			wantOpen:        1,
-			wantNodes:       nodes[:3],
-		},
+		{firstParam: 1, wantHasNextPage: true, wantTotalCount: 4, wantOpen: 2, wantNodes: nodes[:1]},
+		{firstParam: 2, wantHasNextPage: true, wantTotalCount: 4, wantOpen: 2, wantNodes: nodes[:2]},
+		{firstParam: 3, wantHasNextPage: true, wantTotalCount: 4, wantOpen: 2, wantNodes: nodes[:3]},
+		{firstParam: 4, wantHasNextPage: false, wantTotalCount: 4, wantOpen: 2, wantNodes: nodes[:4]},
+		// Expect only 3 changesets to be returned when an unsafe filter is applied.
+		{firstParam: 1, useUnsafeOpts: true, wantHasNextPage: true, wantTotalCount: 3, wantOpen: 1, wantNodes: nodes[:1]},
+		{firstParam: 2, useUnsafeOpts: true, wantHasNextPage: true, wantTotalCount: 3, wantOpen: 1, wantNodes: nodes[:2]},
+		{firstParam: 3, useUnsafeOpts: true, wantHasNextPage: false, wantTotalCount: 3, wantOpen: 1, wantNodes: nodes[:3]},
 	}
 
-	reviewStatePending := campaigns.ChangesetReviewStatePending
-
 	for _, tc := range tests {
-		t.Run(fmt.Sprintf("Unsafe opts %t, first %d", tc.unsafeOpts, tc.First), func(t *testing.T) {
-			var reviewState *campaigns.ChangesetReviewState
-			if tc.unsafeOpts {
-				reviewState = &reviewStatePending
+		t.Run(fmt.Sprintf("Unsafe opts %t, first %d", tc.useUnsafeOpts, tc.firstParam), func(t *testing.T) {
+			input := map[string]interface{}{"campaign": campaignApiID, "first": int64(tc.firstParam)}
+			if tc.useUnsafeOpts {
+				input["reviewState"] = campaigns.ChangesetReviewStatePending
 			}
-			input := map[string]interface{}{"campaign": campaignApiID, "first": int64(tc.First), "reviewState": reviewState}
 			var response struct{ Node apitest.Campaign }
 			apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryChangesetConnection)
 
@@ -237,17 +189,17 @@ query($campaign: ID!, $first: Int, $reviewState: ChangesetReviewState){
 
           ... on ExternalChangeset {
             id
-			repository { name }
-			nextSyncAt
+            repository { name }
+            nextSyncAt
           }
           ... on HiddenExternalChangeset {
             id
-			nextSyncAt
+            nextSyncAt
           }
-		}
-		pageInfo {
-		  hasNextPage
-		}
+        }
+        pageInfo {
+          hasNextPage
+        }
       }
     }
   }
