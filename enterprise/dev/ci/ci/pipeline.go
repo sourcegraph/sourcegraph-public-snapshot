@@ -37,7 +37,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		"CI_DEBUG_PROFILE": strconv.FormatBool(c.profilingEnabled),
 	}
 
-	// On release branches Percy must compare to the previous commit of the release branch, not master.
+	// On release branches Percy must compare to the previous commit of the release branch, not main.
 	if c.releaseBranch {
 		env["PERCY_TARGET_BRANCH"] = c.branch
 	}

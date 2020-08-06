@@ -32,11 +32,15 @@ import { ChangesetFields } from '../../../../graphql-operations'
 import { isValidChangesetExternalState, isValidChangesetReviewState, isValidChangesetCheckState } from '../../utils'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
-    campaign: Pick<GQL.ICampaign, 'id' | 'closedAt' | 'viewerCanAdminister'>
+    campaignID: GQL.ID
+    viewerCanAdminister: boolean
     history: H.History
     location: H.Location
     campaignUpdates: Subject<void>
     changesetUpdates: Subject<void>
+    /** When true, only open changesets will be listed. */
+    onlyOpen?: boolean
+    hideFilters?: boolean
 
     /** For testing only. */
     queryChangesets?: typeof _queryChangesets
@@ -52,7 +56,8 @@ interface ChangesetFilters {
  * A list of a campaign's changesets.
  */
 export const CampaignChangesets: React.FunctionComponent<Props> = ({
-    campaign,
+    campaignID,
+    viewerCanAdminister,
     history,
     location,
     isLightTheme,
@@ -61,6 +66,8 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
     extensionsController,
     platformContext,
     telemetryService,
+    onlyOpen = false,
+    hideFilters = false,
     queryChangesets = _queryChangesets,
 }) => {
     const [changesetFilters, setChangesetFilters] = useState<ChangesetFilters>({
@@ -73,13 +80,24 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
             merge(of(undefined), changesetUpdates).pipe(
                 switchMap(() =>
                     queryChangesets({
-                        ...changesetFilters,
+                        externalState: changesetFilters.externalState,
+                        reviewState: changesetFilters.reviewState,
+                        checkState: changesetFilters.checkState,
+                        ...(onlyOpen ? { externalState: GQL.ChangesetExternalState.OPEN } : {}),
                         first: args.first ?? null,
-                        campaign: campaign.id,
+                        campaign: campaignID,
                     }).pipe(repeatWhen(notifier => notifier.pipe(delay(5000))))
                 )
             ),
-        [campaign.id, changesetFilters, queryChangesets, changesetUpdates]
+        [
+            campaignID,
+            changesetFilters.externalState,
+            changesetFilters.reviewState,
+            changesetFilters.checkState,
+            queryChangesets,
+            changesetUpdates,
+            onlyOpen,
+        ]
     )
 
     const containerElements = useMemo(() => new Subject<HTMLElement | null>(), [])
@@ -138,14 +156,16 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
 
     return (
         <>
-            <ChangesetFilterRow history={history} location={location} onFiltersChange={setChangesetFilters} />
+            {!hideFilters && (
+                <ChangesetFilterRow history={history} location={location} onFiltersChange={setChangesetFilters} />
+            )}
             <div className="list-group position-relative" ref={nextContainerElement}>
                 <FilteredConnection<ChangesetFields, Omit<ChangesetNodeProps, 'node'>>
                     className="mt-2"
                     nodeComponent={ChangesetNode}
                     nodeComponentProps={{
                         isLightTheme,
-                        viewerCanAdminister: campaign.viewerCanAdminister,
+                        viewerCanAdminister,
                         history,
                         location,
                         campaignUpdates,

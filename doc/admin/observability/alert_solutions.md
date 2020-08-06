@@ -729,8 +729,8 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of frontend container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of frontend container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
@@ -1048,14 +1048,12 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _gitserver: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+- _gitserver: less than 30% container memory usage (7d maximum) by instance_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of gitserver container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider decreasing `memory:` of gitserver container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
 ```json
@@ -1079,24 +1077,6 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```json
 "observability.silenceAlerts": [
   "warning_gitserver_provisioning_container_cpu_usage_5m"
-]
-```
-
-## gitserver: provisioning_container_memory_usage_5m
-
-**Descriptions:**
-
-- _gitserver: 90%+ container memory usage (5m maximum) by instance_
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of gitserver container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
-
-```json
-"observability.silenceAlerts": [
-  "warning_gitserver_provisioning_container_memory_usage_5m"
 ]
 ```
 
@@ -1287,8 +1267,8 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of github-proxy container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
@@ -1690,8 +1670,8 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of precise-code-intel-bundle-manager container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-bundle-manager container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
@@ -2105,8 +2085,8 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
@@ -2552,8 +2532,8 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
@@ -2775,8 +2755,8 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of query-runner container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of query-runner container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
@@ -2998,8 +2978,8 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of replacer container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of replacer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
@@ -3221,8 +3201,8 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of repo-updater container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of repo-updater container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
@@ -3476,8 +3456,8 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of searcher container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of searcher container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
@@ -3731,8 +3711,8 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of symbols container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
@@ -3995,8 +3975,8 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of syntect-server container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
@@ -4182,8 +4162,8 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
@@ -4366,8 +4346,8 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 
@@ -4551,8 +4531,8 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of prometheus container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of prometheus container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration:
 

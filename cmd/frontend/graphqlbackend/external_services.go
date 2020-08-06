@@ -113,13 +113,16 @@ func syncExternalService(ctx context.Context, svc *types.ExternalService) error 
 	defer cancel()
 
 	_, err := repoupdater.DefaultClient.SyncExternalService(ctx, api.ExternalService{
-		ID:          svc.ID,
-		Kind:        svc.Kind,
-		DisplayName: svc.DisplayName,
-		Config:      svc.Config,
-		CreatedAt:   svc.CreatedAt,
-		UpdatedAt:   svc.UpdatedAt,
-		DeletedAt:   svc.DeletedAt,
+		ID:              svc.ID,
+		Kind:            svc.Kind,
+		DisplayName:     svc.DisplayName,
+		Config:          svc.Config,
+		CreatedAt:       svc.CreatedAt,
+		UpdatedAt:       svc.UpdatedAt,
+		DeletedAt:       svc.DeletedAt,
+		LastSyncAt:      svc.LastSyncAt,
+		NextSyncAt:      svc.NextSyncAt,
+		NamespaceUserID: svc.NamespaceUserID,
 	})
 	if err != nil && ctx.Err() == nil {
 		return err
