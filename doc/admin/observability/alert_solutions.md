@@ -377,6 +377,17 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
 
+# gitserver: container_memory_usage
+
+**Descriptions:**
+
+- _gitserver: 99%+ container memory usage by instance_ (`warning_gitserver_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of gitserver container in `docker-compose.yml`.
+
 # gitserver: container_restarts
 
 **Descriptions:**
