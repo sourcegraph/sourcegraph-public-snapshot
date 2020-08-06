@@ -258,8 +258,8 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of frontend container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of frontend container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
 # frontend: provisioning_container_cpu_usage_5m
@@ -431,14 +431,12 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 
 **Descriptions:**
 
-- _gitserver: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_gitserver_provisioning_container_memory_usage_7d`)
+- _gitserver: less than 30% container memory usage (7d maximum) by instance_ (`warning_gitserver_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of gitserver container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider decreasing `memory:` of gitserver container in `docker-compose.yml`.
 
 # gitserver: provisioning_container_cpu_usage_5m
 
@@ -450,17 +448,6 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
-
-# gitserver: provisioning_container_memory_usage_5m
-
-**Descriptions:**
-
-- _gitserver: 90%+ container memory usage (5m maximum) by instance_ (`warning_gitserver_provisioning_container_memory_usage_5m`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of gitserver container in `docker-compose.yml`.
 
 # github-proxy: github_core_rate_limit_remaining
 
@@ -552,8 +539,8 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of github-proxy container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
 # github-proxy: provisioning_container_cpu_usage_5m
@@ -677,8 +664,8 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of precise-code-intel-bundle-manager container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-bundle-manager container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
 # precise-code-intel-bundle-manager: provisioning_container_cpu_usage_5m
@@ -789,8 +776,8 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
 # precise-code-intel-worker: provisioning_container_cpu_usage_5m
@@ -901,8 +888,8 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
 # precise-code-intel-indexer: provisioning_container_cpu_usage_5m
@@ -1013,8 +1000,8 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of query-runner container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of query-runner container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
 # query-runner: provisioning_container_cpu_usage_5m
@@ -1125,8 +1112,8 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of replacer container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of replacer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
 # replacer: provisioning_container_cpu_usage_5m
@@ -1237,8 +1224,8 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of repo-updater container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of repo-updater container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
 # repo-updater: provisioning_container_cpu_usage_5m
@@ -1349,8 +1336,8 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of searcher container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of searcher container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
 # searcher: provisioning_container_cpu_usage_5m
@@ -1461,8 +1448,8 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of symbols container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
 # symbols: provisioning_container_cpu_usage_5m
@@ -1557,8 +1544,8 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of syntect-server container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
 # syntect-server: provisioning_container_cpu_usage_5m
@@ -1653,8 +1640,8 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
 # zoekt-indexserver: provisioning_container_cpu_usage_5m
@@ -1749,8 +1736,8 @@ Try restarting the pod to get a different public IP.
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
 # zoekt-webserver: provisioning_container_cpu_usage_5m
@@ -1855,8 +1842,8 @@ Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of prometheus container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider increasing `memory:` of prometheus container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
 # prometheus: provisioning_container_cpu_usage_5m
