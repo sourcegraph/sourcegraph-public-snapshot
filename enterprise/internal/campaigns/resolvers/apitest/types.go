@@ -149,7 +149,7 @@ type Comparison struct {
 type Label struct {
 	Text        string
 	Color       string
-	Description string
+	Description *string
 }
 
 type ChangesetConnection struct {
