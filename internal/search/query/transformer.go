@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
+
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // SubstituteAliases substitutes field name aliases for their canonical names.
@@ -199,7 +201,11 @@ func (g globError) Error() string {
 // from glob to regex.
 func reporevToRegex(value string) (string, error) {
 	reporev := strings.SplitN(value, "@", 2)
-	repo, err := globToRegex(reporev[0])
+	repo := reporev[0]
+	if ContainsNoGlobSyntax(repo) {
+		repo = fuzzifyGlobPattern(repo)
+	}
+	repo, err := globToRegex(repo)
 	if err != nil {
 		return "", err
 	}
@@ -208,6 +214,19 @@ func reporevToRegex(value string) (string, error) {
 		value = value + "@" + reporev[1]
 	}
 	return value, nil
+}
+
+var globSyntax = lazyregexp.New(`[][*?/]`)
+
+func ContainsNoGlobSyntax(value string) bool {
+	return !globSyntax.MatchString(value)
+}
+
+func fuzzifyGlobPattern(value string) string {
+	if value == "" {
+		return value
+	}
+	return "**" + value + "**"
 }
 
 // mapGlobToRegex translates glob to regexp for fields repo, file, and repohasfile.
@@ -220,6 +239,9 @@ func mapGlobToRegex(nodes []Node) ([]Node, error) {
 		case FieldRepo:
 			value, err = reporevToRegex(value)
 		case FieldFile, FieldRepoHasFile:
+			if ContainsNoGlobSyntax(value) {
+				value = fuzzifyGlobPattern(value)
+			}
 			value, err = globToRegex(value)
 		}
 		if err != nil {
