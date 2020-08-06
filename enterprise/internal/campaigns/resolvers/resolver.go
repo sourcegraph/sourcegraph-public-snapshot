@@ -383,6 +383,7 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 		return nil, err
 	}
 	opts := ee.ListCampaignsOpts{}
+
 	state, err := parseCampaignState(args.State)
 	if err != nil {
 		return nil, err
@@ -391,6 +392,7 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 	if args.First != nil {
 		opts.Limit = int(*args.First)
 	}
+
 	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx)
 	if authErr != nil && authErr != backend.ErrMustBeSiteAdmin {
 		return nil, err
@@ -400,6 +402,17 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 		if args.ViewerCanAdminister != nil && *args.ViewerCanAdminister {
 			actor := actor.FromContext(ctx)
 			opts.OnlyForAuthor = actor.UID
+		}
+	}
+
+	if args.Namespace != nil {
+		switch relay.UnmarshalKind(*args.Namespace) {
+		case "User":
+			err = relay.UnmarshalSpec(*args.Namespace, &opts.NamespaceUserID)
+		case "Org":
+			err = relay.UnmarshalSpec(*args.Namespace, &opts.NamespaceOrgID)
+		default:
+			err = errors.Errorf("Invalid namespace %q", args.Namespace)
 		}
 	}
 	return &campaignsConnectionResolver{

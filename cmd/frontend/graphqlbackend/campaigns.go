@@ -29,6 +29,8 @@ type ListCampaignArgs struct {
 	First               *int32
 	State               *string
 	ViewerCanAdminister *bool
+
+	Namespace *graphql.ID
 }
 
 type CloseCampaignArgs struct {

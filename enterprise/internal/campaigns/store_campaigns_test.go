@@ -216,6 +216,44 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 				}
 			}
 		})
+
+		t.Run("ListCampaigns by NamespaceUserID", func(t *testing.T) {
+			for _, c := range campaigns {
+				if c.NamespaceUserID == 0 {
+					continue
+				}
+				opts := ListCampaignsOpts{NamespaceUserID: c.NamespaceUserID}
+				have, _, err := s.ListCampaigns(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				for _, haveCampaign := range have {
+					if have, want := haveCampaign.NamespaceUserID, opts.NamespaceUserID; have != want {
+						t.Fatalf("campaign has wrong NamespaceUserID. want=%d, have=%d", want, have)
+					}
+				}
+			}
+		})
+
+		t.Run("ListCampaigns by NamespaceOrgID", func(t *testing.T) {
+			for _, c := range campaigns {
+				if c.NamespaceOrgID == 0 {
+					continue
+				}
+				opts := ListCampaignsOpts{NamespaceOrgID: c.NamespaceOrgID}
+				have, _, err := s.ListCampaigns(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				for _, haveCampaign := range have {
+					if have, want := haveCampaign.NamespaceOrgID, opts.NamespaceOrgID; have != want {
+						t.Fatalf("campaign has wrong NamespaceOrgID. want=%d, have=%d", want, have)
+					}
+				}
+			}
+		})
 	})
 
 	t.Run("Update", func(t *testing.T) {

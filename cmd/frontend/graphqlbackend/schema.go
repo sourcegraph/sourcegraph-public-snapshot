@@ -3334,6 +3334,15 @@ type User implements Node & SettingsSubject & Namespace {
     # The permissions information of the user over repositories.
     # It is null when there is no permissions data stored for the user.
     permissionsInfo: PermissionsInfo
+
+    # A list of campaigns applied under this user's namespace.
+    campaigns(
+        # Returns the first n campaigns from the list.
+        first: Int
+        state: CampaignState
+        # Only include campaigns that the viewer can administer.
+        viewerCanAdminister: Boolean
+    ): CampaignConnection!
 }
 
 # An access token that grants to the holder the privileges of the user who created it.
@@ -3526,6 +3535,15 @@ type Org implements Node & SettingsSubject & Namespace {
 
     # The name of this user namespace's component. For organizations, this is the organization's name.
     namespaceName: String!
+
+    # A list of campaigns initially applied in this organization.
+    campaigns(
+        # Returns the first n campaigns from the list.
+        first: Int
+        state: CampaignState
+        # Only include campaigns that the viewer can administer.
+        viewerCanAdminister: Boolean
+    ): CampaignConnection!
 }
 
 # The result of Mutation.inviteUserToOrganization.
