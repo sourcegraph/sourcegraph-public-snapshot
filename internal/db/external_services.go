@@ -426,18 +426,16 @@ FROM external_services
 WHERE deleted_at IS NULL
 `)
 
-	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	var kinds []string
+	err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(pq.Array(&kinds))
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return []string{}, nil
+		}
 		return nil, err
 	}
-	defer rows.Close()
 
-	if !rows.Next() {
-		return []string{}, nil
-	}
-
-	var kinds []string
-	return kinds, rows.Scan(pq.Array(&kinds))
+	return kinds, nil
 }
 
 // listConfigs decodes the list of configs into result. In addition to populating
