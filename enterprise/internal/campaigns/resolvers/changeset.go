@@ -163,7 +163,7 @@ func (r *changesetResolver) ExternalID() *string {
 }
 
 func (r *changesetResolver) Repository(ctx context.Context) *graphqlbackend.RepositoryResolver {
-	return graphqlbackend.NewRepositoryResolver(r.repo)
+	return r.repoResolver
 }
 
 func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
