@@ -284,7 +284,10 @@ WHERE
   created_at < %s
 AND
 NOT EXISTS (
-  SELECT 1 FROM campaigns WHERE campaigns.campaign_spec_id = campaign_specs.id
+  SELECT 1 FROM campaigns WHERE campaign_spec_id = campaign_specs.id
+)
+AND NOT EXISTS (
+  SELECT 1 FROM changeset_specs WHERE campaign_spec_id = campaign_specs.id
 );
 `
 

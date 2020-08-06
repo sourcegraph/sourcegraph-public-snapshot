@@ -342,12 +342,24 @@ func (s *Store) DeleteExpiredChangesetSpecs(ctx context.Context) error {
 var deleteExpiredChangesetSpecsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:DeleteExpiredChangesetSpecs
 DELETE FROM
-  changeset_specs
+  changeset_specs cspecs
 WHERE
   created_at < %s
 AND
+(
+  -- It was never attached to a campaign_spec
   campaign_spec_id IS NULL
-;
+
+  OR
+
+  (
+    -- The campaign_spec is not applied to a campaign
+    NOT EXISTS(SELECT 1 FROM campaigns WHERE campaign_spec_id = cspecs.campaign_spec_id)
+    AND
+    -- and the changeset_spec is not attached to a changeset
+    NOT EXISTS(SELECT 1 FROM changesets WHERE current_spec_id = cspecs.id OR previous_spec_id = cspecs.id)
+  )
+);
 `
 
 func scanChangesetSpec(c *campaigns.ChangesetSpec, s scanner) error {
