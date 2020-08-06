@@ -32,19 +32,19 @@ import { PrivateCodeCta } from '../search/input/PrivateCodeCta'
 
 export interface RepogroupPageProps
     extends SettingsCascadeProps<Settings>,
-    ThemeProps,
-    ThemePreferenceProps,
-    ActivationProps,
-    PatternTypeProps,
-    CaseSensitivityProps,
-    KeyboardShortcutsProps,
-    EventLoggerProps,
-    ExtensionsControllerProps<'executeCommand' | 'services'>,
-    PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
-    InteractiveSearchProps,
-    SmartSearchFieldProps,
-    CopyQueryButtonProps,
-    VersionContextProps {
+        ThemeProps,
+        ThemePreferenceProps,
+        ActivationProps,
+        PatternTypeProps,
+        CaseSensitivityProps,
+        KeyboardShortcutsProps,
+        EventLoggerProps,
+        ExtensionsControllerProps<'executeCommand' | 'services'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+        InteractiveSearchProps,
+        SmartSearchFieldProps,
+        CopyQueryButtonProps,
+        VersionContextProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History

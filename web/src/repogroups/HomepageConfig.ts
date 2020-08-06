@@ -6,7 +6,14 @@ import { reactHooks } from './ReactHooks'
 import { stanford } from './Stanford'
 import { RepogroupMetadata } from './types'
 
-export const repogroupList: RepogroupMetadata[] = [python2To3Metadata, android, kubernetes, golang, reactHooks, stanford]
+export const repogroupList: RepogroupMetadata[] = [
+    python2To3Metadata,
+    android,
+    kubernetes,
+    golang,
+    reactHooks,
+    stanford,
+]
 
 export const homepageLanguageList: { name: string; filterName: string }[] = [
     { name: 'C', filterName: 'c' },

@@ -35,20 +35,20 @@ import { PrivateCodeCta } from './PrivateCodeCta'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
-    ThemeProps,
-    ThemePreferenceProps,
-    ActivationProps,
-    PatternTypeProps,
-    CaseSensitivityProps,
-    KeyboardShortcutsProps,
-    EventLoggerProps,
-    ExtensionsControllerProps<'executeCommand' | 'services'>,
-    PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
-    InteractiveSearchProps,
-    SmartSearchFieldProps,
-    CopyQueryButtonProps,
-    VersionContextProps,
-    RepogroupHomepageProps {
+        ThemeProps,
+        ThemePreferenceProps,
+        ActivationProps,
+        PatternTypeProps,
+        CaseSensitivityProps,
+        KeyboardShortcutsProps,
+        EventLoggerProps,
+        ExtensionsControllerProps<'executeCommand' | 'services'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+        InteractiveSearchProps,
+        SmartSearchFieldProps,
+        CopyQueryButtonProps,
+        VersionContextProps,
+        RepogroupHomepageProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -82,10 +82,10 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
             () =>
                 codeInsightsEnabled
                     ? getViewsForContainer(
-                        ContributableViewContainer.Homepage,
-                        {},
-                        props.extensionsController.services.view
-                    )
+                          ContributableViewContainer.Homepage,
+                          {},
+                          props.extensionsController.services.view
+                      )
                     : EMPTY,
             [codeInsightsEnabled, props.extensionsController.services.view]
         )
