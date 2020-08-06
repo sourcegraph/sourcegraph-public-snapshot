@@ -236,48 +236,48 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 		- **Kubernetes:** consider provisioning more machines with less resources.
 
-# frontend: provisioning_container_cpu_usage_7d
+# frontend: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _frontend: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_frontend_provisioning_container_cpu_usage_7d`)
+- _frontend: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_ (`warning_frontend_provisioning_container_cpu_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the frontend container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the frontend service.
+	- **Docker Compose:** Consider increasing `cpus:` of the frontend container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# frontend: provisioning_container_memory_usage_7d
+# frontend: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _frontend: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_frontend_provisioning_container_memory_usage_7d`)
+- _frontend: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_ (`warning_frontend_provisioning_container_memory_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of frontend container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the frontend service.
+	- **Docker Compose:** Consider increasing `memory:` of the frontend container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# frontend: provisioning_container_cpu_usage_5m
+# frontend: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
-- _frontend: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_frontend_provisioning_container_cpu_usage_5m`)
+- _frontend: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_frontend_provisioning_container_cpu_usage_short_term`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the frontend container in `docker-compose.yml`.
 
-# frontend: provisioning_container_memory_usage_5m
+# frontend: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
-- _frontend: 90%+ container memory usage (5m maximum) by instance_ (`warning_frontend_provisioning_container_memory_usage_5m`)
+- _frontend: 90%+ container memory usage (5m maximum) by instance_ (`warning_frontend_provisioning_container_memory_usage_short_term`)
 
 **Possible solutions:**
 
@@ -414,35 +414,37 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 		- **Kubernetes:** consider provisioning more machines with less resources.
 
-# gitserver: provisioning_container_cpu_usage_7d
+# gitserver: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _gitserver: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_gitserver_provisioning_container_cpu_usage_7d`)
+- _gitserver: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_ (`warning_gitserver_provisioning_container_cpu_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the gitserver container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the gitserver service.
+	- **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# gitserver: provisioning_container_memory_usage_7d
+# gitserver: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _gitserver: less than 30% container memory usage (7d maximum) by instance_ (`warning_gitserver_provisioning_container_memory_usage_7d`)
+- _gitserver: less than 30% container memory usage (1d maximum) by instance for 336h0m0s_ (`warning_gitserver_provisioning_container_memory_usage_long_term`)
 
 **Possible solutions:**
 
-- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider decreasing `memory:` of gitserver container in `docker-compose.yml`.
+- If usage is high:
+	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the gitserver service.
+	- **Docker Compose:** Consider increasing `memory:` of the gitserver container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
-# gitserver: provisioning_container_cpu_usage_5m
+# gitserver: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
-- _gitserver: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_gitserver_provisioning_container_cpu_usage_5m`)
+- _gitserver: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_gitserver_provisioning_container_cpu_usage_short_term`)
 
 **Possible solutions:**
 
@@ -517,48 +519,48 @@ Try restarting the pod to get a different public IP.
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 		- **Kubernetes:** consider provisioning more machines with less resources.
 
-# github-proxy: provisioning_container_cpu_usage_7d
+# github-proxy: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _github-proxy: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_github-proxy_provisioning_container_cpu_usage_7d`)
+- _github-proxy: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_ (`warning_github-proxy_provisioning_container_cpu_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the github-proxy container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the github-proxy service.
+	- **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# github-proxy: provisioning_container_memory_usage_7d
+# github-proxy: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _github-proxy: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_github-proxy_provisioning_container_memory_usage_7d`)
+- _github-proxy: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_ (`warning_github-proxy_provisioning_container_memory_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the github-proxy service.
+	- **Docker Compose:** Consider increasing `memory:` of the github-proxy container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# github-proxy: provisioning_container_cpu_usage_5m
+# github-proxy: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
-- _github-proxy: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_github-proxy_provisioning_container_cpu_usage_5m`)
+- _github-proxy: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_github-proxy_provisioning_container_cpu_usage_short_term`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
 
-# github-proxy: provisioning_container_memory_usage_5m
+# github-proxy: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
-- _github-proxy: 90%+ container memory usage (5m maximum) by instance_ (`warning_github-proxy_provisioning_container_memory_usage_5m`)
+- _github-proxy: 90%+ container memory usage (5m maximum) by instance_ (`warning_github-proxy_provisioning_container_memory_usage_short_term`)
 
 **Possible solutions:**
 
@@ -642,48 +644,48 @@ Try restarting the pod to get a different public IP.
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 		- **Kubernetes:** consider provisioning more machines with less resources.
 
-# precise-code-intel-bundle-manager: provisioning_container_cpu_usage_7d
+# precise-code-intel-bundle-manager: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_precise-code-intel-bundle-manager_provisioning_container_cpu_usage_7d`)
+- _precise-code-intel-bundle-manager: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_ (`warning_precise-code-intel-bundle-manager_provisioning_container_cpu_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the precise-code-intel-bundle-manager service.
+	- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# precise-code-intel-bundle-manager: provisioning_container_memory_usage_7d
+# precise-code-intel-bundle-manager: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_precise-code-intel-bundle-manager_provisioning_container_memory_usage_7d`)
+- _precise-code-intel-bundle-manager: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_ (`warning_precise-code-intel-bundle-manager_provisioning_container_memory_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-bundle-manager container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the precise-code-intel-bundle-manager service.
+	- **Docker Compose:** Consider increasing `memory:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# precise-code-intel-bundle-manager: provisioning_container_cpu_usage_5m
+# precise-code-intel-bundle-manager: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_precise-code-intel-bundle-manager_provisioning_container_cpu_usage_5m`)
+- _precise-code-intel-bundle-manager: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_precise-code-intel-bundle-manager_provisioning_container_cpu_usage_short_term`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
 
-# precise-code-intel-bundle-manager: provisioning_container_memory_usage_5m
+# precise-code-intel-bundle-manager: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 90%+ container memory usage (5m maximum) by instance_ (`warning_precise-code-intel-bundle-manager_provisioning_container_memory_usage_5m`)
+- _precise-code-intel-bundle-manager: 90%+ container memory usage (5m maximum) by instance_ (`warning_precise-code-intel-bundle-manager_provisioning_container_memory_usage_short_term`)
 
 **Possible solutions:**
 
@@ -754,48 +756,48 @@ Try restarting the pod to get a different public IP.
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 		- **Kubernetes:** consider provisioning more machines with less resources.
 
-# precise-code-intel-worker: provisioning_container_cpu_usage_7d
+# precise-code-intel-worker: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_precise-code-intel-worker_provisioning_container_cpu_usage_7d`)
+- _precise-code-intel-worker: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_ (`warning_precise-code-intel-worker_provisioning_container_cpu_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the precise-code-intel-worker service.
+	- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# precise-code-intel-worker: provisioning_container_memory_usage_7d
+# precise-code-intel-worker: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_precise-code-intel-worker_provisioning_container_memory_usage_7d`)
+- _precise-code-intel-worker: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_ (`warning_precise-code-intel-worker_provisioning_container_memory_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the precise-code-intel-worker service.
+	- **Docker Compose:** Consider increasing `memory:` of the precise-code-intel-worker container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# precise-code-intel-worker: provisioning_container_cpu_usage_5m
+# precise-code-intel-worker: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_precise-code-intel-worker_provisioning_container_cpu_usage_5m`)
+- _precise-code-intel-worker: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_precise-code-intel-worker_provisioning_container_cpu_usage_short_term`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
 
-# precise-code-intel-worker: provisioning_container_memory_usage_5m
+# precise-code-intel-worker: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 90%+ container memory usage (5m maximum) by instance_ (`warning_precise-code-intel-worker_provisioning_container_memory_usage_5m`)
+- _precise-code-intel-worker: 90%+ container memory usage (5m maximum) by instance_ (`warning_precise-code-intel-worker_provisioning_container_memory_usage_short_term`)
 
 **Possible solutions:**
 
@@ -866,48 +868,48 @@ Try restarting the pod to get a different public IP.
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 		- **Kubernetes:** consider provisioning more machines with less resources.
 
-# precise-code-intel-indexer: provisioning_container_cpu_usage_7d
+# precise-code-intel-indexer: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_precise-code-intel-indexer_provisioning_container_cpu_usage_7d`)
+- _precise-code-intel-indexer: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_ (`warning_precise-code-intel-indexer_provisioning_container_cpu_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the precise-code-intel-indexer service.
+	- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# precise-code-intel-indexer: provisioning_container_memory_usage_7d
+# precise-code-intel-indexer: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_precise-code-intel-indexer_provisioning_container_memory_usage_7d`)
+- _precise-code-intel-indexer: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_ (`warning_precise-code-intel-indexer_provisioning_container_memory_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the precise-code-intel-indexer service.
+	- **Docker Compose:** Consider increasing `memory:` of the precise-code-intel-indexer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# precise-code-intel-indexer: provisioning_container_cpu_usage_5m
+# precise-code-intel-indexer: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_precise-code-intel-indexer_provisioning_container_cpu_usage_5m`)
+- _precise-code-intel-indexer: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_precise-code-intel-indexer_provisioning_container_cpu_usage_short_term`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
 
-# precise-code-intel-indexer: provisioning_container_memory_usage_5m
+# precise-code-intel-indexer: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 90%+ container memory usage (5m maximum) by instance_ (`warning_precise-code-intel-indexer_provisioning_container_memory_usage_5m`)
+- _precise-code-intel-indexer: 90%+ container memory usage (5m maximum) by instance_ (`warning_precise-code-intel-indexer_provisioning_container_memory_usage_short_term`)
 
 **Possible solutions:**
 
@@ -978,48 +980,48 @@ Try restarting the pod to get a different public IP.
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 		- **Kubernetes:** consider provisioning more machines with less resources.
 
-# query-runner: provisioning_container_cpu_usage_7d
+# query-runner: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _query-runner: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_query-runner_provisioning_container_cpu_usage_7d`)
+- _query-runner: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_ (`warning_query-runner_provisioning_container_cpu_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the query-runner container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the query-runner service.
+	- **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# query-runner: provisioning_container_memory_usage_7d
+# query-runner: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _query-runner: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_query-runner_provisioning_container_memory_usage_7d`)
+- _query-runner: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_ (`warning_query-runner_provisioning_container_memory_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of query-runner container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the query-runner service.
+	- **Docker Compose:** Consider increasing `memory:` of the query-runner container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# query-runner: provisioning_container_cpu_usage_5m
+# query-runner: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
-- _query-runner: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_query-runner_provisioning_container_cpu_usage_5m`)
+- _query-runner: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_query-runner_provisioning_container_cpu_usage_short_term`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
 
-# query-runner: provisioning_container_memory_usage_5m
+# query-runner: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
-- _query-runner: 90%+ container memory usage (5m maximum) by instance_ (`warning_query-runner_provisioning_container_memory_usage_5m`)
+- _query-runner: 90%+ container memory usage (5m maximum) by instance_ (`warning_query-runner_provisioning_container_memory_usage_short_term`)
 
 **Possible solutions:**
 
@@ -1090,48 +1092,48 @@ Try restarting the pod to get a different public IP.
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 		- **Kubernetes:** consider provisioning more machines with less resources.
 
-# replacer: provisioning_container_cpu_usage_7d
+# replacer: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _replacer: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_replacer_provisioning_container_cpu_usage_7d`)
+- _replacer: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_ (`warning_replacer_provisioning_container_cpu_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the replacer container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the replacer service.
+	- **Docker Compose:** Consider increasing `cpus:` of the replacer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# replacer: provisioning_container_memory_usage_7d
+# replacer: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _replacer: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_replacer_provisioning_container_memory_usage_7d`)
+- _replacer: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_ (`warning_replacer_provisioning_container_memory_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of replacer container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the replacer service.
+	- **Docker Compose:** Consider increasing `memory:` of the replacer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# replacer: provisioning_container_cpu_usage_5m
+# replacer: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
-- _replacer: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_replacer_provisioning_container_cpu_usage_5m`)
+- _replacer: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_replacer_provisioning_container_cpu_usage_short_term`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the replacer container in `docker-compose.yml`.
 
-# replacer: provisioning_container_memory_usage_5m
+# replacer: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
-- _replacer: 90%+ container memory usage (5m maximum) by instance_ (`warning_replacer_provisioning_container_memory_usage_5m`)
+- _replacer: 90%+ container memory usage (5m maximum) by instance_ (`warning_replacer_provisioning_container_memory_usage_short_term`)
 
 **Possible solutions:**
 
@@ -1202,48 +1204,48 @@ Try restarting the pod to get a different public IP.
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 		- **Kubernetes:** consider provisioning more machines with less resources.
 
-# repo-updater: provisioning_container_cpu_usage_7d
+# repo-updater: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _repo-updater: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_repo-updater_provisioning_container_cpu_usage_7d`)
+- _repo-updater: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_ (`warning_repo-updater_provisioning_container_cpu_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the repo-updater container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the repo-updater service.
+	- **Docker Compose:** Consider increasing `cpus:` of the repo-updater container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# repo-updater: provisioning_container_memory_usage_7d
+# repo-updater: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _repo-updater: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_repo-updater_provisioning_container_memory_usage_7d`)
+- _repo-updater: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_ (`warning_repo-updater_provisioning_container_memory_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of repo-updater container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the repo-updater service.
+	- **Docker Compose:** Consider increasing `memory:` of the repo-updater container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# repo-updater: provisioning_container_cpu_usage_5m
+# repo-updater: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
-- _repo-updater: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_repo-updater_provisioning_container_cpu_usage_5m`)
+- _repo-updater: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_repo-updater_provisioning_container_cpu_usage_short_term`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the repo-updater container in `docker-compose.yml`.
 
-# repo-updater: provisioning_container_memory_usage_5m
+# repo-updater: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
-- _repo-updater: 90%+ container memory usage (5m maximum) by instance_ (`warning_repo-updater_provisioning_container_memory_usage_5m`)
+- _repo-updater: 90%+ container memory usage (5m maximum) by instance_ (`warning_repo-updater_provisioning_container_memory_usage_short_term`)
 
 **Possible solutions:**
 
@@ -1314,48 +1316,48 @@ Try restarting the pod to get a different public IP.
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 		- **Kubernetes:** consider provisioning more machines with less resources.
 
-# searcher: provisioning_container_cpu_usage_7d
+# searcher: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _searcher: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_searcher_provisioning_container_cpu_usage_7d`)
+- _searcher: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_ (`warning_searcher_provisioning_container_cpu_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the searcher container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the searcher service.
+	- **Docker Compose:** Consider increasing `cpus:` of the searcher container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# searcher: provisioning_container_memory_usage_7d
+# searcher: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _searcher: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_searcher_provisioning_container_memory_usage_7d`)
+- _searcher: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_ (`warning_searcher_provisioning_container_memory_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of searcher container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the searcher service.
+	- **Docker Compose:** Consider increasing `memory:` of the searcher container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# searcher: provisioning_container_cpu_usage_5m
+# searcher: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
-- _searcher: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_searcher_provisioning_container_cpu_usage_5m`)
+- _searcher: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_searcher_provisioning_container_cpu_usage_short_term`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the searcher container in `docker-compose.yml`.
 
-# searcher: provisioning_container_memory_usage_5m
+# searcher: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
-- _searcher: 90%+ container memory usage (5m maximum) by instance_ (`warning_searcher_provisioning_container_memory_usage_5m`)
+- _searcher: 90%+ container memory usage (5m maximum) by instance_ (`warning_searcher_provisioning_container_memory_usage_short_term`)
 
 **Possible solutions:**
 
@@ -1426,48 +1428,48 @@ Try restarting the pod to get a different public IP.
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 		- **Kubernetes:** consider provisioning more machines with less resources.
 
-# symbols: provisioning_container_cpu_usage_7d
+# symbols: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _symbols: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_symbols_provisioning_container_cpu_usage_7d`)
+- _symbols: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_ (`warning_symbols_provisioning_container_cpu_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the symbols container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the symbols service.
+	- **Docker Compose:** Consider increasing `cpus:` of the symbols container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# symbols: provisioning_container_memory_usage_7d
+# symbols: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _symbols: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_symbols_provisioning_container_memory_usage_7d`)
+- _symbols: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_ (`warning_symbols_provisioning_container_memory_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the symbols service.
+	- **Docker Compose:** Consider increasing `memory:` of the symbols container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# symbols: provisioning_container_cpu_usage_5m
+# symbols: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
-- _symbols: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_symbols_provisioning_container_cpu_usage_5m`)
+- _symbols: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_symbols_provisioning_container_cpu_usage_short_term`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the symbols container in `docker-compose.yml`.
 
-# symbols: provisioning_container_memory_usage_5m
+# symbols: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
-- _symbols: 90%+ container memory usage (5m maximum) by instance_ (`warning_symbols_provisioning_container_memory_usage_5m`)
+- _symbols: 90%+ container memory usage (5m maximum) by instance_ (`warning_symbols_provisioning_container_memory_usage_short_term`)
 
 **Possible solutions:**
 
@@ -1522,48 +1524,48 @@ Try restarting the pod to get a different public IP.
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 		- **Kubernetes:** consider provisioning more machines with less resources.
 
-# syntect-server: provisioning_container_cpu_usage_7d
+# syntect-server: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _syntect-server: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_syntect-server_provisioning_container_cpu_usage_7d`)
+- _syntect-server: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_ (`warning_syntect-server_provisioning_container_cpu_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the syntect-server container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the syntect-server service.
+	- **Docker Compose:** Consider increasing `cpus:` of the syntect-server container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# syntect-server: provisioning_container_memory_usage_7d
+# syntect-server: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _syntect-server: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_syntect-server_provisioning_container_memory_usage_7d`)
+- _syntect-server: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_ (`warning_syntect-server_provisioning_container_memory_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the syntect-server service.
+	- **Docker Compose:** Consider increasing `memory:` of the syntect-server container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# syntect-server: provisioning_container_cpu_usage_5m
+# syntect-server: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
-- _syntect-server: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_syntect-server_provisioning_container_cpu_usage_5m`)
+- _syntect-server: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_syntect-server_provisioning_container_cpu_usage_short_term`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the syntect-server container in `docker-compose.yml`.
 
-# syntect-server: provisioning_container_memory_usage_5m
+# syntect-server: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
-- _syntect-server: 90%+ container memory usage (5m maximum) by instance_ (`warning_syntect-server_provisioning_container_memory_usage_5m`)
+- _syntect-server: 90%+ container memory usage (5m maximum) by instance_ (`warning_syntect-server_provisioning_container_memory_usage_short_term`)
 
 **Possible solutions:**
 
@@ -1618,48 +1620,48 @@ Try restarting the pod to get a different public IP.
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 		- **Kubernetes:** consider provisioning more machines with less resources.
 
-# zoekt-indexserver: provisioning_container_cpu_usage_7d
+# zoekt-indexserver: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _zoekt-indexserver: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_zoekt-indexserver_provisioning_container_cpu_usage_7d`)
+- _zoekt-indexserver: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_ (`warning_zoekt-indexserver_provisioning_container_cpu_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the zoekt-indexserver service.
+	- **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# zoekt-indexserver: provisioning_container_memory_usage_7d
+# zoekt-indexserver: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _zoekt-indexserver: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_zoekt-indexserver_provisioning_container_memory_usage_7d`)
+- _zoekt-indexserver: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_ (`warning_zoekt-indexserver_provisioning_container_memory_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the zoekt-indexserver service.
+	- **Docker Compose:** Consider increasing `memory:` of the zoekt-indexserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# zoekt-indexserver: provisioning_container_cpu_usage_5m
+# zoekt-indexserver: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
-- _zoekt-indexserver: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_zoekt-indexserver_provisioning_container_cpu_usage_5m`)
+- _zoekt-indexserver: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_zoekt-indexserver_provisioning_container_cpu_usage_short_term`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
 
-# zoekt-indexserver: provisioning_container_memory_usage_5m
+# zoekt-indexserver: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
-- _zoekt-indexserver: 90%+ container memory usage (5m maximum) by instance_ (`warning_zoekt-indexserver_provisioning_container_memory_usage_5m`)
+- _zoekt-indexserver: 90%+ container memory usage (5m maximum) by instance_ (`warning_zoekt-indexserver_provisioning_container_memory_usage_short_term`)
 
 **Possible solutions:**
 
@@ -1714,48 +1716,48 @@ Try restarting the pod to get a different public IP.
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 		- **Kubernetes:** consider provisioning more machines with less resources.
 
-# zoekt-webserver: provisioning_container_cpu_usage_7d
+# zoekt-webserver: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _zoekt-webserver: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_zoekt-webserver_provisioning_container_cpu_usage_7d`)
+- _zoekt-webserver: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_ (`warning_zoekt-webserver_provisioning_container_cpu_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the zoekt-webserver service.
+	- **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# zoekt-webserver: provisioning_container_memory_usage_7d
+# zoekt-webserver: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _zoekt-webserver: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_zoekt-webserver_provisioning_container_memory_usage_7d`)
+- _zoekt-webserver: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_ (`warning_zoekt-webserver_provisioning_container_memory_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the zoekt-webserver service.
+	- **Docker Compose:** Consider increasing `memory:` of the zoekt-webserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# zoekt-webserver: provisioning_container_cpu_usage_5m
+# zoekt-webserver: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
-- _zoekt-webserver: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_zoekt-webserver_provisioning_container_cpu_usage_5m`)
+- _zoekt-webserver: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_zoekt-webserver_provisioning_container_cpu_usage_short_term`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
 
-# zoekt-webserver: provisioning_container_memory_usage_5m
+# zoekt-webserver: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
-- _zoekt-webserver: 90%+ container memory usage (5m maximum) by instance_ (`warning_zoekt-webserver_provisioning_container_memory_usage_5m`)
+- _zoekt-webserver: 90%+ container memory usage (5m maximum) by instance_ (`warning_zoekt-webserver_provisioning_container_memory_usage_short_term`)
 
 **Possible solutions:**
 
@@ -1820,48 +1822,48 @@ Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 		- **Kubernetes:** consider provisioning more machines with less resources.
 
-# prometheus: provisioning_container_cpu_usage_7d
+# prometheus: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _prometheus: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_prometheus_provisioning_container_cpu_usage_7d`)
+- _prometheus: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_ (`warning_prometheus_provisioning_container_cpu_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the prometheus container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in `Deployment.yaml` for the prometheus service.
+	- **Docker Compose:** Consider increasing `cpus:` of the prometheus container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# prometheus: provisioning_container_memory_usage_7d
+# prometheus: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _prometheus: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_prometheus_provisioning_container_memory_usage_7d`)
+- _prometheus: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_ (`warning_prometheus_provisioning_container_memory_usage_long_term`)
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of prometheus container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in `Deployment.yaml` for the prometheus service.
+	- **Docker Compose:** Consider increasing `memory:` of the prometheus container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# prometheus: provisioning_container_cpu_usage_5m
+# prometheus: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
-- _prometheus: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_prometheus_provisioning_container_cpu_usage_5m`)
+- _prometheus: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_prometheus_provisioning_container_cpu_usage_short_term`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the prometheus container in `docker-compose.yml`.
 
-# prometheus: provisioning_container_memory_usage_5m
+# prometheus: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
-- _prometheus: 90%+ container memory usage (5m maximum) by instance_ (`warning_prometheus_provisioning_container_memory_usage_5m`)
+- _prometheus: 90%+ container memory usage (5m maximum) by instance_ (`warning_prometheus_provisioning_container_memory_usage_short_term`)
 
 **Possible solutions:**
 

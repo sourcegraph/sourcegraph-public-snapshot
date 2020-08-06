@@ -52,12 +52,12 @@ func GitHubProxy() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage7d("github-proxy"),
-						sharedProvisioningMemoryUsage7d("github-proxy"),
+						sharedProvisioningCPUUsageLongTerm("github-proxy"),
+						sharedProvisioningMemoryUsageLongTerm("github-proxy"),
 					},
 					{
-						sharedProvisioningCPUUsage5m("github-proxy"),
-						sharedProvisioningMemoryUsage5m("github-proxy"),
+						sharedProvisioningCPUUsageShortTerm("github-proxy"),
+						sharedProvisioningMemoryUsageShortTerm("github-proxy"),
 					},
 				},
 			},
