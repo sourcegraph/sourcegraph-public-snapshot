@@ -131,7 +131,6 @@ The following are two recommendations for installing these dependencies:
         set -x NVM_DIR ~/.nvm
         ```
 
-
 5.  Install the current recommended version of Node JS by running the following
     from the working directory of a sourcegraph repository clone:
 
