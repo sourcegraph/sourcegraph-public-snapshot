@@ -25,4 +25,5 @@ postgres_exporter: ./dev/postgres_exporter.sh
 # Additional enterprise services
 precise-code-intel-bundle-manager: precise-code-intel-bundle-manager
 precise-code-intel-indexer: precise-code-intel-indexer
+precise-code-intel-indexer-vm: env TMPDIR=/tmp/indexer-vm precise-code-intel-indexer-vm
 precise-code-intel-worker: precise-code-intel-worker
