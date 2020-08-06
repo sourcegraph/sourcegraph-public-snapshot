@@ -9,9 +9,11 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-// Store is the database layer for the workerutil package that handles worker-side operations.
+// Store is the persistence layer for the dbworker package that handles worker-side operations backed by a Postgres
+// database. See StoreOptions for details on the required shape of the database tables (e.g. table column names/types).
 type Store interface {
 	basestore.ShareableStore
 
@@ -27,12 +29,12 @@ type Store interface {
 	// transaction.
 	//
 	// The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
-	Dequeue(ctx context.Context, conditions []*sqlf.Query) (record Record, tx Store, exists bool, err error)
+	Dequeue(ctx context.Context, conditions []*sqlf.Query) (record workerutil.Record, tx Store, exists bool, err error)
 
 	// DequeueWithIndependentTransactionContext is like Dequeue, but will use a context.Background() for the underlying
 	// transaction context. This method allows the transaction to lexically outlive the code in which it was created. This
 	// is useful if a longer-running transaction is managed explicitly bewteen multiple goroutines.
-	DequeueWithIndependentTransactionContext(ctx context.Context, conditions []*sqlf.Query) (Record, Store, bool, error)
+	DequeueWithIndependentTransactionContext(ctx context.Context, conditions []*sqlf.Query) (workerutil.Record, Store, bool, error)
 
 	// Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
 	// the next dequeue of this record can be performed.
@@ -53,12 +55,6 @@ type Store interface {
 	// than `MaxNumResets` times will be marked as errored. This method returns a list of record identifiers that have
 	// been reset and a list of record identifiers that have been marked as errored.
 	ResetStalled(ctx context.Context) (resetIDs, erroredIDs []int, err error)
-}
-
-// Record is a generic interface for record conforming to the requirements of the store.
-type Record interface {
-	// RecordID returns the integer primary key of the record.
-	RecordID() int
 }
 
 type store struct {
@@ -142,7 +138,7 @@ type StoreOptions struct {
 // value if the given error value is nil.
 //
 // See the `CloseRows` function in the store/base package for suggested implementation details.
-type RecordScanFn func(rows *sql.Rows, err error) (Record, bool, error)
+type RecordScanFn func(rows *sql.Rows, err error) (workerutil.Record, bool, error)
 
 // NewStore creates a new store with the given database handle and options.
 func NewStore(handle *basestore.TransactableHandle, options StoreOptions) Store {
@@ -203,20 +199,25 @@ func (s *store) Transact(ctx context.Context) (*store, error) {
 // transaction.
 //
 // The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
-func (s *store) Dequeue(ctx context.Context, conditions []*sqlf.Query) (record Record, _ Store, exists bool, err error) {
+func (s *store) Dequeue(ctx context.Context, conditions []*sqlf.Query) (record workerutil.Record, _ Store, exists bool, err error) {
 	return s.dequeue(ctx, conditions, false)
 }
 
 // DequeueWithIndependentTransactionContext is like Dequeue, but will use a context.Background() for the underlying
 // transaction context. This method allows the transaction to lexically outlive the code in which it was created. This
 // is useful if a longer-running transaction is managed explicitly bewteen multiple goroutines.
-func (s *store) DequeueWithIndependentTransactionContext(ctx context.Context, conditions []*sqlf.Query) (Record, Store, bool, error) {
+func (s *store) DequeueWithIndependentTransactionContext(ctx context.Context, conditions []*sqlf.Query) (workerutil.Record, Store, bool, error) {
 	return s.dequeue(ctx, conditions, true)
 }
 
-func (s *store) dequeue(ctx context.Context, conditions []*sqlf.Query, independentTxCtx bool) (record Record, _ Store, exists bool, err error) {
+func (s *store) dequeue(ctx context.Context, conditions []*sqlf.Query, independentTxCtx bool) (record workerutil.Record, _ Store, exists bool, err error) {
 	if s.InTransaction() {
 		return nil, nil, false, ErrDequeueTransaction
+	}
+
+	txCtx := ctx
+	if independentTxCtx {
+		txCtx = context.Background()
 	}
 
 	query := s.formatQuery(
@@ -240,7 +241,7 @@ func (s *store) dequeue(ctx context.Context, conditions []*sqlf.Query, independe
 
 		// Once we have an eligible identifier, we try to create a transaction and select the
 		// record in a way that takes a row lock for the duration of the transaction.
-		tx, err := s.Transact(ctx)
+		tx, err := s.Transact(txCtx)
 		if err != nil {
 			return nil, nil, false, err
 		}

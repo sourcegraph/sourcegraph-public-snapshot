@@ -1,4 +1,4 @@
-package workerutil
+package dbworker
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"github.com/efritz/glock"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // Resetter periodically moves all unlocked records that have been in the processing state
@@ -17,7 +18,7 @@ import (
 // state for more than a few seconds are very likely to be stuck after the worker processing
 // them has crashed.
 type Resetter struct {
-	store    Store
+	store    store.Store
 	options  ResetterOptions
 	clock    glock.Clock
 	ctx      context.Context // root context passed to the database
@@ -37,11 +38,11 @@ type ResetterMetrics struct {
 	Errors              prometheus.Counter
 }
 
-func NewResetter(store Store, options ResetterOptions) *Resetter {
+func NewResetter(store store.Store, options ResetterOptions) *Resetter {
 	return newResetter(store, options, glock.NewRealClock())
 }
 
-func newResetter(store Store, options ResetterOptions, clock glock.Clock) *Resetter {
+func newResetter(store store.Store, options ResetterOptions, clock glock.Clock) *Resetter {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &Resetter{
