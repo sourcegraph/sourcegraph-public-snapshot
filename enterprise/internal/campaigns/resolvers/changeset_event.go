@@ -10,9 +10,9 @@ import (
 )
 
 type changesetEventResolver struct {
-	store       *ee.Store
-	httpFactory *httpcli.Factory
-	changeset   graphqlbackend.ExternalChangesetResolver
+	store             *ee.Store
+	httpFactory       *httpcli.Factory
+	changesetResolver *changesetResolver
 	*campaigns.ChangesetEvent
 }
 
@@ -31,5 +31,5 @@ func (r *changesetEventResolver) CreatedAt() graphqlbackend.DateTime {
 }
 
 func (r *changesetEventResolver) Changeset() graphqlbackend.ExternalChangesetResolver {
-	return r.changeset
+	return r.changesetResolver
 }

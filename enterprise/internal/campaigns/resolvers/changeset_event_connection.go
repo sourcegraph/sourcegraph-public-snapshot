@@ -12,11 +12,10 @@ import (
 )
 
 type changesetEventsConnectionResolver struct {
-	store       *ee.Store
-	httpFactory *httpcli.Factory
-	changeset   graphqlbackend.ExternalChangesetResolver
-	changesetID int64
-	first       int
+	store             *ee.Store
+	httpFactory       *httpcli.Factory
+	changesetResolver *changesetResolver
+	first             int
 
 	// cache results because they are used by multiple fields
 	once            sync.Once
@@ -33,17 +32,17 @@ func (r *changesetEventsConnectionResolver) Nodes(ctx context.Context) ([]graphq
 	resolvers := make([]graphqlbackend.ChangesetEventResolver, 0, len(changesetEvents))
 	for _, c := range changesetEvents {
 		resolvers = append(resolvers, &changesetEventResolver{
-			store:          r.store,
-			httpFactory:    r.httpFactory,
-			changeset:      r.changeset,
-			ChangesetEvent: c,
+			store:             r.store,
+			httpFactory:       r.httpFactory,
+			changesetResolver: r.changesetResolver,
+			ChangesetEvent:    c,
 		})
 	}
 	return resolvers, nil
 }
 
 func (r *changesetEventsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := ee.CountChangesetEventsOpts{ChangesetID: r.changesetID}
+	opts := ee.CountChangesetEventsOpts{ChangesetID: r.changesetResolver.changeset.ID}
 	count, err := r.store.CountChangesetEvents(ctx, opts)
 	return int32(count), err
 }
@@ -59,7 +58,7 @@ func (r *changesetEventsConnectionResolver) PageInfo(ctx context.Context) (*grap
 func (r *changesetEventsConnectionResolver) compute(ctx context.Context) ([]*campaigns.ChangesetEvent, int64, error) {
 	r.once.Do(func() {
 		opts := ee.ListChangesetEventsOpts{
-			ChangesetIDs: []int64{r.changesetID},
+			ChangesetIDs: []int64{r.changesetResolver.changeset.ID},
 			Limit:        r.first,
 		}
 		r.changesetEvents, r.next, r.err = r.store.ListChangesetEvents(ctx, opts)

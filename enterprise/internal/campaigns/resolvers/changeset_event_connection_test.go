@@ -52,10 +52,7 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 	}
 
 	changeset := createChangeset(t, ctx, store, testChangesetOpts{
-		repo: repo.ID,
-		// We don't need a spec because we don't query for fields that would
-		// require it
-		currentSpec:         0,
+		repo:                repo.ID,
 		externalServiceType: "github",
 		publicationState:    campaigns.ChangesetPublicationStateUnpublished,
 		externalReviewState: campaigns.ChangesetReviewStatePending,

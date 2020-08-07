@@ -60,10 +60,7 @@ func TestChangesetCountsOverTimeResolver(t *testing.T) {
 	}
 
 	changeset1 := createChangeset(t, ctx, store, testChangesetOpts{
-		repo: repo.ID,
-		// We don't need a spec because we don't query for fields that would
-		// require it
-		currentSpec:         0,
+		repo:                repo.ID,
 		externalServiceType: "github",
 		// Unpublished changesets should not be considered.
 		publicationState: campaigns.ChangesetPublicationStateUnpublished,
@@ -71,10 +68,7 @@ func TestChangesetCountsOverTimeResolver(t *testing.T) {
 		campaign:         campaign.ID,
 	})
 	changeset2 := createChangeset(t, ctx, store, testChangesetOpts{
-		repo: repo.ID,
-		// We don't need a spec because we don't query for fields that would
-		// require it
-		currentSpec:         0,
+		repo:                repo.ID,
 		externalServiceType: "github",
 		externalState:       campaigns.ChangesetExternalStateOpen,
 		publicationState:    campaigns.ChangesetPublicationStatePublished,
@@ -122,19 +116,19 @@ const queryChangesetCountsConnection = `
 query($campaign: ID!) {
   node(id: $campaign) {
     ... on Campaign {
-            changesetCountsOverTime {
-				date
-				total
-				merged
-				closed
-				open
-				openApproved
-				openChangesRequested
-				openPending
-			}
-          }
-        }
+      changesetCountsOverTime {
+        date
+        total
+        merged
+        closed
+        open
+        openApproved
+        openChangesRequested
+        openPending
       }
+    }
+  }
+}
 `
 
 func TestChangesetCountsOverTimeIntegration(t *testing.T) {
