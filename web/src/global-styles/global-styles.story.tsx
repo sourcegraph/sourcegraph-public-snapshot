@@ -477,6 +477,17 @@ add(
                 </button>
             </p>
 
+            <h3>Button group</h3>
+
+            <div className="btn-group" role="group" aria-label="Button group example">
+                <button type="button" className={classNames('btn', 'btn-outline-secondary')}>
+                    One
+                </button>
+                <button type="button" className={classNames('btn', 'btn-outline-secondary')}>
+                    Two
+                </button>
+            </div>
+
             <h2>Disabled</h2>
             <p>
                 <button type="button" className="btn btn-primary mr-2" disabled={true}>
