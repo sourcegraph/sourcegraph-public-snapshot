@@ -96,20 +96,8 @@ To set the password for {{.Username}} on Sourcegraph, follow this link:
 `,
 })
 
-// If the instance is configured to do so, send the password reset link directly
-// to the user, rather than requiring the admin to send it to them
+// Send the password reset email directly to the user on user creation by admin
 func HandleSetPasswordEmail(ctx context.Context, id int32) (string, error) {
-	ru, err := backend.MakePasswordResetURL(ctx, id)
-	if err == db.ErrPasswordResetRateLimit {
-		return "", errors.New("too many password reset requests. try again in a few minutes")
-	} else if err != nil {
-		return "", errors.New("could not reset password")
-	}
-
-	if !conf.CanSendEmail() {
-		return "", errors.New("unable to reset password because email sending is not configured on this site")
-	}
-
 	e, _, err := db.UserEmails.GetPrimaryEmail(ctx, id)
 	if err != nil {
 		return "", errors.New("failed to lookup user email")
@@ -118,6 +106,13 @@ func HandleSetPasswordEmail(ctx context.Context, id int32) (string, error) {
 	usr, err := db.Users.GetByID(ctx, id)
 	if err != nil {
 		return "", errors.New("failed to lookup user")
+	}
+
+	ru, err := backend.MakePasswordResetURL(ctx, id)
+	if err == db.ErrPasswordResetRateLimit {
+		return "", errors.New("too many password reset requests. try again in a few minutes")
+	} else if err != nil {
+		return "", errors.New("could not reset password")
 	}
 
 	rus := globals.ExternalURL().ResolveReference(ru).String()

@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
@@ -14,9 +16,16 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 	_, ctx = ot.StartSpanFromContext(ctx, "dummy")
 
-	// TODO: Make the mocks
 	backend.Mocks.MakePasswordResetURL = func(context.Context, int32) (string, error) {
 		return "t", nil
+	}
+
+	db.Mocks.UserEmails.GetPrimaryEmail = func(context.Context, int32) (string, bool, error) {
+		return "test@gmail.com", true, nil
+	}
+
+	db.Mocks.Users.GetByID = func(context.Context, int32) (*types.User, error) {
+		return nil, nil
 	}
 
 	tests := []struct {

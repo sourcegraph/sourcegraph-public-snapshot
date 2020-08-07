@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 )
 
@@ -61,20 +62,20 @@ func (r *createUserResult) ResetPasswordURL(ctx context.Context) (*string, error
 	if !userpasswd.ResetPasswordEnabled() {
 		return nil, nil
 	}
+	ru := ""
 
-	// Try sending the user an email. This function handles checking for email being enabled
-	ru, err := userpasswd.HandleSetPasswordEmail(ctx, r.user.ID)
-
-	if err != nil {
-		// If we failed to send an email for any reason, then just generate a fresh password reset URL
-		// This method modifies the DB, which is somewhat counterintuitive for a "value" type from an
-		// implementation POV. Its behavior is justified because it is convenient and intuitive from the
-		// POV of the API consumer.
-		resetURL, err := backend.MakePasswordResetURL(ctx, r.user.ID)
-		if err != nil {
-			return nil, err
+	if conf.CanSendEmail() {
+		ru, err := userpasswd.HandleSetPasswordEmail(ctx, r.user.ID)
+		if err == nil {
+			return &ru, nil
 		}
-		ru = globals.ExternalURL().ResolveReference(resetURL).String()
 	}
+
+	resetURL, err := backend.MakePasswordResetURL(ctx, r.user.ID)
+	if err != nil {
+		return nil, err
+	}
+	ru = globals.ExternalURL().ResolveReference(resetURL).String()
 	return &ru, nil
+
 }
