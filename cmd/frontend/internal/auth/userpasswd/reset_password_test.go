@@ -30,7 +30,7 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 	}
 
 	db.Mocks.Users.GetByID = func(context.Context, int32) (*types.User, error) {
-		return nil, nil
+		return &types.User{ID: 1, Username: "test"}, nil
 	}
 
 	tests := []struct {
