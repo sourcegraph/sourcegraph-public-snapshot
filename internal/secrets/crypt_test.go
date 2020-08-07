@@ -153,7 +153,7 @@ func TestKeyRotation(t *testing.T) {
 
 func TestEncryptAndDecryptIfPossible(t *testing.T) {
 	initialKey, _ := GenerateRandomAESKey()
-	isEncrypted = true
+	configuredToEncrypt = true
 	e := Encrypter{EncryptionKey: initialKey}
 
 	encString, err := e.EncryptIfPossible(toEncrypt)
@@ -175,7 +175,7 @@ func TestEncryptAndDecryptIfPossible(t *testing.T) {
 	// now test when we cannot encrypt
 
 	e = Encrypter{}
-	isEncrypted = false // setting this false means that EncryptIfPossible will not return an err
+	configuredToEncrypt = false // setting this false means that EncryptIfPossible will not return an err
 	encString, err = e.EncryptIfPossible(toEncrypt)
 	if err != nil {
 		t.Fatalf("Received error when code path should be nil. %v", err)
@@ -183,7 +183,7 @@ func TestEncryptAndDecryptIfPossible(t *testing.T) {
 	if encString != toEncrypt {
 		t.Fatalf("Received encrypted string, expected unencrypted.")
 	}
-	isEncrypted = true
+	configuredToEncrypt = true
 	decString, err = e.DecryptIfPossible(encString)
 	if err != nil {
 		t.Fatalf("Received error when code path should be nil. %v", err)
@@ -195,7 +195,7 @@ func TestEncryptAndDecryptIfPossible(t *testing.T) {
 
 func TestEncryptAndDecryptBytesIfPossible(t *testing.T) {
 	initialKey, _ := GenerateRandomAESKey()
-	isEncrypted = true
+	configuredToEncrypt = true
 	e := Encrypter{EncryptionKey: initialKey}
 
 	encString, err := e.EncryptBytesIfPossible([]byte(toEncrypt))
@@ -217,7 +217,7 @@ func TestEncryptAndDecryptBytesIfPossible(t *testing.T) {
 	// now test when we cannot encrypt
 
 	e = Encrypter{}
-	isEncrypted = false // setting this false means that EncryptBytesIfPossible will not return an err
+	configuredToEncrypt = false // setting this false means that EncryptBytesIfPossible will not return an err
 	encString, err = e.EncryptBytesIfPossible([]byte(toEncrypt))
 	if err != nil {
 		t.Fatalf("Received error when code path should be nil. %v", err)
@@ -225,7 +225,7 @@ func TestEncryptAndDecryptBytesIfPossible(t *testing.T) {
 	if encString != toEncrypt {
 		t.Fatalf("Received encrypted string, expected unencrypted.")
 	}
-	isEncrypted = true
+	configuredToEncrypt = true
 	decString, err = e.DecryptBytesIfPossible([]byte(encString))
 	if err != nil {
 		t.Fatalf("Received error when code path should be nil. %v", err)

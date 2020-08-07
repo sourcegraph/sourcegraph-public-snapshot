@@ -10,7 +10,7 @@ import (
 )
 
 var CryptObject Encrypter
-var isEncrypted bool
+var configuredToEncrypt bool
 
 const (
 	// #nosec G101
@@ -19,7 +19,7 @@ const (
 )
 
 func ConfiguredToEncrypt() bool {
-	return isEncrypted
+	return configuredToEncrypt
 }
 
 // gatherKeys splits the encryption string into its potential two components
@@ -36,7 +36,7 @@ func gatherKeys(data []byte) (oldKey, newKey []byte) {
 }
 
 func init() {
-	isEncrypted = false
+	configuredToEncrypt = false
 
 	envCryptKey, cryptOK := os.LookupEnv(sourcegraphCryptEnvvar)
 	var encryptionKey []byte
@@ -108,5 +108,5 @@ func init() {
 			sourcegraphSecretfileEnvvar))
 	}
 
-	isEncrypted = true
+	configuredToEncrypt = true
 }

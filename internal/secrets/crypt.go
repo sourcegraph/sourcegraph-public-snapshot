@@ -5,6 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"io"
 )
 
@@ -15,6 +16,9 @@ const (
 type EncryptionError struct {
 	Message string
 }
+
+// NotEncodedError means we can test for whether or not a string is encoded, prior to attempting decryption
+var NotEncodedError = errors.New("object is not encoded.")
 
 // Generate a valid key for AES-256 encryption
 func GenerateRandomAESKey() ([]byte, error) {
@@ -68,7 +72,7 @@ func (e *Encrypter) Encrypt(value string) (string, error) {
 }
 
 func (e *Encrypter) EncryptBytesIfPossible(b []byte) (string, error) {
-	if isEncrypted {
+	if configuredToEncrypt {
 		return e.EncryptBytes(b)
 	}
 	return string(b), nil
@@ -77,7 +81,7 @@ func (e *Encrypter) EncryptBytesIfPossible(b []byte) (string, error) {
 // EncryptIfPossible encrypts  the string if encryption is configured.
 // Returns an error only when encryption is enabled, and encryption fails.
 func (e *Encrypter) EncryptIfPossible(value string) (string, error) {
-	if isEncrypted {
+	if configuredToEncrypt {
 		return e.Encrypt(value)
 	}
 	return value, nil
@@ -95,7 +99,7 @@ func (e *Encrypter) DecryptBytes(b []byte) (string, error) {
 func (e *Encrypter) decrypt(encodedValue string) (string, error) {
 	encrypted, err := base64.StdEncoding.DecodeString(encodedValue)
 	if err != nil {
-		return "", nil
+		return "", NotEncodedError
 	}
 
 	if len(encrypted) < aes.BlockSize {
@@ -117,14 +121,14 @@ func (e *Encrypter) decrypt(encodedValue string) (string, error) {
 // DecryptIfPossible decrypts the string if encryption is configured.
 // It returns an error only if encryption is enabled and it cannot decrypt the string
 func (e *Encrypter) DecryptIfPossible(value string) (string, error) {
-	if isEncrypted {
+	if configuredToEncrypt {
 		return e.Decrypt(value)
 	}
 	return value, nil
 }
 
 func (e *Encrypter) DecryptBytesIfPossible(b []byte) (string, error) {
-	if isEncrypted {
+	if configuredToEncrypt {
 		return e.DecryptBytes(b)
 	}
 	return string(b), nil
@@ -141,15 +145,3 @@ func (e *Encrypter) RotateKey(newKey []byte, encryptedValue string) (string, err
 	e.EncryptionKey = newKey
 	return e.encrypt(newKey, []byte(decrypted))
 }
-
-// // This function rotates the encryption used on an item by decryping and then recencrypting.
-// // Rotating keys updates the EncryptionKey within the Encrypter object
-// func (e *Encrypter) RotateKey(newE Encrypter, encryptedValue string) (string, error) {
-// 	decrypted, err := e.Decrypt(encryptedValue)
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	e.EncryptionKey = newKey
-// 	return e.encrypt(newKey, []byte(decrypted))
-// }
