@@ -15717,10 +15717,10 @@ mkdirp@1.0.4, mkdirp@^1.0.3, mkdirp@^1.0.4:
   resolved "https://registry.npmjs.org/mkdirp/-/mkdirp-1.0.4.tgz#3eb5ed62622756d79a5f0e2a221dfebad75c2f7e"
   integrity sha512-vVqVZQyf3WLx2Shd0qJ9xuvqgAyKPLAiqITEtqW0oIUjzo3PePDd6fW9iFz30ef7Ysp/oiWqbhszeGWW2T6Gzw==
 
-mocha@^8.1.0:
-  version "8.1.0"
-  resolved "https://registry.npmjs.org/mocha/-/mocha-8.1.0.tgz#e651d05dcc5e42389f3412c2173ca13352a8bacd"
-  integrity sha512-sI0gaI1I/jPVu3KFpnveWGadfe3JNBAENqgTUPgLZAUppu725zS2mrVztzAgIR8DUscuS4doEBTx9LATC+HSeA==
+mocha@^8.1.1:
+  version "8.1.1"
+  resolved "https://registry.npmjs.org/mocha/-/mocha-8.1.1.tgz#1de1ba4e9a2c955d96b84e469d7540848223592d"
+  integrity sha512-p7FuGlYH8t7gaiodlFreseLxEmxTgvyG9RgPHODFPySNhwUehu8NIb0vdSt3WFckSneswZ0Un5typYcWElk7HQ==
   dependencies:
     ansi-colors "4.1.1"
     browser-stdout "1.3.1"
