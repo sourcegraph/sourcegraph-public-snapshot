@@ -7,5 +7,5 @@ import (
 
 func resetMocks() {
 	db.Mocks = db.MockStores{}
-	backend.Mocks = backend.MockServices{}
+	backend.ResetMocks()
 }
