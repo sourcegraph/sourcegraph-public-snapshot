@@ -94,7 +94,7 @@ Visit your Sourcegraph instance (or https://sourcegraph.com), click your usernam
  - `src extsvc` - manage external services (repository configuration)
  - `src extensions` - manage extensions
  - `src lsif` - manages LSIF data
- - `serve-git` - serves your local git repositories over HTTP for Sourcegraph to pull
+ - `src serve-git` - serves your local git repositories over HTTP for Sourcegraph to pull
  - `src version` - check version and guaranteed-compatible version for your Sourcegraph instance
 
 Run `src -h` and `src <subcommand> -h` for more detailed usage information.
