@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/scylladb"
 	sqlitereader "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/sqlite"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -377,20 +378,21 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 		span.Finish()
 	}()
 
-	return s.readerCache.WithReader(ctx, filename, func(reader persistence.Reader) error {
-		db, err := database.OpenDatabase(ctx, filename, persistence.NewObserved(reader, s.observationContext))
-		if err != nil {
-			return pkgerrors.Wrap(err, "database.OpenDatabase")
-		}
+	// return s.readerCache.WithReader(ctx, filename, func(reader persistence.Reader) error {
+	reader := scylladb.NewReader(int(idFromRequest(r)))
+	db, err := database.OpenDatabase(ctx, filename, persistence.NewObserved(reader, s.observationContext))
+	if err != nil {
+		return pkgerrors.Wrap(err, "database.OpenDatabase")
+	}
 
-		payload, err := handler(ctx, db)
-		if err != nil {
-			return err
-		}
+	payload, err := handler(ctx, db)
+	if err != nil {
+		return err
+	}
 
-		writeJSON(w, payload)
-		return nil
-	})
+	writeJSON(w, payload)
+	return nil
+	// })
 }
 
 // limitTransferRate applies a transfer limit to the given writer.

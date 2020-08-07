@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
-	sqlitewriter "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/sqlite"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/scylladb"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
@@ -91,7 +91,7 @@ func (p *processor) Process(ctx context.Context, store store.Store, upload store
 		return false, errors.Wrap(err, "correlation.Correlate")
 	}
 
-	if err := p.write(ctx, tempDir, groupedBundleData); err != nil {
+	if err := p.write(ctx, upload.ID, tempDir, groupedBundleData); err != nil {
 		return false, err
 	}
 
@@ -147,14 +147,21 @@ func (p *processor) isRepoCurrentlyCloning(ctx context.Context, repoID int, comm
 }
 
 // write commits the correlated data to disk.
-func (p *processor) write(ctx context.Context, dirname string, groupedBundleData *correlation.GroupedBundleData) (err error) {
+func (p *processor) write(ctx context.Context, id int, dirname string, groupedBundleData *correlation.GroupedBundleData) (err error) {
 	ctx, endOperation := p.metrics.WriteOperation.With(ctx, &err, observation.Args{})
 	defer endOperation(1, observation.Args{})
 
-	writer, err := sqlitewriter.NewWriter(ctx, filepath.Join(dirname, "sqlite.db"))
+	f, err := os.OpenFile(filepath.Join(dirname, "sqlite.db"), os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		return err
 	}
+	f.Close()
+
+	writer := scylladb.NewWriter(id)
+	// writer, err := sqlitewriter.NewWriter(ctx, filepath.Join(dirname, "sqlite.db"))
+	// if err != nil {
+	// 	return err
+	// }
 	defer func() {
 		err = writer.Close(err)
 	}()
