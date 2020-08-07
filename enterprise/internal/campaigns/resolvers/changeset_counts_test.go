@@ -98,6 +98,7 @@ func TestChangesetCountsOverTimeResolver(t *testing.T) {
 	apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryChangesetCountsConnection)
 
 	wantCounts := []apitest.ChangesetCounts{
+		{Date: marshalDateTime(t, now.Add(-7*24*time.Hour))},
 		{Date: marshalDateTime(t, now.Add(-6*24*time.Hour))},
 		{Date: marshalDateTime(t, now.Add(-5*24*time.Hour))},
 		{Date: marshalDateTime(t, now.Add(-4*24*time.Hour))},
