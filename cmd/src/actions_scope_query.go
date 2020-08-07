@@ -10,6 +10,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/campaigns"
 )
 
@@ -35,6 +36,7 @@ Examples:
 	var (
 		fileFlag               = flagSet.String("f", "-", "The action file. If not given or '-' standard input is used. (Required)")
 		includeUnsupportedFlag = flagSet.Bool("include-unsupported", false, "When specified, also repos from unsupported codehosts are processed. Those can be created once the integration is done.")
+		apiFlags               = api.NewFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
@@ -71,6 +73,7 @@ Examples:
 		}
 
 		ctx := context.Background()
+		client := cfg.apiClient(apiFlags, flagSet.Output())
 
 		if *verbose {
 			log.Printf("# scopeQuery in action definition: %s\n", action.ScopeQuery)
@@ -81,7 +84,7 @@ Examples:
 		}
 
 		logger := campaigns.NewActionLogger(*verbose, false)
-		repos, err := actionRepos(ctx, action.ScopeQuery, *includeUnsupportedFlag, logger)
+		repos, err := actionRepos(ctx, client, action.ScopeQuery, *includeUnsupportedFlag, logger)
 		if err != nil {
 			return err
 		}

@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 func init() {
@@ -23,11 +26,13 @@ Examples:
 	var (
 		orgIDFlag  = flagSet.String("org-id", "", "ID of organization from which to remove member. (required)")
 		userIDFlag = flagSet.String("user-id", "", "ID of user to remove as member. (required)")
-		apiFlags   = newAPIFlags(flagSet)
+		apiFlags   = api.NewFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
 		flagSet.Parse(args)
+
+		client := cfg.apiClient(apiFlags, flagSet.Output())
 
 		query := `mutation RemoveUserFromOrg(
   $orgID: ID!,
@@ -44,19 +49,15 @@ Examples:
 		var result struct {
 			RemoveUserFromOrg struct{}
 		}
-		return (&apiRequest{
-			query: query,
-			vars: map[string]interface{}{
-				"orgID":  *orgIDFlag,
-				"userID": *userIDFlag,
-			},
-			result: &result,
-			done: func() error {
-				fmt.Printf("User %q removed as member from organization with ID %q.\n", *userIDFlag, *orgIDFlag)
-				return nil
-			},
-			flags: apiFlags,
-		}).do()
+		if ok, err := client.NewRequest(query, map[string]interface{}{
+			"orgID":  *orgIDFlag,
+			"userID": *userIDFlag,
+		}).Do(context.Background(), &result); err != nil || !ok {
+			return err
+		}
+
+		fmt.Printf("User %q removed as member from organization with ID %q.\n", *userIDFlag, *orgIDFlag)
+		return nil
 	}
 
 	// Register the command.

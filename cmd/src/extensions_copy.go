@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 func withCfg(new *config, f func()) {
@@ -29,7 +32,7 @@ Copy an extension from Sourcegraph.com to your private registry.
 	var (
 		extensionIDFlag = flagSet.String("extension-id", "", `The <extID> in https://sourcegraph.com/extensions/<extID> (e.g. sourcegraph/java)`)
 		currentUserFlag = flagSet.String("current-user", "", `The current user`)
-		apiFlags        = newAPIFlags(flagSet)
+		apiFlags        = api.NewFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
@@ -54,6 +57,10 @@ Copy an extension from Sourcegraph.com to your private registry.
 		}
 		extensionName := extensionIDParts[1]
 
+		ctx := context.Background()
+		client := cfg.apiClient(apiFlags, flagSet.Output())
+		ok := false
+
 		var extensionResult struct {
 			ExtensionRegistry struct {
 				Extension struct {
@@ -66,8 +73,7 @@ Copy an extension from Sourcegraph.com to your private registry.
 		}
 
 		withCfg(&config{Endpoint: "https://sourcegraph.com"}, func() {
-			err = (&apiRequest{
-				query: `query GetExtension(
+			query := `query GetExtension(
 	$extensionID: String!
 ){
   extensionRegistry{
@@ -78,15 +84,13 @@ Copy an extension from Sourcegraph.com to your private registry.
       }
     }
   }
-}`,
-				vars: map[string]interface{}{
-					"extensionID": extensionID,
-				},
-				result: &extensionResult,
-				flags:  apiFlags,
-			}).do()
+}`
+
+			ok, err = client.NewRequest(query, map[string]interface{}{
+				"extensionID": extensionID,
+			}).Do(ctx, &extensionResult)
 		})
-		if err != nil {
+		if err != nil || !ok {
 			return err
 		}
 
@@ -108,18 +112,7 @@ Copy an extension from Sourcegraph.com to your private registry.
 		fmt.Printf("bundle: %s\n", string(bundle[0:100]))
 		fmt.Printf("manifest: %s\n", string(manifest[0:]))
 
-		var publishResult struct {
-			ExtensionRegistry struct {
-				PublishExtension struct {
-					Extension struct {
-						ExtensionID string
-						URL         string
-					}
-				}
-			}
-		}
-		return (&apiRequest{
-			query: `mutation PublishExtension(
+		query := `mutation PublishExtension(
 	$extensionID: String!,
 	$manifest: String!,
 	$bundle: String,
@@ -136,22 +129,31 @@ Copy an extension from Sourcegraph.com to your private registry.
 			}
 		}
 	}
-}`,
-			vars: map[string]interface{}{
-				"extensionID": currentUser + "/" + extensionName,
-				"manifest":    string(manifest),
-				"bundle":      bundle,
-			},
-			result: &publishResult,
-			done: func() error {
-				fmt.Println("Extension published!")
-				fmt.Println()
-				fmt.Printf("\tExtension ID: %s\n\n", publishResult.ExtensionRegistry.PublishExtension.Extension.ExtensionID)
-				fmt.Printf("View, enable, and configure it at: %s\n", cfg.Endpoint+publishResult.ExtensionRegistry.PublishExtension.Extension.URL)
-				return nil
-			},
-			flags: apiFlags,
-		}).do()
+}`
+
+		var publishResult struct {
+			ExtensionRegistry struct {
+				PublishExtension struct {
+					Extension struct {
+						ExtensionID string
+						URL         string
+					}
+				}
+			}
+		}
+		if ok, err := client.NewRequest(query, map[string]interface{}{
+			"extensionID": currentUser + "/" + extensionName,
+			"manifest":    string(manifest),
+			"bundle":      bundle,
+		}).Do(ctx, &publishResult); err != nil || !ok {
+			return err
+		}
+
+		fmt.Println("Extension published!")
+		fmt.Println()
+		fmt.Printf("\tExtension ID: %s\n\n", publishResult.ExtensionRegistry.PublishExtension.Extension.ExtensionID)
+		fmt.Printf("View, enable, and configure it at: %s\n", cfg.Endpoint+publishResult.ExtensionRegistry.PublishExtension.Extension.URL)
+		return nil
 	}
 
 	// Register the command.

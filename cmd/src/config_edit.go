@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
+
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 func init() {
@@ -45,7 +48,7 @@ Examples:
 		valueFlag     = flagSet.String("value", "", "The value for the settings property (when used with -property).")
 		valueFileFlag = flagSet.String("value-file", "", "Read the value from this file instead of from the -value command-line option.")
 		overwriteFlag = flagSet.Bool("overwrite", false, "Overwrite the entire settings with the value given in -value (not just a single property).")
-		apiFlags      = newAPIFlags(flagSet)
+		apiFlags      = api.NewFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
@@ -74,9 +77,12 @@ Examples:
 			return &usageError{errors.New("either -value or -value-file must be used")}
 		}
 
+		ctx := context.Background()
+		client := cfg.apiClient(apiFlags, flagSet.Output())
+
 		var subjectID string
 		if *subjectFlag == "" {
-			userID, err := getViewerUserID()
+			userID, err := getViewerUserID(ctx, client)
 			if err != nil {
 				return err
 			}
@@ -85,7 +91,7 @@ Examples:
 			subjectID = *subjectFlag
 		}
 
-		lastID, err := getSettingsSubjectLatestSettingsID(subjectID)
+		lastID, err := getSettingsSubjectLatestSettingsID(ctx, client, subjectID)
 		if err != nil {
 			return err
 		}
@@ -116,12 +122,8 @@ mutation EditSettings($input: SettingsMutationGroupInput!, $edit: SettingsEdit!)
 			ViewerSettings  *SettingsCascade
 			SettingsSubject *SettingsSubject
 		}
-		return (&apiRequest{
-			query:  query,
-			vars:   queryVars,
-			result: &result,
-			flags:  apiFlags,
-		}).do()
+		_, err = client.NewRequest(query, queryVars).Do(ctx, &result)
+		return err
 	}
 
 	// Register the command.

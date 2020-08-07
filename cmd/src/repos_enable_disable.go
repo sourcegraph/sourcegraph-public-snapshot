@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 func init() {
@@ -35,10 +37,10 @@ func initReposEnableDisable(cmdName string, enable bool, usage string) {
 		flagSet.PrintDefaults()
 		fmt.Println(usage)
 	}
-	apiFlags := newAPIFlags(flagSet)
+	apiFlags := api.NewFlags(flagSet)
 
-	setRepositoryEnabled := func(repoName string, enabled bool) error {
-		repoID, err := fetchRepositoryID(repoName)
+	setRepositoryEnabled := func(ctx context.Context, client api.Client, repoName string, enabled bool) error {
+		repoID, err := fetchRepositoryID(ctx, client, repoName)
 		if err != nil {
 			return err
 		}
@@ -50,27 +52,26 @@ func initReposEnableDisable(cmdName string, enable bool, usage string) {
 }`
 
 		var result struct{}
-		return (&apiRequest{
-			query: query,
-			vars: map[string]interface{}{
-				"repoID":  repoID,
-				"enabled": enabled,
-			},
-			result: &result,
-			done: func() error {
-				fmt.Printf("repository %sd: %s\n", cmdName, repoName)
-				return nil
-			},
-			flags: apiFlags,
-		}).do()
+		if ok, err := client.NewRequest(query, map[string]interface{}{
+			"repoID":  repoID,
+			"enabled": enabled,
+		}).Do(ctx, &result); err != nil || !ok {
+			return err
+		}
+
+		fmt.Printf("repository %sd: %s\n", cmdName, repoName)
+		return nil
 	}
 
 	handler := func(args []string) error {
 		flagSet.Parse(args)
 
+		ctx := context.Background()
+		client := cfg.apiClient(apiFlags, flagSet.Output())
+
 		var errs *multierror.Error
 		for _, repoName := range flagSet.Args() {
-			if err := setRepositoryEnabled(repoName, enable); err != nil {
+			if err := setRepositoryEnabled(ctx, client, repoName, enable); err != nil {
 				err = errors.Wrapf(err, "Failed to %s repository %q", cmdName, repoName)
 				errs = multierror.Append(errs, err)
 			}
@@ -86,7 +87,7 @@ func initReposEnableDisable(cmdName string, enable bool, usage string) {
 	})
 }
 
-func fetchRepositoryID(repoName string) (string, error) {
+func fetchRepositoryID(ctx context.Context, client api.Client, repoName string) (string, error) {
 	query := `query RepositoryID($repoName: String!) {
   repository(name: $repoName) {
     id
@@ -98,14 +99,9 @@ func fetchRepositoryID(repoName string) (string, error) {
 			ID string
 		}
 	}
-	err := (&apiRequest{
-		query: query,
-		vars: map[string]interface{}{
-			"repoName": repoName,
-		},
-		result: &result,
-	}).do()
-	if err != nil {
+	if ok, err := client.NewRequest(query, map[string]interface{}{
+		"repoName": repoName,
+	}).Do(ctx, &result); err != nil || !ok {
 		return "", err
 	}
 	if result.Repository.ID == "" {

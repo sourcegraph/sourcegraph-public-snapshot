@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 func init() {
@@ -27,7 +30,7 @@ Examples:
 	}
 	var (
 		extensionIDFlag = flagSet.String("id", "", `The ID (GraphQL API ID, not extension ID) of the extension to delete.`)
-		apiFlags        = newAPIFlags(flagSet)
+		apiFlags        = api.NewFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
@@ -35,6 +38,8 @@ Examples:
 		if err != nil {
 			return err
 		}
+
+		client := cfg.apiClient(apiFlags, flagSet.Output())
 
 		query := `mutation DeleteExtension(
   $extension: ID!
@@ -53,18 +58,14 @@ Examples:
 				DeleteExtension struct{}
 			}
 		}
-		return (&apiRequest{
-			query: query,
-			vars: map[string]interface{}{
-				"extension": *extensionIDFlag,
-			},
-			result: &result,
-			done: func() error {
-				fmt.Printf("Extension with ID %q deleted.\n", *extensionIDFlag)
-				return nil
-			},
-			flags: apiFlags,
-		}).do()
+		if ok, err := client.NewRequest(query, map[string]interface{}{
+			"extension": *extensionIDFlag,
+		}).Do(context.Background(), &result); err != nil || !ok {
+			return err
+		}
+
+		fmt.Printf("Extension with ID %q deleted.\n", *extensionIDFlag)
+		return nil
 	}
 
 	// Register the command.

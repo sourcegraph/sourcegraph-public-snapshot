@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
+
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 var configCommands commander
@@ -113,39 +116,31 @@ type KeyPath struct {
 	Index    int    `json:"index,omitempty"`
 }
 
-func getViewerUserID() (string, error) {
-	var result struct {
-		CurrentUser *struct{ ID string }
-	}
-	req := &apiRequest{
-		query: `
+func getViewerUserID(ctx context.Context, client api.Client) (string, error) {
+	query := `
 query ViewerUserID {
   currentUser {
     id
   }
 }
-`,
-		result: &result,
+`
+
+	var result struct {
+		CurrentUser *struct{ ID string }
 	}
-	if err := req.do(); err != nil {
+
+	if _, err := client.NewQuery(query).Do(ctx, &result); err != nil {
 		return "", err
 	}
+
 	if result.CurrentUser == nil || result.CurrentUser.ID == "" {
 		return "", errors.New("unable to determine current user ID (see https://github.com/sourcegraph/src-cli#authentication)")
 	}
 	return result.CurrentUser.ID, nil
 }
 
-func getSettingsSubjectLatestSettingsID(subjectID string) (*int, error) {
-	var result struct {
-		SettingsSubject *struct {
-			LatestSettings *struct {
-				ID int
-			}
-		}
-	}
-	req := &apiRequest{
-		query: `
+func getSettingsSubjectLatestSettingsID(ctx context.Context, client api.Client, subjectID string) (*int, error) {
+	query := `
 query SettingsSubjectLatestSettingsID($subject: ID!) {
   settingsSubject(id: $subject) {
     latestSettings {
@@ -153,13 +148,20 @@ query SettingsSubjectLatestSettingsID($subject: ID!) {
     }
   }
 }
-`,
-		vars:   map[string]interface{}{"subject": subjectID},
-		result: &result,
+`
+
+	var result struct {
+		SettingsSubject *struct {
+			LatestSettings *struct {
+				ID int
+			}
+		}
 	}
-	if err := req.do(); err != nil {
+
+	if _, err := client.NewQuery(query).Do(ctx, &result); err != nil {
 		return nil, err
 	}
+
 	if result.SettingsSubject == nil {
 		return nil, fmt.Errorf("unable to find settings subject with ID %s", subjectID)
 	}

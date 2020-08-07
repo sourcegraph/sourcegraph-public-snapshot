@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 func init() {
@@ -28,11 +31,13 @@ Examples:
 	var (
 		nameFlag   = flagSet.String("name", "", `Look up organization by name. (e.g. "abc-org")`)
 		formatFlag = flagSet.String("f", "{{.|json}}", `Format for the output, using the syntax of Go package text/template. (e.g. "{{.ID}}: {{.Name}} ({{.DisplayName}})")`)
-		apiFlags   = newAPIFlags(flagSet)
+		apiFlags   = api.NewFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
 		flagSet.Parse(args)
+
+		client := cfg.apiClient(apiFlags, flagSet.Output())
 
 		tmpl, err := parseTemplate(*formatFlag)
 		if err != nil {
@@ -52,17 +57,13 @@ Examples:
 		var result struct {
 			Organization *Org
 		}
-		return (&apiRequest{
-			query: query,
-			vars: map[string]interface{}{
-				"name": *nameFlag,
-			},
-			result: &result,
-			done: func() error {
-				return execTemplate(tmpl, result.Organization)
-			},
-			flags: apiFlags,
-		}).do()
+		if ok, err := client.NewRequest(query, map[string]interface{}{
+			"name": *nameFlag,
+		}).Do(context.Background(), &result); err != nil || !ok {
+			return err
+		}
+
+		return execTemplate(tmpl, result.Organization)
 	}
 
 	// Register the command.

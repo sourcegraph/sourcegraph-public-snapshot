@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"strings"
+
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 func init() {
@@ -46,11 +49,13 @@ Examples:
 		descendingFlag       = flagSet.Bool("descending", false, "Whether or not results should be in descending order.")
 		namesWithoutHostFlag = flagSet.Bool("names-without-host", false, "Whether or not repository names should be printed without the hostname (or other first path component). If set, -f is ignored.")
 		formatFlag           = flagSet.String("f", "{{.Name}}", `Format for the output, using the syntax of Go package text/template. (e.g. "{{.ID}}: {{.Name}}") or "{{.|json}}")`)
-		apiFlags             = newAPIFlags(flagSet)
+		apiFlags             = api.NewFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
 		flagSet.Parse(args)
+
+		client := cfg.apiClient(apiFlags, flagSet.Output())
 
 		tmpl, err := parseTemplate(*formatFlag)
 		if err != nil {
@@ -99,35 +104,31 @@ Examples:
 				Nodes []Repository
 			}
 		}
-		return (&apiRequest{
-			query: query,
-			vars: map[string]interface{}{
-				"first":      nullInt(*firstFlag),
-				"query":      nullString(*queryFlag),
-				"cloned":     *clonedFlag,
-				"notCloned":  *notClonedFlag,
-				"indexed":    *indexedFlag,
-				"notIndexed": *notIndexedFlag,
-				"orderBy":    orderBy,
-				"descending": *descendingFlag,
-			},
-			result: &result,
-			done: func() error {
-				for _, repo := range result.Repositories.Nodes {
-					if *namesWithoutHostFlag {
-						firstSlash := strings.Index(repo.Name, "/")
-						fmt.Println(repo.Name[firstSlash+len("/"):])
-						continue
-					}
+		if ok, err := client.NewRequest(query, map[string]interface{}{
+			"first":      api.NullInt(*firstFlag),
+			"query":      api.NullString(*queryFlag),
+			"cloned":     *clonedFlag,
+			"notCloned":  *notClonedFlag,
+			"indexed":    *indexedFlag,
+			"notIndexed": *notIndexedFlag,
+			"orderBy":    orderBy,
+			"descending": *descendingFlag,
+		}).Do(context.Background(), &result); err != nil || !ok {
+			return err
+		}
 
-					if err := execTemplate(tmpl, repo); err != nil {
-						return err
-					}
-				}
-				return nil
-			},
-			flags: apiFlags,
-		}).do()
+		for _, repo := range result.Repositories.Nodes {
+			if *namesWithoutHostFlag {
+				firstSlash := strings.Index(repo.Name, "/")
+				fmt.Println(repo.Name[firstSlash+len("/"):])
+				continue
+			}
+
+			if err := execTemplate(tmpl, repo); err != nil {
+				return err
+			}
+		}
+		return nil
 	}
 
 	// Register the command.

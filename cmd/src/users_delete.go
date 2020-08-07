@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 func init() {
@@ -31,11 +34,13 @@ Examples:
 	}
 	var (
 		userIDFlag = flagSet.String("id", "", `The ID of the user to delete.`)
-		apiFlags   = newAPIFlags(flagSet)
+		apiFlags   = api.NewFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
 		flagSet.Parse(args)
+
+		client := cfg.apiClient(apiFlags, flagSet.Output())
 
 		query := `mutation DeleteUser(
   $user: ID!
@@ -50,18 +55,14 @@ Examples:
 		var result struct {
 			DeleteUser struct{}
 		}
-		return (&apiRequest{
-			query: query,
-			vars: map[string]interface{}{
-				"user": *userIDFlag,
-			},
-			result: &result,
-			done: func() error {
-				fmt.Printf("User with ID %q deleted.\n", *userIDFlag)
-				return nil
-			},
-			flags: apiFlags,
-		}).do()
+		if ok, err := client.NewRequest(query, map[string]interface{}{
+			"user": *userIDFlag,
+		}).Do(context.Background(), &result); err != nil || !ok {
+			return err
+		}
+
+		fmt.Printf("User with ID %q deleted.\n", *userIDFlag)
+		return nil
 	}
 
 	// Register the command.

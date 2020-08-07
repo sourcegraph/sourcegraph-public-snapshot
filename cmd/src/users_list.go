@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 func init() {
@@ -38,20 +41,23 @@ Examples:
 		queryFlag  = flagSet.String("query", "", `Returns users whose names match the query. (e.g. "alice")`)
 		tagFlag    = flagSet.String("tag", "", `Returns users with the given tag.`)
 		formatFlag = flagSet.String("f", "{{.Username}}", `Format for the output, using the syntax of Go package text/template. (e.g. "{{.ID}}: {{.Username}} ({{.DisplayName}})" or "{{.|json}}")`)
-		apiFlags   = newAPIFlags(flagSet)
+		apiFlags   = api.NewFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
 		flagSet.Parse(args)
+
+		ctx := context.Background()
+		client := cfg.apiClient(apiFlags, flagSet.Output())
 
 		tmpl, err := parseTemplate(*formatFlag)
 		if err != nil {
 			return err
 		}
 		vars := map[string]interface{}{
-			"first": nullInt(*firstFlag),
-			"query": nullString(*queryFlag),
-			"tag":   nullString(*tagFlag),
+			"first": api.NullInt(*firstFlag),
+			"query": api.NullString(*queryFlag),
+			"tag":   api.NullString(*tagFlag),
 		}
 		queryTagVar := ""
 		queryTag := ""
@@ -65,7 +71,7 @@ Examples:
 ` + queryTagVar + `
 ) {
   users(
-    first: $first,
+first: $first,
     query: $query,
 ` + queryTag + `
   ) {
@@ -80,20 +86,16 @@ Examples:
 				Nodes []User
 			}
 		}
-		return (&apiRequest{
-			query:  query,
-			vars:   vars,
-			result: &result,
-			done: func() error {
-				for _, user := range result.Users.Nodes {
-					if err := execTemplate(tmpl, user); err != nil {
-						return err
-					}
-				}
-				return nil
-			},
-			flags: apiFlags,
-		}).do()
+		if ok, err := client.NewRequest(query, vars).Do(ctx, &result); err != nil || !ok {
+			return err
+		}
+
+		for _, user := range result.Users.Nodes {
+			if err := execTemplate(tmpl, user); err != nil {
+				return err
+			}
+		}
+		return nil
 	}
 
 	// Register the command.

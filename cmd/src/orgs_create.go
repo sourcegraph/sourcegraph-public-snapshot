@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 func init() {
@@ -24,11 +27,13 @@ Examples:
 	var (
 		nameFlag        = flagSet.String("name", "", `The new organization's name. (required)`)
 		displayNameFlag = flagSet.String("display-name", "", `The new organization's display name.`)
-		apiFlags        = newAPIFlags(flagSet)
+		apiFlags        = api.NewFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
 		flagSet.Parse(args)
+
+		client := cfg.apiClient(apiFlags, flagSet.Output())
 
 		query := `mutation CreateOrg(
   $name: String!,
@@ -45,19 +50,15 @@ Examples:
 		var result struct {
 			CreateOrg Org
 		}
-		return (&apiRequest{
-			query: query,
-			vars: map[string]interface{}{
-				"name":        *nameFlag,
-				"displayName": *displayNameFlag,
-			},
-			result: &result,
-			done: func() error {
-				fmt.Printf("Organization %q created.\n", *nameFlag)
-				return nil
-			},
-			flags: apiFlags,
-		}).do()
+		if ok, err := client.NewRequest(query, map[string]interface{}{
+			"name":        *nameFlag,
+			"displayName": *displayNameFlag,
+		}).Do(context.Background(), &result); err != nil || !ok {
+			return err
+		}
+
+		fmt.Printf("Organization %q created.\n", *nameFlag)
+		return nil
 	}
 
 	// Register the command.

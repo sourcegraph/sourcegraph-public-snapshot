@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 func init() {
@@ -28,7 +31,7 @@ Examples:
 	var (
 		firstFlag  = flagSet.Int("first", -1, "Return only the first n external services. (use -1 for unlimited)")
 		formatFlag = flagSet.String("f", "", `Format for the output, using the syntax of Go package text/template. (e.g. "{{.|json}}")`)
-		apiFlags   = newAPIFlags(flagSet)
+		apiFlags   = api.NewFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
@@ -51,19 +54,17 @@ Examples:
 			return err
 		}
 
+		ctx := context.Background()
+		client := cfg.apiClient(apiFlags, flagSet.Output())
+
 		queryVars := map[string]interface{}{
 			"first": first,
 		}
 		var result externalServicesListResult
-		return (&apiRequest{
-			query:  externalServicesListQuery,
-			vars:   queryVars,
-			result: &result,
-			done: func() error {
-				return execTemplate(tmpl, result.ExternalServices)
-			},
-			flags: apiFlags,
-		}).do()
+		if ok, err := client.NewRequest(externalServicesListQuery, queryVars).Do(ctx, &result); err != nil || !ok {
+			return err
+		}
+		return execTemplate(tmpl, result.ExternalServices)
 	}
 
 	// Register the command.

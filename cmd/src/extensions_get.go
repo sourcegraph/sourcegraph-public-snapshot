@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 func init() {
@@ -25,7 +28,7 @@ Examples:
 	var (
 		extensionIDFlag = flagSet.String("extension-id", "", `Look up extension by extension ID. (e.g. "alice/myextension")`)
 		formatFlag      = flagSet.String("f", "{{.|json}}", `Format for the output, using the syntax of Go package text/template. (e.g. "{{.ExtensionID}}: {{.Manifest.Title}} ({{.RemoteURL}})" or "{{.|json}}")`)
-		apiFlags        = newAPIFlags(flagSet)
+		apiFlags        = api.NewFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
@@ -35,6 +38,8 @@ Examples:
 		if err != nil {
 			return err
 		}
+
+		client := cfg.apiClient(apiFlags, flagSet.Output())
 
 		query := `query RegistryExtension(
   $extensionID: String!,
@@ -58,17 +63,13 @@ Examples:
 				Extension *Extension
 			}
 		}
-		return (&apiRequest{
-			query: query,
-			vars: map[string]interface{}{
-				"extensionID": extensionID,
-			},
-			result: &result,
-			done: func() error {
-				return execTemplate(tmpl, result.ExtensionRegistry.Extension)
-			},
-			flags: apiFlags,
-		}).do()
+		if ok, err := client.NewRequest(query, map[string]interface{}{
+			"extensionID": extensionID,
+		}).Do(context.Background(), &result); err != nil || !ok {
+			return err
+		}
+
+		return execTemplate(tmpl, result.ExtensionRegistry.Extension)
 	}
 
 	// Register the command.

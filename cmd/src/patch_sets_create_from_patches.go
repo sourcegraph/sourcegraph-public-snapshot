@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/mattn/go-isatty"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/campaigns"
 )
 
@@ -48,7 +50,7 @@ Examples:
 	var (
 		patchesFlag = flagSet.Int("patches", 1000, "Returns the first n patches in the patch set.")
 		formatFlag  = flagSet.String("f", "{{friendlyPatchSetCreatedMessage .}}", `Format for the output, using the syntax of Go package text/template. (e.g. "{{.ID}}: {{len .Patches}} patches") or "{{.|json}}")`)
-		apiFlags    = newAPIFlags(flagSet)
+		apiFlags    = api.NewFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
@@ -68,7 +70,10 @@ Examples:
 			return errors.Wrap(err, "invalid JSON patches input")
 		}
 
-		return createPatchSetFromPatches(apiFlags, patches, tmpl, *patchesFlag)
+		ctx := context.Background()
+		client := cfg.apiClient(apiFlags, flagSet.Output())
+
+		return createPatchSetFromPatches(ctx, client, patches, tmpl, *patchesFlag)
 	}
 
 	// Register the command.
@@ -88,7 +93,8 @@ mutation CreatePatchSetFromPatches($patches: [PatchInput!]!) {
 `
 
 func createPatchSetFromPatches(
-	apiFlags *apiFlags,
+	ctx context.Context,
+	client api.Client,
 	patches []campaigns.PatchInput,
 	tmpl *template.Template,
 	numChangesets int,
@@ -99,7 +105,7 @@ func createPatchSetFromPatches(
 		CreatePatchSetFromPatches PatchSet
 	}
 
-	version, err := getSourcegraphVersion()
+	version, err := getSourcegraphVersion(ctx, client)
 	if err != nil {
 		return err
 	}
@@ -125,16 +131,11 @@ func createPatchSetFromPatches(
 		patches = patchesWithoutBaseRef
 	}
 
-	return (&apiRequest{
-		query:  query,
-		vars:   map[string]interface{}{"patches": patches},
-		result: &result,
-		done: func() error {
-			if err := execTemplate(tmpl, result.CreatePatchSetFromPatches); err != nil {
-				return err
-			}
-			return nil
-		},
-		flags: apiFlags,
-	}).do()
+	if ok, err := client.NewRequest(query, map[string]interface{}{
+		"patches": patches,
+	}).Do(ctx, &result); err != nil || !ok {
+		return err
+	}
+
+	return execTemplate(tmpl, result.CreatePatchSetFromPatches)
 }

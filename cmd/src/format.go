@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -106,7 +107,7 @@ func parseTemplate(text string) (*template.Template, error) {
 
 			// Hacky to do this in a formatting helper, but better than
 			// globally querying the version and only using it here for now.
-			version, err := getSourcegraphVersion()
+			version, err := getSourcegraphVersion(context.Background(), cfg.apiClient(nil, os.Stdout))
 			if err != nil {
 				// We ignore the error and return what we have
 				return buf.String()

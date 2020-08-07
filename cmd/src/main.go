@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 const usageText = `src is a tool that provides access to Sourcegraph instances.
@@ -74,6 +76,17 @@ type config struct {
 	Endpoint          string            `json:"endpoint"`
 	AccessToken       string            `json:"accessToken"`
 	AdditionalHeaders map[string]string `json:"additionalHeaders"`
+}
+
+// apiClient returns an api.Client built from the configuration.
+func (c *config) apiClient(flags *api.Flags, out io.Writer) api.Client {
+	return api.NewClient(api.ClientOpts{
+		Endpoint:          c.Endpoint,
+		AccessToken:       c.AccessToken,
+		AdditionalHeaders: c.AdditionalHeaders,
+		Flags:             flags,
+		Out:               out,
+	})
 }
 
 // readConfig reads the config file from the given path.

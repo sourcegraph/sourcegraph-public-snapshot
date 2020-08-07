@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 func init() {
@@ -53,7 +55,7 @@ Examples:
 		changesetsFlag = flagSet.Int("changesets", 1000, "Returns the first n changesets per campaign.")
 
 		formatFlag = flagSet.String("f", "{{friendlyCampaignCreatedMessage .}}", `Format for the output, using the syntax of Go package text/template. (e.g. "{{.ID}}: {{.Name}}") or "{{.|json}}")`)
-		apiFlags   = newAPIFlags(flagSet)
+		apiFlags   = api.NewFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
@@ -88,9 +90,12 @@ Examples:
 			return &usageError{errors.New("campaign description cannot be blank")}
 		}
 
+		ctx := context.Background()
+		client := cfg.apiClient(apiFlags, flagSet.Output())
+
 		if *patchsetIDFlag != "" {
 			// We only need to check for -branch if the Sourcegraph version is >= 3.13
-			version, err := getSourcegraphVersion()
+			version, err := getSourcegraphVersion(ctx, client)
 			if err != nil {
 				return err
 			}
@@ -112,13 +117,7 @@ Examples:
 				CurrentUser *User
 			}
 
-			req := &apiRequest{
-				query:  currentUserIDQuery,
-				result: &currentUserResult,
-				flags:  apiFlags,
-			}
-			err := req.do()
-			if err != nil {
+			if _, err := client.NewQuery(currentUserIDQuery).Do(ctx, &currentUserResult); err != nil {
 				return err
 			}
 			if currentUserResult.CurrentUser.ID == "" {
@@ -136,7 +135,7 @@ Examples:
 			"name":        name,
 			"description": description,
 			"namespace":   namespace,
-			"patchSet":    nullString(*patchsetIDFlag),
+			"patchSet":    api.NullString(*patchsetIDFlag),
 			"branch":      *branchFlag,
 		}
 
@@ -144,18 +143,14 @@ Examples:
 			CreateCampaign Campaign
 		}
 
-		return (&apiRequest{
-			query: campaignFragment + createcampaignMutation,
-			vars: map[string]interface{}{
-				"input":           input,
-				"changesetsFirst": nullInt(*changesetsFlag),
-			},
-			result: &result,
-			done: func() error {
-				return execTemplate(tmpl, result.CreateCampaign)
-			},
-			flags: apiFlags,
-		}).do()
+		if ok, err := client.NewRequest(campaignFragment+createcampaignMutation, map[string]interface{}{
+			"input":           input,
+			"changesetsFirst": api.NullInt(*changesetsFlag),
+		}).Do(ctx, &result); err != nil || !ok {
+			return err
+		}
+
+		return execTemplate(tmpl, result.CreateCampaign)
 	}
 
 	// Register the command.
@@ -283,22 +278,15 @@ const sourcegraphVersionQuery = `query SourcegraphVersion {
 }
 `
 
-func getSourcegraphVersion() (string, error) {
+func getSourcegraphVersion(ctx context.Context, client api.Client) (string, error) {
 	var sourcegraphVersion struct {
 		Site struct {
 			ProductVersion string
 		}
 	}
 
-	err := (&apiRequest{
-		query:  sourcegraphVersionQuery,
-		result: &sourcegraphVersion,
-	}).do()
-	if err != nil {
-		return "", err
-	}
-
-	return sourcegraphVersion.Site.ProductVersion, nil
+	_, err := client.NewQuery(sourcegraphVersionQuery).Do(ctx, &sourcegraphVersion)
+	return sourcegraphVersion.Site.ProductVersion, err
 }
 
 func sourcegraphVersionCheck(version, constraint, minDate string) (bool, error) {

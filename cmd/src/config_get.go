@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 func init() {
@@ -32,7 +35,7 @@ Examples:
 	var (
 		subjectFlag = flagSet.String("subject", "", "The ID of the settings subject whose settings to get. (default: authenticated user)")
 		formatFlag  = flagSet.String("f", "{{.|jsonIndent}}", `Format for the output, using the syntax of Go package text/template. (e.g. "{{.|json}}")`)
-		apiFlags    = newAPIFlags(flagSet)
+		apiFlags    = api.NewFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
@@ -53,29 +56,27 @@ Examples:
 		} else {
 			query = settingsSubjectCascadeQuery
 			queryVars = map[string]interface{}{
-				"subject": nullString(*subjectFlag),
+				"subject": api.NullString(*subjectFlag),
 			}
 		}
+
+		client := cfg.apiClient(apiFlags, flagSet.Output())
 
 		var result struct {
 			ViewerSettings  *SettingsCascade
 			SettingsSubject *SettingsSubject
 		}
-		return (&apiRequest{
-			query:  query,
-			vars:   queryVars,
-			result: &result,
-			done: func() error {
-				var final string
-				if result.ViewerSettings != nil {
-					final = result.ViewerSettings.Final
-				} else if result.SettingsSubject != nil {
-					final = result.SettingsSubject.SettingsCascade.Final
-				}
-				return execTemplate(tmpl, final)
-			},
-			flags: apiFlags,
-		}).do()
+		if ok, err := client.NewRequest(query, queryVars).Do(context.Background(), &result); err != nil || !ok {
+			return err
+		}
+
+		var final string
+		if result.ViewerSettings != nil {
+			final = result.ViewerSettings.Final
+		} else if result.SettingsSubject != nil {
+			final = result.SettingsSubject.SettingsCascade.Final
+		}
+		return execTemplate(tmpl, final)
 	}
 
 	// Register the command.

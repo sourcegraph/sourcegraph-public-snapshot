@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -11,6 +12,7 @@ import (
 
 	isatty "github.com/mattn/go-isatty"
 	"github.com/sourcegraph/jsonx"
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 func init() {
@@ -42,11 +44,14 @@ Examples:
 		idFlag                  = flagSet.String("id", "", "ID of the external service to edit")
 		renameFlag              = flagSet.String("rename", "", "when specified, renames the external service")
 		excludeRepositoriesFlag = flagSet.String("exclude-repos", "", "when specified, add these repositories to the exclusion list")
-		apiFlags                = newAPIFlags(flagSet)
+		apiFlags                = api.NewFlags(flagSet)
 	)
 
 	handler := func(args []string) (err error) {
 		flagSet.Parse(args)
+
+		ctx := context.Background()
+		client := cfg.apiClient(apiFlags, flagSet.Output())
 
 		// Determine ID of external service we will edit.
 		if *nameFlag == "" && *idFlag == "" {
@@ -54,7 +59,7 @@ Examples:
 		}
 		id := *idFlag
 		if id == "" {
-			svc, err := lookupExternalService("", *nameFlag)
+			svc, err := lookupExternalService(ctx, client, "", *nameFlag)
 			if err != nil {
 				return err
 			}
@@ -80,7 +85,7 @@ Examples:
 		if *excludeRepositoriesFlag != "" {
 			if len(updateJSON) == 0 {
 				// We need to fetch the current JSON then.
-				svc, err := lookupExternalService(id, "")
+				svc, err := lookupExternalService(ctx, client, id, "")
 				if err != nil {
 					return err
 				}
@@ -110,20 +115,15 @@ Examples:
 			"input": updateExternalServiceInput,
 		}
 		var result struct{} // TODO: future: allow formatting resulting external service
-		err = (&apiRequest{
-			query:  externalServicesUpdateMutation,
-			vars:   queryVars,
-			result: &result,
-			done: func() error {
-				fmt.Println("External service updated:", id)
-				return nil
-			},
-			flags: apiFlags,
-		}).do()
-		if err != nil && strings.Contains(err.Error(), "Additional property exclude is not allowed") {
-			return errors.New(`specified external service does not support repository "exclude" list`)
+		if ok, err := client.NewRequest(externalServicesUpdateMutation, queryVars).Do(ctx, &result); err != nil {
+			if strings.Contains(err.Error(), "Additional property exclude is not allowed") {
+				return errors.New(`specified external service does not support repository "exclude" list`)
+			}
+			return err
+		} else if ok {
+			fmt.Println("External service updated:", id)
 		}
-		return err
+		return nil
 	}
 
 	// Register the command.

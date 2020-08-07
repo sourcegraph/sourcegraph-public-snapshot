@@ -21,6 +21,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/mattn/go-isatty"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/campaigns"
 )
 
@@ -123,7 +124,7 @@ Format of the action JSON files:
 
 		includeUnsupportedFlag = flagSet.Bool("include-unsupported", false, "When specified, also repos from unsupported codehosts are processed. Those can be created once the integration is done.")
 
-		apiFlags = newAPIFlags(flagSet)
+		apiFlags = api.NewFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
@@ -212,6 +213,7 @@ Format of the action JSON files:
 			os.Exit(2)
 		}()
 
+		client := cfg.apiClient(apiFlags, flagSet.Output())
 		logger := campaigns.NewActionLogger(*verbose, *keepLogsFlag)
 
 		// Fetch Docker images etc.
@@ -232,7 +234,7 @@ Format of the action JSON files:
 
 		// Query repos over which to run action
 		logger.Infof("Querying %s for repositories matching '%s'...\n", cfg.Endpoint, action.ScopeQuery)
-		repos, err := actionRepos(ctx, action.ScopeQuery, *includeUnsupportedFlag, logger)
+		repos, err := actionRepos(ctx, client, action.ScopeQuery, *includeUnsupportedFlag, logger)
 		if err != nil {
 			return err
 		}
@@ -310,7 +312,7 @@ Format of the action JSON files:
 			return err
 		}
 
-		return createPatchSetFromPatches(apiFlags, patches, tmpl, 100)
+		return createPatchSetFromPatches(ctx, client, patches, tmpl, 100)
 	}
 
 	// Register the command.
@@ -321,7 +323,7 @@ Format of the action JSON files:
 	})
 }
 
-func actionRepos(ctx context.Context, scopeQuery string, includeUnsupported bool, logger *campaigns.ActionLogger) ([]campaigns.ActionRepo, error) {
+func actionRepos(ctx context.Context, client api.Client, scopeQuery string, includeUnsupported bool, logger *campaigns.ActionLogger) ([]campaigns.ActionRepo, error) {
 	hasCount, err := regexp.MatchString(`count:\d+`, scopeQuery)
 	if err != nil {
 		return nil, err
@@ -403,31 +405,13 @@ fragment repositoryFields on Repository {
 		} `json:"errors,omitempty"`
 	}
 
-	if err := (&apiRequest{
-		query: query,
-		vars: map[string]interface{}{
-			"query": scopeQuery,
-		},
-		// Do not unpack errors and return error. Instead we want to go through
-		// the results and check whether they're complete.
-		// If we don't do this and the query returns an error for _one_
-		// repository because that is still cloning, we don't get any repositories.
-		// Instead we simply want to skip those repositories that are still
-		// being cloned.
-		dontUnpackErrors: true,
-		result:           &result,
-	}).do(); err != nil {
-
-		// Ignore exitCodeError with error == nil, because we explicitly set
-		// dontUnpackErrors, which can lead to an empty exitCodeErr being
-		// returned.
-		exitCodeErr, ok := err.(*exitCodeError)
-		if !ok {
-			return nil, err
-		}
-		if exitCodeErr.error != nil {
-			return nil, exitCodeErr
-		}
+	ok, err := client.NewRequest(query, map[string]interface{}{
+		"query": scopeQuery,
+	}).DoRaw(ctx, &result)
+	if err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, nil
 	}
 
 	skipped := []string{}
@@ -449,7 +433,7 @@ fragment repositoryFields on Repository {
 
 		// Skip repos from unsupported code hosts but don't report them explicitly.
 		if !includeUnsupported {
-			ok, err := isCodeHostSupportedForCampaigns(repo.ExternalRepository.ServiceType)
+			ok, err := isCodeHostSupportedForCampaigns(ctx, client, repo.ExternalRepository.ServiceType)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed code host check")
 			}
@@ -541,11 +525,13 @@ var codeHostCampaignVersions = map[string]*minimumVersionDate{
 	},
 }
 
-func isCodeHostSupportedForCampaigns(kind string) (bool, error) {
+func isCodeHostSupportedForCampaigns(ctx context.Context, client api.Client, kind string) (bool, error) {
 	// TODO(LawnGnome): this is a temporary hack; I intend to improve our
 	// testing story including mocking requests to Sourcegraph as part of
 	// https://github.com/sourcegraph/sourcegraph/issues/12333
-	return isCodeHostSupportedForCampaignsImpl(kind, getSourcegraphVersion)
+	return isCodeHostSupportedForCampaignsImpl(kind, func() (string, error) {
+		return getSourcegraphVersion(ctx, client)
+	})
 }
 
 func isCodeHostSupportedForCampaignsImpl(kind string, getVersion func() (string, error)) (bool, error) {

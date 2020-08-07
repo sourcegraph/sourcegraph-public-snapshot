@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
+
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 var extsvcCommands commander
@@ -48,22 +51,18 @@ type externalService struct {
 	CreatedAt, UpdatedAt string
 }
 
-func lookupExternalService(byID, byName string) (*externalService, error) {
+func lookupExternalService(ctx context.Context, client api.Client, byID, byName string) (*externalService, error) {
 	var result struct {
 		ExternalServices struct {
 			Nodes []*externalService
 		}
 	}
-	err := (&apiRequest{
-		query: externalServicesListQuery,
-		vars: map[string]interface{}{
-			"first": 99999,
-		},
-		result: &result,
-	}).do()
-	if err != nil {
+	if ok, err := client.NewRequest(externalServicesListQuery, map[string]interface{}{
+		"first": 99999,
+	}).Do(ctx, &result); err != nil || !ok {
 		return nil, err
 	}
+
 	for _, svc := range result.ExternalServices.Nodes {
 		if byID != "" && svc.ID == byID {
 			return svc, nil

@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 func init() {
@@ -35,11 +38,13 @@ Related examples:
 		userIDFlag = flagSet.String("user-id", "", `The ID of the user to tag. (required)`)
 		tagFlag    = flagSet.String("tag", "", `The tag to set on the user. (required)`)
 		removeFlag = flagSet.Bool("remove", false, `Remove the tag. (default: add the tag`)
-		apiFlags   = newAPIFlags(flagSet)
+		apiFlags   = api.NewFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
 		flagSet.Parse(args)
+
+		client := cfg.apiClient(apiFlags, flagSet.Output())
 
 		query := `mutation SetUserTag(
   $user: ID!,
@@ -55,16 +60,12 @@ Related examples:
   }
 }`
 
-		return (&apiRequest{
-			query: query,
-			vars: map[string]interface{}{
-				"user":    *userIDFlag,
-				"tag":     *tagFlag,
-				"present": !*removeFlag,
-			},
-			result: &struct{}{},
-			flags:  apiFlags,
-		}).do()
+		_, err := client.NewRequest(query, map[string]interface{}{
+			"user":    *userIDFlag,
+			"tag":     *tagFlag,
+			"present": !*removeFlag,
+		}).Do(context.Background(), &struct{}{})
+		return err
 	}
 
 	// Register the command.

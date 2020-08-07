@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 func init() {
@@ -24,11 +27,13 @@ Examples:
 	var (
 		orgIDFlag    = flagSet.String("org-id", "", "ID of organization to which to add member. (required)")
 		usernameFlag = flagSet.String("username", "", "Username of user to add as member. (required)")
-		apiFlags     = newAPIFlags(flagSet)
+		apiFlags     = api.NewFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
 		flagSet.Parse(args)
+
+		client := cfg.apiClient(apiFlags, flagSet.Output())
 
 		query := `mutation AddUserToOrganization(
   $organization: ID!,
@@ -45,19 +50,15 @@ Examples:
 		var result struct {
 			AddUserToOrganization struct{}
 		}
-		return (&apiRequest{
-			query: query,
-			vars: map[string]interface{}{
-				"organization": *orgIDFlag,
-				"username":     *usernameFlag,
-			},
-			result: &result,
-			done: func() error {
-				fmt.Printf("User %q added as member to organization with ID %q.\n", *usernameFlag, *orgIDFlag)
-				return nil
-			},
-			flags: apiFlags,
-		}).do()
+		if ok, err := client.NewRequest(query, map[string]interface{}{
+			"organization": *orgIDFlag,
+			"username":     *usernameFlag,
+		}).Do(context.Background(), &result); err != nil || !ok {
+			return err
+		}
+
+		fmt.Printf("User %q added as member to organization with ID %q.\n", *usernameFlag, *orgIDFlag)
+		return nil
 	}
 
 	// Register the command.

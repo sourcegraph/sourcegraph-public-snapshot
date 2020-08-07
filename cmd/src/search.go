@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -15,6 +16,7 @@ import (
 	"time"
 
 	isatty "github.com/mattn/go-isatty"
+	"github.com/sourcegraph/src-cli/internal/api"
 	"jaytaylor.com/html2text"
 )
 
@@ -50,7 +52,7 @@ Other tips:
 	var (
 		jsonFlag        = flagSet.Bool("json", false, "Whether or not to output results as JSON")
 		explainJSONFlag = flagSet.Bool("explain-json", false, "Explain the JSON output schema and exit.")
-		apiFlags        = newAPIFlags(flagSet)
+		apiFlags        = api.NewFlags(flagSet)
 		lessFlag        = flagSet.Bool("less", true, "Pipe output to 'less -R' (only if stdout is terminal, and not json flag)")
 	)
 
@@ -97,6 +99,8 @@ Other tips:
 			lessCmd.Stdout = os.Stdout
 			return lessCmd.Run()
 		}
+
+		client := cfg.apiClient(apiFlags, flagSet.Output())
 
 		query := `fragment FileMatchFields on FileMatch {
 				repository {
@@ -226,41 +230,34 @@ Other tips:
 			}
 		}
 
-		return (&apiRequest{
-			query: query,
-			vars: map[string]interface{}{
-				"query": nullString(queryString),
-			},
-			result: &result,
-			done: func() error {
-				improved := searchResultsImproved{
-					SourcegraphEndpoint: cfg.Endpoint,
-					Query:               queryString,
-					Site:                result.Site,
-					searchResults:       result.Search.Results,
-				}
+		if ok, err := client.NewRequest(query, map[string]interface{}{
+			"query": api.NullString(queryString),
+		}).Do(context.Background(), &result); err != nil || !ok {
+			return err
+		}
 
-				if *jsonFlag {
-					// Print the formatted JSON.
-					f, err := marshalIndent(improved)
-					if err != nil {
-						return err
-					}
-					fmt.Println(string(f))
-					return nil
-				}
+		improved := searchResultsImproved{
+			SourcegraphEndpoint: cfg.Endpoint,
+			Query:               queryString,
+			Site:                result.Site,
+			searchResults:       result.Search.Results,
+		}
 
-				tmpl, err := parseTemplate(searchResultsTemplate)
-				if err != nil {
-					return err
-				}
-				if err := execTemplate(tmpl, improved); err != nil {
-					return err
-				}
-				return nil
-			},
-			flags: apiFlags,
-		}).do()
+		if *jsonFlag {
+			// Print the formatted JSON.
+			f, err := marshalIndent(improved)
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(f))
+			return nil
+		}
+
+		tmpl, err := parseTemplate(searchResultsTemplate)
+		if err != nil {
+			return err
+		}
+		return execTemplate(tmpl, improved)
 	}
 
 	// Register the command.

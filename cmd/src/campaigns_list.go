@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"time"
+
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 func init() {
@@ -34,7 +37,7 @@ Examples:
 		firstFlag      = flagSet.Int("first", 1000, "Returns the first n campaigns.")
 		changesetsFlag = flagSet.Int("changesets", 1000, "Returns the first n changesets per campaign.")
 		formatFlag     = flagSet.String("f", "{{.ID}}: {{.Name}}", `Format for the output, using the syntax of Go package text/template. (e.g. "{{.ID}}: {{.Name}}") or "{{.|json}}")`)
-		apiFlags       = newAPIFlags(flagSet)
+		apiFlags       = api.NewFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
@@ -58,29 +61,27 @@ query Campaigns($first: Int, $changesetsFirst: Int) {
 }
 `
 
+		client := cfg.apiClient(apiFlags, flagSet.Output())
+
 		var result struct {
 			Campaigns struct {
 				Nodes []Campaign
 			}
 		}
 
-		return (&apiRequest{
-			query: query,
-			vars: map[string]interface{}{
-				"first":           nullInt(*firstFlag),
-				"changesetsFirst": nullInt(*changesetsFlag),
-			},
-			result: &result,
-			done: func() error {
-				for _, c := range result.Campaigns.Nodes {
-					if err := execTemplate(tmpl, c); err != nil {
-						return err
-					}
-				}
-				return nil
-			},
-			flags: apiFlags,
-		}).do()
+		if ok, err := client.NewRequest(query, map[string]interface{}{
+			"first":           api.NullInt(*firstFlag),
+			"changesetsFirst": api.NullInt(*changesetsFlag),
+		}).Do(context.Background(), &result); err != nil || !ok {
+			return err
+		}
+
+		for _, c := range result.Campaigns.Nodes {
+			if err := execTemplate(tmpl, c); err != nil {
+				return err
+			}
+		}
+		return nil
 	}
 
 	// Register the command.

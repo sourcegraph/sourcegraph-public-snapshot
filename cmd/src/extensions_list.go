@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 func init() {
@@ -33,7 +36,7 @@ Examples:
 		firstFlag  = flagSet.Int("first", 1000, "Returns the first n extensions from the list. (use -1 for unlimited)")
 		queryFlag  = flagSet.String("query", "", `Returns extensions whose extension IDs match the query. (e.g. "myextension")`)
 		formatFlag = flagSet.String("f", "{{.ExtensionID}}", `Format for the output, using the syntax of Go package text/template. (e.g. "{{.ExtensionID}}: {{.Manifest.Description}} ({{.RemoteURL}})" or "{{.|json}}")`)
-		apiFlags   = newAPIFlags(flagSet)
+		apiFlags   = api.NewFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
@@ -43,6 +46,8 @@ Examples:
 		if err != nil {
 			return err
 		}
+
+		client := cfg.apiClient(apiFlags, flagSet.Output())
 
 		query := `query RegistryExtensions(
   $first: Int,
@@ -67,23 +72,19 @@ Examples:
 				}
 			}
 		}
-		return (&apiRequest{
-			query: query,
-			vars: map[string]interface{}{
-				"first": nullInt(*firstFlag),
-				"query": nullString(*queryFlag),
-			},
-			result: &result,
-			done: func() error {
-				for _, extension := range result.ExtensionRegistry.Extensions.Nodes {
-					if err := execTemplate(tmpl, extension); err != nil {
-						return err
-					}
-				}
-				return nil
-			},
-			flags: apiFlags,
-		}).do()
+		if ok, err := client.NewRequest(query, map[string]interface{}{
+			"first": api.NullInt(*firstFlag),
+			"query": api.NullString(*queryFlag),
+		}).Do(context.Background(), &result); err != nil || !ok {
+			return err
+		}
+
+		for _, extension := range result.ExtensionRegistry.Extensions.Nodes {
+			if err := execTemplate(tmpl, extension); err != nil {
+				return err
+			}
+		}
+		return nil
 	}
 
 	// Register the command.

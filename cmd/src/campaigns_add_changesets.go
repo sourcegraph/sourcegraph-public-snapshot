@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
+
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 func init() {
@@ -40,7 +43,7 @@ Notes:
 	var (
 		campaignIDFlag = flagSet.String("campaign", "", "ID of campaign to which to add changesets. (required)")
 		repoNameFlag   = flagSet.String("repo-name", "", "Name of repository to which the changesets belong. (required)")
-		apiFlags       = newAPIFlags(flagSet)
+		apiFlags       = api.NewFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
@@ -63,17 +66,20 @@ Notes:
 
 		externalIDs := args[2:]
 
-		repoID, err := getRepoID(apiFlags, *repoNameFlag)
+		ctx := context.Background()
+		client := cfg.apiClient(apiFlags, flagSet.Output())
+
+		repoID, err := getRepoID(ctx, client, *repoNameFlag)
 		if err != nil {
 			return err
 		}
 
-		changesetIDs, err := createChangesets(apiFlags, repoID, externalIDs)
+		changesetIDs, err := createChangesets(ctx, client, repoID, externalIDs)
 		if err != nil {
 			return err
 		}
 
-		err = addChangesets(apiFlags, *campaignIDFlag, changesetIDs)
+		err = addChangesets(ctx, client, *campaignIDFlag, changesetIDs)
 		if err != nil {
 			return err
 		}
@@ -94,20 +100,12 @@ Notes:
 
 const getRepoIDQuery = `query Repository($name: String) { repository(name: $name) { id } }`
 
-func getRepoID(f *apiFlags, name string) (string, error) {
+func getRepoID(ctx context.Context, client api.Client, name string) (string, error) {
 	var result struct{ Repository struct{ ID string } }
 
-	req := &apiRequest{
-		query:  getRepoIDQuery,
-		vars:   map[string]interface{}{"name": name},
-		result: &result,
-		flags:  f,
-	}
-
-	err := req.do()
-	if err != nil {
-		return "", err
-	}
+	_, err := client.NewRequest(getRepoIDQuery, map[string]interface{}{
+		"name": name,
+	}).Do(ctx, &result)
 
 	return result.Repository.ID, err
 }
@@ -119,7 +117,7 @@ mutation CreateChangesets($input: [CreateChangesetInput!]!) {
   }
 }`
 
-func createChangesets(f *apiFlags, repoID string, externalIDs []string) ([]string, error) {
+func createChangesets(ctx context.Context, client api.Client, repoID string, externalIDs []string) ([]string, error) {
 	var result struct {
 		CreateChangesets []struct {
 			ID string `json:"id"`
@@ -136,15 +134,9 @@ func createChangesets(f *apiFlags, repoID string, externalIDs []string) ([]strin
 
 	var changesetIDs []string
 
-	req := &apiRequest{
-		query:  createChangesetsQuery,
-		vars:   map[string]interface{}{"input": pairs},
-		result: &result,
-		flags:  f,
-	}
-
-	err := req.do()
-	if err != nil {
+	if ok, err := client.NewRequest(createChangesetsQuery, map[string]interface{}{
+		"input": pairs,
+	}).Do(ctx, &result); err != nil || !ok {
 		return changesetIDs, err
 	}
 
@@ -154,7 +146,7 @@ func createChangesets(f *apiFlags, repoID string, externalIDs []string) ([]strin
 
 	fmt.Printf("Created %d changesets.\n", len(changesetIDs))
 
-	return changesetIDs, err
+	return changesetIDs, nil
 }
 
 const addChangesetsQuery = `
@@ -168,7 +160,7 @@ mutation AddChangesetsToCampaign($campaign: ID!, $changesets: [ID!]!) {
 }
 `
 
-func addChangesets(f *apiFlags, campaignID string, changesetIDs []string) error {
+func addChangesets(ctx context.Context, client api.Client, campaignID string, changesetIDs []string) error {
 	var result struct {
 		AddChangesetsToCampaign struct {
 			ID         string `json:"id"`
@@ -178,22 +170,13 @@ func addChangesets(f *apiFlags, campaignID string, changesetIDs []string) error 
 		} `json:"addChangesetsToCampaign"`
 	}
 
-	req := &apiRequest{
-		query: addChangesetsQuery,
-		vars: map[string]interface{}{
-			"campaign":   campaignID,
-			"changesets": changesetIDs,
-		},
-		result: &result,
-		flags:  f,
-	}
-
-	err := req.do()
-	if err != nil {
+	if ok, err := client.NewRequest(addChangesetsQuery, map[string]interface{}{
+		"campaign":   campaignID,
+		"changesets": changesetIDs,
+	}).Do(ctx, &result); err != nil || !ok {
 		return err
 	}
 
 	fmt.Printf("Added changeset to campaign. Changesets now in campaign: %d\n", result.AddChangesetsToCampaign.Changesets.TotalCount)
-
-	return err
+	return nil
 }

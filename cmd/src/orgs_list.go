@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 func init() {
@@ -33,11 +36,13 @@ Examples:
 		firstFlag  = flagSet.Int("first", 1000, "Returns the first n organizations from the list. (use -1 for unlimited)")
 		queryFlag  = flagSet.String("query", "", `Returns organizations whose names match the query. (e.g. "alice")`)
 		formatFlag = flagSet.String("f", "{{.Name}}", `Format for the output, using the syntax of Go package text/template. (e.g. "{{.ID}}: {{.Name}} ({{.DisplayName}})" or "{{.|json}}")`)
-		apiFlags   = newAPIFlags(flagSet)
+		apiFlags   = api.NewFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
 		flagSet.Parse(args)
+
+		client := cfg.apiClient(apiFlags, flagSet.Output())
 
 		tmpl, err := parseTemplate(*formatFlag)
 		if err != nil {
@@ -63,23 +68,19 @@ Examples:
 				Nodes []Org
 			}
 		}
-		return (&apiRequest{
-			query: query,
-			vars: map[string]interface{}{
-				"first": nullInt(*firstFlag),
-				"query": nullString(*queryFlag),
-			},
-			result: &result,
-			done: func() error {
-				for _, org := range result.Organizations.Nodes {
-					if err := execTemplate(tmpl, org); err != nil {
-						return err
-					}
-				}
-				return nil
-			},
-			flags: apiFlags,
-		}).do()
+		if ok, err := client.NewRequest(query, map[string]interface{}{
+			"first": api.NullInt(*firstFlag),
+			"query": api.NullString(*queryFlag),
+		}).Do(context.Background(), &result); err != nil || !ok {
+			return err
+		}
+
+		for _, org := range result.Organizations.Nodes {
+			if err := execTemplate(tmpl, org); err != nil {
+				return err
+			}
+		}
+		return nil
 	}
 
 	// Register the command.

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -10,6 +11,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 func init() {
@@ -48,7 +51,7 @@ Notes:
 		urlFlag         = flagSet.String("url", "", `Override the URL for the bundle. (example: set to http://localhost:1234/myext.js for local dev with parcel)`)
 		manifestFlag    = flagSet.String("manifest", "package.json", `The extension manifest file.`)
 		forceFlag       = flagSet.Bool("force", false, `Force publish the extension, even if there are validation problems or other warnings.`)
-		apiFlags        = newAPIFlags(flagSet)
+		apiFlags        = api.NewFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
@@ -93,6 +96,8 @@ Notes:
 			}
 		}
 
+		client := cfg.apiClient(apiFlags, flagSet.Output())
+
 		query := `mutation PublishExtension(
   $extensionID: String!,
   $manifest: String!,
@@ -126,25 +131,21 @@ Notes:
 				}
 			}
 		}
-		return (&apiRequest{
-			query: query,
-			vars: map[string]interface{}{
-				"extensionID": extensionID,
-				"manifest":    string(manifest),
-				"bundle":      bundle,
-				"sourceMap":   sourceMap,
-				"force":       *forceFlag,
-			},
-			result: &result,
-			done: func() error {
-				fmt.Println("Extension published!")
-				fmt.Println()
-				fmt.Printf("\tExtension ID: %s\n\n", result.ExtensionRegistry.PublishExtension.Extension.ExtensionID)
-				fmt.Printf("View, enable, and configure it at: %s\n", cfg.Endpoint+result.ExtensionRegistry.PublishExtension.Extension.URL)
-				return nil
-			},
-			flags: apiFlags,
-		}).do()
+		if ok, err := client.NewRequest(query, map[string]interface{}{
+			"extensionID": extensionID,
+			"manifest":    string(manifest),
+			"bundle":      bundle,
+			"sourceMap":   sourceMap,
+			"force":       *forceFlag,
+		}).Do(context.Background(), &result); err != nil || !ok {
+			return err
+		}
+
+		fmt.Println("Extension published!")
+		fmt.Println()
+		fmt.Printf("\tExtension ID: %s\n\n", result.ExtensionRegistry.PublishExtension.Extension.ExtensionID)
+		fmt.Printf("View, enable, and configure it at: %s\n", cfg.Endpoint+result.ExtensionRegistry.PublishExtension.Extension.URL)
+		return nil
 	}
 
 	// Register the command.
