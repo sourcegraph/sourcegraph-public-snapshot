@@ -168,7 +168,9 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 		return resolvers, err
 	}
 
-	weekAgo := time.Now().Add(-6 * 24 * time.Hour)
+	now := r.store.Clock()()
+
+	weekAgo := now.Add(-6 * 24 * time.Hour)
 	start := r.Campaign.CreatedAt.UTC()
 	if start.After(weekAgo) {
 		start = weekAgo
@@ -177,7 +179,7 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 		start = args.From.Time.UTC()
 	}
 
-	end := time.Now().UTC()
+	end := now.UTC()
 	if args.To != nil && args.To.Time.Before(end) {
 		end = args.To.Time.UTC()
 	}
