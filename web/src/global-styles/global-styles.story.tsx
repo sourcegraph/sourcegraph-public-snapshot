@@ -594,6 +594,21 @@ add(
                     </small>
                 </div>
                 <div className="form-group">
+                    <label htmlFor="example-prepend-input">Prepend group</label>
+                    <div className="input-group mb-2">
+                        <div className="input-group-prepend">
+                            <div className="input-group-text">@</div>
+                        </div>
+                        <input
+                            type="email"
+                            className="form-control"
+                            id="example-prepend-input"
+                            aria-describedby="email-help"
+                            placeholder="me@example.com"
+                        />
+                    </div>
+                </div>
+                <div className="form-group">
                     <label htmlFor="example-input-password">Password</label>
                     <input type="password" className="form-control" id="example-input-password" />
                 </div>
@@ -605,16 +620,69 @@ add(
                         <option>Option C</option>
                     </select>
                 </div>
+
+
                 <div className="form-group">
                     <label htmlFor="example-textarea">Example textarea</label>
                     <textarea className="form-control" id="example-textarea" rows={3} />
                 </div>
+
+                <h3>Checkboxes</h3>
                 <div className="form-group form-check">
-                    <input type="checkbox" className="form-check-input" id="exampleCheck1" />
+                    <input type="checkbox" className="form-check-input" id="exampleCheck1" checked={false} aria-checked={false} />
                     <label className="form-check-label" htmlFor="exampleCheck1">
-                        Check me out
+                        Unchecked
                     </label>
                 </div>
+                <div className="form-group form-check">
+                    <input type="checkbox" className="form-check-input" id="exampleCheck2" checked={true} aria-checked={true} />
+                    <label className="form-check-label" htmlFor="exampleCheck1">
+                        Checked
+                    </label>
+                </div>
+                <div className="form-group">
+                    <div className="form-check">
+                        <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id="disabledCheck"
+                            disabled={true}
+                        />
+                        <label className="form-check-label" htmlFor="disabledFieldsetCheck">
+                            Disabled
+                        </label>
+                    </div>
+                </div>
+
+                <h3>Radio Buttons</h3>
+                <div className="form-group form-check">
+                    <input type="radio" className="form-check-input" id="exampleRadio1" value={1} checked={false} aria-checked={false} />
+                    <label className="form-check-label" htmlFor="exampleCheck1">
+                        Unselected
+                    </label>
+                </div>
+                <div className="form-group form-check">
+                    <input type="radio" className="form-check-input" id="exampleRadio2" value={2} checked={true} aria-checked={true} />
+                    <label className="form-check-label" htmlFor="exampleCheck1">
+                        Selected
+                    </label>
+                </div>
+                <div className="form-group">
+                    <div className="form-check">
+                        <input
+                            className="form-check-input"
+                            type="radio"
+                            id="disabledRadio"
+                            value={3}
+                            disabled={true}
+                        />
+                        <label className="form-check-label" htmlFor="disabledFieldsetCheck">
+                            Disabled
+                        </label>
+                    </div>
+                </div>
+
+
                 <button type="submit" className="btn btn-primary">
                     Submit
                 </button>
@@ -638,19 +706,7 @@ add(
                             <option>Disabled select</option>
                         </select>
                     </div>
-                    <div className="form-group">
-                        <div className="form-check">
-                            <input
-                                className="form-check-input"
-                                type="checkbox"
-                                id="disabledFieldsetCheck"
-                                disabled={true}
-                            />
-                            <label className="form-check-label" htmlFor="disabledFieldsetCheck">
-                                Can't check this
-                            </label>
-                        </div>
-                    </div>
+
                     <button type="submit" className="btn btn-primary">
                         Submit
                     </button>
