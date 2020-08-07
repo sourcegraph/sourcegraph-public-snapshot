@@ -27,6 +27,9 @@ class JSDOMEnvironment {
     })
     const global = (this.global = this.dom.window.document.defaultView)
 
+    // Expose JSDOM as global to allow reconfiguring the URL
+    global.jsdom = this.dom
+
     // JSDOM does not have SVGAElement implemented. Use a quick and dirty polyfill.
     // This does not implement href and target, which is impossible without mofifying JSDOM.
     global.SVGAElement = class SVGAElement extends global.SVGGraphicsElement {}
