@@ -523,7 +523,7 @@ add(
                 ))}
             </p>
 
-            <h3>Outline</h3>
+            <h2>Outline</h2>
             <p>
                 {semanticColors.map(semantic => (
                     <React.Fragment key={semantic}>
@@ -539,39 +539,33 @@ add(
                 ))}
             </p>
 
-            <h3>Sizes</h3>
+            <h2>Sizes</h2>
             <p>
-                Large
-                <br />
-                <button type="button" className={classNames('btn', 'btn-lg', 'btn-primary', 'mr-2')}>
-                    Large button
-                </button>
-                <button type="button" className={classNames('btn', 'btn-lg', 'btn-secondary')}>
-                    Large button
+                <code>btn-sm</code> and <code>btn-lg</code> can be combined with all other variations of buttons to make
+                them small or large.
+            </p>
+            <p>
+                <h3>Large</h3>
+                <button type="button" className="btn btn-lg btn-primary">
+                    Large primary button
+                </button>{' '}
+                <button type="button" className="btn btn-lg btn-secondary">
+                    Large secondary button
                 </button>
             </p>
 
             <p>
-                Small
-                <br />
-                <button type="button" className={classNames('btn', 'btn-sm', 'btn-primary', 'mr-2')}>
-                    Large button
-                </button>
-                <button type="button" className={classNames('btn', 'btn-sm', 'btn-secondary')}>
-                    Large button
+                <h3>Small</h3>
+                <button type="button" className="btn btn-sm btn-primary">
+                    Small primary button
+                </button>{' '}
+                <button type="button" className="btn btn-sm btn-secondary">
+                    Small secondary button
+                </button>{' '}
+                <button type="button" className="btn btn-sm btn-outline-secondary">
+                    Small secondary outline button
                 </button>
             </p>
-
-            <h3>Button group</h3>
-
-            <div className="btn-group" role="group" aria-label="Button group example">
-                <button type="button" className={classNames('btn', 'btn-outline-secondary')}>
-                    One
-                </button>
-                <button type="button" className={classNames('btn', 'btn-outline-secondary')}>
-                    Two
-                </button>
-            </div>
 
             <h2>Disabled</h2>
             <p>
@@ -588,6 +582,22 @@ add(
             <a href="https://example.com" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
                 I am a link
             </a>
+
+            <h2>Button group</h2>
+            <p>
+                A series of arbitrary buttons can be grouped using <code>btn-group</code>.
+            </p>
+            <div className="btn-group mb-2" role="group" aria-label="Button group example">
+                <button type="button" className="btn btn-outline-secondary">
+                    One
+                </button>
+                <button type="button" className="btn btn-outline-secondary">
+                    Two
+                </button>
+                <button type="button" className="btn btn-outline-secondary">
+                    Three
+                </button>
+            </div>
         </>
     ),
     {
