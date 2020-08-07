@@ -1,70 +1,5 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`CampaignDetails creation form for empty manual campaign 1`] = `
-<HeroPage
-  icon={
-    Object {
-      "$$typeof": Symbol(react.memo),
-      "compare": null,
-      "type": [Function],
-    }
-  }
-  title="Campaign not found"
-/>
-`;
-
-exports[`CampaignDetails creation form given existing patch set 1`] = `
-<CampaignDetails
-  history="[History]"
-  isLightTheme={true}
-  location="[Location path=/?patchSet=p]"
-  telemetryService={
-    Object {
-      "log": [Function],
-      "logViewEvent": [Function],
-    }
-  }
->
-  <HeroPage
-    icon={
-      Object {
-        "$$typeof": Symbol(react.memo),
-        "compare": null,
-        "type": [Function],
-      }
-    }
-    title="Campaign not found"
-  >
-    <div
-      className="hero-page "
-    >
-      <div
-        className="hero-page__icon"
-      >
-        <Memo(AlertCircleIcon)>
-          <svg
-            className="mdi-icon "
-            fill="currentColor"
-            height={24}
-            viewBox="0 0 24 24"
-            width={24}
-          >
-            <path
-              d="M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
-            />
-          </svg>
-        </Memo(AlertCircleIcon)>
-      </div>
-      <div
-        className="hero-page__title"
-      >
-        Campaign not found
-      </div>
-    </div>
-  </HeroPage>
-</CampaignDetails>
-`;
-
 exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
 <CampaignDetails
   _fetchCampaignById={[Function]}
@@ -87,6 +22,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
       Object {
         "__typename": "Campaign",
         "author": Object {
+          "avatarURL": "http://test.test/avatar",
           "username": "alice",
         },
         "branch": "awesome-branch",
@@ -95,22 +31,25 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
           "stats": Object {
             "closed": 0,
             "merged": 0,
+            "open": 8,
             "total": 10,
+            "unpublished": 2,
           },
-          "totalCount": 2,
+          "totalCount": 0,
         },
         "closedAt": null,
         "createdAt": "2020-01-01",
         "description": "d",
         "diffStat": Object {
-          "__typename": "IDiffStat",
           "added": 5,
           "changed": 3,
           "deleted": 2,
         },
-        "hasUnpublishedPatches": false,
         "id": "c",
         "name": "n",
+        "namespace": Object {
+          "namespaceName": "alice",
+        },
         "updatedAt": "2020-01-01",
         "viewerCanAdminister": false,
       }
@@ -155,9 +94,21 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
             <span
               className="badge badge-success text-uppercase mr-2"
             >
-              <CampaignsIcon
+              <Memo(ImageAutoAdjustIcon)
                 className="icon-inline campaign-actions-bar__campaign-icon"
-              />
+              >
+                <svg
+                  className="mdi-icon icon-inline campaign-actions-bar__campaign-icon"
+                  fill="currentColor"
+                  height={24}
+                  viewBox="0 0 24 24"
+                  width={24}
+                >
+                  <path
+                    d="M19 10V19H5V5H14V3H5C3.92 3 3 3.9 3 5V19C3 20.1 3.92 21 5 21H19C20.12 21 21 20.1 21 19V10H19M17 10L17.94 7.94L20 7L17.94 6.06L17 4L16.06 6.06L14 7L16.06 7.94L17 10M13.25 10.75L12 8L10.75 10.75L8 12L10.75 13.25L12 16L13.25 13.25L16 12L13.25 10.75Z"
+                  />
+                </svg>
+              </Memo(ImageAutoAdjustIcon)>
                Open
             </span>
           </CampaignStateBadge>
@@ -166,7 +117,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
           >
             0
             % complete. 
-            2
+            0
              changesets total
           </small>
         </div>
@@ -176,6 +127,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
   <CampaignInfoCard
     author={
       Object {
+        "avatarURL": "http://test.test/avatar",
         "username": "alice",
       }
     }
@@ -194,10 +146,16 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
             className="icon-inline"
             user={
               Object {
+                "avatarURL": "http://test.test/avatar",
                 "username": "alice",
               }
             }
-          />
+          >
+            <img
+              className="user-avatar icon-inline"
+              src="http://test.test/avatar"
+            />
+          </UserAvatar>
            
           alice
         </strong>
@@ -236,43 +194,6 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
       </div>
     </div>
   </CampaignInfoCard>
-  <h3
-    className="mt-4 mb-2"
-  >
-    Progress
-  </h3>
-  <CampaignBurndownChart
-    changesetCountsOverTime={Array []}
-    history="[History]"
-  >
-    <p>
-      <em>
-        Burndown chart will be shown when there is more than 1 day of data.
-      </em>
-    </p>
-  </CampaignBurndownChart>
-  <h3
-    className="mt-4 d-flex align-items-end mb-0"
-  >
-    2
-     
-    Changesets
-  </h3>
-  <CampaignChangesets
-    campaignID="c"
-    campaignUpdates="[Subject]"
-    changesetUpdates="[Subject]"
-    history="[History]"
-    isLightTheme={true}
-    location="[Location path=/]"
-    telemetryService={
-      Object {
-        "log": [Function],
-        "logViewEvent": [Function],
-      }
-    }
-    viewerCanAdminister={false}
-  />
 </CampaignDetails>
 `;
 
@@ -298,6 +219,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
       Object {
         "__typename": "Campaign",
         "author": Object {
+          "avatarURL": "http://test.test/avatar",
           "username": "alice",
         },
         "branch": "awesome-branch",
@@ -306,22 +228,25 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
           "stats": Object {
             "closed": 0,
             "merged": 0,
+            "open": 8,
             "total": 10,
+            "unpublished": 2,
           },
-          "totalCount": 2,
+          "totalCount": 0,
         },
         "closedAt": null,
         "createdAt": "2020-01-01",
         "description": "d",
         "diffStat": Object {
-          "__typename": "IDiffStat",
           "added": 5,
           "changed": 3,
           "deleted": 2,
         },
-        "hasUnpublishedPatches": false,
         "id": "c",
         "name": "n",
+        "namespace": Object {
+          "namespaceName": "alice",
+        },
         "updatedAt": "2020-01-01",
         "viewerCanAdminister": true,
       }
@@ -366,9 +291,21 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
             <span
               className="badge badge-success text-uppercase mr-2"
             >
-              <CampaignsIcon
+              <Memo(ImageAutoAdjustIcon)
                 className="icon-inline campaign-actions-bar__campaign-icon"
-              />
+              >
+                <svg
+                  className="mdi-icon icon-inline campaign-actions-bar__campaign-icon"
+                  fill="currentColor"
+                  height={24}
+                  viewBox="0 0 24 24"
+                  width={24}
+                >
+                  <path
+                    d="M19 10V19H5V5H14V3H5C3.92 3 3 3.9 3 5V19C3 20.1 3.92 21 5 21H19C20.12 21 21 20.1 21 19V10H19M17 10L17.94 7.94L20 7L17.94 6.06L17 4L16.06 6.06L14 7L16.06 7.94L17 10M13.25 10.75L12 8L10.75 10.75L8 12L10.75 13.25L12 16L13.25 13.25L16 12L13.25 10.75Z"
+                  />
+                </svg>
+              </Memo(ImageAutoAdjustIcon)>
                Open
             </span>
           </CampaignStateBadge>
@@ -377,7 +314,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
           >
             0
             % complete. 
-            2
+            0
              changesets total
           </small>
         </div>
@@ -387,6 +324,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
   <CampaignInfoCard
     author={
       Object {
+        "avatarURL": "http://test.test/avatar",
         "username": "alice",
       }
     }
@@ -405,10 +343,16 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
             className="icon-inline"
             user={
               Object {
+                "avatarURL": "http://test.test/avatar",
                 "username": "alice",
               }
             }
-          />
+          >
+            <img
+              className="user-avatar icon-inline"
+              src="http://test.test/avatar"
+            />
+          </UserAvatar>
            
           alice
         </strong>
@@ -447,42 +391,5 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
       </div>
     </div>
   </CampaignInfoCard>
-  <h3
-    className="mt-4 mb-2"
-  >
-    Progress
-  </h3>
-  <CampaignBurndownChart
-    changesetCountsOverTime={Array []}
-    history="[History]"
-  >
-    <p>
-      <em>
-        Burndown chart will be shown when there is more than 1 day of data.
-      </em>
-    </p>
-  </CampaignBurndownChart>
-  <h3
-    className="mt-4 d-flex align-items-end mb-0"
-  >
-    2
-     
-    Changesets
-  </h3>
-  <CampaignChangesets
-    campaignID="c"
-    campaignUpdates="[Subject]"
-    changesetUpdates="[Subject]"
-    history="[History]"
-    isLightTheme={true}
-    location="[Location path=/]"
-    telemetryService={
-      Object {
-        "log": [Function],
-        "logViewEvent": [Function],
-      }
-    }
-    viewerCanAdminister={true}
-  />
 </CampaignDetails>
 `;

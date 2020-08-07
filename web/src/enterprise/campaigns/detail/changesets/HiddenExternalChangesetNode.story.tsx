@@ -5,7 +5,7 @@ import webStyles from '../../../../enterprise.scss'
 import { Tooltip } from '../../../../components/tooltip/Tooltip'
 import { HiddenExternalChangesetNode } from './HiddenExternalChangesetNode'
 import { addHours } from 'date-fns'
-import { ChangesetExternalState } from '../../../../../../shared/src/graphql/schema'
+import { ChangesetExternalState } from '../../../../graphql-operations'
 
 const { add } = storiesOf('web/campaigns/HiddenExternalChangesetNode', module).addDecorator(story => {
     const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')

@@ -7,8 +7,6 @@ import { ListCampaign } from '../../../graphql-operations'
 
 const now = parseISO('2019-01-01T23:15:01Z')
 
-jest.mock('../icons', () => ({ CampaignsIcon: 'CampaignsIcon' }))
-
 describe('CampaignNode', () => {
     const node: ListCampaign = {
         id: '123',

@@ -6,16 +6,16 @@ import webStyles from '../../../../enterprise.scss'
 import { Tooltip } from '../../../../components/tooltip/Tooltip'
 import { CampaignChangesets } from './CampaignChangesets'
 import { addHours } from 'date-fns'
-import {
-    ChangesetExternalState,
-    ChangesetReconcilerState,
-    ChangesetCheckState,
-    ChangesetReviewState,
-    ChangesetPublicationState,
-} from '../../../../../../shared/src/graphql/schema'
 import { of, Subject } from 'rxjs'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../../shared/src/telemetry/telemetryService'
-import { ChangesetFields } from '../../../../graphql-operations'
+import {
+    ChangesetFields,
+    ChangesetExternalState,
+    ChangesetReconcilerState,
+    ChangesetPublicationState,
+    ChangesetCheckState,
+    ChangesetReviewState,
+} from '../../../../graphql-operations'
 
 let isLightTheme = true
 

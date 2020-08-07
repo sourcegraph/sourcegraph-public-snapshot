@@ -1,13 +1,13 @@
 import React from 'react'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { CampaignsIcon } from '../icons'
 import { Link } from '../../../../../shared/src/components/Link'
+import { CampaignFields } from '../../../graphql-operations'
 
 interface Props {
-    campaign: Pick<GQL.ICampaign, 'name' | 'closedAt' | 'viewerCanAdminister'> & {
+    campaign: Pick<CampaignFields, 'name' | 'closedAt' | 'viewerCanAdminister'> & {
         changesets: {
-            totalCount: GQL.ICampaign['changesets']['totalCount']
-            stats: Pick<GQL.ICampaign['changesets']['stats'], 'total' | 'closed' | 'merged'>
+            totalCount: CampaignFields['changesets']['totalCount']
+            stats: Pick<CampaignFields['changesets']['stats'], 'total' | 'closed' | 'merged'>
         }
     }
 }

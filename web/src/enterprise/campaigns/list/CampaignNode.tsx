@@ -1,6 +1,5 @@
 import React from 'react'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { CampaignsIcon } from '../icons'
 import { Link } from '../../../../../shared/src/components/Link'
@@ -10,7 +9,7 @@ import parseISO from 'date-fns/parseISO'
 import * as H from 'history'
 import { changesetExternalStateIcons, changesetExternalStateColorClasses } from '../detail/changesets/presentation'
 import { Timestamp } from '../../../components/time/Timestamp'
-import { ListCampaign } from '../../../graphql-operations'
+import { ListCampaign, ChangesetExternalState } from '../../../graphql-operations'
 
 export interface CampaignNodeProps {
     node: ListCampaign
@@ -24,9 +23,9 @@ export interface CampaignNodeProps {
  */
 export const CampaignNode: React.FunctionComponent<CampaignNodeProps> = ({ node, history, now = new Date() }) => {
     const campaignIconClass = node.closedAt ? 'text-danger' : 'text-success'
-    const OpenChangesetIcon = changesetExternalStateIcons[GQL.ChangesetExternalState.OPEN]
-    const ClosedChangesetIcon = changesetExternalStateIcons[GQL.ChangesetExternalState.CLOSED]
-    const MergedChangesetIcon = changesetExternalStateIcons[GQL.ChangesetExternalState.MERGED]
+    const OpenChangesetIcon = changesetExternalStateIcons[ChangesetExternalState.OPEN]
+    const ClosedChangesetIcon = changesetExternalStateIcons[ChangesetExternalState.CLOSED]
+    const MergedChangesetIcon = changesetExternalStateIcons[ChangesetExternalState.MERGED]
     return (
         <li className="list-group-item">
             <div className="d-flex align-items-center p-2">

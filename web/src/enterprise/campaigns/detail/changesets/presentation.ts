@@ -1,8 +1,3 @@
-import {
-    ChangesetExternalState,
-    ChangesetReviewState,
-    ChangesetCheckState,
-} from '../../../../../../shared/src/graphql/schema'
 import { MdiReactIconComponentType } from 'mdi-react'
 import AccountCheckIcon from 'mdi-react/AccountCheckIcon'
 import AccountAlertIcon from 'mdi-react/AccountAlertIcon'
@@ -13,6 +8,7 @@ import DeleteIcon from 'mdi-react/DeleteIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
+import { ChangesetExternalState, ChangesetReviewState, ChangesetCheckState } from '../../../../graphql-operations'
 
 export const changesetExternalStateColorClasses: Record<ChangesetExternalState, string> = {
     [ChangesetExternalState.OPEN]: 'success',

@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import * as H from 'history'
-import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ChangesetNodeProps, ChangesetNode } from './ChangesetNode'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
@@ -28,11 +27,16 @@ import { PlatformContextProps } from '../../../../../../shared/src/platform/cont
 import { TelemetryProps } from '../../../../../../shared/src/telemetry/telemetryService'
 import { property, isDefined } from '../../../../../../shared/src/util/types'
 import { useObservable } from '../../../../../../shared/src/util/useObservable'
-import { ChangesetFields } from '../../../../graphql-operations'
+import {
+    ChangesetFields,
+    ChangesetExternalState,
+    ChangesetReviewState,
+    ChangesetCheckState,
+} from '../../../../graphql-operations'
 import { isValidChangesetExternalState, isValidChangesetReviewState, isValidChangesetCheckState } from '../../utils'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
-    campaignID: GQL.ID
+    campaignID: string
     viewerCanAdminister: boolean
     history: H.History
     location: H.Location
@@ -47,9 +51,9 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
 }
 
 interface ChangesetFilters {
-    externalState: GQL.ChangesetExternalState | null
-    reviewState: GQL.ChangesetReviewState | null
-    checkState: GQL.ChangesetCheckState | null
+    externalState: ChangesetExternalState | null
+    reviewState: ChangesetReviewState | null
+    checkState: ChangesetCheckState | null
 }
 
 /**
@@ -83,7 +87,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                         externalState: changesetFilters.externalState,
                         reviewState: changesetFilters.reviewState,
                         checkState: changesetFilters.checkState,
-                        ...(onlyOpen ? { externalState: GQL.ChangesetExternalState.OPEN } : {}),
+                        ...(onlyOpen ? { externalState: ChangesetExternalState.OPEN } : {}),
                         first: args.first ?? null,
                         campaign: campaignID,
                     }).pipe(repeatWhen(notifier => notifier.pipe(delay(5000))))
@@ -209,15 +213,15 @@ const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps> = ({
     onFiltersChange,
 }) => {
     const searchParameters = new URLSearchParams(location.search)
-    const [externalState, setExternalState] = useState<GQL.ChangesetExternalState | undefined>(() => {
+    const [externalState, setExternalState] = useState<ChangesetExternalState | undefined>(() => {
         const value = searchParameters.get('external_state')
         return value && isValidChangesetExternalState(value) ? value : undefined
     })
-    const [reviewState, setReviewState] = useState<GQL.ChangesetReviewState | undefined>(() => {
+    const [reviewState, setReviewState] = useState<ChangesetReviewState | undefined>(() => {
         const value = searchParameters.get('review_state')
         return value && isValidChangesetReviewState(value) ? value : undefined
     })
-    const [checkState, setCheckState] = useState<GQL.ChangesetCheckState | undefined>(() => {
+    const [checkState, setCheckState] = useState<ChangesetCheckState | undefined>(() => {
         const value = searchParameters.get('check_state')
         return value && isValidChangesetCheckState(value) ? value : undefined
     })
@@ -250,22 +254,22 @@ const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps> = ({
     }, [externalState, reviewState, checkState])
     return (
         <div className="form-inline mb-0 mt-2">
-            <ChangesetFilter<GQL.ChangesetExternalState>
-                values={Object.values(GQL.ChangesetExternalState)}
+            <ChangesetFilter<ChangesetExternalState>
+                values={Object.values(ChangesetExternalState)}
                 label="State"
                 htmlID="changeset-state-filter"
                 selected={externalState}
                 onChange={setExternalState}
             />
-            <ChangesetFilter<GQL.ChangesetReviewState>
-                values={Object.values(GQL.ChangesetReviewState)}
+            <ChangesetFilter<ChangesetReviewState>
+                values={Object.values(ChangesetReviewState)}
                 label="Review state"
                 htmlID="changeset-review-state-filter"
                 selected={reviewState}
                 onChange={setReviewState}
             />
-            <ChangesetFilter<GQL.ChangesetCheckState>
-                values={Object.values(GQL.ChangesetCheckState)}
+            <ChangesetFilter<ChangesetCheckState>
+                values={Object.values(ChangesetCheckState)}
                 label="Check state"
                 htmlID="changeset-check-state-filter"
                 selected={checkState}
