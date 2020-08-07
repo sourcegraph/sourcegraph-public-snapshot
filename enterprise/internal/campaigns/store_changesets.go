@@ -633,7 +633,7 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		&dbutil.NullString{S: &failureMessage},
 		&t.StartedAt,
 		&t.FinishedAt,
-		&t.ProcessAfter,
+		&dbutil.NullTime{Time: &t.ProcessAfter},
 		&t.NumResets,
 	)
 	if err != nil {
