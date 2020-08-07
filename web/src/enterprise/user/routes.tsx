@@ -3,6 +3,13 @@ import { Redirect, RouteComponentProps } from 'react-router'
 import { userAreaRoutes } from '../../user/area/routes'
 import { UserAreaRoute, UserAreaRouteContext } from '../../user/area/UserArea'
 import { enterpriseNamespaceAreaRoutes } from '../namespaces/routes'
+import { UserCampaignListPageProps } from '../campaigns/global/list/GlobalCampaignListPage'
+import { lazyComponent } from '../../util/lazyComponent'
+
+const UserCampaignListPage = lazyComponent<UserCampaignListPageProps, 'UserCampaignListPage'>(
+    () => import('../campaigns/global/list/GlobalCampaignListPage'),
+    'UserCampaignListPage'
+)
 
 export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
     ...userAreaRoutes,
@@ -18,5 +25,9 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
                 }`}
             />
         ),
+    },
+    {
+        path: '/campaigns',
+        render: props => <UserCampaignListPage {...props} userID={props.user.id} />,
     },
 ]

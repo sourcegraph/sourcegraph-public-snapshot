@@ -8,10 +8,11 @@ import { UserAreaRouteContext } from './UserArea'
 
 interface Props extends UserAreaRouteContext, RouteComponentProps<{}> {
     navItems: readonly UserAreaHeaderNavItem[]
+    isSourcegraphDotCom: boolean
     className?: string
 }
 
-export type UserAreaHeaderContext = Pick<Props, 'user'>
+export type UserAreaHeaderContext = Pick<Props, 'user'> & { isSourcegraphDotCom: boolean }
 
 export interface UserAreaHeaderNavItem extends NavItemWithIconDescriptor<UserAreaHeaderContext> {}
 

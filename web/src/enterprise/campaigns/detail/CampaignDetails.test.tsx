@@ -47,6 +47,7 @@ describe('CampaignDetails', () => {
                     },
                     namespace: {
                         namespaceName: 'alice',
+                        url: '/users/alice',
                     },
                 })
             }

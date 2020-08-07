@@ -1,18 +1,19 @@
 import React, { useEffect, useCallback } from 'react'
-import { queryCampaigns as _queryCampaigns } from './backend'
+import { queryCampaigns as _queryCampaigns, queryCampaignsByUser, queryCampaignsByOrg } from './backend'
 import { RouteComponentProps } from 'react-router'
-import {
-    FilteredConnection,
-    FilteredConnectionFilter,
-    FilteredConnectionQueryArgs,
-} from '../../../../components/FilteredConnection'
+import { FilteredConnection, FilteredConnectionFilter } from '../../../../components/FilteredConnection'
 import { CampaignNode, CampaignNodeProps } from '../../list/CampaignNode'
 import { TelemetryProps } from '../../../../../../shared/src/telemetry/telemetryService'
-import { ListCampaign, CampaignState } from '../../../../graphql-operations'
-import { AuthenticatedUser } from '../../../../auth'
+import {
+    ListCampaign,
+    CampaignState,
+    Scalars,
+    CampaignsByUserVariables,
+    CampaignsByOrgVariables,
+} from '../../../../graphql-operations'
 
 interface Props extends TelemetryProps, Pick<RouteComponentProps, 'history' | 'location'> {
-    authenticatedUser: Pick<AuthenticatedUser, 'siteAdmin'>
+    displayNamespace?: boolean
     queryCampaigns?: typeof _queryCampaigns
 }
 
@@ -42,18 +43,9 @@ const FILTERS: FilteredConnectionFilter[] = [
  */
 export const GlobalCampaignListPage: React.FunctionComponent<Props> = ({
     queryCampaigns = _queryCampaigns,
+    displayNamespace = true,
     ...props
 }) => {
-    const queryConnection = useCallback(
-        (args: FilteredConnectionQueryArgs) =>
-            queryCampaigns({
-                first: args.first ?? null,
-                // The types for FilteredConnectionQueryArgs don't allow access to the filter arguments.
-                state: (args as { state: CampaignState | undefined }).state ?? null,
-                viewerCanAdminister: null,
-            }),
-        [queryCampaigns]
-    )
     useEffect(() => props.telemetryService.logViewEvent('CampaignsListPage'), [props.telemetryService])
     return (
         <>
@@ -89,8 +81,8 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = ({
             <FilteredConnection<ListCampaign, Omit<CampaignNodeProps, 'node'>>
                 {...props}
                 nodeComponent={CampaignNode}
-                nodeComponentProps={{ history: props.history }}
-                queryConnection={queryConnection}
+                nodeComponentProps={{ history: props.history, displayNamespace }}
+                queryConnection={queryCampaigns}
                 hideSearch={true}
                 filters={FILTERS}
                 noun="campaign"
@@ -99,4 +91,48 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = ({
             />
         </>
     )
+}
+
+export interface UserCampaignListPageProps extends Props {
+    userID: Scalars['ID']
+}
+
+/**
+ * A list of all campaigns in a users namespace.
+ */
+export const UserCampaignListPage: React.FunctionComponent<UserCampaignListPageProps> = ({ userID, ...props }) => {
+    const queryConnection = useCallback(
+        (args: Partial<CampaignsByUserVariables>) =>
+            queryCampaignsByUser({
+                userID,
+                first: args.first ?? null,
+                // The types for FilteredConnectionQueryArgs don't allow access to the filter arguments.
+                state: (args as { state: CampaignState | undefined }).state ?? null,
+                viewerCanAdminister: null,
+            }),
+        [userID]
+    )
+    return <GlobalCampaignListPage {...props} displayNamespace={false} queryCampaigns={queryConnection} />
+}
+
+export interface OrgCampaignListPageProps extends Props {
+    orgID: Scalars['ID']
+}
+
+/**
+ * A list of all campaigns in an orgs namespace.
+ */
+export const OrgCampaignListPage: React.FunctionComponent<OrgCampaignListPageProps> = ({ orgID, ...props }) => {
+    const queryConnection = useCallback(
+        (args: Partial<CampaignsByOrgVariables>) =>
+            queryCampaignsByOrg({
+                orgID,
+                first: args.first ?? null,
+                // The types for FilteredConnectionQueryArgs don't allow access to the filter arguments.
+                state: (args as { state: CampaignState | undefined }).state ?? null,
+                viewerCanAdminister: null,
+            }),
+        [orgID]
+    )
+    return <GlobalCampaignListPage {...props} displayNamespace={false} queryCampaigns={queryConnection} />
 }

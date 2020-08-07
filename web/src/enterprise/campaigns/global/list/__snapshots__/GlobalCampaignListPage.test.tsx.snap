@@ -101,6 +101,7 @@ exports[`GlobalCampaignListPage renders for non-siteadmin and totalCount: 0 1`] 
     nodeComponent={[Function]}
     nodeComponentProps={
       Object {
+        "displayNamespace": true,
         "history": "[History]",
       }
     }
@@ -219,6 +220,7 @@ exports[`GlobalCampaignListPage renders for non-siteadmin and totalCount: 1 1`] 
     nodeComponent={[Function]}
     nodeComponentProps={
       Object {
+        "displayNamespace": true,
         "history": "[History]",
       }
     }
@@ -337,6 +339,7 @@ exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 0 1`] = `
     nodeComponent={[Function]}
     nodeComponentProps={
       Object {
+        "displayNamespace": true,
         "history": "[History]",
       }
     }
@@ -455,6 +458,7 @@ exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 1 1`] = `
     nodeComponent={[Function]}
     nodeComponentProps={
       Object {
+        "displayNamespace": true,
         "history": "[History]",
       }
     }

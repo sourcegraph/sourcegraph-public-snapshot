@@ -35,6 +35,7 @@ const campaignFragment = gql`
         name
         namespace {
             namespaceName
+            url
         }
         description
         initialApplier {

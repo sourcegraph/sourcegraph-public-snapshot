@@ -5,6 +5,7 @@ import { CampaignFields } from '../../../graphql-operations'
 
 interface Props {
     campaign: Pick<CampaignFields, 'name' | 'closedAt' | 'viewerCanAdminister'> & {
+        namespace: CampaignFields['namespace']
         changesets: {
             totalCount: CampaignFields['changesets']['totalCount']
             stats: Pick<CampaignFields['changesets']['stats'], 'total' | 'closed' | 'merged'>
@@ -26,6 +27,10 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({ campaign })
             <div className="mb-2">
                 <span>
                     <Link to="/campaigns">Campaigns</Link>
+                </span>
+                <span className="text-muted d-inline-block mx-1">/</span>
+                <span>
+                    <Link to={campaign.namespace.url}>{campaign.namespace.namespaceName}</Link>
                 </span>
                 <span className="text-muted d-inline-block mx-1">/</span>
                 <span>{campaign.name}</span>
