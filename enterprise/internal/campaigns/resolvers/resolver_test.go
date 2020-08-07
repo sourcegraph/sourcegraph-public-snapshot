@@ -217,26 +217,6 @@ func TestNullIDResilience(t *testing.T) {
 	}
 }
 
-func getBitbucketServerRepos(t testing.TB, ctx context.Context, src *repos.BitbucketServerSource) []*repos.Repo {
-	results := make(chan repos.SourceResult)
-
-	go func() {
-		src.ListRepos(ctx, results)
-		close(results)
-	}()
-
-	var repos []*repos.Repo
-
-	for res := range results {
-		if res.Err != nil {
-			t.Fatal(res.Err)
-		}
-		repos = append(repos, res.Repo)
-	}
-
-	return repos
-}
-
 func TestCreateCampaignSpec(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -447,18 +427,6 @@ func TestApplyCampaign(t *testing.T) {
 
 	repoApiID := graphqlbackend.MarshalRepositoryID(repo.ID)
 
-	changesetSpec := &campaigns.ChangesetSpec{
-		RawSpec: ct.NewRawChangesetSpecGitBranch(repoApiID, "d34db33f"),
-		Spec: &campaigns.ChangesetSpecDescription{
-			BaseRepository: repoApiID,
-		},
-		RepoID: repo.ID,
-		UserID: userID,
-	}
-	if err := store.CreateChangesetSpec(ctx, changesetSpec); err != nil {
-		t.Fatal(err)
-	}
-
 	campaignSpec := &campaigns.CampaignSpec{
 		RawSpec: ct.TestRawCampaignSpec,
 		Spec: campaigns.CampaignSpecFields{
@@ -478,6 +446,18 @@ func TestApplyCampaign(t *testing.T) {
 		NamespaceUserID: userID,
 	}
 	if err := store.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+		t.Fatal(err)
+	}
+
+	changesetSpec := &campaigns.ChangesetSpec{
+		CampaignSpecID: campaignSpec.ID,
+		Spec: &campaigns.ChangesetSpecDescription{
+			BaseRepository: repoApiID,
+		},
+		RepoID: repo.ID,
+		UserID: userID,
+	}
+	if err := store.CreateChangesetSpec(ctx, changesetSpec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -512,8 +492,12 @@ func TestApplyCampaign(t *testing.T) {
 			DatabaseID: userID,
 			SiteAdmin:  true,
 		},
-		// TODO: Test for CampaignSpec/ChangesetSpecs once they're defined in
-		// the schema.
+		Changesets: apitest.ChangesetConnection{
+			Nodes: []apitest.Changeset{
+				{Typename: "ExternalChangeset", ReconcilerState: "QUEUED"},
+			},
+			TotalCount: 1,
+		},
 	}
 
 	if diff := cmp.Diff(want, have); diff != "" {
@@ -553,12 +537,27 @@ fragment o on Org  { id, name }
 
 mutation($campaignSpec: ID!, $ensureCampaign: ID){
   applyCampaign(campaignSpec: $campaignSpec, ensureCampaign: $ensureCampaign) {
-	id, name, description, branch
-	author    { ...u }
-	namespace {
-		... on User { ...u }
-		... on Org  { ...o }
-	}
+    id, name, description, branch
+    author    { ...u }
+    namespace {
+        ... on User { ...u }
+        ... on Org  { ...o }
+    }
+
+    changesets {
+      nodes {
+        __typename
+
+        ... on ExternalChangeset {
+          reconcilerState
+        }
+        ... on HiddenExternalChangeset {
+          reconcilerState
+        }
+      }
+
+      totalCount
+    }
   }
 }
 `
