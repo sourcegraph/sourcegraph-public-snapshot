@@ -181,7 +181,7 @@
     "chai-as-promised": "^7.1.1",
     "chalk": "^4.1.0",
     "chokidar-cli": "^2.1.0",
-    "chromatic": "^5.0.0",
+    "chromatic": "^5.1.0",
     "chrome-webstore-upload-cli": "^1.2.0",
     "command-exists": "^1.2.9",
     "cross-env": "^7.0.2",
