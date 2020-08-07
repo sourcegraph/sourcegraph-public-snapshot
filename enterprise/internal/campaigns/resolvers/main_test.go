@@ -8,14 +8,11 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -28,10 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -47,39 +41,6 @@ func TestMain(m *testing.M) {
 		log15.Root().SetHandler(log15.DiscardHandler())
 	}
 	os.Exit(m.Run())
-}
-
-func newGithubClientFactory(t testing.TB, name string) (*httpcli.Factory, func()) {
-	t.Helper()
-
-	cassete := filepath.Join("testdata/vcr/", strings.Replace(name, " ", "-", -1))
-
-	rec, err := httptestutil.NewRecorder(cassete, *update, func(i *cassette.Interaction) error {
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	mw := httpcli.NewMiddleware(githubProxyRedirectMiddleware)
-
-	hc := httpcli.NewFactory(mw, httptestutil.NewRecorderOpt(rec))
-
-	return hc, func() {
-		if err := rec.Stop(); err != nil {
-			t.Errorf("failed to update test data: %s", err)
-		}
-	}
-}
-
-func githubProxyRedirectMiddleware(cli httpcli.Doer) httpcli.Doer {
-	return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
-		if req.URL.Hostname() == "github-proxy" {
-			req.URL.Host = "api.github.com"
-			req.URL.Scheme = "https"
-		}
-		return cli.Do(req)
-	})
 }
 
 const testDiff = `diff README.md README.md
@@ -415,27 +376,4 @@ func createChangesetSpec(
 	}
 
 	return spec
-}
-
-// This is taken from reconciler_test.go
-func buildGithubPR(now time.Time, externalID, state, title, body, headRef string) *github.PullRequest {
-	return &github.PullRequest{
-		ID:          externalID,
-		Title:       title,
-		Body:        body,
-		HeadRefName: git.AbbreviateRef(headRef),
-		Number:      12345,
-		State:       "OPEN",
-		TimelineItems: []github.TimelineItem{
-			{Type: "PullRequestCommit", Item: &github.PullRequestCommit{
-				Commit: github.Commit{
-					OID:           "new-f00bar",
-					PushedDate:    now,
-					CommittedDate: now,
-				},
-			}},
-		},
-		CreatedAt: now,
-		UpdatedAt: now,
-	}
 }
