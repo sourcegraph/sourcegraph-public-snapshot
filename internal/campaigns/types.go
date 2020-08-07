@@ -477,6 +477,22 @@ func (c *Changeset) URL() (s string, err error) {
 	}
 }
 
+// ChangesetSpecs is a slice of *ChangesetSpecs.
+type ChangesetSpecs []*ChangesetSpec
+
+// IDs returns the unique RepoIDs of all changeset specs in the slice.
+func (cs ChangesetSpecs) RepoIDs() []api.RepoID {
+	repoIDMap := make(map[api.RepoID]struct{})
+	for _, c := range cs {
+		repoIDMap[c.RepoID] = struct{}{}
+	}
+	repoIDs := make([]api.RepoID, 0)
+	for id := range repoIDMap {
+		repoIDs = append(repoIDs, id)
+	}
+	return repoIDs
+}
+
 // Changesets is a slice of *Changesets.
 type Changesets []*Changeset
 

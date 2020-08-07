@@ -129,22 +129,17 @@ func (r *changesetsConnectionResolver) computeAllAccessibleChangesets(ctx contex
 			return
 		}
 
-		// 🚨 SECURITY: db.Repos.GetByIDs uses the authzFilter under the hood and
+		// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
 		// filters out repositories that the user doesn't have access to.
-		rs, err := db.Repos.GetByIDs(ctx, cs.RepoIDs()...)
+		accessibleRepos, err := db.Repos.GetReposSetByIDs(ctx, cs.RepoIDs()...)
 		if err != nil {
 			r.allAccessibleChangesetsErr = err
 			return
 		}
 
-		accessibleRepoIDs := map[api.RepoID]struct{}{}
-		for _, r := range rs {
-			accessibleRepoIDs[r.ID] = struct{}{}
-		}
-
 		var accessibleChangesets []*campaigns.Changeset
 		for _, c := range cs {
-			if _, ok := accessibleRepoIDs[c.RepoID]; !ok {
+			if _, ok := accessibleRepos[c.RepoID]; !ok {
 				continue
 			}
 			accessibleChangesets = append(accessibleChangesets, c)
@@ -176,20 +171,9 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) (campaigns.C
 			return
 		}
 
-		repoIDs := r.changesets.RepoIDs()
-
-		// 🚨 SECURITY: db.Repos.GetByIDs uses the authzFilter under the hood and
+		// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
 		// filters out repositories that the user doesn't have access to.
-		rs, err := db.Repos.GetByIDs(ctx, repoIDs...)
-		if err != nil {
-			r.err = err
-			return
-		}
-
-		r.reposByID = make(map[api.RepoID]*types.Repo, len(rs))
-		for _, repo := range rs {
-			r.reposByID[repo.ID] = repo
-		}
+		r.reposByID, r.err = db.Repos.GetReposSetByIDs(ctx, r.changesets.RepoIDs()...)
 	})
 
 	return r.changesets, r.reposByID, r.err
