@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
@@ -1151,6 +1152,23 @@ func TestServiceApplyCampaign(t *testing.T) {
 				t.Fatalf("wrong repository ID in RepoNotFoundErr: %d", notFoundErr.ID)
 			}
 		})
+	})
+
+	t.Run("applying to closed campaign", func(t *testing.T) {
+		campaignSpec := createCampaignSpec(t, ctx, store, "closed-campaign", admin.ID)
+		campaign := createCampaign(t, ctx, store, "closed-campaign", admin.ID, campaignSpec.ID)
+
+		campaign.ClosedAt = time.Now()
+		if err := store.UpdateCampaign(ctx, campaign); err != nil {
+			t.Fatalf("failed to update campaign: %s", err)
+		}
+
+		_, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+			CampaignSpecRandID: campaignSpec.RandID,
+		})
+		if err != ErrApplyClosedCampaign {
+			t.Fatalf("ApplyCampaign returned unexpected error: %s", err)
+		}
 	})
 }
 

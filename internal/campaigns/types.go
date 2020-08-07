@@ -86,6 +86,9 @@ func (c *Campaign) RemoveChangesetID(id int64) {
 	}
 }
 
+// Closed returns true when the ClosedAt timestamp has been set.
+func (c *Campaign) Closed() bool { return !c.ClosedAt.IsZero() }
+
 // GenChangesetBody creates the markdown to be used as the body of a changeset.
 // It includes a URL back to the campaign on the Sourcegraph instance.
 func (c *Campaign) GenChangesetBody(externalURL string) string {

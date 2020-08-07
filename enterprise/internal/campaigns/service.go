@@ -210,6 +210,10 @@ func (e *changesetSpecNotFoundErr) Error() string {
 
 func (e *changesetSpecNotFoundErr) NotFound() bool { return true }
 
+// ErrApplyClosedCampaign is returned by ApplyCampaign when the campaign
+// matched by the campaign spec is already closed.
+var ErrApplyClosedCampaign = errors.New("existing campaign matched by campaign spec is closed")
+
 type ApplyCampaignOpts struct {
 	CampaignSpecRandID string
 	EnsureCampaignID   int64
@@ -302,6 +306,10 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 
 	if opts.EnsureCampaignID != 0 && campaign.ID != opts.EnsureCampaignID {
 		return nil, ErrEnsureCampaignFailed
+	}
+
+	if campaign.Closed() {
+		return nil, ErrApplyClosedCampaign
 	}
 
 	if campaign.CampaignSpecID == campaignSpec.ID {
@@ -736,6 +744,10 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 			return errors.Wrap(err, "getting campaign")
 		}
 
+		if campaign.Closed() {
+			return nil
+		}
+
 		if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID); err != nil {
 			return err
 		}
@@ -754,10 +766,6 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 				err = ErrCloseProcessingCampaign
 				return err
 			}
-		}
-
-		if !campaign.ClosedAt.IsZero() {
-			return nil
 		}
 
 		campaign.ClosedAt = time.Now().UTC()
