@@ -231,7 +231,7 @@
     "react-hot-loader": "^4.12.21",
     "react-test-renderer": "^16.13.1",
     "sass": "^1.26.10",
-    "sass-loader": "^9.0.2",
+    "sass-loader": "^9.0.3",
     "shelljs": "^0.8.4",
     "signale": "^1.4.0",
     "simmerjs": "^0.5.6",
