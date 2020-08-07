@@ -210,6 +210,49 @@ func (*userExternalAccounts) Delete(ctx context.Context, id int32) error {
 	return nil
 }
 
+// Encrypt uses the helper_secret to encrypt the denoted column(s)
+// it first gets all the data in the current column and then performs the update
+func (s *userExternalAccounts) Encrypt(ctx context.Context, id int32) error {
+
+	account, err := s.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	maybeUserExtAcct, err := encryptColumns([]string{"auth_data"}, *account)
+	if err != nil {
+		return err
+	}
+	userExtAcct, ok := maybeUserExtAcct.(extsvc.Account)
+	if !ok {
+		return fmt.Errorf("not a userExternalAccount")
+	}
+
+	query := `UPDATE user_external_accounts SET auth_data=$1 where id=$2`
+
+	tx, err := dbconn.Global.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			rollErr := tx.Rollback()
+			if rollErr != nil {
+				err = multierror.Append(err, rollErr)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+
+	_, err = tx.ExecContext(ctx, query, userExtAcct.AuthData, userExtAcct.ID)
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // ExternalAccountsListOptions specifies the options for listing user external accounts.
 type ExternalAccountsListOptions struct {
 	UserID                           int32
