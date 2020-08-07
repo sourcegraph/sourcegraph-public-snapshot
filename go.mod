@@ -49,6 +49,7 @@ require (
 	github.com/go-playground/validator/v10 v10.3.0 // indirect
 	github.com/go-redsync/redsync v1.4.2
 	github.com/gobwas/glob v0.2.3
+	github.com/gocql/gocql v0.0.0-20190301043612-f6df8288f9b4
 	github.com/golang-migrate/migrate/v4 v4.11.0
 	github.com/golang/gddo v0.0.0-20200611223618-a4829ef13274
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
@@ -208,3 +209,5 @@ replace github.com/golang/lint => golang.org/x/lint v0.0.0-20191125180803-fdd1cd
 
 // See: https://github.com/ghodss/yaml/pull/65
 replace github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
+
+replace github.com/gocql/gocql => github.com/scylladb/gocql v1.4.0

@@ -98,6 +98,8 @@
 // 1528395697_add_changeset_state_machine.up.sql (2.213kB)
 // 1528395698_add_sync_time_and_user_id_to_external_services.down.sql (335B)
 // 1528395698_add_sync_time_and_user_id_to_external_services.up.sql (425B)
+// 1528395699_lsif_data.down.sql (183B)
+// 1528395699_lsif_data.up.sql (580B)
 
 package migrations
 
@@ -2126,6 +2128,46 @@ func _1528395698_add_sync_time_and_user_id_to_external_servicesUpSql() (*asset, 
 	return a, nil
 }
 
+var __1528395699_lsif_dataDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xc8\x29\xce\x4c\x8b\x4f\x49\x2c\x49\x8c\xcf\x4d\x2d\x49\x04\x31\xac\xb1\x4b\xa7\xe4\x27\x97\xe6\xa6\xe6\x95\x14\xe3\x90\x2f\x4a\x2d\x2e\xcd\x29\x89\x4f\xce\x28\xcd\xcb\xc6\xa5\x26\x25\x35\x2d\x33\x2f\xb3\x24\x33\x3f\x0f\xb7\x29\x69\xa9\x45\xa9\x79\xc9\xa9\xc5\xd6\x5c\x5c\xce\xfe\xbe\xbe\x9e\x21\xd6\x5c\x80\x00\x00\x00\xff\xff\x87\xc0\xbc\x0b\xb7\x00\x00\x00")
+
+func _1528395699_lsif_dataDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395699_lsif_dataDownSql,
+		"1528395699_lsif_data.down.sql",
+	)
+}
+
+func _1528395699_lsif_dataDownSql() (*asset, error) {
+	bytes, err := _1528395699_lsif_dataDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395699_lsif_data.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x4b, 0x26, 0x37, 0x85, 0xe5, 0xe9, 0x2c, 0xa2, 0xb5, 0x5a, 0x31, 0xcc, 0xa8, 0xb0, 0x25, 0xc7, 0x1b, 0x6f, 0xa3, 0x28, 0x33, 0xf3, 0xb3, 0x39, 0xa7, 0xa7, 0xe9, 0x4a, 0xdd, 0x6, 0x70, 0x19}}
+	return a, nil
+}
+
+var __1528395699_lsif_dataUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xbc\x8f\xc1\x4a\xc4\x30\x10\x86\xef\x79\x8a\x39\xba\xb0\x6f\xd0\x53\x77\x09\x52\xb4\x2a\xa5\x97\x3d\x85\x98\x4c\xe8\xe0\x66\xb6\x34\x13\xa8\x6f\x2f\x1a\x11\x5b\xb4\x7a\xda\xdb\x10\xf2\xff\xdf\xff\x1d\xf4\x6d\xf3\x50\x29\x75\xec\x74\xdd\x6b\xe8\xeb\xc3\xbd\x86\x73\xa2\x60\xbc\x15\x6b\x22\x8a\x7d\x3f\xe0\xc6\xe7\x38\x1a\xf2\x40\x2c\x7b\xe0\x1c\xcd\x84\x29\x9f\xc5\xb8\x21\xf3\x4b\x2a\xcf\x4f\x5d\xd3\xd6\xdd\x09\xee\xf4\xe9\x2b\xb0\xdb\x55\xbf\x95\xfb\x8b\xcb\x11\x59\xd2\xaa\x7d\xb4\x32\x80\xe0\x2c\x7b\xf8\x60\x3f\xbf\x0a\xda\x9f\xdb\xcb\xe7\x0d\xc6\x72\xe5\x92\x43\x7e\x2e\xc7\xdf\x14\xf2\xf3\x96\x08\x06\x62\x12\xba\xf0\x1a\x91\xdc\x80\x11\x3f\x65\xc8\x23\x0b\x05\xc2\xe9\xdf\x76\x25\xff\x3d\xba\xe9\x1a\x70\x42\x76\x78\x9d\x15\xea\xf8\xd8\xb6\x4d\x5f\xa9\xb7\x00\x00\x00\xff\xff\xa5\x85\x76\x31\x44\x02\x00\x00")
+
+func _1528395699_lsif_dataUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395699_lsif_dataUpSql,
+		"1528395699_lsif_data.up.sql",
+	)
+}
+
+func _1528395699_lsif_dataUpSql() (*asset, error) {
+	bytes, err := _1528395699_lsif_dataUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395699_lsif_data.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x3b, 0x3b, 0x53, 0xe7, 0xb4, 0xa5, 0xf6, 0x5c, 0x98, 0xfe, 0x41, 0x4d, 0xf, 0xf7, 0x84, 0x22, 0x42, 0xb7, 0x12, 0x12, 0xc3, 0xd4, 0x8c, 0x39, 0xa0, 0xdd, 0xa2, 0xc9, 0x5d, 0x1c, 0xa, 0x8a}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2315,6 +2357,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395697_add_changeset_state_machine.up.sql":                           _1528395697_add_changeset_state_machineUpSql,
 	"1528395698_add_sync_time_and_user_id_to_external_services.down.sql":      _1528395698_add_sync_time_and_user_id_to_external_servicesDownSql,
 	"1528395698_add_sync_time_and_user_id_to_external_services.up.sql":        _1528395698_add_sync_time_and_user_id_to_external_servicesUpSql,
+	"1528395699_lsif_data.down.sql":                                           _1528395699_lsif_dataDownSql,
+	"1528395699_lsif_data.up.sql":                                             _1528395699_lsif_dataUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2459,6 +2503,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395697_add_changeset_state_machine.up.sql":                           {_1528395697_add_changeset_state_machineUpSql, map[string]*bintree{}},
 	"1528395698_add_sync_time_and_user_id_to_external_services.down.sql":      {_1528395698_add_sync_time_and_user_id_to_external_servicesDownSql, map[string]*bintree{}},
 	"1528395698_add_sync_time_and_user_id_to_external_services.up.sql":        {_1528395698_add_sync_time_and_user_id_to_external_servicesUpSql, map[string]*bintree{}},
+	"1528395699_lsif_data.down.sql":                                           {_1528395699_lsif_dataDownSql, map[string]*bintree{}},
+	"1528395699_lsif_data.up.sql":                                             {_1528395699_lsif_dataUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
