@@ -279,9 +279,6 @@ func (r *RepositoryResolver) ToFileMatch() (*FileMatchResolver, bool)   { return
 func (r *RepositoryResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return nil, false
 }
-func (r *RepositoryResolver) ToCodemodResult() (*codemodResultResolver, bool) {
-	return nil, false
-}
 
 func (r *RepositoryResolver) searchResultURIs() (string, string) {
 	return string(r.repo.Name), ""

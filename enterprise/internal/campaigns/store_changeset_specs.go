@@ -13,36 +13,38 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
-const changesetSpecInsertCols = `
-  rand_id,
-  raw_spec,
-  spec,
-  campaign_spec_id,
-  repo_id,
-  user_id,
-  diff_stat_added,
-  diff_stat_changed,
-  diff_stat_deleted,
-  created_at,
-  updated_at
-`
-const changesetSpecCols = `
-  id,` + changesetSpecInsertCols
+// changesetSpecInsertColumns is the list of changeset_specs columns that are
+// modified when inserting or updating a changeset spec.
+var changesetSpecInsertColumns = []*sqlf.Query{
+	sqlf.Sprintf("rand_id"),
+	sqlf.Sprintf("raw_spec"),
+	sqlf.Sprintf("spec"),
+	sqlf.Sprintf("campaign_spec_id"),
+	sqlf.Sprintf("repo_id"),
+	sqlf.Sprintf("user_id"),
+	sqlf.Sprintf("diff_stat_added"),
+	sqlf.Sprintf("diff_stat_changed"),
+	sqlf.Sprintf("diff_stat_deleted"),
+	sqlf.Sprintf("created_at"),
+	sqlf.Sprintf("updated_at"),
+}
 
-const changesetSpecColsFullyQualified = `
-  changeset_specs.id,
-  changeset_specs.rand_id,
-  changeset_specs.raw_spec,
-  changeset_specs.spec,
-  changeset_specs.campaign_spec_id,
-  changeset_specs.repo_id,
-  changeset_specs.user_id,
-  changeset_specs.diff_stat_added,
-  changeset_specs.diff_stat_changed,
-  changeset_specs.diff_stat_deleted,
-  changeset_specs.created_at,
-  changeset_specs.updated_at
-`
+// changesetSpecColumns are used by the changeset spec related Store methods to
+// insert, update and query changeset specs.
+var changesetSpecColumns = []*sqlf.Query{
+	sqlf.Sprintf("changeset_specs.id"),
+	sqlf.Sprintf("changeset_specs.rand_id"),
+	sqlf.Sprintf("changeset_specs.raw_spec"),
+	sqlf.Sprintf("changeset_specs.spec"),
+	sqlf.Sprintf("changeset_specs.campaign_spec_id"),
+	sqlf.Sprintf("changeset_specs.repo_id"),
+	sqlf.Sprintf("changeset_specs.user_id"),
+	sqlf.Sprintf("changeset_specs.diff_stat_added"),
+	sqlf.Sprintf("changeset_specs.diff_stat_changed"),
+	sqlf.Sprintf("changeset_specs.diff_stat_deleted"),
+	sqlf.Sprintf("changeset_specs.created_at"),
+	sqlf.Sprintf("changeset_specs.updated_at"),
+}
 
 // CreateChangesetSpec creates the given ChangesetSpec.
 func (s *Store) CreateChangesetSpec(ctx context.Context, c *campaigns.ChangesetSpec) error {
@@ -56,9 +58,9 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, c *campaigns.ChangesetS
 
 var createChangesetSpecQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changeset_specs.go:CreateChangesetSpec
-INSERT INTO changeset_specs (` + changesetSpecInsertCols + `)
+INSERT INTO changeset_specs (%s)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-RETURNING` + changesetSpecCols + `;`
+RETURNING %s`
 
 func (s *Store) createChangesetSpecQuery(c *campaigns.ChangesetSpec) (*sqlf.Query, error) {
 	spec, err := jsonbColumn(c.Spec)
@@ -82,6 +84,7 @@ func (s *Store) createChangesetSpecQuery(c *campaigns.ChangesetSpec) (*sqlf.Quer
 
 	return sqlf.Sprintf(
 		createChangesetSpecQueryFmtstr,
+		sqlf.Join(changesetSpecInsertColumns, ", "),
 		c.RandID,
 		c.RawSpec,
 		spec,
@@ -93,6 +96,7 @@ func (s *Store) createChangesetSpecQuery(c *campaigns.ChangesetSpec) (*sqlf.Quer
 		c.DiffStatDeleted,
 		c.CreatedAt,
 		c.UpdatedAt,
+		sqlf.Join(changesetSpecColumns, ", "),
 	), nil
 }
 
@@ -111,9 +115,9 @@ func (s *Store) UpdateChangesetSpec(ctx context.Context, c *campaigns.ChangesetS
 var updateChangesetSpecQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changeset_specs.go:UpdateChangesetSpec
 UPDATE changeset_specs
-SET (` + changesetSpecInsertCols + `) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
-RETURNING ` + changesetSpecCols
+RETURNING %s`
 
 func (s *Store) updateChangesetSpecQuery(c *campaigns.ChangesetSpec) (*sqlf.Query, error) {
 	spec, err := jsonbColumn(c.Spec)
@@ -125,6 +129,7 @@ func (s *Store) updateChangesetSpecQuery(c *campaigns.ChangesetSpec) (*sqlf.Quer
 
 	return sqlf.Sprintf(
 		updateChangesetSpecQueryFmtstr,
+		sqlf.Join(changesetSpecInsertColumns, ", "),
 		c.RandID,
 		c.RawSpec,
 		spec,
@@ -137,6 +142,7 @@ func (s *Store) updateChangesetSpecQuery(c *campaigns.ChangesetSpec) (*sqlf.Quer
 		c.CreatedAt,
 		c.UpdatedAt,
 		c.ID,
+		sqlf.Join(changesetSpecColumns, ", "),
 	), nil
 }
 
@@ -218,8 +224,7 @@ func (s *Store) GetChangesetSpecByID(ctx context.Context, id int64) (*campaigns.
 
 var getChangesetSpecsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changeset_specs.go:GetChangesetSpec
-SELECT ` + changesetSpecColsFullyQualified + `
-FROM changeset_specs
+SELECT %s FROM changeset_specs
 INNER JOIN repo ON repo.id = changeset_specs.repo_id
 WHERE %s
 LIMIT 1
@@ -242,7 +247,11 @@ func getChangesetSpecQuery(opts *GetChangesetSpecOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
-	return sqlf.Sprintf(getChangesetSpecsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+	return sqlf.Sprintf(
+		getChangesetSpecsQueryFmtstr,
+		sqlf.Join(changesetSpecColumns, ", "),
+		sqlf.Join(preds, "\n AND "),
+	)
 }
 
 // ListChangesetSpecsOpts captures the query options needed for
@@ -279,7 +288,7 @@ func (s *Store) ListChangesetSpecs(ctx context.Context, opts ListChangesetSpecsO
 
 var listChangesetSpecsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changeset_specs.go:ListChangesetSpecs
-SELECT ` + changesetSpecColsFullyQualified + ` FROM changeset_specs
+SELECT %s FROM changeset_specs
 INNER JOIN repo ON repo.id = changeset_specs.repo_id
 WHERE %s
 ORDER BY changeset_specs.id ASC
@@ -317,6 +326,7 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		listChangesetSpecsQueryFmtstr+limitClause,
+		sqlf.Join(changesetSpecColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -332,12 +342,24 @@ func (s *Store) DeleteExpiredChangesetSpecs(ctx context.Context) error {
 var deleteExpiredChangesetSpecsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:DeleteExpiredChangesetSpecs
 DELETE FROM
-  changeset_specs
+  changeset_specs cspecs
 WHERE
   created_at < %s
 AND
+(
+  -- It was never attached to a campaign_spec
   campaign_spec_id IS NULL
-;
+
+  OR
+
+  (
+    -- The campaign_spec is not applied to a campaign
+    NOT EXISTS(SELECT 1 FROM campaigns WHERE campaign_spec_id = cspecs.campaign_spec_id)
+    AND
+    -- and the changeset_spec is not attached to a changeset
+    NOT EXISTS(SELECT 1 FROM changesets WHERE current_spec_id = cspecs.id OR previous_spec_id = cspecs.id)
+  )
+);
 `
 
 func scanChangesetSpec(c *campaigns.ChangesetSpec, s scanner) error {

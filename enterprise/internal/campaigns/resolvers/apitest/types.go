@@ -55,33 +55,8 @@ type FileDiffs struct {
 		HasNextPage bool
 		EndCursor   string
 	}
-	Nodes []FileDiff
-}
-
-type PatchConnection struct {
-	Nodes      []Patch
+	Nodes      []FileDiff
 	TotalCount int
-	PageInfo   struct {
-		HasNextPage bool
-	}
-}
-
-type Patch struct {
-	Typename            string `json:"__typename"`
-	ID                  string
-	PublicationEnqueued bool
-	Publishable         bool
-	Repository          struct{ Name, URL string }
-	Diff                struct {
-		FileDiffs FileDiffs
-	}
-}
-
-type PatchSet struct {
-	ID         string
-	Patches    PatchConnection
-	PreviewURL string
-	DiffStat   DiffStat
 }
 
 type User struct {
@@ -112,12 +87,10 @@ type Campaign struct {
 	Namespace               UserOrg
 	CreatedAt               string
 	UpdatedAt               string
-	Patches                 PatchConnection
-	HasUnpublishedPatches   bool
+	URL                     string
 	Changesets              ChangesetConnection
 	ChangesetCountsOverTime []ChangesetCounts
 	DiffStat                DiffStat
-	PatchSet                PatchSet
 }
 
 type CampaignConnection struct {
@@ -137,6 +110,11 @@ type Repository struct {
 	Name string
 }
 
+type ExternalURL struct {
+	URL         string
+	ServiceType string
+}
+
 type Changeset struct {
 	Typename         string `json:"__typename"`
 	ID               string
@@ -150,27 +128,43 @@ type Changeset struct {
 	PublicationState string
 	ReconcilerState  string
 	ExternalState    string
-	ExternalURL      struct {
-		URL         string
-		ServiceType string
-	}
-	ReviewState string
-	CheckState  string
-	Events      ChangesetEventConnection
-	Head        GitRef
-	Base        GitRef
+	ExternalID       string
+	ExternalURL      ExternalURL
+	ReviewState      string
+	CheckState       string
+	Events           ChangesetEventConnection
+	Head             GitRef
+	Base             GitRef
 
-	Diff struct {
-		FileDiffs FileDiffs
-	}
+	Diff Comparison
+
+	Labels []Label
+}
+
+type Comparison struct {
+	Typename  string `json:"__typename"`
+	FileDiffs FileDiffs
+}
+
+type Label struct {
+	Text        string
+	Color       string
+	Description *string
 }
 
 type ChangesetConnection struct {
 	Nodes      []Changeset
 	TotalCount int
-	PageInfo   struct {
-		HasNextPage bool
-	}
+	PageInfo   PageInfo
+	Stats      ChangesetConnectionStats
+}
+
+type ChangesetConnectionStats struct {
+	Unpublished int
+	Open        int
+	Merged      int
+	Closed      int
+	Total       int
 }
 
 type ChangesetCounts struct {
@@ -247,4 +241,8 @@ type ChangesetSpecDescription struct {
 type GitCommitDescription struct {
 	Message string
 	Diff    string
+}
+
+type PageInfo struct {
+	HasNextPage bool
 }

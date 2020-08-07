@@ -103,12 +103,12 @@ func getAndMarshalSiteActivityJSON(ctx context.Context, criticalOnly bool) (_ js
 
 func hasSearchOccurred(ctx context.Context) (_ bool, err error) {
 	defer recordOperation("hasSearchOccurred")(&err)
-	return usagestats.HasSearchOccurred()
+	return usagestats.HasSearchOccurred(ctx)
 }
 
 func hasFindRefsOccurred(ctx context.Context) (_ bool, err error) {
 	defer recordOperation("hasSearchOccured")(&err)
-	return usagestats.HasFindRefsOccurred()
+	return usagestats.HasFindRefsOccurred(ctx)
 }
 
 func getTotalUsersCount(ctx context.Context) (_ int, err error) {
@@ -123,7 +123,7 @@ func getTotalReposCount(ctx context.Context) (_ int, err error) {
 
 func getUsersActiveTodayCount(ctx context.Context) (_ int, err error) {
 	defer recordOperation("getUsersActiveTodayCount")(&err)
-	return usagestatsdeprecated.GetUsersActiveTodayCount()
+	return usagestatsdeprecated.GetUsersActiveTodayCount(ctx)
 }
 
 func getInitialSiteAdminEmail(ctx context.Context) (_ string, err error) {
@@ -162,7 +162,7 @@ func getAndMarshalAggregatedUsageJSON(ctx context.Context) (_ json.RawMessage, _
 	return serializedCodeIntelUsage, serializedSearchUsage, nil
 }
 
-func updateURL(ctx context.Context) string {
+func updateURL() string {
 	return baseURL.String()
 }
 
@@ -299,7 +299,7 @@ func check(ctx context.Context) (*Status, error) {
 		if err != nil {
 			return "", err
 		}
-		resp, err := ctxhttp.Post(ctx, nil, updateURL(ctx), "application/json", body)
+		resp, err := ctxhttp.Post(ctx, nil, updateURL(), "application/json", body)
 		if err != nil {
 			return "", err
 		}

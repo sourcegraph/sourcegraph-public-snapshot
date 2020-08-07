@@ -1236,8 +1236,12 @@ type Query {
         # Will not actually check the code host to see if the repository actually exists.
         cloneURL: String
     ): RepositoryRedirect
-    # Lists all external services.
+    # Lists external services under given namespace.
+    # If no namespace is given, it returns all external services.
     externalServices(
+        # The namespace to scope returned external services.
+        # Currently, this can only be used for a user.
+        namespace: ID
         # Returns the first n external services from the list.
         first: Int
     ): ExternalServiceConnection!
@@ -1507,7 +1511,7 @@ type SearchFilterSuggestions {
 }
 
 # A search result.
-union SearchResult = FileMatch | CommitSearchResult | Repository | CodemodResult
+union SearchResult = FileMatch | CommitSearchResult | Repository
 
 # An object representing a markdown string.
 type Markdown {
@@ -1735,24 +1739,6 @@ type CommitSearchResult implements GenericSearchResultInterface {
     messagePreview: HighlightedString
     # The matching portion of the diff, if any.
     diffPreview: HighlightedString
-}
-
-# The result of a code modification query.
-type CodemodResult implements GenericSearchResultInterface {
-    # URL to an icon that is displayed with every search result.
-    icon: String!
-    # A markdown string that is rendered prominently.
-    label: Markdown!
-    # The URL of the result.
-    url: String!
-    # A markdown string that is rendered less prominently.
-    detail: Markdown!
-    # A list of matches in this search result.
-    matches: [SearchResultMatch!]!
-    # The commit whose contents the codemod was run against.
-    commit: GitCommit!
-    # The raw diff of the modification.
-    rawDiff: String!
 }
 
 # A search result that is a diff between two diffable Git objects.

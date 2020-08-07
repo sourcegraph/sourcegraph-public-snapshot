@@ -33,10 +33,16 @@ const campaignFragment = gql`
         __typename
         id
         name
+        namespace {
+            namespaceName
+        }
         description
         author {
             username
             avatarURL
+        }
+        namespace {
+            namespaceName
         }
         branch
         createdAt
@@ -49,6 +55,8 @@ const campaignFragment = gql`
                 total
                 closed
                 merged
+                open
+                unpublished
             }
         }
         # TODO move to separate query and configure from/to

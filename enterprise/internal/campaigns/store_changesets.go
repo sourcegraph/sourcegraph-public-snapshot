@@ -19,8 +19,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
 
-// changesetColumns are used by by workerutil.Worker that loads changesets from
-// the database for processing by the reconciler.
+// changesetColumns are used by by the changeset related Store methods and by
+// workerutil.Worker to load changesets from the database for processing by
+// the reconciler.
 var changesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.id"),
 	sqlf.Sprintf("changesets.repo_id"),
@@ -54,6 +55,40 @@ var changesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.num_resets"),
 }
 
+// changesetInsertColumns is the list of changeset columns that are modified in
+// CreateChangeset and UpdateChangeset.
+var changesetInsertColumns = []*sqlf.Query{
+	sqlf.Sprintf("repo_id"),
+	sqlf.Sprintf("created_at"),
+	sqlf.Sprintf("updated_at"),
+	sqlf.Sprintf("metadata"),
+	sqlf.Sprintf("campaign_ids"),
+	sqlf.Sprintf("external_id"),
+	sqlf.Sprintf("external_service_type"),
+	sqlf.Sprintf("external_branch"),
+	sqlf.Sprintf("external_deleted_at"),
+	sqlf.Sprintf("external_updated_at"),
+	sqlf.Sprintf("external_state"),
+	sqlf.Sprintf("external_review_state"),
+	sqlf.Sprintf("external_check_state"),
+	sqlf.Sprintf("created_by_campaign"),
+	sqlf.Sprintf("added_to_campaign"),
+	sqlf.Sprintf("diff_stat_added"),
+	sqlf.Sprintf("diff_stat_changed"),
+	sqlf.Sprintf("diff_stat_deleted"),
+	sqlf.Sprintf("sync_state"),
+	sqlf.Sprintf("owned_by_campaign_id"),
+	sqlf.Sprintf("current_spec_id"),
+	sqlf.Sprintf("previous_spec_id"),
+	sqlf.Sprintf("publication_state"),
+	sqlf.Sprintf("reconciler_state"),
+	sqlf.Sprintf("failure_message"),
+	sqlf.Sprintf("started_at"),
+	sqlf.Sprintf("finished_at"),
+	sqlf.Sprintf("process_after"),
+	sqlf.Sprintf("num_resets"),
+}
+
 // CreateChangeset creates the given Changeset.
 func (s *Store) CreateChangeset(ctx context.Context, c *campaigns.Changeset) error {
 	q, err := s.createChangesetQuery(c)
@@ -66,74 +101,12 @@ func (s *Store) CreateChangeset(ctx context.Context, c *campaigns.Changeset) err
 
 var createChangesetQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:CreateChangeset
-INSERT INTO changesets (
-  repo_id,
-  created_at,
-  updated_at,
-  metadata,
-  campaign_ids,
-  external_id,
-  external_service_type,
-  external_branch,
-  external_deleted_at,
-  external_updated_at,
-  external_state,
-  external_review_state,
-  external_check_state,
-  created_by_campaign,
-  added_to_campaign,
-  diff_stat_added,
-  diff_stat_changed,
-  diff_stat_deleted,
-  sync_state,
-
-  owned_by_campaign_id,
-  current_spec_id,
-  previous_spec_id,
-  publication_state,
-  reconciler_state,
-  failure_message,
-  started_at,
-  finished_at,
-  process_after,
-  num_resets
-)
+INSERT INTO changesets (%s)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 ON CONFLICT ON CONSTRAINT
 changesets_repo_external_id_unique
 DO NOTHING
-RETURNING
-  id,
-  repo_id,
-  created_at,
-  updated_at,
-  metadata,
-  campaign_ids,
-  external_id,
-  external_service_type,
-  external_branch,
-  external_deleted_at,
-  external_updated_at,
-  external_state,
-  external_review_state,
-  external_check_state,
-  created_by_campaign,
-  added_to_campaign,
-  diff_stat_added,
-  diff_stat_changed,
-  diff_stat_deleted,
-  sync_state,
-
-  owned_by_campaign_id,
-  current_spec_id,
-  previous_spec_id,
-  publication_state,
-  reconciler_state,
-  failure_message,
-  started_at,
-  finished_at,
-  process_after,
-  num_resets
+RETURNING %s
 `
 
 func (s *Store) createChangesetQuery(c *campaigns.Changeset) (*sqlf.Query, error) {
@@ -162,6 +135,7 @@ func (s *Store) createChangesetQuery(c *campaigns.Changeset) (*sqlf.Query, error
 
 	return sqlf.Sprintf(
 		createChangesetQueryFmtstr,
+		sqlf.Join(changesetInsertColumns, ", "),
 		c.RepoID,
 		c.CreatedAt,
 		c.UpdatedAt,
@@ -191,6 +165,7 @@ func (s *Store) createChangesetQuery(c *campaigns.Changeset) (*sqlf.Query, error
 		c.FinishedAt,
 		c.ProcessAfter,
 		c.NumResets,
+		sqlf.Join(changesetColumns, ", "),
 	), nil
 }
 
@@ -273,39 +248,7 @@ func (s *Store) GetChangeset(ctx context.Context, opts GetChangesetOpts) (*campa
 
 var getChangesetsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:GetChangeset
-SELECT
-  changesets.id,
-  changesets.repo_id,
-  changesets.created_at,
-  changesets.updated_at,
-  changesets.metadata,
-  changesets.campaign_ids,
-  changesets.external_id,
-  changesets.external_service_type,
-  changesets.external_branch,
-  changesets.external_deleted_at,
-  changesets.external_updated_at,
-  changesets.external_state,
-  changesets.external_review_state,
-  changesets.external_check_state,
-  changesets.created_by_campaign,
-  changesets.added_to_campaign,
-  changesets.diff_stat_added,
-  changesets.diff_stat_changed,
-  changesets.diff_stat_deleted,
-  changesets.sync_state,
-
-  changesets.owned_by_campaign_id,
-  changesets.current_spec_id,
-  changesets.previous_spec_id,
-  changesets.publication_state,
-  changesets.reconciler_state,
-  changesets.failure_message,
-  changesets.started_at,
-  changesets.finished_at,
-  changesets.process_after,
-  changesets.num_resets
-FROM changesets
+SELECT %s FROM changesets
 INNER JOIN repo ON repo.id = changesets.repo_id
 WHERE %s
 LIMIT 1
@@ -330,7 +273,11 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 		)
 	}
 
-	return sqlf.Sprintf(getChangesetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+	return sqlf.Sprintf(
+		getChangesetsQueryFmtstr,
+		sqlf.Join(changesetColumns, ", "),
+		sqlf.Join(preds, "\n AND "),
+	)
 }
 
 type ListChangesetSyncDataOpts struct {
@@ -442,39 +389,7 @@ func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs
 
 var listChangesetsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:ListChangesets
-SELECT
-  changesets.id,
-  changesets.repo_id,
-  changesets.created_at,
-  changesets.updated_at,
-  changesets.metadata,
-  changesets.campaign_ids,
-  changesets.external_id,
-  changesets.external_service_type,
-  changesets.external_branch,
-  changesets.external_deleted_at,
-  changesets.external_updated_at,
-  changesets.external_state,
-  changesets.external_review_state,
-  changesets.external_check_state,
-  changesets.created_by_campaign,
-  changesets.added_to_campaign,
-  changesets.diff_stat_added,
-  changesets.diff_stat_changed,
-  changesets.diff_stat_deleted,
-  changesets.sync_state,
-
-  changesets.owned_by_campaign_id,
-  changesets.current_spec_id,
-  changesets.previous_spec_id,
-  changesets.publication_state,
-  changesets.reconciler_state,
-  changesets.failure_message,
-  changesets.started_at,
-  changesets.finished_at,
-  changesets.process_after,
-  changesets.num_resets
-FROM changesets
+SELECT %s FROM changesets
 INNER JOIN repo ON repo.id = changesets.repo_id
 WHERE %s
 ORDER BY id ASC
@@ -538,6 +453,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		listChangesetsQueryFmtstr+limitClause,
+		sqlf.Join(changesetColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -557,71 +473,10 @@ func (s *Store) UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) er
 var updateChangesetQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changeset_specs.go:UpdateChangeset
 UPDATE changesets
-SET (
-  repo_id,
-  created_at,
-  updated_at,
-  metadata,
-  campaign_ids,
-  external_id,
-  external_service_type,
-  external_branch,
-  external_deleted_at,
-  external_updated_at,
-  external_state,
-  external_review_state,
-  external_check_state,
-  created_by_campaign,
-  added_to_campaign,
-  diff_stat_added,
-  diff_stat_changed,
-  diff_stat_deleted,
-  sync_state,
-
-  owned_by_campaign_id,
-  current_spec_id,
-  previous_spec_id,
-  publication_state,
-  reconciler_state,
-  failure_message,
-  started_at,
-  finished_at,
-  process_after,
-  num_resets
-) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
-  id,
-  repo_id,
-  created_at,
-  updated_at,
-  metadata,
-  campaign_ids,
-  external_id,
-  external_service_type,
-  external_branch,
-  external_deleted_at,
-  external_updated_at,
-  external_state,
-  external_review_state,
-  external_check_state,
-  created_by_campaign,
-  added_to_campaign,
-  diff_stat_added,
-  diff_stat_changed,
-  diff_stat_deleted,
-  sync_state,
-
-  owned_by_campaign_id,
-  current_spec_id,
-  previous_spec_id,
-  publication_state,
-  reconciler_state,
-  failure_message,
-  started_at,
-  finished_at,
-  process_after,
-  num_resets
+  %s
 `
 
 func (s *Store) updateChangesetQuery(c *campaigns.Changeset) (*sqlf.Query, error) {
@@ -644,6 +499,7 @@ func (s *Store) updateChangesetQuery(c *campaigns.Changeset) (*sqlf.Query, error
 
 	return sqlf.Sprintf(
 		updateChangesetQueryFmtstr,
+		sqlf.Join(changesetInsertColumns, ", "),
 		c.RepoID,
 		c.CreatedAt,
 		c.UpdatedAt,
@@ -675,6 +531,7 @@ func (s *Store) updateChangesetQuery(c *campaigns.Changeset) (*sqlf.Query, error
 		c.NumResets,
 		// ID
 		c.ID,
+		sqlf.Join(changesetColumns, ", "),
 	), nil
 }
 
