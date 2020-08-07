@@ -128,7 +128,7 @@ func (r *campaignResolver) UpdatedAt() graphqlbackend.DateTime {
 }
 
 func (r *campaignResolver) ClosedAt() *graphqlbackend.DateTime {
-	if r.Campaign.ClosedAt.IsZero() {
+	if !r.Campaign.Closed() {
 		return nil
 	}
 	return &graphqlbackend.DateTime{Time: r.Campaign.ClosedAt}

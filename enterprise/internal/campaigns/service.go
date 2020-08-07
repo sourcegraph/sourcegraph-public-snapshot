@@ -308,7 +308,7 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		return nil, ErrEnsureCampaignFailed
 	}
 
-	if !campaign.ClosedAt.IsZero() {
+	if campaign.Closed() {
 		return nil, ErrApplyClosedCampaign
 	}
 
@@ -744,6 +744,10 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 			return errors.Wrap(err, "getting campaign")
 		}
 
+		if campaign.Closed() {
+			return nil
+		}
+
 		if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID); err != nil {
 			return err
 		}
@@ -762,10 +766,6 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 				err = ErrCloseProcessingCampaign
 				return err
 			}
-		}
-
-		if !campaign.ClosedAt.IsZero() {
-			return nil
 		}
 
 		campaign.ClosedAt = time.Now().UTC()
