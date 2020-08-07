@@ -283,7 +283,7 @@ type ChangesetEventsConnectionResolver interface {
 
 type ChangesetEventResolver interface {
 	ID() graphql.ID
-	Changeset(ctx context.Context) (ExternalChangesetResolver, error)
+	Changeset() ExternalChangesetResolver
 	CreatedAt() DateTime
 }
 

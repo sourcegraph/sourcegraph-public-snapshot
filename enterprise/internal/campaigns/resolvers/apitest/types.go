@@ -100,13 +100,19 @@ type Campaign struct {
 type CampaignConnection struct {
 	Nodes      []Campaign
 	TotalCount int
-	PageInfo   struct {
-		HasNextPage bool
-	}
+	PageInfo   PageInfo
+}
+
+type ChangesetEvent struct {
+	ID        string
+	Changeset struct{ ID string }
+	CreatedAt string
 }
 
 type ChangesetEventConnection struct {
 	TotalCount int
+	PageInfo   PageInfo
+	Nodes      []ChangesetEvent
 }
 
 type Repository struct {
@@ -172,7 +178,7 @@ type ChangesetConnectionStats struct {
 }
 
 type ChangesetCounts struct {
-	Date                 graphqlbackend.DateTime
+	Date                 string
 	Total                int32
 	Merged               int32
 	Closed               int32

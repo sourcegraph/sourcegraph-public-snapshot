@@ -308,6 +308,10 @@ func createChangeset(
 		t.Fatalf("creating changeset failed: %s", err)
 	}
 
+	if err := store.UpsertChangesetEvents(ctx, changeset.Events()...); err != nil {
+		t.Fatalf("creating changeset events failed: %s", err)
+	}
+
 	return changeset
 }
 
