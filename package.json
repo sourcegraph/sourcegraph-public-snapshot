@@ -167,7 +167,7 @@
     "@types/storybook__react": "4.0.2",
     "@types/textarea-caret": "3.0.0",
     "@types/uuid": "8.0.0",
-    "@types/webpack": "4.41.20",
+    "@types/webpack": "4.41.21",
     "@types/webpack-dev-server": "3.11.0",
     "abort-controller": "^3.0.0",
     "autoprefixer": "^9.8.0",
@@ -252,7 +252,7 @@
     "typescript": "^3.9.2",
     "utc-version": "^2.0.2",
     "web-ext": "^4.2.0",
-    "webpack": "^4.43.0",
+    "webpack": "^4.44.1",
     "webpack-dev-server": "^3.11.0",
     "worker-loader": "^2.0.0",
     "yarn-deduplicate": "^2.1.1"
