@@ -3,6 +3,7 @@ package userpasswd
 import (
 	"context"
 	"net/url"
+	"reflect"
 	"strconv"
 	"testing"
 
@@ -11,12 +12,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
 )
 
 func TestHandleSetPasswordEmail(t *testing.T) {
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 	_, ctx = ot.StartSpanFromContext(ctx, "dummy")
+
+	var sent *txemail.Message
+	txemail.MockSend = func(ctx context.Context, message txemail.Message) error {
+		sent = &message
+		return nil
+	}
+	defer func() { txemail.MockSend = nil }()
 
 	backend.MockMakePasswordResetURL = func(context.Context, int32) (*url.URL, error) {
 		query := url.Values{}
@@ -26,7 +35,7 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 	}
 
 	db.Mocks.UserEmails.GetPrimaryEmail = func(context.Context, int32) (string, bool, error) {
-		return "test@gmail.com", true, nil
+		return "a@example.com", true, nil
 	}
 
 	db.Mocks.Users.GetByID = func(context.Context, int32) (*types.User, error) {
@@ -39,13 +48,15 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 		ctx     context.Context
 		wantOut string
 		wantErr bool
+		email   string
 	}{
 		{
 			name:    "Valid ID",
 			id:      1,
 			ctx:     ctx,
-			wantOut: "",
+			wantOut: "http://example.com/password-reset?code=foo&userID=1",
 			wantErr: false,
+			email:   "a@example.com",
 		},
 	}
 
@@ -61,6 +72,24 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 				} else {
 					t.Fatalf("input %q got unexpected error %q", tst.id, err.Error())
 				}
+			}
+
+			if sent == nil {
+				t.Fatal("want sent != nil")
+			}
+
+			if want := (txemail.Message{
+				To:       []string{tst.email},
+				Template: setPasswordEmailTemplates,
+				Data: struct {
+					Username string
+					URL      string
+				}{
+					Username: "test",
+					URL:      got,
+				},
+			}); !reflect.DeepEqual(*sent, want) {
+				t.Errorf("got %+v, want %+v", *sent, want)
 			}
 		})
 	}
