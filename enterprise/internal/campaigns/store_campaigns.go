@@ -155,6 +155,9 @@ type CountCampaignsOpts struct {
 	State       campaigns.CampaignState
 	// Only return campaigns where author_id is the given.
 	OnlyForAuthor int32
+
+	NamespaceUserID int32
+	NamespaceOrgID  int32
 }
 
 // CountCampaigns returns the number of campaigns in the database.
@@ -184,6 +187,14 @@ func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
 
 	if opts.OnlyForAuthor != 0 {
 		preds = append(preds, sqlf.Sprintf("author_id = %d", opts.OnlyForAuthor))
+	}
+
+	if opts.NamespaceUserID != 0 {
+		preds = append(preds, sqlf.Sprintf("namespace_user_id = %s", opts.NamespaceUserID))
+	}
+
+	if opts.NamespaceOrgID != 0 {
+		preds = append(preds, sqlf.Sprintf("namespace_org_id = %s", opts.NamespaceOrgID))
 	}
 
 	if len(preds) == 0 {
@@ -273,6 +284,9 @@ type ListCampaignsOpts struct {
 	State       campaigns.CampaignState
 	// Only return campaigns where author_id is the given.
 	OnlyForAuthor int32
+
+	NamespaceUserID int32
+	NamespaceOrgID  int32
 }
 
 // ListCampaigns lists Campaigns with the given filters.
@@ -328,6 +342,14 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 
 	if opts.OnlyForAuthor != 0 {
 		preds = append(preds, sqlf.Sprintf("author_id = %d", opts.OnlyForAuthor))
+	}
+
+	if opts.NamespaceUserID != 0 {
+		preds = append(preds, sqlf.Sprintf("campaigns.namespace_user_id = %s", opts.NamespaceUserID))
+	}
+
+	if opts.NamespaceOrgID != 0 {
+		preds = append(preds, sqlf.Sprintf("campaigns.namespace_org_id = %s", opts.NamespaceOrgID))
 	}
 
 	return sqlf.Sprintf(

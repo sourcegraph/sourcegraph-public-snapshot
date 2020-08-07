@@ -63,11 +63,15 @@ type User struct {
 	ID         string
 	DatabaseID int32
 	SiteAdmin  bool
+
+	Campaigns CampaignConnection
 }
 
 type Org struct {
 	ID   string
 	Name string
+
+	Campaigns CampaignConnection
 }
 
 type UserOrg struct {

@@ -93,6 +93,54 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 				}
 			}
 		})
+
+		t.Run("NamespaceUserID", func(t *testing.T) {
+			wantCounts := map[int32]int{}
+			for _, c := range campaigns {
+				if c.NamespaceUserID == 0 {
+					continue
+				}
+				wantCounts[c.NamespaceUserID] += 1
+			}
+			if len(wantCounts) == 0 {
+				t.Fatalf("No campaigns with NamespaceUserID")
+			}
+
+			for userID, want := range wantCounts {
+				have, err := s.CountCampaigns(ctx, CountCampaignsOpts{NamespaceUserID: userID})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have != want {
+					t.Fatalf("campaigns count for NamespaceUserID=%d wrong. want=%d, have=%d", userID, want, have)
+				}
+			}
+		})
+
+		t.Run("NamespaceOrgID", func(t *testing.T) {
+			wantCounts := map[int32]int{}
+			for _, c := range campaigns {
+				if c.NamespaceOrgID == 0 {
+					continue
+				}
+				wantCounts[c.NamespaceOrgID] += 1
+			}
+			if len(wantCounts) == 0 {
+				t.Fatalf("No campaigns with NamespaceOrgID")
+			}
+
+			for orgID, want := range wantCounts {
+				have, err := s.CountCampaigns(ctx, CountCampaignsOpts{NamespaceOrgID: orgID})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have != want {
+					t.Fatalf("campaigns count for NamespaceOrgID=%d wrong. want=%d, have=%d", orgID, want, have)
+				}
+			}
+		})
 	})
 
 	t.Run("List", func(t *testing.T) {
@@ -213,6 +261,44 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 				}
 				if diff := cmp.Diff(have[0], c); diff != "" {
 					t.Fatal(diff)
+				}
+			}
+		})
+
+		t.Run("ListCampaigns by NamespaceUserID", func(t *testing.T) {
+			for _, c := range campaigns {
+				if c.NamespaceUserID == 0 {
+					continue
+				}
+				opts := ListCampaignsOpts{NamespaceUserID: c.NamespaceUserID}
+				have, _, err := s.ListCampaigns(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				for _, haveCampaign := range have {
+					if have, want := haveCampaign.NamespaceUserID, opts.NamespaceUserID; have != want {
+						t.Fatalf("campaign has wrong NamespaceUserID. want=%d, have=%d", want, have)
+					}
+				}
+			}
+		})
+
+		t.Run("ListCampaigns by NamespaceOrgID", func(t *testing.T) {
+			for _, c := range campaigns {
+				if c.NamespaceOrgID == 0 {
+					continue
+				}
+				opts := ListCampaignsOpts{NamespaceOrgID: c.NamespaceOrgID}
+				have, _, err := s.ListCampaigns(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				for _, haveCampaign := range have {
+					if have, want := haveCampaign.NamespaceOrgID, opts.NamespaceOrgID; have != want {
+						t.Fatalf("campaign has wrong NamespaceOrgID. want=%d, have=%d", want, have)
+					}
 				}
 			}
 		})
