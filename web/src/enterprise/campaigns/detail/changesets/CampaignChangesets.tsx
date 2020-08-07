@@ -32,11 +32,12 @@ import {
     ChangesetExternalState,
     ChangesetReviewState,
     ChangesetCheckState,
+    Scalars,
 } from '../../../../graphql-operations'
 import { isValidChangesetExternalState, isValidChangesetReviewState, isValidChangesetCheckState } from '../../utils'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
-    campaignID: string
+    campaignID: Scalars['ID']
     viewerCanAdminister: boolean
     history: H.History
     location: H.Location

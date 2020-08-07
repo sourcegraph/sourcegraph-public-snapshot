@@ -17,14 +17,14 @@ import { pluralize } from '../../../../../shared/src/util/strings'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import { CampaignFields } from '../../../graphql-operations'
+import { CampaignFields, Scalars } from '../../../graphql-operations'
 import { CampaignInfoCard } from './CampaignInfoCard'
 
 interface Props extends ThemeProps, ExtensionsControllerProps, PlatformContextProps, TelemetryProps {
     /**
      * The campaign ID.
      */
-    campaignID: string
+    campaignID: Scalars['ID']
     history: H.History
     location: H.Location
 
