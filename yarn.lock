@@ -2569,10 +2569,10 @@
     sourcegraph "^24.0.0"
     ts-key-enum "^2.0.0"
 
-"@sourcegraph/eslint-config@^0.19.15":
-  version "0.19.15"
-  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.19.15.tgz#99f826c8d9230aecddb28e1653a4ad8e652b6f9f"
-  integrity sha512-x76bN05kbFVDYInfrRFbup39Gprvp5kYp1GRbXjL4U/Ig6F0T6r93Mf0wLinl+asjp+04AVAlZ9umlA+DQzNFA==
+"@sourcegraph/eslint-config@^0.20.0":
+  version "0.20.0"
+  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.20.0.tgz#4a068d90fb4a4c42641aa171319a8680cad3ab92"
+  integrity sha512-DF0NE/wqBcsFbY5FSd98M/SRTf5PV3GcjE6Kt3ReXCjorbanxAW41mazeydfXUrYFyHPSyuiiwE+bt9cQ7EP7w==
   dependencies:
     "@sourcegraph/prettierrc" "^3.0.3"
     "@typescript-eslint/eslint-plugin" "^3.6.0"
