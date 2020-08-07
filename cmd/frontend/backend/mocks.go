@@ -9,14 +9,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-var Mocks, emptyMocks struct {
+var Mocks MockServices
+
+type MockServices struct {
 	Repos MockRepos
 }
 
 // testContext creates a new context.Context for use by tests
 func testContext() context.Context {
 	db.Mocks = db.MockStores{}
-	Mocks = emptyMocks
+	Mocks = MockServices{}
 	git.ResetMocks()
 
 	ctx := context.Background()
@@ -24,10 +26,4 @@ func testContext() context.Context {
 	_, ctx = ot.StartSpanFromContext(ctx, "dummy")
 
 	return ctx
-}
-
-// ResetMocks clears the mock functions set on Mocks (so that subsequent tests don't inadvertently
-// use them).
-func ResetMocks() {
-	Mocks = emptyMocks
 }

@@ -9,5 +9,5 @@ import (
 func resetMocks() {
 	repoupdater.MockRepoLookup = nil
 	db.Mocks = db.MockStores{}
-	backend.ResetMocks()
+	backend.Mocks = backend.MockServices{}
 }
