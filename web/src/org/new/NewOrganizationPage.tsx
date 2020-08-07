@@ -58,7 +58,7 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                     }),
                     filter(event => event.currentTarget.checkValidity()),
                     mergeMap(() =>
-                        createOrganization(this.state).pipe(
+                        createOrganization({ name: this.state.name, displayName: this.state.displayName }).pipe(
                             catchError(error => {
                                 console.error(error)
                                 this.setState({ error })
