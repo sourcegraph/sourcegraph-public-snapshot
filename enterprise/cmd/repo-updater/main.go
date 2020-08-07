@@ -60,11 +60,14 @@ func enterpriseInit(
 	// Set up expired spec deletion
 	go func() {
 		for {
-			if err := campaignsStore.DeleteExpiredCampaignSpecs(ctx); err != nil {
-				log15.Error("DeleteExpiredCampaignSpecs", "error", err)
-			}
+			// We first need to delete expired ChangesetSpecs...
 			if err := campaignsStore.DeleteExpiredChangesetSpecs(ctx); err != nil {
 				log15.Error("DeleteExpiredChangesetSpecs", "error", err)
+			}
+			// ... and then the CampaignSpecs, due to the campaign_spec_id
+			// foreign key on changeset_specs.
+			if err := campaignsStore.DeleteExpiredCampaignSpecs(ctx); err != nil {
+				log15.Error("DeleteExpiredCampaignSpecs", "error", err)
 			}
 
 			time.Sleep(2 * time.Minute)

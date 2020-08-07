@@ -14,6 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -30,10 +32,10 @@ type reconciler struct {
 	store           *Store
 }
 
-// HandlerFunc returns a workerutil.HandlerFunc that can be passed to a
+// HandlerFunc returns a dbworker.HandlerFunc that can be passed to a
 // workerutil.Worker to process queued changesets.
-func (r *reconciler) HandlerFunc() workerutil.HandlerFunc {
-	return func(ctx context.Context, tx workerutil.Store, record workerutil.Record) error {
+func (r *reconciler) HandlerFunc() dbworker.HandlerFunc {
+	return func(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) error {
 		return r.process(ctx, r.store.With(tx), record.(*campaigns.Changeset))
 	}
 }

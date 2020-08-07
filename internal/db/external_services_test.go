@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -18,6 +19,7 @@ import (
 func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 	tests := []struct {
 		name            string
+		noNamespace     bool
 		namespaceUserID int32
 		kinds           []string
 		wantQuery       string
@@ -45,10 +47,17 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			wantQuery:       "deleted_at IS NULL AND namespace_user_id = $1",
 			wantArgs:        []interface{}{int32(1)},
 		},
+		{
+			name:            "want no namespace",
+			noNamespace:     true,
+			namespaceUserID: 1,
+			wantQuery:       "deleted_at IS NULL AND namespace_user_id IS NULL",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			opts := ExternalServicesListOptions{
+				NoNamespace:     test.noNamespace,
 				NamespaceUserID: test.namespaceUserID,
 				Kinds:           test.kinds,
 			}
@@ -313,46 +322,69 @@ func TestExternalServicesStore_List(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create a new external service
+	// Create new external services
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
-	es := &types.ExternalService{
-		Kind:            extsvc.KindGitHub,
-		DisplayName:     "GITHUB #1",
-		Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-		NamespaceUserID: &user.ID,
+	ess := []*types.ExternalService{
+		{
+			Kind:            extsvc.KindGitHub,
+			DisplayName:     "GITHUB #1",
+			Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+			NamespaceUserID: &user.ID,
+		},
+		{
+			Kind:        extsvc.KindGitHub,
+			DisplayName: "GITHUB #2",
+			Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`,
+		},
 	}
-	err = (&ExternalServicesStore{}).Create(ctx, confGet, es)
-	if err != nil {
-		t.Fatal(err)
+	for _, es := range ess {
+		err := ExternalServices.Create(ctx, confGet, es)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	t.Run("list all external services", func(t *testing.T) {
-		ess, err := (&ExternalServicesStore{}).List(ctx, ExternalServicesListOptions{})
+		got, err := (&ExternalServicesStore{}).List(ctx, ExternalServicesListOptions{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		sort.Slice(got, func(i, j int) bool { return got[i].ID < got[j].ID })
+
+		if diff := cmp.Diff(ess, got); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("list external services with no namespace", func(t *testing.T) {
+		got, err := (&ExternalServicesStore{}).List(ctx, ExternalServicesListOptions{
+			NoNamespace: true,
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if len(ess) != 1 {
+		if len(got) != 1 {
 			t.Fatalf("Want 1 external service but got %d", len(ess))
-		} else if diff := cmp.Diff(es, ess[0]); diff != "" {
-			t.Fatalf("(-want +got):\n%s", diff)
+		} else if diff := cmp.Diff(ess[1], got[0]); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
 	})
 
 	t.Run("list only test user's external services", func(t *testing.T) {
-		ess, err := (&ExternalServicesStore{}).List(ctx, ExternalServicesListOptions{
+		got, err := (&ExternalServicesStore{}).List(ctx, ExternalServicesListOptions{
 			NamespaceUserID: user.ID,
 		})
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if len(ess) != 1 {
+		if len(got) != 1 {
 			t.Fatalf("Want 1 external service but got %d", len(ess))
-		} else if diff := cmp.Diff(es, ess[0]); diff != "" {
-			t.Fatalf("(-want +got):\n%s", diff)
+		} else if diff := cmp.Diff(ess[0], got[0]); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
 	})
 

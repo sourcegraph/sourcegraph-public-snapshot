@@ -105,7 +105,8 @@ func marshalDateTime(t testing.TB, ts time.Time) string {
 		t.Fatal(err)
 	}
 
-	return string(bs)
+	// Unquote the date time.
+	return strings.ReplaceAll(string(bs), "\"", "")
 }
 
 func parseJSONTime(t testing.TB, ts string) time.Time {
@@ -233,6 +234,7 @@ type testChangesetOpts struct {
 	externalCheckState  campaigns.ChangesetCheckState
 
 	publicationState campaigns.ChangesetPublicationState
+	reconcilerState  campaigns.ReconcilerState
 	failureMessage   string
 
 	createdByCampaign bool
@@ -265,6 +267,7 @@ func createChangeset(
 		ExternalCheckState:  opts.externalCheckState,
 
 		PublicationState: opts.publicationState,
+		ReconcilerState:  opts.reconcilerState,
 
 		CreatedByCampaign: opts.createdByCampaign,
 		OwnedByCampaignID: opts.ownedByCampaign,

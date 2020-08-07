@@ -49,6 +49,7 @@ type changesetResolver struct {
 	events     ee.ChangesetEvents
 	eventsErr  error
 
+	attemptedPreloadNextSyncAt bool
 	// When the next sync is scheduled
 	preloadedNextSyncAt *time.Time
 	nextSyncAtOnce      sync.Once
@@ -160,22 +161,22 @@ func (r *changesetResolver) computeEvents(ctx context.Context) ([]*campaigns.Cha
 
 func (r *changesetResolver) computeNextSyncAt(ctx context.Context) (time.Time, error) {
 	r.nextSyncAtOnce.Do(func() {
-		if r.preloadedNextSyncAt != nil {
-			r.nextSyncAt = *r.preloadedNextSyncAt
-		} else {
-			syncData, err := r.store.ListChangesetSyncData(ctx, ee.ListChangesetSyncDataOpts{ChangesetIDs: []int64{r.changeset.ID}})
-			if err != nil {
-				r.nextSyncAtErr = err
+		if r.attemptedPreloadNextSyncAt {
+			if r.preloadedNextSyncAt != nil {
+				r.nextSyncAt = *r.preloadedNextSyncAt
+			}
+			return
+		}
+		syncData, err := r.store.ListChangesetSyncData(ctx, ee.ListChangesetSyncDataOpts{ChangesetIDs: []int64{r.changeset.ID}})
+		if err != nil {
+			r.nextSyncAtErr = err
+			return
+		}
+		for _, d := range syncData {
+			if d.ChangesetID == r.changeset.ID {
+				r.nextSyncAt = ee.NextSync(time.Now, d)
 				return
 			}
-			for _, d := range syncData {
-				if d.ChangesetID == r.changeset.ID {
-					r.nextSyncAt = ee.NextSync(time.Now, d)
-					return
-				}
-			}
-			// Return zero time if not found in the sync data.
-			return
 		}
 	})
 	return r.nextSyncAt, r.nextSyncAtErr
@@ -554,5 +555,8 @@ func (r *changesetLabelResolver) Color() string {
 }
 
 func (r *changesetLabelResolver) Description() *string {
+	if r.label.Description == "" {
+		return nil
+	}
 	return &r.label.Description
 }

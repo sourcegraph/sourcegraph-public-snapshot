@@ -1,4 +1,4 @@
-package workerutil
+package dbworker
 
 import (
 	"testing"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/efritz/glock"
 	"github.com/prometheus/client_golang/prometheus"
-	storemocks "github.com/sourcegraph/sourcegraph/internal/workerutil/store/mocks"
+	storemocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
 )
 
 func TestResetter(t *testing.T) {

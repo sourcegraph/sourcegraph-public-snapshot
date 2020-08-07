@@ -14,9 +14,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-// RunWorkers starts a workerutil.NewWorker that fetches enqueued changesets
+// RunWorkers starts a dbworker.NewWorker that fetches enqueued changesets
 // from the database and passes them to the changeset reconciler for
 // processing.
 func RunWorkers(
@@ -27,7 +29,7 @@ func RunWorkers(
 ) {
 	r := &reconciler{gitserverClient: gitClient, sourcer: sourcer, store: s}
 
-	options := workerutil.WorkerOptions{
+	options := dbworker.WorkerOptions{
 		Handler:     r.HandlerFunc(),
 		NumHandlers: 5,
 		Interval:    5 * time.Second,
@@ -36,7 +38,7 @@ func RunWorkers(
 		},
 	}
 
-	workerStore := workerutil.NewStore(s.Handle(), workerutil.StoreOptions{
+	workerStore := dbworkerstore.NewStore(s.Handle(), dbworkerstore.StoreOptions{
 		TableName:            "changesets",
 		AlternateColumnNames: map[string]string{"state": "reconciler_state"},
 		ColumnExpressions:    changesetColumns,
@@ -46,7 +48,7 @@ func RunWorkers(
 		MaxNumResets:         5,
 	})
 
-	worker := workerutil.NewWorker(ctx, workerStore, options)
+	worker := dbworker.NewWorker(ctx, workerStore, options)
 	worker.Start()
 }
 
