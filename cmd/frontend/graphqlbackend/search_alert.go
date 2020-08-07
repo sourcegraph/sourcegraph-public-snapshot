@@ -218,7 +218,6 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			onlyForks:        onlyForks,
 			noForks:          noForks,
 		}
-
 		if reposExist(ctx, tryAnyRepo) {
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
 				description: "include repositories satisfying any (not all) of your repo: filters",
@@ -295,7 +294,6 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			onlyForks:        onlyForks,
 			noForks:          noForks,
 		}
-
 		if reposExist(ctx, tryAnyRepo) {
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
 				description: "include repositories satisfying any (not all) of your repo: filters",
@@ -308,7 +306,6 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			description: "remove repo: filters",
 			query:       withoutRepoFields,
 		})
-
 		return &searchAlert{
 			prometheusType:  "no_resolved_repos__suggest_add_remove_repos",
 			title:           "No repositories satisfied all of your repo: filters.",
