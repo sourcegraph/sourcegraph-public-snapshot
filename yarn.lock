@@ -21142,10 +21142,10 @@ store2@^2.7.1:
   resolved "https://registry.npmjs.org/store2/-/store2-2.7.1.tgz#22070b7dc04748a792fc6912a58ab99d3a21d788"
   integrity sha512-zzzP5ZY6QWumnAFV6kBRbS44pUMcpZBNER5DWUe1HETlaKXqLcCQxbNu6IHaKr1pUsjuhUGBdOy8sWKmMkL6pQ==
 
-storybook-addon-designs@^5.4.0:
-  version "5.4.0"
-  resolved "https://registry.npmjs.org/storybook-addon-designs/-/storybook-addon-designs-5.4.0.tgz#f1a40d27766ec5c1603a8d333c54270ed1609f65"
-  integrity sha512-1tW5a956pHaDA3hrDRZFborJibGmu/rYviacrBmNG8QoW4TFnsu80qPfOKbkG0b/vbnqh7WukTRVh2UE8ZoMDw==
+storybook-addon-designs@^5.4.1:
+  version "5.4.1"
+  resolved "https://registry.npmjs.org/storybook-addon-designs/-/storybook-addon-designs-5.4.1.tgz#23aa25d189aa7dbe3b5cbc915d923c15e401f1d1"
+  integrity sha512-NU/ZcYovTYyJ3xDbkd54gjTZLcYKttvMubVc6eRBSHhRJsh3fi1qyYDKmolBmy3YPyYguo9mhNg88Id7aSmGtA==
   dependencies:
     react-pdf "^4.0.5"
 
