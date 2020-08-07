@@ -1,10 +1,10 @@
-import { IHiddenExternalChangeset } from '../../../../../../shared/src/graphql/schema'
 import React from 'react'
 import { ChangesetStateIcon } from './ChangesetStateIcon'
 import { ChangesetLastSynced } from './ChangesetLastSynced'
+import { ChangesetFields } from '../../../../graphql-operations'
 
 export interface HiddenExternalChangesetNodeProps {
-    node: Pick<IHiddenExternalChangeset, 'id' | 'nextSyncAt' | 'updatedAt' | 'externalState'>
+    node: Pick<ChangesetFields, 'id' | 'nextSyncAt' | 'updatedAt' | 'externalState'>
 }
 
 export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternalChangesetNodeProps> = ({ node }) => (

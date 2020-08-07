@@ -1,10 +1,9 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useState, useEffect, useRef, useMemo } from 'react'
-import * as GQL from '../../../../../shared/src/graphql/schema'
+import React, { useState, useEffect, useMemo } from 'react'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
-import { noop, isEqual } from 'lodash'
+import { isEqual } from 'lodash'
 import { fetchCampaignById } from './backend'
 import { useError } from '../../../../../shared/src/util/useObservable'
 import * as H from 'history'
@@ -18,15 +17,14 @@ import { pluralize } from '../../../../../shared/src/util/strings'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import { CampaignFields } from '../../../graphql-operations'
+import { CampaignFields, Scalars } from '../../../graphql-operations'
 import { CampaignInfoCard } from './CampaignInfoCard'
 
 interface Props extends ThemeProps, ExtensionsControllerProps, PlatformContextProps, TelemetryProps {
     /**
      * The campaign ID.
-     * If not given, will display a creation form.
      */
-    campaignID?: GQL.ID
+    campaignID: Scalars['ID']
     history: H.History
     location: H.Location
 
@@ -89,20 +87,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         return () => subscription.unsubscribe()
     }, [campaignID, triggerError, changesetUpdates, campaignUpdates, _fetchCampaignById])
 
-    // To unblock the history after leaving edit mode
-    const unblockHistoryReference = useRef<H.UnregisterCallback>(noop)
-    useEffect(() => {
-        if (!campaignID) {
-            unblockHistoryReference.current()
-            unblockHistoryReference.current = history.block('Do you want to discard this campaign?')
-        }
-        // Note: the current() method gets dynamically reassigned,
-        // therefor we can't return it directly.
-        return () => unblockHistoryReference.current()
-    }, [campaignID, history])
-
     // Is loading.
-    if (campaignID && campaign === undefined) {
+    if (campaign === undefined) {
         return (
             <div className="text-center">
                 <LoadingSpinner className="icon-inline mx-auto my-4" />
@@ -110,8 +96,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         )
     }
     // Campaign was not found
-    // TODO: remove campaign === undefined.
-    if (campaign === undefined || campaign === null) {
+    if (campaign === null) {
         return <HeroPage icon={AlertCircleIcon} title="Campaign not found" />
     }
 

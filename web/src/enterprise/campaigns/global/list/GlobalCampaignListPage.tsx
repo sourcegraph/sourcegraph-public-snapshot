@@ -6,13 +6,13 @@ import {
     FilteredConnectionFilter,
     FilteredConnectionQueryArgs,
 } from '../../../../components/FilteredConnection'
-import { CampaignState, IUser } from '../../../../../../shared/src/graphql/schema'
 import { CampaignNode, CampaignNodeProps } from '../../list/CampaignNode'
 import { TelemetryProps } from '../../../../../../shared/src/telemetry/telemetryService'
-import { ListCampaign } from '../../../../graphql-operations'
+import { ListCampaign, CampaignState } from '../../../../graphql-operations'
+import { AuthenticatedUser } from '../../../../auth'
 
 interface Props extends TelemetryProps, Pick<RouteComponentProps, 'history' | 'location'> {
-    authenticatedUser: Pick<IUser, 'siteAdmin'>
+    authenticatedUser: Pick<AuthenticatedUser, 'siteAdmin'>
     queryCampaigns?: typeof _queryCampaigns
 }
 
