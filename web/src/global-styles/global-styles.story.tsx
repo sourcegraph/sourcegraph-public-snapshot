@@ -717,7 +717,6 @@ add(
                     </select>
                 </div>
 
-
                 <div className="form-group">
                     <label htmlFor="example-textarea">Example textarea</label>
                     <textarea className="form-control" id="example-textarea" rows={3} />
@@ -725,25 +724,32 @@ add(
 
                 <h3>Checkboxes</h3>
                 <div className="form-group form-check">
-                    <input type="checkbox" className="form-check-input" id="exampleCheck1" checked={false} aria-checked={false} />
+                    <input
+                        type="checkbox"
+                        className="form-check-input"
+                        id="exampleCheck1"
+                        checked={false}
+                        aria-checked={false}
+                    />
                     <label className="form-check-label" htmlFor="exampleCheck1">
                         Unchecked
                     </label>
                 </div>
                 <div className="form-group form-check">
-                    <input type="checkbox" className="form-check-input" id="exampleCheck2" checked={true} aria-checked={true} />
+                    <input
+                        type="checkbox"
+                        className="form-check-input"
+                        id="exampleCheck2"
+                        checked={true}
+                        aria-checked={true}
+                    />
                     <label className="form-check-label" htmlFor="exampleCheck1">
                         Checked
                     </label>
                 </div>
                 <div className="form-group">
                     <div className="form-check">
-                        <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id="disabledCheck"
-                            disabled={true}
-                        />
+                        <input className="form-check-input" type="checkbox" id="disabledCheck" disabled={true} />
                         <label className="form-check-label" htmlFor="disabledFieldsetCheck">
                             Disabled
                         </label>
@@ -752,32 +758,39 @@ add(
 
                 <h3>Radio Buttons</h3>
                 <div className="form-group form-check">
-                    <input type="radio" className="form-check-input" id="exampleRadio1" value={1} checked={false} aria-checked={false} />
+                    <input
+                        type="radio"
+                        className="form-check-input"
+                        id="exampleRadio1"
+                        value={1}
+                        checked={false}
+                        aria-checked={false}
+                    />
                     <label className="form-check-label" htmlFor="exampleCheck1">
                         Unselected
                     </label>
                 </div>
                 <div className="form-group form-check">
-                    <input type="radio" className="form-check-input" id="exampleRadio2" value={2} checked={true} aria-checked={true} />
+                    <input
+                        type="radio"
+                        className="form-check-input"
+                        id="exampleRadio2"
+                        value={2}
+                        checked={true}
+                        aria-checked={true}
+                    />
                     <label className="form-check-label" htmlFor="exampleCheck1">
                         Selected
                     </label>
                 </div>
                 <div className="form-group">
                     <div className="form-check">
-                        <input
-                            className="form-check-input"
-                            type="radio"
-                            id="disabledRadio"
-                            value={3}
-                            disabled={true}
-                        />
+                        <input className="form-check-input" type="radio" id="disabledRadio" value={3} disabled={true} />
                         <label className="form-check-label" htmlFor="disabledFieldsetCheck">
                             Disabled
                         </label>
                     </div>
                 </div>
-
 
                 <button type="submit" className="btn btn-primary">
                     Submit
