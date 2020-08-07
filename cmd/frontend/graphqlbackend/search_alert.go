@@ -394,7 +394,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 
 	// If globbing is active we return a simple alert for now. The alert is still
 	// helpful but it doesn't contain any proposed queries.
-	if settings, err := decodedViewerFinalSettings(ctx); err != nil || getBoolPtr(settings.SearchGlobbing, false) {
+	if settings, err := decodedViewerFinalSettings(ctx); err == nil && getBoolPtr(settings.SearchGlobbing, false) {
 		return buildAlert(proposedQueries, description)
 	}
 
