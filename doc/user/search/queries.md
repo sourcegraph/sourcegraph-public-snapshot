@@ -60,9 +60,9 @@ Click the <img src=../img/brackets.png> toggle to activate structural search. St
 
 Note: It is not possible to perform case-insensitive matching with structural search.
 
-## Keywords 
+## Keywords (all searches)
 
-Unless stated otherwise, the following keywords can be used on all searches (using [RE2 syntax](https://golang.org/s/re2syntax) any place a regex is accepted):
+The following keywords can be used on all searches (using [RE2 syntax](https://golang.org/s/re2syntax) any place a regex is accepted):
 
 | Keyword | Description | Examples |
 | --- | --- | --- |
@@ -72,7 +72,7 @@ Unless stated otherwise, the following keywords can be used on all searches (usi
 | **file:regexp-pattern** <br> _alias: f_ | Only include results in files whose full path matches the regexp. | [`file:\.js$ httptest`](https://sourcegraph.com/search?q=file:%5C.js%24+httptest) <br> [`file:internal/ httptest`](https://sourcegraph.com/search?q=file:internal/+httptest) |
 | **-file:regexp-pattern** <br> _alias: -f_ | Exclude results from files whose full path matches the regexp. | [`file:\.js$ -file:test http`](https://sourcegraph.com/search?q=file:%5C.js%24+-file:test+http) |
 | **content:"pattern"** | Set the search pattern with a dedicated parameter. Useful when searching literally for a string that may conflict with the [search pattern syntax](#search-pattern-syntax). | [`repo:sourcegraph content:"repo:sourcegraph"`](https://sourcegraph.com/search?q=repo:sourcegraph+content:"repo:sourcegraph"&patternType=literal) |
-| **-content:"pattern"** | Exclude results from files whose content matches the pattern. Note: `-content` is currently only supported for literal and regexp patterns on indexed repositories. | [`file:Dockerfile alpine -content:alpine:latest`](https://sourcegraph.com/search?q=file:Dockerfile+alpine+-content:alpine:latest&patternType=literal) |
+| **-content:"pattern"** | Exclude results from files whose content matches the pattern. | [`file:Dockerfile alpine -content:alpine:latest`](https://sourcegraph.com/search?q=file:Dockerfile+alpine+-content:alpine:latest&patternType=literal) |
 | **lang:language-name** <br> _alias: l_ | Only include results from files in the specified programming language. | [`lang:typescript encoding`](https://sourcegraph.com/search?q=lang:typescript+encoding) |
 | **-lang:language-name** <br> _alias: -l_ | Exclude results from files in the specified programming language. | [`-lang:typescript encoding`](https://sourcegraph.com/search?q=-lang:typescript+encoding) |
 | **type:symbol** | Perform a symbol search. | [`type:symbol path`](https://sourcegraph.com/search?q=type:symbol+path)  ||
@@ -90,6 +90,8 @@ Unless stated otherwise, the following keywords can be used on all searches (usi
 
 
 Multiple or combined **repo:** and **file:** keywords are intersected. For example, `repo:foo repo:bar` limits your search to repositories whose path contains **both** _foo_ and _bar_ (such as _github.com/alice/foobar_). To include results from repositories whose path contains **either** _foo_ or _bar_, use `repo:foo|bar`.
+
+`-content` requires the experimental `migrateParser: true` option in the site settings and is currently only supported for literal and regexp queries on indexed repositories. 
 
 ## Operators
 
@@ -111,9 +113,14 @@ Returns file content matching either on the left or right side, or both (set uni
 
 | Operator | Example |
 | --- | --- |
-| `not`, `NOT` | [`panic not file:main.go lang:go`](https://sourcegraph.com/search?q=panic+not+file:main.go+lang:go&patternType=literal),
+| `not`, `NOT` | [`panic not file:main.go lang:go`](https://sourcegraph.com/search?q=panic+not+file:main.go+lang:go&patternType=literal), [`panic NOT ever`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+panic+not+ever&patternType=literal)
 
-`NOT <keyword>:` is equivalent to `-<keyword>:`. `NOT` can only stand before negatable keywords, such as `file`, `content`, `lang`, `repohasfile`, and `repo`. 
+`NOT` can be used in place of `-` to negate keywords, such as `file`, `content`, `lang`, `repohasfile`, and `repo`. For
+search patterns, `NOT` excludes documents that contain the term after `NOT`. For readability, you can also include the
+`AND` operator before a `NOT` (i.e. `panic NOT ever` is equivalent to `panic AND NOT ever`).
+
+`NOT` requires the experimental `migrateParser: true` option in the site settings and can currently not be used in
+conjunction with `type:`.
 
 ### Operator precedence and groups
 
