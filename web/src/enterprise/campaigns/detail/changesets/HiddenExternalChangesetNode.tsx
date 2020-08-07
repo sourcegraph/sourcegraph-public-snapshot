@@ -15,7 +15,7 @@ export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternal
                     <div className="d-flex flex-column">
                         <div className="m-0 mb-2">
                             <h3 className="m-0 d-inline">
-                                <ChangesetStateIcon externalState={node.externalState!} />
+                                {node.externalState && <ChangesetStateIcon externalState={node.externalState} />}
                                 <span className="text-muted">Changeset in a private repository</span>
                             </h3>
                         </div>

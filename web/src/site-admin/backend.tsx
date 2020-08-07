@@ -91,7 +91,6 @@ interface RepositoryArgs {
     first?: number
     query?: string
     cloned?: boolean
-    cloneInProgress?: boolean
     notCloned?: boolean
     indexed?: boolean
     notIndexed?: boolean
@@ -105,7 +104,6 @@ interface RepositoryArgs {
 function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryConnection> {
     args = {
         cloned: true,
-        cloneInProgress: true,
         notCloned: true,
         indexed: true,
         notIndexed: true,
@@ -117,7 +115,6 @@ function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryC
                 $first: Int
                 $query: String
                 $cloned: Boolean
-                $cloneInProgress: Boolean
                 $notCloned: Boolean
                 $indexed: Boolean
                 $notIndexed: Boolean
@@ -126,7 +123,6 @@ function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryC
                     first: $first
                     query: $query
                     cloned: $cloned
-                    cloneInProgress: $cloneInProgress
                     notCloned: $notCloned
                     indexed: $indexed
                     notIndexed: $notIndexed
@@ -400,11 +396,11 @@ export function fetchAllConfigAndSettings(): Observable<AllConfig> {
                 }
 
                 viewerSettings {
-                    ...SettingsCascadeFields
+                    ...SiteAdminSettingsCascadeFields
                 }
             }
 
-            fragment SettingsCascadeFields on SettingsCascade {
+            fragment SiteAdminSettingsCascadeFields on SettingsCascade {
                 subjects {
                     __typename
                     latestSettings {
@@ -632,6 +628,7 @@ export function fetchMonitoringStats(days: number): Observable<GQL.IMonitoringSt
                             name
                             timestamp
                             average
+                            owner
                         }
                     }
                 }

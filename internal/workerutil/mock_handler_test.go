@@ -5,6 +5,7 @@ package workerutil
 import (
 	"context"
 	sqlf "github.com/keegancsmith/sqlf"
+	store "github.com/sourcegraph/sourcegraph/internal/workerutil/store"
 	"sync"
 )
 
@@ -22,7 +23,7 @@ type MockHandler struct {
 func NewMockHandler() *MockHandler {
 	return &MockHandler{
 		HandleFunc: &HandlerHandleFunc{
-			defaultHook: func(context.Context, Store, Record) error {
+			defaultHook: func(context.Context, store.Store, store.Record) error {
 				return nil
 			},
 		},
@@ -42,15 +43,15 @@ func NewMockHandlerFrom(i Handler) *MockHandler {
 // HandlerHandleFunc describes the behavior when the Handle method of the
 // parent MockHandler instance is invoked.
 type HandlerHandleFunc struct {
-	defaultHook func(context.Context, Store, Record) error
-	hooks       []func(context.Context, Store, Record) error
+	defaultHook func(context.Context, store.Store, store.Record) error
+	hooks       []func(context.Context, store.Store, store.Record) error
 	history     []HandlerHandleFuncCall
 	mutex       sync.Mutex
 }
 
 // Handle delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockHandler) Handle(v0 context.Context, v1 Store, v2 Record) error {
+func (m *MockHandler) Handle(v0 context.Context, v1 store.Store, v2 store.Record) error {
 	r0 := m.HandleFunc.nextHook()(v0, v1, v2)
 	m.HandleFunc.appendCall(HandlerHandleFuncCall{v0, v1, v2, r0})
 	return r0
@@ -58,7 +59,7 @@ func (m *MockHandler) Handle(v0 context.Context, v1 Store, v2 Record) error {
 
 // SetDefaultHook sets function that is called when the Handle method of the
 // parent MockHandler instance is invoked and the hook queue is empty.
-func (f *HandlerHandleFunc) SetDefaultHook(hook func(context.Context, Store, Record) error) {
+func (f *HandlerHandleFunc) SetDefaultHook(hook func(context.Context, store.Store, store.Record) error) {
 	f.defaultHook = hook
 }
 
@@ -66,7 +67,7 @@ func (f *HandlerHandleFunc) SetDefaultHook(hook func(context.Context, Store, Rec
 // Handle method of the parent MockHandler instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *HandlerHandleFunc) PushHook(hook func(context.Context, Store, Record) error) {
+func (f *HandlerHandleFunc) PushHook(hook func(context.Context, store.Store, store.Record) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -75,7 +76,7 @@ func (f *HandlerHandleFunc) PushHook(hook func(context.Context, Store, Record) e
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *HandlerHandleFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, Store, Record) error {
+	f.SetDefaultHook(func(context.Context, store.Store, store.Record) error {
 		return r0
 	})
 }
@@ -83,12 +84,12 @@ func (f *HandlerHandleFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *HandlerHandleFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, Store, Record) error {
+	f.PushHook(func(context.Context, store.Store, store.Record) error {
 		return r0
 	})
 }
 
-func (f *HandlerHandleFunc) nextHook() func(context.Context, Store, Record) error {
+func (f *HandlerHandleFunc) nextHook() func(context.Context, store.Store, store.Record) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -126,10 +127,10 @@ type HandlerHandleFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 Store
+	Arg1 store.Store
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 Record
+	Arg2 store.Record
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -169,17 +170,17 @@ type MockHandlerWithHooks struct {
 func NewMockHandlerWithHooks() *MockHandlerWithHooks {
 	return &MockHandlerWithHooks{
 		HandleFunc: &HandlerWithHooksHandleFunc{
-			defaultHook: func(context.Context, Store, Record) error {
+			defaultHook: func(context.Context, store.Store, store.Record) error {
 				return nil
 			},
 		},
 		PostHandleFunc: &HandlerWithHooksPostHandleFunc{
-			defaultHook: func(context.Context, Record) {
+			defaultHook: func(context.Context, store.Record) {
 				return
 			},
 		},
 		PreHandleFunc: &HandlerWithHooksPreHandleFunc{
-			defaultHook: func(context.Context, Record) {
+			defaultHook: func(context.Context, store.Record) {
 				return
 			},
 		},
@@ -206,15 +207,15 @@ func NewMockHandlerWithHooksFrom(i HandlerWithHooks) *MockHandlerWithHooks {
 // HandlerWithHooksHandleFunc describes the behavior when the Handle method
 // of the parent MockHandlerWithHooks instance is invoked.
 type HandlerWithHooksHandleFunc struct {
-	defaultHook func(context.Context, Store, Record) error
-	hooks       []func(context.Context, Store, Record) error
+	defaultHook func(context.Context, store.Store, store.Record) error
+	hooks       []func(context.Context, store.Store, store.Record) error
 	history     []HandlerWithHooksHandleFuncCall
 	mutex       sync.Mutex
 }
 
 // Handle delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockHandlerWithHooks) Handle(v0 context.Context, v1 Store, v2 Record) error {
+func (m *MockHandlerWithHooks) Handle(v0 context.Context, v1 store.Store, v2 store.Record) error {
 	r0 := m.HandleFunc.nextHook()(v0, v1, v2)
 	m.HandleFunc.appendCall(HandlerWithHooksHandleFuncCall{v0, v1, v2, r0})
 	return r0
@@ -223,7 +224,7 @@ func (m *MockHandlerWithHooks) Handle(v0 context.Context, v1 Store, v2 Record) e
 // SetDefaultHook sets function that is called when the Handle method of the
 // parent MockHandlerWithHooks instance is invoked and the hook queue is
 // empty.
-func (f *HandlerWithHooksHandleFunc) SetDefaultHook(hook func(context.Context, Store, Record) error) {
+func (f *HandlerWithHooksHandleFunc) SetDefaultHook(hook func(context.Context, store.Store, store.Record) error) {
 	f.defaultHook = hook
 }
 
@@ -231,7 +232,7 @@ func (f *HandlerWithHooksHandleFunc) SetDefaultHook(hook func(context.Context, S
 // Handle method of the parent MockHandlerWithHooks instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *HandlerWithHooksHandleFunc) PushHook(hook func(context.Context, Store, Record) error) {
+func (f *HandlerWithHooksHandleFunc) PushHook(hook func(context.Context, store.Store, store.Record) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -240,7 +241,7 @@ func (f *HandlerWithHooksHandleFunc) PushHook(hook func(context.Context, Store, 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *HandlerWithHooksHandleFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, Store, Record) error {
+	f.SetDefaultHook(func(context.Context, store.Store, store.Record) error {
 		return r0
 	})
 }
@@ -248,12 +249,12 @@ func (f *HandlerWithHooksHandleFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *HandlerWithHooksHandleFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, Store, Record) error {
+	f.PushHook(func(context.Context, store.Store, store.Record) error {
 		return r0
 	})
 }
 
-func (f *HandlerWithHooksHandleFunc) nextHook() func(context.Context, Store, Record) error {
+func (f *HandlerWithHooksHandleFunc) nextHook() func(context.Context, store.Store, store.Record) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -291,10 +292,10 @@ type HandlerWithHooksHandleFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 Store
+	Arg1 store.Store
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 Record
+	Arg2 store.Record
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -315,15 +316,15 @@ func (c HandlerWithHooksHandleFuncCall) Results() []interface{} {
 // HandlerWithHooksPostHandleFunc describes the behavior when the PostHandle
 // method of the parent MockHandlerWithHooks instance is invoked.
 type HandlerWithHooksPostHandleFunc struct {
-	defaultHook func(context.Context, Record)
-	hooks       []func(context.Context, Record)
+	defaultHook func(context.Context, store.Record)
+	hooks       []func(context.Context, store.Record)
 	history     []HandlerWithHooksPostHandleFuncCall
 	mutex       sync.Mutex
 }
 
 // PostHandle delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockHandlerWithHooks) PostHandle(v0 context.Context, v1 Record) {
+func (m *MockHandlerWithHooks) PostHandle(v0 context.Context, v1 store.Record) {
 	m.PostHandleFunc.nextHook()(v0, v1)
 	m.PostHandleFunc.appendCall(HandlerWithHooksPostHandleFuncCall{v0, v1})
 	return
@@ -332,7 +333,7 @@ func (m *MockHandlerWithHooks) PostHandle(v0 context.Context, v1 Record) {
 // SetDefaultHook sets function that is called when the PostHandle method of
 // the parent MockHandlerWithHooks instance is invoked and the hook queue is
 // empty.
-func (f *HandlerWithHooksPostHandleFunc) SetDefaultHook(hook func(context.Context, Record)) {
+func (f *HandlerWithHooksPostHandleFunc) SetDefaultHook(hook func(context.Context, store.Record)) {
 	f.defaultHook = hook
 }
 
@@ -340,7 +341,7 @@ func (f *HandlerWithHooksPostHandleFunc) SetDefaultHook(hook func(context.Contex
 // PostHandle method of the parent MockHandlerWithHooks instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *HandlerWithHooksPostHandleFunc) PushHook(hook func(context.Context, Record)) {
+func (f *HandlerWithHooksPostHandleFunc) PushHook(hook func(context.Context, store.Record)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -349,7 +350,7 @@ func (f *HandlerWithHooksPostHandleFunc) PushHook(hook func(context.Context, Rec
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *HandlerWithHooksPostHandleFunc) SetDefaultReturn() {
-	f.SetDefaultHook(func(context.Context, Record) {
+	f.SetDefaultHook(func(context.Context, store.Record) {
 		return
 	})
 }
@@ -357,12 +358,12 @@ func (f *HandlerWithHooksPostHandleFunc) SetDefaultReturn() {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *HandlerWithHooksPostHandleFunc) PushReturn() {
-	f.PushHook(func(context.Context, Record) {
+	f.PushHook(func(context.Context, store.Record) {
 		return
 	})
 }
 
-func (f *HandlerWithHooksPostHandleFunc) nextHook() func(context.Context, Record) {
+func (f *HandlerWithHooksPostHandleFunc) nextHook() func(context.Context, store.Record) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -400,7 +401,7 @@ type HandlerWithHooksPostHandleFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 Record
+	Arg1 store.Record
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -418,15 +419,15 @@ func (c HandlerWithHooksPostHandleFuncCall) Results() []interface{} {
 // HandlerWithHooksPreHandleFunc describes the behavior when the PreHandle
 // method of the parent MockHandlerWithHooks instance is invoked.
 type HandlerWithHooksPreHandleFunc struct {
-	defaultHook func(context.Context, Record)
-	hooks       []func(context.Context, Record)
+	defaultHook func(context.Context, store.Record)
+	hooks       []func(context.Context, store.Record)
 	history     []HandlerWithHooksPreHandleFuncCall
 	mutex       sync.Mutex
 }
 
 // PreHandle delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockHandlerWithHooks) PreHandle(v0 context.Context, v1 Record) {
+func (m *MockHandlerWithHooks) PreHandle(v0 context.Context, v1 store.Record) {
 	m.PreHandleFunc.nextHook()(v0, v1)
 	m.PreHandleFunc.appendCall(HandlerWithHooksPreHandleFuncCall{v0, v1})
 	return
@@ -435,7 +436,7 @@ func (m *MockHandlerWithHooks) PreHandle(v0 context.Context, v1 Record) {
 // SetDefaultHook sets function that is called when the PreHandle method of
 // the parent MockHandlerWithHooks instance is invoked and the hook queue is
 // empty.
-func (f *HandlerWithHooksPreHandleFunc) SetDefaultHook(hook func(context.Context, Record)) {
+func (f *HandlerWithHooksPreHandleFunc) SetDefaultHook(hook func(context.Context, store.Record)) {
 	f.defaultHook = hook
 }
 
@@ -443,7 +444,7 @@ func (f *HandlerWithHooksPreHandleFunc) SetDefaultHook(hook func(context.Context
 // PreHandle method of the parent MockHandlerWithHooks instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *HandlerWithHooksPreHandleFunc) PushHook(hook func(context.Context, Record)) {
+func (f *HandlerWithHooksPreHandleFunc) PushHook(hook func(context.Context, store.Record)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -452,7 +453,7 @@ func (f *HandlerWithHooksPreHandleFunc) PushHook(hook func(context.Context, Reco
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *HandlerWithHooksPreHandleFunc) SetDefaultReturn() {
-	f.SetDefaultHook(func(context.Context, Record) {
+	f.SetDefaultHook(func(context.Context, store.Record) {
 		return
 	})
 }
@@ -460,12 +461,12 @@ func (f *HandlerWithHooksPreHandleFunc) SetDefaultReturn() {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *HandlerWithHooksPreHandleFunc) PushReturn() {
-	f.PushHook(func(context.Context, Record) {
+	f.PushHook(func(context.Context, store.Record) {
 		return
 	})
 }
 
-func (f *HandlerWithHooksPreHandleFunc) nextHook() func(context.Context, Record) {
+func (f *HandlerWithHooksPreHandleFunc) nextHook() func(context.Context, store.Record) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -503,7 +504,7 @@ type HandlerWithHooksPreHandleFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 Record
+	Arg1 store.Record
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -537,7 +538,7 @@ type MockHandlerWithPreDequeue struct {
 func NewMockHandlerWithPreDequeue() *MockHandlerWithPreDequeue {
 	return &MockHandlerWithPreDequeue{
 		HandleFunc: &HandlerWithPreDequeueHandleFunc{
-			defaultHook: func(context.Context, Store, Record) error {
+			defaultHook: func(context.Context, store.Store, store.Record) error {
 				return nil
 			},
 		},
@@ -566,15 +567,15 @@ func NewMockHandlerWithPreDequeueFrom(i HandlerWithPreDequeue) *MockHandlerWithP
 // HandlerWithPreDequeueHandleFunc describes the behavior when the Handle
 // method of the parent MockHandlerWithPreDequeue instance is invoked.
 type HandlerWithPreDequeueHandleFunc struct {
-	defaultHook func(context.Context, Store, Record) error
-	hooks       []func(context.Context, Store, Record) error
+	defaultHook func(context.Context, store.Store, store.Record) error
+	hooks       []func(context.Context, store.Store, store.Record) error
 	history     []HandlerWithPreDequeueHandleFuncCall
 	mutex       sync.Mutex
 }
 
 // Handle delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockHandlerWithPreDequeue) Handle(v0 context.Context, v1 Store, v2 Record) error {
+func (m *MockHandlerWithPreDequeue) Handle(v0 context.Context, v1 store.Store, v2 store.Record) error {
 	r0 := m.HandleFunc.nextHook()(v0, v1, v2)
 	m.HandleFunc.appendCall(HandlerWithPreDequeueHandleFuncCall{v0, v1, v2, r0})
 	return r0
@@ -583,7 +584,7 @@ func (m *MockHandlerWithPreDequeue) Handle(v0 context.Context, v1 Store, v2 Reco
 // SetDefaultHook sets function that is called when the Handle method of the
 // parent MockHandlerWithPreDequeue instance is invoked and the hook queue
 // is empty.
-func (f *HandlerWithPreDequeueHandleFunc) SetDefaultHook(hook func(context.Context, Store, Record) error) {
+func (f *HandlerWithPreDequeueHandleFunc) SetDefaultHook(hook func(context.Context, store.Store, store.Record) error) {
 	f.defaultHook = hook
 }
 
@@ -591,7 +592,7 @@ func (f *HandlerWithPreDequeueHandleFunc) SetDefaultHook(hook func(context.Conte
 // Handle method of the parent MockHandlerWithPreDequeue instance inovkes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *HandlerWithPreDequeueHandleFunc) PushHook(hook func(context.Context, Store, Record) error) {
+func (f *HandlerWithPreDequeueHandleFunc) PushHook(hook func(context.Context, store.Store, store.Record) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -600,7 +601,7 @@ func (f *HandlerWithPreDequeueHandleFunc) PushHook(hook func(context.Context, St
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *HandlerWithPreDequeueHandleFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, Store, Record) error {
+	f.SetDefaultHook(func(context.Context, store.Store, store.Record) error {
 		return r0
 	})
 }
@@ -608,12 +609,12 @@ func (f *HandlerWithPreDequeueHandleFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *HandlerWithPreDequeueHandleFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, Store, Record) error {
+	f.PushHook(func(context.Context, store.Store, store.Record) error {
 		return r0
 	})
 }
 
-func (f *HandlerWithPreDequeueHandleFunc) nextHook() func(context.Context, Store, Record) error {
+func (f *HandlerWithPreDequeueHandleFunc) nextHook() func(context.Context, store.Store, store.Record) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -651,10 +652,10 @@ type HandlerWithPreDequeueHandleFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 Store
+	Arg1 store.Store
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 Record
+	Arg2 store.Record
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error

@@ -166,9 +166,12 @@ func PreciseCodeIntelWorker() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("precise-code-intel-worker"),
-						sharedContainerMemoryUsage("precise-code-intel-worker"),
 						sharedContainerCPUUsage("precise-code-intel-worker"),
+						sharedContainerMemoryUsage("precise-code-intel-worker"),
+					},
+					{
+						sharedContainerRestarts("precise-code-intel-worker"),
+						sharedContainerFsInodes("precise-code-intel-worker"),
 					},
 				},
 			},
@@ -183,6 +186,25 @@ func PreciseCodeIntelWorker() *Container {
 					{
 						sharedProvisioningCPUUsage5m("precise-code-intel-worker"),
 						sharedProvisioningMemoryUsage5m("precise-code-intel-worker"),
+					},
+				},
+			},
+			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("precise-code-intel-worker"),
+						sharedGoGcDuration("precise-code-intel-worker"),
+					},
+				},
+			},
+			{
+				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedKubernetesPodsAvailable("precise-code-intel-worker"),
 					},
 				},
 			},

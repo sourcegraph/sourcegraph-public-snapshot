@@ -10,15 +10,15 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	ossAuthz "github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
-	frontendAuthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/authz"
+	frontendAuthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	frontendDB "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
+	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	ossDB "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -55,7 +55,7 @@ func enterpriseInit(
 	}
 
 	sourcer := repos.NewSourcer(cf)
-	go campaigns.RunWorkers(ctx, campaignsStore, clock, gitserver.DefaultClient, sourcer, 5*time.Second)
+	go campaigns.RunWorkers(ctx, campaignsStore, gitserver.DefaultClient, sourcer)
 
 	// Set up expired spec deletion
 	go func() {

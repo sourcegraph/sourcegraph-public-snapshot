@@ -7,7 +7,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-bundle-manager/internal/paths"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
@@ -51,7 +50,7 @@ func (j *Janitor) removeCompletedRecordsWithoutBundleFile() error {
 			continue
 		}
 
-		deleted, err := j.store.DeleteUploadByID(ctx, id, j.getTipCommit)
+		deleted, err := j.store.DeleteUploadByID(ctx, id)
 		if err != nil {
 			return errors.Wrap(err, "store.DeleteUploadByID")
 		}
@@ -80,7 +79,7 @@ func (j *Janitor) removeOldUploadingRecords() error {
 	}
 
 	for _, id := range ids {
-		deleted, err := j.store.DeleteUploadByID(ctx, id, j.getTipCommit)
+		deleted, err := j.store.DeleteUploadByID(ctx, id)
 		if err != nil {
 			return errors.Wrap(err, "store.DeleteUploadByID")
 		}
@@ -117,17 +116,6 @@ func (j *Janitor) getUploadIDs(ctx context.Context, opts store.GetUploadsOptions
 	}
 
 	return ids, nil
-}
-
-// getTipCommit returns the head of the default branch for the given repository. This
-// is used to recalculate the set of visible dumps for a repository on dump deletion.
-func (j *Janitor) getTipCommit(ctx context.Context, repositoryID int) (string, error) {
-	tipCommit, err := gitserver.Head(ctx, j.store, repositoryID)
-	if err != nil && !isRepoNotExist(err) {
-		return "", errors.Wrap(err, "gitserver.Head")
-	}
-
-	return tipCommit, nil
 }
 
 func isRepoNotExist(err error) bool {

@@ -77,7 +77,7 @@ different from your account name.)
 
 Migrations get applied automatically at application startup - you
 shouldn't need to run anything by hand. For full documentation see
-[migrations/README.md](https://github.com/sourcegraph/sourcegraph/blob/master/migrations/README.md)
+[migrations/README.md](https://github.com/sourcegraph/sourcegraph/blob/main/migrations/README.md)
 
 ## Style guide
 

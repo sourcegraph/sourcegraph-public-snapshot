@@ -63,6 +63,18 @@ func containsAndOrExpression(nodes []Node) bool {
 	})
 }
 
+// containsNegatedPattern returns true if any search pattern is negated in nodes.
+func containsNegatedPattern(nodes []Node) bool {
+	return exists(nodes, func(node Node) bool {
+		if p, ok := node.(Pattern); ok {
+			if p.Negated {
+				return true
+			}
+		}
+		return false
+	})
+}
+
 // ContainsAndOrKeyword returns true if this query contains or- or and-
 // keywords. It is a temporary signal to determine whether we can fallback to
 // the older existing search functionality.
@@ -273,7 +285,8 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		return satisfies(isNotNegated)
 	case
 		FieldPatternType,
-		FieldContent:
+		FieldContent,
+		FieldVisibility:
 		return satisfies(isSingular, isNotNegated)
 	case
 		FieldRepoHasFile:
@@ -314,7 +327,7 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 func validate(nodes []Node) error {
 	var err error
 	seen := map[string]struct{}{}
-	VisitParameter(nodes, func(field, value string, negated bool) {
+	VisitParameter(nodes, func(field, value string, negated bool, _ Annotation) {
 		if err != nil {
 			return
 		}

@@ -146,6 +146,10 @@ var tests = []test{
 		Name:  `Global search, exclude counts for fork and archive`,
 		Query: `repo:mux|archive|caddy`,
 	},
+	{
+		Name:  `Repo visibility`,
+		Query: `repo:github.com/rvantonderp/adjust-go-wrk visibility:public`,
+	},
 	// And/Or queries.
 	{
 		Name:  `And operator, basic`,
@@ -274,6 +278,10 @@ var tests = []test{
 	{
 		Name:  `Intersect file matches per file against an empty result set`,
 		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^cmd/adapter/adapter\.go func and doesnotexist838338`,
+	},
+	{
+		Name:  `Dedupe union operation`,
+		Query: `file:cors_filter.go|ginkgo_dsl.go|funcs.go repo:rvantonderp/DirectXMan12-k8s-prometheus-adapter  :[[i]], :[[x]] := range :[src.] { :[[dst]][:[i]] = :[[x]] } or if strings.ToLower(:[s1]) == strings.ToLower(:[s2]) patterntype:structural`,
 	},
 }
 

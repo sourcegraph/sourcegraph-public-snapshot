@@ -19,9 +19,12 @@ func QueryRunner() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("query-runner"),
 						sharedContainerMemoryUsage("query-runner"),
 						sharedContainerCPUUsage("query-runner"),
+					},
+					{
+						sharedContainerRestarts("query-runner"),
+						sharedContainerFsInodes("query-runner"),
 					},
 				},
 			},
@@ -36,6 +39,25 @@ func QueryRunner() *Container {
 					{
 						sharedProvisioningCPUUsage5m("query-runner"),
 						sharedProvisioningMemoryUsage5m("query-runner"),
+					},
+				},
+			},
+			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("query-runner"),
+						sharedGoGcDuration("query-runner"),
+					},
+				},
+			},
+			{
+				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedKubernetesPodsAvailable("query-runner"),
 					},
 				},
 			},

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 // This file contains shared declarations between dashboards. In general, you should NOT be making
@@ -51,9 +52,13 @@ var sharedFrontendInternalAPIErrorResponses sharedObservable = func(containerNam
 }
 
 // promCadvisorContainerMatchers generates Prometheus matchers that capture metrics that match the given container name
-// while excluding some irrelevant metrics (namely pods and jaeger sidecars)
+// while excluding some irrelevant series
 func promCadvisorContainerMatchers(containerName string) string {
-	return fmt.Sprintf(`name=~".*%s.*",name!~".*(_POD_|_jaeger-agent_).*"`, containerName)
+	// This matcher excludes:
+	// * jaeger sidecar (jaeger-agent)
+	// * pod sidecars (_POD_)
+	// as well as matching on the name of the container exactly with "_{container}_"
+	return fmt.Sprintf(`name=~".*_%s_.*",name!~".*(_POD_|_jaeger-agent_).*"`, containerName)
 }
 
 // Container monitoring overviews - alert on all container failures, but only alert on extreme resource usage.
@@ -86,7 +91,7 @@ var sharedContainerMemoryUsage sharedObservable = func(containerName string) Obs
 		Query:           fmt.Sprintf(`cadvisor_container_memory_usage_percentage_total{%s}`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 99},
-		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Interval(100),
+		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Interval(100).Max(100).Min(0),
 		Owner:           ObservableOwnerDistribution,
 		PossibleSolutions: strings.Replace(`
 			- **Kubernetes:** Consider increasing memory limit in relevant 'Deployment.yaml'.
@@ -102,12 +107,28 @@ var sharedContainerCPUUsage sharedObservable = func(containerName string) Observ
 		Query:           fmt.Sprintf(`cadvisor_container_cpu_usage_percentage_total{%s}`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 99},
-		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Interval(100),
+		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Interval(100).Max(100).Min(0),
 		Owner:           ObservableOwnerDistribution,
 		PossibleSolutions: strings.Replace(`
 			- **Kubernetes:** Consider increasing CPU limits in the the relevant 'Deployment.yaml'.
 			- **Docker Compose:** Consider increasing 'cpus:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
 		`, "{{CONTAINER_NAME}}", containerName, -1),
+	}
+}
+
+var sharedContainerFsInodes sharedObservable = func(containerName string) Observable {
+	return Observable{
+		Name:            "fs_inodes_used",
+		Description:     "fs inodes in use by instance",
+		Query:           fmt.Sprintf(`sum by (name)(container_fs_inodes_total{%s})`, promCadvisorContainerMatchers(containerName)),
+		DataMayNotExist: true,
+		Warning:         Alert{GreaterOrEqual: 3e+06},
+		PanelOptions:    PanelOptions().LegendFormat("{{name}}"),
+		Owner:           ObservableOwnerDistribution,
+		PossibleSolutions: `
+			- Refer to your OS or cloud provider's documentation for how to increase inodes.
+			- **Kubernetes:** consider provisioning more machines with less resources.
+`,
 	}
 }
 
@@ -120,7 +141,7 @@ var sharedProvisioningCPUUsage5m sharedObservable = func(containerName string) O
 		Query:           fmt.Sprintf(`max_over_time(cadvisor_container_cpu_usage_percentage_total{%s}[5m])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 90},
-		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Interval(100),
+		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Interval(100).Max(100).Min(0),
 		Owner:           ObservableOwnerDistribution,
 		PossibleSolutions: strings.Replace(`
 			- **Kubernetes:** Consider increasing CPU limits in the the relevant 'Deployment.yaml'.
@@ -136,7 +157,7 @@ var sharedProvisioningMemoryUsage5m sharedObservable = func(containerName string
 		Query:           fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[5m])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 90},
-		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Interval(100),
+		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Interval(100).Max(100).Min(0),
 		Owner:           ObservableOwnerDistribution,
 		PossibleSolutions: strings.Replace(`
 			- **Kubernetes:** Consider increasing memory limit in relevant 'Deployment.yaml'.
@@ -153,8 +174,8 @@ var sharedProvisioningCPUUsage7d sharedObservable = func(containerName string) O
 		Description:     "container cpu usage total (7d maximum) across all cores by instance",
 		Query:           fmt.Sprintf(`max_over_time(cadvisor_container_cpu_usage_percentage_total{%s}[7d])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
-		Warning:         Alert{LessOrEqual: 30, GreaterOrEqual: 80},
-		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
+		Warning:         Alert{LessOrEqual: 30, GreaterOrEqual: 80, For: 7 * 24 * time.Hour},
+		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Max(100).Min(0),
 		Owner:           ObservableOwnerDistribution,
 		PossibleSolutions: strings.Replace(`
 			- If usage is high:
@@ -171,8 +192,8 @@ var sharedProvisioningMemoryUsage7d sharedObservable = func(containerName string
 		Description:     "container memory usage (7d maximum) by instance",
 		Query:           fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[7d])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
-		Warning:         Alert{LessOrEqual: 30, GreaterOrEqual: 80},
-		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
+		Warning:         Alert{LessOrEqual: 30, GreaterOrEqual: 80, For: 14 * 24 * time.Hour},
+		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Max(100).Min(0),
 		Owner:           ObservableOwnerDistribution,
 		PossibleSolutions: strings.Replace(`
 			- If usage is high:
@@ -180,5 +201,48 @@ var sharedProvisioningMemoryUsage7d sharedObservable = func(containerName string
 				- **Docker Compose:** Consider decreasing 'memory:' of {{CONTAINER_NAME}} container in 'docker-compose.yml'.
 			- If usage is low, consider decreasing the above values.
 		`, "{{CONTAINER_NAME}}", containerName, -1),
+	}
+}
+
+// Golang monitoring overviews
+
+var sharedGoGoroutines sharedObservable = func(containerName string) Observable {
+	return Observable{
+		Name:              "go_goroutines",
+		Description:       "maximum active goroutines for 10m",
+		Query:             fmt.Sprintf(`max by(instance) (go_goroutines{job=~".*%s"})`, containerName),
+		DataMayNotExist:   true,
+		Warning:           Alert{GreaterOrEqual: 10000, For: 10 * time.Minute},
+		PanelOptions:      PanelOptions().LegendFormat("{{name}}"),
+		Owner:             ObservableOwnerDistribution,
+		PossibleSolutions: "none",
+	}
+}
+
+var sharedGoGcDuration sharedObservable = func(containerName string) Observable {
+	return Observable{
+		Name:              "go_gc_duration_seconds",
+		Description:       "maximum go garbage collection duration",
+		Query:             fmt.Sprintf(`max by(instance) (go_gc_duration_seconds{job=~".*%s"})`, containerName),
+		DataMayNotExist:   true,
+		Warning:           Alert{GreaterOrEqual: 2},
+		PanelOptions:      PanelOptions().LegendFormat("{{name}}").Unit(Seconds),
+		Owner:             ObservableOwnerDistribution,
+		PossibleSolutions: "none",
+	}
+}
+
+// Kubernetes monitoring overviews
+
+var sharedKubernetesPodsAvailable sharedObservable = func(containerName string) Observable {
+	return Observable{
+		Name:              "pods_available_percentage",
+		Description:       "percentage pods available for 10m",
+		Query:             fmt.Sprintf(`sum by(app) (up{app=~".*%[1]s"}) / count by (app) (up{app=~".*%[1]s"}) * 100`, containerName),
+		Critical:          Alert{LessOrEqual: 90, For: 10 * time.Minute},
+		DataMayNotExist:   true,
+		PanelOptions:      PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Max(100).Min(0),
+		Owner:             ObservableOwnerDistribution,
+		PossibleSolutions: "none",
 	}
 }

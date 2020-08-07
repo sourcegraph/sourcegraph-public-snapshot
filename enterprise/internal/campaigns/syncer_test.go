@@ -193,14 +193,56 @@ func TestPrioritizeChangesetsWithoutDiffStats(t *testing.T) {
 				return []*campaigns.Changeset{}, 0, nil
 			},
 		},
-		"non-empty list": {
+		"non-empty list with published changesets": {
 			listChangesets: func(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
 				return []*campaigns.Changeset{
-					{ID: 1},
-					{ID: 2},
+					{
+						ID:               1,
+						ReconcilerState:  campaigns.ReconcilerStateCompleted,
+						PublicationState: campaigns.ChangesetPublicationStatePublished,
+					},
+					{
+						ID:               2,
+						ReconcilerState:  campaigns.ReconcilerStateCompleted,
+						PublicationState: campaigns.ChangesetPublicationStatePublished,
+					},
 				}, 0, nil
 			},
 			wantIDs: []int64{1, 2},
+		},
+		"non-empty list with unpublished changesets": {
+			listChangesets: func(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
+				return []*campaigns.Changeset{
+					{
+						ID:               1,
+						ReconcilerState:  campaigns.ReconcilerStateCompleted,
+						PublicationState: campaigns.ChangesetPublicationStateUnpublished,
+					},
+					{
+						ID:               2,
+						ReconcilerState:  campaigns.ReconcilerStateCompleted,
+						PublicationState: campaigns.ChangesetPublicationStateUnpublished,
+					},
+				}, 0, nil
+			},
+			wantIDs: []int64{},
+		},
+		"non-empty list with processing changesets": {
+			listChangesets: func(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
+				return []*campaigns.Changeset{
+					{
+						ID:               1,
+						ReconcilerState:  campaigns.ReconcilerStateProcessing,
+						PublicationState: campaigns.ChangesetPublicationStatePublished,
+					},
+					{
+						ID:               2,
+						ReconcilerState:  campaigns.ReconcilerStateProcessing,
+						PublicationState: campaigns.ChangesetPublicationStatePublished,
+					},
+				}, 0, nil
+			},
+			wantIDs: []int64{},
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -506,7 +548,7 @@ type MockSyncStore struct {
 	listChangesetSyncData func(context.Context, ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error)
 	getChangeset          func(context.Context, GetChangesetOpts) (*campaigns.Changeset, error)
 	listChangesets        func(context.Context, ListChangesetsOpts) (campaigns.Changesets, int64, error)
-	updateChangesets      func(context.Context, ...*campaigns.Changeset) error
+	updateChangeset       func(context.Context, *campaigns.Changeset) error
 	upsertChangesetEvents func(context.Context, ...*campaigns.ChangesetEvent) error
 	transact              func(context.Context) (*Store, error)
 }
@@ -523,8 +565,8 @@ func (m MockSyncStore) ListChangesets(ctx context.Context, opts ListChangesetsOp
 	return m.listChangesets(ctx, opts)
 }
 
-func (m MockSyncStore) UpdateChangesets(ctx context.Context, cs ...*campaigns.Changeset) error {
-	return m.updateChangesets(ctx, cs...)
+func (m MockSyncStore) UpdateChangeset(ctx context.Context, c *campaigns.Changeset) error {
+	return m.updateChangeset(ctx, c)
 }
 
 func (m MockSyncStore) UpsertChangesetEvents(ctx context.Context, cs ...*campaigns.ChangesetEvent) error {

@@ -59,6 +59,14 @@ add('Text', () => (
         </p>
 
         <p>
+            Text can have superscripts<sup>sup</sup> with <code>{'<sup>'}</code>.
+        </p>
+
+        <p>
+            Text can have subscripts<sub>sub</sub> with <code>{'<sub>'}</code>.
+        </p>
+
+        <p>
             <small>
                 You can use <code>{'<small>'}</code> to make small text. Use sparingly.
             </small>
@@ -353,35 +361,70 @@ add(
                 </a>{' '}
                 | <a href="https://getbootstrap.com/docs/4.5/components/badge/">Bootstrap Documentation</a>{' '}
             </p>
-            <p>
-                Badges are used for labelling and displaying small counts. Badges scale to match the size of the
-                immediate parent element by using relative font sizing and <code>em</code> units for padding. Text in
-                badges is automatically uppercased with CSS.
-            </p>
+            <p>Badges are used for labelling and displaying small counts.</p>
 
-            <h2>Headings</h2>
+            <h2>Scaling</h2>
             <p>
-                Badges can be used in headings within a superscript <code>{'<sup></sup>'}</code>:
+                Badges scale to match the size of the immediate parent element by using relative font sizing and{' '}
+                <code>em</code> units for padding.
+            </p>
+            <p>
+                Use a superscript <code>{'<sup></sup>'}</code> to position the badge top-right of a word in{' '}
+                <code>h1</code> headings. Do not use a superscript for smaller text, because the font size would become
+                too small.
             </p>
             <table className="table">
                 <tbody>
-                    {(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const).map(Heading => (
+                    <tr>
+                        <td>
+                            <code>{'<h1>'}</code> + <code>{'<sup>'}</code>
+                        </td>
+                        <td>
+                            <h1>
+                                Lorem{' '}
+                                <sup>
+                                    <span className="badge badge-secondary">ipsum</span>
+                                </sup>
+                            </h1>
+                            <small>Use a superscript to align the badge top-right of the heading text.</small>
+                        </td>
+                    </tr>
+                    {(['h2', 'h3', 'h4', 'h5', 'h6'] as const).map(Heading => (
                         <tr key={Heading}>
                             <td>
                                 <code>{`<${Heading}>`}</code>
                             </td>
                             <td>
                                 <Heading>
-                                    Blockchain support{' '}
-                                    <sup>
-                                        <span className="badge badge-info">Beta</span>
-                                    </sup>
+                                    Lorem <span className="badge badge-secondary">ipsum</span>
                                 </Heading>
                             </td>
                         </tr>
                     ))}
+                    <tr>
+                        <td>Regular text</td>
+                        <td>
+                            Lorem <span className="badge badge-secondary">ipsum</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>{'<small>'}</code>
+                        </td>
+                        <td>
+                            <small>
+                                Lorem <span className="badge badge-secondary">ipsum</span>
+                            </small>
+                            <p>
+                                <small className="text-danger">
+                                    Discouraged because the text becomes too small to read.
+                                </small>
+                            </p>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
+
             <h2>Semantic variations</h2>
             <p>Change the appearance of any badge with modifier classes for semantic colors.</p>
             <p>
@@ -391,6 +434,48 @@ add(
                     </React.Fragment>
                 ))}
             </p>
+
+            <h2>Uppercase</h2>
+            <p>
+                Badges can be visually uppercased by combining them with the <code>text-uppercase</code> class.
+                Examples:
+            </p>
+            <div>
+                <h1>
+                    Blockchain support{' '}
+                    <sup>
+                        <span className="badge badge-warning text-uppercase">Beta</span>
+                    </sup>
+                </h1>
+                <h1>
+                    Blockchain support{' '}
+                    <sup>
+                        <span className="badge badge-info text-uppercase">Preview</span>
+                    </sup>
+                </h1>
+                <h1>
+                    Blockchain support{' '}
+                    <sup>
+                        <span className="badge badge-info text-uppercase">Experimental</span>
+                    </sup>
+                </h1>
+                <h1>
+                    Blockchain support{' '}
+                    <sup>
+                        <span className="badge badge-info text-uppercase">Prototype</span>
+                    </sup>
+                </h1>
+            </div>
+            <p>
+                <span className="badge badge-success text-uppercase">added</span> <code>path/to/file.ts</code>
+            </p>
+            <p>
+                <span className="badge badge-danger text-uppercase">deleted</span> <code>path/to/file.ts</code>
+            </p>
+            <p>
+                <span className="badge badge-warning text-uppercase">moved</span> <code>path/to/file.ts</code>
+            </p>
+            <p>Do not use it for user-supplied text like labels (tags) or usernames.</p>
 
             <h2>Pill badges</h2>
             <p>Pill badges are commonly used to display counts.</p>

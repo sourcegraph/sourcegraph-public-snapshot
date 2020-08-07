@@ -62,6 +62,13 @@ $alert-color-level-light: 6;
 $alert-padding-y: 0.75rem;
 $alert-padding-x: 0.75rem;
 
+// Badges
+
+$badge-font-size: 0.75em;
+$badge-font-weight: 600;
+$badge-padding-y: 0.34em;
+$badge-padding-x: 0.6em;
+
 // Forms
 
 $form-check-input-margin-y: 0.2em;
@@ -144,6 +151,7 @@ $code-bg: var(--body-bg);
 @import './global-styles/alert';
 @import './global-styles/forms';
 @import './global-styles/highlight';
+@import './global-styles/web-content';
 
 * {
     box-sizing: border-box;

@@ -52,7 +52,6 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
                 <ChangesetLabel
                   label={
                     Object {
-                      "__typename": "ChangesetLabel",
                       "color": "93ba13",
                       "description": "Something is broken",
                       "text": "bug",
@@ -80,20 +79,7 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
                     "__typename": "ExternalChangeset",
                     "body": "We should remove lodash",
                     "checkState": "FAILED",
-                    "diff": Object {
-                      "fileDiffs": Object {
-                        "diffStat": Object {
-                          "added": 100,
-                          "changed": 200,
-                          "deleted": 100,
-                        },
-                        "nodes": Array [
-                          Object {
-                            "__typename": "FileDiff",
-                          },
-                        ],
-                      },
-                    },
+                    "createdAt": "2020-01-01T00:00:00.000Z",
                     "diffStat": Object {
                       "added": 100,
                       "changed": 200,
@@ -104,21 +90,23 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
                     "externalURL": Object {
                       "url": "https://github.com/sourcegraph/sourcegraph/pull/111111",
                     },
+                    "id": "TestExternalChangeset",
                     "labels": Array [
                       Object {
-                        "__typename": "ChangesetLabel",
                         "color": "93ba13",
                         "description": "Something is broken",
                         "text": "bug",
                       },
                     ],
+                    "nextSyncAt": null,
+                    "publicationState": "PUBLISHED",
+                    "reconcilerState": "COMPLETED",
                     "repository": Object {
-                      "__typename": "Repository",
+                      "id": "TestRepository",
                       "name": "sourcegraph",
                       "url": "github.com/sourcegraph/sourcegraph",
                     },
                     "reviewState": "PENDING",
-                    "state": "UNPUBLISHED",
                     "title": "Remove lodash",
                     "updatedAt": "2020-01-01T00:00:00.000Z",
                   }
@@ -173,6 +161,7 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
       noun="changed file"
       pluralNoun="changed files"
       queryConnection={[Function]}
+      updateOnChange="TestRepository"
       useURLQuery={false}
     />
   </Collapsible>
