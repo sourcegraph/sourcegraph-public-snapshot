@@ -7,6 +7,9 @@ interface Props {
     /** The DOM ID of the element. */
     id?: string
 
+    /** Data attribute for testing */
+    dataTest?: string
+
     /**
      * Called when the user changes the input's value.
      */
@@ -37,6 +40,7 @@ export class Toggle extends React.PureComponent<Props> {
                 value={this.props.value ? 1 : 0}
                 onClick={this.onClick}
                 tabIndex={this.props.tabIndex}
+                data-test={this.props.dataTest}
             >
                 <span
                     className={`toggle__bar ${this.props.value ? 'toggle__bar--active' : ''} ${

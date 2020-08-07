@@ -15,7 +15,7 @@ import { ExtensionToggle } from './ExtensionToggle'
 import { isEncodedImage } from '../../../shared/src/util/icon'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
-    node: Pick<
+    extension: Pick<
         ConfiguredRegistryExtension<
             Pick<
                 GQL.IRegistryExtension,
@@ -33,22 +33,23 @@ const stopPropagation: React.MouseEventHandler<HTMLElement> = event => {
 }
 
 /** Displays an extension as a card. */
-export const ExtensionCard = React.memo<Props>(function ExtensionCard(props) {
-    const { node } = props
+export const ExtensionCard = React.memo<Props>(function ExtensionCard({
+    extension,
+    settingsCascade,
+    platformContext,
+    subject,
+    enabled,
+}) {
     const manifest: ExtensionManifest | undefined =
-        node.manifest && !isErrorLike(node.manifest) ? node.manifest : undefined
+        extension.manifest && !isErrorLike(extension.manifest) ? extension.manifest : undefined
 
-    const iconURL = React.useMemo(() => {
-        let url: URL | undefined
-        try {
-            if (manifest?.icon) {
-                url = new URL(manifest.icon)
-            }
-        } catch {
-            // noop
+    const icon = React.useMemo(() => {
+        let url: string | undefined
+        if (manifest?.icon && isEncodedImage(manifest.icon)) {
+            url = manifest.icon
         }
         return url
-    }, [manifest?.icon])
+    }, [manifest])
 
     return (
         <div className="d-flex">
@@ -60,54 +61,54 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard(props) {
                     onClick={stopPropagation}
                 >
                     <div className="d-flex">
-                        {manifest?.icon && iconURL && iconURL.protocol === 'data:' && isEncodedImage(manifest.icon) && (
-                            <img className="extension-card__icon mr-2" src={manifest.icon} />
-                        )}
+                        {icon && <img className="extension-card__icon mr-2" src={icon} />}
                         <div className="text-truncate w-100">
                             <div className="d-flex align-items-center">
                                 <h4 className="card-title extension-card__body-title mb-0 mr-1 text-truncate font-weight-normal flex-1">
-                                    <LinkOrSpan to={node.registryExtension?.url} className="stretched-link">
+                                    <LinkOrSpan to={extension.registryExtension?.url} className="stretched-link">
                                         <Path
                                             path={
-                                                node.registryExtension
-                                                    ? node.registryExtension.extensionIDWithoutRegistry
-                                                    : node.id
+                                                extension.registryExtension
+                                                    ? extension.registryExtension.extensionIDWithoutRegistry
+                                                    : extension.id
                                             }
                                         />
                                     </LinkOrSpan>
                                 </h4>
-                                {node.registryExtension?.isWorkInProgress && (
+                                {extension.registryExtension?.isWorkInProgress && (
                                     <WorkInProgressBadge
-                                        viewerCanAdminister={node.registryExtension.viewerCanAdminister}
+                                        viewerCanAdminister={extension.registryExtension.viewerCanAdminister}
                                     />
                                 )}
-                                {props.subject &&
-                                    (props.subject.viewerCanAdminister ? (
+                                {subject &&
+                                    (subject.viewerCanAdminister ? (
                                         <ExtensionToggle
-                                            extension={node}
-                                            settingsCascade={props.settingsCascade}
-                                            platformContext={props.platformContext}
+                                            extensionID={extension.id}
+                                            enabled={enabled}
+                                            settingsCascade={settingsCascade}
+                                            platformContext={platformContext}
                                             className="extension-card__toggle"
-                                            id={`test-extension-toggle-${node.id}`}
                                         />
                                     ) : (
                                         <ExtensionConfigurationState
-                                            isAdded={isExtensionAdded(props.settingsCascade.final, node.id)}
-                                            isEnabled={isExtensionEnabled(props.settingsCascade.final, node.id)}
+                                            isAdded={isExtensionAdded(settingsCascade.final, extension.id)}
+                                            isEnabled={enabled}
                                             enabledIconOnly={true}
                                             className="small"
                                         />
                                     ))}
                             </div>
                             <div className="mt-1">
-                                {node.manifest ? (
-                                    isErrorLike(node.manifest) ? (
-                                        <span className="text-danger small" title={node.manifest.message}>
+                                {extension.manifest ? (
+                                    isErrorLike(extension.manifest) ? (
+                                        <span className="text-danger small" title={extension.manifest.message}>
                                             <WarningIcon className="icon-inline" /> Invalid manifest
                                         </span>
                                     ) : (
-                                        node.manifest.description && (
-                                            <div className="text-muted text-truncate">{node.manifest.description}</div>
+                                        extension.manifest.description && (
+                                            <div className="text-muted text-truncate">
+                                                {extension.manifest.description}
+                                            </div>
                                         )
                                     )
                                 ) : (
@@ -122,7 +123,8 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard(props) {
             </div>
         </div>
     )
-}, areEqual)
+},
+areEqual)
 
 /** Custom compareFunction for ExtensionCard */
 function areEqual(oldProps: Props, newProps: Props): boolean {

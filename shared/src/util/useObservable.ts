@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { Observable, Observer, Subject } from 'rxjs'
 
 /**
@@ -59,7 +59,7 @@ export function useEventObservable<R>(
 export function useEventObservable<T, R>(
     transform: (events: Observable<T>) => Observable<R>
 ): [Observer<T>['next'], R | undefined] {
-    const events = useMemo(() => new Subject<T>(), [])
+    const { current: events } = useRef(new Subject<T>())
     const observable = useMemo(() => events.pipe(transform), [events, transform])
     const nextEvent = useMemo(() => events.next.bind(events), [events])
     const value = useObservable(observable)

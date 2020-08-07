@@ -192,7 +192,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                                     <ExtensionCard
                                         key={extension.id}
                                         subject={this.props.subject}
-                                        node={extension}
+                                        extension={extension}
                                         settingsCascade={this.props.settingsCascade}
                                         platformContext={this.props.platformContext}
                                         enabled={isExtensionEnabled(this.props.settingsCascade.final, extension.id)}

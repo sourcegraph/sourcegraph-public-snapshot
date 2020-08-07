@@ -13,7 +13,7 @@ describe('ExtensionCard', () => {
                 .create(
                     <MemoryRouter>
                         <ExtensionCard
-                            node={{
+                            extension={{
                                 id: 'x/y',
                                 manifest: {
                                     activationEvents: ['*'],
