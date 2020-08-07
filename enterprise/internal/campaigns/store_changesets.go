@@ -161,9 +161,9 @@ func (s *Store) createChangesetQuery(c *campaigns.Changeset) (*sqlf.Query, error
 		c.PublicationState,
 		c.ReconcilerState.ToDB(),
 		c.FailureMessage,
-		c.StartedAt,
-		c.FinishedAt,
-		c.ProcessAfter,
+		nullTimeColumn(c.StartedAt),
+		nullTimeColumn(c.FinishedAt),
+		nullTimeColumn(c.ProcessAfter),
 		c.NumResets,
 		sqlf.Join(changesetColumns, ", "),
 	), nil
@@ -531,9 +531,9 @@ func (s *Store) updateChangesetQuery(c *campaigns.Changeset) (*sqlf.Query, error
 		c.PublicationState,
 		c.ReconcilerState.ToDB(),
 		c.FailureMessage,
-		c.StartedAt,
-		c.FinishedAt,
-		c.ProcessAfter,
+		nullTimeColumn(c.StartedAt),
+		nullTimeColumn(c.FinishedAt),
+		nullTimeColumn(c.ProcessAfter),
 		c.NumResets,
 		// ID
 		c.ID,
@@ -631,9 +631,9 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		&t.PublicationState,
 		&reconcilerState,
 		&dbutil.NullString{S: &failureMessage},
-		&t.StartedAt,
-		&t.FinishedAt,
-		&t.ProcessAfter,
+		&dbutil.NullTime{Time: &t.StartedAt},
+		&dbutil.NullTime{Time: &t.FinishedAt},
+		&dbutil.NullTime{Time: &t.ProcessAfter},
 		&t.NumResets,
 	)
 	if err != nil {
