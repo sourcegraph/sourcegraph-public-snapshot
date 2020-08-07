@@ -110,6 +110,12 @@ func TestCampaignSpecResolver(t *testing.T) {
 				},
 			},
 		},
+
+		DiffStat: apitest.DiffStat{
+			Added:   changesetSpec.DiffStatAdded,
+			Changed: changesetSpec.DiffStatChanged,
+			Deleted: changesetSpec.DiffStatDeleted,
+		},
 	}
 
 	if diff := cmp.Diff(want, response.Node); diff != "" {
@@ -141,6 +147,8 @@ query($campaignSpec: ID!) {
 
       createdAt
       expiresAt
+
+      diffStat { added, deleted, changed }
 
       changesetSpecs(first: 100) {
         totalCount

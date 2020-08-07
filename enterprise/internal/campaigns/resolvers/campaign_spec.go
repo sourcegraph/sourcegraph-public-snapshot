@@ -122,3 +122,39 @@ func (r *campaignDescriptionResolver) Name() string {
 func (r *campaignDescriptionResolver) Description() string {
 	return r.description
 }
+
+func (r *campaignSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
+	specsConnection := &changesetSpecConnectionResolver{
+		store:       r.store,
+		httpFactory: r.httpFactory,
+		opts: ee.ListChangesetSpecsOpts{
+			CampaignSpecID: r.campaignSpec.ID,
+			Limit:          -1,
+		},
+	}
+
+	specs, err := specsConnection.Nodes(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	totalStat := &graphqlbackend.DiffStat{}
+	for _, spec := range specs {
+		// If we can't convert it, that means it's hidden from the user and we
+		// can simply skip it.
+		if _, ok := spec.ToVisibleChangesetSpec(); !ok {
+			continue
+		}
+
+		resolver, ok := spec.(*changesetSpecResolver)
+		if !ok {
+			// This should never happen.
+			continue
+		}
+
+		stat := resolver.changesetSpec.DiffStat()
+		totalStat.AddStat(stat)
+	}
+
+	return totalStat, nil
+}

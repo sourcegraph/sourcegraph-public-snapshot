@@ -663,6 +663,9 @@ type CampaignSpec implements Node {
 
     # When true, the viewing user can apply this spec.
     viewerCanAdminister: Boolean!
+
+    # The diff stat for all the changeset specs in the campaign spec.
+    diffStat: DiffStat!
 }
 
 # A user (identified either by username or email address) with its repository permission.
