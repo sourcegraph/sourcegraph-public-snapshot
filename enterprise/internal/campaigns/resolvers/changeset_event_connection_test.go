@@ -112,7 +112,7 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		t.Run(fmt.Sprintf("First %d", tc.firstParam), func(t *testing.T) {
+		t.Run(fmt.Sprintf("first=%d", tc.firstParam), func(t *testing.T) {
 			input := map[string]interface{}{"changeset": changesetAPIID, "first": int64(tc.firstParam)}
 			var response struct{ Node apitest.Changeset }
 			apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryChangesetEventConnection)
