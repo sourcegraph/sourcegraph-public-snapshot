@@ -412,12 +412,14 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 		case "Org":
 			err = relay.UnmarshalSpec(*args.Namespace, &opts.NamespaceOrgID)
 		default:
-			err = errors.Errorf("Invalid namespace %q", args.Namespace)
+			err = errors.Errorf("Invalid namespace %q", *args.Namespace)
 		}
 		if err != nil {
 			return nil, err
 		}
 	}
+
+	fmt.Printf("opts=%+v\n", opts)
 
 	return &campaignsConnectionResolver{
 		store:       r.store,

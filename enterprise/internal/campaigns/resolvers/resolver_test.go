@@ -787,3 +787,114 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		}
 	}
 }
+
+func TestCampaignsListing(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	dbtesting.SetupGlobalTestDB(t)
+
+	userID := insertTestUser(t, dbconn.Global, "campaigns-lsiting", true)
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	org, err := db.Orgs.Create(ctx, "org", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	store := ee.NewStore(dbconn.Global)
+
+	r := &Resolver{store: store}
+	s, err := graphqlbackend.NewSchema(r, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	createCampaign := func(t *testing.T, c *campaigns.Campaign) {
+		t.Helper()
+
+		c.Name = "n"
+		c.AuthorID = userID
+		if err := store.CreateCampaign(ctx, c); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	t.Run("listing a users campaigns", func(t *testing.T) {
+		campaign := &campaigns.Campaign{NamespaceUserID: userID}
+		createCampaign(t, campaign)
+
+		userApiID := string(graphqlbackend.MarshalUserID(userID))
+		input := map[string]interface{}{"node": userApiID}
+
+		var response struct{ Node apitest.User }
+		apitest.MustExec(actorCtx, t, s, input, &response, listNamespacesCampaigns)
+
+		want := apitest.User{
+			ID: userApiID,
+			Campaigns: apitest.CampaignConnection{
+				TotalCount: 1,
+				Nodes: []apitest.Campaign{
+					{ID: string(campaigns.MarshalCampaignID(campaign.ID))},
+				},
+			},
+		}
+
+		if diff := cmp.Diff(want, response.Node); diff != "" {
+			t.Fatalf("wrong campaign response (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("listing an orgs campaigns", func(t *testing.T) {
+		campaign := &campaigns.Campaign{NamespaceOrgID: org.ID}
+		createCampaign(t, campaign)
+
+		orgApiID := string(graphqlbackend.MarshalOrgID(org.ID))
+		input := map[string]interface{}{"node": orgApiID}
+
+		var response struct{ Node apitest.Org }
+		apitest.MustExec(actorCtx, t, s, input, &response, listNamespacesCampaigns)
+
+		want := apitest.Org{
+			ID: orgApiID,
+			Campaigns: apitest.CampaignConnection{
+				TotalCount: 1,
+				Nodes: []apitest.Campaign{
+					{ID: string(campaigns.MarshalCampaignID(campaign.ID))},
+				},
+			},
+		}
+
+		if diff := cmp.Diff(want, response.Node); diff != "" {
+			t.Fatalf("wrong campaign response (-want +got):\n%s", diff)
+		}
+	})
+}
+
+const listNamespacesCampaigns = `
+query($node: ID!) {
+  node(id: $node) {
+    ... on User {
+      id
+      campaigns {
+        totalCount
+        nodes {
+          id
+        }
+      }
+    }
+
+    ... on Org {
+      id
+      campaigns {
+        totalCount
+        nodes {
+          id
+        }
+      }
+    }
+  }
+}
+`
