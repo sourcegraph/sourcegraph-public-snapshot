@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"sync"
 	"time"
@@ -504,7 +503,7 @@ func (r *changesetLabelResolver) Text() string {
 }
 
 func (r *changesetLabelResolver) Color() string {
-	return fmt.Sprintf("%s", r.label.Color)
+	return r.label.Color
 }
 
 func (r *changesetLabelResolver) Description() *string {

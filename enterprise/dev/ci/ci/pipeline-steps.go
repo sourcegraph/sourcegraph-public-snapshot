@@ -148,7 +148,7 @@ func addPostgresBackcompat(pipeline *bk.Pipeline) {
 func addGoTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go:",
 		bk.Cmd("./dev/ci/go-test.sh"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F go -F unit"))
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F go"))
 }
 
 // Builds the OSS and Enterprise Go commands.

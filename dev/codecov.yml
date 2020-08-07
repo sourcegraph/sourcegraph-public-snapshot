@@ -35,6 +35,9 @@ comment:
   layout: 'diff, flags, files'
 ignore:
   - '**/bindata.go'
+
 flags:
   typescript:
     carryforward: true
+
+show_carryforward_flags: true
