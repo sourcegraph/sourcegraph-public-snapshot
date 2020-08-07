@@ -419,8 +419,6 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 		}
 	}
 
-	fmt.Printf("opts=%+v\n", opts)
-
 	return &campaignsConnectionResolver{
 		store:       r.store,
 		httpFactory: r.httpFactory,
