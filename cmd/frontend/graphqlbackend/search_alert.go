@@ -137,8 +137,8 @@ func reposExist(ctx context.Context, options resolveRepoOp) bool {
 
 func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAlert {
 	globbing := false
-	if settings, err := decodedViewerFinalSettings(ctx); err != nil || getBoolPtr(settings.SearchGlobbing, false) {
-		globbing = true
+	if settings, err := decodedViewerFinalSettings(ctx); err == nil {
+		globbing = getBoolPtr(settings.SearchGlobbing, false)
 	}
 
 	repoFilters, minusRepoFilters := r.query.RegexpPatterns(query.FieldRepo)
