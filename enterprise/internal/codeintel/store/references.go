@@ -42,22 +42,11 @@ func (s *store) SameRepoPager(ctx context.Context, repositoryID int, commit, sch
 		return 0, nil, err
 	}
 
-	visibleIDs, err := scanInts(tx.query(
-		ctx,
-		withBidirectionalLineage(`SELECT id FROM visible_ids`, repositoryID, commit),
-	))
-	if err != nil {
-		return 0, nil, tx.Done(err)
-	}
-	if len(visibleIDs) == 0 {
-		return 0, newReferencePager(noopPageFromOffsetFunc, tx.Done), nil
-	}
-
 	conds := []*sqlf.Query{
 		sqlf.Sprintf("r.scheme = %s", scheme),
 		sqlf.Sprintf("r.name = %s", name),
 		sqlf.Sprintf("r.version = %s", version),
-		sqlf.Sprintf("r.dump_id IN (%s)", sqlf.Join(intsToQueries(visibleIDs), ", ")),
+		sqlf.Sprintf("r.dump_id IN (SELECT upload_id FROM lsif_nearest_uploads WHERE repository_id = %s AND commit = %s)", repositoryID, commit),
 	}
 
 	totalCount, _, err := scanFirstInt(tx.query(
@@ -96,7 +85,7 @@ func (s *store) PackageReferencePager(ctx context.Context, scheme, name, version
 		sqlf.Sprintf("r.name = %s", name),
 		sqlf.Sprintf("r.version = %s", version),
 		sqlf.Sprintf("d.repository_id != %s", repositoryID),
-		sqlf.Sprintf("d.visible_at_tip = true"),
+		sqlf.Sprintf("EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = d.repository_id and upload_id = d.id)"),
 	}
 
 	totalCount, _, err := scanFirstInt(tx.query(

@@ -110,4 +110,4 @@ For more complex setups, configure your `src-expose` by providing a local config
 src-expose -snapshot-config config.yaml
 ```
 
-See [an example YAML file containing available configuration options](https://github.com/sourcegraph/sourcegraph/blob/master/dev/src-expose/examples/example.yaml). 
+See [an example YAML file containing available configuration options](https://github.com/sourcegraph/sourcegraph/blob/main/dev/src-expose/examples/example.yaml). 

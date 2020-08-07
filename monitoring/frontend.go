@@ -76,8 +76,6 @@ func Frontend() *Container {
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
-					},
-					{
 						{
 							Name:            "search_alert_user_suggestions",
 							Description:     "search alert user suggestions shown every 5m",
@@ -90,16 +88,32 @@ func Frontend() *Container {
 								- This indicates your user's are making syntax errors or similar user errors.
 							`,
 						},
+					},
+					{
 						{
-							Name:         "page_load_latency",
-							Description:  "90th percentile page load latency over all routes over 10m",
-							Query:        `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{job="sourcegraph-frontend",route!="raw"}[10m])))`,
-							Critical:     Alert{GreaterOrEqual: 20},
-							PanelOptions: PanelOptions().LegendFormat("latency"),
-							Owner:        ObservableOwnerSearch,
+							Name:            "page_load_latency",
+							Description:     "90th percentile page load latency over all routes over 10m",
+							Query:           `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route!="raw",route!="blob",route!~"graphql.*"}[10m])))`,
+							DataMayNotExist: true,
+							Critical:        Alert{GreaterOrEqual: 2},
+							PanelOptions:    PanelOptions().LegendFormat("latency").Unit(Seconds),
+							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
 								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
-								- Trace a request to see what is the slowest part - refer to: https://docs.sourcegraph.com/admin/observability/tracing
+								- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
+							`,
+						},
+						{
+							Name:            "blob_load_latency",
+							Description:     "90th percentile blob load latency over 10m",
+							Query:           `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route="blob"}[10m])))`,
+							DataMayNotExist: true,
+							Critical:        Alert{GreaterOrEqual: 2},
+							PanelOptions:    PanelOptions().LegendFormat("latency").Unit(Seconds),
+							Owner:           ObservableOwnerSearch,
+							PossibleSolutions: `
+								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
+								- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
 							`,
 						},
 					},
@@ -267,7 +281,7 @@ func Frontend() *Container {
 						{
 							Name:            "search_api_alert_user_suggestions",
 							Description:     "search API alert user suggestions shown every 5m",
-							Query:           `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out",source="other"}[5m]))`,
+							Query:           `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out|no_results__suggest_quotes",source="other"}[5m]))`,
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 50},
 							PanelOptions:    PanelOptions().LegendFormat("{{alert_type}}"),
@@ -441,6 +455,28 @@ func Frontend() *Container {
 							PanelOptions:      PanelOptions().LegendFormat("{{method}}").Max(0.10).Unit(Seconds),
 							Owner:             ObservableOwnerDistribution,
 							PossibleSolutions: "none",
+						},
+					},
+					{
+						{
+							Name:              "observability_test_alert_warning",
+							Description:       "warning test alert metric",
+							Query:             `max by(owner) (observability_test_metric_warning)`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 1},
+							PanelOptions:      PanelOptions().Max(1),
+							Owner:             ObservableOwnerDistribution,
+							PossibleSolutions: "This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.",
+						},
+						{
+							Name:              "observability_test_alert_critical",
+							Description:       "critical test alert metric",
+							Query:             `max by(owner) (observability_test_metric_critical)`,
+							DataMayNotExist:   true,
+							Critical:          Alert{GreaterOrEqual: 1},
+							PanelOptions:      PanelOptions().Max(1),
+							Owner:             ObservableOwnerDistribution,
+							PossibleSolutions: "This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.",
 						},
 					},
 				},

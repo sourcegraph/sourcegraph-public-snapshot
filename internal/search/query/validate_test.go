@@ -10,8 +10,9 @@ import (
 
 func TestAndOrQuery_Validation(t *testing.T) {
 	cases := []struct {
-		input string
-		want  string
+		input      string
+		searchType SearchType // nil value is regexp
+		want       string
 	}{
 		{
 			input: "case:yes case:no",
@@ -53,10 +54,20 @@ func TestAndOrQuery_Validation(t *testing.T) {
 			input: `\\\`,
 			want:  "error parsing regexp: trailing backslash at end of expression: ``",
 		},
+		{
+			input:      `-content:"foo"`,
+			want:       "The query contains a negated search pattern. Structural search does not support negated search patterns at the moment.",
+			searchType: SearchTypeStructural,
+		},
+		{
+			input:      `NOT foo`,
+			want:       "The query contains a negated search pattern. Structural search does not support negated search patterns at the moment.",
+			searchType: SearchTypeStructural,
+		},
 	}
 	for _, c := range cases {
 		t.Run("validate and/or query", func(t *testing.T) {
-			_, err := ProcessAndOr(c.input, ParserOptions{SearchTypeRegex, false})
+			_, err := ProcessAndOr(c.input, ParserOptions{c.searchType, false})
 			if err == nil {
 				t.Fatal("expected test to fail")
 			}

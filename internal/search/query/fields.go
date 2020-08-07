@@ -18,6 +18,7 @@ var allFields = map[string]struct{}{
 	FieldType:               empty,
 	FieldPatternType:        empty,
 	FieldContent:            empty,
+	FieldVisibility:         empty,
 	FieldRepoHasFile:        empty,
 	FieldRepoHasCommitAfter: empty,
 	FieldBefore:             empty,

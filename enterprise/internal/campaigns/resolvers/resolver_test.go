@@ -730,9 +730,12 @@ func TestChangesetCountsOverTime(t *testing.T) {
 		},
 	}
 
-	err = store.CreateChangesets(ctx, changesets...)
-	if err != nil {
-		t.Fatal(err)
+	for _, c := range changesets {
+		if err = store.CreateChangeset(ctx, c); err != nil {
+			t.Fatal(err)
+		}
+
+		campaign.ChangesetIDs = append(campaign.ChangesetIDs, c.ID)
 	}
 
 	mockState := ct.MockChangesetSyncState(&protocol.RepoInfo{
@@ -746,9 +749,6 @@ func TestChangesetCountsOverTime(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, c := range changesets {
-		campaign.ChangesetIDs = append(campaign.ChangesetIDs, c.ID)
-	}
 	err = store.UpdateCampaign(ctx, campaign)
 	if err != nil {
 		t.Fatal(err)
@@ -881,7 +881,7 @@ func TestCreateCampaignSpec(t *testing.T) {
 	}
 
 	changesetSpec := &campaigns.ChangesetSpec{
-		Spec: campaigns.ChangesetSpecDescription{
+		Spec: &campaigns.ChangesetSpecDescription{
 			BaseRepository: graphqlbackend.MarshalRepositoryID(repo.ID),
 		},
 		RepoID: repo.ID,
@@ -1074,7 +1074,7 @@ func TestApplyCampaign(t *testing.T) {
 
 	changesetSpec := &campaigns.ChangesetSpec{
 		RawSpec: ct.NewRawChangesetSpecGitBranch(repoApiID, "d34db33f"),
-		Spec: campaigns.ChangesetSpecDescription{
+		Spec: &campaigns.ChangesetSpecDescription{
 			BaseRepository: repoApiID,
 		},
 		RepoID: repo.ID,
@@ -1275,3 +1275,140 @@ mutation($campaign: ID!, $newName: String, $newNamespace: ID){
   }
 }
 `
+
+func TestListChangesetOptsFromArgs(t *testing.T) {
+	var wantFirst int32 = 10
+	wantPublicationStates := []campaigns.ChangesetPublicationState{
+		"PUBLISHED",
+		"INVALID",
+	}
+	reconcilerStates := []campaigns.ReconcilerState{
+		"PROCESSING",
+		campaigns.ReconcilerStateProcessing,
+		"INVALID",
+	}
+	wantExternalStates := []campaigns.ChangesetExternalState{"OPEN", "INVALID"}
+	wantReviewStates := []campaigns.ChangesetReviewState{"APPROVED", "INVALID"}
+	wantCheckStates := []campaigns.ChangesetCheckState{"PENDING", "INVALID"}
+
+	tcs := []struct {
+		args       *graphqlbackend.ListChangesetsArgs
+		wantSafe   bool
+		wantErr    string
+		wantParsed ee.ListChangesetsOpts
+	}{
+		// No args given.
+		{
+			args:       nil,
+			wantSafe:   true,
+			wantParsed: ee.ListChangesetsOpts{},
+		},
+		// First argument is set in opts, and considered safe.
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				First: &wantFirst,
+			},
+			wantSafe:   true,
+			wantParsed: ee.ListChangesetsOpts{Limit: 10},
+		},
+		// Setting publication state is safe and transferred to opts.
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				PublicationState: &wantPublicationStates[0],
+			},
+			wantSafe: true,
+			wantParsed: ee.ListChangesetsOpts{
+				PublicationState: &wantPublicationStates[0],
+			},
+		},
+		// Setting invalid publication state fails.
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				PublicationState: &wantPublicationStates[1],
+			},
+			wantErr: "changeset publication state not valid",
+		},
+		// Setting reconciler state is safe and transferred to opts as lowercase version.
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				ReconcilerState: &reconcilerStates[0],
+			},
+			wantSafe: true,
+			wantParsed: ee.ListChangesetsOpts{
+				ReconcilerState: &reconcilerStates[1],
+			},
+		},
+		// Setting invalid reconciler state fails.
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				ReconcilerState: &reconcilerStates[2],
+			},
+			wantErr: "changeset reconciler state not valid",
+		},
+		// Setting external state is safe and transferred to opts.
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				ExternalState: &wantExternalStates[0],
+			},
+			wantSafe:   true,
+			wantParsed: ee.ListChangesetsOpts{ExternalState: &wantExternalStates[0]},
+		},
+		// Setting invalid external state fails.
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				ExternalState: &wantExternalStates[1],
+			},
+			wantErr: "changeset external state not valid",
+		},
+		// Setting review state is not safe and transferred to opts.
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				ReviewState: &wantReviewStates[0],
+			},
+			wantSafe:   false,
+			wantParsed: ee.ListChangesetsOpts{ExternalReviewState: &wantReviewStates[0]},
+		},
+		// Setting invalid review state fails.
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				ReviewState: &wantReviewStates[1],
+			},
+			wantErr: "changeset review state not valid",
+		},
+		// Setting check state is not safe and transferred to opts.
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				CheckState: &wantCheckStates[0],
+			},
+			wantSafe:   false,
+			wantParsed: ee.ListChangesetsOpts{ExternalCheckState: &wantCheckStates[0]},
+		},
+		// Setting invalid check state fails.
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				CheckState: &wantCheckStates[1],
+			},
+			wantErr: "changeset check state not valid",
+		},
+	}
+	for _, tc := range tcs {
+		haveParsed, haveSafe, err := listChangesetOptsFromArgs(tc.args)
+		if tc.wantErr == "" && err != nil {
+			t.Fatal(err)
+		}
+		haveErr := fmt.Sprintf("%v", err)
+		wantErr := tc.wantErr
+		if wantErr == "" {
+			wantErr = "<nil>"
+		}
+		if have, want := haveErr, wantErr; have != want {
+			t.Errorf("wrong error returned. have=%q want=%q", have, want)
+		}
+		if diff := cmp.Diff(haveParsed, tc.wantParsed); diff != "" {
+			t.Errorf("wrong args returned. diff=%s", diff)
+		}
+		if have, want := haveSafe, tc.wantSafe; have != want {
+			t.Errorf("wrong safe value returned. have=%t want=%t", have, want)
+		}
+	}
+}

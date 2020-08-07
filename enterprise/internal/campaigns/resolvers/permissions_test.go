@@ -56,7 +56,7 @@ func TestPermissionLevels(t *testing.T) {
 		ExternalServiceType: "github",
 		ExternalID:          "1234",
 	}
-	if err := store.CreateChangesets(ctx, changeset); err != nil {
+	if err := store.CreateChangeset(ctx, changeset); err != nil {
 		t.Fatal(err)
 	}
 
@@ -397,7 +397,7 @@ func TestPermissionLevels(t *testing.T) {
 						// for the addChangesetsToCampaign mutation, since that is
 						// idempotent and we want to solely check for auth errors.
 						changeset.CampaignIDs = []int64{campaignID}
-						if err := store.UpdateChangesets(ctx, changeset); err != nil {
+						if err := store.UpdateChangeset(ctx, changeset); err != nil {
 							t.Fatal(err)
 						}
 
@@ -439,8 +439,6 @@ func TestRepositoryPermissions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
-	// now := time.Now().UTC().Truncate(time.Microsecond)
 
 	// We need to enable read access so that non-site-admin users can access
 	// the API and we can check for their admin rights.
@@ -499,13 +497,15 @@ func TestRepositoryPermissions(t *testing.T) {
 				ExternalState:       campaigns.ChangesetExternalStateOpen,
 				ExternalCheckState:  campaigns.ChangesetCheckStatePassed,
 				ExternalReviewState: campaigns.ChangesetReviewStateChangesRequested,
+				PublicationState:    campaigns.ChangesetPublicationStatePublished,
+				ReconcilerState:     campaigns.ReconcilerStateCompleted,
 				Metadata: &github.PullRequest{
 					BaseRefOid: changesetBaseRefOid,
 					HeadRefOid: changesetHeadRefOid,
 				},
 			}
 			c.SetDiffStat(changesetDiffStat.ToDiffStat())
-			if err := store.CreateChangesets(ctx, c); err != nil {
+			if err := store.CreateChangeset(ctx, c); err != nil {
 				t.Fatal(err)
 			}
 			changesets = append(changesets, c)
@@ -524,9 +524,9 @@ func TestRepositoryPermissions(t *testing.T) {
 		}
 		for _, c := range changesets {
 			c.CampaignIDs = []int64{campaign.ID}
-		}
-		if err := store.UpdateChangesets(ctx, changesets...); err != nil {
-			t.Fatal(err)
+			if err := store.UpdateChangeset(ctx, c); err != nil {
+				t.Fatal(err)
+			}
 		}
 
 		// Query campaign and check that we get all changesets
@@ -746,8 +746,16 @@ func testChangesetResponse(t *testing.T, s *graphql.Schema, ctx context.Context,
 		t.Fatalf("changeset has wrong typename. want=%q, have=%q", want, have)
 	}
 
+	if have, want := res.Node.PublicationState, string(campaigns.ChangesetPublicationStatePublished); have != want {
+		t.Fatalf("changeset has wrong publication state. want=%q, have=%q", want, have)
+	}
+
+	if have, want := res.Node.ReconcilerState, string(campaigns.ReconcilerStateCompleted); have != want {
+		t.Fatalf("changeset has wrong reconciler state. want=%q, have=%q", want, have)
+	}
+
 	if have, want := res.Node.ExternalState, string(campaigns.ChangesetExternalStateOpen); have != want {
-		t.Fatalf("changeset has wrong state. want=%q, have=%q", want, have)
+		t.Fatalf("changeset has wrong external state. want=%q, have=%q", want, have)
 	}
 
 	if have, want := res.Node.Campaigns.TotalCount, 1; have != want {
@@ -775,6 +783,8 @@ query {
     ... on HiddenExternalChangeset {
       id
 
+	  publicationState
+	  reconcilerState
 	  externalState
 	  createdAt
 	  updatedAt
@@ -786,6 +796,8 @@ query {
     ... on ExternalChangeset {
       id
 
+	  publicationState
+	  reconcilerState
 	  externalState
 	  createdAt
 	  updatedAt

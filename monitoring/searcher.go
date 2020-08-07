@@ -1,7 +1,5 @@
 package main
 
-import "time"
-
 func Searcher() *Container {
 	return &Container{
 		Name:        "searcher",
@@ -23,10 +21,11 @@ func Searcher() *Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "error_ratio",
-							Description:       "error ratio over 10m",
-							Query:             `searcher_errors:ratio10m`,
-							Warning:           Alert{GreaterOrEqual: 0.1, For: 20 * time.Minute},
+							Name:              "replica_traffic",
+							Description:       "requests per second over 10m",
+							Query:             "sum by(instance) (rate(searcher_service_request_total[10m]))",
+							Warning:           Alert{GreaterOrEqual: 5},
+							PanelOptions:      PanelOptions().LegendFormat("{{instance}}"),
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},

@@ -119,6 +119,7 @@ const (
 	SQUOTE keyword = "'"
 	DQUOTE keyword = "\""
 	SLASH  keyword = "/"
+	NOT    keyword = "not"
 )
 
 func isSpace(buf []byte) bool {
@@ -236,6 +237,22 @@ func (p *parser) matchKeyword(keyword keyword) bool {
 	return strings.EqualFold(v, string(keyword))
 }
 
+// matchUnaryKeyword is like match but expects the keyword to be followed by whitespace.
+func (p *parser) matchUnaryKeyword(keyword keyword) bool {
+	if p.pos != 0 && !isSpace(p.buf[p.pos-1:p.pos]) {
+		return false
+	}
+	v, err := p.peek(len(string(keyword)))
+	if err != nil {
+		return false
+	}
+	after := p.pos + len(string(keyword))
+	if after >= len(p.buf) || !isSpace(p.buf[after:after+1]) {
+		return false
+	}
+	return strings.EqualFold(v, string(keyword))
+}
+
 // skipSpaces advances the input and places the parser position at the next
 // non-space value.
 func (p *parser) skipSpaces() error {
@@ -248,6 +265,39 @@ func (p *parser) skipSpaces() error {
 		return io.ErrShortBuffer
 	}
 	return nil
+}
+
+// parseNegatedLeafNode parses `NOT field:value` or `NOT pattern` and
+// translates it to `-field:value` or as negated pattern respectively.
+func (p *parser) parseNegatedLeafNode() (Node, error) {
+	start := p.pos
+	_ = p.expect(NOT)
+
+	err := p.skipSpaces()
+	if err != nil {
+		return Parameter{}, err
+	}
+
+	// try parsing as parameter. If it doesn't work we treat NOT's operand
+	// as pattern.
+	parameter, ok, err := p.ParseParameter()
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		pattern := p.ParsePattern()
+		pattern.Negated = true
+		pattern.Annotation.Range = newRange(start, p.pos)
+		return pattern, nil
+	}
+	// we don't support NOT -field:value
+	if parameter.Negated {
+		return nil, fmt.Errorf("Unexpected NOT before \"-%s:%s\". Remove NOT and try again.",
+			parameter.Field, parameter.Value)
+	}
+	parameter.Negated = true
+	parameter.Annotation.Range = newRange(start, p.pos)
+	return parameter, nil
 }
 
 // ScanDelimited takes a delimited (e.g., quoted) value for some arbitrary
@@ -685,6 +735,12 @@ loop:
 		case p.matchKeyword(AND), p.matchKeyword(OR):
 			// Caller advances.
 			break loop
+		case p.matchUnaryKeyword(NOT):
+			parameter, err := p.parseNegatedLeafNode()
+			if err != nil {
+				return nil, err
+			}
+			nodes = append(nodes, parameter)
 		default:
 			parameter, ok, err := p.ParseParameter()
 			if err != nil {
@@ -898,8 +954,15 @@ func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 		return nil, err
 	}
 
+	query = Map(query, LowercaseFieldNames, SubstituteAliases)
+
 	switch options.SearchType {
-	case SearchTypeLiteral, SearchTypeStructural:
+	case SearchTypeLiteral:
+		query = substituteConcat(query, " ")
+	case SearchTypeStructural:
+		if containsNegatedPattern(query) {
+			return nil, errors.New("The query contains a negated search pattern. Structural search does not support negated search patterns at the moment.")
+		}
 		query = substituteConcat(query, " ")
 	case SearchTypeRegex:
 		query = EmptyGroupsToLiteral(query)
@@ -912,7 +975,6 @@ func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 		}
 	}
 
-	query = Map(query, LowercaseFieldNames, SubstituteAliases)
 	err = validate(query)
 	if err != nil {
 		return nil, err
