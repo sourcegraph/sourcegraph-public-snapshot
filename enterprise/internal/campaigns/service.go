@@ -711,9 +711,9 @@ func (s *Service) MoveCampaign(ctx context.Context, opts MoveCampaignOpts) (camp
 var ErrEnsureCampaignFailed = errors.New("a campaign in the given namespace and with the given name exists but does not match the given ID")
 
 // ErrCloseProcessingCampaign is returned by CloseCampaign if the Campaign has
-// been published at the time of closing but its ChangesetJobs have not
-// finished execution.
-var ErrCloseProcessingCampaign = errors.New("cannot close a Campaign while changesets are being created on codehosts")
+// been published at the time of closing but its Changesets are still being
+// processed by the reconciler.
+var ErrCloseProcessingCampaign = errors.New("cannot close a campaign while changesets are being processed")
 
 // CloseCampaign closes the Campaign with the given ID if it has not been closed yet.
 func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets bool) (campaign *campaigns.Campaign, err error) {
@@ -740,11 +740,20 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 			return err
 		}
 
-		// TODO: Implement logic to find changesets in PUBLISHING state.
-		processing := false
-		if processing {
-			err = ErrCloseProcessingCampaign
-			return err
+		if closeChangesets {
+			processingState := campaigns.ReconcilerStateProcessing
+			countOpts := CountChangesetsOpts{
+				CampaignID:      campaign.ID,
+				ReconcilerState: &processingState,
+			}
+			processingCount, err := tx.CountChangesets(ctx, countOpts)
+			if err != nil {
+				return errors.Wrap(err, "checking for processing changesets")
+			}
+			if processingCount != 0 {
+				err = ErrCloseProcessingCampaign
+				return err
+			}
 		}
 
 		if !campaign.ClosedAt.IsZero() {
@@ -765,9 +774,11 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 		go func() {
 			ctx := trace.ContextWithTrace(context.Background(), tr)
 
+			open := campaigns.ChangesetExternalStateOpen
 			cs, _, err := s.store.ListChangesets(ctx, ListChangesetsOpts{
-				CampaignID: campaign.ID,
-				Limit:      -1,
+				CampaignID:    campaign.ID,
+				ExternalState: &open,
+				Limit:         -1,
 			})
 			if err != nil {
 				log15.Error("ListChangesets", "err", err)
@@ -785,14 +796,8 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 	return campaign, nil
 }
 
-// ErrDeleteProcessingCampaign is returned by DeleteCampaign if the Campaign
-// has been published at the time of deletion but its ChangesetJobs have not
-// finished execution.
-var ErrDeleteProcessingCampaign = errors.New("cannot delete a Campaign while changesets are being created on codehosts")
-
 // DeleteCampaign deletes the Campaign with the given ID if it hasn't been
-// deleted yet. If closeChangesets is true, the changesets associated with the
-// Campaign will be closed on the codehosts.
+// deleted yet.
 func (s *Service) DeleteCampaign(ctx context.Context, id int64) (err error) {
 	traceTitle := fmt.Sprintf("campaign: %d", id)
 	tr, ctx := trace.New(ctx, "service.DeleteCampaign", traceTitle)
@@ -810,23 +815,7 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64) (err error) {
 		return err
 	}
 
-	transaction := func() (err error) {
-		tx, err := s.store.Transact(ctx)
-		if err != nil {
-			return err
-		}
-		defer func() { err = tx.Done(err) }()
-
-		// TODO: Implement logic to find changesets in PUBLISHING state.
-		processing := false
-		if processing {
-			return ErrDeleteProcessingCampaign
-		}
-
-		return tx.DeleteCampaign(ctx, id)
-	}
-
-	return transaction()
+	return s.store.DeleteCampaign(ctx, id)
 }
 
 // CloseOpenChangesets closes the given Changesets on their respective codehosts and syncs them.

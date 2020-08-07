@@ -185,6 +185,7 @@ type CountChangesetsOpts struct {
 	ExternalState       *campaigns.ChangesetExternalState
 	ExternalReviewState *campaigns.ChangesetReviewState
 	ExternalCheckState  *campaigns.ChangesetCheckState
+	ReconcilerState     *campaigns.ReconcilerState
 }
 
 // CountChangesets returns the number of changesets in the database.
@@ -216,6 +217,11 @@ func countChangesetsQuery(opts *CountChangesetsOpts) *sqlf.Query {
 	}
 	if opts.ExternalCheckState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.external_check_state = %s", *opts.ExternalCheckState))
+	}
+
+	if opts.ReconcilerState != nil {
+		state := (*opts.ReconcilerState).ToDB()
+		preds = append(preds, sqlf.Sprintf("changesets.reconciler_state = %s", state))
 	}
 
 	return sqlf.Sprintf(countChangesetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
