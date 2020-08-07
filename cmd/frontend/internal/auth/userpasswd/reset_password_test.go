@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
-func TestHandleResetPasswordEmail(t *testing.T) {
+func TestHandleSetPasswordEmail(t *testing.T) {
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 	_, ctx = ot.StartSpanFromContext(ctx, "dummy")
@@ -37,7 +37,7 @@ func TestHandleResetPasswordEmail(t *testing.T) {
 
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
-			got, err := HandleResetPasswordEmail(tst.ctx, tst.id)
+			got, err := HandleSetPasswordEmail(tst.ctx, tst.id)
 			if got != tst.wantOut {
 				t.Fatalf("input %q got %q want %q", tst.id, got, tst.wantOut)
 			}

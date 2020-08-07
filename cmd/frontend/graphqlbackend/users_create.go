@@ -63,7 +63,7 @@ func (r *createUserResult) ResetPasswordURL(ctx context.Context) (*string, error
 	}
 
 	// Try sending the user an email. This function handles checking for email being enabled
-	ru, err := userpasswd.HandleResetPasswordEmail(ctx, r.user.ID)
+	ru, err := userpasswd.HandleSetPasswordEmail(ctx, r.user.ID)
 
 	if err != nil {
 		// If we failed to send an email for any reason, then just generate a fresh password reset URL

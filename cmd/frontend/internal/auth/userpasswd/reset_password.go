@@ -78,9 +78,27 @@ func HandleResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+var setPasswordEmailTemplates = txemail.MustValidate(txtypes.Templates{
+	Subject: `Set your Sourcegraph password`,
+	Text: `
+Your administrator created an account for you on Sourcegraph.
+
+To set the password for {{.Username}} on Sourcegraph, follow this link:
+
+  {{.URL}}
+`,
+	HTML: `
+<p>
+  Your administrator created an account for you on Sourcegraph.
+</p>
+
+<p><strong><a href="{{.URL}}">Set password for {{.Username}}</a></strong></p>
+`,
+})
+
 // If the instance is configured to do so, send the password reset link directly
 // to the user, rather than requiring the admin to send it to them
-func HandleResetPasswordEmail(ctx context.Context, id int32) (string, error) {
+func HandleSetPasswordEmail(ctx context.Context, id int32) (string, error) {
 	ru, err := backend.MakePasswordResetURL(ctx, id)
 	if err == db.ErrPasswordResetRateLimit {
 		return "", errors.New("too many password reset requests. try again in a few minutes")
@@ -106,7 +124,7 @@ func HandleResetPasswordEmail(ctx context.Context, id int32) (string, error) {
 
 	if err := txemail.Send(ctx, txemail.Message{
 		To:       []string{e},
-		Template: resetPasswordEmailTemplates,
+		Template: setPasswordEmailTemplates,
 		Data: struct {
 			Username string
 			URL      string
