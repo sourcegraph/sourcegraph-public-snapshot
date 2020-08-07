@@ -16,22 +16,26 @@
   resolved "https://registry.npmjs.org/@ardatan/aggregate-error/-/aggregate-error-0.0.1.tgz#1403ac5de10d8ca689fc1f65844c27179ae1d44f"
   integrity sha512-UQ9BequOTIavs0pTHLMwQwKQF8tTV1oezY/H2O9chA+JNPFZSua55xpU5dPSjAU9/jLJ1VwU+HJuTVN8u7S6Fg==
 
-"@atlassian/aui@^7.10.1":
-  version "7.10.1"
-  resolved "https://registry.npmjs.org/@atlassian/aui/-/aui-7.10.1.tgz#21fae26d599ffc7d4e35d4f603e5747a5ac913ce"
-  integrity sha512-KNCaQA40mdH22/yzk0JQ78j7Z0OCx5t0q1S/JJay6o+gDmbpizAaZAxzDdoptzvMsV2BjddehzJPYg5wcmIgJQ==
+"@atlassian/aui@^9.0.0":
+  version "9.0.0"
+  resolved "https://registry.npmjs.org/@atlassian/aui/-/aui-9.0.0.tgz#88c1c59a5282696ae5254bb13ec987938f35172d"
+  integrity sha512-piAt9ecYSfoypIoUr8JLmOnEH1XBWVXkYseNxkh7rY9hO0GSw3kpzpk7bh6TQZjEpWATDTRKv+2ej2whQm8dMg==
   dependencies:
-    backbone "1.1.2"
-    clipboard-js "0.2.0"
+    "@atlassian/tipsy" "^1.3.1"
+    backbone "^1.3.3"
     css.escape "1.5.0"
-    fancy-file-input "2.0.3"
-    object-assign "4.0.1"
+    fancy-file-input "~2.0.4"
+    jquery-ui "^1.12.1"
+    popper.js "^1.14.5"
     skatejs "0.13.17"
     skatejs-template-html "0.0.0"
-    tether atlassian/tether#amd-with-global
     trim-extra-html-whitespace "1.3.0"
-    underscore "1.6.0"
-    webcomponents.js "0.7.20"
+    underscore "^1.10.2"
+
+"@atlassian/tipsy@^1.3.1":
+  version "1.3.2"
+  resolved "https://registry.npmjs.org/@atlassian/tipsy/-/tipsy-1.3.2.tgz#ab759d461670d712425b2dac7573b79575a10502"
+  integrity sha512-H7qWMs66bztELt2QpOCLYDU9ZM3VZfE0knbRHHLBukH7v9dMkIS5ZwqcGREjWnVt0KNETaBeXxj0FD88TEOGVw==
 
 "@babel/code-frame@7.0.0":
   version "7.0.0"
@@ -6029,12 +6033,12 @@ bach@^1.0.0:
     async-settle "^1.0.0"
     now-and-later "^2.0.0"
 
-backbone@1.1.2:
-  version "1.1.2"
-  resolved "https://registry.npmjs.org/backbone/-/backbone-1.1.2.tgz#c2c04c66bf87268fb82c177acebeff7d37ba6f2d"
-  integrity sha1-wsBMZr+HJo+4LBd6zr7/fTe6by0=
+backbone@^1.3.3:
+  version "1.4.0"
+  resolved "https://registry.npmjs.org/backbone/-/backbone-1.4.0.tgz#54db4de9df7c3811c3f032f34749a4cd27f3bd12"
+  integrity sha512-RLmDrRXkVdouTg38jcgHhyQ/2zjg7a8E6sz2zxfz21Hh17xDJYUHBZimVIt5fUyS8vbfpeSmTL3gUjTEvUV3qQ==
   dependencies:
-    underscore ">=1.5.0"
+    underscore ">=1.8.3"
 
 backo2@1.0.2, backo2@^1.0.2:
   version "1.0.2"
@@ -7285,11 +7289,6 @@ cli-width@^3.0.0:
   version "3.0.0"
   resolved "https://registry.npmjs.org/cli-width/-/cli-width-3.0.0.tgz#a2f48437a2caa9a22436e794bf071ec9e61cedf6"
   integrity sha512-FxqpkPPwu1HjuN93Omfm4h8uIanXofW0RxVEW3k5RKx+mJJYSthzNhp32Kzxxy3YAEZ/Dc/EWN1vZRY0+kOhbw==
-
-clipboard-js@0.2.0:
-  version "0.2.0"
-  resolved "https://registry.npmjs.org/clipboard-js/-/clipboard-js-0.2.0.tgz#ba1a6092ccbce43ccc9817407737692e432f409b"
-  integrity sha1-uhpgksy85DzMmBdAdzdpLkMvQJs=
 
 clipboard@^2.0.0:
   version "2.0.4"
@@ -10295,10 +10294,10 @@ fake-tag@^2.0.0:
   resolved "https://registry.npmjs.org/fake-tag/-/fake-tag-2.0.0.tgz#08ea5df950ef8635833186247f569e8406ffb4da"
   integrity sha512-QDz+8qiNQ9AfBZ31EXlID5JIbUkU3e1nXDWk4tidFzd2gy8XJaEUW1HCuDY6DUy6t2Y0nvhD6PsUc+2WYy5w0w==
 
-fancy-file-input@2.0.3:
-  version "2.0.3"
-  resolved "https://registry.npmjs.org/fancy-file-input/-/fancy-file-input-2.0.3.tgz#4b2d6a6313b8a62127e52a548a8d6995f46446ce"
-  integrity sha512-9StOIYtZWoGGWG/OAuI3PmFDNI+TRiTb7nYyglQL2OZPbmp2lw0/qwIEoRD3s5YtNyf078oDTY4xIIDQzk/pdA==
+fancy-file-input@~2.0.4:
+  version "2.0.4"
+  resolved "https://registry.npmjs.org/fancy-file-input/-/fancy-file-input-2.0.4.tgz#698c216482e07649a827681c4db3054fddc9a32b"
+  integrity sha512-l+J0WwDl4nM/zMJ/C8qleYnXMUJKsLng7c5uWH/miAiHoTvPDtEoLW1tmVO6Cy2O8i/1VfA+2YOwg/Q3+kgO6w==
 
 fancy-log@^1.3.2, fancy-log@^1.3.3:
   version "1.3.3"
@@ -13867,6 +13866,11 @@ jetpack-id@1.0.0:
   resolved "https://registry.npmjs.org/jetpack-id/-/jetpack-id-1.0.0.tgz#2cf9fbae46d8074fc16b7de0071c8efebca473a6"
   integrity sha1-LPn7rkbYB0/Ba33gBxyO/rykc6Y=
 
+jquery-ui@^1.12.1:
+  version "1.12.1"
+  resolved "https://registry.npmjs.org/jquery-ui/-/jquery-ui-1.12.1.tgz#bcb4045c8dd0539c134bc1488cdd3e768a7a9e51"
+  integrity sha1-vLQEXI3QU5wTS8FIjN0+dop6nlE=
+
 js-select@~0.6.0:
   version "0.6.0"
   resolved "https://registry.npmjs.org/js-select/-/js-select-0.6.0.tgz#c284e22824d5927aec962dcdf247174aefb0d190"
@@ -16567,11 +16571,6 @@ oauth-sign@~0.9.0:
   resolved "https://registry.npmjs.org/oauth-sign/-/oauth-sign-0.9.0.tgz#47a7b016baa68b5fa0ecf3dee08a85c679ac6455"
   integrity sha512-fexhUFFPTGV8ybAtSIGbV6gOkSv8UtRbDBnAyLQw4QPKkgNlsH2ByPGtMUqdWkos6YCRmAqViwgZrJc/mRDzZQ==
 
-object-assign@4.0.1:
-  version "4.0.1"
-  resolved "https://registry.npmjs.org/object-assign/-/object-assign-4.0.1.tgz#99504456c3598b5cad4fc59c26e8a9bb107fe0bd"
-  integrity sha1-mVBEVsNZi1ytT8WcJuipuxB/4L0=
-
 object-assign@^4, object-assign@^4.0.1, object-assign@^4.1.0, object-assign@^4.1.1:
   version "4.1.1"
   resolved "https://registry.npmjs.org/object-assign/-/object-assign-4.1.1.tgz#2109adc7965887cfc05cbbd442cac8bfbb360863"
@@ -17590,10 +17589,10 @@ polished@^3.3.1:
   dependencies:
     "@babel/runtime" "^7.4.4"
 
-popper.js@^1.14.1, popper.js@^1.14.4, popper.js@^1.14.7:
-  version "1.15.0"
-  resolved "https://registry.npmjs.org/popper.js/-/popper.js-1.15.0.tgz#5560b99bbad7647e9faa475c6b8056621f5a4ff2"
-  integrity sha512-w010cY1oCUmI+9KwwlWki+r5jxKfTFDVoadl7MSrIujHU5MJ5OR6HTDj6Xo8aoR/QsA56x8jKjA59qGH4ELtrA==
+popper.js@^1.14.1, popper.js@^1.14.4, popper.js@^1.14.5, popper.js@^1.14.7:
+  version "1.16.1"
+  resolved "https://registry.npmjs.org/popper.js/-/popper.js-1.16.1.tgz#2a223cb3dc7b6213d740e40372be40de43e65b1b"
+  integrity sha512-Wb4p1J4zyFTbM+u6WuO4XstYx4Ky9Cewe4DWrel7B0w6VVICvPwdOpotjzcf6eD8TsckVnIMNONQyPIUFOUbCQ==
 
 portfinder@^1.0.26:
   version "1.0.26"
@@ -21894,10 +21893,6 @@ test-exclude@^6.0.0:
     glob "^7.1.4"
     minimatch "^3.0.4"
 
-tether@atlassian/tether#amd-with-global:
-  version "0.6.5"
-  resolved "https://codeload.github.com/atlassian/tether/tar.gz/bf85430889b5231fbe5b383416cce6281225bf06"
-
 text-table@0.2.0, text-table@^0.2.0, text-table@~0.2.0:
   version "0.2.0"
   resolved "https://registry.npmjs.org/text-table/-/text-table-0.2.0.tgz#7f5ee823ae805207c00af2df4a84ec3fcfa570b4"
@@ -22455,10 +22450,10 @@ unc-path-regex@^0.1.2:
   resolved "https://registry.npmjs.org/unc-path-regex/-/unc-path-regex-0.1.2.tgz#e73dd3d7b0d7c5ed86fbac6b0ae7d8c6a69d50fa"
   integrity sha1-5z3T17DXxe2G+6xrCufYxqadUPo=
 
-underscore@1.6.0, underscore@>=1.5.0:
-  version "1.6.0"
-  resolved "https://registry.npmjs.org/underscore/-/underscore-1.6.0.tgz#8b38b10cacdef63337b8b24e4ff86d45aea529a8"
-  integrity sha1-izixDKze9jM3uLJOT/htRa6lKag=
+underscore@>=1.8.3, underscore@^1.10.2:
+  version "1.10.2"
+  resolved "https://registry.npmjs.org/underscore/-/underscore-1.10.2.tgz#73d6aa3668f3188e4adb0f1943bd12cfd7efaaaf"
+  integrity sha512-N4P+Q/BuyuEKFJ43B9gYuOj4TQUHXX+j2FqguVOpjkssLUUrnJofCcBccJSCoeturDoZU6GorDTHSvUDlSQbTg==
 
 undertaker-registry@^1.0.0:
   version "1.0.1"
@@ -23210,11 +23205,6 @@ web-namespaces@^1.1.2:
   version "1.1.2"
   resolved "https://registry.npmjs.org/web-namespaces/-/web-namespaces-1.1.2.tgz#c8dc267ab639505276bae19e129dbd6ae72b22b4"
   integrity sha512-II+n2ms4mPxK+RnIxRPOw3zwF2jRscdJIUE9BfkKHm4FYEg9+biIoTMnaZF5MpemE3T+VhMLrhbyD4ilkPCSbg==
-
-webcomponents.js@0.7.20:
-  version "0.7.20"
-  resolved "https://registry.npmjs.org/webcomponents.js/-/webcomponents.js-0.7.20.tgz#36727218fbf59433ae10139e59eaf3cfdddc11c5"
-  integrity sha1-NnJyGPv1lDOuEBOeWerzz93cEcU=
 
 webext-additional-permissions@^1.0.0:
   version "1.0.0"
