@@ -572,12 +572,17 @@ func TestReporevToRegex(t *testing.T) {
 		{
 			name: "many @",
 			arg:  "foo@bar@bas",
-			want: "^foo$@bar@bas",
+			want: "^.*?foo.*?$@bar@bas",
 		},
 		{
 			name: "just @",
 			arg:  "@",
 			want: "@",
+		},
+		{
+			name: "fuzzy repo",
+			arg:  "sourcegraph",
+			want: "^.*?sourcegraph.*?$",
 		},
 	}
 	for _, tt := range tests {
@@ -611,6 +616,130 @@ func TestFuzzifyRegexPatterns(t *testing.T) {
 			got := prettyPrint(FuzzifyRegexPatterns(query))
 			if got != tt.want {
 				t.Fatalf("got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestContainsNoGlobSyntax(t *testing.T) {
+	tests := []struct {
+		in   string
+		want bool
+	}{
+		{
+			in:   "foo",
+			want: true,
+		},
+		{
+			in:   "foo.bar",
+			want: true,
+		},
+		{
+			in:   "/foo.bar",
+			want: false,
+		},
+		{
+			in:   "path/to/file/foo.bar",
+			want: false,
+		},
+		{
+			in:   "github.com/org/repo",
+			want: false,
+		},
+		{
+			in:   "foo**",
+			want: false,
+		},
+		{
+			in:   "**foo",
+			want: false,
+		},
+		{
+			in:   "**foo**",
+			want: false,
+		},
+		{
+			in:   "*foo*",
+			want: false,
+		},
+		{
+			in:   "foo?",
+			want: false,
+		},
+		{
+			in:   "fo?o",
+			want: false,
+		},
+		{
+			in:   "fo[o]bar",
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.in, func(t *testing.T) {
+			if got := ContainsNoGlobSyntax(tt.in); got != tt.want {
+				t.Errorf("ContainsNoGlobSyntax() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestFuzzifyGlobPattern(t *testing.T) {
+	tests := []struct {
+		in   string
+		want string
+	}{
+		{
+			in:   "foo",
+			want: "**foo**",
+		},
+		{
+			in:   "",
+			want: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.in, func(t *testing.T) {
+			if got := fuzzifyGlobPattern(tt.in); got != tt.want {
+				t.Errorf("fuzzifyGlobPattern() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestMapGlobToRegex(t *testing.T) {
+	cases := []struct {
+		input string
+		want  string
+	}{
+		{
+			input: "repo:sourcegraph",
+			want:  `"repo:^.*?sourcegraph.*?$"`,
+		},
+		{
+			input: "repo:**sourcegraph",
+			want:  `"repo:^.*?sourcegraph$"`,
+		},
+		{
+			input: "file:**foo.bar",
+			want:  `"file:^.*?foo\\.bar$"`,
+		},
+		{
+			input: "file:afile file:bfile file:**cfile",
+			want:  `(and "file:^.*?afile.*?$" "file:^.*?bfile.*?$" "file:^.*?cfile$")`,
+		},
+		{
+			input: "file:afile file:dir1/bfile",
+			want:  `(and "file:^.*?afile.*?$" "file:^dir1/bfile$")`,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.input, func(t *testing.T) {
+			query, _ := ParseAndOr(c.input, SearchTypeRegex)
+			regexQuery, _ := mapGlobToRegex(query)
+			got := prettyPrint(regexQuery)
+			if diff := cmp.Diff(c.want, got); diff != "" {
+				t.Fatal(diff)
 			}
 		})
 	}

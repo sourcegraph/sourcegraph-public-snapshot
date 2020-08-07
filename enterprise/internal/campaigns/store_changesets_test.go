@@ -148,7 +148,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		// before it enters the database and uppercase it when it leaves the
 		// DB.
 		//
-		// If workerutils.Worker supports custom mappings for the state-machine
+		// If workerutil.Worker supports custom mappings for the state-machine
 		// states, we can remove this.
 
 		// This test ensures that the database representation is lowercase.

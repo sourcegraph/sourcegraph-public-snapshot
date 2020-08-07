@@ -33,7 +33,8 @@ describe('CampaignChangesets', () => {
                             ],
                         })
                     }
-                    campaign={{ id: '123', closedAt: null, viewerCanAdminister: true }}
+                    campaignID="123"
+                    viewerCanAdminister={true}
                     history={history}
                     location={history.location}
                     isLightTheme={true}

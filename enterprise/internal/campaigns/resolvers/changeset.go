@@ -20,171 +20,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
-
-type changesetsConnectionStatsResolver struct {
-	unpublished, open, merged, closed, total int32
-}
-
-func (r *changesetsConnectionStatsResolver) Unpublished() int32 {
-	return r.unpublished
-}
-func (r *changesetsConnectionStatsResolver) Open() int32 {
-	return r.open
-}
-func (r *changesetsConnectionStatsResolver) Merged() int32 {
-	return r.merged
-}
-func (r *changesetsConnectionStatsResolver) Closed() int32 {
-	return r.closed
-}
-func (r *changesetsConnectionStatsResolver) Total() int32 {
-	return r.total
-}
-
-type changesetsConnectionResolver struct {
-	store       *ee.Store
-	httpFactory *httpcli.Factory
-
-	opts ee.ListChangesetsOpts
-	// 🚨 SECURITY: If the given opts do not reveal hidden information about a
-	// changeset by including the changeset in the result set, this should be
-	// set to true.
-	optsSafe bool
-
-	// cache results because they are used by multiple fields
-	once           sync.Once
-	changesets     []*campaigns.Changeset
-	scheduledSyncs map[int64]time.Time
-	reposByID      map[api.RepoID]*types.Repo
-	next           int64
-	err            error
-}
-
-func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetResolver, error) {
-	changesets, reposByID, _, err := r.compute(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	resolvers := make([]graphqlbackend.ChangesetResolver, 0, len(changesets))
-	for _, c := range changesets {
-		nextSyncAt, isPreloaded := r.scheduledSyncs[c.ID]
-		var preloadedNextSyncAt *time.Time
-		if isPreloaded {
-			preloadedNextSyncAt = &nextSyncAt
-		}
-
-		repo, repoFound := reposByID[c.RepoID]
-		// If it's not in reposByID the repository was filtered out by the
-		// authz-filter. In that case we want to return a changesetResolver
-		// that doesn't reveal all information.
-		// But if the filter opts would leak information about the hidden
-		// changesets, we skip the hidden changeset.
-		if !repoFound && !r.optsSafe {
-			continue
-		}
-
-		resolvers = append(resolvers, &changesetResolver{
-			store:                r.store,
-			httpFactory:          r.httpFactory,
-			changeset:            c,
-			preloadedRepo:        repo,
-			attemptedPreloadRepo: true,
-			preloadedNextSyncAt:  preloadedNextSyncAt,
-		})
-	}
-
-	return resolvers, nil
-}
-
-func (r *changesetsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := r.opts
-	opts.Limit = -1
-
-	cs, _, err := r.store.ListChangesets(ctx, opts)
-	if err != nil {
-		return 0, err
-	}
-
-	// 🚨 SECURITY: If the opts do not leak information, we can return the
-	// number of changesets. Otherwise we have to filter the changesets by
-	// accessible repos.
-	if r.optsSafe {
-		return int32(len(cs)), nil
-	}
-
-	// 🚨 SECURITY: db.Repos.GetByIDs uses the authzFilter under the hood and
-	// filters out repositories that the user doesn't have access to.
-	rs, err := db.Repos.GetByIDs(ctx, cs.RepoIDs()...)
-	if err != nil {
-		return 0, err
-	}
-
-	return int32(len(rs)), err
-}
-
-func (r *changesetsConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	_, _, next, err := r.compute(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return graphqlutil.HasNextPage(next != 0), nil
-}
-
-func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*campaigns.Changeset, map[api.RepoID]*types.Repo, int64, error) {
-	r.once.Do(func() {
-		r.changesets, r.next, r.err = r.store.ListChangesets(ctx, r.opts)
-		if r.err != nil {
-			return
-		}
-
-		changesetIDs := make([]int64, len(r.changesets))
-		for i, c := range r.changesets {
-			changesetIDs[i] = c.ID
-		}
-
-		syncData, err := r.store.ListChangesetSyncData(ctx, ee.ListChangesetSyncDataOpts{ChangesetIDs: changesetIDs})
-		if err != nil {
-			r.err = err
-			return
-		}
-		r.scheduledSyncs = make(map[int64]time.Time)
-		for _, d := range syncData {
-			r.scheduledSyncs[d.ChangesetID] = ee.NextSync(time.Now, d)
-		}
-
-		repoIDs := make([]api.RepoID, len(r.changesets))
-		for i, c := range r.changesets {
-			repoIDs[i] = c.RepoID
-		}
-
-		// 🚨 SECURITY: db.Repos.GetByIDs uses the authzFilter under the hood and
-		// filters out repositories that the user doesn't have access to.
-		rs, err := db.Repos.GetByIDs(ctx, repoIDs...)
-		if err != nil {
-			r.err = err
-			return
-		}
-
-		r.reposByID = make(map[api.RepoID]*types.Repo, len(rs))
-		for _, repo := range rs {
-			r.reposByID[repo.ID] = repo
-		}
-	})
-
-	return r.changesets, r.reposByID, r.next, r.err
-}
-
-func (r *changesetsConnectionResolver) Stats(ctx context.Context) (graphqlbackend.ChangesetsConnectionStatsResolver, error) {
-	// TODO: Implement.
-	return &changesetsConnectionStatsResolver{}, nil
-}
 
 type changesetResolver struct {
 	store       *ee.Store
@@ -210,11 +49,17 @@ type changesetResolver struct {
 	events     ee.ChangesetEvents
 	eventsErr  error
 
+	attemptedPreloadNextSyncAt bool
 	// When the next sync is scheduled
 	preloadedNextSyncAt *time.Time
 	nextSyncAtOnce      sync.Once
 	nextSyncAt          time.Time
 	nextSyncAtErr       error
+
+	// cache the current ChangesetSpec as it's accessed by multiple methods
+	specOnce sync.Once
+	spec     *campaigns.ChangesetSpec
+	specErr  error
 }
 
 const changesetIDKind = "Changeset"
@@ -286,6 +131,18 @@ func (r *changesetResolver) computeRepo() (*graphqlbackend.RepositoryResolver, e
 	return r.repo, r.repoErr
 }
 
+func (r *changesetResolver) computeSpec(ctx context.Context) (*campaigns.ChangesetSpec, error) {
+	r.specOnce.Do(func() {
+		if r.changeset.CurrentSpecID == 0 {
+			r.specErr = errors.New("Changeset has no ChangesetSpec")
+			return
+		}
+
+		r.spec, r.specErr = r.store.GetChangesetSpecByID(ctx, r.changeset.CurrentSpecID)
+	})
+	return r.spec, r.specErr
+}
+
 func (r *changesetResolver) computeEvents(ctx context.Context) ([]*campaigns.ChangesetEvent, error) {
 	r.eventsOnce.Do(func() {
 		opts := ee.ListChangesetEventsOpts{
@@ -304,22 +161,22 @@ func (r *changesetResolver) computeEvents(ctx context.Context) ([]*campaigns.Cha
 
 func (r *changesetResolver) computeNextSyncAt(ctx context.Context) (time.Time, error) {
 	r.nextSyncAtOnce.Do(func() {
-		if r.preloadedNextSyncAt != nil {
-			r.nextSyncAt = *r.preloadedNextSyncAt
-		} else {
-			syncData, err := r.store.ListChangesetSyncData(ctx, ee.ListChangesetSyncDataOpts{ChangesetIDs: []int64{r.changeset.ID}})
-			if err != nil {
-				r.nextSyncAtErr = err
+		if r.attemptedPreloadNextSyncAt {
+			if r.preloadedNextSyncAt != nil {
+				r.nextSyncAt = *r.preloadedNextSyncAt
+			}
+			return
+		}
+		syncData, err := r.store.ListChangesetSyncData(ctx, ee.ListChangesetSyncDataOpts{ChangesetIDs: []int64{r.changeset.ID}})
+		if err != nil {
+			r.nextSyncAtErr = err
+			return
+		}
+		for _, d := range syncData {
+			if d.ChangesetID == r.changeset.ID {
+				r.nextSyncAt = ee.NextSync(time.Now, d)
 				return
 			}
-			for _, d := range syncData {
-				if d.ChangesetID == r.changeset.ID {
-					r.nextSyncAt = ee.NextSync(time.Now, d)
-					return
-				}
-			}
-			// Return zero time if not found in the sync data.
-			return
 		}
 	})
 	return r.nextSyncAt, r.nextSyncAtErr
@@ -330,7 +187,7 @@ func (r *changesetResolver) ID() graphql.ID {
 }
 
 func (r *changesetResolver) ExternalID() *string {
-	if r.changeset == nil {
+	if r.changeset.PublicationState.Unpublished() {
 		return nil
 	}
 	return &r.changeset.ExternalID
@@ -388,18 +245,43 @@ func (r *changesetResolver) NextSyncAt(ctx context.Context) (*graphqlbackend.Dat
 	return &graphqlbackend.DateTime{Time: nextSyncAt}, nil
 }
 
-func (r *changesetResolver) Title() (string, error) {
-	if r.changeset == nil {
-		return "TODO: return from spec", nil
+func (r *changesetResolver) Title(ctx context.Context) (string, error) {
+	if r.changeset.PublicationState.Unpublished() {
+		desc, err := r.getBranchSpecDescription(ctx)
+		if err != nil {
+			return "", err
+		}
+
+		return desc.Title, nil
 	}
+
 	return r.changeset.Title()
 }
 
-func (r *changesetResolver) Body() (string, error) {
-	if r.changeset == nil {
-		return "TODO: return from spec", nil
+func (r *changesetResolver) Body(ctx context.Context) (string, error) {
+	if r.changeset.PublicationState.Unpublished() {
+		desc, err := r.getBranchSpecDescription(ctx)
+		if err != nil {
+			return "", err
+		}
+
+		return desc.Body, nil
 	}
+
 	return r.changeset.Body()
+}
+
+func (r *changesetResolver) getBranchSpecDescription(ctx context.Context) (*campaigns.ChangesetSpecDescription, error) {
+	spec, err := r.computeSpec(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if spec.Spec.IsImportingExisting() {
+		return nil, errors.New("ChangesetSpec imports a changeset")
+	}
+
+	return spec.Spec, nil
 }
 
 func (r *changesetResolver) PublicationState() campaigns.ChangesetPublicationState {
@@ -411,10 +293,16 @@ func (r *changesetResolver) ReconcilerState() campaigns.ReconcilerState {
 }
 
 func (r *changesetResolver) ExternalState() *campaigns.ChangesetExternalState {
+	if r.changeset.PublicationState.Unpublished() {
+		return nil
+	}
 	return &r.changeset.ExternalState
 }
 
 func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
+	if r.changeset.PublicationState.Unpublished() {
+		return nil, nil
+	}
 	url, err := r.changeset.URL()
 	if err != nil {
 		return nil, err
@@ -423,17 +311,22 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 }
 
 func (r *changesetResolver) ReviewState(ctx context.Context) *campaigns.ChangesetReviewState {
-	if r.changeset.PublicationState.Published() {
-		return &r.changeset.ExternalReviewState
+	if r.changeset.PublicationState.Unpublished() {
+		return nil
 	}
-	return nil
+	return &r.changeset.ExternalReviewState
 }
 
 func (r *changesetResolver) CheckState() *campaigns.ChangesetCheckState {
+	if r.changeset.PublicationState.Unpublished() {
+		return nil
+	}
+
 	state := r.changeset.ExternalCheckState
 	if state == campaigns.ChangesetCheckStateUnknown {
 		return nil
 	}
+
 	return &state
 }
 
@@ -478,13 +371,28 @@ func (r *changesetResolver) Events(ctx context.Context, args *struct {
 }
 
 func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.RepositoryComparisonInterface, error) {
-	// TODO: Return previewRepositoryConnection from the spec, when changeset doesn't yet exist on the codehost.
-	if r.changeset == nil {
+	if r.changeset.PublicationState.Unpublished() {
 		repo, err := r.computeRepo()
 		if err != nil {
 			return nil, err
 		}
-		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, repo, r.changeset.SyncState.BaseRefOid, "")
+
+		desc, err := r.getBranchSpecDescription(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		diff, err := desc.Diff()
+		if err != nil {
+			return nil, errors.New("ChangesetSpec has no diff")
+		}
+
+		return graphqlbackend.NewPreviewRepositoryComparisonResolver(
+			ctx,
+			repo,
+			desc.BaseRev,
+			diff,
+		)
 	}
 
 	// Only return diffs for open changesets, otherwise we can't guarantee that
@@ -537,6 +445,10 @@ func (r *changesetResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffS
 }
 
 func (r *changesetResolver) Head(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {
+	if r.changeset.PublicationState.Unpublished() {
+		return nil, nil
+	}
+
 	name, err := r.changeset.HeadRef()
 	if err != nil {
 		return nil, err
@@ -573,6 +485,10 @@ func (r *changesetResolver) Head(ctx context.Context) (*graphqlbackend.GitRefRes
 }
 
 func (r *changesetResolver) Base(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {
+	if r.changeset.PublicationState.Unpublished() {
+		return nil, nil
+	}
+
 	name, err := r.changeset.BaseRef()
 	if err != nil {
 		return nil, err
@@ -639,5 +555,8 @@ func (r *changesetLabelResolver) Color() string {
 }
 
 func (r *changesetLabelResolver) Description() *string {
+	if r.label.Description == "" {
+		return nil
+	}
 	return &r.label.Description
 }

@@ -118,7 +118,9 @@ func (s ChangesetPublicationState) Valid() bool {
 func (s ChangesetPublicationState) Published() bool { return s == ChangesetPublicationStatePublished }
 
 // Unpublished returns true if the given state is ChangesetPublicationStateUnpublished.
-func (s ChangesetPublicationState) Unpublished() bool { return s == ChangesetPublicationStatePublished }
+func (s ChangesetPublicationState) Unpublished() bool {
+	return s == ChangesetPublicationStateUnpublished
+}
 
 // ReconcilerState defines the possible states of a Reconciler.
 type ReconcilerState string
@@ -147,7 +149,7 @@ func (s ReconcilerState) Valid() bool {
 // ToDB returns the database representation of the reconciler state. That's
 // needed because we want to use UPPERCASE ReconcilerStates in the application
 // and GraphQL layer, but need to use lowercase in the database to make it work
-// with workerutils.Worker.
+// with workerutil.Worker.
 func (s ReconcilerState) ToDB() string { return strings.ToLower(string(s)) }
 
 // ChangesetExternalState defines the possible states of a Changeset on a code host.
@@ -274,7 +276,7 @@ type Changeset struct {
 
 	PublicationState ChangesetPublicationState // "unpublished", "published"
 
-	// All of the following fields are used by workerutils.Worker.
+	// All of the following fields are used by workerutil.Worker.
 	ReconcilerState ReconcilerState
 	FailureMessage  *string
 	StartedAt       time.Time
@@ -484,11 +486,15 @@ func (cs Changesets) IDs() []int64 {
 	return ids
 }
 
-// IDs returns the RepoIDs of all changesets in the slice.
+// IDs returns the unique RepoIDs of all changesets in the slice.
 func (cs Changesets) RepoIDs() []api.RepoID {
-	repoIDs := make([]api.RepoID, len(cs))
-	for i, c := range cs {
-		repoIDs[i] = c.RepoID
+	repoIDMap := make(map[api.RepoID]struct{})
+	for _, c := range cs {
+		repoIDMap[c.RepoID] = struct{}{}
+	}
+	repoIDs := make([]api.RepoID, len(repoIDMap))
+	for id := range repoIDMap {
+		repoIDs = append(repoIDs, id)
 	}
 	return repoIDs
 }

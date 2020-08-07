@@ -7,7 +7,6 @@ import (
 
 	"github.com/efritz/glock"
 	"github.com/inconshreveable/log15"
-	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -31,63 +30,6 @@ type WorkerOptions struct {
 	NumHandlers int
 	Interval    time.Duration
 	Metrics     WorkerMetrics
-}
-
-// Handler is the configurable consumer within a worker. Types that conform to this
-// interface may also optionally conform to the PreDequeuer, PreHandler, and PostHandler
-// interfaces to further configure the behavior of the worker routine.
-type Handler interface {
-	// Handle processes a single record. The store provided by this method a store backed
-	// by the transaction that is locking the given record. If use of a database is necessary
-	// within this handler, other stores should take the underlying handler to keep work
-	// within the same transaction.
-	//
-	//     func (h *handler) Handle(ctx context.Context, tx workerutil.Store, record workerutil.Record) error {
-	//         myStore := h.myStore.With(tx) // combine store handles
-	//         myRecord := record.(MyType)   // convert type of record
-	//         // do processing ...
-	//         return nil
-	//     }
-	Handle(ctx context.Context, store Store, record Record) error
-}
-
-// HandlerWithPreDequeue is an extension of the Handler interface.
-type HandlerWithPreDequeue interface {
-	Handler
-
-	// PreDequeue is called, if implemented, directly before a call to the store's Dequeue method.
-	// If this method returns false, then the current worker iteration is skipped and the next iteration
-	// will begin after waiting for the configured polling interval. Any SQL queries returned by this
-	// method will be supplied as additional conditions to the store's Dequeue method.
-	PreDequeue(ctx context.Context) (bool, []*sqlf.Query, error)
-}
-
-// HandlerWithHooks is an extension of the Handler interface.
-//
-// Example use case:
-// The processor for LSIF uploads has a maximum budget based on input size. PreHandle will subtract
-// the input size (atomically) from the budget and PostHandle will restore the input size back to the
-// budget. The PreDequeue hook is also implemented to supply additional SQL conditions that ensures no
-// record with a larger input sizes than the current budget will be dequeued by the worker process.
-type HandlerWithHooks interface {
-	Handler
-
-	// PreHandle is called, if implemented, directly before a invoking the handler with the given
-	// record. This method is invoked before starting a handler goroutine - therefore, any expensive
-	// operations in this method will block the dequeue loop from proceeding.
-	PreHandle(ctx context.Context, record Record)
-
-	// PostHandle is called, if implemented, directly after the handler for the given record has
-	// completed. This method is invoked inside the handler goroutine. Note that if PreHandle and
-	// PostHandle both operate on shared data, that they will be operating on the data from different
-	// goroutines and it is up to the caller to properly synchronize access to it.
-	PostHandle(ctx context.Context, record Record)
-}
-
-type HandlerFunc func(ctx context.Context, store Store, record Record) error
-
-func (f HandlerFunc) Handle(ctx context.Context, store Store, record Record) error {
-	return f(ctx, store, record)
 }
 
 type WorkerMetrics struct {
@@ -165,8 +107,8 @@ func (w *Worker) Stop() {
 // will bubble up.
 func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	select {
-	// If we block here we are waiting for a handler to exit so that we
-	// do not exceed our configured concurrency limit.
+	// If we block here we are waiting for a handler to exit so that we do not
+	// exceed our configured concurrency limit.
 	case <-w.handlerSemaphore:
 	case <-w.ctx.Done():
 		return false, w.ctx.Err()
@@ -181,7 +123,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 		}
 	}()
 
-	dequeueable, conditions, err := w.preDequeueHook()
+	dequeueable, extraDequeueArguments, err := w.preDequeueHook()
 	if err != nil {
 		return false, errors.Wrap(err, "Handler.PreDequeueHook")
 	}
@@ -191,7 +133,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	}
 
 	// Select a queued record to process and the transaction that holds it
-	record, tx, dequeued, err := w.store.Dequeue(w.ctx, conditions)
+	record, tx, dequeued, err := w.store.Dequeue(w.ctx, extraDequeueArguments)
 	if err != nil {
 		return false, errors.Wrap(err, "store.Dequeue")
 	}
@@ -202,7 +144,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 
 	log15.Info("Dequeued record for processing", "name", w.options.Name, "id", record.RecordID())
 
-	if hook, ok := w.options.Handler.(HandlerWithHooks); ok {
+	if hook, ok := w.options.Handler.(WithHooks); ok {
 		hook.PreHandle(w.ctx, record)
 	}
 
@@ -210,7 +152,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 
 	go func() {
 		defer func() {
-			if hook, ok := w.options.Handler.(HandlerWithHooks); ok {
+			if hook, ok := w.options.Handler.(WithHooks); ok {
 				hook.PostHandle(w.ctx, record)
 			}
 
@@ -263,8 +205,8 @@ func (w *Worker) handle(tx Store, record Record) (err error) {
 }
 
 // preDequeueHook invokes the handler's pre-dequeue hook if it exists.
-func (w *Worker) preDequeueHook() (bool, []*sqlf.Query, error) {
-	if o, ok := w.options.Handler.(HandlerWithPreDequeue); ok {
+func (w *Worker) preDequeueHook() (dequeueable bool, extraDequeueArguments interface{}, err error) {
+	if o, ok := w.options.Handler.(WithPreDequeue); ok {
 		return o.PreDequeue(w.ctx)
 	}
 

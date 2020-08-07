@@ -96,6 +96,8 @@
 // 1528395696_repo_name_index.up.sql (198B)
 // 1528395697_add_changeset_state_machine.down.sql (767B)
 // 1528395697_add_changeset_state_machine.up.sql (2.213kB)
+// 1528395698_add_sync_time_and_user_id_to_external_services.down.sql (335B)
+// 1528395698_add_sync_time_and_user_id_to_external_services.up.sql (425B)
 
 package migrations
 
@@ -2084,6 +2086,46 @@ func _1528395697_add_changeset_state_machineUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395698_add_sync_time_and_user_id_to_external_servicesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\x8f\xcd\xaa\xc2\x30\x10\x46\xf7\x79\x8a\x79\x8f\xac\xda\xde\x5c\x09\xa4\x89\xb4\x23\xe8\x6a\x08\x75\x84\x62\x2d\x25\x13\xa5\x7d\x7b\x71\xe5\x1f\x6e\x74\x7f\xbe\x73\xf8\x4a\xb3\xb2\x5e\x2b\x55\x38\x34\x0d\x60\x51\x3a\x03\x3c\x67\x4e\x63\x1c\x48\x38\x5d\xfa\x8e\x05\xfe\x9a\xb0\x86\x2a\xb8\x4d\xed\xc1\xfe\x83\xd9\xda\x16\x5b\x18\xa2\x64\x92\x65\xec\x28\x66\xfd\x95\x61\xe4\xf9\x57\x43\x3c\xb1\x4c\xb1\x63\x3a\x0b\x27\xea\xf7\x2f\x5f\xee\x64\xf0\x6e\xf7\x59\xeb\x5b\x6c\x0a\xeb\xf1\x61\xf0\xc6\xd2\x2d\x36\x3d\xd5\xe8\x70\xe4\x45\x2b\x55\x85\xba\xb6\xa8\xd5\x35\x00\x00\xff\xff\x90\xf9\xa8\xa6\x4f\x01\x00\x00")
+
+func _1528395698_add_sync_time_and_user_id_to_external_servicesDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395698_add_sync_time_and_user_id_to_external_servicesDownSql,
+		"1528395698_add_sync_time_and_user_id_to_external_services.down.sql",
+	)
+}
+
+func _1528395698_add_sync_time_and_user_id_to_external_servicesDownSql() (*asset, error) {
+	bytes, err := _1528395698_add_sync_time_and_user_id_to_external_servicesDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395698_add_sync_time_and_user_id_to_external_services.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x85, 0xaa, 0x75, 0xb7, 0x15, 0x2c, 0x4c, 0xd2, 0x52, 0x9e, 0xee, 0x7f, 0x71, 0xb0, 0x29, 0x2f, 0x3a, 0xc1, 0x4f, 0x88, 0x1b, 0x41, 0x9d, 0x6b, 0x3b, 0xf1, 0x5a, 0x5a, 0xcb, 0x39, 0xbd, 0x5c}}
+	return a, nil
+}
+
+var __1528395698_add_sync_time_and_user_id_to_external_servicesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xac\x8f\xb1\x4e\xc3\x30\x14\x45\x77\x7f\xc5\x1d\xcb\x37\x64\x72\x93\xd7\x2a\xc2\xb1\x25\xc7\x0c\x9d\x2c\x2b\x3c\xc0\xa2\x31\x51\x6c\xa0\xe5\xeb\x91\x11\x0b\x64\x61\x60\x7c\x57\x57\xe7\x9e\xb7\xa7\x63\xaf\x1b\x21\xa4\x72\x64\xe1\xe4\x5e\x11\xf8\x52\x78\x4d\xe1\xec\x33\xaf\x6f\x71\xe2\x0c\xd9\x75\x68\x8d\xba\x1b\x34\xce\x21\x17\x9f\xaf\x69\xf2\xa1\xa0\xc4\x99\x73\x09\xf3\x82\xf7\x58\x9e\xbe\x4e\x7c\xbc\x24\x6e\xfe\xce\x4b\x7c\xf9\x5f\x5e\x98\x39\x2f\x61\x62\xff\x9a\x79\xf5\xf1\x1e\x31\x15\x7e\xe4\xf5\xd7\x93\x46\xab\xd3\x96\x24\x00\x7c\xd3\xf4\xe8\xac\xec\xb5\xdb\x96\x7c\xdd\x58\x7e\x8c\xf8\x87\x67\xbe\xe2\x60\x2c\xf5\x47\x8d\x5b\x3a\x61\xb7\x11\xb9\x81\xa5\x03\x59\xd2\x2d\x8d\xa8\x59\xde\xd5\xd0\x68\x74\xa4\xc8\x11\x5a\x39\xb6\xb2\x23\x74\xb5\x66\xab\x65\x23\x44\x6b\x86\xa1\x77\x8d\xf8\x0c\x00\x00\xff\xff\xaa\x38\x2c\x54\xa9\x01\x00\x00")
+
+func _1528395698_add_sync_time_and_user_id_to_external_servicesUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395698_add_sync_time_and_user_id_to_external_servicesUpSql,
+		"1528395698_add_sync_time_and_user_id_to_external_services.up.sql",
+	)
+}
+
+func _1528395698_add_sync_time_and_user_id_to_external_servicesUpSql() (*asset, error) {
+	bytes, err := _1528395698_add_sync_time_and_user_id_to_external_servicesUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395698_add_sync_time_and_user_id_to_external_services.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x22, 0xd2, 0x42, 0xd1, 0x7, 0x87, 0x1a, 0x4a, 0x23, 0x13, 0x40, 0x2, 0x59, 0xb9, 0x3f, 0x50, 0x84, 0xbe, 0xe1, 0x33, 0x7d, 0x5e, 0x30, 0x2b, 0x71, 0xb5, 0xa, 0xbb, 0xaa, 0xec, 0xa8, 0x4d}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2271,6 +2313,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395696_repo_name_index.up.sql":                                       _1528395696_repo_name_indexUpSql,
 	"1528395697_add_changeset_state_machine.down.sql":                         _1528395697_add_changeset_state_machineDownSql,
 	"1528395697_add_changeset_state_machine.up.sql":                           _1528395697_add_changeset_state_machineUpSql,
+	"1528395698_add_sync_time_and_user_id_to_external_services.down.sql":      _1528395698_add_sync_time_and_user_id_to_external_servicesDownSql,
+	"1528395698_add_sync_time_and_user_id_to_external_services.up.sql":        _1528395698_add_sync_time_and_user_id_to_external_servicesUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2413,6 +2457,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395696_repo_name_index.up.sql":                                       {_1528395696_repo_name_indexUpSql, map[string]*bintree{}},
 	"1528395697_add_changeset_state_machine.down.sql":                         {_1528395697_add_changeset_state_machineDownSql, map[string]*bintree{}},
 	"1528395697_add_changeset_state_machine.up.sql":                           {_1528395697_add_changeset_state_machineUpSql, map[string]*bintree{}},
+	"1528395698_add_sync_time_and_user_id_to_external_services.down.sql":      {_1528395698_add_sync_time_and_user_id_to_external_servicesDownSql, map[string]*bintree{}},
+	"1528395698_add_sync_time_and_user_id_to_external_services.up.sql":        {_1528395698_add_sync_time_and_user_id_to_external_servicesUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

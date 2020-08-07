@@ -4,16 +4,12 @@ import React, { useState, useEffect, useRef, useMemo } from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
-import { UserAvatar } from '../../../user/UserAvatar'
-import { Timestamp } from '../../../components/time/Timestamp'
 import { noop, isEqual } from 'lodash'
 import { fetchCampaignById } from './backend'
 import { useError } from '../../../../../shared/src/util/useObservable'
 import * as H from 'history'
 import { CampaignBurndownChart } from './BurndownChart'
 import { Subject, of, merge } from 'rxjs'
-import { renderMarkdown } from '../../../../../shared/src/util/markdown'
-import { Markdown } from '../../../../../shared/src/components/Markdown'
 import { switchMap, distinctUntilChanged, repeatWhen, delay } from 'rxjs/operators'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { CampaignActionsBar } from './CampaignActionsBar'
@@ -23,6 +19,7 @@ import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { CampaignFields } from '../../../graphql-operations'
+import { CampaignInfoCard } from './CampaignInfoCard'
 
 interface Props extends ThemeProps, ExtensionsControllerProps, PlatformContextProps, TelemetryProps {
     /**
@@ -30,7 +27,6 @@ interface Props extends ThemeProps, ExtensionsControllerProps, PlatformContextPr
      * If not given, will display a creation form.
      */
     campaignID?: GQL.ID
-    authenticatedUser: Pick<GQL.IUser, 'id' | 'username' | 'avatarURL'>
     history: H.History
     location: H.Location
 
@@ -45,7 +41,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     campaignID,
     history,
     location,
-    authenticatedUser,
     isLightTheme,
     extensionsController,
     platformContext,
@@ -120,28 +115,18 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         return <HeroPage icon={AlertCircleIcon} title="Campaign not found" />
     }
 
-    const author = campaign ? campaign.author : authenticatedUser
-
     const totalChangesetCount = campaign.changesets.totalCount
 
     return (
         <>
             <PageTitle title={campaign.name} />
             <CampaignActionsBar campaign={campaign} />
-            <div className="card mt-2">
-                <div className="card-header">
-                    <strong>
-                        <UserAvatar user={author} className="icon-inline" /> {author.username}
-                    </strong>{' '}
-                    started <Timestamp date={campaign.createdAt} />
-                </div>
-                <div className="card-body">
-                    <Markdown
-                        dangerousInnerHTML={renderMarkdown(campaign.description || '_No description_')}
-                        history={history}
-                    />
-                </div>
-            </div>
+            <CampaignInfoCard
+                history={history}
+                author={campaign.author}
+                createdAt={campaign.createdAt}
+                description={campaign.description}
+            />
             {totalChangesetCount > 0 && (
                 <>
                     <h3 className="mt-4 mb-2">Progress</h3>
@@ -153,7 +138,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         {totalChangesetCount} {pluralize('Changeset', totalChangesetCount)}
                     </h3>
                     <CampaignChangesets
-                        campaign={campaign}
+                        campaignID={campaign.id}
+                        viewerCanAdminister={campaign.viewerCanAdminister}
                         changesetUpdates={changesetUpdates}
                         campaignUpdates={campaignUpdates}
                         history={history}

@@ -10,7 +10,9 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -113,13 +115,16 @@ func syncExternalService(ctx context.Context, svc *types.ExternalService) error 
 	defer cancel()
 
 	_, err := repoupdater.DefaultClient.SyncExternalService(ctx, api.ExternalService{
-		ID:          svc.ID,
-		Kind:        svc.Kind,
-		DisplayName: svc.DisplayName,
-		Config:      svc.Config,
-		CreatedAt:   svc.CreatedAt,
-		UpdatedAt:   svc.UpdatedAt,
-		DeletedAt:   svc.DeletedAt,
+		ID:              svc.ID,
+		Kind:            svc.Kind,
+		DisplayName:     svc.DisplayName,
+		Config:          svc.Config,
+		CreatedAt:       svc.CreatedAt,
+		UpdatedAt:       svc.UpdatedAt,
+		DeletedAt:       svc.DeletedAt,
+		LastSyncAt:      svc.LastSyncAt,
+		NextSyncAt:      svc.NextSyncAt,
+		NamespaceUserID: svc.NamespaceUserID,
 	})
 	if err != nil && ctx.Err() == nil {
 		return err
@@ -164,14 +169,41 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
-func (r *schemaResolver) ExternalServices(ctx context.Context, args *struct {
+type ExternalServicesArgs struct {
+	Namespace *graphql.ID
 	graphqlutil.ConnectionArgs
-}) (*externalServiceConnectionResolver, error) {
-	// 🚨 SECURITY: Only site admins may read external services (they have secrets).
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
+}
+
+var errMustBeSiteAdminOrSameUser = errors.New("must be site admin or the namespace is same as the authenticated user")
+
+func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalServicesArgs) (*externalServiceConnectionResolver, error) {
+	var namespaceUserID int32
+	if args.Namespace != nil {
+		var err error
+		switch relay.UnmarshalKind(*args.Namespace) {
+		case "User":
+			err = relay.UnmarshalSpec(*args.Namespace, &namespaceUserID)
+		default:
+			err = errors.Errorf("invalid namespace %q", *args.Namespace)
+		}
+
+		if err != nil {
+			return nil, err
+		}
 	}
-	var opt db.ExternalServicesListOptions
+
+	// 🚨 SECURITY: Only site admins may read all or a user's external services.
+	// Otherwise, the authenticated user can only read external services under the same namespace.
+	if backend.CheckSiteAdminOrSameUser(ctx, namespaceUserID) != nil {
+		// NOTE: We do not directly return the err here because it contains the desired username,
+		// which then allows attacker to brute force over our database ID and get corresponding
+		// username.
+		return nil, errMustBeSiteAdminOrSameUser
+	}
+
+	opt := db.ExternalServicesListOptions{
+		NamespaceUserID: namespaceUserID,
+	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &externalServiceConnectionResolver{opt: opt}, nil
 }

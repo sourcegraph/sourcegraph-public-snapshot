@@ -981,7 +981,7 @@ func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchR
 	if err != nil {
 		return nil, err
 	}
-	sortResults(result.SearchResults)
+	r.sortResults(ctx, result.SearchResults)
 	return result, nil
 }
 
@@ -1841,7 +1841,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		multiErr = nil
 	}
 
-	sortResults(results)
+	r.sortResults(ctx, results)
 
 	resultsResolver := SearchResultsResolver{
 		start:               start,
@@ -1870,31 +1870,70 @@ func isContextError(ctx context.Context, err error) bool {
 //
 // Note: Any new result types added here also need to be handled properly in search_results.go:301 (sparklines)
 type SearchResultResolver interface {
+	searchResultURIGetter
+
 	ToRepository() (*RepositoryResolver, bool)
 	ToFileMatch() (*FileMatchResolver, bool)
 	ToCommitSearchResult() (*commitSearchResultResolver, bool)
 	ToCodemodResult() (*codemodResultResolver, bool)
 
-	// SearchResultURIs returns the repo name and file uri respectiveley
-	searchResultURIs() (string, string)
 	resultCount() int32
 }
 
-// compareSearchResults checks to see if a is less than b.
-// It is implemented separately for easier testing.
-func compareSearchResults(a, b SearchResultResolver) bool {
+type searchResultURIGetter interface {
+	// SearchResultURIs returns the repo name and file uri respectively
+	searchResultURIs() (string, string)
+}
+
+// compareSearchResults sorts alphabetically unless one of the filenames is contained in exactFilePatterns,
+// in which case exact matches are sorted by length of their file path and then alphabetically.
+func compareSearchResults(a, b searchResultURIGetter, exactFilePatterns map[string]struct{}) bool {
 	arepo, afile := a.searchResultURIs()
 	brepo, bfile := b.searchResultURIs()
 
 	if arepo == brepo {
+		if len(exactFilePatterns) == 0 {
+			return afile < bfile
+		}
+		_, aMatch := exactFilePatterns[path.Base(afile)]
+		_, bMatch := exactFilePatterns[path.Base(bfile)]
+		if aMatch || bMatch {
+			if aMatch && bMatch {
+				// Prefer shorter file names (ie root files come first)
+				if len(afile) != len(bfile) {
+					return len(afile) < len(bfile)
+				}
+				return afile < bfile
+			}
+			// prefer exact match
+			return aMatch
+		}
 		return afile < bfile
 	}
-
 	return arepo < brepo
 }
 
-func sortResults(r []SearchResultResolver) {
-	sort.Slice(r, func(i, j int) bool { return compareSearchResults(r[i], r[j]) })
+func (r *searchResolver) sortResults(ctx context.Context, results []SearchResultResolver) {
+	var exactPatterns map[string]struct{}
+	if settings, err := decodedViewerFinalSettings(ctx); err != nil && getBoolPtr(settings.SearchGlobbing, false) {
+		exactPatterns = r.getExactFilePatterns()
+	}
+	sort.Slice(results, func(i, j int) bool { return compareSearchResults(results[i], results[j], exactPatterns) })
+}
+
+// getExactFilePatterns returns the set of file patterns without glob syntax.
+func (r *searchResolver) getExactFilePatterns() map[string]struct{} {
+	m := map[string]struct{}{}
+	query.VisitField(
+		r.query.(*query.AndOrQuery).Query,
+		query.FieldFile,
+		func(value string, negated bool, annotation query.Annotation) {
+			originalValue := r.originalQuery[annotation.Range.Start.Column+len(query.FieldFile)+1 : annotation.Range.End.Column]
+			if !negated && query.ContainsNoGlobSyntax(originalValue) {
+				m[originalValue] = struct{}{}
+			}
+		})
+	return m
 }
 
 // orderedFuzzyRegexp interpolate a lazy 'match everything' regexp pattern
