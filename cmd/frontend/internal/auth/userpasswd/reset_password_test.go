@@ -2,6 +2,8 @@ package userpasswd
 
 import (
 	"context"
+	"net/url"
+	"strconv"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -16,8 +18,11 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 	_, ctx = ot.StartSpanFromContext(ctx, "dummy")
 
-	backend.Mocks.MakePasswordResetURL = func(context.Context, int32) (string, error) {
-		return "t", nil
+	backend.MockMakePasswordResetURL = func(context.Context, int32) (*url.URL, error) {
+		query := url.Values{}
+		query.Set("userID", strconv.Itoa(int(1)))
+		query.Set("code", "foo")
+		return &url.URL{Path: "/password-reset", RawQuery: query.Encode()}, nil
 	}
 
 	db.Mocks.UserEmails.GetPrimaryEmail = func(context.Context, int32) (string, bool, error) {

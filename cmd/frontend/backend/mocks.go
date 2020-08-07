@@ -10,8 +10,7 @@ import (
 )
 
 var Mocks, emptyMocks struct {
-	Repos                MockRepos
-	MakePasswordResetURL func(context.Context, int32) (string, error)
+	Repos MockRepos
 }
 
 // testContext creates a new context.Context for use by tests
