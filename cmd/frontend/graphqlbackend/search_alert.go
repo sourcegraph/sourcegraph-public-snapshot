@@ -136,6 +136,11 @@ func reposExist(ctx context.Context, options resolveRepoOp) bool {
 }
 
 func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAlert {
+	globbing := false
+	if settings, err := decodedViewerFinalSettings(ctx); err != nil || getBoolPtr(settings.SearchGlobbing, false) {
+		globbing = true
+	}
+
 	repoFilters, minusRepoFilters := r.query.RegexpPatterns(query.FieldRepo)
 	repoGroupFilters, _ := r.query.StringValues(query.FieldRepoGroup)
 	fork, _ := r.query.StringValue(query.FieldFork)
@@ -181,6 +186,13 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 		}
 
 	case len(repoGroupFilters) == 1 && len(repoFilters) > 1:
+		if globbing {
+			return &searchAlert{
+				prometheusType: "no_resolved_repos__try_remove_filters_for_repogroup",
+				title:          fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0]),
+				description:    "Remove repo: filters to see results",
+			}
+		}
 		proposedQueries := []*searchQueryDescription{}
 		tryRemoveRepoGroup := resolveRepoOp{
 			repoFilters:      repoFilters,
@@ -206,6 +218,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			onlyForks:        onlyForks,
 			noForks:          noForks,
 		}
+
 		if reposExist(ctx, tryAnyRepo) {
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
 				description: "include repositories satisfying any (not all) of your repo: filters",
@@ -229,6 +242,13 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 		}
 
 	case len(repoGroupFilters) == 1 && len(repoFilters) == 1:
+		if globbing {
+			return &searchAlert{
+				prometheusType: "no_resolved_repogroups",
+				title:          fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0]),
+				description:    "Remove repo: filters to see results",
+			}
+		}
 		proposedQueries := []*searchQueryDescription{}
 		tryRemoveRepoGroup := resolveRepoOp{
 			repoFilters:      repoFilters,
@@ -259,6 +279,13 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 		}
 
 	case len(repoGroupFilters) == 0 && len(repoFilters) > 1:
+		if globbing {
+			return &searchAlert{
+				prometheusType: "no_resolved_repos__suggest_add_remove_repos",
+				title:          "No repositories satisfied all of your repo: filters.",
+				description:    "remove repo: filters",
+			}
+		}
 		proposedQueries := []*searchQueryDescription{}
 		unionRepoFilter := unionRegExps(repoFilters)
 		tryAnyRepo := resolveRepoOp{
@@ -268,6 +295,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			onlyForks:        onlyForks,
 			noForks:          noForks,
 		}
+
 		if reposExist(ctx, tryAnyRepo) {
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
 				description: "include repositories satisfying any (not all) of your repo: filters",
@@ -280,6 +308,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			description: "remove repo: filters",
 			query:       withoutRepoFields,
 		})
+
 		return &searchAlert{
 			prometheusType:  "no_resolved_repos__suggest_add_remove_repos",
 			title:           "No repositories satisfied all of your repo: filters.",
@@ -303,6 +332,14 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 						description: "To start searching code, ask the site admin to configure and enable repositories.",
 					}
 				}
+			}
+		}
+
+		if globbing {
+			return &searchAlert{
+				prometheusType: "no_resolved_repos__generic",
+				title:          "No repositories satisfied your repo: filter",
+				description:    "Modify your repo: filter to see results",
 			}
 		}
 
