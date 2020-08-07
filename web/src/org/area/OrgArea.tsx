@@ -85,6 +85,7 @@ interface Props
      */
     authenticatedUser: GQL.IUser | null
     history: H.History
+    isSourcegraphDotCom: boolean
 }
 
 interface State {

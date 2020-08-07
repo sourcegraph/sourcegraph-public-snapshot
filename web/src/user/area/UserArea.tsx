@@ -96,6 +96,8 @@ interface UserAreaProps
      * parameter.
      */
     authenticatedUser: GQL.IUser | null
+
+    isSourcegraphDotCom: boolean
 }
 
 interface UserAreaState {

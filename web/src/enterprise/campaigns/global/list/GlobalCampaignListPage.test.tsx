@@ -16,7 +16,6 @@ describe('GlobalCampaignListPage', () => {
                     <GlobalCampaignListPage
                         history={history}
                         location={history.location}
-                        authenticatedUser={{ siteAdmin: true }}
                         queryCampaigns={() =>
                             of({ totalCount: Object.values(nodes).length, nodes: Object.values(nodes) })
                         }
@@ -31,7 +30,6 @@ describe('GlobalCampaignListPage', () => {
                     <GlobalCampaignListPage
                         history={history}
                         location={history.location}
-                        authenticatedUser={{ siteAdmin: false }}
                         queryCampaigns={() =>
                             of({ totalCount: Object.values(nodes).length, nodes: Object.values(nodes) })
                         }

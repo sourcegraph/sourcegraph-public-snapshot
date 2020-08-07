@@ -62,11 +62,6 @@ exports[`GlobalCampaignListPage renders for non-siteadmin and totalCount: 0 1`] 
     </div>
   </div>
   <FilteredConnection
-    authenticatedUser={
-      Object {
-        "siteAdmin": false,
-      }
-    }
     className="mb-3"
     defaultFirst={20}
     filters={
@@ -181,11 +176,6 @@ exports[`GlobalCampaignListPage renders for non-siteadmin and totalCount: 1 1`] 
     </div>
   </div>
   <FilteredConnection
-    authenticatedUser={
-      Object {
-        "siteAdmin": false,
-      }
-    }
     className="mb-3"
     defaultFirst={20}
     filters={
@@ -300,11 +290,6 @@ exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 0 1`] = `
     </div>
   </div>
   <FilteredConnection
-    authenticatedUser={
-      Object {
-        "siteAdmin": true,
-      }
-    }
     className="mb-3"
     defaultFirst={20}
     filters={
@@ -419,11 +404,6 @@ exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 1 1`] = `
     </div>
   </div>
   <FilteredConnection
-    authenticatedUser={
-      Object {
-        "siteAdmin": true,
-      }
-    }
     className="mb-3"
     defaultFirst={20}
     filters={

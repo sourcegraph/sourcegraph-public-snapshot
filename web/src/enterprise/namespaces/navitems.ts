@@ -1,9 +1,7 @@
-import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { CampaignsIcon } from '../campaigns/icons'
+import { OrgAreaHeaderNavItem } from '../../org/area/OrgHeader'
 
-export const enterpriseNamespaceAreaHeaderNavItems: readonly NavItemWithIconDescriptor<{
-    isSourcegraphDotCom: boolean
-}>[] = [
+export const enterpriseNamespaceAreaHeaderNavItems: OrgAreaHeaderNavItem[] = [
     {
         to: '/campaigns',
         label: 'Campaigns',

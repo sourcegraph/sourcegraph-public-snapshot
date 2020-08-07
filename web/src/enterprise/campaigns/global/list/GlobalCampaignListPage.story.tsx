@@ -26,7 +26,6 @@ add('List of campaigns', () => {
     const history = createMemoryHistory()
     return (
         <GlobalCampaignListPage
-            authenticatedUser={{ siteAdmin: true }}
             queryCampaigns={() => of({ totalCount: Object.values(nodes).length, nodes: Object.values(nodes) })}
             telemetryService={NOOP_TELEMETRY_SERVICE}
             history={history}

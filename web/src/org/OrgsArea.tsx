@@ -33,6 +33,7 @@ interface Props
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
 
     authenticatedUser: GQL.IUser | null
+    isSourcegraphDotCom: boolean
 }
 
 /**
