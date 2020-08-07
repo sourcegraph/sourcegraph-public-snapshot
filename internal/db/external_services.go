@@ -12,6 +12,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/xeipuuv/gojsonschema"
 
@@ -422,6 +423,26 @@ func (e *ExternalServicesStore) List(ctx context.Context, opt ExternalServicesLi
 		return Mocks.ExternalServices.List(opt)
 	}
 	return e.list(ctx, opt.sqlConditions(), opt.LimitOffset)
+}
+
+// DistinctKinds returns the distinct list of external services kinds that are stored in the database.
+func (e *ExternalServicesStore) DistinctKinds(ctx context.Context) ([]string, error) {
+	q := sqlf.Sprintf(`
+SELECT ARRAY_AGG(DISTINCT(kind)::TEXT)
+FROM external_services
+WHERE deleted_at IS NULL
+`)
+
+	var kinds []string
+	err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(pq.Array(&kinds))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return []string{}, nil
+		}
+		return nil, err
+	}
+
+	return kinds, nil
 }
 
 // listConfigs decodes the list of configs into result. In addition to populating
