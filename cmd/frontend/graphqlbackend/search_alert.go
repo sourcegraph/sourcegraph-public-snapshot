@@ -282,7 +282,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			return &searchAlert{
 				prometheusType: "no_resolved_repos__suggest_add_remove_repos",
 				title:          "No repositories satisfied all of your repo: filters.",
-				description:    "remove repo: filters",
+				description:    "remove repo: filters to see results",
 			}
 		}
 		proposedQueries := []*searchQueryDescription{}
