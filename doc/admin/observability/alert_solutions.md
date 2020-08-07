@@ -3810,7 +3810,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _syntect-server: 5+ syntax highlighting errors every 5m_
+- _syntect-server: 5%+ syntax highlighting errors every 5m_
 
 **Possible solutions:**
 
@@ -3819,6 +3819,22 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```json
 "observability.silenceAlerts": [
   "warning_syntect-server_syntax_highlighting_errors"
+]
+```
+
+## syntect-server: syntax_highlighting_timeouts
+
+**Descriptions:**
+
+- _syntect-server: 5%+ syntax highlighting timeouts every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_syntect-server_syntax_highlighting_timeouts"
 ]
 ```
 
@@ -3835,22 +3851,6 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```json
 "observability.silenceAlerts": [
   "warning_syntect-server_syntax_highlighting_panics"
-]
-```
-
-## syntect-server: syntax_highlighting_timeouts
-
-**Descriptions:**
-
-- _syntect-server: 5+ syntax highlighting timeouts every 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_syntect-server_syntax_highlighting_timeouts"
 ]
 ```
 
