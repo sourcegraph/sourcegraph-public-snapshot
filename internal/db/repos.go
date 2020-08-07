@@ -3,13 +3,17 @@ package db
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"io"
 	regexpsyntax "regexp/syntax"
 	"strings"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	repoUpdater "github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -216,12 +220,6 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		&r.Name,
 		&r.Private,
 		&dbutil.NullString{S: &r.ExternalRepo.ID},
-		&dbutil.NullString{S: &r.ExternalRepo.ServiceType},
-		&dbutil.NullString{S: &r.ExternalRepo.ServiceID},
-		&dbutil.NullString{S: &r.URI},
-		&r.Description,
-		&r.Language,
-		&r.Fork,
 		&r.Archived,
 		&r.Cloned,
 	)
@@ -381,6 +379,334 @@ func (s *repos) ListEnabledNames(ctx context.Context) ([]string, error) {
 	}
 
 	return names, nil
+}
+
+func (s *repos) UpsertRepos(ctx context.Context, repos ...*repoUpdater.Repo) error {
+	if len(repos) == 0 {
+		return nil
+	}
+
+	var deletes, updates, inserts []*repoUpdater.Repo
+	for _, r := range repos {
+		switch {
+		case r.IsDeleted():
+			deletes = append(deletes, r)
+		case r.ID != 0:
+			updates = append(updates, r)
+		default:
+			// We also update to un-delete soft-deleted repositories. The
+			// insert statement has an on conflict do nothing.
+			updates = append(updates, r)
+			inserts = append(inserts, r)
+		}
+	}
+
+	for _, op := range []struct {
+		name  string
+		query string
+		repos []*repoUpdater.Repo
+	}{
+		{"delete", deleteReposQuery, deletes},
+		{"update", updateReposQuery, updates},
+		{"insert", insertReposQuery, inserts},
+		{"list", listRepoIDsQuery, inserts}, // list must run last to pick up inserted IDs
+	} {
+		if len(op.repos) == 0 {
+			continue
+		}
+
+		q, err := batchReposQuery(op.query, op.repos)
+		if err != nil {
+			return errors.Wrap(err, op.name)
+		}
+
+		rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		if err != nil {
+			return errors.Wrap(err, op.name)
+		}
+
+		if op.name != "list" {
+			if err = rows.Close(); err != nil {
+				return errors.Wrap(err, op.name)
+			}
+			// Nothing to scan
+			continue
+		}
+
+		_, _, err = scanAll(rows, func(sc scanner) (last, count int64, err error) {
+			var (
+				i  int
+				id api.RepoID
+			)
+
+			err = sc.Scan(&i, &id)
+			if err != nil {
+				return 0, 0, err
+			}
+			op.repos[i-1].ID = id
+			return int64(id), 1, nil
+		})
+
+		if err != nil {
+			return errors.Wrap(err, op.name)
+		}
+	}
+
+	// Assert we have set ID for all repos.
+	for _, r := range repos {
+		if r.ID == 0 && !r.IsDeleted() {
+			return errors.Errorf("DBStore.UpsertRepos did not set ID for %v", r)
+		}
+	}
+
+	return nil
+}
+
+func batchReposQuery(fmtstr string, repos []*repoUpdater.Repo) (_ *sqlf.Query, err error) {
+	type record struct {
+		ID                  api.RepoID      `json:"id"`
+		Name                string          `json:"name"`
+		URI                 *string         `json:"uri,omitempty"`
+		Description         string          `json:"description"`
+		Language            string          `json:"language"`
+		CreatedAt           time.Time       `json:"created_at"`
+		UpdatedAt           *time.Time      `json:"updated_at,omitempty"`
+		DeletedAt           *time.Time      `json:"deleted_at,omitempty"`
+		ExternalServiceType *string         `json:"external_service_type,omitempty"`
+		ExternalServiceID   *string         `json:"external_service_id,omitempty"`
+		ExternalID          *string         `json:"external_id,omitempty"`
+		Archived            bool            `json:"archived"`
+		Fork                bool            `json:"fork"`
+		Private             bool            `json:"private"`
+		Sources             json.RawMessage `json:"sources"`
+		Metadata            json.RawMessage `json:"metadata"`
+	}
+
+	records := make([]record, 0, len(repos))
+	for _, r := range repos {
+		sources, err := json.Marshal(r.Sources)
+		if err != nil {
+			return nil, errors.Wrapf(err, "batchReposQuery: sources marshalling failed")
+		}
+
+		metadata, err := metadataColumn(r.Metadata)
+		if err != nil {
+			return nil, errors.Wrapf(err, "batchReposQuery: metadata marshalling failed")
+		}
+
+		records = append(records, record{
+			ID:                  r.ID,
+			Name:                r.Name,
+			URI:                 nullStringColumn(r.URI),
+			Description:         r.Description,
+			Language:            r.Language,
+			CreatedAt:           r.CreatedAt.UTC(),
+			UpdatedAt:           nullTimeColumn(r.UpdatedAt.UTC()),
+			DeletedAt:           nullTimeColumn(r.DeletedAt.UTC()),
+			ExternalServiceType: nullStringColumn(r.ExternalRepo.ServiceType),
+			ExternalServiceID:   nullStringColumn(r.ExternalRepo.ServiceID),
+			ExternalID:          nullStringColumn(r.ExternalRepo.ID),
+			Archived:            r.Archived,
+			Fork:                r.Fork,
+			Private:             r.Private,
+			Sources:             sources,
+			Metadata:            metadata,
+		})
+	}
+
+	batch, err := json.MarshalIndent(records, "    ", "    ")
+	if err != nil {
+		return nil, err
+	}
+
+	return sqlf.Sprintf(fmtstr, string(batch)), nil
+}
+
+const batchReposQueryFmtstr = `
+--
+-- The "batch" Common Table Expression (CTE) produces the records to be upserted,
+-- leveraging the "json_to_recordset" Postgres function to parse the JSON
+-- serialised repos array being passed from the application code.
+--
+-- This is done for two reasons:
+--
+--     1. To circumvent Postgres' limit of 32767 bind parameters per statement.
+--     2. To use the WITH ORDINALITY table function feature which gives us
+--        an auto-generated ordering column we rely on to maintain the order of
+--        the final result set produced (see the last SELECT statement).
+--
+WITH batch AS (
+  SELECT * FROM ROWS FROM (
+  json_to_recordset(%s)
+  AS (
+      id                    integer,
+      name                  citext,
+      uri                   citext,
+      description           text,
+      language              text,
+      created_at            timestamptz,
+      updated_at            timestamptz,
+      deleted_at            timestamptz,
+      external_service_type text,
+      external_service_id   text,
+      external_id           text,
+      archived              boolean,
+      fork                  boolean,
+      private               boolean,
+      sources               jsonb,
+      metadata              jsonb
+    )
+  )
+  WITH ORDINALITY
+)`
+
+var updateReposQuery = batchReposQueryFmtstr + `
+UPDATE repo
+SET
+  name                  = batch.name,
+  uri                   = batch.uri,
+  description           = batch.description,
+  language              = batch.language,
+  created_at            = batch.created_at,
+  updated_at            = batch.updated_at,
+  deleted_at            = batch.deleted_at,
+  external_service_type = batch.external_service_type,
+  external_service_id   = batch.external_service_id,
+  external_id           = batch.external_id,
+  archived              = batch.archived,
+  fork                  = batch.fork,
+  private               = batch.private,
+  sources               = batch.sources,
+  metadata              = batch.metadata
+FROM batch
+WHERE repo.external_service_type = batch.external_service_type
+AND repo.external_service_id = batch.external_service_id
+AND repo.external_id = batch.external_id
+`
+
+// delete is a soft-delete. name is unique and the syncer ensures we respect
+// that constraint. However, the syncer is unaware of soft-deleted
+// repositories. So we update the name to something unique to prevent
+// violating this constraint between active and soft-deleted names.
+var deleteReposQuery = batchReposQueryFmtstr + `
+UPDATE repo
+SET
+  name = 'DELETED-' || extract(epoch from transaction_timestamp()) || '-' || batch.name,
+  deleted_at = batch.deleted_at
+FROM batch
+WHERE batch.deleted_at IS NOT NULL
+AND repo.id = batch.id
+`
+
+var insertReposQuery = batchReposQueryFmtstr + `
+INSERT INTO repo (
+  name,
+  uri,
+  description,
+  language,
+  created_at,
+  updated_at,
+  deleted_at,
+  external_service_type,
+  external_service_id,
+  external_id,
+  archived,
+  fork,
+  private,
+  sources,
+  metadata
+)
+SELECT
+  name,
+  NULLIF(BTRIM(uri), ''),
+  description,
+  language,
+  created_at,
+  updated_at,
+  deleted_at,
+  external_service_type,
+  external_service_id,
+  external_id,
+  archived,
+  fork,
+  private,
+  sources,
+  metadata
+FROM batch
+ON CONFLICT (external_service_type, external_service_id, external_id) DO NOTHING
+`
+
+var listRepoIDsQuery = batchReposQueryFmtstr + `
+SELECT batch.ordinality, repo.id
+FROM batch
+JOIN repo USING (external_service_type, external_service_id, external_id)
+`
+
+func nullTimeColumn(t time.Time) *time.Time {
+	if t.IsZero() {
+		return nil
+	}
+	return &t
+}
+
+func nullStringColumn(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+func nullInt32Column(i int32) *int32 {
+	if i == 0 {
+		return nil
+	}
+	return &i
+}
+
+func metadataColumn(metadata interface{}) (msg json.RawMessage, err error) {
+	switch m := metadata.(type) {
+	case nil:
+		msg = json.RawMessage("{}")
+	case string:
+		msg = json.RawMessage(m)
+	case []byte:
+		msg = m
+	case json.RawMessage:
+		msg = m
+	default:
+		msg, err = json.MarshalIndent(m, "        ", "    ")
+	}
+	return
+}
+
+// scanner captures the Scan method of sql.Rows and sql.Row
+type scanner interface {
+	Scan(dst ...interface{}) error
+}
+
+// a scanFunc scans one or more rows from a scanner, returning
+// the last id column scanned and the count of scanned rows.
+type scanFunc func(scanner) (last, count int64, err error)
+
+func scanAll(rows *sql.Rows, scan scanFunc) (last, count int64, err error) {
+	defer closeErr(rows, &err)
+
+	last = -1
+	for rows.Next() {
+		var n int64
+		if last, n, err = scan(rows); err != nil {
+			return last, count, err
+		}
+		count += n
+	}
+
+	return last, count, rows.Err()
+}
+
+func closeErr(c io.Closer, err *error) {
+	if e := c.Close(); err != nil && *err == nil {
+		*err = e
+	}
 }
 
 func parsePattern(p string) ([]*sqlf.Query, error) {

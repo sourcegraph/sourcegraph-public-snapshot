@@ -44,8 +44,13 @@ type ExternalServiceConfigsRequest struct {
 }
 
 type ExternalServicesListRequest struct {
-	// NOTE(tsenart): We must keep this field in addition to the
-	// Kinds field until after we roll-out this change, for backwards compatibility.
-	Kind  string   `json:"kind"`
-	Kinds []string `json:"kinds"`
+	// IDs of external services to list. When zero-valued, this is omitted from the predicate set.
+	IDs []int64
+	// RepoIDs that the listed external services own.
+	RepoIDs []RepoID
+	// Kinds of external services to list. When zero-valued, this is omitted from the predicate set.
+	Kinds []string
+}
+type ExternalServicesUpsertRequest struct {
+	Services []*ExternalService
 }

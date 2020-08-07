@@ -298,6 +298,11 @@ func (c *internalClient) ExternalServicesList(ctx context.Context, opts External
 	return extsvcs, c.postInternal(ctx, "external-services/list", &opts, &extsvcs)
 }
 
+// ExternalServicesUpsert upserts all external services in opts.
+func (c *internalClient) ExternalServicesUpsert(ctx context.Context, opts ExternalServicesUpsertRequest) error {
+	return c.postInternal(ctx, "external-services/upsert", &opts, nil)
+}
+
 func (c *internalClient) LogTelemetry(ctx context.Context, reqBody interface{}) error {
 	return c.postInternal(ctx, "telemetry", reqBody, nil)
 }
