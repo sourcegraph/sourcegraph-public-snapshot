@@ -87,18 +87,19 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 				ReconcilerState: cmpgn.ReconcilerStateCompleted,
 				FailureMessage:  &failureMessage,
-				StartedAt:       clock.now(),
-				FinishedAt:      clock.now(),
-				ProcessAfter:    clock.now(),
 				NumResets:       18,
 			}
 
-			// Only set the diff stats on a subset to make sure that
+			// Only set these fields on a subset to make sure that
 			// we handle nil pointers correctly
 			if i != cap(changesets)-1 {
 				th.DiffStatAdded = &added
 				th.DiffStatChanged = &changed
 				th.DiffStatDeleted = &deleted
+
+				th.StartedAt = clock.now()
+				th.FinishedAt = clock.now()
+				th.ProcessAfter = clock.now()
 			}
 
 			if err := s.CreateChangeset(ctx, th); err != nil {
