@@ -22,7 +22,6 @@ export const ExtensionToggle: React.FunctionComponent<Props> = ({
     enabled,
     className,
 }) => {
-    /** the truth comes from above */
     const [optimisticEnabled, setOptimisticEnabled] = useState(enabled)
     const [nextToggle] = useEventObservable(
         useCallback(
@@ -64,8 +63,7 @@ export const ExtensionToggle: React.FunctionComponent<Props> = ({
         )
     )
 
-    // new title
-    const title = enabled ? 'Click to disable' : 'Click to enable'
+    const title = optimisticEnabled ? 'Click to disable' : 'Click to enable'
 
     return (
         <Toggle
