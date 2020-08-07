@@ -217,26 +217,6 @@ func TestNullIDResilience(t *testing.T) {
 	}
 }
 
-func getBitbucketServerRepos(t testing.TB, ctx context.Context, src *repos.BitbucketServerSource) []*repos.Repo {
-	results := make(chan repos.SourceResult)
-
-	go func() {
-		src.ListRepos(ctx, results)
-		close(results)
-	}()
-
-	var repos []*repos.Repo
-
-	for res := range results {
-		if res.Err != nil {
-			t.Fatal(res.Err)
-		}
-		repos = append(repos, res.Repo)
-	}
-
-	return repos
-}
-
 func TestCreateCampaignSpec(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
