@@ -40,3 +40,6 @@ comment:
   after_n_builds: 6
 ignore:
   - '**/bindata.go'
+flags:
+  typescript:
+    carryforward: true
