@@ -73,10 +73,7 @@ func TestChangesetResolver(t *testing.T) {
 	labelEventDescriptionText := "the best label in town"
 
 	syncedGitHubChangeset := createChangeset(t, ctx, store, testChangesetOpts{
-		repo: repo.ID,
-		// We don't need a spec, because the resolver should take all the data
-		// out of the changeset.
-		currentSpec:         0,
+		repo:                repo.ID,
 		externalServiceType: "github",
 		externalID:          "12345",
 		externalBranch:      "open-pr",

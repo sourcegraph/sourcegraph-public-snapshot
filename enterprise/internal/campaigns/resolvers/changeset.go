@@ -331,12 +331,9 @@ func (r *changesetResolver) Events(ctx context.Context, args *struct {
 	// TODO: We already need to fetch all events for ReviewState and Labels
 	// perhaps we can use the cached data here
 	return &changesetEventsConnectionResolver{
-		store:     r.store,
-		changeset: r.changeset,
-		opts: ee.ListChangesetEventsOpts{
-			ChangesetIDs: []int64{r.changeset.ID},
-			Limit:        int(args.ConnectionArgs.GetFirst()),
-		},
+		store:             r.store,
+		changesetResolver: r,
+		first:             int(args.GetFirst()),
 	}, nil
 }
 
