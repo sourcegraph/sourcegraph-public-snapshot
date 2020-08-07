@@ -6,7 +6,7 @@ Sourcegraph natively supports all Git-based Version Control Systems (VCSs) and c
 
 ## Use `src serve-git`
 
-Since Sourcegraph 3.19 we recommend users to use [`src serve-git`](src_serve_git.md). `src serve-git` only provides the serving of git repositories (no snapshotting). We found users generally wanted to control the git repos and snapshotting overcomplicated the interface. Additionally `src serve-git` uses a faster and modern git transfer protocol.
+Since Sourcegraph 3.19 we recommend users to use [`src serve-git`](src_serve_git.md). `src serve-git` only provides the serving of git repositories (no snapshotting). We found users generally wanted to control the git repos and snapshotting complicated the setup. Additionally `src serve-git` uses a fast and modern git transfer protocol.
 
 ## Installing `src-expose`
 

@@ -942,7 +942,7 @@ const SRC_SERVE_GIT: AddExternalServiceOptions = {
     editorActions: [
         {
             id: 'setURL',
-            label: 'Sourcegraph in docker and src serve-git running on host',
+            label: 'Sourcegraph in Docker and src serve-git running on host',
             run: config => {
                 const value = 'http://host.docker.internal:3434'
                 const edits = setProperty(config, ['url'], value, defaultFormattingOptions)

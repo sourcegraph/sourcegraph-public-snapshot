@@ -24,4 +24,4 @@ The most common use-case for `src serve-git` is to create git repos that do not 
 
 ## src-expose
 
-Before Sourcegraph 3.19 we recommend users to use [`src-expose`](non-git.md). `src-expose` also provided snapshotting capabilities. We found users generally wanted to control the git repos and snapshotting overcomplicated the interface. Additionally `src serve-git` uses a faster and modern git transfer protocol.
+Before Sourcegraph 3.19 we recommend users to still use [`src-expose`](non-git.md).
