@@ -76,7 +76,7 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 			continue
 		}
 
-		resolvers = append(resolvers, NewChangesetResolverWithPreloadedNextSync(r.store, r.httpFactory, c, repo, preloadedNextSyncAt))
+		resolvers = append(resolvers, NewChangesetResolverWithNextSync(r.store, r.httpFactory, c, repo, preloadedNextSyncAt))
 	}
 
 	return resolvers, nil

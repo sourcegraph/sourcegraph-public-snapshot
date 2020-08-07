@@ -30,6 +30,7 @@ type changesetResolver struct {
 
 	changeset *campaigns.Changeset
 
+	// When repo is nil, this resolver resolves to a `HiddenExternalChangeset` in the API.
 	repo         *types.Repo
 	repoResolver *graphqlbackend.RepositoryResolver
 
@@ -51,10 +52,10 @@ type changesetResolver struct {
 	specErr  error
 }
 
-func NewChangesetResolverWithPreloadedNextSync(store *ee.Store, httpFactory *httpcli.Factory, changeset *campaigns.Changeset, repo *types.Repo, preloadedNextSyncAt *time.Time) *changesetResolver {
+func NewChangesetResolverWithNextSync(store *ee.Store, httpFactory *httpcli.Factory, changeset *campaigns.Changeset, repo *types.Repo, nextSyncAt *time.Time) *changesetResolver {
 	r := NewChangesetResolver(store, httpFactory, changeset, repo)
 	r.attemptedPreloadNextSyncAt = true
-	r.preloadedNextSyncAt = preloadedNextSyncAt
+	r.preloadedNextSyncAt = nextSyncAt
 	return r
 }
 
