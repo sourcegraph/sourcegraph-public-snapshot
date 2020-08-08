@@ -621,17 +621,27 @@ func (c *Container) alertDescription(o Observable, alert Alert) string {
 	if alert.isEmpty() {
 		panic("never here")
 	}
+	var description string
+
+	// description based on thresholds
 	units := o.PanelOptions.unitType.short()
 	if alert.GreaterOrEqual != 0 && alert.LessOrEqual != 0 {
-		return fmt.Sprintf("%s: %v%s+ or less than %v%s %s", c.Name, alert.GreaterOrEqual, units, alert.LessOrEqual, units, o.Description)
+		description = fmt.Sprintf("%s: %v%s+ or less than %v%s %s", c.Name, alert.GreaterOrEqual, units, alert.LessOrEqual, units, o.Description)
 	} else if alert.GreaterOrEqual != 0 {
 		// e.g. "zoekt-indexserver: 20+ indexed search request errors every 5m by code"
-		return fmt.Sprintf("%s: %v%s+ %s", c.Name, alert.GreaterOrEqual, units, o.Description)
+		description = fmt.Sprintf("%s: %v%s+ %s", c.Name, alert.GreaterOrEqual, units, o.Description)
 	} else if alert.LessOrEqual != 0 {
 		// e.g. "zoekt-indexserver: less than 20 indexed search requests every 5m by code"
-		return fmt.Sprintf("%s: less than %v%s %s", c.Name, alert.LessOrEqual, units, o.Description)
+		description = fmt.Sprintf("%s: less than %v%s %s", c.Name, alert.LessOrEqual, units, o.Description)
+	} else {
+		panic(fmt.Sprintf("unable to generate description for observable %+v", o))
 	}
-	panic("never here")
+
+	// add information about "for"
+	if alert.For > 0 {
+		return fmt.Sprintf("%s for %s", description, alert.For)
+	}
+	return description
 }
 
 // promAlertsFile generates the Prometheus rules file which defines our

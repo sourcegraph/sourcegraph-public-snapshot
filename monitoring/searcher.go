@@ -52,12 +52,12 @@ func Searcher() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage7d("searcher"),
-						sharedProvisioningMemoryUsage7d("searcher"),
+						sharedProvisioningCPUUsageLongTerm("searcher"),
+						sharedProvisioningMemoryUsageLongTerm("searcher"),
 					},
 					{
-						sharedProvisioningCPUUsage5m("searcher"),
-						sharedProvisioningMemoryUsage5m("searcher"),
+						sharedProvisioningCPUUsageShortTerm("searcher"),
+						sharedProvisioningMemoryUsageShortTerm("searcher"),
 					},
 				},
 			},

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -110,25 +111,27 @@ func GitServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage7d("gitserver"),
+						sharedProvisioningCPUUsageLongTerm("gitserver"),
+						// gitserver generally uses up all the memory it gets, so
+						// alerting on long-term high memory usage is not very useful
 						{
-							Name:            "provisioning_container_memory_usage_7d",
-							Description:     "container memory usage (7d maximum) by instance",
-							Query:           fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[7d])`, promCadvisorContainerMatchers("gitserver")),
+							Name:            "provisioning_container_memory_usage_long_term",
+							Description:     "container memory usage (1d maximum) by instance",
+							Query:           fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[1d])`, promCadvisorContainerMatchers("gitserver")),
 							DataMayNotExist: true,
-							// gitserver generally uses up all the memory it gets, so
-							// alerting on long-term high memory usage is not very useful
-							Warning:      Alert{LessOrEqual: 30, For: 14 * 24 * time.Hour},
-							PanelOptions: PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Max(100).Min(0),
-							Owner:        ObservableOwnerDistribution,
-							PossibleSolutions: `
-								- **Kubernetes:** Consider decreasing memory limit in relevant 'Deployment.yaml'.
-								- **Docker Compose:** Consider decreasing 'memory:' of gitserver container in 'docker-compose.yml'.
-							`,
+							Warning:         Alert{LessOrEqual: 30, For: 14 * 24 * time.Hour},
+							PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Max(100).Min(0),
+							Owner:           ObservableOwnerDistribution,
+							PossibleSolutions: strings.Replace(`
+								- If usage is high:
+									- **Kubernetes:** Consider increasing memory limits in the 'Deployment.yaml' for the {{CONTAINER_NAME}} service.
+									- **Docker Compose:** Consider increasing 'memory:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
+								- If usage is low, consider decreasing the above values.
+							`, "{{CONTAINER_NAME}}", "gitserver", -1),
 						},
 					},
 					{
-						sharedProvisioningCPUUsage5m("gitserver"),
+						sharedProvisioningCPUUsageShortTerm("gitserver"),
 					},
 				},
 			},

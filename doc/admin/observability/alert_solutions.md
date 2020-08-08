@@ -700,47 +700,47 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
-## frontend: provisioning_container_cpu_usage_7d
+## frontend: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _frontend: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+- _frontend: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the frontend container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the frontend service.
+	- **Docker Compose:** Consider increasing `cpus:` of the frontend container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_provisioning_container_cpu_usage_7d"
+  "warning_frontend_provisioning_container_cpu_usage_long_term"
 ]
 ```
 
-## frontend: provisioning_container_memory_usage_7d
+## frontend: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _frontend: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+- _frontend: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of frontend container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the frontend service.
+	- **Docker Compose:** Consider increasing `memory:` of the frontend container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_provisioning_container_memory_usage_7d"
+  "warning_frontend_provisioning_container_memory_usage_long_term"
 ]
 ```
 
-## frontend: provisioning_container_cpu_usage_5m
+## frontend: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
@@ -754,11 +754,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_provisioning_container_cpu_usage_5m"
+  "warning_frontend_provisioning_container_cpu_usage_short_term"
 ]
 ```
 
-## frontend: provisioning_container_memory_usage_5m
+## frontend: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
@@ -772,7 +772,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_provisioning_container_memory_usage_5m"
+  "warning_frontend_provisioning_container_memory_usage_short_term"
 ]
 ```
 
@@ -780,7 +780,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: 10000+ maximum active goroutines for 10m_
+- _frontend: 10000+ maximum active goroutines for 10m for 10m0s_
 
 **Possible solutions:**
 
@@ -812,7 +812,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: less than 90% percentage pods available for 10m_
+- _frontend: less than 90% percentage pods available for 10m for 10m0s_
 
 **Possible solutions:**
 
@@ -1024,45 +1024,47 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
-## gitserver: provisioning_container_cpu_usage_7d
+## gitserver: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _gitserver: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+- _gitserver: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the gitserver container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the gitserver service.
+	- **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_gitserver_provisioning_container_cpu_usage_7d"
+  "warning_gitserver_provisioning_container_cpu_usage_long_term"
 ]
 ```
 
-## gitserver: provisioning_container_memory_usage_7d
+## gitserver: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _gitserver: less than 30% container memory usage (7d maximum) by instance_
+- _gitserver: less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider decreasing `memory:` of gitserver container in `docker-compose.yml`.
+- If usage is high:
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the gitserver service.
+	- **Docker Compose:** Consider increasing `memory:` of the gitserver container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_gitserver_provisioning_container_memory_usage_7d"
+  "warning_gitserver_provisioning_container_memory_usage_long_term"
 ]
 ```
 
-## gitserver: provisioning_container_cpu_usage_5m
+## gitserver: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
@@ -1076,7 +1078,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_gitserver_provisioning_container_cpu_usage_5m"
+  "warning_gitserver_provisioning_container_cpu_usage_short_term"
 ]
 ```
 
@@ -1084,7 +1086,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _gitserver: 10000+ maximum active goroutines for 10m_
+- _gitserver: 10000+ maximum active goroutines for 10m for 10m0s_
 
 **Possible solutions:**
 
@@ -1116,7 +1118,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _gitserver: less than 90% percentage pods available for 10m_
+- _gitserver: less than 90% percentage pods available for 10m for 10m0s_
 
 **Possible solutions:**
 
@@ -1238,47 +1240,47 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
-## github-proxy: provisioning_container_cpu_usage_7d
+## github-proxy: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _github-proxy: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+- _github-proxy: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the github-proxy container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the github-proxy service.
+	- **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_github-proxy_provisioning_container_cpu_usage_7d"
+  "warning_github-proxy_provisioning_container_cpu_usage_long_term"
 ]
 ```
 
-## github-proxy: provisioning_container_memory_usage_7d
+## github-proxy: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _github-proxy: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+- _github-proxy: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the github-proxy service.
+	- **Docker Compose:** Consider increasing `memory:` of the github-proxy container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_github-proxy_provisioning_container_memory_usage_7d"
+  "warning_github-proxy_provisioning_container_memory_usage_long_term"
 ]
 ```
 
-## github-proxy: provisioning_container_cpu_usage_5m
+## github-proxy: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
@@ -1292,11 +1294,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_github-proxy_provisioning_container_cpu_usage_5m"
+  "warning_github-proxy_provisioning_container_cpu_usage_short_term"
 ]
 ```
 
-## github-proxy: provisioning_container_memory_usage_5m
+## github-proxy: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
@@ -1310,7 +1312,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_github-proxy_provisioning_container_memory_usage_5m"
+  "warning_github-proxy_provisioning_container_memory_usage_short_term"
 ]
 ```
 
@@ -1318,7 +1320,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _github-proxy: 10000+ maximum active goroutines for 10m_
+- _github-proxy: 10000+ maximum active goroutines for 10m for 10m0s_
 
 **Possible solutions:**
 
@@ -1350,7 +1352,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _github-proxy: less than 90% percentage pods available for 10m_
+- _github-proxy: less than 90% percentage pods available for 10m for 10m0s_
 
 **Possible solutions:**
 
@@ -1641,47 +1643,47 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
-## precise-code-intel-bundle-manager: provisioning_container_cpu_usage_7d
+## precise-code-intel-bundle-manager: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+- _precise-code-intel-bundle-manager: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the precise-code-intel-bundle-manager service.
+	- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_provisioning_container_cpu_usage_7d"
+  "warning_precise-code-intel-bundle-manager_provisioning_container_cpu_usage_long_term"
 ]
 ```
 
-## precise-code-intel-bundle-manager: provisioning_container_memory_usage_7d
+## precise-code-intel-bundle-manager: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+- _precise-code-intel-bundle-manager: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-bundle-manager container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the precise-code-intel-bundle-manager service.
+	- **Docker Compose:** Consider increasing `memory:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_provisioning_container_memory_usage_7d"
+  "warning_precise-code-intel-bundle-manager_provisioning_container_memory_usage_long_term"
 ]
 ```
 
-## precise-code-intel-bundle-manager: provisioning_container_cpu_usage_5m
+## precise-code-intel-bundle-manager: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
@@ -1695,11 +1697,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_provisioning_container_cpu_usage_5m"
+  "warning_precise-code-intel-bundle-manager_provisioning_container_cpu_usage_short_term"
 ]
 ```
 
-## precise-code-intel-bundle-manager: provisioning_container_memory_usage_5m
+## precise-code-intel-bundle-manager: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
@@ -1713,7 +1715,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_provisioning_container_memory_usage_5m"
+  "warning_precise-code-intel-bundle-manager_provisioning_container_memory_usage_short_term"
 ]
 ```
 
@@ -1721,7 +1723,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 10000+ maximum active goroutines for 10m_
+- _precise-code-intel-bundle-manager: 10000+ maximum active goroutines for 10m for 10m0s_
 
 **Possible solutions:**
 
@@ -1753,7 +1755,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: less than 90% percentage pods available for 10m_
+- _precise-code-intel-bundle-manager: less than 90% percentage pods available for 10m for 10m0s_
 
 **Possible solutions:**
 
@@ -2056,47 +2058,47 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
-## precise-code-intel-worker: provisioning_container_cpu_usage_7d
+## precise-code-intel-worker: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+- _precise-code-intel-worker: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the precise-code-intel-worker service.
+	- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_provisioning_container_cpu_usage_7d"
+  "warning_precise-code-intel-worker_provisioning_container_cpu_usage_long_term"
 ]
 ```
 
-## precise-code-intel-worker: provisioning_container_memory_usage_7d
+## precise-code-intel-worker: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+- _precise-code-intel-worker: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the precise-code-intel-worker service.
+	- **Docker Compose:** Consider increasing `memory:` of the precise-code-intel-worker container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_provisioning_container_memory_usage_7d"
+  "warning_precise-code-intel-worker_provisioning_container_memory_usage_long_term"
 ]
 ```
 
-## precise-code-intel-worker: provisioning_container_cpu_usage_5m
+## precise-code-intel-worker: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
@@ -2110,11 +2112,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_provisioning_container_cpu_usage_5m"
+  "warning_precise-code-intel-worker_provisioning_container_cpu_usage_short_term"
 ]
 ```
 
-## precise-code-intel-worker: provisioning_container_memory_usage_5m
+## precise-code-intel-worker: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
@@ -2128,7 +2130,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_provisioning_container_memory_usage_5m"
+  "warning_precise-code-intel-worker_provisioning_container_memory_usage_short_term"
 ]
 ```
 
@@ -2136,7 +2138,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 10000+ maximum active goroutines for 10m_
+- _precise-code-intel-worker: 10000+ maximum active goroutines for 10m for 10m0s_
 
 **Possible solutions:**
 
@@ -2168,7 +2170,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-worker: less than 90% percentage pods available for 10m_
+- _precise-code-intel-worker: less than 90% percentage pods available for 10m for 10m0s_
 
 **Possible solutions:**
 
@@ -2503,47 +2505,47 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
-## precise-code-intel-indexer: provisioning_container_cpu_usage_7d
+## precise-code-intel-indexer: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+- _precise-code-intel-indexer: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the precise-code-intel-indexer service.
+	- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_provisioning_container_cpu_usage_7d"
+  "warning_precise-code-intel-indexer_provisioning_container_cpu_usage_long_term"
 ]
 ```
 
-## precise-code-intel-indexer: provisioning_container_memory_usage_7d
+## precise-code-intel-indexer: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+- _precise-code-intel-indexer: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the precise-code-intel-indexer service.
+	- **Docker Compose:** Consider increasing `memory:` of the precise-code-intel-indexer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_provisioning_container_memory_usage_7d"
+  "warning_precise-code-intel-indexer_provisioning_container_memory_usage_long_term"
 ]
 ```
 
-## precise-code-intel-indexer: provisioning_container_cpu_usage_5m
+## precise-code-intel-indexer: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
@@ -2557,11 +2559,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_provisioning_container_cpu_usage_5m"
+  "warning_precise-code-intel-indexer_provisioning_container_cpu_usage_short_term"
 ]
 ```
 
-## precise-code-intel-indexer: provisioning_container_memory_usage_5m
+## precise-code-intel-indexer: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
@@ -2575,7 +2577,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_provisioning_container_memory_usage_5m"
+  "warning_precise-code-intel-indexer_provisioning_container_memory_usage_short_term"
 ]
 ```
 
@@ -2583,7 +2585,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 10000+ maximum active goroutines for 10m_
+- _precise-code-intel-indexer: 10000+ maximum active goroutines for 10m for 10m0s_
 
 **Possible solutions:**
 
@@ -2615,7 +2617,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: less than 90% percentage pods available for 10m_
+- _precise-code-intel-indexer: less than 90% percentage pods available for 10m for 10m0s_
 
 **Possible solutions:**
 
@@ -2726,47 +2728,47 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
-## query-runner: provisioning_container_cpu_usage_7d
+## query-runner: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _query-runner: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+- _query-runner: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the query-runner container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the query-runner service.
+	- **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_query-runner_provisioning_container_cpu_usage_7d"
+  "warning_query-runner_provisioning_container_cpu_usage_long_term"
 ]
 ```
 
-## query-runner: provisioning_container_memory_usage_7d
+## query-runner: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _query-runner: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+- _query-runner: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of query-runner container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the query-runner service.
+	- **Docker Compose:** Consider increasing `memory:` of the query-runner container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_query-runner_provisioning_container_memory_usage_7d"
+  "warning_query-runner_provisioning_container_memory_usage_long_term"
 ]
 ```
 
-## query-runner: provisioning_container_cpu_usage_5m
+## query-runner: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
@@ -2780,11 +2782,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_query-runner_provisioning_container_cpu_usage_5m"
+  "warning_query-runner_provisioning_container_cpu_usage_short_term"
 ]
 ```
 
-## query-runner: provisioning_container_memory_usage_5m
+## query-runner: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
@@ -2798,7 +2800,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_query-runner_provisioning_container_memory_usage_5m"
+  "warning_query-runner_provisioning_container_memory_usage_short_term"
 ]
 ```
 
@@ -2806,7 +2808,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _query-runner: 10000+ maximum active goroutines for 10m_
+- _query-runner: 10000+ maximum active goroutines for 10m for 10m0s_
 
 **Possible solutions:**
 
@@ -2838,7 +2840,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _query-runner: less than 90% percentage pods available for 10m_
+- _query-runner: less than 90% percentage pods available for 10m for 10m0s_
 
 **Possible solutions:**
 
@@ -2949,47 +2951,47 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
-## repo-updater: provisioning_container_cpu_usage_7d
+## repo-updater: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _repo-updater: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+- _repo-updater: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the repo-updater container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the repo-updater service.
+	- **Docker Compose:** Consider increasing `cpus:` of the repo-updater container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_provisioning_container_cpu_usage_7d"
+  "warning_repo-updater_provisioning_container_cpu_usage_long_term"
 ]
 ```
 
-## repo-updater: provisioning_container_memory_usage_7d
+## repo-updater: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _repo-updater: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+- _repo-updater: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of repo-updater container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the repo-updater service.
+	- **Docker Compose:** Consider increasing `memory:` of the repo-updater container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_provisioning_container_memory_usage_7d"
+  "warning_repo-updater_provisioning_container_memory_usage_long_term"
 ]
 ```
 
-## repo-updater: provisioning_container_cpu_usage_5m
+## repo-updater: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
@@ -3003,11 +3005,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_provisioning_container_cpu_usage_5m"
+  "warning_repo-updater_provisioning_container_cpu_usage_short_term"
 ]
 ```
 
-## repo-updater: provisioning_container_memory_usage_5m
+## repo-updater: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
@@ -3021,7 +3023,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_provisioning_container_memory_usage_5m"
+  "warning_repo-updater_provisioning_container_memory_usage_short_term"
 ]
 ```
 
@@ -3029,7 +3031,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: 10000+ maximum active goroutines for 10m_
+- _repo-updater: 10000+ maximum active goroutines for 10m for 10m0s_
 
 **Possible solutions:**
 
@@ -3061,7 +3063,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: less than 90% percentage pods available for 10m_
+- _repo-updater: less than 90% percentage pods available for 10m for 10m0s_
 
 **Possible solutions:**
 
@@ -3204,47 +3206,47 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
-## searcher: provisioning_container_cpu_usage_7d
+## searcher: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _searcher: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+- _searcher: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the searcher container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the searcher service.
+	- **Docker Compose:** Consider increasing `cpus:` of the searcher container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_searcher_provisioning_container_cpu_usage_7d"
+  "warning_searcher_provisioning_container_cpu_usage_long_term"
 ]
 ```
 
-## searcher: provisioning_container_memory_usage_7d
+## searcher: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _searcher: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+- _searcher: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of searcher container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the searcher service.
+	- **Docker Compose:** Consider increasing `memory:` of the searcher container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_searcher_provisioning_container_memory_usage_7d"
+  "warning_searcher_provisioning_container_memory_usage_long_term"
 ]
 ```
 
-## searcher: provisioning_container_cpu_usage_5m
+## searcher: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
@@ -3258,11 +3260,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_searcher_provisioning_container_cpu_usage_5m"
+  "warning_searcher_provisioning_container_cpu_usage_short_term"
 ]
 ```
 
-## searcher: provisioning_container_memory_usage_5m
+## searcher: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
@@ -3276,7 +3278,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_searcher_provisioning_container_memory_usage_5m"
+  "warning_searcher_provisioning_container_memory_usage_short_term"
 ]
 ```
 
@@ -3284,7 +3286,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _searcher: 10000+ maximum active goroutines for 10m_
+- _searcher: 10000+ maximum active goroutines for 10m for 10m0s_
 
 **Possible solutions:**
 
@@ -3316,7 +3318,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _searcher: less than 90% percentage pods available for 10m_
+- _searcher: less than 90% percentage pods available for 10m for 10m0s_
 
 **Possible solutions:**
 
@@ -3459,47 +3461,47 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
-## symbols: provisioning_container_cpu_usage_7d
+## symbols: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _symbols: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+- _symbols: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the symbols container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the symbols service.
+	- **Docker Compose:** Consider increasing `cpus:` of the symbols container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_symbols_provisioning_container_cpu_usage_7d"
+  "warning_symbols_provisioning_container_cpu_usage_long_term"
 ]
 ```
 
-## symbols: provisioning_container_memory_usage_7d
+## symbols: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _symbols: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+- _symbols: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the symbols service.
+	- **Docker Compose:** Consider increasing `memory:` of the symbols container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_symbols_provisioning_container_memory_usage_7d"
+  "warning_symbols_provisioning_container_memory_usage_long_term"
 ]
 ```
 
-## symbols: provisioning_container_cpu_usage_5m
+## symbols: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
@@ -3513,11 +3515,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_symbols_provisioning_container_cpu_usage_5m"
+  "warning_symbols_provisioning_container_cpu_usage_short_term"
 ]
 ```
 
-## symbols: provisioning_container_memory_usage_5m
+## symbols: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
@@ -3531,7 +3533,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_symbols_provisioning_container_memory_usage_5m"
+  "warning_symbols_provisioning_container_memory_usage_short_term"
 ]
 ```
 
@@ -3539,7 +3541,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _symbols: 10000+ maximum active goroutines for 10m_
+- _symbols: 10000+ maximum active goroutines for 10m for 10m0s_
 
 **Possible solutions:**
 
@@ -3571,7 +3573,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _symbols: less than 90% percentage pods available for 10m_
+- _symbols: less than 90% percentage pods available for 10m for 10m0s_
 
 **Possible solutions:**
 
@@ -3587,7 +3589,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _syntect-server: 5%+ syntax highlighting errors every 5m_
+- _syntect-server: 5%+ syntax highlighting errors every 5m for 5m0s_
 
 **Possible solutions:**
 
@@ -3603,7 +3605,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _syntect-server: 5%+ syntax highlighting timeouts every 5m_
+- _syntect-server: 5%+ syntax highlighting timeouts every 5m for 5m0s_
 
 **Possible solutions:**
 
@@ -3723,47 +3725,47 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
-## syntect-server: provisioning_container_cpu_usage_7d
+## syntect-server: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _syntect-server: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+- _syntect-server: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the syntect-server container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the syntect-server service.
+	- **Docker Compose:** Consider increasing `cpus:` of the syntect-server container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_syntect-server_provisioning_container_cpu_usage_7d"
+  "warning_syntect-server_provisioning_container_cpu_usage_long_term"
 ]
 ```
 
-## syntect-server: provisioning_container_memory_usage_7d
+## syntect-server: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _syntect-server: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+- _syntect-server: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the syntect-server service.
+	- **Docker Compose:** Consider increasing `memory:` of the syntect-server container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_syntect-server_provisioning_container_memory_usage_7d"
+  "warning_syntect-server_provisioning_container_memory_usage_long_term"
 ]
 ```
 
-## syntect-server: provisioning_container_cpu_usage_5m
+## syntect-server: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
@@ -3777,11 +3779,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_syntect-server_provisioning_container_cpu_usage_5m"
+  "warning_syntect-server_provisioning_container_cpu_usage_short_term"
 ]
 ```
 
-## syntect-server: provisioning_container_memory_usage_5m
+## syntect-server: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
@@ -3795,7 +3797,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_syntect-server_provisioning_container_memory_usage_5m"
+  "warning_syntect-server_provisioning_container_memory_usage_short_term"
 ]
 ```
 
@@ -3803,7 +3805,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _syntect-server: less than 90% percentage pods available for 10m_
+- _syntect-server: less than 90% percentage pods available for 10m for 10m0s_
 
 **Possible solutions:**
 
@@ -3910,47 +3912,47 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
-## zoekt-indexserver: provisioning_container_cpu_usage_7d
+## zoekt-indexserver: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _zoekt-indexserver: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+- _zoekt-indexserver: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the zoekt-indexserver service.
+	- **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-indexserver_provisioning_container_cpu_usage_7d"
+  "warning_zoekt-indexserver_provisioning_container_cpu_usage_long_term"
 ]
 ```
 
-## zoekt-indexserver: provisioning_container_memory_usage_7d
+## zoekt-indexserver: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _zoekt-indexserver: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+- _zoekt-indexserver: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the zoekt-indexserver service.
+	- **Docker Compose:** Consider increasing `memory:` of the zoekt-indexserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-indexserver_provisioning_container_memory_usage_7d"
+  "warning_zoekt-indexserver_provisioning_container_memory_usage_long_term"
 ]
 ```
 
-## zoekt-indexserver: provisioning_container_cpu_usage_5m
+## zoekt-indexserver: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
@@ -3964,11 +3966,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-indexserver_provisioning_container_cpu_usage_5m"
+  "warning_zoekt-indexserver_provisioning_container_cpu_usage_short_term"
 ]
 ```
 
-## zoekt-indexserver: provisioning_container_memory_usage_5m
+## zoekt-indexserver: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
@@ -3982,7 +3984,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-indexserver_provisioning_container_memory_usage_5m"
+  "warning_zoekt-indexserver_provisioning_container_memory_usage_short_term"
 ]
 ```
 
@@ -3990,7 +3992,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _zoekt-indexserver: less than 90% percentage pods available for 10m_
+- _zoekt-indexserver: less than 90% percentage pods available for 10m for 10m0s_
 
 **Possible solutions:**
 
@@ -4094,47 +4096,47 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
-## zoekt-webserver: provisioning_container_cpu_usage_7d
+## zoekt-webserver: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _zoekt-webserver: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+- _zoekt-webserver: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the zoekt-webserver service.
+	- **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-webserver_provisioning_container_cpu_usage_7d"
+  "warning_zoekt-webserver_provisioning_container_cpu_usage_long_term"
 ]
 ```
 
-## zoekt-webserver: provisioning_container_memory_usage_7d
+## zoekt-webserver: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _zoekt-webserver: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+- _zoekt-webserver: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the zoekt-webserver service.
+	- **Docker Compose:** Consider increasing `memory:` of the zoekt-webserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-webserver_provisioning_container_memory_usage_7d"
+  "warning_zoekt-webserver_provisioning_container_memory_usage_long_term"
 ]
 ```
 
-## zoekt-webserver: provisioning_container_cpu_usage_5m
+## zoekt-webserver: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
@@ -4148,11 +4150,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-webserver_provisioning_container_cpu_usage_5m"
+  "warning_zoekt-webserver_provisioning_container_cpu_usage_short_term"
 ]
 ```
 
-## zoekt-webserver: provisioning_container_memory_usage_5m
+## zoekt-webserver: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
@@ -4166,7 +4168,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-webserver_provisioning_container_memory_usage_5m"
+  "warning_zoekt-webserver_provisioning_container_memory_usage_short_term"
 ]
 ```
 
@@ -4279,47 +4281,47 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
-## prometheus: provisioning_container_cpu_usage_7d
+## prometheus: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
 
-- _prometheus: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
+- _prometheus: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the prometheus container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the prometheus service.
+	- **Docker Compose:** Consider increasing `cpus:` of the prometheus container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_prometheus_provisioning_container_cpu_usage_7d"
+  "warning_prometheus_provisioning_container_cpu_usage_long_term"
 ]
 ```
 
-## prometheus: provisioning_container_memory_usage_7d
+## prometheus: provisioning_container_memory_usage_long_term
 
 **Descriptions:**
 
-- _prometheus: 80%+ or less than 30% container memory usage (7d maximum) by instance_
+- _prometheus: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
 - If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of prometheus container in `docker-compose.yml`.
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the prometheus service.
+	- **Docker Compose:** Consider increasing `memory:` of the prometheus container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_prometheus_provisioning_container_memory_usage_7d"
+  "warning_prometheus_provisioning_container_memory_usage_long_term"
 ]
 ```
 
-## prometheus: provisioning_container_cpu_usage_5m
+## prometheus: provisioning_container_cpu_usage_short_term
 
 **Descriptions:**
 
@@ -4333,11 +4335,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_prometheus_provisioning_container_cpu_usage_5m"
+  "warning_prometheus_provisioning_container_cpu_usage_short_term"
 ]
 ```
 
-## prometheus: provisioning_container_memory_usage_5m
+## prometheus: provisioning_container_memory_usage_short_term
 
 **Descriptions:**
 
@@ -4351,7 +4353,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_prometheus_provisioning_container_memory_usage_5m"
+  "warning_prometheus_provisioning_container_memory_usage_short_term"
 ]
 ```
 
@@ -4359,7 +4361,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _prometheus: less than 90% percentage pods available for 10m_
+- _prometheus: less than 90% percentage pods available for 10m for 10m0s_
 
 **Possible solutions:**
 
