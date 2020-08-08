@@ -81,7 +81,7 @@ func Frontend() *Container {
 						{
 							Name:            "search_alert_user_suggestions",
 							Description:     "search alert user suggestions shown every 5m",
-							Query:           `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out",source="browser",name!="CodeIntelSearch"}[5m])) / ignoring(alert_type) group_left sum(increase(src_graphql_search_response{source="browser",name!="CodeIntelSearch"}[5m])) * 100`,
+							Query:           `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out|no_results__suggest_quotes",source="browser",name!="CodeIntelSearch"}[5m])) / ignoring(alert_type) group_left sum(increase(src_graphql_search_response{source="browser",name!="CodeIntelSearch"}[5m])) * 100`,
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
 							PanelOptions:    PanelOptions().LegendFormat("{{alert_type}}").Unit(Percentage),
