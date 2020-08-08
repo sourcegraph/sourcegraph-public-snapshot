@@ -52,9 +52,9 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: 5+ hard timeout search responses every 5m_
+- _frontend: 2%+ hard timeout search responses every 5m for 15m0s_
 
-- _frontend: 20+ hard timeout search responses every 5m_
+- _frontend: 5%+ hard timeout search responses every 5m for 15m0s_
 
 **Possible solutions:**
 
@@ -71,9 +71,9 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: 5+ hard error search responses every 5m_
+- _frontend: 2%+ hard error search responses every 5m for 15m0s_
 
-- _frontend: 20+ hard error search responses every 5m_
+- _frontend: 5%+ hard error search responses every 5m for 15m0s_
 
 **Possible solutions:**
 
@@ -90,7 +90,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: 5+ partial timeout search responses every 5m_
+- _frontend: 5%+ partial timeout search responses every 5m for 15m0s_
 
 **Possible solutions:**
 
@@ -106,7 +106,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: 50+ search alert user suggestions shown every 5m_
+- _frontend: 5%+ search alert user suggestions shown every 5m for 15m0s_
 
 **Possible solutions:**
 
@@ -199,9 +199,9 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: 5+ hard timeout search code-intel responses every 5m_
+- _frontend: 2%+ hard timeout search code-intel responses every 5m for 15m0s_
 
-- _frontend: 20+ hard timeout search code-intel responses every 5m_
+- _frontend: 5%+ hard timeout search code-intel responses every 5m for 15m0s_
 
 **Possible solutions:**
 
@@ -218,9 +218,9 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: 5+ hard error search code-intel responses every 5m_
+- _frontend: 2%+ hard error search code-intel responses every 5m for 15m0s_
 
-- _frontend: 20+ hard error search code-intel responses every 5m_
+- _frontend: 5%+ hard error search code-intel responses every 5m for 15m0s_
 
 **Possible solutions:**
 
@@ -237,7 +237,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: 5+ partial timeout search code-intel responses every 5m_
+- _frontend: 5%+ partial timeout search code-intel responses every 5m for 15m0s_
 
 **Possible solutions:**
 
@@ -253,7 +253,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: 50+ search code-intel alert user suggestions shown every 5m_
+- _frontend: 5%+ search code-intel alert user suggestions shown every 5m for 15m0s_
 
 **Possible solutions:**
 
@@ -312,9 +312,9 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: 5+ hard timeout search API responses every 5m_
+- _frontend: 2%+ hard timeout search API responses every 5m for 15m0s_
 
-- _frontend: 20+ hard timeout search API responses every 5m_
+- _frontend: 5%+ hard timeout search API responses every 5m for 15m0s_
 
 **Possible solutions:**
 
@@ -331,9 +331,9 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: 5+ hard error search API responses every 5m_
+- _frontend: 2%+ hard error search API responses every 5m for 15m0s_
 
-- _frontend: 20+ hard error search API responses every 5m_
+- _frontend: 5%+ hard error search API responses every 5m for 15m0s_
 
 **Possible solutions:**
 
@@ -350,7 +350,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: 5+ partial timeout search API responses every 5m_
+- _frontend: 5%+ partial timeout search API responses every 5m for 15m0s_
 
 **Possible solutions:**
 
@@ -366,7 +366,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: 50+ search API alert user suggestions shown every 5m_
+- _frontend: 5%+ search API alert user suggestions shown every 5m_
 
 **Possible solutions:**
 
@@ -399,7 +399,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: 20+ precise code intel api errors every 5m_
+- _frontend: 5%+ precise code intel api errors every 5m for 15m0s_
 
 **Possible solutions:**
 
@@ -431,7 +431,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: 20+ precise code intel database errors every 5m_
+- _frontend: 5+ precise code intel database errors every 5m for 15m0s_
 
 **Possible solutions:**
 
@@ -447,7 +447,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: 5+ internal indexed search error responses every 5m_
+- _frontend: 5%+ internal indexed search error responses every 5m for 15m0s_
 
 **Possible solutions:**
 
@@ -464,7 +464,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: 5+ internal unindexed search error responses every 5m_
+- _frontend: 5%+ internal unindexed search error responses every 5m for 15m0s_
 
 **Possible solutions:**
 
@@ -481,7 +481,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: 25+ internal API error responses every 5m by route_
+- _frontend: 5%+ internal API error responses every 5m by route for 15m0s_
 
 **Possible solutions:**
 
@@ -530,7 +530,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: 5+ precise-code-intel-bundle-manager error responses every 5m_
+- _frontend: 5%+ precise-code-intel-bundle-manager error responses every 5m for 15m0s_
 
 **Possible solutions:**
 
@@ -562,7 +562,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: 5+ gitserver error responses every 5m_
+- _frontend: 5%+ gitserver error responses every 5m for 15m0s_
 
 **Possible solutions:**
 
