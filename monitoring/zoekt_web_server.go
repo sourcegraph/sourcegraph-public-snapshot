@@ -42,12 +42,12 @@ func ZoektWebServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage7d("zoekt-webserver"),
-						sharedProvisioningMemoryUsage7d("zoekt-webserver"),
+						sharedProvisioningCPUUsageLongTerm("zoekt-webserver"),
+						sharedProvisioningMemoryUsageLongTerm("zoekt-webserver"),
 					},
 					{
-						sharedProvisioningCPUUsage5m("zoekt-webserver"),
-						sharedProvisioningMemoryUsage5m("zoekt-webserver"),
+						sharedProvisioningCPUUsageShortTerm("zoekt-webserver"),
+						sharedProvisioningMemoryUsageShortTerm("zoekt-webserver"),
 					},
 				},
 			},

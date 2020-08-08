@@ -33,12 +33,12 @@ func QueryRunner() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage7d("query-runner"),
-						sharedProvisioningMemoryUsage7d("query-runner"),
+						sharedProvisioningCPUUsageLongTerm("query-runner"),
+						sharedProvisioningMemoryUsageLongTerm("query-runner"),
 					},
 					{
-						sharedProvisioningCPUUsage5m("query-runner"),
-						sharedProvisioningMemoryUsage5m("query-runner"),
+						sharedProvisioningCPUUsageShortTerm("query-runner"),
+						sharedProvisioningMemoryUsageShortTerm("query-runner"),
 					},
 				},
 			},

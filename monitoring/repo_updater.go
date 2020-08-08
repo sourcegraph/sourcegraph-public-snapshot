@@ -33,12 +33,12 @@ func RepoUpdater() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage7d("repo-updater"),
-						sharedProvisioningMemoryUsage7d("repo-updater"),
+						sharedProvisioningCPUUsageLongTerm("repo-updater"),
+						sharedProvisioningMemoryUsageLongTerm("repo-updater"),
 					},
 					{
-						sharedProvisioningCPUUsage5m("repo-updater"),
-						sharedProvisioningMemoryUsage5m("repo-updater"),
+						sharedProvisioningCPUUsageShortTerm("repo-updater"),
+						sharedProvisioningMemoryUsageShortTerm("repo-updater"),
 					},
 				},
 			},
