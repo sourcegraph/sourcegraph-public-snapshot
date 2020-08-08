@@ -704,7 +704,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_
+- _frontend: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -1028,7 +1028,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _gitserver: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_
+- _gitserver: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -1244,7 +1244,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _github-proxy: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_
+- _github-proxy: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -1647,7 +1647,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_
+- _precise-code-intel-bundle-manager: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -2062,7 +2062,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_
+- _precise-code-intel-worker: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -2509,7 +2509,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_
+- _precise-code-intel-indexer: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -2732,7 +2732,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _query-runner: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_
+- _query-runner: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -2955,7 +2955,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _replacer: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_
+- _replacer: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -3178,7 +3178,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_
+- _repo-updater: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -3433,7 +3433,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _searcher: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_
+- _searcher: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -3688,7 +3688,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _symbols: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_
+- _symbols: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -3952,7 +3952,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _syntect-server: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_
+- _syntect-server: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -4139,7 +4139,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _zoekt-indexserver: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_
+- _zoekt-indexserver: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -4323,7 +4323,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _zoekt-webserver: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_
+- _zoekt-webserver: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -4508,7 +4508,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _prometheus: 80%+ or less than 30% container cpu usage total (1d maximum) across all cores by instance for 336h0m0s_
+- _prometheus: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 

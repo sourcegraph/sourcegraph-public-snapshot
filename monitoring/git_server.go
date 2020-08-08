@@ -117,7 +117,7 @@ func GitServer() *Container {
 						{
 							Name:            "provisioning_container_memory_usage_long_term",
 							Description:     "container memory usage (1d maximum) by instance",
-							Query:           fmt.Sprintf(`quantile_over_time(0.9, cadvisor_container_memory_usage_percentage_total{%s}[1d])`, promCadvisorContainerMatchers("gitserver")),
+							Query:           fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[1d])`, promCadvisorContainerMatchers("gitserver")),
 							DataMayNotExist: true,
 							Warning:         Alert{LessOrEqual: 30, For: 14 * 24 * time.Hour},
 							PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Max(100).Min(0),

@@ -170,7 +170,7 @@ var sharedProvisioningMemoryUsageShortTerm sharedObservable = func(containerName
 var sharedProvisioningCPUUsageLongTerm sharedObservable = func(containerName string) Observable {
 	return Observable{
 		Name:            "provisioning_container_cpu_usage_long_term",
-		Description:     "container cpu usage total (1d maximum) across all cores by instance",
+		Description:     "container cpu usage total (90th percentile over 1d) across all cores by instance",
 		Query:           fmt.Sprintf(`quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{%s}[1d])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{LessOrEqual: 30, GreaterOrEqual: 80, For: 14 * 24 * time.Hour},
@@ -189,7 +189,7 @@ var sharedProvisioningMemoryUsageLongTerm sharedObservable = func(containerName 
 	return Observable{
 		Name:            "provisioning_container_memory_usage_long_term",
 		Description:     "container memory usage (1d maximum) by instance",
-		Query:           fmt.Sprintf(`quantile_over_time(0.9, cadvisor_container_memory_usage_percentage_total{%s}[1d])`, promCadvisorContainerMatchers(containerName)),
+		Query:           fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[1d])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{LessOrEqual: 30, GreaterOrEqual: 80, For: 14 * 24 * time.Hour},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Max(100).Min(0),
