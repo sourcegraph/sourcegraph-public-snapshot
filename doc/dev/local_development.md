@@ -57,6 +57,8 @@ You'll need to clone [`sourcegraph/dev-private`](https://github.com/sourcegraph/
 
 After the initial setup you can run `enterprise/dev/start.sh` instead of `dev/start.sh`.
 
+The environment variables `SITE_CONFIG_FILE`, `EXTSVC_CONFIG_FILE` and `GLOBAL_SETTINGS_FILE` are paths that are read at startup. The content of the files will overwrite the respective setting. `start.sh` will set these files to point into `dev-private`. To avoid overwriting configuration changes done in Sourcegraph, you can set the environment variable `DEV_NO_CONFIG=1`.
+
 ## Step 1: Install dependencies
 
 

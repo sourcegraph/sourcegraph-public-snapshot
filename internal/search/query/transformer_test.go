@@ -557,12 +557,12 @@ func TestReporevToRegex(t *testing.T) {
 		{
 			name: "no revision",
 			arg:  "github.com/foo",
-			want: "^github\\.com/foo$",
+			want: "^.*?github\\.com/foo.*?$",
 		},
 		{
 			name: "with revision",
 			arg:  "github.com/foo@bar",
-			want: "^github\\.com/foo$@bar",
+			want: "^.*?github\\.com/foo.*?$@bar",
 		},
 		{
 			name: "empty string",
@@ -636,15 +636,15 @@ func TestContainsNoGlobSyntax(t *testing.T) {
 		},
 		{
 			in:   "/foo.bar",
-			want: false,
+			want: true,
 		},
 		{
 			in:   "path/to/file/foo.bar",
-			want: false,
+			want: true,
 		},
 		{
 			in:   "github.com/org/repo",
-			want: false,
+			want: true,
 		},
 		{
 			in:   "foo**",
@@ -717,6 +717,10 @@ func TestMapGlobToRegex(t *testing.T) {
 			want:  `"repo:^.*?sourcegraph.*?$"`,
 		},
 		{
+			input: "repo:github.com/sourcegraph",
+			want:  `"repo:^.*?github\\.com/sourcegraph.*?$"`,
+		},
+		{
 			input: "repo:**sourcegraph",
 			want:  `"repo:^.*?sourcegraph$"`,
 		},
@@ -730,7 +734,7 @@ func TestMapGlobToRegex(t *testing.T) {
 		},
 		{
 			input: "file:afile file:dir1/bfile",
-			want:  `(and "file:^.*?afile.*?$" "file:^dir1/bfile$")`,
+			want:  `(and "file:^.*?afile.*?$" "file:^.*?dir1/bfile.*?$")`,
 		},
 	}
 	for _, c := range cases {

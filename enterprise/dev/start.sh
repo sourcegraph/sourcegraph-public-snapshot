@@ -25,12 +25,14 @@ fi
 # shellcheck disable=SC1090
 source "$DEV_PRIVATE_PATH/enterprise/dev/env"
 
-export SITE_CONFIG_FILE=$DEV_PRIVATE_PATH/enterprise/dev/site-config.json
-export EXTSVC_CONFIG_FILE=$DEV_PRIVATE_PATH/enterprise/dev/external-services-config.json
-export GLOBAL_SETTINGS_FILE=$PWD/../dev/global-settings.json
-export SITE_CONFIG_ALLOW_EDITS=true
-export GLOBAL_SETTINGS_ALLOW_EDITS=true
-export EXTSVC_CONFIG_ALLOW_EDITS=true
+if [ -z "${DEV_NO_CONFIG-}" ]; then
+  export SITE_CONFIG_FILE=${SITE_CONFIG_FILE:-$DEV_PRIVATE_PATH/enterprise/dev/site-config.json}
+  export EXTSVC_CONFIG_FILE=${EXTSVC_CONFIG_FILE:-$DEV_PRIVATE_PATH/enterprise/dev/external-services-config.json}
+  export GLOBAL_SETTINGS_FILE=${GLOBAL_SETTINGS_FILE:-$PWD/../dev/global-settings.json}
+  export SITE_CONFIG_ALLOW_EDITS=true
+  export GLOBAL_SETTINGS_ALLOW_EDITS=true
+  export EXTSVC_CONFIG_ALLOW_EDITS=true
+fi
 
 SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat "$DEV_PRIVATE_PATH"/enterprise/dev/test-license-generation-key.pem)
 export SOURCEGRAPH_LICENSE_GENERATION_KEY

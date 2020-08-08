@@ -216,7 +216,7 @@ func reporevToRegex(value string) (string, error) {
 	return value, nil
 }
 
-var globSyntax = lazyregexp.New(`[][*?/]`)
+var globSyntax = lazyregexp.New(`[][*?]`)
 
 func ContainsNoGlobSyntax(value string) bool {
 	return !globSyntax.MatchString(value)

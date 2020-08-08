@@ -119,12 +119,9 @@ func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpe
 		return nil, err
 	}
 
-	repoIDs := make([]api.RepoID, 0, len(cs))
-	for _, c := range cs {
-		repoIDs = append(repoIDs, c.RepoID)
-	}
-
-	accessibleReposByID, err := accessibleRepos(ctx, repoIDs)
+	// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
+	// filters out repositories that the user doesn't have access to.
+	accessibleReposByID, err := db.Repos.GetReposSetByIDs(ctx, cs.RepoIDs()...)
 	if err != nil {
 		return nil, err
 	}
@@ -209,6 +206,10 @@ func (e *changesetSpecNotFoundErr) Error() string {
 }
 
 func (e *changesetSpecNotFoundErr) NotFound() bool { return true }
+
+// ErrApplyClosedCampaign is returned by ApplyCampaign when the campaign
+// matched by the campaign spec is already closed.
+var ErrApplyClosedCampaign = errors.New("existing campaign matched by campaign spec is closed")
 
 type ApplyCampaignOpts struct {
 	CampaignSpecRandID string
@@ -304,6 +305,10 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		return nil, ErrEnsureCampaignFailed
 	}
 
+	if campaign.Closed() {
+		return nil, ErrApplyClosedCampaign
+	}
+
 	if campaign.CampaignSpecID == campaignSpec.ID {
 		return campaign, nil
 	}
@@ -347,14 +352,10 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 
 	// We load all the repositories involved, checking for repository permissions
 	// under the hood.
-	repoIDs := make([]api.RepoID, 0, len(newChangesetSpecs)+len(changesets))
-	for _, spec := range newChangesetSpecs {
-		repoIDs = append(repoIDs, spec.RepoID)
-	}
-	for _, changeset := range changesets {
-		repoIDs = append(repoIDs, changeset.RepoID)
-	}
-	accessibleReposByID, err := accessibleRepos(ctx, repoIDs)
+	repoIDs := append(newChangesetSpecs.RepoIDs(), changesets.RepoIDs()...)
+	// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
+	// filters out repositories that the user doesn't have access to.
+	accessibleReposByID, err := db.Repos.GetReposSetByIDs(ctx, repoIDs...)
 	if err != nil {
 		return nil, err
 	}
@@ -711,9 +712,9 @@ func (s *Service) MoveCampaign(ctx context.Context, opts MoveCampaignOpts) (camp
 var ErrEnsureCampaignFailed = errors.New("a campaign in the given namespace and with the given name exists but does not match the given ID")
 
 // ErrCloseProcessingCampaign is returned by CloseCampaign if the Campaign has
-// been published at the time of closing but its ChangesetJobs have not
-// finished execution.
-var ErrCloseProcessingCampaign = errors.New("cannot close a Campaign while changesets are being created on codehosts")
+// been published at the time of closing but its Changesets are still being
+// processed by the reconciler.
+var ErrCloseProcessingCampaign = errors.New("cannot close a campaign while changesets are being processed")
 
 // CloseCampaign closes the Campaign with the given ID if it has not been closed yet.
 func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets bool) (campaign *campaigns.Campaign, err error) {
@@ -736,19 +737,28 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 			return errors.Wrap(err, "getting campaign")
 		}
 
+		if campaign.Closed() {
+			return nil
+		}
+
 		if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID); err != nil {
 			return err
 		}
 
-		// TODO: Implement logic to find changesets in PUBLISHING state.
-		processing := false
-		if processing {
-			err = ErrCloseProcessingCampaign
-			return err
-		}
-
-		if !campaign.ClosedAt.IsZero() {
-			return nil
+		if closeChangesets {
+			processingState := campaigns.ReconcilerStateProcessing
+			countOpts := CountChangesetsOpts{
+				CampaignID:      campaign.ID,
+				ReconcilerState: &processingState,
+			}
+			processingCount, err := tx.CountChangesets(ctx, countOpts)
+			if err != nil {
+				return errors.Wrap(err, "checking for processing changesets")
+			}
+			if processingCount != 0 {
+				err = ErrCloseProcessingCampaign
+				return err
+			}
 		}
 
 		campaign.ClosedAt = time.Now().UTC()
@@ -765,9 +775,11 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 		go func() {
 			ctx := trace.ContextWithTrace(context.Background(), tr)
 
+			open := campaigns.ChangesetExternalStateOpen
 			cs, _, err := s.store.ListChangesets(ctx, ListChangesetsOpts{
-				CampaignID: campaign.ID,
-				Limit:      -1,
+				CampaignID:    campaign.ID,
+				ExternalState: &open,
+				Limit:         -1,
 			})
 			if err != nil {
 				log15.Error("ListChangesets", "err", err)
@@ -785,14 +797,8 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 	return campaign, nil
 }
 
-// ErrDeleteProcessingCampaign is returned by DeleteCampaign if the Campaign
-// has been published at the time of deletion but its ChangesetJobs have not
-// finished execution.
-var ErrDeleteProcessingCampaign = errors.New("cannot delete a Campaign while changesets are being created on codehosts")
-
 // DeleteCampaign deletes the Campaign with the given ID if it hasn't been
-// deleted yet. If closeChangesets is true, the changesets associated with the
-// Campaign will be closed on the codehosts.
+// deleted yet.
 func (s *Service) DeleteCampaign(ctx context.Context, id int64) (err error) {
 	traceTitle := fmt.Sprintf("campaign: %d", id)
 	tr, ctx := trace.New(ctx, "service.DeleteCampaign", traceTitle)
@@ -810,23 +816,7 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64) (err error) {
 		return err
 	}
 
-	transaction := func() (err error) {
-		tx, err := s.store.Transact(ctx)
-		if err != nil {
-			return err
-		}
-		defer func() { err = tx.Done(err) }()
-
-		// TODO: Implement logic to find changesets in PUBLISHING state.
-		processing := false
-		if processing {
-			return ErrDeleteProcessingCampaign
-		}
-
-		return tx.DeleteCampaign(ctx, id)
-	}
-
-	return transaction()
+	return s.store.DeleteCampaign(ctx, id)
 }
 
 // CloseOpenChangesets closes the given Changesets on their respective codehosts and syncs them.
@@ -839,7 +829,9 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs campaigns.Changese
 		return nil
 	}
 
-	accessibleReposByID, err := accessibleRepos(ctx, cs.RepoIDs())
+	// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
+	// filters out repositories that the user doesn't have access to.
+	accessibleReposByID, err := db.Repos.GetReposSetByIDs(ctx, cs.RepoIDs()...)
 	if err != nil {
 		return err
 	}
@@ -951,25 +943,6 @@ func validateCampaignBranch(branch string) error {
 		return ErrCampaignBranchInvalid
 	}
 	return nil
-}
-
-// accessibleRepos collects the RepoIDs of the changesets and returns a set of
-// the api.RepoID for which the subset of repositories for which the actor in
-// ctx has read permissions.
-func accessibleRepos(ctx context.Context, ids []api.RepoID) (map[api.RepoID]*types.Repo, error) {
-	// 🚨 SECURITY: We use db.Repos.GetByIDs to filter out repositories the
-	// user doesn't have access to.
-	accessibleRepos, err := db.Repos.GetByIDs(ctx, ids...)
-	if err != nil {
-		return nil, err
-	}
-
-	accessibleRepoIDs := make(map[api.RepoID]*types.Repo, len(accessibleRepos))
-	for _, r := range accessibleRepos {
-		accessibleRepoIDs[r.ID] = r
-	}
-
-	return accessibleRepoIDs, nil
 }
 
 // checkNamespaceAccess checks whether the current user in the ctx has access

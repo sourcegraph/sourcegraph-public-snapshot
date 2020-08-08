@@ -2850,229 +2850,6 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
-## replacer: frontend_internal_api_error_responses
-
-**Descriptions:**
-
-- _replacer: 5+ frontend-internal API error responses every 5m by route_
-
-**Possible solutions:**
-
-- **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
-- **Kubernetes:**
-	- Confirm that `kubectl get pods` shows the `frontend` pods are healthy.
-	- Check `kubectl logs replacer` for logs indicate request failures to `frontend` or `frontend-internal`.
-- **Docker Compose:**
-	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
-	- Check `docker logs replacer` for logs indicating request failures to `frontend` or `frontend-internal`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_replacer_frontend_internal_api_error_responses"
-]
-```
-
-## replacer: container_cpu_usage
-
-**Descriptions:**
-
-- _replacer: 99%+ container cpu usage total (1m average) across all cores by instance_
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the replacer container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_replacer_container_cpu_usage"
-]
-```
-
-## replacer: container_memory_usage
-
-**Descriptions:**
-
-- _replacer: 99%+ container memory usage by instance_
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of replacer container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_replacer_container_memory_usage"
-]
-```
-
-## replacer: container_restarts
-
-**Descriptions:**
-
-- _replacer: 1+ container restarts every 5m by instance_
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod replacer` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p replacer`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' replacer` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the replacer container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs replacer` (note this will include logs from the previous and currently running container).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_replacer_container_restarts"
-]
-```
-
-## replacer: fs_inodes_used
-
-**Descriptions:**
-
-- _replacer: 3e+06+ fs inodes in use by instance_
-
-**Possible solutions:**
-
-- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-			- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_replacer_fs_inodes_used"
-]
-```
-
-## replacer: provisioning_container_cpu_usage_7d
-
-**Descriptions:**
-
-- _replacer: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_
-
-**Possible solutions:**
-
-- If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the replacer container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_replacer_provisioning_container_cpu_usage_7d"
-]
-```
-
-## replacer: provisioning_container_memory_usage_7d
-
-**Descriptions:**
-
-- _replacer: 80%+ or less than 30% container memory usage (7d maximum) by instance_
-
-**Possible solutions:**
-
-- If usage is high:
-	- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider increasing `memory:` of replacer container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_replacer_provisioning_container_memory_usage_7d"
-]
-```
-
-## replacer: provisioning_container_cpu_usage_5m
-
-**Descriptions:**
-
-- _replacer: 90%+ container cpu usage total (5m maximum) across all cores by instance_
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the replacer container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_replacer_provisioning_container_cpu_usage_5m"
-]
-```
-
-## replacer: provisioning_container_memory_usage_5m
-
-**Descriptions:**
-
-- _replacer: 90%+ container memory usage (5m maximum) by instance_
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of replacer container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_replacer_provisioning_container_memory_usage_5m"
-]
-```
-
-## replacer: go_goroutines
-
-**Descriptions:**
-
-- _replacer: 10000+ maximum active goroutines for 10m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_replacer_go_goroutines"
-]
-```
-
-## replacer: go_gc_duration_seconds
-
-**Descriptions:**
-
-- _replacer: 2s+ maximum go garbage collection duration_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_replacer_go_gc_duration_seconds"
-]
-```
-
-## replacer: pods_available_percentage
-
-**Descriptions:**
-
-- _replacer: less than 90% percentage pods available for 10m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "critical_replacer_pods_available_percentage"
-]
-```
-
 ## repo-updater: frontend_internal_api_error_responses
 
 **Descriptions:**
@@ -3810,7 +3587,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _syntect-server: 5+ syntax highlighting errors every 5m_
+- _syntect-server: 5%+ syntax highlighting errors every 5m_
 
 **Possible solutions:**
 
@@ -3819,6 +3596,22 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```json
 "observability.silenceAlerts": [
   "warning_syntect-server_syntax_highlighting_errors"
+]
+```
+
+## syntect-server: syntax_highlighting_timeouts
+
+**Descriptions:**
+
+- _syntect-server: 5%+ syntax highlighting timeouts every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_syntect-server_syntax_highlighting_timeouts"
 ]
 ```
 
@@ -3835,22 +3628,6 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```json
 "observability.silenceAlerts": [
   "warning_syntect-server_syntax_highlighting_panics"
-]
-```
-
-## syntect-server: syntax_highlighting_timeouts
-
-**Descriptions:**
-
-- _syntect-server: 5+ syntax highlighting timeouts every 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_syntect-server_syntax_highlighting_timeouts"
 ]
 ```
 

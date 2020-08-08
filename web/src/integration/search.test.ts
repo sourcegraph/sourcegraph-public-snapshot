@@ -271,7 +271,7 @@ describe('Search', () => {
             await driver.assertWindowLocation('/search?q=fork:%22no%22+test&patternType=literal')
         })
 
-        test.only('Clicking on alert proposed query navigates to the right filter', async () => {
+        test('Clicking on alert proposed query navigates to the right filter', async () => {
             const searchResultsWithAlert = searchResults()
             if (searchResultsWithAlert.search) {
                 searchResultsWithAlert.search.results.results = []

@@ -402,6 +402,73 @@ func TestExternalServicesStore_List(t *testing.T) {
 	})
 }
 
+func TestExternalServicesStore_DistinctKinds(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	t.Run("no external service won't blow up", func(t *testing.T) {
+		kinds, err := ExternalServices.DistinctKinds(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(kinds) != 0 {
+			t.Fatalf("Kinds: want 0 but got %d", len(kinds))
+		}
+	})
+
+	// Create new external services in different kinds
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	ess := []*types.ExternalService{
+		{
+			Kind:        extsvc.KindGitHub,
+			DisplayName: "GITHUB #1",
+			Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		},
+		{
+			Kind:        extsvc.KindGitHub,
+			DisplayName: "GITHUB #2",
+			Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`,
+		},
+		{
+			Kind:        extsvc.KindGitLab,
+			DisplayName: "GITLAB #1",
+			Config:      `{"url": "https://github.com", "projectQuery": ["none"], "token": "abc"}`,
+		},
+		{
+			Kind:        extsvc.KindOther,
+			DisplayName: "OTHER #1",
+			Config:      `{"repos": []}`,
+		},
+	}
+	for _, es := range ess {
+		err := ExternalServices.Create(ctx, confGet, es)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Delete the last external service which should be excluded from the result
+	err := ExternalServices.Delete(ctx, ess[3].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	kinds, err := ExternalServices.DistinctKinds(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sort.Strings(kinds)
+	wantKinds := []string{extsvc.KindGitHub, extsvc.KindGitLab}
+	if diff := cmp.Diff(wantKinds, kinds); diff != "" {
+		t.Fatalf("Kinds mismatch (-want +got):\n%s", diff)
+	}
+}
+
 func TestExternalServicesStore_Count(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

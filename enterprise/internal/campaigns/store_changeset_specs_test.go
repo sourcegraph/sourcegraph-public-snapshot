@@ -20,7 +20,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 		t.Fatal(err)
 	}
 
-	changesetSpecs := make([]*cmpgn.ChangesetSpec, 0, 3)
+	changesetSpecs := make(cmpgn.ChangesetSpecs, 0, 3)
 	for i := 0; i < cap(changesetSpecs); i++ {
 		c := &cmpgn.ChangesetSpec{
 			RawSpec: `{"externalID":"12345"}`,
@@ -54,7 +54,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 	}
 
 	t.Run("Create", func(t *testing.T) {
-		toCreate := make([]*cmpgn.ChangesetSpec, 0, len(changesetSpecs)+1)
+		toCreate := make(cmpgn.ChangesetSpecs, 0, len(changesetSpecs)+1)
 		toCreate = append(toCreate, changesetSpecDeletedRepo)
 		toCreate = append(toCreate, changesetSpecs...)
 
@@ -209,7 +209,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 					t.Fatal(err)
 				}
 
-				want := []*cmpgn.ChangesetSpec{c}
+				want := cmpgn.ChangesetSpecs{c}
 				if diff := cmp.Diff(have, want); diff != "" {
 					t.Fatalf("opts: %+v, diff: %s", opts, diff)
 				}
@@ -224,7 +224,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 					t.Fatal(err)
 				}
 
-				want := []*cmpgn.ChangesetSpec{c}
+				want := cmpgn.ChangesetSpecs{c}
 				if diff := cmp.Diff(have, want); diff != "" {
 					t.Fatalf("opts: %+v, diff: %s", opts, diff)
 				}

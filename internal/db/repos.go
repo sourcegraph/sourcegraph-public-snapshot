@@ -117,6 +117,22 @@ func (s *repos) GetByIDs(ctx context.Context, ids ...api.RepoID) ([]*types.Repo,
 	return s.getReposBySQL(ctx, true, q)
 }
 
+// GetReposSetByIDs returns a map of repositories with the given IDs, indexed by their IDs. The number of results
+// entries could be less than the candidate list due to no repository is associated with some IDs.
+func (s *repos) GetReposSetByIDs(ctx context.Context, ids ...api.RepoID) (map[api.RepoID]*types.Repo, error) {
+	repos, err := s.GetByIDs(ctx, ids...)
+	if err != nil {
+		return nil, err
+	}
+
+	repoMap := make(map[api.RepoID]*types.Repo, len(repos))
+	for _, r := range repos {
+		repoMap[r.ID] = r
+	}
+
+	return repoMap, nil
+}
+
 func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
 	if Mocks.Repos.Count != nil {
 		return Mocks.Repos.Count(ctx, opt)

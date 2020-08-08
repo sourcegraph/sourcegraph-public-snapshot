@@ -86,6 +86,9 @@ func (c *Campaign) RemoveChangesetID(id int64) {
 	}
 }
 
+// Closed returns true when the ClosedAt timestamp has been set.
+func (c *Campaign) Closed() bool { return !c.ClosedAt.IsZero() }
+
 // GenChangesetBody creates the markdown to be used as the body of a changeset.
 // It includes a URL back to the campaign on the Sourcegraph instance.
 func (c *Campaign) GenChangesetBody(externalURL string) string {
@@ -472,6 +475,22 @@ func (c *Changeset) URL() (s string, err error) {
 	default:
 		return "", errors.New("unknown changeset type")
 	}
+}
+
+// ChangesetSpecs is a slice of *ChangesetSpecs.
+type ChangesetSpecs []*ChangesetSpec
+
+// IDs returns the unique RepoIDs of all changeset specs in the slice.
+func (cs ChangesetSpecs) RepoIDs() []api.RepoID {
+	repoIDMap := make(map[api.RepoID]struct{})
+	for _, c := range cs {
+		repoIDMap[c.RepoID] = struct{}{}
+	}
+	repoIDs := make([]api.RepoID, 0)
+	for id := range repoIDMap {
+		repoIDs = append(repoIDs, id)
+	}
+	return repoIDs
 }
 
 // Changesets is a slice of *Changesets.

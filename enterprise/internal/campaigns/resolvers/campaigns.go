@@ -41,7 +41,13 @@ func (r *campaignsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacke
 }
 
 func (r *campaignsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := ee.CountCampaignsOpts{ChangesetID: r.opts.ChangesetID, State: r.opts.State, OnlyForAuthor: r.opts.OnlyForAuthor}
+	opts := ee.CountCampaignsOpts{
+		ChangesetID:     r.opts.ChangesetID,
+		State:           r.opts.State,
+		OnlyForAuthor:   r.opts.OnlyForAuthor,
+		NamespaceUserID: r.opts.NamespaceUserID,
+		NamespaceOrgID:  r.opts.NamespaceOrgID,
+	}
 	count, err := r.store.CountCampaigns(ctx, opts)
 	return int32(count), err
 }
@@ -122,7 +128,7 @@ func (r *campaignResolver) UpdatedAt() graphqlbackend.DateTime {
 }
 
 func (r *campaignResolver) ClosedAt() *graphqlbackend.DateTime {
-	if r.Campaign.ClosedAt.IsZero() {
+	if !r.Campaign.Closed() {
 		return nil
 	}
 	return &graphqlbackend.DateTime{Time: r.Campaign.ClosedAt}
@@ -155,13 +161,16 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 
 	resolvers := []graphqlbackend.ChangesetCountsResolver{}
 
-	opts := ee.ListChangesetsOpts{CampaignID: r.Campaign.ID, Limit: -1}
+	publishedState := campaigns.ChangesetPublicationStatePublished
+	opts := ee.ListChangesetsOpts{CampaignID: r.Campaign.ID, Limit: -1, PublicationState: &publishedState}
 	cs, _, err := r.store.ListChangesets(ctx, opts)
 	if err != nil {
 		return resolvers, err
 	}
 
-	weekAgo := time.Now().Add(-7 * 24 * time.Hour)
+	now := r.store.Clock()()
+
+	weekAgo := now.Add(-7 * 24 * time.Hour)
 	start := r.Campaign.CreatedAt.UTC()
 	if start.After(weekAgo) {
 		start = weekAgo
@@ -170,7 +179,7 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 		start = args.From.Time.UTC()
 	}
 
-	end := time.Now().UTC()
+	end := now.UTC()
 	if args.To != nil && args.To.Time.Before(end) {
 		end = args.To.Time.UTC()
 	}
