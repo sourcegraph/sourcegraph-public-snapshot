@@ -86,6 +86,9 @@ func (c *Campaign) RemoveChangesetID(id int64) {
 	}
 }
 
+// Closed returns true when the ClosedAt timestamp has been set.
+func (c *Campaign) Closed() bool { return !c.ClosedAt.IsZero() }
+
 // GenChangesetBody creates the markdown to be used as the body of a changeset.
 // It includes a URL back to the campaign on the Sourcegraph instance.
 func (c *Campaign) GenChangesetBody(externalURL string) string {
@@ -149,7 +152,7 @@ func (s ReconcilerState) Valid() bool {
 // ToDB returns the database representation of the reconciler state. That's
 // needed because we want to use UPPERCASE ReconcilerStates in the application
 // and GraphQL layer, but need to use lowercase in the database to make it work
-// with workerutils.Worker.
+// with workerutil.Worker.
 func (s ReconcilerState) ToDB() string { return strings.ToLower(string(s)) }
 
 // ChangesetExternalState defines the possible states of a Changeset on a code host.
@@ -276,7 +279,7 @@ type Changeset struct {
 
 	PublicationState ChangesetPublicationState // "unpublished", "published"
 
-	// All of the following fields are used by workerutils.Worker.
+	// All of the following fields are used by workerutil.Worker.
 	ReconcilerState ReconcilerState
 	FailureMessage  *string
 	StartedAt       time.Time
@@ -474,6 +477,22 @@ func (c *Changeset) URL() (s string, err error) {
 	}
 }
 
+// ChangesetSpecs is a slice of *ChangesetSpecs.
+type ChangesetSpecs []*ChangesetSpec
+
+// IDs returns the unique RepoIDs of all changeset specs in the slice.
+func (cs ChangesetSpecs) RepoIDs() []api.RepoID {
+	repoIDMap := make(map[api.RepoID]struct{})
+	for _, c := range cs {
+		repoIDMap[c.RepoID] = struct{}{}
+	}
+	repoIDs := make([]api.RepoID, 0)
+	for id := range repoIDMap {
+		repoIDs = append(repoIDs, id)
+	}
+	return repoIDs
+}
+
 // Changesets is a slice of *Changesets.
 type Changesets []*Changeset
 
@@ -486,11 +505,15 @@ func (cs Changesets) IDs() []int64 {
 	return ids
 }
 
-// IDs returns the RepoIDs of all changesets in the slice.
+// IDs returns the unique RepoIDs of all changesets in the slice.
 func (cs Changesets) RepoIDs() []api.RepoID {
-	repoIDs := make([]api.RepoID, len(cs))
-	for i, c := range cs {
-		repoIDs[i] = c.RepoID
+	repoIDMap := make(map[api.RepoID]struct{})
+	for _, c := range cs {
+		repoIDMap[c.RepoID] = struct{}{}
+	}
+	repoIDs := make([]api.RepoID, len(repoIDMap))
+	for id := range repoIDMap {
+		repoIDs = append(repoIDs, id)
 	}
 	return repoIDs
 }

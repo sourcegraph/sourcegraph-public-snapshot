@@ -63,11 +63,15 @@ type User struct {
 	ID         string
 	DatabaseID int32
 	SiteAdmin  bool
+
+	Campaigns CampaignConnection
 }
 
 type Org struct {
 	ID   string
 	Name string
+
+	Campaigns CampaignConnection
 }
 
 type UserOrg struct {
@@ -96,13 +100,19 @@ type Campaign struct {
 type CampaignConnection struct {
 	Nodes      []Campaign
 	TotalCount int
-	PageInfo   struct {
-		HasNextPage bool
-	}
+	PageInfo   PageInfo
+}
+
+type ChangesetEvent struct {
+	ID        string
+	Changeset struct{ ID string }
+	CreatedAt string
 }
 
 type ChangesetEventConnection struct {
 	TotalCount int
+	PageInfo   PageInfo
+	Nodes      []ChangesetEvent
 }
 
 type Repository struct {
@@ -149,16 +159,14 @@ type Comparison struct {
 type Label struct {
 	Text        string
 	Color       string
-	Description string
+	Description *string
 }
 
 type ChangesetConnection struct {
 	Nodes      []Changeset
 	TotalCount int
-	PageInfo   struct {
-		HasNextPage bool
-	}
-	Stats ChangesetConnectionStats
+	PageInfo   PageInfo
+	Stats      ChangesetConnectionStats
 }
 
 type ChangesetConnectionStats struct {
@@ -170,7 +178,7 @@ type ChangesetConnectionStats struct {
 }
 
 type ChangesetCounts struct {
-	Date                 graphqlbackend.DateTime
+	Date                 string
 	Total                int32
 	Merged               int32
 	Closed               int32
@@ -243,4 +251,8 @@ type ChangesetSpecDescription struct {
 type GitCommitDescription struct {
 	Message string
 	Diff    string
+}
+
+type PageInfo struct {
+	HasNextPage bool
 }

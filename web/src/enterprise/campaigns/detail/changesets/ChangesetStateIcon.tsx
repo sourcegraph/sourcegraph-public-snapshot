@@ -1,7 +1,7 @@
 import { changesetExternalStateIcons, changesetExternalStateColorClasses, changesetStateLabels } from './presentation'
-import { ChangesetExternalState } from '../../../../../../shared/src/graphql/schema'
 import React from 'react'
 import classNames from 'classnames'
+import { ChangesetExternalState } from '../../../../graphql-operations'
 
 export interface ChangesetStateIconProps {
     externalState: ChangesetExternalState

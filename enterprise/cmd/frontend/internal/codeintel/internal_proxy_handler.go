@@ -55,8 +55,8 @@ func newInternalProxyHandler() (func() http.Handler, error) {
 		base := mux.NewRouter().PathPrefix("/.internal-code-intel/").Subrouter()
 		base.StrictSlash(true)
 
-		// Proxy only GET info/refs and git-upload-pack for gitservice (git clone/fetch)
-		base.Path("/git/{rest:.*/(?:info/refs|git-upload-pack)}").Methods("GET").Handler(reverseProxy(frontendOrigin))
+		// Proxy only info/refs and git-upload-pack for gitservice (git clone/fetch)
+		base.Path("/git/{rest:.*/(?:info/refs|git-upload-pack)}").Handler(reverseProxy(frontendOrigin))
 
 		// Proxy only the known routes in the index queue API
 		base.Path("/index-queue/{rest:(?:dequeue|complete|heartbeat)}").Handler(reverseProxy(indexerOrigin))
@@ -117,6 +117,7 @@ func reverseProxy(target *url.URL) http.Handler {
 
 		copyHeader(w.Header(), resp.Header)
 		w.WriteHeader(resp.StatusCode)
+
 		if _, err := io.Copy(w, resp.Body); err != nil {
 			log15.Error("Failed to write payload to client", "err", err)
 		}
@@ -147,8 +148,6 @@ func makeProxyRequest(r *http.Request, target *url.URL) (*http.Request, error) {
 	u.Scheme = target.Scheme
 	u.Host = target.Host
 	u.Path = path.Join("/", target.Path, getRest(r))
-
-	fmt.Printf("Making request to %s\n", u)
 
 	req, err := http.NewRequest(r.Method, u.String(), bytes.NewReader(content))
 	if err != nil {

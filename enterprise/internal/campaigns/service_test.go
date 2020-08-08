@@ -181,12 +181,6 @@ func TestService(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	now := time.Now().UTC().Truncate(time.Microsecond)
-	clock := func() time.Time {
-		return now.UTC().Truncate(time.Microsecond)
-	}
-	cf := httpcli.NewExternalHTTPClientFactory()
-
 	admin := createTestUser(ctx, t)
 	if !admin.SiteAdmin {
 		t.Fatal("admin is not a site-admin")
@@ -197,47 +191,14 @@ func TestService(t *testing.T) {
 		t.Fatal("user is admin, want non-admin")
 	}
 
-	store := NewStoreWithClock(dbconn.Global, clock)
+	store := NewStore(dbconn.Global)
+	rs, _ := createTestRepos(t, ctx, dbconn.Global, 4)
 
-	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-
-	ext := &repos.ExternalService{
-		Kind:        extsvc.TypeGitHub,
-		DisplayName: "GitHub",
-		Config: marshalJSON(t, &schema.GitHubConnection{
-			Url:   "https://github.com",
-			Token: "SECRETTOKEN",
-		}),
-	}
-	if err := reposStore.UpsertExternalServices(ctx, ext); err != nil {
-		t.Fatal(err)
-	}
-
-	var rs []*repos.Repo
-	for i := 0; i < 4; i++ {
-		r := testRepo(i, extsvc.TypeGitHub)
-		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
-
-		rs = append(rs, r)
-	}
-
-	awsCodeCommitRepoID := 4
-	{
-		r := testRepo(awsCodeCommitRepoID, extsvc.TypeAWSCodeCommit)
-		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
-		rs = append(rs, r)
-	}
-
-	err := reposStore.UpsertRepos(ctx, rs...)
-	if err != nil {
-		t.Fatal(err)
-	}
+	svc := NewService(store, nil)
 
 	t.Run("CreateCampaign", func(t *testing.T) {
 		campaign := testCampaign(admin.ID)
-		svc := NewServiceWithClock(store, cf, clock)
-
-		err = svc.CreateCampaign(ctx, campaign)
+		err := svc.CreateCampaign(ctx, campaign)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -250,50 +211,91 @@ func TestService(t *testing.T) {
 
 	t.Run("DeleteCampaign", func(t *testing.T) {
 		campaign := testCampaign(admin.ID)
-
-		svc := NewServiceWithClock(store, cf, clock)
-
-		if err = svc.CreateCampaign(ctx, campaign); err != nil {
+		if err := svc.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
 		if err := svc.DeleteCampaign(ctx, campaign.ID); err != nil {
 			t.Fatalf("campaign not deleted: %s", err)
 		}
+
+		_, err := store.GetCampaign(ctx, GetCampaignOpts{ID: campaign.ID})
+		if err != nil && err != ErrNoResults {
+			t.Fatalf("want campaign to be deleted, but was not: %e", err)
+		}
 	})
 
 	t.Run("CloseCampaign", func(t *testing.T) {
-		campaign := testCampaign(admin.ID)
-
-		svc := NewServiceWithClock(store, cf, clock)
-
-		if err = svc.CreateCampaign(ctx, campaign); err != nil {
-			t.Fatal(err)
+		createCampaign := func(t *testing.T) *campaigns.Campaign {
+			t.Helper()
+			campaign := testCampaign(admin.ID)
+			if err := store.CreateCampaign(ctx, campaign); err != nil {
+				t.Fatal(err)
+			}
+			return campaign
 		}
 
-		campaign, err = svc.CloseCampaign(ctx, campaign.ID, true)
-		if err != nil {
-			t.Fatalf("campaign not closed: %s", err)
+		closeConfirm := func(t *testing.T, c *campaigns.Campaign, closeChangesets bool) {
+			t.Helper()
+
+			closedCampaign, err := svc.CloseCampaign(ctx, c.ID, closeChangesets)
+			if err != nil {
+				t.Fatalf("campaign not closed: %s", err)
+			}
+			if closedCampaign.ClosedAt.IsZero() {
+				t.Fatalf("campaign ClosedAt is zero")
+			}
 		}
-		if campaign.ClosedAt.IsZero() {
-			t.Fatalf("campaign ClosedAt is zero")
-		}
+
+		t.Run("no changesets", func(t *testing.T) {
+			campaign := createCampaign(t)
+			closeConfirm(t, campaign, false)
+		})
+
+		t.Run("processing changesets", func(t *testing.T) {
+			campaign := createCampaign(t)
+
+			changeset := testChangeset(rs[0].ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
+			changeset.ReconcilerState = campaigns.ReconcilerStateProcessing
+			if err := store.CreateChangeset(ctx, changeset); err != nil {
+				t.Fatal(err)
+			}
+
+			// should fail
+			_, err := svc.CloseCampaign(ctx, campaign.ID, true)
+			if err != ErrCloseProcessingCampaign {
+				t.Fatalf("CloseCampaign returned unexpected error: %s", err)
+			}
+
+			// without trying to close changesets, it should succeed:
+			closeConfirm(t, campaign, false)
+		})
+
+		t.Run("non-processing changesets", func(t *testing.T) {
+			campaign := createCampaign(t)
+
+			changeset := testChangeset(rs[0].ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
+			changeset.ReconcilerState = campaigns.ReconcilerStateCompleted
+			if err := store.CreateChangeset(ctx, changeset); err != nil {
+				t.Fatal(err)
+			}
+
+			closeConfirm(t, campaign, true)
+		})
 	})
 
 	t.Run("EnqueueChangesetSync", func(t *testing.T) {
-		svc := NewServiceWithClock(store, cf, clock)
-
 		campaign := testCampaign(admin.ID)
-		if err = store.CreateCampaign(ctx, campaign); err != nil {
+		if err := store.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
 
 		changeset := testChangeset(rs[0].ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
-		if err = store.CreateChangeset(ctx, changeset); err != nil {
+		if err := store.CreateChangeset(ctx, changeset); err != nil {
 			t.Fatal(err)
 		}
 
 		campaign.ChangesetIDs = []int64{changeset.ID}
-		if err = store.UpdateCampaign(ctx, campaign); err != nil {
+		if err := store.UpdateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
 
@@ -326,11 +328,11 @@ func TestService(t *testing.T) {
 
 	t.Run("CloseOpenChangesets", func(t *testing.T) {
 		changeset1 := testChangeset(rs[0].ID, 0, campaigns.ChangesetExternalStateOpen)
-		if err = store.CreateChangeset(ctx, changeset1); err != nil {
+		if err := store.CreateChangeset(ctx, changeset1); err != nil {
 			t.Fatal(err)
 		}
 		changeset2 := testChangeset(rs[1].ID, 0, campaigns.ChangesetExternalStateOpen)
-		if err = store.CreateChangeset(ctx, changeset2); err != nil {
+		if err := store.CreateChangeset(ctx, changeset2); err != nil {
 			t.Fatal(err)
 		}
 
@@ -340,7 +342,7 @@ func TestService(t *testing.T) {
 		fakeSource := &ct.FakeChangesetSource{Err: nil}
 		sourcer := repos.NewFakeSourcer(nil, fakeSource)
 
-		svc := NewServiceWithClock(store, cf, clock)
+		svc := NewService(store, nil)
 		svc.sourcer = sourcer
 
 		// Try to close open changesets
@@ -360,8 +362,6 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CreateCampaignSpec", func(t *testing.T) {
-		svc := NewServiceWithClock(store, cf, clock)
-
 		changesetSpecs := make([]*campaigns.ChangesetSpec, 0, len(rs))
 		changesetSpecRandIDs := make([]string, 0, len(rs))
 		for _, r := range rs {
@@ -525,8 +525,6 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CreateChangesetSpec", func(t *testing.T) {
-		svc := NewServiceWithClock(store, cf, clock)
-
 		repo := rs[0]
 		rawSpec := ct.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo.ID), "d34db33f")
 
@@ -589,8 +587,6 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("MoveCampaign", func(t *testing.T) {
-		svc := NewServiceWithClock(store, cf, clock)
-
 		createCampaign := func(t *testing.T, name string, authorID, userID, orgID int32) *campaigns.Campaign {
 			t.Helper()
 
@@ -1156,6 +1152,23 @@ func TestServiceApplyCampaign(t *testing.T) {
 				t.Fatalf("wrong repository ID in RepoNotFoundErr: %d", notFoundErr.ID)
 			}
 		})
+	})
+
+	t.Run("applying to closed campaign", func(t *testing.T) {
+		campaignSpec := createCampaignSpec(t, ctx, store, "closed-campaign", admin.ID)
+		campaign := createCampaign(t, ctx, store, "closed-campaign", admin.ID, campaignSpec.ID)
+
+		campaign.ClosedAt = time.Now()
+		if err := store.UpdateCampaign(ctx, campaign); err != nil {
+			t.Fatalf("failed to update campaign: %s", err)
+		}
+
+		_, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+			CampaignSpecRandID: campaignSpec.RandID,
+		})
+		if err != ErrApplyClosedCampaign {
+			t.Fatalf("ApplyCampaign returned unexpected error: %s", err)
+		}
 	})
 }
 

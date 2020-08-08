@@ -1,8 +1,8 @@
 import React from 'react'
 import { HiddenExternalChangesetNode } from './HiddenExternalChangesetNode'
 import { addDays } from 'date-fns'
-import { ChangesetExternalState } from '../../../../../../shared/src/graphql/schema'
 import { mount } from 'enzyme'
+import { ChangesetExternalState } from '../../../../graphql-operations'
 
 describe('HiddenExternalChangesetNode', () => {
     test('renders', () => {

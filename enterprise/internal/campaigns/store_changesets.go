@@ -161,9 +161,9 @@ func (s *Store) createChangesetQuery(c *campaigns.Changeset) (*sqlf.Query, error
 		c.PublicationState,
 		c.ReconcilerState.ToDB(),
 		c.FailureMessage,
-		c.StartedAt,
-		c.FinishedAt,
-		c.ProcessAfter,
+		nullTimeColumn(c.StartedAt),
+		nullTimeColumn(c.FinishedAt),
+		nullTimeColumn(c.ProcessAfter),
 		c.NumResets,
 		sqlf.Join(changesetColumns, ", "),
 	), nil
@@ -185,6 +185,7 @@ type CountChangesetsOpts struct {
 	ExternalState       *campaigns.ChangesetExternalState
 	ExternalReviewState *campaigns.ChangesetReviewState
 	ExternalCheckState  *campaigns.ChangesetCheckState
+	ReconcilerState     *campaigns.ReconcilerState
 }
 
 // CountChangesets returns the number of changesets in the database.
@@ -216,6 +217,11 @@ func countChangesetsQuery(opts *CountChangesetsOpts) *sqlf.Query {
 	}
 	if opts.ExternalCheckState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.external_check_state = %s", *opts.ExternalCheckState))
+	}
+
+	if opts.ReconcilerState != nil {
+		state := (*opts.ReconcilerState).ToDB()
+		preds = append(preds, sqlf.Sprintf("changesets.reconciler_state = %s", state))
 	}
 
 	return sqlf.Sprintf(countChangesetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
@@ -525,9 +531,9 @@ func (s *Store) updateChangesetQuery(c *campaigns.Changeset) (*sqlf.Query, error
 		c.PublicationState,
 		c.ReconcilerState.ToDB(),
 		c.FailureMessage,
-		c.StartedAt,
-		c.FinishedAt,
-		c.ProcessAfter,
+		nullTimeColumn(c.StartedAt),
+		nullTimeColumn(c.FinishedAt),
+		nullTimeColumn(c.ProcessAfter),
 		c.NumResets,
 		// ID
 		c.ID,
@@ -625,9 +631,9 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		&t.PublicationState,
 		&reconcilerState,
 		&dbutil.NullString{S: &failureMessage},
-		&t.StartedAt,
-		&t.FinishedAt,
-		&t.ProcessAfter,
+		&dbutil.NullTime{Time: &t.StartedAt},
+		&dbutil.NullTime{Time: &t.FinishedAt},
+		&dbutil.NullTime{Time: &t.ProcessAfter},
 		&t.NumResets,
 	)
 	if err != nil {

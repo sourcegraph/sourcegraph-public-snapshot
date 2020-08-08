@@ -128,10 +128,16 @@ func TestParseParameterList(t *testing.T) {
 			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":4}}`,
 			WantLabels: Literal | Quoted,
 		},
+		{
+			Input:      `foo.*bar(`,
+			Want:       `{"value":"foo.*bar(","negated":false}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":9}}`,
+			WantLabels: Regexp | HeuristicDanglingParens,
+		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
-			parser := &parser{buf: []byte(tt.Input)}
+			parser := &parser{buf: []byte(tt.Input), heuristics: parensAsPatterns | allowDanglingParens}
 			result, err := parser.parseLeavesRegexp()
 			if err != nil {
 				t.Fatal(fmt.Sprintf("Unexpected error: %s", err))

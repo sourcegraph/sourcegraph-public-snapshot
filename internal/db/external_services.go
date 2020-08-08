@@ -12,6 +12,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/xeipuuv/gojsonschema"
 
@@ -57,14 +58,21 @@ type ExternalServiceKind struct {
 
 // ExternalServicesListOptions contains options for listing external services.
 type ExternalServicesListOptions struct {
+	// When true, only include external services not under any namespace (i.e. owned by all site admins),
+	// and value of NamespaceUserID is ignored.
+	NoNamespace bool
+	// When specified, only include external services under given user namespace.
 	NamespaceUserID int32
-	Kinds           []string
+	// When specified, only include external services with given list of kinds.
+	Kinds []string
 	*LimitOffset
 }
 
 func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
-	if o.NamespaceUserID > 0 {
+	if o.NoNamespace {
+		conds = append(conds, sqlf.Sprintf(`namespace_user_id IS NULL`))
+	} else if o.NamespaceUserID > 0 {
 		conds = append(conds, sqlf.Sprintf(`namespace_user_id = %d`, o.NamespaceUserID))
 	}
 	if len(o.Kinds) > 0 {
@@ -272,24 +280,24 @@ func (e *ExternalServicesStore) validateDuplicateRateLimits(ctx context.Context,
 // determines a deadlock occurred.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error {
+func (e *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf.Unified, es *types.ExternalService) error {
 	if Mocks.ExternalServices.Create != nil {
-		return Mocks.ExternalServices.Create(ctx, confGet, externalService)
+		return Mocks.ExternalServices.Create(ctx, confGet, es)
 	}
 
 	ps := confGet().AuthProviders
-	if err := e.ValidateConfig(ctx, 0, externalService.Kind, externalService.Config, ps); err != nil {
+	if err := e.ValidateConfig(ctx, 0, es.Kind, es.Config, ps); err != nil {
 		return err
 	}
 
-	externalService.CreatedAt = time.Now().UTC().Truncate(time.Microsecond)
-	externalService.UpdatedAt = externalService.CreatedAt
+	es.CreatedAt = time.Now().UTC().Truncate(time.Microsecond)
+	es.UpdatedAt = es.CreatedAt
 
 	return dbconn.Global.QueryRowContext(
 		ctx,
 		"INSERT INTO external_services(kind, display_name, config, created_at, updated_at, namespace_user_id) VALUES($1, $2, $3, $4, $5, $6) RETURNING id",
-		externalService.Kind, externalService.DisplayName, externalService.Config, externalService.CreatedAt, externalService.UpdatedAt, externalService.NamespaceUserID,
-	).Scan(&externalService.ID)
+		es.Kind, es.DisplayName, es.Config, es.CreatedAt, es.UpdatedAt, es.NamespaceUserID,
+	).Scan(&es.ID)
 }
 
 // ExternalServiceUpdate contains optional fields to update.
@@ -415,6 +423,26 @@ func (e *ExternalServicesStore) List(ctx context.Context, opt ExternalServicesLi
 		return Mocks.ExternalServices.List(opt)
 	}
 	return e.list(ctx, opt.sqlConditions(), opt.LimitOffset)
+}
+
+// DistinctKinds returns the distinct list of external services kinds that are stored in the database.
+func (e *ExternalServicesStore) DistinctKinds(ctx context.Context) ([]string, error) {
+	q := sqlf.Sprintf(`
+SELECT ARRAY_AGG(DISTINCT(kind)::TEXT)
+FROM external_services
+WHERE deleted_at IS NULL
+`)
+
+	var kinds []string
+	err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(pq.Array(&kinds))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return []string{}, nil
+		}
+		return nil, err
+	}
+
+	return kinds, nil
 }
 
 // listConfigs decodes the list of configs into result. In addition to populating

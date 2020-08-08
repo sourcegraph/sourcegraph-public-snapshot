@@ -8,11 +8,11 @@ import { ExternalChangesetNode } from './ExternalChangesetNode'
 import { addHours } from 'date-fns'
 import {
     ChangesetExternalState,
-    ChangesetCheckState,
-    ChangesetReviewState,
     ChangesetReconcilerState,
     ChangesetPublicationState,
-} from '../../../../../../shared/src/graphql/schema'
+    ChangesetCheckState,
+    ChangesetReviewState,
+} from '../../../../graphql-operations'
 
 let isLightTheme = true
 

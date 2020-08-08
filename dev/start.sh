@@ -63,7 +63,6 @@ export INSECURE_DEV=1
 export SRC_GIT_SERVERS=127.0.0.1:3178
 export GOLANGSERVER_SRC_GIT_SERVERS=host.docker.internal:3178
 export SEARCHER_URL=http://127.0.0.1:3181
-export REPLACER_URL=http://127.0.0.1:3185
 export REPO_UPDATER_URL=http://127.0.0.1:3182
 export REDIS_ENDPOINT=127.0.0.1:6379
 export QUERY_RUNNER_URL=http://localhost:3183
@@ -101,10 +100,12 @@ export SOURCEGRAPH_HTTPS_PORT="${SOURCEGRAPH_HTTPS_PORT:-"3443"}"
 export SRC_HTTP_ADDR=":3082"
 export WEBPACK_DEV_SERVER=1
 
-export SITE_CONFIG_FILE=${SITE_CONFIG_FILE:-./dev/site-config.json}
-export GLOBAL_SETTINGS_FILE=${GLOBAL_SETTINGS_FILE:-./dev/global-settings.json}
-export SITE_CONFIG_ALLOW_EDITS=true
-export GLOBAL_SETTINGS_ALLOW_EDITS=true
+if [ -z "${DEV_NO_CONFIG-}" ]; then
+  export SITE_CONFIG_FILE=${SITE_CONFIG_FILE:-./dev/site-config.json}
+  export GLOBAL_SETTINGS_FILE=${GLOBAL_SETTINGS_FILE:-./dev/global-settings.json}
+  export SITE_CONFIG_ALLOW_EDITS=true
+  export GLOBAL_SETTINGS_ALLOW_EDITS=true
+fi
 
 # WebApp
 export NODE_ENV=development

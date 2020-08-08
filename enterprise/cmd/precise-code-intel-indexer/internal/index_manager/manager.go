@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/teivah/onecontext"
 )
 
@@ -69,7 +69,7 @@ type ManagerOptions struct {
 }
 
 type manager struct {
-	store            workerutil.Store
+	store            dbworkerstore.Store
 	options          ManagerOptions
 	clock            glock.Clock
 	indexers         map[string]*indexerMeta
@@ -92,16 +92,16 @@ type indexerMeta struct {
 // indexMeta wraps an index record and the tranaction that is currently locking it for processing.
 type indexMeta struct {
 	index   store.Index
-	tx      workerutil.Store
+	tx      dbworkerstore.Store
 	started time.Time
 }
 
 // New creates a new manager with the given store and options.
-func New(store workerutil.Store, options ManagerOptions) ThreadedManager {
+func New(store dbworkerstore.Store, options ManagerOptions) ThreadedManager {
 	return newManager(store, options, glock.NewRealClock())
 }
 
-func newManager(store workerutil.Store, options ManagerOptions, clock glock.Clock) ThreadedManager {
+func newManager(store dbworkerstore.Store, options ManagerOptions, clock glock.Clock) ThreadedManager {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	dequeueSemaphore := make(chan struct{}, options.MaximumTransactions)

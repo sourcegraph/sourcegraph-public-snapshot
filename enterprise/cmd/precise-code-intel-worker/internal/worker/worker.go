@@ -12,6 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 func NewWorker(
@@ -42,14 +44,14 @@ func NewWorker(
 		HandleOperation: metrics.ProcessOperation,
 	}
 
-	options := workerutil.WorkerOptions{
+	options := dbworker.WorkerOptions{
 		Handler:     handler,
 		NumHandlers: numProcessorRoutines,
 		Interval:    pollInterval,
 		Metrics:     workerMetrics,
 	}
 
-	return workerutil.NewWorker(rootContext, store.WorkerutilUploadStore(s), options)
+	return dbworker.NewWorker(rootContext, store.WorkerutilUploadStore(s), options)
 }
 
 type handler struct {
@@ -59,12 +61,16 @@ type handler struct {
 	budgetRemaining int64
 }
 
-func (h *handler) Handle(ctx context.Context, tx workerutil.Store, record workerutil.Record) error {
+var _ dbworker.Handler = &handler{}
+var _ workerutil.WithPreDequeue = &handler{}
+var _ workerutil.WithHooks = &handler{}
+
+func (h *handler) Handle(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) error {
 	_, err := h.processor.Process(ctx, h.store.With(tx), record.(store.Upload))
 	return err
 }
 
-func (h *handler) PreDequeue(ctx context.Context) (bool, []*sqlf.Query, error) {
+func (h *handler) PreDequeue(ctx context.Context) (bool, interface{}, error) {
 	if !h.enableBudget {
 		return true, nil, nil
 	}

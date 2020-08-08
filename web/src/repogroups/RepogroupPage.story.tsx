@@ -116,6 +116,12 @@ const authUser = {
     databaseID: 0,
     namespaceName: '',
     permissionsInfo: null,
+    campaigns: {
+        __typename: 'CampaignConnection',
+        totalCount: 0,
+        pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
+        nodes: [] as GQL.ICampaign[],
+    },
 } as GQL.IUser
 
 const commonProps: RepogroupPageProps = {

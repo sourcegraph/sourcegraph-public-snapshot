@@ -11,10 +11,10 @@ import { SourcegraphContext } from '../../jscontext'
 
 window.context = {} as SourcegraphContext & SuiteFunction
 
-const { add } = storiesOf('web/CodeIntelIndexes', module).addDecorator(story => (
+const { add } = storiesOf('web/Codeintel administration/CodeIntelIndexes', module).addDecorator(story => (
     <>
-        <style>{webStyles}</style>
         <div className="theme-light container">{story()}</div>
+        <style>{webStyles}</style>
     </>
 ))
 

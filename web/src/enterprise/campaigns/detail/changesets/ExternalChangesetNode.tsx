@@ -1,5 +1,4 @@
 import { ThemeProps } from '../../../../../../shared/src/theme'
-import { ChangesetCheckState, ChangesetExternalState } from '../../../../../../shared/src/graphql/schema'
 import { Observer } from 'rxjs'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '../../../../../../shared/src/util/url'
@@ -30,7 +29,13 @@ import { FileDiffConnection } from '../../../../components/diff/FileDiffConnecti
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
 import { tap, map } from 'rxjs/operators'
 import { ChangesetStateIcon } from './ChangesetStateIcon'
-import { ChangesetFields, GitRefSpecFields, ExternalChangesetFileDiffsFields } from '../../../../graphql-operations'
+import {
+    ChangesetFields,
+    GitRefSpecFields,
+    ExternalChangesetFileDiffsFields,
+    ChangesetCheckState,
+    ChangesetExternalState,
+} from '../../../../graphql-operations'
 
 export interface ExternalChangesetNodeProps extends ThemeProps {
     node: ChangesetFields & { __typename: 'ExternalChangeset' }

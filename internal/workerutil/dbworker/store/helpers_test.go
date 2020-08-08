@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 type TestWorkRecord struct {
@@ -32,7 +33,7 @@ func (v TestRecord) RecordID() int {
 	return v.ID
 }
 
-func testScanFirstRecord(rows *sql.Rows, queryErr error) (v Record, _ bool, err error) {
+func testScanFirstRecord(rows *sql.Rows, queryErr error) (v workerutil.Record, _ bool, err error) {
 	if queryErr != nil {
 		return nil, false, queryErr
 	}
@@ -60,7 +61,7 @@ func (v TestRecordView) RecordID() int {
 	return v.ID
 }
 
-func testScanFirstRecordView(rows *sql.Rows, queryErr error) (v Record, exists bool, err error) {
+func testScanFirstRecordView(rows *sql.Rows, queryErr error) (v workerutil.Record, exists bool, err error) {
 	if queryErr != nil {
 		return nil, false, queryErr
 	}

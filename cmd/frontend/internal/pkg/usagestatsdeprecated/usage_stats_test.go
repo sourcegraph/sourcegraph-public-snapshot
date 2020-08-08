@@ -1,6 +1,7 @@
 package usagestatsdeprecated
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
@@ -133,7 +134,8 @@ func TestUserUsageStatistics_getUsersActiveToday(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	n, err := GetUsersActiveTodayCount()
+	ctx := context.Background()
+	n, err := GetUsersActiveTodayCount(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -159,7 +161,7 @@ func TestUserUsageStatistics_getUsersActiveToday(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	n, err = GetUsersActiveTodayCount()
+	n, err = GetUsersActiveTodayCount(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
