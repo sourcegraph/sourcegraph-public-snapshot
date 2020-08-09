@@ -431,7 +431,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: 5+ precise code intel database errors every 5m for 15m0s_
+- _frontend: 5%+ precise code intel database errors every 5m for 15m0s_
 
 **Possible solutions:**
 
@@ -780,7 +780,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: 10000+ maximum active goroutines for 10m for 10m0s_
+- _frontend: 10000+ maximum active goroutines for 10m0s_
 
 **Possible solutions:**
 
@@ -812,7 +812,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: less than 90% percentage pods available for 10m for 10m0s_
+- _frontend: less than 90% percentage pods available for 10m0s_
 
 **Possible solutions:**
 
@@ -1086,7 +1086,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _gitserver: 10000+ maximum active goroutines for 10m for 10m0s_
+- _gitserver: 10000+ maximum active goroutines for 10m0s_
 
 **Possible solutions:**
 
@@ -1118,7 +1118,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _gitserver: less than 90% percentage pods available for 10m for 10m0s_
+- _gitserver: less than 90% percentage pods available for 10m0s_
 
 **Possible solutions:**
 
@@ -1320,7 +1320,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _github-proxy: 10000+ maximum active goroutines for 10m for 10m0s_
+- _github-proxy: 10000+ maximum active goroutines for 10m0s_
 
 **Possible solutions:**
 
@@ -1352,7 +1352,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _github-proxy: less than 90% percentage pods available for 10m for 10m0s_
+- _github-proxy: less than 90% percentage pods available for 10m0s_
 
 **Possible solutions:**
 
@@ -1723,7 +1723,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 10000+ maximum active goroutines for 10m for 10m0s_
+- _precise-code-intel-bundle-manager: 10000+ maximum active goroutines for 10m0s_
 
 **Possible solutions:**
 
@@ -1755,7 +1755,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: less than 90% percentage pods available for 10m for 10m0s_
+- _precise-code-intel-bundle-manager: less than 90% percentage pods available for 10m0s_
 
 **Possible solutions:**
 
@@ -2138,7 +2138,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 10000+ maximum active goroutines for 10m for 10m0s_
+- _precise-code-intel-worker: 10000+ maximum active goroutines for 10m0s_
 
 **Possible solutions:**
 
@@ -2170,7 +2170,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-worker: less than 90% percentage pods available for 10m for 10m0s_
+- _precise-code-intel-worker: less than 90% percentage pods available for 10m0s_
 
 **Possible solutions:**
 
@@ -2585,7 +2585,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 10000+ maximum active goroutines for 10m for 10m0s_
+- _precise-code-intel-indexer: 10000+ maximum active goroutines for 10m0s_
 
 **Possible solutions:**
 
@@ -2617,7 +2617,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: less than 90% percentage pods available for 10m for 10m0s_
+- _precise-code-intel-indexer: less than 90% percentage pods available for 10m0s_
 
 **Possible solutions:**
 
@@ -2808,7 +2808,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _query-runner: 10000+ maximum active goroutines for 10m for 10m0s_
+- _query-runner: 10000+ maximum active goroutines for 10m0s_
 
 **Possible solutions:**
 
@@ -2840,7 +2840,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _query-runner: less than 90% percentage pods available for 10m for 10m0s_
+- _query-runner: less than 90% percentage pods available for 10m0s_
 
 **Possible solutions:**
 
@@ -3031,7 +3031,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: 10000+ maximum active goroutines for 10m for 10m0s_
+- _repo-updater: 10000+ maximum active goroutines for 10m0s_
 
 **Possible solutions:**
 
@@ -3063,7 +3063,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: less than 90% percentage pods available for 10m for 10m0s_
+- _repo-updater: less than 90% percentage pods available for 10m0s_
 
 **Possible solutions:**
 
@@ -3286,7 +3286,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _searcher: 10000+ maximum active goroutines for 10m for 10m0s_
+- _searcher: 10000+ maximum active goroutines for 10m0s_
 
 **Possible solutions:**
 
@@ -3318,7 +3318,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _searcher: less than 90% percentage pods available for 10m for 10m0s_
+- _searcher: less than 90% percentage pods available for 10m0s_
 
 **Possible solutions:**
 
@@ -3541,7 +3541,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _symbols: 10000+ maximum active goroutines for 10m for 10m0s_
+- _symbols: 10000+ maximum active goroutines for 10m0s_
 
 **Possible solutions:**
 
@@ -3573,7 +3573,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _symbols: less than 90% percentage pods available for 10m for 10m0s_
+- _symbols: less than 90% percentage pods available for 10m0s_
 
 **Possible solutions:**
 
@@ -3805,7 +3805,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _syntect-server: less than 90% percentage pods available for 10m for 10m0s_
+- _syntect-server: less than 90% percentage pods available for 10m0s_
 
 **Possible solutions:**
 
@@ -3992,7 +3992,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _zoekt-indexserver: less than 90% percentage pods available for 10m for 10m0s_
+- _zoekt-indexserver: less than 90% percentage pods available for 10m0s_
 
 **Possible solutions:**
 
@@ -4361,7 +4361,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _prometheus: less than 90% percentage pods available for 10m for 10m0s_
+- _prometheus: less than 90% percentage pods available for 10m0s_
 
 **Possible solutions:**
 
