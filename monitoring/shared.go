@@ -208,7 +208,7 @@ var sharedProvisioningMemoryUsageLongTerm sharedObservable = func(containerName 
 var sharedGoGoroutines sharedObservable = func(containerName string) Observable {
 	return Observable{
 		Name:              "go_goroutines",
-		Description:       "maximum active goroutines for 10m",
+		Description:       "maximum active goroutines",
 		Query:             fmt.Sprintf(`max by(instance) (go_goroutines{job=~".*%s"})`, containerName),
 		DataMayNotExist:   true,
 		Warning:           Alert{GreaterOrEqual: 10000, For: 10 * time.Minute},
@@ -236,7 +236,7 @@ var sharedGoGcDuration sharedObservable = func(containerName string) Observable 
 var sharedKubernetesPodsAvailable sharedObservable = func(containerName string) Observable {
 	return Observable{
 		Name:              "pods_available_percentage",
-		Description:       "percentage pods available for 10m",
+		Description:       "percentage pods available",
 		Query:             fmt.Sprintf(`sum by(app) (up{app=~".*%[1]s"}) / count by (app) (up{app=~".*%[1]s"}) * 100`, containerName),
 		Critical:          Alert{LessOrEqual: 90, For: 10 * time.Minute},
 		DataMayNotExist:   true,
