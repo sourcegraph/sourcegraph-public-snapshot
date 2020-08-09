@@ -342,7 +342,7 @@ func Frontend() *Container {
 							Query:             `sum(increase(src_code_intel_store_errors_total{job="frontend"}[5m])) / sum(increase(src_code_intel_store_total{job="frontend"}[5m])) * 100`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
-							PanelOptions:      PanelOptions().LegendFormat("store operations"),
+							PanelOptions:      PanelOptions().LegendFormat("store operations").Unit(Percentage),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
