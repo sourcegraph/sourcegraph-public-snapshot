@@ -43,7 +43,7 @@ export const CampaignNode: React.FunctionComponent<CampaignNodeProps> = ({ node,
                             <span data-tooltip={<Timestamp date={node.createdAt} />}>
                                 {formatDistance(parseISO(node.createdAt), now)} ago
                             </span>{' '}
-                            by <strong>{node.author.username}</strong>
+                            by <strong>{node.initialApplier.username}</strong>
                         </small>
                     </div>
                     <Markdown

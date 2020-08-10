@@ -37,7 +37,7 @@ const campaignFragment = gql`
             namespaceName
         }
         description
-        author {
+        initialApplier {
             username
             avatarURL
         }

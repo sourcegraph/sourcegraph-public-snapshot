@@ -21,10 +21,6 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
     campaign={
       Object {
         "__typename": "Campaign",
-        "author": Object {
-          "avatarURL": "http://test.test/avatar",
-          "username": "alice",
-        },
         "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesets": Object {
@@ -46,6 +42,10 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
           "deleted": 2,
         },
         "id": "c",
+        "initialApplier": Object {
+          "avatarURL": "http://test.test/avatar",
+          "username": "alice",
+        },
         "name": "n",
         "namespace": Object {
           "namespaceName": "alice",
@@ -218,10 +218,6 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
     campaign={
       Object {
         "__typename": "Campaign",
-        "author": Object {
-          "avatarURL": "http://test.test/avatar",
-          "username": "alice",
-        },
         "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesets": Object {
@@ -243,6 +239,10 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
           "deleted": 2,
         },
         "id": "c",
+        "initialApplier": Object {
+          "avatarURL": "http://test.test/avatar",
+          "username": "alice",
+        },
         "name": "n",
         "namespace": Object {
           "namespaceName": "alice",

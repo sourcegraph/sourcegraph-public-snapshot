@@ -108,7 +108,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             <CampaignActionsBar campaign={campaign} />
             <CampaignInfoCard
                 history={history}
-                author={campaign.author}
+                author={campaign.initialApplier}
                 createdAt={campaign.createdAt}
                 description={campaign.description}
             />

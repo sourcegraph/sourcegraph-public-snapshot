@@ -19,7 +19,7 @@ describe('CampaignNode', () => {
         changesets: { stats: { merged: 0, open: 1, closed: 3 } },
         createdAt: '2019-12-04T23:15:01Z',
         closedAt: null,
-        author: {
+        initialApplier: {
             username: 'alice',
         },
     }
