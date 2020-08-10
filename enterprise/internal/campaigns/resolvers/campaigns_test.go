@@ -69,7 +69,7 @@ fragment o on Org  { name }
 query($campaign: ID!){
   node(id: $campaign) {
     ... on Campaign {
-      id, name, description, branch
+      id, name, description
       author    { ...u }
       namespace {
         ... on User { ...u }
