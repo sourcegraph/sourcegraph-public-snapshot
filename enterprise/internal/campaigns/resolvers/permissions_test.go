@@ -64,9 +64,9 @@ func TestPermissionLevels(t *testing.T) {
 		t.Helper()
 
 		c := &campaigns.Campaign{
-			Name:            name,
-			AuthorID:        userID,
-			NamespaceUserID: userID,
+			Name:             name,
+			InitialApplierID: userID,
+			NamespaceUserID:  userID,
 			// We attach the changeset to the campaign so we can test syncChangeset
 			ChangesetIDs: []int64{changeset.ID},
 		}
@@ -513,9 +513,9 @@ func TestRepositoryPermissions(t *testing.T) {
 		}
 
 		campaign := &campaigns.Campaign{
-			Name:            "my campaign",
-			AuthorID:        userID,
-			NamespaceUserID: userID,
+			Name:             "my campaign",
+			InitialApplierID: userID,
+			NamespaceUserID:  userID,
 			// We attach the two changesets to the campaign
 			ChangesetIDs: changesetIDs,
 		}

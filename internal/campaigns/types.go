@@ -55,17 +55,25 @@ func IsKindSupported(extSvcKind string) bool {
 
 // A Campaign of changesets over multiple Repos over time.
 type Campaign struct {
-	ID              int64
-	Name            string
-	Description     string
-	AuthorID        int32
+	ID          int64
+	Name        string
+	Description string
+
+	CampaignSpecID int64
+
+	InitialApplierID int32
+	LastApplierID    int32
+	LastAppliedAt    time.Time
+
 	NamespaceUserID int32
 	NamespaceOrgID  int32
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	ChangesetIDs    []int64
-	ClosedAt        time.Time
-	CampaignSpecID  int64
+
+	ChangesetIDs []int64
+
+	ClosedAt time.Time
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // Clone returns a clone of a Campaign.

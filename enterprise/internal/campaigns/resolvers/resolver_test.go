@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
@@ -270,7 +271,11 @@ func TestApplyCampaign(t *testing.T) {
 
 	userID := insertTestUser(t, dbconn.Global, "apply-campaign", true)
 
-	store := ee.NewStore(dbconn.Global)
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	clock := func() time.Time {
+		return now.UTC().Truncate(time.Microsecond)
+	}
+	store := ee.NewStoreWithClock(dbconn.Global, clock)
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", 1)
@@ -339,11 +344,17 @@ func TestApplyCampaign(t *testing.T) {
 			DatabaseID: userID,
 			SiteAdmin:  true,
 		},
-		Author: apitest.User{
+		InitialApplier: apitest.User{
 			ID:         userApiID,
 			DatabaseID: userID,
 			SiteAdmin:  true,
 		},
+		LastApplier: apitest.User{
+			ID:         userApiID,
+			DatabaseID: userID,
+			SiteAdmin:  true,
+		},
+		LastAppliedAt: marshalDateTime(t, now),
 		Changesets: apitest.ChangesetConnection{
 			Nodes: []apitest.Changeset{
 				{Typename: "ExternalChangeset", ReconcilerState: "QUEUED"},
@@ -390,7 +401,9 @@ fragment o on Org  { id, name }
 mutation($campaignSpec: ID!, $ensureCampaign: ID){
   applyCampaign(campaignSpec: $campaignSpec, ensureCampaign: $ensureCampaign) {
     id, name, description
-    author    { ...u }
+    initialApplier    { ...u }
+    lastApplier       { ...u }
+    lastAppliedAt
     namespace {
         ... on User { ...u }
         ... on Org  { ...o }
@@ -504,10 +517,10 @@ func TestMoveCampaign(t *testing.T) {
 	}
 
 	campaign := &campaigns.Campaign{
-		CampaignSpecID:  campaignSpec.ID,
-		Name:            "old-name",
-		AuthorID:        userID,
-		NamespaceUserID: campaignSpec.UserID,
+		CampaignSpecID:   campaignSpec.ID,
+		Name:             "old-name",
+		InitialApplierID: userID,
+		NamespaceUserID:  campaignSpec.UserID,
 	}
 	if err := store.CreateCampaign(ctx, campaign); err != nil {
 		t.Fatal(err)
@@ -566,7 +579,7 @@ fragment o on Org  { id, name }
 mutation($campaign: ID!, $newName: String, $newNamespace: ID){
   moveCampaign(campaign: $campaign, newName: $newName, newNamespace: $newNamespace) {
 	id, name, description
-	author    { ...u }
+	initialApplier  { ...u }
 	namespace {
 		... on User { ...u }
 		... on Org  { ...o }
@@ -741,7 +754,7 @@ func TestCampaignsListing(t *testing.T) {
 		t.Helper()
 
 		c.Name = "n"
-		c.AuthorID = userID
+		c.InitialApplierID = userID
 		if err := store.CreateCampaign(ctx, c); err != nil {
 			t.Fatal(err)
 		}

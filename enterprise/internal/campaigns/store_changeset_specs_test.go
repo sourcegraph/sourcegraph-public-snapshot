@@ -381,10 +381,10 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 
 				if tc.campaignSpecApplied {
 					campaign := &cmpgn.Campaign{
-						Name:            fmt.Sprintf("campaign for spec %d", campaignSpec.ID),
-						CampaignSpecID:  campaignSpec.ID,
-						AuthorID:        campaignSpec.UserID,
-						NamespaceUserID: campaignSpec.NamespaceUserID,
+						Name:             fmt.Sprintf("campaign for spec %d", campaignSpec.ID),
+						CampaignSpecID:   campaignSpec.ID,
+						InitialApplierID: campaignSpec.UserID,
+						NamespaceUserID:  campaignSpec.NamespaceUserID,
 					}
 					if err := s.CreateCampaign(ctx, campaign); err != nil {
 						t.Fatal(err)

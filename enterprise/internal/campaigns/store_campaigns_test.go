@@ -18,24 +18,30 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 	t.Run("Create", func(t *testing.T) {
 		for i := 0; i < cap(campaigns); i++ {
 			c := &cmpgn.Campaign{
-				Name:           fmt.Sprintf("test-campaign-%d", i),
-				Description:    "All the Javascripts are belong to us",
-				AuthorID:       int32(i) + 50,
+				Name:        fmt.Sprintf("test-campaign-%d", i),
+				Description: "All the Javascripts are belong to us",
+
+				InitialApplierID: int32(i) + 50,
+				LastAppliedAt:    clock.now(),
+				LastApplierID:    int32(i) + 99,
+
 				ChangesetIDs:   []int64{int64(i) + 1},
 				CampaignSpecID: 1742 + int64(i),
 				ClosedAt:       clock.now(),
 			}
+
 			if i == 0 {
-				// don't have associations for the first one
+				// Check for nullability of fields by not setting them
 				c.CampaignSpecID = 0
-				// Don't close the first one
 				c.ClosedAt = time.Time{}
+				c.LastAppliedAt = time.Time{}
+				c.LastApplierID = 0
 			}
 
 			if i%2 == 0 {
 				c.NamespaceOrgID = int32(i) + 23
 			} else {
-				c.NamespaceUserID = c.AuthorID
+				c.NamespaceUserID = c.InitialApplierID
 			}
 
 			want := c.Clone()
@@ -83,7 +89,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 
 		t.Run("OnlyForAuthor set", func(t *testing.T) {
 			for _, c := range campaigns {
-				count, err = s.CountCampaigns(ctx, CountCampaignsOpts{OnlyForAuthor: c.AuthorID})
+				count, err = s.CountCampaigns(ctx, CountCampaignsOpts{InitialApplierID: c.InitialApplierID})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -248,7 +254,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 
 		t.Run("ListCampaigns OnlyForAuthor set", func(t *testing.T) {
 			for _, c := range campaigns {
-				have, next, err := s.ListCampaigns(ctx, ListCampaignsOpts{OnlyForAuthor: c.AuthorID})
+				have, next, err := s.ListCampaigns(ctx, ListCampaignsOpts{InitialApplierID: c.InitialApplierID})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -307,7 +313,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 		for _, c := range campaigns {
 			c.Name += "-updated"
 			c.Description += "-updated"
-			c.AuthorID++
+			c.InitialApplierID++
 			c.ClosedAt = c.ClosedAt.Add(5 * time.Second)
 
 			if c.NamespaceUserID != 0 {

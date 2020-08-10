@@ -127,9 +127,9 @@ func TestChangesetResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 	campaign := &campaigns.Campaign{
-		Name:            "my-unique-name",
-		NamespaceUserID: userID,
-		AuthorID:        userID,
+		Name:             "my-unique-name",
+		NamespaceUserID:  userID,
+		InitialApplierID: userID,
 	}
 	if err := store.CreateCampaign(ctx, campaign); err != nil {
 		t.Fatal(err)

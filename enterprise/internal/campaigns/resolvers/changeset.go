@@ -189,7 +189,7 @@ func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.
 	if !isSiteAdmin {
 		if args.ViewerCanAdminister != nil && *args.ViewerCanAdminister {
 			actor := actor.FromContext(ctx)
-			opts.OnlyForAuthor = actor.UID
+			opts.InitialApplierID = actor.UID
 		}
 	}
 
