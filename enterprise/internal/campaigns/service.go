@@ -45,42 +45,6 @@ type Service struct {
 	clock func() time.Time
 }
 
-// CreateCampaign creates the Campaign.
-func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign) (err error) {
-	tr, ctx := trace.New(ctx, "Service.CreateCampaign", fmt.Sprintf("Name: %q", c.Name))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	if c.Name == "" {
-		return ErrCampaignNameBlank
-	}
-
-	tx, err := s.store.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	c.CreatedAt = s.clock()
-	c.UpdatedAt = c.CreatedAt
-
-	err = tx.CreateCampaign(ctx, c)
-	if err != nil {
-		return err
-	}
-
-	if c.Branch != "" {
-		err = validateCampaignBranch(c.Branch)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 type CreateCampaignSpecOpts struct {
 	RawSpec string
 
@@ -211,9 +175,17 @@ func (e *changesetSpecNotFoundErr) NotFound() bool { return true }
 // matched by the campaign spec is already closed.
 var ErrApplyClosedCampaign = errors.New("existing campaign matched by campaign spec is closed")
 
+// ErrMatchingCampaign is returned by ApplyCampaign if a campaign matching the
+// campaign spec already exists and FailIfExists was set.
+var ErrMatchingCampaignExists = errors.New("a campaign matching the given campaign spec already exists")
+
 type ApplyCampaignOpts struct {
 	CampaignSpecRandID string
 	EnsureCampaignID   int64
+
+	// When FailIfCampaignExists is true, ApplyCampaign will fail if a Campaign
+	// matching the given CampaignSpec already exists.
+	FailIfCampaignExists bool
 }
 
 func (o ApplyCampaignOpts) String() string {
@@ -284,21 +256,14 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		return nil, err
 	}
 
-	getOpts := GetCampaignOpts{
-		Name:            campaignSpec.Spec.Name,
-		NamespaceUserID: campaignSpec.NamespaceUserID,
-		NamespaceOrgID:  campaignSpec.NamespaceOrgID,
-	}
-
-	campaign, err = tx.GetCampaign(ctx, getOpts)
+	campaign, err = s.GetCampaignMatchingCampaignSpec(ctx, tx, campaignSpec)
 	if err != nil {
-		if err != ErrNoResults {
-			return nil, err
-		}
-		err = nil
+		return nil, err
 	}
 	if campaign == nil {
 		campaign = &campaigns.Campaign{}
+	} else if opts.FailIfCampaignExists {
+		return nil, ErrMatchingCampaignExists
 	}
 
 	if opts.EnsureCampaignID != 0 && campaign.ID != opts.EnsureCampaignID {
@@ -638,6 +603,27 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	}
 
 	return campaign, tx.UpdateCampaign(ctx, campaign)
+}
+
+// GetCampaignMatchingCampaignSpec returns the Campaign that the CampaignSpec
+// applies to, if that Campaign already exists.
+// If it doesn't exist yet, both return values are nil.
+// It accepts a *Store so that it can be used inside a transaction.
+func (s *Service) GetCampaignMatchingCampaignSpec(ctx context.Context, tx *Store, spec *campaigns.CampaignSpec) (*campaigns.Campaign, error) {
+	opts := GetCampaignOpts{
+		Name:            spec.Spec.Name,
+		NamespaceUserID: spec.NamespaceUserID,
+		NamespaceOrgID:  spec.NamespaceOrgID,
+	}
+
+	campaign, err := tx.GetCampaign(ctx, opts)
+	if err != nil {
+		if err != ErrNoResults {
+			return nil, err
+		}
+		err = nil
+	}
+	return campaign, err
 }
 
 type MoveCampaignOpts struct {

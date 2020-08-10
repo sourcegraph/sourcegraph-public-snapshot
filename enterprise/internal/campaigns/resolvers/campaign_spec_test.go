@@ -63,6 +63,15 @@ func TestCampaignSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	matchingCampaign := &campaigns.Campaign{
+		Name:            spec.Spec.Name,
+		NamespaceUserID: userID,
+		AuthorID:        userID,
+	}
+	if err := store.CreateCampaign(ctx, matchingCampaign); err != nil {
+		t.Fatal(err)
+	}
+
 	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -118,6 +127,10 @@ func TestCampaignSpecResolver(t *testing.T) {
 			Changed: changesetSpec.DiffStatChanged,
 			Deleted: changesetSpec.DiffStatDeleted,
 		},
+
+		AppliesToCampaign: apitest.Campaign{
+			ID: string(campaigns.MarshalCampaignID(matchingCampaign.ID)),
+		},
 	}
 
 	if diff := cmp.Diff(want, response.Node); diff != "" {
@@ -151,6 +164,8 @@ query($campaignSpec: ID!) {
       expiresAt
 
       diffStat { added, deleted, changed }
+
+      appliesToCampaign { id }
 
       changesetSpecs(first: 100) {
         totalCount

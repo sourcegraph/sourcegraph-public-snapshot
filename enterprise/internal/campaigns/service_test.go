@@ -196,22 +196,9 @@ func TestService(t *testing.T) {
 
 	svc := NewService(store, nil)
 
-	t.Run("CreateCampaign", func(t *testing.T) {
-		campaign := testCampaign(admin.ID)
-		err := svc.CreateCampaign(ctx, campaign)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		_, err = store.GetCampaign(ctx, GetCampaignOpts{ID: campaign.ID})
-		if err != nil {
-			t.Fatal(err)
-		}
-	})
-
 	t.Run("DeleteCampaign", func(t *testing.T) {
 		campaign := testCampaign(admin.ID)
-		if err := svc.CreateCampaign(ctx, campaign); err != nil {
+		if err := store.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
 		if err := svc.DeleteCampaign(ctx, campaign.ID); err != nil {
@@ -692,6 +679,41 @@ func TestService(t *testing.T) {
 			}
 		})
 	})
+
+	t.Run("GetCampaignMatchingCampaignSpec", func(t *testing.T) {
+		campaignSpec := createCampaignSpec(t, ctx, store, "matching-campaign-spec", admin.ID)
+
+		haveCampaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, store, campaignSpec)
+		if err != nil {
+			t.Fatalf("unexpected error: %s\n", err)
+		}
+		if haveCampaign != nil {
+			t.Fatalf("expected campaign to be nil, but is not: %+v\n", haveCampaign)
+		}
+
+		matchingCampaign := &campaigns.Campaign{
+			Name:            campaignSpec.Spec.Name,
+			Description:     campaignSpec.Spec.Description,
+			AuthorID:        admin.ID,
+			NamespaceOrgID:  campaignSpec.NamespaceOrgID,
+			NamespaceUserID: campaignSpec.NamespaceUserID,
+		}
+		if err := store.CreateCampaign(ctx, matchingCampaign); err != nil {
+			t.Fatalf("failed to create campaign: %s\n", err)
+		}
+
+		haveCampaign, err = svc.GetCampaignMatchingCampaignSpec(ctx, store, campaignSpec)
+		if err != nil {
+			t.Fatalf("unexpected error: %s\n", err)
+		}
+		if haveCampaign == nil {
+			t.Fatalf("expected to have matching campaign, but got nil")
+		}
+
+		if diff := cmp.Diff(matchingCampaign, haveCampaign); diff != "" {
+			t.Fatalf("wrong campaign was matched (-want +got):\n%s", diff)
+		}
+	})
 }
 
 func TestServiceApplyCampaign(t *testing.T) {
@@ -765,6 +787,16 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 				if have, want := campaign2.ID, campaign.ID; have != want {
 					t.Fatalf("campaign ID is wrong. want=%d, have=%d", want, have)
+				}
+			})
+
+			t.Run("apply same campaignSpec with FailIfExists", func(t *testing.T) {
+				_, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+					CampaignSpecRandID:   campaignSpec.RandID,
+					FailIfCampaignExists: true,
+				})
+				if err != ErrMatchingCampaignExists {
+					t.Fatalf("unexpected error. want=%s, got=%s", ErrMatchingCampaignExists, err)
 				}
 			})
 
