@@ -266,6 +266,7 @@ type pingPayload struct {
 	CampaignsUsage       json.RawMessage `json:"automation_usage"`
 	CodeIntelUsage       json.RawMessage `json:"code_intel_usage"`
 	SearchUsage          json.RawMessage `json:"search_usage"`
+	GrowthStatistics	 json.RawMessage `json:"growth_statistics"`
 	InstallerEmail       string          `json:"installer_email"`
 	AuthProviders        string          `json:"auth_providers"`
 	ExtServices          string          `json:"ext_services"`
