@@ -14,7 +14,7 @@ import (
 	indexmanager "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer-vm/internal/index_manager"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer-vm/internal/indexer"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer-vm/internal/server"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/queue/client"
+	queue "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/queue/client"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -48,7 +48,7 @@ func main() {
 
 	indexerName := uuid.New().String()
 
-	queueClient := client.NewClient(
+	queueClient := queue.NewClient(
 		indexerName,
 		frontendURL,
 		internalProxyAuthToken,

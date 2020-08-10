@@ -5,7 +5,7 @@ import (
 	"time"
 
 	indexmanager "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer-vm/internal/index_manager"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/queue/client"
+	queue "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/queue/client"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -16,7 +16,7 @@ type IndexerOptions struct {
 	HandlerOptions HandlerOptions
 }
 
-func NewIndexer(ctx context.Context, queueClient client.Client, indexManager *indexmanager.Manager, options IndexerOptions) *workerutil.Worker {
+func NewIndexer(ctx context.Context, queueClient queue.Client, indexManager *indexmanager.Manager, options IndexerOptions) *workerutil.Worker {
 	handler := &Handler{
 		queueClient:  queueClient,
 		indexManager: indexManager,

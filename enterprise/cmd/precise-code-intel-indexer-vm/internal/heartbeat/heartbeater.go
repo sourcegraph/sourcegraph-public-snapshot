@@ -9,11 +9,11 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	indexmanager "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer-vm/internal/index_manager"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/queue/client"
+	queue "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/queue/client"
 )
 
 type Heartbeater struct {
-	queueClient  client.Client
+	queueClient  queue.Client
 	indexManager *indexmanager.Manager
 	options      HeartbeaterOptions
 	clock        glock.Clock
@@ -27,11 +27,11 @@ type HeartbeaterOptions struct {
 	Interval time.Duration
 }
 
-func NewHeartbeater(ctx context.Context, queueClient client.Client, indexManager *indexmanager.Manager, options HeartbeaterOptions) *Heartbeater {
+func NewHeartbeater(ctx context.Context, queueClient queue.Client, indexManager *indexmanager.Manager, options HeartbeaterOptions) *Heartbeater {
 	return newHeartbeater(ctx, queueClient, indexManager, options, glock.NewRealClock())
 }
 
-func newHeartbeater(ctx context.Context, queueClient client.Client, indexManager *indexmanager.Manager, options HeartbeaterOptions, clock glock.Clock) *Heartbeater {
+func newHeartbeater(ctx context.Context, queueClient queue.Client, indexManager *indexmanager.Manager, options HeartbeaterOptions, clock glock.Clock) *Heartbeater {
 	ctx, cancel := context.WithCancel(ctx)
 
 	return &Heartbeater{
