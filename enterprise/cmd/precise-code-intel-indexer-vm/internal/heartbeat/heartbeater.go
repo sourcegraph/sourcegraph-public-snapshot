@@ -49,6 +49,7 @@ func (w *Heartbeater) Start() {
 loop:
 	for {
 		if err := w.queueClient.Heartbeat(w.ctx, w.indexManager.GetIDs()); err != nil {
+			// If the error is due to the loop being shut down, just break
 			for ex := err; ex != nil; ex = errors.Unwrap(ex) {
 				if err == w.ctx.Err() {
 					break loop
