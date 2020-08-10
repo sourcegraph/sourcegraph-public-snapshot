@@ -85,7 +85,6 @@ func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log15.Info("Error checking /healthz: " + err.Error())
 	}
-	return
 }
 
 func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Request) {
