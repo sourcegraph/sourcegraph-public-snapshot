@@ -66,7 +66,9 @@ type Server struct {
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/healthz", s.handleHealthz)
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("/repo-update-scheduler-info", s.handleRepoUpdateSchedulerInfo)
 	mux.HandleFunc("/repo-lookup", s.handleRepoLookup)
 	mux.HandleFunc("/repo-external-services", s.handleRepoExternalServices)
@@ -77,14 +79,6 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/enqueue-changeset-sync", s.handleEnqueueChangesetSync)
 	mux.HandleFunc("/schedule-perms-sync", s.handleSchedulePermsSync)
 	return mux
-}
-
-func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	_, err := w.Write([]byte("ok"))
-	if err != nil {
-		log15.Info("Error checking /healthz: " + err.Error())
-	}
 }
 
 func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Request) {
