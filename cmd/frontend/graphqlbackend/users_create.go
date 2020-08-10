@@ -62,7 +62,7 @@ func (r *createUserResult) ResetPasswordURL(ctx context.Context) (*string, error
 	if !userpasswd.ResetPasswordEnabled() {
 		return nil, nil
 	}
-	var ru
+	var ru string
 
 	if conf.CanSendEmail() {
 		ru, err := userpasswd.HandleSetPasswordEmail(ctx, r.user.ID)
