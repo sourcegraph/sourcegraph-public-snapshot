@@ -3079,7 +3079,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _searcher: 5+ unindexed search request errors every 5m by code_
+- _searcher: 5%+ unindexed search request errors every 5m by code for 5m0s_
 
 **Possible solutions:**
 
@@ -4008,7 +4008,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _zoekt-webserver: 5%+ indexed search request errors every 5m by code_
+- _zoekt-webserver: 5%+ indexed search request errors every 5m by code for 5m0s_
 
 **Possible solutions:**
 
