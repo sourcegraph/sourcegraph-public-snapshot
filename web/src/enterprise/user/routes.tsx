@@ -29,6 +29,7 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
     {
         path: '/campaigns',
         render: props => <UserCampaignListPage {...props} userID={props.user.id} />,
-        condition: ({ isSourcegraphDotCom }) => !isSourcegraphDotCom,
+        condition: ({ isSourcegraphDotCom }) =>
+            !isSourcegraphDotCom && window.context.experimentalFeatures.automation === 'enabled',
     },
 ]
