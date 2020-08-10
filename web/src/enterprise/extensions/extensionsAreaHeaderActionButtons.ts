@@ -5,7 +5,7 @@ import { extensionsAreaHeaderActionButtons } from '../../extensions/extensionsAr
 export const enterpriseExtensionsAreaHeaderActionButtons: readonly ExtensionsAreaHeaderActionButton[] = [
     ...extensionsAreaHeaderActionButtons,
     {
-        label: 'Publish new extension',
+        label: 'Create extension',
         to: () => '/extensions/registry/new',
         icon: AddIcon,
         condition: context => context.isPrimaryHeader,

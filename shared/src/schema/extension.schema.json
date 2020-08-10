@@ -47,15 +47,7 @@
       "type": "array",
       "items": {
         "type": "string",
-        "enum": [
-          "Programming languages",
-          "Linters",
-          "Code analysis",
-          "External services",
-          "Reports and stats",
-          "Other",
-          "Demos"
-        ]
+        "enum": ["Reports and stats", "External services", "Code editors", "Linters", "Other", "Programming languages"]
       }
     },
     "tags": {

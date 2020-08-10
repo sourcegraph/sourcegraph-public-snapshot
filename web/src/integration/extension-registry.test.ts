@@ -63,8 +63,18 @@ describe('Extension Registry', () => {
     saveScreenshotsUponFailures(() => driver.page)
     afterEach(() => testContext?.dispose())
 
+    describe('searching', () => {
+        /**
+         * - input query (paste)
+         * - wait for graphql request + assert
+         * -
+         */
+    })
+
+    describe('filtering')
+
     describe('toggling', () => {
-        function overrideGraphQLForExtension({ enabled }: { enabled: boolean }): void {
+        function overrideGraphQLForToggle({ enabled }: { enabled: boolean }): void {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 ViewerSettings: () => ({
@@ -133,7 +143,7 @@ describe('Extension Registry', () => {
 
         it('a disabled extension enables it', async () => {
             const enabled = false
-            overrideGraphQLForExtension({ enabled })
+            overrideGraphQLForToggle({ enabled })
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/extensions')
 
@@ -151,7 +161,7 @@ describe('Extension Registry', () => {
 
         it('an enabled extension disables it ', async () => {
             const enabled = true
-            overrideGraphQLForExtension({ enabled })
+            overrideGraphQLForToggle({ enabled })
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/extensions')
 
