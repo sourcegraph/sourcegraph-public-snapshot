@@ -140,6 +140,8 @@ export interface UserAreaRouteContext
     authenticatedUser: GQL.IUser | null
     userSettingsSideBarItems: UserSettingsSidebarItems
     userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
+
+    isSourcegraphDotCom: boolean
 }
 
 /**
