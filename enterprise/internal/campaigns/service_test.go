@@ -692,6 +692,41 @@ func TestService(t *testing.T) {
 			}
 		})
 	})
+
+	t.Run("GetCampaignMatchingCampaignSpec", func(t *testing.T) {
+		campaignSpec := createCampaignSpec(t, ctx, store, "matching-campaign-spec", admin.ID)
+
+		haveCampaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, store, campaignSpec)
+		if err != nil {
+			t.Fatalf("unexpected error: %s\n", err)
+		}
+		if haveCampaign != nil {
+			t.Fatalf("expected campaign to be nil, but is not: %+v\n", haveCampaign)
+		}
+
+		matchingCampaign := &campaigns.Campaign{
+			Name:            campaignSpec.Spec.Name,
+			Description:     campaignSpec.Spec.Description,
+			AuthorID:        admin.ID,
+			NamespaceOrgID:  campaignSpec.NamespaceOrgID,
+			NamespaceUserID: campaignSpec.NamespaceUserID,
+		}
+		if err := store.CreateCampaign(ctx, matchingCampaign); err != nil {
+			t.Fatalf("failed to create campaign: %s\n", err)
+		}
+
+		haveCampaign, err = svc.GetCampaignMatchingCampaignSpec(ctx, store, campaignSpec)
+		if err != nil {
+			t.Fatalf("unexpected error: %s\n", err)
+		}
+		if haveCampaign == nil {
+			t.Fatalf("expected to have matching campaign, but got nil")
+		}
+
+		if diff := cmp.Diff(matchingCampaign, haveCampaign); diff != "" {
+			t.Fatalf("wrong campaign was matched (-want +got):\n%s", diff)
+		}
+	})
 }
 
 func TestServiceApplyCampaign(t *testing.T) {

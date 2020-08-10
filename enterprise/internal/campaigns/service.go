@@ -284,18 +284,9 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		return nil, err
 	}
 
-	getOpts := GetCampaignOpts{
-		Name:            campaignSpec.Spec.Name,
-		NamespaceUserID: campaignSpec.NamespaceUserID,
-		NamespaceOrgID:  campaignSpec.NamespaceOrgID,
-	}
-
-	campaign, err = tx.GetCampaign(ctx, getOpts)
+	campaign, err = s.GetCampaignMatchingCampaignSpec(ctx, tx, campaignSpec)
 	if err != nil {
-		if err != ErrNoResults {
-			return nil, err
-		}
-		err = nil
+		return nil, err
 	}
 	if campaign == nil {
 		campaign = &campaigns.Campaign{}
@@ -638,6 +629,27 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	}
 
 	return campaign, tx.UpdateCampaign(ctx, campaign)
+}
+
+// GetCampaignMatchingCampaignSpec returns the Campaign that the CampaignSpec
+// applies to, if that Campaign already exists.
+// If it doesn't exist yet, both return values are nil.
+// It accepts a *Store so that it can be used inside a transaction.
+func (s *Service) GetCampaignMatchingCampaignSpec(ctx context.Context, tx *Store, spec *campaigns.CampaignSpec) (*campaigns.Campaign, error) {
+	opts := GetCampaignOpts{
+		Name:            spec.Spec.Name,
+		NamespaceUserID: spec.NamespaceUserID,
+		NamespaceOrgID:  spec.NamespaceOrgID,
+	}
+
+	campaign, err := tx.GetCampaign(ctx, opts)
+	if err != nil {
+		if err != ErrNoResults {
+			return nil, err
+		}
+		err = nil
+	}
+	return campaign, err
 }
 
 type MoveCampaignOpts struct {

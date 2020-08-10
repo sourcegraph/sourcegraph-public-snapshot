@@ -102,6 +102,8 @@ type CampaignSpecResolver interface {
 	ViewerCanAdminister(context.Context) (bool, error)
 
 	DiffStat(ctx context.Context) (*DiffStat, error)
+
+	AppliesToCampaign(ctx context.Context) (CampaignResolver, error)
 }
 
 type CampaignDescriptionResolver interface {

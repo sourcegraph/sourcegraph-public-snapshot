@@ -206,6 +206,8 @@ type CampaignSpec struct {
 
 	DiffStat DiffStat
 
+	AppliesToCampaign Campaign
+
 	CreatedAt graphqlbackend.DateTime
 	ExpiresAt *graphqlbackend.DateTime
 }

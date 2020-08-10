@@ -673,6 +673,10 @@ type CampaignSpec implements Node {
 
     # The diff stat for all the changeset specs in the campaign spec.
     diffStat: DiffStat!
+
+    # The campaign this spec will update when applied. If it's null, the
+    # campaign doesn't yet exist.
+    appliesToCampaign: Campaign
 }
 
 # A user (identified either by username or email address) with its repository permission.
