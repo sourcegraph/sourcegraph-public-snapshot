@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
@@ -37,7 +38,8 @@ func TestCampaignSpecResolver(t *testing.T) {
 	}
 	repoID := graphqlbackend.MarshalRepositoryID(repo.ID)
 
-	userID := insertTestUser(t, dbconn.Global, "campaign-spec-by-id", false)
+	username := "campaign-spec-by-id-user-name"
+	userID := insertTestUser(t, dbconn.Global, username, false)
 
 	spec, err := campaigns.NewCampaignSpecFromRaw(ct.TestRawCampaignSpec)
 	if err != nil {
@@ -87,7 +89,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 		OriginalInput: spec.RawSpec,
 		ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
 
-		PreviewURL:          "/campaigns/new?spec=" + apiID,
+		ApplyURL:            fmt.Sprintf("/users/%s/campaigns/apply?spec=%s", username, apiID),
 		Namespace:           apitest.UserOrg{ID: userApiID, DatabaseID: userID},
 		Creator:             apitest.User{ID: userApiID, DatabaseID: userID},
 		ViewerCanAdminister: true,
@@ -142,7 +144,7 @@ query($campaignSpec: ID!) {
         ... on Org  { ...o }
       }
 
-      previewURL
+      applyURL
       viewerCanAdminister
 
       createdAt

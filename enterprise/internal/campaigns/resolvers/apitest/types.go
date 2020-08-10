@@ -195,7 +195,7 @@ type CampaignSpec struct {
 	OriginalInput string
 	ParsedInput   graphqlbackend.JSONValue
 
-	PreviewURL string
+	ApplyURL string
 
 	Namespace UserOrg
 	Creator   User

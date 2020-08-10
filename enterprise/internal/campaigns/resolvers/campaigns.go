@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"path"
 	"sync"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
@@ -73,6 +73,11 @@ type campaignResolver struct {
 	store       *ee.Store
 	httpFactory *httpcli.Factory
 	*campaigns.Campaign
+
+	// Cache the namespace on the resolver, since it's accessed more than once.
+	namespaceOnce sync.Once
+	namespace     graphqlbackend.NamespaceResolver
+	namespaceErr  error
 }
 
 func (r *campaignResolver) ID() graphql.ID {
@@ -106,17 +111,40 @@ func (r *campaignResolver) ViewerCanAdminister(ctx context.Context) (bool, error
 }
 
 func (r *campaignResolver) URL(ctx context.Context) (string, error) {
-	return path.Join("/campaigns", string(r.ID())), nil
+	n, err := r.Namespace(ctx)
+	if err != nil {
+		return "", err
+	}
+	return campaignURL(n, r), nil
 }
 
-func (r *campaignResolver) Namespace(ctx context.Context) (n graphqlbackend.NamespaceResolver, err error) {
-	if r.NamespaceUserID != 0 {
-		n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, r.NamespaceUserID)
-	} else {
-		n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, r.NamespaceOrgID)
-	}
+func (r *campaignResolver) Namespace(ctx context.Context) (graphqlbackend.NamespaceResolver, error) {
+	return r.computeNamespace(ctx)
+}
 
-	return n, err
+func (r *campaignResolver) computeNamespace(ctx context.Context) (graphqlbackend.NamespaceResolver, error) {
+	r.namespaceOnce.Do(func() {
+		if r.Campaign.NamespaceUserID != 0 {
+			r.namespace.Namespace, r.namespaceErr = graphqlbackend.UserByIDInt32(
+				ctx,
+				r.Campaign.NamespaceUserID,
+			)
+		} else {
+			r.namespace.Namespace, r.namespaceErr = graphqlbackend.OrgByIDInt32(
+				ctx,
+				r.Campaign.NamespaceOrgID,
+			)
+		}
+
+		if errcode.IsNotFound(r.namespaceErr) {
+			r.namespaceErr = nil
+		}
+
+		return
+	})
+
+	return r.namespace, r.namespaceErr
+
 }
 
 func (r *campaignResolver) CreatedAt() graphqlbackend.DateTime {
