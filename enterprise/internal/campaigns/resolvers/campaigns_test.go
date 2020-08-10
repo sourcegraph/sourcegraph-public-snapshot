@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -22,7 +23,8 @@ func TestCampaignResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "campaign-resolver", true)
+	username := "campaign-resolver-username"
+	userID := insertTestUser(t, dbconn.Global, username, true)
 
 	store := ee.NewStore(dbconn.Global)
 
@@ -53,7 +55,7 @@ func TestCampaignResolver(t *testing.T) {
 		Description: campaign.Description,
 		Namespace:   apitest.UserOrg{DatabaseID: userID, SiteAdmin: true},
 		Author:      apitest.User{DatabaseID: userID, SiteAdmin: true},
-		URL:         "/campaigns/" + campaignApiID,
+		URL:         fmt.Sprintf("/users/%s/campaigns/%s", username, campaignApiID),
 	}
 	if diff := cmp.Diff(wantCampaign, response.Node); diff != "" {
 		t.Fatalf("wrong campaign response (-want +got):\n%s", diff)

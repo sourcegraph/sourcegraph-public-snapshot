@@ -97,7 +97,7 @@ type CampaignSpecResolver interface {
 
 	ExpiresAt() *DateTime
 
-	PreviewURL() (string, error)
+	ApplyURL(ctx context.Context) (string, error)
 
 	ViewerCanAdminister(context.Context) (bool, error)
 

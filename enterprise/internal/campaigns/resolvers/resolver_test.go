@@ -78,7 +78,8 @@ func TestCreateCampaignSpec(t *testing.T) {
 	ctx := context.Background()
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "create-campaign-spec", true)
+	username := "create-campaign-spec-username"
+	userID := insertTestUser(t, dbconn.Global, username, true)
 
 	store := ee.NewStore(dbconn.Global)
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
@@ -126,11 +127,15 @@ func TestCreateCampaignSpec(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	have := response.CreateCampaignSpec
 
 	want := apitest.CampaignSpec{
+		ID:            have.ID,
+		CreatedAt:     have.CreatedAt,
+		ExpiresAt:     have.ExpiresAt,
 		OriginalInput: rawSpec,
 		ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
-		PreviewURL:    "/campaigns/new?spec=",
+		ApplyURL:      fmt.Sprintf("/users/%s/campaigns/apply?spec=%s", username, have.ID),
 		Namespace:     apitest.UserOrg{ID: userApiID, DatabaseID: userID, SiteAdmin: true},
 		Creator:       apitest.User{ID: userApiID, DatabaseID: userID, SiteAdmin: true},
 		ChangesetSpecs: apitest.ChangesetSpecConnection{
@@ -142,12 +147,6 @@ func TestCreateCampaignSpec(t *testing.T) {
 			},
 		},
 	}
-	have := response.CreateCampaignSpec
-
-	want.ID = have.ID
-	want.PreviewURL = want.PreviewURL + want.ID
-	want.CreatedAt = have.CreatedAt
-	want.ExpiresAt = have.ExpiresAt
 
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatalf("unexpected response (-want +got):\n%s", diff)
@@ -170,7 +169,7 @@ mutation($namespace: ID!, $campaignSpec: String!, $changesetSpecs: [ID!]!){
       ... on Org  { ...o }
     }
 
-    previewURL
+    applyURL
 
 	changesetSpecs {
 	  nodes {
@@ -423,7 +422,8 @@ func TestMoveCampaign(t *testing.T) {
 	ctx := context.Background()
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "move-campaign1", true)
+	username := "move-campaign-username"
+	userID := insertTestUser(t, dbconn.Global, username, true)
 
 	org, err := db.Orgs.Create(ctx, "org", nil)
 	if err != nil {
@@ -458,8 +458,9 @@ func TestMoveCampaign(t *testing.T) {
 	}
 
 	// Move to a new name
+	campaignApiID := string(campaigns.MarshalCampaignID(campaign.ID))
 	input := map[string]interface{}{
-		"campaign": string(campaigns.MarshalCampaignID(campaign.ID)),
+		"campaign": campaignApiID,
 		"newName":  "new-name",
 	}
 
@@ -470,6 +471,11 @@ func TestMoveCampaign(t *testing.T) {
 	haveCampaign := response.MoveCampaign
 	if diff := cmp.Diff(input["newName"], haveCampaign.Name); diff != "" {
 		t.Fatalf("unexpected name (-want +got):\n%s", diff)
+	}
+
+	wantURL := fmt.Sprintf("/users/%s/campaigns/%s", username, campaignApiID)
+	if diff := cmp.Diff(wantURL, haveCampaign.URL); diff != "" {
+		t.Fatalf("unexpected URL (-want +got):\n%s", diff)
 	}
 
 	// Move to a new namespace
@@ -485,6 +491,10 @@ func TestMoveCampaign(t *testing.T) {
 	if diff := cmp.Diff(string(orgApiID), haveCampaign.Namespace.ID); diff != "" {
 		t.Fatalf("unexpected namespace (-want +got):\n%s", diff)
 	}
+	wantURL = fmt.Sprintf("/organizations/%s/campaigns/%s", org.Name, campaignApiID)
+	if diff := cmp.Diff(wantURL, haveCampaign.URL); diff != "" {
+		t.Fatalf("unexpected URL (-want +got):\n%s", diff)
+	}
 }
 
 const mutationMoveCampaign = `
@@ -499,6 +509,7 @@ mutation($campaign: ID!, $newName: String, $newNamespace: ID){
 		... on User { ...u }
 		... on Org  { ...o }
 	}
+	url
   }
 }
 `

@@ -658,8 +658,9 @@ type CampaignSpec implements Node {
     # never expires if it has been applied.
     expiresAt: DateTime
 
-    # The URL of a web page that displays a preview of creating a campaign from this spec.
-    previewURL: String!
+    # The URL of a web page that allows applying this campaign spec and
+    # displays a preview of which changesets will be created by applying it.
+    applyURL: String!
 
     # When true, the viewing user can apply this spec.
     viewerCanAdminister: Boolean!
