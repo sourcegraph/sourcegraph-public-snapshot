@@ -1,6 +1,7 @@
 package correlation
 
 import (
+	"context"
 	"sort"
 	"strings"
 	"testing"
@@ -235,7 +236,7 @@ func TestGroupBundleData(t *testing.T) {
 		}),
 	}
 
-	actualBundleData, err := groupBundleData(state, 42)
+	actualBundleData, err := groupBundleData(context.Background(), state, 42)
 	if err != nil {
 		t.Fatalf("unexpected error converting correlation state to types: %s", err)
 	}
@@ -265,7 +266,10 @@ func TestGroupBundleData(t *testing.T) {
 		t.Errorf("unexpected package references (-want +got):\n%s", diff)
 	}
 
-	documents := actualBundleData.Documents
+	documents := map[string]types.DocumentData{}
+	for v := range actualBundleData.Documents {
+		documents[v.Path] = v.Document
+	}
 	for _, document := range documents {
 		sortDiagnostics(document.Diagnostics)
 
@@ -470,7 +474,10 @@ func TestGroupBundleData(t *testing.T) {
 		t.Errorf("unexpected document data (-want +got):\n%s", diff)
 	}
 
-	resultChunkData := actualBundleData.ResultChunks
+	resultChunkData := map[int]types.ResultChunkData{}
+	for v := range actualBundleData.ResultChunks {
+		resultChunkData[v.Index] = v.ResultChunk
+	}
 	for _, resultChunk := range resultChunkData {
 		for _, documentRanges := range resultChunk.DocumentIDRangeIDs {
 			sortDocumentIDRangeIDs(documentRanges)
@@ -527,7 +534,10 @@ func TestGroupBundleData(t *testing.T) {
 		t.Errorf("unexpected result chunk data (-want +got):\n%s", diff)
 	}
 
-	definitions := actualBundleData.Definitions
+	var definitions []types.MonikerLocations
+	for v := range actualBundleData.Definitions {
+		definitions = append(definitions, v)
+	}
 	sortMonikerLocations(definitions)
 
 	expectedDefinitions := []types.MonikerLocations{
@@ -554,7 +564,10 @@ func TestGroupBundleData(t *testing.T) {
 		t.Errorf("unexpected definitions (-want +got):\n%s", diff)
 	}
 
-	references := actualBundleData.References
+	var references []types.MonikerLocations
+	for v := range actualBundleData.References {
+		references = append(references, v)
+	}
 	sortMonikerLocations(references)
 
 	expectedReferences := []types.MonikerLocations{
