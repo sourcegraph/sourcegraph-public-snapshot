@@ -1,11 +1,6 @@
-import { CampaignsIcon } from '../campaigns/icons'
-import { OrgAreaHeaderNavItem } from '../../org/area/OrgHeader'
+import { NavItemWithIconDescriptor } from '../../util/contributions'
 
-export const enterpriseNamespaceAreaHeaderNavItems: OrgAreaHeaderNavItem[] = [
-    {
-        to: '/campaigns',
-        label: 'Campaigns',
-        icon: CampaignsIcon,
-        condition: ({ isSourcegraphDotCom }) => !isSourcegraphDotCom,
-    },
-]
+export const enterpriseNamespaceAreaHeaderNavItems: readonly Pick<
+    NavItemWithIconDescriptor,
+    Exclude<keyof NavItemWithIconDescriptor, 'condition'>
+>[] = []
