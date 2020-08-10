@@ -71,7 +71,7 @@ describe('getMonacoTokens()', () => {
                 startIndex: 8,
             },
             {
-                scopes: 'identifier',
+                scopes: 'operator',
                 startIndex: 9,
             },
             {

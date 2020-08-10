@@ -1,5 +1,5 @@
 import * as React from 'react'
-import H from 'history'
+import * as H from 'history'
 import { Markdown } from '../../../../shared/src/components/Markdown'
 import { useScrollToLocationHash } from '../../components/useScrollToLocationHash'
 

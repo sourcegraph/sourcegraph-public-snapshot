@@ -13,11 +13,12 @@ func ZoektIndexServer() *Container {
 						{
 							Name:              "average_resolve_revision_duration",
 							Description:       "average resolve revision duration over 5m",
-							Query:             `sum(rate(resolve_revision_seconds_sum[5m]))`,
+							Query:             `sum(rate(resolve_revision_seconds_sum[5m])) / sum(rate(resolve_revision_seconds_count[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 15},
 							Critical:          Alert{GreaterOrEqual: 30},
 							PanelOptions:      PanelOptions().LegendFormat("{{duration}}").Unit(Seconds),
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 					},
@@ -28,9 +29,12 @@ func ZoektIndexServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("zoekt-indexserver"),
-						sharedContainerMemoryUsage("zoekt-indexserver"),
 						sharedContainerCPUUsage("zoekt-indexserver"),
+						sharedContainerMemoryUsage("zoekt-indexserver"),
+					},
+					{
+						sharedContainerRestarts("zoekt-indexserver"),
+						sharedContainerFsInodes("zoekt-indexserver"),
 					},
 				},
 			},
@@ -39,12 +43,24 @@ func ZoektIndexServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage1d("zoekt-indexserver"),
-						sharedProvisioningMemoryUsage1d("zoekt-indexserver"),
+						sharedProvisioningCPUUsageLongTerm("zoekt-indexserver"),
+						sharedProvisioningMemoryUsageLongTerm("zoekt-indexserver"),
 					},
 					{
-						sharedProvisioningCPUUsage5m("zoekt-indexserver"),
-						sharedProvisioningMemoryUsage5m("zoekt-indexserver"),
+						sharedProvisioningCPUUsageShortTerm("zoekt-indexserver"),
+						sharedProvisioningMemoryUsageShortTerm("zoekt-indexserver"),
+					},
+				},
+			},
+			{
+				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						// zoekt_index_server, zoekt_web_server are deployed together
+						// as part of the indexed-search service, so only show pod
+						// availability here.
+						sharedKubernetesPodsAvailable("indexed-search"),
 					},
 				},
 			},

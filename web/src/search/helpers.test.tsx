@@ -7,6 +7,7 @@ import {
     isFuzzyWordSearch,
     formatQueryForFuzzySearch,
     filterAliasForSearch,
+    toggleSearchFilter,
 } from './helpers'
 import { SearchType } from './results/SearchResults'
 import { searchFilterSuggestions } from './searchFilterSuggestions'
@@ -241,6 +242,20 @@ describe('search/helpers', () => {
                     cursorPosition: 27,
                 })
             ).toBe('l:javascript file:index.js archived:No')
+        })
+    })
+
+    describe('toggleSearchFilter', () => {
+        it('adds filter if it is not already in query', () => {
+            expect(toggleSearchFilter('repo:test ', 'lang:c++')).toStrictEqual('repo:test lang:c++ ')
+        })
+
+        it('adds filter if it is not already in query, even if it matches substring for an existing filter', () => {
+            expect(toggleSearchFilter('repo:test lang:c++ ', 'lang:c')).toStrictEqual('repo:test lang:c++ lang:c ')
+        })
+
+        it('removes filter from query it it exists', () => {
+            expect(toggleSearchFilter('repo:test lang:c++ lang:c ', 'lang:c')).toStrictEqual('repo:test lang:c++')
         })
     })
 })

@@ -25,17 +25,21 @@ fi
 # shellcheck disable=SC1090
 source "$DEV_PRIVATE_PATH/enterprise/dev/env"
 
-export SITE_CONFIG_FILE=$DEV_PRIVATE_PATH/enterprise/dev/site-config.json
-export EXTSVC_CONFIG_FILE=$DEV_PRIVATE_PATH/enterprise/dev/external-services-config.json
-export GLOBAL_SETTINGS_FILE=$PWD/../dev/global-settings.json
-export SITE_CONFIG_ALLOW_EDITS=true
-export GLOBAL_SETTINGS_ALLOW_EDITS=true
-export EXTSVC_CONFIG_ALLOW_EDITS=true
+if [ -z "${DEV_NO_CONFIG-}" ]; then
+  export SITE_CONFIG_FILE=${SITE_CONFIG_FILE:-$DEV_PRIVATE_PATH/enterprise/dev/site-config.json}
+  export EXTSVC_CONFIG_FILE=${EXTSVC_CONFIG_FILE:-$DEV_PRIVATE_PATH/enterprise/dev/external-services-config.json}
+  export GLOBAL_SETTINGS_FILE=${GLOBAL_SETTINGS_FILE:-$PWD/../dev/global-settings.json}
+  export SITE_CONFIG_ALLOW_EDITS=true
+  export GLOBAL_SETTINGS_ALLOW_EDITS=true
+  export EXTSVC_CONFIG_ALLOW_EDITS=true
+fi
 
 SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat "$DEV_PRIVATE_PATH"/enterprise/dev/test-license-generation-key.pem)
 export SOURCEGRAPH_LICENSE_GENERATION_KEY
 
+export PRECISE_CODE_INTEL_INDEX_MANAGER_URL=http://localhost:3189
 export PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL=http://localhost:3187
+export PRECISE_CODE_INTEL_INTERNAL_PROXY_AUTH_TOKEN=hunter2
 export PRECISE_CODE_INTEL_BUNDLE_DIR=$HOME/.sourcegraph/lsif-storage
 
 export WATCH_ADDITIONAL_GO_DIRS="enterprise/cmd enterprise/dev enterprise/internal"

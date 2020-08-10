@@ -1,5 +1,9 @@
 # Example: Using ESLint to automatically migrate to a new TypeScript version
 
+> NOTE: This documentation describes the current work-in-progress version of campaigns. [Click here](https://docs.sourcegraph.com/@3.18/user/campaigns) to read the documentation for campaigns in Sourcegraph 3.18.
+
+<!-- TODO(sqs): update for new campaigns flow -->
+
 Our goal for this campaign is to convert all TypeScript code synced to our Sourcegraph instance to make use of new TypeScript features. To do this we convert the code, then update the TypeScript version.
 
 To convert the code we install and run ESLint with the desired `typescript-eslint` rules, using the [`--fix` flag](https://eslint.org/docs/user-guide/command-line-interface#fix) to automatically fix problems. We then update the TypeScript version using [`yarn upgrade`](https://legacy.yarnpkg.com/en/docs/cli/upgrade/).

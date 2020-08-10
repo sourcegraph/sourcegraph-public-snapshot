@@ -71,7 +71,7 @@ exports[`OptionsMenu doesn't render the permissions alert on about://addons 1`] 
             />
              
             <span
-              className="e2e-connection-status"
+              className="test-connection-status"
             >
               Connected
             </span>
@@ -81,7 +81,7 @@ exports[`OptionsMenu doesn't render the permissions alert on about://addons 1`] 
       <input
         autoCapitalize="off"
         autoCorrect="off"
-        className="form-control e2e-sourcegraph-url"
+        className="form-control test-sourcegraph-url"
         id="sourcegraph-url"
         onChange={[Function]}
         spellCheck={false}
@@ -190,7 +190,7 @@ exports[`OptionsMenu doesn't render the permissions alert on chrome://extensions
             />
              
             <span
-              className="e2e-connection-status"
+              className="test-connection-status"
             >
               Connected
             </span>
@@ -200,7 +200,7 @@ exports[`OptionsMenu doesn't render the permissions alert on chrome://extensions
       <input
         autoCapitalize="off"
         autoCorrect="off"
-        className="form-control e2e-sourcegraph-url"
+        className="form-control test-sourcegraph-url"
         id="sourcegraph-url"
         onChange={[Function]}
         spellCheck={false}
@@ -309,7 +309,7 @@ exports[`OptionsMenu doesn't render the permissions alert on chrome://newtab 1`]
             />
              
             <span
-              className="e2e-connection-status"
+              className="test-connection-status"
             >
               Connected
             </span>
@@ -319,7 +319,7 @@ exports[`OptionsMenu doesn't render the permissions alert on chrome://newtab 1`]
       <input
         autoCapitalize="off"
         autoCorrect="off"
-        className="form-control e2e-sourcegraph-url"
+        className="form-control test-sourcegraph-url"
         id="sourcegraph-url"
         onChange={[Function]}
         spellCheck={false}
@@ -428,7 +428,7 @@ exports[`OptionsMenu renders a default state 1`] = `
             />
              
             <span
-              className="e2e-connection-status"
+              className="test-connection-status"
             >
               Connected
             </span>
@@ -438,7 +438,7 @@ exports[`OptionsMenu renders a default state 1`] = `
       <input
         autoCapitalize="off"
         autoCorrect="off"
-        className="form-control e2e-sourcegraph-url"
+        className="form-control test-sourcegraph-url"
         id="sourcegraph-url"
         onChange={[Function]}
         spellCheck={false}
@@ -547,7 +547,7 @@ exports[`OptionsMenu renders the current tab permissions alert 1`] = `
             />
              
             <span
-              className="e2e-connection-status"
+              className="test-connection-status"
             >
               Connected
             </span>
@@ -557,7 +557,7 @@ exports[`OptionsMenu renders the current tab permissions alert 1`] = `
       <input
         autoCapitalize="off"
         autoCorrect="off"
-        className="form-control e2e-sourcegraph-url"
+        className="form-control test-sourcegraph-url"
         id="sourcegraph-url"
         onChange={[Function]}
         spellCheck={false}
@@ -691,7 +691,7 @@ exports[`OptionsMenu renders the feature flags 1`] = `
             />
              
             <span
-              className="e2e-connection-status"
+              className="test-connection-status"
             >
               Connected
             </span>
@@ -701,7 +701,7 @@ exports[`OptionsMenu renders the feature flags 1`] = `
       <input
         autoCapitalize="off"
         autoCorrect="off"
-        className="form-control e2e-sourcegraph-url"
+        className="form-control test-sourcegraph-url"
         id="sourcegraph-url"
         onChange={[Function]}
         spellCheck={false}

@@ -19,9 +19,8 @@
     "eslint": "eslint --cache '**/*.[jt]s?(x)'",
     "stylelint": "stylelint 'src/**/*.scss'",
     "test": "jest",
-    "graphql": "gulp graphQLTypes",
+    "graphql": "gulp graphQlSchema",
     "schema": "gulp schema",
-    "gql-extract-operations": "TS_NODE_COMPILER_OPTIONS=\"{\\\"module\\\":\\\"commonjs\\\"}\" ts-node ./dev/extract-gql-tags.ts",
     "watch-schema": "gulp watchSchema"
   },
   "sideEffects": true

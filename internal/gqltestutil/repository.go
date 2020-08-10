@@ -13,17 +13,14 @@ import (
 func (c *Client) WaitForReposToBeCloned(repos ...string) error {
 	return Retry(30*time.Second, func() error {
 		const query = `
-query Repositories($first: Int) {
-	repositories(first: $first, cloned: true, cloneInProgress: false, notCloned: false) {
+query Repositories {
+	repositories(first: 1000, cloned: true, notCloned: false) {
 		nodes {
 			name
 		}
 	}
 }
 `
-		variables := map[string]interface{}{
-			"first": len(repos),
-		}
 		var resp struct {
 			Data struct {
 				Repositories struct {
@@ -33,13 +30,9 @@ query Repositories($first: Int) {
 				} `json:"repositories"`
 			} `json:"data"`
 		}
-		err := c.GraphQL("", query, variables, &resp)
+		err := c.GraphQL("", query, nil, &resp)
 		if err != nil {
 			return errors.Wrap(err, "request GraphQL")
-		}
-
-		if len(resp.Data.Repositories.Nodes) != len(repos) {
-			return ErrContinueRetry
 		}
 
 		repoSet := make(map[string]struct{}, len(repos))

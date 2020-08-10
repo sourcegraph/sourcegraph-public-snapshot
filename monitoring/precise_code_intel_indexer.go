@@ -17,6 +17,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 100},
 							PanelOptions:      PanelOptions().LegendFormat("indexes queued for processing"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -26,6 +27,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("index queue growth rate"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -36,6 +38,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -49,6 +52,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -58,6 +62,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("store operation"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -75,6 +80,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -84,6 +90,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -101,6 +108,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("indexes"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -110,6 +118,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("indexes"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -119,6 +128,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -136,6 +146,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -145,6 +156,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("records removed"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -163,6 +175,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						{
@@ -172,6 +185,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}"),
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 					},
@@ -185,9 +199,12 @@ func PreciseCodeIntelIndexer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("precise-code-intel-indexer"),
-						sharedContainerMemoryUsage("precise-code-intel-indexer"),
 						sharedContainerCPUUsage("precise-code-intel-indexer"),
+						sharedContainerMemoryUsage("precise-code-intel-indexer"),
+					},
+					{
+						sharedContainerRestarts("precise-code-intel-indexer"),
+						sharedContainerFsInodes("precise-code-intel-indexer"),
 					},
 				},
 			},
@@ -196,12 +213,31 @@ func PreciseCodeIntelIndexer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage1d("precise-code-intel-indexer"),
-						sharedProvisioningMemoryUsage1d("precise-code-intel-indexer"),
+						sharedProvisioningCPUUsageLongTerm("precise-code-intel-indexer"),
+						sharedProvisioningMemoryUsageLongTerm("precise-code-intel-indexer"),
 					},
 					{
-						sharedProvisioningCPUUsage5m("precise-code-intel-indexer"),
-						sharedProvisioningMemoryUsage5m("precise-code-intel-indexer"),
+						sharedProvisioningCPUUsageShortTerm("precise-code-intel-indexer"),
+						sharedProvisioningMemoryUsageShortTerm("precise-code-intel-indexer"),
+					},
+				},
+			},
+			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("precise-code-intel-indexer"),
+						sharedGoGcDuration("precise-code-intel-indexer"),
+					},
+				},
+			},
+			{
+				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedKubernetesPodsAvailable("precise-code-intel-indexer"),
 					},
 				},
 			},

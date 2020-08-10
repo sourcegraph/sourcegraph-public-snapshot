@@ -47,7 +47,6 @@ func TestGetPackage(t *testing.T) {
 		ID:             expected.ID,
 		Commit:         expected.Commit,
 		Root:           expected.Root,
-		VisibleAtTip:   expected.VisibleAtTip,
 		UploadedAt:     expected.UploadedAt,
 		State:          expected.State,
 		FailureMessage: expected.FailureMessage,
@@ -59,6 +58,7 @@ func TestGetPackage(t *testing.T) {
 		RepositoryName: expected.RepositoryName,
 		Indexer:        expected.Indexer,
 	})
+	insertVisibleAtTip(t, dbconn.Global, 50, 1)
 
 	if err := store.UpdatePackages(context.Background(), []types.Package{
 		{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"},

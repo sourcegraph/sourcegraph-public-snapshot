@@ -610,6 +610,10 @@ Search a repository at a given revision. For example, a branch name, commit hash
 
 **Example:** `repo:^github\.com/gorilla/mux@948bec34 testroute` [↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/gorilla/mux%40948bec34+testroute&patternType=literal)
 
+You can search multiple revisions by separating the revisions with `:`. Specify `HEAD` for the default branch.
+
+**Example:** `repo:^github\.com/gorilla/mux$@v1.7.4:v1.4.0 testing.T` [↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/gorilla/mux%24%40v1.7.4:v1.4.0+testing.T&patternType=literal)
+
 ### File
 
 <div name="r">

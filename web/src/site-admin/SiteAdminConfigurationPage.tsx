@@ -16,6 +16,8 @@ import * as jsonc from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import * as H from 'history'
 import { SiteConfiguration } from '../schema/site.schema'
+import { ThemeProps } from '../../../shared/src/theme'
+import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
 const defaultFormattingOptions: jsonc.FormattingOptions = {
     eol: '\n',
@@ -192,8 +194,7 @@ const quickConfigureActions: {
     },
 ]
 
-interface Props extends RouteComponentProps<{}> {
-    isLightTheme: boolean
+interface Props extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
     history: H.History
 }
 
@@ -455,6 +456,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                             onSave={this.onSave}
                             actions={quickConfigureActions}
                             history={this.props.history}
+                            telemetryService={this.props.telemetryService}
                         />
                         <p className="form-text text-muted">
                             <small>

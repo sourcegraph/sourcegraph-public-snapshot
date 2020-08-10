@@ -40,6 +40,11 @@ type subscribedSiteConfig struct {
 
 	Email    *siteEmailConfig
 	emailSum [32]byte
+
+	SilencedAlerts    []string
+	silencedAlertsSum [32]byte
+
+	ExternalURL string
 }
 
 // newSubscribedSiteConfig creates a subscribedSiteConfig with sha256 sums calculated.
@@ -53,12 +58,21 @@ func newSubscribedSiteConfig(config schema.SiteConfiguration) *subscribedSiteCon
 	if err != nil {
 		return nil
 	}
+	silencedAlertsBytes, err := json.Marshal(config.ObservabilitySilenceAlerts)
+	if err != nil {
+		return nil
+	}
 	return &subscribedSiteConfig{
 		Alerts:    config.ObservabilityAlerts,
 		alertsSum: sha256.Sum256(alertsBytes),
 
 		Email:    email,
 		emailSum: sha256.Sum256(emailBytes),
+
+		SilencedAlerts:    config.ObservabilitySilenceAlerts,
+		silencedAlertsSum: sha256.Sum256(silencedAlertsBytes),
+
+		ExternalURL: config.ExternalURL,
 	}
 }
 
@@ -71,12 +85,16 @@ type siteConfigDiff struct {
 func (c *subscribedSiteConfig) Diff(other *subscribedSiteConfig) []siteConfigDiff {
 	var changes []siteConfigDiff
 
-	if !bytes.Equal(c.alertsSum[:], other.alertsSum[:]) {
+	if !bytes.Equal(c.alertsSum[:], other.alertsSum[:]) || c.ExternalURL != other.ExternalURL {
 		changes = append(changes, siteConfigDiff{Type: "alerts", Change: changeReceivers})
 	}
 
 	if !bytes.Equal(c.emailSum[:], other.emailSum[:]) {
 		changes = append(changes, siteConfigDiff{Type: "email", Change: changeSMTP})
+	}
+
+	if !bytes.Equal(c.silencedAlertsSum[:], other.silencedAlertsSum[:]) {
+		changes = append(changes, siteConfigDiff{Type: "silenced-alerts", Change: changeSilences})
 	}
 
 	return changes
@@ -140,20 +158,26 @@ func (c *SiteConfigSubscriber) Subscribe(ctx context.Context) {
 	// Note that in the event that e.g. the Sourcegraph frontend is entirely down or never becomes
 	// accessible, we simply use the existing configuration persisted on disk.
 	c.log.Info("waiting for frontend", "url", api.InternalClient.URL)
-	if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
-		c.log.Error("unable to connect to frontend, proceeding with existing configuration",
-			"error", err)
-	} else {
-		c.log.Debug("detected frontend ready, loading initial configuration")
-
-		// Load initial alerts configuration
-		siteConfig := newSubscribedSiteConfig(conf.Get().SiteConfiguration)
-		diffs := siteConfig.Diff(c.config)
-		if len(diffs) > 0 {
-			c.execDiffs(ctx, siteConfig, diffs)
+	var frontendConnected bool
+	for !frontendConnected {
+		waitCtx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+		if err := api.InternalClient.WaitForFrontend(waitCtx); err != nil {
+			c.log.Warn("unable to connect to frontend, trying again - disable config sync with DISABLE_SOURCEGRAPH_CONFIG=true",
+				"error", err)
 		} else {
-			c.log.Debug("no relevant configuration to init")
+			frontendConnected = true
 		}
+		cancel()
+	}
+	c.log.Info("detected frontend ready, loading initial configuration")
+
+	// Load initial alerts configuration
+	siteConfig := newSubscribedSiteConfig(conf.Get().SiteConfiguration)
+	diffs := siteConfig.Diff(c.config)
+	if len(diffs) > 0 {
+		c.execDiffs(ctx, siteConfig, diffs)
+	} else {
+		c.log.Debug("no relevant configuration to init")
 	}
 
 	// Watch for future changes
@@ -195,10 +219,11 @@ func (c *SiteConfigSubscriber) execDiffs(ctx context.Context, newConfig *subscri
 	// run changeset and aggregate results
 	changeContext := ChangeContext{
 		AMConfig: amConfig,
+		AMClient: c.alertmanager,
 	}
 	for _, diff := range diffs {
 		c.log.Info(fmt.Sprintf("applying changes for %q diff", diff.Type))
-		result := diff.Change(ctx, c.log, changeContext, newConfig)
+		result := diff.Change(ctx, c.log.New("change", diff.Type), changeContext, newConfig)
 		c.problems = append(c.problems, result.Problems...)
 	}
 
@@ -224,5 +249,5 @@ func (c *SiteConfigSubscriber) execDiffs(ctx context.Context, newConfig *subscri
 
 	// update state
 	c.config = newConfig
-	c.log.Debug("configuration diffs applied", "diffs", diffs)
+	c.log.Debug("configuration diffs applied", "diffs", diffs, "problems", c.problems)
 }

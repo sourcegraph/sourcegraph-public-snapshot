@@ -6,13 +6,10 @@ import { ExternalServiceCard } from '../components/ExternalServiceCard'
 import { codeHostExternalServices, nonCodeHostExternalServices, allExternalServices } from './externalServices'
 import { SiteAdminAddExternalServicePage } from './SiteAdminAddExternalServicePage'
 import { useLocalStorage } from '../util/useLocalStorage'
+import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
-interface Props extends ThemeProps {
+interface Props extends ThemeProps, TelemetryProps {
     history: H.History
-    eventLogger: {
-        logViewEvent: (event: 'AddExternalService') => void
-        log: (event: 'AddExternalServiceFailed' | 'AddExternalServiceSucceeded', eventProperties?: any) => void
-    }
 }
 
 /**

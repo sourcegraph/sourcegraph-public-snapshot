@@ -20,7 +20,7 @@ import { TestResourceManager } from './util/TestResourceManager'
 import delay from 'delay'
 import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
 
-const activationNavBarSelector = '.e2e-activation-nav-item-toggle'
+const activationNavBarSelector = '.test-activation-nav-item-toggle'
 
 /**
  * Gets the activation status for the current user from the GUI. There's no easy way to fetch this
@@ -171,7 +171,7 @@ describe('Onboarding', () => {
         }
         await setUserSiteAdmin(gqlClient, testUser.id, false)
 
-        const statusBarSelector = '.activation-dropdown-button__progress-bar-container'
+        const statusBarSelector = '.test-activation-progress-bar'
 
         // Initial status indicator
         await driver.page.goto(config.sourcegraphBaseUrl + '/search')
@@ -183,8 +183,8 @@ describe('Onboarding', () => {
         )
 
         // Do a search
-        await driver.page.waitForSelector('.e2e-query-input')
-        await driver.page.type('.e2e-query-input', 'asdf')
+        await driver.page.waitForSelector('#monaco-query-input')
+        await driver.page.type('#monaco-query-input', 'asdf')
         await driver.page.keyboard.press(Key.Enter)
         await delay(500) // allow some time for confetti to play
         await screenshots.verifyScreenshot({
@@ -201,16 +201,16 @@ describe('Onboarding', () => {
         await driver.page.goto(
             config.sourcegraphBaseUrl + '/github.com/auth0/go-jwt-middleware/-/blob/jwtmiddleware.go'
         )
-        // await driver.page.mouse.move(100, 100)
-        const defTokenXPath = '//*[contains(@class, "blob-page__blob")]//span[starts-with(text(), "TokenExtractor")]'
-        await driver.page.waitForXPath(defTokenXPath)
-        const elements = await driver.page.$x(defTokenXPath)
-        await Promise.all(elements.map(element => element.click()))
-        await Promise.all(elements.map(element => element.dispose()))
-        const findReferencesSelector = '.e2e-tooltip-find-references'
+        await driver.findElementWithText('TokenExtractor', {
+            selector: '.blob-page__blob span',
+            fuzziness: 'prefix',
+            wait: { timeout: 5000 },
+            action: 'click',
+        })
+        const findReferencesSelector = '.test-tooltip-find-references'
         await driver.page.waitForSelector(findReferencesSelector)
         await driver.page.click(findReferencesSelector)
-        await driver.page.waitForSelector('.e2e-search-result')
+        await driver.page.waitForSelector('.test-search-result')
 
         await delay(500) // allow some time for confetti to play
         await screenshots.verifyScreenshot({
@@ -222,21 +222,9 @@ describe('Onboarding', () => {
             '100% green circle',
             statusBarSelector
         )
-
         await driver.page.reload()
 
-        // Wait for status bar to appear but it should be invisible
-        await driver.page.waitForFunction(
-            statusBarSelector => {
-                const element = document.querySelector<Element>(statusBarSelector)
-                if (!element) {
-                    return false
-                }
-                const { width, height } = element.getBoundingClientRect()
-                return width === 0 && height === 0
-            },
-            { timeout: 100000 },
-            statusBarSelector
-        )
+        // Activation dropdown should be hidden
+        await driver.page.waitForSelector('.test-activation-hidden')
     })
 })

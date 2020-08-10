@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { PlatformContextProps } from '../../../shared/src/platform/context'

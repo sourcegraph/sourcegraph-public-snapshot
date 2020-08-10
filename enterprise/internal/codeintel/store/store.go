@@ -12,6 +12,12 @@ import (
 
 // Store is the interface to Postgres for precise-code-intel features.
 type Store interface {
+	// Handle returns the underlying transactable database handle.
+	Handle() *basestore.TransactableHandle
+
+	// With creates a new store with the underlying database handle from the given store.
+	With(other basestore.ShareableStore) Store
+
 	// Transact returns a store whose methods operate within the context of a transaction.
 	// This method will return an error if the underlying store cannot be interface upgraded
 	// to a TxBeginner.
@@ -22,6 +28,10 @@ type Store interface {
 	// is added to the resulting error value. If the store does not wrap a transaction the
 	// original error value is returned unchanged.
 	Done(err error) error
+
+	// Lock attempts to take an advisory lock on the given key. If successful, this method will
+	// return a true-valued flag along with a function that must be called to release the lock.
+	Lock(ctx context.Context, key int, blocking bool) (bool, UnlockFunc, error)
 
 	// GetUploadByID returns an upload by its identifier and boolean flag indicating its existence.
 	GetUploadByID(ctx context.Context, id int) (Upload, bool, error)
@@ -39,8 +49,8 @@ type Store interface {
 	// (the resulting array is deduplicated on update).
 	AddUploadPart(ctx context.Context, uploadID, partIndex int) error
 
-	// MarkQueued updates the state of the upload to queued.
-	MarkQueued(ctx context.Context, uploadID int) error
+	// MarkQueued updates the state of the upload to queued and updates the upload size.
+	MarkQueued(ctx context.Context, uploadID int, uploadSize *int) error
 
 	// MarkComplete updates the state of the upload to complete.
 	MarkComplete(ctx context.Context, id int) error
@@ -48,11 +58,11 @@ type Store interface {
 	// MarkErrored updates the state of the upload to errored and updates the failure summary data.
 	MarkErrored(ctx context.Context, id int, failureMessage string) error
 
-	// Dequeue selects the oldest queued upload and locks it with a transaction. If there is such an upload, the
-	// upload is returned along with a store instance which wraps the transaction. This transaction must be closed.
-	// If there is no such unlocked upload, a zero-value upload and nil store will be returned along with a false
-	// valued flag. This method must not be called from within a transaction.
-	Dequeue(ctx context.Context) (Upload, Store, bool, error)
+	// Dequeue selects the oldest queued upload smaller than the given maximum size and locks it with a transaction.
+	// If there is such an upload, the upload is returned along with a store instance which wraps the transaction.
+	// This transaction must be closed. If there is no such unlocked upload, a zero-value upload and nil store will
+	// be returned along with a false valued flag. This method must not be called from within a transaction.
+	Dequeue(ctx context.Context, maxSize int64) (Upload, Store, bool, error)
 
 	// Requeue updates the state of the upload to queued and adds a processing delay before the next dequeue attempt.
 	Requeue(ctx context.Context, id int, after time.Time) error
@@ -60,10 +70,10 @@ type Store interface {
 	// GetStates returns the states for the uploads with the given identifiers.
 	GetStates(ctx context.Context, ids []int) (map[int]string, error)
 
-	// DeleteUploadByID deletes an upload by its identifier. If the upload was visible at the tip of its repository's default branch,
-	// the visibility of all uploads for that repository are recalculated. The getTipCommit function is expected to return the newest
-	// commit on the default branch when invoked.
-	DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFunc) (bool, error)
+	// DeleteUploadByID deletes an upload by its identifier. This method returns a true-valued flag if a record
+	// was deleted. The associated repository will be marked as dirty so that its commit graph will be updated in
+	// the background.
+	DeleteUploadByID(ctx context.Context, id int) (bool, error)
 
 	// DeleteUploadsWithoutRepository deletes uploads associated with repositories that were deleted at least
 	// DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of uploads
@@ -85,11 +95,9 @@ type Store interface {
 	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) ([]Dump, error)
 
 	// DeleteOldestDump deletes the oldest dump that is not currently visible at the tip of its repository's default branch.
-	// This method returns the deleted dump's identifier and a flag indicating its (previous) existence.
+	// This method returns the deleted dump's identifier and a flag indicating its (previous) existence. The associated repository
+	// will be marked as dirty so that its commit graph will be updated in the background.
 	DeleteOldestDump(ctx context.Context) (int, bool, error)
-
-	// UpdateDumpsVisibleFromTip recalculates the visible_at_tip flag of all dumps of the given repository.
-	UpdateDumpsVisibleFromTip(ctx context.Context, repositoryID int, tipCommit string) error
 
 	// DeleteOverlapapingDumps deletes all completed uploads for the given repository with the same
 	// commit, root, and indexer. This is necessary to perform during conversions before changing
@@ -114,11 +122,27 @@ type Store interface {
 	// default branch.
 	PackageReferencePager(ctx context.Context, scheme, name, version string, repositoryID, limit int) (int, ReferencePager, error)
 
+	// HasRepository determines if there is LSIF data for the given repository.
+	HasRepository(ctx context.Context, repositoryID int) (bool, error)
+
 	// HasCommit determines if the given commit is known for the given repository.
 	HasCommit(ctx context.Context, repositoryID int, commit string) (bool, error)
 
-	// UpdateCommits upserts commits/parent-commit relations for the given repository ID.
-	UpdateCommits(ctx context.Context, repositoryID int, commits map[string][]string) error
+	// MarkRepositoryAsDirty marks the given repository's commit graph as out of date.
+	MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error
+
+	// DirtyRepositories returns a map from repository identifiers to a dirty token for each repository whose commit
+	// graph is out of date. This token should be passed to CalculateVisibleUploads in order to unmark the repository.
+	DirtyRepositories(ctx context.Context) (map[int]int, error)
+
+	// CalculateVisibleUploads uses the given commit graph and the tip commit of the default branch to determine the set
+	// of LSIF uploads that are visible for each commit, and the set of uploads which are visible at the tip. The decorated
+	// commit graph is serialized to Postgres for use by find closest dumps queries.
+	//
+	// If dirtyToken is supplied, the repository will be unmarked when the supplied token does matches the most recent
+	// token stored in the database, the flag will not be cleared as another request for update has come in since this
+	// token has been read.
+	CalculateVisibleUploads(ctx context.Context, repositoryID int, graph map[string][]string, tipCommit string, dirtyToken int) error
 
 	// IndexableRepositories returns the identifiers of all indexable repositories.
 	IndexableRepositories(ctx context.Context, opts IndexableRepositoryQueryOptions) ([]IndexableRepository, error)
@@ -184,9 +208,6 @@ type Store interface {
 	RepoName(ctx context.Context, repositoryID int) (string, error)
 }
 
-// GetTipCommitFunc returns the head commit for the given repository.
-type GetTipCommitFunc func(ctx context.Context, repositoryID int) (string, error)
-
 type store struct {
 	*basestore.Store
 }
@@ -248,6 +269,11 @@ func scanInts(rows *sql.Rows, queryErr error) (_ []int, err error) {
 // scanFirstInt scans a slice of ints from the return value of `*store.query` and returns the first.
 func scanFirstInt(rows *sql.Rows, err error) (int, bool, error) {
 	return basestore.ScanFirstInt(rows, err)
+}
+
+// scanFirstBool scans a slice of bools from the return value of `*store.query` and returns the first.
+func scanFirstBool(rows *sql.Rows, err error) (bool, bool, error) {
+	return basestore.ScanFirstBool(rows, err)
 }
 
 // closeRows closes the rows object and checks its error value.

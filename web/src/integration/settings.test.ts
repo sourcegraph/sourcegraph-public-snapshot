@@ -1,38 +1,32 @@
-import { createDriverForTest } from '../../../shared/src/testing/driver'
-import MockDate from 'mockdate'
-import { getConfig } from '../../../shared/src/testing/config'
 import assert from 'assert'
-import { IOrgConnection, IUserEmail, IOrg } from '../../../shared/src/graphql/schema'
-import { describeIntegration } from './helpers'
 import { retry } from '../../../shared/src/testing/utils'
-import { commonGraphQlResults, testUserID, settingsID } from './graphQlResults'
+import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
+import { commonWebGraphQlResults } from './graphQlResults'
+import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
+import { settingsID, testUserID } from '../../../shared/src/testing/integration/graphQlResults'
+import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
 
-describeIntegration('Settings', ({ initGeneration, describe }) => {
-    initGeneration(async () => {
-        // Reset date mocking
-        MockDate.reset()
-        const { sourcegraphBaseUrl, headless, slowMo, testUserPassword } = getConfig(
-            'sourcegraphBaseUrl',
-            'headless',
-            'slowMo',
-            'testUserPassword'
-        )
-
-        // Start browser
-        const driver = await createDriverForTest({
-            sourcegraphBaseUrl,
-            logBrowserConsole: true,
-            headless,
-            slowMo,
-        })
-        await driver.ensureLoggedIn({ username: 'test', password: testUserPassword, email: 'test@test.com' })
-        return { driver, sourcegraphBaseUrl }
+describe('Settings', () => {
+    let driver: Driver
+    before(async () => {
+        driver = await createDriverForTest()
     })
+    after(() => driver?.close())
+    let testContext: WebIntegrationTestContext
+    beforeEach(async function () {
+        testContext = await createWebIntegrationTestContext({
+            driver,
+            currentTest: this.currentTest!,
+            directory: __dirname,
+        })
+    })
+    saveScreenshotsUponFailures(() => driver.page)
+    afterEach(() => testContext?.dispose())
 
-    describe('User settings page', ({ it }) => {
-        it('updates user settings', async ({ driver, sourcegraphBaseUrl, overrideGraphQL, waitForGraphQLRequest }) => {
-            overrideGraphQL({
-                ...commonGraphQlResults,
+    describe('User settings page', () => {
+        it('updates user settings', async () => {
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
                 SettingsCascade: () => ({
                     settingsSubject: {
                         settingsCascade: {
@@ -69,31 +63,31 @@ describeIntegration('Settings', ({ initGeneration, describe }) => {
                         siteAdmin: true,
                         builtinAuth: true,
                         createdAt: '2020-03-02T11:52:15Z',
-                        emails: [{ email: 'test@sourcegraph.test', verified: true } as IUserEmail],
-                        organizations: { nodes: [] as IOrg[] } as IOrgConnection,
+                        emails: [{ email: 'test@sourcegraph.test', verified: true }],
+                        organizations: { nodes: [] },
                         permissionsInfo: null,
                     },
                 }),
             })
 
             const getSettingsEditorContent = async (): Promise<string | null | undefined> => {
-                await driver.page.waitForSelector('.e2e-settings-file .monaco-editor .view-lines')
+                await driver.page.waitForSelector('.test-settings-file .monaco-editor .view-lines')
                 return driver.page.evaluate(
                     () =>
                         document
-                            .querySelector<HTMLElement>('.e2e-settings-file .monaco-editor .view-lines')
+                            .querySelector<HTMLElement>('.test-settings-file .monaco-editor .view-lines')
                             ?.textContent?.replace(/\u00A0/g, ' ') // Monaco replaces all spaces with &nbsp;
                 )
             }
 
-            await driver.page.goto(sourcegraphBaseUrl + '/users/test/settings')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/users/test/settings')
 
-            await driver.page.waitForSelector('.e2e-settings-file .monaco-editor')
-            await driver.page.waitForSelector('.e2e-save-toolbar-save')
+            await driver.page.waitForSelector('.test-settings-file .monaco-editor')
+            await driver.page.waitForSelector('.test-save-toolbar-save')
 
             assert.strictEqual(
                 await driver.page.evaluate(
-                    () => document.querySelector<HTMLButtonElement>('.e2e-save-toolbar-save')?.disabled
+                    () => document.querySelector<HTMLButtonElement>('.test-save-toolbar-save')?.disabled
                 ),
                 true,
                 'Expected save button to be disabled'
@@ -102,7 +96,7 @@ describeIntegration('Settings', ({ initGeneration, describe }) => {
             // Replace with new settings
             const newSettings = '{ /* These are new settings */}'
             await driver.replaceText({
-                selector: '.e2e-settings-file .monaco-editor .view-lines',
+                selector: '.test-settings-file .monaco-editor .view-lines',
                 newText: newSettings,
                 selectMethod: 'keyboard',
                 enterTextMethod: 'type',
@@ -114,14 +108,14 @@ describeIntegration('Settings', ({ initGeneration, describe }) => {
 
             assert.strictEqual(
                 await driver.page.evaluate(
-                    () => document.querySelector<HTMLButtonElement>('.e2e-save-toolbar-save')?.disabled
+                    () => document.querySelector<HTMLButtonElement>('.test-save-toolbar-save')?.disabled
                 ),
                 false,
                 'Expected save button to not be disabled'
             )
 
             // Assert mutation is done when save button is clicked
-            const overrideSettingsVariables = await waitForGraphQLRequest(async () => {
+            const overrideSettingsVariables = await testContext.waitForGraphQLRequest(async () => {
                 await driver.findElementWithText('Save changes', { action: 'click' })
             }, 'OverwriteSettings')
 

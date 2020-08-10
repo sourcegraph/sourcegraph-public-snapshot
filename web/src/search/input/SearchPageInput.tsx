@@ -24,7 +24,6 @@ import {
     InteractiveSearchProps,
     SmartSearchFieldProps,
     CopyQueryButtonProps,
-    parseSearchURLQuery,
 } from '..'
 import { EventLoggerProps } from '../../tracking/eventLogger'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -55,9 +54,13 @@ interface Props
     isSourcegraphDotCom: boolean
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
-
+    /** Whether globbing is enabled for filters. */
+    globbing: boolean
     /** Whether to display the interactive mode input centered on the page, as on the search homepage. */
     interactiveModeHomepageMode?: boolean
+    /** A query fragment to appear at the beginning of the input. */
+    queryPrefix?: string
+    autoFocus?: boolean
 
     // For NavLinks
     authRequired?: boolean
@@ -65,12 +68,10 @@ interface Props
 }
 
 export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) => {
-    const queryFromUrl = parseSearchURLQuery(props.location.search) || ''
-
     /** The query cursor position and value entered by the user in the query input */
     const [userQueryState, setUserQueryState] = useState({
-        query: queryFromUrl,
-        cursorPosition: queryFromUrl.length,
+        query: props.queryPrefix ? props.queryPrefix : '',
+        cursorPosition: props.queryPrefix ? props.queryPrefix.length : 0,
     })
 
     const quickLinks =
@@ -121,14 +122,15 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                                     queryState={userQueryState}
                                     onChange={setUserQueryState}
                                     onSubmit={onSubmit}
-                                    autoFocus={true}
+                                    autoFocus={props.autoFocus !== false}
                                 />
                             ) : (
                                 <QueryInput
                                     {...props}
                                     value={userQueryState}
                                     onChange={setUserQueryState}
-                                    autoFocus="cursor-at-end"
+                                    // We always want to set this to 'cursor-at-end' when true.
+                                    autoFocus={props.autoFocus ? 'cursor-at-end' : props.autoFocus}
                                     hasGlobalQueryBehavior={true}
                                     patternType={props.patternType}
                                     setPatternType={props.setPatternType}

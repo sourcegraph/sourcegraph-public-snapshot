@@ -28,12 +28,12 @@ export const AddFilterRow: React.FunctionComponent<RowProps> = ({ isHomepage, on
     }
 
     return (
-        <div className={`add-filter-row ${isHomepage ? 'add-filter-row--homepage' : ''} e2e-add-filter-row`}>
+        <div className={`add-filter-row ${isHomepage ? 'add-filter-row--homepage' : ''} test-add-filter-row`}>
             {defaultFilterTypes.map(filterType => (
                 <button
                     key={filterType}
                     type="button"
-                    className={`add-filter-row__button btn btn-outline-primary e2e-add-filter-button-${filterType}`}
+                    className={`add-filter-row__button btn btn-outline-primary test-add-filter-button-${filterType}`}
                     onClick={buildOnAddFilterHandler(filterType)}
                 >
                     + {startCase(filterType)} filter

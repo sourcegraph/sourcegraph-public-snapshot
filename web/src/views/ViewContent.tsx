@@ -2,7 +2,7 @@ import React from 'react'
 import { Markdown } from '../../../shared/src/components/Markdown'
 import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
-import H from 'history'
+import * as H from 'history'
 import { QueryInputInViewContent } from './QueryInputInViewContent'
 import { View, MarkupContent } from 'sourcegraph'
 import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps } from '../search'
@@ -24,6 +24,7 @@ export interface ViewContentProps
     viewContent: View['content']
     location: H.Location
     history: H.History
+    globbing: boolean
 }
 
 /**

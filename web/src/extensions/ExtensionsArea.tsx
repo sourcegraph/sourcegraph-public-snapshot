@@ -10,6 +10,7 @@ import { ExtensionAreaRoute } from './extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extension/ExtensionAreaHeader'
 import { ExtensionsAreaHeader, ExtensionsAreaHeaderActionButton } from './ExtensionsAreaHeader'
 import { ThemeProps } from '../../../shared/src/theme'
+import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -18,7 +19,11 @@ export interface ExtensionsAreaRoute extends RouteDescriptor<ExtensionsAreaRoute
 /**
  * Properties passed to all page components in the extensions area.
  */
-export interface ExtensionsAreaRouteContext extends SettingsCascadeProps, PlatformContextProps, ThemeProps {
+export interface ExtensionsAreaRouteContext
+    extends SettingsCascadeProps,
+        PlatformContextProps,
+        ThemeProps,
+        TelemetryProps {
     /** The currently authenticated user. */
     authenticatedUser: GQL.IUser | null
 
@@ -32,7 +37,8 @@ interface ExtensionsAreaProps
     extends RouteComponentProps<{ extensionID: string }>,
         SettingsCascadeProps,
         PlatformContextProps,
-        ThemeProps {
+        ThemeProps,
+        TelemetryProps {
     routes: readonly ExtensionsAreaRoute[]
 
     /**
@@ -63,6 +69,7 @@ export class ExtensionsArea extends React.Component<ExtensionsAreaProps, Extensi
             extensionAreaRoutes: this.props.extensionAreaRoutes,
             extensionAreaHeaderNavItems: this.props.extensionAreaHeaderNavItems,
             isLightTheme: this.props.isLightTheme,
+            telemetryService: this.props.telemetryService,
         }
 
         return (

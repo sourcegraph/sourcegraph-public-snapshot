@@ -21,6 +21,8 @@ $border-radius-lg: 4px;
 $font-size-base: 0.875rem;
 $line-height-base: (20/14);
 
+$box-shadow: 0 0.25rem 0.5rem rgba($gray-19, 0.07);
+
 $grid-gutter-width: 1.5rem;
 
 // No max width except for xl.
@@ -60,6 +62,13 @@ $alert-color-level-light: 6;
 $alert-padding-y: 0.75rem;
 $alert-padding-x: 0.75rem;
 
+// Badges
+
+$badge-font-size: 0.75em;
+$badge-font-weight: 600;
+$badge-padding-y: 0.34em;
+$badge-padding-x: 0.6em;
+
 // Forms
 
 $form-check-input-margin-y: 0.2em;
@@ -82,6 +91,21 @@ $input-placeholder-color: var(--input-placeholder-color);
 $input-group-addon-color: var(--input-group-addon-color);
 $input-group-addon-bg: var(--input-group-addon-bg);
 $input-group-addon-border-color: var(--input-group-addon-border-color);
+
+// Dropdown
+$dropdown-bg: var(--dropdown-bg);
+$dropdown-border-color: var(--dropdown-border-color);
+$dropdown-divider-bg: var(--border-color);
+$dropdown-link-color: var(--body-color);
+$dropdown-link-hover-color: var(--body-color);
+$dropdown-link-hover-bg: var(--dropdown-link-hover-bg);
+$dropdown-link-active-color: #ffffff;
+$dropdown-link-active-bg: var(--primary);
+$dropdown-link-disabled-color: var(--text-muted);
+$dropdown-header-color: var(--dropdown-header-color);
+$dropdown-item-padding-y: 0.25rem;
+$dropdown-item-padding-x: 0.5rem;
+$dropdown-padding-y: $dropdown-item-padding-y;
 
 // Tables
 
@@ -127,6 +151,7 @@ $code-bg: var(--body-bg);
 @import './global-styles/alert';
 @import './global-styles/forms';
 @import './global-styles/highlight';
+@import './global-styles/web-content';
 
 * {
     box-sizing: border-box;
@@ -185,10 +210,6 @@ body,
     }
 }
 
-.form-control::placeholder {
-    opacity: 0.5;
-}
-
 .spacer {
     flex: 1;
 }
@@ -222,6 +243,14 @@ body,
 :focus-visible {
     outline: 0;
     box-shadow: $btn-focus-box-shadow;
+}
+
+// Hide the given element from Percy.
+.percy-hide {
+    @media only percy {
+        visibility: hidden;
+        display: none;
+    }
 }
 
 // Pages

@@ -29,8 +29,8 @@ interface RepositoryNodeProps extends ActivationProps {
 const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = props => (
     <li
         className="repository-node list-group-item py-2"
-        data-e2e-repository={props.node.name}
-        data-e2e-cloned={props.node.mirrorInfo.cloned}
+        data-test-repository={props.node.name}
+        data-test-cloned={props.node.mirrorInfo.cloned}
     >
         <div className="d-flex align-items-center justify-content-between">
             <div>
@@ -82,19 +82,13 @@ const FILTERS: FilteredConnectionFilter[] = [
         label: 'Cloned',
         id: 'cloned',
         tooltip: 'Show cloned repositories only',
-        args: { cloned: true, cloneInProgress: false, notCloned: false },
-    },
-    {
-        label: 'Cloning',
-        id: 'cloning',
-        tooltip: 'Show only repositories that are currently being cloned',
-        args: { cloned: false, cloneInProgress: true, notCloned: false },
+        args: { cloned: true, notCloned: false },
     },
     {
         label: 'Not cloned',
         id: 'not-cloned',
         tooltip: 'Show only repositories that have not been cloned yet',
-        args: { cloned: false, cloneInProgress: false, notCloned: true },
+        args: { cloned: false, notCloned: true },
     },
     {
         label: 'Needs index',

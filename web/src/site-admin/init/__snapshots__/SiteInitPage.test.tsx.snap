@@ -23,7 +23,7 @@ exports[`SiteInitPage normal 1`] = `
         Create an admin account to start using Sourcegraph.
       </p>
       <form
-        className="signin-signup-form e2e-signup-form w-100 "
+        className="signin-signup-form test-signup-form w-100 "
         onInvalid={[Function]}
         onSubmit={[Function]}
       >

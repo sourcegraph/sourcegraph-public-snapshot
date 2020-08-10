@@ -58,13 +58,7 @@ import { ApplyLinkPreviewOptions } from '../../../../../shared/src/components/li
 import { Controller } from '../../../../../shared/src/extensions/controller'
 import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
 import { getHoverActions, registerHoverContributions } from '../../../../../shared/src/hover/actions'
-import {
-    HoverAlert,
-    HoverContext,
-    HoverData,
-    HoverOverlay,
-    HoverOverlayClassProps,
-} from '../../../../../shared/src/hover/HoverOverlay'
+import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '../../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../../shared/src/languages'
 import { URLToFileContext } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
@@ -97,7 +91,7 @@ import { CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './c
 import { ContentView, handleContentViews } from './contentViews'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
 import { ViewOnSourcegraphButtonClassProps, ViewOnSourcegraphButton } from './ViewOnSourcegraphButton'
-import { ExtensionHoverAlertType, getActiveHoverAlerts, onHoverAlertDismissed } from './hoverAlerts'
+import { getActiveHoverAlerts, onHoverAlertDismissed } from './hoverAlerts'
 import {
     handleNativeTooltips,
     NativeTooltip,
@@ -108,11 +102,12 @@ import { handleTextFields, TextField } from './textFields'
 import { delayUntilIntersecting, ViewResolver } from './views'
 
 import { IS_LIGHT_THEME } from './consts'
-import { NotificationType } from 'sourcegraph'
+import { NotificationType, HoverAlert } from 'sourcegraph'
 import { isHTTPAuthError } from '../../../../../shared/src/backend/fetch'
 import { asError } from '../../../../../shared/src/util/errors'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
 import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
+import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 
 registerHighlightContributions()
 
@@ -139,7 +134,7 @@ export type MountGetter = (container: HTMLElement) => HTMLElement | null
  */
 export type CodeHostContext = RawRepoSpec & Partial<RevisionSpec> & { privateRepository: boolean }
 
-type CodeHostType = 'github' | 'phabricator' | 'bitbucket-server' | 'gitlab'
+export type CodeHostType = 'github' | 'phabricator' | 'bitbucket-server' | 'gitlab'
 
 /** Information for adding code intelligence to code views on arbitrary code hosts. */
 export interface CodeHost extends ApplyLinkPreviewOptions {
@@ -339,14 +334,10 @@ function initCodeIntelligence({
     hoverAlerts,
 }: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController' | 'telemetryService'> & {
     render: typeof reactDOMRender
-    hoverAlerts: Observable<HoverAlert<ExtensionHoverAlertType>>[]
+    hoverAlerts: Observable<HoverAlert>[]
     mutations: Observable<MutationRecordLike[]>
 }): {
-    hoverifier: Hoverifier<
-        RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
-        HoverData<ExtensionHoverAlertType>,
-        ActionItemAction
-    >
+    hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
     subscription: Unsubscribable
 } {
     const subscription = new Subscription()
@@ -373,7 +364,7 @@ function initCodeIntelligence({
     // Code views come and go, but there is always a single hoverifier on the page
     const hoverifier = createHoverifier<
         RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
-        HoverData<ExtensionHoverAlertType>,
+        HoverMerged,
         ActionItemAction
     >({
         closeButtonClicks,
@@ -399,9 +390,7 @@ function initCodeIntelligence({
                     getActiveHoverAlerts(hoverAlerts),
                 ]).pipe(
                     map(
-                        ([{ isLoading, result: hoverMerged }, alerts]): MaybeLoadingResult<HoverData<
-                            ExtensionHoverAlertType
-                        > | null> => ({
+                        ([{ isLoading, result: hoverMerged }, alerts]): MaybeLoadingResult<HoverMerged | null> => ({
                             isLoading,
                             result: hoverMerged ? { ...hoverMerged, alerts } : null,
                         })
@@ -423,10 +412,7 @@ function initCodeIntelligence({
         tokenize: codeHost.codeViewsRequireTokenization,
     })
 
-    class HoverOverlayContainer extends React.Component<
-        {},
-        HoverState<HoverContext, HoverData<ExtensionHoverAlertType>, ActionItemAction>
-    > {
+    class HoverOverlayContainer extends React.Component<{}, HoverState<HoverContext, HoverMerged, ActionItemAction>> {
         private subscription = new Subscription()
         private nextOverlayElement = hoverOverlayElements.next.bind(hoverOverlayElements)
         private nextCloseButtonClick = closeButtonClicks.next.bind(closeButtonClicks)
@@ -466,11 +452,7 @@ function initCodeIntelligence({
                 />
             ) : null
         }
-        private getHoverOverlayProps(): HoverState<
-            HoverContext,
-            HoverData<ExtensionHoverAlertType>,
-            ActionItemAction
-        >['hoverOverlayProps'] {
+        private getHoverOverlayProps(): HoverState<HoverContext, HoverMerged, ActionItemAction>['hoverOverlayProps'] {
             if (!this.state.hoverOverlayProps) {
                 return undefined
             }
@@ -602,7 +584,7 @@ export function handleCodeHost({
         ? nativeTooltipsEnabledFromSettings(platformContext.settings)
         : of(false)
 
-    const hoverAlerts: Observable<HoverAlert<ExtensionHoverAlertType>>[] = []
+    const hoverAlerts: Observable<HoverAlert>[] = []
 
     if (codeHost.nativeTooltipResolvers) {
         const { subscription, nativeTooltipsAlert } = handleNativeTooltips(mutations, nativeTooltipsEnabled, codeHost)

@@ -14,12 +14,15 @@ exports[`CampaignsMarketing renders 1`] = `
     <h1
       className="font-weight-bold display-4"
     >
-      Campaigns 
-      <span
-        className="badge badge-info"
-      >
-        Beta
-      </span>
+      Campaigns
+       
+      <sup>
+        <span
+          className="badge badge-info text-uppercase"
+        >
+          Beta
+        </span>
+      </sup>
     </h1>
     <h2
       className="mb-5"
@@ -32,6 +35,7 @@ exports[`CampaignsMarketing renders 1`] = `
       <iframe
         allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen={true}
+        className="percy-hide chromatic-ignore"
         frameBorder="0"
         height="315"
         src="https://www.youtube.com/embed/aqcCrqRB17w"
