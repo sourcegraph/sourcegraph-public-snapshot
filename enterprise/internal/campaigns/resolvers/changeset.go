@@ -144,7 +144,7 @@ func (r *changesetResolver) computeNextSyncAt(ctx context.Context) (time.Time, e
 		}
 		for _, d := range syncData {
 			if d.ChangesetID == r.changeset.ID {
-				r.nextSyncAt = ee.NextSync(time.Now, d)
+				r.nextSyncAt = ee.NextSync(r.store.Clock(), d)
 				return
 			}
 		}

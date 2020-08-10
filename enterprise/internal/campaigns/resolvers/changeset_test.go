@@ -31,7 +31,8 @@ func TestChangesetResolver(t *testing.T) {
 	userID := insertTestUser(t, dbconn.Global, "campaign-resolver", true)
 
 	now := time.Now().UTC().Truncate(time.Microsecond)
-	store := ee.NewStore(dbconn.Global)
+	clock := func() time.Time { return now.UTC().Truncate(time.Microsecond) }
+	store := ee.NewStoreWithClock(dbconn.Global, clock)
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", 1)
