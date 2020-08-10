@@ -14,7 +14,6 @@ var campaignColumns = []*sqlf.Query{
 	sqlf.Sprintf("campaigns.id"),
 	sqlf.Sprintf("campaigns.name"),
 	sqlf.Sprintf("campaigns.description"),
-	sqlf.Sprintf("campaigns.branch"),
 	sqlf.Sprintf("campaigns.author_id"),
 	sqlf.Sprintf("campaigns.namespace_user_id"),
 	sqlf.Sprintf("campaigns.namespace_org_id"),
@@ -31,7 +30,6 @@ var campaignColumns = []*sqlf.Query{
 var campaignInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("name"),
 	sqlf.Sprintf("description"),
-	sqlf.Sprintf("branch"),
 	sqlf.Sprintf("author_id"),
 	sqlf.Sprintf("namespace_user_id"),
 	sqlf.Sprintf("namespace_org_id"),
@@ -57,7 +55,7 @@ func (s *Store) CreateCampaign(ctx context.Context, c *campaigns.Campaign) error
 var createCampaignQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:CreateCampaign
 INSERT INTO campaigns (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
 `
 
@@ -80,7 +78,6 @@ func (s *Store) createCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) 
 		sqlf.Join(campaignInsertColumns, ", "),
 		c.Name,
 		c.Description,
-		c.Branch,
 		c.AuthorID,
 		nullInt32Column(c.NamespaceUserID),
 		nullInt32Column(c.NamespaceOrgID),
@@ -106,7 +103,7 @@ func (s *Store) UpdateCampaign(ctx context.Context, c *campaigns.Campaign) error
 var updateCampaignQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:UpdateCampaign
 UPDATE campaigns
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING %s
 `
@@ -124,7 +121,6 @@ func (s *Store) updateCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) 
 		sqlf.Join(campaignInsertColumns, ", "),
 		c.Name,
 		c.Description,
-		c.Branch,
 		c.AuthorID,
 		nullInt32Column(c.NamespaceUserID),
 		nullInt32Column(c.NamespaceOrgID),
@@ -365,7 +361,6 @@ func scanCampaign(c *campaigns.Campaign, s scanner) error {
 		&c.ID,
 		&c.Name,
 		&dbutil.NullString{S: &c.Description},
-		&dbutil.NullString{S: &c.Branch},
 		&c.AuthorID,
 		&dbutil.NullInt32{N: &c.NamespaceUserID},
 		&dbutil.NullInt32{N: &c.NamespaceOrgID},

@@ -58,7 +58,6 @@ type Campaign struct {
 	ID              int64
 	Name            string
 	Description     string
-	Branch          string
 	AuthorID        int32
 	NamespaceUserID int32
 	NamespaceOrgID  int32
