@@ -65,6 +65,9 @@ type ExternalServicesListOptions struct {
 	NamespaceUserID int32
 	// When specified, only include external services with given list of kinds.
 	Kinds []string
+	// When specified, only include external services with ID below this number
+	// (because we're sorting results by ID in descending order).
+	AfterID int64
 	*LimitOffset
 }
 
@@ -81,6 +84,9 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 			kinds = append(kinds, sqlf.Sprintf("%s", kind))
 		}
 		conds = append(conds, sqlf.Sprintf("kind IN (%s)", sqlf.Join(kinds, ",")))
+	}
+	if o.AfterID > 0 {
+		conds = append(conds, sqlf.Sprintf(`id < %d`, o.AfterID))
 	}
 	return conds
 }

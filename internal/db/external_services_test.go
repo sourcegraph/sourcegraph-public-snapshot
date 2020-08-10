@@ -22,11 +22,12 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 		noNamespace     bool
 		namespaceUserID int32
 		kinds           []string
+		afterID         int64
 		wantQuery       string
 		wantArgs        []interface{}
 	}{
 		{
-			name:      "no kind",
+			name:      "no condition",
 			wantQuery: "deleted_at IS NULL",
 		},
 		{
@@ -53,6 +54,12 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			namespaceUserID: 1,
 			wantQuery:       "deleted_at IS NULL AND namespace_user_id IS NULL",
 		},
+		{
+			name:      "has after ID",
+			afterID:   10,
+			wantQuery: "deleted_at IS NULL AND id < $1",
+			wantArgs:  []interface{}{int64(10)},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -60,6 +67,7 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 				NoNamespace:     test.noNamespace,
 				NamespaceUserID: test.namespaceUserID,
 				Kinds:           test.kinds,
+				AfterID:         test.afterID,
 			}
 			q := sqlf.Join(opts.sqlConditions(), "AND")
 			if diff := cmp.Diff(test.wantQuery, q.Query(sqlf.PostgresBindVar)); diff != "" {
