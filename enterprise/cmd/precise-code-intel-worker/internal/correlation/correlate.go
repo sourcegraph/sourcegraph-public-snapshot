@@ -217,7 +217,7 @@ func correlateMetaData(state *wrappedState, element lsif.Element) error {
 }
 
 func correlateDocument(state *wrappedState, element lsif.Element) error {
-	payload, ok := element.Payload.(lsif.Document)
+	payload, ok := element.Payload.(string)
 	if !ok {
 		return ErrUnexpectedPayload
 	}
@@ -226,13 +226,12 @@ func correlateDocument(state *wrappedState, element lsif.Element) error {
 		return ErrMissingMetaData
 	}
 
-	relativeURI, err := filepath.Rel(state.ProjectRoot, payload.URI)
+	relativeURI, err := filepath.Rel(state.ProjectRoot, payload)
 	if err != nil {
-		return fmt.Errorf("document URI %q is not relative to project root %q (%s)", payload.URI, state.ProjectRoot, err)
+		return fmt.Errorf("document URI %q is not relative to project root %q (%s)", payload, state.ProjectRoot, err)
 	}
 
-	payload.URI = relativeURI
-	state.DocumentData[element.ID] = payload
+	state.DocumentData[element.ID] = relativeURI
 	return nil
 }
 
@@ -247,19 +246,17 @@ func correlateRange(state *wrappedState, element lsif.Element) error {
 }
 
 func correlateResultSet(state *wrappedState, element lsif.Element) error {
-	state.ResultSetData[element.ID] = lsif.ResultSet{
-		MonikerIDs: datastructures.NewIDSet(),
-	}
+	state.ResultSetData[element.ID] = lsif.ResultSet{}
 	return nil
 }
 
 func correlateDefinitionResult(state *wrappedState, element lsif.Element) error {
-	state.DefinitionData[element.ID] = datastructures.DefaultIDSetMap{}
+	state.DefinitionData[element.ID] = datastructures.NewDefaultIDSetMap()
 	return nil
 }
 
 func correlateReferenceResult(state *wrappedState, element lsif.Element) error {
-	state.ReferenceData[element.ID] = datastructures.DefaultIDSetMap{}
+	state.ReferenceData[element.ID] = datastructures.NewDefaultIDSetMap()
 	return nil
 }
 
@@ -294,18 +291,17 @@ func correlatePackageInformation(state *wrappedState, element lsif.Element) erro
 }
 
 func correlateDiagnosticResult(state *wrappedState, element lsif.Element) error {
-	payload, ok := element.Payload.(lsif.DiagnosticResult)
+	payload, ok := element.Payload.([]lsif.Diagnostic)
 	if !ok {
 		return ErrUnexpectedPayload
 	}
 
-	state.Diagnostics[element.ID] = payload
+	state.DiagnosticResults[element.ID] = payload
 	return nil
 }
 
 func correlateContainsEdge(state *wrappedState, id int, edge lsif.Edge) error {
-	document, ok := state.DocumentData[edge.OutV]
-	if !ok {
+	if _, ok := state.DocumentData[edge.OutV]; !ok {
 		// Do not track this relation for project vertices
 		return nil
 	}
@@ -314,7 +310,7 @@ func correlateContainsEdge(state *wrappedState, id int, edge lsif.Edge) error {
 		if _, ok := state.RangeData[inV]; !ok {
 			return malformedDump(id, edge.InV, "range")
 		}
-		document.Contains.Add(inV)
+		state.Contains.SetAdd(edge.OutV, inV)
 	}
 	return nil
 }
@@ -342,7 +338,7 @@ func correlateItemEdge(state *wrappedState, id int, edge lsif.Edge) error {
 			}
 
 			// Link definition data to defining range
-			documentMap.GetOrCreate(edge.Document).Add(inV)
+			documentMap.SetAdd(edge.Document, inV)
 		}
 
 		return nil
@@ -352,14 +348,14 @@ func correlateItemEdge(state *wrappedState, id int, edge lsif.Edge) error {
 		for _, inV := range edge.InVs {
 			if _, ok := state.ReferenceData[inV]; ok {
 				// Link reference data identifiers together
-				state.LinkedReferenceResults.Union(edge.OutV, inV)
+				state.LinkedReferenceResults.Link(edge.OutV, inV)
 			} else {
 				if _, ok = state.RangeData[inV]; !ok {
 					return malformedDump(id, edge.InV, "range")
 				}
 
 				// Link reference data to a reference range
-				documentMap.GetOrCreate(edge.Document).Add(inV)
+				documentMap.SetAdd(edge.Document, inV)
 			}
 		}
 
@@ -424,12 +420,10 @@ func correlateMonikerEdge(state *wrappedState, id int, edge lsif.Edge) error {
 		return malformedDump(id, edge.InV, "moniker")
 	}
 
-	ids := datastructures.IDSetWith(edge.InV)
-
-	if source, ok := state.RangeData[edge.OutV]; ok {
-		state.RangeData[edge.OutV] = source.SetMonikerIDs(ids)
-	} else if source, ok := state.ResultSetData[edge.OutV]; ok {
-		state.ResultSetData[edge.OutV] = source.SetMonikerIDs(ids)
+	if _, ok := state.RangeData[edge.OutV]; ok {
+		state.Monikers.SetAdd(edge.OutV, edge.InV)
+	} else if _, ok := state.ResultSetData[edge.OutV]; ok {
+		state.Monikers.SetAdd(edge.OutV, edge.InV)
 	} else {
 		return malformedDump(id, edge.OutV, "range", "resultSet")
 	}
@@ -444,7 +438,7 @@ func correlateNextMonikerEdge(state *wrappedState, id int, edge lsif.Edge) error
 		return malformedDump(id, edge.OutV, "moniker")
 	}
 
-	state.LinkedMonikers.Union(edge.InV, edge.OutV)
+	state.LinkedMonikers.Link(edge.InV, edge.OutV)
 	return nil
 }
 
@@ -472,15 +466,14 @@ func correlatePackageInformationEdge(state *wrappedState, id int, edge lsif.Edge
 }
 
 func correlateDiagnosticEdge(state *wrappedState, id int, edge lsif.Edge) error {
-	document, ok := state.DocumentData[edge.OutV]
-	if !ok {
+	if _, ok := state.DocumentData[edge.OutV]; !ok {
 		return malformedDump(id, edge.OutV, "document")
 	}
 
-	if _, ok := state.Diagnostics[edge.InV]; !ok {
+	if _, ok := state.DiagnosticResults[edge.InV]; !ok {
 		return malformedDump(id, edge.InV, "diagnosticResult")
 	}
 
-	document.Diagnostics.Add(edge.InV)
+	state.Diagnostics.SetAdd(edge.OutV, edge.InV)
 	return nil
 }
