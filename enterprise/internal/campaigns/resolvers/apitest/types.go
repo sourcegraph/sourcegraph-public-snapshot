@@ -204,6 +204,8 @@ type CampaignSpec struct {
 
 	ViewerCanAdminister bool
 
+	DiffStat DiffStat
+
 	CreatedAt graphqlbackend.DateTime
 	ExpiresAt *graphqlbackend.DateTime
 }

@@ -100,6 +100,8 @@ type CampaignSpecResolver interface {
 	PreviewURL() (string, error)
 
 	ViewerCanAdminister(context.Context) (bool, error)
+
+	DiffStat(ctx context.Context) (*DiffStat, error)
 }
 
 type CampaignDescriptionResolver interface {

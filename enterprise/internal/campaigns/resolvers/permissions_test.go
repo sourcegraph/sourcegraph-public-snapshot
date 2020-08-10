@@ -617,9 +617,12 @@ func TestRepositoryPermissions(t *testing.T) {
 		changesetSpecs := make([]*campaigns.ChangesetSpec, 0, len(repos))
 		for _, r := range repos {
 			c := &campaigns.ChangesetSpec{
-				RepoID:         r.ID,
-				UserID:         userID,
-				CampaignSpecID: campaignSpec.ID,
+				RepoID:          r.ID,
+				UserID:          userID,
+				CampaignSpecID:  campaignSpec.ID,
+				DiffStatAdded:   4,
+				DiffStatChanged: 4,
+				DiffStatDeleted: 4,
 			}
 			if err := store.CreateChangesetSpec(ctx, c); err != nil {
 				t.Fatal(err)
@@ -632,6 +635,9 @@ func TestRepositoryPermissions(t *testing.T) {
 		testCampaignSpecResponse(t, s, userCtx, campaignSpec.RandID, wantCampaignSpecResponse{
 			changesetSpecTypes:  map[string]int{"VisibleChangesetSpec": 2},
 			changesetSpecsCount: 2,
+			campaignSpecDiffStat: apitest.DiffStat{
+				Added: 8, Changed: 8, Deleted: 8,
+			},
 		})
 
 		// Now query the changesetSpecs as single nodes, to make sure that fetching/preloading
@@ -653,6 +659,9 @@ func TestRepositoryPermissions(t *testing.T) {
 				"HiddenChangesetSpec":  1,
 			},
 			changesetSpecsCount: 2,
+			campaignSpecDiffStat: apitest.DiffStat{
+				Added: 4, Changed: 4, Deleted: 4,
+			},
 		})
 
 		// Query the single changesetSpec nodes again
@@ -820,8 +829,9 @@ query {
 `
 
 type wantCampaignSpecResponse struct {
-	changesetSpecTypes  map[string]int
-	changesetSpecsCount int
+	changesetSpecTypes   map[string]int
+	changesetSpecsCount  int
+	campaignSpecDiffStat apitest.DiffStat
 }
 
 func testCampaignSpecResponse(t *testing.T, s *graphql.Schema, ctx context.Context, campaignSpecRandID string, w wantCampaignSpecResponse) {
