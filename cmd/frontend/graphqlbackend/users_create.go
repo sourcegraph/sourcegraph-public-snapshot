@@ -80,5 +80,4 @@ func (r *createUserResult) ResetPasswordURL(ctx context.Context) (*string, error
 	}
 	ru = globals.ExternalURL().ResolveReference(resetURL).String()
 	return &ru, nil
-
 }
