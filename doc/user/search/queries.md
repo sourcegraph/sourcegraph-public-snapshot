@@ -72,7 +72,7 @@ The following keywords can be used on all searches (using [RE2 syntax](https://g
 | **file:regexp-pattern** <br> _alias: f_ | Only include results in files whose full path matches the regexp. | [`file:\.js$ httptest`](https://sourcegraph.com/search?q=file:%5C.js%24+httptest) <br> [`file:internal/ httptest`](https://sourcegraph.com/search?q=file:internal/+httptest) |
 | **-file:regexp-pattern** <br> _alias: -f_ | Exclude results from files whose full path matches the regexp. | [`file:\.js$ -file:test http`](https://sourcegraph.com/search?q=file:%5C.js%24+-file:test+http) |
 | **content:"pattern"** | Set the search pattern with a dedicated parameter. Useful when searching literally for a string that may conflict with the [search pattern syntax](#search-pattern-syntax). | [`repo:sourcegraph content:"repo:sourcegraph"`](https://sourcegraph.com/search?q=repo:sourcegraph+content:"repo:sourcegraph"&patternType=literal) |
-| **-content:"pattern"** | Exclude results from files whose content matches the pattern. | [`file:Dockerfile alpine -content:alpine:latest`](https://sourcegraph.com/search?q=file:Dockerfile+alpine+-content:alpine:latest&patternType=literal) |
+| **-content:"pattern"** | Exclude results from files whose content matches the pattern. See our [content-search](#limitations-of-content-search) documentation for current limitations. | [`file:Dockerfile alpine -content:alpine:latest`](https://sourcegraph.com/search?q=file:Dockerfile+alpine+-content:alpine:latest&patternType=literal) |
 | **lang:language-name** <br> _alias: l_ | Only include results from files in the specified programming language. | [`lang:typescript encoding`](https://sourcegraph.com/search?q=lang:typescript+encoding) |
 | **-lang:language-name** <br> _alias: -l_ | Exclude results from files in the specified programming language. | [`-lang:typescript encoding`](https://sourcegraph.com/search?q=-lang:typescript+encoding) |
 | **type:symbol** | Perform a symbol search. | [`type:symbol path`](https://sourcegraph.com/search?q=type:symbol+path)  ||
@@ -88,10 +88,7 @@ The following keywords can be used on all searches (using [RE2 syntax](https://g
 | **visibility:any, visibility:public, visibility:private** | Filter results to only public or private repositories. The default is to include both private and public repositories. | [`type:repo visibility:public`](https://sourcegraph.com/search?q=type:repo+visibility:public) |
 | **stable:yes** | Ensures a deterministic result order. Applies only to file contents. Limited to at max `count:5000` results. Note this field should be removed if you're using the pagination API, which already ensures deterministic results. | [`func stable:yes count:10`](https://sourcegraph.com/search?q=func+stable:yes+count:30&patternType=literal) |
 
-
 Multiple or combined **repo:** and **file:** keywords are intersected. For example, `repo:foo repo:bar` limits your search to repositories whose path contains **both** _foo_ and _bar_ (such as _github.com/alice/foobar_). To include results from repositories whose path contains **either** _foo_ or _bar_, use `repo:foo|bar`.
-
-`-content` requires the experimental `migrateParser: true` option in the site settings and is currently only supported for literal and regexp queries on indexed repositories. 
 
 ## Operators
 
@@ -176,3 +173,8 @@ Example: [`repo:docker repo:registry`](https://sourcegraph.com/search?q=repo:doc
 A query with `type:path` restricts terms to matching filenames only (not file contents).
 
 Example: [`type:path repo:/docker/ registry`](https://sourcegraph.com/search?q=type:path+repo:/docker/+registry)
+
+
+## Limitations of content search
+
+`-content` requires the experimental `migrateParser: true` option in the site settings and is currently only supported for literal and regexp queries on indexed repositories. 
