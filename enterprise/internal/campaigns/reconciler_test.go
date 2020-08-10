@@ -435,12 +435,6 @@ func TestReconcilerProcess(t *testing.T) {
 	}
 }
 
-var (
-	diffStatOne   int32 = 1
-	diffStatTwo   int32 = 2
-	diffStatThree int32 = 3
-)
-
 func buildGithubPR(now time.Time, externalID, title, body, headRef string) interface{} {
 	return &github.PullRequest{
 		ID:          externalID,

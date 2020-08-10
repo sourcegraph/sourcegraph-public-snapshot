@@ -102,7 +102,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	campaignApiID := string(campaigns.MarshalCampaignID(campaign.ID))
+	campaignAPIID := string(campaigns.MarshalCampaignID(campaign.ID))
 	nodes := []apitest.Changeset{
 		{
 			Typename:   "ExternalChangeset",
@@ -145,7 +145,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(fmt.Sprintf("Unsafe opts %t, first %d", tc.useUnsafeOpts, tc.firstParam), func(t *testing.T) {
-			input := map[string]interface{}{"campaign": campaignApiID, "first": int64(tc.firstParam)}
+			input := map[string]interface{}{"campaign": campaignAPIID, "first": int64(tc.firstParam)}
 			if tc.useUnsafeOpts {
 				input["reviewState"] = campaigns.ChangesetReviewStatePending
 			}

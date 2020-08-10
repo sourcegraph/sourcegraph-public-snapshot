@@ -100,7 +100,7 @@ func TestPermissionLevels(t *testing.T) {
 		return cs.RandID
 	}
 
-	cleanUpCampaigns := func(t *testing.T, s *ee.Store) {
+	cleanUpCampaigns := func(t *testing.T, _ *ee.Store) {
 		t.Helper()
 
 		campaigns, next, err := store.ListCampaigns(ctx, ee.ListCampaignsOpts{Limit: 1000})
@@ -910,7 +910,7 @@ query($campaignSpec: ID!) {
 }
 `
 
-func testChangesetSpecResponse(t *testing.T, s *graphql.Schema, ctx context.Context, randID string, wantType string) {
+func testChangesetSpecResponse(t *testing.T, s *graphql.Schema, ctx context.Context, randID, wantType string) {
 	t.Helper()
 
 	var res struct{ Node apitest.ChangesetSpec }

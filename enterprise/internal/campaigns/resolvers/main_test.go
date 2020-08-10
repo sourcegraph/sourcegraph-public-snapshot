@@ -192,7 +192,7 @@ func mockBackendCommits(t *testing.T, revs ...api.CommitID) {
 	t.Cleanup(func() { backend.Mocks.Repos.GetCommit = nil })
 }
 
-func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
+func mockRepoComparison(t *testing.T, baseRev, headRev, _ string) {
 	t.Helper()
 
 	spec := fmt.Sprintf("%s...%s", baseRev, headRev)
@@ -201,7 +201,7 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 		if string(id) != baseRev && string(id) != headRev {
 			t.Fatalf("git.Mocks.GetCommit received unknown commit id: %s", id)
 		}
-		return &git.Commit{ID: api.CommitID(id)}, nil
+		return &git.Commit{ID: id}, nil
 	}
 	t.Cleanup(func() { git.Mocks.GetCommit = nil })
 
