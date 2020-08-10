@@ -107,7 +107,6 @@ func (r *campaignSpecResolver) computeNamespace(ctx context.Context) (*graphqlba
 
 		r.namespace = n
 		r.namespaceErr = err
-		return
 	})
 	return r.namespace, r.namespaceErr
 }
