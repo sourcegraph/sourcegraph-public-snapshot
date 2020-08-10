@@ -172,9 +172,27 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		tr.Finish()
 	}()
 
-	// TODO(sqs): Implement createCampaign when we've implemented applyCampaign and are happy about
-	// how it works.
-	return nil, errors.New("createCampaign is not yet implemented (use applyCampaign instead)")
+	opts := ee.ApplyCampaignOpts{
+		// This is what differentiates CreateCampaign from ApplyCampaign
+		FailIfCampaignExists: true,
+	}
+
+	opts.CampaignSpecRandID, err = unmarshalCampaignSpecID(args.CampaignSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	if opts.CampaignSpecRandID == "" {
+		return nil, ErrIDIsZero
+	}
+
+	svc := ee.NewService(r.store, r.httpFactory)
+	campaign, err := svc.ApplyCampaign(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
 func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.ApplyCampaignArgs) (graphqlbackend.CampaignResolver, error) {

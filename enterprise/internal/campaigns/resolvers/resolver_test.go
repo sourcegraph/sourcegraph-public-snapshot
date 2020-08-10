@@ -55,6 +55,7 @@ func TestNullIDResilience(t *testing.T) {
 		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, campaigns.MarshalCampaignID(0)),
 		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, marshalChangesetID(0)),
 		fmt.Sprintf(`mutation { applyCampaign(campaignSpec: %q) { id } }`, marshalCampaignSpecRandID("")),
+		fmt.Sprintf(`mutation { createCampaign(campaignSpec: %q) { id } }`, marshalCampaignSpecRandID("")),
 		fmt.Sprintf(`mutation { moveCampaign(campaign: %q, newName: "foobar") { id } }`, campaigns.MarshalCampaignID(0)),
 	}
 
@@ -412,6 +413,68 @@ mutation($campaignSpec: ID!, $ensureCampaign: ID){
       totalCount
     }
   }
+}
+`
+
+func TestCreateCampaign(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	dbtesting.SetupGlobalTestDB(t)
+
+	userID := insertTestUser(t, dbconn.Global, "apply-campaign", true)
+
+	store := ee.NewStore(dbconn.Global)
+
+	campaignSpec := &campaigns.CampaignSpec{
+		RawSpec: ct.TestRawCampaignSpec,
+		Spec: campaigns.CampaignSpecFields{
+			Name:        "my-campaign",
+			Description: "My description",
+		},
+		UserID:          userID,
+		NamespaceUserID: userID,
+	}
+	if err := store.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+		t.Fatal(err)
+	}
+
+	r := &Resolver{store: store}
+	s, err := graphqlbackend.NewSchema(r, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	input := map[string]interface{}{
+		"campaignSpec": string(marshalCampaignSpecRandID(campaignSpec.RandID)),
+	}
+
+	var response struct{ CreateCampaign apitest.Campaign }
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	// First time it should work, because no campaign exists
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateCampaign)
+
+	if response.CreateCampaign.ID == "" {
+		t.Fatalf("expected campaign to be created, but was not")
+	}
+
+	// Second time it should fail
+	errors := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCampaign)
+
+	if len(errors) != 1 {
+		t.Fatalf("expected single errors, but got none")
+	}
+	if have, want := errors[0].Message, ee.ErrMatchingCampaignExists.Error(); have != want {
+		t.Fatalf("wrong error. want=%q, have=%q", want, have)
+	}
+}
+
+const mutationCreateCampaign = `
+mutation($campaignSpec: ID!){
+  createCampaign(campaignSpec: $campaignSpec) { id }
 }
 `
 
