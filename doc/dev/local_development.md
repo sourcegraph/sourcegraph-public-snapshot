@@ -116,6 +116,23 @@ The following are two recommendations for installing these dependencies:
     There is also a Homebrew package for `nvm`, but it is unsupported by the
     `nvm` maintainers.
 
+    * For fish shell users, you will want to install `bass` which you can get via `omf`:
+
+        ```
+        curl -L https://get.oh-my.fish | fish
+        omf install bass
+        ```
+
+    * Then add the following to your `config.fish`:
+
+        ```
+        function nvm
+          bass source ~/.nvm/nvm.sh --no-use ';' nvm $argv
+        end
+
+        set -x NVM_DIR ~/.nvm
+        ```
+
 5.  Install the current recommended version of Node JS by running the following
     from the working directory of a sourcegraph repository clone:
 
@@ -478,7 +495,7 @@ yarn
 Validating package.json...
 error @: The engine "node" is incompatible with this module. Expected version "^v14.7.0". Got "14.5.0"
 ```
-If you see an error like this you need to upgrade the version of node installed. You can do this with `nvm use` and then following the prompts to install or update to the correct Node.js version. 
+If you see an error like this you need to upgrade the version of node installed. You can do this with `nvm use` and then following the prompts to install or update to the correct Node.js version.
 
 #### dial tcp 127.0.0.1:3090: connect: connection refused
 
