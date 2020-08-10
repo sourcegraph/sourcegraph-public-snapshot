@@ -141,6 +141,14 @@ func TestServicePermissionLevels(t *testing.T) {
 			currentUserCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
 
 			t.Run("EnqueueChangesetSync", func(t *testing.T) {
+				// The cases that don't result in auth errors will fall through
+				// to call repoupdater.EnqueueChangesetSync, so we need to
+				// ensure we mock that call to avoid unexpected network calls.
+				repoupdater.MockEnqueueChangesetSync = func(ctx context.Context, ids []int64) error {
+					return nil
+				}
+				t.Cleanup(func() { repoupdater.MockEnqueueChangesetSync = nil })
+
 				err := svc.EnqueueChangesetSync(currentUserCtx, changeset.ID)
 				tc.assertFunc(t, err)
 			})
