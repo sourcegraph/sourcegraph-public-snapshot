@@ -73,10 +73,11 @@ describe('Core functionality regression test suite', () => {
 
     test('2.2.1 User settings are saved and applied', async () => {
         const getSettings = async () => {
-            await driver.page.waitForSelector('.e2e-settings-file .monaco-editor')
+            await driver.page.waitForSelector('.test-settings-file .monaco-editor .view-lines')
             return driver.page.evaluate(() => {
-                const editor = document.querySelector('.e2e-settings-file .monaco-editor') as HTMLElement
-                return editor ? editor.textContent : null
+                const editor = document.querySelector('.test-settings-file .monaco-editor .view-lines') as HTMLElement
+                // eslint-disable-next-line unicorn/prefer-text-content
+                return editor ? editor.innerText : null
             })
         }
 
@@ -87,7 +88,7 @@ describe('Core functionality regression test suite', () => {
         }
         const newSettings = '{\u00A0/*\u00A0These\u00A0are\u00A0new\u00A0settings\u00A0*/}'
         await driver.replaceText({
-            selector: '.e2e-settings-file .monaco-editor',
+            selector: '.test-settings-file .monaco-editor',
             newText: newSettings,
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
@@ -104,7 +105,7 @@ describe('Core functionality regression test suite', () => {
         }
 
         await driver.replaceText({
-            selector: '.e2e-settings-file .monaco-editor',
+            selector: '.test-settings-file .monaco-editor',
             newText: newSettings,
             selectMethod: 'keyboard',
             enterTextMethod: 'type',
@@ -129,7 +130,7 @@ describe('Core functionality regression test suite', () => {
         const textToTypeFromPrevious = previousSettings.replace(/}$/, '')
         // Restore old settings
         await driver.replaceText({
-            selector: '.e2e-settings-file .monaco-editor',
+            selector: '.test-settings-file .monaco-editor',
             newText: textToTypeFromPrevious,
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
@@ -158,11 +159,11 @@ describe('Core functionality regression test suite', () => {
 
         await driver.page.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/profile`)
         await driver.replaceText({
-            selector: '.e2e-user-settings-profile-page__display-name',
+            selector: '.test-user-settings-profile-page__display-name',
             newText: displayName,
         })
         await driver.replaceText({
-            selector: '.e2e-user-settings-profile-page__avatar_url',
+            selector: '.test-user-settings-profile-page__avatar_url',
             newText: aviURL,
             enterTextMethod: 'paste',
         })
@@ -170,7 +171,7 @@ describe('Core functionality regression test suite', () => {
         await driver.page.reload()
         await driver.page.waitForFunction(
             displayName => {
-                const element = document.querySelector('.e2e-user-area-header__display-name')
+                const element = document.querySelector('.test-user-area-header__display-name')
                 return element?.textContent && element.textContent.trim() === displayName
             },
             undefined,
@@ -180,14 +181,14 @@ describe('Core functionality regression test suite', () => {
         await screenshots.verifySelector(
             'navbar-toggle-is-bart-simpson.png',
             'Navbar toggle avatar is Bart Simpson',
-            '.e2e-user-nav-item-toggle'
+            '.test-user-nav-item-toggle'
         )
     })
 
     test('2.2.3. User emails page', async () => {
         const testEmail = 'sg-test-account@protonmail.com'
         await driver.page.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/emails`)
-        await driver.replaceText({ selector: '.e2e-user-email-add-input', newText: 'sg-test-account@protonmail.com' })
+        await driver.replaceText({ selector: '.test-user-email-add-input', newText: 'sg-test-account@protonmail.com' })
         await driver.findElementWithText('Add', { action: 'click' })
         await driver.findElementWithText(testEmail, { wait: true })
         try {
@@ -205,7 +206,7 @@ describe('Core functionality regression test suite', () => {
         await driver.findElementWithText('Generate new token', { action: 'click', wait: { timeout: 5000 } })
         await driver.findElementWithText('New access token', { wait: { timeout: 1000 } })
         await driver.replaceText({
-            selector: '.e2e-create-access-token-description',
+            selector: '.test-create-access-token-description',
             newText: 'test-regression',
         })
         await driver.findElementWithText('Generate token', { action: 'click', wait: { timeout: 1000 } })
@@ -214,7 +215,7 @@ describe('Core functionality regression test suite', () => {
         })
         await driver.findElementWithText('Copy', { action: 'click' })
         const token = await driver.page.evaluate(() => {
-            const tokenElement = document.querySelector('.e2e-access-token')
+            const tokenElement = document.querySelector('.test-access-token')
             if (!tokenElement) {
                 return null
             }

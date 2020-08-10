@@ -28,7 +28,8 @@ describe('getCompletionItems()', () => {
                                 },
                             },
                         },
-                    ] as SearchSuggestion[])
+                    ] as SearchSuggestion[]),
+                    false
                 )
             )?.suggestions.map(({ label }) => label)
         ).toStrictEqual([
@@ -38,6 +39,7 @@ describe('getCompletionItems()', () => {
             'before',
             'case',
             'content',
+            '-content',
             'count',
             'file',
             '-file',
@@ -82,7 +84,8 @@ describe('getCompletionItems()', () => {
                                 },
                             },
                         },
-                    ] as SearchSuggestion[])
+                    ] as SearchSuggestion[]),
+                    false
                 )
             )?.suggestions.map(({ label }) => label)
         ).toStrictEqual([
@@ -92,6 +95,7 @@ describe('getCompletionItems()', () => {
             'before',
             'case',
             'content',
+            '-content',
             'count',
             'file',
             '-file',
@@ -118,7 +122,12 @@ describe('getCompletionItems()', () => {
     test('returns suggestions for an empty query', async () => {
         expect(
             (
-                await getCompletionItems((parseSearchQuery('') as ParseSuccess<Sequence>).token, { column: 1 }, NEVER)
+                await getCompletionItems(
+                    (parseSearchQuery('') as ParseSuccess<Sequence>).token,
+                    { column: 1 },
+                    NEVER,
+                    false
+                )
             )?.suggestions.map(({ label }) => label)
         ).toStrictEqual([
             'after',
@@ -127,6 +136,7 @@ describe('getCompletionItems()', () => {
             'before',
             'case',
             'content',
+            '-content',
             'count',
             'file',
             '-file',
@@ -159,7 +169,8 @@ describe('getCompletionItems()', () => {
                             __typename: 'Repository',
                             name: 'github.com/sourcegraph/jsonrpc2',
                         },
-                    ] as SearchSuggestion[])
+                    ] as SearchSuggestion[]),
+                    false
                 )
             )?.suggestions.map(({ label }) => label)
         ).toStrictEqual([
@@ -169,6 +180,7 @@ describe('getCompletionItems()', () => {
             'before',
             'case',
             'content',
+            '-content',
             'count',
             'file',
             '-file',
@@ -197,7 +209,8 @@ describe('getCompletionItems()', () => {
                 await getCompletionItems(
                     (parseSearchQuery('rE') as ParseSuccess<Sequence>).token,
                     { column: 3 },
-                    of([])
+                    of([]),
+                    false
                 )
             )?.suggestions.map(({ label }) => label)
         ).toStrictEqual([
@@ -207,6 +220,7 @@ describe('getCompletionItems()', () => {
             'before',
             'case',
             'content',
+            '-content',
             'count',
             'file',
             '-file',
@@ -234,7 +248,8 @@ describe('getCompletionItems()', () => {
                 await getCompletionItems(
                     (parseSearchQuery('case:y') as ParseSuccess<Sequence>).token,
                     { column: 7 },
-                    NEVER
+                    NEVER,
+                    false
                 )
             )?.suggestions.map(({ label }) => label)
         ).toStrictEqual(['yes', 'no'])
@@ -248,7 +263,8 @@ describe('getCompletionItems()', () => {
                     {
                         column: 6,
                     },
-                    of([])
+                    of([]),
+                    false
                 )
             )?.suggestions.map(({ label }) => label)
         ).toStrictEqual([
@@ -291,10 +307,11 @@ describe('getCompletionItems()', () => {
                                 name: 'github.com/sourcegraph/jsonrpc2',
                             },
                         },
-                    ] as SearchSuggestion[])
+                    ] as SearchSuggestion[]),
+                    false
                 )
             )?.suggestions.map(({ label, insertText }) => ({ label, insertText }))
-        ).toStrictEqual([{ label: 'connect.go', insertText: '^connect\\.go$' }])
+        ).toStrictEqual([{ label: 'connect.go', insertText: '^connect\\.go$ ' }])
     })
 
     test('inserts valid filters when selecting a file or repository suggestion', async () => {
@@ -316,7 +333,8 @@ describe('getCompletionItems()', () => {
                             __typename: 'Repository',
                             name: 'github.com/sourcegraph/jsonrpc2.go',
                         },
-                    ] as SearchSuggestion[])
+                    ] as SearchSuggestion[]),
+                    false
                 )
             )?.suggestions
                 .filter(
@@ -342,9 +360,56 @@ describe('getCompletionItems()', () => {
                                 name: 'github.com/sourcegraph/jsonrpc2',
                             },
                         },
-                    ] as SearchSuggestion[])
+                    ] as SearchSuggestion[]),
+                    false
                 )
             )?.suggestions.map(({ filterText }) => filterText)
         ).toStrictEqual(['^jsonrpc'])
+    })
+
+    test('includes file path in insertText with fuzzy completions', async () => {
+        expect(
+            (
+                await getCompletionItems(
+                    (parseSearchQuery('main.go') as ParseSuccess<Sequence>).token,
+                    { column: 7 },
+                    of([
+                        {
+                            __typename: 'File',
+                            path: 'some/path/main.go',
+                            name: 'main.go',
+                            repository: {
+                                name: 'github.com/sourcegraph/jsonrpc2',
+                            },
+                        },
+                    ] as SearchSuggestion[]),
+                    false
+                )
+            )?.suggestions
+                .filter(({ insertText }) => insertText.includes('some/path'))
+                .map(({ insertText }) => insertText)
+        ).toStrictEqual(['file:^some/path/main\\.go$ '])
+    })
+
+    test('includes file path in insertText when completing filter value', async () => {
+        expect(
+            (
+                await getCompletionItems(
+                    (parseSearchQuery('f:') as ParseSuccess<Sequence>).token,
+                    { column: 2 },
+                    of([
+                        {
+                            __typename: 'File',
+                            path: 'some/path/main.go',
+                            name: 'main.go',
+                            repository: {
+                                name: 'github.com/sourcegraph/jsonrpc2',
+                            },
+                        },
+                    ] as SearchSuggestion[]),
+                    false
+                )
+            )?.suggestions.map(({ insertText }) => insertText)
+        ).toStrictEqual(['^some/path/main\\.go$ '])
     })
 })

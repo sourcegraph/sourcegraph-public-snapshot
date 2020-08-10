@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -96,21 +95,21 @@ func (p *processor) Process(ctx context.Context, store store.Store, upload store
 		return false, err
 	}
 
-	// At this point we haven't touched the database. We're going to start a nested transaction
+	// Start a nested transaction. In the event that something after this point fails, we want to
+	// update the upload record with an error message but do not want to alter any other data in
+	// the database. Rolling back to this savepoint will allow us to discard any other changes
+	// but still commit the transaction as a whole.
+
 	// with Postgres savepoints. In the event that something after this point fails, we want to
 	// update the upload record with an error message but do not want to alter any other data in
 	// the database. Rolling back to this savepoint will allow us to discard any other changes
 	// but still commit the transaction as a whole.
-	savepointID, err := store.Savepoint(ctx)
+	tx, err := store.Transact(ctx)
 	if err != nil {
-		return false, errors.Wrap(err, "store.Savepoint")
+		return false, errors.Wrap(err, "store.Transact")
 	}
 	defer func() {
-		if err != nil {
-			if rollbackErr := store.RollbackToSavepoint(ctx, savepointID); rollbackErr != nil {
-				err = multierror.Append(err, rollbackErr)
-			}
-		}
+		err = tx.Done(err)
 	}()
 
 	if err := p.updateXrepoData(ctx, store, upload, groupedBundleData.Packages, groupedBundleData.PackageReferences); err != nil {
@@ -179,6 +178,7 @@ func (p *processor) write(ctx context.Context, dirname string, groupedBundleData
 	return err
 }
 
+// TODO(efritz) - refactor/simplify this after last change
 func (p *processor) updateXrepoData(ctx context.Context, store store.Store, upload store.Upload, packages []types.Package, packageReferences []types.PackageReference) (err error) {
 	ctx, endOperation := p.metrics.UpdateXrepoDatabaseOperation.With(ctx, &err, observation.Args{})
 	defer endOperation(1, observation.Args{})
@@ -206,38 +206,13 @@ func (p *processor) updateXrepoData(ctx context.Context, store store.Store, uplo
 		return errors.Wrap(err, "store.MarkComplete")
 	}
 
-	// Discover commits around the current tip commit and the commit of this upload. Upsert these
-	// commits into the lsif_commits table, then update the visibility of all dumps for this repository.
-	tipCommit, err := p.gitserverClient.Head(ctx, store, upload.RepositoryID)
-	if err != nil {
-		return errors.Wrap(err, "gitserver.Head")
-	}
-	newCommits, err := p.gitserverClient.CommitsNear(ctx, store, upload.RepositoryID, tipCommit)
-	if err != nil {
-		return errors.Wrap(err, "gitserver.CommitsNear")
-	}
-
-	if tipCommit != upload.Commit {
-		// If the tip is ahead of this commit, we also want to discover all of the commits between this
-		// commit and the tip so that we can accurately determine what is visible from the tip. If we
-		// do not do this before the updateDumpsVisibleFromTip call below, no dumps will be reachable
-		// from the tip and all dumps will be invisible.
-		additionalCommits, err := p.gitserverClient.CommitsNear(ctx, store, upload.RepositoryID, upload.Commit)
-		if err != nil {
-			return errors.Wrap(err, "gitserver.CommitsNear")
-		}
-
-		for k, vs := range additionalCommits {
-			newCommits[k] = append(newCommits[k], vs...)
-		}
-	}
-
-	if err := store.UpdateCommits(ctx, upload.RepositoryID, newCommits); err != nil {
-		return errors.Wrap(err, "store.UpdateCommits")
-	}
-
-	if err := store.UpdateDumpsVisibleFromTip(ctx, upload.RepositoryID, tipCommit); err != nil {
-		return errors.Wrap(err, "store.UpdateDumpsVisibleFromTip")
+	// Mark this repository so that the commit updater process will pull the full commit graph from gitserver
+	// and recalculate the nearest upload for each commit as well as which uploads are visible from the tip of
+	// the default branch. We don't do this inside of the transaction as we re-calcalute the entire set of data
+	// from scratch and we want to be able to coalesce requests for the same repository rather than having a set
+	// of uploads for the same repo re-calculate nearly identical data multiple times.
+	if err := store.MarkRepositoryAsDirty(ctx, upload.RepositoryID); err != nil {
+		return errors.Wrap(err, "store.MarkRepositoryDirty")
 	}
 
 	return nil

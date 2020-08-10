@@ -25,10 +25,21 @@ Running ci-db-backcompat.sh with the following parameters:
   current deployed commit:         ${CURRENTLY_DEPLOYED}
 EOF
 
+# Older branches will fail leading to a PR requiring rebasing. Additionally
+# longer lived branches (release branches) will fail. We should avoid this
+# check in those cases. If this PR does indeed contain a failure, we will pick
+# it up in the master CI run.
+if ! git merge-base --is-ancestor "${CURRENTLY_DEPLOYED}" "${HEAD}"; then
+  echo
+  echo "This branch is out of date with sourcegraph.com."
+  echo "SKIPPED"
+  exit 0
+fi
+
 # Recreate the test DB and run TestMigrations once to ensure that the schema version is the latest.
 set -ex
 asdf install # in case the go version has changed in between these two commits
-go test -count=1 -v ./cmd/frontend/db/ -run=TestMigrations
+go test -count=1 -v ./internal/db/ -run=TestMigrations
 HEAD="$HEAD" OLD="${CURRENTLY_DEPLOYED}" ./dev/ci/db-backcompat.sh
 set +ex
 

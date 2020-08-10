@@ -2,116 +2,99 @@ package worker
 
 import (
 	"context"
-	"sync"
+	"sync/atomic"
 	"time"
 
-	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-type Worker struct {
-	store        store.Store
-	processor    Processor
-	pollInterval time.Duration
-	metrics      metrics.WorkerMetrics
-	done         chan struct{}
-	once         sync.Once
-}
-
 func NewWorker(
-	store store.Store,
+	s store.Store,
 	bundleManagerClient bundles.BundleManagerClient,
 	gitserverClient gitserver.Client,
 	pollInterval time.Duration,
+	numProcessorRoutines int,
+	budgetMax int64,
 	metrics metrics.WorkerMetrics,
-) *Worker {
+) *workerutil.Worker {
+	rootContext := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
+
 	processor := &processor{
 		bundleManagerClient: bundleManagerClient,
 		gitserverClient:     gitserverClient,
 		metrics:             metrics,
 	}
 
-	return &Worker{
-		store:        store,
-		processor:    processor,
-		pollInterval: pollInterval,
-		metrics:      metrics,
-		done:         make(chan struct{}),
+	handler := &handler{
+		store:           s,
+		processor:       processor,
+		enableBudget:    budgetMax > 0,
+		budgetRemaining: budgetMax,
 	}
+
+	workerMetrics := workerutil.WorkerMetrics{
+		HandleOperation: metrics.ProcessOperation,
+	}
+
+	options := dbworker.WorkerOptions{
+		Handler:     handler,
+		NumHandlers: numProcessorRoutines,
+		Interval:    pollInterval,
+		Metrics:     workerMetrics,
+	}
+
+	return dbworker.NewWorker(rootContext, store.WorkerutilUploadStore(s), options)
 }
 
-func (w *Worker) Start() {
-	ctx := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
-
-	for {
-		if ok, _ := w.dequeueAndProcess(ctx); !ok {
-			select {
-			case <-time.After(w.pollInterval):
-			case <-w.done:
-				return
-			}
-		} else {
-			select {
-			case <-w.done:
-				return
-			default:
-			}
-		}
-	}
+type handler struct {
+	store           store.Store
+	processor       *processor
+	enableBudget    bool
+	budgetRemaining int64
 }
 
-func (w *Worker) Stop() {
-	w.once.Do(func() {
-		close(w.done)
-	})
+var _ dbworker.Handler = &handler{}
+var _ workerutil.WithPreDequeue = &handler{}
+var _ workerutil.WithHooks = &handler{}
+
+func (h *handler) Handle(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) error {
+	_, err := h.processor.Process(ctx, h.store.With(tx), record.(store.Upload))
+	return err
 }
 
-// TODO(efritz) - use cancellable context
-
-// dequeueAndProcess pulls a job from the queue and processes it. If there
-// were no jobs ready to process, this method returns a false-valued flag.
-func (w *Worker) dequeueAndProcess(ctx context.Context) (_ bool, err error) {
-	upload, store, ok, err := w.store.Dequeue(ctx)
-	if err != nil || !ok {
-		return false, errors.Wrap(err, "store.Dequeue")
+func (h *handler) PreDequeue(ctx context.Context) (bool, interface{}, error) {
+	if !h.enableBudget {
+		return true, nil, nil
 	}
 
-	// Enable tracing on this context
-	ctx = ot.WithShouldTrace(ctx, true)
-
-	// Trace the remainder of the operation including the transaction commit call in
-	// the following defered function.
-	ctx, endOperation := w.metrics.ProcessOperation.With(ctx, &err, observation.Args{})
-
-	defer func() {
-		err = store.Done(err)
-		endOperation(1, observation.Args{})
-	}()
-
-	log15.Info("Dequeued upload for processing", "id", upload.ID)
-
-	// TODO - same for janitors/resetters
-	if requeued, processErr := w.processor.Process(ctx, store, upload); processErr == nil {
-		if requeued {
-			log15.Info("Requeueing upload", "id", upload.ID)
-		} else {
-			log15.Info("Processed upload", "id", upload.ID)
-		}
-	} else {
-		// TODO(efritz) - distinguish between correlation and system errors
-		log15.Warn("Failed to process upload", "id", upload.ID, "err", processErr)
-
-		if markErr := store.MarkErrored(ctx, upload.ID, processErr.Error()); markErr != nil {
-			return true, errors.Wrap(markErr, "store.MarkErrored")
-		}
+	budgetRemaining := atomic.LoadInt64(&h.budgetRemaining)
+	if budgetRemaining <= 0 {
+		return false, nil, nil
 	}
 
-	return true, nil
+	return true, []*sqlf.Query{sqlf.Sprintf("(upload_size IS NULL OR upload_size <= %s)", budgetRemaining)}, nil
+}
+
+func (h *handler) PreHandle(ctx context.Context, record workerutil.Record) {
+	atomic.AddInt64(&h.budgetRemaining, -h.getSize(record))
+}
+
+func (h *handler) PostHandle(ctx context.Context, record workerutil.Record) {
+	atomic.AddInt64(&h.budgetRemaining, +h.getSize(record))
+}
+
+func (h *handler) getSize(record workerutil.Record) int64 {
+	if size := record.(store.Upload).UploadSize; size != nil {
+		return *size
+	}
+
+	return 0
 }

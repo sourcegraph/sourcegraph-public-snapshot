@@ -13,7 +13,7 @@
         </button>
         <details-menu aria-label="Sourcegraph version" class="dropdown-menu m-0 p-0" aria-labelledby="Version Dropdown">
 
-            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.16.2"}} {{$previousReleaseVersion := "3.16"}} {{$currentReleaseRevspec := "v3.17.3"}} {{$currentReleaseVersion := "3.17"}} {{$nextReleaseVersion := "master"}}
+            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.17.3"}} {{$previousReleaseVersion := "3.17"}} {{$currentReleaseRevspec := "v3.18.0"}} {{$currentReleaseVersion := "3.18"}} {{$nextReleaseVersion := "master"}}
             <a rel="nofollow" class="dropdown-item {{if eq .ContentVersion " "}}active{{end}}" href="/{{.ContentPagePath}}">master</a>
             <a rel="nofollow" class=" dropdown-item {{if eq $currentReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$currentReleaseVersion}}/{{.ContentPagePath}}">{{$currentReleaseVersion}}<span class="current-branch ml-1">current</span></a>
             <a rel="nofollow" class=" dropdown-item {{if eq $previousReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$previousReleaseVersion}}/{{.ContentPagePath}}">{{$previousReleaseVersion}}</a>
@@ -116,27 +116,7 @@
                             <li><a href="/user/usage_statistics">Usage statistics</a></li>
                             <li><a href="/user/user_surveys">User surveys</a></li>
                             <li><a href="/user/quick_links">Quick links</a></li>
-
-                            <li><a href="/user/campaigns">Campaigns <span class="badge badge-primary">Beta</span></a></li>
-                            <li class="content-nav-no-hover">
-                                <ul class="content-nav-section-subsection">
-                                    <li><a href="/user/campaigns/getting_started">Getting started</a></li>
-                                    <li><a href="/user/campaigns/creating_campaign_from_patches">Creating a campaign from patches</a></li>
-                                    <li><a href="/user/campaigns/creating_manual_campaign">Creating a manual campaign</a></li>
-                                    <li><a href="/user/campaigns/actions">Actions</a></li>
-                                    <li><a href="/user/campaigns/updating_campaigns">Updating campaigns</a></li>
-                                    <li><a href="/user/campaigns/drafts">Campaign drafts</a></li>
-                                    <li><a href="/user/campaigns/configuration">Configuration</a></li>
-                                    <li><a href="/user/campaigns/examples">Examples</a></li>
-                                    <li class="content-nav-no-hover" data-sub-section-item="Examples" )>
-                                        <ul class="content-nav-section-subsection">
-                                            <li><a href="/user/campaigns/examples/eslint_typescript_version">Migrate to a new TypeScript version</a></li>
-                                            <li><a href="/user/campaigns/examples/lsif_action">Adding a GitHub Action to upload LSIF data</a></li>
-                                            <li><a href="/user/campaigns/examples/refactor_go_comby">Refactor Go code using Comby</a></li>
-                                        </ul>
-                                    </li>
-                                </ul>
-                            </li>
+                            <li><a href="/user/campaigns">Campaigns</a></li>
                         </ul>
                     </li>
                 </ul>

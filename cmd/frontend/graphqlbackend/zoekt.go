@@ -165,7 +165,7 @@ func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResol
 	case symbolRequest:
 		return zoektSearch(ctx, s.args, s.repos, s.typ, since)
 	case fileRequest:
-		return zoektSearchHEADOnlyFiles(ctx, s.args, s.repos.repoRevs, false, since)
+		return zoektSearchHEADOnlyFiles(ctx, s.args, s.repos, false, since)
 	default:
 		return nil, false, nil, fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
 	}
@@ -240,15 +240,6 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 	}
 	finalQuery := zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, queryExceptRepos)
 
-	tr, ctx := trace.New(ctx, "zoekt.Search", finalQuery.String())
-	defer func() {
-		tr.SetError(err)
-		if len(fm) > 0 {
-			tr.LazyPrintf("%d file matches", len(fm))
-		}
-		tr.Finish()
-	}()
-
 	k := zoektResultCountFactor(len(repos.repoBranches), args.PatternInfo)
 	searchOpts := zoektSearchOpts(k, args.PatternInfo)
 
@@ -263,15 +254,8 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		// We'll create a new context that gets cancelled if the other context is cancelled for any
 		// reason other than the deadline being exceeded. This essentially means the deadline for the new context
 		// will be `deadline + time for zoekt to cancel + network latency`.
-		cNew, cancel := context.WithCancel(context.Background())
-		go func(cOld context.Context) {
-			<-cOld.Done()
-			// cancel the new context if the old one is done for some reason other than the deadline passing.
-			if cOld.Err() != context.DeadlineExceeded {
-				cancel()
-			}
-		}(ctx)
-		ctx = cNew
+		var cancel context.CancelFunc
+		ctx, cancel = contextWithoutDeadline(ctx)
 		defer cancel()
 	}
 
@@ -324,9 +308,9 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		limitHit = true
 	}
 
-	matches := make([]*FileMatchResolver, len(resp.Files))
+	matches := make([]*FileMatchResolver, 0, len(resp.Files))
 	repoResolvers := make(RepositoryResolverCache)
-	for i, file := range resp.Files {
+	for _, file := range resp.Files {
 		fileLimitHit := false
 		if len(file.LineMatches) > maxLineMatches {
 			file.LineMatches = file.LineMatches[:maxLineMatches]
@@ -334,34 +318,38 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			limitHit = true
 		}
 
-		repo, inputRev := repos.GetRepoInputRev(&file)
+		repo, inputRevs := repos.GetRepoInputRev(&file)
 		repoResolver := repoResolvers[repo.Name]
 		if repoResolver == nil {
 			repoResolver = &RepositoryResolver{repo: repo}
 			repoResolvers[repo.Name] = repoResolver
 		}
 
-		// symbols is set in symbols search, lines in text search.
-		var (
-			symbols    []*searchSymbolResult
-			lines      []*lineMatch
-			matchCount int
-		)
+		var lines []*lineMatch
+		var matchCount int
 		if typ != symbolRequest {
 			lines, matchCount = zoektFileMatchToLineMatches(maxLineFragmentMatches, &file)
-		} else {
-			symbols = zoektFileMatchToSymbolResults(repoResolver, inputRev, &file)
 		}
 
-		matches[i] = &FileMatchResolver{
-			JPath:        file.FileName,
-			JLineMatches: lines,
-			JLimitHit:    fileLimitHit,
-			MatchCount:   matchCount, // We do not use resp.MatchCount because it counts the number of lines matched, not the number of fragments.
-			uri:          fileMatchURI(repo.Name, inputRev, file.FileName),
-			symbols:      symbols,
-			Repo:         repoResolver,
-			CommitID:     api.CommitID(file.Version),
+		for _, inputRev := range inputRevs {
+			inputRev := inputRev // copy so we can take the pointer
+
+			var symbols []*searchSymbolResult
+			if typ == symbolRequest {
+				symbols = zoektFileMatchToSymbolResults(repoResolver, inputRev, &file)
+			}
+
+			matches = append(matches, &FileMatchResolver{
+				JPath:        file.FileName,
+				JLineMatches: lines,
+				JLimitHit:    fileLimitHit,
+				MatchCount:   matchCount, // We do not use resp.MatchCount because it counts the number of lines matched, not the number of fragments.
+				uri:          fileMatchURI(repo.Name, inputRev, file.FileName),
+				symbols:      symbols,
+				Repo:         repoResolver,
+				CommitID:     api.CommitID(file.Version),
+				InputRev:     &inputRev,
+			})
 		}
 	}
 
@@ -439,6 +427,30 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 	return symbols
 }
 
+// contextWithoutDeadline returns a context which will cancel if the cOld is
+// canceled.
+func contextWithoutDeadline(cOld context.Context) (context.Context, context.CancelFunc) {
+	cNew, cancel := context.WithCancel(context.Background())
+
+	// Set trace context so we still get spans propagated
+	if tr := trace.TraceFromContext(cOld); tr != nil {
+		cNew = trace.ContextWithTrace(cNew, tr)
+	}
+
+	go func() {
+		select {
+		case <-cOld.Done():
+			// cancel the new context if the old one is done for some reason other than the deadline passing.
+			if cOld.Err() != context.DeadlineExceeded {
+				cancel()
+			}
+		case <-cNew.Done():
+		}
+	}()
+
+	return cNew, cancel
+}
+
 func noOpAnyChar(re *syntax.Regexp) {
 	if re.Op == syntax.OpAnyChar {
 		re.Op = syntax.OpAnyCharNotNL
@@ -496,6 +508,10 @@ func queryToZoektQuery(query *search.TextPatternInfo, typ indexedRequestType) (z
 			FileName: true,
 			Content:  true,
 		}
+	}
+
+	if query.IsNegated {
+		q = &zoektquery.Not{Child: q}
 	}
 
 	if typ == symbolRequest {
@@ -568,9 +584,11 @@ func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.R
 			continue
 		}
 
-		ok = indexed.Add(reporev, repo)
-		if !ok {
-			unindexed = append(unindexed, reporev)
+		unindexedRevs := indexed.Add(reporev, repo)
+		if len(unindexedRevs) > 0 {
+			copy := *reporev
+			copy.Revs = unindexedRevs
+			unindexed = append(unindexed, &copy)
 		}
 	}
 
@@ -599,82 +617,96 @@ type indexedRepoRevs struct {
 }
 
 // Add will add reporev and repo to the list of repository and branches to
-// search if reporev's refs are a subset of repo's branches.
-func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.Repository) bool {
+// search if reporev's refs are a subset of repo's branches. It will return
+// the revision specifiers it can't add.
+func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.Repository) []search.RevisionSpecifier {
 	// A repo should only appear once in revs. However, in case this
 	// invariant is broken we will treat later revs as if it isn't
 	// indexed.
 	if _, ok := rb.repoBranches[string(reporev.Repo.Name)]; ok {
-		return false
+		return reporev.Revs
 	}
 
 	if !reporev.OnlyExplicit() {
 		// Contains a RefGlob or ExcludeRefGlob so we can't do indexed
 		// search on it.
-		return false
+		//
+		// TODO we could only process the explicit revs and return the non
+		// explicit ones as unindexed.
+		return reporev.Revs
 	}
 
 	// notHEADOnlySearch is set to true if we search any branch other than
 	// repo.Branches[0]
 	notHEADOnlySearch := false
 
+	// Assume for large searches they will mostly involve indexed
+	// revisions, so just allocate that.
+	var unindexed []search.RevisionSpecifier
+	indexed := make([]search.RevisionSpecifier, 0, len(reporev.Revs))
+
 	branches := make([]string, 0, len(reporev.Revs))
 	for _, rev := range reporev.Revs {
 		if rev.RevSpec == "" || rev.RevSpec == "HEAD" {
 			// Zoekt convention that first branch is HEAD
 			branches = append(branches, repo.Branches[0].Name)
+			indexed = append(indexed, rev)
 			continue
 		}
 
+		found := false
 		for i, branch := range repo.Branches {
 			if branch.Name == rev.RevSpec {
 				branches = append(branches, branch.Name)
 				notHEADOnlySearch = notHEADOnlySearch || i > 0
+				found = true
 				break
 			}
 			// Check if rev is an abbrev commit SHA
 			if len(rev.RevSpec) >= 4 && strings.HasPrefix(branch.Version, rev.RevSpec) {
 				branches = append(branches, branch.Name)
 				notHEADOnlySearch = notHEADOnlySearch || i > 0
+				found = true
 				break
+			}
+		}
+
+		if found {
+			indexed = append(indexed, rev)
+		} else {
+			unindexed = append(unindexed, rev)
+		}
+	}
+
+	// We found indexed branches! Track them.
+	if len(indexed) > 0 {
+		rb.repoRevs[string(reporev.Repo.Name)] = reporev
+		rb.repoBranches[string(reporev.Repo.Name)] = branches
+		rb.NotHEADOnlySearch = rb.NotHEADOnlySearch || notHEADOnlySearch
+	}
+
+	return unindexed
+}
+
+// GetRepoInputRev returns the repo and inputRev associated with file.
+func (rb *indexedRepoRevs) GetRepoInputRev(file *zoekt.FileMatch) (repo *types.Repo, inputRevs []string) {
+	repoRev := rb.repoRevs[file.Repository]
+
+	inputRevs = make([]string, 0, len(file.Branches))
+	for _, branch := range file.Branches {
+		for i, b := range rb.repoBranches[file.Repository] {
+			if branch == b {
+				// RevSpec is guaranteed to be explicit via zoektIndexedRepos
+				inputRevs = append(inputRevs, repoRev.Revs[i].RevSpec)
 			}
 		}
 	}
 
-	// Only search zoekt if we can search all revisions on it. TODO see if
-	// anything breaks if we do split out the search. Educated guess: the
-	// lists of repos in searchResultsCommon may not like it.
-	//
-	// NOTE: notHEADOnlySearch depends on this assumptions
-	if len(branches) != len(reporev.Revs) {
-		return false
+	if len(inputRevs) == 0 {
+		// Did not find a match. This is unexpected, but we can fallback to
+		// file.Version to generate correct links.
+		inputRevs = append(inputRevs, file.Version)
 	}
 
-	rb.repoRevs[string(reporev.Repo.Name)] = reporev
-	rb.repoBranches[string(reporev.Repo.Name)] = branches
-	rb.NotHEADOnlySearch = rb.NotHEADOnlySearch || notHEADOnlySearch
-	return true
-}
-
-// GetRepoInputRev returns the repo and inputRev associated with file.
-func (rb *indexedRepoRevs) GetRepoInputRev(file *zoekt.FileMatch) (repo *types.Repo, inputRev string) {
-	repoRev := rb.repoRevs[file.Repository]
-
-	// TODO(keegancsmith) We need to handle results across branches for the
-	// same file. Options:
-	// 1. a filematch per file.Branches
-	// 2. update result schema to have multiple uris.
-	//
-	// For now we only show one result for simplicity.
-	branch := file.Branches[0]
-	for i, b := range rb.repoBranches[file.Repository] {
-		if branch == b {
-			// RevSpec is guaranteed to be explicit via zoektIndexedRepos
-			return repoRev.Repo, repoRev.Revs[i].RevSpec
-		}
-	}
-
-	// Did not find a match. This is unexpected, but we can fallback to
-	// file.Version to generate correct links.
-	return repoRev.Repo, file.Version
+	return repoRev.Repo, inputRevs
 }

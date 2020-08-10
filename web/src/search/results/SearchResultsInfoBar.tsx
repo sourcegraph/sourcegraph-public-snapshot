@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import ArrowCollapseVerticalIcon from 'mdi-react/ArrowCollapseVerticalIcon'
 import ArrowExpandVerticalIcon from 'mdi-react/ArrowExpandVerticalIcon'
 import CalculatorIcon from 'mdi-react/CalculatorIcon'
@@ -100,7 +100,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 excludedArchivedCount > 0) && (
                 <small className="search-results-info-bar__row">
                     <div className="search-results-info-bar__row-left">
-                        <div className="search-results-info-bar__notice e2e-search-results-stats">
+                        <div className="search-results-info-bar__notice test-search-results-stats">
                             <span>
                                 <CalculatorIcon className="icon-inline" /> {props.results.approximateResultCount}{' '}
                                 {pluralize('result', props.results.matchCount)} in{' '}
@@ -228,7 +228,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                                         </>
                                     ) : (
                                         <>
-                                            <DownloadIcon className="icon-inline e2e-save-search-link" /> Save this
+                                            <DownloadIcon className="icon-inline test-save-search-link" /> Save this
                                             search query
                                         </>
                                     )}

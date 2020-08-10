@@ -108,6 +108,7 @@ package-lock.json
 /dist
 sourcegraph-webapp-*.tgz
 *.tsbuildinfo
+graphql-operations.ts
 
 # Extensions
 /packages/sourcegraph-extension-api/dist
@@ -137,3 +138,6 @@ storybook-static/
 # tilt files
 /dev/tilt/generated-cluster
 /dev/tilt/tilt-watch-targets
+
+# sonarqube
+.scannerwork

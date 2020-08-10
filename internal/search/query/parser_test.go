@@ -26,6 +26,13 @@ func TestParseParameterList(t *testing.T) {
 			WantLabels: None,
 		},
 		{
+			Name:       "Normal field:value with trailing space",
+			Input:      `file:README.md    `,
+			Want:       `{"field":"file","value":"README.md","negated":false}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":14}}`,
+			WantLabels: None,
+		},
+		{
 			Name:       "First char is colon",
 			Input:      `:foo`,
 			Want:       `{"value":":foo","negated":false}`,
@@ -61,6 +68,34 @@ func TestParseParameterList(t *testing.T) {
 			WantLabels: Regexp,
 		},
 		{
+			Name:       "NOT prefix on file",
+			Input:      `NOT file:README.md`,
+			Want:       `{"field":"file","value":"README.md","negated":true}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":18}}`,
+			WantLabels: Regexp,
+		},
+		{
+			Name:       "NOT prefix on unsupported key-value pair",
+			Input:      `NOT foo:bar`,
+			Want:       `{"value":"foo:bar","negated":true}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":11}}`,
+			WantLabels: Regexp,
+		},
+		{
+			Name:       "NOT prefix on content",
+			Input:      `NOT content:bar`,
+			Want:       `{"field":"content","value":"bar","negated":true}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":15}}`,
+			WantLabels: Regexp,
+		},
+		{
+			Name:       "Double NOT",
+			Input:      `NOT NOT`,
+			Want:       `{"value":"NOT","negated":true}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":7}}`,
+			WantLabels: Regexp,
+		},
+		{
 			Name:       "Double minus prefix on field",
 			Input:      `--foo:bar`,
 			Want:       `{"value":"--foo:bar","negated":false}`,
@@ -93,11 +128,17 @@ func TestParseParameterList(t *testing.T) {
 			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":4}}`,
 			WantLabels: Literal | Quoted,
 		},
+		{
+			Input:      `foo.*bar(`,
+			Want:       `{"value":"foo.*bar(","negated":false}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":9}}`,
+			WantLabels: Regexp | HeuristicDanglingParens,
+		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
-			parser := &parser{buf: []byte(tt.Input)}
-			result, err := parser.parseParameterList()
+			parser := &parser{buf: []byte(tt.Input), heuristics: parensAsPatterns | allowDanglingParens}
+			result, err := parser.parseLeavesRegexp()
 			if err != nil {
 				t.Fatal(fmt.Sprintf("Unexpected error: %s", err))
 			}
@@ -248,8 +289,8 @@ func parseAndOrGrammar(in string) ([]Node, error) {
 		return nil, nil
 	}
 	parser := &parser{
-		buf: []byte(in),
-		// heuristics: map[heuristic]bool{parensAsPatterns: false},
+		buf:        []byte(in),
+		leafParser: SearchTypeRegex,
 	}
 	nodes, err := parser.parseOr()
 	if err != nil {
@@ -700,6 +741,28 @@ func TestParse(t *testing.T) {
 			WantGrammar:   `(and "repo:foo\\ bar" "\\:\\\\")`,
 			WantHeuristic: Same,
 		},
+		{
+			Input:         `a file:\.(ts(?:(?:)|x)|js(?:(?:)|x))(?m:$)`,
+			WantGrammar:   `(and "file:\\.(ts(?:(?:)|x)|js(?:(?:)|x))(?m:$)" "a")`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `(file:(a) file:(b))`,
+			WantGrammar:   `(and "file:(a)" "file:(b)")`,
+			WantHeuristic: Same,
+		},
+		// Fringe tests cases at the boundary of heuristics and invalid syntax.
+		{
+			Input:         `(0(F)(:())(:())(<0)0()`,
+			WantGrammar:   Spec(`unbalanced expression`),
+			WantHeuristic: `invalid query syntax`,
+		},
+		// The space-looking character below is U+00A0.
+		{
+			Input:         `00 (000)`,
+			WantGrammar:   `(concat "00" "000")`,
+			WantHeuristic: `invalid query syntax`,
+		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
@@ -723,7 +786,7 @@ func TestParse(t *testing.T) {
 			var err error
 			result, err = parseAndOrGrammar(tt.Input) // Parse without heuristic.
 			check(result, err, string(tt.WantGrammar))
-			result, err = ParseAndOr(tt.Input)
+			result, err = ParseAndOr(tt.Input, SearchTypeRegex)
 			if tt.WantHeuristic == Same {
 				check(result, err, string(tt.WantGrammar))
 			} else {
@@ -818,6 +881,78 @@ func TestScanDelimited(t *testing.T) {
 			got := result{value, count, errMsg}
 			if diff := cmp.Diff(tt.want, got); diff != "" {
 				t.Error(diff)
+			}
+		})
+	}
+}
+
+func TestMergePatterns(t *testing.T) {
+	cases := []struct {
+		input string
+		want  string
+	}{
+		{
+			input: "foo()bar",
+			want:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":8}}`,
+		},
+		{
+			input: "()bar",
+			want:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":5}}`,
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run("merge pattern", func(t *testing.T) {
+			p := &parser{buf: []byte(tt.input), heuristics: parensAsPatterns}
+			nodes, err := p.parseLeavesRegexp()
+			got := nodes[0].(Pattern).Annotation.Range.String()
+			if err != nil {
+				t.Error(err)
+			}
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Error(diff)
+			}
+		})
+	}
+}
+
+func TestMatchUnaryKeyword(t *testing.T) {
+	tests := []struct {
+		in   string
+		pos  int
+		want bool
+	}{
+		{
+			in:   "NOT bar",
+			pos:  0,
+			want: true,
+		},
+		{
+			in:   "foo NOT bar",
+			pos:  4,
+			want: true,
+		},
+		{
+			in:   "foo NOT",
+			pos:  4,
+			want: false,
+		},
+		{
+			in:   "fooNOT bar",
+			pos:  3,
+			want: false,
+		},
+		{
+			in:   "NOTbar",
+			pos:  0,
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.in, func(t *testing.T) {
+			p := &parser{buf: []byte(tt.in), pos: tt.pos}
+			if got := p.matchUnaryKeyword("NOT"); got != tt.want {
+				t.Errorf("matchUnaryKeyword() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -5,17 +5,17 @@ export const reactHooks: RepogroupMetadata = {
     title: 'React Hooks',
     name: 'react-hooks',
     url: '/react-hooks',
-    description: `Search popular React Hook repositories from resources in the GitHub repository 'rehooks/awesome-react-hooks'.
-                  The search examples show usages of the React Hook useState with various data types. useState is a hook that lets you add React state to function components.`,
+    description:
+        "Search popular React Hook repositories from the GitHub repository 'rehooks/awesome-react-hooks'. The search examples show usage of the React Hook useState with various data types.",
     examples: [
         {
-            title: 'Find imports of useState with regex search:',
+            title: 'Find imports of useState with regex search',
             exampleQuery: <>import [^;]+useState[^;]+ from 'react'</>,
             rawQuery: "import [^;]+useState[^;]+ from 'react'",
             patternType: SearchPatternType.regexp,
         },
         {
-            title: 'Examples of useState with an object as the input parameter:',
+            title: 'Examples of useState with an object as the input parameter',
             description: `useState takes a single argument and can accept a primitive, an array or an object.
             Syntax for usage is [state_value, function_to_update_state_value] = useState (initial_state_value).`,
             exampleQuery: <>{'useState({:[string]})'}</>,
@@ -23,18 +23,17 @@ export const reactHooks: RepogroupMetadata = {
             patternType: SearchPatternType.structural,
         },
         {
-            title: 'Examples of useState with any Javascript data type as the input parameter:',
+            title: 'Examples of useState with any JavaScript data type as the input parameter',
             exampleQuery: <>useState(:[string])</>,
             rawQuery: 'useState(:[string]) count:1000',
             patternType: SearchPatternType.structural,
         },
         {
-            title:
-                'Examples of useState with any Javascript data type as the input parameter in only Typescript files:',
+            title: 'Examples of useState with any JavaScript data type as the input parameter in only TypeScript files',
             exampleQuery: (
                 <>
                     useState(:[string])
-                    <span className="repogroup-page__keyword-text">lang:</span>typescript
+                    <span className="search-keyword">lang:</span>typescript
                 </>
             ),
             rawQuery: 'useState(:[string]) count:1000 lang:typescript',

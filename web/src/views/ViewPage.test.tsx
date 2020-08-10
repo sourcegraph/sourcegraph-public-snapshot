@@ -21,6 +21,7 @@ const commonProps: Omit<React.ComponentProps<typeof ViewPage>, 'viewID' | 'extra
     extensionsController: { services: { contribution: { getContributions: () => ({}) } } } as Controller,
     copyQueryButton: false,
     versionContext: undefined,
+    globbing: false,
 }
 
 describe('ViewPage', () => {

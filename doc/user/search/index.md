@@ -122,7 +122,35 @@ Your site admin can add version contexts in site configuration under the `experi
 }
 ```
 
- After setting some version contexts, users can select version contexts in the dropdown to the left of the search bar.
+To specify the default branch, you can set `"rev"` to `"HEAD"` or `""`.
+
+After setting some version contexts, users can select version contexts in the dropdown to the left of the search bar.
+
+
+> NOTE: All revisions specified in version contexts [will be indexed](#multi-branch-indexing-experimental).
+
+### Multi-branch indexing <span class="badge badge-primary">experimental</span>
+
+> NOTE: This feature is still in active development and must be enabled by a Sourcegraph site admin in site configuration.
+
+The most common branch to search is your default branch. To speed up this common operation Sourcegraph maintains an index of the source code on your default branch. Some organizations have other branches which are regularly searched. To speed up search for those branches Sourcegraph can be configured to index up to 64 branches per repository.
+
+Your site admin can configure indexed branches in site configuration under the `experimentalFeatures.search.index.branches` setting. For example:
+
+``` json
+"experimentalFeatures": {
+  "search.index.branches": {
+   "github.com/sourcegraph/sourcegraph": ["3.15", "develop"],
+   "github.com/sourcegraph/src-cli": "next"
+  }
+}
+```
+
+Indexing multiple branches will add additional resource requirements to Sourcegraph (particularly memory). The indexer will deduplicate documents between branches. So the size of your index will grow in relation to the number of unique documents. Refer to our [resource estimator](../../admin/install/resource_estimator.md) to estimate whether additional resources are required.
+
+> NOTE: The default branch (`HEAD`) is always indexed.
+
+> NOTE: All revisions specified in version contexts are also indexed.
 
 ---
 

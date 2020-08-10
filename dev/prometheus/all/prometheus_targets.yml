@@ -54,8 +54,3 @@
   targets:
     # postgres exporter
     - host.docker.internal:9187
-- labels:
-    job: replacer
-  targets:
-    # replacer
-    - host.docker.internal:6076

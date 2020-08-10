@@ -13,7 +13,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/felixge/httpsnoop"
-	raven "github.com/getsentry/raven-go"
+	"github.com/getsentry/raven-go"
 	"github.com/gorilla/mux"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"

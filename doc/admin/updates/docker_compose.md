@@ -4,6 +4,18 @@ This document describes the exact changes needed to update a Docker Compose Sour
 
 Each section comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
+## 3.18.0 -> 3.18.0-1
+
+This release fixes `observability.alerts` in the site configuration. No manual migration required.
+
+Please upgrade to the [`v3.18.0-1` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/3.18/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
+
+## v3.17.2 -> 3.18.0
+
+No manual migration required.
+
+Please upgrade to the [`v3.18.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/3.18/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
+
 ## v3.16.0 -> v3.17.2
 
 No manual migration is required. 
@@ -30,7 +42,12 @@ If your users have uploaded LSIF precise code intelligence data, you may keep it
 docker run --rm -it -v /var/lib/docker:/docker alpine:latest sh -c 'cp -R /docker/volumes/docker-compose_lsif-server/_data/* /docker/volumes/docker-compose_precise-code-intel-bundle-manager/_data/'
 ```
 
-(No restart is required after running the above command.)
+Followed by:
+
+```sh
+docker run --rm -it -v /var/lib/docker:/docker alpine:latest sh -c 'chown -R 100:101 /docker/volumes/docker-compose_precise-code-intel-bundle-manager'
+docker restart precise-code-intel-bundle-manager
+```
 
 ## v3.14.2 -> v3.14.4
 

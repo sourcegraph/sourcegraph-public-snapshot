@@ -29,7 +29,7 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
                 <h1 className="flex-grow-1 text-nowrap">
                     <InsightsIcon className="icon-inline" /> Insights{' '}
                     <sup>
-                        <span className="badge badge-primary">prototype</span>
+                        <span className="badge badge-primary text-uppercase">prototype</span>
                     </sup>
                 </h1>
                 {/* These buttons are just links until there is a proper configuration UI */}

@@ -21,6 +21,7 @@ const defaultProps = {
     editable: true,
     negated: false,
     isHomepage: false,
+    globbing: true,
     onSubmit: sinon.spy(),
     onFilterEdited: sinon.spy(),
     onFilterDeleted: sinon.spy(),
@@ -76,10 +77,10 @@ describe('FilterInput', () => {
             container = render(
                 <FilterInput {...defaultProps} value="diff" filterType={FilterType.type} mapKey="type" />
             ).container
-            const codeRadioButton = container.querySelector('.e2e-filter-input-radio-button-')
+            const codeRadioButton = container.querySelector('.test-filter-input-radio-button-')
             expect(codeRadioButton).toBeTruthy()
             fireEvent.click(codeRadioButton!)
-            const confirmButton = container.querySelector('.e2e-confirm-filter-button')
+            const confirmButton = container.querySelector('.test-confirm-filter-button')
             expect(confirmButton).toBeTruthy()
             fireEvent.click(confirmButton!)
             expect(defaultProps.onFilterEdited.calledOnce).toBe(true)

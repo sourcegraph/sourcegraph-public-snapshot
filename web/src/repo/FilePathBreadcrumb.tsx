@@ -2,6 +2,7 @@ import * as React from 'react'
 import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
 import { RepoRev, toPrettyBlobURL } from '../../../shared/src/util/url'
 import { toTreeURL } from '../util/url'
+import classNames from 'classnames'
 
 interface Props {
     path: string
@@ -13,14 +14,12 @@ interface Props {
  * A breadcrumb where each path component is a separate link. Use this sparingly. Usually having the entire path be
  * a single link target is more usable; in that case, use RepoFileLink.
  */
-const Breadcrumb: React.FunctionComponent<Props> = props => {
-    const parts = props.path.split('/')
+const Breadcrumb: React.FunctionComponent<Props> = ({ path, partToUrl, partToClassName }) => {
+    const parts = path.split('/')
     const spans: JSX.Element[] = []
     for (const [index, part] of parts.entries()) {
-        const link = props.partToUrl(index)
-        const className = `part ${props.partToClassName ? props.partToClassName(index) : ''} ${
-            index === parts.length - 1 ? 'part-last' : ''
-        }`
+        const link = partToUrl(index)
+        const className = classNames('part', partToClassName?.(index))
         spans.push(
             <LinkOrSpan key={index} className={className} to={link}>
                 {part}
@@ -62,7 +61,11 @@ export const FilePathBreadcrumb: React.FunctionComponent<
                 }
                 return toPrettyBlobURL({ repoName, revision, filePath: partPath })
             }}
-            partToClassName={index => (index === parts.length - 1 ? 'part-last' : 'part-directory')}
+            partToClassName={index =>
+                index === parts.length - 1
+                    ? 'part-last test-breadcrumb-part-last'
+                    : 'part-directory test-breadcrumb-part-directory'
+            }
         />
         /* eslint-enable react/jsx-no-bind */
     )

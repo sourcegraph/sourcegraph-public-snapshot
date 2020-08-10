@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useMemo } from 'react'
-import H from 'history'
+import * as H from 'history'
 import { LineChartContent, BarChartContent, ChartContent, PieChartContent } from 'sourcegraph'
 import {
     LineChart,
@@ -49,8 +49,9 @@ const toLocaleString = (value: {}): string => value.toLocaleString()
  */
 export const CartesianChartViewContent: React.FunctionComponent<{
     content: LineChartContent<any, string> | BarChartContent<any, string>
+    animate?: boolean
     history: H.History
-}> = ({ content, history }) => {
+}> = ({ content, animate, history }) => {
     const linkHandler = useMemo(() => createLinkClickHandler(history), [history])
 
     // Unwrap union type
@@ -104,6 +105,7 @@ export const CartesianChartViewContent: React.FunctionComponent<{
                 {content.chart === 'line'
                     ? content.series.map(series => (
                           <Line
+                              isAnimationActive={animate}
                               key={series.dataKey as string}
                               name={series.name}
                               dataKey={series.dataKey as string}
@@ -150,6 +152,7 @@ export const CartesianChartViewContent: React.FunctionComponent<{
                               key={series.dataKey as string}
                               name={series.name}
                               dataKey={series.dataKey as string}
+                              isAnimationActive={animate}
                               fill={series.fill}
                               label={false}
                               stackId={series.stackId}
@@ -170,10 +173,11 @@ export const CartesianChartViewContent: React.FunctionComponent<{
 const percentageLabel: ContentRenderer<PieLabelRenderProps> = props =>
     props.name + (props.percent ? ': ' + (props.percent * 100).toFixed(0) + '%' : '')
 
-export const PieChartViewContent: React.FunctionComponent<{ content: PieChartContent<any>; history: H.History }> = ({
-    content,
-    history,
-}) => {
+export const PieChartViewContent: React.FunctionComponent<{
+    content: PieChartContent<any>
+    animate?: boolean
+    history: H.History
+}> = ({ content, history, animate }) => {
     const linkHandler = useMemo(() => createLinkClickHandler(history), [history])
 
     // Track hovered element to wrap it with a link
@@ -185,6 +189,7 @@ export const PieChartViewContent: React.FunctionComponent<{ content: PieChartCon
             <PieChart>
                 {content.pies.map(({ fillKey, dataKey, nameKey, linkURLKey, data }) => (
                     <Pie
+                        isAnimationActive={animate}
                         key={dataKey as string}
                         animationDuration={animationDuration}
                         data={data}
@@ -216,10 +221,11 @@ export const PieChartViewContent: React.FunctionComponent<{ content: PieChartCon
 /**
  * Displays chart view content.
  */
-export const ChartViewContent: React.FunctionComponent<{ content: ChartContent; history: H.History }> = ({
-    content,
-    ...props
-}) => (
+export const ChartViewContent: React.FunctionComponent<{
+    content: ChartContent
+    animate?: boolean
+    history: H.History
+}> = ({ content, ...props }) => (
     <>
         {content.chart === 'line' || content.chart === 'bar' ? (
             <CartesianChartViewContent {...props} content={content} />

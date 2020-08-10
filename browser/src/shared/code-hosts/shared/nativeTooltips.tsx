@@ -1,20 +1,20 @@
 import { isEqual } from 'lodash'
-import * as React from 'react'
 import { from, Observable, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, filter, first, map, mapTo, publishReplay, refCount } from 'rxjs/operators'
 import { parseTemplate } from '../../../../../shared/src/api/client/context/expr/evaluator'
 import { Services } from '../../../../../shared/src/api/client/services'
-import { HoverAlert } from '../../../../../shared/src/hover/HoverOverlay'
+import type { HoverAlert } from 'sourcegraph'
+import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { PlatformContext } from '../../../../../shared/src/platform/context'
 import { Settings } from '../../../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { isDefined, isNot } from '../../../../../shared/src/util/types'
 import { MutationRecordLike } from '../../util/dom'
 import { CodeHost } from './codeHost'
-import { ExtensionHoverAlertType } from './hoverAlerts'
 import { trackViews } from './views'
 
 const NATIVE_TOOLTIP_HIDDEN = 'native-tooltip--hidden'
+const NATIVE_TOOLTIP_TYPE = 'nativeTooltips'
 
 /**
  * Defines a native tooltip that is present on a page and exposes operations for manipulating it.
@@ -28,19 +28,16 @@ export function handleNativeTooltips(
     mutations: Observable<MutationRecordLike[]>,
     nativeTooltipsEnabled: Observable<boolean>,
     { nativeTooltipResolvers, name }: Pick<CodeHost, 'nativeTooltipResolvers' | 'name'>
-): { nativeTooltipsAlert: Observable<HoverAlert<ExtensionHoverAlertType>>; subscription: Unsubscribable } {
+): { nativeTooltipsAlert: Observable<HoverAlert>; subscription: Unsubscribable } {
     const nativeTooltips = mutations.pipe(trackViews(nativeTooltipResolvers || []))
     const nativeTooltipsAlert = mutations.pipe(
         first(),
         mapTo({
-            type: 'nativeTooltips' as const,
-            content: (
-                <>
-                    Sourcegraph has hidden {name || 'the code host'}'s native hover tooltips. You can toggle this at any
-                    time: to enable the native tooltips run “Code host: prefer non-Sourcegraph hover tooltips” from the
-                    command palette or set <code>"codeHost.useNativeTooltips": true</code> in your user settings.
-                </>
-            ),
+            type: NATIVE_TOOLTIP_TYPE,
+            summary: {
+                kind: MarkupKind.Markdown,
+                value: `<small>Sourcegraph has hidden ${name}'s native hover tooltips. You can toggle this at any time: to enable the native tooltips run "Code host: prefer non-Sourcegraph hover tooltips" from the command palette or set {"codeHost.useNativeTooltips": true} in your user settings.</small>`,
+            },
         }),
         publishReplay(1),
         refCount()

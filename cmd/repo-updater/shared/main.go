@@ -4,18 +4,21 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"html/template"
 	"log"
 	"net"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/golang/gddo/httputil"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared/assets"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -221,13 +224,50 @@ func Main(enterpriseInit EnterpriseInit) {
 				dumps = append(dumps, dumper.DebugDump())
 			}
 
-			p, err := json.MarshalIndent(dumps, "", "  ")
-			if err != nil {
-				http.Error(w, "failed to marshal snapshot: "+err.Error(), http.StatusInternalServerError)
-				return
+			const (
+				textPlain       = "text/plain"
+				applicationJson = "application/json"
+			)
+
+			// Negotiate the content type.
+			contentTypeOffers := []string{textPlain, applicationJson}
+			defaultOffer := textPlain
+			contentType := httputil.NegotiateContentType(r, contentTypeOffers, defaultOffer)
+
+			// Allow users to override the negotiated content type so that e.g. browser
+			// users can easily request json by adding ?format=json to
+			// the URL.
+			switch r.URL.Query().Get("format") {
+			case "json":
+				contentType = applicationJson
 			}
-			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write(p)
+
+			switch contentType {
+			case applicationJson:
+				p, err := json.MarshalIndent(dumps, "", "  ")
+				if err != nil {
+					http.Error(w, "failed to marshal snapshot: "+err.Error(), http.StatusInternalServerError)
+					return
+				}
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write(p)
+
+			default:
+				// This case also applies for defaultOffer. Note that this is preferred
+				// over e.g. a 406 status code, according to the MDN:
+				// https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/406
+				tmpl := template.New("state.html").Funcs(template.FuncMap{
+					"truncateDuration": func(d time.Duration) time.Duration {
+						return d.Truncate(time.Second)
+					},
+				})
+				template.Must(tmpl.Parse(assets.MustAssetString("state.html.tmpl")))
+				err := tmpl.Execute(w, dumps)
+				if err != nil {
+					http.Error(w, "failed to render template: "+err.Error(), http.StatusInternalServerError)
+					return
+				}
+			}
 		}),
 	})
 
@@ -270,11 +310,11 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 // syncCloned will periodically list the cloned repositories on gitserver and
 // update the scheduler with the list.
 func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver.Client, store repos.Store) {
-	for {
+	doSync := func() {
 		cloned, err := gitserverClient.ListCloned(ctx)
 		if err != nil {
 			log15.Warn("failed to update git fetch scheduler with list of cloned repositories", "error", err)
-			continue
+			return
 		}
 
 		sched.SetCloned(cloned)
@@ -282,12 +322,14 @@ func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver
 		err = store.SetClonedRepos(ctx, cloned...)
 		if err != nil {
 			log15.Warn("failed to set cloned repository list", "error", err)
-			continue
+			return
 		}
+	}
 
+	for ctx.Err() == nil {
+		doSync()
 		select {
 		case <-ctx.Done():
-			return
 		case <-time.After(10 * time.Second):
 		}
 	}

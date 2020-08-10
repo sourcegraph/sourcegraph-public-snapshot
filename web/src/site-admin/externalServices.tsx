@@ -484,6 +484,15 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
                   },
               },
           ]),
+    {
+        id: 'addWebhooks',
+        label: 'Add webhook',
+        run: config => {
+            const value = { secret: '<any_secret_string>' }
+            const edits = setProperty(config, ['webhooks', -1], value, defaultFormattingOptions)
+            return { edits, selectText: '<any_secret_string>' }
+        },
+    },
 ]
 
 const GITHUB_DOTCOM: AddExternalServiceOptions = {

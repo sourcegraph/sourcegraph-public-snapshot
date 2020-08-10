@@ -19,8 +19,6 @@ import (
 	"github.com/gchaincl/sqlhooks"
 	"github.com/inconshreveable/log15"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -163,11 +161,10 @@ type hook struct{}
 
 // Before implements sqlhooks.Hooks
 func (h *hook) Before(ctx context.Context, query string, args ...interface{}) (context.Context, error) {
-	tr, ctx := trace.New(ctx, "sql", query)
-	if span := opentracing.SpanFromContext(ctx); span != nil {
-		ext.SpanKindRPCClient.Set(span)
-		ext.DBType.Set(span, "sql")
-	}
+	tr, ctx := trace.New(ctx, "sql", query,
+		trace.Tag{Key: "span.kind", Value: "client"},
+		trace.Tag{Key: "db.type", Value: "sql"},
+	)
 	tr.LogFields(otlog.Lazy(func(fv otlog.Encoder) {
 		for i, arg := range args {
 			fv.EmitString(strconv.Itoa(i+1), fmt.Sprintf("%q", arg))

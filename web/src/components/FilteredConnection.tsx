@@ -745,7 +745,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         const compactnessClass = `filtered-connection--${this.props.compact ? 'compact' : 'noncompact'}`
         return (
             <div
-                className={`filtered-connection e2e-filtered-connection ${compactnessClass} ${
+                className={`filtered-connection test-filtered-connection ${compactnessClass} ${
                     this.props.className || ''
                 }`}
             >
@@ -814,7 +814,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                     />
                 )}
                 {this.state.loading && (
-                    <span className="filtered-connection__loader e2e-filtered-connection__loader">
+                    <span className="filtered-connection__loader test-filtered-connection__loader">
                         <LoadingSpinner className="icon-inline" />
                     </span>
                 )}

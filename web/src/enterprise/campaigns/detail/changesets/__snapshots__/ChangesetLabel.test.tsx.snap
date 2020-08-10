@@ -4,7 +4,6 @@ exports[`ChangesetLabel renders a dark label with white text 1`] = `
 <ChangesetLabel
   label={
     Object {
-      "__typename": "ChangesetLabel",
       "color": "330912",
       "description": "Something is wrong",
       "text": "bug",
@@ -29,7 +28,6 @@ exports[`ChangesetLabel renders a light label with dark text 1`] = `
 <ChangesetLabel
   label={
     Object {
-      "__typename": "ChangesetLabel",
       "color": "acfc99",
       "description": "Something is wrong",
       "text": "bug",

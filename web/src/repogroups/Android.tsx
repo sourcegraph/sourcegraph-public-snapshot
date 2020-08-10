@@ -6,29 +6,29 @@ export const android: RepogroupMetadata = {
     title: 'Android',
     name: 'android',
     url: '/android',
-    description: 'Search the most starred Android repositories on GitHub. Explore with search examples below.',
+    description: 'Use these search suggestions to explore popular Android repositories on GitHub.',
     examples: [
         {
-            title: 'Find intent filter examples in Android Manifest XML files:',
+            title: 'Find intent filter examples in Android Manifest XML files',
             exampleQuery: (
                 <>
-                    <span className="repogroup-page__keyword-text">lang:</span>
+                    <span className="search-keyword">lang:</span>
                     {'xml <intent-filter> :[string] </intent-filter>'}
                 </>
             ),
             rawQuery: 'lang:xml <intent-filter> :[string] </intent-filter>',
-            description: `An intent filter is used to specify the type of intents a component would like to receive. An intent filter can accept
-             3 types of elements - <action>, <category> and <data> elements.`,
+            description:
+                'Intent filters specify the type of intents a component would like to receive. An intent filter can accept three types of elements - <action>, <category> and <data> elements.',
             patternType: SearchPatternType.structural,
         },
         {
-            title: 'Find try-catch blocks to see how errors are caught:',
+            title: 'Find try-catch blocks to see how errors are caught',
             exampleQuery: <>{'try {:[0]} catch (:[1]) {:[2]} finally {:[3]}'}</>,
             rawQuery: 'try {:[0]} catch (:[1]) {:[2]} finally {:[3]}',
             patternType: SearchPatternType.structural,
         },
         {
-            title: 'Examine and optimize your layout by detecting nested LinearLayouts:',
+            title: 'Examine and optimize your layout by detecting nested LinearLayouts',
             description: `LinearLayout can lead to an excessively deep view hierarchy. Nesting several instances of
             LinearLayout that use the layout_weight parameter can be especially expensive as each child needs to be measured twice. This is particularly
             important when the layout is inflated repeatedly, such as when used in a ListView or GridView.`,
@@ -37,10 +37,10 @@ export const android: RepogroupMetadata = {
             patternType: SearchPatternType.structural,
         },
         {
-            title: 'Find usage examples of the OnClickListener function in Kotlin’s syntax:',
+            title: 'Find usage examples of the OnClickListener function in Kotlin’s syntax',
             exampleQuery: (
                 <>
-                    <span className="repogroup-page__keyword-text">file:</span>
+                    <span className="search-keyword">file:</span>
                     {'.kt .setOnClickListener {:[function]}'}
                 </>
             ),

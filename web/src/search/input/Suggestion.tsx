@@ -73,14 +73,14 @@ interface SuggestionIconProps {
  */
 const formatRegExp = (value: string): string => '^' + escapeRegExp(value) + '$'
 
-export function createSuggestion(item: SearchSuggestion): Suggestion | undefined {
+export function createSuggestion(item: SearchSuggestion, globbing: boolean): Suggestion | undefined {
     switch (item.__typename) {
         case 'Repository': {
             return {
                 type: FilterType.repo,
                 // Add "regex start and end boundaries" to
                 // correctly scope additional suggestions
-                value: formatRegExp(item.name),
+                value: globbing ? item.name : formatRegExp(item.name),
                 displayValue: item.name,
                 url: `/${item.name}`,
                 label: 'go to repository',
@@ -96,7 +96,7 @@ export function createSuggestion(item: SearchSuggestion): Suggestion | undefined
             if (item.isDirectory) {
                 return {
                     type: NonFilterSuggestionType.Directory,
-                    value: '^' + escapeRegExp(item.path),
+                    value: globbing ? item.path : '^' + escapeRegExp(item.path),
                     description: descriptionParts.join(' — '),
                     url: appendSubtreeQueryParameter(item.url),
                     label: 'go to dir',
@@ -104,7 +104,7 @@ export function createSuggestion(item: SearchSuggestion): Suggestion | undefined
             }
             return {
                 type: FilterType.file,
-                value: formatRegExp(item.path),
+                value: globbing ? item.path : formatRegExp(item.path),
                 displayValue: item.name,
                 description: descriptionParts.join(' — '),
                 url: appendSubtreeQueryParameter(item.url),
@@ -171,7 +171,7 @@ export const SuggestionItem: React.FunctionComponent<SuggestionProps> = ({
     defaultLabel,
     ...props
 }) => (
-    <li className={`suggestion ${isSelected ? ' suggestion--selected' : ''} e2e-suggestion-item`} {...props}>
+    <li className={`suggestion ${isSelected ? ' suggestion--selected' : ''} test-suggestion-item`} {...props}>
         <SuggestionIcon className="icon-inline suggestion__icon" suggestion={suggestion} />
         <div className="suggestion__title">{suggestion.displayValue ?? suggestion.value}</div>
         <div className="suggestion__description">{suggestion.description}</div>

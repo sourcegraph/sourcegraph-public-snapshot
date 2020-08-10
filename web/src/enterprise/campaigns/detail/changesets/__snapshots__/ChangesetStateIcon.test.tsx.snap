@@ -2,7 +2,7 @@
 
 exports[`ChangesetStateIcon renders CLOSED 1`] = `
 <ChangesetStateIcon
-  state="CLOSED"
+  externalState="CLOSED"
 >
   <Memo(SourcePullIcon)
     className="mr-1 icon-inline text-danger"
@@ -26,7 +26,7 @@ exports[`ChangesetStateIcon renders CLOSED 1`] = `
 
 exports[`ChangesetStateIcon renders DELETED 1`] = `
 <ChangesetStateIcon
-  state="DELETED"
+  externalState="DELETED"
 >
   <Memo(DeleteIcon)
     className="mr-1 icon-inline text-muted"
@@ -50,7 +50,7 @@ exports[`ChangesetStateIcon renders DELETED 1`] = `
 
 exports[`ChangesetStateIcon renders MERGED 1`] = `
 <ChangesetStateIcon
-  state="MERGED"
+  externalState="MERGED"
 >
   <Memo(SourceMergeIcon)
     className="mr-1 icon-inline text-merged"
@@ -74,7 +74,7 @@ exports[`ChangesetStateIcon renders MERGED 1`] = `
 
 exports[`ChangesetStateIcon renders OPEN 1`] = `
 <ChangesetStateIcon
-  state="OPEN"
+  externalState="OPEN"
 >
   <Memo(SourcePullIcon)
     className="mr-1 icon-inline text-success"

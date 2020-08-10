@@ -14,8 +14,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -44,6 +44,17 @@ var (
 )
 
 func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {
+
+	// If globbing is activated, convert regex patterns of repo, file, and repohasfile
+	// from "field:^foo$" to "field:^foo".
+	globbing := false
+	if settings, err := decodedViewerFinalSettings(ctx); err == nil && getBoolPtr(settings.SearchGlobbing, false) {
+		globbing = true
+	}
+	if AndOrQuery, isAndOr := r.query.(*query.AndOrQuery); globbing && isAndOr {
+		AndOrQuery.Query = query.FuzzifyRegexPatterns(AndOrQuery.Query)
+	}
+
 	args.applyDefaultsAndConstraints()
 
 	if len(r.query.ParseTree()) == 0 {

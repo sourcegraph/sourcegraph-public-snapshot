@@ -6,11 +6,12 @@ import (
 	"testing"
 
 	"github.com/graph-gophers/graphql-go/gqltesting"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -215,6 +216,93 @@ func TestDeleteExternalService(t *testing.T) {
 			{
 				"deleteExternalService": {
 					"alwaysNil": null
+				}
+			}
+		`,
+		},
+	})
+}
+
+func TestExternalServices(t *testing.T) {
+	t.Run("authenticated as non-admin", func(t *testing.T) {
+		t.Run("read someone else's external services", func(t *testing.T) {
+			db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+				return &types.User{ID: 1}, nil
+			}
+			db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+				return &types.User{ID: id}, nil
+			}
+			defer func() {
+				db.Mocks.Users = db.MockUsers{}
+			}()
+
+			id := MarshalUserID(2)
+			result, err := (&schemaResolver{}).ExternalServices(context.Background(), &ExternalServicesArgs{
+				Namespace: &id,
+			})
+			if want := errMustBeSiteAdminOrSameUser; err != want {
+				t.Errorf("err: want %q but got %v", want, err)
+			}
+			if result != nil {
+				t.Errorf("result: want nil but got %v", result)
+			}
+		})
+	})
+
+	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+		return &types.User{SiteAdmin: true}, nil
+	}
+	db.Mocks.ExternalServices.List = func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+		if opt.NamespaceUserID > 0 {
+			return []*types.ExternalService{
+				{ID: 1},
+			}, nil
+		}
+		return []*types.ExternalService{
+			{ID: 1},
+			{ID: 2},
+		}, nil
+	}
+	defer func() {
+		db.Mocks.Users = db.MockUsers{}
+		db.Mocks.ExternalServices = db.MockExternalServices{}
+	}()
+
+	gqltesting.RunTests(t, []*gqltesting.Test{
+		{
+			Schema: mustParseGraphQLSchema(t),
+			Query: `
+			{
+				externalServices() {
+					nodes {
+						id
+					}
+				}
+			}
+		`,
+			ExpectedResult: `
+			{
+				"externalServices": {
+					"nodes": [{"id":"RXh0ZXJuYWxTZXJ2aWNlOjE="}, {"id":"RXh0ZXJuYWxTZXJ2aWNlOjI="}]
+				}
+			}
+		`,
+		},
+		{
+			Schema: mustParseGraphQLSchema(t),
+			Query: `
+			{
+				externalServices(namespace: "VXNlcjoy") {
+					nodes {
+						id
+					}
+				}
+			}
+		`,
+			ExpectedResult: `
+			{
+				"externalServices": {
+					"nodes": [{"id":"RXh0ZXJuYWxTZXJ2aWNlOjE="}]
 				}
 			}
 		`,

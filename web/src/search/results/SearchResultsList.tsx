@@ -31,6 +31,7 @@ import { shouldDisplayPerformanceWarning } from '../backend'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { ErrorAlert } from '../../components/alerts'
 import { VersionContextProps } from '../../../../shared/src/search/util'
+import { DeployType } from '../../jscontext'
 
 const isSearchResults = (value: unknown): value is GQL.ISearchResults =>
     typeof value === 'object' &&
@@ -424,6 +425,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                             <li key={proposedQuery.query}>
                                                                 <Link
                                                                     className="btn btn-secondary btn-sm"
+                                                                    data-testid="proposed-query-link"
                                                                     to={
                                                                         '/search?' +
                                                                         buildSearchURLQuery(
@@ -431,7 +433,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                                             this.props.patternType,
                                                                             this.props.caseSensitive,
                                                                             this.props.versionContext,
-                                                                            this.props.filtersInQuery
+                                                                            {}
                                                                         )
                                                                     }
                                                                 >

@@ -6,9 +6,8 @@ export const python2To3Metadata: RepogroupMetadata = {
     title: 'Refactor Python 2 to 3',
     name: 'python',
     url: '/refactor-python2-to-3',
-    description: `Search popular Python repositories with the most GitHub stars.
-                        The examples below help you find Python 2 code that requires refactoring and
-                        review examples of the new Python 3 syntax.`,
+    description:
+        'The examples below help you find Python 2 code that requires refactoring, and review examples of the new Python 3 syntax, across popular Python repositories.',
     examples: [
         //         {
         //             title: 'Implicit relative imports in Python 2 and absolute imports:',
@@ -20,39 +19,38 @@ export const python2To3Metadata: RepogroupMetadata = {
         //             patternType: SearchPatternType.regexp,
         //         },
         {
-            title: 'Python 3 explicit relative imports:',
-            description: `Python 3 deprecates implicit relative reports. It requires explicitly specifying the location of the package relative to the current folder. The
-            search below returns usages of explicit relative imports. For example, an import with one leading dot signifies that the package resides in the current folder and
-            with two leading dots tells Python that the package is 1 directory up from the current one.`,
+            title: 'Python 3 explicit relative imports',
+            description:
+                'Python 3 requires you to explicitly specify package location relative to the current folder, and deprecates implicit relative reports. The search below returns usages of explicit relative imports. For example, an import with one leading dot signifies that the package resides in the current folder, and with two leading dots tells Python that the package is one directory up from the current one.',
             exampleQuery: <>from \B\.\w+ import \w+</>,
             rawQuery: 'from \\B\\.\\w+ import \\w+',
             patternType: SearchPatternType.regexp,
         },
         {
-            title: 'Python 2 style print statements:',
-            description: 'Find print statements with double quotes like print “Hello, World!”.',
+            title: 'Python 2 style print statements',
+            description: 'Find print statements with double quotes like print "Hello, World!".',
             exampleQuery: (
                 <>
-                    <span className="repogroup-page__keyword-text">lang:</span>python print ":[string]"
+                    <span className="search-keyword">lang:</span>python print ":[string]"
                 </>
             ),
             rawQuery: 'lang:python print ":[string]"',
             patternType: SearchPatternType.structural,
         },
         {
-            title: 'Python 3 style print statements:',
+            title: 'Python 3 style print statements',
             description:
-                'Convert print statements to the print( ) function like print(“Hello, World!”). These will work with both Python 2 and Python 3.',
+                'Convert print statements to the print( ) function like print("Hello, World!"). These will work with both Python 2 and Python 3.',
             exampleQuery: (
                 <>
-                    <span className="repogroup-page__keyword-text">lang:</span>python print(":[string]")
+                    <span className="search-keyword">lang:</span>python print(":[string]")
                 </>
             ),
             rawQuery: 'lang:python print(":[string]")',
             patternType: SearchPatternType.structural,
         },
         {
-            title: 'Python 2 float division:',
+            title: 'Python 2 float division',
             description: `In Python 2, the division operator / rounds down the result to the nearest integer. To get a result with a floating point number,
             you need to convert the numbers to float and then perform the division. Python 3 no longer needs an explicit conversion to float by using 2 different
             operators: / for float division and // for integer division.`,
@@ -61,12 +59,12 @@ export const python2To3Metadata: RepogroupMetadata = {
             patternType: SearchPatternType.structural,
         },
         {
-            title: 'Python 2 & 3 integer conversion:',
+            title: 'Python 2 and Python 3 integer conversion',
             description: `Both Python 2 and 3 have built-in methods to allow you to easily convert integers to floats and floats to integers. For example,
             int(100.8) will be converted to 100.`,
             exampleQuery: (
                 <>
-                    <span className="repogroup-page__keyword-text">lang:</span>python \\sint\\(-*\\d+\\)
+                    <span className="search-keyword">lang:</span>python \\sint\\(-*\\d+\\)
                 </>
             ),
             rawQuery: 'lang:python \\sint\\(-*\\d+\\)',

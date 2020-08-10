@@ -21,7 +21,7 @@ The next line of the file should be a `project` vertex. This project contains al
 
 Documents and projects are linked via a _contains_ relationship. This relationship is directed from the _parent_ to its _children_ and can be visualized as follows. Contains is a one-to-many edge relationship -- as a project may contain many documents, the contains edge for a project may specify many destination vertex identifiers.
 
-<center><img src="https://storage.googleapis.com/sourcegraph-assets/docs.sourcegraph.com/lsif-graphviz/1.png" width="50%"></center>
+<center><img src="https://sourcegraphstatic.com/docs.sourcegraph.com/lsif-graphviz/1.png" width="50%"></center>
 
 ## Ranges
 
@@ -54,7 +54,7 @@ Ranges must belong to exactly one document via the contains relationship, which 
 
 Our LSIF output can now be visualized as follows.
 
-<center><img src="https://storage.googleapis.com/sourcegraph-assets/docs.sourcegraph.com/lsif-graphviz/2.png" width="50%"></center>
+<center><img src="https://sourcegraphstatic.com/docs.sourcegraph.com/lsif-graphviz/2.png" width="50%"></center>
 
 ## Result sets
 
@@ -81,7 +81,7 @@ It is also possible to attach result sets to other result sets, forming a chain.
 
 Using result sets, our LSIF output can now be visualized as follows.
 
-<center><img src="https://storage.googleapis.com/sourcegraph-assets/docs.sourcegraph.com/lsif-graphviz/3.png" width="50%"></center>
+<center><img src="https://sourcegraphstatic.com/docs.sourcegraph.com/lsif-graphviz/3.png" width="50%"></center>
 
 Now we can get back to business!
 
@@ -104,7 +104,7 @@ The `contents` property of a hover result is composed of a list of segments whic
 
 Using result sets, our LSIF output can now be visualized as follows, and the hover text is now (indirectly) attached to both the definition and reference ranges defined earlier.
 
-<center><img src="https://storage.googleapis.com/sourcegraph-assets/docs.sourcegraph.com/lsif-graphviz/4.png" width="50%"></center>
+<center><img src="https://sourcegraphstatic.com/docs.sourcegraph.com/lsif-graphviz/4.png" width="50%"></center>
 
 ### Linking definitions and references together
 
@@ -134,7 +134,7 @@ Each item edge has a _document_ property that specifies the document that contai
 
 Our LSIF output can now be visualized as follows.
 
-<center><img src="https://storage.googleapis.com/sourcegraph-assets/docs.sourcegraph.com/lsif-graphviz/5.png" width="75%"></center>
+<center><img src="https://sourcegraphstatic.com/docs.sourcegraph.com/lsif-graphviz/5.png" width="75%"></center>
 
 ## Monikers
 
@@ -180,7 +180,7 @@ Monikers are attached to ranges or result sets via a _moniker_ edge, and package
 
 This very simple graph fragment can be visualized as follows.
 
-<center><img src="https://storage.googleapis.com/sourcegraph-assets/docs.sourcegraph.com/lsif-graphviz/6.png" width="33%"></center>
+<center><img src="https://sourcegraphstatic.com/docs.sourcegraph.com/lsif-graphviz/6.png" width="33%"></center>
 
 Some tools populate monikers in a multi-pass process. This is how early versions of lsif-go worked, and how lsif-tsc currently works. The first pass will export import and export monikers but no package information. The second pass outputs additional monikers that are correlated with the package information (using the contents of a dependency manifest such as a go.mod file or a package.json).
 
@@ -201,7 +201,7 @@ The second pass then reads each moniker from the first pass, correlates the pack
 {"id": "103", "type": "edge", "label": "packageInformation", "outV": "100", "inV": "101"}
 ```
 
-<center><img src="https://storage.googleapis.com/sourcegraph-assets/docs.sourcegraph.com/lsif-graphviz/7.png" width="33%"></center>
+<center><img src="https://sourcegraphstatic.com/docs.sourcegraph.com/lsif-graphviz/7.png" width="33%"></center>
 
 <!--
 Here is the dot file used to generate the SVG images in this article (rendered via https://dreampuf.github.io/GraphvizOnline/).

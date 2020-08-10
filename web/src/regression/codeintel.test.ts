@@ -194,7 +194,7 @@ describe('Code intelligence regression test suite', () => {
             for (const file of ['cmd', 'frontend', 'auth', 'providers', 'providers.go']) {
                 await driver.findElementWithText(file, {
                     action: 'click',
-                    selector: '.e2e-repo-revision-sidebar a',
+                    selector: '.test-repo-revision-sidebar a',
                     wait: { timeout: 2 * 1000 },
                 })
             }
@@ -211,12 +211,12 @@ describe('Code intelligence regression test suite', () => {
             )
             await driver.findElementWithText('SYMBOLS', {
                 action: 'click',
-                selector: '.e2e-repo-revision-sidebar button',
+                selector: '.test-repo-revision-sidebar button',
                 wait: { timeout: 10 * 1000 },
             })
             await driver.findElementWithText('backgroundEntry', {
                 action: 'click',
-                selector: '.e2e-repo-revision-sidebar a span',
+                selector: '.test-repo-revision-sidebar a span',
                 wait: { timeout: 2 * 1000 },
             })
             await driver.replaceText({
@@ -225,14 +225,14 @@ describe('Code intelligence regression test suite', () => {
             })
             await driver.page.waitForFunction(
                 () => {
-                    const sidebar = document.querySelector<HTMLElement>('.e2e-repo-revision-sidebar')
+                    const sidebar = document.querySelector<HTMLElement>('.test-repo-revision-sidebar')
                     return sidebar && !sidebar.textContent?.includes('backgroundEntry')
                 },
                 { timeout: 2 * 1000 }
             )
             await driver.findElementWithText('buildEntry', {
                 action: 'click',
-                selector: '.e2e-repo-revision-sidebar a span',
+                selector: '.test-repo-revision-sidebar a span',
                 wait: { timeout: 2 * 1000 },
             })
             await driver.waitUntilURL(
@@ -454,7 +454,7 @@ async function testCodeNavigation(
     }: CodeNavigationTestCase
 ): Promise<void> {
     await driver.page.goto(config.sourcegraphBaseUrl + page)
-    await driver.page.waitForSelector('.e2e-blob')
+    await driver.page.waitForSelector('.test-blob')
     const tokenElement = await findTokenElement(driver, line, token)
 
     // Check hover
@@ -473,7 +473,7 @@ async function testCodeNavigation(
         await waitForHover(driver, expectedHoverContains)
         await (await driver.findElementWithText('Find references')).click()
 
-        await driver.page.waitForSelector('.e2e-search-result')
+        await driver.page.waitForSelector('.test-search-result')
         const referenceLinks = await collectLinks(driver)
         for (const expectedReference of expectedReferences) {
             expect(referenceLinks).toContainEqual(expectedReference)
@@ -511,7 +511,7 @@ async function testCodeNavigation(
  * sequence.
  */
 async function collectLinks(driver: Driver): Promise<Set<TestLocation>> {
-    await driver.page.waitForSelector('.e2e-loading-spinner', { hidden: true })
+    await driver.page.waitForSelector('.test-loading-spinner', { hidden: true })
 
     const panelTabTitles = await getPanelTabTitles(driver)
     if (panelTabTitles.length === 0) {
@@ -520,7 +520,7 @@ async function collectLinks(driver: Driver): Promise<Set<TestLocation>> {
 
     const links = new Set<TestLocation>()
     for (const title of panelTabTitles) {
-        const tabElement = await driver.page.$$(`.e2e-hierarchical-locations-view-list span[title="${title}"]`)
+        const tabElement = await driver.page.$$(`.test-hierarchical-locations-view-list span[title="${title}"]`)
         if (tabElement.length > 0) {
             await tabElement[0].click()
         }
@@ -553,9 +553,9 @@ async function getPanelTabTitles(driver: Driver): Promise<string[]> {
  */
 function collectVisibleLinks(driver: Driver): Promise<TestLocation[]> {
     return driver.page.evaluate(() =>
-        [...document.querySelectorAll<HTMLElement>('.e2e-file-match-children-item-wrapper')].map(a => ({
-            url: a.querySelector('.e2e-file-match-children-item')?.getAttribute('href') || '',
-            precise: a.querySelector('.e2e-badge-row')?.childElementCount === 0,
+        [...document.querySelectorAll<HTMLElement>('.test-file-match-children-item-wrapper')].map(a => ({
+            url: a.querySelector('.test-file-match-children-item')?.getAttribute('href') || '',
+            precise: a.querySelector('.test-badge-row')?.childElementCount === 0,
         }))
     )
 }
@@ -564,8 +564,8 @@ function collectVisibleLinks(driver: Driver): Promise<TestLocation[]> {
  * Close any visible hover overlay.
  */
 async function clickOnEmptyPartOfCodeView(driver: Driver): Promise<void> {
-    await driver.page.click('.e2e-blob tr:nth-child(1) .line')
-    await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-tooltip-go-to-definition').length === 0)
+    await driver.page.click('.test-blob tr:nth-child(1) .line')
+    await driver.page.waitForFunction(() => document.querySelectorAll('.test-tooltip-go-to-definition').length === 0)
 }
 
 /**
@@ -580,12 +580,12 @@ async function findTokenElement(driver: Driver, line: number, token: string): Pr
         // identifier happens to be hidden by it, we won't be able to select the correct
         // token. This condition was reproducible in the code navigation test that searches
         // for the identifier `StdioLogger`.
-        await driver.page.click('.e2e-close-toast')
+        await driver.page.click('.test-close-toast')
     } catch {
         // No toast open, this is fine
     }
 
-    const selector = `.e2e-blob tr:nth-child(${line}) span`
+    const selector = `.test-blob tr:nth-child(${line}) span`
     await driver.page.hover(selector)
     return driver.findElementWithText(token, { selector, fuzziness: 'exact' })
 }
@@ -596,13 +596,13 @@ async function findTokenElement(driver: Driver, line: number, token: string): Pr
  * supplied, ensure that the presence of the UI indicator matches this value.
  */
 async function waitForHover(driver: Driver, expectedHoverContains: string, precise?: boolean): Promise<void> {
-    await driver.page.waitForSelector('.e2e-tooltip-go-to-definition')
-    await driver.page.waitForSelector('.e2e-tooltip-content')
+    await driver.page.waitForSelector('.test-tooltip-go-to-definition')
+    await driver.page.waitForSelector('.test-tooltip-content')
     expect(normalizeWhitespace(await getTooltip(driver))).toContain(normalizeWhitespace(expectedHoverContains))
 
     if (precise !== undefined) {
         expect(
-            await driver.page.evaluate(() => document.querySelectorAll<HTMLElement>('.e2e-hover-badge').length)
+            await driver.page.evaluate(() => document.querySelectorAll<HTMLElement>('.test-hover-badge').length)
         ).toEqual(precise ? 0 : 1)
     }
 }
@@ -611,7 +611,9 @@ async function waitForHover(driver: Driver, expectedHoverContains: string, preci
  * Return the currently visible hover text.
  */
 async function getTooltip(driver: Driver): Promise<string> {
-    return driver.page.evaluate(() => (document.querySelector('.e2e-tooltip-content') as HTMLElement).textContent || '')
+    return driver.page.evaluate(
+        () => (document.querySelector('.test-tooltip-content') as HTMLElement).textContent || ''
+    )
 }
 
 /**
@@ -790,10 +792,10 @@ async function ensureUpload(driver: Driver, uploadUrl: string): Promise<void> {
     await driver.page.goto(uploadUrl)
 
     await driver.page.waitFor(
-        () => document.querySelector('.e2e-upload-state')?.textContent === 'Upload processed successfully.'
+        () => document.querySelector('.test-upload-state')?.textContent === 'Upload processed successfully.'
     )
 
-    const isLatestForRepoText = await (await driver.page.waitFor('.e2e-is-latest-for-repo')).evaluate(
+    const isLatestForRepoText = await (await driver.page.waitFor('.test-is-latest-for-repo')).evaluate(
         element => element.textContent
     )
     expect(isLatestForRepoText).toEqual('yes')

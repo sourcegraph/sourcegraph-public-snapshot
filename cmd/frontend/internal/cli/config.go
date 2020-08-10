@@ -13,12 +13,12 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/confdb"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -119,7 +119,11 @@ func handleConfigOverrides() error {
 				log15.Warn("EXTSVC_CONFIG_FILE contains zero external service configurations")
 			}
 
-			existing, err := db.ExternalServices.List(ctx, db.ExternalServicesListOptions{})
+			existing, err := db.ExternalServices.List(ctx, db.ExternalServicesListOptions{
+				// NOTE: External services loaded from config file do not have namespace specified.
+				// Therefore, we only need to load those from database.
+				NoNamespace: true,
+			})
 			if err != nil {
 				return errors.Wrap(err, "ExternalServices.List")
 			}
