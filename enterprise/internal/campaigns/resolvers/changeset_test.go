@@ -51,7 +51,7 @@ func TestChangesetResolver(t *testing.T) {
 	defer func() { git.Mocks.ResolveRevision = nil }()
 	// These are needed in addition for preview repository comparisons.
 	mockBackendCommits(t, api.CommitID(baseRev))
-	mockRepoComparison(t, baseRev, headRev, testDiff)
+	mockRepoComparison(t, baseRev, headRev)
 
 	unpublishedSpec := createChangesetSpec(t, ctx, store, testSpecOpts{
 		user:          userID,
