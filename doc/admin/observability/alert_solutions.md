@@ -4008,7 +4008,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _zoekt-webserver: 50s+ indexed search request errors every 5m by code_
+- _zoekt-webserver: 5%+ indexed search request errors every 5m by code_
 
 **Possible solutions:**
 
