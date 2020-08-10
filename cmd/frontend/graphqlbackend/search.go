@@ -996,7 +996,7 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 }
 
 func optimizeRepoPatternWithHeuristics(repoPattern string) string {
-	if envvar.SourcegraphDotComMode() && strings.HasPrefix(string(repoPattern), "github.com") {
+	if envvar.SourcegraphDotComMode() && (strings.HasPrefix(string(repoPattern), "github.com") || strings.HasPrefix(string(repoPattern), `github\.com`)) {
 		repoPattern = "^" + repoPattern
 	}
 	// Optimization: make the "." in "github.com" a literal dot
