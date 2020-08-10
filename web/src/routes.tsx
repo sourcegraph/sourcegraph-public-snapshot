@@ -8,7 +8,7 @@ import { RepogroupPage } from './repogroups/RepogroupPage'
 import { python2To3Metadata } from './repogroups/Python2To3'
 import { kubernetes } from './repogroups/Kubernetes'
 import { golang } from './repogroups/Golang'
-import { reactHooks } from './repogroups/ReactHooks'
+import { react } from './repogroups/React'
 import { android } from './repogroups/Android'
 import { stanford } from './repogroups/Stanford'
 
@@ -187,8 +187,8 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         condition: props => window.context.sourcegraphDotComMode,
     },
     {
-        path: '/react-hooks',
-        render: props => <RepogroupPage {...props} repogroupMetadata={reactHooks} />,
+        path: '/react',
+        render: props => <RepogroupPage {...props} repogroupMetadata={react} />,
         condition: props => window.context.sourcegraphDotComMode,
     },
     {
