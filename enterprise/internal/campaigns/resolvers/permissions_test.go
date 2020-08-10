@@ -100,10 +100,10 @@ func TestPermissionLevels(t *testing.T) {
 		return cs.RandID
 	}
 
-	cleanUpCampaigns := func(t *testing.T, _ *ee.Store) {
+	cleanUpCampaigns := func(t *testing.T, s *ee.Store) {
 		t.Helper()
 
-		campaigns, next, err := store.ListCampaigns(ctx, ee.ListCampaignsOpts{Limit: 1000})
+		campaigns, next, err := s.ListCampaigns(ctx, ee.ListCampaignsOpts{Limit: 1000})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -112,7 +112,7 @@ func TestPermissionLevels(t *testing.T) {
 		}
 
 		for _, c := range campaigns {
-			if err := store.DeleteCampaign(ctx, c.ID); err != nil {
+			if err := s.DeleteCampaign(ctx, c.ID); err != nil {
 				t.Fatal(err)
 			}
 		}
