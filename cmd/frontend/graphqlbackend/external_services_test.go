@@ -258,10 +258,21 @@ func TestExternalServices(t *testing.T) {
 				{ID: 1},
 			}, nil
 		}
-		return []*types.ExternalService{
+
+		if opt.AfterID > 0 {
+			return []*types.ExternalService{
+				{ID: 2},
+			}, nil
+		}
+
+		ess := []*types.ExternalService{
 			{ID: 1},
 			{ID: 2},
-		}, nil
+		}
+		if opt.LimitOffset != nil {
+			return ess[:opt.LimitOffset.Limit], nil
+		}
+		return ess, nil
 	}
 	defer func() {
 		db.Mocks.Users = db.MockUsers{}
@@ -269,6 +280,7 @@ func TestExternalServices(t *testing.T) {
 	}()
 
 	gqltesting.RunTests(t, []*gqltesting.Test{
+		// Read all external services
 		{
 			Schema: mustParseGraphQLSchema(t),
 			Query: `
@@ -288,6 +300,7 @@ func TestExternalServices(t *testing.T) {
 			}
 		`,
 		},
+		// Read someone's external services
 		{
 			Schema: mustParseGraphQLSchema(t),
 			Query: `
@@ -303,6 +316,55 @@ func TestExternalServices(t *testing.T) {
 			{
 				"externalServices": {
 					"nodes": [{"id":"RXh0ZXJuYWxTZXJ2aWNlOjE="}]
+				}
+			}
+		`,
+		},
+		// Pagination
+		{
+			Schema: mustParseGraphQLSchema(t),
+			Query: `
+			{
+				externalServices(first: 1) {
+					nodes {
+						id
+					}
+					pageInfo {
+						endCursor
+						hasNextPage
+					}
+				}
+			}
+		`,
+			ExpectedResult: `
+			{
+				"externalServices": {
+					"nodes":[{"id":"RXh0ZXJuYWxTZXJ2aWNlOjE="}],
+					"pageInfo":{"endCursor":"RXh0ZXJuYWxTZXJ2aWNlOjE=","hasNextPage":true}
+				}
+			}
+		`,
+		},
+		{
+			Schema: mustParseGraphQLSchema(t),
+			Query: `
+			{
+				externalServices(after: "RXh0ZXJuYWxTZXJ2aWNlOjE=") {
+					nodes {
+						id
+					}
+					pageInfo {
+						endCursor
+						hasNextPage
+					}
+				}
+			}
+		`,
+			ExpectedResult: `
+			{
+				"externalServices": {
+					"nodes":[{"id":"RXh0ZXJuYWxTZXJ2aWNlOjI="}],
+					"pageInfo":{"endCursor":null,"hasNextPage":false}
 				}
 			}
 		`,

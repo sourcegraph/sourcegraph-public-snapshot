@@ -1252,6 +1252,8 @@ type Query {
         namespace: ID
         # Returns the first n external services from the list.
         first: Int
+        # Opaque pagination cursor.
+        after: String
     ): ExternalServiceConnection!
     # List all repositories.
     repositories(
