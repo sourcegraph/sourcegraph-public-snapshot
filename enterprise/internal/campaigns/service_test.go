@@ -764,7 +764,6 @@ func TestServiceApplyCampaign(t *testing.T) {
 			want := &campaigns.Campaign{
 				Name:            campaignSpec.Spec.Name,
 				Description:     campaignSpec.Spec.Description,
-				Branch:          campaignSpec.Spec.ChangesetTemplate.Branch,
 				AuthorID:        campaignSpec.UserID,
 				ChangesetIDs:    []int64{},
 				NamespaceUserID: campaignSpec.NamespaceUserID,

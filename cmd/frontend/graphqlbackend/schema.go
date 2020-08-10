@@ -697,9 +697,6 @@ type Campaign implements Node {
     # The description (as Markdown).
     description: String
 
-    # The branch of the changesets.
-    branch: String
-
     # The user who authored the campaign.
     author: User!
 

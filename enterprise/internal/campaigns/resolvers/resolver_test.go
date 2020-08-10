@@ -334,7 +334,6 @@ func TestApplyCampaign(t *testing.T) {
 		ID:          have.ID,
 		Name:        campaignSpec.Spec.Name,
 		Description: campaignSpec.Spec.Description,
-		Branch:      campaignSpec.Spec.ChangesetTemplate.Branch,
 		Namespace: apitest.UserOrg{
 			ID:         userApiID,
 			DatabaseID: userID,
@@ -390,7 +389,7 @@ fragment o on Org  { id, name }
 
 mutation($campaignSpec: ID!, $ensureCampaign: ID){
   applyCampaign(campaignSpec: $campaignSpec, ensureCampaign: $ensureCampaign) {
-    id, name, description, branch
+    id, name, description
     author    { ...u }
     namespace {
         ... on User { ...u }
@@ -566,7 +565,7 @@ fragment o on Org  { id, name }
 
 mutation($campaign: ID!, $newName: String, $newNamespace: ID){
   moveCampaign(campaign: $campaign, newName: $newName, newNamespace: $newNamespace) {
-	id, name, description, branch
+	id, name, description
 	author    { ...u }
 	namespace {
 		... on User { ...u }

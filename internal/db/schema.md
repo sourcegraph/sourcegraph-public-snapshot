@@ -61,7 +61,6 @@ Referenced by:
  updated_at        | timestamp with time zone | not null default now()
  changeset_ids     | jsonb                    | not null default '{}'::jsonb
  closed_at         | timestamp with time zone | 
- branch            | text                     | 
  campaign_spec_id  | bigint                   | 
 Indexes:
     "campaigns_pkey" PRIMARY KEY, btree (id)

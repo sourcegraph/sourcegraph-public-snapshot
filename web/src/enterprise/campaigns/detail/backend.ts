@@ -44,7 +44,6 @@ const campaignFragment = gql`
         namespace {
             namespaceName
         }
-        branch
         createdAt
         updatedAt
         closedAt

@@ -285,9 +285,6 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	campaign.Name = campaignSpec.Spec.Name
 
 	campaign.Description = campaignSpec.Spec.Description
-	// TODO(mrnugget): This doesn't need to be populated, since the branch is
-	// now ChangesetSpec.Spec.HeadRef.
-	campaign.Branch = campaignSpec.Spec.ChangesetTemplate.Branch
 
 	if campaign.ID == 0 {
 		err := tx.CreateCampaign(ctx, campaign)
@@ -912,24 +909,6 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 // ErrCampaignNameBlank is returned by CreateCampaign or UpdateCampaign if the
 // specified Campaign name is blank.
 var ErrCampaignNameBlank = errors.New("Campaign title cannot be blank")
-
-// ErrCampaignBranchBlank is returned by CreateCampaign or UpdateCampaign if the specified Campaign's
-// branch is blank.
-var ErrCampaignBranchBlank = errors.New("Campaign branch cannot be blank")
-
-// ErrCampaignBranchInvalid is returned by CreateCampaign or UpdateCampaign if the specified Campaign's
-// branch is invalid.
-var ErrCampaignBranchInvalid = errors.New("Campaign branch is invalid")
-
-func validateCampaignBranch(branch string) error {
-	if branch == "" {
-		return ErrCampaignBranchBlank
-	}
-	if !git.ValidateBranchName(branch) {
-		return ErrCampaignBranchInvalid
-	}
-	return nil
-}
 
 // checkNamespaceAccess checks whether the current user in the ctx has access
 // to either the user ID or the org ID as a namespace.

@@ -20,7 +20,6 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 			c := &cmpgn.Campaign{
 				Name:           fmt.Sprintf("test-campaign-%d", i),
 				Description:    "All the Javascripts are belong to us",
-				Branch:         "upgrade-es-lint",
 				AuthorID:       int32(i) + 50,
 				ChangesetIDs:   []int64{int64(i) + 1},
 				CampaignSpecID: 1742 + int64(i),
