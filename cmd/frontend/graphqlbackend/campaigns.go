@@ -97,11 +97,13 @@ type CampaignSpecResolver interface {
 
 	ExpiresAt() *DateTime
 
-	PreviewURL() (string, error)
+	ApplyURL(ctx context.Context) (string, error)
 
 	ViewerCanAdminister(context.Context) (bool, error)
 
 	DiffStat(ctx context.Context) (*DiffStat, error)
+
+	AppliesToCampaign(ctx context.Context) (CampaignResolver, error)
 }
 
 type CampaignDescriptionResolver interface {

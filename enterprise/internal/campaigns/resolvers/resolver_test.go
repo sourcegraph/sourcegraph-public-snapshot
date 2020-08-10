@@ -55,6 +55,7 @@ func TestNullIDResilience(t *testing.T) {
 		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, campaigns.MarshalCampaignID(0)),
 		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, marshalChangesetID(0)),
 		fmt.Sprintf(`mutation { applyCampaign(campaignSpec: %q) { id } }`, marshalCampaignSpecRandID("")),
+		fmt.Sprintf(`mutation { createCampaign(campaignSpec: %q) { id } }`, marshalCampaignSpecRandID("")),
 		fmt.Sprintf(`mutation { moveCampaign(campaign: %q, newName: "foobar") { id } }`, campaigns.MarshalCampaignID(0)),
 	}
 
@@ -78,7 +79,8 @@ func TestCreateCampaignSpec(t *testing.T) {
 	ctx := context.Background()
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "create-campaign-spec", true)
+	username := "create-campaign-spec-username"
+	userID := insertTestUser(t, dbconn.Global, username, true)
 
 	store := ee.NewStore(dbconn.Global)
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
@@ -126,11 +128,15 @@ func TestCreateCampaignSpec(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	have := response.CreateCampaignSpec
 
 	want := apitest.CampaignSpec{
+		ID:            have.ID,
+		CreatedAt:     have.CreatedAt,
+		ExpiresAt:     have.ExpiresAt,
 		OriginalInput: rawSpec,
 		ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
-		PreviewURL:    "/campaigns/new?spec=",
+		ApplyURL:      fmt.Sprintf("/users/%s/campaigns/apply?spec=%s", username, have.ID),
 		Namespace:     apitest.UserOrg{ID: userApiID, DatabaseID: userID, SiteAdmin: true},
 		Creator:       apitest.User{ID: userApiID, DatabaseID: userID, SiteAdmin: true},
 		ChangesetSpecs: apitest.ChangesetSpecConnection{
@@ -142,12 +148,6 @@ func TestCreateCampaignSpec(t *testing.T) {
 			},
 		},
 	}
-	have := response.CreateCampaignSpec
-
-	want.ID = have.ID
-	want.PreviewURL = want.PreviewURL + want.ID
-	want.CreatedAt = have.CreatedAt
-	want.ExpiresAt = have.ExpiresAt
 
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatalf("unexpected response (-want +got):\n%s", diff)
@@ -170,7 +170,7 @@ mutation($namespace: ID!, $campaignSpec: String!, $changesetSpecs: [ID!]!){
       ... on Org  { ...o }
     }
 
-    previewURL
+    applyURL
 
 	changesetSpecs {
 	  nodes {
@@ -415,6 +415,68 @@ mutation($campaignSpec: ID!, $ensureCampaign: ID){
 }
 `
 
+func TestCreateCampaign(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	dbtesting.SetupGlobalTestDB(t)
+
+	userID := insertTestUser(t, dbconn.Global, "apply-campaign", true)
+
+	store := ee.NewStore(dbconn.Global)
+
+	campaignSpec := &campaigns.CampaignSpec{
+		RawSpec: ct.TestRawCampaignSpec,
+		Spec: campaigns.CampaignSpecFields{
+			Name:        "my-campaign",
+			Description: "My description",
+		},
+		UserID:          userID,
+		NamespaceUserID: userID,
+	}
+	if err := store.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+		t.Fatal(err)
+	}
+
+	r := &Resolver{store: store}
+	s, err := graphqlbackend.NewSchema(r, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	input := map[string]interface{}{
+		"campaignSpec": string(marshalCampaignSpecRandID(campaignSpec.RandID)),
+	}
+
+	var response struct{ CreateCampaign apitest.Campaign }
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	// First time it should work, because no campaign exists
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateCampaign)
+
+	if response.CreateCampaign.ID == "" {
+		t.Fatalf("expected campaign to be created, but was not")
+	}
+
+	// Second time it should fail
+	errors := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCampaign)
+
+	if len(errors) != 1 {
+		t.Fatalf("expected single errors, but got none")
+	}
+	if have, want := errors[0].Message, ee.ErrMatchingCampaignExists.Error(); have != want {
+		t.Fatalf("wrong error. want=%q, have=%q", want, have)
+	}
+}
+
+const mutationCreateCampaign = `
+mutation($campaignSpec: ID!){
+  createCampaign(campaignSpec: $campaignSpec) { id }
+}
+`
+
 func TestMoveCampaign(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -423,7 +485,8 @@ func TestMoveCampaign(t *testing.T) {
 	ctx := context.Background()
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "move-campaign1", true)
+	username := "move-campaign-username"
+	userID := insertTestUser(t, dbconn.Global, username, true)
 
 	org, err := db.Orgs.Create(ctx, "org", nil)
 	if err != nil {
@@ -458,8 +521,9 @@ func TestMoveCampaign(t *testing.T) {
 	}
 
 	// Move to a new name
+	campaignApiID := string(campaigns.MarshalCampaignID(campaign.ID))
 	input := map[string]interface{}{
-		"campaign": string(campaigns.MarshalCampaignID(campaign.ID)),
+		"campaign": campaignApiID,
 		"newName":  "new-name",
 	}
 
@@ -470,6 +534,11 @@ func TestMoveCampaign(t *testing.T) {
 	haveCampaign := response.MoveCampaign
 	if diff := cmp.Diff(input["newName"], haveCampaign.Name); diff != "" {
 		t.Fatalf("unexpected name (-want +got):\n%s", diff)
+	}
+
+	wantURL := fmt.Sprintf("/users/%s/campaigns/%s", username, campaignApiID)
+	if diff := cmp.Diff(wantURL, haveCampaign.URL); diff != "" {
+		t.Fatalf("unexpected URL (-want +got):\n%s", diff)
 	}
 
 	// Move to a new namespace
@@ -485,6 +554,10 @@ func TestMoveCampaign(t *testing.T) {
 	if diff := cmp.Diff(string(orgApiID), haveCampaign.Namespace.ID); diff != "" {
 		t.Fatalf("unexpected namespace (-want +got):\n%s", diff)
 	}
+	wantURL = fmt.Sprintf("/organizations/%s/campaigns/%s", org.Name, campaignApiID)
+	if diff := cmp.Diff(wantURL, haveCampaign.URL); diff != "" {
+		t.Fatalf("unexpected URL (-want +got):\n%s", diff)
+	}
 }
 
 const mutationMoveCampaign = `
@@ -499,6 +572,7 @@ mutation($campaign: ID!, $newName: String, $newNamespace: ID){
 		... on User { ...u }
 		... on Org  { ...o }
 	}
+	url
   }
 }
 `

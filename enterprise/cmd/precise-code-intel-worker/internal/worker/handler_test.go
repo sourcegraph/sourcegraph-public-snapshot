@@ -29,7 +29,7 @@ func init() {
 	sqliteutil.MustRegisterSqlite3WithPcre()
 }
 
-func TestProcess(t *testing.T) {
+func TestHandle(t *testing.T) {
 	setupRepoMocks(t)
 
 	upload := store.Upload{
@@ -56,15 +56,15 @@ func TestProcess(t *testing.T) {
 		"": {"foo.go", "bar.go"},
 	}, nil)
 
-	processor := &processor{
+	handler := &handler{
 		bundleManagerClient: bundleManagerClient,
 		gitserverClient:     gitserverClient,
 		metrics:             metrics.NewWorkerMetrics(&observation.TestContext),
 	}
 
-	requeued, err := processor.Process(context.Background(), mockStore, upload)
+	requeued, err := handler.handle(context.Background(), mockStore, upload)
 	if err != nil {
-		t.Fatalf("unexpected error processing upload: %s", err)
+		t.Fatalf("unexpected error handlling upload: %s", err)
 	} else if requeued {
 		t.Errorf("unexpected requeue")
 	}
@@ -125,7 +125,7 @@ func TestProcess(t *testing.T) {
 	}
 }
 
-func TestProcessError(t *testing.T) {
+func TestHandleError(t *testing.T) {
 	setupRepoMocks(t)
 
 	upload := store.Upload{
@@ -150,15 +150,15 @@ func TestProcessError(t *testing.T) {
 	// Set a different tip commit
 	mockStore.MarkRepositoryAsDirtyFunc.SetDefaultReturn(fmt.Errorf("uh-oh!"))
 
-	processor := &processor{
+	handler := &handler{
 		bundleManagerClient: bundleManagerClient,
 		gitserverClient:     gitserverClient,
 		metrics:             metrics.NewWorkerMetrics(&observation.TestContext),
 	}
 
-	requeued, err := processor.Process(context.Background(), mockStore, upload)
+	requeued, err := handler.handle(context.Background(), mockStore, upload)
 	if err == nil {
-		t.Fatalf("unexpected nil error processing upload")
+		t.Fatalf("unexpected nil error handling upload")
 	} else if !strings.Contains(err.Error(), "uh-oh!") {
 		t.Fatalf("unexpected error: %s", err)
 	} else if requeued {
@@ -174,7 +174,7 @@ func TestProcessError(t *testing.T) {
 	}
 }
 
-func TestProcessCloneInProgress(t *testing.T) {
+func TestHandleCloneInProgress(t *testing.T) {
 	t.Cleanup(func() {
 		backend.Mocks.Repos.Get = nil
 		backend.Mocks.Repos.ResolveRev = nil
@@ -203,15 +203,15 @@ func TestProcessCloneInProgress(t *testing.T) {
 	bundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 	gitserverClient := gitservermocks.NewMockClient()
 
-	processor := &processor{
+	handler := &handler{
 		bundleManagerClient: bundleManagerClient,
 		gitserverClient:     gitserverClient,
 		metrics:             metrics.NewWorkerMetrics(&observation.TestContext),
 	}
 
-	requeued, err := processor.Process(context.Background(), mockStore, upload)
+	requeued, err := handler.handle(context.Background(), mockStore, upload)
 	if err != nil {
-		t.Fatalf("unexpected error processing upload: %s", err)
+		t.Fatalf("unexpected error handling upload: %s", err)
 	} else if !requeued {
 		t.Errorf("expected upload to be requeued")
 	}

@@ -195,7 +195,7 @@ type CampaignSpec struct {
 	OriginalInput string
 	ParsedInput   graphqlbackend.JSONValue
 
-	PreviewURL string
+	ApplyURL string
 
 	Namespace UserOrg
 	Creator   User
@@ -205,6 +205,8 @@ type CampaignSpec struct {
 	ViewerCanAdminister bool
 
 	DiffStat DiffStat
+
+	AppliesToCampaign Campaign
 
 	CreatedAt graphqlbackend.DateTime
 	ExpiresAt *graphqlbackend.DateTime
