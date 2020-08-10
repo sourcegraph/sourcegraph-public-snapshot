@@ -17,4 +17,4 @@ func (f CommanderFunc) Run(ctx context.Context, command string, args ...string) 
 }
 
 // DefaultCommander is a commander that uses exec.Cmd to invoke commands on the host machine.
-var DefaultCommander = CommanderFunc(runCommand)
+var DefaultCommander Commander = CommanderFunc(runCommand)
