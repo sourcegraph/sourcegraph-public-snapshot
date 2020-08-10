@@ -1,6 +1,6 @@
 <!--
 ###################################### READ ME ###########################################
-### This changelog should always be read on `master` branch. Its contents on version   ###
+### This changelog should always be read on `main` branch. Its contents on version     ###
 ### branches do not necessarily reflect the changes that have gone into that branch.   ###
 ##########################################################################################
 -->
@@ -10,6 +10,10 @@
 All notable changes to `src-cli` are documented in this file.
 
 ## Unreleased changes
+
+### Changed
+
+- The default branch for the `src-cli` project has been changed to `main`. [#262](https://github.com/sourcegraph/src-cli/pull/262)
 
 ### Fixed
 

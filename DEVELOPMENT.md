@@ -9,11 +9,11 @@ go install ./cmd/src
 
 ## Releasing
 
-1.  If this is a non-patch release, update the changelog. Add a new section `## $MAJOR.MINOR` to [`CHANGELOG.md`](https://github.com/sourcegraph/src-cli/blob/master/CHANGELOG.md#unreleased) immediately under `## Unreleased changes`. Add new empty `Added`, `Changed`, `Fixed`, and `Removed` sections under `## Unreleased changes`.
+1.  If this is a non-patch release, update the changelog. Add a new section `## $MAJOR.MINOR` to [`CHANGELOG.md`](https://github.com/sourcegraph/src-cli/blob/main/CHANGELOG.md#unreleased) immediately under `## Unreleased changes`. Add new empty `Added`, `Changed`, `Fixed`, and `Removed` sections under `## Unreleased changes`.
 1.  Find the latest version (either via the releases tab on GitHub or via git tags) to determine which version you are releasing.
 2.  `VERSION=9.9.9 ./release.sh` (replace `9.9.9` with the version you are releasing)
 3.  Travis will automatically perform the release. Once it has finished, **confirm that the curl commands fetch the latest version above**.
-4.  Update the `MinimumVersion` constant in the [src-cli package](https://github.com/sourcegraph/sourcegraph/tree/master/internal/src-cli/consts.go).
+4.  Update the `MinimumVersion` constant in the [src-cli package](https://github.com/sourcegraph/sourcegraph/tree/main/internal/src-cli/consts.go).
 
 ### Patch releases
 
