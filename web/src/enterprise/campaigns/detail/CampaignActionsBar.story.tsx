@@ -34,6 +34,8 @@ add('Bar', () => (
                     total: 107,
                     closed: 10,
                     merged: 20,
+                    open: 60,
+                    unpublished: 17,
                 },
             },
         }}

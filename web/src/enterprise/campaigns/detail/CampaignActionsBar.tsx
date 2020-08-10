@@ -4,13 +4,7 @@ import { Link } from '../../../../../shared/src/components/Link'
 import { CampaignFields } from '../../../graphql-operations'
 
 interface Props {
-    campaign: Pick<CampaignFields, 'name' | 'closedAt' | 'viewerCanAdminister'> & {
-        namespace: CampaignFields['namespace']
-        changesets: {
-            totalCount: CampaignFields['changesets']['totalCount']
-            stats: Pick<CampaignFields['changesets']['stats'], 'total' | 'closed' | 'merged'>
-        }
-    }
+    campaign: Pick<CampaignFields, 'name' | 'closedAt' | 'viewerCanAdminister' | 'namespace' | 'changesets'>
 }
 
 export const CampaignActionsBar: React.FunctionComponent<Props> = ({ campaign }) => {
