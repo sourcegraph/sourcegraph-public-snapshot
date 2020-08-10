@@ -2,7 +2,6 @@ package heartbeat
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/efritz/glock"
@@ -19,7 +18,6 @@ type Heartbeater struct {
 	clock        glock.Clock
 	ctx          context.Context
 	cancel       func()
-	wg           sync.WaitGroup
 	finished     chan struct{}
 }
 
@@ -66,8 +64,6 @@ loop:
 			break loop
 		}
 	}
-
-	w.wg.Wait()
 }
 
 func (w *Heartbeater) Stop() {
