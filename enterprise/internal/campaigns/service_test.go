@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -202,7 +203,11 @@ func TestService(t *testing.T) {
 	store := NewStore(dbconn.Global)
 	rs, _ := createTestRepos(t, ctx, dbconn.Global, 4)
 
+	fakeSource := &ct.FakeChangesetSource{Err: nil}
+	sourcer := repos.NewFakeSourcer(nil, fakeSource)
+
 	svc := NewService(store, nil)
+	svc.sourcer = sourcer
 
 	t.Run("DeleteCampaign", func(t *testing.T) {
 		campaign := testCampaign(admin.ID)
@@ -339,6 +344,13 @@ func TestService(t *testing.T) {
 
 		svc := NewService(store, nil)
 		svc.sourcer = sourcer
+
+		// After close, the changesets will be synced, so we need to mock that operation.
+		state := ct.MockChangesetSyncState(&protocol.RepoInfo{
+			Name: api.RepoName(rs[0].Name),
+			VCS:  protocol.VCSInfo{URL: rs[0].URI},
+		})
+		defer state.Unmock()
 
 		// Try to close open changesets
 		err := svc.CloseOpenChangesets(ctx, []*campaigns.Changeset{changeset1, changeset2})
@@ -1255,7 +1267,7 @@ func testChangeset(repoID api.RepoID, campaign int64, extState campaigns.Changes
 		RepoID:              repoID,
 		ExternalServiceType: extsvc.TypeGitHub,
 		ExternalID:          fmt.Sprintf("ext-id-%d", campaign),
-		Metadata:            &github.PullRequest{State: string(extState)},
+		Metadata:            &github.PullRequest{State: string(extState), CreatedAt: time.Now()},
 		ExternalState:       extState,
 	}
 

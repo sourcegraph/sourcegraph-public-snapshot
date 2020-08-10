@@ -126,6 +126,11 @@ func computeExternalState(c *campaigns.Changeset, history []changesetStatesAtTim
 // associated events. The events should be presorted.
 func computeReviewState(c *campaigns.Changeset, history []changesetStatesAtTime) (campaigns.ChangesetReviewState, error) {
 	if len(history) == 0 {
+		// GitHub doesn't keep the review state on a changeset, so a GitHub Changeset
+		// will always return ChangesetReviewStatePending.
+		if c.ExternalServiceType == extsvc.TypeGitHub {
+			return campaigns.ChangesetReviewStatePending, nil
+		}
 		return computeSingleChangesetReviewState(c)
 	}
 

@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -38,6 +39,12 @@ func TestPermissionLevels(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	// SyncChangeset uses EnqueueChangesetSync and tries to talk to repo-updater, hence we need to mock it.
+	repoupdater.MockEnqueueChangesetSync = func(ctx context.Context, ids []int64) error {
+		return nil
+	}
+	t.Cleanup(func() { repoupdater.MockEnqueueChangesetSync = nil })
 
 	ctx := context.Background()
 
