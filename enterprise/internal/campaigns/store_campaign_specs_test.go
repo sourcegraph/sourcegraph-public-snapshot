@@ -268,10 +268,10 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, _ repos
 
 			if tc.hasCampaign {
 				campaign := &cmpgn.Campaign{
-					Name:            "not-blank",
-					AuthorID:        1,
-					NamespaceUserID: 1,
-					CampaignSpecID:  campaignSpec.ID,
+					Name:             "not-blank",
+					InitialApplierID: 1,
+					NamespaceUserID:  1,
+					CampaignSpecID:   campaignSpec.ID,
 				}
 				if err := s.CreateCampaign(ctx, campaign); err != nil {
 					t.Fatal(err)

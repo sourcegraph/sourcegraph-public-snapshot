@@ -586,10 +586,10 @@ func TestService(t *testing.T) {
 			t.Helper()
 
 			c := &campaigns.Campaign{
-				AuthorID:        authorID,
-				NamespaceUserID: userID,
-				NamespaceOrgID:  orgID,
-				Name:            name,
+				InitialApplierID: authorID,
+				NamespaceUserID:  userID,
+				NamespaceOrgID:   orgID,
+				Name:             name,
 			}
 
 			if err := store.CreateCampaign(ctx, c); err != nil {
@@ -700,11 +700,11 @@ func TestService(t *testing.T) {
 		}
 
 		matchingCampaign := &campaigns.Campaign{
-			Name:            campaignSpec.Spec.Name,
-			Description:     campaignSpec.Spec.Description,
-			AuthorID:        admin.ID,
-			NamespaceOrgID:  campaignSpec.NamespaceOrgID,
-			NamespaceUserID: campaignSpec.NamespaceUserID,
+			Name:             campaignSpec.Spec.Name,
+			Description:      campaignSpec.Spec.Description,
+			InitialApplierID: admin.ID,
+			NamespaceOrgID:   campaignSpec.NamespaceOrgID,
+			NamespaceUserID:  campaignSpec.NamespaceUserID,
 		}
 		if err := store.CreateCampaign(ctx, matchingCampaign); err != nil {
 			t.Fatalf("failed to create campaign: %s\n", err)
@@ -736,6 +736,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 	if !admin.SiteAdmin {
 		t.Fatal("admin is not a site-admin")
 	}
+	adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
 
 	user := createTestUser(ctx, t)
 	if user.SiteAdmin {
@@ -744,13 +745,17 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 	repos, _ := createTestRepos(t, ctx, dbconn.Global, 4)
 
-	store := NewStore(dbconn.Global)
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	clock := func() time.Time {
+		return now.UTC().Truncate(time.Microsecond)
+	}
+	store := NewStoreWithClock(dbconn.Global, clock)
 	svc := NewService(store, httpcli.NewExternalHTTPClientFactory())
 
 	t.Run("campaignSpec without changesetSpecs", func(t *testing.T) {
 		t.Run("new campaign", func(t *testing.T) {
 			campaignSpec := createCampaignSpec(t, ctx, store, "campaign1", admin.ID)
-			campaign, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+			campaign, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
 				CampaignSpecRandID: campaignSpec.RandID,
 			})
 			if err != nil {
@@ -762,12 +767,14 @@ func TestServiceApplyCampaign(t *testing.T) {
 			}
 
 			want := &campaigns.Campaign{
-				Name:            campaignSpec.Spec.Name,
-				Description:     campaignSpec.Spec.Description,
-				AuthorID:        campaignSpec.UserID,
-				ChangesetIDs:    []int64{},
-				NamespaceUserID: campaignSpec.NamespaceUserID,
-				CampaignSpecID:  campaignSpec.ID,
+				Name:             campaignSpec.Spec.Name,
+				Description:      campaignSpec.Spec.Description,
+				InitialApplierID: admin.ID,
+				LastApplierID:    admin.ID,
+				LastAppliedAt:    now,
+				ChangesetIDs:     []int64{},
+				NamespaceUserID:  campaignSpec.NamespaceUserID,
+				CampaignSpecID:   campaignSpec.ID,
 
 				// Ignore these fields
 				ID:        campaign.ID,
@@ -785,7 +792,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			campaign := createCampaign(t, ctx, store, "campaign2", admin.ID, campaignSpec.ID)
 
 			t.Run("apply same campaignSpec", func(t *testing.T) {
-				campaign2, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+				campaign2, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
 					CampaignSpecRandID: campaignSpec.RandID,
 				})
 				if err != nil {
@@ -809,7 +816,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 			t.Run("apply campaign spec with same name", func(t *testing.T) {
 				campaignSpec2 := createCampaignSpec(t, ctx, store, "campaign2", admin.ID)
-				campaign2, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+				campaign2, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
 					CampaignSpecRandID: campaignSpec2.RandID,
 				})
 				if err != nil {
@@ -821,11 +828,44 @@ func TestServiceApplyCampaign(t *testing.T) {
 				}
 			})
 
+			t.Run("apply campaign spec with same name but different current user", func(t *testing.T) {
+				campaignSpec := createCampaignSpec(t, ctx, store, "created-by-user", user.ID)
+				campaign := createCampaign(t, ctx, store, "created-by-user", user.ID, campaignSpec.ID)
+
+				if have, want := campaign.InitialApplierID, user.ID; have != want {
+					t.Fatalf("campaign InitialApplierID is wrong. want=%d, have=%d", want, have)
+				}
+
+				if have, want := campaign.LastApplierID, user.ID; have != want {
+					t.Fatalf("campaign LastApplierID is wrong. want=%d, have=%d", want, have)
+				}
+
+				campaignSpec2 := createCampaignSpec(t, ctx, store, "created-by-user", user.ID)
+				campaign2, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
+					CampaignSpecRandID: campaignSpec2.RandID,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := campaign2.ID, campaign.ID; have != want {
+					t.Fatalf("campaign ID is wrong. want=%d, have=%d", want, have)
+				}
+
+				if have, want := campaign2.InitialApplierID, campaign.InitialApplierID; have != want {
+					t.Fatalf("campaign InitialApplierID is wrong. want=%d, have=%d", want, have)
+				}
+
+				if have, want := campaign2.LastApplierID, admin.ID; have != want {
+					t.Fatalf("campaign LastApplierID is wrong. want=%d, have=%d", want, have)
+				}
+			})
+
 			t.Run("apply campaign spec with same name but different namespace", func(t *testing.T) {
 				user2 := createTestUser(ctx, t)
 				campaignSpec2 := createCampaignSpec(t, ctx, store, "campaign2", user2.ID)
 
-				campaign2, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+				campaign2, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
 					CampaignSpecRandID: campaignSpec2.RandID,
 				})
 				if err != nil {
@@ -844,7 +884,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			t.Run("campaign spec with same name and same ensureCampaignID", func(t *testing.T) {
 				campaignSpec2 := createCampaignSpec(t, ctx, store, "campaign2", admin.ID)
 
-				campaign2, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+				campaign2, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
 					CampaignSpecRandID: campaignSpec2.RandID,
 					EnsureCampaignID:   campaign.ID,
 				})
@@ -859,7 +899,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			t.Run("campaign spec with same name but different ensureCampaignID", func(t *testing.T) {
 				campaignSpec2 := createCampaignSpec(t, ctx, store, "campaign2", admin.ID)
 
-				_, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+				_, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
 					CampaignSpecRandID: campaignSpec2.RandID,
 					EnsureCampaignID:   campaign.ID + 999,
 				})
@@ -906,7 +946,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				headRef:      "refs/heads/my-branch",
 			})
 
-			campaign, cs := applyAndListChangesets(ctx, t, svc, campaignSpec.RandID, 2)
+			campaign, cs := applyAndListChangesets(adminCtx, t, svc, campaignSpec.RandID, 2)
 
 			if have, want := campaign.Name, "campaign3"; have != want {
 				t.Fatalf("wrong campaign name. want=%s, have=%s", want, have)
@@ -966,7 +1006,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			// Apply and expect 4 changesets
-			_, oldChangesets := applyAndListChangesets(ctx, t, svc, campaignSpec1.RandID, 4)
+			_, oldChangesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec1.RandID, 4)
 
 			// Now we create another campaign spec with the same campaign name
 			// and namespace.
@@ -1021,7 +1061,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			verifyClosed := assertChangesetsClose(t, wantClosed)
 
 			// Apply and expect 5 changesets
-			campaign, cs := applyAndListChangesets(ctx, t, svc, campaignSpec2.RandID, 5)
+			campaign, cs := applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 5)
 
 			verifyClosed()
 
@@ -1086,7 +1126,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				headRef:      "refs/heads/repo-0-branch-0",
 			})
 
-			ownerCampaign, ownerChangesets := applyAndListChangesets(ctx, t, svc, campaignSpec1.RandID, 1)
+			ownerCampaign, ownerChangesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec1.RandID, 1)
 
 			// Now we update the changeset so it looks like it's been published
 			// on the code host.
@@ -1102,7 +1142,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				externalID:   c.ExternalID,
 			})
 
-			_, trackedChangesets := applyAndListChangesets(ctx, t, svc, campaignSpec2.RandID, 1)
+			_, trackedChangesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 1)
 			// This should still point to the owner campaign
 			c2 := trackedChangesets[0]
 			assertChangeset(t, c2, changesetAssertions{
@@ -1123,7 +1163,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			// not the owner.
 			//
 			verifyClosed := assertChangesetsClose(t)
-			applyAndListChangesets(ctx, t, svc, campaignSpec3.RandID, 0)
+			applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 0)
 			verifyClosed()
 		})
 
@@ -1138,7 +1178,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			// We apply the spec and expect 1 changeset
-			_, changesets := applyAndListChangesets(ctx, t, svc, campaignSpec1.RandID, 1)
+			_, changesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec1.RandID, 1)
 
 			// But the changeset was not published yet.
 			// And now we apply a new spec without any changesets.
@@ -1146,7 +1186,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 			// That should close no changesets, but leave the campaign with 0 changesets
 			verifyClosed := assertChangesetsClose(t)
-			applyAndListChangesets(ctx, t, svc, campaignSpec2.RandID, 0)
+			applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 0)
 			verifyClosed()
 
 			// And the unpublished changesets should be deleted
@@ -1177,7 +1217,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				headRef:      "refs/heads/my-branch",
 			})
 
-			_, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+			_, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
 				CampaignSpecRandID: campaignSpec.RandID,
 			})
 			if err == nil {
@@ -1202,7 +1242,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			t.Fatalf("failed to update campaign: %s", err)
 		}
 
-		_, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+		_, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
 			CampaignSpecRandID: campaignSpec.RandID,
 		})
 		if err != ErrApplyClosedCampaign {
@@ -1241,9 +1281,9 @@ var createTestUser = func() func(context.Context, *testing.T) *types.User {
 
 func testCampaign(user int32) *campaigns.Campaign {
 	c := &campaigns.Campaign{
-		Name:            "test-campaign",
-		AuthorID:        user,
-		NamespaceUserID: user,
+		Name:             "test-campaign",
+		InitialApplierID: user,
+		NamespaceUserID:  user,
 	}
 
 	return c
@@ -1269,11 +1309,13 @@ func createCampaign(t *testing.T, ctx context.Context, store *Store, name string
 	t.Helper()
 
 	c := &campaigns.Campaign{
-		AuthorID:        userID,
-		NamespaceUserID: userID,
-		CampaignSpecID:  spec,
-		Name:            name,
-		Description:     "campaign description",
+		InitialApplierID: userID,
+		LastApplierID:    userID,
+		LastAppliedAt:    store.Clock()(),
+		NamespaceUserID:  userID,
+		CampaignSpecID:   spec,
+		Name:             name,
+		Description:      "campaign description",
 	}
 
 	if err := store.CreateCampaign(ctx, c); err != nil {

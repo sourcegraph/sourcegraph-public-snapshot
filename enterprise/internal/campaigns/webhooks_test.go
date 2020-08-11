@@ -84,10 +84,10 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		store := NewStoreWithClock(db, clock)
 
 		campaign := &campaigns.Campaign{
-			Name:            "Test campaign",
-			Description:     "Testing THE WEBHOOKS",
-			AuthorID:        userID,
-			NamespaceUserID: userID,
+			Name:             "Test campaign",
+			Description:      "Testing THE WEBHOOKS",
+			InitialApplierID: userID,
+			NamespaceUserID:  userID,
 		}
 
 		err = store.CreateCampaign(ctx, campaign)
@@ -247,10 +247,10 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		store := NewStoreWithClock(db, clock)
 
 		campaign := &campaigns.Campaign{
-			Name:            "Test campaign",
-			Description:     "Testing THE WEBHOOKS",
-			AuthorID:        userID,
-			NamespaceUserID: userID,
+			Name:             "Test campaign",
+			Description:      "Testing THE WEBHOOKS",
+			InitialApplierID: userID,
+			NamespaceUserID:  userID,
 		}
 
 		err = store.CreateCampaign(ctx, campaign)

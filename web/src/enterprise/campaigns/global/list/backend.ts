@@ -10,7 +10,7 @@ const ListCampaignFragment = gql`
         description
         createdAt
         closedAt
-        author {
+        initialApplier {
             username
         }
         changesets {

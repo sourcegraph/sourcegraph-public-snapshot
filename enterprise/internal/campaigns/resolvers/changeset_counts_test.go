@@ -51,9 +51,9 @@ func TestChangesetCountsOverTimeResolver(t *testing.T) {
 	}
 
 	campaign := &campaigns.Campaign{
-		Name:            "my-unique-name",
-		NamespaceUserID: userID,
-		AuthorID:        userID,
+		Name:             "my-unique-name",
+		NamespaceUserID:  userID,
+		InitialApplierID: userID,
 	}
 	if err := store.CreateCampaign(ctx, campaign); err != nil {
 		t.Fatal(err)
@@ -180,10 +180,10 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	store := ee.NewStore(dbconn.Global)
 
 	campaign := &campaigns.Campaign{
-		Name:            "Test campaign",
-		Description:     "Testing changeset counts",
-		AuthorID:        userID,
-		NamespaceUserID: userID,
+		Name:             "Test campaign",
+		Description:      "Testing changeset counts",
+		InitialApplierID: userID,
+		NamespaceUserID:  userID,
 	}
 
 	err = store.CreateCampaign(ctx, campaign)

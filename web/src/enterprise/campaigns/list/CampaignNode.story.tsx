@@ -24,7 +24,7 @@ This is my thorough explanation. And it can also get very long, in that case the
                 merged: 5,
             },
         },
-        author: {
+        initialApplier: {
             username: 'alice',
         },
     },
@@ -41,7 +41,7 @@ This is my thorough explanation. And it can also get very long, in that case the
                 merged: 5,
             },
         },
-        author: {
+        initialApplier: {
             username: 'alice',
         },
     },
@@ -60,7 +60,7 @@ This is my thorough explanation. And it can also get very long, in that case the
                 merged: 5,
             },
         },
-        author: {
+        initialApplier: {
             username: 'alice',
         },
     },

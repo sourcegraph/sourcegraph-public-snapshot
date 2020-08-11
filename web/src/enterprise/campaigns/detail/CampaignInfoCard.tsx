@@ -7,7 +7,7 @@ import { Timestamp } from '../../../components/time/Timestamp'
 import { CampaignFields } from '../../../graphql-operations'
 
 interface CampaignInfoCardProps extends Pick<CampaignFields, 'createdAt' | 'description'> {
-    author: Pick<CampaignFields['author'], 'avatarURL' | 'username'>
+    author: Pick<CampaignFields['initialApplier'], 'avatarURL' | 'username'>
     history: H.History
 }
 

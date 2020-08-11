@@ -42,11 +42,11 @@ func (r *campaignsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacke
 
 func (r *campaignsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	opts := ee.CountCampaignsOpts{
-		ChangesetID:     r.opts.ChangesetID,
-		State:           r.opts.State,
-		OnlyForAuthor:   r.opts.OnlyForAuthor,
-		NamespaceUserID: r.opts.NamespaceUserID,
-		NamespaceOrgID:  r.opts.NamespaceOrgID,
+		ChangesetID:      r.opts.ChangesetID,
+		State:            r.opts.State,
+		InitialApplierID: r.opts.InitialApplierID,
+		NamespaceUserID:  r.opts.NamespaceUserID,
+		NamespaceOrgID:   r.opts.NamespaceOrgID,
 	}
 	count, err := r.store.CountCampaigns(ctx, opts)
 	return int32(count), err
@@ -95,12 +95,30 @@ func (r *campaignResolver) Description() *string {
 	return &r.Campaign.Description
 }
 
-func (r *campaignResolver) Author(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return graphqlbackend.UserByIDInt32(ctx, r.AuthorID)
+func (r *campaignResolver) InitialApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
+	return graphqlbackend.UserByIDInt32(ctx, r.Campaign.InitialApplierID)
+}
+
+func (r *campaignResolver) LastApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
+	return graphqlbackend.UserByIDInt32(ctx, r.Campaign.LastApplierID)
+}
+
+func (r *campaignResolver) LastAppliedAt() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{Time: r.Campaign.LastAppliedAt}
+}
+
+func (r *campaignResolver) SpecCreator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
+	spec, err := r.store.GetCampaignSpec(ctx, ee.GetCampaignSpecOpts{
+		ID: r.Campaign.CampaignSpecID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return graphqlbackend.UserByIDInt32(ctx, spec.UserID)
 }
 
 func (r *campaignResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	return checkSiteAdminOrSameUser(ctx, r.Campaign.AuthorID)
+	return checkSiteAdminOrSameUser(ctx, r.Campaign.InitialApplierID)
 }
 
 func (r *campaignResolver) URL(ctx context.Context) (string, error) {

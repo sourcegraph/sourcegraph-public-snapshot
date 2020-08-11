@@ -5,9 +5,6 @@ exports[`CampaignNode campaign without description 1`] = `
   history="[History]"
   node={
     Object {
-      "author": Object {
-        "username": "alice",
-      },
       "changesets": Object {
         "stats": Object {
           "closed": 3,
@@ -19,6 +16,9 @@ exports[`CampaignNode campaign without description 1`] = `
       "createdAt": "2019-12-04T23:15:01Z",
       "description": null,
       "id": "123",
+      "initialApplier": Object {
+        "username": "alice",
+      },
       "name": "Upgrade lodash to v4",
     }
   }
@@ -180,9 +180,6 @@ exports[`CampaignNode closed campaign 1`] = `
   history="[History]"
   node={
     Object {
-      "author": Object {
-        "username": "alice",
-      },
       "changesets": Object {
         "stats": Object {
           "closed": 3,
@@ -198,6 +195,9 @@ exports[`CampaignNode closed campaign 1`] = `
 - and renders in markdown
         ",
       "id": "123",
+      "initialApplier": Object {
+        "username": "alice",
+      },
       "name": "Upgrade lodash to v4",
     }
   }
@@ -367,9 +367,6 @@ exports[`CampaignNode open campaign 1`] = `
   history="[History]"
   node={
     Object {
-      "author": Object {
-        "username": "alice",
-      },
       "changesets": Object {
         "stats": Object {
           "closed": 3,
@@ -385,6 +382,9 @@ exports[`CampaignNode open campaign 1`] = `
 - and renders in markdown
         ",
       "id": "123",
+      "initialApplier": Object {
+        "username": "alice",
+      },
       "name": "Upgrade lodash to v4",
     }
   }

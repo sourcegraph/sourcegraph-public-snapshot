@@ -40,9 +40,9 @@ func TestChangesetConnectionResolver(t *testing.T) {
 	ct.AuthzFilterRepos(t, inaccessibleRepo.ID)
 
 	campaign := &campaigns.Campaign{
-		Name:            "my-unique-name",
-		NamespaceUserID: userID,
-		AuthorID:        userID,
+		Name:             "my-unique-name",
+		NamespaceUserID:  userID,
+		InitialApplierID: userID,
 	}
 	if err := store.CreateCampaign(ctx, campaign); err != nil {
 		t.Fatal(err)

@@ -49,19 +49,21 @@ Referenced by:
 
 # Table "public.campaigns"
 ```
-      Column       |           Type           |                       Modifiers                        
--------------------+--------------------------+--------------------------------------------------------
- id                | bigint                   | not null default nextval('campaigns_id_seq'::regclass)
- name              | text                     | not null
- description       | text                     | 
- author_id         | integer                  | not null
- namespace_user_id | integer                  | 
- namespace_org_id  | integer                  | 
- created_at        | timestamp with time zone | not null default now()
- updated_at        | timestamp with time zone | not null default now()
- changeset_ids     | jsonb                    | not null default '{}'::jsonb
- closed_at         | timestamp with time zone | 
- campaign_spec_id  | bigint                   | 
+       Column       |           Type           |                       Modifiers                        
+--------------------+--------------------------+--------------------------------------------------------
+ id                 | bigint                   | not null default nextval('campaigns_id_seq'::regclass)
+ name               | text                     | not null
+ description        | text                     | 
+ initial_applier_id | integer                  | not null
+ namespace_user_id  | integer                  | 
+ namespace_org_id   | integer                  | 
+ created_at         | timestamp with time zone | not null default now()
+ updated_at         | timestamp with time zone | not null default now()
+ changeset_ids      | jsonb                    | not null default '{}'::jsonb
+ closed_at          | timestamp with time zone | 
+ campaign_spec_id   | bigint                   | 
+ last_applier_id    | bigint                   | 
+ last_applied_at    | timestamp with time zone | 
 Indexes:
     "campaigns_pkey" PRIMARY KEY, btree (id)
     "campaigns_changeset_ids_gin_idx" gin (changeset_ids)
@@ -72,8 +74,9 @@ Check constraints:
     "campaigns_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
     "campaigns_name_not_blank" CHECK (name <> ''::text)
 Foreign-key constraints:
-    "campaigns_author_id_fkey" FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+    "campaigns_author_id_fkey" FOREIGN KEY (initial_applier_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     "campaigns_campaign_spec_id_fkey" FOREIGN KEY (campaign_spec_id) REFERENCES campaign_specs(id) DEFERRABLE
+    "campaigns_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) DEFERRABLE
     "campaigns_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
     "campaigns_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
@@ -1030,7 +1033,8 @@ Referenced by:
     TABLE "access_tokens" CONSTRAINT "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "access_tokens" CONSTRAINT "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
     TABLE "campaign_specs" CONSTRAINT "campaign_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) DEFERRABLE
-    TABLE "campaigns" CONSTRAINT "campaigns_author_id_fkey" FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "campaigns" CONSTRAINT "campaigns_author_id_fkey" FOREIGN KEY (initial_applier_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "campaigns" CONSTRAINT "campaigns_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) DEFERRABLE
     TABLE "campaigns" CONSTRAINT "campaigns_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) DEFERRABLE
     TABLE "discussion_comments" CONSTRAINT "discussion_comments_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
