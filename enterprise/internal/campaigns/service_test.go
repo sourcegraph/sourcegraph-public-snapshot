@@ -155,7 +155,7 @@ func TestServicePermissionLevels(t *testing.T) {
 			})
 
 			t.Run("CloseCampaign", func(t *testing.T) {
-				_, err := svc.CloseCampaign(currentUserCtx, campaign.ID, false)
+				_, err := svc.CloseCampaign(currentUserCtx, campaign.ID, false, false)
 				tc.assertFunc(t, err)
 			})
 
@@ -225,6 +225,12 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CloseCampaign", func(t *testing.T) {
+		// After close, the changesets will be synced, so we need to mock that operation.
+		state := ct.MockChangesetSyncState(&protocol.RepoInfo{
+			Name: api.RepoName(rs[0].Name),
+			VCS:  protocol.VCSInfo{URL: rs[0].URI},
+		})
+		defer state.Unmock()
 		createCampaign := func(t *testing.T) *campaigns.Campaign {
 			t.Helper()
 			campaign := testCampaign(admin.ID)
@@ -237,7 +243,7 @@ func TestService(t *testing.T) {
 		closeConfirm := func(t *testing.T, c *campaigns.Campaign, closeChangesets bool) {
 			t.Helper()
 
-			closedCampaign, err := svc.CloseCampaign(ctx, c.ID, closeChangesets)
+			closedCampaign, err := svc.CloseCampaign(ctx, c.ID, closeChangesets, false)
 			if err != nil {
 				t.Fatalf("campaign not closed: %s", err)
 			}
@@ -261,7 +267,7 @@ func TestService(t *testing.T) {
 			}
 
 			// should fail
-			_, err := svc.CloseCampaign(ctx, campaign.ID, true)
+			_, err := svc.CloseCampaign(ctx, campaign.ID, true, false)
 			if err != ErrCloseProcessingCampaign {
 				t.Fatalf("CloseCampaign returned unexpected error: %s", err)
 			}
