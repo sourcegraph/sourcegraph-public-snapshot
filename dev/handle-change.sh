@@ -79,7 +79,7 @@ if [ ${#rebuilt[@]} -gt 0 ]; then
   if [ -n "$GOREMAN" ]; then
     for cmd in "${rebuilt[@]}"; do
       if $GOREMAN run list | grep -Ee "^${cmd}$"; then
-        $GOREMAN run restart ${cmd}
+        $GOREMAN run restart "${cmd}"
       fi
     done
   fi
