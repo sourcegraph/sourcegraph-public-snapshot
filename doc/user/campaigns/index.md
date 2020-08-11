@@ -102,14 +102,6 @@ If a person viewing the campaign lacks read access to a repository in the campai
 
 You can update a campaign's changes at any time, even after you've published changesets. For more information, see "[Updating a campaign](#updating-a-campaign)".
 
-### Example campaigns
-
-The [example campaigns](examples/index.md) show how to use campaigns to make useful, real-world changes:
-
-- [Using ESLint to automatically migrate to a new TypeScript version](examples/eslint_typescript_version.md)
-- [Adding a GitHub action to upload LSIF data to Sourcegraph](examples/lsif_action.md)
-- [Refactoring Go code using Comby](examples/refactor_go_comby.md)
-
 ## Publishing changesets to the code host
 
 After you've added patches, you can see a preview of the changesets (e.g., GitHub pull requests) that will be created from the patches. Publishing the changesets will, for each repository:
@@ -118,11 +110,23 @@ After you've added patches, you can see a preview of the changesets (e.g., GitHu
 - Push a branch (using the branch name you chose when creating the campaign)
 - Create a changeset (e.g., GitHub pull request) on the code host for review and merging
 
-When you're ready, you can publish some or all of a campaign's changesets.
+> NOTE: When pushing the branch Sourcegraph will use a force push. Make sure that the branch names are unused, otherwise previous commits will be overwritten.
 
-<!-- > TODO(sqs): add steps for updating campaign spec's `changesetTemplate` to publish -->
+When you're ready, you can publish all of a campaign's changesets by changing the `published: false` in your campaign spec to `true`:
 
-You'll see a progress indicator when changesets are being published. Any errors will be shown, and you can retry publishing after you've resolved the problem by running `src campaign apply` again. You don't need to worry about it creating multiple branches or pull requests when you retry, because it uses the same branch name.
+```yaml
+name: hello-world
+
+# ...
+
+changesetTemplate:
+  # ...
+  published: false
+```
+
+Then run the `src campaign apply` command again.
+
+In the Sourcegraph web UI you'll see a progress indicators that the changesets are being published. Any errors will be shown, and you can retry publishing after you've resolved the problem by running `src campaign apply` again. You don't need to worry about it creating multiple branches or pull requests when you retry, because it uses the same branch name.
 
 To publish a changeset, you need admin access to the campaign and write access to the changeset's repository (on the code host). For more information, see "[Code host interactions in campaigns](managing_access.md#code-host-interactions-in-campaigns)". [Forking the repository](#known-issues) is not yet supported.
 
