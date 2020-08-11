@@ -49,6 +49,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
         "name": "n",
         "namespace": Object {
           "namespaceName": "alice",
+          "url": "/users/alice",
         },
         "updatedAt": "2020-01-01",
         "viewerCanAdminister": false,
@@ -66,6 +67,22 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
             href="/campaigns"
           >
             Campaigns
+          </a>
+        </AnchorLink>
+      </span>
+      <span
+        className="text-muted d-inline-block mx-1"
+      >
+        /
+      </span>
+      <span>
+        <AnchorLink
+          to="/users/alice"
+        >
+          <a
+            href="/users/alice"
+          >
+            alice
           </a>
         </AnchorLink>
       </span>
@@ -246,6 +263,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
         "name": "n",
         "namespace": Object {
           "namespaceName": "alice",
+          "url": "/users/alice",
         },
         "updatedAt": "2020-01-01",
         "viewerCanAdminister": true,
@@ -263,6 +281,22 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
             href="/campaigns"
           >
             Campaigns
+          </a>
+        </AnchorLink>
+      </span>
+      <span
+        className="text-muted d-inline-block mx-1"
+      >
+        /
+      </span>
+      <span>
+        <AnchorLink
+          to="/users/alice"
+        >
+          <a
+            href="/users/alice"
+          >
+            alice
           </a>
         </AnchorLink>
       </span>

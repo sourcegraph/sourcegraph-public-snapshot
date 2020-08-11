@@ -85,6 +85,7 @@ interface Props
      */
     authenticatedUser: GQL.IUser | null
     history: H.History
+    isSourcegraphDotCom: boolean
 }
 
 interface State {
@@ -113,6 +114,8 @@ export interface OrgAreaPageProps
 
     /** The currently authenticated user. */
     authenticatedUser: GQL.IUser | null
+
+    isSourcegraphDotCom: boolean
 }
 
 /**
@@ -190,6 +193,7 @@ export class OrgArea extends React.Component<Props> {
             namespace: this.state.orgOrError,
             patternType: this.props.patternType,
             telemetryService: this.props.telemetryService,
+            isSourcegraphDotCom: this.props.isSourcegraphDotCom,
         }
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {
