@@ -116,8 +116,6 @@ Returns file content matching either on the left or right side, or both (set uni
 search patterns, `NOT` excludes documents that contain the term after `NOT`. For readability, you can also include the
 `AND` operator before a `NOT` (i.e. `panic NOT ever` is equivalent to `panic AND NOT ever`).
 
-`NOT` requires the experimental `migrateParser: true` option in the site settings and can currently not be used in
-conjunction with `type:`.
 
 ### Operator precedence and groups
 
