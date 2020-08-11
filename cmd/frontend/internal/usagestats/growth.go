@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
+// source: cmd/frontend/internal/usagestats/growth.go:GetGrowthStatistics
 func GetGrowthStatistics(ctx context.Context) (*types.GrowthStatistics, error) {
 	const q = `
 	WITH

@@ -280,8 +280,6 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		return nil, err
 	}
 
-	fmt.Println(string(contents))
-
 	return bytes.NewReader(contents), nil
 }
 
