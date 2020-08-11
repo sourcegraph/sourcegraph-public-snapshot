@@ -77,6 +77,10 @@ func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpe
 	spec.NamespaceUserID = opts.NamespaceUserID
 	spec.UserID = actor.UID
 
+	if len(opts.ChangesetSpecRandIDs) == 0 {
+		return spec, s.store.CreateCampaignSpec(ctx, spec)
+	}
+
 	listOpts := ListChangesetSpecsOpts{Limit: -1, RandIDs: opts.ChangesetSpecRandIDs}
 	cs, _, err := s.store.ListChangesetSpecs(ctx, listOpts)
 	if err != nil {

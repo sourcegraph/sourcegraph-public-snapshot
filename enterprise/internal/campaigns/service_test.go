@@ -517,6 +517,31 @@ func TestService(t *testing.T) {
 				t.Fatalf("expected no error but got %s", err)
 			}
 		})
+
+		t.Run("no side-effects if no changeset spec IDs are given", func(t *testing.T) {
+			// We already have ChangesetSpecs in the database. Here we
+			// want to make sure that the new CampaignSpec is created,
+			// without accidently attaching the existing ChangesetSpecs.
+			opts := CreateCampaignSpecOpts{
+				NamespaceUserID:      admin.ID,
+				RawSpec:              ct.TestRawCampaignSpec,
+				ChangesetSpecRandIDs: []string{},
+			}
+
+			spec, err := svc.CreateCampaignSpec(adminCtx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			countOpts := CountChangesetSpecsOpts{CampaignSpecID: spec.ID}
+			count, err := store.CountChangesetSpecs(adminCtx, countOpts)
+			if err != nil {
+				return
+			}
+			if count != 0 {
+				t.Fatalf("want no changeset specs attached to campaign spec, but have %d", count)
+			}
+		})
 	})
 
 	t.Run("CreateChangesetSpec", func(t *testing.T) {
