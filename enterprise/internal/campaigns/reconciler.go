@@ -199,7 +199,8 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 	// If we only need to update the diff, we're done, because we already
 	// pushed the commit. We don't need to update anything on the codehost.
 	if !delta.NeedCodeHostUpdate() {
-		return nil
+		ch.FailureMessage = nil
+		return tx.UpdateChangeset(ctx, ch)
 	}
 
 	// Otherwise, we need to update the pull request on the code host.

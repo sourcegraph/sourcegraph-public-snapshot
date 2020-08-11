@@ -190,6 +190,45 @@ func TestReconcilerProcess(t *testing.T) {
 				body:  "Remote body",
 			},
 		},
+		"retry update published changeset metadata": {
+			currentSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+
+				title: "new title",
+				body:  "new body",
+			},
+			previousSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+
+				title: "old title",
+				body:  "old body",
+			},
+			changeset: testChangesetOpts{
+				publicationState:  campaigns.ChangesetPublicationStatePublished,
+				externalID:        "12345",
+				externalBranch:    "head-ref-on-github",
+				createdByCampaign: true,
+				// Previous update failed:
+				failureMessage: "failed to update changeset metadata",
+			},
+			sourcerMetadata: githubPR,
+
+			wantCreateOnHostCode: false,
+			wantUpdateOnCodeHost: true,
+			wantGitserverCommit:  false,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       "12345",
+				externalBranch:   "head-ref-on-github",
+				title:            "Remote title",
+				body:             "Remote body",
+
+				// failureMessage should be nil
+			},
+		},
 		"update published changeset commit": {
 			currentSpec: &testSpecOpts{
 				headRef:   "refs/heads/head-ref-on-github",
@@ -223,6 +262,42 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       "12345",
 				externalBranch:   "head-ref-on-github",
+			},
+		},
+		"retry update published changeset commit": {
+			currentSpec: &testSpecOpts{
+				headRef:       "refs/heads/head-ref-on-github",
+				published:     true,
+				commitDiff:    "new diff",
+				commitMessage: "new message",
+			},
+			previousSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+
+				commitDiff:    "old diff",
+				commitMessage: "old message",
+			},
+			changeset: testChangesetOpts{
+				publicationState:  campaigns.ChangesetPublicationStatePublished,
+				externalID:        "12345",
+				externalBranch:    "head-ref-on-github",
+				createdByCampaign: true,
+
+				// Previous update failed:
+				failureMessage: "failed to update changeset commit",
+			},
+			sourcerMetadata: githubPR,
+
+			wantCreateOnHostCode: false,
+			wantUpdateOnCodeHost: false,
+			wantGitserverCommit:  true,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       "12345",
+				externalBranch:   "head-ref-on-github",
+				// failureMessage should be nil
 			},
 		},
 		"reprocess published changeset without changes": {
