@@ -1071,6 +1071,19 @@ func TestRepoLookup(t *testing.T) {
 			result: &protocol.RepoLookupResult{ErrorNotFound: true},
 			err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.RepoName("git-codecommit.us-west-1.amazonaws.com/stripe-go"), true),
 		},
+		{
+			name: "Private repos are not supported on sourcegraph.com",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName(githubRepository.Name),
+			},
+			githubDotComSource: &fakeRepoSource{
+				repo: githubRepository.With(func(r *repos.Repo) {
+					r.Private = true
+				}),
+			},
+			result: &protocol.RepoLookupResult{ErrorNotFound: true},
+			err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.RepoName(githubRepository.Name), true),
+		},
 	}
 
 	for _, tc := range testCases {

@@ -523,6 +523,12 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 		}
 	}
 
+	if repo.Private {
+		return &protocol.RepoLookupResult{
+			ErrorNotFound: true,
+		}, nil
+	}
+
 	err = s.Syncer.SyncSubset(ctx, repo)
 	if err != nil {
 		return nil, err
