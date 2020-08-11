@@ -192,7 +192,7 @@ func mockBackendCommits(t *testing.T, revs ...api.CommitID) {
 	t.Cleanup(func() { backend.Mocks.Repos.GetCommit = nil })
 }
 
-func mockRepoComparison(t *testing.T, baseRev, headRev, _ string) {
+func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 	t.Helper()
 
 	spec := fmt.Sprintf("%s...%s", baseRev, headRev)
@@ -213,7 +213,7 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, _ string) {
 		if have, want := args[len(args)-2], spec; have != want {
 			t.Fatalf("gitserver.ExecReader received wrong spec: %q, want %q", have, want)
 		}
-		return ioutil.NopCloser(strings.NewReader(testDiff)), nil
+		return ioutil.NopCloser(strings.NewReader(diff)), nil
 	}
 	t.Cleanup(func() { git.Mocks.ExecReader = nil })
 
