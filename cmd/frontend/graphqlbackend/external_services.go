@@ -172,6 +172,7 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
 type ExternalServicesArgs struct {
 	Namespace *graphql.ID
 	graphqlutil.ConnectionArgs
+	After *string
 }
 
 var errMustBeSiteAdminOrSameUser = errors.New("must be site admin or the namespace is same as the authenticated user")
@@ -201,8 +202,18 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 		return nil, errMustBeSiteAdminOrSameUser
 	}
 
+	var afterID int64
+	if args.After != nil {
+		var err error
+		afterID, err = unmarshalExternalServiceID(graphql.ID(*args.After))
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	opt := db.ExternalServicesListOptions{
 		NamespaceUserID: namespaceUserID,
+		AfterID:         afterID,
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &externalServiceConnectionResolver{opt: opt}, nil
@@ -246,7 +257,13 @@ func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*grap
 	if err != nil {
 		return nil, err
 	}
-	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(externalServices) >= r.opt.Limit), nil
+
+	hasNextPage := r.opt.LimitOffset != nil && len(externalServices) >= r.opt.Limit
+	if hasNextPage {
+		endCursorID := externalServices[len(externalServices)-1].ID
+		return graphqlutil.NextPageCursor(string(marshalExternalServiceID(endCursorID))), nil
+	}
+	return graphqlutil.HasNextPage(false), nil
 }
 
 type computedExternalServiceConnectionResolver struct {
