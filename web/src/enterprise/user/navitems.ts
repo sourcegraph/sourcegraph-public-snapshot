@@ -9,6 +9,6 @@ export const enterpriseUserAreaHeaderNavItems: readonly UserAreaHeaderNavItem[] 
         label: 'Campaigns',
         icon: CampaignsIcon,
         condition: ({ isSourcegraphDotCom }): boolean =>
-            !isSourcegraphDotCom && window.context.experimentalFeatures.automation === 'enabled',
+            !isSourcegraphDotCom && window.context.experimentalFeatures?.automation === 'enabled',
     },
 ]

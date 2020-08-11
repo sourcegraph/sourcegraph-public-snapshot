@@ -11,6 +11,6 @@ export const enterpriseOrgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[] = 
         label: 'Campaigns',
         icon: CampaignsIcon,
         condition: ({ isSourcegraphDotCom }) =>
-            !isSourcegraphDotCom && window.context.experimentalFeatures.automation === 'enabled',
+            !isSourcegraphDotCom && window.context.experimentalFeatures?.automation === 'enabled',
     },
 ]

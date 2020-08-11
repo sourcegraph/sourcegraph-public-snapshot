@@ -17,6 +17,6 @@ export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
         path: '/campaigns',
         render: props => <OrgCampaignListPage {...props} orgID={props.org.id} />,
         condition: ({ isSourcegraphDotCom }) =>
-            !isSourcegraphDotCom && window.context.experimentalFeatures.automation === 'enabled',
+            !isSourcegraphDotCom && window.context.experimentalFeatures?.automation === 'enabled',
     },
 ]
