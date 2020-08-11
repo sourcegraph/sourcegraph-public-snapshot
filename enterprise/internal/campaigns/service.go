@@ -317,7 +317,10 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	}
 
 	// Load all Changesets attached to this Campaign.
-	changesets, _, err := tx.ListChangesets(ctx, ListChangesetsOpts{CampaignID: campaign.ID})
+	changesets, _, err := tx.ListChangesets(ctx, ListChangesetsOpts{
+		Limit:      -1,
+		CampaignID: campaign.ID,
+	})
 	if err != nil {
 		return nil, err
 	}
