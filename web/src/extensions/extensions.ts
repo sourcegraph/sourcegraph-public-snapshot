@@ -1,8 +1,14 @@
 import { RegistryExtensionFieldsForList } from '../graphql-operations'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '../../../shared/src/schema/extensionSchema'
-import { ConfiguredRegistryExtension, toConfiguredRegistryExtension } from '../../../shared/src/extensions/extension'
+import {
+    ConfiguredRegistryExtension,
+    toConfiguredRegistryExtension,
+    isExtensionEnabled,
+} from '../../../shared/src/extensions/extension'
 import { validCategories } from './extension/extension'
-import { isErrorLike } from '../../../shared/src/util/errors'
+import { isErrorLike, ErrorLike } from '../../../shared/src/util/errors'
+import { ExtensionsEnablement } from './ExtensionsList'
+import { Settings } from '../../../shared/src/settings/settings'
 
 export interface CategorizedExtensionRegistry {
     /** Maps categories to ids of extensions  */
@@ -13,8 +19,9 @@ export interface CategorizedExtensionRegistry {
 }
 
 const NO_VALID_CATEGORIES: 'Other'[] = ['Other']
+
 /**
- * Normalizes
+ * Categorizes extensions
  *
  *
  */
@@ -53,4 +60,31 @@ export function categorizeExtensionRegistry(
     }
 
     return categorizedExtensionRegistry
+}
+
+/**
+ *
+ *
+ * @param categories
+ * @param enablement
+ */
+export function applyExtensionsEnablement(
+    categories: CategorizedExtensionRegistry['categories'],
+    filteredCategories: ExtensionCategory[],
+    enablement: ExtensionsEnablement,
+    settings: Settings | ErrorLike | null
+): CategorizedExtensionRegistry['categories'] {
+    if (enablement === 'all') {
+        return categories
+    }
+
+    const enabled = enablement === 'enabled'
+
+    return filteredCategories.reduce((toRender, category) => {
+        toRender[category] = categories[category].filter(
+            extensionID => enabled === isExtensionEnabled(settings, extensionID)
+        )
+        return toRender
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    }, {} as Record<ExtensionCategory, string[]>)
 }

@@ -5,4 +5,15 @@
         grid-auto-rows: minmax(4rem, auto);
         gap: $spacer * 0.75;
     }
+
+    &__category {
+        margin-top: 10px;
+    }
+
+    &__toolbar {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
 }

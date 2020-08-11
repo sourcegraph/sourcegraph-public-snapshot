@@ -14,6 +14,8 @@ describe('ExtensionsQueryInputToolbar', () => {
                         onQueryChange={() => undefined}
                         selectedCategories={[]}
                         setSelectedCategories={() => {}}
+                        enablementFilter="all"
+                        setEnablementFilter={() => {}}
                     />
                 )
                 .toJSON()
@@ -29,6 +31,8 @@ describe('ExtensionsQueryInputToolbar', () => {
                         onQueryChange={() => undefined}
                         selectedCategories={[]}
                         setSelectedCategories={() => {}}
+                        enablementFilter="all"
+                        setEnablementFilter={() => {}}
                     />
                 )
                 .toJSON()

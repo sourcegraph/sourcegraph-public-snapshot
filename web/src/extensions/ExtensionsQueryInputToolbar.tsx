@@ -1,7 +1,7 @@
 import React from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { EXTENSION_CATEGORIES, ExtensionCategory } from '../../../shared/src/schema/extensionSchema'
-import { extensionsQuery } from './extension/extension'
+import { ExtensionsEnablement } from './ExtensionsList'
 
 interface Props {
     /** The current extensions registry list query. */
@@ -15,6 +15,10 @@ interface Props {
 
     /**  */
     setSelectedCategories: React.Dispatch<React.SetStateAction<ExtensionCategory[]>>
+
+    enablementFilter: ExtensionsEnablement
+
+    setEnablementFilter: React.Dispatch<React.SetStateAction<ExtensionsEnablement>>
 }
 
 type DropdownMenuID = 'categories' | 'options'
@@ -32,68 +36,71 @@ export const NewExtensionsQueryInputToolbar: React.FunctionComponent<Props> = ()
 export class ExtensionsQueryInputToolbar extends React.PureComponent<Props, State> {
     public state: State = {}
 
-    private toggleCategories = (): void => this.toggleIsOpen('categories')
     private toggleOptions = (): void => this.toggleIsOpen('options')
     private toggleIsOpen = (menu: DropdownMenuID): void =>
         this.setState(previousState => ({ open: previousState.open === menu ? undefined : menu }))
 
     public render(): JSX.Element | null {
         return (
-            <>
-                {EXTENSION_CATEGORIES.map(category => {
-                    const selected = this.props.selectedCategories.includes(category)
-                    return (
-                        <button
-                            type="button"
-                            className={`btn btn-sm text-nowrap filter-chip ${selected ? 'filter-chip--selected' : ''}`}
-                            key={category}
-                            onClick={() =>
-                                this.props.setSelectedCategories(selectedCategories =>
-                                    selected
-                                        ? selectedCategories.filter(selectedCategory => selectedCategory !== category)
-                                        : [...selectedCategories, category]
-                                )
-                            }
-                        >
-                            {category}
-                        </button>
-                    )
-                })}
-                <ButtonDropdown isOpen={this.state.open === 'categories'} toggle={this.toggleCategories}>
-                    <DropdownToggle caret={true}>Category</DropdownToggle>
-                    <DropdownMenu right={true}>
-                        {EXTENSION_CATEGORIES.map(category => (
-                            <DropdownItem
-                                // eslint-disable-next-line react/jsx-no-bind
-                                onClick={() => this.props.onQueryChange(extensionsQuery({ category }))}
+            <div className="extensions-list__toolbar mb-2">
+                <div>
+                    {EXTENSION_CATEGORIES.map(category => {
+                        const selected = this.props.selectedCategories.includes(category)
+                        return (
+                            <button
+                                type="button"
+                                className={`btn btn-sm text-nowrap filter-chip ${
+                                    selected ? 'filter-chip--selected' : ''
+                                }`}
+                                data-test-extension-category={category}
                                 key={category}
-                                disabled={this.props.query === extensionsQuery({ category })}
+                                onClick={() =>
+                                    this.props.setSelectedCategories(selectedCategories =>
+                                        selected
+                                            ? selectedCategories.filter(
+                                                  selectedCategory => selectedCategory !== category
+                                              )
+                                            : [...selectedCategories, category]
+                                    )
+                                }
                             >
                                 {category}
-                            </DropdownItem>
-                        ))}
-                    </DropdownMenu>
-                </ButtonDropdown>{' '}
-                <ButtonDropdown isOpen={this.state.open === 'options'} toggle={this.toggleOptions}>
+                            </button>
+                        )
+                    })}
+                </div>
+
+                <ButtonDropdown
+                    style={{ backgroundColor: 'transparent' }}
+                    isOpen={this.state.open === 'options'}
+                    toggle={this.toggleOptions}
+                >
                     <DropdownToggle caret={true}>Options</DropdownToggle>
                     <DropdownMenu right={true}>
                         <DropdownItem
                             // eslint-disable-next-line react/jsx-no-bind
-                            onClick={() => this.props.onQueryChange(extensionsQuery({ enabled: true }))}
-                            disabled={this.props.query.includes(extensionsQuery({ enabled: true }))}
+                            onClick={() => this.props.setEnablementFilter('all')}
+                            disabled={this.props.enablementFilter === 'all'}
+                        >
+                            Show all
+                        </DropdownItem>
+                        <DropdownItem
+                            // eslint-disable-next-line react/jsx-no-bind
+                            onClick={() => this.props.setEnablementFilter('enabled')}
+                            disabled={this.props.enablementFilter === 'enabled'}
                         >
                             Show enabled extensions
                         </DropdownItem>
                         <DropdownItem
                             // eslint-disable-next-line react/jsx-no-bind
-                            onClick={() => this.props.onQueryChange(extensionsQuery({ disabled: true }))}
-                            disabled={this.props.query.includes(extensionsQuery({ disabled: true }))}
+                            onClick={() => this.props.setEnablementFilter('disabled')}
+                            disabled={this.props.enablementFilter === 'disabled'}
                         >
                             Show disabled extensions
                         </DropdownItem>
                     </DropdownMenu>
                 </ButtonDropdown>
-            </>
+            </div>
         )
     }
 }

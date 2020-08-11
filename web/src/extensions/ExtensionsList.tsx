@@ -24,7 +24,7 @@ import {
     RegistryExtensionFieldsForList,
     RegistryExtensionsVariables,
 } from '../graphql-operations'
-import { categorizeExtensionRegistry, CategorizedExtensionRegistry } from './extensions'
+import { categorizeExtensionRegistry, CategorizedExtensionRegistry, applyExtensionsEnablement } from './extensions'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '../../../shared/src/schema/extensionSchema'
 import { ShowMoreExtensions } from './ShowMoreExtensions'
 
@@ -38,6 +38,8 @@ const LOADING = 'loading' as const
 const URL_QUERY_PARAM = 'query'
 
 type NewExtensionListData = typeof LOADING | (CategorizedExtensionRegistry & { error: string | null }) | ErrorLike
+
+export type ExtensionsEnablement = 'all' | 'enabled' | 'disabled'
 
 const extensionRegistryQuery = gql`
     query RegistryExtensions($query: String, $prioritizeExtensionIDs: [String!]!) {
@@ -101,16 +103,12 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
     )
     const [query, setQuery] = useState(getQueryFromProps(location))
     const [selectedCategories, setSelectedCategories] = useState<ExtensionCategory[]>([])
+    const [enablementFilter, setEnablementFilter] = useState<ExtensionsEnablement>('all')
     const [showMoreExtensions, setShowMoreExtensions] = useState(false)
 
     /**
-     * Intended behavior:
-     * - ignore repeated equal queries
-     * - debounce TODO
-     *
-     * Notes:
-     * - pass `settingsCascade` instead of making it a dependency
-     *   to prevent creating a new subscription when user toggles extensions
+     * Note: pass `settingsCascade` instead of making it a dependency to prevent creating
+     * new subscriptions when user toggles extensions
      */
     const [nextQueryInput, data] = useEventObservable<
         { query: string; immediate: boolean; settingsCascade: SettingsCascadeOrError<Settings> },
@@ -163,6 +161,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
                         }
 
                         const { error, nodes } = data.extensionRegistry.extensions
+
                         return {
                             error,
                             ...categorizeExtensionRegistry(nodes, configuredExtensionCache),
@@ -173,14 +172,12 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
         )
     )
 
-    /** TODO: comment explaining intent */
     const onQueryChangeEvent = useCallback(
         (event: React.FormEvent<HTMLInputElement>) =>
             nextQueryInput({ query: event.currentTarget.value, immediate: false, settingsCascade }),
         [nextQueryInput, settingsCascade]
     )
 
-    /** TODO: comment explaining intent */
     const onQueryChangeImmediate = useCallback(
         (query: string) => nextQueryInput({ query, immediate: true, settingsCascade }),
         [nextQueryInput, settingsCascade]
@@ -212,14 +209,16 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
                         spellCheck={false}
                     />
                 </Form>
-                <div className="mb-2">
-                    <ExtensionsQueryInputToolbar
-                        query={query}
-                        onQueryChange={onQueryChangeImmediate}
-                        selectedCategories={selectedCategories}
-                        setSelectedCategories={setSelectedCategories}
-                    />
-                </div>
+
+                <ExtensionsQueryInputToolbar
+                    query={query}
+                    onQueryChange={onQueryChangeImmediate}
+                    selectedCategories={selectedCategories}
+                    setSelectedCategories={setSelectedCategories}
+                    enablementFilter={enablementFilter}
+                    setEnablementFilter={setEnablementFilter}
+                />
+
                 {content}
             </div>
         )
@@ -252,16 +251,15 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
     }
 
     /**
-     * Determining categories to render:
-     * - if user opts into seeing language extensions ('See more extensions')
-     *      - if no categories are selected, render all categories
-     *      - if categories are selected, render the selected categories
+     * Apply categories:
+     * - if user opts into seeing language extensions ('See more extensions') and no categories are selected, render all categories
+     * - else if categories are selected, render the selected categories
      * - else, only render languages if selected
      */
     const renderLanguages =
         (selectedCategories.length === 0 && showMoreExtensions) || selectedCategories.includes('Programming languages')
 
-    const filteredCategories = EXTENSION_CATEGORIES.filter(category => {
+    const filteredCategoryIDs = EXTENSION_CATEGORIES.filter(category => {
         if (category === 'Programming languages') {
             return renderLanguages
         }
@@ -269,16 +267,24 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
         return selectedCategories.length === 0 || selectedCategories.includes(category)
     })
 
+    // Apply enablement filter
+    const filteredCategories = applyExtensionsEnablement(
+        categories,
+        filteredCategoryIDs,
+        enablementFilter,
+        settingsCascade.final
+    )
+
     const categorySections: JSX.Element[] = []
 
-    for (const category of filteredCategories) {
+    for (const category of filteredCategoryIDs) {
         // Don't render the section (including header) if no extensions belong to the category
-        if (categories[category].length > 0) {
+        if (filteredCategories[category].length > 0) {
             categorySections.push(
                 <div key={category} className="mt-1">
-                    <h3>category: {category}</h3>
+                    <h3 className="extensions-list__category">category: {category}</h3>
                     <div className="extensions-list__cards mt-1">
-                        {categories[category].map(extensionId => (
+                        {filteredCategories[category].map(extensionId => (
                             <ExtensionCard
                                 key={extensionId}
                                 subject={subject}

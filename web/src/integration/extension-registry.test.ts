@@ -123,64 +123,112 @@ describe('Extension Registry', () => {
     saveScreenshotsUponFailures(() => driver.page)
     afterEach(() => testContext?.dispose())
 
+    function overrideGraphQLExtensionRegistry({ enabled }: { enabled: boolean }): void {
+        testContext.overrideGraphQL({
+            ...commonWebGraphQlResults,
+            ViewerSettings: () => ({
+                viewerSettings: {
+                    subjects: [
+                        {
+                            __typename: 'DefaultSettings',
+                            settingsURL: null,
+                            viewerCanAdminister: false,
+                            latestSettings: {
+                                id: 0,
+                                contents: JSON.stringify({}),
+                            },
+                        },
+                        {
+                            __typename: 'Site',
+                            id: siteGQLID,
+                            siteID,
+                            latestSettings: {
+                                id: 470,
+                                contents: JSON.stringify({}),
+                            },
+                            settingsURL: '/site-admin/global-settings',
+                            viewerCanAdminister: true,
+                        },
+                        {
+                            __typename: 'User',
+                            id: 'TestGQLUserID',
+                            username: 'testusername',
+                            settingsURL: '/user/testusername/settings',
+                            displayName: 'test',
+                            viewerCanAdminister: true,
+                            latestSettings: {
+                                id: 310,
+                                contents: JSON.stringify({ extensions: { 'sqs/word-count': enabled } }),
+                            },
+                        },
+                    ],
+                    final: JSON.stringify({}),
+                },
+            }),
+            RegistryExtensions: () => ({
+                extensionRegistry: {
+                    extensions: {
+                        error: null,
+                        nodes: registryExtensionNodes,
+                    },
+                },
+            }),
+            Extensions: () => ({
+                extensionRegistry: {
+                    extensions: {
+                        nodes: extensionNodes,
+                    },
+                },
+            }),
+            EditSettings: () => ({
+                configurationMutation: {
+                    editConfiguration: {
+                        empty: null,
+                    },
+                },
+            }),
+        })
+    }
+
+    function elementExists(selector: string) {
+        return driver.page.evaluate(selector => document.querySelector(selector) !== null, selector)
+    }
+
+    describe('filtering by category', () => {
+        it('does not show language extensions until user clicks show more', async () => {
+            overrideGraphQLExtensionRegistry({ enabled: false })
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/extensions')
+
+            //  wait for initial set of extensions
+            await driver.page.waitForSelector('[data-test="extension-toggle-sqs/word-count"]')
+            assert.strictEqual(await elementExists('[data-test="extension-toggle-sourcegraph/typescript"]'), false)
+            await driver.findElementWithText('Show more extensions', { action: 'click' })
+            assert.strictEqual(await elementExists('[data-test="extension-toggle-sourcegraph/typescript"]'), true)
+        })
+
+        it('only shows extensions from the selected categories', async () => {
+            overrideGraphQLExtensionRegistry({ enabled: false })
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/extensions')
+
+            //  wait for initial set of extensions
+            await driver.page.waitForSelector('[data-test="extension-toggle-sqs/word-count"]')
+            assert.strictEqual(await elementExists('[data-test="extension-toggle-sqs/word-count"]'), true)
+            assert.strictEqual(await elementExists('[data-test="extension-toggle-sourcegraph/typescript"]'), false)
+            await driver.page.click('[data-test-extension-category="Programming languages"')
+            assert.strictEqual(await elementExists('[data-test="extension-toggle-sqs/word-count"]'), false)
+            assert.strictEqual(await elementExists('[data-test="extension-toggle-sourcegraph/typescript"]'), true)
+        })
+    })
+
     describe('searching', () => {
-        /**
-         * - input query (paste)
-         * - wait for graphql request + assert
-         * -
-         */
-        it('displays relevant extensions', async () => {
-            testContext.overrideGraphQL({
-                ...commonWebGraphQlResults,
-                ViewerSettings: () => ({
-                    viewerSettings: {
-                        subjects: [
-                            {
-                                __typename: 'DefaultSettings',
-                                settingsURL: null,
-                                viewerCanAdminister: false,
-                                latestSettings: {
-                                    id: 0,
-                                    contents: JSON.stringify({}),
-                                },
-                            },
-                            {
-                                __typename: 'Site',
-                                id: siteGQLID,
-                                siteID,
-                                latestSettings: {
-                                    id: 470,
-                                    contents: JSON.stringify({}),
-                                },
-                                settingsURL: '/site-admin/global-settings',
-                                viewerCanAdminister: true,
-                            },
-                        ],
-                        final: JSON.stringify({}),
-                    },
-                }),
-                RegistryExtensions: () => ({
-                    extensionRegistry: {
-                        extensions: {
-                            error: null,
-                            nodes: registryExtensionNodes,
-                        },
-                    },
-                }),
-                Extensions: () => ({
-                    extensionRegistry: {
-                        extensions: {
-                            nodes: extensionNodes,
-                        },
-                    },
-                }),
-            })
+        it('input leads to the correct query', async () => {
+            // testing that text input makes it through the RxJS pipeline
+            overrideGraphQLExtensionRegistry({ enabled: false })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/extensions')
 
             await driver.page.waitForSelector('.test-extension-registry-input')
 
             const { query } = await testContext.waitForGraphQLRequest(async () => {
-                // await driver.page.type('.test-extension-registry-input', 'sqs')
                 await driver.replaceText({
                     selector: '.test-extension-registry-input',
                     newText: 'sqs',
@@ -189,158 +237,13 @@ describe('Extension Registry', () => {
             }, 'RegistryExtensions')
 
             assert.strictEqual(query, 'sqs')
-
-            console.log(query)
-        })
-    })
-
-    describe('filtering by category', () => {
-        it('does not render language extensions until show more is clicked', async () => {
-            testContext.overrideGraphQL({
-                ...commonWebGraphQlResults,
-                ViewerSettings: () => ({
-                    viewerSettings: {
-                        subjects: [
-                            {
-                                __typename: 'DefaultSettings',
-                                settingsURL: null,
-                                viewerCanAdminister: false,
-                                latestSettings: {
-                                    id: 0,
-                                    contents: JSON.stringify({}),
-                                },
-                            },
-                            {
-                                __typename: 'Site',
-                                id: siteGQLID,
-                                siteID,
-                                latestSettings: {
-                                    id: 470,
-                                    contents: JSON.stringify({}),
-                                },
-                                settingsURL: '/site-admin/global-settings',
-                                viewerCanAdminister: true,
-                            },
-                        ],
-                        final: JSON.stringify({}),
-                    },
-                }),
-                RegistryExtensions: () => ({
-                    extensionRegistry: {
-                        extensions: {
-                            error: null,
-                            nodes: registryExtensionNodes,
-                        },
-                    },
-                }),
-                Extensions: () => ({
-                    extensionRegistry: {
-                        extensions: {
-                            nodes: extensionNodes,
-                        },
-                    },
-                }),
-            })
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/extensions')
-
-            function elementExists(selector: string) {
-                return driver.page.evaluate(selector => document.querySelector(selector) !== undefined, selector)
-            }
-
-            await driver.page.waitForSelector('[data-test="extension-toggle-sqs/word-count"]')
-            assert.strictEqual(
-                await driver.page.evaluate(
-                    () => document.querySelector('[data-test="extension-toggle-sqs/word-count"]') !== undefined
-                ),
-                true
-            )
-            assert.strictEqual(
-                await driver.page.evaluate(
-                    () => document.querySelector('[data-test="extension-toggle-sourcegraph/typescript"]') !== undefined
-                ),
-                false
-            )
-
-            await driver.findElementWithText('Show more extensions', { action: 'click' })
-            // const button = await driver.page.waitForSelector('')
-
-            // category filtering is synchronous (for now), so no need to wait
-            assert.strictEqual(await elementExists('[data-test="extension-toggle-sqs/word-count"]'), true)
-            assert.strictEqual(await elementExists('[data-test="extension-toggle-sourcegraph/typescript"]'), true)
         })
     })
 
     describe('toggling', () => {
-        function overrideGraphQLForToggle({ enabled }: { enabled: boolean }): void {
-            testContext.overrideGraphQL({
-                ...commonWebGraphQlResults,
-                ViewerSettings: () => ({
-                    viewerSettings: {
-                        subjects: [
-                            {
-                                __typename: 'DefaultSettings',
-                                settingsURL: null,
-                                viewerCanAdminister: false,
-                                latestSettings: {
-                                    id: 0,
-                                    contents: JSON.stringify({}),
-                                },
-                            },
-                            {
-                                __typename: 'Site',
-                                id: siteGQLID,
-                                siteID,
-                                latestSettings: {
-                                    id: 470,
-                                    contents: JSON.stringify({}),
-                                },
-                                settingsURL: '/site-admin/global-settings',
-                                viewerCanAdminister: true,
-                            },
-                            {
-                                __typename: 'User',
-                                id: 'TestGQLUserID',
-                                username: 'testusername',
-                                settingsURL: '/user/testusername/settings',
-                                displayName: 'test',
-                                viewerCanAdminister: true,
-                                latestSettings: {
-                                    id: 310,
-                                    contents: JSON.stringify({ extensions: { 'sqs/word-count': enabled } }),
-                                },
-                            },
-                        ],
-                        final: JSON.stringify({}),
-                    },
-                }),
-                RegistryExtensions: () => ({
-                    extensionRegistry: {
-                        extensions: {
-                            error: null,
-                            nodes: registryExtensionNodes,
-                        },
-                    },
-                }),
-                Extensions: () => ({
-                    extensionRegistry: {
-                        extensions: {
-                            nodes: extensionNodes,
-                        },
-                    },
-                }),
-                EditSettings: () => ({
-                    configurationMutation: {
-                        editConfiguration: {
-                            empty: null,
-                        },
-                    },
-                }),
-            })
-        }
-
         it('a disabled extension enables it', async () => {
             const enabled = false
-            overrideGraphQLForToggle({ enabled })
+            overrideGraphQLExtensionRegistry({ enabled })
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/extensions')
 
@@ -358,7 +261,7 @@ describe('Extension Registry', () => {
 
         it('an enabled extension disables it ', async () => {
             const enabled = true
-            overrideGraphQLForToggle({ enabled })
+            overrideGraphQLExtensionRegistry({ enabled })
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/extensions')
 

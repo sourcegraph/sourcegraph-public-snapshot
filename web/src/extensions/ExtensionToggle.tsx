@@ -9,7 +9,7 @@ import { isExtensionAdded } from './extension/extension'
 import { useEventObservable } from '../../../shared/src/util/useObservable'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
-    /** The extension that this element is for. */
+    /** The id of the extension that this element is for. */
     extensionID: string
     enabled: boolean
     className?: string
