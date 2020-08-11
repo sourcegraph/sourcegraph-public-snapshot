@@ -19,13 +19,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
-	tracer.Init()
+	// TODO(efritz) - disabled as it requires internal API access
+	// tracer.Init()
 
 	var (
 		frontendURL              = mustGet(rawFrontendURL, "PRECISE_CODE_INTEL_EXTERNAL_URL")
