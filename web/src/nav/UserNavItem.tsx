@@ -81,6 +81,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                             >
                                 <option value={ThemePreference.Light}>Light</option>
                                 <option value={ThemePreference.Dark}>Dark</option>
+                                <option value={ThemePreference.HighContrastBlack}>High-contrast</option>
                                 <option value={ThemePreference.System}>System</option>
                             </select>
                         </div>
@@ -155,8 +156,8 @@ export class UserNavItem extends React.PureComponent<Props, State> {
     }
 
     private onThemeCycle = (): void => {
-        this.props.onThemePreferenceChange(
-            this.props.themePreference === ThemePreference.Dark ? ThemePreference.Light : ThemePreference.Dark
-        )
+        const allThemes = Object.values(ThemePreference)
+        const index = allThemes.indexOf(this.props.themePreference)
+        this.props.onThemePreferenceChange(allThemes[(index + 1) % allThemes.length])
     }
 }

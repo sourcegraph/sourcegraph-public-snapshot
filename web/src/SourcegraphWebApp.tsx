@@ -263,11 +263,12 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         }
     }
 
-    /** Returns whether Sourcegraph should be in light theme */
-    private isLightTheme(): boolean {
-        return this.state.themePreference === 'system'
-            ? this.state.systemIsLightTheme
-            : this.state.themePreference === 'light'
+    /** Returns the effective Sourcegraph color theme. */
+    private effectiveTheme(): ThemePreference.Light | ThemePreference.Dark | ThemePreference.HighContrastBlack {
+        if (this.state.themePreference === 'system') {
+            return this.state.systemIsLightTheme ? ThemePreference.Light : ThemePreference.Dark
+        }
+        return this.state.themePreference
     }
 
     public componentDidMount(): void {
@@ -367,8 +368,11 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
     public componentDidUpdate(): void {
         localStorage.setItem(LIGHT_THEME_LOCAL_STORAGE_KEY, this.state.themePreference)
-        document.body.classList.toggle('theme-light', this.isLightTheme())
-        document.body.classList.toggle('theme-dark', !this.isLightTheme())
+
+        const effectiveTheme = this.effectiveTheme()
+        for (const themeName of Object.values(ThemePreference)) {
+            document.body.classList.toggle(`theme-${themeName}`, effectiveTheme === themeName)
+        }
     }
 
     private toggleSearchMode = (event: React.MouseEvent<HTMLAnchorElement>): void => {
@@ -441,7 +445,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     settingsCascade={this.state.settingsCascade}
                                     showCampaigns={this.props.showCampaigns}
                                     // Theme
-                                    isLightTheme={this.isLightTheme()}
+                                    isLightTheme={this.effectiveTheme() === ThemePreference.Light}
                                     themePreference={this.state.themePreference}
                                     onThemePreferenceChange={this.onThemePreferenceChange}
                                     // Search query

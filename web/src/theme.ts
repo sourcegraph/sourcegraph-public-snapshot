@@ -5,6 +5,7 @@
 export enum ThemePreference {
     Light = 'light',
     Dark = 'dark',
+    HighContrastBlack = 'hc-black',
     System = 'system',
 }
 

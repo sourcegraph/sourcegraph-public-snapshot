@@ -15,6 +15,13 @@
     }
 }
 
+.theme-hc-black {
+    --dropdown-bg: black;
+    --dropdown-border-color: var(--color-border);
+    --dropdown-link-hover-bg: var(--secondary);
+    --dropdown-header-color: white;
+}
+
 .theme-light {
     --dropdown-bg: #ffffff;
     --dropdown-border-color: #{$color-light-border};

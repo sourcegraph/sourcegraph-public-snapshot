@@ -133,3 +133,18 @@ $body-bg-color-dark: #04070e;
     --link-active-color: #{$gray-02};
     --link-hover-color: #{$white};
 }
+.theme-hc-black {
+    --secondary: #ccc;
+    --color-border: yellow;
+    --body-color: white;
+    --body-bg: black;
+    --text-muted: #ccc;
+    --link-color: #ffffff;
+    --link-active-color: yellow;
+    --link-hover-color: yellow;
+
+    a,
+    .btn-link {
+        text-decoration: underline;
+    }
+}
