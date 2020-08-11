@@ -56,6 +56,8 @@ type StoreListReposArgs struct {
 	UseOr bool
 }
 
+const DefaultListExternalServicesPerPage = 500
+
 // StoreListExternalServicesArgs is a query arguments type used by
 // the ListExternalServices method of Store implementations.
 //
@@ -67,6 +69,9 @@ type StoreListExternalServicesArgs struct {
 	RepoIDs []api.RepoID
 	// Kinds of external services to list. When zero-valued, this is omitted from the predicate set.
 	Kinds []string
+	// PerPage defines how many external services to fetch per page. If zero, DefaultListExternalServicePageSize
+	// will be used
+	PerPage int64
 }
 
 // ErrNoResults is returned by Store method invocations that yield no result set.
@@ -145,7 +150,10 @@ func (s *DBStore) Done(errs ...*error) {
 
 // ListExternalServices lists all stored external services matching the given args.
 func (s DBStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) (svcs []*ExternalService, _ error) {
-	return svcs, s.paginate(ctx, 0, 500, listExternalServicesQuery(args),
+	if args.PerPage <= 0 {
+		args.PerPage = DefaultListExternalServicesPerPage
+	}
+	return svcs, s.paginate(ctx, 0, args.PerPage, listExternalServicesQuery(args),
 		func(sc scanner) (last, count int64, err error) {
 			var svc ExternalService
 			err = scanExternalService(&svc, sc)
@@ -486,15 +494,15 @@ SELECT COUNT(*) FROM repo WHERE deleted_at IS NULL AND NOT cloned
 // parameters
 type paginatedQuery func(cursor, limit int64) *sqlf.Query
 
-func (s DBStore) paginate(ctx context.Context, limit, page int64, q paginatedQuery, scan scanFunc) (err error) {
+func (s DBStore) paginate(ctx context.Context, limit, perPage int64, q paginatedQuery, scan scanFunc) (err error) {
 	const defaultPerPageLimit = 10000
 
-	if page <= 0 {
-		page = defaultPerPageLimit
+	if perPage <= 0 {
+		perPage = defaultPerPageLimit
 	}
 
-	if limit > 0 && page > limit {
-		page = limit
+	if limit > 0 && perPage > limit {
+		perPage = limit
 	}
 
 	var (
@@ -505,10 +513,10 @@ func (s DBStore) paginate(ctx context.Context, limit, page int64, q paginatedQue
 
 	for cursor < next && err == nil && (limit <= 0 || remaining > 0) {
 		cursor = next
-		next, count, err = s.list(ctx, q(cursor, page), scan)
+		next, count, err = s.list(ctx, q(cursor, perPage), scan)
 		if limit > 0 {
-			if remaining -= count; page > remaining {
-				page = remaining
+			if remaining -= count; perPage > remaining {
+				perPage = remaining
 			}
 		}
 	}
