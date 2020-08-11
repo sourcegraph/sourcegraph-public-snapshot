@@ -75,11 +75,10 @@ func TestCampaignSpecResolver(t *testing.T) {
 	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil)
 	if err != nil {
 		t.Fatal(err)
-
 	}
 
 	apiID := string(marshalCampaignSpecRandID(spec.RandID))
-	userApiID := string(graphqlbackend.MarshalUserID(userID))
+	userAPIID := string(graphqlbackend.MarshalUserID(userID))
 
 	input := map[string]interface{}{"campaignSpec": apiID}
 	var response struct{ Node apitest.CampaignSpec }
@@ -99,8 +98,8 @@ func TestCampaignSpecResolver(t *testing.T) {
 		ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
 
 		ApplyURL:            fmt.Sprintf("/users/%s/campaigns/apply?spec=%s", username, apiID),
-		Namespace:           apitest.UserOrg{ID: userApiID, DatabaseID: userID},
-		Creator:             apitest.User{ID: userApiID, DatabaseID: userID},
+		Namespace:           apitest.UserOrg{ID: userAPIID, DatabaseID: userID},
+		Creator:             apitest.User{ID: userAPIID, DatabaseID: userID},
 		ViewerCanAdminister: true,
 
 		CreatedAt: graphqlbackend.DateTime{Time: spec.CreatedAt.Truncate(time.Second)},

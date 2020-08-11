@@ -71,7 +71,6 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil)
 	if err != nil {
 		t.Fatal(err)
-
 	}
 
 	apiID := string(marshalCampaignSpecRandID(campaignSpec.RandID))

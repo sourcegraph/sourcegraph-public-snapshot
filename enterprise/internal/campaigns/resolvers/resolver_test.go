@@ -106,15 +106,14 @@ func TestCreateCampaignSpec(t *testing.T) {
 	s, err := graphqlbackend.NewSchema(r, nil, nil)
 	if err != nil {
 		t.Fatal(err)
-
 	}
 
-	userApiID := string(graphqlbackend.MarshalUserID(userID))
+	userAPIID := string(graphqlbackend.MarshalUserID(userID))
 	changesetSpecID := marshalChangesetSpecRandID(changesetSpec.RandID)
 	rawSpec := ct.TestRawCampaignSpec
 
 	input := map[string]interface{}{
-		"namespace":      userApiID,
+		"namespace":      userAPIID,
 		"campaignSpec":   rawSpec,
 		"changesetSpecs": []graphql.ID{changesetSpecID},
 	}
@@ -138,8 +137,8 @@ func TestCreateCampaignSpec(t *testing.T) {
 		OriginalInput: rawSpec,
 		ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
 		ApplyURL:      fmt.Sprintf("/users/%s/campaigns/apply?spec=%s", username, have.ID),
-		Namespace:     apitest.UserOrg{ID: userApiID, DatabaseID: userID, SiteAdmin: true},
-		Creator:       apitest.User{ID: userApiID, DatabaseID: userID, SiteAdmin: true},
+		Namespace:     apitest.UserOrg{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
+		Creator:       apitest.User{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
 		ChangesetSpecs: apitest.ChangesetSpecConnection{
 			Nodes: []apitest.ChangesetSpec{
 				{
@@ -210,7 +209,6 @@ func TestCreateChangesetSpec(t *testing.T) {
 	s, err := graphqlbackend.NewSchema(r, nil, nil)
 	if err != nil {
 		t.Fatal(err)
-
 	}
 
 	input := map[string]interface{}{
@@ -283,7 +281,7 @@ func TestApplyCampaign(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repoApiID := graphqlbackend.MarshalRepositoryID(repo.ID)
+	repoAPIID := graphqlbackend.MarshalRepositoryID(repo.ID)
 
 	campaignSpec := &campaigns.CampaignSpec{
 		RawSpec: ct.TestRawCampaignSpec,
@@ -310,7 +308,7 @@ func TestApplyCampaign(t *testing.T) {
 	changesetSpec := &campaigns.ChangesetSpec{
 		CampaignSpecID: campaignSpec.ID,
 		Spec: &campaigns.ChangesetSpecDescription{
-			BaseRepository: repoApiID,
+			BaseRepository: repoAPIID,
 		},
 		RepoID: repo.ID,
 		UserID: userID,
@@ -325,7 +323,7 @@ func TestApplyCampaign(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	userApiID := string(graphqlbackend.MarshalUserID(userID))
+	userAPIID := string(graphqlbackend.MarshalUserID(userID))
 	input := map[string]interface{}{
 		"campaignSpec": string(marshalCampaignSpecRandID(campaignSpec.RandID)),
 	}
@@ -340,17 +338,17 @@ func TestApplyCampaign(t *testing.T) {
 		Name:        campaignSpec.Spec.Name,
 		Description: campaignSpec.Spec.Description,
 		Namespace: apitest.UserOrg{
-			ID:         userApiID,
+			ID:         userAPIID,
 			DatabaseID: userID,
 			SiteAdmin:  true,
 		},
 		InitialApplier: apitest.User{
-			ID:         userApiID,
+			ID:         userAPIID,
 			DatabaseID: userID,
 			SiteAdmin:  true,
 		},
 		LastApplier: apitest.User{
-			ID:         userApiID,
+			ID:         userAPIID,
 			DatabaseID: userID,
 			SiteAdmin:  true,
 		},
@@ -533,9 +531,9 @@ func TestMoveCampaign(t *testing.T) {
 	}
 
 	// Move to a new name
-	campaignApiID := string(campaigns.MarshalCampaignID(campaign.ID))
+	campaignAPIID := string(campaigns.MarshalCampaignID(campaign.ID))
 	input := map[string]interface{}{
-		"campaign": campaignApiID,
+		"campaign": campaignAPIID,
 		"newName":  "new-name",
 	}
 
@@ -548,25 +546,25 @@ func TestMoveCampaign(t *testing.T) {
 		t.Fatalf("unexpected name (-want +got):\n%s", diff)
 	}
 
-	wantURL := fmt.Sprintf("/users/%s/campaigns/%s", username, campaignApiID)
+	wantURL := fmt.Sprintf("/users/%s/campaigns/%s", username, campaignAPIID)
 	if diff := cmp.Diff(wantURL, haveCampaign.URL); diff != "" {
 		t.Fatalf("unexpected URL (-want +got):\n%s", diff)
 	}
 
 	// Move to a new namespace
-	orgApiID := graphqlbackend.MarshalOrgID(org.ID)
+	orgAPIID := graphqlbackend.MarshalOrgID(org.ID)
 	input = map[string]interface{}{
 		"campaign":     string(campaigns.MarshalCampaignID(campaign.ID)),
-		"newNamespace": orgApiID,
+		"newNamespace": orgAPIID,
 	}
 
 	apitest.MustExec(actorCtx, t, s, input, &response, mutationMoveCampaign)
 
 	haveCampaign = response.MoveCampaign
-	if diff := cmp.Diff(string(orgApiID), haveCampaign.Namespace.ID); diff != "" {
+	if diff := cmp.Diff(string(orgAPIID), haveCampaign.Namespace.ID); diff != "" {
 		t.Fatalf("unexpected namespace (-want +got):\n%s", diff)
 	}
-	wantURL = fmt.Sprintf("/organizations/%s/campaigns/%s", org.Name, campaignApiID)
+	wantURL = fmt.Sprintf("/organizations/%s/campaigns/%s", org.Name, campaignAPIID)
 	if diff := cmp.Diff(wantURL, haveCampaign.URL); diff != "" {
 		t.Fatalf("unexpected URL (-want +got):\n%s", diff)
 	}
@@ -764,14 +762,14 @@ func TestCampaignsListing(t *testing.T) {
 		campaign := &campaigns.Campaign{NamespaceUserID: userID}
 		createCampaign(t, campaign)
 
-		userApiID := string(graphqlbackend.MarshalUserID(userID))
-		input := map[string]interface{}{"node": userApiID}
+		userAPIID := string(graphqlbackend.MarshalUserID(userID))
+		input := map[string]interface{}{"node": userAPIID}
 
 		var response struct{ Node apitest.User }
 		apitest.MustExec(actorCtx, t, s, input, &response, listNamespacesCampaigns)
 
 		want := apitest.User{
-			ID: userApiID,
+			ID: userAPIID,
 			Campaigns: apitest.CampaignConnection{
 				TotalCount: 1,
 				Nodes: []apitest.Campaign{
@@ -789,14 +787,14 @@ func TestCampaignsListing(t *testing.T) {
 		campaign := &campaigns.Campaign{NamespaceOrgID: org.ID}
 		createCampaign(t, campaign)
 
-		orgApiID := string(graphqlbackend.MarshalOrgID(org.ID))
-		input := map[string]interface{}{"node": orgApiID}
+		orgAPIID := string(graphqlbackend.MarshalOrgID(org.ID))
+		input := map[string]interface{}{"node": orgAPIID}
 
 		var response struct{ Node apitest.Org }
 		apitest.MustExec(actorCtx, t, s, input, &response, listNamespacesCampaigns)
 
 		want := apitest.Org{
-			ID: orgApiID,
+			ID: orgAPIID,
 			Campaigns: apitest.CampaignConnection{
 				TotalCount: 1,
 				Nodes: []apitest.Campaign{
