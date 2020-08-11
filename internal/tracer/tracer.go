@@ -199,14 +199,14 @@ func initTracer(serviceName string) {
 		}
 
 		globalTracer.set(tracer, closer, opts.Debug)
-		trace.SpanURL = urlFunc
+		trace.SetSpanURLFunc(urlFunc)
 	})
 }
 
 func newTracer(opts *jaegerOpts) (opentracing.Tracer, func(span opentracing.Span) string, io.Closer, error) {
 	if !opts.Enabled {
 		log15.Info("opentracing: Jaeger disabled")
-		return opentracing.NoopTracer{}, trace.NoopSpanURL, nil, nil
+		return opentracing.NoopTracer{}, nil, nil, nil
 	}
 
 	log15.Info("opentracing: Jaeger enabled")
