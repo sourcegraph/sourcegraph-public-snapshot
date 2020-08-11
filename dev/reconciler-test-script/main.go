@@ -282,10 +282,13 @@ func deleteEverything() {
 		log.Fatalf("failed to initialize db store: %v", err)
 	}
 
-	if _, err := db.ExecContext(ctx, "DELETE FROM campaigns;"); err != nil {
+	if _, err := db.ExecContext(ctx, "DELETE FROM changeset_events;"); err != nil {
 		log.Fatal(err)
 	}
 	if _, err := db.ExecContext(ctx, "DELETE FROM changesets;"); err != nil {
+		log.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx, "DELETE FROM campaigns;"); err != nil {
 		log.Fatal(err)
 	}
 	if _, err := db.ExecContext(ctx, "DELETE FROM changeset_specs;"); err != nil {
