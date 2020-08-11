@@ -175,6 +175,6 @@ A query with `type:path` restricts terms to matching filenames only (not file co
 Example: [`type:path repo:/docker/ registry`](https://sourcegraph.com/search?q=type:path+repo:/docker/+registry)
 
 
-## Limitations of content search
+## Negated content search
 
 To exclude code or text matches with `not pattern` or `-content:pattern`, set the `migrateParser: true` option in global settings. Negated content search is currently supported for literal and regexp queries on indexed repositories. Negated content search on unindexed repositories is not yet supported.
