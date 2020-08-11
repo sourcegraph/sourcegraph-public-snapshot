@@ -87,7 +87,8 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                         <div className="d-flex align-items-center mt-3 mb-2">
                             {props.authenticatedUser && (
                                 <ExtensionToggle
-                                    extension={props.extension}
+                                    enabled={isExtensionEnabled(props.settingsCascade.final, props.extension.id)}
+                                    extensionID={props.extension.id}
                                     settingsCascade={props.settingsCascade}
                                     platformContext={props.platformContext}
                                     className="mr-2"

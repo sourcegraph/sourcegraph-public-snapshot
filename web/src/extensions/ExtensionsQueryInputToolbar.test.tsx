@@ -7,7 +7,16 @@ import { ExtensionsQueryInputToolbar } from './ExtensionsQueryInputToolbar'
 describe('ExtensionsQueryInputToolbar', () => {
     test('renders', () => {
         expect(
-            renderer.create(<ExtensionsQueryInputToolbar query="q" onQueryChange={() => undefined} />).toJSON()
+            renderer
+                .create(
+                    <ExtensionsQueryInputToolbar
+                        query="q"
+                        onQueryChange={() => undefined}
+                        selectedCategories={[]}
+                        setSelectedCategories={() => {}}
+                    />
+                )
+                .toJSON()
         ).toMatchSnapshot()
     })
 
@@ -18,6 +27,8 @@ describe('ExtensionsQueryInputToolbar', () => {
                     <ExtensionsQueryInputToolbar
                         query={extensionsQuery({ category: EXTENSION_CATEGORIES[0] })}
                         onQueryChange={() => undefined}
+                        selectedCategories={[]}
+                        setSelectedCategories={() => {}}
                     />
                 )
                 .toJSON()

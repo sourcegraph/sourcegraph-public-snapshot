@@ -47,14 +47,13 @@ export class ExtensionsQueryInputToolbar extends React.PureComponent<Props, Stat
                             type="button"
                             className={`btn btn-sm text-nowrap filter-chip ${selected ? 'filter-chip--selected' : ''}`}
                             key={category}
-                            onClick={() => {
-                                console.log('clicced')
+                            onClick={() =>
                                 this.props.setSelectedCategories(selectedCategories =>
                                     selected
                                         ? selectedCategories.filter(selectedCategory => selectedCategory !== category)
                                         : [...selectedCategories, category]
                                 )
-                            }}
+                            }
                         >
                             {category}
                         </button>

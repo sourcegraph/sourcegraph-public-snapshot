@@ -1,12 +1,17 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import React, { useEffect, useState, useCallback, useRef } from 'react'
-import { concat, Observable, of, timer } from 'rxjs'
+import { concat, of, timer } from 'rxjs'
 import { debounce, delay, map, switchMap, takeUntil, tap, distinctUntilKeyChanged } from 'rxjs/operators'
 import { ConfiguredRegistryExtension, isExtensionEnabled } from '../../../shared/src/extensions/extension'
 import { gql } from '../../../shared/src/graphql/graphql'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
-import { Settings, SettingsCascadeProps, SettingsSubject } from '../../../shared/src/settings/settings'
+import {
+    Settings,
+    SettingsCascadeProps,
+    SettingsSubject,
+    SettingsCascadeOrError,
+} from '../../../shared/src/settings/settings'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { Form } from '../components/Form'
 import { extensionsQuery, isExtensionAdded } from './extension/extension'
@@ -102,10 +107,17 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
      * Intended behavior:
      * - ignore repeated equal queries
      * - debounce TODO
+     *
+     * Notes:
+     * - pass `settingsCascade` instead of making it a dependency
+     *   to prevent creating a new subscription when user toggles extensions
      */
-    const [nextQueryInput, data] = useEventObservable<{ query: string; immediate: boolean }, NewExtensionListData>(
+    const [nextQueryInput, data] = useEventObservable<
+        { query: string; immediate: boolean; settingsCascade: SettingsCascadeOrError<Settings> },
+        NewExtensionListData
+    >(
         useCallback(
-            (newQueries: Observable<{ query: string; immediate: boolean }>) =>
+            newQueries =>
                 newQueries.pipe(
                     distinctUntilKeyChanged('query'),
                     tap(({ query }) => {
@@ -118,7 +130,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
                     }),
                     debounce(({ immediate }) => timer(immediate ? 0 : 50)),
                     distinctUntilKeyChanged('query'),
-                    switchMap(({ query, immediate }) => {
+                    switchMap(({ query, immediate, settingsCascade }) => {
                         let viewerConfiguredExtensions: string[] = []
                         if (!isErrorLike(settingsCascade.final)) {
                             if (settingsCascade.final?.extensions) {
@@ -157,21 +169,22 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
                         }
                     })
                 ),
-            [platformContext, history, settingsCascade, location.hash, configuredExtensionCache]
+            [platformContext, history, location.hash, configuredExtensionCache]
         )
     )
 
     /** TODO: comment explaining intent */
     const onQueryChangeEvent = useCallback(
         (event: React.FormEvent<HTMLInputElement>) =>
-            nextQueryInput({ query: event.currentTarget.value, immediate: false }),
-        [nextQueryInput]
+            nextQueryInput({ query: event.currentTarget.value, immediate: false, settingsCascade }),
+        [nextQueryInput, settingsCascade]
     )
 
     /** TODO: comment explaining intent */
-    const onQueryChangeImmediate = useCallback((query: string) => nextQueryInput({ query, immediate: true }), [
-        nextQueryInput,
-    ])
+    const onQueryChangeImmediate = useCallback(
+        (query: string) => nextQueryInput({ query, immediate: true, settingsCascade }),
+        [nextQueryInput, settingsCascade]
+    )
 
     useEffect(() => {
         // kicks off initial request
@@ -186,7 +199,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
             <div className="extensions-list">
                 <Form onSubmit={preventDefault} className="form-inline">
                     <input
-                        className="form-control flex-grow-1 mr-1 mb-2"
+                        className="form-control flex-grow-1 mr-1 mb-2 test-extension-registry-input"
                         type="search"
                         placeholder="Search extensions..."
                         name="query"
