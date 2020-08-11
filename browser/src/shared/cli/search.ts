@@ -1,11 +1,17 @@
-import { take } from 'rxjs/operators'
+import { take, map, filter, catchError, timeout } from 'rxjs/operators'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { createSuggestionFetcher } from '../backend/search'
-import { observeSourcegraphURL } from '../util/context'
+import { observeSourcegraphURL, getAssetsURL, DEFAULT_SOURCEGRAPH_URL } from '../util/context'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
+import { createPlatformContext, BrowserPlatformContext } from '../platform/context'
+import { from } from 'rxjs'
+import { isDefined, isNot } from '../../../../shared/src/util/types'
+import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { Settings } from '../../../../shared/src/settings/settings'
 
 const isURL = /^https?:\/\//
+const IS_EXTENSION = true // This feature is only supported in browser extension
 
 export class SearchCommand {
     public description = 'Enter a search query'
@@ -45,17 +51,20 @@ export class SearchCommand {
         })
 
     public action = async (query: string, disposition?: string): Promise<void> => {
-        const sourcegraphURL = await observeSourcegraphURL(true) // isExtension=true, this feature is only supported in the browser extension
-            .pipe(take(1))
-            .toPromise()
+        const sourcegraphURL = await observeSourcegraphURL(IS_EXTENSION).pipe(take(1)).toPromise()
+
+        const platformContext = createPlatformContext(
+            { urlToFile: undefined, getContext: undefined },
+            { sourcegraphURL, assetsURL: getAssetsURL(DEFAULT_SOURCEGRAPH_URL) },
+            IS_EXTENSION
+        )
+
+        const patternType = await this.getDefaultSearchPatternType(platformContext)
+
         const props = {
             url: isURL.test(query)
                 ? query
-                : `${sourcegraphURL}/search?${buildSearchURLQuery(
-                      query,
-                      SearchPatternType.literal,
-                      false
-                  )}&utm_source=omnibox`,
+                : `${sourcegraphURL}/search?${buildSearchURLQuery(query, patternType, false)}&utm_source=omnibox`,
         }
 
         switch (disposition) {
@@ -70,5 +79,21 @@ export class SearchCommand {
                 await browser.tabs.update(props)
                 break
         }
+    }
+
+    private async getDefaultSearchPatternType(platformContext: BrowserPlatformContext): Promise<SearchPatternType> {
+        const cascadePatternTypeValue = (await from(platformContext.settings)
+            .pipe(
+                map(({ final }) => final),
+                filter(isDefined),
+                filter(isNot<ErrorLike | Settings, ErrorLike>(isErrorLike)),
+                map(settings => settings['search.defaultPatternType'] as SearchPatternType),
+                timeout(1000),
+                catchError(() => SearchPatternType.literal)
+            )
+            .toPromise()) as SearchPatternType
+
+        const defaultPatternType = cascadePatternTypeValue || SearchPatternType.literal
+        return defaultPatternType
     }
 }
