@@ -427,6 +427,7 @@ func (r *changesetRewirer) loadAssociations() (err error) {
 
 	// Load all Changesets attached to this Campaign.
 	r.changesets, _, err = r.tx.ListChangesets(r.ctx, ListChangesetsOpts{
+		Limit:      -1,
 		CampaignID: r.campaign.ID,
 	})
 	if err != nil {
