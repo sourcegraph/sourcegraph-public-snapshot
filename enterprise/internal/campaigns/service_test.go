@@ -333,6 +333,13 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CloseOpenChangesets", func(t *testing.T) {
+		// After close, the changesets will be synced, so we need to mock that operation.
+		state := ct.MockChangesetSyncState(&protocol.RepoInfo{
+			Name: api.RepoName(rs[0].Name),
+			VCS:  protocol.VCSInfo{URL: rs[0].URI},
+		})
+		defer state.Unmock()
+
 		changeset1 := testChangeset(rs[0].ID, 0, campaigns.ChangesetExternalStateOpen)
 		if err := store.CreateChangeset(ctx, changeset1); err != nil {
 			t.Fatal(err)
@@ -350,13 +357,6 @@ func TestService(t *testing.T) {
 
 		svc := NewService(store, nil)
 		svc.sourcer = sourcer
-
-		// After close, the changesets will be synced, so we need to mock that operation.
-		state := ct.MockChangesetSyncState(&protocol.RepoInfo{
-			Name: api.RepoName(rs[0].Name),
-			VCS:  protocol.VCSInfo{URL: rs[0].URI},
-		})
-		defer state.Unmock()
 
 		// Try to close open changesets
 		err := svc.CloseOpenChangesets(ctx, []*campaigns.Changeset{changeset1, changeset2})
