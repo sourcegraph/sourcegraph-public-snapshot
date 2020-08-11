@@ -77,7 +77,11 @@ if [ ${#rebuilt[@]} -gt 0 ]; then
   echo >&2 "Rebuilt: ${rebuilt[*]}"
 
   if [ -n "$GOREMAN" ]; then
-    $GOREMAN run restart "${rebuilt[@]}"
+    for cmd in "${rebuilt[@]}"; do
+      if $GOREMAN run list | grep -Ee "^${cmd}$"; then
+        $GOREMAN run restart "${cmd}"
+      fi
+    done
   fi
 
 else
