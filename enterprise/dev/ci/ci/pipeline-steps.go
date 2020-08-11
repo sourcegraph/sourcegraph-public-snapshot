@@ -34,6 +34,7 @@ var allDockerImages = []string{
 	"syntax-highlighter",
 	"jaeger-agent",
 	"jaeger-all-in-one",
+	"ignite-ubuntu",
 }
 
 // Verifies the docs formatting and builds the `docsite` command.
