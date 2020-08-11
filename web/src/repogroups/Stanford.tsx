@@ -9,7 +9,7 @@ export const stanford: RepogroupMetadata = {
     description: 'Explore open-source code from Stanford students, faculty, research groups, and clubs.',
     examples: [
         {
-            title: 'Explore Stanford machine learning projects.',
+            title: 'Find all mentions of "machine learning" in Stanford projects.',
             exampleQuery: <>machine learning</>,
             patternType: SearchPatternType.literal,
             rawQuery: 'machine learning',
