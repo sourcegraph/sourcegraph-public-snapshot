@@ -34,10 +34,10 @@ var sharedFrontendInternalAPIErrorResponses sharedObservable = func(containerNam
 	return Observable{
 		Name:            "frontend_internal_api_error_responses",
 		Description:     "frontend-internal API error responses every 5m by route",
-		Query:           fmt.Sprintf(`sum by (category)(increase(src_frontend_internal_request_duration_seconds_count{job="%s",code!~"2.."}[5m]))`, containerName),
+		Query:           fmt.Sprintf(`sum by (category)(increase(src_frontend_internal_request_duration_seconds_count{job="%[1]s",code!~"2.."}[5m])) / ignoring(category) group_left sum(increase(src_frontend_internal_request_duration_seconds_count{job="%[1]s"}[5m]))`, containerName),
 		DataMayNotExist: true,
-		Warning:         Alert{GreaterOrEqual: 5},
-		PanelOptions:    PanelOptions().LegendFormat("{{category}}"),
+		Warning:         Alert{GreaterOrEqual: 2, For: 5 * time.Minute},
+		PanelOptions:    PanelOptions().LegendFormat("{{category}}").Unit(Percentage),
 		Owner:           ObservableOwnerBackendInfrastructure,
 		PossibleSolutions: strings.Replace(`
 			- **Single-container deployments:** Check 'docker logs $CONTAINER_ID' for logs starting with 'repo-updater' that indicate requests to the frontend service are failing.

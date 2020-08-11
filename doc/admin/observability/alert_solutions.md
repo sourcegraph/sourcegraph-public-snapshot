@@ -929,7 +929,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _gitserver: 5+ frontend-internal API error responses every 5m by route_
+- _gitserver: 2%+ frontend-internal API error responses every 5m by route for 5m0s_
 
 **Possible solutions:**
 
@@ -1548,7 +1548,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 5+ frontend-internal API error responses every 5m by route_
+- _precise-code-intel-bundle-manager: 2%+ frontend-internal API error responses every 5m by route for 5m0s_
 
 **Possible solutions:**
 
@@ -1963,7 +1963,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 5+ frontend-internal API error responses every 5m by route_
+- _precise-code-intel-worker: 2%+ frontend-internal API error responses every 5m by route for 5m0s_
 
 **Possible solutions:**
 
@@ -2410,7 +2410,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 5+ frontend-internal API error responses every 5m by route_
+- _precise-code-intel-indexer: 2%+ frontend-internal API error responses every 5m by route for 5m0s_
 
 **Possible solutions:**
 
@@ -2633,7 +2633,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _query-runner: 5+ frontend-internal API error responses every 5m by route_
+- _query-runner: 2%+ frontend-internal API error responses every 5m by route for 5m0s_
 
 **Possible solutions:**
 
@@ -2856,7 +2856,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: 5+ frontend-internal API error responses every 5m by route_
+- _repo-updater: 2%+ frontend-internal API error responses every 5m by route for 5m0s_
 
 **Possible solutions:**
 
@@ -3079,7 +3079,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _searcher: 5+ unindexed search request errors every 5m by code_
+- _searcher: 5%+ unindexed search request errors every 5m by code for 5m0s_
 
 **Possible solutions:**
 
@@ -3111,7 +3111,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _searcher: 5+ frontend-internal API error responses every 5m by route_
+- _searcher: 2%+ frontend-internal API error responses every 5m by route for 5m0s_
 
 **Possible solutions:**
 
@@ -3366,7 +3366,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _symbols: 5+ frontend-internal API error responses every 5m by route_
+- _symbols: 2%+ frontend-internal API error responses every 5m by route for 5m0s_
 
 **Possible solutions:**
 
@@ -4008,7 +4008,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _zoekt-webserver: 50s+ indexed search request errors every 5m by code_
+- _zoekt-webserver: 5%+ indexed search request errors every 5m by code for 5m0s_
 
 **Possible solutions:**
 
