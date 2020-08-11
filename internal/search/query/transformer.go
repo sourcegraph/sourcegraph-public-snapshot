@@ -201,9 +201,9 @@ func (g globError) Error() string {
 // from glob to regex.
 func reporevToRegex(value string) (string, error) {
 	reporev := strings.SplitN(value, "@", 2)
-	containsRev := len(reporev) == 2
+	containsNoRev := len(reporev) == 1
 	repo := reporev[0]
-	if !containsRev && ContainsNoGlobSyntax(repo) {
+	if containsNoRev && ContainsNoGlobSyntax(repo) {
 		repo = fuzzifyGlobPattern(repo)
 	}
 	repo, err := globToRegex(repo)
