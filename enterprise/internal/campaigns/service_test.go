@@ -203,7 +203,7 @@ func TestService(t *testing.T) {
 	store := NewStore(dbconn.Global)
 	rs, _ := createTestRepos(t, ctx, dbconn.Global, 4)
 
-	fakeSource := &ct.FakeChangesetSource{Err: nil}
+	fakeSource := &ct.FakeChangesetSource{}
 	sourcer := repos.NewFakeSourcer(nil, fakeSource)
 
 	svc := NewService(store, nil)
