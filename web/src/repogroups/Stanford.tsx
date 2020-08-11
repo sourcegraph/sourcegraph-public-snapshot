@@ -15,7 +15,7 @@ export const stanford: RepogroupMetadata = {
             rawQuery: 'machine learning',
         },
         {
-            title: 'Explore the code of specific research groups.',
+            title: 'Explore the code of specific research groups like Hazy Research, a group led by Professor Chris Ré that investigates weakly supervised machine learning models and the use of systems principles to automate the creation of training datasets.',
             exampleQuery: (
                 <>
                     <span className="repogroup-page__keyword-text">repo:</span>/HazyResearch/{' '}
