@@ -28,9 +28,6 @@ This is my thorough explanation. And it can also get very long, in that case the
             namespaceName: 'alice',
             url: '/users/alice',
         },
-        initialApplier: {
-            username: 'alice',
-        },
     },
     'No description': {
         id: 'test2',
@@ -48,9 +45,6 @@ This is my thorough explanation. And it can also get very long, in that case the
         namespace: {
             namespaceName: 'alice',
             url: '/users/alice',
-        },
-        initialApplier: {
-            username: 'alice',
         },
     },
     'Closed campaign': {
@@ -71,9 +65,6 @@ This is my thorough explanation. And it can also get very long, in that case the
         namespace: {
             namespaceName: 'alice',
             url: '/users/alice',
-        },
-        initialApplier: {
-            username: 'alice',
         },
     },
 }

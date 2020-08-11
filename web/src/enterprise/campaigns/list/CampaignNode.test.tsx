@@ -23,9 +23,6 @@ describe('CampaignNode', () => {
             namespaceName: 'alice',
             url: '/users/alice',
         },
-        initialApplier: {
-            username: 'alice',
-        },
     }
 
     test('open campaign', () => {

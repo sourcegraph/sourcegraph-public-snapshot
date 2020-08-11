@@ -17,9 +17,6 @@ exports[`CampaignNode campaign without description 1`] = `
       "createdAt": "2019-12-04T23:15:01Z",
       "description": null,
       "id": "123",
-      "initialApplier": Object {
-        "username": "alice",
-      },
       "name": "Upgrade lodash to v4",
       "namespace": Object {
         "namespaceName": "alice",
@@ -212,9 +209,6 @@ exports[`CampaignNode closed campaign 1`] = `
 - and renders in markdown
         ",
       "id": "123",
-      "initialApplier": Object {
-        "username": "alice",
-      },
       "name": "Upgrade lodash to v4",
       "namespace": Object {
         "namespaceName": "alice",
@@ -415,9 +409,6 @@ exports[`CampaignNode open campaign 1`] = `
 - and renders in markdown
         ",
       "id": "123",
-      "initialApplier": Object {
-        "username": "alice",
-      },
       "name": "Upgrade lodash to v4",
       "namespace": Object {
         "namespaceName": "alice",
@@ -618,9 +609,6 @@ exports[`CampaignNode open campaign on user page 1`] = `
 - and renders in markdown
         ",
       "id": "123",
-      "initialApplier": Object {
-        "username": "alice",
-      },
       "name": "Upgrade lodash to v4",
       "namespace": Object {
         "namespaceName": "alice",
