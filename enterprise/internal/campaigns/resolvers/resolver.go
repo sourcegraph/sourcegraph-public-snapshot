@@ -519,7 +519,7 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 
 	svc := ee.NewService(r.store, r.httpFactory)
 	// 🚨 SECURITY: CloseCampaign checks whether current user is authorized.
-	campaign, err := svc.CloseCampaign(ctx, campaignID, args.CloseChangesets)
+	campaign, err := svc.CloseCampaign(ctx, campaignID, args.CloseChangesets, true)
 	if err != nil {
 		return nil, errors.Wrap(err, "closing campaign")
 	}

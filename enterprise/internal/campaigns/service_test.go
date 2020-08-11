@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -154,7 +155,7 @@ func TestServicePermissionLevels(t *testing.T) {
 			})
 
 			t.Run("CloseCampaign", func(t *testing.T) {
-				_, err := svc.CloseCampaign(currentUserCtx, campaign.ID, false)
+				_, err := svc.CloseCampaign(currentUserCtx, campaign.ID, false, false)
 				tc.assertFunc(t, err)
 			})
 
@@ -202,7 +203,11 @@ func TestService(t *testing.T) {
 	store := NewStore(dbconn.Global)
 	rs, _ := createTestRepos(t, ctx, dbconn.Global, 4)
 
+	fakeSource := &ct.FakeChangesetSource{}
+	sourcer := repos.NewFakeSourcer(nil, fakeSource)
+
 	svc := NewService(store, nil)
+	svc.sourcer = sourcer
 
 	t.Run("DeleteCampaign", func(t *testing.T) {
 		campaign := testCampaign(admin.ID)
@@ -220,6 +225,12 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CloseCampaign", func(t *testing.T) {
+		// After close, the changesets will be synced, so we need to mock that operation.
+		state := ct.MockChangesetSyncState(&protocol.RepoInfo{
+			Name: api.RepoName(rs[0].Name),
+			VCS:  protocol.VCSInfo{URL: rs[0].URI},
+		})
+		defer state.Unmock()
 		createCampaign := func(t *testing.T) *campaigns.Campaign {
 			t.Helper()
 			campaign := testCampaign(admin.ID)
@@ -232,7 +243,7 @@ func TestService(t *testing.T) {
 		closeConfirm := func(t *testing.T, c *campaigns.Campaign, closeChangesets bool) {
 			t.Helper()
 
-			closedCampaign, err := svc.CloseCampaign(ctx, c.ID, closeChangesets)
+			closedCampaign, err := svc.CloseCampaign(ctx, c.ID, closeChangesets, false)
 			if err != nil {
 				t.Fatalf("campaign not closed: %s", err)
 			}
@@ -256,7 +267,7 @@ func TestService(t *testing.T) {
 			}
 
 			// should fail
-			_, err := svc.CloseCampaign(ctx, campaign.ID, true)
+			_, err := svc.CloseCampaign(ctx, campaign.ID, true, false)
 			if err != ErrCloseProcessingCampaign {
 				t.Fatalf("CloseCampaign returned unexpected error: %s", err)
 			}
@@ -322,6 +333,13 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CloseOpenChangesets", func(t *testing.T) {
+		// After close, the changesets will be synced, so we need to mock that operation.
+		state := ct.MockChangesetSyncState(&protocol.RepoInfo{
+			Name: api.RepoName(rs[0].Name),
+			VCS:  protocol.VCSInfo{URL: rs[0].URI},
+		})
+		defer state.Unmock()
+
 		changeset1 := testChangeset(rs[0].ID, 0, campaigns.ChangesetExternalStateOpen)
 		if err := store.CreateChangeset(ctx, changeset1); err != nil {
 			t.Fatal(err)
@@ -1319,7 +1337,7 @@ func testChangeset(repoID api.RepoID, campaign int64, extState campaigns.Changes
 		RepoID:              repoID,
 		ExternalServiceType: extsvc.TypeGitHub,
 		ExternalID:          fmt.Sprintf("ext-id-%d", campaign),
-		Metadata:            &github.PullRequest{State: string(extState)},
+		Metadata:            &github.PullRequest{State: string(extState), CreatedAt: time.Now()},
 		ExternalState:       extState,
 	}
 

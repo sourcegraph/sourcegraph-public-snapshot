@@ -710,7 +710,7 @@ var ErrEnsureCampaignFailed = errors.New("a campaign in the given namespace and 
 var ErrCloseProcessingCampaign = errors.New("cannot close a campaign while changesets are being processed")
 
 // CloseCampaign closes the Campaign with the given ID if it has not been closed yet.
-func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets bool) (campaign *campaigns.Campaign, err error) {
+func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets, closeAsync bool) (campaign *campaigns.Campaign, err error) {
 	traceTitle := fmt.Sprintf("campaign: %d, closeChangesets: %t", id, closeChangesets)
 	tr, ctx := trace.New(ctx, "service.CloseCampaign", traceTitle)
 	defer func() {
@@ -765,7 +765,7 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 	}
 
 	if closeChangesets {
-		go func() {
+		closer := func() {
 			ctx := trace.ContextWithTrace(context.Background(), tr)
 
 			open := campaigns.ChangesetExternalStateOpen
@@ -784,7 +784,12 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 			if err != nil {
 				log15.Error("CloseCampaignChangesets", "err", err)
 			}
-		}()
+		}
+		if closeAsync {
+			go closer()
+		} else {
+			closer()
+		}
 	}
 
 	return campaign, nil
