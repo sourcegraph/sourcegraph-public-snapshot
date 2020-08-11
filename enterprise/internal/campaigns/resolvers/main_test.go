@@ -192,7 +192,7 @@ func mockBackendCommits(t *testing.T, revs ...api.CommitID) {
 	t.Cleanup(func() { backend.Mocks.Repos.GetCommit = nil })
 }
 
-func mockRepoComparison(t *testing.T, baseRev, headRev string) {
+func mockRepoComparison(t *testing.T, baseRev, headRev, _ string) {
 	t.Helper()
 
 	spec := fmt.Sprintf("%s...%s", baseRev, headRev)
