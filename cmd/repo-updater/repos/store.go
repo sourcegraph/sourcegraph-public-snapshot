@@ -69,8 +69,8 @@ type StoreListExternalServicesArgs struct {
 	RepoIDs []api.RepoID
 	// Kinds of external services to list. When zero-valued, this is omitted from the predicate set.
 	Kinds []string
-	// PerPage defines how many external services to fetch per page. If zero, DefaultListExternalServicePageSize
-	// will be used
+	// PerPage defines how many external services to fetch per page. When zero-valued,
+	// DefaultListExternalServicePageSize will be used.
 	PerPage int64
 }
 
