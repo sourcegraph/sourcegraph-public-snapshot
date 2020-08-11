@@ -16,20 +16,7 @@ People usually use campaigns to make the following kinds of changes:
 - Patching critical security issues
 - Standardizing build, configuration, and deployment files
 
-For step-by-step instructions to create your first campaign, see [Hello World Campaign](hello_world_campaign.md) in Sourcegraph Guides.
-
-<!-- TODO(sqs): link to about site for "why use campaigns?"
-
-Why use campaigns?
-
-With campaigns, making large-scale changes becomes:
-
-- Simpler: Just provide a script and select the repositories.
-- Easier to follow through on: You can track the progress of all pull requests, including checks and review statuses, to see where to help out and to confirm when everything's merged.
-- Less scary: You can preview everything, roll out changes gradually, and update all changes even after creation.
-- Collaborative: Other people can see all the changes, including those still in preview, in one place.
-
--->
+For step-by-step instructions to create your first campaign, see [Hello World Campaign](hello_world_campaign.md).
 
 <!-- TODO(sqs): Add video here, similar to https://www.youtube.com/aqcCrqRB17w (which will need to be updated for the new campaign flow). -->
 
@@ -56,7 +43,7 @@ If you lack read access to a repository in a campaign, you can only see [limited
 
 ### Campaign specs
 
-You can create or update a campaign from a [campaign spec](#campaign-spec), which is a YAML file that defines a campaign.
+You can create or update a campaign from a campaign spec, which is a YAML file that defines a campaign.
 
 See the "[Creating a campaign](#creating-a-campaign)" section for an example campaign spec YAML file.
 
@@ -65,13 +52,12 @@ For more information, see:
 - [Creating a campaign](#creating-a-campaign) from a campaign spec
 - [Updating a campaign](#updating-a-campaign) from a campaign spec
 <!-- - TODO(sqs) <u>Campaign spec YAML reference</u> -->
-- [Example campaign specs](examples/index.md)
 
 ## Creating a campaign
 
 > **Creating your first campaign?** See [Hello World Campaign](hello_world_campaign.md) in Sourcegraph Guides for step-by-step instructions.
 
-You can create a campaign from a [campaign spec](#campaign-spec), which is a YAML file that describes your campaign.
+You can create a campaign from a [campaign spec](#campaign-specs), which is a YAML file that describes your campaign.
 
 The following example campaign spec adds "Hello World" to all `README.md` files:
 
@@ -136,7 +122,7 @@ When you're ready, you can publish some or all of a campaign's changesets.
 
 <!-- > TODO(sqs): add steps for updating campaign spec's `changesetTemplate` to publish -->
 
-You'll see a progress indicator when changesets are being published. Any errors will be shown, and you can retry publishing after you've resolved the problem. You don't need to worry about it creating multiple branches or pull requests when you retry, because it uses the same branch name.
+You'll see a progress indicator when changesets are being published. Any errors will be shown, and you can retry publishing after you've resolved the problem by running `src campaign apply` again. You don't need to worry about it creating multiple branches or pull requests when you retry, because it uses the same branch name.
 
 To publish a changeset, you need admin access to the campaign and write access to the changeset's repository (on the code host). For more information, see "[Code host interactions in campaigns](managing_access.md#code-host-interactions-in-campaigns)". [Forking the repository](#known-issues) is not yet supported.
 
@@ -179,18 +165,30 @@ All of the changesets on your code host will be updated to the desired state tha
 
 ## Tracking existing changesets
 
-<!-- TODO(sqs): needs wireframes/mocks -->
+You can track existing changests by adding them to the [campaign spec](#campaign-specs) under the `importChangesets` property.
 
-1. Click the <img src="campaigns-icon.svg" alt="Campaigns icon" /> campaigns icon in the top navigation bar.
-1. *To use an existing campaign:* In the list of campaigns, click the campaign where you'd like to track existing changesets.
+The following example campaign spec tracks five existing changesets in different repositories on different code hosts:
 
-    *To create a new campaign:* Click the **＋ New campaign** button. For more information, see "[Creating a new campaign](#creating-a-new-campaign)".
-1. Click the **Track existing changeset** button in the top right of the **Changesets** list.
-1. Type in the name of the changeset's repository.
+```yaml
+name: track-important-milestone
+description: Track all changesets related to our important milestone
 
-    This is the repository's name on Sourcegraph. If you can visit the repository at `https://sourcegraph.example.com/foo/bar`, the name is `foo/bar`. Depending on the configuration, it may or may not begin with a hostname (such as `github.com/foo/bar`).
-1. Type in the changeset number (e.g., the GitHub pull request number).
-1. Click **Add**. <!-- TODO(sqs): button label -->
+importChangesets:
+- repo: github.com/sourcegraph/sourcegraph
+  externalIDs: [12374, 11675]
+- repo: bitbucket.sgdev.org/SOUR/vegeta
+  externalIDs: [8]
+- repo: gitlab.sgdev.org/sourcegraph/src-cli
+  externalIDs: [113, 119]
+```
+
+1. Create a campaign from the campaign spec by running the following [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) command:
+
+    <pre><code>src campaign apply -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em> -preview</code></pre>
+
+1. Open the preview URL that the command printed out.
+1. Examine the preview. Confirm that the changesets are the ones you intended to track. (If not, edit the campaign spec and then rerun the command above.)
+1. Click the **Create campaign** button.
 
 You'll see the existing changeset in the list. The campaign will track the changeset's status and include it in the overall campaign progress (in the same way as if it had been created by the campaign). For more information, see "[Tracking campaign progress and changeset statuses](#tracking-campaign-progress-and-changeset-statuses)".
 
@@ -238,15 +236,11 @@ Site admins can also:
 
 To learn about the internals of campaigns, see "[Campaigns](../../dev/campaigns_development.md)" in the developer documentation.
 
-## Roadmap
-
-<!-- TODO(sqs): This section is rough/incomplete/outline-only. -->
-
 ### Known issues
 
 <!-- TODO(sqs): This section is rough/incomplete/outline-only. -->
 
 - Campaigns currently support **GitHub**, **GitLab** and **Bitbucket Server** repositories. If you're interested in using campaigns on other code hosts, [let us know](https://about.sourcegraph.com/contact).
-- It is not yet possible for a campaign to have multiple changesets in a single repository (e.g., to make changes to multiple subtrees in a monorepo).
+- It is not yet possible for a campaign to create multiple changesets in a single repository (e.g., to make changes to multiple subtrees in a monorepo).
 - Forking a repository and creating a pull request on the fork is not yet supported. Because of this limitation, you need write access to each repository that your campaign will change (in order to push a branch to it).
 - Campaign steps are run locally (in the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli)). Sourcegraph does not yet support executing campaign steps (which can be arbitrary commands) on the server. For this reason, the APIs for creating and updating a campaign require you to upload all of the changeset specs (which are produced by executing the campaign spec locally). {#server-execution}
