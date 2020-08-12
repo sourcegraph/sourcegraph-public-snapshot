@@ -10,12 +10,17 @@ export const stanford: RepogroupMetadata = {
     examples: [
         {
             title: 'Find all mentions of "machine learning" in Stanford projects.',
-            exampleQuery: <>machine learning</>,
+            exampleQuery: (
+                <>
+                    <span className="repogroup-page__keyword-text">file:</span>README machine learning{' '}
+                </>
+            ),
             patternType: SearchPatternType.literal,
             rawQuery: 'machine learning',
         },
         {
-            title: 'Explore the code of specific research groups like Hazy Research, a group led by Professor Chris Ré that investigates weakly supervised machine learning models and the use of systems principles to automate the creation of training datasets.',
+            title:
+                'Explore the code of specific research groups like Hazy Research, a group led by Professor Chris Ré that investigates weakly supervised machine learning models and the use of systems principles to automate the creation of training datasets.',
             exampleQuery: (
                 <>
                     <span className="repogroup-page__keyword-text">repo:</span>/HazyResearch/{' '}
@@ -25,7 +30,8 @@ export const stanford: RepogroupMetadata = {
             rawQuery: 'repo:/HazyResearch/',
         },
         {
-            title: 'Search all Stanford University School of Medicine repositories.',
+            title:
+                'Explore the code of a specific user or organization such as Stanford University School of Medicine.',
             exampleQuery: (
                 <>
                     <span className="repogroup-page__keyword-text">repo:</span>/susom/{' '}
@@ -55,20 +61,14 @@ export const stanford: RepogroupMetadata = {
             rawQuery: 'file:README.txt',
         },
         {
-            title: "Perform a general search if you're unsure of an organization or project name.",
-            exampleQuery: <>space initiative</>,
-            patternType: SearchPatternType.literal,
-            rawQuery: 'space initiative',
-        },
-        {
-            title: 'Explore the code of a specific user.',
+            title: 'Find old-style string formatted print statements.',
             exampleQuery: (
                 <>
-                    <span className="repogroup-page__keyword-text">repo:</span>/RedHeadedStranger99/{' '}
+                    <span className="repogroup-page__keyword-text">lang:</span>python print(:[args] % :[v]){' '}
                 </>
             ),
-            patternType: SearchPatternType.literal,
-            rawQuery: 'repo:/RedHeadedStranger99/',
+            patternType: SearchPatternType.structural,
+            rawQuery: 'lang:python print(:[args] % :[v])',
         },
     ],
     homepageDescription: 'Explore Stanford open-source code.',
