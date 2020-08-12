@@ -2,7 +2,7 @@ import * as H from 'history'
 import { storiesOf } from '@storybook/react'
 import { RepogroupPage, RepogroupPageProps } from './RepogroupPage'
 import React from 'react'
-import { python2To3Metadata } from './Python2To3'
+import { python } from './Python'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { NEVER } from 'rxjs'
 import { NOOP_SETTINGS_CASCADE } from '../../../shared/src/util/searchTestHelpers'
@@ -114,7 +114,7 @@ const commonProps: RepogroupPageProps = {
     authRequired: false,
     showCampaigns: false,
     authenticatedUser: authUser,
-    repogroupMetadata: python2To3Metadata,
+    repogroupMetadata: python,
     autoFocus: false,
     globbing: false,
     showOnboardingTour: false,
