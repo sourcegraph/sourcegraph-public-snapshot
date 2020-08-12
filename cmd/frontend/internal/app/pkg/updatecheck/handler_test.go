@@ -222,7 +222,7 @@ func TestSerializeFromQuery(t *testing.T) {
 		"automation_usage": null,
 		"code_intel_usage": null,
 		"search_usage": null,
-		"growth_statistics": null
+		"growth_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
@@ -251,7 +251,7 @@ func TestSerializeAutomationUsage(t *testing.T) {
 		CampaignsUsage:       json.RawMessage([]byte(`{"baz":"bonk"}`)),
 		CodeIntelUsage:       nil,
 		SearchUsage:          nil,
-		GrowthStatistics:      nil,
+		GrowthStatistics:     nil,
 		InitialAdminEmail:    "test@sourcegraph.com",
 		TotalUsers:           234,
 		HasRepos:             true,
@@ -276,7 +276,7 @@ func TestSerializeAutomationUsage(t *testing.T) {
 		"automation_usage": {"baz":"bonk"},
 		"code_intel_usage": null,
 		"search_usage": null,
-		"growth_statistics": null
+		"growth_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
@@ -354,7 +354,7 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		"automation_usage": null,
 		"code_intel_usage": {"Daily":`+period+`,"Weekly":`+period+`,"Monthly":`+period+`},
 		"search_usage": null,
-		"growth_statistics": null
+		"growth_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
