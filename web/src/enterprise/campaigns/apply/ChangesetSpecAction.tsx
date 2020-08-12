@@ -4,7 +4,11 @@ import ClipboardCheckOutlineIcon from 'mdi-react/ClipboardCheckOutlineIcon'
 import ClipboardAlertOutlineIcon from 'mdi-react/ClipboardAlertOutlineIcon'
 import ClipboardArrowUpOutlineIcon from 'mdi-react/ClipboardArrowUpOutlineIcon'
 
-export const ChangesetSpecAction: React.FunctionComponent<{ spec: ChangesetSpecFields }> = ({ spec }) => {
+export interface ChangesetSpecActionProps {
+    spec: ChangesetSpecFields
+}
+
+export const ChangesetSpecAction: React.FunctionComponent<ChangesetSpecActionProps> = ({ spec }) => {
     if (spec.__typename === 'HiddenChangesetSpec') {
         if (spec.type === ChangesetSpecType.BRANCH) {
             return <ChangesetSpecActionNoPublish />

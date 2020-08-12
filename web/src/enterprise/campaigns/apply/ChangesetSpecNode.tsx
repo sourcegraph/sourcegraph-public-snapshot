@@ -10,6 +10,8 @@ export interface ChangesetSpecNodeProps extends ThemeProps {
     node: ChangesetSpecFields
     history: H.History
     location: H.Location
+
+    /** Used for testing. */
     queryChangesetSpecFileDiffs?: typeof queryChangesetSpecFileDiffs
 }
 
@@ -21,15 +23,23 @@ export const ChangesetSpecNode: React.FunctionComponent<ChangesetSpecNodeProps> 
     queryChangesetSpecFileDiffs,
 }) => {
     if (node.__typename === 'HiddenChangesetSpec') {
-        return <HiddenChangesetSpecNode node={node} />
+        return (
+            <>
+                <span className="changeset-spec-node__separator" />
+                <HiddenChangesetSpecNode node={node} />
+            </>
+        )
     }
     return (
-        <VisibleChangesetSpecNode
-            node={node}
-            history={history}
-            location={location}
-            isLightTheme={isLightTheme}
-            queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
-        />
+        <>
+            <span className="changeset-spec-node__separator" />
+            <VisibleChangesetSpecNode
+                node={node}
+                history={history}
+                location={location}
+                isLightTheme={isLightTheme}
+                queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
+            />
+        </>
     )
 }

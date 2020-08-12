@@ -5,6 +5,7 @@ import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../compon
 import { Scalars, ChangesetSpecFields } from '../../../graphql-operations'
 import { queryChangesetSpecs as _queryChangesetSpecs, queryChangesetSpecFileDiffs } from './backend'
 import { ChangesetSpecNode, ChangesetSpecNodeProps } from './ChangesetSpecNode'
+import { ChangesetSpecListHeader } from './ChangesetSpecListHeader'
 
 interface Props extends ThemeProps {
     campaignSpecID: Scalars['ID']
@@ -16,24 +17,6 @@ interface Props extends ThemeProps {
     /** For testing only. */
     queryChangesetSpecFileDiffs?: typeof queryChangesetSpecFileDiffs
 }
-
-const ChangesetSpecListHeader: React.FunctionComponent<{
-    nodes: ChangesetSpecFields[]
-    totalCount?: number | null
-}> = ({ nodes, totalCount }) => (
-    <>
-        <div className="grid-row mb-2">
-            <strong>
-                Displaying {nodes.length}
-                {totalCount && <> of {totalCount}</>} changesets
-            </strong>
-        </div>
-        <span />
-        <h5 className="text-uppercase text-center text-nowrap text-muted">Action</h5>
-        <h5 className="text-uppercase text-nowrap text-muted">Changeset information</h5>
-        <h5 className="text-uppercase text-right text-nowrap text-muted">Changeset diff</h5>
-    </>
-)
 
 /**
  * A list of a campaign spec's changeset specs.

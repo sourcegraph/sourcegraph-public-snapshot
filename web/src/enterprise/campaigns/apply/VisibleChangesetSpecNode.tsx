@@ -74,16 +74,14 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
             <ChangesetSpecAction spec={node} />
             <div>
                 <div className="d-flex flex-column">
-                    <div className="m-0 mb-2">
-                        <h3 className="m-0 d-inline">
-                            {node.description.__typename === 'ExistingChangesetReference' && (
-                                <span>Import changeset #{node.description.externalID}</span>
-                            )}
-                            {node.description.__typename === 'GitBranchChangesetDescription' && (
-                                <span>{node.description.title}</span>
-                            )}
-                        </h3>
-                    </div>
+                    <h3>
+                        {node.description.__typename === 'ExistingChangesetReference' && (
+                            <span>Import changeset #{node.description.externalID}</span>
+                        )}
+                        {node.description.__typename === 'GitBranchChangesetDescription' && (
+                            <span>{node.description.title}</span>
+                        )}
+                    </h3>
                     <div>
                         <strong className="mr-2">
                             <Link to={node.description.baseRepository.url} target="_blank" rel="noopener noreferrer">
@@ -99,13 +97,13 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
                     </div>
                 </div>
             </div>
-            <div className="justify-self-end align-self-start">
+            <div className="visible-changeset-spec-node__diffstat">
                 {node.description.__typename === 'GitBranchChangesetDescription' && (
                     <DiffStat {...node.description.diff.fileDiffs.diffStat} expandedCounts={true} />
                 )}
             </div>
             {isExpanded && (
-                <div className="grid-row">
+                <div className="visible-changeset-spec-node__expanded-section">
                     {node.description.__typename === 'GitBranchChangesetDescription' && (
                         <FileDiffConnection
                             listClassName="list-group list-group-flush"
