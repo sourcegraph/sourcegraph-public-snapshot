@@ -15,7 +15,6 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
-	"golang.org/x/net/context/ctxhttp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
@@ -23,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
@@ -282,7 +282,22 @@ func check() {
 		if err != nil {
 			return "", err
 		}
-		resp, err := ctxhttp.Post(ctx, nil, "https://sourcegraph.com/.api/updates", "application/json", body)
+
+		req, err := http.NewRequest("POST", "https://sourcegraph.com/.api/updates", body)
+		if err != nil {
+			return "", err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req = req.WithContext(ctx)
+
+		// This HTTP client will pick up proxy settings in firewalled
+		// environments. We create a new one each loop since this is only run
+		// every 30s.
+		client, err := httpcli.NewExternalHTTPClientFactory().Doer()
+		if err != nil {
+			return "", err
+		}
+		resp, err := client.Do(req)
 		if err != nil {
 			return "", err
 		}
