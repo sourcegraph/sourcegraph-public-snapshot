@@ -789,6 +789,23 @@ func intersect(left, right *SearchResultsResolver) *SearchResultsResolver {
 	return intersectMerge(left, right)
 }
 
+// dedubOperands removes dupliate operands from the list of query.Nodes.
+func dedupOperands(operands []query.Node) int {
+	s := make(map[query.Pattern]struct{}, len(operands))
+	i := 0
+	for _, o := range operands {
+		pattern := o.(query.Pattern)
+		pattern.Annotation = query.Annotation{}
+		if _, ok := s[pattern]; ok {
+			continue
+		}
+		s[pattern] = struct{}{}
+		operands[i] = o
+		i++
+	}
+	return i
+}
+
 // evaluateAnd performs set intersection on result sets. It collects results for
 // all expressions that are ANDed together by searching for each subexpression
 // and then intersects those results that are in the same repo/file path. To
@@ -810,6 +827,14 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 	// corresponds to documents, not line matches. By default, we ask for at
 	// least 5 documents to fill the result page.
 	want := 5
+	averageOverlap := 0.10 // this has to be inferred from live traffic
+	maxTryCount := 20000   // When we retry, cap the max search results we request for each expression if search continues to not be exhaustive. Alert if exceeded.
+
+	i := dedupOperands(operands)
+	operands = operands[:i]
+
+	// TODO: check that timeout is respected
+	// TODO: wall time for request does not make sense
 
 	var countStr string
 	query.VisitField(scopeParameters, "count", func(value string, _ bool, _ query.Annotation) {
@@ -825,8 +850,11 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 		})
 	}
 
-	tryCount := want * 1000     // Opportunistic approximation for the number of results to get for an intersection.
-	maxResultsForRetry := 20000 // When we retry, cap the max search results we request for each expression if search continues to not be exhaustive. Alert if exceeded.
+	// the tryCount starts small but grows exponentially with the number of operands (capped at maxTryCount)
+	tryCount := int(math.Floor(float64(want) / math.Pow(averageOverlap, float64(len(operands)-1))))
+	if tryCount > maxTryCount {
+		tryCount = maxTryCount
+	}
 
 	var exhausted bool
 	for {
@@ -863,8 +891,8 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 		}
 		// If the result size set is not big enough, and we haven't
 		// exhausted search on all expressions, double the tryCount and search more.
-		tryCount *= tryCount
-		if tryCount > maxResultsForRetry {
+		tryCount *= 2
+		if tryCount > maxTryCount {
 			// We've capped out what we're willing to do, throw alert.
 			return alertForCappedAndExpression().wrap(), nil
 		}
@@ -942,6 +970,14 @@ func (r *searchResolver) evaluateOperator(ctx context.Context, scopeParameters [
 	return result, nil
 }
 
+func prettyPrint(nodes []query.Node) string {
+	var resultStr []string
+	for _, node := range nodes {
+		resultStr = append(resultStr, node.String())
+	}
+	return strings.Join(resultStr, " ")
+}
+
 // evaluatePatternExpression evaluates a search pattern containing and/or expressions.
 func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopeParameters []query.Node, node query.Node) (*SearchResultsResolver, error) {
 	switch term := node.(type) {
@@ -956,7 +992,11 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 	case query.Pattern:
 		q := append(scopeParameters, term)
 		r.query.(*query.AndOrQuery).Query = q
-		return r.evaluateLeaf(ctx)
+		sh := time.Now()
+		fmt.Println("query:", prettyPrint(r.query.(*query.AndOrQuery).Query))
+		res, err := r.evaluateLeaf(ctx)
+		fmt.Println("DURATION[evaluateLeaf]", time.Since(sh).Milliseconds())
+		return res, err
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
 		return nil, nil
