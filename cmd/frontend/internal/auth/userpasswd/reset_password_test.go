@@ -3,7 +3,6 @@ package userpasswd
 import (
 	"context"
 	"net/url"
-	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -24,6 +23,9 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 		return nil
 	}
 	defer func() { txemail.MockSend = nil }()
+	defer func() { backend.MockMakePasswordResetURL = nil }()
+	defer func() { db.Mocks.UserEmails.GetPrimaryEmail = nil }()
+	defer func() { db.Mocks.Users.GetByID = nil }()
 
 	backend.MockMakePasswordResetURL = func(context.Context, int32) (*url.URL, error) {
 		query := url.Values{}
