@@ -151,6 +151,16 @@ func getAndMarshalGrowthStatisticsJSON(ctx context.Context) (_ json.RawMessage, 
 	return json.Marshal(growthStatistics)
 }
 
+func getAndMarshalSavedSearchesJSON(ctx context.Context) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalSavedSearchesJSON")(&err)
+
+	savedSearches, err := usagestats.GetSavedSearches(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(savedSearches)
+}
+
 func getAndMarshalAggregatedUsageJSON(ctx context.Context) (_ json.RawMessage, _ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalAggregatedUsageJSON")(&err)
 
