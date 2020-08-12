@@ -32,9 +32,7 @@ export class SearchCommand {
             this.suggestionFetcher({
                 query,
                 handler: async suggestions => {
-                    const sourcegraphURL = await observeSourcegraphURL(true) // isExtension=true, this feature is only supported in the browser extension
-                        .pipe(take(1))
-                        .toPromise()
+                    const sourcegraphURL = await observeSourcegraphURL(IS_EXTENSION).pipe(take(1)).toPromise()
                     const built = suggestions.map(({ title, url, urlLabel }) => ({
                         content: `${sourcegraphURL}${url}`,
                         description: `${title} - ${urlLabel}`,
@@ -82,18 +80,17 @@ export class SearchCommand {
     }
 
     private async getDefaultSearchPatternType(platformContext: BrowserPlatformContext): Promise<SearchPatternType> {
-        const cascadePatternTypeValue = (await from(platformContext.settings)
-            .pipe(
-                map(({ final }) => final),
-                filter(isDefined),
-                filter(isNot<ErrorLike | Settings, ErrorLike>(isErrorLike)),
-                map(settings => settings['search.defaultPatternType'] as SearchPatternType),
-                timeout(1000),
-                catchError(() => SearchPatternType.literal)
-            )
-            .toPromise()) as SearchPatternType
+        try {
+            await platformContext.refreshSettings()
+            const settings = (await from(platformContext.settings).pipe(take(1)).toPromise()).final
 
-        const defaultPatternType = cascadePatternTypeValue || SearchPatternType.literal
-        return defaultPatternType
+            if (isDefined(settings) && isNot<ErrorLike | Settings, ErrorLike>(isErrorLike)(settings)) {
+                return settings['search.defaultPatternType'] as SearchPatternType
+            }
+        } catch {
+            // Ignore errors
+        }
+
+        return SearchPatternType.literal
     }
 }
