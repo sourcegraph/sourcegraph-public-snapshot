@@ -1,15 +1,14 @@
 import React from 'react'
 import { CampaignNode } from './CampaignNode'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { parseISO } from 'date-fns'
 import { createMemoryHistory } from 'history'
 import { mount } from 'enzyme'
+import { ListCampaign } from '../../../graphql-operations'
 
-jest.mock('../icons', () => ({ CampaignsIcon: 'CampaignsIcon' }))
+const now = parseISO('2019-01-01T23:15:01Z')
 
 describe('CampaignNode', () => {
-    const node = {
-        __typename: 'Campaign',
+    const node: ListCampaign = {
         id: '123',
         name: 'Upgrade lodash to v4',
         description: `
@@ -17,15 +16,23 @@ describe('CampaignNode', () => {
 
 - and renders in markdown
         `,
-        changesets: { nodes: [{ state: GQL.ChangesetState.OPEN }] },
-        patches: { totalCount: 2 },
+        changesets: { stats: { merged: 0, open: 1, closed: 3 } },
         createdAt: '2019-12-04T23:15:01Z',
         closedAt: null,
+        namespace: {
+            namespaceName: 'alice',
+            url: '/users/alice',
+        },
     }
 
     test('open campaign', () => {
         expect(
-            mount(<CampaignNode node={node} now={parseISO('2019-01-01T23:15:01Z')} history={createMemoryHistory()} />)
+            mount(<CampaignNode displayNamespace={true} node={node} now={now} history={createMemoryHistory()} />)
+        ).toMatchSnapshot()
+    })
+    test('open campaign on user page', () => {
+        expect(
+            mount(<CampaignNode displayNamespace={false} node={node} now={now} history={createMemoryHistory()} />)
         ).toMatchSnapshot()
     })
     test('closed campaign', () => {
@@ -33,7 +40,8 @@ describe('CampaignNode', () => {
             mount(
                 <CampaignNode
                     node={{ ...node, closedAt: '2019-12-04T23:19:01Z' }}
-                    now={parseISO('2019-01-01T23:15:01Z')}
+                    displayNamespace={true}
+                    now={now}
                     history={createMemoryHistory()}
                 />
             )
@@ -45,42 +53,10 @@ describe('CampaignNode', () => {
                 <CampaignNode
                     node={{
                         ...node,
-                        // todo: make this null, once it's supported in the API: https://github.com/sourcegraph/sourcegraph/issues/9034
-                        description: '',
+                        description: null,
                     }}
-                    now={parseISO('2019-01-01T23:15:01Z')}
-                    history={createMemoryHistory()}
-                />
-            )
-        ).toMatchSnapshot()
-    })
-    test('campaign selection mode', () => {
-        expect(
-            mount(
-                <CampaignNode
-                    node={node}
-                    selection={{
-                        buttonLabel: 'Select',
-                        enabled: true,
-                        onSelect: () => undefined,
-                    }}
-                    now={parseISO('2019-01-01T23:15:01Z')}
-                    history={createMemoryHistory()}
-                />
-            )
-        ).toMatchSnapshot()
-    })
-    test('campaign with mixed changeset states', () => {
-        expect(
-            mount(
-                <CampaignNode
-                    node={{
-                        ...node,
-                        changesets: {
-                            nodes: [{ state: GQL.ChangesetState.OPEN }, { state: GQL.ChangesetState.CLOSED }],
-                        },
-                    }}
-                    now={parseISO('2019-01-01T23:15:01Z')}
+                    displayNamespace={true}
+                    now={now}
                     history={createMemoryHistory()}
                 />
             )

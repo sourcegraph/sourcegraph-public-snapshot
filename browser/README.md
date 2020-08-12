@@ -162,17 +162,35 @@ Requires `node` version specified in [`.nvmrc`](../.nvmrc). In the steps below w
 
 Tested on Ubuntu 20.04 and Mac OS 10.15.5.
 
-First, clone the repository.
+### Obtain the source code
+
+#### A. Obtain the source code by cloning the repository
+
+Clone the public repository with `git clone`:
 
 ```sh
 git clone git@github.com:sourcegraph/sourcegraph
 cd sourcegraph
 ```
 
+#### B. Obtain the source code by downloading the zip
+
+Alternatively (instead of cloning the repository), you can obtain the source code as a zip for a particular commit hash or a branch.
+
+For example, to build from commit `e1547ea0e9`:
+
+```sh
+curl -OL https://github.com/sourcegraph/sourcegraph/archive/e1547ea0e9.zip
+unzip e1547ea0e9.zip
+cd sourcegraph-e1547ea0e99475dd748a4e3bb1a81cee71c0f7fd
+```
+
+### Install dependencies and build
+
 Use `nvm` to select the Node.js version specified in `.nvmrc`
 
 ```sh
-nvm use
+nvm install
 ```
 
 Install dependencies with `yarn` (install it globally with `npm i -g yarn` if needed) and build from the `browser` directory.
@@ -190,6 +208,6 @@ The output will be in `browser/build`:
 - Firefox add-on:
   - Packed: `browser/build/bundles/firefox-bundle.xpi`
   - Unpacked: `browser/build/firefox`
-- Chrome extension: `browser/build/bundles/chrome-bundle.zip`
+- Chrome extension:
   - Packed: `browser/build/bundles/chrome-bundle.zip`
   - Unpacked: `browser/build/chrome`

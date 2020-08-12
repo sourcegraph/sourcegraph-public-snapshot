@@ -1,13 +1,7 @@
 import React from 'react'
 import { Redirect } from 'react-router'
-import { eventLogger } from '../tracking/eventLogger'
 import { lazyComponent } from '../util/lazyComponent'
 import { SiteAdminAreaRoute } from './SiteAdminArea'
-
-const SiteAdminAddExternalServicesPage = lazyComponent(
-    () => import('./SiteAdminAddExternalServicesPage'),
-    'SiteAdminAddExternalServicesPage'
-)
 
 export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
@@ -38,7 +32,7 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/external-services/new',
-        render: props => <SiteAdminAddExternalServicesPage {...props} eventLogger={eventLogger} />,
+        render: lazyComponent(() => import('./SiteAdminAddExternalServicesPage'), 'SiteAdminAddExternalServicesPage'),
         exact: true,
     },
     {

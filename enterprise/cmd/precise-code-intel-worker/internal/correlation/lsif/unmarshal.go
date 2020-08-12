@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	jsoniter "github.com/json-iterator/go"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/datastructures"
 )
 
 var unmarshaller = jsoniter.ConfigFastest
@@ -119,11 +118,7 @@ func unmarshalDocument(line []byte) (interface{}, error) {
 		return nil, err
 	}
 
-	return Document{
-		URI:         payload.URI,
-		Contains:    datastructures.NewIDSet(),
-		Diagnostics: datastructures.NewIDSet(),
-	}, nil
+	return payload.URI, nil
 }
 
 func unmarshalRange(line []byte) (interface{}, error) {
@@ -144,7 +139,6 @@ func unmarshalRange(line []byte) (interface{}, error) {
 		StartCharacter: payload.Start.Character,
 		EndLine:        payload.End.Line,
 		EndCharacter:   payload.End.Character,
-		MonikerIDs:     datastructures.NewIDSet(),
 	}, nil
 }
 
@@ -289,7 +283,7 @@ func unmarshalDiagnosticResult(line []byte) (interface{}, error) {
 		})
 	}
 
-	return DiagnosticResult{Result: diagnostics}, nil
+	return diagnostics, nil
 }
 
 type StringOrInt string

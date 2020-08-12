@@ -99,24 +99,6 @@
 <path fill="none" stroke="black" stroke-width="0.6" d="M352.71,-560.99C328.73,-552 300.1,-538.19 279.94,-517.73 259.3,-496.77 247.52,-464.89 238.39,-441.56"/>
 <polygon fill="#8dd3c7" stroke="black" stroke-width="0.6" points="242.73,-439.69 233.27,-428.97 233.98,-443.25 242.73,-439.69"/>
 </g>
-<!-- replacer -->
-<g id="node5" class="node">
-<title>replacer</title>
-<g id="a_node5"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/replacer" xlink:title="replacer" target="_blank">
-<polygon fill="#80b1d3" stroke="black" points="424.44,-428.73 371.44,-428.73 367.44,-424.73 367.44,-392.73 420.44,-392.73 424.44,-396.73 424.44,-428.73"/>
-<polyline fill="none" stroke="black" points="420.44,-424.73 367.44,-424.73 "/>
-<polyline fill="none" stroke="black" points="420.44,-424.73 420.44,-392.73 "/>
-<polyline fill="none" stroke="black" points="420.44,-424.73 424.44,-428.73 "/>
-<text text-anchor="middle" x="395.94" y="-408.23" font-family="Iosevka" font-size="10.00">replacer</text>
-</a>
-</g>
-</g>
-<!-- frontend&#45;&gt;replacer -->
-<g id="edge4" class="edge">
-<title>frontend&#45;&gt;replacer</title>
-<path fill="none" stroke="black" stroke-width="0.6" d="M405.92,-533.49C407.89,-505.09 407.57,-468.29 404.96,-442.61"/>
-<polygon fill="#8dd3c7" stroke="black" stroke-width="0.6" points="409.61,-441.69 403.17,-428.93 400.24,-442.93 409.61,-441.69"/>
-</g>
 <!-- query_runner -->
 <g id="node6" class="node">
 <title>query_runner</title>
@@ -379,18 +361,6 @@
 <title>searcher&#45;&gt;gitserver</title>
 <path fill="none" stroke="black" stroke-width="0.6" d="M246.53,-392.46C252.57,-388.58 258.96,-384.49 264.94,-380.73 310.87,-351.8 328.78,-353.23 368.94,-316.73 378.51,-308.02 387.45,-297 394.73,-286.89"/>
 <polygon fill="#fb8072" stroke="black" stroke-width="0.6" points="398.71,-289.44 402.46,-275.64 390.92,-284.09 398.71,-289.44"/>
-</g>
-<!-- replacer&#45;&gt;frontend -->
-<g id="edge16" class="edge">
-<title>replacer&#45;&gt;frontend</title>
-<path fill="none" stroke="black" stroke-width="0.6" d="M389.2,-428.93C385.79,-450.35 384.7,-488.01 385.93,-519.82"/>
-<polygon fill="#80b1d3" stroke="black" stroke-width="0.6" points="381.22,-520.25 386.63,-533.49 390.66,-519.77 381.22,-520.25"/>
-</g>
-<!-- replacer&#45;&gt;gitserver -->
-<g id="edge17" class="edge">
-<title>replacer&#45;&gt;gitserver</title>
-<path fill="none" stroke="black" stroke-width="0.6" d="M397.86,-392.67C400.68,-367.59 405.98,-320.38 409.49,-289.17"/>
-<polygon fill="#80b1d3" stroke="black" stroke-width="0.6" points="414.19,-289.64 411.01,-275.7 404.8,-288.59 414.19,-289.64"/>
 </g>
 <!-- query_runner&#45;&gt;frontend -->
 <g id="edge18" class="edge">

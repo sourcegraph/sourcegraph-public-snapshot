@@ -12,7 +12,10 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
+	"github.com/xeipuuv/gojsonschema"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -20,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/xeipuuv/gojsonschema"
 )
 
 // An ExternalServicesStore stores external services and their configuration.
@@ -56,18 +58,35 @@ type ExternalServiceKind struct {
 
 // ExternalServicesListOptions contains options for listing external services.
 type ExternalServicesListOptions struct {
+	// When true, only include external services not under any namespace (i.e. owned by all site admins),
+	// and value of NamespaceUserID is ignored.
+	NoNamespace bool
+	// When specified, only include external services under given user namespace.
+	NamespaceUserID int32
+	// When specified, only include external services with given list of kinds.
 	Kinds []string
+	// When specified, only include external services with ID below this number
+	// (because we're sorting results by ID in descending order).
+	AfterID int64
 	*LimitOffset
 }
 
 func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
+	if o.NoNamespace {
+		conds = append(conds, sqlf.Sprintf(`namespace_user_id IS NULL`))
+	} else if o.NamespaceUserID > 0 {
+		conds = append(conds, sqlf.Sprintf(`namespace_user_id = %d`, o.NamespaceUserID))
+	}
 	if len(o.Kinds) > 0 {
 		kinds := make([]*sqlf.Query, 0, len(o.Kinds))
 		for _, kind := range o.Kinds {
 			kinds = append(kinds, sqlf.Sprintf("%s", kind))
 		}
 		conds = append(conds, sqlf.Sprintf("kind IN (%s)", sqlf.Join(kinds, ",")))
+	}
+	if o.AfterID > 0 {
+		conds = append(conds, sqlf.Sprintf(`id < %d`, o.AfterID))
 	}
 	return conds
 }
@@ -267,24 +286,24 @@ func (e *ExternalServicesStore) validateDuplicateRateLimits(ctx context.Context,
 // determines a deadlock occurred.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error {
+func (e *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf.Unified, es *types.ExternalService) error {
 	if Mocks.ExternalServices.Create != nil {
-		return Mocks.ExternalServices.Create(ctx, confGet, externalService)
+		return Mocks.ExternalServices.Create(ctx, confGet, es)
 	}
 
 	ps := confGet().AuthProviders
-	if err := e.ValidateConfig(ctx, 0, externalService.Kind, externalService.Config, ps); err != nil {
+	if err := e.ValidateConfig(ctx, 0, es.Kind, es.Config, ps); err != nil {
 		return err
 	}
 
-	externalService.CreatedAt = time.Now().UTC().Truncate(time.Microsecond)
-	externalService.UpdatedAt = externalService.CreatedAt
+	es.CreatedAt = time.Now().UTC().Truncate(time.Microsecond)
+	es.UpdatedAt = es.CreatedAt
 
 	return dbconn.Global.QueryRowContext(
 		ctx,
-		"INSERT INTO external_services(kind, display_name, config, created_at, updated_at) VALUES($1, $2, $3, $4, $5) RETURNING id",
-		externalService.Kind, externalService.DisplayName, externalService.Config, externalService.CreatedAt, externalService.UpdatedAt,
-	).Scan(&externalService.ID)
+		"INSERT INTO external_services(kind, display_name, config, created_at, updated_at, namespace_user_id) VALUES($1, $2, $3, $4, $5, $6) RETURNING id",
+		es.Kind, es.DisplayName, es.Config, es.CreatedAt, es.UpdatedAt, es.NamespaceUserID,
+	).Scan(&es.ID)
 }
 
 // ExternalServiceUpdate contains optional fields to update.
@@ -399,14 +418,37 @@ func (e *ExternalServicesStore) GetByID(ctx context.Context, id int64) (*types.E
 	return ess[0], nil
 }
 
-// List returns all external services.
+// List returns external services under given namespace.
+// If no namespace is given, it returns all external services.
 //
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+// 🚨 SECURITY: The caller must ensure one of the following:
+// 	- The actor is a site admin
+// 	- The opt.NamespaceUserID is same as authenticated user ID (i.e. actor.UID)
 func (e *ExternalServicesStore) List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
 	if Mocks.ExternalServices.List != nil {
 		return Mocks.ExternalServices.List(opt)
 	}
 	return e.list(ctx, opt.sqlConditions(), opt.LimitOffset)
+}
+
+// DistinctKinds returns the distinct list of external services kinds that are stored in the database.
+func (e *ExternalServicesStore) DistinctKinds(ctx context.Context) ([]string, error) {
+	q := sqlf.Sprintf(`
+SELECT ARRAY_AGG(DISTINCT(kind)::TEXT)
+FROM external_services
+WHERE deleted_at IS NULL
+`)
+
+	var kinds []string
+	err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(pq.Array(&kinds))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return []string{}, nil
+		}
+		return nil, err
+	}
+
+	return kinds, nil
 }
 
 // listConfigs decodes the list of configs into result. In addition to populating
@@ -547,7 +589,7 @@ func (e *ExternalServicesStore) ListOtherExternalServicesConnections(ctx context
 
 func (*ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*types.ExternalService, error) {
 	q := sqlf.Sprintf(`
-		SELECT id, kind, display_name, config, created_at, updated_at
+		SELECT id, kind, display_name, config, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id
 		FROM external_services
 		WHERE (%s)
 		ORDER BY id DESC
@@ -564,9 +606,27 @@ func (*ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, lim
 
 	var results []*types.ExternalService
 	for rows.Next() {
-		var h types.ExternalService
-		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &h.CreatedAt, &h.UpdatedAt); err != nil {
+		var (
+			h              types.ExternalService
+			deletedAt      sql.NullTime
+			lastSyncAt     sql.NullTime
+			nextSyncAt     sql.NullTime
+			namepaceUserID sql.NullInt32
+		)
+		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namepaceUserID); err != nil {
 			return nil, err
+		}
+		if deletedAt.Valid {
+			h.DeletedAt = &deletedAt.Time
+		}
+		if lastSyncAt.Valid {
+			h.LastSyncAt = &lastSyncAt.Time
+		}
+		if nextSyncAt.Valid {
+			h.NextSyncAt = &nextSyncAt.Time
+		}
+		if namepaceUserID.Valid {
+			h.NamespaceUserID = &namepaceUserID.Int32
 		}
 		results = append(results, &h)
 	}

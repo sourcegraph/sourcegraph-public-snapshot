@@ -1,10 +1,10 @@
-import { IHiddenExternalChangeset } from '../../../../../../shared/src/graphql/schema'
 import React from 'react'
 import { ChangesetStateIcon } from './ChangesetStateIcon'
 import { ChangesetLastSynced } from './ChangesetLastSynced'
+import { ChangesetFields } from '../../../../graphql-operations'
 
 export interface HiddenExternalChangesetNodeProps {
-    node: Pick<IHiddenExternalChangeset, 'id' | 'nextSyncAt' | 'updatedAt' | 'state'>
+    node: Pick<ChangesetFields, 'id' | 'nextSyncAt' | 'updatedAt' | 'externalState'>
 }
 
 export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternalChangesetNodeProps> = ({ node }) => (
@@ -15,7 +15,7 @@ export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternal
                     <div className="d-flex flex-column">
                         <div className="m-0 mb-2">
                             <h3 className="m-0 d-inline">
-                                <ChangesetStateIcon state={node.state} />
+                                {node.externalState && <ChangesetStateIcon externalState={node.externalState} />}
                                 <span className="text-muted">Changeset in a private repository</span>
                             </h3>
                         </div>

@@ -7,8 +7,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // Upload is a subset of the lsif_uploads table and stores both processed and unprocessed
@@ -124,27 +124,6 @@ func scanStates(rows *sql.Rows, queryErr error) (_ map[int]string, err error) {
 	return states, nil
 }
 
-// scanVisibility scans pairs of id/visibleAtTip from the return value of `*store.query`.
-func scanVisibilities(rows *sql.Rows, queryErr error) (_ map[int]bool, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = closeRows(rows, err) }()
-
-	visibilities := map[int]bool{}
-	for rows.Next() {
-		var id int
-		var visibleAtTip bool
-		if err := rows.Scan(&id, &visibleAtTip); err != nil {
-			return nil, err
-		}
-
-		visibilities[id] = visibleAtTip
-	}
-
-	return visibilities, nil
-}
-
 // scanCounts scans pairs of id/counts from the return value of `*store.query`.
 func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 	if queryErr != nil {
@@ -173,7 +152,7 @@ func (s *store) GetUploadByID(ctx context.Context, id int) (Upload, bool, error)
 			u.id,
 			u.commit,
 			u.root,
-			u.visible_at_tip,
+			EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = u.repository_id and upload_id = u.id) AS visible_at_tip,
 			u.uploaded_at,
 			u.state,
 			u.failure_message,
@@ -229,7 +208,7 @@ func (s *store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		conds = append(conds, sqlf.Sprintf("u.state = %s", opts.State))
 	}
 	if opts.VisibleAtTip {
-		conds = append(conds, sqlf.Sprintf("u.visible_at_tip = true"))
+		conds = append(conds, sqlf.Sprintf("EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = u.repository_id and upload_id = u.id)"))
 	}
 	if opts.UploadedBefore != nil {
 		conds = append(conds, sqlf.Sprintf("u.uploaded_at < %s", *opts.UploadedBefore))
@@ -254,7 +233,7 @@ func (s *store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 				u.id,
 				u.commit,
 				u.root,
-				u.visible_at_tip,
+				EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = u.repository_id and upload_id = u.id) AS visible_at_tip,
 				u.uploaded_at,
 				u.state,
 				u.failure_message,
@@ -383,7 +362,7 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.id"),
 	sqlf.Sprintf("u.commit"),
 	sqlf.Sprintf("u.root"),
-	sqlf.Sprintf("u.visible_at_tip"),
+	sqlf.Sprintf("EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = u.repository_id and upload_id = u.id) AS visible_at_tip"),
 	sqlf.Sprintf("u.uploaded_at"),
 	sqlf.Sprintf("u.state"),
 	sqlf.Sprintf("u.failure_message"),
@@ -431,44 +410,36 @@ func (s *store) GetStates(ctx context.Context, ids []int) (map[int]string, error
 	`, sqlf.Join(intsToQueries(ids), ", "))))
 }
 
-// DeleteUploadByID deletes an upload by its identifier. If the upload was visible at the tip of its repository's default branch,
-// the visibility of all uploads for that repository are recalculated. The getTipCommit function is expected to return the newest
-// commit on the default branch when invoked.
-func (s *store) DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFunc) (_ bool, err error) {
+// DeleteUploadByID deletes an upload by its identifier. This method returns a true-valued flag if a record
+// was deleted. The associated repository will be marked as dirty so that its commit graph will be updated in
+// the background.
+func (s *store) DeleteUploadByID(ctx context.Context, id int) (_ bool, err error) {
 	tx, err := s.transact(ctx)
 	if err != nil {
 		return false, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	visibilities, err := scanVisibilities(tx.query(
+	repositoryID, deleted, err := scanFirstInt(tx.query(
 		ctx,
 		sqlf.Sprintf(`
 			DELETE FROM lsif_uploads
 			WHERE id = %s
-			RETURNING repository_id, visible_at_tip
+			RETURNING repository_id
 		`, id),
 	))
 	if err != nil {
 		return false, err
 	}
-
-	for repositoryID, visibleAtTip := range visibilities {
-		if visibleAtTip {
-			tipCommit, err := getTipCommit(ctx, repositoryID)
-			if err != nil {
-				return false, err
-			}
-
-			if err := tx.UpdateDumpsVisibleFromTip(ctx, repositoryID, tipCommit); err != nil {
-				return false, errors.Wrap(err, "store.UpdateDumpsVisibleFromTip")
-			}
-		}
-
-		return true, nil
+	if !deleted {
+		return false, nil
 	}
 
-	return false, nil
+	if err := tx.MarkRepositoryAsDirty(ctx, repositoryID); err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 // DeletedRepositoryGracePeriod is the minimum allowable duration between a repo deletion
@@ -487,7 +458,7 @@ func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Tim
 			SELECT r.id AS id FROM repo r
 			WHERE
 				%s - r.deleted_at >= %s * interval '1 second' AND
-				EXISTS (SELECT COUNT(*) from lsif_uploads u WHERE u.repository_id = r.id)
+				EXISTS (SELECT 1 from lsif_uploads u WHERE u.repository_id = r.id)
 		),
 		deleted_uploads AS (
 			DELETE FROM lsif_uploads u WHERE repository_id IN (SELECT id FROM deleted_repos)
@@ -516,12 +487,12 @@ func (s *store) ResetStalled(ctx context.Context, now time.Time) ([]int, []int, 
 	return s.makeUploadWorkQueueStore().ResetStalled(ctx)
 }
 
-func (s *store) makeUploadWorkQueueStore() workerutil.Store {
+func (s *store) makeUploadWorkQueueStore() dbworkerstore.Store {
 	return WorkerutilUploadStore(s)
 }
 
-func WorkerutilUploadStore(s Store) workerutil.Store {
-	return workerutil.NewStore(s.Handle(), workerutil.StoreOptions{
+func WorkerutilUploadStore(s Store) dbworkerstore.Store {
+	return dbworkerstore.NewStore(s.Handle(), dbworkerstore.StoreOptions{
 		TableName:         "lsif_uploads",
 		ViewName:          "lsif_uploads_with_repository_name u",
 		ColumnExpressions: uploadColumnsWithNullRank,

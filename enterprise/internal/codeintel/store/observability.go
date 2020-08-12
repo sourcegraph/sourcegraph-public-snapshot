@@ -14,6 +14,7 @@ import (
 type ObservedStore struct {
 	store                                   Store
 	doneOperation                           *observation.Operation
+	lockOperation                           *observation.Operation
 	getUploadByIDOperation                  *observation.Operation
 	getUploadsOperation                     *observation.Operation
 	queueSizeOperation                      *observation.Operation
@@ -31,15 +32,17 @@ type ObservedStore struct {
 	getDumpByIDOperation                    *observation.Operation
 	findClosestDumpsOperation               *observation.Operation
 	deleteOldestDumpOperation               *observation.Operation
-	updateDumpsVisibleFromTipOperation      *observation.Operation
 	deleteOverlappingDumpsOperation         *observation.Operation
 	getPackageOperation                     *observation.Operation
 	updatePackagesOperation                 *observation.Operation
 	sameRepoPagerOperation                  *observation.Operation
 	updatePackageReferencesOperation        *observation.Operation
 	packageReferencePagerOperation          *observation.Operation
+	hasRepositoryOperation                  *observation.Operation
 	hasCommitOperation                      *observation.Operation
-	updateCommitsOperation                  *observation.Operation
+	markRepositoryAsDirtyOperation          *observation.Operation
+	dirtyRepositoriesOperation              *observation.Operation
+	fixCommitsOperation                     *observation.Operation
 	indexableRepositoriesOperation          *observation.Operation
 	updateIndexableRepositoryOperation      *observation.Operation
 	resetIndexableRepositoriesOperation     *observation.Operation
@@ -75,6 +78,11 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 		doneOperation: observationContext.Operation(observation.Op{
 			Name:         "store.Done",
 			MetricLabels: []string{"done"},
+			Metrics:      metrics,
+		}),
+		lockOperation: observationContext.Operation(observation.Op{
+			Name:         "store.Lock",
+			MetricLabels: []string{"lock"},
 			Metrics:      metrics,
 		}),
 		getUploadByIDOperation: observationContext.Operation(observation.Op{
@@ -162,11 +170,6 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 			MetricLabels: []string{"delete_oldest_dump"},
 			Metrics:      metrics,
 		}),
-		updateDumpsVisibleFromTipOperation: observationContext.Operation(observation.Op{
-			Name:         "store.UpdateDumpsVisibleFromTip",
-			MetricLabels: []string{"update_dumps_visible_from_tip"},
-			Metrics:      metrics,
-		}),
 		deleteOverlappingDumpsOperation: observationContext.Operation(observation.Op{
 			Name:         "store.DeleteOverlappingDumps",
 			MetricLabels: []string{"delete_overlapping_dumps"},
@@ -197,14 +200,29 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 			MetricLabels: []string{"package_reference_pager"},
 			Metrics:      metrics,
 		}),
+		hasRepositoryOperation: observationContext.Operation(observation.Op{
+			Name:         "store.HasRepository",
+			MetricLabels: []string{"has_repository"},
+			Metrics:      metrics,
+		}),
 		hasCommitOperation: observationContext.Operation(observation.Op{
 			Name:         "store.HasCommit",
 			MetricLabels: []string{"has_commit"},
 			Metrics:      metrics,
 		}),
-		updateCommitsOperation: observationContext.Operation(observation.Op{
-			Name:         "store.UpdateCommits",
-			MetricLabels: []string{"update_commits"},
+		markRepositoryAsDirtyOperation: observationContext.Operation(observation.Op{
+			Name:         "store.MarkRepositoryAsDirty",
+			MetricLabels: []string{"mark_repository_as_dirty"},
+			Metrics:      metrics,
+		}),
+		dirtyRepositoriesOperation: observationContext.Operation(observation.Op{
+			Name:         "store.DirtyRepositories",
+			MetricLabels: []string{"dirty_repositories"},
+			Metrics:      metrics,
+		}),
+		fixCommitsOperation: observationContext.Operation(observation.Op{
+			Name:         "store.FixCommits",
+			MetricLabels: []string{"fix_commits"},
 			Metrics:      metrics,
 		}),
 		indexableRepositoriesOperation: observationContext.Operation(observation.Op{
@@ -304,6 +322,7 @@ func (s *ObservedStore) wrap(other Store) Store {
 	return &ObservedStore{
 		store:                                   other,
 		doneOperation:                           s.doneOperation,
+		lockOperation:                           s.lockOperation,
 		getUploadByIDOperation:                  s.getUploadByIDOperation,
 		deleteUploadsWithoutRepositoryOperation: s.deleteUploadsWithoutRepositoryOperation,
 		getUploadsOperation:                     s.getUploadsOperation,
@@ -321,15 +340,17 @@ func (s *ObservedStore) wrap(other Store) Store {
 		getDumpByIDOperation:                    s.getDumpByIDOperation,
 		findClosestDumpsOperation:               s.findClosestDumpsOperation,
 		deleteOldestDumpOperation:               s.deleteOldestDumpOperation,
-		updateDumpsVisibleFromTipOperation:      s.updateDumpsVisibleFromTipOperation,
 		deleteOverlappingDumpsOperation:         s.deleteOverlappingDumpsOperation,
 		getPackageOperation:                     s.getPackageOperation,
 		updatePackagesOperation:                 s.updatePackagesOperation,
 		sameRepoPagerOperation:                  s.sameRepoPagerOperation,
 		updatePackageReferencesOperation:        s.updatePackageReferencesOperation,
 		packageReferencePagerOperation:          s.packageReferencePagerOperation,
+		hasRepositoryOperation:                  s.hasRepositoryOperation,
 		hasCommitOperation:                      s.hasCommitOperation,
-		updateCommitsOperation:                  s.updateCommitsOperation,
+		markRepositoryAsDirtyOperation:          s.markRepositoryAsDirtyOperation,
+		dirtyRepositoriesOperation:              s.dirtyRepositoriesOperation,
+		fixCommitsOperation:                     s.fixCommitsOperation,
 		indexableRepositoriesOperation:          s.indexableRepositoriesOperation,
 		updateIndexableRepositoryOperation:      s.updateIndexableRepositoryOperation,
 		resetIndexableRepositoriesOperation:     s.resetIndexableRepositoriesOperation,
@@ -382,6 +403,13 @@ func (s *ObservedStore) Done(e error) error {
 		observedErr = err
 	}
 	return err
+}
+
+// Lock calls into the inner store and registers the observed results.
+func (s *ObservedStore) Lock(ctx context.Context, key int, blocking bool) (_ bool, _ UnlockFunc, err error) {
+	ctx, endObservation := s.lockOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return s.store.Lock(ctx, key, blocking)
 }
 
 // GetUploadByID calls into the inner store and registers the observed results.
@@ -464,10 +492,10 @@ func (s *ObservedStore) GetStates(ctx context.Context, ids []int) (states map[in
 }
 
 // DeleteUploadByID calls into the inner store and registers the observed results.
-func (s *ObservedStore) DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFunc) (_ bool, err error) {
+func (s *ObservedStore) DeleteUploadByID(ctx context.Context, id int) (_ bool, err error) {
 	ctx, endObservation := s.deleteUploadByIDOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-	return s.store.DeleteUploadByID(ctx, id, getTipCommit)
+	return s.store.DeleteUploadByID(ctx, id)
 }
 
 // DeleteUploadsWithoutRepository calls into the inner store and registers the observed results.
@@ -512,13 +540,6 @@ func (s *ObservedStore) DeleteOldestDump(ctx context.Context) (_ int, _ bool, er
 	return s.store.DeleteOldestDump(ctx)
 }
 
-// UpdateDumpsVisibleFromTip calls into the inner store and registers the observed results.
-func (s *ObservedStore) UpdateDumpsVisibleFromTip(ctx context.Context, repositoryID int, tipCommit string) (err error) {
-	ctx, endObservation := s.updateDumpsVisibleFromTipOperation.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-	return s.store.UpdateDumpsVisibleFromTip(ctx, repositoryID, tipCommit)
-}
-
 // DeleteOverlappingDumps calls into the inner store and registers the observed results.
 func (s *ObservedStore) DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) (err error) {
 	ctx, endObservation := s.deleteOverlappingDumpsOperation.With(ctx, &err, observation.Args{})
@@ -561,6 +582,13 @@ func (s *ObservedStore) PackageReferencePager(ctx context.Context, scheme, name,
 	return s.store.PackageReferencePager(ctx, scheme, name, version, repositoryID, limit)
 }
 
+// HasRepository calls into the inner store and registers the observed results.
+func (s *ObservedStore) HasRepository(ctx context.Context, repositoryID int) (_ bool, err error) {
+	ctx, endObservation := s.hasRepositoryOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return s.store.HasRepository(ctx, repositoryID)
+}
+
 // HasCommit calls into the inner store and registers the observed results.
 func (s *ObservedStore) HasCommit(ctx context.Context, repositoryID int, commit string) (_ bool, err error) {
 	ctx, endObservation := s.hasCommitOperation.With(ctx, &err, observation.Args{})
@@ -568,11 +596,25 @@ func (s *ObservedStore) HasCommit(ctx context.Context, repositoryID int, commit 
 	return s.store.HasCommit(ctx, repositoryID, commit)
 }
 
-// UpdateCommits calls into the inner store and registers the observed results.
-func (s *ObservedStore) UpdateCommits(ctx context.Context, repositoryID int, commits map[string][]string) (err error) {
-	ctx, endObservation := s.updateCommitsOperation.With(ctx, &err, observation.Args{})
+// MarkRepositoryAsDirty calls into the inner store and registers the observed results.
+func (s *ObservedStore) MarkRepositoryAsDirty(ctx context.Context, repositoryID int) (err error) {
+	ctx, endObservation := s.markRepositoryAsDirtyOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-	return s.store.UpdateCommits(ctx, repositoryID, commits)
+	return s.store.MarkRepositoryAsDirty(ctx, repositoryID)
+}
+
+// DirtyRepositories calls into the inner store and registers the observed results.
+func (s *ObservedStore) DirtyRepositories(ctx context.Context) (repositoryIDs map[int]int, err error) {
+	ctx, endObservation := s.dirtyRepositoriesOperation.With(ctx, &err, observation.Args{})
+	defer func() { endObservation(float64(len(repositoryIDs)), observation.Args{}) }()
+	return s.store.DirtyRepositories(ctx)
+}
+
+// CalculateVisibleUploads calls into the inner store and registers the observed results.
+func (s *ObservedStore) CalculateVisibleUploads(ctx context.Context, repositoryID int, graph map[string][]string, tipCommit string, dirtyToken int) (err error) {
+	ctx, endObservation := s.fixCommitsOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return s.store.CalculateVisibleUploads(ctx, repositoryID, graph, tipCommit, dirtyToken)
 }
 
 // IndexableRepositories calls into the inner store and registers the observed results.
@@ -604,9 +646,9 @@ func (s *ObservedStore) GetIndexByID(ctx context.Context, id int) (_ Index, _ bo
 }
 
 // GetIndexes calls into the inner store and registers the observed results.
-func (s *ObservedStore) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Index, _ int, err error) {
+func (s *ObservedStore) GetIndexes(ctx context.Context, opts GetIndexesOptions) (indexes []Index, _ int, err error) {
 	ctx, endObservation := s.getIndexesOperation.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+	defer func() { endObservation(float64(len(indexes)), observation.Args{}) }()
 	return s.store.GetIndexes(ctx, opts)
 }
 

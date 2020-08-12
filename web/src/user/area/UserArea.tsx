@@ -24,6 +24,7 @@ import { UserAreaHeader, UserAreaHeaderNavItem } from './UserAreaHeader'
 import { PatternTypeProps } from '../../search'
 import { ErrorMessage } from '../../components/alerts'
 import { isDefined } from '../../../../shared/src/util/types'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
 const fetchUser = (args: { username: string; siteAdmin: boolean }): Observable<GQL.IUser> =>
     queryGraphQL(
@@ -82,6 +83,7 @@ interface UserAreaProps
         PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps,
+        TelemetryProps,
         ActivationProps,
         Omit<PatternTypeProps, 'setPatternType'> {
     userAreaRoutes: readonly UserAreaRoute[]
@@ -94,6 +96,8 @@ interface UserAreaProps
      * parameter.
      */
     authenticatedUser: GQL.IUser | null
+
+    isSourcegraphDotCom: boolean
 }
 
 interface UserAreaState {
@@ -112,6 +116,7 @@ export interface UserAreaRouteContext
         PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps,
+        TelemetryProps,
         ActivationProps,
         NamespaceProps,
         Omit<PatternTypeProps, 'setPatternType'> {
@@ -135,6 +140,8 @@ export interface UserAreaRouteContext
     authenticatedUser: GQL.IUser | null
     userSettingsSideBarItems: UserSettingsSidebarItems
     userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
+
+    isSourcegraphDotCom: boolean
 }
 
 /**

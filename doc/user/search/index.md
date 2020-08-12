@@ -133,7 +133,7 @@ After setting some version contexts, users can select version contexts in the dr
 
 > NOTE: This feature is still in active development and must be enabled by a Sourcegraph site admin in site configuration.
 
-The most common branch to search is your default branch. To speed up this common operation Sourcegraph maintains an index of the source code on your default branch. Some organizations have other branches which are regularly searched. To speed up search for those branches Sourcegraph can be configured to index them.
+The most common branch to search is your default branch. To speed up this common operation Sourcegraph maintains an index of the source code on your default branch. Some organizations have other branches which are regularly searched. To speed up search for those branches Sourcegraph can be configured to index up to 64 branches per repository.
 
 Your site admin can configure indexed branches in site configuration under the `experimentalFeatures.search.index.branches` setting. For example:
 

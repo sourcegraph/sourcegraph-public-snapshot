@@ -8,9 +8,17 @@ import (
 	"time"
 
 	"github.com/efritz/glock"
-	sqlf "github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
+
+type TestRecord struct {
+	ID    int
+	State string
+}
+
+func (v TestRecord) RecordID() int {
+	return v.ID
+}
 
 func TestWorkerHandlerSuccess(t *testing.T) {
 	store := NewMockStore()
@@ -43,7 +51,7 @@ func TestWorkerHandlerSuccess(t *testing.T) {
 	if callCount := len(store.MarkCompleteFunc.History()); callCount != 1 {
 		t.Errorf("unexpected mark complete call count. want=%d have=%d", 1, callCount)
 	} else if id := store.MarkCompleteFunc.History()[0].Arg1; id != 42 {
-		t.Errorf("unexpected id argument to markge. want=%v have=%v", 42, id)
+		t.Errorf("unexpected id argument to mark complete. want=%v have=%v", 42, id)
 	}
 
 	if callCount := len(store.DoneFunc.History()); callCount != 1 {
@@ -237,10 +245,10 @@ func TestWorkerConditionalPreDequeueHook(t *testing.T) {
 	store.DequeueFunc.PushReturn(TestRecord{ID: 44}, store, true, nil)
 	store.DequeueFunc.SetDefaultReturn(nil, nil, false, nil)
 
-	// Block all dequeues
-	handler.PreDequeueFunc.PushReturn(true, []*sqlf.Query{sqlf.Sprintf("A")}, nil)
-	handler.PreDequeueFunc.PushReturn(true, []*sqlf.Query{sqlf.Sprintf("B")}, nil)
-	handler.PreDequeueFunc.PushReturn(true, []*sqlf.Query{sqlf.Sprintf("C")}, nil)
+	// Return additional arguments
+	handler.PreDequeueFunc.PushReturn(true, "A", nil)
+	handler.PreDequeueFunc.PushReturn(true, "B", nil)
+	handler.PreDequeueFunc.PushReturn(true, "C", nil)
 
 	worker := newWorker(context.Background(), store, options, clock)
 	go func() { worker.Start() }()
@@ -256,12 +264,34 @@ func TestWorkerConditionalPreDequeueHook(t *testing.T) {
 	if callCount := len(store.DequeueFunc.History()); callCount != 3 {
 		t.Errorf("unexpected dequeue call count. want=%d have=%d", 3, callCount)
 	} else {
-		for i, expectedQuery := range []string{"A", "B", "C"} {
-			if queries := store.DequeueFunc.History()[i].Arg1; len(queries) == 0 {
-				t.Errorf("expected condition queries for dequeue call %d", i)
-			} else if query := queries[0].Query(sqlf.PostgresBindVar); query != expectedQuery {
-				t.Errorf("unexpected query for dequeue call %d. want=%q have=%q", i, expectedQuery, query)
+		for i, expected := range []string{"A", "B", "C"} {
+			if extra := store.DequeueFunc.History()[i].Arg1; extra != expected {
+				t.Errorf("unexpected extra argument for dequeue call %d. want=%q have=%q", i, expected, extra)
 			}
 		}
+	}
+}
+
+type MockHandlerWithPreDequeue struct {
+	*MockHandler
+	*MockWithPreDequeue
+}
+
+func NewMockHandlerWithPreDequeue() *MockHandlerWithPreDequeue {
+	return &MockHandlerWithPreDequeue{
+		MockHandler:        NewMockHandler(),
+		MockWithPreDequeue: NewMockWithPreDequeue(),
+	}
+}
+
+type MockHandlerWithHooks struct {
+	*MockHandler
+	*MockWithHooks
+}
+
+func NewMockHandlerWithHooks() *MockHandlerWithHooks {
+	return &MockHandlerWithHooks{
+		MockHandler:   NewMockHandler(),
+		MockWithHooks: NewMockWithHooks(),
 	}
 }

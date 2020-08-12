@@ -11,6 +11,7 @@ import { HeroPage } from '../components/HeroPage'
 import { RouteDescriptor } from '../util/contributions'
 import { SiteAdminSidebar, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
 const NotFoundPage: React.ComponentType<{}> = () => (
     <HeroPage
@@ -24,7 +25,11 @@ const NotSiteAdminPage: React.ComponentType<{}> = () => (
     <HeroPage icon={MapSearchIcon} title="403: Forbidden" subtitle="Only site admins are allowed here." />
 )
 
-export interface SiteAdminAreaRouteContext extends PlatformContextProps, SettingsCascadeProps, ActivationProps {
+export interface SiteAdminAreaRouteContext
+    extends PlatformContextProps,
+        SettingsCascadeProps,
+        ActivationProps,
+        TelemetryProps {
     site: Pick<GQL.ISite, '__typename' | 'id'>
     authenticatedUser: GQL.IUser
     isLightTheme: boolean
@@ -39,7 +44,8 @@ interface SiteAdminAreaProps
     extends RouteComponentProps<{}>,
         PlatformContextProps,
         SettingsCascadeProps,
-        ActivationProps {
+        ActivationProps,
+        TelemetryProps {
     routes: readonly SiteAdminAreaRoute[]
     sideBarGroups: SiteAdminSideBarGroups
     overviewComponents: readonly React.ComponentType[]
@@ -61,6 +67,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
         activation: props.activation,
         site: { __typename: 'Site' as const, id: window.context.siteGQLID },
         overviewComponents: props.overviewComponents,
+        telemetryService: props.telemetryService,
     }
 
     return (

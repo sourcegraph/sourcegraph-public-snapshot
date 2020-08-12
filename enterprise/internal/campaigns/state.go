@@ -29,7 +29,7 @@ func SetDerivedState(ctx context.Context, c *campaigns.Changeset, es []*campaign
 	copy(events, es)
 	sort.Sort(events)
 
-	c.ExternalCheckState = ComputeCheckState(c, events)
+	c.ExternalCheckState = computeCheckState(c, events)
 
 	history, err := computeHistory(c, events)
 	if err != nil {
@@ -37,12 +37,12 @@ func SetDerivedState(ctx context.Context, c *campaigns.Changeset, es []*campaign
 		return
 	}
 
-	if state, err := ComputeChangesetState(c, history); err != nil {
-		log15.Warn("Computing changeset state", "err", err)
+	if state, err := computeExternalState(c, history); err != nil {
+		log15.Warn("Computing external changeset state", "err", err)
 	} else {
 		c.ExternalState = state
 	}
-	if state, err := ComputeReviewState(c, history); err != nil {
+	if state, err := computeReviewState(c, history); err != nil {
 		log15.Warn("Computing changeset review state", "err", err)
 	} else {
 		c.ExternalReviewState = state
@@ -52,7 +52,7 @@ func SetDerivedState(ctx context.Context, c *campaigns.Changeset, es []*campaign
 	// synced, and it's still complete, then we don't need to do any further
 	// work: the diffstat should still be correct, and this way we don't need to
 	// rely on gitserver having the head OID still available.
-	if c.SyncState.IsComplete && c.ExternalState != campaigns.ChangesetStateOpen {
+	if c.SyncState.IsComplete && c.ExternalState != campaigns.ChangesetExternalStateOpen {
 		return
 	}
 
@@ -91,9 +91,10 @@ func SetDerivedState(ctx context.Context, c *campaigns.Changeset, es []*campaign
 	}
 }
 
-// ComputeCheckState computes the overall check state based on the current synced check state
-// and any webhook events that have arrived after the most recent sync
-func ComputeCheckState(c *campaigns.Changeset, events ChangesetEvents) campaigns.ChangesetCheckState {
+// computeCheckState computes the overall check state based on the current
+// synced check state and any webhook events that have arrived after the most
+// recent sync.
+func computeCheckState(c *campaigns.Changeset, events ChangesetEvents) campaigns.ChangesetCheckState {
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
 		return computeGitHubCheckState(c.UpdatedAt, m, events)
@@ -102,28 +103,28 @@ func ComputeCheckState(c *campaigns.Changeset, events ChangesetEvents) campaigns
 		return computeBitbucketBuildStatus(c.UpdatedAt, m, events)
 
 	case *gitlab.MergeRequest:
-		return computeGitLabCheckState(m)
+		return computeGitLabCheckState(c.UpdatedAt, m, events)
 	}
 
 	return campaigns.ChangesetCheckStateUnknown
 }
 
-// ComputeChangesetState computes the overall state for the changeset and its
-// associated events. The events should be presorted.
-func ComputeChangesetState(c *campaigns.Changeset, history []changesetStatesAtTime) (campaigns.ChangesetState, error) {
+// computeExternalState computes the external state for the changeset and its
+// associated events.
+func computeExternalState(c *campaigns.Changeset, history []changesetStatesAtTime) (campaigns.ChangesetExternalState, error) {
 	if len(history) == 0 {
-		return computeSingleChangesetState(c)
+		return computeSingleChangesetExternalState(c)
 	}
 	newestDataPoint := history[len(history)-1]
 	if c.UpdatedAt.After(newestDataPoint.t) {
-		return computeSingleChangesetState(c)
+		return computeSingleChangesetExternalState(c)
 	}
-	return newestDataPoint.state, nil
+	return newestDataPoint.externalState, nil
 }
 
-// ComputeReviewState computes the review state for the changeset and its
+// computeReviewState computes the review state for the changeset and its
 // associated events. The events should be presorted.
-func ComputeReviewState(c *campaigns.Changeset, history []changesetStatesAtTime) (campaigns.ChangesetReviewState, error) {
+func computeReviewState(c *campaigns.Changeset, history []changesetStatesAtTime) (campaigns.ChangesetReviewState, error) {
 	if len(history) == 0 {
 		return computeSingleChangesetReviewState(c)
 	}
@@ -351,30 +352,53 @@ func parseGithubCheckSuiteState(status, conclusion string) campaigns.ChangesetCh
 	return campaigns.ChangesetCheckStateUnknown
 }
 
-func computeGitLabCheckState(mr *gitlab.MergeRequest) campaigns.ChangesetCheckState {
+func computeGitLabCheckState(lastSynced time.Time, mr *gitlab.MergeRequest, events []*campaigns.ChangesetEvent) campaigns.ChangesetCheckState {
 	// GitLab pipelines aren't tied to commits in the same way that GitHub
-	// checks are. In the (current) absence of webhooks, the process here is
-	// pretty straightforward: the latest pipeline wins. They _should_ be in
-	// descending order, but we'll sort them just to be sure.
+	// checks are. We're simply looking for the most recent pipeline run that
+	// was associated with the merge request, which may live in a changeset
+	// event (via webhook) or on the Pipelines field of the merge request
+	// itself. We don't need to implement the same combinatorial logic that
+	// exists for other code hosts because that's essentially what the pipeline
+	// is, except GitLab handles the details of combining the job states.
 
-	// First up, a special case: if there are no pipelines, we'll try to use
-	// HeadPipeline. If that's empty, then we'll shrug and say we don't know.
-	if len(mr.Pipelines) == 0 {
-		if mr.HeadPipeline != nil {
-			return parseGitLabPipelineStatus(mr.HeadPipeline.Status)
+	// Let's figure out what the last pipeline event we saw in the events was.
+	var lastPipelineEvent *gitlab.Pipeline
+	for _, e := range events {
+		switch m := e.Metadata.(type) {
+		case *gitlab.Pipeline:
+			if lastPipelineEvent == nil || lastPipelineEvent.CreatedAt.Before(m.CreatedAt.Time) {
+				lastPipelineEvent = m
+			}
 		}
-		return campaigns.ChangesetCheckStateUnknown
 	}
 
-	// Sort into descending order so that the pipeline at index 0 is the latest.
-	pipelines := mr.Pipelines
-	sort.Slice(pipelines, func(i, j int) bool {
-		return pipelines[i].CreatedAt.After(pipelines[j].CreatedAt)
-	})
+	if lastPipelineEvent == nil || lastPipelineEvent.CreatedAt.Before(lastSynced) {
+		// OK, so we've either synced since the last pipeline event or there
+		// just aren't any events, therefore the source of truth is the merge
+		// request. The process here is pretty straightforward: the latest
+		// pipeline wins. They _should_ be in descending order, but we'll sort
+		// them just to be sure.
 
-	// TODO: after webhooks, look at changeset events.
+		// First up, a special case: if there are no pipelines, we'll try to use
+		// HeadPipeline. If that's empty, then we'll shrug and say we don't
+		// know.
+		if len(mr.Pipelines) == 0 {
+			if mr.HeadPipeline != nil {
+				return parseGitLabPipelineStatus(mr.HeadPipeline.Status)
+			}
+			return campaigns.ChangesetCheckStateUnknown
+		}
 
-	return parseGitLabPipelineStatus(pipelines[0].Status)
+		// Sort into descending order so that the pipeline at index 0 is the latest.
+		pipelines := mr.Pipelines
+		sort.Slice(pipelines, func(i, j int) bool {
+			return pipelines[i].CreatedAt.After(pipelines[j].CreatedAt.Time)
+		})
+
+		return parseGitLabPipelineStatus(pipelines[0].Status)
+	}
+
+	return parseGitLabPipelineStatus(lastPipelineEvent.Status)
 }
 
 func parseGitLabPipelineStatus(status gitlab.PipelineStatus) campaigns.ChangesetCheckState {
@@ -390,31 +414,30 @@ func parseGitLabPipelineStatus(status gitlab.PipelineStatus) campaigns.Changeset
 	}
 }
 
-// computeSingleChangesetState of a Changeset based on the metadata.
+// computeSingleChangesetExternalState of a Changeset based on the metadata.
 // It does NOT reflect the final calculated state, use `ExternalState` instead.
-func computeSingleChangesetState(c *campaigns.Changeset) (s campaigns.ChangesetState, err error) {
+func computeSingleChangesetExternalState(c *campaigns.Changeset) (s campaigns.ChangesetExternalState, err error) {
 	if !c.ExternalDeletedAt.IsZero() {
-		return campaigns.ChangesetStateDeleted, nil
+		return campaigns.ChangesetExternalStateDeleted, nil
 	}
 
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
-		s = campaigns.ChangesetState(m.State)
+		s = campaigns.ChangesetExternalState(m.State)
 	case *bitbucketserver.PullRequest:
 		if m.State == "DECLINED" {
-			s = campaigns.ChangesetStateClosed
+			s = campaigns.ChangesetExternalStateClosed
 		} else {
-			s = campaigns.ChangesetState(m.State)
+			s = campaigns.ChangesetExternalState(m.State)
 		}
 	case *gitlab.MergeRequest:
-		// TODO: implement webhook support
 		switch m.State {
 		case gitlab.MergeRequestStateClosed, gitlab.MergeRequestStateLocked:
-			s = campaigns.ChangesetStateClosed
+			s = campaigns.ChangesetExternalStateClosed
 		case gitlab.MergeRequestStateMerged:
-			s = campaigns.ChangesetStateMerged
+			s = campaigns.ChangesetExternalStateMerged
 		case gitlab.MergeRequestStateOpened:
-			s = campaigns.ChangesetStateOpen
+			s = campaigns.ChangesetExternalStateOpen
 		default:
 			return "", errors.Errorf("unknown GitLab merge request state: %s", m.State)
 		}
@@ -433,14 +456,13 @@ func computeSingleChangesetState(c *campaigns.Changeset) (s campaigns.ChangesetS
 // GitHub doesn't keep the review state on a changeset, so a GitHub Changeset
 // will always return ChangesetReviewStatePending.
 //
-// This method should NOT be called directly. Use ComputeReviewState instead.
+// This method should NOT be called directly. Use computeReviewState instead.
 func computeSingleChangesetReviewState(c *campaigns.Changeset) (s campaigns.ChangesetReviewState, err error) {
 	states := map[campaigns.ChangesetReviewState]bool{}
 
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
-		// For GitHub we need to use `ChangesetEvents.ReviewState`
-		log15.Warn("Changeset.ReviewState() called, but GitHub review state is calculated through ChangesetEvents.ReviewState", "changeset", c)
+		// For GitHub we need to use `ChangesetEvents.ReviewState`.
 		return campaigns.ChangesetReviewStatePending, nil
 
 	case *bitbucketserver.PullRequest:
@@ -503,16 +525,6 @@ func selectReviewState(states map[campaigns.ChangesetReviewState]bool) campaigns
 	return campaigns.ChangesetReviewStatePending
 }
 
-// computeOverallReviewState returns the overall review state given a map of
-// reviews per author.
-func computeReviewState(statesByAuthor map[string]campaigns.ChangesetReviewState) campaigns.ChangesetReviewState {
-	states := make(map[campaigns.ChangesetReviewState]bool)
-	for _, s := range statesByAuthor {
-		states[s] = true
-	}
-	return selectReviewState(states)
-}
-
 // computeDiffStat computes the up to date diffstat for the changeset, based on
 // the values in c.SyncState.
 func computeDiffStat(ctx context.Context, c *campaigns.Changeset, repo gitserver.Repo) (*diff.Stat, error) {
@@ -570,7 +582,7 @@ func computeSyncState(ctx context.Context, c *campaigns.Changeset, repo gitserve
 	return &campaigns.ChangesetSyncState{
 		BaseRefOid: base,
 		HeadRefOid: head,
-		IsComplete: c.ExternalState != campaigns.ChangesetStateOpen,
+		IsComplete: c.ExternalState != campaigns.ChangesetExternalStateOpen,
 	}, nil
 }
 
@@ -632,6 +644,7 @@ func ComputeLabels(c *campaigns.Changeset, events ChangesetEvents) []campaigns.C
 				delete(set, e.Label.Name)
 				continue
 			}
+
 			set[e.Label.Name] = campaigns.ChangesetLabel{
 				Name:        e.Label.Name,
 				Color:       e.Label.Color,

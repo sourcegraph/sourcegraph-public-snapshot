@@ -30,8 +30,8 @@ const { add } = storiesOf('web/Global styles', module).addDecorator(story => {
     document.body.classList.toggle('theme-dark', theme === 'dark')
     return (
         <>
-            <style>{webStyles}</style>
             <div className="p-3 container">{story()}</div>
+            <style>{webStyles}</style>
         </>
     )
 })
@@ -56,6 +56,14 @@ add('Text', () => (
 
         <p>
             Text can be <em>emphasized</em> or made <strong>strong</strong>.
+        </p>
+
+        <p>
+            Text can have superscripts<sup>sup</sup> with <code>{'<sup>'}</code>.
+        </p>
+
+        <p>
+            Text can have subscripts<sub>sub</sub> with <code>{'<sub>'}</code>.
         </p>
 
         <p>
@@ -159,52 +167,61 @@ add('Code', () => (
     </>
 ))
 
-add('Colors', () => (
-    <>
-        <h1>Colors</h1>
+add(
+    'Colors',
+    () => (
+        <>
+            <h1>Colors</h1>
 
-        <h2>Semantic colors</h2>
-        <p>
-            These can be used to give semantic clues and always work both in light and dark theme. They are availeble on
-            most CSS components and the <code>border-</code> and <code>bg-</code> utility classes.
-        </p>
-        <div className="d-flex flex-wrap">
-            {semanticColors.map(semantic => (
-                <div className="m-2 text-center" key={semantic}>
-                    <div className={`bg-${semantic} rounded`} style={{ width: '5rem', height: '5rem' }} />
-                    {semantic}
-                </div>
-            ))}
-        </div>
-
-        <h2>Color Palette</h2>
-        <p>
-            Our color palette is the <a href="https://yeun.github.io/open-color/">Open Color</a> palette. All colors are
-            available as SCSS and CSS variables. It's generally not advised to use these directly, but they may be used
-            in rare cases, like charts. In other cases, rely on CSS components, utilities for borders and background,
-            and dynamic CSS variables.
-        </p>
-        {Object.entries(openColor).map(
-            ([name, colors]) =>
-                Array.isArray(colors) && (
-                    <div key={name}>
-                        <h5>{name}</h5>
-                        <div className="d-flex flex-wrap">
-                            {colors.map((color, number) => (
-                                <div key={color} className="m-2 text-right">
-                                    <div
-                                        className="rounded"
-                                        style={{ background: color, width: '3rem', height: '3rem' }}
-                                    />
-                                    {number}
-                                </div>
-                            ))}
-                        </div>
+            <h2>Semantic colors</h2>
+            <p>
+                These can be used to give semantic clues and always work both in light and dark theme. They are
+                available on most CSS components and the <code>border-</code> and <code>bg-</code> utility classes.
+            </p>
+            <div className="d-flex flex-wrap">
+                {semanticColors.map(semantic => (
+                    <div className="m-2 text-center" key={semantic}>
+                        <div className={`bg-${semantic} rounded`} style={{ width: '5rem', height: '5rem' }} />
+                        {semantic}
                     </div>
-                )
-        )}
-    </>
-))
+                ))}
+            </div>
+
+            <h2>Color Palette</h2>
+            <p>
+                Our color palette is the <a href="https://yeun.github.io/open-color/">Open Color</a> palette. All colors
+                are available as SCSS and CSS variables. It's generally not advised to use these directly, but they may
+                be used in rare cases, like charts. In other cases, rely on CSS components, utilities for borders and
+                background, and dynamic CSS variables.
+            </p>
+            {Object.entries(openColor).map(
+                ([name, colors]) =>
+                    Array.isArray(colors) && (
+                        <div key={name}>
+                            <h5>{name}</h5>
+                            <div className="d-flex flex-wrap">
+                                {colors.map((color, number) => (
+                                    <div key={color} className="m-2 text-right">
+                                        <div
+                                            className="rounded"
+                                            style={{ background: color, width: '3rem', height: '3rem' }}
+                                        />
+                                        {number}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )
+            )}
+        </>
+    ),
+    {
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/P2M4QrgIxeUsjE80MHP8TmY3/Sourcegraph-Colors?node-id=0%3A2',
+        },
+    }
+)
 
 add('Layout', () => (
     <>
@@ -325,19 +342,161 @@ add(
     }
 )
 
-add('Badges', () => (
-    <>
-        <h1>Badges</h1>
-        <h2>Contextual variations</h2>
-        <p>
-            {semanticColors.map(semantic => (
-                <React.Fragment key={semantic}>
-                    <span className={classNames('badge', `badge-${semantic}`)}>{semantic}</span>{' '}
-                </React.Fragment>
-            ))}
-        </p>
-    </>
-))
+add(
+    'Badges',
+    () => (
+        <>
+            <h1>Badges</h1>
+            <p>
+                <a href="https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+count:1000+badge+badge-&patternType=literal">
+                    Usages
+                </a>{' '}
+                | <a href="https://getbootstrap.com/docs/4.5/components/badge/">Bootstrap Documentation</a>{' '}
+            </p>
+            <p>Badges are used for labelling and displaying small counts.</p>
+
+            <h2>Scaling</h2>
+            <p>
+                Badges scale to match the size of the immediate parent element by using relative font sizing and{' '}
+                <code>em</code> units for padding.
+            </p>
+            <p>
+                Use a superscript <code>{'<sup></sup>'}</code> to position the badge top-right of a word in{' '}
+                <code>h1</code> headings. Do not use a superscript for smaller text, because the font size would become
+                too small.
+            </p>
+            <table className="table">
+                <tbody>
+                    <tr>
+                        <td>
+                            <code>{'<h1>'}</code> + <code>{'<sup>'}</code>
+                        </td>
+                        <td>
+                            <h1>
+                                Lorem{' '}
+                                <sup>
+                                    <span className="badge badge-secondary">ipsum</span>
+                                </sup>
+                            </h1>
+                            <small>Use a superscript to align the badge top-right of the heading text.</small>
+                        </td>
+                    </tr>
+                    {(['h2', 'h3', 'h4', 'h5', 'h6'] as const).map(Heading => (
+                        <tr key={Heading}>
+                            <td>
+                                <code>{`<${Heading}>`}</code>
+                            </td>
+                            <td>
+                                <Heading>
+                                    Lorem <span className="badge badge-secondary">ipsum</span>
+                                </Heading>
+                            </td>
+                        </tr>
+                    ))}
+                    <tr>
+                        <td>Regular text</td>
+                        <td>
+                            Lorem <span className="badge badge-secondary">ipsum</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>{'<small>'}</code>
+                        </td>
+                        <td>
+                            <small>
+                                Lorem <span className="badge badge-secondary">ipsum</span>
+                            </small>
+                            <p>
+                                <small className="text-danger">
+                                    Discouraged because the text becomes too small to read.
+                                </small>
+                            </p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>Semantic variations</h2>
+            <p>Change the appearance of any badge with modifier classes for semantic colors.</p>
+            <p>
+                {semanticColors.map(semantic => (
+                    <React.Fragment key={semantic}>
+                        <span className={classNames('badge', `badge-${semantic}`)}>{semantic}</span>{' '}
+                    </React.Fragment>
+                ))}
+            </p>
+
+            <h2>Uppercase</h2>
+            <p>
+                Badges can be visually uppercased by combining them with the <code>text-uppercase</code> class.
+                Examples:
+            </p>
+            <div>
+                <h1>
+                    Blockchain support{' '}
+                    <sup>
+                        <span className="badge badge-warning text-uppercase">Beta</span>
+                    </sup>
+                </h1>
+                <h1>
+                    Blockchain support{' '}
+                    <sup>
+                        <span className="badge badge-info text-uppercase">Preview</span>
+                    </sup>
+                </h1>
+                <h1>
+                    Blockchain support{' '}
+                    <sup>
+                        <span className="badge badge-info text-uppercase">Experimental</span>
+                    </sup>
+                </h1>
+                <h1>
+                    Blockchain support{' '}
+                    <sup>
+                        <span className="badge badge-info text-uppercase">Prototype</span>
+                    </sup>
+                </h1>
+            </div>
+            <p>
+                <span className="badge badge-success text-uppercase">added</span> <code>path/to/file.ts</code>
+            </p>
+            <p>
+                <span className="badge badge-danger text-uppercase">deleted</span> <code>path/to/file.ts</code>
+            </p>
+            <p>
+                <span className="badge badge-warning text-uppercase">moved</span> <code>path/to/file.ts</code>
+            </p>
+            <p>Do not use it for user-supplied text like labels (tags) or usernames.</p>
+
+            <h2>Pill badges</h2>
+            <p>Pill badges are commonly used to display counts.</p>
+            <div className="mb-4">
+                Matches <span className="badge badge-pill badge-secondary">321+</span>
+            </div>
+            <div>
+                <ul className="nav nav-tabs">
+                    <li className="nav-item">
+                        <a className="nav-link active" href="#" onClick={preventDefault}>
+                            Comments <span className="badge badge-pill badge-secondary">14</span>
+                        </a>
+                    </li>
+                    <li className="nav-item">
+                        <a className="nav-link" href="#" onClick={preventDefault}>
+                            Changed files <span className="badge badge-pill badge-secondary">6</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </>
+    ),
+    {
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=486%3A0',
+        },
+    }
+)
 
 add(
     'Buttons',

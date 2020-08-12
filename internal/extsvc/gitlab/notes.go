@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/pkg/errors"
 )
@@ -48,11 +47,11 @@ func (c *Client) GetMergeRequestNotes(ctx context.Context, project *Project, iid
 }
 
 type Note struct {
-	ID        ID        `json:"id"`
-	Body      string    `json:"body"`
-	Author    User      `json:"author"`
-	CreatedAt time.Time `json:"created_at"`
-	System    bool      `json:"system"`
+	ID        ID     `json:"id"`
+	Body      string `json:"body"`
+	Author    User   `json:"author"`
+	CreatedAt Time   `json:"created_at"`
+	System    bool   `json:"system"`
 }
 
 func (n *Note) Key() string {

@@ -26,6 +26,7 @@ require (
 	github.com/dghubble/gologin v2.2.0+incompatible
 	github.com/dgraph-io/ristretto v0.0.2
 	github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 // indirect
+	github.com/dineshappavoo/basex v0.0.0-20170425072625-481a6f6dc663
 	github.com/dnaeon/go-vcr v1.0.1
 	github.com/efritz/glock v0.0.0-20181228234553-f184d69dff2c
 	github.com/efritz/go-genlib v0.0.0-20200616012750-c21aae2e13ac // indirect
@@ -95,8 +96,6 @@ require (
 	github.com/kylelemons/godebug v1.1.0
 	github.com/leanovate/gopter v0.2.8
 	github.com/lib/pq v1.7.0
-	github.com/lightstep/lightstep-tracer-common/golang/gogo v0.0.0-20200310182322-adf4263e074b // indirect
-	github.com/lightstep/lightstep-tracer-go v0.20.0
 	github.com/machinebox/graphql v0.2.2
 	github.com/matryer/is v1.3.0 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
@@ -125,7 +124,6 @@ require (
 	github.com/schollz/progressbar/v3 v3.3.4
 	github.com/segmentio/fasthash v1.0.2
 	github.com/sergi/go-diff v1.1.0
-	github.com/shirou/gopsutil v2.20.5+incompatible // indirect
 	github.com/shurcooL/github_flavored_markdown v0.0.0-20181002035957-2122de532470
 	github.com/shurcooL/go v0.0.0-20200502201357-93f07166e636 // indirect
 	github.com/shurcooL/highlight_diff v0.0.0-20181222201841-111da2e7d480 // indirect
@@ -149,6 +147,7 @@ require (
 	github.com/src-d/enry/v2 v2.1.0
 	github.com/stretchr/testify v1.6.1 // indirect
 	github.com/stripe/stripe-go v70.15.0+incompatible
+	github.com/teivah/onecontext v0.0.0-20200513185103-40f981bfd775
 	github.com/temoto/robotstxt v1.1.1
 	github.com/tinylib/msgp v1.1.2 // indirect
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80
@@ -178,7 +177,7 @@ require (
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.3.0
-	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 	honnef.co/go/tools v0.0.1-2020.1.4 // indirect
 )
 
@@ -188,20 +187,24 @@ replace (
 
 	// We need our fork until https://github.com/graph-gophers/graphql-go/pull/400 is merged upstream
 	// Our change limits the number of goroutines spawned by resolvers which was causing memory spikes on our frontend
-	github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20200626080007-7fa8b67cbb1d
+	github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20200724075322-e542e8956484
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 
-	// prom-wrapper needs to be able to write alertmanager configuration with secrets - https://github.com/prometheus/alertmanager/pull/2316
-	github.com/prometheus/alertmanager => github.com/bobheadxi/alertmanager v0.21.1-0.20200702014640-a941b136043b
+	// prom-wrapper needs to be able to write alertmanager configuration with secrets, etc, which
+	// the alertmanager project is currently not planning on accepting changes for.
+	github.com/prometheus/alertmanager => github.com/bobheadxi/alertmanager v0.21.1-0.20200727091526-3e856a90b534
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.3.2-0.20200109173551-5cfddeb48b17
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0
 )
 
 // We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200720095407-6597aebe357e
+replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200729195846-c908c13fd7a9
 
 replace github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
 
 replace github.com/dghubble/gologin => github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8
 
 replace github.com/golang/lint => golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f
+
+// See: https://github.com/ghodss/yaml/pull/65
+replace github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152

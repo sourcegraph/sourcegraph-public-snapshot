@@ -23,7 +23,8 @@ import (
 //     }
 //
 //     func NewWithHandle(db dbutil.DB) *SprocketStore {
-//         return &SprocketStore{Store: basestore.NewWithHandle(db)}
+//         handle := basestore.NewHandleWithDB(db)
+//         return &SprocketStore{Store: basestore.NewWithHandle(handle)}
 //     }
 //
 //     func (s *SprocketStore) With(other basestore.ShareableStore) *SprocketStore {

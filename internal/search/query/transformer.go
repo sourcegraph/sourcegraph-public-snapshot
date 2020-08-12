@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
+
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // SubstituteAliases substitutes field name aliases for their canonical names.
@@ -46,80 +48,66 @@ func translateCharacterClass(r []rune, startIx int) (int, string, error) {
 	sb := strings.Builder{}
 	i := startIx
 	lenR := len(r)
-Loop:
+
+	switch r[i] {
+	case '!':
+		if i < lenR-1 && r[i+1] == ']' {
+			// the character class cannot contain just "!"
+			return -1, "", ErrBadGlobPattern
+		}
+		sb.WriteRune('^')
+		i++
+	case '^':
+		sb.WriteString("//^")
+		i++
+	}
+
 	for i < lenR {
-		switch r[i] {
-		case '!':
-			if i == startIx {
-				sb.WriteRune('^')
-			} else {
-				sb.WriteRune(r[i])
-			}
-			i++
-		case ']':
+		if r[i] == ']' {
 			if i > startIx {
-				break Loop
+				break
 			}
 			sb.WriteRune(r[i])
 			i++
-		default: // translate character range lo-hi.
-
-			// '-' is treated literally at the start and end of
-			// of a character class.
-			if r[i] == '-' {
-				if i == lenR-1 {
-					// no closing bracket
-					return -1, "", ErrBadGlobPattern
-				}
-
-				if i > startIx && r[i+1] != ']' {
-					// '-' cannot be the lower end of a range
-					// unless it is the first character within
-					// the character class.
-					return -1, "", ErrBadGlobPattern
-				}
-			}
-			lo := r[i]
-			sb.WriteRune(r[i]) // lo
-			i++
-
-			if i == lenR {
-				// no closing bracket
-				return -1, "", ErrBadGlobPattern
-			}
-
-			// lo = hi
-			if r[i] != '-' {
-				continue
-			}
-
-			sb.WriteRune(r[i]) // -
-			i++
-
-			if i == lenR {
-				// no closing bracket
-				return -1, "", ErrBadGlobPattern
-			}
-
-			if r[i] == ']' {
-				continue
-			}
-
-			hi := r[i]
-			if lo > hi {
-				// range is reversed
-				return -1, "", ErrBadGlobPattern
-			}
-			sb.WriteRune(r[i]) // hi
-			i++
+			continue
 		}
+
+		lo := r[i]
+		sb.WriteRune(r[i]) // lo
+		i++
+		if i == lenR {
+			// no closing bracket
+			return -1, "", ErrBadGlobPattern
+		}
+
+		// lo = hi
+		if r[i] != '-' {
+			continue
+		}
+
+		sb.WriteRune(r[i]) // -
+		i++
+		if i == lenR {
+			// no closing bracket
+			return -1, "", ErrBadGlobPattern
+		}
+
+		if r[i] == ']' {
+			continue
+		}
+
+		hi := r[i]
+		if lo > hi {
+			// range is reversed
+			return -1, "", ErrBadGlobPattern
+		}
+		sb.WriteRune(r[i]) // hi
+		i++
 	}
 	if i == lenR {
 		return -1, "", ErrBadGlobPattern
 	}
-
 	return i - startIx, sb.String(), nil
-
 }
 
 var globSpecialSymbols = map[rune]struct{}{
@@ -140,14 +128,13 @@ func globToRegex(value string) (string, error) {
 	l := len(r)
 	sb := strings.Builder{}
 
-	i := 0
-	// Add regex anchor "^" if glob does not start with *.
-	if r[i] != '*' {
-		sb.WriteRune('^')
-	}
-	for i = 0; i < l; i++ {
+	// Add regex anchor "^" as prefix to all patterns
+	sb.WriteRune('^')
+
+	for i := 0; i < l; i++ {
 		switch r[i] {
 		case '*':
+			// **
 			if i < l-1 && r[i+1] == '*' {
 				sb.WriteString(".*?")
 			} else {
@@ -160,14 +147,23 @@ func globToRegex(value string) (string, error) {
 		case '?':
 			sb.WriteRune('.')
 		case '\\':
-			// Handle escaped special characters.
+			// trailing backslashes are not allowed
+			if i == l-1 {
+				return "", ErrBadGlobPattern
+			}
+
 			sb.WriteRune('\\')
 			i++
+
+			// we only support escaping of special characters
 			if _, ok := globSpecialSymbols[r[i]]; !ok {
 				return "", ErrBadGlobPattern
 			}
 			sb.WriteRune(r[i])
 		case '[':
+			if i == l-1 {
+				return "", ErrBadGlobPattern
+			}
 			sb.WriteRune('[')
 			i++
 
@@ -184,11 +180,8 @@ func globToRegex(value string) (string, error) {
 			sb.WriteString(regexp.QuoteMeta(string(r[i])))
 		}
 	}
-
-	// add regex anchor "$" if glob doesn't end with *
-	if r[l-1] != '*' {
-		sb.WriteRune('$')
-	}
+	// add regex anchor '$' as suffix to all patterns
+	sb.WriteRune('$')
 	return sb.String(), nil
 }
 
@@ -203,17 +196,56 @@ func (g globError) Error() string {
 	return g.err.Error()
 }
 
+// reporevToRegex is a wrapper around globToRegex that takes care of
+// treating repo and rev (as in repo@rev) separately during translation
+// from glob to regex.
+func reporevToRegex(value string) (string, error) {
+	reporev := strings.SplitN(value, "@", 2)
+	repo := reporev[0]
+	if ContainsNoGlobSyntax(repo) {
+		repo = fuzzifyGlobPattern(repo)
+	}
+	repo, err := globToRegex(repo)
+	if err != nil {
+		return "", err
+	}
+	value = repo
+	if len(reporev) > 1 {
+		value = value + "@" + reporev[1]
+	}
+	return value, nil
+}
+
+var globSyntax = lazyregexp.New(`[][*?]`)
+
+func ContainsNoGlobSyntax(value string) bool {
+	return !globSyntax.MatchString(value)
+}
+
+func fuzzifyGlobPattern(value string) string {
+	if value == "" {
+		return value
+	}
+	return "**" + value + "**"
+}
+
 // mapGlobToRegex translates glob to regexp for fields repo, file, and repohasfile.
 func mapGlobToRegex(nodes []Node) ([]Node, error) {
 	var globErrors []globError
-	var err error
 
 	nodes = MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
-		if field == FieldRepo || field == FieldFile || field == FieldRepoHasFile {
-			value, err = globToRegex(value)
-			if err != nil {
-				globErrors = append(globErrors, globError{field: field, err: err})
+		var err error
+		switch field {
+		case FieldRepo:
+			value, err = reporevToRegex(value)
+		case FieldFile, FieldRepoHasFile:
+			if ContainsNoGlobSyntax(value) {
+				value = fuzzifyGlobPattern(value)
 			}
+			value, err = globToRegex(value)
+		}
+		if err != nil {
+			globErrors = append(globErrors, globError{field: field, err: err})
 		}
 		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 	})
@@ -324,6 +356,67 @@ func partition(nodes []Node, fn func(node Node) bool) (left, right []Node) {
 	return left, right
 }
 
+// product appends the list of n elements in right to each of the m rows in
+// left. If left is empty, it is initialized with right.
+func product(left [][]Node, right []Node) [][]Node {
+	result := [][]Node{}
+	if len(left) == 0 {
+		return append(result, right)
+	}
+
+	for _, row := range left {
+		newRow := make([]Node, len(row))
+		copy(newRow, row)
+		result = append(result, append(newRow, right...))
+	}
+	return result
+}
+
+// distribute applies the distributed property to nodes. See the dnf function
+// for context. Its first argument takes the current set of prefixes to prepend
+// to each term in an or-expression.
+func distribute(prefixes [][]Node, nodes []Node) [][]Node {
+	for _, node := range nodes {
+		switch v := node.(type) {
+		case Operator:
+			switch v.Kind {
+			case Or:
+				result := [][]Node{}
+				for _, o := range v.Operands {
+					var newPrefixes [][]Node
+					newPrefixes = distribute(newPrefixes, []Node{o})
+					for _, newPrefix := range newPrefixes {
+						result = append(result, product(prefixes, newPrefix)...)
+					}
+				}
+				prefixes = result
+			case And, Concat:
+				prefixes = distribute(prefixes, v.Operands)
+			}
+		case Parameter, Pattern:
+			prefixes = product(prefixes, []Node{v})
+		}
+	}
+	return prefixes
+}
+
+// dnf returns the Disjunctive Normal Form of a query (a flat sequence of
+// or-expressions) by applying the distributive property on (possibly nested)
+// or-expressions. For example, the query:
+//
+// (repo:a (file:b OR file:c))
+// in DNF becomes:
+// (repo:a file:b) OR (repo:a file:c)
+//
+// Using the DNF expression makes it easy to support general nested queries that
+// imply scope, like the one above: We simply evaluate all disjuncts and union
+// the results. Note that various optimizations are possible
+// during evaluation, but those are separate query pre- or postprocessing steps
+// separate from this general transformation.
+func dnf(query []Node) [][]Node {
+	return distribute([][]Node{}, query)
+}
+
 func substituteOrForRegexp(nodes []Node) []Node {
 	isPattern := func(node Node) bool {
 		if pattern, ok := node.(Pattern); ok && !pattern.Negated {
@@ -412,6 +505,26 @@ func substituteConcat(nodes []Node, separator string) []Node {
 	return new
 }
 
+// TrailingParensToLiteral is a heuristic used in the context of regular
+// expression search. It checks whether any pattern is annotated with a label
+// HeusticDanglingParens. This label implies that the regular expression is not
+// well-formed, for example, "foo.*bar(" or "foo(.*bar". As a special case for
+// usability we escape a trailing parenthesis and treat it literally. Any other
+// forms are ignored, and will likely not pass validation.
+func TrailingParensToLiteral(nodes []Node) []Node {
+	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
+		if annotation.Labels.isSet(HeuristicDanglingParens) && strings.HasSuffix(value, "(") {
+			value = strings.TrimSuffix(value, "(")
+			value += `\(`
+		}
+		return Pattern{
+			Value:      value,
+			Negated:    negated,
+			Annotation: annotation,
+		}
+	})
+}
+
 // EmptyGroupsToLiteral is a heuristic used in the context of regular expression
 // search. It labels any pattern containing "()" as a literal pattern since in
 // regex it implies the empty string, which is meaningless as a search query and
@@ -436,4 +549,13 @@ func Map(query []Node, fns ...func([]Node) []Node) []Node {
 		query = fn(query)
 	}
 	return query
+}
+
+func FuzzifyRegexPatterns(nodes []Node) []Node {
+	return MapParameter(nodes, func(field string, value string, negated bool, annotation Annotation) Node {
+		if field == FieldRepo || field == FieldFile || field == FieldRepoHasFile {
+			value = strings.TrimSuffix(value, "$")
+		}
+		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
+	})
 }

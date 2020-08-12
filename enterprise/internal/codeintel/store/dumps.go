@@ -78,7 +78,7 @@ func (s *store) GetDumpByID(ctx context.Context, id int) (Dump, bool, error) {
 			d.id,
 			d.commit,
 			d.root,
-			d.visible_at_tip,
+			EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = d.repository_id and upload_id = d.id) AS visible_at_tip,
 			d.uploaded_at,
 			d.state,
 			d.failure_message,
@@ -97,104 +97,93 @@ func (s *store) GetDumpByID(ctx context.Context, id int) (Dump, bool, error) {
 // optional indexer. If rootMustEnclosePath is true, then only dumps with a root which is a prefix of path are returned. Otherwise,
 // any dump with a root intersecting the given path is returned.
 func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []Dump, err error) {
-	tx, err := s.transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	var cond *sqlf.Query
+	var conds []*sqlf.Query
 	if rootMustEnclosePath {
 		// Ensure that the root is a prefix of the path
-		cond = sqlf.Sprintf(`%s LIKE (d.root || '%%%%')`, path)
+		conds = append(conds, sqlf.Sprintf(`%s LIKE (d.root || '%%%%')`, path))
 	} else {
 		// Ensure that the root is a prefix of the path or vice versa
-		cond = sqlf.Sprintf(`%s LIKE (d.root || '%%%%') OR d.root LIKE (%s || '%%%%')`, path, path)
+		conds = append(conds, sqlf.Sprintf(`(%s LIKE (d.root || '%%%%') OR d.root LIKE (%s || '%%%%'))`, path, path))
 	}
-
-	ids, err := scanInts(tx.query(
-		ctx,
-		withBidirectionalLineage(`
-			SELECT d.dump_id FROM lineage_with_dumps d
-			WHERE %s AND d.dump_id IN (SELECT * FROM visible_ids)
-			ORDER BY d.n
-		`, repositoryID, commit, cond),
-	))
-	if err != nil || len(ids) == 0 {
-		return nil, err
-	}
-
-	var conds []*sqlf.Query
-	conds = append(conds, sqlf.Sprintf("d.id IN (%s)", sqlf.Join(intsToQueries(ids), ", ")))
 	if indexer != "" {
 		conds = append(conds, sqlf.Sprintf("indexer = %s", indexer))
 	}
 
-	dumps, err := scanDumps(tx.query(
+	return scanDumps(s.query(
 		ctx,
 		sqlf.Sprintf(`
-			SELECT
-				d.id,
-				d.commit,
+	 		SELECT
+	 			d.id,
+	 			d.commit,
 				d.root,
-				d.visible_at_tip,
-				d.uploaded_at,
-				d.state,
-				d.failure_message,
-				d.started_at,
-				d.finished_at,
-				d.process_after,
-				d.num_resets,
-				d.repository_id,
-				d.repository_name,
-				d.indexer
-			FROM lsif_dumps_with_repository_name d WHERE %s
-		`, sqlf.Join(conds, " AND ")),
+				EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = d.repository_id and upload_id = d.id) AS visible_at_tip,
+	 			d.uploaded_at,
+	 			d.state,
+	 			d.failure_message,
+	 			d.started_at,
+	 			d.finished_at,
+	 			d.process_after,
+	 			d.num_resets,
+	 			d.repository_id,
+	 			d.repository_name,
+	 			d.indexer
+			 FROM lsif_nearest_uploads u
+			 JOIN lsif_dumps_with_repository_name d ON d.id = u.upload_id
+			 WHERE u.repository_id = %s AND u.commit = %s AND %s
+		`, repositoryID, commit, sqlf.Join(conds, " AND ")),
 	))
-	if err != nil {
-		return nil, err
-	}
-
-	return deduplicateDumps(dumps), nil
 }
 
-// deduplicateDumps returns a copy of the given slice of dumps with duplicate identifiers removed.
-// The first dump with a unique identifier is retained.
-func deduplicateDumps(allDumps []Dump) (dumps []Dump) {
-	dumpIDs := map[int]struct{}{}
-	for _, dump := range allDumps {
-		if _, ok := dumpIDs[dump.ID]; ok {
-			continue
+func scanFirstIntPair(rows *sql.Rows, queryErr error) (_ int, _ int, _ bool, err error) {
+	if queryErr != nil {
+		return 0, 0, false, queryErr
+	}
+	defer func() { err = closeRows(rows, err) }()
+
+	if rows.Next() {
+		var value1 int
+		var value2 int
+		if err := rows.Scan(&value1, &value2); err != nil {
+			return 0, 0, false, err
 		}
 
-		dumpIDs[dump.ID] = struct{}{}
-		dumps = append(dumps, dump)
+		return value1, value2, true, nil
 	}
 
-	return dumps
+	return 0, 0, false, nil
 }
 
 // DeleteOldestDump deletes the oldest dump that is not currently visible at the tip of its repository's default branch.
-// This method returns the deleted dump's identifier and a flag indicating its (previous) existence.
-func (s *store) DeleteOldestDump(ctx context.Context) (int, bool, error) {
-	return scanFirstInt(s.query(ctx, sqlf.Sprintf(`
+// This method returns the deleted dump's identifier and a flag indicating its (previous) existence. The associated repository
+// will be marked as dirty so that its commit graph will be updated in the background.
+func (s *store) DeleteOldestDump(ctx context.Context) (_ int, _ bool, err error) {
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return 0, false, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	id, repositoryID, deleted, err := scanFirstIntPair(tx.query(ctx, sqlf.Sprintf(`
 		DELETE FROM lsif_uploads
 		WHERE id IN (
-			SELECT id FROM lsif_dumps_with_repository_name
-			WHERE visible_at_tip = false
-			ORDER BY uploaded_at
+			SELECT d.id FROM lsif_dumps_with_repository_name d
+			WHERE NOT EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip WHERE repository_id = d.repository_id AND upload_id = d.id)
+			ORDER BY d.uploaded_at
 			LIMIT 1
-		) RETURNING id
+		) RETURNING id, repository_id
 	`)))
-}
+	if err != nil {
+		return 0, false, err
+	}
+	if !deleted {
+		return 0, false, nil
+	}
 
-// UpdateDumpsVisibleFromTip recalculates the visible_at_tip flag of all dumps of the given repository.
-func (s *store) UpdateDumpsVisibleFromTip(ctx context.Context, repositoryID int, tipCommit string) (err error) {
-	return s.queryForEffect(ctx, withAncestorLineage(`
-		UPDATE lsif_uploads d
-		SET visible_at_tip = id IN (SELECT * from visible_ids)
-		WHERE d.repository_id = %s AND (d.id IN (SELECT * from visible_ids) OR d.visible_at_tip)
-	`, repositoryID, tipCommit, repositoryID))
+	if err := tx.MarkRepositoryAsDirty(ctx, repositoryID); err != nil {
+		return 0, false, err
+	}
+
+	return id, true, nil
 }
 
 // DeleteOverlapapingDumps deletes all completed uploads for the given repository with the same

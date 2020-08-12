@@ -16,21 +16,6 @@
     overflow: auto;
     padding-bottom: 4rem;
 
-    &__web-link {
-        color: #1c7cd6;
-    }
-
-    h5 {
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-    }
-
-    p {
-        font-weight: normal;
-        font-size: 14px;
-        line-height: 20px;
-    }
-
     &__logo {
         flex: 0 0 auto;
         display: flex;
@@ -42,6 +27,7 @@
 
     &__cloud-tag-line {
         margin-top: 1rem;
+        color: $gray-07;
     }
 
     &__search-container {
@@ -107,31 +93,13 @@
         }
     }
 
-    &__keyword-value-text {
-        color: #6078a9;
-        font-size: 12px;
-        line-height: 140%;
-    }
-
     &__repogroup-listing-title {
-        font-size: 14px;
         margin-bottom: 0.25rem;
-    }
-
-    &__repogroup-listing-description {
-        font-size: 14px;
-    }
-
-    &__lang-ref {
-        font-size: 12px;
     }
 }
 
 .theme-light {
     .search-page {
-        &__sign-in {
-            color: $gray-11;
-        }
         &__cloud-tag-line {
             color: $gray-11;
         }
@@ -140,44 +108,7 @@
 
 .theme-dark {
     .search-page {
-        &__cloud-tag-line {
-            color: $gray-07;
-        }
-
-        h1,
-        h2 {
-            color: $gray-19;
-        }
-
-        h3,
-        h4,
-        h6 {
-            color: $gray-13;
-        }
-
-        h5 {
-            color: $gray-18;
-        }
-
-        strong {
-            color: $gray-11;
-        }
-
-        &__help-content {
-            color: $gray-11;
-        }
-
-        &__example-searches {
-            a {
-                color: $gray-19;
-            }
-        }
-
         &__web-link {
-            color: #1c7cd6;
-        }
-
-        &__keyword-text {
             color: #1c7cd6;
         }
     }

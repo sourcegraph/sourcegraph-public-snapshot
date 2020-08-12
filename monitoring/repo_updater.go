@@ -19,9 +19,12 @@ func RepoUpdater() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("repo-updater"),
-						sharedContainerMemoryUsage("repo-updater"),
 						sharedContainerCPUUsage("repo-updater"),
+						sharedContainerMemoryUsage("repo-updater"),
+					},
+					{
+						sharedContainerRestarts("repo-updater"),
+						sharedContainerFsInodes("repo-updater"),
 					},
 				},
 			},
@@ -30,12 +33,31 @@ func RepoUpdater() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage7d("repo-updater"),
-						sharedProvisioningMemoryUsage7d("repo-updater"),
+						sharedProvisioningCPUUsageLongTerm("repo-updater"),
+						sharedProvisioningMemoryUsageLongTerm("repo-updater"),
 					},
 					{
-						sharedProvisioningCPUUsage5m("repo-updater"),
-						sharedProvisioningMemoryUsage5m("repo-updater"),
+						sharedProvisioningCPUUsageShortTerm("repo-updater"),
+						sharedProvisioningMemoryUsageShortTerm("repo-updater"),
+					},
+				},
+			},
+			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("repo-updater"),
+						sharedGoGcDuration("repo-updater"),
+					},
+				},
+			},
+			{
+				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedKubernetesPodsAvailable("repo-updater"),
 					},
 				},
 			},

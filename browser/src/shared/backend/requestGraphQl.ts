@@ -1,6 +1,5 @@
 import { from } from 'rxjs'
 import { requestGraphQL } from '../../../../shared/src/graphql/graphql'
-import { IQuery, IMutation } from '../../../../shared/src/graphql/schema'
 import { background } from '../../browser-extension/web-extension-api/runtime'
 
 /**
@@ -10,18 +9,18 @@ import { background } from '../../browser-extension/web-extension-api/runtime'
  *
  * In the native integration, the returned function will rely on the `requestGraphQL` implementation from `/shared`.
  */
-export const requestGraphQlHelper = (isExtension: boolean, baseUrl: string) => <T extends IQuery | IMutation>({
+export const requestGraphQlHelper = (isExtension: boolean, baseUrl: string) => <T, V = object>({
     request,
     variables,
 }: {
     request: string
-    variables: {}
+    variables: V
 }) =>
     isExtension
         ? from(
-              background.requestGraphQL<T>({ request, variables })
+              background.requestGraphQL<T, V>({ request, variables })
           )
-        : requestGraphQL<T>({
+        : requestGraphQL<T, V>({
               request,
               variables,
               baseUrl,

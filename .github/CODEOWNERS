@@ -55,6 +55,7 @@
 /.prettierignore @felixfbecker
 /.github @beyang
 /.github/workflows/lsif.yml @efritz
+/.github/workflows/codeql.yml @sourcegraph/security
 /.gitmodules @beyang
 /.gitattributes @beyang
 /.yarnrc @felixfbecker
@@ -115,13 +116,14 @@
 /internal/actor/ @beyang @unknwon
 
 # Cloud
-/cmd/frontend/authz/ @sourcegraph/cloud
+/internal/authz/ @sourcegraph/cloud
 /cmd/frontend/globals/ @sourcegraph/cloud @slimsag
 /cmd/frontend/internal/bg/ @sourcegraph/cloud @slimsag
 /cmd/github-proxy/ @sourcegraph/cloud
 /cmd/gitserver/ @sourcegraph/cloud
 /cmd/repo-updater/ @sourcegraph/cloud
 /enterprise/cmd/frontend/authz/ @sourcegraph/cloud
+/enterprise/internal/authz/ @sourcegraph/cloud
 /enterprise/internal/db/ @sourcegraph/cloud
 /enterprise/cmd/frontend/internal/authz/ @sourcegraph/cloud
 /enterprise/cmd/repo-updater/ @sourcegraph/cloud
@@ -141,16 +143,16 @@
 /cmd/frontend/graphqlbackend/campaigns.go @sourcegraph/campaigns
 /doc/user/campaigns @sourcegraph/campaigns
 /enterprise/internal/campaigns @sourcegraph/campaigns
+/enterprise/cmd/frontend/internal/campaigns @sourcegraph/campaigns
 /internal/campaigns @sourcegraph/campaigns
 /web/**/campaigns/** @sourcegraph/campaigns
 
-# Search and code mod
+# Search
 */search/**/* @sourcegraph/search
 /cmd/frontend/internal/pkg/search @sourcegraph/search
 /cmd/frontend/graphqlbackend/*search* @sourcegraph/search
 /cmd/frontend/graphqlbackend/*zoekt* @sourcegraph/search
 /cmd/query-runner/ @sourcegraph/search
-/cmd/replacer/ @sourcegraph/search @rvantonder
 /cmd/searcher/ @sourcegraph/search
 /cmd/symbols/ @sourcegraph/search
 /internal/search/ @sourcegraph/search
@@ -228,7 +230,9 @@ Dockerfile @sourcegraph/distribution
 /enterprise/cmd/precise-code-intel-bundle-manager/ @sourcegraph/code-intel
 /enterprise/cmd/precise-code-intel-worker/ @sourcegraph/code-intel
 /enterprise/cmd/precise-code-intel-indexer/ @sourcegraph/code-intel
+/enterprise/cmd/precise-code-intel-indexer-vm/ @sourcegraph/code-intel
 /enterprise/internal/codeintel @sourcegraph/code-intel
+/enterprise/cmd/frontend/internal/codeintel @sourcegraph/code-intel
 /cmd/frontend/graphqlbackend/codeintel.go @sourcegraph/code-intel
 /internal/cmd/precise-code-intel-tester @sourcegraph/code-intel
 
@@ -244,6 +248,7 @@ Dockerfile @sourcegraph/distribution
 /internal/hubspot/ @dadlerj
 /internal/highlight/ @slimsag
 /dev/codecov.yml @nicksnyder @tsenart @lguychard @beyang
+/.github/ISSUE_TEMPLATE/security.md @sourcegraph/security
 
 # Third party license list
 /third-party-licenses/ThirdPartyLicenses.csv @sourcegraph/cloud @sourcegraph/web

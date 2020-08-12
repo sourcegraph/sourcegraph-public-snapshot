@@ -1,4 +1,3 @@
-import { ChangesetState, ChangesetReviewState, ChangesetCheckState } from '../../../../../../shared/src/graphql/schema'
 import { MdiReactIconComponentType } from 'mdi-react'
 import AccountCheckIcon from 'mdi-react/AccountCheckIcon'
 import AccountAlertIcon from 'mdi-react/AccountAlertIcon'
@@ -9,12 +8,13 @@ import DeleteIcon from 'mdi-react/DeleteIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
+import { ChangesetExternalState, ChangesetReviewState, ChangesetCheckState } from '../../../../graphql-operations'
 
-export const changesetStatusColorClasses: Record<ChangesetState, string> = {
-    [ChangesetState.OPEN]: 'success',
-    [ChangesetState.CLOSED]: 'danger',
-    [ChangesetState.DELETED]: 'muted',
-    [ChangesetState.MERGED]: 'merged',
+export const changesetExternalStateColorClasses: Record<ChangesetExternalState, string> = {
+    [ChangesetExternalState.OPEN]: 'success',
+    [ChangesetExternalState.CLOSED]: 'danger',
+    [ChangesetExternalState.DELETED]: 'muted',
+    [ChangesetExternalState.MERGED]: 'merged',
 }
 
 export const changesetReviewStateColors: Record<ChangesetReviewState, string> = {
@@ -33,11 +33,11 @@ export const changesetReviewStateIcons: Record<ChangesetReviewState, MdiReactIco
     [ChangesetReviewState.DISMISSED]: AccountQuestionIcon,
 }
 
-export const changesetStageLabels: Record<ChangesetReviewState | ChangesetState, string> = {
-    [ChangesetState.OPEN]: 'open',
-    [ChangesetState.CLOSED]: 'closed',
-    [ChangesetState.MERGED]: 'merged',
-    [ChangesetState.DELETED]: 'deleted',
+export const changesetStateLabels: Record<ChangesetReviewState | ChangesetExternalState, string> = {
+    [ChangesetExternalState.OPEN]: 'open',
+    [ChangesetExternalState.CLOSED]: 'closed',
+    [ChangesetExternalState.MERGED]: 'merged',
+    [ChangesetExternalState.DELETED]: 'deleted',
     [ChangesetReviewState.APPROVED]: 'approved',
     [ChangesetReviewState.CHANGES_REQUESTED]: 'changes requested',
     [ChangesetReviewState.PENDING]: 'pending review',
@@ -45,11 +45,11 @@ export const changesetStageLabels: Record<ChangesetReviewState | ChangesetState,
     [ChangesetReviewState.DISMISSED]: 'dismissed',
 }
 
-export const changesetStateIcons: Record<ChangesetState, MdiReactIconComponentType> = {
-    [ChangesetState.CLOSED]: SourcePullIcon,
-    [ChangesetState.MERGED]: SourceMergeIcon,
-    [ChangesetState.OPEN]: SourcePullIcon,
-    [ChangesetState.DELETED]: DeleteIcon,
+export const changesetExternalStateIcons: Record<ChangesetExternalState, MdiReactIconComponentType> = {
+    [ChangesetExternalState.CLOSED]: SourcePullIcon,
+    [ChangesetExternalState.MERGED]: SourceMergeIcon,
+    [ChangesetExternalState.OPEN]: SourcePullIcon,
+    [ChangesetExternalState.DELETED]: DeleteIcon,
 }
 
 export const changesetCheckStateIcons: Record<ChangesetCheckState, MdiReactIconComponentType> = {

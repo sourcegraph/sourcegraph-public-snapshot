@@ -14,10 +14,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/src-d/enry/v2"
 
 	"github.com/hashicorp/go-multierror"
@@ -201,27 +201,37 @@ func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
 // commonFileFilters are common filters used. It is used by DynamicFilters to
 // propose them if they match shown results.
 var commonFileFilters = []struct {
-	Regexp *lazyregexp.Regexp
-	Filter string
+	regexp      *lazyregexp.Regexp
+	regexFilter string
+	globFilter  string
 }{
 	// Exclude go tests
 	{
-		Regexp: lazyregexp.New(`_test\.go$`),
-		Filter: `-file:_test\.go$`,
+		regexp:      lazyregexp.New(`_test\.go$`),
+		regexFilter: `-file:_test\.go$`,
+		globFilter:  `-file:**_test.go`,
 	},
 	// Exclude go vendor
 	{
-		Regexp: lazyregexp.New(`(^|/)vendor/`),
-		Filter: `-file:(^|/)vendor/`,
+		regexp:      lazyregexp.New(`(^|/)vendor/`),
+		regexFilter: `-file:(^|/)vendor/`,
+		globFilter:  `-file:vendor/** -file:**/vendor/**`,
 	},
 	// Exclude node_modules
 	{
-		Regexp: lazyregexp.New(`(^|/)node_modules/`),
-		Filter: `-file:(^|/)node_modules/`,
+		regexp:      lazyregexp.New(`(^|/)node_modules/`),
+		regexFilter: `-file:(^|/)node_modules/`,
+		globFilter:  `-file:node_modules/** -file:**/node_modules/**`,
 	},
 }
 
-func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
+func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFilterResolver {
+
+	globbing := false
+	if settings, err := decodedViewerFinalSettings(ctx); err == nil {
+		globbing = getBoolPtr(settings.SearchGlobbing, false)
+	}
+
 	filters := map[string]*searchFilterResolver{}
 	repoToMatchCount := make(map[string]int)
 	add := func(value string, label string, count int, limitHit bool, kind string, score score) {
@@ -243,7 +253,13 @@ func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 	}
 
 	addRepoFilter := func(uri string, rev string, lineMatchCount int) {
-		filter := fmt.Sprintf(`repo:^%s$`, regexp.QuoteMeta(uri))
+		var filter string
+		if globbing {
+			filter = fmt.Sprintf(`repo:%s`, uri)
+		} else {
+			filter = fmt.Sprintf(`repo:^%s$`, regexp.QuoteMeta(uri))
+		}
+
 		if rev != "" {
 			// We don't need to quote rev. The only special characters we interpret
 			// are @ and :, both of which are disallowed in git refs
@@ -257,8 +273,14 @@ func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 
 	addFileFilter := func(fileMatchPath string, lineMatchCount int, limitHit bool) {
 		for _, ff := range commonFileFilters {
-			if ff.Regexp.MatchString(fileMatchPath) {
-				add(ff.Filter, ff.Filter, lineMatchCount, limitHit, "file", scoreDefault)
+			// use regexp to match file paths unconditionally, whether globbing is enabled or not,
+			// since we have no native library call to match `**` for globs.
+			if ff.regexp.MatchString(fileMatchPath) {
+				if globbing {
+					add(ff.globFilter, ff.globFilter, lineMatchCount, limitHit, "file", scoreDefault)
+				} else {
+					add(ff.regexFilter, ff.regexFilter, lineMatchCount, limitHit, "file", scoreDefault)
+				}
 			}
 		}
 	}
@@ -482,8 +504,6 @@ loop:
 				}
 				addPoint(t)
 			})
-		case *codemodResultResolver:
-			continue
 		default:
 			panic("SearchResults.Sparkline unexpected union type state")
 		}
@@ -664,35 +684,45 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolv
 // they occur in the same file, and taking care to update match counts.
 func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 	var count int // count non-overlapping files when we merge.
-	for _, leftMatch := range left.SearchResults {
-		for _, rightMatch := range right.SearchResults {
-			rightFileMatch, ok := rightMatch.ToFileMatch()
-			if !ok {
-				left.SearchResults = append(left.SearchResults, rightMatch)
-				count++
-				continue
-			}
+	var merged []SearchResultResolver
+	rightFileMatches := make(map[string]*FileMatchResolver)
 
-			leftFileMatch, ok := leftMatch.ToFileMatch()
-			if !ok {
-				left.SearchResults = append(left.SearchResults, rightMatch)
-				count++
-				continue
-			}
-
-			if leftFileMatch.uri == rightFileMatch.uri {
-				// Do not count this match, since it will be counted by the outer-loop.
-				leftFileMatch.JLineMatches = append(leftFileMatch.JLineMatches, rightFileMatch.JLineMatches...)
-				leftFileMatch.MatchCount += rightFileMatch.MatchCount
-				leftFileMatch.JLimitHit = leftFileMatch.JLimitHit || rightFileMatch.JLimitHit
-			} else {
-				left.SearchResults = append(left.SearchResults, rightMatch)
-				count++
-			}
+	// accumulate file matches for the right subexpression in a lookup.
+	for _, r := range right.SearchResults {
+		if fileMatch, ok := r.ToFileMatch(); ok {
+			rightFileMatches[fileMatch.uri] = fileMatch
+			continue
 		}
-		count++
+		merged = append(merged, r)
 	}
-	// merge common search data.
+
+	for _, leftMatch := range left.SearchResults {
+		leftFileMatch, ok := leftMatch.ToFileMatch()
+		if !ok {
+			merged = append(merged, leftMatch)
+			continue
+		}
+
+		rightFileMatch := rightFileMatches[leftFileMatch.uri]
+		if rightFileMatch == nil {
+			// no overlap with existing matches.
+			merged = append(merged, leftMatch)
+			count++
+			continue
+		}
+
+		// merge line matches with a file match that already exists.
+		rightFileMatch.JLineMatches = append(rightFileMatch.JLineMatches, leftFileMatch.JLineMatches...)
+		rightFileMatch.MatchCount += leftFileMatch.MatchCount
+		rightFileMatch.JLimitHit = rightFileMatch.JLimitHit || leftFileMatch.JLimitHit
+		rightFileMatches[leftFileMatch.uri] = rightFileMatch
+	}
+
+	for _, v := range rightFileMatches {
+		merged = append(merged, v)
+	}
+
+	left.SearchResults = merged
 	left.searchResultsCommon.update(right.searchResultsCommon)
 	// set the count that tracks non-overlapping result count.
 	left.searchResultsCommon.resultCount = int32(count)
@@ -782,7 +812,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 	want := 5
 
 	var countStr string
-	query.VisitField(scopeParameters, "count", func(value string, _ bool) {
+	query.VisitField(scopeParameters, "count", func(value string, _ bool, _ query.Annotation) {
 		countStr = value
 	})
 	if countStr != "" {
@@ -854,7 +884,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query
 
 	var countStr string
 	wantCount := defaultMaxSearchResults
-	query.VisitField(scopeParameters, "count", func(value string, _ bool) {
+	query.VisitField(scopeParameters, "count", func(value string, _ bool, _ query.Annotation) {
 		countStr = value
 	})
 	if countStr != "" {
@@ -949,7 +979,7 @@ func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchR
 	if err != nil {
 		return nil, err
 	}
-	sortResults(result.SearchResults)
+	r.sortResults(ctx, result.SearchResults)
 	return result, nil
 }
 
@@ -958,14 +988,6 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 	case *query.OrdinaryQuery:
 		return r.evaluateLeaf(ctx)
 	case *query.AndOrQuery:
-		// Get settings to check if `search.uppercase` is active. If so, run transformer.
-		settings, err := decodedViewerFinalSettings(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if v := settings.SearchUppercase; v != nil && *v {
-			q.Query = query.SearchUppercase(q.Query)
-		}
 		return r.evaluate(ctx, q.Query)
 	}
 	// Unreachable.
@@ -1166,9 +1188,27 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Te
 	return getPatternInfo(r.query, opts)
 }
 
+func isPatternNegated(q []query.Node) bool {
+	isNegated := false
+	patternsFound := 0
+	query.VisitPattern(q, func(_ string, negated bool, _ query.Annotation) {
+		patternsFound++
+		if patternsFound > 1 {
+			return
+		}
+		isNegated = negated
+	})
+
+	// we only support negation for queries that contain exactly 1 pattern.
+	if patternsFound > 1 {
+		return false
+	}
+	return isNegated
+}
+
 // processSearchPattern processes the search pattern for a query. It handles the interpretation of search patterns
 // as literal, regex, or structural patterns, and applies fuzzy regex matching if applicable.
-func processSearchPattern(q query.QueryInfo, opts *getPatternInfoOptions) (string, bool, bool) {
+func processSearchPattern(q query.QueryInfo, opts *getPatternInfoOptions) (string, bool, bool, bool) {
 	var pattern string
 	var pieces []string
 	var contentFieldSet bool
@@ -1176,6 +1216,12 @@ func processSearchPattern(q query.QueryInfo, opts *getPatternInfoOptions) (strin
 	isStructuralPat := false
 
 	patternValues := q.Values(query.FieldDefault)
+
+	isNegated := false
+	if andOrQuery, ok := q.(*query.AndOrQuery); ok {
+		isNegated = isPatternNegated(andOrQuery.Query)
+	}
+
 	if overridePattern := q.Values(query.FieldContent); len(overridePattern) > 0 {
 		patternValues = overridePattern
 		contentFieldSet = true
@@ -1221,12 +1267,12 @@ func processSearchPattern(q query.QueryInfo, opts *getPatternInfoOptions) (strin
 		pattern = "."
 	}
 
-	return pattern, isRegExp, isStructuralPat
+	return pattern, isRegExp, isStructuralPat, isNegated
 }
 
 // getPatternInfo gets the search pattern info for q
 func getPatternInfo(q query.QueryInfo, opts *getPatternInfoOptions) (*search.TextPatternInfo, error) {
-	pattern, isRegExp, isStructuralPat := processSearchPattern(q, opts)
+	pattern, isRegExp, isStructuralPat, isNegated := processSearchPattern(q, opts)
 
 	// Handle file: and -file: filters.
 	includePatterns, excludePatterns := q.RegexpPatterns(query.FieldFile)
@@ -1259,6 +1305,7 @@ func getPatternInfo(q query.QueryInfo, opts *getPatternInfoOptions) (*search.Tex
 		IsCaseSensitive:              q.IsCaseSensitive(),
 		FileMatchLimit:               opts.fileMatchLimit,
 		Pattern:                      pattern,
+		IsNegated:                    isNegated,
 		IncludePatterns:              includePatterns,
 		FilePatternsReposMustInclude: filePatternsReposMustInclude,
 		FilePatternsReposMustExclude: filePatternsReposMustExclude,
@@ -1339,8 +1386,6 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceO
 	// Determine which types of results to return.
 	if forceOnlyResultType != "" {
 		resultTypes = []string{forceOnlyResultType}
-	} else if len(r.query.Values(query.FieldReplace)) > 0 {
-		resultTypes = []string{"codemod"}
 	} else {
 		resultTypes, _ = r.query.StringValues(query.FieldType)
 		if len(resultTypes) == 0 {
@@ -1609,10 +1654,12 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 						multiErr = multierror.Append(multiErr, errors.Wrap(err, "text search failed"))
 						multiErrMu.Unlock()
 					}
-					if len(fileResults) == 0 && fileCommon.limitHit {
+					if len(fileResults) == 0 {
 						// Still no results? Give up.
 						log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
-						fileCommon.limitHit = false // Ensure we don't display "Show more".
+						if fileCommon != nil {
+							fileCommon.limitHit = false // Ensure we don't display "Show more".
+						}
 					}
 				}
 				for _, r := range fileResults {
@@ -1716,30 +1763,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					commonMu.Unlock()
 				}
 			})
-		case "codemod":
-			wg := waitGroup(true)
-			wg.Add(1)
-			goroutine.Go(func() {
-				defer wg.Done()
-
-				codemodResults, codemodCommon, err := performCodemod(ctx, &args)
-				// Timeouts are reported through searchResultsCommon so don't report an error for them
-				if err != nil && !isContextError(ctx, err) {
-					multiErrMu.Lock()
-					multiErr = multierror.Append(multiErr, errors.Wrap(err, "codemod search failed"))
-					multiErrMu.Unlock()
-				}
-				if codemodResults != nil {
-					resultsMu.Lock()
-					results = append(results, codemodResults...)
-					resultsMu.Unlock()
-				}
-				if codemodCommon != nil {
-					commonMu.Lock()
-					common.update(*codemodCommon)
-					commonMu.Unlock()
-				}
-			})
 		}
 	}
 
@@ -1790,7 +1813,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		multiErr = nil
 	}
 
-	sortResults(results)
+	r.sortResults(ctx, results)
 
 	resultsResolver := SearchResultsResolver{
 		start:               start,
@@ -1815,35 +1838,72 @@ func isContextError(ctx context.Context, err error) bool {
 //   - *RepositoryResolver         // repo name match
 //   - *fileMatchResolver          // text match
 //   - *commitSearchResultResolver // diff or commit match
-//   - *codemodResultResolver      // code modification
 //
 // Note: Any new result types added here also need to be handled properly in search_results.go:301 (sparklines)
 type SearchResultResolver interface {
+	searchResultURIGetter
+
 	ToRepository() (*RepositoryResolver, bool)
 	ToFileMatch() (*FileMatchResolver, bool)
 	ToCommitSearchResult() (*commitSearchResultResolver, bool)
-	ToCodemodResult() (*codemodResultResolver, bool)
 
-	// SearchResultURIs returns the repo name and file uri respectiveley
-	searchResultURIs() (string, string)
 	resultCount() int32
 }
 
-// compareSearchResults checks to see if a is less than b.
-// It is implemented separately for easier testing.
-func compareSearchResults(a, b SearchResultResolver) bool {
+type searchResultURIGetter interface {
+	// SearchResultURIs returns the repo name and file uri respectively
+	searchResultURIs() (string, string)
+}
+
+// compareSearchResults sorts alphabetically unless one of the filenames is contained in exactFilePatterns,
+// in which case exact matches are sorted by length of their file path and then alphabetically.
+func compareSearchResults(a, b searchResultURIGetter, exactFilePatterns map[string]struct{}) bool {
 	arepo, afile := a.searchResultURIs()
 	brepo, bfile := b.searchResultURIs()
 
 	if arepo == brepo {
+		if len(exactFilePatterns) == 0 {
+			return afile < bfile
+		}
+		_, aMatch := exactFilePatterns[path.Base(afile)]
+		_, bMatch := exactFilePatterns[path.Base(bfile)]
+		if aMatch || bMatch {
+			if aMatch && bMatch {
+				// Prefer shorter file names (ie root files come first)
+				if len(afile) != len(bfile) {
+					return len(afile) < len(bfile)
+				}
+				return afile < bfile
+			}
+			// prefer exact match
+			return aMatch
+		}
 		return afile < bfile
 	}
-
 	return arepo < brepo
 }
 
-func sortResults(r []SearchResultResolver) {
-	sort.Slice(r, func(i, j int) bool { return compareSearchResults(r[i], r[j]) })
+func (r *searchResolver) sortResults(ctx context.Context, results []SearchResultResolver) {
+	var exactPatterns map[string]struct{}
+	if settings, err := decodedViewerFinalSettings(ctx); err == nil && getBoolPtr(settings.SearchGlobbing, false) {
+		exactPatterns = r.getExactFilePatterns()
+	}
+	sort.Slice(results, func(i, j int) bool { return compareSearchResults(results[i], results[j], exactPatterns) })
+}
+
+// getExactFilePatterns returns the set of file patterns without glob syntax.
+func (r *searchResolver) getExactFilePatterns() map[string]struct{} {
+	m := map[string]struct{}{}
+	query.VisitField(
+		r.query.(*query.AndOrQuery).Query,
+		query.FieldFile,
+		func(value string, negated bool, annotation query.Annotation) {
+			originalValue := r.originalQuery[annotation.Range.Start.Column+len(query.FieldFile)+1 : annotation.Range.End.Column]
+			if !negated && query.ContainsNoGlobSyntax(originalValue) {
+				m[originalValue] = struct{}{}
+			}
+		})
+	return m
 }
 
 // orderedFuzzyRegexp interpolate a lazy 'match everything' regexp pattern

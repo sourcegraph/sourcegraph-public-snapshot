@@ -64,12 +64,12 @@ func TestChangesetMetadata(t *testing.T) {
 		t.Errorf("changeset body wrong. want=%q, have=%q", want, have)
 	}
 
-	state, err := changeset.state()
+	state, err := changeset.externalState()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if want, have := ChangesetStateMerged, state; want != have {
+	if want, have := ChangesetExternalStateMerged, state; want != have {
 		t.Errorf("changeset state wrong. want=%q, have=%q", want, have)
 	}
 
@@ -298,14 +298,16 @@ func TestChangesetEvents(t *testing.T) {
 			{ID: 22},
 		}
 
+		mr := &gitlab.MergeRequest{
+			Notes:     notes,
+			Pipelines: pipelines,
+		}
+
 		cases = append(cases, testCase{
 			name: "gitlab",
 			changeset: Changeset{
-				ID: 1234,
-				Metadata: &gitlab.MergeRequest{
-					Notes:     notes,
-					Pipelines: pipelines,
-				},
+				ID:       1234,
+				Metadata: mr,
 			},
 			events: []*ChangesetEvent{
 				{
@@ -498,7 +500,7 @@ func TestChangeset_SetMetadata(t *testing.T) {
 			meta: &gitlab.MergeRequest{
 				IID:          12345,
 				SourceBranch: "branch",
-				UpdatedAt:    time.Unix(10, 0),
+				UpdatedAt:    gitlab.Time{Time: time.Unix(10, 0)},
 			},
 			want: &Changeset{
 				ExternalID:          "12345",
@@ -566,7 +568,7 @@ func TestChangeset_ExternalCreatedAt(t *testing.T) {
 			CreatedAt: want,
 		},
 		"GitLab": &gitlab.MergeRequest{
-			CreatedAt: want,
+			CreatedAt: gitlab.Time{Time: want},
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -619,57 +621,57 @@ func TestChangeset_Body(t *testing.T) {
 	})
 }
 
-func TestChangeset_state(t *testing.T) {
+func TestChangeset_externalState(t *testing.T) {
 	for name, tc := range map[string]struct {
 		meta interface{}
-		want ChangesetState
+		want ChangesetExternalState
 	}{
 		"bitbucketserver: declined": {
 			meta: &bitbucketserver.PullRequest{
 				State: "DECLINED",
 			},
-			want: ChangesetStateClosed,
+			want: ChangesetExternalStateClosed,
 		},
 		"bitbucketserver: open": {
 			meta: &bitbucketserver.PullRequest{
 				State: "OPEN",
 			},
-			want: ChangesetStateOpen,
+			want: ChangesetExternalStateOpen,
 		},
 		"GitHub: open": {
 			meta: &github.PullRequest{
 				State: "OPEN",
 			},
-			want: ChangesetStateOpen,
+			want: ChangesetExternalStateOpen,
 		},
 		"GitLab: opened": {
 			meta: &gitlab.MergeRequest{
 				State: gitlab.MergeRequestStateOpened,
 			},
-			want: ChangesetStateOpen,
+			want: ChangesetExternalStateOpen,
 		},
 		"GitLab: closed": {
 			meta: &gitlab.MergeRequest{
 				State: gitlab.MergeRequestStateClosed,
 			},
-			want: ChangesetStateClosed,
+			want: ChangesetExternalStateClosed,
 		},
 		"GitLab: locked": {
 			meta: &gitlab.MergeRequest{
 				State: gitlab.MergeRequestStateLocked,
 			},
-			want: ChangesetStateClosed,
+			want: ChangesetExternalStateClosed,
 		},
 		"GitLab: merged": {
 			meta: &gitlab.MergeRequest{
 				State: gitlab.MergeRequestStateMerged,
 			},
-			want: ChangesetStateMerged,
+			want: ChangesetExternalStateMerged,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			c := &Changeset{Metadata: tc.meta}
-			have, err := c.state()
+			have, err := c.externalState()
 			if err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
@@ -681,11 +683,11 @@ func TestChangeset_state(t *testing.T) {
 
 	t.Run("deleted", func(t *testing.T) {
 		c := &Changeset{ExternalDeletedAt: time.Unix(10, 0)}
-		have, err := c.state()
+		have, err := c.externalState()
 		if err != nil {
 			t.Errorf("unexpected error: %+v", err)
 		}
-		if want := ChangesetStateDeleted; have != want {
+		if want := ChangesetExternalStateDeleted; have != want {
 			t.Errorf("unexpected state: have %s; want %s", have, want)
 		}
 	})
@@ -694,14 +696,14 @@ func TestChangeset_state(t *testing.T) {
 		c := &Changeset{Metadata: &github.PullRequest{
 			State: "FOO",
 		}}
-		if _, err := c.state(); err == nil {
+		if _, err := c.externalState(); err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
 
 	t.Run("unknown changeset type", func(t *testing.T) {
 		c := &Changeset{}
-		if _, err := c.state(); err == nil {
+		if _, err := c.externalState(); err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
@@ -965,6 +967,219 @@ func TestChangeset_Labels(t *testing.T) {
 			c := &Changeset{Metadata: tc.meta}
 			if d := cmp.Diff(c.Labels(), tc.want); d != "" {
 				t.Errorf("unexpected labels: %s", d)
+			}
+		})
+	}
+}
+
+func TestChangesetSpecUnmarshalValidate(t *testing.T) {
+	tests := []struct {
+		name    string
+		rawSpec string
+		err     string
+	}{
+		{
+			name: "valid ExistingChangesetReference",
+			rawSpec: `{
+				"baseRepository": "graphql-id",
+				"externalID": "1234"
+			}`,
+		},
+		{
+			name: "valid GitBranchChangesetDescription",
+			rawSpec: `{
+				"baseRepository": "graphql-id",
+				"baseRef": "refs/heads/master",
+				"baseRev": "d34db33f",
+				"headRef": "refs/heads/my-branch",
+				"headRepository": "graphql-id",
+				"title": "my title",
+				"body": "my body",
+				"published": false,
+				"commits": [{
+				  "message": "commit message",
+				  "diff": "the diff"
+				}]
+			}`,
+		},
+		{
+			name: "missing fields in GitBranchChangesetDescription",
+			rawSpec: `{
+				"baseRepository": "graphql-id",
+				"baseRef": "refs/heads/master",
+				"headRef": "refs/heads/my-branch",
+				"headRepository": "graphql-id",
+				"title": "my title",
+				"published": false,
+				"commits": [{
+				  "diff": "the diff"
+				}]
+			}`,
+			err: "4 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* baseRev is required\n\t* body is required\n\t* commits.0: message is required\n\n",
+		},
+		{
+			name: "missing fields in ExistingChangesetReference",
+			rawSpec: `{
+				"baseRepository": "graphql-id"
+			}`,
+			err: "2 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* externalID is required\n\n",
+		},
+		{
+			name: "headRepository in GitBranchChangesetDescription does not match baseRepository",
+			rawSpec: `{
+				"baseRepository": "graphql-id",
+				"baseRef": "refs/heads/master",
+				"baseRev": "d34db33f",
+				"headRef": "refs/heads/my-branch",
+				"headRepository": "graphql-id999999",
+				"title": "my title",
+				"body": "my body",
+				"published": false,
+				"commits": [{
+				  "message": "commit message",
+				  "diff": "the diff"
+				}]
+			}`,
+			err: ErrHeadBaseMismatch.Error(),
+		},
+		{
+			name: "too many commits in GitBranchChangesetDescription",
+			rawSpec: `{
+				"baseRepository": "graphql-id",
+				"baseRef": "refs/heads/master",
+				"baseRev": "d34db33f",
+				"headRef": "refs/heads/my-branch",
+				"headRepository": "graphql-id",
+				"title": "my title",
+				"body": "my body",
+				"published": false,
+				"commits": [
+				  {
+				    "message": "commit message",
+				    "diff": "the diff"
+				  },
+                  {
+				    "message": "commit message2",
+				    "diff": "the diff2"
+				  }
+				]
+			}`,
+			err: "2 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* commits: Array must have at most 1 items\n\n",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			spec := &ChangesetSpec{RawSpec: tc.rawSpec}
+			haveErr := fmt.Sprintf("%v", spec.UnmarshalValidate())
+			if haveErr == "<nil>" {
+				haveErr = ""
+			}
+			if diff := cmp.Diff(tc.err, haveErr); diff != "" {
+				t.Fatalf("unexpected response (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestCampaignSpecUnmarshalValidate(t *testing.T) {
+	tests := []struct {
+		name    string
+		rawSpec string
+		err     string
+	}{
+		{
+			name: "valid",
+			rawSpec: `{
+				"name": "my-unique-name",
+				"description": "My description",
+				"on": [
+				    {"repositoriesMatchingQuery": "lang:go func main"},
+					{"repository": "github.com/sourcegraph/src-cli"}
+				],
+				"steps": [
+				{
+					"run": "echo 'foobar'",
+					"container": "alpine",
+					"env": {
+						"PATH": "/work/foobar:$PATH"
+					}
+				}
+				],
+				"changesetTemplate": {
+					"title": "Hello World",
+					"body": "My first campaign!",
+					"branch": "hello-world",
+					"commit": {
+						"message": "Append Hello World to all README.md files"
+					},
+					"published": false
+				}
+			}`,
+		},
+		{
+			name: "valid YAML",
+			rawSpec: `
+name: my-unique-name
+description: My description
+on:
+- repositoriesMatchingQuery: lang:go func main
+- repository: github.com/sourcegraph/src-cli
+steps:
+- run: echo 'foobar'
+  container: alpine
+  env:
+    PATH: "/work/foobar:$PATH"
+changesetTemplate:
+  title: Hello World
+  body: My first campaign!
+  branch: hello-world
+  commit:
+    message: Append Hello World to all README.md files
+  published: false
+`,
+		},
+		{
+			name: "invalid name",
+			rawSpec: `{
+				"name": "this contains spaces",
+				"description": "My description",
+				"on": [
+				    {"repositoriesMatchingQuery": "lang:go func main"},
+					{"repository": "github.com/sourcegraph/src-cli"}
+				],
+				"steps": [
+				{
+					"run": "echo 'foobar'",
+					"container": "alpine",
+					"env": {
+						"PATH": "/work/foobar:$PATH"
+					}
+				}
+				],
+				"changesetTemplate": {
+					"title": "Hello World",
+					"body": "My first campaign!",
+					"branch": "hello-world",
+					"commit": {
+						"message": "Append Hello World to all README.md files"
+					},
+					"published": false
+				}
+			}`,
+			err: "1 error occurred:\n\t* name: Does not match pattern '^[\\w.-]+$'\n\n",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			spec := &CampaignSpec{RawSpec: tc.rawSpec}
+			haveErr := fmt.Sprintf("%v", spec.UnmarshalValidate())
+			if haveErr == "<nil>" {
+				haveErr = ""
+			}
+			if diff := cmp.Diff(tc.err, haveErr); diff != "" {
+				t.Fatalf("unexpected response (-want +got):\n%s", diff)
 			}
 		})
 	}

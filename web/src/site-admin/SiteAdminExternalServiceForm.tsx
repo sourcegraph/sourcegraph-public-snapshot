@@ -7,11 +7,12 @@ import { Form } from '../components/Form'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import { AddExternalServiceOptions } from './externalServices'
 import { ErrorAlert, ErrorMessage } from '../components/alerts'
+import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { ThemeProps } from '../../../shared/src/theme'
 
-interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions'> {
+interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions'>, ThemeProps, TelemetryProps {
     history: H.History
     input: GQL.IAddExternalServiceInput
-    isLightTheme: boolean
     error?: ErrorLike
     warning?: string | null
     mode: 'edit' | 'create'
@@ -72,6 +73,7 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                         history={this.props.history}
                         actions={this.props.editorActions}
                         className="test-external-service-editor"
+                        telemetryService={this.props.telemetryService}
                     />
                     <p className="form-text text-muted">
                         <small>Use Ctrl+Space for completion, and hover over JSON properties for documentation.</small>

@@ -9,11 +9,11 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
@@ -57,10 +57,6 @@ type mockProvider struct {
 
 	fetchUserPerms func(context.Context, *extsvc.Account) ([]extsvc.RepoID, error)
 	fetchRepoPerms func(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error)
-}
-
-func (*mockProvider) RepoPerms(context.Context, *extsvc.Account, []*types.Repo) ([]authz.RepoPerms, error) {
-	return nil, nil
 }
 
 func (*mockProvider) FetchAccount(context.Context, *types.User, []*extsvc.Account) (*extsvc.Account, error) {

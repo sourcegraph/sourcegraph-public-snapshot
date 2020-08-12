@@ -11,6 +11,7 @@ import { OrgArea, OrgAreaRoute } from './area/OrgArea'
 import { OrgAreaHeaderNavItem } from './area/OrgHeader'
 import { NewOrganizationPage } from './new/NewOrganizationPage'
 import { PatternTypeProps } from '../search'
+import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -26,11 +27,13 @@ interface Props
         PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps,
+        TelemetryProps,
         Omit<PatternTypeProps, 'setPatternType'> {
     orgAreaRoutes: readonly OrgAreaRoute[]
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
 
     authenticatedUser: GQL.IUser | null
+    isSourcegraphDotCom: boolean
 }
 
 /**

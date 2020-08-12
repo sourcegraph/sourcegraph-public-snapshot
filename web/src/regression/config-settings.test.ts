@@ -70,7 +70,6 @@ describe('Site config test suite', () => {
         this.timeout(20 * 1000)
         const siteConfig = await fetchSiteConfiguration(gqlClient).toPromise()
         const siteConfigParsed: SiteConfiguration = jsonc.parse(siteConfig.configuration.effectiveContents)
-        // console.log('# siteConfig', siteConfigParsed)
         const setBuiltinAuthProvider = async (provider: BuiltinAuthProvider) => {
             const authProviders = siteConfigParsed['auth.providers']
             const foundIndices =
@@ -80,18 +79,28 @@ describe('Site config test suite', () => {
             const builtinAuthProviderIndex = foundIndices.length > 0 ? foundIndices[0] : -1
             const editFns = []
             if (builtinAuthProviderIndex !== -1) {
-                editFns.push((contents: string) =>
-                    jsoncEdit.setProperty(
-                        contents,
-                        ['auth.providers', builtinAuthProviderIndex],
-                        undefined,
-                        formattingOptions
-                    )
-                )
+                editFns.push((contents: string) => {
+                    const parsed: SiteConfiguration = jsonc.parse(contents)
+                    const found =
+                        parsed['auth.providers']
+                            ?.map((provider, index) => (provider.type === 'builtin' ? index : -1))
+                            .filter(index => index !== -1) || []
+                    const foundIndex = found.length > 0 ? found[0] : -1
+                    if (foundIndex !== -1) {
+                        return jsoncEdit.setProperty(
+                            contents,
+                            ['auth.providers', foundIndex],
+                            undefined,
+                            formattingOptions
+                        )
+                    }
+                    return []
+                })
             }
             editFns.push((contents: string) =>
                 jsoncEdit.setProperty(contents, ['auth.providers', -1], provider, formattingOptions)
             )
+            console.log('editFns', editFns)
             return editSiteConfig(gqlClient, ...editFns)
         }
 
@@ -100,6 +109,7 @@ describe('Site config test suite', () => {
             'builtin auth provider: allowSignup',
             await setBuiltinAuthProvider({ type: 'builtin', allowSignup: false })
         )
+
         await retry(
             async () => {
                 await driver.page.goto(config.sourcegraphBaseUrl)

@@ -42,7 +42,7 @@ Have a look around, our code is on [GitHub](https://sourcegraph.com/github.com/s
 
 ## Environment
 
-Sourcegraph server is a collection of smaller binaries. The development server, [dev/start.sh](https://github.com/sourcegraph/sourcegraph/blob/master/dev/start.sh), initializes the environment and starts a process manager that runs all of the binaries. See the [Architecture doc](architecture/index.md) for a full description of what each of these services does. The sections below describe the dependencies you need to run `dev/start.sh`.
+Sourcegraph server is a collection of smaller binaries. The development server, [dev/start.sh](https://github.com/sourcegraph/sourcegraph/blob/main/dev/start.sh), initializes the environment and starts a process manager that runs all of the binaries. See the [Architecture doc](architecture/index.md) for a full description of what each of these services does. The sections below describe the dependencies you need to run `dev/start.sh`.
 
 <!-- omit in toc -->
 ### For Sourcegraph employees
@@ -57,6 +57,8 @@ You'll need to clone [`sourcegraph/dev-private`](https://github.com/sourcegraph/
 
 After the initial setup you can run `enterprise/dev/start.sh` instead of `dev/start.sh`.
 
+The environment variables `SITE_CONFIG_FILE`, `EXTSVC_CONFIG_FILE` and `GLOBAL_SETTINGS_FILE` are paths that are read at startup. The content of the files will overwrite the respective setting. `start.sh` will set these files to point into `dev-private`. To avoid overwriting configuration changes done in Sourcegraph, you can set the environment variable `DEV_NO_CONFIG=1`.
+
 ## Step 1: Install dependencies
 
 
@@ -65,7 +67,7 @@ After the initial setup you can run `enterprise/dev/start.sh` instead of `dev/st
 Sourcegraph has the following dependencies:
 - [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) (v2.18 or higher)
 - [Go](https://golang.org/doc/install) (v1.14 or higher)
-- [Node JS](https://nodejs.org/en/download/) (see current recommended version in [.nvmrc](https://github.com/sourcegraph/sourcegraph/blob/master/.nvmrc))
+- [Node JS](https://nodejs.org/en/download/) (see current recommended version in [.nvmrc](https://github.com/sourcegraph/sourcegraph/blob/main/.nvmrc))
 - [make](https://www.gnu.org/software/make/)
 - [Docker](https://docs.docker.com/engine/installation/) (v18 or higher)
   - For macOS we recommend using Docker for Mac instead of `docker-machine`
@@ -113,6 +115,23 @@ The following are two recommendations for installing these dependencies:
     the output of `which nvm`. Use `type nvm` to verify whether it is set up.
     There is also a Homebrew package for `nvm`, but it is unsupported by the
     `nvm` maintainers.
+
+    * For fish shell users, you will want to install `bass` which you can get via `omf`:
+
+        ```
+        curl -L https://get.oh-my.fish | fish
+        omf install bass
+        ```
+
+    * Then add the following to your `config.fish`:
+
+        ```
+        function nvm
+          bass source ~/.nvm/nvm.sh --no-use ';' nvm $argv
+        end
+
+        set -x NVM_DIR ~/.nvm
+        ```
 
 5.  Install the current recommended version of Node JS by running the following
     from the working directory of a sourcegraph repository clone:
@@ -184,7 +203,13 @@ The following are two recommendations for installing these dependencies:
     curl -L https://github.com/comby-tools/comby/releases/download/0.11.3/comby-0.11.3-x86_64-linux.tar.gz | tar xvz
 
     # install watchman (you must put the binary and shared libraries on your $PATH and $LD_LIBRARY_PATH)
-    curl -L https://github.com/facebook/watchman/releases/download/v2020.07.13.00/watchman-v2020.07.13.00-linux.zip
+    curl -LO https://github.com/facebook/watchman/releases/download/v2020.07.13.00/watchman-v2020.07.13.00-linux.zip
+    unzip watchman-*-linux.zip
+    sudo mkdir -p /usr/local/{bin,lib} /usr/local/var/run/watchman
+    sudo cp bin/* /usr/local/bin
+    sudo cp lib/* /usr/local/lib
+    sudo chmod 755 /usr/local/bin/watchman
+    sudo chmod 2777 /usr/local/var/run/watchman
 
     # nvm (to manage Node.js)
     NVM_VERSION="$(curl https://api.github.com/repos/nvm-sh/nvm/releases/latest | jq -r .name)"
@@ -264,9 +289,9 @@ asdf plugin add yarn
 <!-- omit in toc -->
 #### Usage instructions
 
-[asdf](https://github.com/asdf-vm/asdf) uses versions specified in [.tool-versions](https://github.com/sourcegraph/sourcegraph/blob/master/.tool-versions) whenever a command is run from one of `sourcegraph/sourcegraph`'s subdirectories.
+[asdf](https://github.com/asdf-vm/asdf) uses versions specified in [.tool-versions](https://github.com/sourcegraph/sourcegraph/blob/main/.tool-versions) whenever a command is run from one of `sourcegraph/sourcegraph`'s subdirectories.
 
-You can install the all the versions specified in [.tool-versions](https://github.com/sourcegraph/sourcegraph/blob/master/.tool-versions) by running `asdf install`.
+You can install the all the versions specified in [.tool-versions](https://github.com/sourcegraph/sourcegraph/blob/main/.tool-versions) by running `asdf install`.
 
 
 ## Step 2: Initialize your database
@@ -463,6 +488,14 @@ yarn
 cd web
 yarn
 ```
+
+### Node version out of date
+
+```bash
+Validating package.json...
+error @: The engine "node" is incompatible with this module. Expected version "^v14.7.0". Got "14.5.0"
+```
+If you see an error like this you need to upgrade the version of node installed. You can do this with `nvm use` and then following the prompts to install or update to the correct Node.js version.
 
 #### dial tcp 127.0.0.1:3090: connect: connection refused
 
