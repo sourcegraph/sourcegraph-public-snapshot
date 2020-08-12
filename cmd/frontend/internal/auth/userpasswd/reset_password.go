@@ -112,7 +112,7 @@ func HandleSetPasswordEmail(ctx context.Context, id int32) (string, error) {
 	if err == db.ErrPasswordResetRateLimit {
 		return "", err
 	} else if err != nil {
-		return "", errors.New("could not reset password")
+		return "", errors.Wrap(err, "make password reset URL")
 	}
 
 	rus := globals.ExternalURL().ResolveReference(ru).String()

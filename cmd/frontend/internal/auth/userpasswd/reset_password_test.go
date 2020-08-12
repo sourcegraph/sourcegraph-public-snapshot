@@ -27,7 +27,7 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 
 	backend.MockMakePasswordResetURL = func(context.Context, int32) (*url.URL, error) {
 		query := url.Values{}
-		query.Set("userID", strconv.Itoa(int(1)))
+		query.Set("userID", "1")
 		query.Set("code", "foo")
 		return &url.URL{Path: "/password-reset", RawQuery: query.Encode()}, nil
 	}
