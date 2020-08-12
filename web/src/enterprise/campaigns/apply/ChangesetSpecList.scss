@@ -1,0 +1,20 @@
+.changeset-spec-list {
+    &__grid {
+        display: grid;
+        grid-template-columns: [caret] min-content [action] min-content [info] auto [diffstat] min-content [end];
+        row-gap: 1rem;
+        align-items: center;
+    }
+}
+
+.justify-self-end {
+    justify-self: end;
+}
+
+.grid-row {
+    grid-column: 1 / -1;
+}
+
+.align-self-start {
+    align-self: start;
+}

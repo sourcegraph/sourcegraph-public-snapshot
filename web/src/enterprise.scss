@@ -3,6 +3,7 @@
 @import './SourcegraphWebApp';
 
 // Enterprise styles
+@import './enterprise/campaigns/apply/ChangesetSpecList';
 @import './enterprise/campaigns/detail/CampaignActionsBar';
 @import './enterprise/campaigns/list/CampaignNode';
 @import './enterprise/campaigns/detail/changesets/ExternalChangesetNode';

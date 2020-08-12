@@ -108,7 +108,7 @@ interface ConnectionDisplayProps {
  */
 interface ConnectionPropsCommon<N, NP = {}> extends ConnectionDisplayProps {
     /** Header row to appear above all nodes. */
-    headComponent?: React.ComponentType<{ nodes: N[] }>
+    headComponent?: React.ComponentType<{ nodes: N[]; totalCount?: number | null }>
 
     /** Footer row to appear below all nodes. */
     footComponent?: React.ComponentType<{ nodes: N[] }>
@@ -247,7 +247,12 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
                 {this.props.connectionQuery && summary}
                 {this.props.connection && this.props.connection.nodes.length > 0 && (
                     <ListComponent className={`filtered-connection__nodes ${this.props.listClassName || ''}`}>
-                        {HeadComponent && <HeadComponent nodes={this.props.connection.nodes} />}
+                        {HeadComponent && (
+                            <HeadComponent
+                                nodes={this.props.connection.nodes}
+                                totalCount={this.props.connection.totalCount}
+                            />
+                        )}
                         {ListComponent === 'table' ? <tbody>{nodes}</tbody> : nodes}
                         {FootComponent && <FootComponent nodes={this.props.connection.nodes} />}
                     </ListComponent>
