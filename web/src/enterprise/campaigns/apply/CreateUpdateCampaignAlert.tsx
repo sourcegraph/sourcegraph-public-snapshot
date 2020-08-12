@@ -26,6 +26,9 @@ export const CreateUpdateCampaignAlert: React.FunctionComponent<CreateUpdateCamp
 }) => {
     const campaignID = campaign?.id
     const onApply = useCallback(async () => {
+        if (!confirm('Are you sure you want to apply this campaign?')) {
+            return
+        }
         setIsLoading(true)
         try {
             const campaign = campaignID

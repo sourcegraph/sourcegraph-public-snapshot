@@ -67,7 +67,6 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
                 setIsLoading={setIsLoading}
                 viewerCanAdminister={spec.viewerCanAdminister}
             />
-            <h2 className="mb-3">What this does</h2>
             <Markdown
                 dangerousInnerHTML={renderMarkdown(spec.description.description || '_No description_')}
                 history={history}
