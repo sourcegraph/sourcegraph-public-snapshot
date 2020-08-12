@@ -1,4 +1,4 @@
-import { take, map, filter, catchError, timeout } from 'rxjs/operators'
+import { take } from 'rxjs/operators'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { createSuggestionFetcher } from '../backend/search'
@@ -51,13 +51,7 @@ export class SearchCommand {
     public action = async (query: string, disposition?: string): Promise<void> => {
         const sourcegraphURL = await observeSourcegraphURL(IS_EXTENSION).pipe(take(1)).toPromise()
 
-        const platformContext = createPlatformContext(
-            { urlToFile: undefined, getContext: undefined },
-            { sourcegraphURL, assetsURL: getAssetsURL(DEFAULT_SOURCEGRAPH_URL) },
-            IS_EXTENSION
-        )
-
-        const patternType = await this.getDefaultSearchPatternType(platformContext)
+        const patternType = await this.getDefaultSearchPatternType(sourcegraphURL)
 
         const props = {
             url: isURL.test(query)
@@ -79,18 +73,45 @@ export class SearchCommand {
         }
     }
 
-    private async getDefaultSearchPatternType(platformContext: BrowserPlatformContext): Promise<SearchPatternType> {
-        try {
-            await platformContext.refreshSettings()
-            const settings = (await from(platformContext.settings).pipe(take(1)).toPromise()).final
+    private lastSourcegraphUrl = ''
+    private settingsTimeoutHandler = 0
+    private defaultPatternType = SearchPatternType.literal
+    private readonly settingsTimeoutDuration = 60 * 60 * 1000 // one hour
 
-            if (isDefined(settings) && isNot<ErrorLike | Settings, ErrorLike>(isErrorLike)(settings)) {
-                return settings['search.defaultPatternType'] as SearchPatternType
+    private async getDefaultSearchPatternType(sourcegraphURL: string): Promise<SearchPatternType> {
+        try {
+            // Refresh settings when either:
+            // - First search
+            // - Sourcegraph URL changes
+            // - Over an hour has passed since last refresh
+
+            if (this.lastSourcegraphUrl !== sourcegraphURL || this.settingsTimeoutHandler === 0) {
+                clearTimeout(this.settingsTimeoutHandler)
+                this.settingsTimeoutHandler = 0
+
+                const platformContext = createPlatformContext(
+                    { urlToFile: undefined, getContext: undefined },
+                    { sourcegraphURL, assetsURL: getAssetsURL(DEFAULT_SOURCEGRAPH_URL) },
+                    IS_EXTENSION
+                )
+
+                await platformContext.refreshSettings()
+                const settings = (await from(platformContext.settings).pipe(take(1)).toPromise()).final
+
+                if (isDefined(settings) && isNot<ErrorLike | Settings, ErrorLike>(isErrorLike)(settings)) {
+                    this.defaultPatternType =
+                        (settings['search.defaultPatternType'] as SearchPatternType) || this.defaultPatternType
+                }
+
+                this.lastSourcegraphUrl = sourcegraphURL
+                this.settingsTimeoutHandler = window.setTimeout(() => {
+                    this.settingsTimeoutHandler = 0
+                }, this.settingsTimeoutDuration)
             }
         } catch {
-            // Ignore errors
+            // Ignore errors trying to get settings, fall to return default below
         }
 
-        return SearchPatternType.literal
+        return this.defaultPatternType
     }
 }
