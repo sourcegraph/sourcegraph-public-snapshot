@@ -192,9 +192,6 @@ export const changesetSpecFileDiffsFields = gql`
                             hasNextPage
                             endCursor
                         }
-                        diffStat {
-                            ...DiffStatFields
-                        }
                     }
                 }
             }

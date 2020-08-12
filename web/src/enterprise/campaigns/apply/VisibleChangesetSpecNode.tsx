@@ -5,7 +5,7 @@ import { ThemeProps } from '../../../../../shared/src/theme'
 import { FileDiffNode } from '../../../components/diff/FileDiffNode'
 import { FileDiffConnection } from '../../../components/diff/FileDiffConnection'
 import { map } from 'rxjs/operators'
-import { queryChangesetSpecFileDiffs } from './backend'
+import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'
 import { FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 import { Link } from '../../../../../shared/src/components/Link'
 import { DiffStat } from '../../../components/diff/DiffStat'
@@ -17,6 +17,9 @@ export interface VisibleChangesetSpecNodeProps extends ThemeProps {
     node: ChangesetSpecFields & { __typename: 'VisibleChangesetSpec' }
     history: H.History
     location: H.Location
+
+    /** Used for testing. */
+    queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
 }
 
 export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetSpecNodeProps> = ({
@@ -24,6 +27,7 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
     isLightTheme,
     history,
     location,
+    queryChangesetSpecFileDiffs = _queryChangesetSpecFileDiffs,
 }) => {
     const [isExpanded, setIsExpanded] = useState(false)
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
@@ -50,7 +54,7 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
                     return diff.fileDiffs
                 })
             ),
-        [node.id, isLightTheme]
+        [node.id, isLightTheme, queryChangesetSpecFileDiffs]
     )
 
     return (

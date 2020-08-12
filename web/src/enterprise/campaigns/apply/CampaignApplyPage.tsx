@@ -2,7 +2,13 @@ import * as H from 'history'
 import React, { useMemo, useCallback, useState } from 'react'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { PageTitle } from '../../../components/PageTitle'
-import { fetchCampaignSpecById, createCampaign, applyCampaign } from './backend'
+import {
+    fetchCampaignSpecById as _fetchCampaignSpecById,
+    createCampaign,
+    applyCampaign,
+    queryChangesetSpecs,
+    queryChangesetSpecFileDiffs,
+} from './backend'
 import { ErrorAlert } from '../../../components/alerts'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { CampaignHeader } from '../detail/CampaignHeader'
@@ -20,6 +26,13 @@ export interface CampaignApplyPageProps extends ThemeProps {
     specID: string
     history: H.History
     location: H.Location
+
+    /** Used for testing. */
+    fetchCampaignSpecById?: typeof _fetchCampaignSpecById
+    /** Used for testing. */
+    queryChangesetSpecs?: typeof queryChangesetSpecs
+    /** Used for testing. */
+    queryChangesetSpecFileDiffs?: typeof queryChangesetSpecFileDiffs
 }
 
 export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> = ({
@@ -27,9 +40,12 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
     history,
     location,
     isLightTheme,
+    fetchCampaignSpecById = _fetchCampaignSpecById,
+    queryChangesetSpecs,
+    queryChangesetSpecFileDiffs,
 }) => {
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
-    const spec = useObservable(useMemo(() => fetchCampaignSpecById(specID), [specID]))
+    const spec = useObservable(useMemo(() => fetchCampaignSpecById(specID), [specID, fetchCampaignSpecById]))
     if (spec === undefined) {
         return <LoadingSpinner />
     }
@@ -66,6 +82,8 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
                 history={history}
                 location={location}
                 isLightTheme={isLightTheme}
+                queryChangesetSpecs={queryChangesetSpecs}
+                queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
             />
             <CreateUpdateCampaignAlert
                 history={history}
@@ -102,7 +120,7 @@ export const CreateUpdateCampaignAlert: React.FunctionComponent<{
     }, [specID, setIsLoading, history, campaignID])
     return (
         <>
-            <div className="alert alert-info p-3 mb-3 d-flex align-items-center">
+            <div className="alert alert-info p-3 mb-3 d-flex align-items-center body-lead">
                 <span className="badge badge-info text-uppercase mb-0 mr-3">Preview</span>
                 {!campaign && (
                     <p className="mb-0 flex-grow-1">

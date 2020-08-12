@@ -7,6 +7,7 @@ import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { ChangesetSpecNode } from './ChangesetSpecNode'
 import { visibleChangesetSpecStories } from './VisibleChangesetSpecNode.story'
 import { hiddenChangesetSpecStories } from './HiddenChangesetSpecNode.story'
+import { of } from 'rxjs'
 
 let isLightTheme = true
 const { add } = storiesOf('web/campaigns/apply/ChangesetSpecNode', module).addDecorator(story => {
@@ -23,18 +24,22 @@ const { add } = storiesOf('web/campaigns/apply/ChangesetSpecNode', module).addDe
     )
 })
 
+const queryEmptyFileDiffs = () =>
+    of({ fileDiffs: { totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] } })
+
 add('Overview', () => {
     const history = H.createMemoryHistory()
     const nodes = [...Object.values(visibleChangesetSpecStories), ...Object.values(hiddenChangesetSpecStories)]
     return (
         <>
-            {nodes.map((node, index) => (
+            {nodes.map(node => (
                 <ChangesetSpecNode
-                    key={index}
+                    key={node.id}
                     node={node}
                     history={history}
                     location={history.location}
                     isLightTheme={isLightTheme}
+                    queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                 />
             ))}
         </>

@@ -24,13 +24,13 @@ const { add } = storiesOf('web/campaigns/apply/HiddenChangesetSpecNode', module)
 export const hiddenChangesetSpecStories: Record<string, ChangesetSpecFields & { __typename: 'HiddenChangesetSpec' }> = {
     'Import changeset': {
         __typename: 'HiddenChangesetSpec',
-        id: 'someid',
+        id: 'someidh1',
         expiresAt: addDays(new Date(), 7).toISOString(),
         type: ChangesetSpecType.EXISTING,
     },
     'Create changeset': {
         __typename: 'HiddenChangesetSpec',
-        id: 'someid',
+        id: 'someidh2',
         expiresAt: addDays(new Date(), 7).toISOString(),
         type: ChangesetSpecType.BRANCH,
     },

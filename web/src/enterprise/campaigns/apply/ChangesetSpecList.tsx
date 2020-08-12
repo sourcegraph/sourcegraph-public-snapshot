@@ -3,7 +3,7 @@ import * as H from 'history'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 import { Scalars, ChangesetSpecFields } from '../../../graphql-operations'
-import { queryChangesetSpecs as _queryChangesetSpecs } from './backend'
+import { queryChangesetSpecs as _queryChangesetSpecs, queryChangesetSpecFileDiffs } from './backend'
 import { ChangesetSpecNode, ChangesetSpecNodeProps } from './ChangesetSpecNode'
 
 interface Props extends ThemeProps {
@@ -13,6 +13,8 @@ interface Props extends ThemeProps {
 
     /** For testing only. */
     queryChangesetSpecs?: typeof _queryChangesetSpecs
+    /** For testing only. */
+    queryChangesetSpecFileDiffs?: typeof queryChangesetSpecFileDiffs
 }
 
 const ChangesetSpecListHeader: React.FunctionComponent<{
@@ -42,6 +44,7 @@ export const ChangesetSpecList: React.FunctionComponent<Props> = ({
     location,
     isLightTheme,
     queryChangesetSpecs = _queryChangesetSpecs,
+    queryChangesetSpecFileDiffs,
 }) => {
     const queryChangesetSpecsConnection = useCallback(
         (args: FilteredConnectionQueryArgs) =>
@@ -62,6 +65,7 @@ export const ChangesetSpecList: React.FunctionComponent<Props> = ({
                     isLightTheme,
                     history,
                     location,
+                    queryChangesetSpecFileDiffs,
                 }}
                 queryConnection={queryChangesetSpecsConnection}
                 hideSearch={true}

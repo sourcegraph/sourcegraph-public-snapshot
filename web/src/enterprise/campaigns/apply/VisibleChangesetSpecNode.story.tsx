@@ -8,6 +8,7 @@ import { VisibleChangesetSpecNode } from './VisibleChangesetSpecNode'
 import { addDays } from 'date-fns'
 import { ChangesetSpecType } from '../../../../../shared/src/graphql/schema'
 import { ChangesetSpecFields } from '../../../graphql-operations'
+import { of } from 'rxjs'
 
 let isLightTheme = true
 const { add } = storiesOf('web/campaigns/apply/VisibleChangesetSpecNode', module).addDecorator(story => {
@@ -30,7 +31,7 @@ export const visibleChangesetSpecStories: Record<
 > = {
     'Import changeset': {
         __typename: 'VisibleChangesetSpec',
-        id: 'someid',
+        id: 'someidv1',
         expiresAt: addDays(new Date(), 7).toISOString(),
         type: ChangesetSpecType.EXISTING,
         description: {
@@ -41,7 +42,7 @@ export const visibleChangesetSpecStories: Record<
     },
     'Create changeset published': {
         __typename: 'VisibleChangesetSpec',
-        id: 'someid',
+        id: 'someidv2',
         expiresAt: addDays(new Date(), 7).toISOString(),
         type: ChangesetSpecType.EXISTING,
         description: {
@@ -66,7 +67,7 @@ export const visibleChangesetSpecStories: Record<
     },
     'Create changeset not published': {
         __typename: 'VisibleChangesetSpec',
-        id: 'someid',
+        id: 'someidv3',
         expiresAt: addDays(new Date(), 7).toISOString(),
         type: ChangesetSpecType.EXISTING,
         description: {
@@ -91,6 +92,9 @@ export const visibleChangesetSpecStories: Record<
     },
 }
 
+const queryEmptyFileDiffs = () =>
+    of({ fileDiffs: { totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] } })
+
 for (const storyName of Object.keys(visibleChangesetSpecStories)) {
     add(storyName, () => {
         const history = H.createMemoryHistory()
@@ -100,6 +104,7 @@ for (const storyName of Object.keys(visibleChangesetSpecStories)) {
                 history={history}
                 location={history.location}
                 isLightTheme={isLightTheme}
+                queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
             />
         )
     })

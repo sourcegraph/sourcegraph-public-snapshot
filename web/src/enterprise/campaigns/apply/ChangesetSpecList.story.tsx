@@ -42,12 +42,16 @@ const queryChangesetSpecs = (): Observable<
         nodes,
     })
 
+const queryEmptyFileDiffs = () =>
+    of({ fileDiffs: { totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] } })
+
 add('List view', () => {
     const history = H.createMemoryHistory()
     return (
         <ChangesetSpecList
             campaignSpecID="123123"
             queryChangesetSpecs={queryChangesetSpecs}
+            queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
             history={history}
             location={history.location}
             isLightTheme={isLightTheme}
