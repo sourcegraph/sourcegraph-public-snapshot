@@ -176,7 +176,7 @@ type pingRequest struct {
 	UniqueUsers          int32           `json:"u"`
 	Activity             json.RawMessage `json:"act"`
 	CampaignsUsage       json.RawMessage `json:"automationUsage"`
-	GrowthStatistics	 json.RawMessage `json:"growthStatistics"`
+	GrowthStatistics     json.RawMessage `json:"growthStatistics"`
 	CodeIntelUsage       json.RawMessage `json:"codeIntelUsage"`
 	SearchUsage          json.RawMessage `json:"searchUsage"`
 	InitialAdminEmail    string          `json:"initAdmin"`
@@ -266,7 +266,7 @@ type pingPayload struct {
 	CampaignsUsage       json.RawMessage `json:"automation_usage"`
 	CodeIntelUsage       json.RawMessage `json:"code_intel_usage"`
 	SearchUsage          json.RawMessage `json:"search_usage"`
-	GrowthStatistics	 json.RawMessage `json:"growth_statistics"`
+	GrowthStatistics     json.RawMessage `json:"growth_statistics"`
 	InstallerEmail       string          `json:"installer_email"`
 	AuthProviders        string          `json:"auth_providers"`
 	ExtServices          string          `json:"ext_services"`

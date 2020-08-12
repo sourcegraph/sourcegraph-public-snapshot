@@ -144,7 +144,7 @@ func TestSerializeBasic(t *testing.T) {
 		CampaignsUsage:       nil,
 		CodeIntelUsage:       nil,
 		SearchUsage:          nil,
-		GrowthStatistics:	  nil,
+		GrowthStatistics:     nil,
 		InitialAdminEmail:    "test@sourcegraph.com",
 		TotalUsers:           234,
 		HasRepos:             true,
@@ -329,7 +329,7 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 			"Monthly": [` + period + `, ` + period + `]
 		}`)),
 		SearchUsage:       nil,
-		GrowthStatistics:   nil,
+		GrowthStatistics:  nil,
 		InitialAdminEmail: "test@sourcegraph.com",
 		TotalUsers:        234,
 		HasRepos:          true,
