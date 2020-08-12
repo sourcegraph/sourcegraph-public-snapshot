@@ -46,7 +46,7 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 		name    string
 		id      int32
 		ctx     context.Context
-		wantOut string
+		wantURL string
 		wantErr bool
 		email   string
 	}{
@@ -54,7 +54,7 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 			name:    "Valid ID",
 			id:      1,
 			ctx:     ctx,
-			wantOut: "http://example.com/password-reset?code=foo&userID=1",
+			wantURL: "http://example.com/password-reset?code=foo&userID=1",
 			wantErr: false,
 			email:   "a@example.com",
 		},
@@ -63,8 +63,8 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
 			got, err := HandleSetPasswordEmail(tst.ctx, tst.id)
-			if got != tst.wantOut {
-				t.Fatalf("input %d got %q want %q", tst.id, got, tst.wantOut)
+			if diff := cmp.Diff(tst.wantURL, got); diff != "" {
+				t.Errorf("Message mismatch (-want +got):\n%s", diff)
 			}
 			if (err != nil) != tst.wantErr {
 				if tst.wantErr {
@@ -78,7 +78,7 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 				t.Fatal("want sent != nil")
 			}
 
-			want := &txemail.Message{
+			gotEmail := &txemail.Message{
 				To:       []string{tst.email},
 				Template: setPasswordEmailTemplates,
 				Data: struct {
@@ -89,7 +89,20 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 					URL:      got,
 				},
 			}
-			if diff := cmp.Diff(want, got); diff != "" {
+
+			want := &txemail.Message{
+				To:       []string{tst.email},
+				Template: setPasswordEmailTemplates,
+				Data: struct {
+					Username string
+					URL      string
+				}{
+					Username: "test",
+					URL:      tst.wantURL,
+				},
+			}
+
+			if diff := cmp.Diff(want, gotEmail); diff != "" {
 				t.Errorf("Message mismatch (-want +got):\n%s", diff)
 			}
 		})
