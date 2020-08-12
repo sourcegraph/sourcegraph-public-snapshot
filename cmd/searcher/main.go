@@ -56,7 +56,6 @@ func main() {
 		},
 		Log: log15.Root(),
 	}
-	service.Store.SetMaxConcurrentFetchTar(10)
 	service.Store.Start()
 	handler := ot.Middleware(service)
 
