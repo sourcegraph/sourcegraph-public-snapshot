@@ -201,8 +201,9 @@ func (g globError) Error() string {
 // from glob to regex.
 func reporevToRegex(value string) (string, error) {
 	reporev := strings.SplitN(value, "@", 2)
+	containsNoRev := len(reporev) == 1
 	repo := reporev[0]
-	if ContainsNoGlobSyntax(repo) {
+	if containsNoRev && ContainsNoGlobSyntax(repo) {
 		repo = fuzzifyGlobPattern(repo)
 	}
 	repo, err := globToRegex(repo)
@@ -225,6 +226,9 @@ func ContainsNoGlobSyntax(value string) bool {
 func fuzzifyGlobPattern(value string) string {
 	if value == "" {
 		return value
+	}
+	if strings.HasPrefix(value, "github.com") {
+		return value + "**"
 	}
 	return "**" + value + "**"
 }

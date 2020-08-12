@@ -555,14 +555,19 @@ func TestReporevToRegex(t *testing.T) {
 		want string
 	}{
 		{
-			name: "no revision",
+			name: "starting with github.com, no revision",
 			arg:  "github.com/foo",
-			want: "^.*?github\\.com/foo.*?$",
+			want: "^github\\.com/foo.*?$",
 		},
 		{
-			name: "with revision",
+			name: "starting with github.com, with revision",
 			arg:  "github.com/foo@bar",
-			want: "^.*?github\\.com/foo.*?$@bar",
+			want: "^github\\.com/foo$@bar",
+		},
+		{
+			name: "starting with foo.com, no revision",
+			arg:  "foo.com/bar",
+			want: "^.*?foo\\.com/bar.*?$",
 		},
 		{
 			name: "empty string",
@@ -572,7 +577,7 @@ func TestReporevToRegex(t *testing.T) {
 		{
 			name: "many @",
 			arg:  "foo@bar@bas",
-			want: "^.*?foo.*?$@bar@bas",
+			want: "^foo$@bar@bas",
 		},
 		{
 			name: "just @",
@@ -694,6 +699,10 @@ func TestFuzzifyGlobPattern(t *testing.T) {
 			want: "**foo**",
 		},
 		{
+			in:   "github.com/foo/bar",
+			want: "github.com/foo/bar**",
+		},
+		{
 			in:   "",
 			want: "",
 		},
@@ -717,8 +726,16 @@ func TestMapGlobToRegex(t *testing.T) {
 			want:  `"repo:^.*?sourcegraph.*?$"`,
 		},
 		{
+			input: "repo:sourcegraph@commit-id",
+			want:  `"repo:^sourcegraph$@commit-id"`,
+		},
+		{
 			input: "repo:github.com/sourcegraph",
-			want:  `"repo:^.*?github\\.com/sourcegraph.*?$"`,
+			want:  `"repo:^github\\.com/sourcegraph.*?$"`,
+		},
+		{
+			input: "repo:github.com/sourcegraph/sourcegraph@v3.18.0",
+			want:  `"repo:^github\\.com/sourcegraph/sourcegraph$@v3.18.0"`,
 		},
 		{
 			input: "repo:**sourcegraph",
