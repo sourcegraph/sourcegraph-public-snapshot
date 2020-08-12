@@ -7,6 +7,7 @@ import (
 	"os"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
@@ -41,11 +42,12 @@ func TestUpdate(t *testing.T) {
 		return fmt.Sprintf("c%d", repositoryID), nil
 	})
 
-	updater := &Updater{
-		store:           mockStore,
-		gitserverClient: mockGitserverClient,
-		metrics:         NewUpdaterMetrics(metrics.TestRegisterer),
-	}
+	updater := NewUpdater(
+		mockStore,
+		mockGitserverClient,
+		time.Second,
+		NewUpdaterMetrics(metrics.TestRegisterer),
+	)
 
 	if err := updater.update(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
