@@ -243,6 +243,8 @@ func (e *ExternalServicesStore) validateBitbucketCloudConnection(ctx context.Con
 	return e.validateDuplicateRateLimits(ctx, id, extsvc.KindBitbucketCloud, c)
 }
 
+// validateDuplicateRateLimits returns an error if given config has duplicated non-default rate limit
+// with another external service for the same code host.
 func (e *ExternalServicesStore) validateDuplicateRateLimits(ctx context.Context, id int64, kind string, parsedConfig interface{}) error {
 	// Check if rate limit is already defined for this code host on another external service
 	rlc, err := extsvc.GetLimitFromConfig(kind, parsedConfig)
@@ -256,25 +258,20 @@ func (e *ExternalServicesStore) validateDuplicateRateLimits(ctx context.Context,
 	}
 
 	baseURL := rlc.BaseURL
-	// A rate limit has been defined
-	services, err := e.List(ctx, ExternalServicesListOptions{
+	return e.ListPaginate(ctx, ExternalServicesListOptions{
 		Kinds: []string{kind},
+	}, func(svcs []*types.ExternalService) error {
+		for _, svc := range svcs {
+			rlc, err := extsvc.ExtractRateLimitConfig(svc.Config, svc.Kind, svc.DisplayName)
+			if err != nil {
+				return errors.Wrap(err, "extracting rate limit config")
+			}
+			if rlc.BaseURL == baseURL && svc.ID != id && !rlc.IsDefault {
+				return fmt.Errorf("existing external service, %q, already has a rate limit set", rlc.DisplayName)
+			}
+		}
+		return nil
 	})
-	if err != nil {
-		return errors.Wrap(err, "listing existing services")
-	}
-
-	for _, svc := range services {
-		rlc, err := extsvc.ExtractRateLimitConfig(svc.Config, svc.Kind, svc.DisplayName)
-		if err != nil {
-			return errors.Wrap(err, "extracting rate limit config")
-		}
-		if rlc.BaseURL == baseURL && svc.ID != id && !rlc.IsDefault {
-			return fmt.Errorf("existing external service, %q, already has a rate limit set", rlc.DisplayName)
-		}
-	}
-
-	return nil
 }
 
 // Create creates a external service.
