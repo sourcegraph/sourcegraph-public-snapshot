@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"net/http"
-	"net/url"
 	"strconv"
 	"sync"
 	"time"
@@ -73,12 +72,6 @@ func IsPending() bool {
 	mu.Lock()
 	defer mu.Unlock()
 	return startedAt != nil
-}
-
-var baseURL = &url.URL{
-	Scheme: "https",
-	Host:   "sourcegraph.com",
-	Path:   "/.api/updates",
 }
 
 // recordOperation returns a record fn that is called on any given return err. If an error is encountered
@@ -160,10 +153,6 @@ func getAndMarshalAggregatedUsageJSON(ctx context.Context) (_ json.RawMessage, _
 	}
 
 	return serializedCodeIntelUsage, serializedSearchUsage, nil
-}
-
-func updateURL() string {
-	return baseURL.String()
 }
 
 func updateBody(ctx context.Context) (io.Reader, error) {
@@ -291,7 +280,7 @@ func check(ctx context.Context) (*Status, error) {
 		if err != nil {
 			return "", err
 		}
-		resp, err := ctxhttp.Post(ctx, nil, updateURL(), "application/json", body)
+		resp, err := ctxhttp.Post(ctx, nil, "https://sourcegraph.com/.api/updates", "application/json", body)
 		if err != nil {
 			return "", err
 		}
