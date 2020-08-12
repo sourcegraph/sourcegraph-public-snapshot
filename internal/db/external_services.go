@@ -442,11 +442,13 @@ func (e *ExternalServicesStore) ListPaginate(
 	ctx context.Context,
 	opt ExternalServicesListOptions,
 	iterator func(svcs []*types.ExternalService) error) error {
-	limitOffset := &LimitOffset{
-		Limit: 500, // The number is randomly chosen
+	if opt.LimitOffset == nil {
+		opt.LimitOffset = &LimitOffset{
+			Limit: 500, // The number is randomly chosen
+		}
 	}
 	for {
-		svcs, err := e.list(ctx, opt.sqlConditions(), limitOffset)
+		svcs, err := e.List(ctx, opt)
 		if err != nil {
 			return errors.Wrap(err, "list")
 		}
@@ -460,6 +462,10 @@ func (e *ExternalServicesStore) ListPaginate(
 			break
 		} else if err != nil {
 			return err
+		}
+
+		if len(svcs) < opt.Limit {
+			break // Less results than limit means we've reached end
 		}
 	}
 	return nil

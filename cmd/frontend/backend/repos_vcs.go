@@ -7,6 +7,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -17,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // CachedGitRepo returns a handle to the Git repository that does not know the remote URL. If
@@ -94,42 +96,70 @@ func quickGitserverRepo(ctx context.Context, repo api.RepoName, serviceType stri
 
 // hasGitHubDotComToken reports whether there are any personal access tokens configured for
 // github.com.
-func hasGitHubDotComToken(ctx context.Context) (bool, error) {
-	conns, err := db.ExternalServices.ListGitHubConnections(ctx)
-	if err != nil {
-		return false, err
-	}
-	for _, c := range conns {
-		u, err := url.Parse(c.Url)
-		if err != nil {
-			continue
+func hasGitHubDotComToken(ctx context.Context) (hasToken bool, _ error) {
+	return hasToken, db.ExternalServices.ListPaginate(ctx, db.ExternalServicesListOptions{
+		Kinds: []string{extsvc.KindGitHub},
+	}, func(svcs []*types.ExternalService) error {
+		for _, svc := range svcs {
+			cfg, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+			if err != nil {
+				return errors.Wrap(err, "parse config")
+			}
+
+			var conn *schema.GitHubConnection
+			switch c := cfg.(type) {
+			case *schema.GitHubConnection:
+				conn = c
+			default:
+				return errors.Errorf("want *schema.GitHubConnection but got %T", cfg)
+			}
+
+			u, err := url.Parse(conn.Url)
+			if err != nil {
+				continue
+			}
+			hostname := strings.ToLower(u.Hostname())
+			if (hostname == "github.com" || hostname == "api.github.com") && conn.Token != "" {
+				hasToken = true
+				return db.ErrStopIteratingExternalServices
+			}
 		}
-		hostname := strings.ToLower(u.Hostname())
-		if (hostname == "github.com" || hostname == "api.github.com") && c.Token != "" {
-			return true, nil
-		}
-	}
-	return false, nil
+		return nil
+	})
 }
 
 // hasGitLabDotComToken reports whether there are any personal access tokens configured for
 // github.com.
-func hasGitLabDotComToken(ctx context.Context) (bool, error) {
-	conns, err := db.ExternalServices.ListGitLabConnections(ctx)
-	if err != nil {
-		return false, err
-	}
-	for _, c := range conns {
-		u, err := url.Parse(c.Url)
-		if err != nil {
-			continue
+func hasGitLabDotComToken(ctx context.Context) (hasToken bool, _ error) {
+	return hasToken, db.ExternalServices.ListPaginate(ctx, db.ExternalServicesListOptions{
+		Kinds: []string{extsvc.KindGitLab},
+	}, func(svcs []*types.ExternalService) error {
+		for _, svc := range svcs {
+			cfg, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+			if err != nil {
+				return errors.Wrap(err, "parse config")
+			}
+
+			var conn *schema.GitLabConnection
+			switch c := cfg.(type) {
+			case *schema.GitLabConnection:
+				conn = c
+			default:
+				return errors.Errorf("want *schema.GitLabConnection but got %T", cfg)
+			}
+
+			u, err := url.Parse(conn.Url)
+			if err != nil {
+				continue
+			}
+			hostname := strings.ToLower(u.Hostname())
+			if hostname == "gitlab.com" && conn.Token != "" {
+				hasToken = true
+				return db.ErrStopIteratingExternalServices
+			}
 		}
-		hostname := strings.ToLower(u.Hostname())
-		if hostname == "gitlab.com" && c.Token != "" {
-			return true, nil
-		}
-	}
-	return false, nil
+		return nil
+	})
 }
 
 // ResolveRev will return the absolute commit for a commit-ish spec in a repo.
