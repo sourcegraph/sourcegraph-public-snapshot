@@ -290,14 +290,7 @@ func check() {
 		req.Header.Set("Content-Type", "application/json")
 		req = req.WithContext(ctx)
 
-		// This HTTP client will pick up proxy settings in firewalled
-		// environments. We create a new one each loop since this is only run
-		// every 30s.
-		client, err := httpcli.NewExternalHTTPClientFactory().Doer()
-		if err != nil {
-			return "", err
-		}
-		resp, err := client.Do(req)
+		resp, err := httpcli.ExternalHTTPClient().Do(req)
 		if err != nil {
 			return "", err
 		}
