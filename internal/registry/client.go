@@ -11,8 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/httputil"
-	"golang.org/x/net/context/ctxhttp"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 const (
@@ -88,8 +87,9 @@ func httpGet(ctx context.Context, op, urlStr string, result interface{}) (err er
 	}
 	req.Header.Set("Accept", AcceptHeader)
 	req.Header.Set("User-Agent", "Sourcegraph registry client v"+APIVersion)
+	req = req.WithContext(ctx)
 
-	resp, err := ctxhttp.Do(ctx, httputil.CachingClient, req)
+	resp, err := httpcli.ExternalHTTPClient().Do(req)
 	if err != nil {
 		return err
 	}
