@@ -110,7 +110,7 @@ func HandleSetPasswordEmail(ctx context.Context, id int32) (string, error) {
 
 	ru, err := backend.MakePasswordResetURL(ctx, id)
 	if err == db.ErrPasswordResetRateLimit {
-		return "", errors.New("too many password reset requests. try again in a few minutes")
+		return "", err
 	} else if err != nil {
 		return "", errors.New("could not reset password")
 	}

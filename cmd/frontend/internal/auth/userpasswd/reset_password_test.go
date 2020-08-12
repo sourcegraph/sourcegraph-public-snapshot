@@ -11,14 +11,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 )
 
 func TestHandleSetPasswordEmail(t *testing.T) {
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
-	_, ctx = ot.StartSpanFromContext(ctx, "dummy")
 
 	var sent *txemail.Message
 	txemail.MockSend = func(ctx context.Context, message txemail.Message) error {
