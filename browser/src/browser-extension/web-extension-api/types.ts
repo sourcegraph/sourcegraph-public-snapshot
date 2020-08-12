@@ -17,6 +17,11 @@ export interface FeatureFlags {
     allowErrorReporting: boolean
 
     /**
+     * Send telemetry
+     */
+    sendTelemetry: boolean
+
+    /**
      * Support link previews from extensions in content views (such as GitHub issues).
      */
     experimentalLinkPreviews: boolean
@@ -29,6 +34,7 @@ export interface FeatureFlags {
 
 export const featureFlagDefaults: FeatureFlags = {
     allowErrorReporting: false,
+    sendTelemetry: true,
     experimentalLinkPreviews: false,
     experimentalTextFieldCompletion: false,
 }

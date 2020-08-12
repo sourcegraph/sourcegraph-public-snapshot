@@ -25,7 +25,7 @@ const IS_EXTENSION = true
 
 type State = Pick<
     FeatureFlags,
-    'allowErrorReporting' | 'experimentalLinkPreviews' | 'experimentalTextFieldCompletion'
+    'allowErrorReporting' | 'experimentalLinkPreviews' | 'experimentalTextFieldCompletion' | 'sendTelemetry'
 > & { sourcegraphURL: string | null; isActivated: boolean }
 
 const keyIsFeatureFlag = (key: string): key is keyof FeatureFlags =>
@@ -64,7 +64,10 @@ class Options extends React.Component<{}, State> {
     public state: State = {
         sourcegraphURL: null,
         isActivated: true,
+
+        // Feature flags
         allowErrorReporting: false,
+        sendTelemetry: false,
         experimentalLinkPreviews: false,
         experimentalTextFieldCompletion: false,
     }
@@ -74,7 +77,12 @@ class Options extends React.Component<{}, State> {
     public componentDidMount(): void {
         this.subscriptions.add(
             observeStorageKey('sync', 'featureFlags').subscribe(featureFlags => {
-                const { allowErrorReporting, experimentalLinkPreviews, experimentalTextFieldCompletion } = {
+                const {
+                    allowErrorReporting,
+                    experimentalLinkPreviews,
+                    experimentalTextFieldCompletion,
+                    sendTelemetry,
+                } = {
                     ...featureFlagDefaults,
                     ...featureFlags,
                 }
@@ -82,6 +90,7 @@ class Options extends React.Component<{}, State> {
                     allowErrorReporting,
                     experimentalLinkPreviews,
                     experimentalTextFieldCompletion,
+                    sendTelemetry,
                 })
             })
         )
@@ -129,6 +138,7 @@ class Options extends React.Component<{}, State> {
             toggleExtensionDisabled: (isActivated: boolean) => storage.sync.set({ disableExtension: !isActivated }),
             toggleFeatureFlag,
             featureFlags: [
+                { key: 'sendTelemetry', value: this.state.sendTelemetry },
                 { key: 'allowErrorReporting', value: this.state.allowErrorReporting },
                 { key: 'experimentalLinkPreviews', value: this.state.experimentalLinkPreviews },
                 { key: 'experimentalTextFieldCompletion', value: this.state.experimentalTextFieldCompletion },

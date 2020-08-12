@@ -1062,7 +1062,13 @@ export function injectCodeIntelligenceToCodeHost(
         isExtension
     )
     const { requestGraphQL } = platformContext
+    const sendTelemetry = featureFlags.isEnabled('sendTelemetry').then(value => {
+        console.log('Value of feature flag sendTelemetry in injectCodeIntelligenceToCodeHost:', value)
+    })
+
+    console.log('Creating telemetry service')
     const telemetryService = new EventLogger(isExtension, requestGraphQL)
+
     subscriptions.add(extensionsController)
 
     let codeHostSubscription: Subscription
