@@ -17,6 +17,8 @@ import { Timestamp } from '../../../components/time/Timestamp'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { CreateUpdateCampaignAlert } from './CreateUpdateCampaignAlert'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import { HeroPage } from '../../../components/HeroPage'
 
 export interface CampaignApplyPageProps extends ThemeProps {
     specID: string
@@ -48,6 +50,18 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
     if (spec === null) {
         return <ErrorAlert history={history} error={new Error('Campaign spec not found')} />
     }
+
+    if (spec === undefined) {
+        return (
+            <div className="text-center">
+                <LoadingSpinner className="icon-inline mx-auto my-4" />
+            </div>
+        )
+    }
+    if (spec === null) {
+        return <HeroPage icon={AlertCircleIcon} title="Campaign spec not found" />
+    }
+
     return (
         <>
             <PageTitle title="Apply campaign spec" />
