@@ -150,13 +150,12 @@ func initTracer(serviceName string) {
 	// Initially everything is disabled since we haven't read conf yet.
 	oldOpts := jaegerOpts{
 		ServiceName: serviceName,
-		ExternalURL: conf.Get().ExternalURL,
 		Enabled:     false,
 		Debug:       false,
 	}
 
 	// Watch loop
-	conf.Watch(func() {
+	go conf.Watch(func() {
 		siteConfig := conf.Get()
 
 		// Set sampling strategy
