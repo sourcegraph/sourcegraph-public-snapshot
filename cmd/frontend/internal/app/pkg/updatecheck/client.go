@@ -272,9 +272,11 @@ func externalServiceKinds(ctx context.Context) (kinds []string, err error) {
 	return kinds, err
 }
 
-// check performs an update check. It returns the result and updates the global state
-// (returned by Last and IsPending).
-func check(ctx context.Context) (*Status, error) {
+// check performs an update check and updates the global state.
+func check() {
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
+	defer cancel()
+
 	doCheck := func() (updateVersion string, err error) {
 		body, err := updateBody(ctx)
 		if err != nil {
@@ -325,8 +327,6 @@ func check(ctx context.Context) (*Status, error) {
 		UpdateVersion: updateVersion,
 	}
 	mu.Unlock()
-
-	return lastStatus, err
 }
 
 var started bool
@@ -342,12 +342,9 @@ func Start() {
 		return // no update check
 	}
 
-	ctx := context.Background()
 	const delay = 30 * time.Minute
 	for {
-		ctx, cancel := context.WithTimeout(ctx, 300*time.Second)
-		_, _ = check(ctx) // updates global state on its own, can safely ignore return value
-		cancel()
+		check()
 
 		// Randomize sleep to prevent thundering herds.
 		randomDelay := time.Duration(rand.Intn(600)) * time.Second
