@@ -141,7 +141,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: 2s+ 90th percentile blob load latency over 10m_
+- _frontend: 5s+ 90th percentile blob load latency over 10m_
 
 **Possible solutions:**
 
@@ -1134,7 +1134,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _github-proxy: less than 1000 remaining calls to GitHub before hitting the rate limit_
+- _github-proxy: less than 500 remaining calls to GitHub before hitting the rate limit for 5m0s_
 
 **Possible solutions:**
 
