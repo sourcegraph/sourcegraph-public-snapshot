@@ -114,7 +114,7 @@ func Frontend() *Container {
 							Description:     "90th percentile blob load latency over 10m",
 							Query:           `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route="blob"}[10m])))`,
 							DataMayNotExist: true,
-							Critical:        Alert{GreaterOrEqual: 2},
+							Critical:        Alert{GreaterOrEqual: 5},
 							PanelOptions:    PanelOptions().LegendFormat("latency").Unit(Seconds),
 							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
