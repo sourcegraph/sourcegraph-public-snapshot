@@ -18,7 +18,7 @@ type EncryptionError struct {
 }
 
 // NotEncodedError means we can test for whether or not a string is encoded, prior to attempting decryption
-var NotEncodedError = errors.New("object is not encoded.")
+var NotEncodedError = errors.New("object is not encoded")
 
 // Generate a valid key for AES-256 encryption
 func GenerateRandomAESKey() ([]byte, error) {
@@ -37,9 +37,12 @@ func (err *EncryptionError) Error() string {
 // Encrypter contains the encryption key used in encryption and decryption.
 type Encrypter struct {
 	EncryptionKey []byte
+	// the first key is always used to encrypt, attempt to decrypt with every key
+	EncryptionKeys [][]byte
 }
 
-// Returns an enrypted string.
+// Returns an encrypted string.
+// TODO(Dax): Determine a way to support multi-key encryption
 func (e *Encrypter) encrypt(key []byte, b []byte) (string, error) {
 	// create a one time nonce of standard length, without repetitions
 
@@ -58,6 +61,7 @@ func (e *Encrypter) encrypt(key []byte, b []byte) (string, error) {
 
 	stream := cipher.NewCFBEncrypter(block, nonce)
 	stream.XORKeyStream(encrypted[aes.BlockSize:], b)
+
 	return base64.StdEncoding.EncodeToString(encrypted), nil
 }
 
@@ -96,6 +100,7 @@ func (e *Encrypter) DecryptBytes(b []byte) (string, error) {
 }
 
 // Decrypts the string, returning the decrypted value.
+// TODO(Dax): Support multi-key decryption
 func (e *Encrypter) decrypt(encodedValue string) (string, error) {
 	encrypted, err := base64.StdEncoding.DecodeString(encodedValue)
 	if err != nil {

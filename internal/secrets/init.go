@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
+// Make private, access via functions
 var CryptObject Encrypter
 var configuredToEncrypt bool
 
@@ -17,10 +18,6 @@ const (
 	sourcegraphSecretfileEnvvar = "SOURCEGRAPH_SECRET_FILE"
 	sourcegraphCryptEnvvar      = "SOURCEGRAPH_CRYPT_KEY"
 )
-
-func ConfiguredToEncrypt() bool {
-	return configuredToEncrypt
-}
 
 // gatherKeys splits the encryption string into its potential two components
 func gatherKeys(data []byte) (oldKey, newKey []byte) {

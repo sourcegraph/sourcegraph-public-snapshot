@@ -53,6 +53,7 @@ func TestBadKeysFailToDecrypt(t *testing.T) {
 
 	message := "The secret is to bang the rocks together guys."
 	encrypted, _ := e.Encrypt(message)
+	// TODO(Dax):  e.Decrypt needs to return an error if it can't encrypt so we know to try the next key
 	decrypted, _ := e.Decrypt(encrypted)
 
 	notTheSameKey, _ := GenerateRandomAESKey()
@@ -66,6 +67,38 @@ func TestBadKeysFailToDecrypt(t *testing.T) {
 		t.Fatal("Should not have been able to decrypt string with a second set of secrets.")
 	}
 }
+
+//func TestKeyMigration(t *testing.T) {
+//	keyA, err := GenerateRandomAESKey()
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//	keyB, err := GenerateRandomAESKey()
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//
+//	encryptorA := Encrypter{EncryptionKey: keyA}
+//
+//	message := "encrypted with Key A"
+//	encryptedMessage, err := encryptorA.Encrypt(message)
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//
+//	// now rotate keys to use Key B
+//	encryptorB := Encrypter{EncryptionKey: keyB, EncryptionKeys: [][]byte{keyB, keyA}}
+//
+//	decryptedMessage, err := encryptorB.Decrypt(encryptedMessage)
+//	if err != nil {
+//		t.Fatalf("unable to decrypt string: %v", err)
+//	}
+//
+//	if decryptedMessage != message {
+//		t.Fatalf("messages do not match")
+//	}
+//
+//}
 
 // Test that different strings encrypt to different outputs
 func TestDifferentOutputs(t *testing.T) {
@@ -242,7 +275,6 @@ func Test_gatherKeys(t *testing.T) {
 		wantOldKey []byte
 		wantNewKey []byte
 	}{
-		// TODO: Add test cases.
 		{
 			"base-case",
 			[]byte("key123,key345"),
