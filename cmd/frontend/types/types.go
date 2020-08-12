@@ -380,6 +380,16 @@ type Event struct {
 	Timestamp       time.Time
 }
 
+// GrowthStatistics represents the total users that were created,
+// deleted, resurrected, churned and retained over the current month.
+type GrowthStatistics struct {
+	DeletedUsers     int32
+	CreatedUsers     int32
+	ResurrectedUsers int32
+	ChurnedUsers     int32
+	RetainedUsers    int32
+}
+
 // Secret represents the secrets table
 type Secret struct {
 	ID int32
