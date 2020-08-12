@@ -10,7 +10,7 @@ import (
 )
 
 // Make private, access via functions
-var CryptObject Encrypter
+var CryptObject Encryptor
 var configuredToEncrypt bool
 
 const (
@@ -62,9 +62,9 @@ func init() {
 			panic("failed to make secrets file read only.")
 		}
 
-		newKey, _ := gatherKeys(encryptionKey)
+		newKey, oldKey := gatherKeys(encryptionKey)
 
-		CryptObject.EncryptionKey = newKey
+		CryptObject.EncryptionKeys = [][]byte{primaryKey: newKey, secondaryKey: oldKey}
 		return
 	}
 
@@ -73,7 +73,8 @@ func init() {
 		if len(envCryptKey) != validKeyLength {
 			panic(fmt.Sprintf("encryption key must be %d characters", validKeyLength))
 		}
-		CryptObject.EncryptionKey = []byte(envCryptKey)
+		newKey, oldKey := gatherKeys(encryptionKey)
+		CryptObject.EncryptionKeys = [][]byte{primaryKey: newKey, secondaryKey: oldKey}
 		return
 	}
 
@@ -93,8 +94,8 @@ func init() {
 		if err != nil {
 			panic("failed to make secrets file read only.")
 		}
-		newKey, _ := gatherKeys(b)
-		CryptObject.EncryptionKey = newKey
+		newKey, oldkey := gatherKeys(b)
+		CryptObject.EncryptionKeys = [][]byte{primaryKey: newKey, secondaryKey: oldkey}
 	}
 
 	// wrapping in deploytype check so that we can still compile and test locally
