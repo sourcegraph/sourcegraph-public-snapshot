@@ -13,7 +13,7 @@ import (
 	"golang.org/x/time/rate"
 )
 
-const MaxGitserverRequestsPerSecond = 100
+const MaxGitserverRequestsPerSecond = 20
 
 type Updater struct {
 	store           store.Store
