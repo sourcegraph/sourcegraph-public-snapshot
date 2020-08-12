@@ -96,16 +96,16 @@ To set the password for {{.Username}} on Sourcegraph, follow this link:
 `,
 })
 
-// Send the password reset email directly to the user on user creation by admin
+// HandleSetPasswordEmail sends the password reset email directly to the user for users created by site admins.
 func HandleSetPasswordEmail(ctx context.Context, id int32) (string, error) {
 	e, _, err := db.UserEmails.GetPrimaryEmail(ctx, id)
 	if err != nil {
-		return "", errors.New("failed to lookup user email")
+		return "", errors.Wrap(err, "get user primary email")
 	}
 
 	usr, err := db.Users.GetByID(ctx, id)
 	if err != nil {
-		return "", errors.New("failed to lookup user")
+		return "", errors.Wrap(err, "get user by ID")
 	}
 
 	ru, err := backend.MakePasswordResetURL(ctx, id)
@@ -116,7 +116,6 @@ func HandleSetPasswordEmail(ctx context.Context, id int32) (string, error) {
 	}
 
 	rus := globals.ExternalURL().ResolveReference(ru).String()
-
 	if err := txemail.Send(ctx, txemail.Message{
 		To:       []string{e},
 		Template: setPasswordEmailTemplates,

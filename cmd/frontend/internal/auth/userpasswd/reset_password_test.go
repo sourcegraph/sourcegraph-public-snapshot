@@ -64,13 +64,13 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 		t.Run(tst.name, func(t *testing.T) {
 			got, err := HandleSetPasswordEmail(tst.ctx, tst.id)
 			if got != tst.wantOut {
-				t.Fatalf("input %q got %q want %q", tst.id, got, tst.wantOut)
+				t.Fatalf("input %d got %q want %q", tst.id, got, tst.wantOut)
 			}
 			if (err != nil) != tst.wantErr {
 				if tst.wantErr {
-					t.Fatalf("input %q error expected", tst.id)
+					t.Fatalf("input %d error expected", tst.id)
 				} else {
-					t.Fatalf("input %q got unexpected error %q", tst.id, err.Error())
+					t.Fatalf("input %d got unexpected error %q", tst.id, err.Error())
 				}
 			}
 
@@ -78,7 +78,7 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 				t.Fatal("want sent != nil")
 			}
 
-			if want := (txemail.Message{
+			want := &txemail.Message{
 				To:       []string{tst.email},
 				Template: setPasswordEmailTemplates,
 				Data: struct {
@@ -88,8 +88,9 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 					Username: "test",
 					URL:      got,
 				},
-			}); !reflect.DeepEqual(*sent, want) {
-				t.Errorf("got %+v, want %+v", *sent, want)
+			}
+			if diff := cmp.Diff(want, got); diff != "" {
+				t.Errorf("Message mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
