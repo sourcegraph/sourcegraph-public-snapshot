@@ -251,7 +251,7 @@ func TestSerializeAutomationUsage(t *testing.T) {
 		CampaignsUsage:       json.RawMessage([]byte(`{"baz":"bonk"}`)),
 		CodeIntelUsage:       nil,
 		SearchUsage:          nil,
-		GrowthStatistics      nil,
+		GrowthStatistics:      nil,
 		InitialAdminEmail:    "test@sourcegraph.com",
 		TotalUsers:           234,
 		HasRepos:             true,
