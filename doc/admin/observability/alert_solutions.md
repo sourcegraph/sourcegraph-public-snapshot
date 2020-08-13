@@ -1947,7 +1947,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 5+ gitserver error responses every 5m_
+- _precise-code-intel-worker: 5%+ gitserver error responses every 5m for 15m0s_
 
 **Possible solutions:**
 
@@ -2394,7 +2394,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 5+ gitserver error responses every 5m_
+- _precise-code-intel-indexer: 5%+ gitserver error responses every 5m for 15m0s_
 
 **Possible solutions:**
 
