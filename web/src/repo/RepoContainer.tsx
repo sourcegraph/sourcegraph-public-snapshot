@@ -1,7 +1,7 @@
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo, useState, useEffect, useCallback } from 'react'
-import { escapeRegExp, uniqueId, flow } from 'lodash'
+import { escapeRegExp, uniqueId } from 'lodash'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Observable, NEVER, ObservableInput, of } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
