@@ -1,13 +1,22 @@
 import React from 'react'
 import * as H from 'history'
 import * as Monaco from 'monaco-editor'
-import { isPlainObject } from 'lodash'
+import { isPlainObject, isEqual } from 'lodash'
 import { MonacoEditor } from '../../components/MonacoEditor'
 import { QueryState } from '../helpers'
 import { getProviders } from '../../../../shared/src/search/parser/providers'
-import { Subscription, Observable, Subject, Unsubscribable } from 'rxjs'
+import { Subscription, Observable, Subject, Unsubscribable, ReplaySubject } from 'rxjs'
 import { fetchSuggestions } from '../backend'
-import { map, distinctUntilChanged, publishReplay, refCount, filter, switchMap, withLatestFrom } from 'rxjs/operators'
+import {
+    map,
+    distinctUntilChanged,
+    publishReplay,
+    refCount,
+    filter,
+    switchMap,
+    withLatestFrom,
+    debounceTime,
+} from 'rxjs/operators'
 import { Omit } from 'utility-types'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps } from '..'
@@ -17,6 +26,8 @@ import { hasProperty, isDefined } from '../../../../shared/src/util/types'
 import { KeyboardShortcut } from '../../../../shared/src/keyboardShortcuts'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 import { observeResize } from '../../util/dom'
+import { callbackToAdvanceTourStep } from './SearchOnboardingTour'
+import Shepherd from 'shepherd.js'
 
 export interface MonacoQueryInputProps
     extends Omit<TogglesProps, 'navbarSearchQuery' | 'filtersInQuery'>,
@@ -31,6 +42,15 @@ export interface MonacoQueryInputProps
     onSubmit: () => void
     autoFocus?: boolean
     keyboardShortcutForFocus?: KeyboardShortcut
+    /**
+     * The current onboarding tour instance
+     */
+    tour?: Shepherd.Tour
+    /**
+     * A list of callbacks to advance steps in the search onboarding tour.
+     * These callbacks are called when the query in this query input is updated.
+     */
+    tourAdvanceStepCallbacks?: callbackToAdvanceTourStep[]
 
     // Whether globbing is enabled for filters.
     globbing: boolean
@@ -120,7 +140,7 @@ const hasKeybindingService = (
  * to avoid bundling the Monaco editor on every page.
  */
 export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps> {
-    private componentUpdates = new Subject<MonacoQueryInputProps>()
+    private componentUpdates = new ReplaySubject<MonacoQueryInputProps>(1)
     private searchQueries = this.componentUpdates.pipe(
         map(({ queryState }) => queryState.query),
         distinctUntilChanged(),
@@ -143,6 +163,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
     private containerRefs = new Subject<HTMLElement | null>()
     private editorRefs = new Subject<Monaco.editor.IStandaloneCodeEditor | null>()
     private subscriptions = new Subscription()
+    private suggestionTriggers = new Subject<void>()
 
     constructor(props: MonacoQueryInputProps) {
         super(props)
@@ -159,6 +180,18 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                 )
                 .subscribe(editor => {
                     editor.layout()
+                })
+        )
+
+        this.subscriptions.add(
+            this.suggestionTriggers
+                .pipe(
+                    withLatestFrom(this.editorRefs),
+                    map(([, editor]) => editor),
+                    filter(isDefined)
+                )
+                .subscribe(editor => {
+                    editor.trigger('triggerSuggestions', 'editor.action.triggerSuggest', {})
                 })
         )
     }
@@ -231,7 +264,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
         )
     }
 
-    private onChange = (query: string): void => {
+    private onChange = (editor: Monaco.editor.IStandaloneCodeEditor, query: string): void => {
         // Cursor position is irrelevant for the Monaco query input.
         this.props.onChange({ query, cursorPosition: 0, fromUserInput: true })
     }
@@ -282,11 +315,54 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                 })
         )
 
+        const tour = this.props.tour
+        if (tour) {
+            // Handle advancing the search tour.
+            this.subscriptions.add(
+                this.componentUpdates
+                    .pipe(
+                        debounceTime(500),
+                        map(({ queryState }) => queryState),
+                        filter(({ fromUserInput }) => !!fromUserInput)
+                    )
+                    .subscribe(queryState => {
+                        // Trigger the suggestions popup for `repo:` and `lang:` fields
+                        if (
+                            (isEqual(tour.getCurrentStep(), tour.getById('step-2-repo')) &&
+                                queryState.query === 'repo:') ||
+                            (isEqual(tour.getCurrentStep(), tour.getById('step-2-lang')) &&
+                                queryState.query === 'lang:')
+                        ) {
+                            this.suggestionTriggers.next()
+                        }
+
+                        if (this.props.tourAdvanceStepCallbacks) {
+                            for (const advanceStepCallback of this.props.tourAdvanceStepCallbacks) {
+                                if (
+                                    isEqual(tour.getCurrentStep(), tour.getById(advanceStepCallback.stepToAdvance)) &&
+                                    advanceStepCallback.queryConditions &&
+                                    advanceStepCallback.queryConditions(queryState.query)
+                                ) {
+                                    advanceStepCallback.handler(tour, queryState.query, (newQuery: string) => {
+                                        this.props.onChange({
+                                            query: newQuery,
+                                            cursorPosition: newQuery.length,
+                                            fromUserInput: true,
+                                        })
+                                    })
+                                    break
+                                }
+                            }
+                        }
+                    })
+            )
+        }
+
         // Prevent newline insertion in model, and surface query changes with stripped newlines.
         this.subscriptions.add(
             toUnsubscribable(
                 editor.onDidChangeModelContent(() => {
-                    this.onChange(editor.getValue().replace(/[\n\r↵]/g, ''))
+                    this.onChange(editor, editor.getValue().replace(/[\n\r↵]/g, ''))
                 })
             )
         )

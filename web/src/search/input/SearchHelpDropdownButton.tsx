@@ -12,7 +12,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent = () => {
     const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen])
     const documentationUrlPrefix = window.context?.sourcegraphDotComMode ? 'https://docs.sourcegraph.com' : '/help'
     return (
-        <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className="d-flex">
+        <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className="search-help-dropdown-button d-flex">
             <DropdownToggle
                 tag="span"
                 caret={false}

@@ -27,7 +27,7 @@ interface NegatableFilterDefinition extends Omit<BaseFilterDefinition, 'descript
 
 export type FilterDefinition = BaseFilterDefinition | NegatableFilterDefinition
 
-const LANGUAGES: string[] = [
+export const LANGUAGES: string[] = [
     'c',
     'cpp',
     'csharp',

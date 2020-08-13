@@ -163,6 +163,9 @@ export interface RepogroupHomepageProps {
     showRepogroupHomepage: boolean
 }
 
+export interface OnboardingTourProps {
+    showOnboardingTour: boolean
+}
 /**
  * Verifies whether a version context exists on an instance.
  *
