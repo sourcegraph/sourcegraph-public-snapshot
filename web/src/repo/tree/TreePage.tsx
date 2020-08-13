@@ -44,7 +44,7 @@ import { Settings } from '../../schema/settings.schema'
 import { ViewGrid } from './ViewGrid'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { UpdateBreadcrumbsProps } from '../../components/Breadcrumbs'
-import { FilePathBreadcrumb } from '../FilePathBreadcrumb'
+import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean
@@ -191,18 +191,22 @@ export const TreePage: React.FunctionComponent<Props> = ({
     }, [filePath])
 
     useEffect(() => {
-        if (filePath) {
-            return setBreadcrumb(
-                'treePath',
-                <FilePathBreadcrumb
+        if (!filePath) {
+            return
+        }
+        return setBreadcrumb({
+            key: 'treePath',
+            divider: null,
+            element: (
+                <FilePathBreadcrumbs
                     key="path"
                     repoName={repoName}
                     revision={revision}
                     filePath={filePath}
                     isDir={true}
                 />
-            )
-        }
+            ),
+        })
     }, [repoName, revision, filePath, setBreadcrumb])
 
     const [showOlderCommits, setShowOlderCommits] = useState(false)

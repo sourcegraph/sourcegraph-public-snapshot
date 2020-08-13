@@ -41,10 +41,10 @@ export const RepositoryBranchesArea: React.FunctionComponent<Props> = ({ setBrea
 
     useEffect(
         () =>
-            setBreadcrumb(
-                'branches',
-                <RepoHeaderBreadcrumbNavItem key="branches">Branches</RepoHeaderBreadcrumbNavItem>
-            ),
+            setBreadcrumb({
+                key: 'branches',
+                element: <RepoHeaderBreadcrumbNavItem key="branches">Branches</RepoHeaderBreadcrumbNavItem>,
+            }),
         [setBreadcrumb]
     )
 

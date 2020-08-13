@@ -37,7 +37,7 @@ import { Redirect } from 'react-router'
 import { toTreeURL } from '../../util/url'
 import { UpdateBreadcrumbsProps } from '../../components/Breadcrumbs'
 import { useEventObservable } from '../../../../shared/src/util/useObservable'
-import { FilePathBreadcrumb } from '../FilePathBreadcrumb'
+import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 
 function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
     return makeRepoURI(parsed) + String(parsed.isLightTheme) + String(parsed.disableTimeout)
@@ -114,18 +114,22 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
     }, [repoName, commitID, filePath, isLightTheme, renderMode])
 
     useEffect(() => {
-        if (filePath) {
-            return setBreadcrumb(
-                'filePath',
-                <FilePathBreadcrumb
+        if (!filePath) {
+            return
+        }
+        return setBreadcrumb({
+            key: 'filePath',
+            divider: null,
+            element: (
+                <FilePathBreadcrumbs
                     key="path"
                     repoName={repoName}
                     revision={revision}
                     filePath={filePath}
                     isDir={false}
                 />
-            )
-        }
+            ),
+        })
     }, [filePath, revision, repoName, setBreadcrumb])
 
     const [nextFetchWithDisabledTimeout, blobOrError] = useEventObservable(

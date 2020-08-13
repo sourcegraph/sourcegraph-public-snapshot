@@ -39,9 +39,14 @@ export interface RepositoryReleasesAreaPageProps {
  * Renders pages related to repository branches.
  */
 export const RepositoryReleasesArea: React.FunctionComponent<Props> = ({ setBreadcrumb, repo, routePrefix }) => {
-    useEffect(() => setBreadcrumb('tags', <RepoHeaderBreadcrumbNavItem key="tags">Tags</RepoHeaderBreadcrumbNavItem>), [
-        setBreadcrumb,
-    ])
+    useEffect(
+        () =>
+            setBreadcrumb({
+                key: 'tags',
+                element: <RepoHeaderBreadcrumbNavItem key="tags">Tags</RepoHeaderBreadcrumbNavItem>,
+            }),
+        [setBreadcrumb]
+    )
 
     const transferProps: { repo: GQL.IRepository } = {
         repo,

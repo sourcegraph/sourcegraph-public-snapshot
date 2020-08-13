@@ -6,22 +6,41 @@ import webStyles from '../SourcegraphWebApp.scss'
 const { add } = storiesOf('web/Breadcrumbs', module).addDecorator(story => (
     <>
         <style>{webStyles}</style>
-        <div className="layout__app-router-container">
-            <div className="container mt-3">{story()}</div>
-        </div>
+        <div className="container mt-3 theme-light">{story()}</div>
     </>
 ))
 
-add('Empty breadcrumbs', () => <Breadcrumbs breadcrumbs={[]} />)
-
 add(
-    'Three levels deep',
+    'Example',
     () => (
         <Breadcrumbs
             breadcrumbs={[
-                { key: '1', element: <span className="">Level 2</span> },
-                { key: '2', element: <span className="">Level 3</span> },
-                { key: '3', element: <span className="">Page name</span> },
+                { key: 'home', element: <a href="#">Home</a>, divider: null },
+                { key: 'home', element: <a href="#">Repositories</a> },
+                {
+                    key: 'repo',
+                    element: (
+                        <a href="#">
+                            sourcegraph/<span className="font-weight-semibold">sourcegraph</span>
+                        </a>
+                    ),
+                },
+                {
+                    key: 'revision',
+                    divider: <span className="mx-1 font-weight-semibold">@</span>,
+                    element: <span className="text-muted">fb/my-branch</span>,
+                },
+                { key: 'directory1', element: <a href="#">path</a> },
+                {
+                    key: 'directory2',
+                    divider: <span className="mx-1 font-weight-semibold">/</span>,
+                    element: <a href="#">to</a>,
+                },
+                {
+                    key: 'fileName',
+                    divider: <span className="mx-1 font-weight-semibold">/</span>,
+                    element: <a href="#">file.tsx</a>,
+                },
             ]}
         />
     ),

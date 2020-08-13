@@ -1,9 +1,11 @@
 import React, { useState, useCallback, useEffect } from 'react'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import { Link } from '../../../shared/src/components/Link'
 
 export interface Breadcrumb {
     key: string
     element: React.ReactNode | null
+    divider?: React.ReactNode
 }
 
 export interface BreadcrumbsProps {
@@ -11,23 +13,25 @@ export interface BreadcrumbsProps {
 }
 
 export interface UpdateBreadcrumbsProps {
-    setBreadcrumb: (key: string, element: React.ReactNode) => () => void
+    setBreadcrumb: (options: Breadcrumb) => () => void
 }
 
 export const useBreadcrumbs = (): BreadcrumbsProps & UpdateBreadcrumbsProps => {
-    const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([])
-    const setBreadcrumb = useCallback((key: string, element: React.ReactNode) => {
-        console.log('setBreadcrumb', key, element)
+    const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([
+        { key: 'Home', element: <Link to="/search">Home</Link>, divider: null },
+    ])
+    const setBreadcrumb = useCallback((breadcrumb: Breadcrumb) => {
+        console.log('setBreadcrumb', breadcrumb)
         setBreadcrumbs(breadcrumbs => {
-            const index = breadcrumbs.findIndex(breadcrumb => breadcrumb.key === key)
+            const index = breadcrumbs.findIndex(({ key }) => breadcrumb.key === key)
             if (index === -1) {
-                return [...breadcrumbs, { key, element }]
+                return [...breadcrumbs, breadcrumb]
             }
-            return [...breadcrumbs.slice(0, index), { key, element }, ...breadcrumbs.slice(index + 1)]
+            return [...breadcrumbs.slice(0, index), breadcrumb, ...breadcrumbs.slice(index + 1)]
         })
         return () => {
             // Replace with null (but remember order in case the key gets set again)
-            setBreadcrumb(key, null)
+            setBreadcrumb({ ...breadcrumb, element: null })
         }
     }, [])
     useEffect(() => console.log(breadcrumbs), [breadcrumbs])
@@ -41,9 +45,10 @@ export const Breadcrumbs: React.FunctionComponent<BreadcrumbsProps> = ({ breadcr
     <>
         {breadcrumbs
             .filter(({ element }) => element !== null)
-            .map(({ element, key }, index) => (
+            .map(({ element, key, divider = <ChevronRightIcon className="icon-inline" /> }) => (
                 <React.Fragment key={key}>
-                    {index !== 0 && <ChevronRightIcon />} {element}
+                    <span className="breadcrumbs__divider">{divider}</span>
+                    {element}
                 </React.Fragment>
             ))}
     </>

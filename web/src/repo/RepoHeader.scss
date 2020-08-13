@@ -1,4 +1,3 @@
-@import '../components/Breadcrumb';
 @import './actions/CopyLinkAction';
 @import './RepositoriesPopover';
 @import './RepoHeaderBreadcrumbNavItem';
@@ -52,7 +51,7 @@
     }
 
     &__repo-basename {
-        font-weight: bold;
+        font-weight: 600;
     }
 
     &__alert {

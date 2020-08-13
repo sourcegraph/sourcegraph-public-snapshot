@@ -17,6 +17,7 @@ import { ActionButtonDescriptor } from '../util/contributions'
 import { ResolvedRevision } from './backend'
 import { RepositoriesPopover } from './RepositoriesPopover'
 import { Breadcrumbs, UpdateBreadcrumbsProps, BreadcrumbsProps } from '../components/Breadcrumbs'
+import { flow } from 'lodash'
 /**
  * Stores the list of RepoHeaderContributions, manages addition/deletion, and ensures they are sorted.
  *
@@ -191,23 +192,31 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
     const { history, location } = props
     useEffect(
         () =>
-            setBreadcrumb(
-                'repo',
-                <>
-                    <Link
-                        to={resolvedRev && !isErrorLike(resolvedRev) ? resolvedRev.rootTreeURL : repo.url}
-                        className="repo-header__repo"
-                    >
-                        {repoDirectory ? `${repoDirectory}/` : ''}
-                        <span className="repo-header__repo-basename">{repoBase}</span>
-                    </Link>
-                    <button type="button" id="repo-popover" className="btn btn-link px-0">
-                        <MenuDownIcon className="icon-inline" />
-                    </button>
-                    <UncontrolledPopover placement="bottom-start" target="repo-popover" trigger="legacy">
-                        <RepositoriesPopover currentRepo={repo.id} history={history} location={location} />
-                    </UncontrolledPopover>
-                </>
+            flow(
+                setBreadcrumb({
+                    key: 'repositories',
+                    element: <>Repositories</>,
+                }),
+                setBreadcrumb({
+                    key: 'repository',
+                    element: (
+                        <>
+                            <Link
+                                to={resolvedRev && !isErrorLike(resolvedRev) ? resolvedRev.rootTreeURL : repo.url}
+                                className="repo-header__repo"
+                            >
+                                {repoDirectory ? `${repoDirectory}/` : ''}
+                                <span className="repo-header__repo-basename">{repoBase}</span>
+                            </Link>
+                            <button type="button" id="repo-popover" className="btn btn-link px-0">
+                                <MenuDownIcon className="icon-inline" />
+                            </button>
+                            <UncontrolledPopover placement="bottom-start" target="repo-popover" trigger="legacy">
+                                <RepositoriesPopover currentRepo={repo.id} history={history} location={location} />
+                            </UncontrolledPopover>
+                        </>
+                    ),
+                })
             ),
         [history, location, setBreadcrumb, repo.id, repo.url, repoBase, repoDirectory, resolvedRev]
     )

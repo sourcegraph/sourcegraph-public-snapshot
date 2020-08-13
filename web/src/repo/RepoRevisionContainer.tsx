@@ -38,6 +38,7 @@ import { VersionContextProps } from '../../../shared/src/search/util'
 import { RevisionSpec } from '../../../shared/src/util/url'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 import { UpdateBreadcrumbsProps } from '../components/Breadcrumbs'
+import { flow } from 'lodash'
 
 /** Props passed to sub-routes of {@link RepoRevisionContainer}. */
 export interface RepoRevisionContainerContext
@@ -115,32 +116,35 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
         if (!props.resolvedRevisionOrError || isErrorLike(props.resolvedRevisionOrError)) {
             return
         }
-        return setBreadcrumb(
-            'revision',
-            <div className="d-flex align-items-center" key="repo-revision">
-                <span className="test-revision">
-                    {(props.revision && props.revision === props.resolvedRevisionOrError.commitID
-                        ? props.resolvedRevisionOrError.commitID.slice(0, 7)
-                        : props.revision) ||
-                        props.resolvedRevisionOrError.defaultBranch ||
-                        'HEAD'}
-                </span>
-                <button type="button" id="repo-revision-popover" className="btn btn-link px-0">
-                    <MenuDownIcon className="icon-inline" />
-                </button>
-                <UncontrolledPopover placement="bottom-start" target="repo-revision-popover" trigger="legacy">
-                    <RevisionsPopover
-                        repo={props.repo.id}
-                        repoName={props.repo.name}
-                        defaultBranch={props.resolvedRevisionOrError.defaultBranch}
-                        currentRev={props.revision}
-                        currentCommitID={props.resolvedRevisionOrError.commitID}
-                        history={props.history}
-                        location={props.location}
-                    />
-                </UncontrolledPopover>
-            </div>
-        )
+        return setBreadcrumb({
+            key: 'revision',
+            divider: <span className="mr-1">@</span>,
+            element: (
+                <div className="d-flex align-items-center" key="repo-revision">
+                    <span className="test-revision">
+                        {(props.revision && props.revision === props.resolvedRevisionOrError.commitID
+                            ? props.resolvedRevisionOrError.commitID.slice(0, 7)
+                            : props.revision) ||
+                            props.resolvedRevisionOrError.defaultBranch ||
+                            'HEAD'}
+                    </span>
+                    <button type="button" id="repo-revision-popover" className="btn btn-link px-0">
+                        <MenuDownIcon className="icon-inline" />
+                    </button>
+                    <UncontrolledPopover placement="bottom-start" target="repo-revision-popover" trigger="legacy">
+                        <RevisionsPopover
+                            repo={props.repo.id}
+                            repoName={props.repo.name}
+                            defaultBranch={props.resolvedRevisionOrError.defaultBranch}
+                            currentRev={props.revision}
+                            currentCommitID={props.resolvedRevisionOrError.commitID}
+                            history={props.history}
+                            location={props.location}
+                        />
+                    </UncontrolledPopover>
+                </div>
+            ),
+        })
     }, [
         props.revision,
         props.resolvedRevisionOrError,
