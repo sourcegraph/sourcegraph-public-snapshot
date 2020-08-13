@@ -1,6 +1,6 @@
 # Precise code intelligence
 
-Precise code intelligence relies on [LSIF](https://github.com/Microsoft/language-server-protocol/blob/master/indexFormat/specification.md) - a file format for precomputed code intelligence data. It provides fast and precise code intelligence but needs to be periodically generated and uploaded to your Sourcegraph instance. LSIF is opt-in: repositories for which you have not uploaded LSIF data will continue to use the built-in code intelligence.
+Precise code intelligence relies on [LSIF](https://github.com/Microsoft/language-server-protocol/blob/master/indexFormat/specification.md) - a file format for precomputed code intelligence data. It provides fast and precise code intelligence but needs to be periodically generated and uploaded to your Sourcegraph instance. Precise code intelligence is an opt-in feature: repositories for which you have not uploaded LSIF data will continue to use the basic search based code intelligence.
 
 > Precise code intelligence using LSIF is supported in Sourcegraph 3.8 and up.
 
@@ -13,7 +13,7 @@ Select your language specific guide from the lsit below to get started. If you d
 
 Once the initial setup, follow the [continuous integration guide](adding_lsif_to_workflows.md#lsif-in-continuous-integration) for precise code indexing automatino for all new commits.
 
-> LSIF support is still a relatively new feature. We are currently working on validating that the feature remains responsive even with tens of thousands of repositories. To get started, we recommend you upload a smaller number of key repositories. Once you reach 50 to 100 repositories, we will be able to provide specific recommendations for ensuring stability and performance of your Sourcegraph instance.
+> LSIF support is still a relatively new feature. We are currently validating that the feature remains responsive even with tens of thousands of repositories. To get started we recommend you upload a smaller number of key repositories. Once you reach 50 to 100 repositories we will be able to provide specific recommendations for ensuring stability and performance of your Sourcegraph instance.
 
 ## Enabling LSIF on your Sourcegraph instance
 
