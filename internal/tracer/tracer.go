@@ -6,14 +6,11 @@
 package tracer
 
 import (
-	"bytes"
 	"fmt"
 	"io"
-	"os"
 	"reflect"
 	"sync"
 
-	"github.com/fatih/color"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -29,24 +26,6 @@ import (
 	jaegermetrics "github.com/uber/jaeger-lib/metrics"
 )
 
-var (
-	logColors = map[log15.Lvl]color.Attribute{
-		log15.LvlCrit:  color.FgRed,
-		log15.LvlError: color.FgRed,
-		log15.LvlWarn:  color.FgYellow,
-		log15.LvlInfo:  color.FgCyan,
-		log15.LvlDebug: color.Faint,
-	}
-	// We'd prefer these in caps, not lowercase, and don't need the 4-character alignment
-	logLabels = map[log15.Lvl]string{
-		log15.LvlCrit:  "CRITICAL",
-		log15.LvlError: "ERROR",
-		log15.LvlWarn:  "WARN",
-		log15.LvlInfo:  "INFO",
-		log15.LvlDebug: "DEBUG",
-	}
-)
-
 func init() {
 	// Tune GOMAXPROCS for kubernetes. All our binaries import this package,
 	// so we tune for all of them.
@@ -59,28 +38,8 @@ func init() {
 	}
 }
 
-func condensedFormat(r *log15.Record) []byte {
-	colorAttr := logColors[r.Lvl]
-	text := logLabels[r.Lvl]
-	var msg bytes.Buffer
-	if colorAttr != 0 {
-		fmt.Print(color.New(colorAttr).Sprint(text) + " " + r.Msg)
-	} else {
-		fmt.Print(&msg, r.Msg)
-	}
-	if len(r.Ctx) > 0 {
-		for i := 0; i < len(r.Ctx); i += 2 {
-			// not as smart about printing things as log15's internal magic
-			fmt.Fprintf(&msg, ", %s: %v", r.Ctx[i].(string), r.Ctx[i+1])
-		}
-	}
-	msg.WriteByte('\n')
-	return msg.Bytes()
-}
-
 // Options control the behavior of a tracer.
 type Options struct {
-	filters     []func(*log15.Record) bool
 	serviceName string
 }
 
@@ -94,17 +53,6 @@ func ServiceName(s string) Option {
 	}
 }
 
-func Filter(f func(*log15.Record) bool) Option {
-	return func(o *Options) {
-		o.filters = append(o.filters, f)
-	}
-}
-
-func init() {
-	// Enable colors by default but support https://no-color.org/
-	color.NoColor = env.Get("NO_COLOR", "", "Disable colored output") != ""
-}
-
 func Init(options ...Option) {
 	opts := &Options{}
 	for _, setter := range options {
@@ -113,24 +61,6 @@ func Init(options ...Option) {
 	if opts.serviceName == "" {
 		opts.serviceName = env.MyName
 	}
-	var handler log15.Handler
-	switch env.LogFormat {
-	case "condensed":
-		handler = log15.StreamHandler(os.Stderr, log15.FormatFunc(condensedFormat))
-	case "logfmt":
-		fallthrough
-	default:
-		handler = log15.StreamHandler(os.Stderr, log15.LogfmtFormat())
-	}
-	for _, filter := range opts.filters {
-		handler = log15.FilterHandler(filter, handler)
-	}
-	// Filter log output by level.
-	lvl, err := log15.LvlFromString(env.LogLevel)
-	if err == nil {
-		handler = log15.LvlFilterHandler(lvl, handler)
-	}
-	log15.Root().SetHandler(log15.LvlFilterHandler(lvl, handler))
 
 	initTracer(opts.serviceName)
 }

@@ -17,6 +17,7 @@ import (
 	queue "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/queue/client"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -24,8 +25,8 @@ import (
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
-	// TODO(efritz) - disabled as it requires internal API access
-	// tracer.Init()
+	logging.Init()
+	//	tracer.Init() // TODO(efritz) - disabled as it requires internal API access
 
 	var (
 		frontendURL              = mustGet(rawFrontendURL, "PRECISE_CODE_INTEL_EXTERNAL_URL")
