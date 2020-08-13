@@ -2,10 +2,10 @@
 
 Code intelligence provides advanced code navigation features that let's developers explore source code and displays rich metadata about functions, variables and cross-references in source code. Learn more about the various code intelligence features at the following links:
 
-- [Hover tooltips](#hover-tooltips-with-documentation-and-type-signatures)
-- [Go to definition](#go-to-definition)
-- [Find references](#find-references)
-- [Symbol search](#symbol-search)
+- [Hover tooltips](./features.md#hover-tooltips-with-documentation-and-type-signatures)
+- [Go to definition](./features.md#go-to-definition)
+- [Find references](./features.md#find-references)
+- [Symbol search](./features.md#symbol-search)
  
 Code intelligence is enabled by [Sourcegraph extensions](../../extensions/index.md) and provides two different types of code intelligence, basic and precise. Basic
 is search-based [basic code intelligence](./basic_code_intelligence.md) and works out of the box with all of the most popular [programming languages via extensions](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22). Precise code intelligence can be enabled in your admin settings and requires you to upload [LSIF data](./lsif.md) for each repository to your Sourcegraph instance. Once you have completed setting up Sourcegraph code intelligence becomes available for use across popular development tools:
@@ -16,7 +16,6 @@ is search-based [basic code intelligence](./basic_code_intelligence.md) and work
 - Via the [Sourcegraph API](https://docs.sourcegraph.com/api/graphql)
 
 ## Basic vs Precise Code Intelligence
-
 
 
 ## Getting started
