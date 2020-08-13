@@ -49,6 +49,7 @@ COPY --from=sourcegraph/syntect_server:ff37f90@sha256:aa93514b7bc3aaf7a4e9c92e5f
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
 # hadolint ignore=DL3022
 COPY --from=redis:5-alpine@sha256:abd9d0fc18e163747253aae8d69be344c7e90d6b6d6027fa7f2f2c0e6c20b2b8 /usr/local/bin/redis-server /usr/local/bin/
+# hadolint ignore=DL3022
 COPY --from=redis:5-alpine@sha256:abd9d0fc18e163747253aae8d69be344c7e90d6b6d6027fa7f2f2c0e6c20b2b8 /usr/local/bin/redis-cli /usr/local/bin/
 
 # hadolint ignore=DL3022
