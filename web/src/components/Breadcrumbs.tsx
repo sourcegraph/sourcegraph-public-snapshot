@@ -42,14 +42,14 @@ export const useBreadcrumbs = (): BreadcrumbsProps & UpdateBreadcrumbsProps => {
 }
 
 export const Breadcrumbs: React.FunctionComponent<BreadcrumbsProps> = ({ breadcrumbs }) => (
-    <>
+    <div className="d-flex">
         {breadcrumbs
             .filter(({ element }) => element !== null)
             .map(({ element, key, divider = <ChevronRightIcon className="icon-inline" /> }) => (
-                <React.Fragment key={key}>
-                    <span className="breadcrumbs__divider">{divider}</span>
+                <span key={key} className="text-muted d-flex align-items-center">
+                    <span className="font-weight-semibold">{divider}</span>
                     {element}
-                </React.Fragment>
+                </span>
             ))}
-    </>
+    </div>
 )

@@ -119,8 +119,8 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
         }
         return setBreadcrumb({
             key: 'filePath',
-            divider: null,
             element: (
+                // TODO should these be "flattened" all using setBreadcrumb()?
                 <FilePathBreadcrumbs
                     key="path"
                     repoName={repoName}

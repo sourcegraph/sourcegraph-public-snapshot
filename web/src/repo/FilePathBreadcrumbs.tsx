@@ -38,7 +38,7 @@ export const FilePathBreadcrumbs: React.FunctionComponent<
         )
         if (index < parts.length - 1) {
             spans.push(
-                <span key={`sep${index}`} className="file-path-breadcrumbs__separator">
+                <span key={`sep${index}`} className="file-path-breadcrumbs__separator text-muted font-weight-semibold">
                     /
                 </span>
             )

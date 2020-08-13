@@ -125,12 +125,7 @@ export interface RepoHeaderContext {
 
 export interface RepoHeaderActionButton extends ActionButtonDescriptor<RepoHeaderContext> {}
 
-interface Props
-    extends PlatformContextProps,
-        ExtensionsControllerProps,
-        EventLoggerProps,
-        UpdateBreadcrumbsProps,
-        BreadcrumbsProps {
+interface Props extends PlatformContextProps, ExtensionsControllerProps, EventLoggerProps, BreadcrumbsProps {
     /**
      * An array of render functions for action buttons that can be configured *in addition* to action buttons
      * contributed through {@link RepoHeaderContributionsLifecycleProps} and through extensions.
@@ -173,13 +168,7 @@ interface Props
  *
  * Other components can contribute items to the repository header using RepoHeaderContribution.
  */
-export const RepoHeader: React.FunctionComponent<Props> = ({
-    onLifecyclePropsChange,
-    setBreadcrumb,
-    resolvedRev,
-    repo,
-    ...props
-}) => {
+export const RepoHeader: React.FunctionComponent<Props> = ({ onLifecyclePropsChange, resolvedRev, repo, ...props }) => {
     const [repoHeaderContributions, setRepoHeaderContributions] = useState<RepoHeaderContribution[]>([])
     const repoHeaderContributionStore = useMemo(
         () => new RepoHeaderContributionStore(contributions => setRepoHeaderContributions(contributions)),
@@ -188,38 +177,7 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
     useEffect(() => {
         onLifecyclePropsChange(repoHeaderContributionStore.props)
     }, [onLifecyclePropsChange, repoHeaderContributionStore])
-    const [repoDirectory, repoBase] = splitPath(displayRepoName(repo.name))
-    const { history, location } = props
-    useEffect(
-        () =>
-            flow(
-                setBreadcrumb({
-                    key: 'repositories',
-                    element: <>Repositories</>,
-                }),
-                setBreadcrumb({
-                    key: 'repository',
-                    element: (
-                        <>
-                            <Link
-                                to={resolvedRev && !isErrorLike(resolvedRev) ? resolvedRev.rootTreeURL : repo.url}
-                                className="repo-header__repo"
-                            >
-                                {repoDirectory ? `${repoDirectory}/` : ''}
-                                <span className="repo-header__repo-basename">{repoBase}</span>
-                            </Link>
-                            <button type="button" id="repo-popover" className="btn btn-link px-0">
-                                <MenuDownIcon className="icon-inline" />
-                            </button>
-                            <UncontrolledPopover placement="bottom-start" target="repo-popover" trigger="legacy">
-                                <RepositoriesPopover currentRepo={repo.id} history={history} location={location} />
-                            </UncontrolledPopover>
-                        </>
-                    ),
-                })
-            ),
-        [history, location, setBreadcrumb, repo.id, repo.url, repoBase, repoDirectory, resolvedRev]
-    )
+
     const context: RepoHeaderContext = {
         repoName: repo.name,
         encodedRev: props.revision,

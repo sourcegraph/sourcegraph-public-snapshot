@@ -1,7 +1,7 @@
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo, useState, useEffect, useCallback } from 'react'
-import { escapeRegExp, uniqueId } from 'lodash'
+import { escapeRegExp, uniqueId, flow } from 'lodash'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Observable, NEVER, ObservableInput, of } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
@@ -48,6 +48,11 @@ import { UpdateBreadcrumbsProps, useBreadcrumbs } from '../components/Breadcrumb
 import { useObservable, useEventObservable } from '../../../shared/src/util/useObservable'
 import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
+import { Link } from '../../../shared/src/components/Link'
+import { UncontrolledPopover } from 'reactstrap'
+import MenuDownIcon from 'mdi-react/MenuDownIcon'
+import { RepositoriesPopover } from './RepositoriesPopover'
+import { displayRepoName, splitPath } from '../../../shared/src/components/RepoFileLink'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -182,6 +187,49 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     // The breadcrumbs and breadcrumb props for the repo header.
     const { breadcrumbs, setBreadcrumb } = useBreadcrumbs()
 
+    useEffect(
+        () =>
+            setBreadcrumb({
+                key: 'repositories',
+                element: <>Repositories</>,
+            }),
+        [setBreadcrumb]
+    )
+    useEffect(() => {
+        if (isErrorLike(repoOrError) || !repoOrError) {
+            return
+        }
+        const [repoDirectory, repoBase] = splitPath(displayRepoName(repoOrError.name))
+        return setBreadcrumb({
+            key: 'repository',
+            element: (
+                <>
+                    <Link
+                        to={
+                            resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
+                                ? resolvedRevisionOrError.rootTreeURL
+                                : repoOrError.url
+                        }
+                        className="repo-header__repo"
+                    >
+                        {repoDirectory ? `${repoDirectory}/` : ''}
+                        <span className="font-weight-semibold">{repoBase}</span>
+                    </Link>
+                    <button type="button" id="repo-popover" className="btn btn-link px-0">
+                        <MenuDownIcon className="icon-inline" />
+                    </button>
+                    <UncontrolledPopover placement="bottom-start" target="repo-popover" trigger="legacy">
+                        <RepositoriesPopover
+                            currentRepo={repoOrError.id}
+                            history={props.history}
+                            location={props.location}
+                        />
+                    </UncontrolledPopover>
+                </>
+            ),
+        })
+    }, [setBreadcrumb, repoOrError, resolvedRevisionOrError, props.history, props.location])
+
     // Update the workspace roots service to reflect the current repo / resolved revision
     useEffect(() => {
         props.extensionsController.services.workspace.roots.next(
@@ -304,7 +352,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 repo={repoOrError}
                 resolvedRev={resolvedRevisionOrError}
                 breadcrumbs={breadcrumbs}
-                setBreadcrumb={setBreadcrumb}
                 onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
             />
             <ErrorBoundary location={props.location}>

@@ -27,18 +27,18 @@ add(
                 },
                 {
                     key: 'revision',
-                    divider: <span className="mx-1 font-weight-semibold">@</span>,
+                    divider: <span className="mx-1">@</span>,
                     element: <span className="text-muted">fb/my-branch</span>,
                 },
                 { key: 'directory1', element: <a href="#">path</a> },
                 {
                     key: 'directory2',
-                    divider: <span className="mx-1 font-weight-semibold">/</span>,
+                    divider: <span className="mx-1">/</span>,
                     element: <a href="#">to</a>,
                 },
                 {
                     key: 'fileName',
-                    divider: <span className="mx-1 font-weight-semibold">/</span>,
+                    divider: <span className="mx-1">/</span>,
                     element: <a href="#">file.tsx</a>,
                 },
             ]}
