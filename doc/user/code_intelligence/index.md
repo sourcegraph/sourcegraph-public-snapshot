@@ -15,8 +15,9 @@ is search-based [basic code intelligence](./basic_code_intelligence.md) and work
 - On diffs in your code review tool, via [integrations](../../integration/index.md)
 - Via the [Sourcegraph API](https://docs.sourcegraph.com/api/graphql)
 
-## Basic vs Precise Code Intelligence
+## Basic vs Precise code intelligence
 
+Basic code intelligence is available by default on all Sourcegraph instances and provides fuzzy code intelligence using a combination of ctags and search, it is great for immediate access to code intelligence features but due to its dependance on text-based search its results are considered imprecise. Precise code intelligence however relies on metadata that is represented as a knowledge graph via code analysis. The precomuptaion step used to generate the graph results in lookups that are both fast and have a high degree of accuracy. To learn more about how to work with each type of code intelligence please visit the [basic](./basic_code_intelligence) and [precise](./lsif) sections.
 
 ## Getting started
 

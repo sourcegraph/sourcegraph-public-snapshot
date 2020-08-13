@@ -1,14 +1,19 @@
-# LSIF: Fast and precise code intelligence
+# Precise code intelligence
 
-[LSIF](https://github.com/Microsoft/language-server-protocol/blob/master/indexFormat/specification.md) is a file format for precomputed code intelligence data. It provides fast and precise code intelligence but needs to be periodically generated and uploaded to your Sourcegraph instance. LSIF is opt-in: repositories for which you have not uploaded LSIF data will continue to use the built-in code intelligence.
+Precise code intelligence relies on [LSIF](https://github.com/Microsoft/language-server-protocol/blob/master/indexFormat/specification.md) - a file format for precomputed code intelligence data. It provides fast and precise code intelligence but needs to be periodically generated and uploaded to your Sourcegraph instance. LSIF is opt-in: repositories for which you have not uploaded LSIF data will continue to use the built-in code intelligence.
 
 > Precise code intelligence using LSIF is supported in Sourcegraph 3.8 and up.
 
 ## Getting started
 
-First check if we've created any [language-specific guides](languages/index.md) that fit your needs. Otherwise, follow our [LSIF quickstart guide](lsif_quickstart.md) to manually generate and upload LSIF data for your repository. After you are satisfied with the result, you can follow our [continuous integration guide](adding_lsif_to_workflows.md#lsif-in-continuous-integration) to automate that process for new commits.
+Select your language specific guide from the lsit below to get started. If you don't see a guide for the language you need, follow our general [LSIF quickstart guide](lsif_quickstart.md) to manually generate and upload LSIF data for your repository. 
 
-LSIF support is still a relatively new feature. We are currently working on validating that the feature remains responsive even with tens of thousands of repositories. To get started, we recommend you upload a smaller number of key repositories. Once you reach 50 to 100 repositories, we will be able to provide specific recommendations for ensuring stability and performance of your Sourcegraph instance.
+- [Go](languages/go.md)
+- [Javascript / Typescript](languages/typescript_and_javascript.md)
+
+Once the initial setup, follow the [continuous integration guide](adding_lsif_to_workflows.md#lsif-in-continuous-integration) for precise code indexing automatino for all new commits.
+
+> LSIF support is still a relatively new feature. We are currently working on validating that the feature remains responsive even with tens of thousands of repositories. To get started, we recommend you upload a smaller number of key repositories. Once you reach 50 to 100 repositories, we will be able to provide specific recommendations for ensuring stability and performance of your Sourcegraph instance.
 
 ## Enabling LSIF on your Sourcegraph instance
 

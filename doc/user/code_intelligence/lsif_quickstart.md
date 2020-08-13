@@ -1,8 +1,6 @@
 # LSIF quickstart guide
 
-## [Language-specific guides](languages/index.md)
-
-We are working on creating guides for each language with an LSIF indexer, so make sure to check for the documentation for your language! If there is not a guide for your language, this general guide will help you through the LSIF setup process.
+We are working on creating guides for each language LSIF indexer, so make sure to check the [documentation](./lsif.md) for your language! If there is guide for your language, this general guide will help you through the LSIF setup process.
 
 ## Manual LSIF generation
 
@@ -17,14 +15,25 @@ We'll walk you through installing and generating LSIF data locally on your machi
   chmod +x /usr/local/bin/src
   ```
 
-1. Install the LSIF indexer for your repository's language:
-  1. Go to https://lsif.dev
-  1. Find the LSIF indexer for your language
-  1. Install the indexer as a command-line tool using the installation instructions in the indexer's README
+1. Install the LSIF indexer
 
 ### What is an LSIF indexer?
 
 An LSIF indexer is a command line tool that analyzes your project's source code and generates a file in LSIF format containing all the definitions, references, and hover documentation in your project. That LSIF file is later uploaded to Sourcegraph to provide code intelligence.
+
+Install the indexer for the programming langauges of your repositories source code by following the instructions in the indexer's README:
+
+  1. [C++](https://github.com/sourcegraph/lsif-cpp)
+  1. [Dart](https://github.com/sourcegraph/lsif-dart)
+  1. [Go](https://github.com/sourcegraph/lsif-go)
+  1. [Haskell](https://github.com/mpickering/hie-lsif)
+  1. [Java](https://github.com/sourcegraph/lsif-java)
+  1. [Javascript](https://github.com/sourcegraph/lsif-node)
+  1. [Jsonnet](https://github.com/sourcegraph/lsif-jsonnet)
+  1. [Python](https://github.com/sourcegraph/lsif-py)
+  1. [OCaml](https://github.com/rvantonder/lsif-ocaml)
+  1. [Scala](https://github.com/sourcegraph/lsif-semanticdb)
+  1. [Typescript](https://github.com/sourcegraph/lsif-node)
 
 ## 2. Generate the LSIF data
 
@@ -75,6 +84,6 @@ Once the LSIF data is uploaded, navigate to a code file for the targeted languag
 
 To verify that LSIF is correctly enabled, hover over a symbol and ensure that its hover text is not decorated with a ![tooltip](img/basic-code-intel-tooltip.svg) tooltip. This icon indicates the results are from search-based [basic code intelligence](./basic_code_intelligence.md) and should be absent when results are precise.
 
-## 5. Productionize the process
+## 5. Automate the process
 
 Now that you're happy with the code intelligence on your repository, you need to make sure that is stays up to date with your repository. Our [continuous integration guide](adding_lsif_to_workflows.md) will get you started.
