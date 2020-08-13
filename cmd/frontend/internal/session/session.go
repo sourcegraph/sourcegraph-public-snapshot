@@ -265,7 +265,7 @@ func deleteSession(w http.ResponseWriter, r *http.Request) error {
 
 // InvalidateSessions invalidates all sessions for a user
 // If an error occurs, it returns the error
-func InvalidateSessions(w http.ResponseWriter, r *http.Request) error {
+func InvalidateSessions(w http.ResponseWriter, r *http.Request, ID int32) error {
 	// Get the user from the body
 
 	// Get the user's sessions
