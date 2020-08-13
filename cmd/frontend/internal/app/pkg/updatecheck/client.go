@@ -151,6 +151,16 @@ func getAndMarshalGrowthStatisticsJSON(ctx context.Context) (_ json.RawMessage, 
 	return json.Marshal(growthStatistics)
 }
 
+func getAndMarshalSavedSearchesJSON(ctx context.Context) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalSavedSearchesJSON")(&err)
+
+	savedSearches, err := usagestats.GetSavedSearches(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(savedSearches)
+}
+
 func getAndMarshalAggregatedUsageJSON(ctx context.Context) (_ json.RawMessage, _ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalAggregatedUsageJSON")(&err)
 
@@ -191,6 +201,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		SearchUsage:         []byte("{}"),
 		CampaignsUsage:      []byte("{}"),
 		GrowthStatistics:    []byte("{}"),
+		SavedSearches:       []byte("{}"),
 	}
 
 	totalUsers, err := getTotalUsersCount(ctx)
@@ -236,6 +247,12 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalGrowthStatisticsJSON failed", "error", err)
 		}
+
+		r.SavedSearches, err = getAndMarshalSavedSearchesJSON(ctx)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalSavedSearchesJSON failed", "error", err)
+		}
+
 		r.ExternalServices, err = externalServiceKinds(ctx)
 		if err != nil {
 			logFunc("telemetry: externalServicesKinds failed", "error", err)
