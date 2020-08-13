@@ -159,7 +159,7 @@ func CheckPasswordLength(pw string) error {
 	minPasswordRunes := conf.AuthMinPasswordLength()
 	if pwLen < minPasswordRunes ||
 		pwLen > maxPasswordRunes {
-		return errcode.NewPresentationError(fmt.Sprintf("Passwords may not be less than %d or be more than %d characters.", minPasswordRunes, maxPasswordRunes))
+		return errcode.NewPresentationError(fmt.Sprintf("Password may not be less than %d or be more than %d characters.", minPasswordRunes, maxPasswordRunes))
 	}
 	return nil
 }
