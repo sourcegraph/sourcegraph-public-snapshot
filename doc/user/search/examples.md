@@ -21,20 +21,20 @@ Below are examples that search repositories on [Sourcegraph.com](https://sourceg
 
 ## When to use regex search mode
 
-Sourcegraph's default litteral search mode is line based and will not match across lines, so regex can be useful when you wish to do so:
+Sourcegraph's default literal search mode is line-based and will not match across lines, so regex can be useful when you wish to do so:
 
 - [Matching multiple text strings in a file](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/Parsely/pykafka%24+Not+leader+for+partition&patternType=regexp)<br/>
 `repo:^github\.com/Parsely/pykafka$ Not leader for partition`
 
-Regex searches are also useful when searching bounderies that are not delimited by code structures:
+Regex searches are also useful when searching boundaries that are not delimited by code structures:
 
-- [Finding css classes with word boundery regex](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%5Cbbtn-secondary%5Cb&patternType=regexp) <br /> 
+- [Finding css classes with word boundary regex](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%5Cbbtn-secondary%5Cb&patternType=regexp) <br /> 
 `repo:^github\.com/sourcegraph/sourcegraph$ \bbtn-secondary\b`
 
 
 ## When to use structural search mode
 
-Use structural searche when you want to match code boundries such as () or {}:
+Use structural search when you want to match code boundaries such as () or {}:
 
-- [Finding try catch statements with varrying content](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+try+%7B+:%5Bmatched_statements%5D+%7D+catch+%7B+:%5Bmatched_catch%5D+%7D&patternType=structural)<br/> 
+- [Finding try catch statements with varying content](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+try+%7B+:%5Bmatched_statements%5D+%7D+catch+%7B+:%5Bmatched_catch%5D+%7D&patternType=structural)<br/> 
 `repo:^github\.com/sourcegraph/sourcegraph$ try { :[matched_statements] } catch { :[matched_catch] }`
