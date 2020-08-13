@@ -263,6 +263,20 @@ func deleteSession(w http.ResponseWriter, r *http.Request) error {
 	return errors.WithMessage(err, "deleting session")
 }
 
+// InvalidateSessions invalidates all sessions for a user
+// If an error occurs, it returns the error
+func InvalidateSessions(w http.ResponseWriter, r *http.Request) error {
+	// Get the user from the body
+
+	// Get the user's sessions
+	// First, get the names of the sessions (cookiestore?)
+	// Then, get the sesions from sessionStore.get(r, cookieName)
+
+	// Invalidate them all by setting sesion.Options.MaxAge = -1
+
+	return nil
+}
+
 // CookieMiddleware is an http.Handler middleware that authenticates
 // future HTTP request via cookie.
 func CookieMiddleware(next http.Handler) http.Handler {
