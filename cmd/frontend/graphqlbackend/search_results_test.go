@@ -1461,9 +1461,9 @@ func TestDedupePatternOperands(t *testing.T) {
 			wantOperands: `"foo" (and "foo" "bar")`,
 		},
 		{
-			query:        "foo and foo and (bar or bas) and qux",
+			query:        "foo and ((bar and bas) or quz) and qux",
 			wantIx:       3,
-			wantOperands: `"foo" (or "bar" "bas") "qux"`,
+			wantOperands: `"foo" (or (and "bar" "bas") "quz") "qux"`,
 		},
 	}
 	for _, tt := range tests {
