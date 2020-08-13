@@ -18,7 +18,7 @@ export function generateStepTooltip(
     additionalContent?: HTMLElement
 ): HTMLElement {
     const element = document.createElement('div')
-    element.className = 'd-flex flex-column'
+    element.className = `d-flex flex-column test-tour-step-${stepNumber}`
     const titleElement = document.createElement('h4')
     titleElement.textContent = title
     titleElement.className = 'font-weight-bold'
@@ -81,7 +81,7 @@ export function createStep1Tooltip(
     languageListItem.className = 'list-group-item p-0 border-0 mb-2'
     languageListItem.textContent = '-'
     const languageButton = document.createElement('button')
-    languageButton.className = 'btn btn-link p-0 pl-1'
+    languageButton.className = 'btn btn-link p-0 pl-1 test-tour-language-button'
     languageButton.textContent = 'Search a language'
     languageListItem.append(languageButton)
     languageButton.addEventListener('click', () => {

@@ -19,7 +19,10 @@ export const SearchHelpDropdownButton: React.FunctionComponent = () => {
                 className="px-2 btn btn-link d-flex align-items-center cursor-pointer"
                 aria-label="Quick help for search"
             >
-                <HelpCircleOutlineIcon className="icon-inline small" aria-hidden="true" />
+                <HelpCircleOutlineIcon
+                    className="test-search-help-dropdown-button-icon icon-inline small"
+                    aria-hidden="true"
+                />
             </DropdownToggle>
             <DropdownMenu right={true} className="pb-0">
                 <DropdownItem header={true}>

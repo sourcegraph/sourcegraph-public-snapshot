@@ -128,6 +128,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                                 name: 'focusAfterRender',
                                 enabled: false,
                             },
+                            { name: 'offset', options: { offset: [0, 8] } },
                         ],
                     },
                     attachTo: { on: 'bottom' },
