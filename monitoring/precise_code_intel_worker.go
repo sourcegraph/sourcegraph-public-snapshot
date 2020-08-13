@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 func PreciseCodeIntelWorker() *Container {
 	return &Container{
 		Name:        "precise-code-intel-worker",
@@ -149,11 +151,12 @@ func PreciseCodeIntelWorker() *Container {
 						{
 							Name:              "gitserver_error_responses",
 							Description:       "gitserver error responses every 5m",
-							Query:             `sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="precise-code-intel-worker",code!~"2.."}[5m]))`,
+							Query:             `sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="precise-code-intel-worker",code!~"2.."}[5m])) / ignoring(code) group_left sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="precise-code-intel-worker"}[5m])) * 100`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 5},
-							PanelOptions:      PanelOptions().LegendFormat("{{category}}"),
-							Owner:             ObservableOwnerCodeIntel,
+							DataMayBeNaN:      true, // ratio denominator could be 0
+							Warning:           Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Percentage),
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 					},
