@@ -20,7 +20,8 @@
   "CreatedAt": "2020-04-16T15:53:22Z",
   "UpdatedAt": "0001-01-01T00:00:00Z",
   "ClosedAt": "0001-01-01T00:00:00Z",
-  "Issues": [{
+  "Issues": [
+    {
       "ID": "MDU6SXNzdWU2MDg1NTU0ODU=",
       "Title": "Add metrics (and dashboard) to new precise-code-intel services",
       "Body": "- [ ] api-server\r\n- [ ] bundle-manager\r\n- [ ] worker",
@@ -219,7 +220,7 @@
     {
       "ID": "MDU6SXNzdWU2MDIzMjkyMTk=",
       "Title": "Fix docs for LSIF option DBS_DIR_MAXIMUM_SIZE_BYTES",
-      "Body": "Reported by https://app.hubspot.com/contacts/2762526/company/2931649618\r\n\r\nOur docs (https://docs.sourcegraph.com/user/code_intelligence/lsif#data-retention-policy) say:\r\n\r\n\u003eThe bulk of LSIF data is stored on-disk, and as code intelligence data for a commit ages it becomes less useful. Sourcegraph will automatically remove the least recently uploaded data **if the amount of disk space falls below a configurable threshold**. This value defaults to 10 GiB (10⨉2^30 = 10737418240 bytes), and can be changed via the DBS_DIR_MAXIMUM_SIZE_BYTES environment variable.\r\n\r\nBut this is incorrect. The `DBS_DIR_MAXIMUM_SIZE_BYTES` reflects the maximum size of uploads on disk, not a minimum amount of extra  space required (as the bolded words above indicate).",
+      "Body": "Reported by https://app.hubspot.com/contacts/2762526/company/2931649618\r\n\r\nOur docs (https://docs.sourcegraph.com/user/code_intelligence/precise_code_intelligence#data-retention-policy) say:\r\n\r\n\u003eThe bulk of LSIF data is stored on-disk, and as code intelligence data for a commit ages it becomes less useful. Sourcegraph will automatically remove the least recently uploaded data **if the amount of disk space falls below a configurable threshold**. This value defaults to 10 GiB (10⨉2^30 = 10737418240 bytes), and can be changed via the DBS_DIR_MAXIMUM_SIZE_BYTES environment variable.\r\n\r\nBut this is incorrect. The `DBS_DIR_MAXIMUM_SIZE_BYTES` reflects the maximum size of uploads on disk, not a minimum amount of extra  space required (as the bolded words above indicate).",
       "Number": 9987,
       "URL": "https://github.com/sourcegraph/sourcegraph/issues/9987",
       "State": "CLOSED",
@@ -738,7 +739,8 @@
       "ClosedAt": "0001-01-01T00:00:00Z"
     }
   ],
-  "PRs": [{
+  "PRs": [
+    {
       "ID": "MDExOlB1bGxSZXF1ZXN0NDA4MzQxMzYz",
       "Title": "Update tracking issue tool to preserve issue order and display allowed labels",
       "Body": "new features on the tracking issue tool:\r\n- preserves order of issues that were already in the tracking issue body (new issues go to the bottom, but I can put them on top if we prefer)\r\n- you can add a new comment `\u003c!-- LABEL: \u003clabel name\u003e --\u003e`, and then issues with that label will have it appended as an inline code element on the end (couldn't figure out a way to embed the pretty colored label block). i want to use this to track issue phase (planning, implementing, blocked, etc) but could see plenty of different uses.\r\n\r\nso won't change anything (other than new issues going to the bottom) for people who continue using as is, but a couple nifty new features.\r\n\r\npotential drawbacks:\r\n- requires re-parsing the issue markdown which is super inelegant, but it does it based on the issue URLs which i think are reasonably canonical\r\n- adding the labels will make it way more likely for issues to take up multiple lines, which might look ugly. but it's opt in\r\n\r\ni wasn't super duper careful about code hygiene given the context the code lives in, let me know if you think it's worth the time to clean it up a bit\r\n\r\nCloses #10082 ",

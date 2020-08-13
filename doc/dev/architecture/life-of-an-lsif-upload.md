@@ -1,6 +1,6 @@
 # Life of an LSIF upload
 
-This document describes how an LSIF data file is uploaded to a Sourcegraph instance and processed. This document does **not** cover the data file generation, which is covered in the [user docs](https://docs.sourcegraph.com/user/code_intelligence/lsif), on [lsif.dev](https://lsif.dev), and in the documentation for individual indexers.
+This document describes how an LSIF data file is uploaded to a Sourcegraph instance and processed. This document does **not** cover the data file generation, which is covered in the [user docs](https://docs.sourcegraph.com/user/code_intelligence/lsif_quickstart), on [lsif.dev](https://lsif.dev), and in the documentation for individual indexers.
 
 ## Uploading
 

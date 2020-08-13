@@ -59,68 +59,68 @@ const IndexNode: FunctionComponent<IndexNodeProps> = ({ node, onDelete, history,
     return deletionOrError && isErrorLike(deletionOrError) ? (
         <ErrorAlert prefix="Error deleting LSIF index" error={deletionOrError} history={history} />
     ) : (
-        <tr>
-            <td>
-                {node.projectRoot ? (
-                    <Link to={node.projectRoot.repository.url}>
-                        <code>{node.projectRoot.repository.name}</code>
-                    </Link>
-                ) : (
-                    'unknown'
-                )}
-            </td>
-            <td>
-                <code>
+            <tr>
+                <td>
                     {node.projectRoot ? (
-                        <Link to={node.projectRoot.commit.url}>
-                            <code>{node.projectRoot.commit.abbreviatedOID}</code>
+                        <Link to={node.projectRoot.repository.url}>
+                            <code>{node.projectRoot.repository.name}</code>
                         </Link>
                     ) : (
-                        node.inputCommit.slice(0, 7)
-                    )}
-                </code>
-            </td>
-            <td>
-                <Link to={`./indexes/${node.id}`}>
-                    {node.state === GQL.LSIFIndexState.PROCESSING ? (
-                        <span>Processing</span>
-                    ) : node.state === GQL.LSIFIndexState.COMPLETED ? (
-                        <span className="text-success">Completed</span>
-                    ) : node.state === GQL.LSIFIndexState.ERRORED ? (
-                        <span className="text-danger">Failed to process</span>
+                            'unknown'
+                        )}
+                </td>
+                <td>
+                    <code>
+                        {node.projectRoot ? (
+                            <Link to={node.projectRoot.commit.url}>
+                                <code>{node.projectRoot.commit.abbreviatedOID}</code>
+                            </Link>
+                        ) : (
+                                node.inputCommit.slice(0, 7)
+                            )}
+                    </code>
+                </td>
+                <td>
+                    <Link to={`./indexes/${node.id}`}>
+                        {node.state === GQL.LSIFIndexState.PROCESSING ? (
+                            <span>Processing</span>
+                        ) : node.state === GQL.LSIFIndexState.COMPLETED ? (
+                            <span className="text-success">Completed</span>
+                        ) : node.state === GQL.LSIFIndexState.ERRORED ? (
+                            <span className="text-danger">Failed to process</span>
+                        ) : (
+                                        <span>Waiting to process (#{node.placeInQueue} in line)</span>
+                                    )}
+                    </Link>
+                </td>
+                <td>
+                    {node.finishedAt ? (
+                        <span>
+                            Completed <Timestamp date={node.finishedAt} now={now} noAbout={true} />
+                        </span>
+                    ) : node.startedAt ? (
+                        <span>
+                            Started <Timestamp date={node.startedAt} now={now} noAbout={true} />
+                        </span>
                     ) : (
-                        <span>Waiting to process (#{node.placeInQueue} in line)</span>
-                    )}
-                </Link>
-            </td>
-            <td>
-                {node.finishedAt ? (
-                    <span>
-                        Completed <Timestamp date={node.finishedAt} now={now} noAbout={true} />
-                    </span>
-                ) : node.startedAt ? (
-                    <span>
-                        Started <Timestamp date={node.startedAt} now={now} noAbout={true} />
-                    </span>
-                ) : (
-                    <span>
-                        Queued <Timestamp date={node.queuedAt} now={now} noAbout={true} />
-                    </span>
-                )}
-            </td>
-            <td>
-                <button
-                    type="button"
-                    className="btn btn-sm btn-danger"
-                    onClick={deleteIndex}
-                    disabled={deletionOrError === 'loading'}
-                    data-tooltip="Delete index"
-                >
-                    <DeleteIcon className="icon-inline" />
-                </button>
-            </td>
-        </tr>
-    )
+                                <span>
+                                    Queued <Timestamp date={node.queuedAt} now={now} noAbout={true} />
+                                </span>
+                            )}
+                </td>
+                <td>
+                    <button
+                        type="button"
+                        className="btn btn-sm btn-danger"
+                        onClick={deleteIndex}
+                        disabled={deletionOrError === 'loading'}
+                        data-tooltip="Delete index"
+                    >
+                        <DeleteIcon className="icon-inline" />
+                    </button>
+                </td>
+            </tr>
+        )
 }
 
 interface Props extends RouteComponentProps<{}> {
@@ -194,7 +194,7 @@ export const CodeIntelIndexesPage: FunctionComponent<Props> = ({
                 </a>
                 . Enable precise code intelligence for non-Go code by{' '}
                 <a
-                    href="https://docs.sourcegraph.com/user/code_intelligence/lsif"
+                    href="https://docs.sourcegraph.com/user/code_intelligence/precise_code_intelligence"
                     target="_blank"
                     rel="noreferrer noopener"
                 >

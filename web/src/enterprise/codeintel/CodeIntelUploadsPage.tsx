@@ -61,80 +61,80 @@ const UploadNode: FunctionComponent<UploadNodeProps> = ({ node, onDelete, histor
     return deletionOrError && isErrorLike(deletionOrError) ? (
         <ErrorAlert prefix="Error deleting LSIF upload" error={deletionOrError} history={history} />
     ) : (
-        <tr>
-            <td>
-                {node.projectRoot ? (
-                    <Link to={node.projectRoot.repository.url}>
-                        <code>{node.projectRoot.repository.name}</code>
-                    </Link>
-                ) : (
-                    'unknown'
-                )}
-            </td>
-            <td>
-                <code>
+            <tr>
+                <td>
                     {node.projectRoot ? (
-                        <Link to={node.projectRoot.commit.url}>
-                            <code>{node.projectRoot.commit.abbreviatedOID}</code>
+                        <Link to={node.projectRoot.repository.url}>
+                            <code>{node.projectRoot.repository.name}</code>
                         </Link>
                     ) : (
-                        node.inputCommit.slice(0, 7)
-                    )}
-                </code>
-            </td>
-            <td>{node.inputIndexer}</td>
-            <td>
-                {node.projectRoot ? (
-                    <Link to={node.projectRoot.url}>
-                        <strong>{node.projectRoot.path || '/'}</strong>
-                    </Link>
-                ) : (
-                    node.inputRoot || '/'
-                )}
-            </td>
-            <td>
-                <Link to={`./uploads/${node.id}`}>
-                    {node.state === GQL.LSIFUploadState.UPLOADING ? (
-                        <span>Uploading</span>
-                    ) : node.state === GQL.LSIFUploadState.PROCESSING ? (
-                        <span>Processing</span>
-                    ) : node.state === GQL.LSIFUploadState.COMPLETED ? (
-                        <span className="text-success">Completed</span>
-                    ) : node.state === GQL.LSIFUploadState.ERRORED ? (
-                        <span className="text-danger">Failed to process</span>
+                            'unknown'
+                        )}
+                </td>
+                <td>
+                    <code>
+                        {node.projectRoot ? (
+                            <Link to={node.projectRoot.commit.url}>
+                                <code>{node.projectRoot.commit.abbreviatedOID}</code>
+                            </Link>
+                        ) : (
+                                node.inputCommit.slice(0, 7)
+                            )}
+                    </code>
+                </td>
+                <td>{node.inputIndexer}</td>
+                <td>
+                    {node.projectRoot ? (
+                        <Link to={node.projectRoot.url}>
+                            <strong>{node.projectRoot.path || '/'}</strong>
+                        </Link>
                     ) : (
-                        <span>Waiting to process (#{node.placeInQueue} in line)</span>
-                    )}
-                </Link>
-            </td>
-            <td>
-                {node.finishedAt ? (
-                    <span>
-                        Completed <Timestamp date={node.finishedAt} now={now} noAbout={true} />
-                    </span>
-                ) : node.startedAt ? (
-                    <span>
-                        Started <Timestamp date={node.startedAt} now={now} noAbout={true} />
-                    </span>
-                ) : (
-                    <span>
-                        Uploaded <Timestamp date={node.uploadedAt} now={now} noAbout={true} />
-                    </span>
-                )}
-            </td>
-            <td>
-                <button
-                    type="button"
-                    className="btn btn-sm btn-danger"
-                    onClick={deleteUpload}
-                    disabled={deletionOrError === 'loading'}
-                    data-tooltip="Delete upload"
-                >
-                    <DeleteIcon className="icon-inline" />
-                </button>
-            </td>
-        </tr>
-    )
+                            node.inputRoot || '/'
+                        )}
+                </td>
+                <td>
+                    <Link to={`./uploads/${node.id}`}>
+                        {node.state === GQL.LSIFUploadState.UPLOADING ? (
+                            <span>Uploading</span>
+                        ) : node.state === GQL.LSIFUploadState.PROCESSING ? (
+                            <span>Processing</span>
+                        ) : node.state === GQL.LSIFUploadState.COMPLETED ? (
+                            <span className="text-success">Completed</span>
+                        ) : node.state === GQL.LSIFUploadState.ERRORED ? (
+                            <span className="text-danger">Failed to process</span>
+                        ) : (
+                                            <span>Waiting to process (#{node.placeInQueue} in line)</span>
+                                        )}
+                    </Link>
+                </td>
+                <td>
+                    {node.finishedAt ? (
+                        <span>
+                            Completed <Timestamp date={node.finishedAt} now={now} noAbout={true} />
+                        </span>
+                    ) : node.startedAt ? (
+                        <span>
+                            Started <Timestamp date={node.startedAt} now={now} noAbout={true} />
+                        </span>
+                    ) : (
+                                <span>
+                                    Uploaded <Timestamp date={node.uploadedAt} now={now} noAbout={true} />
+                                </span>
+                            )}
+                </td>
+                <td>
+                    <button
+                        type="button"
+                        className="btn btn-sm btn-danger"
+                        onClick={deleteUpload}
+                        disabled={deletionOrError === 'loading'}
+                        data-tooltip="Delete upload"
+                    >
+                        <DeleteIcon className="icon-inline" />
+                    </button>
+                </td>
+            </tr>
+        )
 }
 
 interface Props extends RouteComponentProps<{}> {
@@ -206,7 +206,7 @@ export const CodeIntelUploadsPage: FunctionComponent<Props> = ({
             <p>
                 Enable precise code intelligence by{' '}
                 <a
-                    href="https://docs.sourcegraph.com/user/code_intelligence/lsif"
+                    href="https://docs.sourcegraph.com/user/code_intelligence/precise_code_intelligence"
                     target="_blank"
                     rel="noreferrer noopener"
                 >
