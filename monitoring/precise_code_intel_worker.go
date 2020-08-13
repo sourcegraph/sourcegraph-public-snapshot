@@ -145,7 +145,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
-							Owner:             ObservableOwnerCodeIntel,
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						{
