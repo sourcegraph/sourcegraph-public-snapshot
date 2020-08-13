@@ -124,7 +124,8 @@ func hasGitHubDotComToken(ctx context.Context) (hasToken bool, _ error) {
 			case *schema.GitHubConnection:
 				conn = c
 			default:
-				return false, errors.Errorf("want *schema.GitHubConnection but got %T", cfg)
+				log15.Error("hasGitHubDotComToken", "error", errors.Errorf("want *schema.GitHubConnection but got %T", cfg))
+				continue
 			}
 
 			u, err := url.Parse(conn.Url)
@@ -174,7 +175,8 @@ func hasGitLabDotComToken(ctx context.Context) (bool, error) {
 			case *schema.GitLabConnection:
 				conn = c
 			default:
-				return false, errors.Errorf("want *schema.GitLabConnection but got %T", cfg)
+				log15.Error("hasGitLabDotComToken", "error", errors.Errorf("want *schema.GitLabConnection but got %T", cfg))
+				continue
 			}
 
 			u, err := url.Parse(conn.Url)
