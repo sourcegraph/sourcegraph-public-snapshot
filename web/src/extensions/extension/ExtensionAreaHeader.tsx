@@ -1,7 +1,6 @@
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
-import { Path } from '../../../../shared/src/components/Path'
+import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import { isExtensionEnabled } from '../../../../shared/src/extensions/extension'
 import { ExtensionManifest } from '../../../../shared/src/schema/extensionSchema'
 import { isErrorLike } from '../../../../shared/src/util/errors'
@@ -10,12 +9,12 @@ import { ExtensionToggle } from '../ExtensionToggle'
 import { isExtensionAdded } from './extension'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionConfigurationState } from './ExtensionConfigurationState'
-import { WorkInProgressBadge } from './WorkInProgressBadge'
 import { isEncodedImage } from '../../../../shared/src/util/icon'
+import { PageHeader } from '../../components/PageHeader'
+import { startCase } from 'lodash'
 
 interface ExtensionAreaHeaderProps extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
     navItems: readonly ExtensionAreaHeaderNavItem[]
-    className: string
 }
 
 export type ExtensionAreaHeaderContext = Pick<ExtensionAreaHeaderProps, 'extension'>
@@ -40,82 +39,73 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
     }
 
     const isWorkInProgress = props.extension.registryExtension?.isWorkInProgress
-
+    const title = manifest?.name
+        ? startCase(manifest.name)
+        : props.extension.registryExtension?.extensionIDWithoutRegistry ?? props.extension.id
+    const icon =
+        manifest?.icon && iconURL && iconURL.protocol === 'data:' && isEncodedImage(manifest.icon) ? (
+            <img className="extension-area-header__icon mr-2" src={manifest.icon} />
+        ) : (
+            <PuzzleOutlineIcon widths={32} />
+        )
+    const actions = (
+        <div className="d-flex align-items-center mt-3 mb-2">
+            {props.authenticatedUser && (
+                <ExtensionToggle
+                    extension={props.extension}
+                    settingsCascade={props.settingsCascade}
+                    platformContext={props.platformContext}
+                    className="mr-2"
+                />
+            )}
+            <ExtensionConfigurationState
+                className="mr-2"
+                isAdded={isExtensionAdded(props.settingsCascade.final, props.extension.id)}
+                isEnabled={isExtensionEnabled(props.settingsCascade.final, props.extension.id)}
+            />
+            {!props.authenticatedUser && (
+                <div className="d-flex align-items-center">
+                    <Link to="/sign-in" className="btn btn-primary mr-2">
+                        Sign in to{' '}
+                        {isExtensionEnabled(props.settingsCascade.final, props.extension.id) ? 'configure' : 'enable'}
+                    </Link>
+                    <small className="text-muted">
+                        An account is required to{' '}
+                        {isExtensionEnabled(props.settingsCascade.final, props.extension.id) ? '' : 'enable and'}{' '}
+                        configure extensions.
+                    </small>
+                </div>
+            )}
+        </div>
+    )
+    const label = manifest?.description ?? ''
+    const badgeLabel = isWorkInProgress ? 'WIP' : undefined
+    const badgeTooltip = badgeLabel
+        ? props.extension.registryExtension?.viewerCanAdminister
+            ? 'Remove "WIP" from the title when this extension is ready for use.'
+            : 'Work in progress (not ready for use)'
+        : ''
     return (
-        <div className={`extension-area-header ${props.className || ''}`}>
-            <div className="container">
-                {props.extension && (
-                    <>
-                        <div className="mb-3">
-                            <div className="d-flex align-items-start">
-                                {manifest?.icon &&
-                                    iconURL &&
-                                    iconURL.protocol === 'data:' &&
-                                    isEncodedImage(manifest.icon) && (
-                                        <img className="extension-area-header__icon mr-2" src={manifest.icon} />
-                                    )}
-                                <div>
-                                    <h2 className="d-flex align-items-center mb-0 font-weight-normal">
-                                        <Link to="/extensions" className="extensions-nav-link">
-                                            Extensions
-                                        </Link>
-                                        <ChevronRightIcon className="icon-inline extension-area-header__icon-chevron" />{' '}
-                                        <Path
-                                            path={
-                                                props.extension.registryExtension
-                                                    ? props.extension.registryExtension.extensionIDWithoutRegistry
-                                                    : props.extension.id
-                                            }
-                                        />
-                                    </h2>
-                                    {manifest && (manifest.description || isWorkInProgress) && (
-                                        <p className="mt-1 mb-0">
-                                            {isWorkInProgress && (
-                                                <WorkInProgressBadge
-                                                    viewerCanAdminister={
-                                                        !!props.extension.registryExtension &&
-                                                        props.extension.registryExtension.viewerCanAdminister
-                                                    }
-                                                />
-                                            )}
-                                            {manifest.description}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                        <div className="d-flex align-items-center mt-3 mb-2">
-                            {props.authenticatedUser && (
-                                <ExtensionToggle
-                                    extension={props.extension}
-                                    settingsCascade={props.settingsCascade}
-                                    platformContext={props.platformContext}
-                                    className="mr-2"
-                                />
-                            )}
-                            <ExtensionConfigurationState
-                                className="mr-2"
-                                isAdded={isExtensionAdded(props.settingsCascade.final, props.extension.id)}
-                                isEnabled={isExtensionEnabled(props.settingsCascade.final, props.extension.id)}
-                            />
-                            {!props.authenticatedUser && (
-                                <div className="d-flex align-items-center">
-                                    <Link to="/sign-in" className="btn btn-primary mr-2">
-                                        Sign in to{' '}
-                                        {isExtensionEnabled(props.settingsCascade.final, props.extension.id)
-                                            ? 'configure'
-                                            : 'enable'}
-                                    </Link>
-                                    <small className="text-muted">
-                                        An account is required to{' '}
-                                        {isExtensionEnabled(props.settingsCascade.final, props.extension.id)
-                                            ? ''
-                                            : 'enable and'}{' '}
-                                        configure extensions.
-                                    </small>
-                                </div>
-                            )}
-                        </div>
+        <div className="extension-area-header border-bottom">
+            {props.extension && (
+                <>
+                    <PageHeader
+                        title={title}
+                        icon={icon}
+                        actions={actions}
+                        breadcrumbs={[
+                            { key: 'extensions', element: <Link to="/extensions">Extensions</Link> },
+                            { key: 'extensionId', element: props.extension.id },
+                        ]}
+                        badge={
+                            badgeLabel && {
+                                label: badgeLabel,
+                                tooltip: badgeTooltip,
+                            }
+                        }
+                        label={label}
+                    />
+                    <div className="container">
                         <div className="mt-3">
                             <ul className="nav nav-tabs border-bottom-0">
                                 {props.navItems.map(
@@ -135,9 +125,9 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                 )}
                             </ul>
                         </div>
-                    </>
-                )}
-            </div>
+                    </div>
+                </>
+            )}
         </div>
     )
 }

@@ -50,12 +50,12 @@ export function useObservable<T>(observable: Observable<T>): T | undefined {
  * @returns A next function to be used in JSX as an event handler, and the latest result of the Observable pipeline.
  * @throws If the Observable pipeline errors.
  */
-export function useEventObservable<T, R>(
-    transform: (events: Observable<T>) => Observable<R>
-): [Observer<T>['next'], R | undefined]
 export function useEventObservable<R>(
     transform: (events: Observable<void>) => Observable<R>
 ): [() => void, R | undefined]
+export function useEventObservable<T, R>(
+    transform: (events: Observable<T>) => Observable<R>
+): [Observer<T>['next'], R | undefined]
 export function useEventObservable<T, R>(
     transform: (events: Observable<T>) => Observable<R>
 ): [Observer<T>['next'], R | undefined] {

@@ -39,6 +39,10 @@ export const useBreadcrumbs = (): BreadcrumbsProps & UpdateBreadcrumbsProps => {
 
 export const Breadcrumbs: React.FunctionComponent<BreadcrumbsProps> = ({ breadcrumbs }) => (
     <>
+        <>
+            <a href="/">Home</a>
+            {breadcrumbs.length !== 0 && <ChevronRightIcon />}
+        </>
         {breadcrumbs
             .filter(({ element }) => element !== null)
             .map(({ element, key }, index) => (
