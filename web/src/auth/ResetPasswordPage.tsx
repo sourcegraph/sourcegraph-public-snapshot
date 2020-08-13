@@ -11,6 +11,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { PasswordInput } from './SignInSignUpCommon'
 import { ErrorAlert } from '../components/alerts'
 import * as H from 'history'
+import { await } from 'signale'
 
 interface ResetPasswordInitFormState {
     /** The user's email input value. */
@@ -196,11 +197,13 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
                 password: this.state.password,
             }),
         })
-            .then(response => {
+            .then(async response => {
                 if (response.status === 200) {
                     this.setState({ submitOrError: null })
                 } else if (response.status === 401) {
                     this.setState({ submitOrError: new Error('Password reset code was invalid or expired.') })
+                } else if (response.status === 400) {
+                    this.setState({ submitOrError: new Error(await response.text()) })
                 } else {
                     this.setState({ submitOrError: new Error('Password reset failed.') })
                 }
