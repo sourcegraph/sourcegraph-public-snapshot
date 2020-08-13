@@ -12,13 +12,11 @@ import (
 func GetSavedSearches(ctx context.Context) (*types.SavedSearches, error) {
 	const q = `
 	SELECT
-	  (SELECT COUNT(*) FROM saved_searches) AS totalSavedSearches,
-	  (SELECT COUNT(DISTINCT user_id) FROM saved_searches) AS uniqueUsers,
-	  COUNT(*) FILTER (WHERE event_logs.name = 'SavedSearchEmailNotificationSent') AS notificationsSent,
-	  COUNT(*) FILTER (WHERE event_logs.name = 'SavedSearchEmailClicked') AS notificationsClicked,
-	  COUNT(DISTINCT user_id) FILTER (WHERE event_logs.name = 'ViewSavedSearchListPage') AS uniqueUserPageViews
-	FROM
-	  event_logs
+	(SELECT COUNT(*) FROM saved_searches) AS totalSavedSearches,
+	(SELECT COUNT(DISTINCT user_id) FROM saved_searches) AS uniqueUsers,
+	(SELECT COUNT(*) FROM event_logs WHERE event_logs.name = 'SavedSearchEmailNotificationSent') AS notificationsSent,
+	(SELECT COUNT(*) FROM event_logs WHERE event_logs.name = 'SavedSearchEmailClicked') AS notificationsClicked,
+	(SELECT COUNT(DISTINCT user_id) FROM event_logs WHERE event_logs.name = 'ViewSavedSearchListPage') AS uniqueUserPageViews	
 	`
 	var (
 		totalSavedSearches   int
