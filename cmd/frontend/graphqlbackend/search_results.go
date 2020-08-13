@@ -991,14 +991,6 @@ func (r *searchResolver) evaluateOperator(ctx context.Context, scopeParameters [
 	return result, nil
 }
 
-func prettyPrint(nodes []query.Node) string {
-	var resultStr []string
-	for _, node := range nodes {
-		resultStr = append(resultStr, node.String())
-	}
-	return strings.Join(resultStr, " ")
-}
-
 // evaluatePatternExpression evaluates a search pattern containing and/or expressions.
 func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopeParameters []query.Node, node query.Node) (*SearchResultsResolver, error) {
 	switch term := node.(type) {
@@ -1013,11 +1005,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 	case query.Pattern:
 		q := append(scopeParameters, term)
 		r.query.(*query.AndOrQuery).Query = q
-		sh := time.Now()
-		fmt.Println("query:", prettyPrint(r.query.(*query.AndOrQuery).Query))
-		res, err := r.evaluateLeaf(ctx)
-		fmt.Println("DURATION[evaluateLeaf]", time.Since(sh).Milliseconds())
-		return res, err
+		return r.evaluateLeaf(ctx)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
 		return nil, nil
