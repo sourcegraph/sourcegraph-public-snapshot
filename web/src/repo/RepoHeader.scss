@@ -65,8 +65,11 @@
     .copy-link-action {
         opacity: 0;
     }
-    &:hover .copy-link-action {
-        opacity: 1;
+    &:hover,
+    &:focus-within {
+        .copy-link-action {
+            opacity: 1;
+        }
     }
 
     &__spacer {

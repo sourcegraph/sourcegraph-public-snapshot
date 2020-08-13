@@ -41,15 +41,16 @@ export const useBreadcrumbs = (): BreadcrumbsProps & UpdateBreadcrumbsProps => {
     }
 }
 
-export const Breadcrumbs: React.FunctionComponent<BreadcrumbsProps> = ({ breadcrumbs }) => (
-    <div className="d-flex">
-        {breadcrumbs
-            .filter(({ element }) => element !== null)
-            .map(({ element, key, divider = <ChevronRightIcon className="icon-inline" /> }) => (
+export const Breadcrumbs: React.FunctionComponent<BreadcrumbsProps> = ({ breadcrumbs }) => {
+    const filteredBreadcrumbs = breadcrumbs.filter(({ element }) => element !== null)
+    return (
+        <nav className="d-flex" aria-label="Breadcrumbs">
+            {filteredBreadcrumbs.map(({ element, key, divider = <ChevronRightIcon className="icon-inline" /> }) => (
                 <span key={key} className="text-muted d-flex align-items-center">
                     <span className="font-weight-semibold">{divider}</span>
                     {element}
                 </span>
             ))}
-    </div>
-)
+        </nav>
+    )
+}

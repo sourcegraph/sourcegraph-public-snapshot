@@ -215,7 +215,12 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                         {repoDirectory ? `${repoDirectory}/` : ''}
                         <span className="font-weight-semibold">{repoBase}</span>
                     </Link>
-                    <button type="button" id="repo-popover" className="btn btn-link px-0">
+                    <button
+                        type="button"
+                        id="repo-popover"
+                        className="btn btn-link px-0"
+                        aria-label="Change repository"
+                    >
                         <MenuDownIcon className="icon-inline" />
                     </button>
                     <UncontrolledPopover placement="bottom-start" target="repo-popover" trigger="legacy">

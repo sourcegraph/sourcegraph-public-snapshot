@@ -8,7 +8,7 @@ import classNames from 'classnames'
  * Displays a file path in a repository in breadcrumb style, with ancestor path
  * links.
  */
-export const FilePathBreadcrumbs: React.FunctionComponent<
+export const FilePathBreadcrumb: React.FunctionComponent<
     RepoRev & {
         filePath: string
         isDir: boolean
@@ -32,12 +32,7 @@ export const FilePathBreadcrumbs: React.FunctionComponent<
         const link = partToUrl(index)
         const className = classNames('part', partToClassName?.(index))
         spans.push(
-            <LinkOrSpan
-                key={index}
-                className={className}
-                to={link}
-                aria-current={index === parts.length - 1 ? 'page' : 'false'}
-            >
+            <LinkOrSpan key={index} className={className} to={link}>
                 {part}
             </LinkOrSpan>
         )

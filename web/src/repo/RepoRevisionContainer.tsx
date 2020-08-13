@@ -38,7 +38,6 @@ import { VersionContextProps } from '../../../shared/src/search/util'
 import { RevisionSpec } from '../../../shared/src/util/url'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 import { UpdateBreadcrumbsProps } from '../components/Breadcrumbs'
-import { flow } from 'lodash'
 
 /** Props passed to sub-routes of {@link RepoRevisionContainer}. */
 export interface RepoRevisionContainerContext
@@ -128,7 +127,12 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
                             props.resolvedRevisionOrError.defaultBranch ||
                             'HEAD'}
                     </span>
-                    <button type="button" id="repo-revision-popover" className="btn btn-link px-0">
+                    <button
+                        type="button"
+                        id="repo-revision-popover"
+                        className="btn btn-link px-0"
+                        aria-label="Change revision"
+                    >
                         <MenuDownIcon className="icon-inline" />
                     </button>
                     <UncontrolledPopover placement="bottom-start" target="repo-revision-popover" trigger="legacy">
