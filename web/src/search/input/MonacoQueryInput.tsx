@@ -5,7 +5,7 @@ import { isPlainObject } from 'lodash'
 import { MonacoEditor } from '../../components/MonacoEditor'
 import { QueryState } from '../helpers'
 import { getProviders } from '../../../../shared/src/search/parser/providers'
-import { Subscription, Observable, Subject, Unsubscribable } from 'rxjs'
+import { Subscription, Observable, Subject, Unsubscribable, ReplaySubject } from 'rxjs'
 import { fetchSuggestions } from '../backend'
 import { map, distinctUntilChanged, publishReplay, refCount, filter, switchMap, withLatestFrom } from 'rxjs/operators'
 import { Omit } from 'utility-types'
@@ -120,25 +120,19 @@ const hasKeybindingService = (
  * to avoid bundling the Monaco editor on every page.
  */
 export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps> {
-    private componentUpdates = new Subject<MonacoQueryInputProps>()
+    private componentUpdates = new ReplaySubject<MonacoQueryInputProps>(1)
     private searchQueries = this.componentUpdates.pipe(
         map(({ queryState }) => queryState.query),
-        distinctUntilChanged(),
-        publishReplay(1),
-        refCount()
+        distinctUntilChanged()
     )
     private patternTypes = this.componentUpdates.pipe(
         map(({ patternType }) => patternType),
-        distinctUntilChanged(),
-        publishReplay(1),
-        refCount()
+        distinctUntilChanged()
     )
 
     private globbing = this.componentUpdates.pipe(
         map(({ globbing }) => globbing),
-        distinctUntilChanged(),
-        publishReplay(1),
-        refCount()
+        distinctUntilChanged()
     )
     private containerRefs = new Subject<HTMLElement | null>()
     private editorRefs = new Subject<Monaco.editor.IStandaloneCodeEditor | null>()
