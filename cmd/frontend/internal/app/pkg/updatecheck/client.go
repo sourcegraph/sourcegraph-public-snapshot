@@ -31,16 +31,6 @@ import (
 // metricsRecorder records operational metrics for methods.
 var metricsRecorder = metrics.NewOperationMetrics(prometheus.DefaultRegisterer, "updatecheck_client", metrics.WithLabels("method"))
 
-//
-var updateCheckHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
-	Name: "update_check_req",
-	Help: "metrics for update_check",
-})
-
-func init() {
-	prometheus.MustRegister(updateCheckHistogram)
-}
-
 // Status of the check for software updates for Sourcegraph.
 type Status struct {
 	Date          time.Time // the time that the last check completed
@@ -162,7 +152,7 @@ func getAndMarshalAggregatedUsageJSON(ctx context.Context) (_ json.RawMessage, _
 	return serializedCodeIntelUsage, serializedSearchUsage, nil
 }
 
-func updateURL(ctx context.Context) string {
+func updateURL() string {
 	return baseURL.String()
 }
 
@@ -299,7 +289,7 @@ func check(ctx context.Context) (*Status, error) {
 		if err != nil {
 			return "", err
 		}
-		resp, err := ctxhttp.Post(ctx, nil, updateURL(ctx), "application/json", body)
+		resp, err := ctxhttp.Post(ctx, nil, updateURL(), "application/json", body)
 		if err != nil {
 			return "", err
 		}
@@ -365,8 +355,11 @@ func Start() {
 	const delay = 30 * time.Minute
 	for {
 		ctx, cancel := context.WithTimeout(ctx, 300*time.Second)
-		_, _ = check(ctx) // updates global state on its own, can safely ignore return value
+		_, err := check(ctx) // updates global state on its own, can safely ignore return value
 		cancel()
+		if err != nil {
+			log15.Error("telemetry: updatecheck failed: ", err)
+		}
 
 		// Randomize sleep to prevent thundering herds.
 		randomDelay := time.Duration(rand.Intn(600)) * time.Second
