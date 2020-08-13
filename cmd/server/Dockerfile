@@ -47,7 +47,7 @@ COPY --from=comby/comby:0.15.0@sha256:b3b57ed810be1489ccd1ef8fa42210d87d2d396e41
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/syntect_server:ff37f90@sha256:aa93514b7bc3aaf7a4e9c92e5ff52ee5052db6fb101255a69f054e5b8cdb46ff /syntect_server /usr/local/bin/
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
-
+# hadolint ignore=DL3022
 COPY --from=redis:5-alpine@sha256:abd9d0fc18e163747253aae8d69be344c7e90d6b6d6027fa7f2f2c0e6c20b2b8 /usr/local/bin/redis-server /usr/local/bin/
 COPY --from=redis:5-alpine@sha256:abd9d0fc18e163747253aae8d69be344c7e90d6b6d6027fa7f2f2c0e6c20b2b8 /usr/local/bin/redis-cli /usr/local/bin/
 
