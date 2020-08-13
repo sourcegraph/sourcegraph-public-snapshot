@@ -108,7 +108,7 @@ require (
 	github.com/onsi/gomega v1.10.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opentracing-contrib/go-stdlib v1.0.0
-	github.com/opentracing/opentracing-go v1.1.0
+	github.com/opentracing/opentracing-go v1.2.0
 	github.com/peterbourgon/ff v1.7.0
 	github.com/peterhellberg/link v1.1.0
 	github.com/pkg/errors v0.9.1
@@ -152,7 +152,7 @@ require (
 	github.com/tinylib/msgp v1.1.2 // indirect
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80
 	github.com/uber/gonduit v0.6.1
-	github.com/uber/jaeger-client-go v2.24.0+incompatible
+	github.com/uber/jaeger-client-go v2.25.0+incompatible
 	github.com/uber/jaeger-lib v2.2.0+incompatible
 	github.com/vmihailenco/msgpack/v4 v4.3.12 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
@@ -198,7 +198,7 @@ replace (
 )
 
 // We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200729195846-c908c13fd7a9
+replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200813180605-1373c3986c6d
 
 replace github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
 
