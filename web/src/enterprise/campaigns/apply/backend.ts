@@ -199,8 +199,6 @@ export const changesetSpecFileDiffsFields = gql`
     }
 
     ${fileDiffFields}
-
-    ${diffStatFields}
 `
 
 export const queryChangesetSpecFileDiffs = ({
