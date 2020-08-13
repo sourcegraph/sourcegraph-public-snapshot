@@ -416,3 +416,13 @@ type Secret struct {
 	// Value contains the encrypted string
 	Value string
 }
+
+// Session represents the sessions table
+
+type Sesion struct {
+	// Name of the session used by gorilla & redis
+	Name string
+
+	// ID of the user the session is associated with
+	UserID int32
+}

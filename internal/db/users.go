@@ -24,7 +24,7 @@ import (
 
 // users provides access to the `users` table.
 //
-// For a detailed overview of the schema, see schema.txt.
+// For a detailed overview of the schema, see schema.md.
 type users struct {
 	// PreCreateUser (if set) is a hook called before creating a new user in the DB by any means
 	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
