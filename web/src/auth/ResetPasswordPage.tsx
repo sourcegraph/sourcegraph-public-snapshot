@@ -11,7 +11,6 @@ import { eventLogger } from '../tracking/eventLogger'
 import { PasswordInput } from './SignInSignUpCommon'
 import { ErrorAlert } from '../components/alerts'
 import * as H from 'history'
-import { await } from 'signale'
 
 interface ResetPasswordInitFormState {
     /** The user's email input value. */
