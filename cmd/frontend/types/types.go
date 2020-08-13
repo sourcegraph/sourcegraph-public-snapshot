@@ -393,11 +393,11 @@ type GrowthStatistics struct {
 // SavedSearches represents the total number of saved searches, users
 // using saved searches, and usage of saved searches.
 type SavedSearches struct {
-	totalSavedSearches     	int32
-	uniqueUsers     		int32
-	notificationsSent 		int32
-	notificationsClicked    int32
-	uniqueUserPageViews    	int32
+	TotalSavedSearches     	int32
+	UniqueUsers     		int32
+	NotificationsSent 		int32
+	NotificationsClicked    int32
+	UniqueUserPageViews    	int32
 }
 
 // Secret represents the secrets table
