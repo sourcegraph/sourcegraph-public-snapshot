@@ -815,33 +815,45 @@ func dedupOperands(operands []query.Node) int {
 // each expression, and if the intersection does not yield N results, and is not
 // exhaustive for every expression, we rerun the search by doubling count again.
 func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []query.Node, operands []query.Node) (*SearchResultsResolver, error) {
+	start := time.Now()
+
 	if len(operands) == 0 {
 		return nil, nil
 	}
 
-	var err error
-	var result *SearchResultsResolver
-	var new *SearchResultsResolver
+	var (
+		err        error
+		result     *SearchResultsResolver
+		termResult *SearchResultsResolver
+	)
 
 	// The number of results we want. Note that for intersect, this number
 	// corresponds to documents, not line matches. By default, we ask for at
 	// least 5 documents to fill the result page.
 	want := 5
-	averageOverlap := 0.10 // this has to be inferred from live traffic
-	maxTryCount := 20000   // When we retry, cap the max search results we request for each expression if search continues to not be exhaustive. Alert if exceeded.
+	// The fraction of file matches two terms share on average
+	averageIntersection := 0.10
+	// When we retry, cap the max search results we request for each expression
+	// if search continues to not be exhaustive. Alert if exceeded.
+	maxTryCount := 20000
 
 	i := dedupOperands(operands)
 	operands = operands[:i]
 
-	// TODO: check that timeout is respected
-	// TODO: wall time for request does not make sense
+	// Set an overall timeout in addition to the timeouts that are set for leaf-requests.
+	ctx, cancel, err := r.withTimeout(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer cancel()
 
+	// Set count: if not specified.
 	var countStr string
 	query.VisitField(scopeParameters, "count", func(value string, _ bool, _ query.Annotation) {
 		countStr = value
 	})
 	if countStr != "" {
-		// Override the value of count, if specified.
+		// Override "want" if count is specified.
 		want, _ = strconv.Atoi(countStr) // Invariant: count is validated.
 	} else {
 		scopeParameters = append(scopeParameters, query.Parameter{
@@ -850,8 +862,8 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 		})
 	}
 
-	// the tryCount starts small but grows exponentially with the number of operands (capped at maxTryCount)
-	tryCount := int(math.Floor(float64(want) / math.Pow(averageOverlap, float64(len(operands)-1))))
+	// tryCount starts small but grows exponentially with the number of operands. It is capped at maxTryCount.
+	tryCount := int(math.Floor(float64(want) / math.Pow(averageIntersection, float64(len(operands)-1))))
 	if tryCount > maxTryCount {
 		tryCount = maxTryCount
 	}
@@ -874,13 +886,22 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 		}
 		exhausted = !result.limitHit
 		for _, term := range operands[1:] {
-			new, err = r.evaluatePatternExpression(ctx, scopeParameters, term)
+			// check if we exceed the overall time limit before running the next query.
+			select {
+			case <-ctx.Done():
+				usedTime := time.Since(start)
+				suggestTime := longer(2, usedTime)
+				return alertForTimeout(usedTime, suggestTime, r).wrap(), nil
+			default:
+			}
+
+			termResult, err = r.evaluatePatternExpression(ctx, scopeParameters, term)
 			if err != nil {
 				return nil, err
 			}
-			if new != nil {
-				exhausted = exhausted && !new.limitHit
-				result = intersect(result, new)
+			if termResult != nil {
+				exhausted = exhausted && !termResult.limitHit
+				result = intersect(result, termResult)
 			}
 		}
 		if exhausted {
