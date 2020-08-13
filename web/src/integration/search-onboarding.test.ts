@@ -18,4 +18,6 @@ describe('Search onboarding', () => {
     })
     saveScreenshotsUponFailures(() => driver.page)
     afterEach(() => testContext?.dispose())
+
+    describe('Onboarding works')
 })
