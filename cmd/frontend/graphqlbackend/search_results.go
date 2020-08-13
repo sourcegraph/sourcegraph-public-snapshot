@@ -817,9 +817,9 @@ func dedupePatternOperands(operands []query.Node) int {
 // and then intersects those results that are in the same repo/file path. To
 // collect N results for count:N, we need to opportunistically ask for more than
 // N results for each subexpression (since intersect can never yield more than N,
-// and likely yields fewer than N results). Thus, we perform a search of 2*N for
-// each expression, and if the intersection does not yield N results, and is not
-// exhaustive for every expression, we rerun the search by doubling count again.
+// and likely yields fewer than N results). If the intersection does not yield N
+// results, and is not exhaustive for every expression, we rerun the search by
+// doubling count again.
 func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []query.Node, operands []query.Node) (*SearchResultsResolver, error) {
 	start := time.Now()
 
