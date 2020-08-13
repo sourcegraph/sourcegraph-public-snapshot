@@ -97,13 +97,26 @@ func quickGitserverRepo(ctx context.Context, repo api.RepoName, serviceType stri
 // hasGitHubDotComToken reports whether there are any personal access tokens configured for
 // github.com.
 func hasGitHubDotComToken(ctx context.Context) (hasToken bool, _ error) {
-	return hasToken, db.ExternalServices.ListPaginate(ctx, db.ExternalServicesListOptions{
+	opt := db.ExternalServicesListOptions{
 		Kinds: []string{extsvc.KindGitHub},
-	}, func(svcs []*types.ExternalService) error {
+		LimitOffset: &db.LimitOffset{
+			Limit: 500, // The number is randomly chosen
+		},
+	}
+	for {
+		svcs, err := db.ExternalServices.List(ctx, opt)
+		if err != nil {
+			return false, errors.Wrap(err, "list")
+		}
+		if len(svcs) == 0 {
+			break // No more results, exiting
+		}
+		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
+
 		for _, svc := range svcs {
 			cfg, err := extsvc.ParseConfig(svc.Kind, svc.Config)
 			if err != nil {
-				return errors.Wrap(err, "parse config")
+				return false, errors.Wrap(err, "parse config")
 			}
 
 			var conn *schema.GitHubConnection
@@ -111,7 +124,7 @@ func hasGitHubDotComToken(ctx context.Context) (hasToken bool, _ error) {
 			case *schema.GitHubConnection:
 				conn = c
 			default:
-				return errors.Errorf("want *schema.GitHubConnection but got %T", cfg)
+				return false, errors.Errorf("want *schema.GitHubConnection but got %T", cfg)
 			}
 
 			u, err := url.Parse(conn.Url)
@@ -120,24 +133,40 @@ func hasGitHubDotComToken(ctx context.Context) (hasToken bool, _ error) {
 			}
 			hostname := strings.ToLower(u.Hostname())
 			if (hostname == "github.com" || hostname == "api.github.com") && conn.Token != "" {
-				hasToken = true
-				return db.ErrStopIteratingExternalServices
+				return true, nil
 			}
 		}
-		return nil
-	})
+
+		if len(svcs) < opt.Limit {
+			break // Less results than limit means we've reached end
+		}
+	}
+	return false, nil
 }
 
 // hasGitLabDotComToken reports whether there are any personal access tokens configured for
 // github.com.
-func hasGitLabDotComToken(ctx context.Context) (hasToken bool, _ error) {
-	return hasToken, db.ExternalServices.ListPaginate(ctx, db.ExternalServicesListOptions{
+func hasGitLabDotComToken(ctx context.Context) (bool, error) {
+	opt := db.ExternalServicesListOptions{
 		Kinds: []string{extsvc.KindGitLab},
-	}, func(svcs []*types.ExternalService) error {
+		LimitOffset: &db.LimitOffset{
+			Limit: 500, // The number is randomly chosen
+		},
+	}
+	for {
+		svcs, err := db.ExternalServices.List(ctx, opt)
+		if err != nil {
+			return false, errors.Wrap(err, "list")
+		}
+		if len(svcs) == 0 {
+			break // No more results, exiting
+		}
+		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
+
 		for _, svc := range svcs {
 			cfg, err := extsvc.ParseConfig(svc.Kind, svc.Config)
 			if err != nil {
-				return errors.Wrap(err, "parse config")
+				return false, errors.Wrap(err, "parse config")
 			}
 
 			var conn *schema.GitLabConnection
@@ -145,7 +174,7 @@ func hasGitLabDotComToken(ctx context.Context) (hasToken bool, _ error) {
 			case *schema.GitLabConnection:
 				conn = c
 			default:
-				return errors.Errorf("want *schema.GitLabConnection but got %T", cfg)
+				return false, errors.Errorf("want *schema.GitLabConnection but got %T", cfg)
 			}
 
 			u, err := url.Parse(conn.Url)
@@ -154,12 +183,15 @@ func hasGitLabDotComToken(ctx context.Context) (hasToken bool, _ error) {
 			}
 			hostname := strings.ToLower(u.Hostname())
 			if hostname == "gitlab.com" && conn.Token != "" {
-				hasToken = true
-				return db.ErrStopIteratingExternalServices
+				return true, nil
 			}
 		}
-		return nil
-	})
+
+		if len(svcs) < opt.Limit {
+			break // Less results than limit means we've reached end
+		}
+	}
+	return false, nil
 }
 
 // ResolveRev will return the absolute commit for a commit-ish spec in a repo.

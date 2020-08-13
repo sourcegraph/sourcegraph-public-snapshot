@@ -258,9 +258,22 @@ func (e *ExternalServicesStore) validateDuplicateRateLimits(ctx context.Context,
 	}
 
 	baseURL := rlc.BaseURL
-	return e.ListPaginate(ctx, ExternalServicesListOptions{
+	opt := ExternalServicesListOptions{
 		Kinds: []string{kind},
-	}, func(svcs []*types.ExternalService) error {
+		LimitOffset: &LimitOffset{
+			Limit: 500, // The number is randomly chosen
+		},
+	}
+	for {
+		svcs, err := e.List(ctx, opt)
+		if err != nil {
+			return errors.Wrap(err, "list")
+		}
+		if len(svcs) == 0 {
+			break // No more results, exiting
+		}
+		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
+
 		for _, svc := range svcs {
 			rlc, err := extsvc.ExtractRateLimitConfig(svc.Config, svc.Kind, svc.DisplayName)
 			if err != nil {
@@ -270,8 +283,12 @@ func (e *ExternalServicesStore) validateDuplicateRateLimits(ctx context.Context,
 				return fmt.Errorf("existing external service, %q, already has a rate limit set", rlc.DisplayName)
 			}
 		}
-		return nil
-	})
+
+		if len(svcs) < opt.Limit {
+			break // Less results than limit means we've reached end
+		}
+	}
+	return nil
 }
 
 // Create creates a external service.
@@ -426,49 +443,6 @@ func (e *ExternalServicesStore) List(ctx context.Context, opt ExternalServicesLi
 		return Mocks.ExternalServices.List(opt)
 	}
 	return e.list(ctx, opt.sqlConditions(), opt.LimitOffset)
-}
-
-var ErrStopIteratingExternalServices = errors.New("stop iterating external services")
-
-// ListPaginate iterates over external services under given namespace.
-// If no namespace is given, it returns all external services. It stops
-// iterating when the `iterator` returns ErrStopIteratingExternalServices,
-// any other error will be propagated to the caller as it is.
-//
-// 🚨 SECURITY: The caller must ensure one of the following:
-// 	- The actor is a site admin
-// 	- The opt.NamespaceUserID is same as authenticated user ID (i.e. actor.UID)
-func (e *ExternalServicesStore) ListPaginate(
-	ctx context.Context,
-	opt ExternalServicesListOptions,
-	iterator func(svcs []*types.ExternalService) error) error {
-	if opt.LimitOffset == nil {
-		opt.LimitOffset = &LimitOffset{
-			Limit: 500, // The number is randomly chosen
-		}
-	}
-	for {
-		svcs, err := e.List(ctx, opt)
-		if err != nil {
-			return errors.Wrap(err, "list")
-		}
-		if len(svcs) == 0 {
-			break // No more results, exiting
-		}
-		opt.AfterID = svcs[len(svcs)-1].ID
-
-		err = iterator(svcs)
-		if err == ErrStopIteratingExternalServices {
-			break
-		} else if err != nil {
-			return err
-		}
-
-		if len(svcs) < opt.Limit {
-			break // Less results than limit means we've reached end
-		}
-	}
-	return nil
 }
 
 // DistinctKinds returns the distinct list of external services kinds that are stored in the database.
