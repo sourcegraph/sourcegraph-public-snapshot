@@ -789,8 +789,8 @@ func intersect(left, right *SearchResultsResolver) *SearchResultsResolver {
 	return intersectMerge(left, right)
 }
 
-// dedupePatternOperands removes duplicate query.Pattern operands from []query.Node.
-// The relative order of operands is preserved.
+// dedupePatternOperands removes duplicate query.Pattern nodes in-place.
+// The relative order of nodes is preserved.
 func dedupePatternOperands(operands []query.Node) int {
 	s := make(map[query.Pattern]struct{}, len(operands))
 	i := 0
