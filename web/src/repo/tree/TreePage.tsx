@@ -190,10 +190,9 @@ export const TreePage: React.FunctionComponent<Props> = ({
         }
     }, [filePath])
 
-    useEffect(
-        () =>
-            filePath &&
-            setBreadcrumb(
+    useEffect(() => {
+        if (filePath) {
+            return setBreadcrumb(
                 'treePath',
                 <FilePathBreadcrumb
                     key="path"
@@ -202,9 +201,9 @@ export const TreePage: React.FunctionComponent<Props> = ({
                     filePath={filePath}
                     isDir={true}
                 />
-            ),
-        [repoName, revision, filePath, setBreadcrumb]
-    )
+            )
+        }
+    }, [repoName, revision, filePath, setBreadcrumb])
 
     const [showOlderCommits, setShowOlderCommits] = useState(false)
 

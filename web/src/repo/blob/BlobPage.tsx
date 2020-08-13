@@ -113,10 +113,9 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
         eventLogger.logViewEvent('Blob')
     }, [repoName, commitID, filePath, isLightTheme, renderMode])
 
-    useEffect(
-        () =>
-            filePath &&
-            setBreadcrumb(
+    useEffect(() => {
+        if (filePath) {
+            return setBreadcrumb(
                 'filePath',
                 <FilePathBreadcrumb
                     key="path"
@@ -125,9 +124,9 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                     filePath={filePath}
                     isDir={false}
                 />
-            ),
-        [filePath, revision, repoName, setBreadcrumb]
-    )
+            )
+        }
+    }, [filePath, revision, repoName, setBreadcrumb])
 
     const [nextFetchWithDisabledTimeout, blobOrError] = useEventObservable(
         useCallback(

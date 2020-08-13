@@ -47,6 +47,7 @@ import { VersionContextProps } from '../../../shared/src/search/util'
 import { UpdateBreadcrumbsProps, useBreadcrumbs } from '../components/Breadcrumbs'
 import { useObservable, useEventObservable } from '../../../shared/src/util/useObservable'
 import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
+import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -279,6 +280,23 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
     return (
         <div className="repo-container test-repo-container w-100 d-flex flex-column">
+            <RepoHeaderContributionPortal
+                position="right"
+                priority={2}
+                element={
+                    <GoToCodeHostAction
+                        key="go-to-code-host"
+                        repo={repoOrError}
+                        // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
+                        revision={rawRevision || repoOrError.defaultBranch?.displayName || 'HEAD'}
+                        filePath={filePath}
+                        commitRange={commitRange}
+                        position={position}
+                        range={range}
+                        externalLinks={externalLinks}
+                    />
+                }
+            />
             <RepoHeader
                 {...props}
                 actionButtons={props.repoHeaderActionButtons}
@@ -288,25 +306,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 breadcrumbs={breadcrumbs}
                 setBreadcrumb={setBreadcrumb}
                 onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
-                contributions={[
-                    {
-                        position: 'right',
-                        priority: 2,
-                        element: (
-                            <GoToCodeHostAction
-                                key="go-to-code-host"
-                                repo={repoOrError}
-                                // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
-                                revision={rawRevision || repoOrError.defaultBranch?.displayName || 'HEAD'}
-                                filePath={filePath}
-                                commitRange={commitRange}
-                                position={position}
-                                range={range}
-                                externalLinks={externalLinks}
-                            />
-                        ),
-                    },
-                ]}
             />
             <ErrorBoundary location={props.location}>
                 <Switch>
