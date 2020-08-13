@@ -43,7 +43,9 @@ export const CreateUpdateCampaignAlert: React.FunctionComponent<CreateUpdateCamp
     return (
         <>
             <div className="alert alert-info p-3 mb-3 d-flex align-items-center body-lead">
-                <span className="badge badge-info text-uppercase mb-0 mr-3">Preview</span>
+                <h2 className="m-0 mr-3">
+                    <span className="badge badge-info text-uppercase mb-0">Preview</span>
+                </h2>
                 {!campaign && (
                     <p className="mb-0 flex-grow-1">
                         This campaign is in preview mode. Click create campaign to publish it.
