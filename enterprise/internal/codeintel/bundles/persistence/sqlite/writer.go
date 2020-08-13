@@ -66,19 +66,19 @@ func (w *sqliteWriter) WriteMeta(ctx context.Context, metaData types.MetaData) e
 	return nil
 }
 
-func (w *sqliteWriter) WriteDocuments(ctx context.Context, documents map[string]types.DocumentData) error {
+func (w *sqliteWriter) WriteDocuments(ctx context.Context, documents chan persistence.KeyedDocumentData) error {
 	return batch.WriteDocuments(ctx, w.store, "documents", w.serializer, documents)
 }
 
-func (w *sqliteWriter) WriteResultChunks(ctx context.Context, resultChunks map[int]types.ResultChunkData) error {
+func (w *sqliteWriter) WriteResultChunks(ctx context.Context, resultChunks chan persistence.IndexedResultChunkData) error {
 	return batch.WriteResultChunks(ctx, w.store, "result_chunks", w.serializer, resultChunks)
 }
 
-func (w *sqliteWriter) WriteDefinitions(ctx context.Context, monikerLocations []types.MonikerLocations) error {
+func (w *sqliteWriter) WriteDefinitions(ctx context.Context, monikerLocations chan types.MonikerLocations) error {
 	return batch.WriteMonikerLocations(ctx, w.store, "definitions", w.serializer, monikerLocations)
 }
 
-func (w *sqliteWriter) WriteReferences(ctx context.Context, monikerLocations []types.MonikerLocations) error {
+func (w *sqliteWriter) WriteReferences(ctx context.Context, monikerLocations chan types.MonikerLocations) error {
 	return batch.WriteMonikerLocations(ctx, w.store, "references", w.serializer, monikerLocations)
 }
 

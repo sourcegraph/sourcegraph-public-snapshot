@@ -62,6 +62,7 @@ loop:
 
 		for repositoryID, dirtyFlag := range repositoryIDs {
 			if err := u.updater.TryUpdate(context.Background(), repositoryID, dirtyFlag); err != nil {
+				// If the error is due to the loop being shut down, just break
 				for ex := err; ex != nil; ex = errors.Unwrap(ex) {
 					if err == u.ctx.Err() {
 						break loop

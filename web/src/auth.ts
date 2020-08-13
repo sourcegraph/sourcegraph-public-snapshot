@@ -3,6 +3,7 @@ import { catchError, map, mergeMap, tap } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../shared/src/graphql/graphql'
 import * as GQL from '../../shared/src/graphql/schema'
 import { queryGraphQL } from './backend/graphql'
+import { CurrentAuthStateResult } from './graphql-operations'
 
 /**
  * Always represents the latest state of the currently authenticated user.
@@ -11,6 +12,8 @@ import { queryGraphQL } from './backend/graphql'
  * in, sign out, and account changes all require a full-page reload in the browser to take effect.
  */
 export const authenticatedUser = new ReplaySubject<GQL.IUser | null>(1)
+
+export type AuthenticatedUser = NonNullable<CurrentAuthStateResult['currentUser']>
 
 /**
  * Fetches the current user, orgs, and config state from the remote. Emits no items, completes when done.

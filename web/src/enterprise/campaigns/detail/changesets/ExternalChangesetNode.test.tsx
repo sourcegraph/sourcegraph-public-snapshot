@@ -1,22 +1,15 @@
 import * as H from 'history'
 import React from 'react'
 import { ExternalChangesetNode } from './ExternalChangesetNode'
-import {
-    ChangesetReviewState,
-    ChangesetCheckState,
-    ChangesetExternalState,
-    ChangesetReconcilerState,
-    ChangesetPublicationState,
-} from '../../../../../../shared/src/graphql/schema'
 import { Subject } from 'rxjs'
 import { shallow } from 'enzyme'
-
-jest.mock('mdi-react/AccountCheckIcon', () => 'AccountCheckIcon')
-jest.mock('mdi-react/AccountAlertIcon', () => 'AccountAlertIcon')
-jest.mock('mdi-react/AccountQuestionIcon', () => 'AccountQuestionIcon')
-jest.mock('mdi-react/SourceMergeIcon', () => 'SourceMergeIcon')
-jest.mock('mdi-react/SourcePullIcon', () => 'SourcePullIcon')
-jest.mock('mdi-react/DeleteIcon', () => 'DeleteIcon')
+import {
+    ChangesetReviewState,
+    ChangesetPublicationState,
+    ChangesetReconcilerState,
+    ChangesetExternalState,
+    ChangesetCheckState,
+} from '../../../../graphql-operations'
 
 describe('ExternalChangesetNode', () => {
     const history = H.createMemoryHistory({ keyLength: 0 })

@@ -621,17 +621,27 @@ func (c *Container) alertDescription(o Observable, alert Alert) string {
 	if alert.isEmpty() {
 		panic("never here")
 	}
+	var description string
+
+	// description based on thresholds
 	units := o.PanelOptions.unitType.short()
 	if alert.GreaterOrEqual != 0 && alert.LessOrEqual != 0 {
-		return fmt.Sprintf("%s: %v%s+ or less than %v%s %s", c.Name, alert.GreaterOrEqual, units, alert.LessOrEqual, units, o.Description)
+		description = fmt.Sprintf("%s: %v%s+ or less than %v%s %s", c.Name, alert.GreaterOrEqual, units, alert.LessOrEqual, units, o.Description)
 	} else if alert.GreaterOrEqual != 0 {
 		// e.g. "zoekt-indexserver: 20+ indexed search request errors every 5m by code"
-		return fmt.Sprintf("%s: %v%s+ %s", c.Name, alert.GreaterOrEqual, units, o.Description)
+		description = fmt.Sprintf("%s: %v%s+ %s", c.Name, alert.GreaterOrEqual, units, o.Description)
 	} else if alert.LessOrEqual != 0 {
 		// e.g. "zoekt-indexserver: less than 20 indexed search requests every 5m by code"
-		return fmt.Sprintf("%s: less than %v%s %s", c.Name, alert.LessOrEqual, units, o.Description)
+		description = fmt.Sprintf("%s: less than %v%s %s", c.Name, alert.LessOrEqual, units, o.Description)
+	} else {
+		panic(fmt.Sprintf("unable to generate description for observable %+v", o))
 	}
-	panic("never here")
+
+	// add information about "for"
+	if alert.For > 0 {
+		return fmt.Sprintf("%s for %s", description, alert.For)
+	}
+	return description
 }
 
 // promAlertsFile generates the Prometheus rules file which defines our
@@ -710,6 +720,7 @@ func (c *Container) promAlertsFile() *promRulesFile {
 							fireOnNan = "0"
 						}
 						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
+
 						// Wrap the query in max() so that if there are multiple series (e.g. per-container) they
 						// get flattened into a single one (we only support per-service alerts,
 						// not per-container/replica).
@@ -737,6 +748,7 @@ func (c *Container) promAlertsFile() *promRulesFile {
 							fireOnNan = "0"
 						}
 						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
+
 						// Wrap the query in min() so that if there are multiple series (e.g. per-container) they
 						// get flattened into a single one (we only support per-service alerts,
 						// not per-container/replica).
@@ -791,6 +803,8 @@ This document contains possible solutions for when you find alerts are firing in
 If your alert isn't mentioned here, or if the solution doesn't help, [contact us](mailto:support@sourcegraph.com)
 for assistance.
 
+To learn more about Sourcegraph's alerting, see [our alerting documentation](https://docs.sourcegraph.com/admin/observability/alerting).
+
 <!-- DO NOT EDIT: generated via: go generate ./monitoring -->
 
 `)
@@ -798,13 +812,10 @@ for assistance.
 		for _, g := range c.Groups {
 			for _, r := range g.Rows {
 				for _, o := range r {
-					if o.PossibleSolutions == "none" {
-						continue
-					}
-
-					fmt.Fprintf(&b, "# %s: %s\n\n", c.Name, o.Name)
+					fmt.Fprintf(&b, "## %s: %s\n\n", c.Name, o.Name)
 
 					fmt.Fprintf(&b, "**Descriptions:**\n")
+					var prometheusAlertNames []string
 					for _, alert := range []struct {
 						level     string
 						threshold Alert
@@ -815,14 +826,22 @@ for assistance.
 						if alert.threshold.isEmpty() {
 							continue
 						}
-						fmt.Fprintf(&b, "\n- _%s_ (`%s`)\n\n",
-							c.alertDescription(o, alert.threshold),
-							prometheusAlertName(alert.level, c.Name, o.Name))
+						fmt.Fprintf(&b, "\n- _%s_\n", c.alertDescription(o, alert.threshold))
+						prometheusAlertNames = append(prometheusAlertNames,
+							fmt.Sprintf("  \"%s\"", prometheusAlertName(alert.level, c.Name, o.Name)))
 					}
+					fmt.Fprint(&b, "\n")
 
 					fmt.Fprintf(&b, "**Possible solutions:**\n\n")
-					possibleSolutions, _ := goMarkdown(o.PossibleSolutions)
-					fmt.Fprintf(&b, "%s\n\n", possibleSolutions)
+					if o.PossibleSolutions != "none" {
+						possibleSolutions, _ := goMarkdown(o.PossibleSolutions)
+						fmt.Fprintf(&b, "%s\n", possibleSolutions)
+					}
+					// add silencing configuration as another solution
+					fmt.Fprintf(&b, "- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:\n\n")
+					fmt.Fprintf(&b, "```json\n%s\n```\n\n", fmt.Sprintf(`"observability.silenceAlerts": [
+%s
+]`, strings.Join(prometheusAlertNames, ",\n")))
 				}
 			}
 		}
@@ -857,6 +876,12 @@ func goMarkdown(m string) (string, error) {
 		}
 		m = strings.Join(lines[:len(lines)-1], "\n")
 	}
+
+	// If result is not a list, make it a list, so we can add items.
+	if !strings.HasPrefix(m, "-") && !strings.HasPrefix(m, "*") {
+		m = fmt.Sprintf("- %s", m)
+	}
+
 	return m, nil
 }
 
@@ -892,7 +917,6 @@ func main() {
 		PreciseCodeIntelWorker(),
 		PreciseCodeIntelIndexer(),
 		QueryRunner(),
-		Replacer(),
 		RepoUpdater(),
 		Searcher(),
 		Symbols(),

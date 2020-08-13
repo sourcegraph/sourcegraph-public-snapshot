@@ -462,8 +462,7 @@ func computeSingleChangesetReviewState(c *campaigns.Changeset) (s campaigns.Chan
 
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
-		// For GitHub we need to use `ChangesetEvents.ReviewState`
-		log15.Warn("Changeset.ReviewState() called, but GitHub review state is calculated through ChangesetEvents.ReviewState", "changeset", c)
+		// For GitHub we need to use `ChangesetEvents.ReviewState`.
 		return campaigns.ChangesetReviewStatePending, nil
 
 	case *bitbucketserver.PullRequest:
@@ -645,6 +644,7 @@ func ComputeLabels(c *campaigns.Changeset, events ChangesetEvents) []campaigns.C
 				delete(set, e.Label.Name)
 				continue
 			}
+
 			set[e.Label.Name] = campaigns.ChangesetLabel{
 				Name:        e.Label.Name,
 				Color:       e.Label.Color,

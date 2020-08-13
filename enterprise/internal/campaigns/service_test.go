@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -141,12 +142,20 @@ func TestServicePermissionLevels(t *testing.T) {
 			currentUserCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
 
 			t.Run("EnqueueChangesetSync", func(t *testing.T) {
+				// The cases that don't result in auth errors will fall through
+				// to call repoupdater.EnqueueChangesetSync, so we need to
+				// ensure we mock that call to avoid unexpected network calls.
+				repoupdater.MockEnqueueChangesetSync = func(ctx context.Context, ids []int64) error {
+					return nil
+				}
+				t.Cleanup(func() { repoupdater.MockEnqueueChangesetSync = nil })
+
 				err := svc.EnqueueChangesetSync(currentUserCtx, changeset.ID)
 				tc.assertFunc(t, err)
 			})
 
 			t.Run("CloseCampaign", func(t *testing.T) {
-				_, err := svc.CloseCampaign(currentUserCtx, campaign.ID, false)
+				_, err := svc.CloseCampaign(currentUserCtx, campaign.ID, false, false)
 				tc.assertFunc(t, err)
 			})
 
@@ -181,12 +190,6 @@ func TestService(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	now := time.Now().UTC().Truncate(time.Microsecond)
-	clock := func() time.Time {
-		return now.UTC().Truncate(time.Microsecond)
-	}
-	cf := httpcli.NewExternalHTTPClientFactory()
-
 	admin := createTestUser(ctx, t)
 	if !admin.SiteAdmin {
 		t.Fatal("admin is not a site-admin")
@@ -197,103 +200,108 @@ func TestService(t *testing.T) {
 		t.Fatal("user is admin, want non-admin")
 	}
 
-	store := NewStoreWithClock(dbconn.Global, clock)
+	store := NewStore(dbconn.Global)
+	rs, _ := createTestRepos(t, ctx, dbconn.Global, 4)
 
-	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	fakeSource := &ct.FakeChangesetSource{}
+	sourcer := repos.NewFakeSourcer(nil, fakeSource)
 
-	ext := &repos.ExternalService{
-		Kind:        extsvc.TypeGitHub,
-		DisplayName: "GitHub",
-		Config: marshalJSON(t, &schema.GitHubConnection{
-			Url:   "https://github.com",
-			Token: "SECRETTOKEN",
-		}),
-	}
-	if err := reposStore.UpsertExternalServices(ctx, ext); err != nil {
-		t.Fatal(err)
-	}
-
-	var rs []*repos.Repo
-	for i := 0; i < 4; i++ {
-		r := testRepo(i, extsvc.TypeGitHub)
-		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
-
-		rs = append(rs, r)
-	}
-
-	awsCodeCommitRepoID := 4
-	{
-		r := testRepo(awsCodeCommitRepoID, extsvc.TypeAWSCodeCommit)
-		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
-		rs = append(rs, r)
-	}
-
-	err := reposStore.UpsertRepos(ctx, rs...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Run("CreateCampaign", func(t *testing.T) {
-		campaign := testCampaign(admin.ID)
-		svc := NewServiceWithClock(store, cf, clock)
-
-		err = svc.CreateCampaign(ctx, campaign)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		_, err = store.GetCampaign(ctx, GetCampaignOpts{ID: campaign.ID})
-		if err != nil {
-			t.Fatal(err)
-		}
-	})
+	svc := NewService(store, nil)
+	svc.sourcer = sourcer
 
 	t.Run("DeleteCampaign", func(t *testing.T) {
 		campaign := testCampaign(admin.ID)
-
-		svc := NewServiceWithClock(store, cf, clock)
-
-		if err = svc.CreateCampaign(ctx, campaign); err != nil {
+		if err := store.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
 		if err := svc.DeleteCampaign(ctx, campaign.ID); err != nil {
 			t.Fatalf("campaign not deleted: %s", err)
 		}
+
+		_, err := store.GetCampaign(ctx, GetCampaignOpts{ID: campaign.ID})
+		if err != nil && err != ErrNoResults {
+			t.Fatalf("want campaign to be deleted, but was not: %e", err)
+		}
 	})
 
 	t.Run("CloseCampaign", func(t *testing.T) {
-		campaign := testCampaign(admin.ID)
-
-		svc := NewServiceWithClock(store, cf, clock)
-
-		if err = svc.CreateCampaign(ctx, campaign); err != nil {
-			t.Fatal(err)
+		// After close, the changesets will be synced, so we need to mock that operation.
+		state := ct.MockChangesetSyncState(&protocol.RepoInfo{
+			Name: api.RepoName(rs[0].Name),
+			VCS:  protocol.VCSInfo{URL: rs[0].URI},
+		})
+		defer state.Unmock()
+		createCampaign := func(t *testing.T) *campaigns.Campaign {
+			t.Helper()
+			campaign := testCampaign(admin.ID)
+			if err := store.CreateCampaign(ctx, campaign); err != nil {
+				t.Fatal(err)
+			}
+			return campaign
 		}
 
-		campaign, err = svc.CloseCampaign(ctx, campaign.ID, true)
-		if err != nil {
-			t.Fatalf("campaign not closed: %s", err)
+		closeConfirm := func(t *testing.T, c *campaigns.Campaign, closeChangesets bool) {
+			t.Helper()
+
+			closedCampaign, err := svc.CloseCampaign(ctx, c.ID, closeChangesets, false)
+			if err != nil {
+				t.Fatalf("campaign not closed: %s", err)
+			}
+			if closedCampaign.ClosedAt.IsZero() {
+				t.Fatalf("campaign ClosedAt is zero")
+			}
 		}
-		if campaign.ClosedAt.IsZero() {
-			t.Fatalf("campaign ClosedAt is zero")
-		}
+
+		t.Run("no changesets", func(t *testing.T) {
+			campaign := createCampaign(t)
+			closeConfirm(t, campaign, false)
+		})
+
+		t.Run("processing changesets", func(t *testing.T) {
+			campaign := createCampaign(t)
+
+			changeset := testChangeset(rs[0].ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
+			changeset.ReconcilerState = campaigns.ReconcilerStateProcessing
+			if err := store.CreateChangeset(ctx, changeset); err != nil {
+				t.Fatal(err)
+			}
+
+			// should fail
+			_, err := svc.CloseCampaign(ctx, campaign.ID, true, false)
+			if err != ErrCloseProcessingCampaign {
+				t.Fatalf("CloseCampaign returned unexpected error: %s", err)
+			}
+
+			// without trying to close changesets, it should succeed:
+			closeConfirm(t, campaign, false)
+		})
+
+		t.Run("non-processing changesets", func(t *testing.T) {
+			campaign := createCampaign(t)
+
+			changeset := testChangeset(rs[0].ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
+			changeset.ReconcilerState = campaigns.ReconcilerStateCompleted
+			if err := store.CreateChangeset(ctx, changeset); err != nil {
+				t.Fatal(err)
+			}
+
+			closeConfirm(t, campaign, true)
+		})
 	})
 
 	t.Run("EnqueueChangesetSync", func(t *testing.T) {
-		svc := NewServiceWithClock(store, cf, clock)
-
 		campaign := testCampaign(admin.ID)
-		if err = store.CreateCampaign(ctx, campaign); err != nil {
+		if err := store.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
 
 		changeset := testChangeset(rs[0].ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
-		if err = store.CreateChangeset(ctx, changeset); err != nil {
+		if err := store.CreateChangeset(ctx, changeset); err != nil {
 			t.Fatal(err)
 		}
 
 		campaign.ChangesetIDs = []int64{changeset.ID}
-		if err = store.UpdateCampaign(ctx, campaign); err != nil {
+		if err := store.UpdateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
 
@@ -325,12 +333,19 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CloseOpenChangesets", func(t *testing.T) {
+		// After close, the changesets will be synced, so we need to mock that operation.
+		state := ct.MockChangesetSyncState(&protocol.RepoInfo{
+			Name: api.RepoName(rs[0].Name),
+			VCS:  protocol.VCSInfo{URL: rs[0].URI},
+		})
+		defer state.Unmock()
+
 		changeset1 := testChangeset(rs[0].ID, 0, campaigns.ChangesetExternalStateOpen)
-		if err = store.CreateChangeset(ctx, changeset1); err != nil {
+		if err := store.CreateChangeset(ctx, changeset1); err != nil {
 			t.Fatal(err)
 		}
 		changeset2 := testChangeset(rs[1].ID, 0, campaigns.ChangesetExternalStateOpen)
-		if err = store.CreateChangeset(ctx, changeset2); err != nil {
+		if err := store.CreateChangeset(ctx, changeset2); err != nil {
 			t.Fatal(err)
 		}
 
@@ -340,7 +355,7 @@ func TestService(t *testing.T) {
 		fakeSource := &ct.FakeChangesetSource{Err: nil}
 		sourcer := repos.NewFakeSourcer(nil, fakeSource)
 
-		svc := NewServiceWithClock(store, cf, clock)
+		svc := NewService(store, nil)
 		svc.sourcer = sourcer
 
 		// Try to close open changesets
@@ -360,8 +375,6 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CreateCampaignSpec", func(t *testing.T) {
-		svc := NewServiceWithClock(store, cf, clock)
-
 		changesetSpecs := make([]*campaigns.ChangesetSpec, 0, len(rs))
 		changesetSpecRandIDs := make([]string, 0, len(rs))
 		for _, r := range rs {
@@ -522,11 +535,34 @@ func TestService(t *testing.T) {
 				t.Fatalf("expected no error but got %s", err)
 			}
 		})
+
+		t.Run("no side-effects if no changeset spec IDs are given", func(t *testing.T) {
+			// We already have ChangesetSpecs in the database. Here we
+			// want to make sure that the new CampaignSpec is created,
+			// without accidently attaching the existing ChangesetSpecs.
+			opts := CreateCampaignSpecOpts{
+				NamespaceUserID:      admin.ID,
+				RawSpec:              ct.TestRawCampaignSpec,
+				ChangesetSpecRandIDs: []string{},
+			}
+
+			spec, err := svc.CreateCampaignSpec(adminCtx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			countOpts := CountChangesetSpecsOpts{CampaignSpecID: spec.ID}
+			count, err := store.CountChangesetSpecs(adminCtx, countOpts)
+			if err != nil {
+				return
+			}
+			if count != 0 {
+				t.Fatalf("want no changeset specs attached to campaign spec, but have %d", count)
+			}
+		})
 	})
 
 	t.Run("CreateChangesetSpec", func(t *testing.T) {
-		svc := NewServiceWithClock(store, cf, clock)
-
 		repo := rs[0]
 		rawSpec := ct.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo.ID), "d34db33f")
 
@@ -589,16 +625,14 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("MoveCampaign", func(t *testing.T) {
-		svc := NewServiceWithClock(store, cf, clock)
-
 		createCampaign := func(t *testing.T, name string, authorID, userID, orgID int32) *campaigns.Campaign {
 			t.Helper()
 
 			c := &campaigns.Campaign{
-				AuthorID:        authorID,
-				NamespaceUserID: userID,
-				NamespaceOrgID:  orgID,
-				Name:            name,
+				InitialApplierID: authorID,
+				NamespaceUserID:  userID,
+				NamespaceOrgID:   orgID,
+				Name:             name,
 			}
 
 			if err := store.CreateCampaign(ctx, c); err != nil {
@@ -696,6 +730,41 @@ func TestService(t *testing.T) {
 			}
 		})
 	})
+
+	t.Run("GetCampaignMatchingCampaignSpec", func(t *testing.T) {
+		campaignSpec := createCampaignSpec(t, ctx, store, "matching-campaign-spec", admin.ID)
+
+		haveCampaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, store, campaignSpec)
+		if err != nil {
+			t.Fatalf("unexpected error: %s\n", err)
+		}
+		if haveCampaign != nil {
+			t.Fatalf("expected campaign to be nil, but is not: %+v\n", haveCampaign)
+		}
+
+		matchingCampaign := &campaigns.Campaign{
+			Name:             campaignSpec.Spec.Name,
+			Description:      campaignSpec.Spec.Description,
+			InitialApplierID: admin.ID,
+			NamespaceOrgID:   campaignSpec.NamespaceOrgID,
+			NamespaceUserID:  campaignSpec.NamespaceUserID,
+		}
+		if err := store.CreateCampaign(ctx, matchingCampaign); err != nil {
+			t.Fatalf("failed to create campaign: %s\n", err)
+		}
+
+		haveCampaign, err = svc.GetCampaignMatchingCampaignSpec(ctx, store, campaignSpec)
+		if err != nil {
+			t.Fatalf("unexpected error: %s\n", err)
+		}
+		if haveCampaign == nil {
+			t.Fatalf("expected to have matching campaign, but got nil")
+		}
+
+		if diff := cmp.Diff(matchingCampaign, haveCampaign); diff != "" {
+			t.Fatalf("wrong campaign was matched (-want +got):\n%s", diff)
+		}
+	})
 }
 
 func TestServiceApplyCampaign(t *testing.T) {
@@ -710,6 +779,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 	if !admin.SiteAdmin {
 		t.Fatal("admin is not a site-admin")
 	}
+	adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
 
 	user := createTestUser(ctx, t)
 	if user.SiteAdmin {
@@ -718,13 +788,17 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 	repos, _ := createTestRepos(t, ctx, dbconn.Global, 4)
 
-	store := NewStore(dbconn.Global)
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	clock := func() time.Time {
+		return now.UTC().Truncate(time.Microsecond)
+	}
+	store := NewStoreWithClock(dbconn.Global, clock)
 	svc := NewService(store, httpcli.NewExternalHTTPClientFactory())
 
 	t.Run("campaignSpec without changesetSpecs", func(t *testing.T) {
 		t.Run("new campaign", func(t *testing.T) {
 			campaignSpec := createCampaignSpec(t, ctx, store, "campaign1", admin.ID)
-			campaign, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+			campaign, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
 				CampaignSpecRandID: campaignSpec.RandID,
 			})
 			if err != nil {
@@ -736,13 +810,14 @@ func TestServiceApplyCampaign(t *testing.T) {
 			}
 
 			want := &campaigns.Campaign{
-				Name:            campaignSpec.Spec.Name,
-				Description:     campaignSpec.Spec.Description,
-				Branch:          campaignSpec.Spec.ChangesetTemplate.Branch,
-				AuthorID:        campaignSpec.UserID,
-				ChangesetIDs:    []int64{},
-				NamespaceUserID: campaignSpec.NamespaceUserID,
-				CampaignSpecID:  campaignSpec.ID,
+				Name:             campaignSpec.Spec.Name,
+				Description:      campaignSpec.Spec.Description,
+				InitialApplierID: admin.ID,
+				LastApplierID:    admin.ID,
+				LastAppliedAt:    now,
+				ChangesetIDs:     []int64{},
+				NamespaceUserID:  campaignSpec.NamespaceUserID,
+				CampaignSpecID:   campaignSpec.ID,
 
 				// Ignore these fields
 				ID:        campaign.ID,
@@ -760,7 +835,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			campaign := createCampaign(t, ctx, store, "campaign2", admin.ID, campaignSpec.ID)
 
 			t.Run("apply same campaignSpec", func(t *testing.T) {
-				campaign2, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+				campaign2, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
 					CampaignSpecRandID: campaignSpec.RandID,
 				})
 				if err != nil {
@@ -772,9 +847,19 @@ func TestServiceApplyCampaign(t *testing.T) {
 				}
 			})
 
+			t.Run("apply same campaignSpec with FailIfExists", func(t *testing.T) {
+				_, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+					CampaignSpecRandID:   campaignSpec.RandID,
+					FailIfCampaignExists: true,
+				})
+				if err != ErrMatchingCampaignExists {
+					t.Fatalf("unexpected error. want=%s, got=%s", ErrMatchingCampaignExists, err)
+				}
+			})
+
 			t.Run("apply campaign spec with same name", func(t *testing.T) {
 				campaignSpec2 := createCampaignSpec(t, ctx, store, "campaign2", admin.ID)
-				campaign2, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+				campaign2, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
 					CampaignSpecRandID: campaignSpec2.RandID,
 				})
 				if err != nil {
@@ -786,11 +871,44 @@ func TestServiceApplyCampaign(t *testing.T) {
 				}
 			})
 
+			t.Run("apply campaign spec with same name but different current user", func(t *testing.T) {
+				campaignSpec := createCampaignSpec(t, ctx, store, "created-by-user", user.ID)
+				campaign := createCampaign(t, ctx, store, "created-by-user", user.ID, campaignSpec.ID)
+
+				if have, want := campaign.InitialApplierID, user.ID; have != want {
+					t.Fatalf("campaign InitialApplierID is wrong. want=%d, have=%d", want, have)
+				}
+
+				if have, want := campaign.LastApplierID, user.ID; have != want {
+					t.Fatalf("campaign LastApplierID is wrong. want=%d, have=%d", want, have)
+				}
+
+				campaignSpec2 := createCampaignSpec(t, ctx, store, "created-by-user", user.ID)
+				campaign2, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
+					CampaignSpecRandID: campaignSpec2.RandID,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := campaign2.ID, campaign.ID; have != want {
+					t.Fatalf("campaign ID is wrong. want=%d, have=%d", want, have)
+				}
+
+				if have, want := campaign2.InitialApplierID, campaign.InitialApplierID; have != want {
+					t.Fatalf("campaign InitialApplierID is wrong. want=%d, have=%d", want, have)
+				}
+
+				if have, want := campaign2.LastApplierID, admin.ID; have != want {
+					t.Fatalf("campaign LastApplierID is wrong. want=%d, have=%d", want, have)
+				}
+			})
+
 			t.Run("apply campaign spec with same name but different namespace", func(t *testing.T) {
 				user2 := createTestUser(ctx, t)
 				campaignSpec2 := createCampaignSpec(t, ctx, store, "campaign2", user2.ID)
 
-				campaign2, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+				campaign2, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
 					CampaignSpecRandID: campaignSpec2.RandID,
 				})
 				if err != nil {
@@ -809,7 +927,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			t.Run("campaign spec with same name and same ensureCampaignID", func(t *testing.T) {
 				campaignSpec2 := createCampaignSpec(t, ctx, store, "campaign2", admin.ID)
 
-				campaign2, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+				campaign2, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
 					CampaignSpecRandID: campaignSpec2.RandID,
 					EnsureCampaignID:   campaign.ID,
 				})
@@ -824,7 +942,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			t.Run("campaign spec with same name but different ensureCampaignID", func(t *testing.T) {
 				campaignSpec2 := createCampaignSpec(t, ctx, store, "campaign2", admin.ID)
 
-				_, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+				_, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
 					CampaignSpecRandID: campaignSpec2.RandID,
 					EnsureCampaignID:   campaign.ID + 999,
 				})
@@ -871,7 +989,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				headRef:      "refs/heads/my-branch",
 			})
 
-			campaign, cs := applyAndListChangesets(ctx, t, svc, campaignSpec.RandID, 2)
+			campaign, cs := applyAndListChangesets(adminCtx, t, svc, campaignSpec.RandID, 2)
 
 			if have, want := campaign.Name, "campaign3"; have != want {
 				t.Fatalf("wrong campaign name. want=%s, have=%s", want, have)
@@ -931,7 +1049,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			// Apply and expect 4 changesets
-			_, oldChangesets := applyAndListChangesets(ctx, t, svc, campaignSpec1.RandID, 4)
+			_, oldChangesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec1.RandID, 4)
 
 			// Now we create another campaign spec with the same campaign name
 			// and namespace.
@@ -986,7 +1104,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			verifyClosed := assertChangesetsClose(t, wantClosed)
 
 			// Apply and expect 5 changesets
-			campaign, cs := applyAndListChangesets(ctx, t, svc, campaignSpec2.RandID, 5)
+			campaign, cs := applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 5)
 
 			verifyClosed()
 
@@ -1051,7 +1169,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				headRef:      "refs/heads/repo-0-branch-0",
 			})
 
-			ownerCampaign, ownerChangesets := applyAndListChangesets(ctx, t, svc, campaignSpec1.RandID, 1)
+			ownerCampaign, ownerChangesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec1.RandID, 1)
 
 			// Now we update the changeset so it looks like it's been published
 			// on the code host.
@@ -1067,7 +1185,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				externalID:   c.ExternalID,
 			})
 
-			_, trackedChangesets := applyAndListChangesets(ctx, t, svc, campaignSpec2.RandID, 1)
+			_, trackedChangesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 1)
 			// This should still point to the owner campaign
 			c2 := trackedChangesets[0]
 			assertChangeset(t, c2, changesetAssertions{
@@ -1088,7 +1206,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			// not the owner.
 			//
 			verifyClosed := assertChangesetsClose(t)
-			applyAndListChangesets(ctx, t, svc, campaignSpec3.RandID, 0)
+			applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 0)
 			verifyClosed()
 		})
 
@@ -1103,7 +1221,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			// We apply the spec and expect 1 changeset
-			_, changesets := applyAndListChangesets(ctx, t, svc, campaignSpec1.RandID, 1)
+			_, changesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec1.RandID, 1)
 
 			// But the changeset was not published yet.
 			// And now we apply a new spec without any changesets.
@@ -1111,7 +1229,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 			// That should close no changesets, but leave the campaign with 0 changesets
 			verifyClosed := assertChangesetsClose(t)
-			applyAndListChangesets(ctx, t, svc, campaignSpec2.RandID, 0)
+			applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 0)
 			verifyClosed()
 
 			// And the unpublished changesets should be deleted
@@ -1142,7 +1260,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				headRef:      "refs/heads/my-branch",
 			})
 
-			_, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+			_, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
 				CampaignSpecRandID: campaignSpec.RandID,
 			})
 			if err == nil {
@@ -1156,6 +1274,23 @@ func TestServiceApplyCampaign(t *testing.T) {
 				t.Fatalf("wrong repository ID in RepoNotFoundErr: %d", notFoundErr.ID)
 			}
 		})
+	})
+
+	t.Run("applying to closed campaign", func(t *testing.T) {
+		campaignSpec := createCampaignSpec(t, ctx, store, "closed-campaign", admin.ID)
+		campaign := createCampaign(t, ctx, store, "closed-campaign", admin.ID, campaignSpec.ID)
+
+		campaign.ClosedAt = time.Now()
+		if err := store.UpdateCampaign(ctx, campaign); err != nil {
+			t.Fatalf("failed to update campaign: %s", err)
+		}
+
+		_, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
+			CampaignSpecRandID: campaignSpec.RandID,
+		})
+		if err != ErrApplyClosedCampaign {
+			t.Fatalf("ApplyCampaign returned unexpected error: %s", err)
+		}
 	})
 }
 
@@ -1189,9 +1324,9 @@ var createTestUser = func() func(context.Context, *testing.T) *types.User {
 
 func testCampaign(user int32) *campaigns.Campaign {
 	c := &campaigns.Campaign{
-		Name:            "test-campaign",
-		AuthorID:        user,
-		NamespaceUserID: user,
+		Name:             "test-campaign",
+		InitialApplierID: user,
+		NamespaceUserID:  user,
 	}
 
 	return c
@@ -1202,7 +1337,7 @@ func testChangeset(repoID api.RepoID, campaign int64, extState campaigns.Changes
 		RepoID:              repoID,
 		ExternalServiceType: extsvc.TypeGitHub,
 		ExternalID:          fmt.Sprintf("ext-id-%d", campaign),
-		Metadata:            &github.PullRequest{State: string(extState)},
+		Metadata:            &github.PullRequest{State: string(extState), CreatedAt: time.Now()},
 		ExternalState:       extState,
 	}
 
@@ -1217,11 +1352,13 @@ func createCampaign(t *testing.T, ctx context.Context, store *Store, name string
 	t.Helper()
 
 	c := &campaigns.Campaign{
-		AuthorID:        userID,
-		NamespaceUserID: userID,
-		CampaignSpecID:  spec,
-		Name:            name,
-		Description:     "campaign description",
+		InitialApplierID: userID,
+		LastApplierID:    userID,
+		LastAppliedAt:    store.Clock()(),
+		NamespaceUserID:  userID,
+		CampaignSpecID:   spec,
+		Name:             name,
+		Description:      "campaign description",
 	}
 
 	if err := store.CreateCampaign(ctx, c); err != nil {

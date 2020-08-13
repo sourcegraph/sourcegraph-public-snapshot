@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 func Frontend() *Container {
 	return &Container{
 		Name:        "frontend",
@@ -47,42 +49,46 @@ func Frontend() *Container {
 						{
 							Name:              "hard_timeout_search_responses",
 							Description:       "hard timeout search responses every 5m",
-							Query:             `sum(sum by (status)(increase(src_graphql_search_response{status="timeout",source="browser",name!="CodeIntelSearch"}[5m]))) + sum(sum by (status, alert_type)(increase(src_graphql_search_response{status="alert",alert_type="timed_out",source="browser",name!="CodeIntelSearch"}[5m])))`,
+							Query:             `(sum(increase(src_graphql_search_response{status="timeout",source="browser",name!="CodeIntelSearch"}[5m])) + sum(increase(src_graphql_search_response{status="alert",alert_type="timed_out",source="browser",name!="CodeIntelSearch"}[5m]))) / sum(increase(src_graphql_search_response{source="browser",name!="CodeIntelSearch"}[5m])) * 100`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 5},
-							Critical:          Alert{GreaterOrEqual: 20},
-							PanelOptions:      PanelOptions().LegendFormat("hard timeout"),
+							DataMayBeNaN:      true, // ratio denominator could be 0
+							Warning:           Alert{GreaterOrEqual: 2, For: 15 * time.Minute},
+							Critical:          Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("hard timeout").Unit(Percentage),
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						{
 							Name:              "hard_error_search_responses",
 							Description:       "hard error search responses every 5m",
-							Query:             `sum by (status)(increase(src_graphql_search_response{status=~"error",source="browser",name!="CodeIntelSearch"}[5m]))`,
+							Query:             `sum by (status)(increase(src_graphql_search_response{status=~"error",source="browser",name!="CodeIntelSearch"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{source="browser",name!="CodeIntelSearch"}[5m])) * 100`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 5},
-							Critical:          Alert{GreaterOrEqual: 20},
-							PanelOptions:      PanelOptions().LegendFormat("hard error"),
+							DataMayBeNaN:      true, // ratio denominator could be 0
+							Warning:           Alert{GreaterOrEqual: 2, For: 15 * time.Minute},
+							Critical:          Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("{{status}}").Unit(Percentage),
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						{
 							Name:              "partial_timeout_search_responses",
 							Description:       "partial timeout search responses every 5m",
-							Query:             `sum by (status)(increase(src_graphql_search_response{status="partial_timeout",source="browser",name!="CodeIntelSearch"}[5m]))`,
+							Query:             `sum by (status)(increase(src_graphql_search_response{status="partial_timeout",source="browser",name!="CodeIntelSearch"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{source="browser",name!="CodeIntelSearch"}[5m])) * 100`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 5},
-							PanelOptions:      PanelOptions().LegendFormat("partial timeout"),
+							DataMayBeNaN:      true, // ratio denominator could be 0
+							Warning:           Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("{{status}}").Unit(Percentage),
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						{
 							Name:            "search_alert_user_suggestions",
 							Description:     "search alert user suggestions shown every 5m",
-							Query:           `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out",source="browser",name!="CodeIntelSearch"}[5m]))`,
+							Query:           `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out|no_results__suggest_quotes",source="browser",name!="CodeIntelSearch"}[5m])) / ignoring(alert_type) group_left sum(increase(src_graphql_search_response{source="browser",name!="CodeIntelSearch"}[5m])) * 100`,
 							DataMayNotExist: true,
-							Warning:         Alert{GreaterOrEqual: 50},
-							PanelOptions:    PanelOptions().LegendFormat("{{alert_type}}"),
+							DataMayBeNaN:    true, // ratio denominator could be 0
+							Warning:         Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
+							PanelOptions:    PanelOptions().LegendFormat("{{alert_type}}").Unit(Percentage),
 							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
 								- This indicates your user's are making syntax errors or similar user errors.
@@ -108,7 +114,7 @@ func Frontend() *Container {
 							Description:     "90th percentile blob load latency over 10m",
 							Query:           `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route="blob"}[10m])))`,
 							DataMayNotExist: true,
-							Critical:        Alert{GreaterOrEqual: 2},
+							Critical:        Alert{GreaterOrEqual: 5},
 							PanelOptions:    PanelOptions().LegendFormat("latency").Unit(Seconds),
 							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
@@ -161,42 +167,46 @@ func Frontend() *Container {
 						{
 							Name:              "hard_timeout_search_codeintel_responses",
 							Description:       "hard timeout search code-intel responses every 5m",
-							Query:             `sum(sum by (status)(increase(src_graphql_search_response{status="timeout",source="browser",request_name="CodeIntelSearch"}[5m]))) + sum(sum by (status, alert_type)(increase(src_graphql_search_response{status="alert",alert_type="timed_out",source="browser",request_name="CodeIntelSearch"}[5m])))`,
+							Query:             `(sum(increase(src_graphql_search_response{status="timeout",source="browser",request_name="CodeIntelSearch"}[5m])) + sum(increase(src_graphql_search_response{status="alert",alert_type="timed_out",source="browser",request_name="CodeIntelSearch"}[5m]))) / sum(increase(src_graphql_search_response{source="browser",request_name="CodeIntelSearch"}[5m])) * 100`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 5},
-							Critical:          Alert{GreaterOrEqual: 20},
-							PanelOptions:      PanelOptions().LegendFormat("hard timeout"),
+							DataMayBeNaN:      true, // ratio denominator could be 0
+							Warning:           Alert{GreaterOrEqual: 2, For: 15 * time.Minute},
+							Critical:          Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("hard timeout").Unit(Percentage),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
 							Name:              "hard_error_search_codeintel_responses",
 							Description:       "hard error search code-intel responses every 5m",
-							Query:             `sum by (status)(increase(src_graphql_search_response{status=~"error",source="browser",request_name="CodeIntelSearch"}[5m]))`,
+							Query:             `sum by (status)(increase(src_graphql_search_response{status=~"error",source="browser",request_name="CodeIntelSearch"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{source="browser",request_name="CodeIntelSearch"}[5m])) * 100`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 5},
-							Critical:          Alert{GreaterOrEqual: 20},
-							PanelOptions:      PanelOptions().LegendFormat("hard error"),
+							DataMayBeNaN:      true, // ratio denominator could be 0
+							Warning:           Alert{GreaterOrEqual: 2, For: 15 * time.Minute},
+							Critical:          Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("hard error").Unit(Percentage),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
 							Name:              "partial_timeout_search_codeintel_responses",
 							Description:       "partial timeout search code-intel responses every 5m",
-							Query:             `sum by (status)(increase(src_graphql_search_response{status="partial_timeout",source="browser",request_name="CodeIntelSearch"}[5m]))`,
+							Query:             `sum by (status)(increase(src_graphql_search_response{status="partial_timeout",source="browser",request_name="CodeIntelSearch"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{status="partial_timeout",source="browser",request_name="CodeIntelSearch"}[5m])) * 100`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 5},
-							PanelOptions:      PanelOptions().LegendFormat("partial timeout"),
+							DataMayBeNaN:      true, // ratio denominator could be 0
+							Warning:           Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("partial timeout").Unit(Percentage),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
 							Name:            "search_codeintel_alert_user_suggestions",
 							Description:     "search code-intel alert user suggestions shown every 5m",
-							Query:           `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out",source="browser",request_name="CodeIntelSearch"}[5m]))`,
+							Query:           `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out",source="browser",request_name="CodeIntelSearch"}[5m])) / ignoring(alert_type) group_left sum(increase(src_graphql_search_response{source="browser",request_name="CodeIntelSearch"}[5m])) * 100`,
 							DataMayNotExist: true,
-							Warning:         Alert{GreaterOrEqual: 50},
-							PanelOptions:    PanelOptions().LegendFormat("{{alert_type}}"),
+							DataMayBeNaN:    true, // ratio denominator could be 0
+							Warning:         Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
+							PanelOptions:    PanelOptions().LegendFormat("{{alert_type}}").Unit(Percentage),
 							Owner:           ObservableOwnerCodeIntel,
 							PossibleSolutions: `
 								- This indicates a bug in Sourcegraph, please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose).
@@ -249,42 +259,46 @@ func Frontend() *Container {
 						{
 							Name:              "hard_timeout_search_api_responses",
 							Description:       "hard timeout search API responses every 5m",
-							Query:             `sum(sum by (status)(increase(src_graphql_search_response{status="timeout",source="other"}[5m]))) + sum(sum by (status, alert_type)(increase(src_graphql_search_response{status="alert",alert_type="timed_out",source="other"}[5m])))`,
+							Query:             `(sum(increase(src_graphql_search_response{status="timeout",source="other"}[5m])) + sum(increase(src_graphql_search_response{status="alert",alert_type="timed_out",source="other"}[5m]))) / sum(increase(src_graphql_search_response{source="other"}[5m])) * 100`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 5},
-							Critical:          Alert{GreaterOrEqual: 20},
-							PanelOptions:      PanelOptions().LegendFormat("hard timeout"),
+							DataMayBeNaN:      true, // ratio denominator could be 0
+							Warning:           Alert{GreaterOrEqual: 2, For: 15 * time.Minute},
+							Critical:          Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("hard timeout").Unit(Percentage),
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						{
 							Name:              "hard_error_search_api_responses",
 							Description:       "hard error search API responses every 5m",
-							Query:             `sum by (status)(increase(src_graphql_search_response{status=~"error",source="other"}[5m]))`,
+							Query:             `sum by (status)(increase(src_graphql_search_response{status=~"error",source="other"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{source="other"}[5m]))`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 5},
-							Critical:          Alert{GreaterOrEqual: 20},
-							PanelOptions:      PanelOptions().LegendFormat("hard error"),
+							DataMayBeNaN:      true, // ratio denominator could be 0
+							Warning:           Alert{GreaterOrEqual: 2, For: 15 * time.Minute},
+							Critical:          Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("{{status}}").Unit(Percentage),
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						{
 							Name:              "partial_timeout_search_api_responses",
 							Description:       "partial timeout search API responses every 5m",
-							Query:             `sum by (status)(increase(src_graphql_search_response{status="partial_timeout",source="other"}[5m]))`,
+							Query:             `sum(increase(src_graphql_search_response{status="partial_timeout",source="other"}[5m])) / sum(increase(src_graphql_search_response{source="other"}[5m]))`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 5},
-							PanelOptions:      PanelOptions().LegendFormat("partial timeout"),
+							DataMayBeNaN:      true, // ratio denominator could be 0
+							Warning:           Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("partial timeout").Unit(Percentage),
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						{
 							Name:            "search_api_alert_user_suggestions",
 							Description:     "search API alert user suggestions shown every 5m",
-							Query:           `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out|no_results__suggest_quotes",source="other"}[5m]))`,
+							Query:           `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out|no_results__suggest_quotes",source="other"}[5m])) / ignoring(alert_type) group_left sum(increase(src_graphql_search_response{status="alert",source="other"}[5m]))`,
 							DataMayNotExist: true,
-							Warning:         Alert{GreaterOrEqual: 50},
-							PanelOptions:    PanelOptions().LegendFormat("{{alert_type}}"),
+							DataMayBeNaN:    true, // ratio denominator could be 0
+							Warning:         Alert{GreaterOrEqual: 5},
+							PanelOptions:    PanelOptions().LegendFormat("{{alert_type}}").Unit(Percentage),
 							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
 								- This indicates your user's search API requests have syntax errors or a similar user error. Check the responses the API sends back for an explanation.
@@ -313,10 +327,11 @@ func Frontend() *Container {
 						{
 							Name:              "precise_code_intel_api_errors",
 							Description:       "precise code intel api errors every 5m",
-							Query:             `increase(src_code_intel_api_errors_total[5m])`,
+							Query:             `sum(increase(src_code_intel_api_errors_total[5m])) / sum(increase(src_code_intel_api_total[5m])) * 100`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 20},
-							PanelOptions:      PanelOptions().LegendFormat("api operation"),
+							DataMayBeNaN:      true, // ratio denominator could be 0
+							Warning:           Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("api operations").Unit(Percentage),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
@@ -337,10 +352,11 @@ func Frontend() *Container {
 						{
 							Name:              "precise_code_intel_store_errors",
 							Description:       "precise code intel database errors every 5m",
-							Query:             `increase(src_code_intel_store_errors_total{job="frontend"}[5m])`,
+							Query:             `sum(increase(src_code_intel_store_errors_total{job="frontend"}[5m])) / sum(increase(src_code_intel_store_total{job="frontend"}[5m])) * 100`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 20},
-							PanelOptions:      PanelOptions().LegendFormat("store operation"),
+							DataMayBeNaN:      true, // ratio denominator could be 0
+							Warning:           Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("store operations").Unit(Percentage),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
@@ -355,10 +371,11 @@ func Frontend() *Container {
 						{
 							Name:            "internal_indexed_search_error_responses",
 							Description:     "internal indexed search error responses every 5m",
-							Query:           `sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m]))`,
+							Query:           `sum by(code) (increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100`,
 							DataMayNotExist: true,
-							Warning:         Alert{GreaterOrEqual: 5},
-							PanelOptions:    PanelOptions().LegendFormat("{{code}}"),
+							DataMayBeNaN:    true, // ratio denominator could be 0
+							Warning:         Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
+							PanelOptions:    PanelOptions().LegendFormat("{{code}}").Unit(Percentage),
 							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
 								- Check the Zoekt Web Server dashboard for indications it might be unhealthy.
@@ -367,10 +384,11 @@ func Frontend() *Container {
 						{
 							Name:            "internal_unindexed_search_error_responses",
 							Description:     "internal unindexed search error responses every 5m",
-							Query:           `sum by (code)(increase(searcher_service_request_total{code!~"2.."}[5m]))`,
+							Query:           `sum by(code) (increase(searcher_service_request_total{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(searcher_service_request_total[5m])) * 100`,
 							DataMayNotExist: true,
-							Warning:         Alert{GreaterOrEqual: 5},
-							PanelOptions:    PanelOptions().LegendFormat("{{code}}"),
+							DataMayBeNaN:    true, // ratio denominator could be 0
+							Warning:         Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
+							PanelOptions:    PanelOptions().LegendFormat("{{code}}").Unit(Percentage),
 							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
 								- Check the Searcher dashboard for indications it might be unhealthy.
@@ -379,10 +397,11 @@ func Frontend() *Container {
 						{
 							Name:            "internal_api_error_responses",
 							Description:     "internal API error responses every 5m by route",
-							Query:           `sum by (category)(increase(src_frontend_internal_request_duration_seconds_count{code!~"2.."}[5m]))`,
+							Query:           `sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_frontend_internal_request_duration_seconds_count[5m])) * 100`,
 							DataMayNotExist: true,
-							Warning:         Alert{GreaterOrEqual: 25},
-							PanelOptions:    PanelOptions().LegendFormat("{{category}}"),
+							DataMayBeNaN:    true, // ratio denominator could be 0
+							Warning:         Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
+							PanelOptions:    PanelOptions().LegendFormat("{{category}}").Unit(Percentage),
 							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
 								- May not be a substantial issue, check the 'frontend' logs for potential causes.
@@ -415,10 +434,11 @@ func Frontend() *Container {
 						{
 							Name:              "precise_code_intel_bundle_manager_error_responses",
 							Description:       "precise-code-intel-bundle-manager error responses every 5m",
-							Query:             `sum by (category)(increase(src_precise_code_intel_bundle_manager_request_duration_seconds_count{job="frontend",code!~"2.."}[5m]))`,
+							Query:             `sum by(category) (increase(src_precise_code_intel_bundle_manager_request_duration_seconds_count{job="frontend",code!~"2.."}[5m]))  / ignoring(code) group_left sum by(category) (increase(src_precise_code_intel_bundle_manager_request_duration_seconds_count{job="frontend"}[5m])) * 100`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 5},
-							PanelOptions:      PanelOptions().LegendFormat("{{category}}"),
+							DataMayBeNaN:      true, // ratio denominator could be 0
+							Warning:           Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Percentage),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
@@ -438,10 +458,11 @@ func Frontend() *Container {
 						{
 							Name:              "gitserver_error_responses",
 							Description:       "gitserver error responses every 5m",
-							Query:             `sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="frontend",code!~"2.."}[5m]))`,
+							Query:             `sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="frontend",code!~"2.."}[5m])) / ignoring(code) group_left sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="frontend"}[5m])) * 100`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 5},
-							PanelOptions:      PanelOptions().LegendFormat("{{category}}"),
+							DataMayBeNaN:      true, // ratio denominator could be 0
+							Warning:           Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Percentage),
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
@@ -500,12 +521,12 @@ func Frontend() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage7d("frontend"),
-						sharedProvisioningMemoryUsage7d("frontend"),
+						sharedProvisioningCPUUsageLongTerm("frontend"),
+						sharedProvisioningMemoryUsageLongTerm("frontend"),
 					},
 					{
-						sharedProvisioningCPUUsage5m("frontend"),
-						sharedProvisioningMemoryUsage5m("frontend"),
+						sharedProvisioningCPUUsageShortTerm("frontend"),
+						sharedProvisioningMemoryUsageShortTerm("frontend"),
 					},
 				},
 			},

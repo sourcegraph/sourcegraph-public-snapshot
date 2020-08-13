@@ -1,7 +1,6 @@
 import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql, requestGraphQL } from '../../../../../shared/src/graphql/graphql'
 import { Observable } from 'rxjs'
-import { ID } from '../../../../../shared/src/graphql/schema'
 import { diffStatFields, fileDiffFields } from '../../../backend/diff'
 import {
     CampaignFields,
@@ -14,6 +13,7 @@ import {
     ExternalChangesetFileDiffsFields,
     SyncChangesetResult,
     SyncChangesetVariables,
+    Scalars,
 } from '../../../graphql-operations'
 
 const changesetCountsOverTimeFragment = gql`
@@ -33,12 +33,18 @@ const campaignFragment = gql`
         __typename
         id
         name
+        namespace {
+            namespaceName
+            url
+        }
         description
-        author {
+        initialApplier {
             username
             avatarURL
         }
-        branch
+        namespace {
+            namespaceName
+        }
         createdAt
         updatedAt
         closedAt
@@ -49,6 +55,8 @@ const campaignFragment = gql`
                 total
                 closed
                 merged
+                open
+                unpublished
             }
         }
         # TODO move to separate query and configure from/to
@@ -73,7 +81,7 @@ const changesetLabelFragment = gql`
     }
 `
 
-export const fetchCampaignById = (campaign: ID): Observable<CampaignFields | null> =>
+export const fetchCampaignById = (campaign: Scalars['ID']): Observable<CampaignFields | null> =>
     requestGraphQL<CampaignByIDResult, CampaignByIDVariables>({
         request: gql`
             query CampaignByID($campaign: ID!) {
@@ -194,7 +202,7 @@ export const queryChangesets = ({
         })
     )
 
-export async function syncChangeset(changeset: ID): Promise<void> {
+export async function syncChangeset(changeset: Scalars['ID']): Promise<void> {
     const result = await requestGraphQL<SyncChangesetResult, SyncChangesetVariables>({
         request: gql`
             mutation SyncChangeset($changeset: ID!) {

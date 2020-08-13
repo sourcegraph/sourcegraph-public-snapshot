@@ -172,12 +172,12 @@ func PreciseCodeIntelBundleManager() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage7d("precise-code-intel-bundle-manager"),
-						sharedProvisioningMemoryUsage7d("precise-code-intel-bundle-manager"),
+						sharedProvisioningCPUUsageLongTerm("precise-code-intel-bundle-manager"),
+						sharedProvisioningMemoryUsageLongTerm("precise-code-intel-bundle-manager"),
 					},
 					{
-						sharedProvisioningCPUUsage5m("precise-code-intel-bundle-manager"),
-						sharedProvisioningMemoryUsage5m("precise-code-intel-bundle-manager"),
+						sharedProvisioningCPUUsageShortTerm("precise-code-intel-bundle-manager"),
+						sharedProvisioningMemoryUsageShortTerm("precise-code-intel-bundle-manager"),
 					},
 				},
 			},

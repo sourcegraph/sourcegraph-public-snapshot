@@ -25,6 +25,7 @@ func PreciseCodeIntelWorker() *Container {
 							Description:       "upload queue growth rate every 5m",
 							Query:             `sum(increase(src_upload_queue_uploads_total[30m])) / sum(increase(src_upload_queue_processor_total[30m]))`,
 							DataMayNotExist:   true,
+							DataMayBeNaN:      true, // numerator and denominator could both be 0
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("upload queue growth rate"),
 							Owner:             ObservableOwnerCodeIntel,
@@ -180,12 +181,12 @@ func PreciseCodeIntelWorker() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage7d("precise-code-intel-worker"),
-						sharedProvisioningMemoryUsage7d("precise-code-intel-worker"),
+						sharedProvisioningCPUUsageLongTerm("precise-code-intel-worker"),
+						sharedProvisioningMemoryUsageLongTerm("precise-code-intel-worker"),
 					},
 					{
-						sharedProvisioningCPUUsage5m("precise-code-intel-worker"),
-						sharedProvisioningMemoryUsage5m("precise-code-intel-worker"),
+						sharedProvisioningCPUUsageShortTerm("precise-code-intel-worker"),
+						sharedProvisioningMemoryUsageShortTerm("precise-code-intel-worker"),
 					},
 				},
 			},

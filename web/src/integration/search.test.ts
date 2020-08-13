@@ -270,6 +270,57 @@ describe('Search', () => {
             await driver.page.click('.test-confirm-filter-button')
             await driver.assertWindowLocation('/search?q=fork:%22no%22+test&patternType=literal')
         })
+
+        test('Clicking on alert proposed query navigates to the right filter', async () => {
+            const searchResultsWithAlert = searchResults()
+            if (searchResultsWithAlert.search) {
+                searchResultsWithAlert.search.results.results = []
+                searchResultsWithAlert.search.results.alert = {
+                    title: 'Test title',
+                    description: 'Test description',
+                    proposedQueries: [
+                        {
+                            description: 'test',
+                            query: 'repo:test1|test2',
+                        },
+                    ],
+                }
+            }
+
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
+                Search: () => searchResultsWithAlert,
+            })
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+            await driver.page.waitForSelector('.test-search-mode-toggle', { visible: true })
+            await driver.page.click('.test-search-mode-toggle')
+            await driver.page.click('.test-search-mode-toggle__interactive-mode')
+
+            // Wait for the input component to appear
+            await driver.page.waitForSelector('.test-interactive-mode-input', { visible: true })
+            // Wait for the add filter row to appear.
+            await driver.page.waitForSelector('.test-add-filter-row', { visible: true })
+            // Wait for the default add filter buttons appear
+            await driver.page.waitForSelector('.test-add-filter-button-repo', { visible: true })
+            await driver.page.waitForSelector('.test-add-filter-button-file', { visible: true })
+
+            // Add a repo filter
+            await driver.page.waitForSelector('.test-add-filter-button-repo')
+            await driver.page.click('.test-add-filter-button-repo')
+
+            // FilterInput is autofocused
+            await driver.page.waitForSelector('.filter-input')
+            // Search for repo:gorilla in the repo filter chip input
+            await driver.page.keyboard.type('gorilla')
+            await driver.page.keyboard.press('Enter')
+            await driver.assertWindowLocation('/search?q=repo:%22gorilla%22&patternType=literal')
+
+            // Click on proposed query from GraphQL and verify existing filters aren't added
+            await driver.page.waitForSelector('[data-testid="proposed-query-link"]')
+            await driver.page.click('[data-testid="proposed-query-link"]')
+            await driver.assertWindowLocation('/search?q=repo:test1%7Ctest2&patternType=literal')
+        })
     })
 
     describe('Case sensitivity toggle', () => {

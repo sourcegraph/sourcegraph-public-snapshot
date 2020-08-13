@@ -40,6 +40,10 @@ storiesOf('browser/Options/OptionsMenu', module)
             isSettingsOpen={true}
             isActivated={true}
             toggleFeatureFlag={action('Feature flag toggled')}
+            featureFlags={[
+                { key: 'Test setting 1', value: true },
+                { key: 'Test setting 2', value: false },
+            ]}
             requestPermissions={() => undefined}
             urlHasPermissions={true}
         />

@@ -317,6 +317,8 @@ type CampaignSpec struct {
 	ChangesetTemplate *ChangesetTemplate `json:"changesetTemplate,omitempty"`
 	// Description description: The description of the campaign.
 	Description string `json:"description,omitempty"`
+	// ImportChangesets description: Import existing changesets on code hosts.
+	ImportChangesets []*ImportChangesets `json:"importChangesets,omitempty"`
 	// Name description: The name of the campaign, which is unique among all campaigns in the namespace. A campaign's name is case-preserving.
 	Name string `json:"name"`
 	// On description: The set of repositories (and branches) to run the campaign on, specified as a list of search queries (that match repositories) and/or specific repositories.
@@ -723,6 +725,13 @@ func (v *IdentityProvider) UnmarshalJSON(data []byte) error {
 		return json.Unmarshal(data, &v.Username)
 	}
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"oauth", "username", "external"})
+}
+
+type ImportChangesets struct {
+	// ExternalIDs description: The changesets to import from the code host. For GitHub this is the PR number, for GitLab this is the MR number, for Bitbucket Server this is the PR number.
+	ExternalIDs []interface{} `json:"externalIDs"`
+	// Repository description: The repository name as configured on your Sourcegraph instance.
+	Repository string `json:"repository"`
 }
 
 // Log description: Configuration for logging and alerting, including to external services.

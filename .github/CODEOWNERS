@@ -147,13 +147,12 @@
 /internal/campaigns @sourcegraph/campaigns
 /web/**/campaigns/** @sourcegraph/campaigns
 
-# Search and code mod
+# Search
 */search/**/* @sourcegraph/search
 /cmd/frontend/internal/pkg/search @sourcegraph/search
 /cmd/frontend/graphqlbackend/*search* @sourcegraph/search
 /cmd/frontend/graphqlbackend/*zoekt* @sourcegraph/search
 /cmd/query-runner/ @sourcegraph/search
-/cmd/replacer/ @sourcegraph/search @rvantonder
 /cmd/searcher/ @sourcegraph/search
 /cmd/symbols/ @sourcegraph/search
 /internal/search/ @sourcegraph/search
@@ -231,6 +230,7 @@ Dockerfile @sourcegraph/distribution
 /enterprise/cmd/precise-code-intel-bundle-manager/ @sourcegraph/code-intel
 /enterprise/cmd/precise-code-intel-worker/ @sourcegraph/code-intel
 /enterprise/cmd/precise-code-intel-indexer/ @sourcegraph/code-intel
+/enterprise/cmd/precise-code-intel-indexer-vm/ @sourcegraph/code-intel
 /enterprise/internal/codeintel @sourcegraph/code-intel
 /enterprise/cmd/frontend/internal/codeintel @sourcegraph/code-intel
 /cmd/frontend/graphqlbackend/codeintel.go @sourcegraph/code-intel
