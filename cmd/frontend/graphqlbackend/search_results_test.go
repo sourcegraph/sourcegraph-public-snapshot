@@ -1423,3 +1423,77 @@ func TestCompareSearchResults(t *testing.T) {
 		})
 	}
 }
+
+func TestDedupePatternOperands(t *testing.T) {
+	tests := []struct {
+		query        string
+		wantIx       int
+		wantOperands string
+	}{
+		{
+			query:        "foo and bar",
+			wantIx:       2,
+			wantOperands: `"foo" "bar"`,
+		},
+		{
+			query:        "foo and foo",
+			wantIx:       1,
+			wantOperands: `"foo"`,
+		},
+		{
+			query:        "foo and bar and foo",
+			wantIx:       2,
+			wantOperands: `"foo" "bar"`,
+		},
+		{
+			query:        "foo and foo and bar",
+			wantIx:       2,
+			wantOperands: `"foo" "bar"`,
+		},
+		{
+			query:        "foo and (foo or bar)",
+			wantIx:       2,
+			wantOperands: `"foo" (or "foo" "bar")`,
+		},
+		{
+			query:        "foo or (foo and bar)",
+			wantIx:       2,
+			wantOperands: `"foo" (and "foo" "bar")`,
+		},
+		{
+			query:        "foo and foo and (bar or bas) and qux",
+			wantIx:       3,
+			wantOperands: `"foo" (or "bar" "bas") "qux"`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.query, func(t *testing.T) {
+			nodes, _ := query.ParseAndOr(tt.query, query.SearchTypeLiteral)
+			_, pattern, err := query.PartitionSearchPattern(nodes)
+			if err != nil {
+				t.Error(err)
+			}
+			operator, isOperator := pattern.(query.Operator)
+			if !isOperator {
+				t.Errorf("invalid test case. Expected an operator")
+			}
+			operands := operator.Operands
+			i := dedupePatternOperands(operands)
+			if i != tt.wantIx {
+				t.Errorf("dedupePatternOperands() = %v, want %v", i, tt.wantIx)
+			}
+
+			if got := prettyPrint(operands[:i]); got != tt.wantOperands {
+				t.Errorf("got %v, want %v", got, tt.wantOperands)
+			}
+		})
+	}
+}
+
+func prettyPrint(nodes []query.Node) string {
+	var resultStr []string
+	for _, node := range nodes {
+		resultStr = append(resultStr, node.String())
+	}
+	return strings.Join(resultStr, " ")
+}

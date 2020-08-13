@@ -789,12 +789,18 @@ func intersect(left, right *SearchResultsResolver) *SearchResultsResolver {
 	return intersectMerge(left, right)
 }
 
-// dedubOperands removes dupliate operands from the list of query.Nodes.
-func dedupOperands(operands []query.Node) int {
+// dedupePatternOperands removes duplicate query.Pattern operands from []query.Node.
+// The relative order of operands is preserved.
+func dedupePatternOperands(operands []query.Node) int {
 	s := make(map[query.Pattern]struct{}, len(operands))
 	i := 0
 	for _, o := range operands {
-		pattern := o.(query.Pattern)
+		pattern, ok := o.(query.Pattern)
+		if !ok {
+			operands[i] = o
+			i++
+			continue
+		}
 		pattern.Annotation = query.Annotation{}
 		if _, ok := s[pattern]; ok {
 			continue
@@ -837,7 +843,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 	// if search continues to not be exhaustive. Alert if exceeded.
 	maxTryCount := 20000
 
-	i := dedupOperands(operands)
+	i := dedupePatternOperands(operands)
 	operands = operands[:i]
 
 	// Set an overall timeout in addition to the timeouts that are set for leaf-requests.
