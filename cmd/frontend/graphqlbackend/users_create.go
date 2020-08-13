@@ -69,6 +69,7 @@ func (r *createUserResult) ResetPasswordURL(ctx context.Context) (*string, error
 		if err == nil {
 			return &ru, nil
 		}
+		log15.Error("failed to send email", "error", err)
 	}
 
 	// This method modifies the DB, which is somewhat counterintuitive for a "value" type from an
