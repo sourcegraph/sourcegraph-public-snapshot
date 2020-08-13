@@ -11,7 +11,7 @@ We'll walk you through installing and generating LSIF data locally on your machi
 
 ### 1. Install Sourcegraph CLI
 
-The [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) is used for uploading LSIF data to your Sourcegraph instanc (replace `linux` with `darwin` for macOS):
+The [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) is used for uploading LSIF data to your Sourcegraph instance (replace `linux` with `darwin` for macOS):
 
 ```
 $ curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
@@ -54,7 +54,7 @@ $ src -endpoint=<your sourcegraph endpoint> lsif upload -file=<LSIF file (e.g. d
 $ src lsif upload -github-token=<your github token> -file=<LSIF file (e.g. dump.lsif)>
 ```
 
-The upload command in the src-cli will try to infer the repository and git commit by invoking git commands on your local clone. If git is not installed, is older than version 2.7.0 or you are running on code outside of a git clone, you will need to also specify the `-repo` and `-commit` flags explicitly.
+The `src-cli` upload command will try to infer the repository and git commit by invoking git commands on your local clone. If git is not installed, is older than version 2.7.0 or you are running on code outside of a git clone, you will need to also specify the `-repo` and `-commit` flags explicitly.
 
 > NOTE: If you're using Sourcegraph.com or have enabled [`lsifEnforceAuth`](https://docs.sourcegraph.com/admin/config/site_config#lsifEnforceAuth) you need to [supply a GitHub token](#proving-ownership-of-a-github-repository) supplied via the `-github-token` flag in the command above.
 
