@@ -127,7 +127,7 @@ func HandleResetPasswordCode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !success {
-		httpLogAndError(w, "Password reset failed", http.StatusUnauthorized)
+		http.Error(w, "Password reset code was invalid or expired.", http.StatusUnauthorized)
 		return
 	}
 }
