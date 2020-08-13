@@ -21,11 +21,11 @@ func GetSavedSearches(ctx context.Context) (*types.SavedSearches, error) {
 	  event_logs
 	`
 	var (
-		totalSavedSearches     	int
-		uniqueUsers     	    int
-		notificationsSent 	 	int
-		notificationsClicked 	int
-		uniqueUserPageViews    	int
+		totalSavedSearches   int
+		uniqueUsers          int
+		notificationsSent    int
+		notificationsClicked int
+		uniqueUserPageViews  int
 	)
 	if err := dbconn.Global.QueryRowContext(ctx, q).Scan(
 		&totalSavedSearches,
@@ -38,10 +38,10 @@ func GetSavedSearches(ctx context.Context) (*types.SavedSearches, error) {
 	}
 
 	return &types.SavedSearches{
-		TotalSavedSearches:     int32(totalSavedSearches),
-		UniqueUsers:     	    int32(uniqueUsers),
-		NotificationsSent: 	    int32(notificationsSent),
-		NotificationsClicked:   int32(notificationsClicked),
-		UniqueUserPageViews:    int32(uniqueUserPageViews),
+		TotalSavedSearches:   int32(totalSavedSearches),
+		UniqueUsers:          int32(uniqueUsers),
+		NotificationsSent:    int32(notificationsSent),
+		NotificationsClicked: int32(notificationsClicked),
+		UniqueUserPageViews:  int32(uniqueUserPageViews),
 	}, nil
 }

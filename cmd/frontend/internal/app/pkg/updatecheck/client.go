@@ -201,7 +201,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		SearchUsage:         []byte("{}"),
 		CampaignsUsage:      []byte("{}"),
 		GrowthStatistics:    []byte("{}"),
-		SavedSearches:    	 []byte("{}"),
+		SavedSearches:       []byte("{}"),
 	}
 
 	totalUsers, err := getTotalUsersCount(ctx)
