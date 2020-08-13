@@ -89,4 +89,4 @@ To verify that LSIF is correctly enabled, hover over a symbol and ensure that it
 
 ## 6. Automate the process
 
-Now that you're happy with the code intelligence on your repository, you need to make sure that is stays up to date with your repository. Our [continuous integration guide](adding_lsif_to_workflows.md) will get you started.
+Now that you have successfully enabled code intelligence for your repository, you need to make sure that is stays up to date as ongoing code changes are made in the repository. Our [continuous integration guide](adding_lsif_to_workflows.md) will get you started.
