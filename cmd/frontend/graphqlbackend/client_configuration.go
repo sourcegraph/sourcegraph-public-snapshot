@@ -34,6 +34,9 @@ func (r *schemaResolver) ClientConfiguration(ctx context.Context) (*clientConfig
 	// Ideally these could be done in parallel, but the table is small
 	// and I don't think real world perf is going to be bad.
 
+	// TODO: This could become an issue once we have a large number of external services. At that point
+	// we can update the code below to instead extract the URL's in one SQL query.
+
 	// We could have multiple services with the same URL so we dedupe them
 	urlMap := make(map[string]struct{})
 

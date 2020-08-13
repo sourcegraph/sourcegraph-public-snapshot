@@ -70,9 +70,18 @@ func serveExternalServiceConfigs(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	services, err := db.ExternalServices.List(r.Context(), db.ExternalServicesListOptions{
-		Kinds: []string{req.Kind},
-	})
+
+	options := db.ExternalServicesListOptions{
+		Kinds:   []string{req.Kind},
+		AfterID: int64(req.AfterID),
+	}
+	if req.Limit > 0 {
+		options.LimitOffset = &db.LimitOffset{
+			Limit: req.Limit,
+		}
+	}
+
+	services, err := db.ExternalServices.List(r.Context(), options)
 	if err != nil {
 		return err
 	}
@@ -114,9 +123,17 @@ func serveExternalServicesList(w http.ResponseWriter, r *http.Request) error {
 		req.Kinds = append(req.Kinds, req.Kind)
 	}
 
-	services, err := db.ExternalServices.List(r.Context(), db.ExternalServicesListOptions{
-		Kinds: req.Kinds,
-	})
+	options := db.ExternalServicesListOptions{
+		Kinds:   []string{req.Kind},
+		AfterID: int64(req.AfterID),
+	}
+	if req.Limit > 0 {
+		options.LimitOffset = &db.LimitOffset{
+			Limit: req.Limit,
+		}
+	}
+
+	services, err := db.ExternalServices.List(r.Context(), options)
 	if err != nil {
 		return err
 	}
