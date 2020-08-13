@@ -2,6 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
+	"net/url"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
@@ -86,4 +88,20 @@ func (r *schemaResolver) ClientConfiguration(ctx context.Context) (*clientConfig
 		contentScriptUrls: contentScriptUrls,
 		parentSourcegraph: &parentSourcegraph,
 	}, nil
+}
+
+// stripPassword strips the password from u if it can be parsed as a URL.
+// If not, it is left unchanged
+// This is a modified version of stringPassword from the standard lib
+// in net/http/client.go
+func stripPassword(s string) string {
+	u, err := url.Parse(s)
+	if err != nil {
+		return s
+	}
+	_, passSet := u.User.Password()
+	if passSet {
+		return strings.Replace(u.String(), u.User.String()+"@", u.User.Username()+":***@", 1)
+	}
+	return s
 }
