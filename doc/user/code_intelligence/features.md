@@ -1,8 +1,6 @@
 # Code intelligence features
 
-## GitHub pull request
-
-Using our [integrations](../../integration/index.md), all code intelligence features are available everywhere you read code!
+Using our [integrations](../../integration/index.md), all code intelligence features are available everywhere you read code! This includes in browsers and GitHub pull requests.
 
 <img src="img/CodeReview.gif" width="450" style="margin-left:0;margin-right:0;"/>
 
