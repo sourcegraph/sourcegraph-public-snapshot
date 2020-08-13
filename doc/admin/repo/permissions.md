@@ -8,6 +8,8 @@ Currently, GitHub, GitHub Enterprise, GitLab and Bitbucket Server permissions ar
 
 ## GitHub
 
+> WARNING: It takes time to complete mirroring repository permissions from the code host, please read about [background permissions syncing](#background-permissions-syncing) to know what to expect.
+
 Prerequisite: [Add GitHub as an authentication provider.](../auth/index.md#github)
 
 Then, [add or edit a GitHub connection](../external_service/github.md#repository-syncing) and include the `authorization` field:
@@ -23,6 +25,8 @@ Then, [add or edit a GitHub connection](../external_service/github.md#repository
 ```
 
 ## GitLab
+
+> WARNING: It takes time to complete mirroring repository permissions from the code host, please read about [background permissions syncing](#background-permissions-syncing) to know what to expect.
 
 GitLab permissions can be configured in three ways:
 
@@ -101,6 +105,8 @@ because Sourcegraph usernames are mutable.
 ```
 
 ## Bitbucket Server
+
+> WARNING: It takes time to complete mirroring repository permissions from the code host, please read about [background permissions syncing](#background-permissions-syncing) to know what to expect.
 
 Enforcing Bitbucket Server permissions can be configured via the `authorization` setting in its configuration.
 
