@@ -153,8 +153,8 @@ func (u *users) Create(ctx context.Context, info NewUser) (newUser *types.User, 
 // This safety limit is to protect us from a DDOS attack caused by hashing very large passwords on Sourcegraph.com.
 const maxPasswordRunes = 256
 
-// checkPasswordLength returns an error if the password is too long.
-func checkPasswordLength(pw string) error {
+// CheckPasswordLength returns an error if the length of the password is not in the required range.
+func CheckPasswordLength(pw string) error {
 	pwLen := utf8.RuneCountInString(pw)
 	minPasswordRunes := conf.AuthMinPasswordLength()
 	if pwLen < minPasswordRunes ||
@@ -172,7 +172,7 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 	}
 
 	if info.EnforcePasswordLength {
-		if err := checkPasswordLength(info.Password); err != nil {
+		if err := CheckPasswordLength(info.Password); err != nil {
 			return nil, err
 		}
 	}
