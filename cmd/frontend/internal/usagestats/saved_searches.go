@@ -1,5 +1,3 @@
-// Package usagestats provides an interface to update and access information about
-// individual and aggregate Sourcegraph users' activity levels.
 package usagestats
 
 import (
