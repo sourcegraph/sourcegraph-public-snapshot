@@ -15,7 +15,12 @@ func MakeRandomHardToGuessPassword() string {
 	return randstring.NewLen(36)
 }
 
+var MockMakePasswordResetURL func(ctx context.Context, userID int32) (*url.URL, error)
+
 func MakePasswordResetURL(ctx context.Context, userID int32) (*url.URL, error) {
+	if MockMakePasswordResetURL != nil {
+		return MockMakePasswordResetURL(ctx, userID)
+	}
 	resetCode, err := db.Users.RenewPasswordResetCode(ctx, userID)
 	if err != nil {
 		return nil, err
