@@ -87,7 +87,7 @@ func (s *Store) Start() {
 		s.cache = &diskcache.Store{
 			Dir:               s.Path,
 			Component:         "store",
-			BackgroundTimeout: 2 * time.Minute,
+			BackgroundTimeout: 10 * time.Minute,
 			BeforeEvict:       s.ZipCache.delete,
 		}
 		_ = os.MkdirAll(s.Path, 0700)
