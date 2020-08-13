@@ -38,10 +38,10 @@ func GetSavedSearches(ctx context.Context) (*types.SavedSearches, error) {
 	}
 
 	return &types.SavedSearches{
-		totalSavedSearches:     int32(totalSavedSearches),
-		uniqueUsers:     	    int32(uniqueUsers),
-		notificationsSent: 	    int32(notificationsSent),
-		notificationsClicked:   int32(notificationsClicked),
-		uniqueUserPageViews:    int32(uniqueUserPageViews),
+		TotalSavedSearches:     int32(totalSavedSearches),
+		UniqueUsers:     	    int32(uniqueUsers),
+		NotificationsSent: 	    int32(notificationsSent),
+		NotificationsClicked:   int32(notificationsClicked),
+		UniqueUserPageViews:    int32(uniqueUserPageViews),
 	}, nil
 }
