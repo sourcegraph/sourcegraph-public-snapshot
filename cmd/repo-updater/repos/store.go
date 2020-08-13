@@ -69,7 +69,13 @@ type StoreListExternalServicesArgs struct {
 	RepoIDs []api.RepoID
 	// Kinds of external services to list. When zero-valued, this is omitted from the predicate set.
 	Kinds []string
-	// PerPage defines how many external services to fetch per page. When zero-valued,
+
+	// Limit is the total number of items to list. The zero value means no limit.
+	Limit int64
+	// Cursor will limit the query to external services that have an id greater than Cursor.
+	Cursor int64
+
+	// PerPage defines how many external services to fetch per page when listing all services. If zero-valued
 	// DefaultListExternalServicePageSize will be used.
 	PerPage int64
 }
@@ -153,7 +159,7 @@ func (s DBStore) ListExternalServices(ctx context.Context, args StoreListExterna
 	if args.PerPage <= 0 {
 		args.PerPage = DefaultListExternalServicesPerPage
 	}
-	return svcs, s.paginate(ctx, 0, args.PerPage, listExternalServicesQuery(args),
+	return svcs, s.paginate(ctx, args.Limit, args.PerPage, args.Cursor, listExternalServicesQuery(args),
 		func(sc scanner) (last, count int64, err error) {
 			var svc ExternalService
 			err = scanExternalService(&svc, sc)
@@ -323,7 +329,7 @@ RETURNING *
 
 // ListRepos lists all stored repos that match the given arguments.
 func (s DBStore) ListRepos(ctx context.Context, args StoreListReposArgs) (repos []*Repo, _ error) {
-	return repos, s.paginate(ctx, args.Limit, args.PerPage, listReposQuery(args),
+	return repos, s.paginate(ctx, args.Limit, args.PerPage, 0, listReposQuery(args),
 		func(sc scanner) (last, count int64, err error) {
 			var r Repo
 			if err = scanRepo(&r, sc); err != nil {
@@ -494,7 +500,7 @@ SELECT COUNT(*) FROM repo WHERE deleted_at IS NULL AND NOT cloned
 // parameters
 type paginatedQuery func(cursor, limit int64) *sqlf.Query
 
-func (s DBStore) paginate(ctx context.Context, limit, perPage int64, q paginatedQuery, scan scanFunc) (err error) {
+func (s DBStore) paginate(ctx context.Context, limit, perPage int64, cursor int64, q paginatedQuery, scan scanFunc) (err error) {
 	const defaultPerPageLimit = 10000
 
 	if perPage <= 0 {
@@ -506,10 +512,12 @@ func (s DBStore) paginate(ctx context.Context, limit, perPage int64, q paginated
 	}
 
 	var (
-		cursor      = int64(-1)
 		remaining   = limit
 		next, count int64
 	)
+
+	next = cursor
+	cursor--
 
 	for cursor < next && err == nil && (limit <= 0 || remaining > 0) {
 		cursor = next
