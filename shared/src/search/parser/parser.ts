@@ -252,7 +252,7 @@ const operator = pattern(
     (input, { start, end }): Operator => ({ type: 'operator', value: input.slice(start, end) })
 )
 
-const filterKeyword = pattern(new RegExp(`-?(${filterTypeKeysWithAliases.join('|')})+(?=:)`, 'i'))
+const filterKeyword = pattern(new RegExp(`-?(${filterTypeKeysWithAliases.join('|')})+(?=:)`))
 
 const filterDelimiter = character(':')
 
