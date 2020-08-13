@@ -64,7 +64,8 @@ func init() {
 
 		newKey, oldKey := gatherKeys(encryptionKey)
 
-		CryptObject.EncryptionKeys = [][]byte{primaryKey: newKey, secondaryKey: oldKey}
+		CryptObject.EncryptionKeys = [][]byte{primaryKeyIndex: newKey, secondaryKeyIndex: oldKey}
+		configuredToEncrypt = true
 		return
 	}
 
@@ -74,7 +75,8 @@ func init() {
 			panic(fmt.Sprintf("encryption key must be %d characters", validKeyLength))
 		}
 		newKey, oldKey := gatherKeys(encryptionKey)
-		CryptObject.EncryptionKeys = [][]byte{primaryKey: newKey, secondaryKey: oldKey}
+		CryptObject.EncryptionKeys = [][]byte{primaryKeyIndex: newKey, secondaryKeyIndex: oldKey}
+		configuredToEncrypt = true
 		return
 	}
 
@@ -95,7 +97,7 @@ func init() {
 			panic("failed to make secrets file read only.")
 		}
 		newKey, oldkey := gatherKeys(b)
-		CryptObject.EncryptionKeys = [][]byte{primaryKey: newKey, secondaryKey: oldkey}
+		CryptObject.EncryptionKeys = [][]byte{primaryKeyIndex: newKey, secondaryKeyIndex: oldkey}
 	}
 
 	// wrapping in deploytype check so that we can still compile and test locally

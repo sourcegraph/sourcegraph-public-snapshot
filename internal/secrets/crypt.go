@@ -15,18 +15,22 @@ import (
 )
 
 const (
-	validKeyLength = 32
-	hmacSize       = sha256.Size
-	primaryKey     = 0
-	secondaryKey   = 1
+	validKeyLength    = 32
+	hmacSize          = sha256.Size
+	primaryKeyIndex   = 0
+	secondaryKeyIndex = 1
 )
 
 type EncryptionError struct {
 	Message string
 }
 
-// NotEncodedError means we can test for whether or not a string is encoded, prior to attempting decryption
-var NotEncodedError = errors.New("object is not encoded")
+// ErrNotEncoded means we can test for whether or not a string is encoded, prior to attempting decryption
+var ErrNotEncoded = errors.New("object is not encoded")
+
+func (err *EncryptionError) Error() string {
+	return err.Message
+}
 
 // Generate a valid key for AES-256 encryption
 func GenerateRandomAESKey() ([]byte, error) {
@@ -38,21 +42,58 @@ func GenerateRandomAESKey() ([]byte, error) {
 	return b, nil
 }
 
-func (err *EncryptionError) Error() string {
-	return err.Message
+// EncryptBytesIfPossible encrypts the byte array if encryption is configured.
+// Returns an error only when encryption is enabled, and encryption fails.
+func EncryptBytesIfPossible(b []byte) (string, error) {
+	if configuredToEncrypt {
+		return CryptObject.EncryptBytes(b)
+	}
+	return string(b), nil
+}
+
+// EncryptIfPossible encrypts the string if encryption is configured.
+// Returns an error only when encryption is enabled, and encryption fails.
+func EncryptIfPossible(value string) (string, error) {
+	if configuredToEncrypt {
+		return CryptObject.Encrypt(value)
+	}
+	return value, nil
+}
+
+// DecryptIfPossible decrypts the string if encryption is configured.
+// It returns an error only if encryption is enabled and it cannot Decrypt the string
+func DecryptIfPossible(value string) (string, error) {
+	if configuredToEncrypt {
+		return CryptObject.Decrypt(value)
+	}
+	return value, nil
+}
+
+// DecryptBytesIfPossible decrypts the byte array if encryption is configured.
+// It returns an error only if encryption is enabled and it cannot Decrypt the string
+func DecryptBytesIfPossible(b []byte) (string, error) {
+	if configuredToEncrypt {
+		return CryptObject.DecryptBytes(b)
+	}
+	return string(b), nil
 }
 
 // Encryptor contains the encryption key used in encryption and decryption.
 type Encryptor struct {
-	// the first key is always used to encrypt, attempt to decrypt with every key
+	// the first key is always used to EncryptBytes, attempt to Decrypt with every key
 	EncryptionKeys [][]byte
 }
 
 // Returns an encrypted string.
-func (e *Encryptor) encrypt(b []byte) (string, error) {
+func (e *Encryptor) EncryptBytes(b []byte) (string, error) {
+
+	if len(e.EncryptionKeys) == 0 || e.EncryptionKeys[primaryKeyIndex] == nil {
+		return string(b), nil
+	}
+
 	// create a one time nonce of standard length, without repetitions
-	// ONLY use the primary key to encrypt
-	block, err := aes.NewCipher(e.EncryptionKeys[primaryKey])
+	// ONLY use the primary key to EncryptBytes
+	block, err := aes.NewCipher(e.EncryptionKeys[primaryKeyIndex])
 	if err != nil {
 		return "", err
 	}
@@ -68,14 +109,13 @@ func (e *Encryptor) encrypt(b []byte) (string, error) {
 	stream := cipher.NewCFBEncrypter(block, nonce)
 	stream.XORKeyStream(encrypted[aes.BlockSize:], b)
 
-	// encrypt-then-MAC
+	// EncryptBytes-then-MAC
 	// TODO(Dax): We should stretch the key above rather than try to reuse this
-	mac := hmac.New(sha256.New, e.EncryptionKeys[primaryKey])
-	n, err := mac.Write(encrypted)
+	mac := hmac.New(sha256.New, e.EncryptionKeys[primaryKeyIndex])
+	_, err = mac.Write(encrypted)
 	if err != nil {
 		return "", err
 	}
-	fmt.Println("bytes written: ", n)
 	macSum := mac.Sum(nil)
 	encrypted = append(encrypted, macSum...)
 
@@ -83,36 +123,17 @@ func (e *Encryptor) encrypt(b []byte) (string, error) {
 }
 
 // Encrypts the string, returning the encrypted value.
-func (e *Encryptor) EncryptBytes(b []byte) (string, error) {
-	return e.encrypt(b)
-}
-
-// Encrypts the string, returning the encrypted value.
 func (e *Encryptor) Encrypt(value string) (string, error) {
-	return e.encrypt([]byte(value))
+	return e.EncryptBytes([]byte(value))
 }
 
+// EncryptBytesIfPossible encrypts the byte array if encryption is configured.
+// Returns an error only when encryption is enabled, and encryption fails.
 func (e *Encryptor) EncryptBytesIfPossible(b []byte) (string, error) {
 	if configuredToEncrypt {
 		return e.EncryptBytes(b)
 	}
 	return string(b), nil
-}
-
-func EncryptBytesIfPossible(b []byte) (string, error) {
-	if configuredToEncrypt {
-		return CryptObject.encrypt(b)
-	}
-	return string(b), nil
-}
-
-// EncryptIfPossible encrypts the string if encryption is configured.
-// Returns an error only when encryption is enabled, and encryption fails.
-func EncryptIfPossible(value string) (string, error) {
-	if configuredToEncrypt {
-		return CryptObject.Encrypt(value)
-	}
-	return value, nil
 }
 
 // EncryptIfPossible encrypts  the string if encryption is configured.
@@ -124,16 +145,12 @@ func (e *Encryptor) EncryptIfPossible(value string) (string, error) {
 	return value, nil
 }
 
-func (e *Encryptor) Decrypt(value string) (string, error) {
-	return e.decrypt(value)
-}
-
 func (e *Encryptor) DecryptBytes(b []byte) (string, error) {
-	return e.decrypt(string(b))
+	return e.Decrypt(string(b))
 }
 
 // Decrypts the string, returning the decrypted value.
-func (e *Encryptor) decrypt(encodedValue string) (string, error) {
+func (e *Encryptor) Decrypt(encodedValue string) (string, error) {
 
 	// handle plaintext use case
 	if len(e.EncryptionKeys) == 0 {
@@ -143,7 +160,7 @@ func (e *Encryptor) decrypt(encodedValue string) (string, error) {
 	for _, key := range e.EncryptionKeys {
 		encrypted, err := base64.StdEncoding.DecodeString(encodedValue)
 		if err != nil {
-			return "", NotEncodedError
+			return "", ErrNotEncoded
 		}
 
 		//remove hmac
@@ -153,11 +170,10 @@ func (e *Encryptor) decrypt(encodedValue string) (string, error) {
 		// validate hmac
 		// TODO(Dax): We should stretch the key above rather than try to reuse
 		mac := hmac.New(sha256.New, key)
-		n, err := mac.Write(encrypted)
+		_, err = mac.Write(encrypted)
 		if err != nil {
 			return "", err
 		}
-		fmt.Printf("wrote %d bytes \n", n)
 		expectedMac := mac.Sum(nil)
 		if !hmac.Equal(extractedMac, expectedMac) {
 			log15.Warn("mac doesn't match, may retry")
@@ -179,12 +195,12 @@ func (e *Encryptor) decrypt(encodedValue string) (string, error) {
 		stream.XORKeyStream(value, value)
 		return string(value), nil
 	}
-	return "", fmt.Errorf("unable to decrypt")
+	return "", fmt.Errorf("unable to Decrypt")
 
 }
 
 // DecryptIfPossible decrypts the string if encryption is configured.
-// It returns an error only if encryption is enabled and it cannot decrypt the string
+// It returns an error only if encryption is enabled and it cannot Decrypt the string
 func (e *Encryptor) DecryptIfPossible(value string) (string, error) {
 	if configuredToEncrypt {
 		return e.Decrypt(value)
@@ -192,6 +208,8 @@ func (e *Encryptor) DecryptIfPossible(value string) (string, error) {
 	return value, nil
 }
 
+// DecryptBytesIfPossible decrypts the byte array if encryption is configured.
+// It returns an error only if encryption is enabled and it cannot Decrypt the string
 func (e *Encryptor) DecryptBytesIfPossible(b []byte) (string, error) {
 	if configuredToEncrypt {
 		return e.DecryptBytes(b)
@@ -199,14 +217,19 @@ func (e *Encryptor) DecryptBytesIfPossible(b []byte) (string, error) {
 	return string(b), nil
 }
 
-// This function rotates the encryption used on an item by decrypting and then re-encrypting.
-// Rotating keys updates the EncryptionKey within the Encryptor object
-//func (e *Encryptor) RotateKey(newKey []byte, encryptedValue string) (string, error) {
-//	decrypted, err := e.Decrypt(encryptedValue)
-//	if err != nil {
-//		return "", err
-//	}
-//
-//	e.EncryptionKey = newKey
-//	return e.encrypt([]byte(decrypted))
-//}
+func (e *Encryptor) Raw(crypt string) (string, error) {
+	plaintext, err := e.Decrypt(crypt)
+	if err != nil {
+		return "", err
+	}
+	return plaintext, nil
+}
+
+// Return a masked version of the decrypted secret, for when a token-like string needs to be displayed in the UI
+func (e *Encryptor) Mask(crypt string) (string, error) {
+	plaintext, err := e.Decrypt(crypt)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s***********", plaintext[0:0]), nil
+}

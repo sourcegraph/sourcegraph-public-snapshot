@@ -24,14 +24,13 @@ func TestRandomAESKey(t *testing.T) {
 func TestEncryptingAndDecrypting(t *testing.T) {
 	// 32 bytes means an AES-256 cipher
 	key, _ := GenerateRandomAESKey()
-	e := Encryptor{EncryptionKeys: [][]byte{primaryKey: key}}
+	e := Encryptor{EncryptionKeys: [][]byte{primaryKeyIndex: key}}
 
 	encrypted, err := e.Encrypt(messageToEncrypt)
 	if err != nil {
 		t.Errorf(err.Error())
 	}
 
-	// better way to compare byte arrays
 	if encrypted == messageToEncrypt {
 		t.Fatal(err)
 	}
@@ -42,14 +41,14 @@ func TestEncryptingAndDecrypting(t *testing.T) {
 	}
 
 	if decrypted != messageToEncrypt {
-		t.Fatalf("failed to decrypt")
+		t.Fatalf("failed to Decrypt")
 	}
 }
 
-// Test the negative result - we should fail to decrypt with bad keys
+// Test the negative result - we should fail to Decrypt with bad keys
 func TestBadKeysFailToDecrypt(t *testing.T) {
 	key, _ := GenerateRandomAESKey()
-	e := Encryptor{EncryptionKeys: [][]byte{primaryKey: key}}
+	e := Encryptor{EncryptionKeys: [][]byte{primaryKeyIndex: key}}
 
 	message := "The secret is to bang the rocks together guys."
 	encrypted, err := e.Encrypt(message)
@@ -63,22 +62,22 @@ func TestBadKeysFailToDecrypt(t *testing.T) {
 	}
 
 	notTheSameKey, _ := GenerateRandomAESKey()
-	e.EncryptionKeys = [][]byte{primaryKey: notTheSameKey}
+	e.EncryptionKeys = [][]byte{primaryKeyIndex: notTheSameKey}
 	decryptAgain, err := e.Decrypt(encrypted)
 
 	if err == nil {
-		t.Fatal("Should not have been able to decrypt string with a second set of secrets.")
+		t.Fatal("Should not have been able to Decrypt string with a second set of secrets.")
 	}
 
 	if decrypted == decryptAgain {
-		t.Fatal("Should not have been able to decrypt string with a second set of secrets.")
+		t.Fatal("Should not have been able to Decrypt string with a second set of secrets.")
 	}
 }
 
-// Test that different strings encrypt to different outputs
+// Test that different strings EncryptBytes to different outputs
 func TestDifferentOutputs(t *testing.T) {
 	key, _ := GenerateRandomAESKey()
-	e := Encryptor{EncryptionKeys: [][]byte{primaryKey: key}}
+	e := Encryptor{EncryptionKeys: [][]byte{primaryKeyIndex: key}}
 	messages := []string{
 		"This may or may",
 		"This is not the same as that",
@@ -113,7 +112,7 @@ func isInSliceOnce(item string, slice []string) bool {
 
 func TestSampleNoRepeats(t *testing.T) {
 	key, _ := GenerateRandomAESKey()
-	e := Encryptor{EncryptionKeys: [][]byte{primaryKey: key}}
+	e := Encryptor{EncryptionKeys: [][]byte{primaryKeyIndex: key}}
 
 	var crypts []string
 	for i := 0; i < 10000; i++ {
@@ -128,37 +127,6 @@ func TestSampleNoRepeats(t *testing.T) {
 	}
 }
 
-// Test that rotating keys returns different encrypted strings
-//func TestKeyRotation(t *testing.T) {
-//	initialKey, _ := GenerateRandomAESKey()
-//	secondKey, _ := GenerateRandomAESKey()
-//
-//	e := Encryptor{EncryptionKeys: [][]byte{primaryKey:initialKey,secondaryKey:secondKey}}
-//	encrypted, _ := e.Encrypt(messageToEncrypt) // another test validates
-//
-//	reEncrypted, _ := e.RotateKey(secondKey, encrypted)
-//
-//	if reEncrypted == encrypted {
-//		t.Fatalf("Failed to re-encrypt the string.")
-//	}
-//
-//	// validate decrypting the message works with the new key
-//	anotherES := Encryptor{EncryptionKey: secondKey}
-//	decrypted, err := anotherES.Decrypt(reEncrypted)
-//	if err != nil {
-//		t.Fatal(err)
-//	}
-//
-//	if decrypted != messageToEncrypt {
-//		t.Fatal("failed to decrypt")
-//	}
-//
-//	if !bytes.Equal(e.EncryptionKey, secondKey) {
-//		// if !reflect.DeepEqual(e.EncryptionKey, secondKey) {
-//		t.Fatalf("Expected key to be %s, got %s.", secondKey, e.EncryptionKey)
-//	}
-//}
-
 func TestKeyMigration(t *testing.T) {
 	keyA, err := GenerateRandomAESKey()
 	if err != nil {
@@ -169,7 +137,7 @@ func TestKeyMigration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	encryptorA := Encryptor{EncryptionKeys: [][]byte{primaryKey: keyA}}
+	encryptorA := Encryptor{EncryptionKeys: [][]byte{primaryKeyIndex: keyA}}
 
 	message := "encrypted with Key A"
 	encryptedMessage, err := encryptorA.Encrypt(message)
@@ -178,11 +146,11 @@ func TestKeyMigration(t *testing.T) {
 	}
 
 	// now rotate keys to use Key B
-	encryptorB := Encryptor{EncryptionKeys: [][]byte{primaryKey: keyB, secondaryKey: keyA}}
+	encryptorB := Encryptor{EncryptionKeys: [][]byte{primaryKeyIndex: keyB, secondaryKeyIndex: keyA}}
 
 	decryptedMessage, err := encryptorB.Decrypt(encryptedMessage)
 	if err != nil {
-		t.Fatalf("unable to decrypt string: %v", err)
+		t.Fatalf("unable to Decrypt string: %v", err)
 	}
 
 	if decryptedMessage != message {
@@ -193,11 +161,11 @@ func TestKeyMigration(t *testing.T) {
 func TestEncryptAndDecryptIfPossible(t *testing.T) {
 	initialKey, _ := GenerateRandomAESKey()
 	configuredToEncrypt = true
-	e := Encryptor{EncryptionKeys: [][]byte{primaryKey: initialKey}}
+	e := Encryptor{EncryptionKeys: [][]byte{primaryKeyIndex: initialKey}}
 
 	encString, err := e.EncryptIfPossible(messageToEncrypt)
 	if err != nil {
-		t.Fatalf("Failed to encrypt")
+		t.Fatalf("Failed to EncryptBytes")
 	}
 	if encString == messageToEncrypt {
 		t.Fatalf("Encryption failed.")
@@ -205,13 +173,13 @@ func TestEncryptAndDecryptIfPossible(t *testing.T) {
 
 	decString, err := e.DecryptIfPossible(encString)
 	if err != nil {
-		t.Fatalf("Failed to decrypt")
+		t.Fatalf("Failed to Decrypt")
 	}
 	if decString != messageToEncrypt {
 		t.Fatalf("Decryption failed.")
 	}
 
-	// now test when we cannot encrypt
+	// now test when we cannot EncryptBytes
 
 	e = Encryptor{}
 	configuredToEncrypt = false // setting this false means that EncryptIfPossible will not return an err
@@ -238,11 +206,11 @@ func TestEncryptAndDecryptIfPossible(t *testing.T) {
 func TestEncryptAndDecryptBytesIfPossible(t *testing.T) {
 	initialKey, _ := GenerateRandomAESKey()
 	configuredToEncrypt = true
-	e := Encryptor{EncryptionKeys: [][]byte{primaryKey: initialKey}}
+	e := Encryptor{EncryptionKeys: [][]byte{primaryKeyIndex: initialKey}}
 
 	encString, err := e.EncryptBytesIfPossible([]byte(messageToEncrypt))
 	if err != nil {
-		t.Fatalf("Failed to encrypt")
+		t.Fatalf("Failed to EncryptBytes")
 	}
 	if encString == messageToEncrypt {
 		t.Fatalf("Encryption failed.")
@@ -250,13 +218,13 @@ func TestEncryptAndDecryptBytesIfPossible(t *testing.T) {
 
 	decString, err := e.DecryptBytesIfPossible([]byte(encString))
 	if err != nil {
-		t.Fatalf("Failed to decrypt")
+		t.Fatalf("Failed to Decrypt")
 	}
 	if decString != messageToEncrypt {
 		t.Fatalf("Decryption failed.")
 	}
 
-	// now test when we cannot encrypt
+	// now test when we cannot EncryptBytes
 
 	e = Encryptor{}
 	configuredToEncrypt = false // setting this false means that EncryptBytesIfPossible will not return an err
