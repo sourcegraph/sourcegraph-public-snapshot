@@ -1,5 +1,5 @@
-.shepherd-content {
-    border-radius: 1rem;
+.shepherd-element {
+    background: #1d2535;
 }
 
 .tour-card {
@@ -15,13 +15,13 @@
     box-sizing: border-box;
     // stylelint-disable-next-line declaration-property-unit-whitelist
     border: 1rem solid #000000;
-    border-color: transparent transparent #000000 transparent;
+    border-color: transparent transparent #1d2535 transparent;
     transform-origin: 0 0;
     margin-left: -0.5rem;
 }
 
 .shepherd-element[data-popper-placement^='bottom'] .shepherd-arrow::after {
-    top: -45px;
+    top: -50px;
 }
 
 .shepherd-element[data-popper-placement^='top'] .shepherd-arrow::after,
@@ -31,6 +31,9 @@
 }
 
 .theme-light {
+    .shepherd-content {
+        background: #ffffff;
+    }
     .shepherd-arrow::after {
         border-color: transparent transparent #ffffff transparent;
     }
