@@ -795,6 +795,13 @@ func TestServiceApplyCampaign(t *testing.T) {
 	store := NewStoreWithClock(dbconn.Global, clock)
 	svc := NewService(store, httpcli.NewExternalHTTPClientFactory())
 
+	// The diff stat that corresponds to what's stored in the spec.
+	diffStat := &diff.Stat{
+		Added:   10,
+		Changed: 5,
+		Deleted: 2,
+	}
+
 	t.Run("campaignSpec without changesetSpecs", func(t *testing.T) {
 		t.Run("new campaign", func(t *testing.T) {
 			campaignSpec := createCampaignSpec(t, ctx, store, "campaign1", admin.ID)
@@ -1011,6 +1018,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ownedByCampaign:  campaign.ID,
 				reconcilerState:  campaigns.ReconcilerStateQueued,
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				diffStat:         diffStat,
 			})
 		})
 
@@ -1138,6 +1146,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ownedByCampaign:  campaign.ID,
 				reconcilerState:  campaigns.ReconcilerStateQueued,
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				diffStat:         diffStat,
 			})
 
 			c4 := cs.Find(campaigns.WithCurrentSpecID(spec4.ID))
@@ -1147,6 +1156,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ownedByCampaign:  campaign.ID,
 				reconcilerState:  campaigns.ReconcilerStateQueued,
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				diffStat:         diffStat,
 			})
 
 			c5 := cs.Find(campaigns.WithCurrentSpecID(spec5.ID))
@@ -1156,6 +1166,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ownedByCampaign:  campaign.ID,
 				reconcilerState:  campaigns.ReconcilerStateQueued,
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				diffStat:         diffStat,
 			})
 		})
 
@@ -1196,6 +1207,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				externalID:       c.ExternalID,
 				reconcilerState:  campaigns.ReconcilerStateCompleted,
 				publicationState: campaigns.ChangesetPublicationStatePublished,
+				diffStat:         diffStat,
 			})
 
 			// Now we stop tracking it in the second campaign
@@ -1442,6 +1454,9 @@ func createChangesetSpec(
 				},
 			},
 		},
+		DiffStatAdded:   10,
+		DiffStatChanged: 5,
+		DiffStatDeleted: 2,
 	}
 
 	if err := store.CreateChangesetSpec(ctx, spec); err != nil {
@@ -1552,6 +1567,7 @@ type changesetAssertions struct {
 	publicationState campaigns.ChangesetPublicationState
 	externalID       string
 	externalBranch   string
+	diffStat         *diff.Stat
 
 	title string
 	body  string
@@ -1600,6 +1616,10 @@ func assertChangeset(t *testing.T, c *campaigns.Changeset, a changesetAssertions
 
 	if want, have := a.failureMessage, c.FailureMessage; want == nil && have != nil {
 		t.Fatalf("expected no failure message, but have=%q", *have)
+	}
+
+	if diff := cmp.Diff(a.diffStat, c.DiffStat()); diff != "" {
+		t.Fatalf("changeset DiffStat wrong. (-want +got):\n%s", diff)
 	}
 
 	if want := c.FailureMessage; want != nil {
