@@ -247,6 +247,7 @@ type ChangesetSpecDescription struct {
 	Diff struct {
 		FileDiffs FileDiffs
 	}
+	DiffStat DiffStat
 }
 
 type GitCommitDescription struct {

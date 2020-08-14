@@ -85,6 +85,11 @@ func TestChangesetSpecResolver(t *testing.T) {
 								},
 							},
 						},
+						DiffStat: apitest.DiffStat{
+							Added:   1,
+							Deleted: 1,
+							Changed: 2,
+						},
 					},
 					ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
 				}
@@ -176,11 +181,12 @@ query($id: ID!) {
 
           published
 
-		  diff {
-		    fileDiffs {
-			  diffStat { added, changed, deleted }
-			}
-		  }
+          diff {
+            fileDiffs {
+              diffStat { added, changed, deleted }
+            }
+          }
+          diffStat { added, changed, deleted }
         }
       }
 
