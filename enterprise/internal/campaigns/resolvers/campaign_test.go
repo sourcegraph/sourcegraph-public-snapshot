@@ -139,10 +139,10 @@ query($campaign: ID!){
       initialApplier { ...u }
       lastApplier    { ...u }
       specCreator    { ...u }
-	  lastAppliedAt
-	  createdAt
-	  updatedAt
-	  closedAt
+      lastAppliedAt
+      createdAt
+      updatedAt
+      closedAt
       namespace {
         ... on User { ...u }
         ... on Org  { ...o }
