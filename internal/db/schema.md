@@ -54,7 +54,7 @@ Referenced by:
  id                 | bigint                   | not null default nextval('campaigns_id_seq'::regclass)
  name               | text                     | not null
  description        | text                     | 
- initial_applier_id | integer                  | not null
+ initial_applier_id | integer                  | 
  namespace_user_id  | integer                  | 
  namespace_org_id   | integer                  | 
  created_at         | timestamp with time zone | not null default now()
