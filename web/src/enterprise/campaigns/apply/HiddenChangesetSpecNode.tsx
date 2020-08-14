@@ -18,7 +18,7 @@ export const HiddenChangesetSpecNode: React.FunctionComponent<HiddenChangesetSpe
                 {node.type === ChangesetSpecType.BRANCH && <>Create changeset in a private repository</>}
             </h3>
             <span className="text-danger">
-                No action will happen on apply.{' '}
+                No action will be taken on apply.{' '}
                 <InfoCircleOutlineIcon
                     className="icon-inline"
                     data-tooltip="You have no permissions to access this repository."
