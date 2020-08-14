@@ -6,6 +6,7 @@ import (
 
 	"testing"
 
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
@@ -40,6 +41,13 @@ func TestReconcilerProcess(t *testing.T) {
 		VCS:  protocol.VCSInfo{URL: rs[0].URI},
 	})
 	defer state.Unmock()
+
+	// diffStat is the diff stat that MockChangesetSyncState will provide from the source.
+	diffStat := &diff.Stat{
+		Added:   1,
+		Changed: 1,
+		Deleted: 3,
+	}
 
 	githubPR := buildGithubPR(clock(), "12345", "Remote title", "Remote body", "head-ref-on-github")
 
@@ -118,9 +126,9 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       "12345",
 				externalBranch:   "head-ref-on-github",
-
-				title: "Remote title",
-				body:  "Remote body",
+				title:            "Remote title",
+				body:             "Remote body",
+				diffStat:         diffStat,
 			},
 		},
 		"retry publish changeset": {
@@ -147,9 +155,9 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       "12345",
 				externalBranch:   "head-ref-on-github",
-
-				title: "Remote title",
-				body:  "Remote body",
+				title:            "Remote title",
+				body:             "Remote body",
+				diffStat:         diffStat,
 			},
 		},
 		"update published changeset metadata": {
@@ -184,10 +192,49 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       "12345",
 				externalBranch:   "head-ref-on-github",
-
+				diffStat:         diffStat,
 				// We update the title/body but want the title/body returned by the code host.
 				title: "Remote title",
 				body:  "Remote body",
+			},
+		},
+		"retry update published changeset metadata": {
+			currentSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+
+				title: "new title",
+				body:  "new body",
+			},
+			previousSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+
+				title: "old title",
+				body:  "old body",
+			},
+			changeset: testChangesetOpts{
+				publicationState:  campaigns.ChangesetPublicationStatePublished,
+				externalID:        "12345",
+				externalBranch:    "head-ref-on-github",
+				createdByCampaign: true,
+				// Previous update failed:
+				failureMessage: "failed to update changeset metadata",
+			},
+			sourcerMetadata: githubPR,
+
+			wantCreateOnHostCode: false,
+			wantUpdateOnCodeHost: true,
+			wantGitserverCommit:  false,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       "12345",
+				externalBranch:   "head-ref-on-github",
+				title:            "Remote title",
+				body:             "Remote body",
+				diffStat:         diffStat,
+				// failureMessage should be nil
 			},
 		},
 		"update published changeset commit": {
@@ -223,6 +270,42 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       "12345",
 				externalBranch:   "head-ref-on-github",
+			},
+		},
+		"retry update published changeset commit": {
+			currentSpec: &testSpecOpts{
+				headRef:       "refs/heads/head-ref-on-github",
+				published:     true,
+				commitDiff:    "new diff",
+				commitMessage: "new message",
+			},
+			previousSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+
+				commitDiff:    "old diff",
+				commitMessage: "old message",
+			},
+			changeset: testChangesetOpts{
+				publicationState:  campaigns.ChangesetPublicationStatePublished,
+				externalID:        "12345",
+				externalBranch:    "head-ref-on-github",
+				createdByCampaign: true,
+
+				// Previous update failed:
+				failureMessage: "failed to update changeset commit",
+			},
+			sourcerMetadata: githubPR,
+
+			wantCreateOnHostCode: false,
+			wantUpdateOnCodeHost: false,
+			wantGitserverCommit:  true,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       "12345",
+				externalBranch:   "head-ref-on-github",
+				// failureMessage should be nil
 			},
 		},
 		"reprocess published changeset without changes": {
@@ -359,12 +442,6 @@ func TestReconcilerProcess(t *testing.T) {
 		})
 	}
 }
-
-var (
-	diffStatOne   int32 = 1
-	diffStatTwo   int32 = 2
-	diffStatThree int32 = 3
-)
 
 func buildGithubPR(now time.Time, externalID, title, body, headRef string) interface{} {
 	return &github.PullRequest{

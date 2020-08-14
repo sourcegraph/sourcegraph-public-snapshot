@@ -76,13 +76,7 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, err
 	}
 
-	return &changesetResolver{
-		store:                r.store,
-		httpFactory:          r.httpFactory,
-		changeset:            changeset,
-		attemptedPreloadRepo: true,
-		preloadedRepo:        repo,
-	}, nil
+	return NewChangesetResolver(r.store, r.httpFactory, changeset, repo), nil
 }
 
 func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignResolver, error) {
@@ -178,9 +172,27 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		tr.Finish()
 	}()
 
-	// TODO(sqs): Implement createCampaign when we've implemented applyCampaign and are happy about
-	// how it works.
-	return nil, errors.New("createCampaign is not yet implemented (use applyCampaign instead)")
+	opts := ee.ApplyCampaignOpts{
+		// This is what differentiates CreateCampaign from ApplyCampaign
+		FailIfCampaignExists: true,
+	}
+
+	opts.CampaignSpecRandID, err = unmarshalCampaignSpecID(args.CampaignSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	if opts.CampaignSpecRandID == "" {
+		return nil, ErrIDIsZero
+	}
+
+	svc := ee.NewService(r.store, r.httpFactory)
+	campaign, err := svc.ApplyCampaign(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
 func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.ApplyCampaignArgs) (graphqlbackend.CampaignResolver, error) {
@@ -383,6 +395,7 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 		return nil, err
 	}
 	opts := ee.ListCampaignsOpts{}
+
 	state, err := parseCampaignState(args.State)
 	if err != nil {
 		return nil, err
@@ -391,17 +404,33 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 	if args.First != nil {
 		opts.Limit = int(*args.First)
 	}
+
 	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx)
 	if authErr != nil && authErr != backend.ErrMustBeSiteAdmin {
-		return nil, err
+		return nil, authErr
 	}
 	isSiteAdmin := authErr != backend.ErrMustBeSiteAdmin
 	if !isSiteAdmin {
 		if args.ViewerCanAdminister != nil && *args.ViewerCanAdminister {
 			actor := actor.FromContext(ctx)
-			opts.OnlyForAuthor = actor.UID
+			opts.InitialApplierID = actor.UID
 		}
 	}
+
+	if args.Namespace != nil {
+		switch relay.UnmarshalKind(*args.Namespace) {
+		case "User":
+			err = relay.UnmarshalSpec(*args.Namespace, &opts.NamespaceUserID)
+		case "Org":
+			err = relay.UnmarshalSpec(*args.Namespace, &opts.NamespaceOrgID)
+		default:
+			err = errors.Errorf("Invalid namespace %q", *args.Namespace)
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &campaignsConnectionResolver{
 		store:       r.store,
 		httpFactory: r.httpFactory,
@@ -490,7 +519,7 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 
 	svc := ee.NewService(r.store, r.httpFactory)
 	// 🚨 SECURITY: CloseCampaign checks whether current user is authorized.
-	campaign, err := svc.CloseCampaign(ctx, campaignID, args.CloseChangesets)
+	campaign, err := svc.CloseCampaign(ctx, campaignID, args.CloseChangesets, true)
 	if err != nil {
 		return nil, errors.Wrap(err, "closing campaign")
 	}

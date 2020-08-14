@@ -96,6 +96,8 @@ interface UserAreaProps
      * parameter.
      */
     authenticatedUser: GQL.IUser | null
+
+    isSourcegraphDotCom: boolean
 }
 
 interface UserAreaState {
@@ -138,6 +140,8 @@ export interface UserAreaRouteContext
     authenticatedUser: GQL.IUser | null
     userSettingsSideBarItems: UserSettingsSidebarItems
     userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
+
+    isSourcegraphDotCom: boolean
 }
 
 /**

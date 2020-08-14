@@ -82,7 +82,7 @@ func CalcCounts(start, end time.Time, cs []*campaigns.Changeset, es ...*campaign
 			c.Total++
 			switch states.externalState {
 			case campaigns.ChangesetExternalStateOpen:
-				c.Open += 1
+				c.Open++
 				switch states.reviewState {
 				case campaigns.ChangesetReviewStatePending:
 					c.OpenPending++
@@ -93,9 +93,9 @@ func CalcCounts(start, end time.Time, cs []*campaigns.Changeset, es ...*campaign
 				}
 
 			case campaigns.ChangesetExternalStateMerged:
-				c.Merged += 1
+				c.Merged++
 			case campaigns.ChangesetExternalStateClosed:
-				c.Closed += 1
+				c.Closed++
 			}
 
 		}

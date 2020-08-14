@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 )
 
 var testMetricWarning = prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -26,6 +27,11 @@ func init() {
 func (r *schemaResolver) TriggerObservabilityTestAlert(ctx context.Context, args *struct {
 	Level string
 }) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Do not allow arbitrary users to set off alerts.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
 	var metric *prometheus.GaugeVec
 	switch args.Level {
 	case "warning":

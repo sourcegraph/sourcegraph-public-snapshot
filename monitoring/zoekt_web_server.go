@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 func ZoektWebServer() *Container {
 	return &Container{
 		Name:        "zoekt-webserver",
@@ -13,10 +15,11 @@ func ZoektWebServer() *Container {
 						{
 							Name:              "indexed_search_request_errors",
 							Description:       "indexed search request errors every 5m by code",
-							Query:             `sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m]))`,
+							Query:             `sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 50},
-							PanelOptions:      PanelOptions().LegendFormat("{{code}}").Unit(Seconds),
+							DataMayBeNaN:      true, // denominator may be zero
+							Warning:           Alert{GreaterOrEqual: 5, For: 5 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("{{code}}").Unit(Percentage),
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
@@ -42,12 +45,12 @@ func ZoektWebServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage7d("zoekt-webserver"),
-						sharedProvisioningMemoryUsage7d("zoekt-webserver"),
+						sharedProvisioningCPUUsageLongTerm("zoekt-webserver"),
+						sharedProvisioningMemoryUsageLongTerm("zoekt-webserver"),
 					},
 					{
-						sharedProvisioningCPUUsage5m("zoekt-webserver"),
-						sharedProvisioningMemoryUsage5m("zoekt-webserver"),
+						sharedProvisioningCPUUsageShortTerm("zoekt-webserver"),
+						sharedProvisioningMemoryUsageShortTerm("zoekt-webserver"),
 					},
 				},
 			},

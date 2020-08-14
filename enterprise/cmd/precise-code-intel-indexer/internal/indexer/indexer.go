@@ -8,6 +8,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 func NewIndexer(
@@ -25,7 +27,7 @@ func NewIndexer(
 		frontendURL:     frontendURL,
 	}
 
-	handler := workerutil.HandlerFunc(func(ctx context.Context, tx workerutil.Store, record workerutil.Record) error {
+	handler := dbworker.HandlerFunc(func(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) error {
 		return processor.Process(ctx, record.(store.Index))
 	})
 
@@ -33,12 +35,12 @@ func NewIndexer(
 		HandleOperation: metrics.ProcessOperation,
 	}
 
-	options := workerutil.WorkerOptions{
+	options := dbworker.WorkerOptions{
 		Handler:     handler,
 		NumHandlers: 1,
 		Interval:    pollInterval,
 		Metrics:     workerMetrics,
 	}
 
-	return workerutil.NewWorker(rootContext, store.WorkerutilIndexStore(s), options)
+	return dbworker.NewWorker(rootContext, store.WorkerutilIndexStore(s), options)
 }

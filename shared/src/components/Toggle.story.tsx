@@ -2,27 +2,18 @@ import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { Toggle } from './Toggle'
-import toggleStyles from './Toggle.scss'
-import css from 'tagged-template-noop'
+import webStyles from '../../../web/src/main.scss'
 
 const onToggle = action('onToggle')
 
-const cssVars = css`
-    :root {
-        --text-muted: grey;
-        --primary: blue;
-    }
-`
-
 const { add } = storiesOf('shared/Toggle', module).addDecorator(story => (
     <>
-        <style>{toggleStyles}</style>
-        <style>{cssVars}</style>
         <div>{story()}</div>
+        <style>{webStyles}</style>
     </>
 ))
 
-add('interactive', () => {
+add('Interactive', () => {
     interface State {
         value?: boolean
     }
@@ -41,10 +32,10 @@ add('interactive', () => {
     return <ToggleInteractive />
 })
 
-add('on', () => <Toggle value={true} onToggle={onToggle} />)
+add('On', () => <Toggle value={true} onToggle={onToggle} />)
 
-add('off', () => <Toggle value={false} onToggle={onToggle} />)
+add('Off', () => <Toggle value={false} onToggle={onToggle} />)
 
-add('disabled/on', () => <Toggle value={true} disabled={true} onToggle={onToggle} />)
+add('Disabled & on', () => <Toggle value={true} disabled={true} onToggle={onToggle} />)
 
-add('disabled/off', () => <Toggle value={false} disabled={true} onToggle={onToggle} />)
+add('Disabled & off', () => <Toggle value={false} disabled={true} onToggle={onToggle} />)

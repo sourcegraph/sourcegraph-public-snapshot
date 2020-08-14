@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 func GitHubProxy() *Container {
 	return &Container{
 		Name:        "github-proxy",
@@ -15,7 +17,7 @@ func GitHubProxy() *Container {
 							Description:       "remaining calls to GitHub before hitting the rate limit",
 							Query:             `src_github_rate_limit_remaining{resource="core"}`,
 							DataMayNotExist:   true,
-							Critical:          Alert{LessOrEqual: 1000},
+							Critical:          Alert{LessOrEqual: 500, For: 5 * time.Minute},
 							PanelOptions:      PanelOptions().LegendFormat("calls remaining"),
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: `Try restarting the pod to get a different public IP.`,
@@ -52,12 +54,12 @@ func GitHubProxy() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage7d("github-proxy"),
-						sharedProvisioningMemoryUsage7d("github-proxy"),
+						sharedProvisioningCPUUsageLongTerm("github-proxy"),
+						sharedProvisioningMemoryUsageLongTerm("github-proxy"),
 					},
 					{
-						sharedProvisioningCPUUsage5m("github-proxy"),
-						sharedProvisioningMemoryUsage5m("github-proxy"),
+						sharedProvisioningCPUUsageShortTerm("github-proxy"),
+						sharedProvisioningMemoryUsageShortTerm("github-proxy"),
 					},
 				},
 			},

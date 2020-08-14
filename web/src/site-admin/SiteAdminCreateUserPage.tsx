@@ -96,7 +96,7 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
                 <p>
                     Create a new user account
                     {window.context.resetPasswordEnabled
-                        ? ' and generate a password reset link. You must manually send the link to the new user.'
+                        ? ' and generate a password reset link. If sending emails not configured, you must manually send the link to the new user.'
                         : '. New users must authenticate using a configured authentication provider.'}
                 </p>
                 <p className="mb-4">

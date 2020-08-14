@@ -14,7 +14,6 @@ var allDockerImages = []string{
 	"github-proxy",
 	"gitserver",
 	"query-runner",
-	"replacer",
 	"repo-updater",
 	"searcher",
 	"server",
@@ -22,6 +21,7 @@ var allDockerImages = []string{
 	"precise-code-intel-bundle-manager",
 	"precise-code-intel-worker",
 	"precise-code-intel-indexer",
+	"precise-code-intel-indexer-vm",
 
 	// Images under docker-images/
 	"cadvisor",
@@ -35,6 +35,7 @@ var allDockerImages = []string{
 	"syntax-highlighter",
 	"jaeger-agent",
 	"jaeger-all-in-one",
+	"ignite-ubuntu",
 }
 
 // Verifies the docs formatting and builds the `docsite` command.
@@ -149,7 +150,7 @@ func addPostgresBackcompat(pipeline *bk.Pipeline) {
 func addGoTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go:",
 		bk.Cmd("./dev/ci/go-test.sh"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F go -F unit"))
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F go"))
 }
 
 // Builds the OSS and Enterprise Go commands.

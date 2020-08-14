@@ -428,34 +428,52 @@ func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.R
 	if q == nil {
 		return &excludedRepos{}
 	}
-	var err error
+
+	// PERF: We query concurrently since each count call can be slow on
+	// Sourcegraph.com (100ms+).
+	var wg sync.WaitGroup
 	var numExcludedForks, numExcludedArchived int
+
 	forkStr, _ := q.StringValue(query.FieldFork)
 	fork := parseYesNoOnly(forkStr)
 	if fork == Invalid && !exactlyOneRepo(op.IncludePatterns) {
-		// 'fork:...' was not specified and forks are excluded, find out
-		// which repos are excluded.
-		selectForks := op
-		selectForks.OnlyForks = true
-		selectForks.NoForks = false
-		numExcludedForks, err = db.Repos.Count(ctx, selectForks)
-		if err != nil {
-			log15.Warn("repo count for excluded fork", "err", err)
-		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			// 'fork:...' was not specified and forks are excluded, find out
+			// which repos are excluded.
+			selectForks := op
+			selectForks.OnlyForks = true
+			selectForks.NoForks = false
+			var err error
+			numExcludedForks, err = db.Repos.Count(ctx, selectForks)
+			if err != nil {
+				log15.Warn("repo count for excluded fork", "err", err)
+			}
+		}()
 	}
+
 	archivedStr, _ := q.StringValue(query.FieldArchived)
 	archived := parseYesNoOnly(archivedStr)
 	if archived == Invalid && !exactlyOneRepo(op.IncludePatterns) {
-		// archived...: was not specified and archives are excluded,
-		// find out which repos are excluded.
-		selectArchived := op
-		selectArchived.OnlyArchived = true
-		selectArchived.NoArchived = false
-		numExcludedArchived, err = db.Repos.Count(ctx, selectArchived)
-		if err != nil {
-			log15.Warn("repo count for excluded archive", "err", err)
-		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			// archived...: was not specified and archives are excluded,
+			// find out which repos are excluded.
+			selectArchived := op
+			selectArchived.OnlyArchived = true
+			selectArchived.NoArchived = false
+			var err error
+			numExcludedArchived, err = db.Repos.Count(ctx, selectArchived)
+			if err != nil {
+				log15.Warn("repo count for excluded archive", "err", err)
+			}
+		}()
 	}
+
+	wg.Wait()
+
 	return &excludedRepos{forks: numExcludedForks, archived: numExcludedArchived}
 }
 
@@ -712,7 +730,7 @@ func (op *resolveRepoOp) String() string {
 	return b.String()
 }
 
-func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, overLimit bool, excludedRepos *excludedRepos, err error) {
+func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, overLimit bool, excluded *excludedRepos, err error) {
 	tr, ctx := trace.New(ctx, "resolveRepositories", op.String())
 	defer func() {
 		tr.SetError(err)
@@ -812,10 +830,20 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 			NoPrivate:    op.onlyPublic,
 			OnlyPrivate:  op.onlyPrivate,
 		}
-		excludedRepos = computeExcludedRepositories(ctx, op.query, options)
-		tr.LazyPrintf("excluded repos: %+v", excludedRepos)
+
+		// PERF: We query concurrently since Count and List call can be slow
+		// on Sourcegraph.com (100ms+).
+		excludedC := make(chan *excludedRepos)
+		go func() {
+			excludedC <- computeExcludedRepositories(ctx, op.query, options)
+		}()
+
 		repos, err = db.Repos.List(ctx, options)
 		tr.LazyPrintf("Repos.List - done")
+
+		excluded = <-excludedC
+		tr.LazyPrintf("excluded repos: %+v", excluded)
+
 		if err != nil {
 			return nil, nil, false, nil, err
 		}
@@ -903,7 +931,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 		tr.LazyPrintf("repohascommitafter removed %d repos in %s", before-len(repoRevisions), time.Since(start))
 	}
 
-	return repoRevisions, missingRepoRevisions, overLimit, excludedRepos, err
+	return repoRevisions, missingRepoRevisions, overLimit, excluded, err
 }
 
 type defaultReposFunc func(ctx context.Context) ([]*types.Repo, error)
@@ -996,7 +1024,7 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 }
 
 func optimizeRepoPatternWithHeuristics(repoPattern string) string {
-	if envvar.SourcegraphDotComMode() && strings.HasPrefix(string(repoPattern), "github.com") {
+	if envvar.SourcegraphDotComMode() && (strings.HasPrefix(string(repoPattern), "github.com") || strings.HasPrefix(string(repoPattern), `github\.com`)) {
 		repoPattern = "^" + repoPattern
 	}
 	// Optimization: make the "." in "github.com" a literal dot

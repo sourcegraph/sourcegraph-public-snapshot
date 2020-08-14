@@ -31,16 +31,6 @@ import (
 // metricsRecorder records operational metrics for methods.
 var metricsRecorder = metrics.NewOperationMetrics(prometheus.DefaultRegisterer, "updatecheck_client", metrics.WithLabels("method"))
 
-//
-var updateCheckHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
-	Name: "update_check_req",
-	Help: "metrics for update_check",
-})
-
-func init() {
-	prometheus.MustRegister(updateCheckHistogram)
-}
-
 // Status of the check for software updates for Sourcegraph.
 type Status struct {
 	Date          time.Time // the time that the last check completed
@@ -103,12 +93,12 @@ func getAndMarshalSiteActivityJSON(ctx context.Context, criticalOnly bool) (_ js
 
 func hasSearchOccurred(ctx context.Context) (_ bool, err error) {
 	defer recordOperation("hasSearchOccurred")(&err)
-	return usagestats.HasSearchOccurred()
+	return usagestats.HasSearchOccurred(ctx)
 }
 
 func hasFindRefsOccurred(ctx context.Context) (_ bool, err error) {
 	defer recordOperation("hasSearchOccured")(&err)
-	return usagestats.HasFindRefsOccurred()
+	return usagestats.HasFindRefsOccurred(ctx)
 }
 
 func getTotalUsersCount(ctx context.Context) (_ int, err error) {
@@ -123,7 +113,7 @@ func getTotalReposCount(ctx context.Context) (_ int, err error) {
 
 func getUsersActiveTodayCount(ctx context.Context) (_ int, err error) {
 	defer recordOperation("getUsersActiveTodayCount")(&err)
-	return usagestatsdeprecated.GetUsersActiveTodayCount()
+	return usagestatsdeprecated.GetUsersActiveTodayCount(ctx)
 }
 
 func getInitialSiteAdminEmail(ctx context.Context) (_ string, err error) {
@@ -139,6 +129,26 @@ func getAndMarshalCampaignsUsageJSON(ctx context.Context) (_ json.RawMessage, er
 		return nil, err
 	}
 	return json.Marshal(campaignsUsage)
+}
+
+func getAndMarshalGrowthStatisticsJSON(ctx context.Context) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalGrowthStatisticsJSON")(&err)
+
+	growthStatistics, err := usagestats.GetGrowthStatistics(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(growthStatistics)
+}
+
+func getAndMarshalSavedSearchesJSON(ctx context.Context) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalSavedSearchesJSON")(&err)
+
+	savedSearches, err := usagestats.GetSavedSearches(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(savedSearches)
 }
 
 func getAndMarshalAggregatedUsageJSON(ctx context.Context) (_ json.RawMessage, _ json.RawMessage, err error) {
@@ -162,7 +172,7 @@ func getAndMarshalAggregatedUsageJSON(ctx context.Context) (_ json.RawMessage, _
 	return serializedCodeIntelUsage, serializedSearchUsage, nil
 }
 
-func updateURL(ctx context.Context) string {
+func updateURL() string {
 	return baseURL.String()
 }
 
@@ -180,6 +190,8 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		CodeIntelUsage:      []byte("{}"),
 		SearchUsage:         []byte("{}"),
 		CampaignsUsage:      []byte("{}"),
+		GrowthStatistics:    []byte("{}"),
+		SavedSearches:       []byte("{}"),
 	}
 
 	totalUsers, err := getTotalUsersCount(ctx)
@@ -221,6 +233,16 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalCampaignsUsageJSON failed", "error", err)
 		}
+		r.GrowthStatistics, err = getAndMarshalGrowthStatisticsJSON(ctx)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalGrowthStatisticsJSON failed", "error", err)
+		}
+
+		r.SavedSearches, err = getAndMarshalSavedSearchesJSON(ctx)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalSavedSearchesJSON failed", "error", err)
+		}
+
 		r.ExternalServices, err = externalServiceKinds(ctx)
 		if err != nil {
 			logFunc("telemetry: externalServicesKinds failed", "error", err)
@@ -277,18 +299,10 @@ func authProviderTypes() []string {
 	return types
 }
 
-func externalServiceKinds(ctx context.Context) (_ []string, err error) {
+func externalServiceKinds(ctx context.Context) (kinds []string, err error) {
 	defer recordOperation("externalServiceKinds")(&err)
-
-	services, err := db.ExternalServices.List(ctx, db.ExternalServicesListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	kinds := make([]string, len(services))
-	for i, s := range services {
-		kinds[i] = s.Kind
-	}
-	return kinds, nil
+	kinds, err = db.ExternalServices.DistinctKinds(ctx)
+	return kinds, err
 }
 
 // check performs an update check. It returns the result and updates the global state
@@ -299,7 +313,7 @@ func check(ctx context.Context) (*Status, error) {
 		if err != nil {
 			return "", err
 		}
-		resp, err := ctxhttp.Post(ctx, nil, updateURL(ctx), "application/json", body)
+		resp, err := ctxhttp.Post(ctx, nil, updateURL(), "application/json", body)
 		if err != nil {
 			return "", err
 		}
@@ -365,8 +379,11 @@ func Start() {
 	const delay = 30 * time.Minute
 	for {
 		ctx, cancel := context.WithTimeout(ctx, 300*time.Second)
-		_, _ = check(ctx) // updates global state on its own, can safely ignore return value
+		_, err := check(ctx) // updates global state on its own, can safely ignore return value
 		cancel()
+		if err != nil {
+			log15.Error("telemetry: updatecheck failed: ", err)
+		}
 
 		// Randomize sleep to prevent thundering herds.
 		randomDelay := time.Duration(rand.Intn(600)) * time.Second

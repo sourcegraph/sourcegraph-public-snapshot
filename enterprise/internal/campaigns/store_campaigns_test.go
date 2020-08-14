@@ -18,25 +18,30 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 	t.Run("Create", func(t *testing.T) {
 		for i := 0; i < cap(campaigns); i++ {
 			c := &cmpgn.Campaign{
-				Name:           fmt.Sprintf("test-campaign-%d", i),
-				Description:    "All the Javascripts are belong to us",
-				Branch:         "upgrade-es-lint",
-				AuthorID:       int32(i) + 50,
+				Name:        fmt.Sprintf("test-campaign-%d", i),
+				Description: "All the Javascripts are belong to us",
+
+				InitialApplierID: int32(i) + 50,
+				LastAppliedAt:    clock.now(),
+				LastApplierID:    int32(i) + 99,
+
 				ChangesetIDs:   []int64{int64(i) + 1},
 				CampaignSpecID: 1742 + int64(i),
 				ClosedAt:       clock.now(),
 			}
+
 			if i == 0 {
-				// don't have associations for the first one
+				// Check for nullability of fields by not setting them
 				c.CampaignSpecID = 0
-				// Don't close the first one
 				c.ClosedAt = time.Time{}
+				c.LastAppliedAt = time.Time{}
+				c.LastApplierID = 0
 			}
 
 			if i%2 == 0 {
 				c.NamespaceOrgID = int32(i) + 23
 			} else {
-				c.NamespaceUserID = c.AuthorID
+				c.NamespaceUserID = c.InitialApplierID
 			}
 
 			want := c.Clone()
@@ -84,12 +89,60 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 
 		t.Run("OnlyForAuthor set", func(t *testing.T) {
 			for _, c := range campaigns {
-				count, err = s.CountCampaigns(ctx, CountCampaignsOpts{OnlyForAuthor: c.AuthorID})
+				count, err = s.CountCampaigns(ctx, CountCampaignsOpts{InitialApplierID: c.InitialApplierID})
 				if err != nil {
 					t.Fatal(err)
 				}
 				if have, want := count, 1; have != want {
 					t.Fatalf("Incorrect number of campaigns counted, want=%d have=%d", want, have)
+				}
+			}
+		})
+
+		t.Run("NamespaceUserID", func(t *testing.T) {
+			wantCounts := map[int32]int{}
+			for _, c := range campaigns {
+				if c.NamespaceUserID == 0 {
+					continue
+				}
+				wantCounts[c.NamespaceUserID] += 1
+			}
+			if len(wantCounts) == 0 {
+				t.Fatalf("No campaigns with NamespaceUserID")
+			}
+
+			for userID, want := range wantCounts {
+				have, err := s.CountCampaigns(ctx, CountCampaignsOpts{NamespaceUserID: userID})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have != want {
+					t.Fatalf("campaigns count for NamespaceUserID=%d wrong. want=%d, have=%d", userID, want, have)
+				}
+			}
+		})
+
+		t.Run("NamespaceOrgID", func(t *testing.T) {
+			wantCounts := map[int32]int{}
+			for _, c := range campaigns {
+				if c.NamespaceOrgID == 0 {
+					continue
+				}
+				wantCounts[c.NamespaceOrgID] += 1
+			}
+			if len(wantCounts) == 0 {
+				t.Fatalf("No campaigns with NamespaceOrgID")
+			}
+
+			for orgID, want := range wantCounts {
+				have, err := s.CountCampaigns(ctx, CountCampaignsOpts{NamespaceOrgID: orgID})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have != want {
+					t.Fatalf("campaigns count for NamespaceOrgID=%d wrong. want=%d, have=%d", orgID, want, have)
 				}
 			}
 		})
@@ -201,7 +254,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 
 		t.Run("ListCampaigns OnlyForAuthor set", func(t *testing.T) {
 			for _, c := range campaigns {
-				have, next, err := s.ListCampaigns(ctx, ListCampaignsOpts{OnlyForAuthor: c.AuthorID})
+				have, next, err := s.ListCampaigns(ctx, ListCampaignsOpts{InitialApplierID: c.InitialApplierID})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -216,13 +269,51 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 				}
 			}
 		})
+
+		t.Run("ListCampaigns by NamespaceUserID", func(t *testing.T) {
+			for _, c := range campaigns {
+				if c.NamespaceUserID == 0 {
+					continue
+				}
+				opts := ListCampaignsOpts{NamespaceUserID: c.NamespaceUserID}
+				have, _, err := s.ListCampaigns(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				for _, haveCampaign := range have {
+					if have, want := haveCampaign.NamespaceUserID, opts.NamespaceUserID; have != want {
+						t.Fatalf("campaign has wrong NamespaceUserID. want=%d, have=%d", want, have)
+					}
+				}
+			}
+		})
+
+		t.Run("ListCampaigns by NamespaceOrgID", func(t *testing.T) {
+			for _, c := range campaigns {
+				if c.NamespaceOrgID == 0 {
+					continue
+				}
+				opts := ListCampaignsOpts{NamespaceOrgID: c.NamespaceOrgID}
+				have, _, err := s.ListCampaigns(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				for _, haveCampaign := range have {
+					if have, want := haveCampaign.NamespaceOrgID, opts.NamespaceOrgID; have != want {
+						t.Fatalf("campaign has wrong NamespaceOrgID. want=%d, have=%d", want, have)
+					}
+				}
+			}
+		})
 	})
 
 	t.Run("Update", func(t *testing.T) {
 		for _, c := range campaigns {
 			c.Name += "-updated"
 			c.Description += "-updated"
-			c.AuthorID++
+			c.InitialApplierID++
 			c.ClosedAt = c.ClosedAt.Add(5 * time.Second)
 
 			if c.NamespaceUserID != 0 {

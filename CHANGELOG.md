@@ -18,6 +18,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Campaigns can now be synced using GitLab webhooks. [#12139](https://github.com/sourcegraph/sourcegraph/pull/12139)
 - Configured `observability.alerts` can now be tested using a GraphQL endpoint, `triggerObservabilityTestAlert`. [#12532](https://github.com/sourcegraph/sourcegraph/pull/12532)
 - The Sourcegraph CLI can now serve local repositories for Sourcegraph to clone. This was previously in a command called `src-expose`. See [serving local repositories](https://docs.sourcegraph.com/admin/external_service/src_serve_git) in our documentation to find out more. [#12363](https://github.com/sourcegraph/sourcegraph/issues/12363)
+- The count of retained, churned, resurrected, new and deleted users will be sent back in pings. [#12136](https://github.com/sourcegraph/sourcegraph/pull/12136)
+- Saved search usage will be sent back in pings. [#12956](https://github.com/sourcegraph/sourcegraph/pull/12956)
 
 ### Changed
 

@@ -49,10 +49,6 @@ var (
 				// Default is 2, but we can send many concurrent requests
 				MaxIdleConnsPerHost: 500,
 			}, func(u *url.URL) string {
-				// TODO(uwedeportivo): remove once codemod has its own client
-				if strings.Contains(u.String(), "replacer") {
-					return "replace"
-				}
 				return "search"
 			}),
 		},
@@ -136,10 +132,6 @@ func (fm *FileMatchResolver) LimitHit() bool {
 func (fm *FileMatchResolver) ToRepository() (*RepositoryResolver, bool) { return nil, false }
 func (fm *FileMatchResolver) ToFileMatch() (*FileMatchResolver, bool)   { return fm, true }
 func (fm *FileMatchResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
-	return nil, false
-}
-
-func (r *FileMatchResolver) ToCodemodResult() (*codemodResultResolver, bool) {
 	return nil, false
 }
 

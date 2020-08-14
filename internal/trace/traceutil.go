@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync/atomic"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go"
@@ -14,12 +15,25 @@ import (
 	nettrace "golang.org/x/net/trace"
 )
 
-var NoopSpanURL = func(span opentracing.Span) string {
-	return "#tracer-not-enabled"
-}
+var spanURL atomic.Value
 
 // SpanURL returns the URL to the tracing UI for the given span. The span must be non-nil.
-var SpanURL = NoopSpanURL
+func SpanURL(span opentracing.Span) string {
+	v := spanURL.Load()
+	if v == nil {
+		return "#tracer-not-enabled"
+	}
+	f := v.(func(span opentracing.Span) string)
+	if f == nil {
+		return "#tracer-not-enabled"
+	}
+	return f(span)
+}
+
+// SetSpanURLFunc sets the function that SpanURL sets.
+func SetSpanURLFunc(f func(span opentracing.Span) string) {
+	spanURL.Store(f)
+}
 
 // New returns a new Trace with the specified family and title.
 func New(ctx context.Context, family, title string, tags ...Tag) (*Trace, context.Context) {

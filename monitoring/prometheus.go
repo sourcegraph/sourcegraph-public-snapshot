@@ -59,12 +59,12 @@ func Prometheus() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage7d("prometheus"),
-						sharedProvisioningMemoryUsage7d("prometheus"),
+						sharedProvisioningCPUUsageLongTerm("prometheus"),
+						sharedProvisioningMemoryUsageLongTerm("prometheus"),
 					},
 					{
-						sharedProvisioningCPUUsage5m("prometheus"),
-						sharedProvisioningMemoryUsage5m("prometheus"),
+						sharedProvisioningCPUUsageShortTerm("prometheus"),
+						sharedProvisioningMemoryUsageShortTerm("prometheus"),
 					},
 				},
 			},

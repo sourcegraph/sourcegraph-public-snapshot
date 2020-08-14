@@ -55,12 +55,12 @@ func Symbols() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage7d("symbols"),
-						sharedProvisioningMemoryUsage7d("symbols"),
+						sharedProvisioningCPUUsageLongTerm("symbols"),
+						sharedProvisioningMemoryUsageLongTerm("symbols"),
 					},
 					{
-						sharedProvisioningCPUUsage5m("symbols"),
-						sharedProvisioningMemoryUsage5m("symbols"),
+						sharedProvisioningCPUUsageShortTerm("symbols"),
+						sharedProvisioningMemoryUsageShortTerm("symbols"),
 					},
 				},
 			},

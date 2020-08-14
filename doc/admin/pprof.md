@@ -75,7 +75,6 @@ This is a table of Sourcegraph backend debug ports in the two deployment context
 | query-runner      | 6060       | 6067   |
 | zoekt-indexserver | 6060       | 6072   |
 | zoekt-webserver   | 6060       | 3070   |
-| replacer          | 6060       | 6076   |
 
 
 ## Profiling kinds

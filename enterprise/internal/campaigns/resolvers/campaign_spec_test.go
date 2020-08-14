@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
@@ -37,7 +38,8 @@ func TestCampaignSpecResolver(t *testing.T) {
 	}
 	repoID := graphqlbackend.MarshalRepositoryID(repo.ID)
 
-	userID := insertTestUser(t, dbconn.Global, "campaign-spec-by-id", false)
+	username := "campaign-spec-by-id-user-name"
+	userID := insertTestUser(t, dbconn.Global, username, false)
 
 	spec, err := campaigns.NewCampaignSpecFromRaw(ct.TestRawCampaignSpec)
 	if err != nil {
@@ -61,14 +63,22 @@ func TestCampaignSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	matchingCampaign := &campaigns.Campaign{
+		Name:             spec.Spec.Name,
+		NamespaceUserID:  userID,
+		InitialApplierID: userID,
+	}
+	if err := store.CreateCampaign(ctx, matchingCampaign); err != nil {
+		t.Fatal(err)
+	}
+
 	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil)
 	if err != nil {
 		t.Fatal(err)
-
 	}
 
 	apiID := string(marshalCampaignSpecRandID(spec.RandID))
-	userApiID := string(graphqlbackend.MarshalUserID(userID))
+	userAPIID := string(graphqlbackend.MarshalUserID(userID))
 
 	input := map[string]interface{}{"campaignSpec": apiID}
 	var response struct{ Node apitest.CampaignSpec }
@@ -87,9 +97,9 @@ func TestCampaignSpecResolver(t *testing.T) {
 		OriginalInput: spec.RawSpec,
 		ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
 
-		PreviewURL:          "/campaigns/new?spec=" + apiID,
-		Namespace:           apitest.UserOrg{ID: userApiID, DatabaseID: userID},
-		Creator:             apitest.User{ID: userApiID, DatabaseID: userID},
+		ApplyURL:            fmt.Sprintf("/users/%s/campaigns/apply/%s", username, apiID),
+		Namespace:           apitest.UserOrg{ID: userAPIID, DatabaseID: userID},
+		Creator:             apitest.User{ID: userAPIID, DatabaseID: userID},
 		ViewerCanAdminister: true,
 
 		CreatedAt: graphqlbackend.DateTime{Time: spec.CreatedAt.Truncate(time.Second)},
@@ -109,6 +119,16 @@ func TestCampaignSpecResolver(t *testing.T) {
 					},
 				},
 			},
+		},
+
+		DiffStat: apitest.DiffStat{
+			Added:   changesetSpec.DiffStatAdded,
+			Changed: changesetSpec.DiffStatChanged,
+			Deleted: changesetSpec.DiffStatDeleted,
+		},
+
+		AppliesToCampaign: apitest.Campaign{
+			ID: string(campaigns.MarshalCampaignID(matchingCampaign.ID)),
 		},
 	}
 
@@ -136,11 +156,15 @@ query($campaignSpec: ID!) {
         ... on Org  { ...o }
       }
 
-      previewURL
+      applyURL
       viewerCanAdminister
 
       createdAt
       expiresAt
+
+      diffStat { added, deleted, changed }
+
+      appliesToCampaign { id }
 
       changesetSpecs(first: 100) {
         totalCount

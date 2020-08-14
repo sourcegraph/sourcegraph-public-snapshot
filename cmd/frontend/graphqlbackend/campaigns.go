@@ -29,6 +29,8 @@ type ListCampaignArgs struct {
 	First               *int32
 	State               *string
 	ViewerCanAdminister *bool
+
+	Namespace *graphql.ID
 }
 
 type CloseCampaignArgs struct {
@@ -95,9 +97,13 @@ type CampaignSpecResolver interface {
 
 	ExpiresAt() *DateTime
 
-	PreviewURL() (string, error)
+	ApplyURL(ctx context.Context) (string, error)
 
 	ViewerCanAdminister(context.Context) (bool, error)
+
+	DiffStat(ctx context.Context) (*DiffStat, error)
+
+	AppliesToCampaign(ctx context.Context) (CampaignResolver, error)
 }
 
 type CampaignDescriptionResolver interface {
@@ -183,8 +189,10 @@ type CampaignResolver interface {
 	ID() graphql.ID
 	Name() string
 	Description() *string
-	Branch() *string
-	Author(ctx context.Context) (*UserResolver, error)
+	InitialApplier(ctx context.Context) (*UserResolver, error)
+	LastApplier(ctx context.Context) (*UserResolver, error)
+	LastAppliedAt() DateTime
+	SpecCreator(ctx context.Context) (*UserResolver, error)
 	ViewerCanAdminister(ctx context.Context) (bool, error)
 	URL(ctx context.Context) (string, error)
 	Namespace(ctx context.Context) (n NamespaceResolver, err error)
@@ -256,12 +264,12 @@ type ExternalChangesetResolver interface {
 	ChangesetResolver
 
 	ExternalID() *string
-	Title() (string, error)
-	Body() (string, error)
+	Title(context.Context) (string, error)
+	Body(context.Context) (string, error)
 	ExternalURL() (*externallink.Resolver, error)
 	ReviewState(context.Context) *campaigns.ChangesetReviewState
 	CheckState() *campaigns.ChangesetCheckState
-	Repository(ctx context.Context) (*RepositoryResolver, error)
+	Repository(ctx context.Context) *RepositoryResolver
 
 	Events(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (ChangesetEventsConnectionResolver, error)
 	Diff(ctx context.Context) (RepositoryComparisonInterface, error)
@@ -281,7 +289,7 @@ type ChangesetEventsConnectionResolver interface {
 
 type ChangesetEventResolver interface {
 	ID() graphql.ID
-	Changeset(ctx context.Context) (ExternalChangesetResolver, error)
+	Changeset() ExternalChangesetResolver
 	CreatedAt() DateTime
 }
 

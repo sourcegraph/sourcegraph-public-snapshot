@@ -129,7 +129,7 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
         <div
           className="flex-shrink-0 flex-grow-0 ml-1 align-items-end"
         >
-          <AccountQuestionIcon
+          <Memo(AccountQuestionIcon)
             className="text-warning"
             data-tooltip="pending review"
           />

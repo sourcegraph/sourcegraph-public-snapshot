@@ -1,15 +1,10 @@
 import React from 'react'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { CampaignsIcon } from '../icons'
 import { Link } from '../../../../../shared/src/components/Link'
+import { CampaignFields } from '../../../graphql-operations'
 
 interface Props {
-    campaign: Pick<GQL.ICampaign, 'name' | 'closedAt' | 'viewerCanAdminister'> & {
-        changesets: {
-            totalCount: GQL.ICampaign['changesets']['totalCount']
-            stats: Pick<GQL.ICampaign['changesets']['stats'], 'total' | 'closed' | 'merged'>
-        }
-    }
+    campaign: Pick<CampaignFields, 'name' | 'closedAt' | 'viewerCanAdminister' | 'namespace' | 'changesets'>
 }
 
 export const CampaignActionsBar: React.FunctionComponent<Props> = ({ campaign }) => {
@@ -26,6 +21,10 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({ campaign })
             <div className="mb-2">
                 <span>
                     <Link to="/campaigns">Campaigns</Link>
+                </span>
+                <span className="text-muted d-inline-block mx-1">/</span>
+                <span>
+                    <Link to={campaign.namespace.url}>{campaign.namespace.namespaceName}</Link>
                 </span>
                 <span className="text-muted d-inline-block mx-1">/</span>
                 <span>{campaign.name}</span>

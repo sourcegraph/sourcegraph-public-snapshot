@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"path"
 	"sync"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
@@ -41,7 +41,13 @@ func (r *campaignsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacke
 }
 
 func (r *campaignsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := ee.CountCampaignsOpts{ChangesetID: r.opts.ChangesetID, State: r.opts.State, OnlyForAuthor: r.opts.OnlyForAuthor}
+	opts := ee.CountCampaignsOpts{
+		ChangesetID:      r.opts.ChangesetID,
+		State:            r.opts.State,
+		InitialApplierID: r.opts.InitialApplierID,
+		NamespaceUserID:  r.opts.NamespaceUserID,
+		NamespaceOrgID:   r.opts.NamespaceOrgID,
+	}
 	count, err := r.store.CountCampaigns(ctx, opts)
 	return int32(count), err
 }
@@ -67,6 +73,11 @@ type campaignResolver struct {
 	store       *ee.Store
 	httpFactory *httpcli.Factory
 	*campaigns.Campaign
+
+	// Cache the namespace on the resolver, since it's accessed more than once.
+	namespaceOnce sync.Once
+	namespace     graphqlbackend.NamespaceResolver
+	namespaceErr  error
 }
 
 func (r *campaignResolver) ID() graphql.ID {
@@ -84,33 +95,64 @@ func (r *campaignResolver) Description() *string {
 	return &r.Campaign.Description
 }
 
-func (r *campaignResolver) Branch() *string {
-	if r.Campaign.Branch == "" {
-		return nil
-	}
-	return &r.Campaign.Branch
+func (r *campaignResolver) InitialApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
+	return graphqlbackend.UserByIDInt32(ctx, r.Campaign.InitialApplierID)
 }
 
-func (r *campaignResolver) Author(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return graphqlbackend.UserByIDInt32(ctx, r.AuthorID)
+func (r *campaignResolver) LastApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
+	return graphqlbackend.UserByIDInt32(ctx, r.Campaign.LastApplierID)
+}
+
+func (r *campaignResolver) LastAppliedAt() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{Time: r.Campaign.LastAppliedAt}
+}
+
+func (r *campaignResolver) SpecCreator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
+	spec, err := r.store.GetCampaignSpec(ctx, ee.GetCampaignSpecOpts{
+		ID: r.Campaign.CampaignSpecID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return graphqlbackend.UserByIDInt32(ctx, spec.UserID)
 }
 
 func (r *campaignResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	return checkSiteAdminOrSameUser(ctx, r.Campaign.AuthorID)
+	return checkSiteAdminOrSameUser(ctx, r.Campaign.InitialApplierID)
 }
 
 func (r *campaignResolver) URL(ctx context.Context) (string, error) {
-	return path.Join("/campaigns", string(r.ID())), nil
+	n, err := r.Namespace(ctx)
+	if err != nil {
+		return "", err
+	}
+	return campaignURL(n, r), nil
 }
 
-func (r *campaignResolver) Namespace(ctx context.Context) (n graphqlbackend.NamespaceResolver, err error) {
-	if r.NamespaceUserID != 0 {
-		n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, r.NamespaceUserID)
-	} else {
-		n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, r.NamespaceOrgID)
-	}
+func (r *campaignResolver) Namespace(ctx context.Context) (graphqlbackend.NamespaceResolver, error) {
+	return r.computeNamespace(ctx)
+}
 
-	return n, err
+func (r *campaignResolver) computeNamespace(ctx context.Context) (graphqlbackend.NamespaceResolver, error) {
+	r.namespaceOnce.Do(func() {
+		if r.Campaign.NamespaceUserID != 0 {
+			r.namespace.Namespace, r.namespaceErr = graphqlbackend.UserByIDInt32(
+				ctx,
+				r.Campaign.NamespaceUserID,
+			)
+		} else {
+			r.namespace.Namespace, r.namespaceErr = graphqlbackend.OrgByIDInt32(
+				ctx,
+				r.Campaign.NamespaceOrgID,
+			)
+		}
+
+		if errcode.IsNotFound(r.namespaceErr) {
+			r.namespaceErr = nil
+		}
+	})
+
+	return r.namespace, r.namespaceErr
 }
 
 func (r *campaignResolver) CreatedAt() graphqlbackend.DateTime {
@@ -122,7 +164,7 @@ func (r *campaignResolver) UpdatedAt() graphqlbackend.DateTime {
 }
 
 func (r *campaignResolver) ClosedAt() *graphqlbackend.DateTime {
-	if r.Campaign.ClosedAt.IsZero() {
+	if !r.Campaign.Closed() {
 		return nil
 	}
 	return &graphqlbackend.DateTime{Time: r.Campaign.ClosedAt}
@@ -155,13 +197,16 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 
 	resolvers := []graphqlbackend.ChangesetCountsResolver{}
 
-	opts := ee.ListChangesetsOpts{CampaignID: r.Campaign.ID, Limit: -1}
+	publishedState := campaigns.ChangesetPublicationStatePublished
+	opts := ee.ListChangesetsOpts{CampaignID: r.Campaign.ID, Limit: -1, PublicationState: &publishedState}
 	cs, _, err := r.store.ListChangesets(ctx, opts)
 	if err != nil {
 		return resolvers, err
 	}
 
-	weekAgo := time.Now().Add(-7 * 24 * time.Hour)
+	now := r.store.Clock()()
+
+	weekAgo := now.Add(-7 * 24 * time.Hour)
 	start := r.Campaign.CreatedAt.UTC()
 	if start.After(weekAgo) {
 		start = weekAgo
@@ -170,7 +215,7 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 		start = args.From.Time.UTC()
 	}
 
-	end := time.Now().UTC()
+	end := now.UTC()
 	if args.To != nil && args.To.Time.Before(end) {
 		end = args.To.Time.UTC()
 	}

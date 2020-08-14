@@ -43,8 +43,8 @@ describe('e2e test suite', () => {
             'sourcegraph/go-diff',
             'sourcegraph/appdash',
             'sourcegraph/sourcegraph-typescript',
-            'sourcegraph-testing/automation-test-test',
-            'sourcegraph/test-test-private-repository',
+            'sourcegraph-testing/automation-e2e-test',
+            'sourcegraph/e2e-test-private-repository',
         ]
         const alwaysCloningRepoSlugs = ['sourcegraphtest/AlwaysCloningTest']
         await driver.ensureLoggedIn({ username: 'test', password: config.testUserPassword, email: 'test@test.com' })

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/cache"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 )
@@ -49,7 +50,15 @@ func TestWrite(t *testing.T) {
 			"p02": {Name: "pkg B", Version: "1.2.3"},
 		},
 	}
-	if err := writer.WriteDocuments(ctx, map[string]types.DocumentData{"foo.go": expectedDocumentData}); err != nil {
+
+	documentCh := make(chan persistence.KeyedDocumentData, 1)
+	documentCh <- persistence.KeyedDocumentData{
+		Path:     "foo.go",
+		Document: expectedDocumentData,
+	}
+	close(documentCh)
+
+	if err := writer.WriteDocuments(ctx, documentCh); err != nil {
 		t.Fatalf("unexpected error while writing documents: %s", err)
 	}
 
@@ -77,7 +86,15 @@ func TestWrite(t *testing.T) {
 			},
 		},
 	}
-	if err := writer.WriteResultChunks(ctx, map[int]types.ResultChunkData{7: expectedResultChunkData}); err != nil {
+
+	resultChunkCh := make(chan persistence.IndexedResultChunkData, 1)
+	resultChunkCh <- persistence.IndexedResultChunkData{
+		Index:       7,
+		ResultChunk: expectedResultChunkData,
+	}
+	close(resultChunkCh)
+
+	if err := writer.WriteResultChunks(ctx, resultChunkCh); err != nil {
 		t.Fatalf("unexpected error while writing result chunks: %s", err)
 	}
 
@@ -87,14 +104,15 @@ func TestWrite(t *testing.T) {
 		{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
 	}
 
-	definitionMonikerLocations := []types.MonikerLocations{
-		{
-			Scheme:     "scheme A",
-			Identifier: "ident A",
-			Locations:  expectedDefinitions,
-		},
+	definitionsCh := make(chan types.MonikerLocations, 1)
+	definitionsCh <- types.MonikerLocations{
+		Scheme:     "scheme A",
+		Identifier: "ident A",
+		Locations:  expectedDefinitions,
 	}
-	if err := writer.WriteDefinitions(ctx, definitionMonikerLocations); err != nil {
+	close(definitionsCh)
+
+	if err := writer.WriteDefinitions(ctx, definitionsCh); err != nil {
 		t.Fatalf("unexpected error while writing definitions: %s", err)
 	}
 
@@ -104,14 +122,15 @@ func TestWrite(t *testing.T) {
 		{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
 	}
 
-	referenceMonikerLocations := []types.MonikerLocations{
-		{
-			Scheme:     "scheme C",
-			Identifier: "ident C",
-			Locations:  expectedReferences,
-		},
+	referencesCh := make(chan types.MonikerLocations, 1)
+	referencesCh <- types.MonikerLocations{
+		Scheme:     "scheme C",
+		Identifier: "ident C",
+		Locations:  expectedReferences,
 	}
-	if err := writer.WriteReferences(ctx, referenceMonikerLocations); err != nil {
+	close(referencesCh)
+
+	if err := writer.WriteReferences(ctx, referencesCh); err != nil {
 		t.Fatalf("unexpected error while writing references: %s", err)
 	}
 

@@ -3,14 +3,15 @@ import { storiesOf } from '@storybook/react'
 import * as H from 'history'
 import React from 'react'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
-import { ActionItem, ActionItemComponentProps } from './ActionItem'
+import { ActionItem, ActionItemComponentProps, ActionItemProps } from './ActionItem'
 import { NEVER } from 'rxjs'
 import webStyles from '../../../web/src/SourcegraphWebApp.scss'
+import { subtypeOf } from '../util/types'
 
 const { add } = storiesOf('shared/ActionItem', module).addDecorator(story => (
     <>
-        <style>{webStyles}</style>
         <div className="p-4">{story()}</div>
+        <style>{webStyles}</style>
     </>
 ))
 
@@ -26,53 +27,56 @@ const PLATFORM_CONTEXT: ActionItemComponentProps['platformContext'] = {
 const LOCATION: H.Location = { hash: '', pathname: '/', search: '', state: undefined }
 
 const ICON_URL =
-    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg=='
+    'data:image/svg+xml,' +
+    encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🚀</text></svg>'
+    )
 
 const onDidExecute = action('onDidExecute')
 
-add('noop action', () => (
+const commonProps = subtypeOf<Partial<ActionItemProps>>()({
+    location: LOCATION,
+    extensionsController: EXTENSIONS_CONTROLLER,
+    platformContext: PLATFORM_CONTEXT,
+    telemetryService: NOOP_TELEMETRY_SERVICE,
+    iconClassName: 'icon-inline',
+})
+
+add('Noop action', () => (
     <ActionItem
+        {...commonProps}
         action={{ id: 'a', command: undefined, actionItem: { label: 'Hello' } }}
-        telemetryService={NOOP_TELEMETRY_SERVICE}
         variant="actionItem"
-        location={LOCATION}
-        extensionsController={EXTENSIONS_CONTROLLER}
-        platformContext={PLATFORM_CONTEXT}
     />
 ))
 
-add('command action', () => (
+add('Command action', () => (
     <ActionItem
+        {...commonProps}
         action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL }}
         telemetryService={NOOP_TELEMETRY_SERVICE}
         disabledDuringExecution={true}
         showLoadingSpinnerDuringExecution={true}
         showInlineError={true}
         onDidExecute={onDidExecute}
-        location={LOCATION}
-        extensionsController={EXTENSIONS_CONTROLLER}
-        platformContext={PLATFORM_CONTEXT}
     />
 ))
 
-add('link action', () => (
+add('Link action', () => (
     <ActionItem
+        {...commonProps}
         action={{
             id: 'a',
             command: 'open',
             commandArguments: ['javascript:alert("link clicked")'],
             actionItem: { label: 'Hello' },
         }}
-        telemetryService={NOOP_TELEMETRY_SERVICE}
         variant="actionItem"
         onDidExecute={onDidExecute}
-        location={LOCATION}
-        extensionsController={EXTENSIONS_CONTROLLER}
-        platformContext={PLATFORM_CONTEXT}
     />
 ))
 
-add('executing', () => {
+add('Executing', () => {
     class ActionItemExecuting extends ActionItem {
         constructor(props: ActionItem['props']) {
             super(props)
@@ -81,19 +85,16 @@ add('executing', () => {
     }
     return (
         <ActionItemExecuting
+            {...commonProps}
             action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL }}
-            telemetryService={NOOP_TELEMETRY_SERVICE}
             disabledDuringExecution={true}
             showLoadingSpinnerDuringExecution={true}
             showInlineError={true}
-            location={LOCATION}
-            extensionsController={EXTENSIONS_CONTROLLER}
-            platformContext={PLATFORM_CONTEXT}
         />
     )
 })
 
-add('error', () => {
+add('Error', () => {
     class ActionItemWithError extends ActionItem {
         constructor(props: ActionItem['props']) {
             super(props)
@@ -102,14 +103,11 @@ add('error', () => {
     }
     return (
         <ActionItemWithError
+            {...commonProps}
             action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL }}
-            telemetryService={NOOP_TELEMETRY_SERVICE}
             disabledDuringExecution={true}
             showLoadingSpinnerDuringExecution={true}
             showInlineError={true}
-            location={LOCATION}
-            extensionsController={EXTENSIONS_CONTROLLER}
-            platformContext={PLATFORM_CONTEXT}
         />
     )
 })
