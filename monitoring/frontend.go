@@ -466,16 +466,6 @@ func Frontend() *Container {
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
-						{
-							Name:              "update_check_duration",
-							Description:       "update check duration",
-							Query:             `sum(src_updatecheck_client_duration_seconds_sum)`,
-							DataMayNotExist:   true,
-							DataMayBeNaN:      true,
-							Warning:           Alert{GreaterOrEqual: 300},
-							Owner:             ObservableOwnerDistribution,
-							PossibleSolutions: "none",
-						},
 					},
 					{
 						{
