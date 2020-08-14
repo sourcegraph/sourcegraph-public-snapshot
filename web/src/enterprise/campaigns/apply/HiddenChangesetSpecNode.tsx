@@ -1,11 +1,11 @@
 import React from 'react'
-import { ChangesetSpecFields } from '../../../graphql-operations'
+import { HiddenChangesetSpecFields } from '../../../graphql-operations'
 import { ChangesetSpecType } from '../../../../../shared/src/graphql/schema'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import { ChangesetSpecAction } from './ChangesetSpecAction'
 
 export interface HiddenChangesetSpecNodeProps {
-    node: ChangesetSpecFields & { __typename: 'HiddenChangesetSpec' }
+    node: HiddenChangesetSpecFields
 }
 
 export const HiddenChangesetSpecNode: React.FunctionComponent<HiddenChangesetSpecNodeProps> = ({ node }) => (
