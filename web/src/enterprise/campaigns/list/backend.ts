@@ -45,15 +45,6 @@ export const queryCampaigns = ({
                     }
                     totalCount
                 }
-                # allCampaigns: campaigns {
-                #     totalCount
-                # }
-                # openCampaigns: campaigns(state: OPEN) {
-                #     totalCount
-                # }
-                # closedCampaigns: campaigns(state: CLOSED) {
-                #     totalCount
-                # }
             }
 
             ${ListCampaignFragment}
