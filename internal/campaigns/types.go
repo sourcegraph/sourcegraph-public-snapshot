@@ -1870,7 +1870,7 @@ type ChangesetSpecDescription struct {
 	// If this is not empty, the description is a reference to an existing
 	// changeset and the rest of these fields are empty.
 	// TODO(mrnugget): Id or ID, that is the question?
-	ExternalID string `json:"externalId,omitempty"`
+	ExternalID string `json:"externalID,omitempty"`
 
 	BaseRev string `json:"baseRev,omitempty"`
 	BaseRef string `json:"baseRef,omitempty"`
