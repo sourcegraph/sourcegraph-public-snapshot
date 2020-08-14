@@ -99,7 +99,7 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
             </div>
             <div className="visible-changeset-spec-node__diffstat">
                 {node.description.__typename === 'GitBranchChangesetDescription' && (
-                    <DiffStat {...node.description.diff.fileDiffs.diffStat} expandedCounts={true} />
+                    <DiffStat {...node.description.diffStat} expandedCounts={true} />
                 )}
             </div>
             {isExpanded && (
