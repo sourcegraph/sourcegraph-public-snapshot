@@ -969,7 +969,7 @@ type externalServiceLister interface {
 type RateLimitSyncer struct {
 	registry      *ratelimit.Registry
 	serviceLister externalServiceLister
-	// How many services to fetch one each DB call
+	// How many services to fetch in each DB call
 	limit int64
 }
 
