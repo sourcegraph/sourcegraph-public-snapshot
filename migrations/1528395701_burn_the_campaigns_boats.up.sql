@@ -76,7 +76,8 @@ WHERE
 
 ALTER TABLE campaigns
     ALTER COLUMN last_applied_at SET NOT NULL,
-    ALTER COLUMN campaign_spec_id SET NOT NULL;
+    ALTER COLUMN campaign_spec_id SET NOT NULL,
+    ALTER COLUMN initial_applier_id DROP NOT NULL;
 
 -- When a user is hard deleted, we don't want campaigns and specs to be deleted
 -- just because their metadata is affected. We need to tweak their constraints

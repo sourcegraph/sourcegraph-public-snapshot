@@ -26,7 +26,8 @@ ALTER TABLE campaigns
 
 ALTER TABLE campaigns
     ALTER COLUMN last_applied_at DROP NOT NULL,
-    ALTER COLUMN campaign_spec_id DROP NOT NULL;
+    ALTER COLUMN campaign_spec_id DROP NOT NULL,
+    ALTER COLUMN initial_applier_id SET NOT NULL;
 
 -- The ON CONFLICT clause here is because changesets can be partially migrated:
 -- if a changeset is attached to multiple campaigns and the repo-updater
