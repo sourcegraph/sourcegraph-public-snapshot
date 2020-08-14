@@ -200,7 +200,7 @@ type CampaignSpec struct {
 	ApplyURL string
 
 	Namespace UserOrg
-	Creator   User
+	Creator   *User
 
 	ChangesetSpecs ChangesetSpecConnection
 

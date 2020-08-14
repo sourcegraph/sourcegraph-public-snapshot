@@ -80,7 +80,11 @@ func (r *campaignSpecResolver) Description() graphqlbackend.CampaignDescriptionR
 }
 
 func (r *campaignSpecResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return graphqlbackend.UserByIDInt32(ctx, r.campaignSpec.UserID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, r.campaignSpec.UserID)
+	if errcode.IsNotFound(err) {
+		return nil, nil
+	}
+	return user, err
 }
 
 func (r *campaignSpecResolver) Namespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {

@@ -138,7 +138,7 @@ func TestCreateCampaignSpec(t *testing.T) {
 		ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
 		ApplyURL:      fmt.Sprintf("/users/%s/campaigns/apply/%s", username, have.ID),
 		Namespace:     apitest.UserOrg{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
-		Creator:       apitest.User{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
+		Creator:       &apitest.User{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
 		ChangesetSpecs: apitest.ChangesetSpecConnection{
 			Nodes: []apitest.ChangesetSpec{
 				{
