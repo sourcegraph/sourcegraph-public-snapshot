@@ -62,7 +62,7 @@
 <!-- indexer -->
 <g id="node3" class="node">
 <title>indexer</title>
-<g id="a_node3"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/master/enterprise/cmd/precise-code-intel-worker" xlink:title="Indexer" target="_blank">
+<g id="a_node3"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/master/enterprise/cmd/precise-code-intel-indexer" xlink:title="Indexer" target="_blank">
 <polygon fill="#bebada" stroke="black" points="285.5,-198.38 230.5,-198.38 230.5,-162.38 285.5,-162.38 285.5,-198.38"/>
 <text text-anchor="middle" x="258" y="-177.88" font-family="Iosevka" font-size="10.00">Indexer</text>
 </a>

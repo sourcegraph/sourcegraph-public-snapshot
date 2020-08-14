@@ -57,7 +57,7 @@ digraph architecture {
         indexer [
             label="Indexer"
             fillcolor="3"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/master/enterprise/cmd/precise-code-intel-worker"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/master/enterprise/cmd/precise-code-intel-indexer"
         ]
 
         worker [
