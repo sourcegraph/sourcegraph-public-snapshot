@@ -9,25 +9,26 @@
 
 All notable changes to `src-cli` are documented in this file.
 
-## Unreleased
+## 3.17.0
 
 ### Added
 
+- New command `src serve-git` which can serve local repositories for Sourcegraph to clone. This was previously in a command called `src-expose`. See [serving local repositories](https://docs.sourcegraph.com/admin/external_service/src_serve_git) in our documentation to find out more. [#12363](https://github.com/sourcegraph/sourcegraph/issues/12363)
 - When used with Sourcegraph 3.18 or later, campaigns can now be created on GitLab. [#231](https://github.com/sourcegraph/src-cli/pull/231)
 
 ### Changed
 
 ### Fixed
 
-### Removed
-
-- Removed `clone-in-progress` flag. [#246](https://github.com/sourcegraph/src-cli/pull/246)
-
 ## 3.16.1
 
 ### Fixed
 
 - Fix inferred root for lsif upload command. [#248](https://github.com/sourcegraph/src-cli/pull/248)
+
+### Removed
+
+- Removed `clone-in-progress` flag. [#246](https://github.com/sourcegraph/src-cli/pull/246)
 
 ## 3.16
 
