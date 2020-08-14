@@ -40,7 +40,7 @@ export const ChangesetSpecActionNoPublish: React.FunctionComponent<{}> = () => (
 )
 export const ChangesetSpecActionImport: React.FunctionComponent<{}> = () => (
     <div className={iconClassNames}>
-        <ClipboardArrowUpOutlineIcon data-tooltip="This changeset will be imported from the codehost." />
+        <ClipboardArrowUpOutlineIcon data-tooltip="This changeset will be imported from the code host." />
         <span className="text-muted">Import</span>
     </div>
 )
