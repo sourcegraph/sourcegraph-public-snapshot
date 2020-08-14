@@ -11,9 +11,14 @@ import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionConfigurationState } from './ExtensionConfigurationState'
 import { isEncodedImage } from '../../../../shared/src/util/icon'
 import { PageHeader } from '../../components/PageHeader'
-import { startCase } from 'lodash'
+import { upperFirst } from 'lodash'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
+import { Omit } from 'utility-types'
 
-interface ExtensionAreaHeaderProps extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
+export interface ExtensionAreaHeaderProps
+    extends Omit<ExtensionAreaRouteContext, 'platformContext'>,
+        PlatformContextProps<'updateSettings'>,
+        RouteComponentProps<{}> {
     navItems: readonly ExtensionAreaHeaderNavItem[]
 }
 
@@ -40,13 +45,13 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
 
     const isWorkInProgress = props.extension.registryExtension?.isWorkInProgress
     const title = manifest?.name
-        ? startCase(manifest.name)
+        ? upperFirst(manifest.name)
         : props.extension.registryExtension?.extensionIDWithoutRegistry ?? props.extension.id
     const icon =
         manifest?.icon && iconURL && iconURL.protocol === 'data:' && isEncodedImage(manifest.icon) ? (
-            <img className="extension-area-header__icon mr-2" src={manifest.icon} />
+            <img className="extension-area-header__icon" src={manifest.icon} />
         ) : (
-            <PuzzleOutlineIcon widths={32} />
+            <PuzzleOutlineIcon widths={32} className="extension-area-header__icon" />
         )
     const actions = (
         <div className="d-flex align-items-center mt-3 mb-2">

@@ -20,7 +20,7 @@ export const PageHeader: React.FunctionComponent<Props> = ({ title, icon, action
         </div>
         <div className="d-flex container mt-4">
             <div className="h1">{icon}</div>
-            <div className="flex-grow-1 ml-2">
+            <div className="flex-grow-1 ml-4">
                 <h1 className="text-nowrap">
                     {title}{' '}
                     {badge && (

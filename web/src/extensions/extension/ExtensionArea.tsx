@@ -21,6 +21,7 @@ import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorMessage } from '../../components/alerts'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { useEventObservable } from '../../../../shared/src/util/useObservable'
+import { ExtensionsAreaHeaderActionButton } from '../ExtensionsAreaHeader'
 
 export const registryExtensionFragment = gql`
     fragment RegistryExtensionFields on RegistryExtension {
