@@ -70,7 +70,29 @@ func TestChangesetResolver(t *testing.T) {
 		currentSpec:         unpublishedSpec.ID,
 		externalServiceType: "github",
 		publicationState:    campaigns.ChangesetPublicationStateUnpublished,
+		reconcilerState:     campaigns.ReconcilerStateCompleted,
 		createdByCampaign:   false,
+	})
+	erroredSpec := createChangesetSpec(t, ctx, store, testSpecOpts{
+		user:          userID,
+		repo:          repo.ID,
+		headRef:       "refs/heads/my-failing-branch",
+		published:     true,
+		title:         "ChangesetSpec Title",
+		body:          "ChangesetSpec Body",
+		commitMessage: "The commit message",
+		commitDiff:    testDiff,
+		baseRev:       baseRev,
+		baseRef:       "refs/heads/master",
+	})
+	erroredChangeset := createChangeset(t, ctx, store, testChangesetOpts{
+		repo:                repo.ID,
+		currentSpec:         erroredSpec.ID,
+		externalServiceType: "github",
+		publicationState:    campaigns.ChangesetPublicationStateUnpublished,
+		reconcilerState:     campaigns.ReconcilerStateErrored,
+		createdByCampaign:   false,
+		failureMessage:      "very bad error",
 	})
 
 	labelEventDescriptionText := "the best label in town"
@@ -174,6 +196,27 @@ func TestChangesetResolver(t *testing.T) {
 					Typename:  "PreviewRepositoryComparison",
 					FileDiffs: testDiffGraphQL,
 				},
+				PublicationState: string(campaigns.ChangesetPublicationStateUnpublished),
+				ReconcilerState:  string(campaigns.ReconcilerStateCompleted),
+			},
+		},
+		{
+			changeset: erroredChangeset,
+			want: apitest.Changeset{
+				Typename:   "ExternalChangeset",
+				Title:      unpublishedSpec.Spec.Title,
+				Body:       unpublishedSpec.Spec.Body,
+				Repository: apitest.Repository{Name: repo.Name},
+				// Not scheduled for sync, because it's not published.
+				NextSyncAt: "",
+				Labels:     []apitest.Label{},
+				Diff: apitest.Comparison{
+					Typename:  "PreviewRepositoryComparison",
+					FileDiffs: testDiffGraphQL,
+				},
+				PublicationState: string(campaigns.ChangesetPublicationStateUnpublished),
+				ReconcilerState:  string(campaigns.ReconcilerStateErrored),
+				Error:            "very bad error",
 			},
 		},
 		{
@@ -192,6 +235,8 @@ func TestChangesetResolver(t *testing.T) {
 					URL:         "https://github.com/sourcegraph/sourcegraph/pull/12345",
 					ServiceType: "github",
 				},
+				PublicationState: string(campaigns.ChangesetPublicationStatePublished),
+				ReconcilerState:  string(campaigns.ReconcilerStateCompleted),
 				Events: apitest.ChangesetEventConnection{
 					TotalCount: 2,
 				},
@@ -293,6 +338,9 @@ query($changeset: ID!) {
       checkState
       externalURL { url, serviceType }
       nextSyncAt
+      publicationState
+      reconcilerState
+      error
 
       repository { name }
 

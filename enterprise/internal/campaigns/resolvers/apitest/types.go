@@ -137,6 +137,7 @@ type Changeset struct {
 	Body             string
 	PublicationState string
 	ReconcilerState  string
+	Error            string
 	ExternalState    string
 	ExternalID       string
 	ExternalURL      ExternalURL
