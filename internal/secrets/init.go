@@ -96,13 +96,15 @@ func init() {
 		if err != nil {
 			panic("failed to make secrets file read only.")
 		}
-		newKey, oldkey := gatherKeys(b)
-		CryptObject.EncryptionKeys = [][]byte{primaryKeyIndex: newKey, secondaryKeyIndex: oldkey}
+		newKey, _ := gatherKeys(b)
+		CryptObject.EncryptionKeys = [][]byte{primaryKeyIndex: newKey}
+		configuredToEncrypt = true
+		return
 	}
 
 	// wrapping in deploytype check so that we can still compile and test locally
 	if os.Getenv("CI") != "" || conf.IsDev(deployType) {
-		configuredToEncrypt = true
+		return
 	} else {
 		// for k8s & docker compose, expect a secret to be provided
 		panic(fmt.Sprintf("Either specify environment variable %s or provide the secrets file %s.",
