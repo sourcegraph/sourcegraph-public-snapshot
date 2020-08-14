@@ -467,8 +467,8 @@ func Frontend() *Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "total_time_to_perform_update_checks",
-							Description:       "amount of time to perform update check",
+							Name:              "update_check_duration",
+							Description:       "update check duration",
 							Query:             `sum(src_updatecheck_client_duration_seconds_sum)`,
 							DataMayNotExist:   true,
 							DataMayBeNaN:      true,
