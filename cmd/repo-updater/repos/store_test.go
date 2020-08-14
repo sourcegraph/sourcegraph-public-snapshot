@@ -2,7 +2,10 @@ package repos_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/schema"
 	"reflect"
 	"sort"
 	"strconv"
@@ -1400,6 +1403,57 @@ func testStoreListReposPagination(store repos.Store) func(*testing.T) {
 				}
 			}
 		}))
+	}
+}
+
+func testSyncRateLimiters(store repos.Store) func(*testing.T) {
+	clock := repos.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
+	return func(t *testing.T) {
+		ctx := context.Background()
+		transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			toCreate := 501 // Larger than default page size in order to test pagination
+			services := make([]*repos.ExternalService, 0, toCreate)
+			for i := 0; i < toCreate; i++ {
+				svc := &repos.ExternalService{
+					ID:          int64(i) + 1,
+					Kind:        "GitHub",
+					DisplayName: "GitHub",
+					CreatedAt:   now,
+					UpdatedAt:   now,
+					DeletedAt:   time.Time{},
+				}
+				config := schema.GitLabConnection{
+					Url: fmt.Sprintf("http://example%d.com/", i),
+					RateLimit: &schema.GitLabRateLimit{
+						RequestsPerHour: 3600,
+						Enabled:         true,
+					},
+				}
+				data, err := json.Marshal(config)
+				if err != nil {
+					t.Fatal(err)
+				}
+				svc.Config = string(data)
+				services = append(services, svc)
+			}
+
+			if err := tx.UpsertExternalServices(ctx, services...); err != nil {
+				t.Fatalf("failed to setup store: %v", err)
+			}
+
+			registry := ratelimit.NewRegistry()
+			syncer := repos.NewRateLimitSyncer(registry, tx)
+			err := syncer.SyncRateLimiters(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			have := registry.Count()
+			if have != toCreate {
+				t.Fatalf("Want %d, got %d", toCreate, have)
+			}
+		})(t)
 	}
 }
 
