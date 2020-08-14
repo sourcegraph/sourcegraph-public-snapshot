@@ -10,7 +10,7 @@ import (
 	"github.com/gregjones/httpcache"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/httputil"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
@@ -58,6 +58,11 @@ type Factory struct {
 	common []Opt
 }
 
+// redisCache is a HTTP cache backed by Redis. The TTL of a week is a balance
+// between caching values for a useful amount of time versus growing the cache
+// too large.
+var redisCache = rcache.NewWithTTL("http", 604800)
+
 // NewExternalHTTPClientFactory returns an httpcli.Factory with common options
 // and middleware pre-set for communicating to external services.
 func NewExternalHTTPClientFactory() *Factory {
@@ -72,7 +77,7 @@ func NewExternalHTTPClientFactory() *Factory {
 		// not a generic http.RoundTripper.
 		ExternalTransportOpt,
 		TracedTransportOpt,
-		NewCachedTransportOpt(httputil.Cache, true),
+		NewCachedTransportOpt(redisCache, true),
 	)
 }
 
