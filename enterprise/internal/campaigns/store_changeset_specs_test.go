@@ -385,6 +385,8 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 						CampaignSpecID:   campaignSpec.ID,
 						InitialApplierID: campaignSpec.UserID,
 						NamespaceUserID:  campaignSpec.NamespaceUserID,
+						LastApplierID:    campaignSpec.UserID,
+						LastAppliedAt:    time.Now(),
 					}
 					if err := s.CreateCampaign(ctx, campaign); err != nil {
 						t.Fatal(err)

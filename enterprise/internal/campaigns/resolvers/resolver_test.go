@@ -518,6 +518,8 @@ func TestMoveCampaign(t *testing.T) {
 		CampaignSpecID:   campaignSpec.ID,
 		Name:             "old-name",
 		InitialApplierID: userID,
+		LastApplierID:    userID,
+		LastAppliedAt:    time.Now(),
 		NamespaceUserID:  campaignSpec.UserID,
 	}
 	if err := store.CreateCampaign(ctx, campaign); err != nil {
@@ -748,6 +750,16 @@ func TestCampaignsListing(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	createCampaignSpec := func(t *testing.T, spec *campaigns.CampaignSpec) {
+		t.Helper()
+
+		spec.UserID = userID
+		spec.NamespaceUserID = userID
+		if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+			t.Fatal(err)
+		}
+	}
+
 	createCampaign := func(t *testing.T, c *campaigns.Campaign) {
 		t.Helper()
 
@@ -759,7 +771,15 @@ func TestCampaignsListing(t *testing.T) {
 	}
 
 	t.Run("listing a users campaigns", func(t *testing.T) {
-		campaign := &campaigns.Campaign{NamespaceUserID: userID}
+		spec := &campaigns.CampaignSpec{}
+		createCampaignSpec(t, spec)
+
+		campaign := &campaigns.Campaign{
+			NamespaceUserID: userID,
+			CampaignSpecID:  spec.ID,
+			LastApplierID:   userID,
+			LastAppliedAt:   time.Now(),
+		}
 		createCampaign(t, campaign)
 
 		userAPIID := string(graphqlbackend.MarshalUserID(userID))
@@ -784,7 +804,15 @@ func TestCampaignsListing(t *testing.T) {
 	})
 
 	t.Run("listing an orgs campaigns", func(t *testing.T) {
-		campaign := &campaigns.Campaign{NamespaceOrgID: org.ID}
+		spec := &campaigns.CampaignSpec{}
+		createCampaignSpec(t, spec)
+
+		campaign := &campaigns.Campaign{
+			NamespaceOrgID: org.ID,
+			CampaignSpecID: spec.ID,
+			LastApplierID:  userID,
+			LastAppliedAt:  time.Now(),
+		}
 		createCampaign(t, campaign)
 
 		orgAPIID := string(graphqlbackend.MarshalOrgID(org.ID))

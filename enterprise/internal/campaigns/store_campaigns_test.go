@@ -32,10 +32,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 
 			if i == 0 {
 				// Check for nullability of fields by not setting them
-				c.CampaignSpecID = 0
 				c.ClosedAt = time.Time{}
-				c.LastAppliedAt = time.Time{}
-				c.LastApplierID = 0
 			}
 
 			if i%2 == 0 {
