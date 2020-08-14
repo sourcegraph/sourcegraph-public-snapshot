@@ -44,6 +44,10 @@ Here are some guides to help you understand how multiple systems fit together:
 - [Life of a repository](life-of-a-repository.md)
 - [Life of a ping](life-of-a-ping.md)
 - [Search pagination](search-pagination.md)
+- Code intelligence
+  - [Uploads](../codeintel/queries.md)
+  - [Queries](../codeintel/queries.md)
+  - [Extensions](../codeintel/queries.md)
 - Future topics we will cover here:
   - Sourcegraph extension architecture
   - Web app and browser extension architecture
