@@ -75,8 +75,8 @@ var tests = []test{
 	},
 	// Repohascommitafter.
 	{
-		Name:  `Global search, repohascommitafter, nonzero result`,
-		Query: `repohascommitafter:"5 months ago" test patterntype:literal count:1`,
+		Name:  `Repohascommitafter, nonzero result`,
+		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$ repohascommitafter:"5 months ago" test patterntype:literal count:1`,
 	},
 	// Global regex text search.
 	{
@@ -102,7 +102,7 @@ var tests = []test{
 	// Symbol search.
 	{
 		Name:  `Global search, symbols, nonzero result`,
-		Query: `type:symbol test count:1`,
+		Query: `-repo:sourcegraph type:symbol test count:1`,
 	},
 	// Structural search.
 	{
