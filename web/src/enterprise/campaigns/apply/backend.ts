@@ -122,12 +122,8 @@ export const changesetSpecFieldsFragment = gql`
                 }
                 baseRef
                 headRef
-                diff {
-                    fileDiffs {
-                        diffStat {
-                            ...DiffStatFields
-                        }
-                    }
+                diffStat {
+                    ...DiffStatFields
                 }
             }
         }

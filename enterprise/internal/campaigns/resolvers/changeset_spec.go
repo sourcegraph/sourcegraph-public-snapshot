@@ -7,6 +7,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
@@ -93,6 +94,7 @@ func (r *changesetSpecResolver) Description(ctx context.Context) (graphqlbackend
 	descriptionResolver := &changesetDescriptionResolver{
 		desc:         r.changesetSpec.Spec,
 		repoResolver: repo,
+		diffStat:     r.changesetSpec.DiffStat(),
 	}
 
 	return descriptionResolver, nil
@@ -148,6 +150,7 @@ var _ graphqlbackend.ChangesetDescription = &changesetDescriptionResolver{}
 type changesetDescriptionResolver struct {
 	repoResolver *graphqlbackend.RepositoryResolver
 	desc         *campaigns.ChangesetSpecDescription
+	diffStat     diff.Stat
 }
 
 func (r *changesetDescriptionResolver) ToExistingChangesetReference() (graphqlbackend.ExistingChangesetReferenceResolver, bool) {
@@ -176,6 +179,10 @@ func (r *changesetDescriptionResolver) HeadRef() string { return git.AbbreviateR
 func (r *changesetDescriptionResolver) Title() string   { return r.desc.Title }
 func (r *changesetDescriptionResolver) Body() string    { return r.desc.Body }
 func (r *changesetDescriptionResolver) Published() bool { return r.desc.Published }
+
+func (r *changesetDescriptionResolver) DiffStat() *graphqlbackend.DiffStat {
+	return graphqlbackend.NewDiffStat(r.diffStat)
+}
 
 func (r *changesetDescriptionResolver) Diff(ctx context.Context) (graphqlbackend.PreviewRepositoryComparisonResolver, error) {
 	diff, err := r.desc.Diff()

@@ -580,6 +580,11 @@ type GitBranchChangesetDescription {
     # The total diff of the changeset diff.
     diff: PreviewRepositoryComparison!
 
+    # The diffstat of this changeset spec. This data is also available
+    # indirectly through the diff field above, but if only the diffStat is
+    # required, this field is cheaper to access.
+    diffStat: DiffStat!
+
     # Whether or not the changeset described here should be created right after
     # applying the ChangesetSpec this description belongs to.
     #

@@ -49,14 +49,10 @@ export const visibleChangesetSpecStories: Record<string, VisibleChangesetSpecFie
             headRef: 'cool-branch',
             body: 'Body text',
             commits: [{ message: 'Commit message' }],
-            diff: {
-                fileDiffs: {
-                    diffStat: {
-                        added: 10,
-                        changed: 8,
-                        deleted: 2,
-                    },
-                },
+            diffStat: {
+                added: 10,
+                changed: 8,
+                deleted: 2,
             },
             published: true,
             title: 'Add prettier to repository',
@@ -74,14 +70,10 @@ export const visibleChangesetSpecStories: Record<string, VisibleChangesetSpecFie
             headRef: 'cool-branch',
             body: 'Body text',
             commits: [{ message: 'Commit message' }],
-            diff: {
-                fileDiffs: {
-                    diffStat: {
-                        added: 10,
-                        changed: 8,
-                        deleted: 2,
-                    },
-                },
+            diffStat: {
+                added: 10,
+                changed: 8,
+                deleted: 2,
             },
             published: false,
             title: 'Add prettier to repository',

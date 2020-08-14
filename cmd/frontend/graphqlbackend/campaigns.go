@@ -161,6 +161,7 @@ type GitBranchChangesetDescriptionResolver interface {
 	Body() string
 
 	Diff(ctx context.Context) (PreviewRepositoryComparisonResolver, error)
+	DiffStat() *DiffStat
 
 	Commits() []GitCommitDescriptionResolver
 
