@@ -24,3 +24,5 @@ for diagram in "${mermaid_diagrams[@]}"; do
   # Make the generated id deterministic so CI won't see superflouous changes
   sed -i '' "s/mermaid-[0-9]\{1,\}/mermaid-${diagram}/g" "${diagram}.svg"
 done
+
+dot architecture.dot -Tsvg >architecture.svg
