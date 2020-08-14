@@ -104,6 +104,8 @@
 // 1528395700_add_apply_data_to_campaign.up.sql (279B)
 // 1528395701_burn_the_campaigns_boats.down.sql (1.625kB)
 // 1528395701_burn_the_campaigns_boats.up.sql (2.931kB)
+// 1528395702_changeset_user_fk.down.sql (272B)
+// 1528395702_changeset_user_fk.up.sql (300B)
 
 package migrations
 
@@ -2252,6 +2254,46 @@ func _1528395701_burn_the_campaigns_boatsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395702_changeset_user_fkDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\x8f\xcd\x4a\xc4\x30\x14\x46\xf7\x79\x8a\x6f\x59\xc1\x37\xe8\x2a\x4d\x6e\x4b\x30\xbd\x91\xe4\x16\x74\x15\xa4\xc6\x1f\x04\x11\xa3\x8b\x79\xfb\x21\xa5\x0c\x65\x16\x93\xed\x39\x27\x97\x6f\xa0\xc9\x71\xaf\x94\xf6\x42\x11\xa2\x07\x4f\x58\x3f\x5e\xbe\xdf\x4b\x2d\x7f\xb9\xfe\x94\xb5\x2a\x00\xb0\x31\x3c\xc2\x04\x4e\x12\xb5\x63\x81\x1b\x41\x4f\x2e\x49\xba\xb6\xf3\x7f\x2d\xbf\xf9\xf3\x35\xbf\x7d\x95\xd3\xfd\xd6\x6a\x6b\x8f\xe9\xad\x60\xf3\xdb\x1b\x43\x24\x37\x31\x1e\xe8\x19\xdd\x6e\xdc\x5d\x68\xa4\x91\x22\xb1\xa1\x84\xc6\x2a\xba\x23\xb5\x8d\xc6\x36\x65\xbf\xbf\x6d\x33\xc1\x2f\x33\x63\xff\x0b\x89\x04\x1c\x04\xbc\x78\xdf\x2b\x65\xc2\x3c\x3b\xe9\xd5\x39\x00\x00\xff\xff\xdf\xd5\xd3\xd6\x10\x01\x00\x00")
+
+func _1528395702_changeset_user_fkDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395702_changeset_user_fkDownSql,
+		"1528395702_changeset_user_fk.down.sql",
+	)
+}
+
+func _1528395702_changeset_user_fkDownSql() (*asset, error) {
+	bytes, err := _1528395702_changeset_user_fkDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395702_changeset_user_fk.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x7c, 0x51, 0xd5, 0xe6, 0x84, 0xd8, 0x69, 0x8b, 0xe7, 0x50, 0x72, 0x4d, 0x66, 0xc4, 0x1b, 0x80, 0x1f, 0xe, 0x6e, 0xf6, 0x62, 0x40, 0x7b, 0x74, 0x7a, 0xe8, 0x45, 0xda, 0x6b, 0x4f, 0xa4, 0x95}}
+	return a, nil
+}
+
+var __1528395702_changeset_user_fkUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\x90\xcd\x4a\xc6\x30\x10\x45\xf7\x79\x8a\xbb\xfc\x04\xdf\xa0\xab\x34\x99\x96\x60\x3a\x91\x64\x0a\xba\x0a\x52\xe3\x0f\x82\x88\xd1\x85\x6f\x2f\x4d\x4b\x29\x2e\xcc\x32\xe7\x9e\xcb\xcc\xf4\x34\x3a\xee\x94\xd2\x5e\x28\x42\x74\xef\x09\xcb\xcb\xc3\xfb\x73\xa9\xe5\x2b\xd7\x8f\xb2\x54\x05\x00\x1b\x37\xc1\xcf\x13\xe3\xbb\x96\xcf\xfc\xfa\x08\x1b\xc3\x2d\x38\x08\x78\xf6\xfe\xba\xe5\xda\x97\x09\x9c\x24\x6a\xc7\x02\x37\x80\xee\x5c\x92\xf4\xb7\x35\xef\x25\xf9\xe9\xad\xfc\x6c\xae\xb6\xf6\xac\xfe\x27\xb4\xfc\xfa\x86\x10\xc9\x8d\x8c\x1b\xba\xc7\x65\x4f\x5c\x1d\x34\xd2\x40\x91\xd8\x50\x6a\x33\x57\x5c\xce\x34\x30\x2c\x79\x12\x42\xa2\x6d\x87\x03\xd9\x55\x8c\xeb\x35\x3a\xa5\x4c\x98\x26\x27\x9d\xfa\x0d\x00\x00\xff\xff\x1e\xcc\x58\x2e\x2c\x01\x00\x00")
+
+func _1528395702_changeset_user_fkUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395702_changeset_user_fkUpSql,
+		"1528395702_changeset_user_fk.up.sql",
+	)
+}
+
+func _1528395702_changeset_user_fkUpSql() (*asset, error) {
+	bytes, err := _1528395702_changeset_user_fkUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395702_changeset_user_fk.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x3d, 0x2a, 0x8b, 0x2, 0x3, 0x42, 0xef, 0xc8, 0x73, 0xfa, 0x91, 0x3e, 0x85, 0xef, 0x8c, 0xf2, 0x55, 0x4c, 0x29, 0xa8, 0x9, 0xda, 0x67, 0x24, 0x69, 0x16, 0x52, 0xf5, 0x29, 0x51, 0x77, 0xf5}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2447,6 +2489,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395700_add_apply_data_to_campaign.up.sql":                            _1528395700_add_apply_data_to_campaignUpSql,
 	"1528395701_burn_the_campaigns_boats.down.sql":                            _1528395701_burn_the_campaigns_boatsDownSql,
 	"1528395701_burn_the_campaigns_boats.up.sql":                              _1528395701_burn_the_campaigns_boatsUpSql,
+	"1528395702_changeset_user_fk.down.sql":                                   _1528395702_changeset_user_fkDownSql,
+	"1528395702_changeset_user_fk.up.sql":                                     _1528395702_changeset_user_fkUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2597,6 +2641,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395700_add_apply_data_to_campaign.up.sql":                            {_1528395700_add_apply_data_to_campaignUpSql, map[string]*bintree{}},
 	"1528395701_burn_the_campaigns_boats.down.sql":                            {_1528395701_burn_the_campaigns_boatsDownSql, map[string]*bintree{}},
 	"1528395701_burn_the_campaigns_boats.up.sql":                              {_1528395701_burn_the_campaigns_boatsUpSql, map[string]*bintree{}},
+	"1528395702_changeset_user_fk.down.sql":                                   {_1528395702_changeset_user_fkDownSql, map[string]*bintree{}},
+	"1528395702_changeset_user_fk.up.sql":                                     {_1528395702_changeset_user_fkUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
