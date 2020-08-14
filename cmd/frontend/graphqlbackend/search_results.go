@@ -794,29 +794,46 @@ func intersect(left, right *SearchResultsResolver) *SearchResultsResolver {
 // and then intersects those results that are in the same repo/file path. To
 // collect N results for count:N, we need to opportunistically ask for more than
 // N results for each subexpression (since intersect can never yield more than N,
-// and likely yields fewer than N results). Thus, we perform a search of 2*N for
-// each expression, and if the intersection does not yield N results, and is not
-// exhaustive for every expression, we rerun the search by doubling count again.
+// and likely yields fewer than N results). If the intersection does not yield N
+// results, and is not exhaustive for every expression, we rerun the search by
+// doubling count again.
 func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []query.Node, operands []query.Node) (*SearchResultsResolver, error) {
+	start := time.Now()
+
 	if len(operands) == 0 {
 		return nil, nil
 	}
 
-	var err error
-	var result *SearchResultsResolver
-	var new *SearchResultsResolver
+	var (
+		err        error
+		result     *SearchResultsResolver
+		termResult *SearchResultsResolver
+	)
 
 	// The number of results we want. Note that for intersect, this number
 	// corresponds to documents, not line matches. By default, we ask for at
 	// least 5 documents to fill the result page.
 	want := 5
+	// The fraction of file matches two terms share on average
+	averageIntersection := 0.05
+	// When we retry, cap the max search results we request for each expression
+	// if search continues to not be exhaustive. Alert if exceeded.
+	maxTryCount := 40000
 
+	// Set an overall timeout in addition to the timeouts that are set for leaf-requests.
+	ctx, cancel, err := r.withTimeout(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer cancel()
+
+	// Set count: if not specified.
 	var countStr string
 	query.VisitField(scopeParameters, "count", func(value string, _ bool, _ query.Annotation) {
 		countStr = value
 	})
 	if countStr != "" {
-		// Override the value of count, if specified.
+		// Override "want" if count is specified.
 		want, _ = strconv.Atoi(countStr) // Invariant: count is validated.
 	} else {
 		scopeParameters = append(scopeParameters, query.Parameter{
@@ -825,8 +842,11 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 		})
 	}
 
-	tryCount := want * 1000     // Opportunistic approximation for the number of results to get for an intersection.
-	maxResultsForRetry := 20000 // When we retry, cap the max search results we request for each expression if search continues to not be exhaustive. Alert if exceeded.
+	// tryCount starts small but grows exponentially with the number of operands. It is capped at maxTryCount.
+	tryCount := int(math.Floor(float64(want) / math.Pow(averageIntersection, float64(len(operands)-1))))
+	if tryCount > maxTryCount {
+		tryCount = maxTryCount
+	}
 
 	var exhausted bool
 	for {
@@ -846,13 +866,22 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 		}
 		exhausted = !result.limitHit
 		for _, term := range operands[1:] {
-			new, err = r.evaluatePatternExpression(ctx, scopeParameters, term)
+			// check if we exceed the overall time limit before running the next query.
+			select {
+			case <-ctx.Done():
+				usedTime := time.Since(start)
+				suggestTime := longer(2, usedTime)
+				return alertForTimeout(usedTime, suggestTime, r).wrap(), nil
+			default:
+			}
+
+			termResult, err = r.evaluatePatternExpression(ctx, scopeParameters, term)
 			if err != nil {
 				return nil, err
 			}
-			if new != nil {
-				exhausted = exhausted && !new.limitHit
-				result = intersect(result, new)
+			if termResult != nil {
+				exhausted = exhausted && !termResult.limitHit
+				result = intersect(result, termResult)
 			}
 		}
 		if exhausted {
@@ -863,8 +892,8 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 		}
 		// If the result size set is not big enough, and we haven't
 		// exhausted search on all expressions, double the tryCount and search more.
-		tryCount *= tryCount
-		if tryCount > maxResultsForRetry {
+		tryCount *= 2
+		if tryCount > maxTryCount {
 			// We've capped out what we're willing to do, throw alert.
 			return alertForCappedAndExpression().wrap(), nil
 		}

@@ -36,8 +36,8 @@ RUN apk update && apk add --no-cache \
     # the features we can depend on. See this link for more information:
     # https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/postgresql.md#version-requirements
     'bash=5.0.0-r0' 'postgresql-contrib=11.7-r0' 'postgresql=11.7-r0' \
-    'redis=5.0.9-r0' bind-tools ca-certificates git@edge \
-    mailcap nginx openssh-client pcre su-exec tini nodejs-current=12.4.0-r0 curl
+    bind-tools ca-certificates git@edge \
+    mailcap 'nginx=1.16.1-r2' openssh-client pcre su-exec tini nodejs-current=12.4.0-r0 curl
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)
@@ -47,6 +47,8 @@ COPY --from=comby/comby:0.15.0@sha256:b3b57ed810be1489ccd1ef8fa42210d87d2d396e41
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/syntect_server:ff37f90@sha256:aa93514b7bc3aaf7a4e9c92e5ff52ee5052db6fb101255a69f054e5b8cdb46ff /syntect_server /usr/local/bin/
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
+# hadolint ignore=DL3022
+COPY --from=redis:5-alpine@sha256:abd9d0fc18e163747253aae8d69be344c7e90d6b6d6027fa7f2f2c0e6c20b2b8 /usr/local/bin/redis-* /usr/local/bin/
 
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/prometheus:server /bin/prom-wrapper /bin

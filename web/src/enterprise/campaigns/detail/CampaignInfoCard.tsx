@@ -22,7 +22,7 @@ export const CampaignInfoCard: React.FunctionComponent<CampaignInfoCardProps> = 
             <strong>
                 <UserAvatar user={author} className="icon-inline" /> {author.username}
             </strong>{' '}
-            started <Timestamp date={createdAt} />
+            created <Timestamp date={createdAt} />
         </div>
         <div className="card-body">
             <Markdown dangerousInnerHTML={renderMarkdown(description || '_No description_')} history={history} />

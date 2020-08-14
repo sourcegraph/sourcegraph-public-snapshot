@@ -97,7 +97,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 		OriginalInput: spec.RawSpec,
 		ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
 
-		ApplyURL:            fmt.Sprintf("/users/%s/campaigns/apply?spec=%s", username, apiID),
+		ApplyURL:            fmt.Sprintf("/users/%s/campaigns/apply/%s", username, apiID),
 		Namespace:           apitest.UserOrg{ID: userAPIID, DatabaseID: userID},
 		Creator:             apitest.User{ID: userAPIID, DatabaseID: userID},
 		ViewerCanAdminister: true,
