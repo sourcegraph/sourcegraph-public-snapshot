@@ -35,6 +35,7 @@ describe('ExternalChangesetNode', () => {
                         title: 'Remove lodash',
                         body: 'We should remove lodash',
                         checkState: ChangesetCheckState.FAILED,
+                        error: null,
                         externalID: '123',
                         diffStat: {
                             added: 100,

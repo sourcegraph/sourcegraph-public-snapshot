@@ -89,12 +89,14 @@ export const changesetSpecFieldsFragment = gql`
     }
 
     fragment HiddenChangesetSpecFields on HiddenChangesetSpec {
+        __typename
         id
         expiresAt
         type
     }
 
     fragment VisibleChangesetSpecFields on VisibleChangesetSpec {
+        __typename
         id
         expiresAt
         type

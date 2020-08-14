@@ -1,12 +1,12 @@
 import React from 'react'
-import { ChangesetSpecFields } from '../../../graphql-operations'
+import { ChangesetFields } from '../../../../graphql-operations'
 
-export interface ChangesetSpecListHeaderProps {
-    nodes: ChangesetSpecFields[]
+export interface CampaignChangesetsHeaderProps {
+    nodes: ChangesetFields[]
     totalCount?: number | null
 }
 
-export const ChangesetSpecListHeader: React.FunctionComponent<ChangesetSpecListHeaderProps> = ({
+export const CampaignChangesetsHeader: React.FunctionComponent<CampaignChangesetsHeaderProps> = ({
     nodes,
     totalCount,
 }) => (
@@ -18,8 +18,10 @@ export const ChangesetSpecListHeader: React.FunctionComponent<ChangesetSpecListH
             </strong>
         </div>
         <span />
-        <h5 className="text-uppercase text-center text-nowrap text-muted">Action</h5>
+        <h5 className="text-uppercase text-center text-nowrap text-muted">Status</h5>
         <h5 className="text-uppercase text-nowrap text-muted">Changeset information</h5>
+        <h5 className="text-uppercase text-center text-nowrap text-muted">Check state</h5>
+        <h5 className="text-uppercase text-center text-nowrap text-muted">Review state</h5>
         <h5 className="text-uppercase text-right text-nowrap text-muted">Changes</h5>
     </>
 )

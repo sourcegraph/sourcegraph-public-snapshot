@@ -1,5 +1,5 @@
 import { map } from 'rxjs/operators'
-import { dataOrThrowErrors, gql, requestGraphQL } from '../../../../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql, requestGraphQL } from '../../../../../shared/src/graphql/graphql'
 import { Observable } from 'rxjs'
 import {
     CampaignsVariables,
@@ -8,7 +8,7 @@ import {
     CampaignsByUserVariables,
     CampaignsByOrgResult,
     CampaignsByOrgVariables,
-} from '../../../../graphql-operations'
+} from '../../../graphql-operations'
 
 const ListCampaignFragment = gql`
     fragment ListCampaign on Campaign {

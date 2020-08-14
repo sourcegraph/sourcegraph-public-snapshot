@@ -6,7 +6,7 @@ import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { HiddenChangesetSpecNode } from './HiddenChangesetSpecNode'
 import { addDays } from 'date-fns'
 import { ChangesetSpecType } from '../../../../../shared/src/graphql/schema'
-import { ChangesetSpecFields } from '../../../graphql-operations'
+import { HiddenChangesetSpecFields } from '../../../graphql-operations'
 
 const { add } = storiesOf('web/campaigns/apply/HiddenChangesetSpecNode', module).addDecorator(story => {
     const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
@@ -21,7 +21,7 @@ const { add } = storiesOf('web/campaigns/apply/HiddenChangesetSpecNode', module)
     )
 })
 
-export const hiddenChangesetSpecStories: Record<string, ChangesetSpecFields & { __typename: 'HiddenChangesetSpec' }> = {
+export const hiddenChangesetSpecStories: Record<string, HiddenChangesetSpecFields> = {
     'Import changeset': {
         __typename: 'HiddenChangesetSpec',
         id: 'someidh1',

@@ -4,10 +4,9 @@ import { radios } from '@storybook/addon-knobs'
 import React from 'react'
 import webStyles from '../../../enterprise.scss'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
-import { CampaignInfoCard } from './CampaignInfoCard'
-import { subMinutes } from 'date-fns'
+import { CampaignDescription } from './CampaignDescription'
 
-const { add } = storiesOf('web/campaigns/CampaignInfoCard', module).addDecorator(story => {
+const { add } = storiesOf('web/campaigns/CampaignDescription', module).addDecorator(story => {
     const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
     document.body.classList.toggle('theme-light', theme === 'light')
     document.body.classList.toggle('theme-dark', theme === 'dark')
@@ -15,19 +14,14 @@ const { add } = storiesOf('web/campaigns/CampaignInfoCard', module).addDecorator
         <>
             <Tooltip />
             <style>{webStyles}</style>
-            <div className="p-3 container">{story()}</div>
+            <div className="p-3 container web-content">{story()}</div>
         </>
     )
 })
 
 add('Overview', () => (
-    <CampaignInfoCard
+    <CampaignDescription
         history={H.createMemoryHistory()}
-        author={{
-            avatarURL: 'http://test.test/asset.png',
-            username: 'alice',
-        }}
-        createdAt={subMinutes(new Date(), 10).toISOString()}
         description="This is an awesome campaign. It will do great things to your codebase."
     />
 ))

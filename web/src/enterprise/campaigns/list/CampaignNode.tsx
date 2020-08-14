@@ -1,15 +1,18 @@
 import React from 'react'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
-import { CampaignsIcon } from '../icons'
 import { Link } from '../../../../../shared/src/components/Link'
 import classNames from 'classnames'
 import formatDistance from 'date-fns/formatDistance'
 import parseISO from 'date-fns/parseISO'
 import * as H from 'history'
-import { changesetExternalStateIcons, changesetExternalStateColorClasses } from '../detail/changesets/presentation'
 import { Timestamp } from '../../../components/time/Timestamp'
-import { ListCampaign, ChangesetExternalState } from '../../../graphql-operations'
+import { ListCampaign } from '../../../graphql-operations'
+import {
+    ChangesetStatusOpen,
+    ChangesetStatusClosed,
+    ChangesetStatusMerged,
+} from '../detail/changesets/ChangesetStatusCell'
 
 export interface CampaignNodeProps {
     node: ListCampaign
@@ -27,59 +30,49 @@ export const CampaignNode: React.FunctionComponent<CampaignNodeProps> = ({
     history,
     now = new Date(),
     displayNamespace,
-}) => {
-    const campaignIconClass = node.closedAt ? 'text-danger' : 'text-success'
-    const OpenChangesetIcon = changesetExternalStateIcons[ChangesetExternalState.OPEN]
-    const ClosedChangesetIcon = changesetExternalStateIcons[ChangesetExternalState.CLOSED]
-    const MergedChangesetIcon = changesetExternalStateIcons[ChangesetExternalState.MERGED]
-    return (
-        <li className="list-group-item">
-            <div className="d-flex align-items-center p-2">
-                <CampaignsIcon
-                    className={classNames('icon-inline mr-2 flex-shrink-0 align-self-stretch', campaignIconClass)}
-                    data-tooltip={node.closedAt ? 'Closed' : 'Open'}
-                />
-                <div className="flex-grow-1 campaign-node__content">
-                    <div className="m-0 d-flex align-items-baseline">
-                        <h3 className="m-0 d-inline-block">
-                            {displayNamespace && (
-                                <>
-                                    <Link className="text-muted" to={`${node.namespace.url}/campaigns`}>
-                                        {node.namespace.namespaceName}
-                                    </Link>
-                                    <span className="text-muted d-inline-block mx-1">/</span>
-                                </>
-                            )}
-                            <Link to={`/campaigns/${node.id}`}>{node.name}</Link>
-                        </h3>
-                        <small className="ml-2 text-muted">
-                            created{' '}
-                            <span data-tooltip={<Timestamp date={node.createdAt} />}>
-                                {formatDistance(parseISO(node.createdAt), now)} ago
-                            </span>
-                        </small>
-                    </div>
-                    <Markdown
-                        className={classNames('text-truncate', !node.description && 'text-muted font-italic')}
-                        dangerousInnerHTML={
-                            node.description ? renderMarkdown(node.description, { plainText: true }) : 'No description'
-                        }
-                        history={history}
-                    />
-                </div>
-                <div className="flex-shrink-0" data-tooltip="Open changesets">
-                    {node.changesets.stats.open}{' '}
-                    <OpenChangesetIcon className={`text-${changesetExternalStateColorClasses.OPEN} ml-1 mr-2`} />
-                </div>
-                <div className="flex-shrink-0" data-tooltip="Closed changesets">
-                    {node.changesets.stats.closed}{' '}
-                    <ClosedChangesetIcon className={`text-${changesetExternalStateColorClasses.CLOSED} ml-1 mr-2`} />
-                </div>
-                <div className="flex-shrink-0" data-tooltip="Merged changesets">
-                    {node.changesets.stats.merged}{' '}
-                    <MergedChangesetIcon className={`text-${changesetExternalStateColorClasses.MERGED} ml-1`} />
-                </div>
+}) => (
+    <>
+        <span className="campaign-node__separator" />
+        {!node.closedAt && (
+            <h2 className="m-0 campaign-node__badge">
+                <span className="badge badge-success text-uppercase w-100">Open</span>
+            </h2>
+        )}
+        {node.closedAt && (
+            <h2 className="m-0 campaign-node__badge">
+                <span className="badge badge-danger text-uppercase w-100">Closed</span>
+            </h2>
+        )}
+        <div className="campaign-node__content">
+            <div className="m-0 d-flex align-items-baseline">
+                <h3 className="m-0 d-inline-block">
+                    {displayNamespace && (
+                        <>
+                            <Link className="text-muted" to={`${node.namespace.url}/campaigns`}>
+                                {node.namespace.namespaceName}
+                            </Link>
+                            <span className="text-muted d-inline-block mx-1">/</span>
+                        </>
+                    )}
+                    <Link to={`/campaigns/${node.id}`}>{node.name}</Link>
+                </h3>
+                <small className="ml-2 text-muted">
+                    created{' '}
+                    <span data-tooltip={<Timestamp date={node.createdAt} />}>
+                        {formatDistance(parseISO(node.createdAt), now)} ago
+                    </span>
+                </small>
             </div>
-        </li>
-    )
-}
+            <Markdown
+                className={classNames('text-truncate', !node.description && 'text-muted font-italic')}
+                dangerousInnerHTML={
+                    node.description ? renderMarkdown(node.description, { plainText: true }) : 'No description'
+                }
+                history={history}
+            />
+        </div>
+        <ChangesetStatusOpen label={<span className="text-muted">{node.changesets.stats.open} open</span>} />
+        <ChangesetStatusClosed label={<span className="text-muted">{node.changesets.stats.closed} closed</span>} />
+        <ChangesetStatusMerged label={<span className="text-muted">{node.changesets.stats.merged} merged</span>} />
+    </>
+)

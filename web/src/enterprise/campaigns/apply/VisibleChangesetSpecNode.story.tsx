@@ -7,7 +7,7 @@ import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { VisibleChangesetSpecNode } from './VisibleChangesetSpecNode'
 import { addDays } from 'date-fns'
 import { ChangesetSpecType } from '../../../../../shared/src/graphql/schema'
-import { ChangesetSpecFields } from '../../../graphql-operations'
+import { VisibleChangesetSpecFields } from '../../../graphql-operations'
 import { of } from 'rxjs'
 
 let isLightTheme = true
@@ -25,10 +25,7 @@ const { add } = storiesOf('web/campaigns/apply/VisibleChangesetSpecNode', module
     )
 })
 
-export const visibleChangesetSpecStories: Record<
-    string,
-    ChangesetSpecFields & { __typename: 'VisibleChangesetSpec' }
-> = {
+export const visibleChangesetSpecStories: Record<string, VisibleChangesetSpecFields> = {
     'Import changeset': {
         __typename: 'VisibleChangesetSpec',
         id: 'someidv1',

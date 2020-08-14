@@ -3,17 +3,22 @@ import { Redirect, RouteComponentProps } from 'react-router'
 import { userAreaRoutes } from '../../user/area/routes'
 import { UserAreaRoute, UserAreaRouteContext } from '../../user/area/UserArea'
 import { enterpriseNamespaceAreaRoutes } from '../namespaces/routes'
-import { UserCampaignListPageProps } from '../campaigns/global/list/GlobalCampaignListPage'
+import { UserCampaignListPageProps } from '../campaigns/list/CampaignListPage'
 import { lazyComponent } from '../../util/lazyComponent'
 import { CampaignApplyPageProps } from '../campaigns/apply/CampaignApplyPage'
+import { CampaignDetailsProps } from '../campaigns/detail/CampaignDetails'
 
 const UserCampaignListPage = lazyComponent<UserCampaignListPageProps, 'UserCampaignListPage'>(
-    () => import('../campaigns/global/list/GlobalCampaignListPage'),
+    () => import('../campaigns/list/CampaignListPage'),
     'UserCampaignListPage'
 )
 const CampaignApplyPage = lazyComponent<CampaignApplyPageProps, 'CampaignApplyPage'>(
     () => import('../campaigns/apply/CampaignApplyPage'),
     'CampaignApplyPage'
+)
+const CampaignDetails = lazyComponent<CampaignDetailsProps, 'CampaignDetails'>(
+    () => import('../campaigns/detail/CampaignDetails'),
+    'CampaignDetails'
 )
 
 export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
@@ -34,14 +39,30 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
     {
         path: '/campaigns/apply/:specID',
         render: ({ match, ...props }: UserAreaRouteContext & RouteComponentProps<{ specID: string }>) => (
-            <CampaignApplyPage {...props} specID={match.params.specID} />
+            <div className="web-content">
+                <CampaignApplyPage {...props} specID={match.params.specID} />
+            </div>
+        ),
+        condition: ({ isSourcegraphDotCom }) =>
+            !isSourcegraphDotCom && window.context.experimentalFeatures?.automation === 'enabled',
+    },
+    {
+        path: '/campaigns/:campaignID',
+        render: ({ match, ...props }: UserAreaRouteContext & RouteComponentProps<{ campaignID: string }>) => (
+            <div className="web-content">
+                <CampaignDetails {...props} campaignID={match.params.campaignID} />
+            </div>
         ),
         condition: ({ isSourcegraphDotCom }) =>
             !isSourcegraphDotCom && window.context.experimentalFeatures?.automation === 'enabled',
     },
     {
         path: '/campaigns',
-        render: props => <UserCampaignListPage {...props} userID={props.user.id} />,
+        render: props => (
+            <div className="web-content">
+                <UserCampaignListPage {...props} userID={props.user.id} />
+            </div>
+        ),
         condition: ({ isSourcegraphDotCom }) =>
             !isSourcegraphDotCom && window.context.experimentalFeatures?.automation === 'enabled',
     },
