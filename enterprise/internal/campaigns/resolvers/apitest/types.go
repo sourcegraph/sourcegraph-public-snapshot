@@ -85,8 +85,9 @@ type Campaign struct {
 	ID                      string
 	Name                    string
 	Description             string
-	InitialApplier          User
-	LastApplier             User
+	SpecCreator             *User
+	InitialApplier          *User
+	LastApplier             *User
 	LastAppliedAt           string
 	ViewerCanAdminister     bool
 	Namespace               UserOrg
@@ -199,7 +200,7 @@ type CampaignSpec struct {
 	ApplyURL string
 
 	Namespace UserOrg
-	Creator   User
+	Creator   *User
 
 	ChangesetSpecs ChangesetSpecConnection
 

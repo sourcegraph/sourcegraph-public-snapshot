@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
@@ -96,11 +97,19 @@ func (r *campaignResolver) Description() *string {
 }
 
 func (r *campaignResolver) InitialApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return graphqlbackend.UserByIDInt32(ctx, r.Campaign.InitialApplierID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, r.Campaign.InitialApplierID)
+	if errcode.IsNotFound(err) {
+		return nil, nil
+	}
+	return user, err
 }
 
 func (r *campaignResolver) LastApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return graphqlbackend.UserByIDInt32(ctx, r.Campaign.LastApplierID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, r.Campaign.LastApplierID)
+	if errcode.IsNotFound(err) {
+		return nil, nil
+	}
+	return user, err
 }
 
 func (r *campaignResolver) LastAppliedAt() graphqlbackend.DateTime {
@@ -114,7 +123,11 @@ func (r *campaignResolver) SpecCreator(ctx context.Context) (*graphqlbackend.Use
 	if err != nil {
 		return nil, err
 	}
-	return graphqlbackend.UserByIDInt32(ctx, spec.UserID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, spec.UserID)
+	if errcode.IsNotFound(err) {
+		return nil, nil
+	}
+	return user, err
 }
 
 func (r *campaignResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
@@ -146,9 +159,9 @@ func (r *campaignResolver) computeNamespace(ctx context.Context) (graphqlbackend
 				r.Campaign.NamespaceOrgID,
 			)
 		}
-
 		if errcode.IsNotFound(r.namespaceErr) {
-			r.namespaceErr = nil
+			r.namespace.Namespace = nil
+			r.namespaceErr = errors.New("namespace of campaign has been deleted")
 		}
 	})
 
