@@ -40,29 +40,27 @@ export const ChangesetSpecList: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <div className="list-group">
-            <FilteredConnection<ChangesetSpecFields, Omit<ChangesetSpecNodeProps, 'node'>>
-                className="mt-2"
-                nodeComponent={ChangesetSpecNode}
-                nodeComponentProps={{
-                    isLightTheme,
-                    history,
-                    location,
-                    queryChangesetSpecFileDiffs,
-                }}
-                queryConnection={queryChangesetSpecsConnection}
-                hideSearch={true}
-                defaultFirst={15}
-                noun="changeset"
-                pluralNoun="changesets"
-                history={history}
-                location={location}
-                useURLQuery={true}
-                listComponent="div"
-                listClassName="changeset-spec-list__grid mb-3"
-                headComponent={ChangesetSpecListHeader}
-                cursorPaging={true}
-            />
-        </div>
+        <FilteredConnection<ChangesetSpecFields, Omit<ChangesetSpecNodeProps, 'node'>>
+            className="mt-2"
+            nodeComponent={ChangesetSpecNode}
+            nodeComponentProps={{
+                isLightTheme,
+                history,
+                location,
+                queryChangesetSpecFileDiffs,
+            }}
+            queryConnection={queryChangesetSpecsConnection}
+            hideSearch={true}
+            defaultFirst={15}
+            noun="changeset"
+            pluralNoun="changesets"
+            history={history}
+            location={location}
+            useURLQuery={true}
+            listComponent="div"
+            listClassName="changeset-spec-list__grid mb-3"
+            headComponent={ChangesetSpecListHeader}
+            cursorPaging={true}
+        />
     )
 }

@@ -1,19 +1,19 @@
 import * as H from 'history'
 import React from 'react'
-import { GlobalCampaignListPage } from './GlobalCampaignListPage'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../../../shared/src/telemetry/telemetryService'
+import { CampaignListPage } from './CampaignListPage'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 import { of } from 'rxjs'
 import { shallow } from 'enzyme'
-import { nodes } from '../../list/CampaignNode.story'
+import { nodes } from './CampaignNode.story'
 
 const history = H.createMemoryHistory()
 
-describe('GlobalCampaignListPage', () => {
+describe('CampaignListPage', () => {
     for (const totalCount of [0, 1]) {
         test(`renders for siteadmin and totalCount: ${totalCount}`, () => {
             expect(
                 shallow(
-                    <GlobalCampaignListPage
+                    <CampaignListPage
                         history={history}
                         location={history.location}
                         queryCampaigns={() =>
@@ -27,7 +27,7 @@ describe('GlobalCampaignListPage', () => {
         test(`renders for non-siteadmin and totalCount: ${totalCount}`, () => {
             expect(
                 shallow(
-                    <GlobalCampaignListPage
+                    <CampaignListPage
                         history={history}
                         location={history.location}
                         queryCampaigns={() =>

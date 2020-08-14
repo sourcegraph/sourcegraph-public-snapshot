@@ -1,6 +1,5 @@
 import React from 'react'
 import { RouteComponentProps, Switch, Route } from 'react-router'
-import { GlobalCampaignListPage } from './list/GlobalCampaignListPage'
 import { CampaignDetails } from '../detail/CampaignDetails'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { ThemeProps } from '../../../../../shared/src/theme'
@@ -15,6 +14,7 @@ import { CampaignsUserMarketingPage } from './marketing/CampaignsUserMarketingPa
 import { CampaignsBetaFeedbackAlert } from './CampaignsBetaFeedbackAlert'
 import { AuthenticatedUser } from '../../../auth'
 import { CampaignApplyPage } from '../apply/CampaignApplyPage'
+import { CampaignListPage } from '../list/CampaignListPage'
 
 interface Props
     extends RouteComponentProps<{}>,
@@ -59,7 +59,7 @@ export const AuthenticatedCampaignsArea = withAuthenticatedUser<AuthenticatedPro
                 {/* eslint-disable react/jsx-no-bind */}
                 <Switch>
                     <Route
-                        render={props => <GlobalCampaignListPage {...outerProps} {...props} />}
+                        render={props => <CampaignListPage {...outerProps} {...props} />}
                         path={match.url}
                         exact={true}
                     />

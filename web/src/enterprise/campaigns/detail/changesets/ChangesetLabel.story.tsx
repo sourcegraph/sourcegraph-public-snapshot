@@ -13,7 +13,7 @@ const { add } = storiesOf('web/campaigns/ChangesetLabel', module).addDecorator(s
         <>
             <Tooltip />
             <style>{webStyles}</style>
-            <div className="p-3 container">{story()}</div>
+            <div className="p-3 container web-content">{story()}</div>
         </>
     )
 })

@@ -77,7 +77,7 @@ const { add } = storiesOf('web/campaigns/CampaignNode', module).addDecorator(sto
         <>
             <Tooltip />
             <style>{webStyles}</style>
-            <div className="p-3 container">{story()}</div>
+            <div className="p-3 container web-content campaign-list-page__grid">{story()}</div>
         </>
     )
 })

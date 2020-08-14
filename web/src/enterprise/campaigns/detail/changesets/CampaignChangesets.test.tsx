@@ -31,6 +31,10 @@ describe('CampaignChangesets', () => {
                                     updatedAt: new Date('2020-01-04').toISOString(),
                                 },
                             ],
+                            pageInfo: {
+                                endCursor: null,
+                                hasNextPage: false,
+                            },
                         })
                     }
                     campaignID="123"

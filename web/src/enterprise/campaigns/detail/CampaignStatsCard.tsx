@@ -1,14 +1,22 @@
 import React from 'react'
 import ProgressCheckIcon from 'mdi-react/ProgressCheckIcon'
-import SourceMergeIcon from 'mdi-react/SourceMergeIcon'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import classNames from 'classnames'
 import { CampaignFields } from '../../../graphql-operations'
+import { CampaignStateBadge } from './CampaignStateBadge'
+import {
+    ChangesetStatusUnpublished,
+    ChangesetStatusOpen,
+    ChangesetStatusClosed,
+    ChangesetStatusMerged,
+} from './changesets/ChangesetStatusCell'
 
-interface CampaignStatsCardProps extends Pick<CampaignFields['changesets'], 'stats'> {}
+interface CampaignStatsCardProps extends Pick<CampaignFields['changesets'], 'stats'> {
+    closedAt: CampaignFields['closedAt']
+    className?: string
+}
 
-export const CampaignStatsCard: React.FunctionComponent<CampaignStatsCardProps> = ({ stats }) => {
+export const CampaignStatsCard: React.FunctionComponent<CampaignStatsCardProps> = ({ stats, closedAt, className }) => {
     const percentComplete = stats.total === 0 ? 0 : (((stats.closed + stats.merged) / stats.total) * 100).toFixed(0)
     const isCompleted = stats.closed + stats.merged === stats.total
     let CampaignStatusIcon = ProgressCheckIcon
@@ -16,10 +24,13 @@ export const CampaignStatsCard: React.FunctionComponent<CampaignStatsCardProps> 
         CampaignStatusIcon = CheckCircleOutlineIcon
     }
     return (
-        <div className="card mt-2">
-            <div className="card-body">
-                <div className="d-flex justify-content-between align-items-center">
-                    <div className="d-flex align-items-center">
+        <div className={classNames('card', className)}>
+            <div className="card-body p-3">
+                <div className="d-flex flex-wrap justify-content-between align-items-center">
+                    <div className="d-flex align-items-center flex-grow-1">
+                        <h2 className="m-0 mr-3">
+                            <CampaignStateBadge isClosed={!!closedAt} />
+                        </h2>
                         <h1 className="d-inline mb-0">
                             <CampaignStatusIcon
                                 className={classNames(
@@ -29,23 +40,36 @@ export const CampaignStatsCard: React.FunctionComponent<CampaignStatsCardProps> 
                                 )}
                             />
                         </h1>{' '}
-                        {percentComplete}% complete
+                        <span className="lead">{percentComplete}% complete</span>
                     </div>
-                    <div className="text-muted">{stats.total} changesets total</div>
-                    <div className="d-flex align-items-center">
-                        <SourceBranchIcon className="icon-inline text-muted mr-2" /> {stats.unpublished} unpublished
-                    </div>
-                    <div className="d-flex align-items-center">
-                        <SourceBranchIcon className="icon-inline text-success mr-2" /> {stats.open} open
-                    </div>
-                    <div className="d-flex align-items-center">
-                        <SourceMergeIcon className="icon-inline text-merged mr-2" /> {stats.merged} merged
-                    </div>
-                    <div className="d-flex align-items-center">
-                        <SourceBranchIcon className="icon-inline text-danger mr-2" /> {stats.closed} closed
-                    </div>
+                    <CampaignStatsTotalAction count={stats.total} />
+                    <ChangesetStatusUnpublished
+                        label={<span className="text-muted">{stats.unpublished} unpublished</span>}
+                        className="flex-grow-0 flex-shrink-0 mx-3"
+                    />
+                    <ChangesetStatusOpen
+                        label={<span className="text-muted">{stats.open} open</span>}
+                        className="flex-grow-0 flex-shrink-0 mx-3"
+                    />
+                    <ChangesetStatusClosed
+                        label={<span className="text-muted">{stats.closed} closed</span>}
+                        className="flex-grow-0 flex-shrink-0 mx-3"
+                    />
+                    <ChangesetStatusMerged
+                        label={<span className="text-muted">{stats.merged} merged</span>}
+                        className="flex-grow-0 flex-shrink-0 ml-3"
+                    />
                 </div>
             </div>
         </div>
     )
 }
+
+export const CampaignStatsTotalAction: React.FunctionComponent<{ count: number }> = ({ count }) => (
+    <div className="m-0 mr-3 flex-grow-0 flex-shrink-0 text-nowrap d-flex flex-column align-items-center justify-content-center">
+        <span className="campaign-stats-card__changesets-pill">
+            <span className="badge badge-pill badge-secondary">{count}</span>
+        </span>
+        <span className="text-muted">changesets</span>
+    </div>
+)

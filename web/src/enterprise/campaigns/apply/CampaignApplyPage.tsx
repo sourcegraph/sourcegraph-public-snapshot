@@ -12,13 +12,10 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { CampaignHeader } from '../detail/CampaignHeader'
 import { ChangesetSpecList } from './ChangesetSpecList'
 import { ThemeProps } from '../../../../../shared/src/theme'
-import { Link } from '../../../../../shared/src/components/Link'
-import { Timestamp } from '../../../components/time/Timestamp'
-import { Markdown } from '../../../../../shared/src/components/Markdown'
-import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { CreateUpdateCampaignAlert } from './CreateUpdateCampaignAlert'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { HeroPage } from '../../../components/HeroPage'
+import { CampaignDescription } from '../detail/CampaignDescription'
 
 export interface CampaignApplyPageProps extends ThemeProps {
     specID: string
@@ -65,14 +62,14 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
     return (
         <>
             <PageTitle title="Apply campaign spec" />
-            <div className="mb-3">
-                <CampaignHeader name={spec.description.name} namespace={spec.namespace} className="d-inline-block" />
-                <span className="text-muted ml-3">
-                    Uploaded <Timestamp date={spec.createdAt} /> by{' '}
-                    {spec.creator && <Link to={spec.creator.url}>{spec.creator.username}</Link>}
-                    {!spec.creator && <strong>deleted user</strong>}
-                </span>
-            </div>
+            <CampaignHeader
+                name={spec.description.name}
+                namespace={spec.namespace}
+                createdAt={spec.createdAt}
+                creator={spec.creator}
+                verb="Uploaded"
+                className="mb-3"
+            />
             <CreateUpdateCampaignAlert
                 history={history}
                 specID={spec.id}
@@ -81,11 +78,7 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
                 setIsLoading={setIsLoading}
                 viewerCanAdminister={spec.viewerCanAdminister}
             />
-            <Markdown
-                dangerousInnerHTML={renderMarkdown(spec.description.description || '_No description_')}
-                history={history}
-                className="mb-3"
-            />
+            <CampaignDescription history={history} description={spec.description.description} className="mb-3" />
             <ChangesetSpecList
                 campaignSpecID={specID}
                 history={history}

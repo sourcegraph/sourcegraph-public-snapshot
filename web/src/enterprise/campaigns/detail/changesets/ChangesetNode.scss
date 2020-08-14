@@ -1,10 +1,4 @@
-.campaign-node {
-    &__content {
-        min-width: 0;
-    }
-    &__badge {
-        justify-self: stretch;
-    }
+.changeset-node {
     &__separator {
         // Make it full width in the current row.
         grid-column: 1 / -1;
@@ -13,7 +7,7 @@
 }
 
 .theme-dark {
-    .campaign-node {
+    .changeset-node {
         &__separator {
             border-color: $color-light-bg-5;
         }

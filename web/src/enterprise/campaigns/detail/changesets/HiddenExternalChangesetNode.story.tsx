@@ -5,7 +5,11 @@ import webStyles from '../../../../enterprise.scss'
 import { Tooltip } from '../../../../components/tooltip/Tooltip'
 import { HiddenExternalChangesetNode } from './HiddenExternalChangesetNode'
 import { addHours } from 'date-fns'
-import { ChangesetExternalState } from '../../../../graphql-operations'
+import {
+    ChangesetExternalState,
+    ChangesetReconcilerState,
+    ChangesetPublicationState,
+} from '../../../../graphql-operations'
 
 const { add } = storiesOf('web/campaigns/HiddenExternalChangesetNode', module).addDecorator(story => {
     const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
@@ -15,7 +19,7 @@ const { add } = storiesOf('web/campaigns/HiddenExternalChangesetNode', module).a
         <>
             <Tooltip />
             <style>{webStyles}</style>
-            <div className="p-3 container">{story()}</div>
+            <div className="p-3 container web-content campaign-changesets__grid">{story()}</div>
         </>
     )
 })
@@ -32,6 +36,8 @@ add('All external states', () => {
                         updatedAt: now.toISOString(),
                         nextSyncAt: addHours(now, 1).toISOString(),
                         externalState,
+                        publicationState: ChangesetPublicationState.PUBLISHED,
+                        reconcilerState: ChangesetReconcilerState.COMPLETED,
                     }}
                 />
             ))}
