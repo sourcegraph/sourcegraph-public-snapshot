@@ -25,36 +25,36 @@ import (
 // and by workerutil.Worker to load changesets from the database for processing
 // by the reconciler.
 var preSpecChangesetColumns = []*sqlf.Query{
-	sqlf.Sprintf("changesets.id"),
-	sqlf.Sprintf("changesets.repo_id"),
-	sqlf.Sprintf("changesets.created_at"),
-	sqlf.Sprintf("changesets.updated_at"),
-	sqlf.Sprintf("changesets.metadata"),
-	sqlf.Sprintf("changesets.campaign_ids"),
-	sqlf.Sprintf("changesets.external_id"),
-	sqlf.Sprintf("changesets.external_service_type"),
-	sqlf.Sprintf("changesets.external_branch"),
-	sqlf.Sprintf("changesets.external_deleted_at"),
-	sqlf.Sprintf("changesets.external_updated_at"),
-	sqlf.Sprintf("changesets.external_state"),
-	sqlf.Sprintf("changesets.external_review_state"),
-	sqlf.Sprintf("changesets.external_check_state"),
-	sqlf.Sprintf("changesets.created_by_campaign"),
-	sqlf.Sprintf("changesets.added_to_campaign"),
-	sqlf.Sprintf("changesets.diff_stat_added"),
-	sqlf.Sprintf("changesets.diff_stat_changed"),
-	sqlf.Sprintf("changesets.diff_stat_deleted"),
-	sqlf.Sprintf("changesets.sync_state"),
-	sqlf.Sprintf("changesets.owned_by_campaign_id"),
-	sqlf.Sprintf("changesets.current_spec_id"),
-	sqlf.Sprintf("changesets.previous_spec_id"),
-	sqlf.Sprintf("changesets.publication_state"),
-	sqlf.Sprintf("changesets.reconciler_state"),
-	sqlf.Sprintf("changesets.failure_message"),
-	sqlf.Sprintf("changesets.started_at"),
-	sqlf.Sprintf("changesets.finished_at"),
-	sqlf.Sprintf("changesets.process_after"),
-	sqlf.Sprintf("changesets.num_resets"),
+	sqlf.Sprintf("changesets_old.id"),
+	sqlf.Sprintf("changesets_old.repo_id"),
+	sqlf.Sprintf("changesets_old.created_at"),
+	sqlf.Sprintf("changesets_old.updated_at"),
+	sqlf.Sprintf("changesets_old.metadata"),
+	sqlf.Sprintf("changesets_old.campaign_ids"),
+	sqlf.Sprintf("changesets_old.external_id"),
+	sqlf.Sprintf("changesets_old.external_service_type"),
+	sqlf.Sprintf("changesets_old.external_branch"),
+	sqlf.Sprintf("changesets_old.external_deleted_at"),
+	sqlf.Sprintf("changesets_old.external_updated_at"),
+	sqlf.Sprintf("changesets_old.external_state"),
+	sqlf.Sprintf("changesets_old.external_review_state"),
+	sqlf.Sprintf("changesets_old.external_check_state"),
+	sqlf.Sprintf("changesets_old.created_by_campaign"),
+	sqlf.Sprintf("changesets_old.added_to_campaign"),
+	sqlf.Sprintf("changesets_old.diff_stat_added"),
+	sqlf.Sprintf("changesets_old.diff_stat_changed"),
+	sqlf.Sprintf("changesets_old.diff_stat_deleted"),
+	sqlf.Sprintf("changesets_old.sync_state"),
+	sqlf.Sprintf("changesets_old.owned_by_campaign_id"),
+	sqlf.Sprintf("changesets_old.current_spec_id"),
+	sqlf.Sprintf("changesets_old.previous_spec_id"),
+	sqlf.Sprintf("changesets_old.publication_state"),
+	sqlf.Sprintf("changesets_old.reconciler_state"),
+	sqlf.Sprintf("changesets_old.failure_message"),
+	sqlf.Sprintf("changesets_old.started_at"),
+	sqlf.Sprintf("changesets_old.finished_at"),
+	sqlf.Sprintf("changesets_old.process_after"),
+	sqlf.Sprintf("changesets_old.num_resets"),
 }
 
 func (s *Store) listPreSpecChangesets(ctx context.Context) ([]*campaigns.Changeset, error) {
@@ -78,7 +78,7 @@ func (s *Store) listPreSpecChangesets(ctx context.Context) ([]*campaigns.Changes
 }
 
 const listPreSpecChangesetsFmtstr = `
--- source: enterprise/internal/campaigns/spec_migration.go:listPreSpecChangesets
+-- source: enterprise/internal/campaigns/spec_migration_changesets.go:listPreSpecChangesets
 SELECT %s FROM changesets_old
 `
 

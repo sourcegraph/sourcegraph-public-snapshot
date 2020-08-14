@@ -14,6 +14,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
+func (s *Store) deletePreSpecCampaign(ctx context.Context, id int64) error {
+	return s.Store.Exec(ctx, sqlf.Sprintf(
+		"DELETE FROM campaigns_old WHERE id = %s",
+		id,
+	))
+}
+
 // preSpecCampaignColumns are used by the campaign related Store methods to
 // insert, update and query old campaigns.
 var preSpecCampaignColumns = []*sqlf.Query{
@@ -53,7 +60,7 @@ func (s *Store) listPreSpecCampaigns(ctx context.Context) ([]*campaigns.Campaign
 }
 
 const listPreSpecCampaignsFmtstr = `
--- source: enterprise/internal/campaigns/spec_migration.go:listPreSpecCampaigns
+-- source: enterprise/internal/campaigns/spec_migration_campaigns.go:listPreSpecCampaigns
 SELECT %s FROM campaigns_old
 `
 
@@ -74,3 +81,28 @@ func scanPreSpecCampaign(c *campaigns.Campaign, s scanner) error {
 		&dbutil.NullInt64{N: &c.CampaignSpecID},
 	)
 }
+
+func (s *Store) updateCampaignID(ctx context.Context, c *campaigns.Campaign, id int64) error {
+	q := sqlf.Sprintf(
+		updateCampaignIDFmtstr,
+		id,
+		c.ID,
+		sqlf.Join(campaignColumns, ", "),
+	)
+
+	return s.query(ctx, q, func(sc scanner) error {
+		return scanCampaign(c, sc)
+	})
+}
+
+const updateCampaignIDFmtstr = `
+-- source: enterprise/internal/campaigns/spec_migration_campaigns.go:updateCampaignID
+UPDATE
+	campaigns
+SET
+	id = %s
+WHERE
+	id = %s
+RETURNING
+	%s
+`
