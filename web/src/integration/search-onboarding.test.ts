@@ -5,7 +5,7 @@ import { commonWebGraphQlResults } from './graphQlResults'
 import { siteID, siteGQLID } from './jscontext'
 import assert from 'assert'
 
-describe.only('Search onboarding', () => {
+describe('Search onboarding', () => {
     let driver: Driver
     before(async () => {
         driver = await createDriverForTest()
