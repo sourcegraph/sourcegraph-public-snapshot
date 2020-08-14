@@ -33,9 +33,11 @@ func TestCampaignResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	store := ee.NewStore(dbconn.Global)
-
 	now := time.Now().UTC().Truncate(time.Microsecond)
+	clock := func() time.Time {
+		return now.UTC().Truncate(time.Microsecond)
+	}
+	store := ee.NewStoreWithClock(dbconn.Global, clock)
 
 	campaignSpec := &campaigns.CampaignSpec{
 		RawSpec:        ct.TestRawCampaignSpec,
@@ -76,6 +78,10 @@ func TestCampaignResolver(t *testing.T) {
 		SpecCreator:    apiUser,
 		LastAppliedAt:  marshalDateTime(t, now),
 		URL:            fmt.Sprintf("/organizations/%s/campaigns/%s", org.Name, campaignAPIID),
+		CreatedAt:      marshalDateTime(t, now),
+		UpdatedAt:      marshalDateTime(t, now),
+		// Not closed.
+		ClosedAt: "",
 	}
 
 	input := map[string]interface{}{"campaign": campaignAPIID}
@@ -134,6 +140,9 @@ query($campaign: ID!){
       lastApplier    { ...u }
       specCreator    { ...u }
       lastAppliedAt
+      createdAt
+      updatedAt
+      closedAt
       namespace {
         ... on User { ...u }
         ... on Org  { ...o }

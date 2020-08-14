@@ -66,6 +66,7 @@ export const CampaignListPage: React.FunctionComponent<Props> = ({
                 listComponent="div"
                 listClassName="campaign-list-page__grid mb-3"
                 className="mb-3"
+                cursorPaging={true}
             />
         </>
     )
@@ -84,6 +85,7 @@ export const UserCampaignListPage: React.FunctionComponent<UserCampaignListPageP
             queryCampaignsByUser({
                 userID,
                 first: args.first ?? null,
+                after: args.after ?? null,
                 // The types for FilteredConnectionQueryArgs don't allow access to the filter arguments.
                 state: (args as { state: CampaignState | undefined }).state ?? null,
                 viewerCanAdminister: null,
@@ -106,6 +108,7 @@ export const OrgCampaignListPage: React.FunctionComponent<OrgCampaignListPagePro
             queryCampaignsByOrg({
                 orgID,
                 first: args.first ?? null,
+                after: args.after ?? null,
                 // The types for FilteredConnectionQueryArgs don't allow access to the filter arguments.
                 state: (args as { state: CampaignState | undefined }).state ?? null,
                 viewerCanAdminister: null,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -403,6 +404,13 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 	opts.State = state
 	if args.First != nil {
 		opts.Limit = int(*args.First)
+	}
+	if args.After != nil {
+		cursor, err := strconv.ParseInt(*args.After, 10, 32)
+		if err != nil {
+			return nil, err
+		}
+		opts.Cursor = cursor
 	}
 
 	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx)
