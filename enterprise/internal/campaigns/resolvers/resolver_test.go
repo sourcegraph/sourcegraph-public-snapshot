@@ -332,6 +332,12 @@ func TestApplyCampaign(t *testing.T) {
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 	apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyCampaign)
 
+	apiUser := &apitest.User{
+		ID:         userAPIID,
+		DatabaseID: userID,
+		SiteAdmin:  true,
+	}
+
 	have := response.ApplyCampaign
 	want := apitest.Campaign{
 		ID:          have.ID,
@@ -342,17 +348,9 @@ func TestApplyCampaign(t *testing.T) {
 			DatabaseID: userID,
 			SiteAdmin:  true,
 		},
-		InitialApplier: apitest.User{
-			ID:         userAPIID,
-			DatabaseID: userID,
-			SiteAdmin:  true,
-		},
-		LastApplier: apitest.User{
-			ID:         userAPIID,
-			DatabaseID: userID,
-			SiteAdmin:  true,
-		},
-		LastAppliedAt: marshalDateTime(t, now),
+		InitialApplier: apiUser,
+		LastApplier:    apiUser,
+		LastAppliedAt:  marshalDateTime(t, now),
 		Changesets: apitest.ChangesetConnection{
 			Nodes: []apitest.Changeset{
 				{Typename: "ExternalChangeset", ReconcilerState: "QUEUED"},

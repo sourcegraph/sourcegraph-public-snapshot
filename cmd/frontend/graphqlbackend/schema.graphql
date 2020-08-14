@@ -704,15 +704,15 @@ type Campaign implements Node {
     # The description (as Markdown).
     description: String
 
-    # The user that created the initial spec. In an org, this will be different from the namespace.
-    specCreator: User!
+    # The user that created the initial spec. In an org, this will be different from the namespace, or null if the user was deleted.
+    specCreator: User
 
-    # The user who created the campaign initially by applying the spec for the first time.
-    initialApplier: User!
+    # The user who created the campaign initially by applying the spec for the first time, or null if the user was deleted.
+    initialApplier: User
 
     # The user who last updated the campaign by applying a spec to this campaign.
-    # If the campaign hasn't been updated, the lastApplier is the initialApplier.
-    lastApplier: User!
+    # If the campaign hasn't been updated, the lastApplier is the initialApplier, or null if the user was deleted.
+    lastApplier: User
 
     # Whether the current user can edit or delete this campaign.
     viewerCanAdminister: Boolean!

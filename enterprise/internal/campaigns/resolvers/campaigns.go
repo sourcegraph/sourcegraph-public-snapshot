@@ -96,11 +96,19 @@ func (r *campaignResolver) Description() *string {
 }
 
 func (r *campaignResolver) InitialApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return graphqlbackend.UserByIDInt32(ctx, r.Campaign.InitialApplierID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, r.Campaign.InitialApplierID)
+	if err != nil && errcode.IsNotFound(err) {
+		return nil, nil
+	}
+	return user, err
 }
 
 func (r *campaignResolver) LastApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return graphqlbackend.UserByIDInt32(ctx, r.Campaign.LastApplierID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, r.Campaign.LastApplierID)
+	if err != nil && errcode.IsNotFound(err) {
+		return nil, nil
+	}
+	return user, err
 }
 
 func (r *campaignResolver) LastAppliedAt() graphqlbackend.DateTime {
@@ -114,7 +122,11 @@ func (r *campaignResolver) SpecCreator(ctx context.Context) (*graphqlbackend.Use
 	if err != nil {
 		return nil, err
 	}
-	return graphqlbackend.UserByIDInt32(ctx, spec.UserID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, spec.UserID)
+	if err != nil && errcode.IsNotFound(err) {
+		return nil, nil
+	}
+	return user, err
 }
 
 func (r *campaignResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
@@ -140,16 +152,12 @@ func (r *campaignResolver) computeNamespace(ctx context.Context) (graphqlbackend
 				ctx,
 				r.Campaign.NamespaceUserID,
 			)
-		} else {
-			r.namespace.Namespace, r.namespaceErr = graphqlbackend.OrgByIDInt32(
-				ctx,
-				r.Campaign.NamespaceOrgID,
-			)
+			return
 		}
-
-		if errcode.IsNotFound(r.namespaceErr) {
-			r.namespaceErr = nil
-		}
+		r.namespace.Namespace, r.namespaceErr = graphqlbackend.OrgByIDInt32(
+			ctx,
+			r.Campaign.NamespaceOrgID,
+		)
 	})
 
 	return r.namespace, r.namespaceErr
