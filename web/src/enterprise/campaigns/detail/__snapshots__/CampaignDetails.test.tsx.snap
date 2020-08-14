@@ -405,9 +405,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
         "viewerCanAdminister": false,
       }
     }
-    campaignID="c"
     campaignUpdates="[Subject]"
-    fetchCampaignById={[Function]}
     history="[History]"
     isLightTheme={true}
     location="[Location path=/]"
@@ -1112,9 +1110,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
         "viewerCanAdminister": true,
       }
     }
-    campaignID="c"
     campaignUpdates="[Subject]"
-    fetchCampaignById={[Function]}
     history="[History]"
     isLightTheme={true}
     location="[Location path=/]"
