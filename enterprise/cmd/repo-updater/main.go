@@ -74,6 +74,15 @@ func enterpriseInit(
 		}
 	}()
 
+	// Migrate pre-spec campaigns.
+	// This code can be removed in Sourcegraph 3.21 or later.
+	go func() {
+		svc := campaigns.NewServiceWithClock(campaignsStore, nil, clock)
+		if err := svc.MigratePreSpecCampaigns(ctx); err != nil {
+			log15.Error("MigratePreSpecCampaigns", "error", err)
+		}
+	}()
+
 	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
 	dbconn.Global = db
 	permsStore := frontendDB.NewPermsStore(db, clock)
