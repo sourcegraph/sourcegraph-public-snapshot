@@ -75,8 +75,8 @@ func (svc *Service) MigratePreSpecCampaigns(ctx context.Context) (err error) {
 		// arbitrarily choose to be the creator of the first campaign the old
 		// changeset was attached to.
 		if len(c.CampaignIDs) == 0 {
-			err = errors.Errorf("changeset %d was not attached to any campaigns", c.ID)
-			return
+			log15.Debug("pre-spec changeset is not attached to a campaign", "id", c.ID)
+			continue
 		}
 
 		// Check if we have a campaign. If a previous migration run was partly
