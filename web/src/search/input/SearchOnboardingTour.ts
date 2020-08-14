@@ -88,7 +88,7 @@ export function createStep1Tooltip(
         languageButtonHandler()
     })
     const repositoryListItem = document.createElement('li')
-    repositoryListItem.className = 'list-group-item p-0 border-0 mb-2'
+    repositoryListItem.className = 'list-group-item p-0 border-0 mb-2 test-tour-repo-button'
     repositoryListItem.textContent = '-'
     const repositoryButton = document.createElement('button')
     repositoryButton.className = 'btn btn-link p-0 pl-1'
@@ -165,7 +165,7 @@ export function createAddCodeStepWithLanguageExampleTooltip(
     listItem.textContent = '>'
 
     const exampleButton = document.createElement('button')
-    exampleButton.className = 'btn btn-link'
+    exampleButton.className = 'btn btn-link test-tour-language-example'
 
     const langsList = languageFilterToSearchExamples
     let example = ''

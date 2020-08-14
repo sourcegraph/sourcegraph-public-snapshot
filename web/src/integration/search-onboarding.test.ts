@@ -4,8 +4,9 @@ import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screens
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteID, siteGQLID } from './jscontext'
 import assert from 'assert'
+import expect from 'expect'
 
-describe('Search onboarding', () => {
+describe.only('Search onboarding', () => {
     let driver: Driver
     before(async () => {
         driver = await createDriverForTest()
@@ -68,12 +69,93 @@ describe('Search onboarding', () => {
             await driver.page.waitForSelector('.test-tour-step-2')
             await driver.page.keyboard.type('typescript')
             await driver.page.waitForSelector('.test-tour-step-3')
-            await driver.page.keyboard.type(' test')
+            await driver.page.waitForSelector('.test-tour-language-example')
+            await driver.page.click('.test-tour-language-example')
+
             await driver.page.waitForSelector('.test-tour-step-4')
             await driver.page.click('.test-search-help-dropdown-button-icon')
             await driver.page.waitForSelector('.test-tour-step-5')
             await driver.page.click('.test-search-button')
-            await driver.assertWindowLocation('/search?q=lang:typescript+test&patternType=literal')
+            await driver.assertWindowLocation('/search?q=lang:typescript+try%7B:%5Bmy_match%5D%7D&patternType=literal')
+        })
+
+        it('displays all steps in the repo onboarding flow', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+            await driver.page.evaluate(() => localStorage.setItem('has-seen-onboarding-tour', 'false'))
+            await driver.page.evaluate(() => localStorage.setItem('has-cancelled-onboarding-tour', 'false'))
+            await driver.page.evaluate(() => location.reload())
+            await driver.page.waitForSelector('.tour-card')
+            await driver.page.waitForSelector('.test-tour-repo-button')
+            await driver.page.click('.test-tour-repo-button')
+            await driver.page.waitForSelector('#monaco-query-input')
+            // eslint-disable-next-line unicorn/prefer-text-content
+            const inputContents = await driver.page.evaluate(
+                () => document.querySelector('#monaco-query-input .view-lines')?.textContent
+            )
+            assert.strictEqual(inputContents, 'repo:')
+
+            await driver.page.waitForSelector('.test-tour-step-2')
+            await driver.page.keyboard.type('sourcegraph ')
+            await driver.page.waitForSelector('.test-tour-step-3')
+            await driver.page.keyboard.type('test')
+            await driver.page.waitForSelector('.test-tour-step-4')
+            await driver.page.click('.test-search-help-dropdown-button-icon')
+            await driver.page.waitForSelector('.test-tour-step-5')
+            await driver.page.click('.test-search-button')
+            await driver.assertWindowLocation('/search?q=repo:sourcegraph+test&patternType=literal')
+        })
+        it('advances step-2-lang only after the autocomplete is closed', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+            await driver.page.evaluate(() => localStorage.setItem('has-seen-onboarding-tour', 'false'))
+            await driver.page.evaluate(() => localStorage.setItem('has-cancelled-onboarding-tour', 'false'))
+            await driver.page.evaluate(() => location.reload())
+            await driver.page.waitForSelector('.tour-card')
+            await driver.page.waitForSelector('.test-tour-language-button')
+            await driver.page.click('.test-tour-language-button')
+            await driver.page.waitForSelector('#monaco-query-input')
+            // eslint-disable-next-line unicorn/prefer-text-content
+            const inputContents = await driver.page.evaluate(
+                () => document.querySelector('#monaco-query-input .view-lines')?.textContent
+            )
+            assert.strictEqual(inputContents, 'lang:')
+            await driver.page.waitForSelector('.test-tour-step-2')
+            await driver.page.keyboard.type('java')
+            let tourStep2 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-2'))
+            let tourStep3 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-3'))
+            expect(tourStep2).toBeTruthy()
+            expect(tourStep3).toBeNull()
+            await driver.page.keyboard.type('script')
+            await driver.page.keyboard.press('Tab')
+            await driver.page.waitForSelector('.test-tour-step-3')
+            tourStep3 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-3'))
+            tourStep2 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-2'))
+            expect(tourStep3).toBeTruthy()
+        })
+        it('advances step-2-repo only if there is whitespace after the repo filter', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+            await driver.page.evaluate(() => localStorage.setItem('has-seen-onboarding-tour', 'false'))
+            await driver.page.evaluate(() => localStorage.setItem('has-cancelled-onboarding-tour', 'false'))
+            await driver.page.evaluate(() => location.reload())
+            await driver.page.waitForSelector('.tour-card')
+            await driver.page.waitForSelector('.test-tour-repo-button')
+            await driver.page.click('.test-tour-repo-button')
+            await driver.page.waitForSelector('#monaco-query-input')
+            // eslint-disable-next-line unicorn/prefer-text-content
+            const inputContents = await driver.page.evaluate(
+                () => document.querySelector('#monaco-query-input .view-lines')?.textContent
+            )
+            assert.strictEqual(inputContents, 'repo:')
+            await driver.page.waitForSelector('.test-tour-step-2')
+            await driver.page.keyboard.type('sourcegraph')
+            let tourStep2 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-2'))
+            let tourStep3 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-3'))
+            expect(tourStep2).toBeTruthy()
+            expect(tourStep3).toBeNull()
+            await driver.page.keyboard.press('Space')
+            await driver.page.waitForSelector('.test-tour-step-3')
+            tourStep3 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-3'))
+            tourStep2 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-2'))
+            expect(tourStep3).toBeTruthy()
         })
     })
 })
