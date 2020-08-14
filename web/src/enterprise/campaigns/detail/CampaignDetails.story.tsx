@@ -14,7 +14,12 @@ import {
     ChangesetCheckState,
     ChangesetReviewState,
 } from '../../../graphql-operations'
-import { fetchCampaignById, queryChangesets as _queryChangesets, queryExternalChangesetWithFileDiffs } from './backend'
+import {
+    fetchCampaignById,
+    queryChangesets as _queryChangesets,
+    queryExternalChangesetWithFileDiffs,
+    queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
+} from './backend'
 import { subDays } from 'date-fns'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 
@@ -35,62 +40,6 @@ const { add } = storiesOf('web/campaigns/details/CampaignDetails', module).addDe
 
 const campaign: CampaignFields = {
     __typename: 'Campaign',
-    changesetCountsOverTime: [
-        {
-            date: subDays(new Date(), 5).toISOString(),
-            closed: 0,
-            merged: 0,
-            openPending: 10,
-            total: 10,
-            openChangesRequested: 0,
-            openApproved: 0,
-        },
-        {
-            date: subDays(new Date(), 4).toISOString(),
-            closed: 0,
-            merged: 0,
-            openPending: 7,
-            total: 10,
-            openChangesRequested: 0,
-            openApproved: 3,
-        },
-        {
-            date: subDays(new Date(), 3).toISOString(),
-            closed: 0,
-            merged: 2,
-            openPending: 5,
-            total: 10,
-            openChangesRequested: 0,
-            openApproved: 3,
-        },
-        {
-            date: subDays(new Date(), 2).toISOString(),
-            closed: 0,
-            merged: 3,
-            openPending: 3,
-            total: 10,
-            openChangesRequested: 1,
-            openApproved: 3,
-        },
-        {
-            date: subDays(new Date(), 1).toISOString(),
-            closed: 1,
-            merged: 5,
-            openPending: 2,
-            total: 10,
-            openChangesRequested: 0,
-            openApproved: 2,
-        },
-        {
-            date: new Date().toISOString(),
-            closed: 1,
-            merged: 5,
-            openPending: 0,
-            total: 10,
-            openChangesRequested: 0,
-            openApproved: 4,
-        },
-    ],
     changesets: {
         stats: {
             closed: 1,
@@ -248,6 +197,64 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
         },
     })
 
+const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
+    of([
+        {
+            date: subDays(new Date(), 5).toISOString(),
+            closed: 0,
+            merged: 0,
+            openPending: 10,
+            total: 10,
+            openChangesRequested: 0,
+            openApproved: 0,
+        },
+        {
+            date: subDays(new Date(), 4).toISOString(),
+            closed: 0,
+            merged: 0,
+            openPending: 7,
+            total: 10,
+            openChangesRequested: 0,
+            openApproved: 3,
+        },
+        {
+            date: subDays(new Date(), 3).toISOString(),
+            closed: 0,
+            merged: 2,
+            openPending: 5,
+            total: 10,
+            openChangesRequested: 0,
+            openApproved: 3,
+        },
+        {
+            date: subDays(new Date(), 2).toISOString(),
+            closed: 0,
+            merged: 3,
+            openPending: 3,
+            total: 10,
+            openChangesRequested: 1,
+            openApproved: 3,
+        },
+        {
+            date: subDays(new Date(), 1).toISOString(),
+            closed: 1,
+            merged: 5,
+            openPending: 2,
+            total: 10,
+            openChangesRequested: 0,
+            openApproved: 2,
+        },
+        {
+            date: new Date().toISOString(),
+            closed: 1,
+            merged: 5,
+            openPending: 0,
+            total: 10,
+            openChangesRequested: 0,
+            openApproved: 4,
+        },
+    ])
+
 add('Overview', () => {
     const history = H.createMemoryHistory({ initialEntries: [window.location.href] })
     return (
@@ -255,6 +262,7 @@ add('Overview', () => {
             campaignID="123123"
             fetchCampaignById={fetchCampaign}
             queryChangesets={queryChangesets}
+            queryChangesetCountsOverTime={queryChangesetCountsOverTime}
             queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
             history={history}
             location={history.location}

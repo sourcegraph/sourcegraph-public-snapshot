@@ -14,19 +14,10 @@ import {
     SyncChangesetResult,
     SyncChangesetVariables,
     Scalars,
+    ChangesetCountsOverTimeVariables,
+    ChangesetCountsOverTimeFields,
+    ChangesetCountsOverTimeResult,
 } from '../../../graphql-operations'
-
-const changesetCountsOverTimeFragment = gql`
-    fragment ChangesetCountsOverTimeFields on ChangesetCounts {
-        date
-        merged
-        closed
-        openApproved
-        openChangesRequested
-        openPending
-        total
-    }
-`
 
 const campaignFragment = gql`
     fragment CampaignFields on Campaign {
@@ -55,16 +46,10 @@ const campaignFragment = gql`
                 unpublished
             }
         }
-        # TODO move to separate query and configure from/to
-        changesetCountsOverTime {
-            ...ChangesetCountsOverTimeFields
-        }
         diffStat {
             ...DiffStatFields
         }
     }
-
-    ${changesetCountsOverTimeFragment}
 
     ${diffStatFields}
 `
@@ -337,5 +322,49 @@ export const queryExternalChangesetWithFileDiffs = ({
                 throw new Error(`The given ID is a ${node.__typename}, not an ExternalChangeset`)
             }
             return node
+        })
+    )
+
+const changesetCountsOverTimeFragment = gql`
+    fragment ChangesetCountsOverTimeFields on ChangesetCounts {
+        date
+        merged
+        closed
+        openApproved
+        openChangesRequested
+        openPending
+        total
+    }
+`
+
+export const queryChangesetCountsOverTime = ({
+    campaign,
+}: ChangesetCountsOverTimeVariables): Observable<ChangesetCountsOverTimeFields[]> =>
+    requestGraphQL<ChangesetCountsOverTimeResult, ChangesetCountsOverTimeVariables>({
+        request: gql`
+            query ChangesetCountsOverTime($campaign: ID!) {
+                node(id: $campaign) {
+                    __typename
+                    ... on Campaign {
+                        changesetCountsOverTime {
+                            ...ChangesetCountsOverTimeFields
+                        }
+                    }
+                }
+            }
+
+            ${changesetCountsOverTimeFragment}
+        `,
+        variables: { campaign },
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error(`Campaign with ID ${campaign} does not exist`)
+            }
+            if (node.__typename !== 'Campaign') {
+                throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
+            }
+            return node.changesetCountsOverTime
         })
     )

@@ -9,6 +9,7 @@ import { Subject } from 'rxjs'
 import {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
+    queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
 } from './backend'
 import classNames from 'classnames'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
@@ -27,6 +28,8 @@ export interface CampaignTabsProps extends ExtensionsControllerProps, ThemeProps
     queryChangesets?: typeof _queryChangesets
     /** For testing only. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
+    /** For testing only. */
+    queryChangesetCountsOverTime?: typeof _queryChangesetCountsOverTime
 }
 
 export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
@@ -39,6 +42,7 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
     campaign,
     campaignUpdates,
     queryChangesets,
+    queryChangesetCountsOverTime,
     queryExternalChangesetWithFileDiffs,
 }) => {
     const [selectedTab, setSelectedTab] = useState<SelectedTab>('changesets')
@@ -79,7 +83,11 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
                 </li>
             </ul>
             {selectedTab === 'chart' && (
-                <CampaignBurndownChart changesetCountsOverTime={campaign.changesetCountsOverTime} history={history} />
+                <CampaignBurndownChart
+                    campaignID={campaign.id}
+                    queryChangesetCountsOverTime={queryChangesetCountsOverTime}
+                    history={history}
+                />
             )}
             {selectedTab === 'changesets' && (
                 <CampaignChangesets

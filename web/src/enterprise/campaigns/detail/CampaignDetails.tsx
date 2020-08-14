@@ -8,6 +8,7 @@ import {
     fetchCampaignById as _fetchCampaignById,
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
+    queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
 } from './backend'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import * as H from 'history'
@@ -41,6 +42,8 @@ export interface CampaignDetailsProps
     queryChangesets?: typeof _queryChangesets
     /** For testing only. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
+    /** For testing only. */
+    queryChangesetCountsOverTime?: typeof _queryChangesetCountsOverTime
 }
 
 /**
@@ -57,6 +60,7 @@ export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
     fetchCampaignById = _fetchCampaignById,
     queryChangesets,
     queryExternalChangesetWithFileDiffs,
+    queryChangesetCountsOverTime,
 }) => {
     /** Retrigger fetching */
     const campaignUpdates = useMemo(() => new Subject<void>(), [])
@@ -111,6 +115,7 @@ export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
                 platformContext={platformContext}
                 telemetryService={telemetryService}
                 queryChangesets={queryChangesets}
+                queryChangesetCountsOverTime={queryChangesetCountsOverTime}
                 queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
             />
         </>

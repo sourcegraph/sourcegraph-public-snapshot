@@ -7,6 +7,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
   history="[History]"
   isLightTheme={true}
   location="[Location path=/]"
+  queryChangesetCountsOverTime={[Function]}
   telemetryService={
     Object {
       "log": [Function],
@@ -372,7 +373,6 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
       Object {
         "__typename": "Campaign",
         "branch": "awesome-branch",
-        "changesetCountsOverTime": Array [],
         "changesets": Object {
           "stats": Object {
             "closed": 0,
@@ -409,6 +409,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
     history="[History]"
     isLightTheme={true}
     location="[Location path=/]"
+    queryChangesetCountsOverTime={[Function]}
     telemetryService={
       Object {
         "log": [Function],
@@ -712,6 +713,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
   history="[History]"
   isLightTheme={true}
   location="[Location path=/]"
+  queryChangesetCountsOverTime={[Function]}
   telemetryService={
     Object {
       "log": [Function],
@@ -1077,7 +1079,6 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
       Object {
         "__typename": "Campaign",
         "branch": "awesome-branch",
-        "changesetCountsOverTime": Array [],
         "changesets": Object {
           "stats": Object {
             "closed": 0,
@@ -1114,6 +1115,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
     history="[History]"
     isLightTheme={true}
     location="[Location path=/]"
+    queryChangesetCountsOverTime={[Function]}
     telemetryService={
       Object {
         "log": [Function],
