@@ -45,6 +45,17 @@ func truncateTables(t *testing.T, db *sql.DB, tables ...string) {
 	}
 }
 
+func insertTestOrg(t *testing.T, db *sql.DB) (orgID int32) {
+	t.Helper()
+
+	err := db.QueryRow("INSERT INTO orgs (name) VALUES ('bbs-org') RETURNING id").Scan(&orgID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return orgID
+}
+
 func insertTestUser(t *testing.T, db *sql.DB) (userID int32) {
 	t.Helper()
 

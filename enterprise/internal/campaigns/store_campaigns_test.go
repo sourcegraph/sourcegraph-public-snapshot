@@ -8,8 +8,11 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 )
 
 func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock clock) {
@@ -486,4 +489,90 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 			}
 		}
 	})
+}
+
+func TestUserDeleteCascades(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	db := dbtest.NewDB(t, *dsn)
+	orgID := insertTestOrg(t, db)
+	userID := insertTestUser(t, db)
+
+	t.Run("user delete", storeTest(db, func(t *testing.T, ctx context.Context, store *Store, rs repos.Store, clock clock) {
+		// Set up two campaigns and specs: one in the user's namespace (which
+		// should be deleted when the user is hard deleted), and one that is
+		// merely created by the user (which should remain).
+		ownedSpec := &campaigns.CampaignSpec{
+			NamespaceUserID: userID,
+			UserID:          userID,
+		}
+		if err := store.CreateCampaignSpec(ctx, ownedSpec); err != nil {
+			t.Fatal(err)
+		}
+
+		unownedSpec := &campaigns.CampaignSpec{
+			NamespaceOrgID: orgID,
+			UserID:         userID,
+		}
+		if err := store.CreateCampaignSpec(ctx, unownedSpec); err != nil {
+			t.Fatal(err)
+		}
+
+		ownedCampaign := &campaigns.Campaign{
+			Name:             "owned",
+			NamespaceUserID:  userID,
+			InitialApplierID: userID,
+			LastApplierID:    userID,
+			LastAppliedAt:    clock.now(),
+			CampaignSpecID:   ownedSpec.ID,
+		}
+		if err := store.CreateCampaign(ctx, ownedCampaign); err != nil {
+			t.Fatal(err)
+		}
+
+		unownedCampaign := &campaigns.Campaign{
+			Name:             "unowned",
+			NamespaceOrgID:   orgID,
+			InitialApplierID: userID,
+			LastApplierID:    userID,
+			LastAppliedAt:    clock.now(),
+			CampaignSpecID:   ownedSpec.ID,
+		}
+		if err := store.CreateCampaign(ctx, unownedCampaign); err != nil {
+			t.Fatal(err)
+		}
+
+		// Now we'll try actually deleting the user.
+		if err := store.Store.Exec(ctx, sqlf.Sprintf(
+			"DELETE FROM users WHERE id = %s",
+			userID,
+		)); err != nil {
+			t.Fatal(err)
+		}
+
+		// We should now have the unowned campaign still be valid, but the
+		// owned campaign should have gone away.
+		cs, _, err := store.ListCampaigns(ctx, ListCampaignsOpts{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(cs) != 1 {
+			t.Errorf("unexpected number of campaigns: have %d; want %d", len(cs), 1)
+		}
+		if cs[0].ID != unownedCampaign.ID {
+			t.Errorf("unexpected campaign: %+v", cs[0])
+		}
+
+		// Both campaign specs should still be in place, at least until we add
+		// a foreign key constraint to campaign_specs.namespace_user_id.
+		specs, _, err := store.ListCampaignSpecs(ctx, ListCampaignSpecsOpts{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(specs) != 2 {
+			t.Errorf("unexpected number of campaign specs: have %d; want %d", len(specs), 2)
+		}
+	}))
 }
