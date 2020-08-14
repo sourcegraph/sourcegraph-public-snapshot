@@ -815,10 +815,10 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 	// least 5 documents to fill the result page.
 	want := 5
 	// The fraction of file matches two terms share on average
-	averageIntersection := 0.10
+	averageIntersection := 0.05
 	// When we retry, cap the max search results we request for each expression
 	// if search continues to not be exhaustive. Alert if exceeded.
-	maxTryCount := 20000
+	maxTryCount := 40000
 
 	// Set an overall timeout in addition to the timeouts that are set for leaf-requests.
 	ctx, cancel, err := r.withTimeout(ctx)
