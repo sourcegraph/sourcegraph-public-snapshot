@@ -194,6 +194,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
             quickSuggestions: false,
             fixedOverflowWidgets: true,
             contextmenu: false,
+            links: false,
             // Display the cursor as a 1px line.
             cursorStyle: 'line',
             cursorWidth: 1,
