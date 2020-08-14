@@ -22,6 +22,20 @@ The most common use-case for `src serve-git` is to create git repos that do not 
 
 **IMPORTANT:** If you are running Sourcegraph in docker and are using a Linux host machine, replace `host.docker.internal` in the above with the IP address of your actual host machine because `host.docker.internal` [does not work on Linux](https://github.com/docker/for-linux/issues/264). You should use the network-accessible IP shown by `ifconfig` (rather than 127.0.0.1 or localhost).
 
+## Docker
+
+src-cli publishes Docker images which can be used instead of the binary. For example to publish your current directory run:
+
+```
+docker run \
+  --rm=true \
+  --publish 3434:3434 \
+  --volume $PWD:/data/repos:ro \
+  sourcegraph/src-cli:latest serve-git /data/repos
+```
+
+To confirm this is working visit http://localhost:3434
+
 ## src-expose
 
 Before Sourcegraph 3.19 we recommend users to still use [`src-expose`](non-git.md).
