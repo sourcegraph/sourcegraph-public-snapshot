@@ -856,8 +856,12 @@ interface Changeset {
     campaigns(
         # Returns the first n campaigns from the list.
         first: Int
+        # Opaque pagination cursor.
+        after: String
         # Only return campaigns in this state.
         state: CampaignState
+        # Only include campaigns that the viewer can administer.
+        viewerCanAdminister: Boolean
     ): CampaignConnection!
 
     # The publication state of the changeset.
@@ -888,8 +892,12 @@ type HiddenExternalChangeset implements Node & Changeset {
     campaigns(
         # Returns the first n campaigns from the list.
         first: Int
+        # Opaque pagination cursor.
+        after: String
         # Only return campaigns in this state.
         state: CampaignState
+        # Only include campaigns that the viewer can administer.
+        viewerCanAdminister: Boolean
     ): CampaignConnection!
 
     # The publication state of the changeset.
@@ -927,6 +935,8 @@ type ExternalChangeset implements Node & Changeset {
     campaigns(
         # Returns the first n campaigns from the list.
         first: Int
+        # Opaque pagination cursor.
+        after: String
         # Only return campaigns in this state.
         state: CampaignState
         # Only include campaigns that the viewer can administer.
@@ -1224,6 +1234,9 @@ type Query {
     campaigns(
         # Returns the first n campaigns from the list.
         first: Int
+        # Opaque pagination cursor.
+        after: String
+        # Only return campaigns in this state.
         state: CampaignState
         # Only include campaigns that the viewer can administer.
         viewerCanAdminister: Boolean
@@ -3339,6 +3352,9 @@ type User implements Node & SettingsSubject & Namespace {
     campaigns(
         # Returns the first n campaigns from the list.
         first: Int
+        # Opaque pagination cursor.
+        after: String
+        # Only return campaigns in this state.
         state: CampaignState
         # Only include campaigns that the viewer can administer.
         viewerCanAdminister: Boolean
@@ -3540,6 +3556,9 @@ type Org implements Node & SettingsSubject & Namespace {
     campaigns(
         # Returns the first n campaigns from the list.
         first: Int
+        # Opaque pagination cursor.
+        after: String
+        # Only return campaigns in this state.
         state: CampaignState
         # Only include campaigns that the viewer can administer.
         viewerCanAdminister: Boolean

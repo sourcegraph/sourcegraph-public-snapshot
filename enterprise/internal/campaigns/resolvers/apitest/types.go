@@ -49,12 +49,9 @@ type FileDiff struct {
 }
 
 type FileDiffs struct {
-	RawDiff  string
-	DiffStat DiffStat
-	PageInfo struct {
-		HasNextPage bool
-		EndCursor   string
-	}
+	RawDiff    string
+	DiffStat   DiffStat
+	PageInfo   PageInfo
 	Nodes      []FileDiff
 	TotalCount int
 }
@@ -93,6 +90,7 @@ type Campaign struct {
 	Namespace               UserOrg
 	CreatedAt               string
 	UpdatedAt               string
+	ClosedAt                string
 	URL                     string
 	Changesets              ChangesetConnection
 	ChangesetCountsOverTime []ChangesetCounts
@@ -226,10 +224,7 @@ type ChangesetSpec struct {
 type ChangesetSpecConnection struct {
 	Nodes      []ChangesetSpec
 	TotalCount int
-	PageInfo   struct {
-		HasNextPage bool
-		EndCursor   *string
-	}
+	PageInfo   PageInfo
 }
 
 type ChangesetSpecDescription struct {
@@ -261,4 +256,5 @@ type GitCommitDescription struct {
 
 type PageInfo struct {
 	HasNextPage bool
+	EndCursor   *string
 }

@@ -27,6 +27,7 @@ type MoveCampaignArgs struct {
 
 type ListCampaignArgs struct {
 	First               *int32
+	After               *string
 	State               *string
 	ViewerCanAdminister *bool
 

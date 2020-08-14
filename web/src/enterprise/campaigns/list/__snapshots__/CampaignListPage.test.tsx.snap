@@ -8,6 +8,7 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
   <CampaignsListBetaNotice />
   <FilteredConnection
     className="mb-3"
+    cursorPaging={true}
     defaultFirst={15}
     filters={
       Array [
@@ -69,6 +70,7 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
   <CampaignsListBetaNotice />
   <FilteredConnection
     className="mb-3"
+    cursorPaging={true}
     defaultFirst={15}
     filters={
       Array [
@@ -130,6 +132,7 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
   <CampaignsListBetaNotice />
   <FilteredConnection
     className="mb-3"
+    cursorPaging={true}
     defaultFirst={15}
     filters={
       Array [
@@ -191,6 +194,7 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
   <CampaignsListBetaNotice />
   <FilteredConnection
     className="mb-3"
+    cursorPaging={true}
     defaultFirst={15}
     filters={
       Array [
