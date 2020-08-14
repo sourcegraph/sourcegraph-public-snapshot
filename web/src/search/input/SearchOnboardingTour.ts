@@ -235,8 +235,8 @@ export type callbackToAdvanceTourStep = advanceStandardStep | advanceLanguageInp
 export const stepCallbacks: callbackToAdvanceTourStep[] = [
     {
         stepToAdvance: 'step-2-repo',
-        handler: (tour: Shepherd.Tour): void => {
-            if (tour.getById('step-2-repo').isOpen()) {
+        handler: (tour: Shepherd.Tour, query: string): void => {
+            if (tour.getById('step-2-repo').isOpen() && query.endsWith(' ')) {
                 tour.show('step-3')
                 tour.getById('step-3').updateStepOptions({ text: createAddCodeStepTooltip(tour) })
             }

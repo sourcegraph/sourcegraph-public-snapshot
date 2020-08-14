@@ -165,6 +165,14 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
     private subscriptions = new Subscription()
     private suggestionTriggers = new Subject<void>()
 
+    /**
+     * Detects whether the autocomplete suggestions have been closed, and
+     * updates the `suggestionsVisible` component field to false if so.
+     * Used to detect whether we should advance the language filter step in the
+     * search tour.
+     **/
+    private suggestionsVisible = false
+
     constructor(props: MonacoQueryInputProps) {
         super(props)
         // Trigger a layout of the Monaco editor when its container gets resized.
@@ -315,6 +323,43 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                 })
         )
 
+        this.subscriptions.add(
+            toUnsubscribable(
+                editor.addAction({
+                    id: 'detectSuggestionsClose',
+                    label: 'Close',
+                    precondition: 'suggestWidgetVisible',
+                    run: () => {
+                        console.log('close')
+                        this.suggestionsVisible = false
+                    },
+                })
+            )
+        )
+
+        this.subscriptions.add(
+            toUnsubscribable(
+                editor.addAction({
+                    id: 'detectSuggestionsOpen',
+                    label: 'Open',
+                    precondition: '!suggestWidgetVisible',
+                    run: (): void => {
+                        console.log('open')
+                        this.suggestionsVisible = true
+                    },
+                })
+            )
+        )
+
+        this.subscriptions.add(
+            toUnsubscribable(
+                editor.onDidChangeModelContent(() => {
+                    editor.trigger('!suggestWidgetVisible', 'detectSuggestionsClose', [])
+                    editor.trigger('suggestWidgetVisible', 'detectSuggestionsOpen', [])
+                })
+            )
+        )
+
         const tour = this.props.tour
         if (tour) {
             // Handle advancing the search tour.
@@ -343,13 +388,29 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                                     advanceStepCallback.queryConditions &&
                                     advanceStepCallback.queryConditions(queryState.query)
                                 ) {
-                                    advanceStepCallback.handler(tour, queryState.query, (newQuery: string) => {
-                                        this.props.onChange({
-                                            query: newQuery,
-                                            cursorPosition: newQuery.length,
-                                            fromUserInput: true,
+                                    if (advanceStepCallback.stepToAdvance === 'step-2-lang') {
+                                        // In step 2, users are asked to type to filter the language suggestions list. We only want
+                                        // to advance when they are done with the suggestions dropdown, so ensure it's closed
+                                        // before advancing.
+                                        if (!this.suggestionsVisible) {
+                                            advanceStepCallback.handler(tour, queryState.query, (newQuery: string) => {
+                                                this.props.onChange({
+                                                    query: newQuery,
+                                                    cursorPosition: newQuery.length,
+                                                    fromUserInput: true,
+                                                })
+                                            })
+                                        }
+                                        break
+                                    } else {
+                                        advanceStepCallback.handler(tour, queryState.query, (newQuery: string) => {
+                                            this.props.onChange({
+                                                query: newQuery,
+                                                cursorPosition: newQuery.length,
+                                                fromUserInput: true,
+                                            })
                                         })
-                                    })
+                                    }
                                     break
                                 }
                             }
