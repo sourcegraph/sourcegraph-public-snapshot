@@ -789,29 +789,6 @@ func intersect(left, right *SearchResultsResolver) *SearchResultsResolver {
 	return intersectMerge(left, right)
 }
 
-// dedupePatternOperands removes duplicate query.Pattern nodes in-place.
-// The relative order of nodes is preserved.
-func dedupePatternOperands(operands []query.Node) int {
-	s := make(map[query.Pattern]struct{}, len(operands))
-	i := 0
-	for _, o := range operands {
-		pattern, ok := o.(query.Pattern)
-		if !ok {
-			operands[i] = o
-			i++
-			continue
-		}
-		pattern.Annotation = query.Annotation{}
-		if _, ok := s[pattern]; ok {
-			continue
-		}
-		s[pattern] = struct{}{}
-		operands[i] = o
-		i++
-	}
-	return i
-}
-
 // evaluateAnd performs set intersection on result sets. It collects results for
 // all expressions that are ANDed together by searching for each subexpression
 // and then intersects those results that are in the same repo/file path. To
@@ -842,9 +819,6 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 	// When we retry, cap the max search results we request for each expression
 	// if search continues to not be exhaustive. Alert if exceeded.
 	maxTryCount := 20000
-
-	i := dedupePatternOperands(operands)
-	operands = operands[:i]
 
 	// Set an overall timeout in addition to the timeouts that are set for leaf-requests.
 	ctx, cancel, err := r.withTimeout(ctx)
