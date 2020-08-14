@@ -119,16 +119,16 @@ func (r *request) do(ctx context.Context, result interface{}) (bool, error) {
 	}
 
 	// Create the JSON object.
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(map[string]interface{}{
+	reqBody, err := json.Marshal(map[string]interface{}{
 		"query":     r.query,
 		"variables": r.vars,
-	}); err != nil {
+	})
+	if err != nil {
 		return false, err
 	}
 
 	// Create the HTTP request.
-	req, err := http.NewRequestWithContext(ctx, "POST", r.client.url(), nil)
+	req, err := http.NewRequestWithContext(ctx, "POST", r.client.url(), bytes.NewBuffer(reqBody))
 	if err != nil {
 		return false, err
 	}
@@ -141,7 +141,6 @@ func (r *request) do(ctx context.Context, result interface{}) (bool, error) {
 	for k, v := range r.client.opts.AdditionalHeaders {
 		req.Header.Set(k, v)
 	}
-	req.Body = ioutil.NopCloser(&buf)
 
 	// Perform the request.
 	resp, err := http.DefaultClient.Do(req)
