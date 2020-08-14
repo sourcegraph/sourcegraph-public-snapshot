@@ -128,10 +128,22 @@ func TestChangesetResolver(t *testing.T) {
 	if err := store.UpsertChangesetEvents(ctx, events...); err != nil {
 		t.Fatal(err)
 	}
+
+	spec := &campaigns.CampaignSpec{
+		UserID:          userID,
+		NamespaceUserID: userID,
+	}
+	if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+		t.Fatal(err)
+	}
+
 	campaign := &campaigns.Campaign{
 		Name:             "my-unique-name",
 		NamespaceUserID:  userID,
 		InitialApplierID: userID,
+		CampaignSpecID:   spec.ID,
+		LastApplierID:    userID,
+		LastAppliedAt:    time.Now(),
 	}
 	if err := store.CreateCampaign(ctx, campaign); err != nil {
 		t.Fatal(err)

@@ -67,6 +67,9 @@ func TestCampaignSpecResolver(t *testing.T) {
 		Name:             spec.Spec.Name,
 		NamespaceUserID:  userID,
 		InitialApplierID: userID,
+		LastApplierID:    userID,
+		LastAppliedAt:    time.Now(),
+		CampaignSpecID:   spec.ID,
 	}
 	if err := store.CreateCampaign(ctx, matchingCampaign); err != nil {
 		t.Fatal(err)

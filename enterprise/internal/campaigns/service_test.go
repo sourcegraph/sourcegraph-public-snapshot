@@ -63,7 +63,12 @@ func TestServicePermissionLevels(t *testing.T) {
 	rs, _ := createTestRepos(t, ctx, dbconn.Global, 1)
 
 	createTestData := func(t *testing.T, s *Store, svc *Service, author int32) (*campaigns.Campaign, *campaigns.Changeset, *campaigns.CampaignSpec) {
-		campaign := testCampaign(author)
+		spec := testCampaignSpec(author)
+		if err := s.CreateCampaignSpec(ctx, spec); err != nil {
+			t.Fatal(err)
+		}
+
+		campaign := testCampaign(author, spec)
 		if err := s.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
@@ -78,12 +83,7 @@ func TestServicePermissionLevels(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		cs := &campaigns.CampaignSpec{UserID: author, NamespaceUserID: author}
-		if err := s.CreateCampaignSpec(ctx, cs); err != nil {
-			t.Fatal(err)
-		}
-
-		return campaign, changeset, cs
+		return campaign, changeset, spec
 	}
 
 	assertAuthError := func(t *testing.T, err error) {
@@ -210,7 +210,12 @@ func TestService(t *testing.T) {
 	svc.sourcer = sourcer
 
 	t.Run("DeleteCampaign", func(t *testing.T) {
-		campaign := testCampaign(admin.ID)
+		spec := testCampaignSpec(admin.ID)
+		if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+			t.Fatal(err)
+		}
+
+		campaign := testCampaign(admin.ID, spec)
 		if err := store.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
@@ -233,7 +238,13 @@ func TestService(t *testing.T) {
 		defer state.Unmock()
 		createCampaign := func(t *testing.T) *campaigns.Campaign {
 			t.Helper()
-			campaign := testCampaign(admin.ID)
+
+			spec := testCampaignSpec(admin.ID)
+			if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			campaign := testCampaign(admin.ID, spec)
 			if err := store.CreateCampaign(ctx, campaign); err != nil {
 				t.Fatal(err)
 			}
@@ -290,7 +301,12 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("EnqueueChangesetSync", func(t *testing.T) {
-		campaign := testCampaign(admin.ID)
+		spec := testCampaignSpec(admin.ID)
+		if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+			t.Fatal(err)
+		}
+
+		campaign := testCampaign(admin.ID, spec)
 		if err := store.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
@@ -628,11 +644,24 @@ func TestService(t *testing.T) {
 		createCampaign := func(t *testing.T, name string, authorID, userID, orgID int32) *campaigns.Campaign {
 			t.Helper()
 
+			spec := &campaigns.CampaignSpec{
+				UserID:          authorID,
+				NamespaceUserID: userID,
+				NamespaceOrgID:  orgID,
+			}
+
+			if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
 			c := &campaigns.Campaign{
 				InitialApplierID: authorID,
 				NamespaceUserID:  userID,
 				NamespaceOrgID:   orgID,
 				Name:             name,
+				LastApplierID:    authorID,
+				LastAppliedAt:    time.Now(),
+				CampaignSpecID:   spec.ID,
 			}
 
 			if err := store.CreateCampaign(ctx, c); err != nil {
@@ -748,6 +777,9 @@ func TestService(t *testing.T) {
 			InitialApplierID: admin.ID,
 			NamespaceOrgID:   campaignSpec.NamespaceOrgID,
 			NamespaceUserID:  campaignSpec.NamespaceUserID,
+			CampaignSpecID:   campaignSpec.ID,
+			LastApplierID:    admin.ID,
+			LastAppliedAt:    time.Now(),
 		}
 		if err := store.CreateCampaign(ctx, matchingCampaign); err != nil {
 			t.Fatalf("failed to create campaign: %s\n", err)
@@ -1334,14 +1366,24 @@ var createTestUser = func() func(context.Context, *testing.T) *types.User {
 	}
 }()
 
-func testCampaign(user int32) *campaigns.Campaign {
+func testCampaign(user int32, spec *campaigns.CampaignSpec) *campaigns.Campaign {
 	c := &campaigns.Campaign{
 		Name:             "test-campaign",
 		InitialApplierID: user,
 		NamespaceUserID:  user,
+		CampaignSpecID:   spec.ID,
+		LastApplierID:    user,
+		LastAppliedAt:    time.Now(),
 	}
 
 	return c
+}
+
+func testCampaignSpec(user int32) *campaigns.CampaignSpec {
+	return &campaigns.CampaignSpec{
+		UserID:          user,
+		NamespaceUserID: user,
+	}
 }
 
 func testChangeset(repoID api.RepoID, campaign int64, extState campaigns.ChangesetExternalState) *campaigns.Changeset {
