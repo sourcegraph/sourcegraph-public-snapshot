@@ -10,6 +10,7 @@ import {
     ChangesetStatusClosed,
     ChangesetStatusMerged,
 } from './changesets/ChangesetStatusCell'
+import { pluralize } from '../../../../../shared/src/util/strings'
 
 interface CampaignStatsCardProps extends Pick<CampaignFields['changesets'], 'stats'> {
     closedAt: CampaignFields['closedAt']
@@ -70,6 +71,6 @@ export const CampaignStatsTotalAction: React.FunctionComponent<{ count: number }
         <span className="campaign-stats-card__changesets-pill">
             <span className="badge badge-pill badge-secondary">{count}</span>
         </span>
-        <span className="text-muted">changesets</span>
+        <span className="text-muted">{pluralize('changeset', count, 'changesets')}</span>
     </div>
 )
