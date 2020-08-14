@@ -43,3 +43,10 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
   - Total count of changesets created by campaigns that have been merged
   - Total count of changesets manually added to a campaign
   - Total count of changesets manually added to a campaign that have been merged
+- Aggregated counts of users created, deleted, retained, resurrected and churned within the month
+- Saved searches usage data
+  - Count of saved searches
+  - Count of users using saved searches
+  - Count of notifications triggered
+  - Count of notifications clicked
+  - Count of saved search views

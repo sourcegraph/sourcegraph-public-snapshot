@@ -32,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/processrestart"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -130,7 +131,8 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 
 	// Filter trace logs
 	d, _ := time.ParseDuration(traceThreshold)
-	tracer.Init(tracer.Filter(loghandlers.Trace(strings.Fields(trace), d)))
+	logging.Init(logging.Filter(loghandlers.Trace(strings.Fields(trace), d)))
+	tracer.Init()
 
 	// Run enterprise setup hook
 	enterprise := enterpriseSetupHook()

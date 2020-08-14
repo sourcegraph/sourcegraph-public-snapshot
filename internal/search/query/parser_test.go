@@ -713,7 +713,7 @@ func TestParse(t *testing.T) {
 		},
 		{
 			Input:         `repo:foo /b\/ar/`,
-			WantGrammar:   `(and "repo:foo" "/b\\/ar/")`,
+			WantGrammar:   `(and "repo:foo" "b/ar")`,
 			WantHeuristic: Same,
 		},
 		{
@@ -728,7 +728,17 @@ func TestParse(t *testing.T) {
 		},
 		{
 			Input:         `repo:foo /a/ /another/path/`,
-			WantGrammar:   `(and "repo:foo" (concat "/a/" "/another/path/"))`,
+			WantGrammar:   `(and "repo:foo" (concat "a" "/another/path/"))`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `repo:foo /\s+b\d+ar/ `,
+			WantGrammar:   `(and "repo:foo" "\\s+b\\d+ar")`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `repo:foo /bar/ `,
+			WantGrammar:   `(and "repo:foo" "bar")`,
 			WantHeuristic: Same,
 		},
 		{
@@ -869,11 +879,11 @@ func TestScanDelimited(t *testing.T) {
 					t.Errorf("expected panic for ScanDelimited")
 				}
 			}()
-			_, _, _ = ScanDelimited([]byte(tt.input), tt.delimiter)
+			_, _, _ = ScanDelimited([]byte(tt.input), true, tt.delimiter)
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			value, count, err := ScanDelimited([]byte(tt.input), tt.delimiter)
+			value, count, err := ScanDelimited([]byte(tt.input), true, tt.delimiter)
 			var errMsg string
 			if err != nil {
 				errMsg = err.Error()

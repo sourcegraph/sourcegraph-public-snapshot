@@ -659,7 +659,7 @@ type CampaignSpec implements Node {
     createdAt: DateTime!
 
     # The namespace (either a user or organization) of the campaign spec.
-    namespace: Namespace
+    namespace: Namespace!
 
     # The date, if any, when this campaign spec expires and is automatically purged. A campaign spec
     # never expires if it has been applied.

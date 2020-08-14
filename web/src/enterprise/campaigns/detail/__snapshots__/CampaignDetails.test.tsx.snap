@@ -177,7 +177,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
           alice
         </strong>
          
-        started 
+        created 
         <Timestamp
           date="2020-01-01"
         >
@@ -391,7 +391,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
           alice
         </strong>
          
-        started 
+        created 
         <Timestamp
           date="2020-01-01"
         >

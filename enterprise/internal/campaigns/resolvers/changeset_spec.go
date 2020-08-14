@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func marshalChangesetSpecRandID(id string) graphql.ID {
@@ -166,12 +167,12 @@ func (r *changesetDescriptionResolver) BaseRepository() *graphqlbackend.Reposito
 	return r.repoResolver
 }
 func (r *changesetDescriptionResolver) ExternalID() string { return r.desc.ExternalID }
-func (r *changesetDescriptionResolver) BaseRef() string    { return r.desc.BaseRef }
+func (r *changesetDescriptionResolver) BaseRef() string    { return git.AbbreviateRef(r.desc.BaseRef) }
 func (r *changesetDescriptionResolver) BaseRev() string    { return r.desc.BaseRev }
 func (r *changesetDescriptionResolver) HeadRepository() *graphqlbackend.RepositoryResolver {
 	return r.repoResolver
 }
-func (r *changesetDescriptionResolver) HeadRef() string { return r.desc.HeadRef }
+func (r *changesetDescriptionResolver) HeadRef() string { return git.AbbreviateRef(r.desc.HeadRef) }
 func (r *changesetDescriptionResolver) Title() string   { return r.desc.Title }
 func (r *changesetDescriptionResolver) Body() string    { return r.desc.Body }
 func (r *changesetDescriptionResolver) Published() bool { return r.desc.Published }

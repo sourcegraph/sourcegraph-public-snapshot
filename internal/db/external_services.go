@@ -243,6 +243,8 @@ func (e *ExternalServicesStore) validateBitbucketCloudConnection(ctx context.Con
 	return e.validateDuplicateRateLimits(ctx, id, extsvc.KindBitbucketCloud, c)
 }
 
+// validateDuplicateRateLimits returns an error if given config has duplicated non-default rate limit
+// with another external service for the same code host.
 func (e *ExternalServicesStore) validateDuplicateRateLimits(ctx context.Context, id int64, kind string, parsedConfig interface{}) error {
 	// Check if rate limit is already defined for this code host on another external service
 	rlc, err := extsvc.GetLimitFromConfig(kind, parsedConfig)
@@ -256,24 +258,36 @@ func (e *ExternalServicesStore) validateDuplicateRateLimits(ctx context.Context,
 	}
 
 	baseURL := rlc.BaseURL
-	// A rate limit has been defined
-	services, err := e.List(ctx, ExternalServicesListOptions{
+	opt := ExternalServicesListOptions{
 		Kinds: []string{kind},
-	})
-	if err != nil {
-		return errors.Wrap(err, "listing existing services")
+		LimitOffset: &LimitOffset{
+			Limit: 500, // The number is randomly chosen
+		},
 	}
-
-	for _, svc := range services {
-		rlc, err := extsvc.ExtractRateLimitConfig(svc.Config, svc.Kind, svc.DisplayName)
+	for {
+		svcs, err := e.List(ctx, opt)
 		if err != nil {
-			return errors.Wrap(err, "extracting rate limit config")
+			return errors.Wrap(err, "list")
 		}
-		if rlc.BaseURL == baseURL && svc.ID != id && !rlc.IsDefault {
-			return fmt.Errorf("existing external service, %q, already has a rate limit set", rlc.DisplayName)
+		if len(svcs) == 0 {
+			break // No more results, exiting
+		}
+		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
+
+		for _, svc := range svcs {
+			rlc, err := extsvc.ExtractRateLimitConfig(svc.Config, svc.Kind, svc.DisplayName)
+			if err != nil {
+				return errors.Wrap(err, "extracting rate limit config")
+			}
+			if rlc.BaseURL == baseURL && svc.ID != id && !rlc.IsDefault {
+				return fmt.Errorf("existing external service, %q, already has a rate limit set", rlc.DisplayName)
+			}
+		}
+
+		if len(svcs) < opt.Limit {
+			break // Less results than limit means we've reached end
 		}
 	}
-
 	return nil
 }
 

@@ -14,6 +14,7 @@ import { CampaignsSiteAdminMarketingPage } from './marketing/CampaignsSiteAdminM
 import { CampaignsUserMarketingPage } from './marketing/CampaignsUserMarketingPage'
 import { CampaignsBetaFeedbackAlert } from './CampaignsBetaFeedbackAlert'
 import { AuthenticatedUser } from '../../../auth'
+import { CampaignApplyPage } from '../apply/CampaignApplyPage'
 
 interface Props
     extends RouteComponentProps<{}>,
@@ -31,12 +32,16 @@ interface Props
 export const GlobalCampaignsArea: React.FunctionComponent<Props> = props => {
     if (props.isSourcegraphDotCom) {
         return (
-            <div className="container mt-4">
+            <div className="container web-content mt-4">
                 <CampaignsDotComPage />
             </div>
         )
     }
-    return <AuthenticatedCampaignsArea {...props} />
+    return (
+        <div className="container web-content mt-4">
+            <AuthenticatedCampaignsArea {...props} />
+        </div>
+    )
 }
 
 interface AuthenticatedProps extends Props {
@@ -44,46 +49,50 @@ interface AuthenticatedProps extends Props {
 }
 
 export const AuthenticatedCampaignsArea = withAuthenticatedUser<AuthenticatedProps>(({ match, ...outerProps }) => {
-    let content: React.ReactFragment
     if (window.context.experimentalFeatures?.automation === 'enabled') {
         if (!outerProps.authenticatedUser.siteAdmin && window.context.site['campaigns.readAccess.enabled'] !== true) {
-            content = <CampaignsUserMarketingPage enableReadAccess={true} />
-        } else {
-            content = (
-                <>
-                    <CampaignsBetaFeedbackAlert />
-                    {/* eslint-disable react/jsx-no-bind */}
-                    <Switch>
-                        <Route
-                            render={props => <GlobalCampaignListPage {...outerProps} {...props} />}
-                            path={match.url}
-                            exact={true}
-                        />
-                        <Route
-                            path={`${match.url}/create`}
-                            render={props => <CreateCampaign {...outerProps} {...props} />}
-                            exact={true}
-                        />
-                        <Route
-                            path={`${match.url}/cli`}
-                            render={props => <CampaignCliHelp {...outerProps} {...props} />}
-                            exact={true}
-                        />
-                        <Route
-                            path={`${match.url}/:campaignID`}
-                            render={({ match, ...props }: RouteComponentProps<{ campaignID: string }>) => (
-                                <CampaignDetails {...outerProps} {...props} campaignID={match.params.campaignID} />
-                            )}
-                        />
-                    </Switch>
-                    {/* eslint-enable react/jsx-no-bind */}
-                </>
-            )
+            return <CampaignsUserMarketingPage enableReadAccess={true} />
         }
-    } else if (outerProps.authenticatedUser.siteAdmin) {
-        content = <CampaignsSiteAdminMarketingPage />
-    } else {
-        content = <CampaignsUserMarketingPage enableReadAccess={false} />
+        return (
+            <>
+                <CampaignsBetaFeedbackAlert />
+                {/* eslint-disable react/jsx-no-bind */}
+                <Switch>
+                    <Route
+                        render={props => <GlobalCampaignListPage {...outerProps} {...props} />}
+                        path={match.url}
+                        exact={true}
+                    />
+                    <Route
+                        path={`${match.url}/create`}
+                        render={props => <CreateCampaign {...outerProps} {...props} />}
+                        exact={true}
+                    />
+                    <Route
+                        path={`${match.url}/cli`}
+                        render={props => <CampaignCliHelp {...outerProps} {...props} />}
+                        exact={true}
+                    />
+                    <Route
+                        path={`${match.url}/apply/:specID`}
+                        render={({ match, ...props }: RouteComponentProps<{ specID: string }>) => (
+                            <CampaignApplyPage {...outerProps} {...props} specID={match.params.specID} />
+                        )}
+                        exact={true}
+                    />
+                    <Route
+                        path={`${match.url}/:campaignID`}
+                        render={({ match, ...props }: RouteComponentProps<{ campaignID: string }>) => (
+                            <CampaignDetails {...outerProps} {...props} campaignID={match.params.campaignID} />
+                        )}
+                    />
+                </Switch>
+                {/* eslint-enable react/jsx-no-bind */}
+            </>
+        )
     }
-    return <div className="container mt-4">{content}</div>
+    if (outerProps.authenticatedUser.siteAdmin) {
+        return <CampaignsSiteAdminMarketingPage />
+    }
+    return <CampaignsUserMarketingPage enableReadAccess={false} />
 })
