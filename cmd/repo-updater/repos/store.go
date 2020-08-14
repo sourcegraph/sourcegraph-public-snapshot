@@ -516,6 +516,8 @@ func (s DBStore) paginate(ctx context.Context, limit, perPage int64, cursor int6
 		next, count int64
 	)
 
+	// We need this so that we enter the loop below for the first iteration
+	// since cursor will be < next
 	next = cursor
 	cursor--
 
