@@ -149,8 +149,25 @@ func TestCampaignSpecResolver(t *testing.T) {
 		}
 	}
 
-	// Now delete the creator and check that the campaign spec is still retrievable.
+	// Now soft-delete the creator and check that the campaign spec is still retrievable.
 	err = db.Users.Delete(ctx, userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	{
+		var response struct{ Node apitest.CampaignSpec }
+		apitest.MustExec(ctx, t, s, input, &response, queryCampaignSpecNode)
+
+		// Expect creator to not be returned anymore.
+		want.Creator = nil
+
+		if diff := cmp.Diff(want, response.Node); diff != "" {
+			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		}
+	}
+
+	// Now hard-delete the creator and check that the campaign spec is still retrievable.
+	err = db.Users.HardDelete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}

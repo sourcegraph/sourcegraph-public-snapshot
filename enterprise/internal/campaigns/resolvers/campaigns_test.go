@@ -65,32 +65,50 @@ func TestCampaignResolver(t *testing.T) {
 	}
 
 	campaignAPIID := string(campaigns.MarshalCampaignID(campaign.ID))
+	apiUser := &apitest.User{DatabaseID: userID, SiteAdmin: true}
+	wantCampaign := apitest.Campaign{
+		ID:             campaignAPIID,
+		Name:           campaign.Name,
+		Description:    campaign.Description,
+		Namespace:      apitest.UserOrg{ID: string(graphqlbackend.MarshalOrgID(org.ID)), Name: org.Name},
+		InitialApplier: apiUser,
+		LastApplier:    apiUser,
+		SpecCreator:    apiUser,
+		LastAppliedAt:  marshalDateTime(t, now),
+		URL:            fmt.Sprintf("/organizations/%s/campaigns/%s", org.Name, campaignAPIID),
+	}
 
 	input := map[string]interface{}{"campaign": campaignAPIID}
 	{
 		var response struct{ Node apitest.Campaign }
 		apitest.MustExec(ctx, t, s, input, &response, queryCampaign)
 
-		apiUser := &apitest.User{DatabaseID: userID, SiteAdmin: true}
-
-		wantCampaign := apitest.Campaign{
-			ID:             campaignAPIID,
-			Name:           campaign.Name,
-			Description:    campaign.Description,
-			Namespace:      apitest.UserOrg{ID: string(graphqlbackend.MarshalOrgID(org.ID)), Name: org.Name},
-			InitialApplier: apiUser,
-			LastApplier:    apiUser,
-			SpecCreator:    apiUser,
-			LastAppliedAt:  marshalDateTime(t, now),
-			URL:            fmt.Sprintf("/organizations/%s/campaigns/%s", org.Name, campaignAPIID),
-		}
 		if diff := cmp.Diff(wantCampaign, response.Node); diff != "" {
 			t.Fatalf("wrong campaign response (-want +got):\n%s", diff)
 		}
 	}
 
-	// Now delete the user and check we can still access the campaign in the org namespace.
+	// Now soft-delete the user and check we can still access the campaign in the org namespace.
 	err = db.Users.Delete(ctx, userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	wantCampaign.InitialApplier = nil
+	wantCampaign.LastApplier = nil
+	wantCampaign.SpecCreator = nil
+
+	{
+		var response struct{ Node apitest.Campaign }
+		apitest.MustExec(ctx, t, s, input, &response, queryCampaign)
+
+		if diff := cmp.Diff(wantCampaign, response.Node); diff != "" {
+			t.Fatalf("wrong campaign response (-want +got):\n%s", diff)
+		}
+	}
+
+	// Now hard-delete the user and check we can still access the campaign in the org namespace.
+	err = db.Users.HardDelete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,17 +116,6 @@ func TestCampaignResolver(t *testing.T) {
 		var response struct{ Node apitest.Campaign }
 		apitest.MustExec(ctx, t, s, input, &response, queryCampaign)
 
-		wantCampaign := apitest.Campaign{
-			ID:             campaignAPIID,
-			Name:           campaign.Name,
-			Description:    campaign.Description,
-			Namespace:      apitest.UserOrg{ID: string(graphqlbackend.MarshalOrgID(org.ID)), Name: org.Name},
-			InitialApplier: nil,
-			LastApplier:    nil,
-			SpecCreator:    nil,
-			LastAppliedAt:  marshalDateTime(t, now),
-			URL:            fmt.Sprintf("/organizations/%s/campaigns/%s", org.Name, campaignAPIID),
-		}
 		if diff := cmp.Diff(wantCampaign, response.Node); diff != "" {
 			t.Fatalf("wrong campaign response (-want +got):\n%s", diff)
 		}
