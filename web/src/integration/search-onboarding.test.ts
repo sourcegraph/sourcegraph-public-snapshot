@@ -6,7 +6,7 @@ import { siteID, siteGQLID } from './jscontext'
 import assert from 'assert'
 import expect from 'expect'
 
-describe.only('Search onboarding', () => {
+describe('Search onboarding', () => {
     let driver: Driver
     before(async () => {
         driver = await createDriverForTest()
