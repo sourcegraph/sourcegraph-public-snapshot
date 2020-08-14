@@ -15,7 +15,7 @@ const { add } = storiesOf('web/campaigns/BurndownChart', module).addDecorator(st
         <>
             <Tooltip />
             <style>{webStyles}</style>
-            <div className="p-3 container">{story()}</div>
+            <div className="p-3 container web-content">{story()}</div>
         </>
     )
 })

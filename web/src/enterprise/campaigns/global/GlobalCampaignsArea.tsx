@@ -11,7 +11,6 @@ import { CampaignCliHelp } from './create/CampaignCliHelp'
 import { CampaignsDotComPage } from './marketing/CampaignsDotComPage'
 import { CampaignsSiteAdminMarketingPage } from './marketing/CampaignsSiteAdminMarketingPage'
 import { CampaignsUserMarketingPage } from './marketing/CampaignsUserMarketingPage'
-import { CampaignsBetaFeedbackAlert } from './CampaignsBetaFeedbackAlert'
 import { AuthenticatedUser } from '../../../auth'
 import { CampaignApplyPage } from '../apply/CampaignApplyPage'
 import { CampaignListPage } from '../list/CampaignListPage'
@@ -55,7 +54,6 @@ export const AuthenticatedCampaignsArea = withAuthenticatedUser<AuthenticatedPro
         }
         return (
             <>
-                <CampaignsBetaFeedbackAlert />
                 {/* eslint-disable react/jsx-no-bind */}
                 <Switch>
                     <Route

@@ -15,7 +15,7 @@ const { add } = storiesOf('web/campaigns/ChangesetCheckStatusCell', module).addD
         <>
             <Tooltip />
             <style>{webStyles}</style>
-            <div className="p-3 container">{story()}</div>
+            <div className="p-3 container web-content">{story()}</div>
         </>
     )
 })
