@@ -1,4 +1,4 @@
-# How code intelligence extensions resolves hovers
+# How code intelligence extensions resolve hovers
 
 Definition, reference, and hover providers are invoked from the extension host when the user hovers over a symbol in a code view. See the documentation for [authoring extensions](http://localhost:5080/extensions/authoring) for more details about the general extension architecture.
 
