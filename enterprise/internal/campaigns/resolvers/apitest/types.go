@@ -93,6 +93,7 @@ type Campaign struct {
 	Namespace               UserOrg
 	CreatedAt               string
 	UpdatedAt               string
+	ClosedAt                string
 	URL                     string
 	Changesets              ChangesetConnection
 	ChangesetCountsOverTime []ChangesetCounts
