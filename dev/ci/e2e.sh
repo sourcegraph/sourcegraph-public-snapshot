@@ -49,4 +49,4 @@ env SOURCEGRAPH_BASE_URL="$URL" PERCY_ON=true ./node_modules/.bin/percy exec -- 
 
 yarn nyc report -r json
 # Upload the coverage under the "e2e" flag (toggleable in the CodeCov UI)
-bash <(curl -s https://codecov.io/bash) -F e2e
+bash <(curl -s https://codecov.io/bash) -Z -v -F e2e

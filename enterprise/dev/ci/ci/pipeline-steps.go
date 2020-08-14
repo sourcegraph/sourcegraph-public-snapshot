@@ -87,7 +87,7 @@ func addWebApp(pipeline *bk.Pipeline) {
 	// Webapp tests
 	pipeline.AddStep(":jest::globe_with_meridians:",
 		bk.Cmd("dev/ci/yarn-test.sh web"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -Z -v -c -F typescript -F unit"))
 }
 
 // Builds and tests the browser extension.
@@ -99,7 +99,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 	// Browser extension tests
 	pipeline.AddStep(":jest::chrome:",
 		bk.Cmd("dev/ci/yarn-test.sh browser"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -Z -v -c -F typescript -F unit"))
 }
 
 // Adds the shared frontend tests (shared between the web app and browser extension).
@@ -111,7 +111,7 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 			bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-run.sh build-web"),
 			bk.Cmd("yarn run cover-integration"),
 			bk.Cmd("yarn nyc report -r json"),
-			bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F integration"),
+			bk.Cmd("bash <(curl -s https://codecov.io/bash) -Z -v -c -F typescript -F integration"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 
 		// Storybook coverage
@@ -120,7 +120,7 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 			bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-run.sh build-storybook"),
 			bk.Cmd("yarn run cover-storybook"),
 			bk.Cmd("yarn nyc report -r json"),
-			bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F storybook"))
+			bk.Cmd("bash <(curl -s https://codecov.io/bash) -Z -v -c -F typescript -F storybook"))
 
 		// Upload storybook to Chromatic
 		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
@@ -136,7 +136,7 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 		// Shared tests
 		pipeline.AddStep(":jest:",
 			bk.Cmd("dev/ci/yarn-test.sh shared"),
-			bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
+			bk.Cmd("bash <(curl -s https://codecov.io/bash) -Z -v -c -F typescript -F unit"))
 	}
 }
 
@@ -150,7 +150,7 @@ func addPostgresBackcompat(pipeline *bk.Pipeline) {
 func addGoTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go:",
 		bk.Cmd("./dev/ci/go-test.sh"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F go"))
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -Z -v -c -F go"))
 }
 
 // Builds the OSS and Enterprise Go commands.
