@@ -69,6 +69,15 @@ DELETE FROM
 WHERE
     campaign_spec_id IS NULL;
 
+-- It was theoretically possible to end up with a NULL last_applied_at while
+-- having a NOT NULL campaign_spec_id, as the migrations were not done at the
+-- same time. While the likelihood of this happening for anyone other than
+-- developers actively working on campaigns during the 3.19 cycle is
+-- essentially zero, let's take care of it just in case.
+UPDATE campaigns
+    SET last_applied_at = created_at
+    WHERE last_applied_at IS NULL;
+
 -- Now we can alter our fields.
 
 -- Set up the new NOT NULL constraints on the last applied at and campaign spec
