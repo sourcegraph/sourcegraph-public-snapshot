@@ -5,10 +5,15 @@ import { UserAreaRoute, UserAreaRouteContext } from '../../user/area/UserArea'
 import { enterpriseNamespaceAreaRoutes } from '../namespaces/routes'
 import { UserCampaignListPageProps } from '../campaigns/global/list/GlobalCampaignListPage'
 import { lazyComponent } from '../../util/lazyComponent'
+import { CampaignApplyPageProps } from '../campaigns/apply/CampaignApplyPage'
 
 const UserCampaignListPage = lazyComponent<UserCampaignListPageProps, 'UserCampaignListPage'>(
     () => import('../campaigns/global/list/GlobalCampaignListPage'),
     'UserCampaignListPage'
+)
+const CampaignApplyPage = lazyComponent<CampaignApplyPageProps, 'CampaignApplyPage'>(
+    () => import('../campaigns/apply/CampaignApplyPage'),
+    'CampaignApplyPage'
 )
 
 export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
@@ -25,6 +30,14 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
                 }`}
             />
         ),
+    },
+    {
+        path: '/campaigns/apply/:specID',
+        render: ({ match, ...props }: UserAreaRouteContext & RouteComponentProps<{ specID: string }>) => (
+            <CampaignApplyPage {...props} specID={match.params.specID} />
+        ),
+        condition: ({ isSourcegraphDotCom }) =>
+            !isSourcegraphDotCom && window.context.experimentalFeatures?.automation === 'enabled',
     },
     {
         path: '/campaigns',
