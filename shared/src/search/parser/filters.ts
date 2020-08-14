@@ -137,6 +137,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterType.stable]: {
         discreteValues: ['yes', 'no'],
+        default: 'no',
         description: 'Forces search to return a stable result ordering (currently limited to file content matches).',
         singular: true,
     },
