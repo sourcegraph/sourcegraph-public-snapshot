@@ -71,9 +71,38 @@ WHERE
 
 -- Now we can alter our fields.
 
+-- Set up the new NOT NULL constraints on the last applied at and campaign spec
+-- ID fields.
+
 ALTER TABLE campaigns
-    ALTER COLUMN last_applier_id SET NOT NULL,
     ALTER COLUMN last_applied_at SET NOT NULL,
     ALTER COLUMN campaign_spec_id SET NOT NULL;
+
+-- When a user is hard deleted, we don't want campaigns and specs to be deleted
+-- just because their metadata is affected. We need to tweak their constraints
+-- accordingly.
+
+ALTER TABLE campaign_specs
+    ALTER COLUMN user_id DROP NOT NULL,
+    DROP CONSTRAINT IF EXISTS campaign_specs_user_id_fkey,
+    ADD CONSTRAINT campaign_specs_user_id_fkey
+        FOREIGN KEY (user_id)
+        REFERENCES users (id)
+        ON DELETE SET NULL
+        DEFERRABLE;
+
+ALTER TABLE campaigns
+    DROP CONSTRAINT IF EXISTS campaigns_author_id_fkey,
+    DROP CONSTRAINT IF EXISTS campaigns_last_applier_id_fkey,
+    ADD CONSTRAINT campaigns_initial_applier_id_fkey
+        FOREIGN KEY (initial_applier_id)
+        REFERENCES users (id)
+        ON DELETE SET NULL
+        DEFERRABLE,
+    ADD CONSTRAINT campaigns_last_applier_id_fkey
+        FOREIGN KEY (last_applier_id)
+        REFERENCES users (id)
+        ON DELETE SET NULL
+        DEFERRABLE;
 
 COMMIT;
