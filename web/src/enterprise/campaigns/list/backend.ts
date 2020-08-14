@@ -33,13 +33,14 @@ const ListCampaignFragment = gql`
 
 export const queryCampaigns = ({
     first,
+    after,
     state,
     viewerCanAdminister,
 }: Partial<CampaignsVariables>): Observable<CampaignsResult['campaigns']> =>
     requestGraphQL<CampaignsResult, CampaignsVariables>({
         request: gql`
-            query Campaigns($first: Int, $state: CampaignState, $viewerCanAdminister: Boolean) {
-                campaigns(first: $first, state: $state, viewerCanAdminister: $viewerCanAdminister) {
+            query Campaigns($first: Int, $after: String, $state: CampaignState, $viewerCanAdminister: Boolean) {
+                campaigns(first: $first, after: $after, state: $state, viewerCanAdminister: $viewerCanAdminister) {
                     nodes {
                         ...ListCampaign
                     }
@@ -49,7 +50,12 @@ export const queryCampaigns = ({
 
             ${ListCampaignFragment}
         `,
-        variables: { first: first ?? null, state: state ?? null, viewerCanAdminister: viewerCanAdminister ?? null },
+        variables: {
+            first: first ?? null,
+            after: after ?? null,
+            state: state ?? null,
+            viewerCanAdminister: viewerCanAdminister ?? null,
+        },
     }).pipe(
         map(dataOrThrowErrors),
         map(data => data.campaigns)
@@ -58,16 +64,28 @@ export const queryCampaigns = ({
 export const queryCampaignsByUser = ({
     userID,
     first,
+    after,
     state,
     viewerCanAdminister,
 }: CampaignsByUserVariables): Observable<CampaignsResult['campaigns']> =>
     requestGraphQL<CampaignsByUserResult, CampaignsByUserVariables>({
         request: gql`
-            query CampaignsByUser($userID: ID!, $first: Int, $state: CampaignState, $viewerCanAdminister: Boolean) {
+            query CampaignsByUser(
+                $userID: ID!
+                $first: Int
+                $after: String
+                $state: CampaignState
+                $viewerCanAdminister: Boolean
+            ) {
                 node(id: $userID) {
                     __typename
                     ... on User {
-                        campaigns(first: $first, state: $state, viewerCanAdminister: $viewerCanAdminister) {
+                        campaigns(
+                            first: $first
+                            after: $after
+                            state: $state
+                            viewerCanAdminister: $viewerCanAdminister
+                        ) {
                             nodes {
                                 ...ListCampaign
                             }
@@ -79,7 +97,7 @@ export const queryCampaignsByUser = ({
 
             ${ListCampaignFragment}
         `,
-        variables: { first, state, viewerCanAdminister, userID },
+        variables: { first, after, state, viewerCanAdminister, userID },
     }).pipe(
         map(dataOrThrowErrors),
         map(data => {
@@ -96,16 +114,28 @@ export const queryCampaignsByUser = ({
 export const queryCampaignsByOrg = ({
     orgID,
     first,
+    after,
     state,
     viewerCanAdminister,
 }: CampaignsByOrgVariables): Observable<CampaignsResult['campaigns']> =>
     requestGraphQL<CampaignsByOrgResult, CampaignsByOrgVariables>({
         request: gql`
-            query CampaignsByOrg($orgID: ID!, $first: Int, $state: CampaignState, $viewerCanAdminister: Boolean) {
+            query CampaignsByOrg(
+                $orgID: ID!
+                $first: Int
+                $after: String
+                $state: CampaignState
+                $viewerCanAdminister: Boolean
+            ) {
                 node(id: $orgID) {
                     __typename
                     ... on Org {
-                        campaigns(first: $first, state: $state, viewerCanAdminister: $viewerCanAdminister) {
+                        campaigns(
+                            first: $first
+                            after: $after
+                            state: $state
+                            viewerCanAdminister: $viewerCanAdminister
+                        ) {
                             nodes {
                                 ...ListCampaign
                             }
@@ -117,7 +147,7 @@ export const queryCampaignsByOrg = ({
 
             ${ListCampaignFragment}
         `,
-        variables: { first, state, viewerCanAdminister, orgID },
+        variables: { first, after, state, viewerCanAdminister, orgID },
     }).pipe(
         map(dataOrThrowErrors),
         map(data => {

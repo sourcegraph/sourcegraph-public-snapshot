@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"strconv"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -54,7 +55,10 @@ func (r *campaignsConnectionResolver) PageInfo(ctx context.Context) (*graphqluti
 	if err != nil {
 		return nil, err
 	}
-	return graphqlutil.HasNextPage(next != 0), nil
+	if next != 0 {
+		return graphqlutil.NextPageCursor(strconv.Itoa(int(next))), nil
+	}
+	return graphqlutil.HasNextPage(false), nil
 }
 
 func (r *campaignsConnectionResolver) compute(ctx context.Context) ([]*campaigns.Campaign, int64, error) {

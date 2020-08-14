@@ -111,6 +111,8 @@ func TestCampaignConnectionResolver(t *testing.T) {
 				TotalCount: tc.wantTotalCount,
 				PageInfo: apitest.PageInfo{
 					HasNextPage: tc.wantHasNextPage,
+					// We don't test on the cursor here.
+					EndCursor: response.Campaigns.PageInfo.EndCursor,
 				},
 				Nodes: tc.wantNodes,
 			}
@@ -120,14 +122,46 @@ func TestCampaignConnectionResolver(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("Cursor based pagination", func(t *testing.T) {
+		var endCursor *string
+		for i := range nodes {
+			input := map[string]interface{}{"first": 1}
+			if endCursor != nil {
+				input["after"] = *endCursor
+			}
+			wantHasNextPage := i != len(nodes)-1
+
+			var response struct{ Campaigns apitest.CampaignConnection }
+			apitest.MustExec(ctx, t, s, input, &response, queryCampaignsConnection)
+
+			if diff := cmp.Diff(1, len(response.Campaigns.Nodes)); diff != "" {
+				t.Fatalf("unexpected number of nodes (-want +got):\n%s", diff)
+			}
+
+			if diff := cmp.Diff(len(nodes), response.Campaigns.TotalCount); diff != "" {
+				t.Fatalf("unexpected total count (-want +got):\n%s", diff)
+			}
+
+			if diff := cmp.Diff(wantHasNextPage, response.Campaigns.PageInfo.HasNextPage); diff != "" {
+				t.Fatalf("unexpected hasNextPage (-want +got):\n%s", diff)
+			}
+
+			endCursor = response.Campaigns.PageInfo.EndCursor
+			if want, have := wantHasNextPage, endCursor != nil; have != want {
+				t.Fatalf("unexpected endCursor existence. want=%t, have=%t", want, have)
+			}
+		}
+	})
 }
 
 const queryCampaignsConnection = `
-query($first: Int) {
-  campaigns(first: $first) {
+query($first: Int, $after: String) {
+  campaigns(first: $first, after: $after) {
     totalCount
     pageInfo {
-      hasNextPage
+	  hasNextPage
+	  endCursor
     }
     nodes {
       id
