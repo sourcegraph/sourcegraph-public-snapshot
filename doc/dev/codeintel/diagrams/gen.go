@@ -1,6 +1,8 @@
 package architecture
 
 //go:generate sh -c "dot architecture.dot -Tsvg > architecture.svg"
+
+//go:generate sh -c "yarn"
 //go:generate sh -c "../../../../node_modules/.bin/mmdc -i definitions.mermaid -o definitions.svg"
 //go:generate sh -c "../../../../node_modules/.bin/mmdc -i references.mermaid -o references.svg"
 //go:generate sh -c "../../../../node_modules/.bin/mmdc -i resolve-page.mermaid -o resolve-page.svg"
