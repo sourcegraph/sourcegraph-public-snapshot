@@ -1,37 +1,39 @@
-# LSIF: Fast and precise code intelligence
+# Precise code intelligence
 
-[LSIF](https://github.com/Microsoft/language-server-protocol/blob/master/indexFormat/specification.md) is a file format for precomputed code intelligence data. It provides fast and precise code intelligence but needs to be periodically generated and uploaded to your Sourcegraph instance. LSIF is opt-in: repositories for which you have not uploaded LSIF data will continue to use the built-in code intelligence.
+Precise code intelligence relies on [LSIF](https://github.com/Microsoft/language-server-protocol/blob/master/indexFormat/specification.md) 
+(Language Server Index Format) data to deliver precomputed code intelligence. It provides fast and highly accurate code intelligence but needs to be periodically generated and uploaded to your Sourcegraph instance. Precise code intelligence is an opt-in feature: repositories for which you have not uploaded LSIF data will continue to use the basic search based code intelligence.
 
-> Precise code intelligence using LSIF is supported in Sourcegraph 3.8 and up.
+> NOTE: Precise code intelligence using LSIF is supported in Sourcegraph 3.8 and up.
 
 ## Getting started
 
-First check if we've created any [language-specific guides](languages/index.md) that fit your needs. Otherwise, follow our [LSIF quickstart guide](lsif_quickstart.md) to manually generate and upload LSIF data for your repository. After you are satisfied with the result, you can follow our [continuous integration guide](adding_lsif_to_workflows.md#lsif-in-continuous-integration) to automate that process for new commits.
-
-LSIF support is still a relatively new feature. We are currently working on validating that the feature remains responsive even with tens of thousands of repositories. To get started, we recommend you upload a smaller number of key repositories. Once you reach 50 to 100 repositories, we will be able to provide specific recommendations for ensuring stability and performance of your Sourcegraph instance.
-
-## Enabling LSIF on your Sourcegraph instance
-
-Go to your global settings at https://sourcegraph.example.com/site-admin/global-settings and enable LSIF:
+First navigate to your [global settings](https://sourcegraph.example.com/site-admin/global-settings) on your Sourcegraph instance and enable LSIF:
 
 ```json
   "codeIntel.lsif": true
 ```
 
-After uploading LSIF files, your Sourcegraph instance will use these files to respond to code intelligence requests (such as for hovers, definitions, and references). When LSIF data does not exist for a particular file in a repository, Sourcegraph will fall back to built-in code intelligence.
+Then select a language specific guide from the list below to generate and upload LSIF files for your repository. The LSIF data is used by Sourcegraph instances to power code intelligence requests (such as hovers, definitions, and references). If you don't see a guide for the language you need below, follow our general [quickstart guide](lsif_quickstart.md) to setup precise code intelligence.
+
+- [Go](languages/go.md)
+- [Javascript / Typescript](languages/typescript_and_javascript.md)
+
+After completing the initial setup, follow the [continuous integration guide](adding_lsif_to_workflows.md#lsif-in-continuous-integration) to automate indexing of code changes as part of your CI/CD practice.
+
+> NOTE: LSIF support is still a relatively new feature. We are currently validating that the feature remains responsive even with tens of thousands of repositories. We recommend you start by uploading a smaller number of key repositories. Once you reach 50 to 100 repositories we will be able to provide specific recommendations for ensuring stability and performance of your Sourcegraph instance.
+
+## Cross-repository code intelligence
+
+Cross-repository code intelligence will only be powered by LSIF when **both** repositories have LSIF data. When the current file has LSIF data and the other repository doesn't, the missing precise results will be supplemented with imprecise search-based code intelligence.
 
 ## Why are my results sometimes incorrect?
 
-You may occasionally see results from [basic code intelligence](basic_code_intelligence.md) even when you have uploaded LSIF data. Such results are indicated with a ![tooltip](img/basic-code-intel-tooltip.svg) tooltip. This can happen in the following scenarios:
+If LSIF data is not found for a particular file in a repository, Sourcegraph will fall back to the built-in code intelligence. You may occasionally see results from [basic code intelligence](basic_code_intelligence.md) even when you have uploaded LSIF data. Such results are indicated with a ![tooltip](img/basic-code-intel-tooltip.svg) tooltip. This can happen in the following scenarios:
 
 - The symbol has LSIF data, but it is defined in a repository which does not have LSIF data.
 - The nearest commit that has LSIF data is too far away from your browsing commit. [The limit is 100 commits](https://github.com/sourcegraph/sourcegraph/blob/e7803474dbac8021e93ae2af930269045aece079/lsif/src/shared/constants.ts#L25) ahead/behind.
 - The line containing the symbol was created or edited between the nearest indexed commit and the commit being browsed.
 - The _Find references_ panel will always include search-based results, but only after all of the precise results have been displayed. This ensures every symbol has code intelligence.
-
-## Cross-repository code intelligence
-
-Cross-repository code intelligence will only be powered by LSIF when **both** repositories have LSIF data. When the current file has LSIF data and the other repository doesn't, the missing precise results will be supplemented with imprecise search-based code intelligence.
 
 ## Size of upload data
 
