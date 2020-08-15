@@ -28,7 +28,7 @@ Cross-repository code intelligence will only be powered by LSIF when **both** re
 
 ## Why are my results sometimes incorrect?
 
-If LSIF data is not found for a particular file in a repository, Sourcegraph will fall back to the built-in code intelligence. You may occasionally see results from [basic code intelligence](basic_code_intelligence.md) even when you have uploaded LSIF data. Such results are indicated with a ![tooltip](img/basic-code-intel-tooltip.svg) tooltip. This can happen in the following scenarios:
+If LSIF data is not found for a particular file in a repository, Sourcegraph will fall back to basic code intelligence. You may occasionally see results from [basic code intelligence](basic_code_intelligence.md) even when you have uploaded LSIF data. Such results are indicated with a ![tooltip](img/basic-code-intel-tooltip.svg) tooltip. This can happen in the following scenarios:
 
 - The symbol has LSIF data, but it is defined in a repository which does not have LSIF data.
 - The nearest commit that has LSIF data is too far away from your browsing commit. [The limit is 100 commits](https://github.com/sourcegraph/sourcegraph/blob/e7803474dbac8021e93ae2af930269045aece079/lsif/src/shared/constants.ts#L25) ahead/behind.
