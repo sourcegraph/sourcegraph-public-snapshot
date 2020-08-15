@@ -25,7 +25,7 @@ export const homepageLanguageList: { name: string; filterName: string }[] = [
     { name: 'Haskell', filterName: 'haskell' },
     { name: 'Html', filterName: 'html' },
     { name: 'Java', filterName: 'java' },
-    { name: 'Javascript', filterName: 'javascript' },
+    { name: 'JavaScript', filterName: 'javascript' },
     { name: 'Json', filterName: 'json' },
     { name: 'Lua', filterName: 'lua' },
     { name: 'Markdown', filterName: 'markdown' },
@@ -36,5 +36,5 @@ export const homepageLanguageList: { name: string; filterName: string }[] = [
     { name: 'Ruby', filterName: 'ruby' },
     { name: 'Sass', filterName: 'sass' },
     { name: 'Swift', filterName: 'swift' },
-    { name: 'Typescript', filterName: 'typescript' },
+    { name: 'TypeScript', filterName: 'typescript' },
 ]
