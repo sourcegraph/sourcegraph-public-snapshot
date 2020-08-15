@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
@@ -12,6 +13,7 @@ import (
 // TODO: Make private, access via functions
 var CryptObject Encryptor
 var configuredToEncrypt bool
+var doOnce sync.Once
 
 const (
 	// #nosec G101
@@ -32,9 +34,13 @@ func gatherKeys(data []byte) (oldKey, newKey []byte) {
 	return parts[0], parts[1]
 }
 
-//InitializeSecrets should only be called once per Sourcegraph instance to ingest user key
+//InitializeSecrets should only be called once per Sourcegraph instance to ingest user encryption key(s)
 func InitializeSecrets() {
 
+	doOnce.Do(initCryptObject)
+}
+
+func initCryptObject() {
 	configuredToEncrypt = false
 
 	envCryptKey, cryptOK := os.LookupEnv(sourcegraphCryptEnvvar)
