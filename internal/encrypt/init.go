@@ -1,4 +1,4 @@
-package secrets
+package encrypt
 
 import (
 	"bytes"
@@ -32,7 +32,9 @@ func gatherKeys(data []byte) (oldKey, newKey []byte) {
 	return parts[0], parts[1]
 }
 
-func init() {
+//InitializeSecrets should only be called once per Sourcegraph instance to ingest user key
+func InitializeSecrets() {
+
 	configuredToEncrypt = false
 
 	envCryptKey, cryptOK := os.LookupEnv(sourcegraphCryptEnvvar)
