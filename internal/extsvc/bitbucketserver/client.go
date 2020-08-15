@@ -1046,38 +1046,22 @@ type Ref struct {
 }
 
 type PullRequest struct {
-	ID          int    `json:"id"`
-	Version     int    `json:"version"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	State       string `json:"state"`
-	Open        bool   `json:"open"`
-	Closed      bool   `json:"closed"`
-	CreatedDate int    `json:"createdDate"`
-	UpdatedDate int    `json:"updatedDate"`
-	FromRef     Ref    `json:"fromRef"`
-	ToRef       Ref    `json:"toRef"`
-	Locked      bool   `json:"locked"`
-	Author      struct {
-		User     *User  `json:"user"`
-		Role     string `json:"role"`
-		Approved bool   `json:"approved"`
-		Status   string `json:"status"`
-	} `json:"author"`
-	Reviewers []struct {
-		User               *User  `json:"user"`
-		LastReviewedCommit string `json:"lastReviewedCommit"`
-		Role               string `json:"role"`
-		Approved           bool   `json:"approved"`
-		Status             string `json:"status"`
-	} `json:"reviewers"`
-	Participants []struct {
-		User     *User  `json:"user"`
-		Role     string `json:"role"`
-		Approved bool   `json:"approved"`
-		Status   string `json:"status"`
-	} `json:"participants"`
-	Links struct {
+	ID           int               `json:"id"`
+	Version      int               `json:"version"`
+	Title        string            `json:"title"`
+	Description  string            `json:"description"`
+	State        string            `json:"state"`
+	Open         bool              `json:"open"`
+	Closed       bool              `json:"closed"`
+	CreatedDate  int               `json:"createdDate"`
+	UpdatedDate  int               `json:"updatedDate"`
+	FromRef      Ref               `json:"fromRef"`
+	ToRef        Ref               `json:"toRef"`
+	Locked       bool              `json:"locked"`
+	Author       PullRequestAuthor `json:"author"`
+	Reviewers    []Reviewer        `json:"reviewers"`
+	Participants []Participant     `json:"participants"`
+	Links        struct {
 		Self []struct {
 			Href string `json:"href"`
 		} `json:"self"`
@@ -1089,6 +1073,31 @@ type PullRequest struct {
 
 	// Deprecated, use CommitStatus instead. BuildStatus was not tied to individual commits
 	BuildStatuses []*BuildStatus `json:"buildstatuses,omitempty"`
+}
+
+// PullRequestAuthor is the author of a pull request.
+type PullRequestAuthor struct {
+	User     *User  `json:"user"`
+	Role     string `json:"role"`
+	Approved bool   `json:"approved"`
+	Status   string `json:"status"`
+}
+
+// Reviewer is a user that left feedback on a pull request.
+type Reviewer struct {
+	User               *User  `json:"user"`
+	LastReviewedCommit string `json:"lastReviewedCommit"`
+	Role               string `json:"role"`
+	Approved           bool   `json:"approved"`
+	Status             string `json:"status"`
+}
+
+// Participant is a user that was involved in a pull request.
+type Participant struct {
+	User     *User  `json:"user"`
+	Role     string `json:"role"`
+	Approved bool   `json:"approved"`
+	Status   string `json:"status"`
 }
 
 // Activity is a union type of all supported pull request activity items.
