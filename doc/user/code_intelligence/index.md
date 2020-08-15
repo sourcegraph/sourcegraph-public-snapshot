@@ -1,6 +1,6 @@
 # Code intelligence
 
-Code intelligence provides advanced code navigation features that let's developers explore source code and displays rich metadata about functions, variables and cross-references in their code. Visit the [features](./features.md) page to learn more or jump to a section for a specific feature:
+Code intelligence provides advanced code navigation features that lets developers explore source code and displays rich metadata about functions, variables, and cross-references in their code. Visit the [features](./features.md) page to learn more or jump to a section for a specific feature:
 
 - [Hover tooltips](./features.md#hover-tooltips-with-documentation-and-type-signatures)
 - [Go to definition](./features.md#go-to-definition)
