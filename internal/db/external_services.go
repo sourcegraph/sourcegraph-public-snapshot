@@ -513,17 +513,6 @@ func (e *ExternalServicesStore) listConfigs(ctx context.Context, kind string, re
 	return nil
 }
 
-// ListPhabricatorConnections returns a list of PhabricatorConnection configs.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListPhabricatorConnections(ctx context.Context) ([]*types.PhabricatorConnection, error) {
-	var connections []*types.PhabricatorConnection
-	if err := e.listConfigs(ctx, extsvc.KindPhabricator, &connections); err != nil {
-		return nil, err
-	}
-	return connections, nil
-}
-
 func (*ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*types.ExternalService, error) {
 	q := sqlf.Sprintf(`
 		SELECT id, kind, display_name, config, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id
