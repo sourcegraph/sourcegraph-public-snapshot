@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -37,7 +38,8 @@ func TestSearch(t *testing.T) {
 				"sgtest/appdash",
 				"sgtest/sourcegraph-typescript",
 				"sgtest/private",
-				"sgtest/mux", // Fork
+				"sgtest/mux",      // Fork
+				"sgtest/archived", // Archived
 			},
 		}),
 	})
@@ -58,7 +60,8 @@ func TestSearch(t *testing.T) {
 		"github.com/sgtest/appdash",
 		"github.com/sgtest/sourcegraph-typescript",
 		"github.com/sgtest/private",
-		"github.com/sgtest/mux", // Fork
+		"github.com/sgtest/mux",      // Fork
+		"github.com/sgtest/archived", // Archived
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -211,7 +214,77 @@ func TestSearch(t *testing.T) {
 		}
 	})
 
-	t.Run("global search", func(t *testing.T) {
+	t.Run("repository search", func(t *testing.T) {
+		tests := []struct {
+			name        string
+			query       string
+			zeroResult  bool
+			wantMissing []string
+		}{
+			{
+				name:       `archived excluded, zero results`,
+				query:      `type:repo archived`,
+				zeroResult: true,
+			},
+			{
+				name:  `archived included, nonzero result`,
+				query: `type:repo archived archived:yes`,
+			},
+			{
+				name:  `archived included if exact without option, nonzero result`,
+				query: `repo:^github\.com/sgtest/archived$`,
+			},
+			{
+				name:       `fork excluded, zero results`,
+				query:      `type:repo sgtest/mux`,
+				zeroResult: true,
+			},
+			{
+				name:  `fork included, nonzero result`,
+				query: `type:repo sgtest/mux fork:yes`,
+			},
+			{
+				name:  `fork included if exact without option, nonzero result`,
+				query: `repo:^github\.com/sgtest/mux$`,
+			},
+			{
+				name:  `exclude counts for fork and archive`,
+				query: `repo:mux|archived|go-diff`,
+				wantMissing: []string{
+					"github.com/sgtest/archived",
+					"github.com/sgtest/mux",
+				},
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				results, err := client.SearchRepositories(test.query)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if test.zeroResult {
+					if len(results) > 0 {
+						t.Fatalf("Want zero result but got %d", len(results))
+					}
+				} else {
+					if len(results) == 0 {
+						t.Fatal("Want non-zero results but got 0")
+					}
+				}
+
+				if test.wantMissing != nil {
+					missing := results.Exists(test.wantMissing...)
+					sort.Strings(missing)
+					if diff := cmp.Diff(test.wantMissing, missing); diff != "" {
+						t.Fatalf("Missing mismatch (-want +got):\n%s", diff)
+					}
+				}
+			})
+		}
+	})
+
+	t.Run("global text search", func(t *testing.T) {
 		tests := []struct {
 			name          string
 			query         string
