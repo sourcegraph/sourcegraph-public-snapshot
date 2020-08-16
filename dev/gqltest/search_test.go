@@ -318,6 +318,11 @@ func TestSearch(t *testing.T) {
 				name:  "diff search, nonzero result",
 				query: `repo:^github\.com/sgtest/go-diff$ type:diff main count:1`,
 			},
+			// Repohascommitafter
+			{
+				name:  `Repohascommitafter, nonzero result`,
+				query: `repo:^github\.com/sgtest/go-diff$ repohascommitafter:"8 months ago" test patterntype:literal count:1`,
+			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
