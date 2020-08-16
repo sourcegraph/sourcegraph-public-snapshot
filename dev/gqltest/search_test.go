@@ -326,6 +326,10 @@ func TestSearch(t *testing.T) {
 					t.Fatal(err)
 				}
 
+				if results.Alert != nil {
+					t.Fatalf("Unexpected alert: %v", results.Alert)
+				}
+
 				if test.zeroResult {
 					if len(results.Results) > 0 {
 						t.Fatalf("Want zero result but got %d", len(results.Results))
@@ -344,12 +348,12 @@ func TestSearch(t *testing.T) {
 	})
 
 	t.Run("timeout search options", func(t *testing.T) {
-		alert, err := client.SearchAlert(`router index:no timeout:1ns`)
+		results, err := client.SearchFiles(`router index:no timeout:1ns`)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if alert == nil {
+		if results.Alert == nil {
 			t.Fatal("Want search alert but got nil")
 		}
 	})
