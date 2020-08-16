@@ -64,6 +64,13 @@ func TestSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	err = client.WaitForReposToBeIndex(
+		"github.com/sgtest/java-langserver",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	t.Run("visibility", func(t *testing.T) {
 		tests := []struct {
 			query       string
