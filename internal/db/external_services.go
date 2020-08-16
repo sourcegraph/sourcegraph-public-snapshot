@@ -513,39 +513,6 @@ func (e *ExternalServicesStore) listConfigs(ctx context.Context, kind string, re
 	return nil
 }
 
-// ListBitbucketServerConnections returns a list of BitbucketServer configs.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListBitbucketServerConnections(ctx context.Context) ([]*types.BitbucketServerConnection, error) {
-	var connections []*types.BitbucketServerConnection
-	if err := e.listConfigs(ctx, extsvc.KindBitbucketServer, &connections); err != nil {
-		return nil, err
-	}
-	return connections, nil
-}
-
-// ListGitHubConnections returns a list of GitHubConnection configs.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListGitHubConnections(ctx context.Context) ([]*types.GitHubConnection, error) {
-	var connections []*types.GitHubConnection
-	if err := e.listConfigs(ctx, extsvc.KindGitHub, &connections); err != nil {
-		return nil, err
-	}
-	return connections, nil
-}
-
-// ListGitLabConnections returns a list of GitLabConnection configs.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListGitLabConnections(ctx context.Context) ([]*types.GitLabConnection, error) {
-	var connections []*types.GitLabConnection
-	if err := e.listConfigs(ctx, extsvc.KindGitLab, &connections); err != nil {
-		return nil, err
-	}
-	return connections, nil
-}
-
 // ListPhabricatorConnections returns a list of PhabricatorConnection configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/inconshreveable/log15"
+	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -14,12 +15,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz/github"
 	"github.com/sourcegraph/sourcegraph/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type ExternalServicesStore interface {
-	ListGitLabConnections(context.Context) ([]*types.GitLabConnection, error)
-	ListGitHubConnections(context.Context) ([]*types.GitHubConnection, error)
-	ListBitbucketServerConnections(context.Context) ([]*types.BitbucketServerConnection, error)
+	List(context.Context, db.ExternalServicesListOptions) ([]*types.ExternalService, error)
 }
 
 // ProvidersFromConfig returns the set of permission-related providers derived from the site config.
@@ -29,7 +31,7 @@ type ExternalServicesStore interface {
 func ProvidersFromConfig(
 	ctx context.Context,
 	cfg *conf.Unified,
-	s ExternalServicesStore,
+	store ExternalServicesStore,
 ) (
 	allowAccessByDefault bool,
 	providers []authz.Provider,
@@ -44,28 +46,84 @@ func ProvidersFromConfig(
 		}
 	}()
 
-	if ghConns, err := s.ListGitHubConnections(ctx); err != nil {
-		seriousProblems = append(seriousProblems, fmt.Sprintf("Could not load GitHub external service configs: %s", err))
-	} else {
-		ghProviders, ghProblems, ghWarnings := github.NewAuthzProviders(ghConns)
+	opt := db.ExternalServicesListOptions{
+		Kinds: []string{
+			extsvc.KindGitHub,
+			extsvc.KindGitLab,
+			extsvc.KindBitbucketServer,
+		},
+		LimitOffset: &db.LimitOffset{
+			Limit: 500, // The number is randomly chosen
+		},
+	}
+
+	var (
+		gitHubConns          []*types.GitHubConnection
+		gitLabConns          []*types.GitLabConnection
+		bitbucketServerConns []*types.BitbucketServerConnection
+	)
+	for {
+		svcs, err := store.List(ctx, opt)
+		if err != nil {
+			seriousProblems = append(seriousProblems, fmt.Sprintf("Could not list external services: %v", err))
+			break
+		}
+		if len(svcs) == 0 {
+			break // No more results, exiting
+		}
+		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
+
+		for _, svc := range svcs {
+			cfg, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+			if err != nil {
+				seriousProblems = append(seriousProblems, fmt.Sprintf("Could not parse config of external service %d: %v", svc.ID, err))
+				continue
+			}
+
+			switch c := cfg.(type) {
+			case *schema.GitHubConnection:
+				gitHubConns = append(gitHubConns, &types.GitHubConnection{
+					URN:              svc.URN(),
+					GitHubConnection: c,
+				})
+			case *schema.GitLabConnection:
+				gitLabConns = append(gitLabConns, &types.GitLabConnection{
+					URN:              svc.URN(),
+					GitLabConnection: c,
+				})
+			case *schema.BitbucketServerConnection:
+				bitbucketServerConns = append(bitbucketServerConns, &types.BitbucketServerConnection{
+					URN:                       svc.URN(),
+					BitbucketServerConnection: c,
+				})
+			default:
+				log15.Error("ProvidersFromConfig", "error", errors.Errorf("unexpected connection type: %T", cfg))
+				continue
+			}
+
+		}
+
+		if len(svcs) < opt.Limit {
+			break // Less results than limit means we've reached end
+		}
+	}
+
+	if len(gitHubConns) > 0 {
+		ghProviders, ghProblems, ghWarnings := github.NewAuthzProviders(gitHubConns)
 		providers = append(providers, ghProviders...)
 		seriousProblems = append(seriousProblems, ghProblems...)
 		warnings = append(warnings, ghWarnings...)
 	}
 
-	if glConns, err := s.ListGitLabConnections(ctx); err != nil {
-		seriousProblems = append(seriousProblems, fmt.Sprintf("Could not load GitLab external service configs: %s", err))
-	} else {
-		glProviders, glProblems, glWarnings := gitlab.NewAuthzProviders(cfg, glConns)
+	if len(gitLabConns) > 0 {
+		glProviders, glProblems, glWarnings := gitlab.NewAuthzProviders(cfg, gitLabConns)
 		providers = append(providers, glProviders...)
 		seriousProblems = append(seriousProblems, glProblems...)
 		warnings = append(warnings, glWarnings...)
 	}
 
-	if bbsConns, err := s.ListBitbucketServerConnections(ctx); err != nil {
-		seriousProblems = append(seriousProblems, fmt.Sprintf("Could not load Bitbucket Server external service configs: %s", err))
-	} else {
-		bbsProviders, bbsProblems, bbsWarnings := bitbucketserver.NewAuthzProviders(bbsConns)
+	if len(bitbucketServerConns) > 0 {
+		bbsProviders, bbsProblems, bbsWarnings := bitbucketserver.NewAuthzProviders(bitbucketServerConns)
 		providers = append(providers, bbsProviders...)
 		seriousProblems = append(seriousProblems, bbsProblems...)
 		warnings = append(warnings, bbsWarnings...)
