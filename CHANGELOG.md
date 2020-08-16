@@ -33,6 +33,7 @@ All notable changes to Sourcegraph are documented in this file.
 - `github-proxy` now respects the environment variables `HTTP_PROXY`, `HTTPS_PROXY` and `NO_PROXY` (or the lowercase versions thereof). Other services already respect these variables, but this was missed. If you need a proxy to access github.com set the environment variable for the github-proxy container. [#12377](https://github.com/sourcegraph/sourcegraph/issues/12377)
 - `sourcegraph-frontend` now respects the `tls.external` experimental setting as well as the proxy environment variables. In proxy environments this allows Sourcegraph to fetch extensions. [#12633](https://github.com/sourcegraph/sourcegraph/issues/12633)
 - Fixed a bug that would sometimes cause trailing parentheses to be removed from search queries upon page load. [#12960](https://github.com/sourcegraph/sourcegraph/issues/12690)
+- User password reset page now respects the value of site config `auth.minPasswordLength`. [#12971](https://github.com/sourcegraph/sourcegraph/pull/12971)
 - Fixed an issue where duplicate search results would show for `or`-expressions [#12531](https://github.com/sourcegraph/sourcegraph/pull/12531)
 
 ### Removed

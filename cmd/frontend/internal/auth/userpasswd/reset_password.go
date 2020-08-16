@@ -171,6 +171,11 @@ func HandleResetPasswordCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := db.CheckPasswordLength(params.Password); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	success, err := db.Users.SetPassword(ctx, params.UserID, params.Code, params.Password)
 	if err != nil {
 		httpLogAndError(w, "Unexpected error", http.StatusInternalServerError, "err", err)
@@ -178,7 +183,7 @@ func HandleResetPasswordCode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !success {
-		httpLogAndError(w, "Password reset failed", http.StatusUnauthorized)
+		http.Error(w, "Password reset code was invalid or expired.", http.StatusUnauthorized)
 		return
 	}
 }

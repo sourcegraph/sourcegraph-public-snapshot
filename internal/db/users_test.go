@@ -99,7 +99,7 @@ func TestUsers_Create_checkPasswordLength(t *testing.T) {
 	ctx := context.Background()
 
 	minPasswordRunes := conf.AuthMinPasswordLength()
-	expErr := fmt.Sprintf("Passwords may not be less than %d or be more than %d characters.", minPasswordRunes, maxPasswordRunes)
+	expErr := fmt.Sprintf("Password may not be less than %d or be more than %d characters.", minPasswordRunes, maxPasswordRunes)
 	tests := []struct {
 		name     string
 		username string
