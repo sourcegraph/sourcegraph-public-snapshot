@@ -242,11 +242,11 @@ func TestSearch(t *testing.T) {
 			},
 			{
 				name:  "double-quoted pattern, nonzero result",
-				query: `"func main() {\n" patterntype:regexp count:1 stable:yes`,
+				query: `"func main() {\n" patterntype:regexp count:1 stable:yes type:file`,
 			},
 			{
 				name:  "exclude repo, nonzero result",
-				query: `"func main() {\n" -repo:go-diff patterntype:regexp count:1 stable:yes`,
+				query: `"func main() {\n" -repo:go-diff patterntype:regexp count:1 stable:yes type:file`,
 			},
 			{
 				name:       "fork:no",
@@ -265,7 +265,7 @@ func TestSearch(t *testing.T) {
 			},
 			{
 				name:  "repo search by name, case yes, nonzero result",
-				query: `repo:^github\.com/sgtest/go-diff$ String case:yes count:1 stable:yes`,
+				query: `repo:^github\.com/sgtest/go-diff$ String case:yes count:1 stable:yes type:file`,
 			},
 			{
 				name:  "true is an alias for yes when fork is set",
@@ -273,15 +273,15 @@ func TestSearch(t *testing.T) {
 			},
 			{
 				name:  "non-master branch, nonzero result",
-				query: `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal count:1 stable:yes`,
+				query: `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal count:1 stable:yes type:file`,
 			},
 			{
 				name:  "indexed multiline search, nonzero result",
-				query: `repo:^github\.com/sgtest/java-langserver$ \nimport index:only patterntype:regexp count:1 stable:yes`,
+				query: `repo:^github\.com/sgtest/java-langserver$ \nimport index:only patterntype:regexp count:1 stable:yes type:file`,
 			},
 			{
 				name:  "unindexed multiline search, nonzero result",
-				query: `repo:^github\.com/sgtest/java-langserver$ \nimport index:no patterntype:regexp count:1 stable:yes`,
+				query: `repo:^github\.com/sgtest/java-langserver$ \nimport index:no patterntype:regexp count:1 stable:yes type:file`,
 			},
 			{
 				name:       "random characters, zero result",
