@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"reflect"
 	"strings"
 	"time"
 
@@ -463,54 +462,6 @@ WHERE deleted_at IS NULL
 	}
 
 	return kinds, nil
-}
-
-// listConfigs decodes the list of configs into result. In addition to populating
-// loaded configs into the given result, it also calls the "SetURN(string)" method
-// of elements in result when the method exists.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) listConfigs(ctx context.Context, kind string, result interface{}) error {
-	services, err := e.List(ctx, ExternalServicesListOptions{Kinds: []string{kind}})
-	if err != nil {
-		return err
-	}
-
-	// Decode the jsonc configs into Go objects.
-	cfgs := make([]interface{}, 0, len(services))
-	urns := make([]string, 0, len(services))
-	for _, service := range services {
-		var cfg interface{}
-		if err := jsonc.Unmarshal(service.Config, &cfg); err != nil {
-			return err
-		}
-		cfgs = append(cfgs, cfg)
-		urns = append(urns, service.URN())
-	}
-
-	// Now move our untyped config list into the typed list (result). We could
-	// do this using reflection, but JSON marshaling and unmarshaling is easier
-	// and fast enough for our purposes. Note that service.Config is jsonc, not
-	// plain JSON so we could not simply treat it as json.RawMessage.
-	buf, err := json.Marshal(cfgs)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(buf, result)
-	if err != nil {
-		return err
-	}
-
-	conns := reflect.ValueOf(result).Elem()
-	for i := 0; i < conns.Len(); i++ {
-		field, ok := conns.Index(i).Interface().(interface{ SetURN(string) })
-		if ok {
-			field.SetURN(urns[i])
-		}
-	}
-
-	return nil
 }
 
 func (*ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*types.ExternalService, error) {
