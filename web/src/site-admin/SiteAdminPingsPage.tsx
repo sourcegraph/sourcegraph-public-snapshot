@@ -124,6 +124,16 @@ export class SiteAdminPingsPage extends React.Component<Props, State> {
                             <li>Count of users churned</li>
                         </ul>
                     </li>
+                    <li>
+                        Saved searches usage data
+                        <ul>
+                            <li>Count of saved searches</li>
+                            <li>Count of users using saved searches</li>
+                            <li>Count of notifications triggered</li>
+                            <li>Count of notifications clicked</li>
+                            <li>Count of saved search views</li>
+                        </ul>
+                    </li>
                 </ul>
                 {updatesDisabled ? (
                     <p>All telemetry is disabled.</p>

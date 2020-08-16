@@ -4,12 +4,13 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gregjones/httpcache"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/httputil"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
@@ -57,6 +58,11 @@ type Factory struct {
 	common []Opt
 }
 
+// redisCache is a HTTP cache backed by Redis. The TTL of a week is a balance
+// between caching values for a useful amount of time versus growing the cache
+// too large.
+var redisCache = rcache.NewWithTTL("http", 604800)
+
 // NewExternalHTTPClientFactory returns an httpcli.Factory with common options
 // and middleware pre-set for communicating to external services.
 func NewExternalHTTPClientFactory() *Factory {
@@ -71,8 +77,30 @@ func NewExternalHTTPClientFactory() *Factory {
 		// not a generic http.RoundTripper.
 		ExternalTransportOpt,
 		TracedTransportOpt,
-		NewCachedTransportOpt(httputil.Cache, true),
+		NewCachedTransportOpt(redisCache, true),
 	)
+}
+
+var (
+	externalOnce sync.Once
+	externalDoer Doer
+)
+
+// ExternalHTTPClient returns a shared client for external communication. This
+// is a convenience for existing uses of http.DefaultClient.
+//
+// NOTE: Use this for legacy code. New code should generally take in a
+// httpcli.Doer and at a high level NewExternalHTTPClientFactory() is called
+// and passed down.
+func ExternalHTTPClient() Doer {
+	externalOnce.Do(func() {
+		var err error
+		externalDoer, err = NewExternalHTTPClientFactory().Doer()
+		if err != nil {
+			panic("httpcli: failed to create the default ExternalHTTPClient. This should not happen: " + err.Error())
+		}
+	})
+	return externalDoer
 }
 
 // Doer returns a new Doer wrapped with the middleware stack

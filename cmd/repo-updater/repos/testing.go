@@ -160,12 +160,24 @@ func (s FakeStore) ListExternalServices(ctx context.Context, args StoreListExter
 
 			svcs = append(svcs, svc)
 			set[svc] = true
+
 		}
 	}
 
 	sort.Sort(svcs)
 
-	return svcs, nil
+	paginated := make(ExternalServices, 0, len(svcs))
+	for _, svc := range svcs {
+		if svc.ID > args.Cursor {
+			paginated = append(paginated, svc)
+		}
+
+		if args.Limit > 0 && int64(len(paginated)) >= args.Limit {
+			break
+		}
+	}
+
+	return paginated, nil
 }
 
 // UpsertExternalServices updates or inserts the given ExternalServices.

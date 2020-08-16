@@ -273,18 +273,45 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 			},
 			assert: repos.Assert.ExternalServicesEqual(&phabricatorService),
 		},
-	)
-
-	testCases = append(testCases, testCase{
-		name:   "returns svcs by their ids",
-		stored: svcs,
-		args: func(stored repos.ExternalServices) repos.StoreListExternalServicesArgs {
-			return repos.StoreListExternalServicesArgs{
-				IDs: []int64{stored[0].ID, stored[1].ID},
-			}
+		testCase{
+			name:   "returns svcs by their ids",
+			stored: svcs,
+			args: func(stored repos.ExternalServices) repos.StoreListExternalServicesArgs {
+				return repos.StoreListExternalServicesArgs{
+					IDs: []int64{stored[0].ID, stored[1].ID},
+				}
+			},
+			assert: repos.Assert.ExternalServicesEqual(svcs[:2].Clone()...),
 		},
-		assert: repos.Assert.ExternalServicesEqual(svcs[:2].Clone()...),
-	})
+		testCase{
+			name:   "limit and zero cursor",
+			stored: svcs,
+			args: func(repos.ExternalServices) (args repos.StoreListExternalServicesArgs) {
+				args.Cursor = 0
+				args.Limit = 1
+				return args
+			},
+			assert: repos.Assert.ExternalServicesEqual(func() (es repos.ExternalServices) {
+				return repos.ExternalServices{
+					svcs[0],
+				}
+			}()...),
+		},
+		testCase{
+			name:   "limit and non-zero cursor",
+			stored: svcs,
+			args: func(repos repos.ExternalServices) (args repos.StoreListExternalServicesArgs) {
+				args.Cursor = repos[0].ID
+				args.Limit = 1
+				return args
+			},
+			assert: repos.Assert.ExternalServicesEqual(func() (es repos.ExternalServices) {
+				return repos.ExternalServices{
+					svcs[1],
+				}
+			}()...),
+		},
+	)
 
 	return func(t *testing.T) {
 		t.Helper()

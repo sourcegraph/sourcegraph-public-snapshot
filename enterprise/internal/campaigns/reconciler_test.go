@@ -6,6 +6,7 @@ import (
 
 	"testing"
 
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
@@ -40,6 +41,13 @@ func TestReconcilerProcess(t *testing.T) {
 		VCS:  protocol.VCSInfo{URL: rs[0].URI},
 	})
 	defer state.Unmock()
+
+	// diffStat is the diff stat that MockChangesetSyncState will provide from the source.
+	diffStat := &diff.Stat{
+		Added:   1,
+		Changed: 1,
+		Deleted: 3,
+	}
 
 	githubPR := buildGithubPR(clock(), "12345", "Remote title", "Remote body", "head-ref-on-github")
 
@@ -118,9 +126,9 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       "12345",
 				externalBranch:   "head-ref-on-github",
-
-				title: "Remote title",
-				body:  "Remote body",
+				title:            "Remote title",
+				body:             "Remote body",
+				diffStat:         diffStat,
 			},
 		},
 		"retry publish changeset": {
@@ -147,9 +155,9 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       "12345",
 				externalBranch:   "head-ref-on-github",
-
-				title: "Remote title",
-				body:  "Remote body",
+				title:            "Remote title",
+				body:             "Remote body",
+				diffStat:         diffStat,
 			},
 		},
 		"update published changeset metadata": {
@@ -184,7 +192,7 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       "12345",
 				externalBranch:   "head-ref-on-github",
-
+				diffStat:         diffStat,
 				// We update the title/body but want the title/body returned by the code host.
 				title: "Remote title",
 				body:  "Remote body",
@@ -225,7 +233,7 @@ func TestReconcilerProcess(t *testing.T) {
 				externalBranch:   "head-ref-on-github",
 				title:            "Remote title",
 				body:             "Remote body",
-
+				diffStat:         diffStat,
 				// failureMessage should be nil
 			},
 		},

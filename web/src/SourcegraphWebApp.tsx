@@ -17,7 +17,6 @@ import * as GQL from '../../shared/src/graphql/schema'
 import { Notifications } from '../../shared/src/notifications/Notifications'
 import { PlatformContext } from '../../shared/src/platform/context'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '../../shared/src/settings/settings'
-import { isErrorLike } from '../../shared/src/util/errors'
 import { authenticatedUser } from './auth'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { FeedbackText } from './components/FeedbackText'
@@ -62,9 +61,14 @@ import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { FiltersToTypeAndValue } from '../../shared/src/search/interactive/util'
 import { generateFiltersQuery } from '../../shared/src/util/url'
 import { NotificationType } from '../../shared/src/api/client/services/notifications'
-import { SettingsExperimentalFeatures } from './schema/settings.schema'
 import { VersionContext } from './schema/site.schema'
 import { globbingEnabledFromSettings } from './util/globbing'
+import {
+    SITE_SUBJECT_NO_ADMIN,
+    viewerSubjectFromSettings,
+    defaultPatternTypeFromSettings,
+    experimentalFeaturesFromSettings,
+} from './util/settings'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     exploreSections: readonly ExploreSectionDescriptor[]
@@ -203,12 +207,6 @@ const readStoredThemePreference = (): ThemePreference => {
     }
 }
 
-/** A fallback settings subject that can be constructed synchronously at initialization time. */
-const SITE_SUBJECT_NO_ADMIN: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'> = {
-    id: window.context.siteGQLID,
-    viewerCanAdminister: false,
-}
-
 setLinkComponent(RouterLinkOrAnchor)
 
 const LayoutWithActivation = window.context.sourcegraphDotComMode ? Layout : withActivation(Layout)
@@ -274,73 +272,21 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         updateUserSessionStores()
 
         document.body.classList.add('theme')
-        this.subscriptions.add(
-            authenticatedUser.subscribe(
-                authenticatedUser => this.setState({ authenticatedUser }),
-                () => this.setState({ authenticatedUser: null })
-            )
-        )
 
         this.subscriptions.add(
             combineLatest([from(this.platformContext.settings), authenticatedUser.pipe(startWith(null))]).subscribe(
-                ([cascade, authenticatedUser]) => {
-                    this.setState(() => {
-                        if (authenticatedUser) {
-                            return { viewerSubject: authenticatedUser }
-                        }
-                        if (cascade && !isErrorLike(cascade) && cascade.subjects && cascade.subjects.length > 0) {
-                            return { viewerSubject: cascade.subjects[0].subject }
-                        }
-                        return { viewerSubject: SITE_SUBJECT_NO_ADMIN }
-                    })
-                }
+                ([settingsCascade, authenticatedUser]) => {
+                    this.setState(state => ({
+                        settingsCascade,
+                        authenticatedUser,
+                        ...experimentalFeaturesFromSettings(settingsCascade),
+                        globbing: globbingEnabledFromSettings(settingsCascade),
+                        searchPatternType: defaultPatternTypeFromSettings(settingsCascade) || state.searchPatternType,
+                        viewerSubject: viewerSubjectFromSettings(settingsCascade, authenticatedUser),
+                    }))
+                },
+                () => this.setState({ authenticatedUser: null })
             )
-        )
-
-        this.subscriptions.add(
-            from(this.platformContext.settings).subscribe(settingsCascade => this.setState({ settingsCascade }))
-        )
-
-        this.subscriptions.add(
-            from(this.platformContext.settings).subscribe(settingsCascade =>
-                this.setState({ globbing: globbingEnabledFromSettings(settingsCascade) })
-            )
-        )
-
-        this.subscriptions.add(
-            from(this.platformContext.settings).subscribe(settingsCascade => {
-                if (!parseSearchURLPatternType(window.location.search)) {
-                    // When the web app mounts, if the current page does not have a patternType URL
-                    // parameter, set the search pattern type to the defaultPatternType from settings
-                    // (if it is set), otherwise default to literal.
-                    //
-                    // For search result URLs that have no patternType= query parameter,
-                    // the `SearchResults` component will append &patternType=regexp
-                    // to the URL to ensure legacy search links continue to work.
-                    const defaultPatternType =
-                        settingsCascade.final &&
-                        !isErrorLike(settingsCascade.final) &&
-                        settingsCascade.final['search.defaultPatternType']
-                    const searchPatternType = defaultPatternType || 'literal'
-                    this.setState({ searchPatternType })
-                }
-            })
-        )
-
-        this.subscriptions.add(
-            from(this.platformContext.settings).subscribe(settingsCascade => {
-                if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
-                    const experimentalFeatures: SettingsExperimentalFeatures =
-                        settingsCascade.final.experimentalFeatures || {}
-                    const {
-                        splitSearchModes = true,
-                        smartSearchField = true,
-                        copyQueryButton = false,
-                        showRepogroupHomepage = false,
-                    } = experimentalFeatures
-                    this.setState({ splitSearchModes, smartSearchField, copyQueryButton, showRepogroupHomepage })
-                }
-            })
         )
 
         // React to OS theme change

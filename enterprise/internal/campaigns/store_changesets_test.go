@@ -824,6 +824,9 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 			Name:           "ListChangesetSyncData test",
 			ChangesetIDs:   []int64{cs.ID},
 			NamespaceOrgID: 23,
+			LastApplierID:  1,
+			LastAppliedAt:  time.Now(),
+			CampaignSpecID: 42,
 		}
 		err := s.CreateCampaign(ctx, c)
 		if err != nil {

@@ -301,7 +301,7 @@ func TestSearchSuggestions(t *testing.T) {
 			return &inventory.Inventory{
 				Languages: []inventory.Lang{
 					{Name: "Go"},
-					{Name: "Typescript"},
+					{Name: "TypeScript"},
 					{Name: "Java"},
 				},
 			}, nil

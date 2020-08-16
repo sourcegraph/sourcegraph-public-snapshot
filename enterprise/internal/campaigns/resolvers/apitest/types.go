@@ -49,12 +49,9 @@ type FileDiff struct {
 }
 
 type FileDiffs struct {
-	RawDiff  string
-	DiffStat DiffStat
-	PageInfo struct {
-		HasNextPage bool
-		EndCursor   string
-	}
+	RawDiff    string
+	DiffStat   DiffStat
+	PageInfo   PageInfo
 	Nodes      []FileDiff
 	TotalCount int
 }
@@ -85,13 +82,15 @@ type Campaign struct {
 	ID                      string
 	Name                    string
 	Description             string
-	InitialApplier          User
-	LastApplier             User
+	SpecCreator             *User
+	InitialApplier          *User
+	LastApplier             *User
 	LastAppliedAt           string
 	ViewerCanAdminister     bool
 	Namespace               UserOrg
 	CreatedAt               string
 	UpdatedAt               string
+	ClosedAt                string
 	URL                     string
 	Changesets              ChangesetConnection
 	ChangesetCountsOverTime []ChangesetCounts
@@ -138,6 +137,7 @@ type Changeset struct {
 	Body             string
 	PublicationState string
 	ReconcilerState  string
+	Error            string
 	ExternalState    string
 	ExternalID       string
 	ExternalURL      ExternalURL
@@ -199,7 +199,7 @@ type CampaignSpec struct {
 	ApplyURL string
 
 	Namespace UserOrg
-	Creator   User
+	Creator   *User
 
 	ChangesetSpecs ChangesetSpecConnection
 
@@ -225,10 +225,7 @@ type ChangesetSpec struct {
 type ChangesetSpecConnection struct {
 	Nodes      []ChangesetSpec
 	TotalCount int
-	PageInfo   struct {
-		HasNextPage bool
-		EndCursor   *string
-	}
+	PageInfo   PageInfo
 }
 
 type ChangesetSpecDescription struct {
@@ -251,6 +248,7 @@ type ChangesetSpecDescription struct {
 	Diff struct {
 		FileDiffs FileDiffs
 	}
+	DiffStat DiffStat
 }
 
 type GitCommitDescription struct {
@@ -260,4 +258,5 @@ type GitCommitDescription struct {
 
 type PageInfo struct {
 	HasNextPage bool
+	EndCursor   *string
 }
