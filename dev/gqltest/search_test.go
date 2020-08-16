@@ -323,6 +323,28 @@ func TestSearch(t *testing.T) {
 				name:  `Repohascommitafter, nonzero result`,
 				query: `repo:^github\.com/sgtest/go-diff$ repohascommitafter:"8 months ago" test patterntype:literal count:1`,
 			},
+			// Regex text search
+			{
+				name:  `regex, unindexed, nonzero result`,
+				query: `^func.*$ patterntype:regexp index:only count:1 stable:yes type:file`,
+			},
+			{
+				name:  `regex, fork only, nonzero result`,
+				query: `fork:only patterntype:regexp FORK_SENTINEL`,
+			},
+			{
+				name:  `regex, filter by language`,
+				query: `\bfunc\b lang:go count:1 stable:yes type:file patterntype:regexp`,
+			},
+			{
+				name:       `regex, filename, zero results`,
+				query:      `file:asdfasdf.go patterntype:regexp`,
+				zeroResult: true,
+			},
+			{
+				name:  `regexp, filename, nonzero result`,
+				query: `file:doc.go patterntype:regexp count:1`,
+			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
