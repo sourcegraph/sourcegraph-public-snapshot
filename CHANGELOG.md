@@ -1,6 +1,6 @@
 <!--
 ###################################### READ ME ###########################################
-### This changelog should always be read on `master` branch. Its contents on version   ###
+### This changelog should always be read on `main` branch. Its contents on version   ###
 ### branches do not necessarily reflect the changes that have gone into that branch.   ###
 ##########################################################################################
 -->
@@ -13,16 +13,25 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
-- Emails can be now be sent to SMTP servers with self-signed certificates, using `email.smtp.disableTLS`. [#12359](https://github.com/sourcegraph/sourcegraph/pull/12359)
+### Changed
+
+### Fixed
+
+### Removed
+
+## 3.19.0
+
+### Added
+
+- Emails can be now be sent to SMTP servers with self-signed certificates, using `email.smtp.disableTLS`. [#12243](https://github.com/sourcegraph/sourcegraph/pull/12243)
 - Saved search emails now include a link to the user's saved searches page. [#11651](https://github.com/sourcegraph/sourcegraph/pull/11651)
 - Campaigns can now be synced using GitLab webhooks. [#12139](https://github.com/sourcegraph/sourcegraph/pull/12139)
 - Configured `observability.alerts` can now be tested using a GraphQL endpoint, `triggerObservabilityTestAlert`. [#12532](https://github.com/sourcegraph/sourcegraph/pull/12532)
 - The Sourcegraph CLI can now serve local repositories for Sourcegraph to clone. This was previously in a command called `src-expose`. See [serving local repositories](https://docs.sourcegraph.com/admin/external_service/src_serve_git) in our documentation to find out more. [#12363](https://github.com/sourcegraph/sourcegraph/issues/12363)
 - The count of retained, churned, resurrected, new and deleted users will be sent back in pings. [#12136](https://github.com/sourcegraph/sourcegraph/pull/12136)
 - Saved search usage will be sent back in pings. [#12956](https://github.com/sourcegraph/sourcegraph/pull/12956)
-- Faster indexed search queries over a large number of repositories. For searching over 100k repos requests should be about 400ms faster and much more memory efficient. [#12546](https://github.com/sourcegraph/sourcegraph/pull/12546)
 - Any request with `?trace=1` as a URL query parameter will enable Jaeger tracing (if Jaeger is enabled). [#12291](https://github.com/sourcegraph/sourcegraph/pull/12291)
-- Passsword reset emails will now be automatically sent to users created by a site admin if email sending is configured and password reset is enabled. Previously, site admins needed to manually send the user this password reset link. [#](https://github.com/sourcegraph/sourcegraph/pull/12803)
+- Password reset emails will now be automatically sent to users created by a site admin if email sending is configured and password reset is enabled. Previously, site admins needed to manually send the user this password reset link. [#12803](https://github.com/sourcegraph/sourcegraph/pull/12803)
 - Syntax highlighting for `and` and `or` search operators. [#12694](https://github.com/sourcegraph/sourcegraph/pull/12694)
 
 ### Changed
@@ -41,6 +50,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The site admin repository needs-index page is significantly faster. Previously on large instances it would usually timeout. Now it should load within a second. [#12513](https://github.com/sourcegraph/sourcegraph/pull/12513).
 - User password reset page now respects the value of site config `auth.minPasswordLength`. [#12971](https://github.com/sourcegraph/sourcegraph/pull/12971)
 - Fixed an issue where duplicate search results would show for `or`-expressions [#12531](https://github.com/sourcegraph/sourcegraph/pull/12531)
+- Faster indexed search queries over a large number of repositories. For searching over 100k repositories, requests should be about 400ms faster and much more memory efficient. [#12546](https://github.com/sourcegraph/sourcegraph/pull/12546)
 
 ### Removed
 
