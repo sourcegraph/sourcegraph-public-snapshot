@@ -988,12 +988,10 @@ func NewRateLimitSyncer(registry *ratelimit.Registry, serviceLister externalServ
 // and rate limits can be defined in multiple external services for the same host.
 func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context) error {
 	var cursor int64
-	var err error
-	services := make([]*ExternalService, 0, int(r.limit))
 	byURL := make(map[string]extsvc.RateLimitConfig)
 
 	for {
-		services, err = r.serviceLister.ListExternalServices(ctx, StoreListExternalServicesArgs{
+		services, err := r.serviceLister.ListExternalServices(ctx, StoreListExternalServicesArgs{
 			Cursor: cursor,
 			Limit:  r.limit,
 		})
