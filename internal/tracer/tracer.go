@@ -77,6 +77,10 @@ func initTracer(serviceName string) {
 	globalTracer := newSwitchableTracer()
 	opentracing.SetGlobalTracer(globalTracer)
 
+	// initial tracks if its our first run of conf.Watch. This is used to
+	// prevent logging "changes" when its the first run.
+	initial := true
+
 	// Initially everything is disabled since we haven't read conf yet.
 	oldOpts := jaegerOpts{
 		ServiceName: serviceName,
@@ -102,9 +106,10 @@ func initTracer(serviceName string) {
 		} else if siteConfig.UseJaeger {
 			samplingStrategy = ot.TraceAll
 		}
-		if tracePolicy := ot.GetTracePolicy(); tracePolicy != samplingStrategy {
+		if tracePolicy := ot.GetTracePolicy(); tracePolicy != samplingStrategy && !initial {
 			log15.Info("opentracing: TracePolicy", "oldValue", tracePolicy, "newValue", samplingStrategy)
 		}
+		initial = false
 		ot.SetTracePolicy(samplingStrategy)
 
 		opts := jaegerOpts{
