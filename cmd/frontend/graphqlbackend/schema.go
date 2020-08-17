@@ -1844,6 +1844,8 @@ type ExternalService implements Node {
     createdAt: DateTime!
     # When the external service was last updated.
     updatedAt: DateTime!
+    # The namespace this external service belongs to.
+    namespace: ID
     # An optional URL that will be populated when webhooks have been configured for the external service.
     webhookURL: String
     # This is an optional field that's populated when we ran into errors on the

@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -62,14 +63,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 			return nil, err
 		}
 
-		authUser, err := backend.CurrentUser(ctx)
-		if err != nil {
-			return nil, err
-		} else if authUser == nil {
-			return nil, backend.ErrNotAuthenticated
-		}
-
-		if namespaceUserID != authUser.ID {
+		if namespaceUserID != actor.FromContext(ctx).UID {
 			return nil, errors.New("the namespace is not same as the authenticated user")
 		}
 
