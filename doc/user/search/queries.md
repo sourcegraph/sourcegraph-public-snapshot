@@ -110,7 +110,7 @@ Returns file content matching either on the left or right side, or both (set uni
 
 | Operator | Example |
 | --- | --- |
-| `not`, `NOT` | [`panic not file:main.go lang:go`](https://sourcegraph.com/search?q=panic+not+file:main.go+lang:go&patternType=literal), [`panic NOT ever`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+panic+not+ever&patternType=literal)
+| `not`, `NOT` | [`lang:go not file:main.go panic`](https://sourcegraph.com/search?q=lang:go+not+file:main.go+panic&patternType=literal), [`panic NOT ever`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+panic+not+ever&patternType=literal)
 
 `NOT` can be used in place of `-` to negate keywords, such as `file`, `content`, `lang`, `repohasfile`, and `repo`. For
 search patterns, `NOT` excludes documents that contain the term after `NOT`. For readability, you can also include the
