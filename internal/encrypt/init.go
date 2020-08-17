@@ -7,6 +7,8 @@ import (
 	"os"
 	"sync"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
@@ -67,7 +69,7 @@ func initCryptObject() {
 		encryptionKey = contents
 		err = os.Chmod(secretFile, 0400)
 		if err != nil {
-			panic("failed to make secrets file read only.")
+			log15.Warn("failed to make secrets file read only")
 		}
 
 		newKey, oldKey := gatherKeys(encryptionKey)
