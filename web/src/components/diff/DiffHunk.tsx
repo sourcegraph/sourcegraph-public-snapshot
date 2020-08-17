@@ -17,6 +17,12 @@ interface DiffBoundaryProps extends FileDiffHunkFields {
     lineNumbers: boolean
 }
 
+const diffHunkTypeIndicators: Record<GQL.DiffHunkLineType, string> = {
+    ADDED: '+',
+    UNCHANGED: ' ',
+    DELETED: '-',
+}
+
 const DiffBoundary: React.FunctionComponent<DiffBoundaryProps> = props => (
     <tr className="diff-boundary">
         {props.lineNumbers && <td className={`diff-boundary__num ${props.lineNumberClassName}`} colSpan={2} />}
@@ -73,18 +79,6 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                 }
                 if (line.kind !== GQL.DiffHunkLineType.DELETED) {
                     newLine++
-                }
-                let diffMarker: string
-                switch (line.kind) {
-                    case GQL.DiffHunkLineType.ADDED:
-                        diffMarker = '+'
-                        break
-                    case GQL.DiffHunkLineType.UNCHANGED:
-                        diffMarker = ' '
-                        break
-                    case GQL.DiffHunkLineType.DELETED:
-                        diffMarker = '-'
-                        break
                 }
                 const oldAnchor = `${fileDiffAnchor}L${oldLine - 1}`
                 const newAnchor = `${fileDiffAnchor}R${newLine - 1}`
@@ -145,9 +139,7 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                             className="diff-hunk__content"
                             /* eslint-disable-next-line react/forbid-dom-props */
                             style={lineStyle}
-                            data-diff-marker={
-                                diffMarker
-                            }
+                            data-diff-marker={diffHunkTypeIndicators[line.kind]}
                         >
                             <div className="d-inline-block" dangerouslySetInnerHTML={{ __html: line.html }} />
                             {decorationsForLine.filter(property('after', isDefined)).map((decoration, index) => {
