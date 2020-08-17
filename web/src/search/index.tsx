@@ -151,10 +151,6 @@ export interface InteractiveSearchProps {
     toggleSearchMode: (event: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
-export interface SmartSearchFieldProps {
-    smartSearchField: boolean
-}
-
 export interface CopyQueryButtonProps {
     copyQueryButton: boolean
 }

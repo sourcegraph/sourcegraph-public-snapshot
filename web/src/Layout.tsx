@@ -36,7 +36,6 @@ import {
     PatternTypeProps,
     InteractiveSearchProps,
     CaseSensitivityProps,
-    SmartSearchFieldProps,
     CopyQueryButtonProps,
     RepogroupHomepageProps,
 } from './search'
@@ -74,7 +73,6 @@ export interface LayoutProps
         PatternTypeProps,
         CaseSensitivityProps,
         InteractiveSearchProps,
-        SmartSearchFieldProps,
         CopyQueryButtonProps,
         VersionContextProps,
         RepogroupHomepageProps {

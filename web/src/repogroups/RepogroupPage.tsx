@@ -7,13 +7,7 @@ import { SettingsCascadeProps, Settings, isSettingsValid } from '../../../shared
 import { ThemeProps } from '../../../shared/src/theme'
 import { ThemePreferenceProps } from '../theme'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
-import {
-    PatternTypeProps,
-    CaseSensitivityProps,
-    InteractiveSearchProps,
-    SmartSearchFieldProps,
-    CopyQueryButtonProps,
-} from '../search'
+import { PatternTypeProps, CaseSensitivityProps, InteractiveSearchProps, CopyQueryButtonProps } from '../search'
 import { EventLoggerProps, eventLogger } from '../tracking/eventLogger'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
@@ -42,7 +36,6 @@ export interface RepogroupPageProps
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         InteractiveSearchProps,
-        SmartSearchFieldProps,
         CopyQueryButtonProps,
         VersionContextProps {
     authenticatedUser: GQL.IUser | null

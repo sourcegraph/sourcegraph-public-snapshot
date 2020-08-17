@@ -38,6 +38,7 @@ describe('ScopePage', () => {
                             copyQueryButton={false}
                             versionContext={undefined}
                             globbing={false}
+                            isLightTheme={true}
                         />
                     </MemoryRouter>
                 )

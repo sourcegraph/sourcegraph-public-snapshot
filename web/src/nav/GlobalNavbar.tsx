@@ -12,7 +12,6 @@ import {
     PatternTypeProps,
     InteractiveSearchProps,
     CaseSensitivityProps,
-    SmartSearchFieldProps,
     CopyQueryButtonProps,
 } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
@@ -44,7 +43,6 @@ interface Props
         PatternTypeProps,
         CaseSensitivityProps,
         InteractiveSearchProps,
-        SmartSearchFieldProps,
         CopyQueryButtonProps,
         VersionContextProps {
     history: H.History
@@ -250,7 +248,6 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                             {...this.props}
                                             navbarSearchState={this.props.navbarSearchQueryState}
                                             onChange={this.props.onNavbarQueryChange}
-                                            smartSearchField={this.props.smartSearchField}
                                         />
                                     </div>
                                 )}
