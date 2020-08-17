@@ -201,7 +201,7 @@ Benefits of backround syncing:
 
 1. More predictable load on the code host API due to maintaining a schedule of permission updates.
 1. Permissions are quickly synced for new repositories added to the Sourcegraph instance.
-1. Users who sign up on the Sourcegraph instance can immediately get search results from the repositories they have access to on the code host.
+1. Users who sign up on the Sourcegraph instance can immediately get search results from some repositories they have access to on the code host as we begin to incrementally sync their permissions.
 
 Considerations when enabling for the first time:
 
