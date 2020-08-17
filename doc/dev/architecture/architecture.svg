@@ -169,7 +169,7 @@
 <!-- code_intel -->
 <g id="node9" class="node">
 <title>code_intel</title>
-<g id="a_node9"><a xlink:href="https://docs.sourcegraph.com/dev/codintel/architecture" xlink:title="Code intel processes\n(click to expand)" target="_blank">
+<g id="a_node9"><a xlink:href="https://docs.sourcegraph.com/dev/codeintel/architecture" xlink:title="Code intel processes\n(click to expand)" target="_blank">
 <polygon fill="#d9d9d9" stroke="black" points="813.5,-432.73 698.5,-432.73 698.5,-388.73 813.5,-388.73 813.5,-432.73"/>
 <text text-anchor="middle" x="756" y="-413.73" font-family="Iosevka" font-size="10.00">Code intel processes</text>
 <text text-anchor="middle" x="756" y="-402.73" font-family="Iosevka" font-size="10.00">(click to expand)</text>
