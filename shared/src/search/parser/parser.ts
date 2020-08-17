@@ -1,4 +1,5 @@
 import { IRange } from 'monaco-editor'
+import { filterTypeKeysWithAliases } from '../interactive/util'
 
 /**
  * Represents a zero-indexed character range in a single-line search query.
@@ -218,7 +219,7 @@ const pattern = <T extends Token = Literal>(
     expected?: string
 ): Parser<T> => {
     if (!regexp.source.startsWith('^')) {
-        regexp = new RegExp(`^${regexp.source}`)
+        regexp = new RegExp(`^${regexp.source}`, regexp.flags)
     }
     return (input, start) => {
         const matchTarget = input.slice(Math.max(0, start))
@@ -251,7 +252,7 @@ const operator = pattern(
     (input, { start, end }): Operator => ({ type: 'operator', value: input.slice(start, end) })
 )
 
-const filterKeyword = pattern(/-?[A-Za-z]+(?=:)/)
+const filterKeyword = pattern(new RegExp(`-?(${filterTypeKeysWithAliases.join('|')})+(?=:)`, 'i'))
 
 const filterDelimiter = character(':')
 

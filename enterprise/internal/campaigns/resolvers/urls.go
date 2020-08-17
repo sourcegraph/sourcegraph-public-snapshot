@@ -5,7 +5,7 @@ import (
 )
 
 func campaignsApplyURL(n graphqlbackend.Namespace, c graphqlbackend.CampaignSpecResolver) string {
-	return n.URL() + "/campaigns/apply?spec=" + string(c.ID())
+	return n.URL() + "/campaigns/apply/" + string(c.ID())
 }
 
 func campaignURL(n graphqlbackend.Namespace, c graphqlbackend.CampaignResolver) string {

@@ -1,0 +1,249 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
+<Fragment>
+  <CampaignHeader
+    className="mb-3"
+  />
+  <CampaignsListBetaNotice />
+  <FilteredConnection
+    className="mb-3"
+    cursorPaging={true}
+    defaultFirst={15}
+    filters={
+      Array [
+        Object {
+          "args": Object {},
+          "id": "all",
+          "label": "All",
+          "tooltip": "Show all campaigns",
+        },
+        Object {
+          "args": Object {
+            "state": "OPEN",
+          },
+          "id": "open",
+          "label": "Open",
+          "tooltip": "Show only campaigns that are open",
+        },
+        Object {
+          "args": Object {
+            "state": "CLOSED",
+          },
+          "id": "closed",
+          "label": "Closed",
+          "tooltip": "Show only campaigns that are closed",
+        },
+      ]
+    }
+    hideSearch={true}
+    history="[History]"
+    listClassName="campaign-list-page__grid mb-3"
+    listComponent="div"
+    location="[Location path=/]"
+    nodeComponent={[Function]}
+    nodeComponentProps={
+      Object {
+        "displayNamespace": true,
+        "history": "[History]",
+      }
+    }
+    noun="campaign"
+    pluralNoun="campaigns"
+    queryConnection={[Function]}
+    telemetryService={
+      Object {
+        "log": [Function],
+        "logViewEvent": [Function],
+      }
+    }
+    useURLQuery={true}
+  />
+</Fragment>
+`;
+
+exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
+<Fragment>
+  <CampaignHeader
+    className="mb-3"
+  />
+  <CampaignsListBetaNotice />
+  <FilteredConnection
+    className="mb-3"
+    cursorPaging={true}
+    defaultFirst={15}
+    filters={
+      Array [
+        Object {
+          "args": Object {},
+          "id": "all",
+          "label": "All",
+          "tooltip": "Show all campaigns",
+        },
+        Object {
+          "args": Object {
+            "state": "OPEN",
+          },
+          "id": "open",
+          "label": "Open",
+          "tooltip": "Show only campaigns that are open",
+        },
+        Object {
+          "args": Object {
+            "state": "CLOSED",
+          },
+          "id": "closed",
+          "label": "Closed",
+          "tooltip": "Show only campaigns that are closed",
+        },
+      ]
+    }
+    hideSearch={true}
+    history="[History]"
+    listClassName="campaign-list-page__grid mb-3"
+    listComponent="div"
+    location="[Location path=/]"
+    nodeComponent={[Function]}
+    nodeComponentProps={
+      Object {
+        "displayNamespace": true,
+        "history": "[History]",
+      }
+    }
+    noun="campaign"
+    pluralNoun="campaigns"
+    queryConnection={[Function]}
+    telemetryService={
+      Object {
+        "log": [Function],
+        "logViewEvent": [Function],
+      }
+    }
+    useURLQuery={true}
+  />
+</Fragment>
+`;
+
+exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
+<Fragment>
+  <CampaignHeader
+    className="mb-3"
+  />
+  <CampaignsListBetaNotice />
+  <FilteredConnection
+    className="mb-3"
+    cursorPaging={true}
+    defaultFirst={15}
+    filters={
+      Array [
+        Object {
+          "args": Object {},
+          "id": "all",
+          "label": "All",
+          "tooltip": "Show all campaigns",
+        },
+        Object {
+          "args": Object {
+            "state": "OPEN",
+          },
+          "id": "open",
+          "label": "Open",
+          "tooltip": "Show only campaigns that are open",
+        },
+        Object {
+          "args": Object {
+            "state": "CLOSED",
+          },
+          "id": "closed",
+          "label": "Closed",
+          "tooltip": "Show only campaigns that are closed",
+        },
+      ]
+    }
+    hideSearch={true}
+    history="[History]"
+    listClassName="campaign-list-page__grid mb-3"
+    listComponent="div"
+    location="[Location path=/]"
+    nodeComponent={[Function]}
+    nodeComponentProps={
+      Object {
+        "displayNamespace": true,
+        "history": "[History]",
+      }
+    }
+    noun="campaign"
+    pluralNoun="campaigns"
+    queryConnection={[Function]}
+    telemetryService={
+      Object {
+        "log": [Function],
+        "logViewEvent": [Function],
+      }
+    }
+    useURLQuery={true}
+  />
+</Fragment>
+`;
+
+exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
+<Fragment>
+  <CampaignHeader
+    className="mb-3"
+  />
+  <CampaignsListBetaNotice />
+  <FilteredConnection
+    className="mb-3"
+    cursorPaging={true}
+    defaultFirst={15}
+    filters={
+      Array [
+        Object {
+          "args": Object {},
+          "id": "all",
+          "label": "All",
+          "tooltip": "Show all campaigns",
+        },
+        Object {
+          "args": Object {
+            "state": "OPEN",
+          },
+          "id": "open",
+          "label": "Open",
+          "tooltip": "Show only campaigns that are open",
+        },
+        Object {
+          "args": Object {
+            "state": "CLOSED",
+          },
+          "id": "closed",
+          "label": "Closed",
+          "tooltip": "Show only campaigns that are closed",
+        },
+      ]
+    }
+    hideSearch={true}
+    history="[History]"
+    listClassName="campaign-list-page__grid mb-3"
+    listComponent="div"
+    location="[Location path=/]"
+    nodeComponent={[Function]}
+    nodeComponentProps={
+      Object {
+        "displayNamespace": true,
+        "history": "[History]",
+      }
+    }
+    noun="campaign"
+    pluralNoun="campaigns"
+    queryConnection={[Function]}
+    telemetryService={
+      Object {
+        "log": [Function],
+        "logViewEvent": [Function],
+      }
+    }
+    useURLQuery={true}
+  />
+</Fragment>
+`;

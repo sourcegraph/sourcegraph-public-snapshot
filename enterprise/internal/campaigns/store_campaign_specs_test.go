@@ -272,6 +272,8 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, _ repos
 					InitialApplierID: 1,
 					NamespaceUserID:  1,
 					CampaignSpecID:   campaignSpec.ID,
+					LastApplierID:    1,
+					LastAppliedAt:    time.Now(),
 				}
 				if err := s.CreateCampaign(ctx, campaign); err != nil {
 					t.Fatal(err)

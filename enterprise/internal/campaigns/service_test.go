@@ -63,7 +63,12 @@ func TestServicePermissionLevels(t *testing.T) {
 	rs, _ := createTestRepos(t, ctx, dbconn.Global, 1)
 
 	createTestData := func(t *testing.T, s *Store, svc *Service, author int32) (*campaigns.Campaign, *campaigns.Changeset, *campaigns.CampaignSpec) {
-		campaign := testCampaign(author)
+		spec := testCampaignSpec(author)
+		if err := s.CreateCampaignSpec(ctx, spec); err != nil {
+			t.Fatal(err)
+		}
+
+		campaign := testCampaign(author, spec)
 		if err := s.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
@@ -78,12 +83,7 @@ func TestServicePermissionLevels(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		cs := &campaigns.CampaignSpec{UserID: author, NamespaceUserID: author}
-		if err := s.CreateCampaignSpec(ctx, cs); err != nil {
-			t.Fatal(err)
-		}
-
-		return campaign, changeset, cs
+		return campaign, changeset, spec
 	}
 
 	assertAuthError := func(t *testing.T, err error) {
@@ -210,7 +210,12 @@ func TestService(t *testing.T) {
 	svc.sourcer = sourcer
 
 	t.Run("DeleteCampaign", func(t *testing.T) {
-		campaign := testCampaign(admin.ID)
+		spec := testCampaignSpec(admin.ID)
+		if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+			t.Fatal(err)
+		}
+
+		campaign := testCampaign(admin.ID, spec)
 		if err := store.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
@@ -233,7 +238,13 @@ func TestService(t *testing.T) {
 		defer state.Unmock()
 		createCampaign := func(t *testing.T) *campaigns.Campaign {
 			t.Helper()
-			campaign := testCampaign(admin.ID)
+
+			spec := testCampaignSpec(admin.ID)
+			if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			campaign := testCampaign(admin.ID, spec)
 			if err := store.CreateCampaign(ctx, campaign); err != nil {
 				t.Fatal(err)
 			}
@@ -290,7 +301,12 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("EnqueueChangesetSync", func(t *testing.T) {
-		campaign := testCampaign(admin.ID)
+		spec := testCampaignSpec(admin.ID)
+		if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+			t.Fatal(err)
+		}
+
+		campaign := testCampaign(admin.ID, spec)
 		if err := store.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
@@ -628,11 +644,24 @@ func TestService(t *testing.T) {
 		createCampaign := func(t *testing.T, name string, authorID, userID, orgID int32) *campaigns.Campaign {
 			t.Helper()
 
+			spec := &campaigns.CampaignSpec{
+				UserID:          authorID,
+				NamespaceUserID: userID,
+				NamespaceOrgID:  orgID,
+			}
+
+			if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
 			c := &campaigns.Campaign{
 				InitialApplierID: authorID,
 				NamespaceUserID:  userID,
 				NamespaceOrgID:   orgID,
 				Name:             name,
+				LastApplierID:    authorID,
+				LastAppliedAt:    time.Now(),
+				CampaignSpecID:   spec.ID,
 			}
 
 			if err := store.CreateCampaign(ctx, c); err != nil {
@@ -748,6 +777,9 @@ func TestService(t *testing.T) {
 			InitialApplierID: admin.ID,
 			NamespaceOrgID:   campaignSpec.NamespaceOrgID,
 			NamespaceUserID:  campaignSpec.NamespaceUserID,
+			CampaignSpecID:   campaignSpec.ID,
+			LastApplierID:    admin.ID,
+			LastAppliedAt:    time.Now(),
 		}
 		if err := store.CreateCampaign(ctx, matchingCampaign); err != nil {
 			t.Fatalf("failed to create campaign: %s\n", err)
@@ -794,6 +826,13 @@ func TestServiceApplyCampaign(t *testing.T) {
 	}
 	store := NewStoreWithClock(dbconn.Global, clock)
 	svc := NewService(store, httpcli.NewExternalHTTPClientFactory())
+
+	// The diff stat that corresponds to what's stored in the spec.
+	diffStat := &diff.Stat{
+		Added:   10,
+		Changed: 5,
+		Deleted: 2,
+	}
 
 	t.Run("campaignSpec without changesetSpecs", func(t *testing.T) {
 		t.Run("new campaign", func(t *testing.T) {
@@ -1011,6 +1050,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ownedByCampaign:  campaign.ID,
 				reconcilerState:  campaigns.ReconcilerStateQueued,
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				diffStat:         diffStat,
 			})
 		})
 
@@ -1138,6 +1178,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ownedByCampaign:  campaign.ID,
 				reconcilerState:  campaigns.ReconcilerStateQueued,
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				diffStat:         diffStat,
 			})
 
 			c4 := cs.Find(campaigns.WithCurrentSpecID(spec4.ID))
@@ -1147,6 +1188,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ownedByCampaign:  campaign.ID,
 				reconcilerState:  campaigns.ReconcilerStateQueued,
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				diffStat:         diffStat,
 			})
 
 			c5 := cs.Find(campaigns.WithCurrentSpecID(spec5.ID))
@@ -1156,6 +1198,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ownedByCampaign:  campaign.ID,
 				reconcilerState:  campaigns.ReconcilerStateQueued,
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				diffStat:         diffStat,
 			})
 		})
 
@@ -1196,6 +1239,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				externalID:       c.ExternalID,
 				reconcilerState:  campaigns.ReconcilerStateCompleted,
 				publicationState: campaigns.ChangesetPublicationStatePublished,
+				diffStat:         diffStat,
 			})
 
 			// Now we stop tracking it in the second campaign
@@ -1322,14 +1366,24 @@ var createTestUser = func() func(context.Context, *testing.T) *types.User {
 	}
 }()
 
-func testCampaign(user int32) *campaigns.Campaign {
+func testCampaign(user int32, spec *campaigns.CampaignSpec) *campaigns.Campaign {
 	c := &campaigns.Campaign{
 		Name:             "test-campaign",
 		InitialApplierID: user,
 		NamespaceUserID:  user,
+		CampaignSpecID:   spec.ID,
+		LastApplierID:    user,
+		LastAppliedAt:    time.Now(),
 	}
 
 	return c
+}
+
+func testCampaignSpec(user int32) *campaigns.CampaignSpec {
+	return &campaigns.CampaignSpec{
+		UserID:          user,
+		NamespaceUserID: user,
+	}
 }
 
 func testChangeset(repoID api.RepoID, campaign int64, extState campaigns.ChangesetExternalState) *campaigns.Changeset {
@@ -1442,6 +1496,9 @@ func createChangesetSpec(
 				},
 			},
 		},
+		DiffStatAdded:   10,
+		DiffStatChanged: 5,
+		DiffStatDeleted: 2,
 	}
 
 	if err := store.CreateChangesetSpec(ctx, spec); err != nil {
@@ -1552,6 +1609,7 @@ type changesetAssertions struct {
 	publicationState campaigns.ChangesetPublicationState
 	externalID       string
 	externalBranch   string
+	diffStat         *diff.Stat
 
 	title string
 	body  string
@@ -1600,6 +1658,10 @@ func assertChangeset(t *testing.T, c *campaigns.Changeset, a changesetAssertions
 
 	if want, have := a.failureMessage, c.FailureMessage; want == nil && have != nil {
 		t.Fatalf("expected no failure message, but have=%q", *have)
+	}
+
+	if diff := cmp.Diff(a.diffStat, c.DiffStat()); diff != "" {
+		t.Fatalf("changeset DiffStat wrong. (-want +got):\n%s", diff)
 	}
 
 	if want := c.FailureMessage; want != nil {

@@ -39,11 +39,29 @@ export enum FilterType {
     content = 'content',
     patterntype = 'patterntype',
     index = 'index',
+    stable = 'stable',
+}
+
+export enum AliasedFilterType {
+    r = 'repo',
+    g = 'repogroup',
+    f = 'file',
+    l = 'lang',
+    language = 'lang',
+    until = 'before',
+    since = 'after',
+    m = 'message',
+    'msg' = 'message',
 }
 
 export const isFilterType = (filter: string): filter is FilterType => filter in FilterType
+export const isAliasedFilterType = (filter: string): boolean => filter in AliasedFilterType
 
 export const filterTypeKeys: FilterType[] = Object.keys(FilterType) as FilterType[]
+export const filterTypeKeysWithAliases: (FilterType | AliasedFilterType)[] = [
+    ...filterTypeKeys,
+    ...Object.keys(AliasedFilterType),
+] as (FilterType | AliasedFilterType)[]
 
 export enum NegatedFilters {
     repo = '-repo',

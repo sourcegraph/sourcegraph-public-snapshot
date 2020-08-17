@@ -206,6 +206,7 @@ Dockerfile @sourcegraph/distribution
 /doc/ @sourcegraph/distribution
 /doc/dev/ @nicksnyder
 /doc/dev/web/ @felixfbecker @sourcegraph/web
+/doc/dev/codeintel/ @efritz @sourcegraph/code-intel
 
 # Browser extensions
 /browser/ @sourcegraph/web

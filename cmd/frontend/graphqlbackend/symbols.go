@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 type symbolsArgs struct {
@@ -122,6 +123,7 @@ func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, branch s
 	final := zoektquery.Simplify(zoektquery.NewAnd(ands...))
 	match := limitOrDefault(first) + 1
 	resp, err := search.Indexed().Client.Search(ctx, final, &zoekt.SearchOptions{
+		Trace:                  ot.ShouldTrace(ctx),
 		MaxWallTime:            3 * time.Second,
 		ShardMaxMatchCount:     match * 25,
 		TotalMaxMatchCount:     match * 25,
