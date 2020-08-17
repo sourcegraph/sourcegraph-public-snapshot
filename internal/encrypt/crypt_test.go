@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	messageToEncrypt = "I Madam. I made radio, So I dard. Am I mad? Am I?"
+	messageToEncrypt = "I Madam. I made radio, So I dared. Am I mad? Am I?"
 )
 
 func TestRandomAESKey(t *testing.T) {
