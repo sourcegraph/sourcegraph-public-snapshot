@@ -1070,6 +1070,9 @@ input AddExternalServiceInput {
     displayName: String!
     # The JSON configuration of the external service.
     config: String!
+    # The namespace this external service belongs to.
+    # Currently, this can only be used for a user.
+    namespace: ID
 }
 
 # Fields to update for an existing external service.

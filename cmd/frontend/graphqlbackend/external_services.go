@@ -25,25 +25,65 @@ import (
 
 var extsvcConfigAllowEdits, _ = strconv.ParseBool(env.Get("EXTSVC_CONFIG_ALLOW_EDITS", "false", "When EXTSVC_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
 
-func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
-	Input struct {
-		Kind        string
-		DisplayName string
-		Config      string
-	}
-}) (*externalServiceResolver, error) {
-	// 🚨 SECURITY: Only site admins may add external services.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
+type addExternalServiceArgs struct {
+	Input addExternalServiceInput
+}
+
+type addExternalServiceInput struct {
+	Kind        string
+	DisplayName string
+	Config      string
+	Namespace   *graphql.ID
+}
+
+func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExternalServiceArgs) (*externalServiceResolver, error) {
 	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
+	}
+
+	// 🚨 SECURITY: Only site admins may add external services if user mode is not enabled.
+	namespaceUserID := int32(0)
+	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
+	enabled := conf.ExternalServiceUserMode()
+	if args.Input.Namespace != nil {
+		if !enabled {
+			return nil, errors.New("allow users to add external services is not enabled")
+		}
+
+		var err error
+		switch relay.UnmarshalKind(*args.Input.Namespace) {
+		case "User":
+			err = relay.UnmarshalSpec(*args.Input.Namespace, &namespaceUserID)
+		default:
+			err = errors.Errorf("invalid namespace %q", *args.Input.Namespace)
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		authUser, err := backend.CurrentUser(ctx)
+		if err != nil {
+			return nil, err
+		} else if authUser == nil {
+			return nil, backend.ErrNotAuthenticated
+		}
+
+		if namespaceUserID != authUser.ID {
+			return nil, errors.New("the namespace is not same as the authenticated user")
+		}
+
+	} else if !isSiteAdmin {
+		return nil, backend.ErrMustBeSiteAdmin
 	}
 
 	externalService := &types.ExternalService{
 		Kind:        args.Input.Kind,
 		DisplayName: args.Input.DisplayName,
 		Config:      args.Input.Config,
+	}
+	if namespaceUserID > 0 {
+		externalService.NamespaceUserID = &namespaceUserID
 	}
 
 	if err := db.ExternalServices.Create(ctx, conf.Get, externalService); err != nil {
