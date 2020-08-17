@@ -14,34 +14,49 @@ add(
     'Example',
     () => (
         <Breadcrumbs
-            breadcrumbs={[
-                { key: 'home', element: <a href="#">Home</a>, divider: null },
-                { key: 'home', element: <a href="#">Repositories</a> },
-                {
-                    key: 'repo',
-                    element: (
-                        <a href="#">
-                            sourcegraph/<span className="font-weight-semibold">sourcegraph</span>
-                        </a>
-                    ),
+            breadcrumbs={{
+                home: {
+                    breadcrumb: { key: 'home', element: <a href="#">Home</a>, divider: null },
+                    children: {
+                        repositories: {
+                            breadcrumb: { key: 'repositories', element: <a href="#">Repositories</a> },
+                            children: {
+                                revision: {
+                                    breadcrumb: {
+                                        key: 'revision',
+                                        divider: <span className="mx-1">@</span>,
+                                        element: <span className="text-muted">fb/my-branch</span>,
+                                    },
+                                    children: {
+                                        directory1: {
+                                            breadcrumb: { key: 'directory1', element: <a href="#">path</a> },
+                                            children: {
+                                                directory2: {
+                                                    breadcrumb: {
+                                                        key: 'directory2',
+                                                        divider: <span className="mx-1">/</span>,
+                                                        element: <a href="#">to</a>,
+                                                    },
+                                                    children: {
+                                                        fileName: {
+                                                            breadcrumb: {
+                                                                key: 'fileName',
+                                                                divider: <span className="mx-1">/</span>,
+                                                                element: <a href="#">file.tsx</a>,
+                                                            },
+                                                            children: {},
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
                 },
-                {
-                    key: 'revision',
-                    divider: <span className="mx-1">@</span>,
-                    element: <span className="text-muted">fb/my-branch</span>,
-                },
-                { key: 'directory1', element: <a href="#">path</a> },
-                {
-                    key: 'directory2',
-                    divider: <span className="mx-1">/</span>,
-                    element: <a href="#">to</a>,
-                },
-                {
-                    key: 'fileName',
-                    divider: <span className="mx-1">/</span>,
-                    element: <a href="#">file.tsx</a>,
-                },
-            ]}
+            }}
         />
     ),
     {
