@@ -751,14 +751,14 @@ func (s *PermsStore) batchLoadUserPendingPermissions(ctx context.Context, q *sql
 
 		idToSpecs[id] = spec
 
-		if len(ids) == 0 {
-			continue
-		}
-
 		bm := roaring.NewBitmap()
 
 		// Fallback to permissions stored in binary format if the new format is in the initial state.
 		if len(ids) == 0 {
+			if len(binary) == 0 {
+				continue // Ignore malformed data
+			}
+
 			if err = bm.UnmarshalBinary(binary); err != nil {
 				return nil, nil, err
 			}
@@ -1180,14 +1180,14 @@ AND service_id = %s
 			return nil, err
 		}
 
-		if len(ids) == 0 {
-			continue
-		}
-
 		bm := roaring.NewBitmap()
 
 		// Fallback to permissions stored in binary format if the new format is in the initial state.
 		if len(ids) == 0 {
+			if len(binary) == 0 {
+				continue // Ignore malformed data
+			}
+
 			if err = bm.UnmarshalBinary(binary); err != nil {
 				return nil, err
 			}
@@ -1337,6 +1337,10 @@ func (s *PermsStore) load(ctx context.Context, q *sqlf.Query) (*permsLoadValues,
 
 	// Fallback to permissions stored in binary format if the new format is in the initial state.
 	if len(ids) == 0 {
+		if len(binary) == 0 {
+			return vals, nil // Ignore malformed data
+		}
+
 		if err = vals.ids.UnmarshalBinary(binary); err != nil {
 			return nil, err
 		}
@@ -1375,14 +1379,14 @@ func (s *PermsStore) batchLoadIDs(ctx context.Context, q *sqlf.Query) (map[int32
 			return nil, err
 		}
 
-		if len(ids) == 0 {
-			continue
-		}
-
 		bm := roaring.NewBitmap()
 
 		// Fallback to permissions stored in binary format if the new format is in the initial state.
 		if len(ids) == 0 {
+			if len(binary) == 0 {
+				continue // Ignore malformed data
+			}
+
 			if err = bm.UnmarshalBinary(binary); err != nil {
 				return nil, err
 			}

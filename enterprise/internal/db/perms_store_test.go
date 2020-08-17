@@ -1853,6 +1853,110 @@ func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(*testing.T) {
 	}
 }
 
+func testPermsStore_FallbackToOldFormat(db *sql.DB) func(t *testing.T) {
+	return func(t *testing.T) {
+		s := NewPermsStore(db, time.Now)
+		ctx := context.Background()
+
+		t.Run("batchLoadUserPendingPermissions", func(t *testing.T) {
+			defer cleanupPermsTables(t, s)
+
+			accounts := &extsvc.Accounts{
+				ServiceType: authz.SourcegraphServiceType,
+				ServiceID:   authz.SourcegraphServiceID,
+				AccountIDs:  []string{"alice"},
+			}
+			rp := &authz.RepoPermissions{
+				RepoID: 1,
+				Perm:   authz.Read,
+			}
+			if err := s.SetRepoPendingPermissions(ctx, accounts, rp); err != nil {
+				t.Fatal(err)
+			}
+
+			// Reset "object_ids_ints" columns
+			q := sqlf.Sprintf(`UPDATE user_pending_permissions SET object_ids_ints = '{}'`)
+			if err := s.execute(ctx, q); err != nil {
+				t.Fatal(err)
+			}
+
+			alice := &authz.UserPendingPermissions{
+				ServiceType: authz.SourcegraphServiceType,
+				ServiceID:   authz.SourcegraphServiceID,
+				BindID:      "alice",
+				Perm:        authz.Read,
+				Type:        authz.PermRepos,
+			}
+			if err := s.LoadUserPendingPermissions(ctx, alice); err != nil {
+				t.Fatal(err)
+			}
+			equal(t, "IDs", []int{1}, bitmapToArray(alice.IDs))
+
+			q = loadUserPendingPermissionsByIDBatchQuery([]uint32{uint32(alice.ID)}, alice.Perm, alice.Type, "")
+			_, loaded, err := s.batchLoadUserPendingPermissions(ctx, q)
+			if err != nil {
+				t.Fatal(err)
+			}
+			equal(t, "loaded", []int{1}, bitmapToArray(loaded[alice.ID]))
+		})
+
+		t.Run("batchLoadIDs", func(t *testing.T) {
+			defer cleanupPermsTables(t, s)
+
+			rp := &authz.RepoPermissions{
+				RepoID:  1,
+				Perm:    authz.Read,
+				UserIDs: toBitmap(2),
+			}
+			if err := s.SetRepoPermissions(ctx, rp); err != nil {
+				t.Fatal(err)
+			}
+
+			// Reset "object_ids_ints" columns
+			q := sqlf.Sprintf(`UPDATE user_permissions SET object_ids_ints = '{}'`)
+			if err := s.execute(ctx, q); err != nil {
+				t.Fatal(err)
+			}
+
+			q = loadUserPermissionsBatchQuery([]uint32{uint32(2)}, rp.Perm, authz.PermRepos, "")
+			loaded, err := s.batchLoadIDs(ctx, q)
+			if err != nil {
+				t.Fatal(err)
+			}
+			equal(t, "loaded", []int{1}, bitmapToArray(loaded[2]))
+		})
+
+		t.Run("ListPendingUsers", func(t *testing.T) {
+			defer cleanupPermsTables(t, s)
+
+			accounts := &extsvc.Accounts{
+				ServiceType: authz.SourcegraphServiceType,
+				ServiceID:   authz.SourcegraphServiceID,
+				AccountIDs:  []string{"alice"},
+			}
+			rp := &authz.RepoPermissions{
+				RepoID: 1,
+				Perm:   authz.Read,
+			}
+			if err := s.SetRepoPendingPermissions(ctx, accounts, rp); err != nil {
+				t.Fatal(err)
+			}
+
+			// Reset "object_ids_ints" columns
+			q := sqlf.Sprintf(`UPDATE user_pending_permissions SET object_ids_ints = '{}'`)
+			if err := s.execute(ctx, q); err != nil {
+				t.Fatal(err)
+			}
+
+			bindIDs, err := s.ListPendingUsers(ctx, accounts.ServiceType, accounts.ServiceID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			equal(t, "bindIDs", []string{"alice"}, bindIDs)
+		})
+	}
+}
+
 func cleanupUsersTable(t *testing.T, s *PermsStore) {
 	if t.Failed() {
 		return
