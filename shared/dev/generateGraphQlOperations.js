@@ -36,9 +36,6 @@ async function generateGraphQlOperations({ watch } = {}) {
     {
       watch,
       schema: SCHEMA_PATH,
-      hooks: {
-        afterOneFileWrite: 'prettier --write',
-      },
       config: {
         preResolveTypes: true,
         operationResultSuffix: 'Result',

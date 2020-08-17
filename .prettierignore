@@ -14,6 +14,7 @@ vendor/
 out/
 dist/
 shared/src/graphqlschema.ts
+**/graphql-operations.ts
 web/src/schema/
 ts-node-*
 testdata
