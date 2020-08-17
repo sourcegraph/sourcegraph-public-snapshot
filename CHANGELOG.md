@@ -38,7 +38,7 @@ All notable changes to Sourcegraph are documented in this file.
 - It is now possible to search for file content that excludes a term using the `NOT` operator. Negating patterns requires the experimental `migrateParser: true` option in the site settings and is currently only supported for literal and regexp queries on indexed repositories. [#12412](https://github.com/sourcegraph/sourcegraph/pull/12412)
 - It is now possible to search for file content that excludes a term using the `NOT` operator. Negating patterns requires the experimental `"search.migrateParser": true` option in the site settings and is currently only supported for literal and regexp queries on indexed repositories. [#12412](https://github.com/sourcegraph/sourcegraph/pull/12412)
 - It is now possible to search for file content that excludes a term using the `NOT` operator. Negating pattern syntax requires setting `"search.migrateParser": true` in the global settings and is currently only supported for literal and regexp queries on indexed repositories. [#12412](https://github.com/sourcegraph/sourcegraph/pull/12412)
-- `NOT` is available as an alternative syntax of `-` on supported keywords `repo`, `file`, `content`, `lang`, and `repohasfile`. `NOT` requires the experimental `"search.migrateParser": true` option in global settings. [#12520](https://github.com/sourcegraph/sourcegraph/pull/12520)
+- `NOT` is available as an alternative syntax of `-` on supported keywords `repo`, `file`, `content`, `lang`, and `repohasfile`. `NOT` requires setting `"search.migrateParser": true` option in global settings. [#12520](https://github.com/sourcegraph/sourcegraph/pull/12520)
 
 ### Changed
 
