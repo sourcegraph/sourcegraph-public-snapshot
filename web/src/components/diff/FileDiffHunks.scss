@@ -38,7 +38,7 @@
         font-family: $code-font-family;
         white-space: pre;
         font-size: 12px;
-        &:before {
+        &::before {
             padding-right: 0.5rem;
             content: attr(data-diff-marker);
         }
