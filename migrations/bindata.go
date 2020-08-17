@@ -106,6 +106,8 @@
 // 1528395701_burn_the_campaigns_boats.up.sql (3.377kB)
 // 1528395702_changeset_user_fk.down.sql (272B)
 // 1528395702_changeset_user_fk.up.sql (300B)
+// 1528395703_soft_delete_external_service_upon_user_deletion.down.sql (176B)
+// 1528395703_soft_delete_external_service_upon_user_deletion.up.sql (688B)
 
 package migrations
 
@@ -2294,6 +2296,46 @@ func _1528395702_changeset_user_fkUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395703_soft_delete_external_service_upon_user_deletionDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\xcc\xb1\x0a\xc2\x30\x10\x06\xe0\x3d\x4f\x71\xa3\x3e\x43\x36\x6b\x1a\x6e\x68\x22\x69\x04\xb7\x43\xea\x5f\x29\x94\x14\x2e\x51\x7c\x7c\x11\x17\x57\xf7\x8f\xef\xe0\x3c\x07\x6b\xcc\x31\xc5\x13\xe5\xc4\xde\xbb\x44\xdc\x93\xbb\xf0\x98\x47\x6a\xba\xdc\xa5\x6e\x73\x93\x1b\x56\x34\xc8\xa3\x42\x45\x31\x43\x51\x26\xc8\x56\x04\xaf\x06\x2d\xd7\x55\x2a\xf4\xb9\x4c\xa0\x18\xe8\xa3\xaa\xfd\xa6\xfd\x39\x74\x99\x63\xf8\x59\xff\x0b\x77\x7b\x6b\x4c\x17\x87\x81\xb3\x35\xef\x00\x00\x00\xff\xff\x09\x66\x77\x81\xb0\x00\x00\x00")
+
+func _1528395703_soft_delete_external_service_upon_user_deletionDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395703_soft_delete_external_service_upon_user_deletionDownSql,
+		"1528395703_soft_delete_external_service_upon_user_deletion.down.sql",
+	)
+}
+
+func _1528395703_soft_delete_external_service_upon_user_deletionDownSql() (*asset, error) {
+	bytes, err := _1528395703_soft_delete_external_service_upon_user_deletionDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395703_soft_delete_external_service_upon_user_deletion.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xfb, 0xb4, 0x67, 0x35, 0x50, 0x26, 0xd5, 0xc9, 0xa5, 0xbd, 0xc7, 0xaa, 0xb3, 0x90, 0x6e, 0xe3, 0xa6, 0x93, 0xcf, 0x6b, 0xe6, 0x3d, 0x5, 0xb7, 0x92, 0xce, 0x8d, 0xe9, 0x67, 0xa0, 0x50, 0x82}}
+	return a, nil
+}
+
+var __1528395703_soft_delete_external_service_upon_user_deletionUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x52\xc1\x8e\x9b\x30\x10\xbd\xfb\x2b\xde\x21\x87\x44\x6a\xfa\x03\x68\x0f\x14\x06\x62\x89\xb5\x23\x63\xc4\xde\x2c\x14\x26\x29\x12\x25\xa9\x4d\xb7\xed\xdf\x57\x98\x6d\x76\xb5\xb7\x5d\x4e\x8c\xde\xcc\x9b\xf7\xde\xf8\x1b\x95\x52\x25\x42\xe4\x46\x1f\x51\x34\x2a\xb3\x52\x2b\xc8\x02\xf4\x24\x6b\x5b\x23\x5c\xcf\xb3\xeb\x79\xe4\x99\xdd\xaf\xc0\xde\x79\x3e\xb3\xe7\xe9\xc4\xee\x3a\x39\xfe\x33\xb3\x9f\xba\xd1\x05\xf6\xcf\xc3\x89\xb7\xbb\x44\x88\xcc\x50\x6a\xe9\x95\xec\xa3\x14\x30\x64\x1b\xa3\x6a\xcc\x7e\xb8\x5c\xd8\x0b\x00\xa8\x52\x55\x36\x69\x49\xb8\x8d\xb7\x4b\xf8\x39\x8a\xb4\xc6\x66\x23\xa2\xfc\xd8\xb0\xdf\x43\x9e\xd1\x61\xd9\x80\x21\xc4\xad\xfb\x75\x6b\xff\x05\xeb\x0f\xf8\x99\xfd\x5f\xf8\xeb\x6f\xcc\xdf\xbb\x19\x77\x21\x61\xad\x97\xd9\x48\x26\x0b\x6c\x75\x95\x7f\x7d\x99\x77\xdd\x0c\x59\x43\x35\x55\x85\x54\xe5\x50\xd4\xbe\x87\xb4\x8d\xf0\x0e\xf6\x40\xab\xa0\xe5\x6b\x8e\xf9\x12\xc5\x7b\x8f\xe1\xde\x50\x93\xc5\x1b\xa6\x07\x28\xdd\x6e\x77\x77\xb8\x3d\x90\x21\x4c\xdd\x0f\x0e\xb7\xee\xf4\x12\xdf\xd0\xe3\x01\x8b\xba\xa1\x4f\x62\x27\xa9\x1c\xb2\x48\x44\x2c\xd6\xf0\x16\x3c\x11\xa4\xf2\x44\x6c\x36\xaf\x37\xb1\x46\x96\x25\x99\x98\xac\xfb\xd8\x5d\x22\x79\x5a\x58\x32\xff\x5d\xe9\xe2\xad\x74\xad\x62\x7c\xab\xb5\x42\x1b\x50\x9a\x1d\x60\x74\x0b\x7a\xa2\xac\xb1\x84\xa3\xd1\x19\xe5\x8d\xa1\x4f\x3d\x2a\xfd\xf8\x28\x6d\x22\xfe\x05\x00\x00\xff\xff\x23\x89\x1c\x8a\xb0\x02\x00\x00")
+
+func _1528395703_soft_delete_external_service_upon_user_deletionUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395703_soft_delete_external_service_upon_user_deletionUpSql,
+		"1528395703_soft_delete_external_service_upon_user_deletion.up.sql",
+	)
+}
+
+func _1528395703_soft_delete_external_service_upon_user_deletionUpSql() (*asset, error) {
+	bytes, err := _1528395703_soft_delete_external_service_upon_user_deletionUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395703_soft_delete_external_service_upon_user_deletion.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xfd, 0x95, 0xf1, 0xe7, 0x8d, 0x4a, 0xf7, 0xb3, 0x52, 0x88, 0x8c, 0x46, 0xab, 0x1d, 0xf9, 0x8c, 0x3, 0x18, 0xfd, 0xad, 0x3e, 0x9f, 0xf8, 0x10, 0x0, 0x62, 0x73, 0xa9, 0x87, 0x89, 0xfa, 0xfb}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2491,6 +2533,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395701_burn_the_campaigns_boats.up.sql":                              _1528395701_burn_the_campaigns_boatsUpSql,
 	"1528395702_changeset_user_fk.down.sql":                                   _1528395702_changeset_user_fkDownSql,
 	"1528395702_changeset_user_fk.up.sql":                                     _1528395702_changeset_user_fkUpSql,
+	"1528395703_soft_delete_external_service_upon_user_deletion.down.sql":     _1528395703_soft_delete_external_service_upon_user_deletionDownSql,
+	"1528395703_soft_delete_external_service_upon_user_deletion.up.sql":       _1528395703_soft_delete_external_service_upon_user_deletionUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2643,6 +2687,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395701_burn_the_campaigns_boats.up.sql":                              {_1528395701_burn_the_campaigns_boatsUpSql, map[string]*bintree{}},
 	"1528395702_changeset_user_fk.down.sql":                                   {_1528395702_changeset_user_fkDownSql, map[string]*bintree{}},
 	"1528395702_changeset_user_fk.up.sql":                                     {_1528395702_changeset_user_fkUpSql, map[string]*bintree{}},
+	"1528395703_soft_delete_external_service_upon_user_deletion.down.sql":     {_1528395703_soft_delete_external_service_upon_user_deletionDownSql, map[string]*bintree{}},
+	"1528395703_soft_delete_external_service_upon_user_deletion.up.sql":       {_1528395703_soft_delete_external_service_upon_user_deletionUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 // usernamesForTests is a list of test cases containing valid and invalid usernames and org names.
@@ -512,8 +513,8 @@ func TestUsers_GetByUsernames(t *testing.T) {
 }
 
 func TestUsers_Delete(t *testing.T) {
-	for name, hard := range map[string]bool{"": false, "_Hard": true} {
-		t.Run("TestUsers_Delete"+name, func(t *testing.T) {
+	for name, hard := range map[string]bool{"soft": false, "hard": true} {
+		t.Run(name, func(t *testing.T) {
 			if testing.Short() {
 				t.Skip()
 			}
@@ -531,6 +532,20 @@ func TestUsers_Delete(t *testing.T) {
 				Username:              "u",
 				Password:              "p",
 				EmailVerificationCode: "c",
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// Create external service owned by the user
+			confGet := func() *conf.Unified {
+				return &conf.Unified{}
+			}
+			err = ExternalServices.Create(ctx, confGet, &types.ExternalService{
+				Kind:            extsvc.KindGitHub,
+				DisplayName:     "GITHUB #1",
+				Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+				NamespaceUserID: &user.ID,
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -586,6 +601,17 @@ func TestUsers_Delete(t *testing.T) {
 				t.Fatal(err)
 			} else if settings.AuthorUserID != nil {
 				t.Errorf("got author %v, want nil", *settings.AuthorUserID)
+			}
+
+			// User's external services no longer exist
+			ess, err := ExternalServices.List(ctx, ExternalServicesListOptions{
+				NamespaceUserID: user.ID,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(ess) > 0 {
+				t.Errorf("got %d external services, want 0", len(ess))
 			}
 
 			// Can't delete already-deleted user.
