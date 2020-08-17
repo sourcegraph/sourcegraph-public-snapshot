@@ -95,7 +95,7 @@ func (e *Encryptor) EncryptBytes(b []byte) (string, error) {
 	// ONLY use the primary key to EncryptBytes
 	block, err := aes.NewCipher(e.EncryptionKeys[primaryKeyIndex])
 	if err != nil {
-		return "", err
+		return "", &EncryptionError{"cipher err:", err}
 	}
 
 	encrypted := make([]byte, aes.BlockSize+len(b))
@@ -160,7 +160,7 @@ func (e *Encryptor) Decrypt(encodedValue string) (string, error) {
 	for _, key := range e.EncryptionKeys {
 		encrypted, err := base64.StdEncoding.DecodeString(encodedValue)
 		if err != nil {
-			return "", ErrNotEncoded
+			return "", &EncryptionError{Err: ErrNotEncoded}
 		}
 
 		//remove hmac
@@ -195,7 +195,7 @@ func (e *Encryptor) Decrypt(encodedValue string) (string, error) {
 		stream.XORKeyStream(value, value)
 		return string(value), nil
 	}
-	return "", fmt.Errorf("unable to Decrypt")
+	return "", &EncryptionError{Message: "unable to decrypt"}
 
 }
 
