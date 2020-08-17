@@ -128,15 +128,15 @@ AND permission = %s
 //
 // Table states for input:
 // 	"user_permissions":
-//   user_id | permission | object_type |  object_ids   | updated_at | synced_at
-//  ---------+------------+-------------+---------------+------------+------------
-//         1 |       read |       repos |        {1, 2} | <DateTime> | <DateTime>
+//   user_id | permission | object_type |  object_ids  | object_ids_ints | updated_at | synced_at
+//  ---------+------------+-------------+--------------+-----------------+------------+-----------
+//         1 |       read |       repos | bitmap{1, 2} |          {1, 2} |      NOW() |     NOW()
 //
 //  "repo_permissions":
-//   repo_id | permission | user_ids  | updated_at |  synced_at
-//  ---------+------------+-----------+------------+-------------
-//         1 |       read |       {1} | <DateTime> | <Unchanged>
-//         2 |       read |       {1} | <DateTime> | <Unchanged>
+//   repo_id | permission | user_ids  | user_ids_ints | updated_at |  synced_at
+//  ---------+------------+-----------+---------------+------------+-------------
+//         1 |       read | bitmap{1} |           {1} |      NOW() | <Unchanged>
+//         2 |       read | bitmap{1} |           {1} |      NOW() | <Unchanged>
 func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermissions) (err error) {
 	if Mocks.Perms.SetUserPermissions != nil {
 		return Mocks.Perms.SetUserPermissions(ctx, p)
@@ -287,15 +287,15 @@ DO UPDATE SET
 //
 // Table states for input:
 // 	"user_permissions":
-//   user_id | permission | object_type | object_ids | updated_at |  synced_at
-//  ---------+------------+-------------+------------+------------+-------------
-//         1 |       read |       repos |        {1} | <DateTime> | <Unchanged>
-//         2 |       read |       repos |        {1} | <DateTime> | <Unchanged>
+//   user_id | permission | object_type | object_ids | object_ids_ints | updated_at |  synced_at
+//  ---------+------------+-------------+------------+-----------------+------------+-------------
+//         1 |       read |       repos |  bitmap{1} |             {1} |      NOW() | <Unchanged>
+//         2 |       read |       repos |  bitmap{1} |             {1} |      NOW() | <Unchanged>
 //
 //  "repo_permissions":
-//   repo_id | permission |   user_ids   | updated_at | synced_at
-//  ---------+------------+--------------+------------+------------
-//         1 |       read |       {1, 2} | <DateTime> | <DateTime>
+//   repo_id | permission |   user_ids   | user_ids_ints | updated_at | synced_at
+//  ---------+------------+--------------+---------------+------------+-----------
+//         1 |       read | bitmap{1, 2} |        {1, 2} |      NOW() |     NOW()
 func (s *PermsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermissions) (err error) {
 	if Mocks.Perms.SetRepoPermissions != nil {
 		return Mocks.Perms.SetRepoPermissions(ctx, p)
