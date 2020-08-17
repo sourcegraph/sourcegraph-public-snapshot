@@ -781,9 +781,9 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets, 
 
 			open := campaigns.ChangesetExternalStateOpen
 			cs, _, err := s.store.ListChangesets(ctx, ListChangesetsOpts{
-				CampaignID:    campaign.ID,
-				ExternalState: &open,
-				Limit:         -1,
+				CreatedByCampaign: campaign.ID,
+				ExternalState:     &open,
+				Limit:             -1,
 			})
 			if err != nil {
 				log15.Error("ListChangesets", "err", err)

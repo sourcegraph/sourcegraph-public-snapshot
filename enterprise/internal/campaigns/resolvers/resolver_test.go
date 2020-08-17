@@ -601,6 +601,8 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 	wantExternalStates := []campaigns.ChangesetExternalState{"OPEN", "INVALID"}
 	wantReviewStates := []campaigns.ChangesetReviewState{"APPROVED", "INVALID"}
 	wantCheckStates := []campaigns.ChangesetCheckState{"PENDING", "INVALID"}
+	wantOnlyCreatedByThisCampaign := []bool{true}
+	var campaignID int64 = 1
 
 	tcs := []struct {
 		args       *graphqlbackend.ListChangesetsArgs
@@ -701,9 +703,19 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			},
 			wantErr: "changeset check state not valid",
 		},
+		// Setting only createdByCampaign true.
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				OnlyCreatedByThisCampaign: &wantOnlyCreatedByThisCampaign[0],
+			},
+			wantSafe: true,
+			wantParsed: ee.ListChangesetsOpts{
+				CreatedByCampaign: campaignID,
+			},
+		},
 	}
 	for _, tc := range tcs {
-		haveParsed, haveSafe, err := listChangesetOptsFromArgs(tc.args)
+		haveParsed, haveSafe, err := listChangesetOptsFromArgs(tc.args, campaignID)
 		if tc.wantErr == "" && err != nil {
 			t.Fatal(err)
 		}

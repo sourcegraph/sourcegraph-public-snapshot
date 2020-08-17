@@ -451,7 +451,7 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 // If the args do not include a filter that would reveal sensitive information
 // about a changeset the user doesn't have access to, the second return value
 // is false.
-func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs) (opts ee.ListChangesetsOpts, optsSafe bool, err error) {
+func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, campaignID int64) (opts ee.ListChangesetsOpts, optsSafe bool, err error) {
 	if args == nil {
 		return opts, true, nil
 	}
@@ -504,6 +504,9 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs) (opts ee
 		// If the user filters by CheckState we cannot include hidden
 		// changesets, since that would leak information.
 		safe = false
+	}
+	if args.OnlyCreatedByThisCampaign != nil {
+		opts.CreatedByCampaign = campaignID
 	}
 
 	return opts, safe, nil

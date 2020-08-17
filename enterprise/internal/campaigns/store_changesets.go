@@ -186,6 +186,7 @@ type CountChangesetsOpts struct {
 	ExternalReviewState *campaigns.ChangesetReviewState
 	ExternalCheckState  *campaigns.ChangesetCheckState
 	ReconcilerState     *campaigns.ReconcilerState
+	CreatedByCampaign   int64
 }
 
 // CountChangesets returns the number of changesets in the database.
@@ -218,10 +219,13 @@ func countChangesetsQuery(opts *CountChangesetsOpts) *sqlf.Query {
 	if opts.ExternalCheckState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.external_check_state = %s", *opts.ExternalCheckState))
 	}
-
 	if opts.ReconcilerState != nil {
 		state := (*opts.ReconcilerState).ToDB()
 		preds = append(preds, sqlf.Sprintf("changesets.reconciler_state = %s", state))
+	}
+	if opts.CreatedByCampaign != 0 {
+		preds = append(preds, sqlf.Sprintf("changesets.created_by_campaign = true"))
+		preds = append(preds, sqlf.Sprintf("changesets.owned_by_campaign_id = %s", opts.CreatedByCampaign))
 	}
 
 	return sqlf.Sprintf(countChangesetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
@@ -368,6 +372,7 @@ type ListChangesetsOpts struct {
 	ExternalState        *campaigns.ChangesetExternalState
 	ExternalReviewState  *campaigns.ChangesetReviewState
 	ExternalCheckState   *campaigns.ChangesetCheckState
+	CreatedByCampaign    int64
 	OnlyWithoutDiffStats bool
 }
 
@@ -451,6 +456,10 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	}
 	if opts.ExternalCheckState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.external_check_state = %s", *opts.ExternalCheckState))
+	}
+	if opts.CreatedByCampaign != 0 {
+		preds = append(preds, sqlf.Sprintf("changesets.created_by_campaign = true"))
+		preds = append(preds, sqlf.Sprintf("changesets.owned_by_campaign_id = %s", opts.CreatedByCampaign))
 	}
 
 	if opts.OnlyWithoutDiffStats {
