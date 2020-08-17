@@ -376,6 +376,12 @@
       ],
       "group": "Security"
     },
+    "externalService.userMode": {
+      "description": "Enable to allow users to add external services for public reposirories to the Sourcegraph instance.",
+      "type": "string",
+      "enum": ["public", "disabled"],
+      "default": "disabled"
+    },
     "permissions.userMapping": {
       "description": "Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).",
       "type": "object",
