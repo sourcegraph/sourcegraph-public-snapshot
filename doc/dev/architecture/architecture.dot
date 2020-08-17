@@ -85,7 +85,7 @@ digraph architecture {
         code_intel [
             label="Code intel processes\n(click to expand)"
             fillcolor="9"
-            URL="https://docs.sourcegraph.com/dev/codintel/architecture"
+            URL="https://docs.sourcegraph.com/dev/codeintel/architecture"
         ]
 
         subgraph cluster_zoekt {
