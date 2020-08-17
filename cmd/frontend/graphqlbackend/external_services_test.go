@@ -18,20 +18,102 @@ import (
 func TestAddExternalService(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-			return &types.User{}, nil
+			return &types.User{ID: 1}, nil
 		}
-		t.Cleanup(func() {
+		defer func() {
 			db.Mocks.Users = db.MockUsers{}
+		}()
+
+		t.Run("user mode not enabled and no namespace", func(t *testing.T) {
+			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			result, err := (&schemaResolver{}).AddExternalService(ctx, &addExternalServiceArgs{})
+			if want := backend.ErrMustBeSiteAdmin; err != want {
+				t.Errorf("err: want %q but got %q", want, err)
+			}
+			if result != nil {
+				t.Errorf("result: want nil but got %v", result)
+			}
 		})
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&schemaResolver{}).AddExternalService(ctx, nil)
-		if want := backend.ErrMustBeSiteAdmin; err != want {
-			t.Errorf("err: want %q but got %v", want, err)
-		}
-		if result != nil {
-			t.Errorf("result: want nil but got %v", result)
-		}
+		t.Run("user mode not enabled and has namespace", func(t *testing.T) {
+			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			userID := MarshalUserID(1)
+			result, err := (&schemaResolver{}).AddExternalService(ctx, &addExternalServiceArgs{
+				Input: addExternalServiceInput{
+					Namespace: &userID,
+				},
+			})
+
+			want := "allow users to add external services is not enabled"
+			got := fmt.Sprintf("%v", err)
+			if got != want {
+				t.Errorf("err: want %q but got %q", want, got)
+			}
+			if result != nil {
+				t.Errorf("result: want nil but got %v", result)
+			}
+		})
+
+		t.Run("user mode enabled but has mismatched namespace", func(t *testing.T) {
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					ExternalServiceUserMode: "public",
+				},
+			})
+			defer conf.Mock(nil)
+
+			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			userID := MarshalUserID(2)
+			result, err := (&schemaResolver{}).AddExternalService(ctx, &addExternalServiceArgs{
+				Input: addExternalServiceInput{
+					Namespace: &userID,
+				},
+			})
+
+			want := "the namespace is not same as the authenticated user"
+			got := fmt.Sprintf("%v", err)
+			if got != want {
+				t.Errorf("err: want %q but got %q", want, got)
+			}
+			if result != nil {
+				t.Errorf("result: want nil but got %v", result)
+			}
+		})
+
+		t.Run("user mode enabled and has matching namespace", func(t *testing.T) {
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					ExternalServiceUserMode: "public",
+				},
+			})
+			defer conf.Mock(nil)
+
+			db.Mocks.ExternalServices.Create = func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error {
+				return nil
+			}
+			defer func() {
+				db.Mocks.ExternalServices = db.MockExternalServices{}
+			}()
+
+			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			userID := int32(1)
+			gqlID := MarshalUserID(userID)
+			result, err := (&schemaResolver{}).AddExternalService(ctx, &addExternalServiceArgs{
+				Input: addExternalServiceInput{
+					Namespace: &gqlID,
+				},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// We want to check the namespace field is populated
+			if result.externalService.NamespaceUserID == nil {
+				t.Fatal("NamespaceUserID: want non-nil but got nil")
+			} else if *result.externalService.NamespaceUserID != userID {
+				t.Fatalf("NamespaceUserID: want %d but got %d", userID, *result.externalService.NamespaceUserID)
+			}
+		})
 	})
 
 	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
@@ -58,15 +140,17 @@ func TestAddExternalService(t *testing.T) {
 					kind
 					displayName
 					config
+					namespace
 				}
 			}
 		`,
 			ExpectedResult: `
 			{
 				"addExternalService": {
-				  "kind": "GITHUB",
-				  "displayName": "GITHUB #1",
-				  "config": "{\"url\": \"https://github.com\", \"repositoryQuery\": [\"none\"], \"token\": \"abc\"}"
+					"kind": "GITHUB",
+					"displayName": "GITHUB #1",
+					"config": "{\"url\": \"https://github.com\", \"repositoryQuery\": [\"none\"], \"token\": \"abc\"}",
+					"namespace": null
 				}
 			}
 		`,

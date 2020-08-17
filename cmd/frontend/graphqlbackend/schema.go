@@ -1070,6 +1070,9 @@ input AddExternalServiceInput {
     displayName: String!
     # The JSON configuration of the external service.
     config: String!
+    # The namespace this external service belongs to.
+    # Currently, this can only be used for a user.
+    namespace: ID
 }
 
 # Fields to update for an existing external service.
@@ -1841,6 +1844,8 @@ type ExternalService implements Node {
     createdAt: DateTime!
     # When the external service was last updated.
     updatedAt: DateTime!
+    # The namespace this external service belongs to.
+    namespace: ID
     # An optional URL that will be populated when webhooks have been configured for the external service.
     webhookURL: String
     # This is an optional field that's populated when we ran into errors on the
