@@ -112,7 +112,6 @@ Enforcing Bitbucket Server permissions can be configured via the `authorization`
 
 ### Prerequisites
 
-1. You have **fewer than 2500 repositories** on your Bitbucket Server instance.
 1. You have the exact same user accounts, **with matching usernames**, in Sourcegraph and Bitbucket Server. This can be accomplished by configuring an [external authentication provider](../auth/index.md) that mirrors user accounts from a central directory like LDAP or Active Directory. The same should be done on Bitbucket Server with [external user directories](https://confluence.atlassian.com/bitbucketserver/external-user-directories-776640394.html).
 1. Ensure you have set `auth.enableUsernameChanges` to **`false`** in the [site config](../config/site_config.md) to prevent users from changing their usernames and **escalating their privileges**.
 
@@ -201,7 +200,7 @@ Benefits of backround syncing:
 
 1. More predictable load on the code host API due to maintaining a schedule of permission updates.
 1. Permissions are quickly synced for new repositories added to the Sourcegraph instance.
-1. Users who sign up on the Sourcegraph instance can immediately get search results from the repositories they have access to on the code host.
+1. Users who sign up on the Sourcegraph instance can immediately get search results from some repositories they have access to on the code host as we begin to incrementally sync their permissions.
 
 Considerations when enabling for the first time:
 
