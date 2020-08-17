@@ -9,9 +9,11 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	intSecrets "github.com/sourcegraph/sourcegraph/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
@@ -36,10 +38,16 @@ type Event struct {
 func (*eventLogs) Insert(ctx context.Context, e *Event) error {
 	argument := e.Argument
 	if argument == nil {
-		argument = json.RawMessage([]byte(`{}`))
+		argument = json.RawMessage(`{}`)
 	}
 
-	_, err := dbconn.Global.ExecContext(
+	arg, err := intSecrets.EncryptBytes(argument)
+	if err != nil {
+		return err
+	}
+	argument = json.RawMessage(arg)
+
+	_, err = dbconn.Global.ExecContext(
 		ctx,
 		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp) VALUES($1, $2, $3, $4, $5, $6, $7, $8)",
 		e.Name,
@@ -64,13 +72,19 @@ func (*eventLogs) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*typ
 		return nil, err
 	}
 	defer rows.Close()
-	events := []*types.Event{}
+	var events []*types.Event
 	for rows.Next() {
 		r := types.Event{}
 		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.UserID, &r.AnonymousUserID, &r.Source, &r.Argument, &r.Version, &r.Timestamp)
 		if err != nil {
 			return nil, err
 		}
+
+		arg, secErr := intSecrets.DecryptBytes([]byte(r.Argument))
+		if secErr != nil {
+			return nil, secErr
+		}
+		r.Argument = string(arg)
 		events = append(events, &r)
 	}
 	if err = rows.Err(); err != nil {
