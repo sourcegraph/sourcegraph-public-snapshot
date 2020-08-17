@@ -185,7 +185,17 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     >()
 
     // The breadcrumbs and breadcrumb props for the repo header.
-    const { breadcrumbs, setBreadcrumb } = useBreadcrumbs()
+    const { breadcrumbs, setBreadcrumb } = useBreadcrumbs({
+        repositories: {
+            repository: {
+                revision: {
+                    filePath: {},
+                    treePath: {},
+                },
+                settings: {},
+            },
+        },
+    })
 
     useEffect(
         () =>
