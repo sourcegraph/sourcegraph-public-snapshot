@@ -23,14 +23,14 @@ const (
 
 type EncryptionError struct {
 	Message string
+	Err     error
 }
+
+func (e *EncryptionError) Error() string { return e.Message + ": " + e.Err.Error() }
+func (e *EncryptionError) Unwrap() error { return e.Err }
 
 // ErrNotEncoded means we can test for whether or not a string is encoded, prior to attempting decryption
 var ErrNotEncoded = errors.New("object is not encoded")
-
-func (err *EncryptionError) Error() string {
-	return err.Message
-}
 
 // Generate a valid key for AES-256 encryption
 func GenerateRandomAESKey() ([]byte, error) {
