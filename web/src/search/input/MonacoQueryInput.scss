@@ -42,6 +42,7 @@
             box-shadow: none;
         }
 
+        // Show keyboard tip to press Tab to complete
         .suggest-widget .monaco-list .monaco-list-row.focused::after {
             display: flex;
             align-items: center;
