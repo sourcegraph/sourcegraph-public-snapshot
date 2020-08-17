@@ -1,6 +1,6 @@
 import * as H from 'history'
 import React, { useCallback, useState } from 'react'
-import { ChangesetSpecFields } from '../../../graphql-operations'
+import { VisibleChangesetSpecFields } from '../../../graphql-operations'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { FileDiffNode } from '../../../components/diff/FileDiffNode'
 import { FileDiffConnection } from '../../../components/diff/FileDiffConnection'
@@ -14,7 +14,7 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
 export interface VisibleChangesetSpecNodeProps extends ThemeProps {
-    node: ChangesetSpecFields & { __typename: 'VisibleChangesetSpec' }
+    node: VisibleChangesetSpecFields
     history: H.History
     location: H.Location
 
@@ -99,7 +99,7 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
             </div>
             <div className="visible-changeset-spec-node__diffstat">
                 {node.description.__typename === 'GitBranchChangesetDescription' && (
-                    <DiffStat {...node.description.diff.fileDiffs.diffStat} expandedCounts={true} />
+                    <DiffStat {...node.description.diffStat} expandedCounts={true} />
                 )}
             </div>
             {isExpanded && (

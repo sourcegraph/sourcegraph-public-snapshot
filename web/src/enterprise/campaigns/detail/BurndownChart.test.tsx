@@ -2,6 +2,7 @@ import * as H from 'history'
 import React from 'react'
 import { CampaignBurndownChart } from './BurndownChart'
 import { mount } from 'enzyme'
+import { of } from 'rxjs'
 
 describe('CampaignBurndownChart', () => {
     test('renders the chart', () => {
@@ -9,26 +10,29 @@ describe('CampaignBurndownChart', () => {
         expect(
             mount(
                 <CampaignBurndownChart
-                    changesetCountsOverTime={[
-                        {
-                            closed: 1,
-                            date: '2019-11-13T12:00:00Z',
-                            merged: 1,
-                            openApproved: 1,
-                            openChangesRequested: 1,
-                            openPending: 1,
-                            total: 10,
-                        },
-                        {
-                            closed: 1,
-                            date: '2019-11-14T12:00:00Z',
-                            merged: 5,
-                            openApproved: 1,
-                            openChangesRequested: 1,
-                            openPending: 1,
-                            total: 10,
-                        },
-                    ]}
+                    campaignID="123"
+                    queryChangesetCountsOverTime={() =>
+                        of([
+                            {
+                                closed: 1,
+                                date: '2019-11-13T12:00:00Z',
+                                merged: 1,
+                                openApproved: 1,
+                                openChangesRequested: 1,
+                                openPending: 1,
+                                total: 10,
+                            },
+                            {
+                                closed: 1,
+                                date: '2019-11-14T12:00:00Z',
+                                merged: 5,
+                                openApproved: 1,
+                                openChangesRequested: 1,
+                                openPending: 1,
+                                total: 10,
+                            },
+                        ])
+                    }
                     history={history}
                     width={500}
                 />
@@ -40,17 +44,20 @@ describe('CampaignBurndownChart', () => {
         expect(
             mount(
                 <CampaignBurndownChart
-                    changesetCountsOverTime={[
-                        {
-                            closed: 1,
-                            date: '2019-11-13T12:00:00Z',
-                            merged: 1,
-                            openApproved: 1,
-                            openChangesRequested: 1,
-                            openPending: 1,
-                            total: 10,
-                        },
-                    ]}
+                    campaignID="123"
+                    queryChangesetCountsOverTime={() =>
+                        of([
+                            {
+                                closed: 1,
+                                date: '2019-11-13T12:00:00Z',
+                                merged: 1,
+                                openApproved: 1,
+                                openChangesRequested: 1,
+                                openPending: 1,
+                                total: 10,
+                            },
+                        ])
+                    }
                     history={history}
                     width={500}
                 />
@@ -62,26 +69,29 @@ describe('CampaignBurndownChart', () => {
         expect(
             mount(
                 <CampaignBurndownChart
-                    changesetCountsOverTime={[
-                        {
-                            closed: 0,
-                            date: '2019-11-13T12:00:00Z',
-                            merged: 0,
-                            openApproved: 0,
-                            openChangesRequested: 0,
-                            openPending: 0,
-                            total: 0,
-                        },
-                        {
-                            closed: 0,
-                            date: '2019-11-14T12:00:00Z',
-                            merged: 0,
-                            openApproved: 0,
-                            openChangesRequested: 0,
-                            openPending: 0,
-                            total: 0,
-                        },
-                    ]}
+                    campaignID="123"
+                    queryChangesetCountsOverTime={() =>
+                        of([
+                            {
+                                closed: 0,
+                                date: '2019-11-13T12:00:00Z',
+                                merged: 0,
+                                openApproved: 0,
+                                openChangesRequested: 0,
+                                openPending: 0,
+                                total: 0,
+                            },
+                            {
+                                closed: 0,
+                                date: '2019-11-14T12:00:00Z',
+                                merged: 0,
+                                openApproved: 0,
+                                openChangesRequested: 0,
+                                openPending: 0,
+                                total: 0,
+                            },
+                        ])
+                    }
                     history={history}
                     width={500}
                 />

@@ -1,7 +1,7 @@
 .changeset-spec-list {
     &__grid {
         display: grid;
-        grid-template-columns: [caret] min-content [action] min-content [info] auto [diffstat] min-content [end];
+        grid-template-columns: [caret] min-content [action] min-content [info] minmax(auto, 1fr) [diffstat] min-content [end];
         row-gap: 1rem;
         align-items: center;
     }

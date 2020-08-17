@@ -138,7 +138,7 @@ func TestCreateCampaignSpec(t *testing.T) {
 		ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
 		ApplyURL:      fmt.Sprintf("/users/%s/campaigns/apply/%s", username, have.ID),
 		Namespace:     apitest.UserOrg{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
-		Creator:       apitest.User{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
+		Creator:       &apitest.User{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
 		ChangesetSpecs: apitest.ChangesetSpecConnection{
 			Nodes: []apitest.ChangesetSpec{
 				{
@@ -332,6 +332,12 @@ func TestApplyCampaign(t *testing.T) {
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 	apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyCampaign)
 
+	apiUser := &apitest.User{
+		ID:         userAPIID,
+		DatabaseID: userID,
+		SiteAdmin:  true,
+	}
+
 	have := response.ApplyCampaign
 	want := apitest.Campaign{
 		ID:          have.ID,
@@ -342,17 +348,9 @@ func TestApplyCampaign(t *testing.T) {
 			DatabaseID: userID,
 			SiteAdmin:  true,
 		},
-		InitialApplier: apitest.User{
-			ID:         userAPIID,
-			DatabaseID: userID,
-			SiteAdmin:  true,
-		},
-		LastApplier: apitest.User{
-			ID:         userAPIID,
-			DatabaseID: userID,
-			SiteAdmin:  true,
-		},
-		LastAppliedAt: marshalDateTime(t, now),
+		InitialApplier: apiUser,
+		LastApplier:    apiUser,
+		LastAppliedAt:  marshalDateTime(t, now),
 		Changesets: apitest.ChangesetConnection{
 			Nodes: []apitest.Changeset{
 				{Typename: "ExternalChangeset", ReconcilerState: "QUEUED"},
@@ -518,6 +516,8 @@ func TestMoveCampaign(t *testing.T) {
 		CampaignSpecID:   campaignSpec.ID,
 		Name:             "old-name",
 		InitialApplierID: userID,
+		LastApplierID:    userID,
+		LastAppliedAt:    time.Now(),
 		NamespaceUserID:  campaignSpec.UserID,
 	}
 	if err := store.CreateCampaign(ctx, campaign); err != nil {
@@ -723,114 +723,3 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		}
 	}
 }
-
-func TestCampaignsListing(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	ctx := context.Background()
-	dbtesting.SetupGlobalTestDB(t)
-
-	userID := insertTestUser(t, dbconn.Global, "campaigns-lsiting", true)
-	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
-
-	org, err := db.Orgs.Create(ctx, "org", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	store := ee.NewStore(dbconn.Global)
-
-	r := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(r, nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	createCampaign := func(t *testing.T, c *campaigns.Campaign) {
-		t.Helper()
-
-		c.Name = "n"
-		c.InitialApplierID = userID
-		if err := store.CreateCampaign(ctx, c); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	t.Run("listing a users campaigns", func(t *testing.T) {
-		campaign := &campaigns.Campaign{NamespaceUserID: userID}
-		createCampaign(t, campaign)
-
-		userAPIID := string(graphqlbackend.MarshalUserID(userID))
-		input := map[string]interface{}{"node": userAPIID}
-
-		var response struct{ Node apitest.User }
-		apitest.MustExec(actorCtx, t, s, input, &response, listNamespacesCampaigns)
-
-		want := apitest.User{
-			ID: userAPIID,
-			Campaigns: apitest.CampaignConnection{
-				TotalCount: 1,
-				Nodes: []apitest.Campaign{
-					{ID: string(campaigns.MarshalCampaignID(campaign.ID))},
-				},
-			},
-		}
-
-		if diff := cmp.Diff(want, response.Node); diff != "" {
-			t.Fatalf("wrong campaign response (-want +got):\n%s", diff)
-		}
-	})
-
-	t.Run("listing an orgs campaigns", func(t *testing.T) {
-		campaign := &campaigns.Campaign{NamespaceOrgID: org.ID}
-		createCampaign(t, campaign)
-
-		orgAPIID := string(graphqlbackend.MarshalOrgID(org.ID))
-		input := map[string]interface{}{"node": orgAPIID}
-
-		var response struct{ Node apitest.Org }
-		apitest.MustExec(actorCtx, t, s, input, &response, listNamespacesCampaigns)
-
-		want := apitest.Org{
-			ID: orgAPIID,
-			Campaigns: apitest.CampaignConnection{
-				TotalCount: 1,
-				Nodes: []apitest.Campaign{
-					{ID: string(campaigns.MarshalCampaignID(campaign.ID))},
-				},
-			},
-		}
-
-		if diff := cmp.Diff(want, response.Node); diff != "" {
-			t.Fatalf("wrong campaign response (-want +got):\n%s", diff)
-		}
-	})
-}
-
-const listNamespacesCampaigns = `
-query($node: ID!) {
-  node(id: $node) {
-    ... on User {
-      id
-      campaigns {
-        totalCount
-        nodes {
-          id
-        }
-      }
-    }
-
-    ... on Org {
-      id
-      campaigns {
-        totalCount
-        nodes {
-          id
-        }
-      }
-    }
-  }
-}
-`

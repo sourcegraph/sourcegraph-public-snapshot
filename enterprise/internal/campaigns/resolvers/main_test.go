@@ -67,10 +67,7 @@ var testDiffGraphQL = apitest.FileDiffs{
 	TotalCount: 2,
 	RawDiff:    testDiff,
 	DiffStat:   apitest.DiffStat{Changed: 2},
-	PageInfo: struct {
-		HasNextPage bool
-		EndCursor   string
-	}{},
+	PageInfo:   apitest.PageInfo{},
 	Nodes: []apitest.FileDiff{
 		{
 			OldPath: "README.md",

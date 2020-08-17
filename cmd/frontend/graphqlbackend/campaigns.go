@@ -27,6 +27,7 @@ type MoveCampaignArgs struct {
 
 type ListCampaignArgs struct {
 	First               *int32
+	After               *string
 	State               *string
 	ViewerCanAdminister *bool
 
@@ -160,6 +161,7 @@ type GitBranchChangesetDescriptionResolver interface {
 	Body() string
 
 	Diff(ctx context.Context) (PreviewRepositoryComparisonResolver, error)
+	DiffStat() *DiffStat
 
 	Commits() []GitCommitDescriptionResolver
 

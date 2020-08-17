@@ -5,40 +5,35 @@ import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '../../..
 import { HoverMerged } from '../../../../../../shared/src/api/client/types/hover'
 import { ActionItemAction } from '../../../../../../shared/src/actions/ActionItem'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
-import {
-    changesetReviewStateIcons,
-    changesetCheckStateIcons,
-    changesetCheckStateColors,
-    changesetCheckStateTooltips,
-    changesetReviewStateColors,
-    changesetStateLabels,
-} from './presentation'
 import * as H from 'history'
 import React, { useState, useCallback, useMemo } from 'react'
 import { LinkOrSpan } from '../../../../../../shared/src/components/LinkOrSpan'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
-import classNames from 'classnames'
 import { ChangesetLabel } from './ChangesetLabel'
 import { Link } from '../../../../../../shared/src/components/Link'
 import { ChangesetLastSynced } from './ChangesetLastSynced'
 import { DiffStat } from '../../../../components/diff/DiffStat'
 import { FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
-import { queryExternalChangesetWithFileDiffs } from '../backend'
-import { Collapsible } from '../../../../components/Collapsible'
+import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../backend'
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
 import { tap, map } from 'rxjs/operators'
-import { ChangesetStateIcon } from './ChangesetStateIcon'
 import {
-    ChangesetFields,
     GitRefSpecFields,
     ExternalChangesetFileDiffsFields,
-    ChangesetCheckState,
     ChangesetExternalState,
+    ExternalChangesetFields,
+    ChangesetPublicationState,
 } from '../../../../graphql-operations'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import { ChangesetStatusCell } from './ChangesetStatusCell'
+import { ChangesetCheckStatusCell } from './ChangesetCheckStatusCell'
+import { ChangesetReviewStatusCell } from './ChangesetReviewStatusCell'
+import { ErrorAlert } from '../../../../components/alerts'
 
 export interface ExternalChangesetNodeProps extends ThemeProps {
-    node: ChangesetFields & { __typename: 'ExternalChangeset' }
+    node: ExternalChangesetFields
     viewerCanAdminister: boolean
     campaignUpdates?: Pick<Observer<void>, 'next'>
     history: H.History
@@ -46,6 +41,7 @@ export interface ExternalChangesetNodeProps extends ThemeProps {
     extensionInfo?: {
         hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
     } & ExtensionsControllerProps
+    queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
 }
 
 export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNodeProps> = ({
@@ -56,85 +52,15 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
     history,
     location,
     extensionInfo,
+    queryExternalChangesetWithFileDiffs = _queryExternalChangesetWithFileDiffs,
 }) => {
-    const ReviewStateIcon = node.reviewState && changesetReviewStateIcons[node.reviewState]
-    const ChangesetCheckStateIcon = node.checkState
-        ? changesetCheckStateIcons[node.checkState]
-        : changesetCheckStateIcons[ChangesetCheckState.PENDING]
-    const changesetState = node.externalState
-
-    const changesetNodeRow = (
-        <div className="d-flex align-items-start m-1 ml-2">
-            <div className="changeset-node__content flex-fill">
-                <div className="d-flex flex-column">
-                    <div className="m-0 mb-2">
-                        <h3 className="m-0 d-inline">
-                            <ChangesetStateIcon externalState={changesetState || ChangesetExternalState.OPEN} />
-                            <LinkOrSpan
-                                /* Deleted changesets most likely don't exist on the codehost anymore and would return 404 pages */
-                                to={
-                                    node.externalURL && node.externalState !== ChangesetExternalState.DELETED
-                                        ? node.externalURL.url
-                                        : undefined
-                                }
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                {node.title} (#{node.externalID}){' '}
-                                {node.externalURL && node.externalState !== ChangesetExternalState.DELETED && (
-                                    <ExternalLinkIcon size="1rem" />
-                                )}
-                            </LinkOrSpan>
-                        </h3>
-                        {node.checkState && (
-                            <small>
-                                <ChangesetCheckStateIcon
-                                    className={classNames(
-                                        'ml-1 changeset-node__check-state',
-                                        changesetCheckStateColors[node.checkState]
-                                    )}
-                                    data-tooltip={changesetCheckStateTooltips[node.checkState]}
-                                />
-                            </small>
-                        )}
-                        {node.labels.length > 0 && (
-                            <span className="ml-2">
-                                {node.labels.map(label => (
-                                    <ChangesetLabel label={label} key={label.text} />
-                                ))}
-                            </span>
-                        )}
-                    </div>
-                    <div>
-                        <strong className="mr-2">
-                            <Link to={node.repository.url} target="_blank" rel="noopener noreferrer">
-                                {node.repository.name}
-                            </Link>
-                        </strong>
-                        <ChangesetLastSynced
-                            changeset={node}
-                            viewerCanAdminister={viewerCanAdminister}
-                            campaignUpdates={campaignUpdates}
-                        />
-                    </div>
-                </div>
-            </div>
-            <div className="flex-shrink-0 flex-grow-0 ml-1 align-items-end">
-                {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} />}
-            </div>
-            {ReviewStateIcon && node.reviewState && (
-                <div className="flex-shrink-0 flex-grow-0 ml-1 align-items-end">
-                    <ReviewStateIcon
-                        className={
-                            node.externalState === ChangesetExternalState.DELETED
-                                ? 'text-muted'
-                                : `text-${changesetReviewStateColors[node.reviewState]}`
-                        }
-                        data-tooltip={changesetStateLabels[node.reviewState]}
-                    />
-                </div>
-            )}
-        </div>
+    const [isExpanded, setIsExpanded] = useState(false)
+    const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
+        event => {
+            event.preventDefault()
+            setIsExpanded(!isExpanded)
+        },
+        [isExpanded]
     )
 
     const [range, setRange] = useState<
@@ -163,7 +89,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                 }),
                 map(diff => diff.fileDiffs)
             ),
-        [node.id, isLightTheme]
+        [node.id, isLightTheme, queryExternalChangesetWithFileDiffs]
     )
 
     const hydratedExtensionInfo = useMemo(() => {
@@ -190,38 +116,100 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
     }, [extensionInfo, range, node.repository.id, node.repository.name])
 
     return (
-        <li className="list-group-item test-changeset-node">
-            <Collapsible
-                titleClassName="changeset-node__content flex-fill"
-                expandedButtonClassName="mb-3"
-                title={changesetNodeRow}
-                wholeTitleClickable={false}
+        <>
+            <button
+                type="button"
+                className="btn btn-icon"
+                aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
+                onClick={toggleIsExpanded}
             >
-                <FileDiffConnection
-                    listClassName="list-group list-group-flush"
-                    noun="changed file"
-                    pluralNoun="changed files"
-                    queryConnection={queryFileDiffs}
-                    nodeComponent={FileDiffNode}
-                    nodeComponentProps={{
-                        history,
-                        location,
-                        isLightTheme,
-                        persistLines: true,
-                        extensionInfo: hydratedExtensionInfo,
-                        lineNumbers: true,
-                    }}
-                    updateOnChange={node.repository.id}
-                    defaultFirst={15}
-                    hideSearch={true}
-                    noSummaryIfAllNodesVisible={true}
-                    history={history}
-                    location={location}
-                    useURLQuery={false}
-                    cursorPaging={true}
-                />
-            </Collapsible>
-        </li>
+                {isExpanded ? (
+                    <ChevronDownIcon className="icon-inline" aria-label="Close section" />
+                ) : (
+                    <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
+                )}
+            </button>
+            <ChangesetStatusCell changeset={node} />
+            <div className="d-flex flex-column">
+                <div className="m-0 mb-2">
+                    <h3 className="m-0 d-inline">
+                        <LinkOrSpan
+                            /* Deleted changesets most likely don't exist on the codehost anymore and would return 404 pages */
+                            to={
+                                node.externalURL && node.externalState !== ChangesetExternalState.DELETED
+                                    ? node.externalURL.url
+                                    : undefined
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            {node.title}
+                            {node.externalID && <>(#{node.externalID}) </>}
+                            {node.externalURL && node.externalState !== ChangesetExternalState.DELETED && (
+                                <>
+                                    {' '}
+                                    <ExternalLinkIcon size="1rem" />
+                                </>
+                            )}
+                        </LinkOrSpan>
+                    </h3>
+                    {node.labels.length > 0 && (
+                        <span className="ml-2">
+                            {node.labels.map(label => (
+                                <ChangesetLabel label={label} key={label.text} />
+                            ))}
+                        </span>
+                    )}
+                </div>
+                <div>
+                    <strong className="mr-2">
+                        <Link to={node.repository.url} target="_blank" rel="noopener noreferrer">
+                            {node.repository.name}
+                        </Link>
+                    </strong>
+                    {node.publicationState === ChangesetPublicationState.PUBLISHED && (
+                        <ChangesetLastSynced
+                            changeset={node}
+                            viewerCanAdminister={viewerCanAdminister}
+                            campaignUpdates={campaignUpdates}
+                        />
+                    )}
+                </div>
+            </div>
+            <span>{node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} />}</span>
+            <span>{node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} />}</span>
+            <div className="visible-changeset-spec-node__diffstat">
+                {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} />}
+            </div>
+            {isExpanded && (
+                <div className="visible-changeset-spec-node__expanded-section">
+                    {node.error && <ErrorAlert error={node.error} history={history} />}
+                    <FileDiffConnection
+                        listClassName="list-group list-group-flush"
+                        noun="changed file"
+                        pluralNoun="changed files"
+                        queryConnection={queryFileDiffs}
+                        nodeComponent={FileDiffNode}
+                        nodeComponentProps={{
+                            history,
+                            location,
+                            isLightTheme,
+                            persistLines: true,
+                            extensionInfo: hydratedExtensionInfo,
+                            lineNumbers: true,
+                        }}
+                        updateOnChange={node.repository.id}
+                        defaultFirst={15}
+                        hideSearch={true}
+                        noSummaryIfAllNodesVisible={true}
+                        history={history}
+                        location={location}
+                        useURLQuery={false}
+                        cursorPaging={true}
+                    />
+                </div>
+            )}
+        </>
     )
 }
 
