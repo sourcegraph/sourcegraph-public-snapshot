@@ -1008,6 +1008,22 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
+## gitserver: fs_io_operations
+
+**Descriptions:**
+
+- _gitserver: 5000+ filesystem reads and writes rate over 1h_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_gitserver_fs_io_operations"
+]
+```
+
 ## gitserver: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
@@ -3896,6 +3912,22 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
+## zoekt-indexserver: fs_io_operations
+
+**Descriptions:**
+
+- _zoekt-indexserver: 5000+ filesystem reads and writes rate over 1h_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt-indexserver_fs_io_operations"
+]
+```
+
 ## zoekt-indexserver: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
@@ -4077,6 +4109,22 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```json
 "observability.silenceAlerts": [
   "warning_zoekt-webserver_fs_inodes_used"
+]
+```
+
+## zoekt-webserver: fs_io_operations
+
+**Descriptions:**
+
+- _zoekt-webserver: 5000+ filesystem reads and writes rate over 1h_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt-webserver_fs_io_operations"
 ]
 ```
 
