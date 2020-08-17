@@ -1,5 +1,4 @@
 import * as React from 'react'
-import { Link } from '../../../../shared/src/components/Link'
 import classNames from 'classnames'
 
 interface Props {
@@ -16,14 +15,17 @@ export const PrivateCodeCta: React.FunctionComponent<Props> = props => {
             <div>
                 <h3>Search your private code</h3>
                 <p>
-                    Set up a private Sourcegraph instance to search your private repositories on GitHub, GitLab,
-                    Bitbucket and local installations of git, perforce, svn and other code repositories.
+                    Set up a self-hosted Sourcegraph instance to search your private repositories on GitHub, GitLab,
+                    Bitbucket and local installations of Git, Perforce, Subversion and other code repositories.
                 </p>
-                <Link to="https://docs.sourcegraph.com/" target="_blank" rel="noreferrer">
-                    <button type="button" className="btn btn-primary ga-cta-install-now">
-                        Install now
-                    </button>
-                </Link>
+                <a
+                    href="https://docs.sourcegraph.com/"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn btn-primary ga-cta-install-now"
+                >
+                    Install now
+                </a>
             </div>
         </div>
     )
