@@ -5,6 +5,7 @@ import React from 'react'
 import webStyles from '../../../enterprise.scss'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { CreateUpdateCampaignAlert } from './CreateUpdateCampaignAlert'
+import { noop } from 'lodash'
 
 const { add } = storiesOf('web/campaigns/apply/CreateUpdateCampaignAlert', module).addDecorator(story => {
     const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
@@ -19,8 +20,6 @@ const { add } = storiesOf('web/campaigns/apply/CreateUpdateCampaignAlert', modul
     )
 })
 
-const setIsLoadingStub = () => undefined
-
 add('Create', () => {
     const history = H.createMemoryHistory()
     return (
@@ -29,7 +28,7 @@ add('Create', () => {
             campaign={null}
             history={history}
             isLoading={false}
-            setIsLoading={setIsLoadingStub}
+            setIsLoading={noop}
             viewerCanAdminister={boolean('viewerCanAdminister', true)}
         />
     )
@@ -42,7 +41,7 @@ add('Update', () => {
             campaign={{ id: '123', name: 'awesome-campaign', url: 'http://test.test/awesome' }}
             history={history}
             isLoading={false}
-            setIsLoading={setIsLoadingStub}
+            setIsLoading={noop}
             viewerCanAdminister={boolean('viewerCanAdminister', true)}
         />
     )

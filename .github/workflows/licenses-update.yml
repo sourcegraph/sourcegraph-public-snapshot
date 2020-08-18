@@ -33,7 +33,7 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         commit-message: Update third-party licenses
-        base: master
+        base: main
         branch: chore/licenses-update
         title: 'chore: update third-party licenses'
         body: |

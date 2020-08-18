@@ -1,17 +1,22 @@
-# Adding LSIF to your workflows
+# Adding Precise Code Intelligence to CI/CD workflows
 
 ## [Language-specific guides](./languages/index.md)
 
-We are working on creating guides for each language with an LSIF indexer, so make sure to check for the documentation for your language! If there is not a guide for your language, this general guide will help you through the LSIF setup process.
+We are working on creating language specific guides for use with LSIF indexers, so make sure to check for the documentation for your language! If there isn't a guide for your language, this general guide will help you through the precise code intelligence setup process.
 
-## LSIF in continuous integration
+> NOTE: First make sure to complete the steps in the [quickstart guide](./lsif_quickstart.md).
 
-After walking through the [LSIF quickstart guide](./lsif_quickstart.md), add a job to your CI so code intelligence keeps up with the changes to your repository. Because of how many CI frameworks and languages there are, we may not have documented any specific advice for your use case. Feel free to [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new) if you're having difficulties and we can help troubleshoot your setup.
+## Benefits of CI integration
+
+Setting up a source code indexing job in your CI build provides you with fast code intelligence that gives you more control on when source code gets indexed, and ensures accuracy of your code intelligence by keeping in sync with changes in your respository. Due to the large number of CI frameworks and languages we may not have specific documentation for your use case. Feel free to [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new) if you're having difficulties and we can help troubleshoot your setup.
 
 ## Index
 
 - [Using indexer containers](#using-indexer-containers)
 - [CI from scratch](#ci-from-scratch)
+  - [GitHub Action Examples](#github-action-examples)
+  - [Circle CI Examples](#circle-ci-examples)
+  - [Travis CI Examples](#travis-ci-examples)
 - [Recommended upload frequency](#recommended-upload-frequency)
 - [Uploading LSIF data to Sourcegraph.com](#uploading-lsif-data-to-sourcegraphcom)
 
@@ -96,6 +101,8 @@ jobs:
           args: lsif upload -github-token=${{ secrets.GITHUB_TOKEN }} -ignore-upload-failures
 ```
 
+
+### GitHub Action Examples
 The following projects have example GitHub Action workflows to generate and upload LSIF indexes.
 
 - [elastic/kibana](https://github.com/sourcegraph-codeintel-showcase/kibana/blob/7ed559df0e2036487ae6d606e9ffa29d90d49e38/.github/workflows/lsif.yml)
@@ -105,7 +112,9 @@ The following projects have example GitHub Action workflows to generate and uplo
 - [moby/moby](https://github.com/sourcegraph-codeintel-showcase/moby/blob/380429abb05846de773d5aa07de052f40c9e8208/.github/workflows/lsif.yml)
 - [ReactiveX/IxJS](https://github.com/sourcegraph-codeintel-showcase/IxJS/blob/e53d323314043afb016b6deceaeb068d8d23c303/.github/workflows/lsif.yml)
 
-Other frameworks may require you to explicitly cache artifacts between jobs. In CircleCI this might look like:
+
+### Circle CI Examples
+Certain frameworks like Circle CI may require you to explicitly cache artifacts between jobs. In CircleCI this might look like the following:
 
 ```yaml
 version: 2.1
@@ -155,6 +164,7 @@ The following projects have example CircleCI configurations to generate and uplo
 - [prometheus/prometheus](https://github.com/sourcegraph-codeintel-showcase/prometheus/blob/a0a8a249fff9d1c6ce4c097ccc4f5e120c723c51/.circleci/config.yml)
 - [ReactiveX/rxjs](https://github.com/sourcegraph-codeintel-showcase/rxjs/blob/c9d3c1a76a68273863fc59075a71b4cc43c06114/.circleci/config.yml)
 
+### Travis CI Examples
 The following projects have example Travis CI configurations to generate and upload LSIF indexes.
 
 - [aws/aws-sdk-go](https://github.com/sourcegraph-codeintel-showcase/aws-sdk-go/blob/92f67a061fcdd46d6a418b28838b10b6ac63a880/.travis.yml)

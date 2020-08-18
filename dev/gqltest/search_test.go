@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -37,7 +38,8 @@ func TestSearch(t *testing.T) {
 				"sgtest/appdash",
 				"sgtest/sourcegraph-typescript",
 				"sgtest/private",
-				"sgtest/mux", // Fork
+				"sgtest/mux",      // Fork
+				"sgtest/archived", // Archived
 			},
 		}),
 	})
@@ -58,7 +60,15 @@ func TestSearch(t *testing.T) {
 		"github.com/sgtest/appdash",
 		"github.com/sgtest/sourcegraph-typescript",
 		"github.com/sgtest/private",
-		"github.com/sgtest/mux", // Fork
+		"github.com/sgtest/mux",      // Fork
+		"github.com/sgtest/archived", // Archived
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = client.WaitForReposToBeIndex(
+		"github.com/sgtest/java-langserver",
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -204,7 +214,77 @@ func TestSearch(t *testing.T) {
 		}
 	})
 
-	t.Run("global search", func(t *testing.T) {
+	t.Run("repository search", func(t *testing.T) {
+		tests := []struct {
+			name        string
+			query       string
+			zeroResult  bool
+			wantMissing []string
+		}{
+			{
+				name:       `archived excluded, zero results`,
+				query:      `type:repo archived`,
+				zeroResult: true,
+			},
+			{
+				name:  `archived included, nonzero result`,
+				query: `type:repo archived archived:yes`,
+			},
+			{
+				name:  `archived included if exact without option, nonzero result`,
+				query: `repo:^github\.com/sgtest/archived$`,
+			},
+			{
+				name:       `fork excluded, zero results`,
+				query:      `type:repo sgtest/mux`,
+				zeroResult: true,
+			},
+			{
+				name:  `fork included, nonzero result`,
+				query: `type:repo sgtest/mux fork:yes`,
+			},
+			{
+				name:  `fork included if exact without option, nonzero result`,
+				query: `repo:^github\.com/sgtest/mux$`,
+			},
+			{
+				name:  `exclude counts for fork and archive`,
+				query: `repo:mux|archived|go-diff`,
+				wantMissing: []string{
+					"github.com/sgtest/archived",
+					"github.com/sgtest/mux",
+				},
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				results, err := client.SearchRepositories(test.query)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if test.zeroResult {
+					if len(results) > 0 {
+						t.Fatalf("Want zero result but got %d", len(results))
+					}
+				} else {
+					if len(results) == 0 {
+						t.Fatal("Want non-zero results but got 0")
+					}
+				}
+
+				if test.wantMissing != nil {
+					missing := results.Exists(test.wantMissing...)
+					sort.Strings(missing)
+					if diff := cmp.Diff(test.wantMissing, missing); diff != "" {
+						t.Fatalf("Missing mismatch (-want +got):\n%s", diff)
+					}
+				}
+			})
+		}
+	})
+
+	t.Run("global text search", func(t *testing.T) {
 		tests := []struct {
 			name          string
 			query         string
@@ -235,11 +315,11 @@ func TestSearch(t *testing.T) {
 			},
 			{
 				name:  "double-quoted pattern, nonzero result",
-				query: `"func main() {\n" patterntype:regexp count:1 stable:yes`,
+				query: `"func main() {\n" patterntype:regexp count:1 stable:yes type:file`,
 			},
 			{
 				name:  "exclude repo, nonzero result",
-				query: `"func main() {\n" -repo:go-diff patterntype:regexp count:1 stable:yes`,
+				query: `"func main() {\n" -repo:go-diff patterntype:regexp count:1 stable:yes type:file`,
 			},
 			{
 				name:       "fork:no",
@@ -258,7 +338,7 @@ func TestSearch(t *testing.T) {
 			},
 			{
 				name:  "repo search by name, case yes, nonzero result",
-				query: `repo:^github\.com/sgtest/go-diff$ String case:yes count:1 stable:yes`,
+				query: `repo:^github\.com/sgtest/go-diff$ String case:yes count:1 stable:yes type:file`,
 			},
 			{
 				name:  "true is an alias for yes when fork is set",
@@ -266,15 +346,15 @@ func TestSearch(t *testing.T) {
 			},
 			{
 				name:  "non-master branch, nonzero result",
-				query: `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal count:1 stable:yes`,
+				query: `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal count:1 stable:yes type:file`,
 			},
 			{
 				name:  "indexed multiline search, nonzero result",
-				query: `repo:^github\.com/sgtest/java-langserver$ \nimport index:only patterntype:regexp count:1 stable:yes`,
+				query: `repo:^github\.com/sgtest/java-langserver$ \nimport index:only patterntype:regexp count:1 stable:yes type:file`,
 			},
 			{
 				name:  "unindexed multiline search, nonzero result",
-				query: `repo:^github\.com/sgtest/java-langserver$ \nimport index:no patterntype:regexp count:1 stable:yes`,
+				query: `repo:^github\.com/sgtest/java-langserver$ \nimport index:no patterntype:regexp count:1 stable:yes type:file`,
 			},
 			{
 				name:       "random characters, zero result",
@@ -311,12 +391,43 @@ func TestSearch(t *testing.T) {
 				name:  "diff search, nonzero result",
 				query: `repo:^github\.com/sgtest/go-diff$ type:diff main count:1`,
 			},
+			// Repohascommitafter
+			{
+				name:  `Repohascommitafter, nonzero result`,
+				query: `repo:^github\.com/sgtest/go-diff$ repohascommitafter:"8 months ago" test patterntype:literal count:1`,
+			},
+			// Regex text search
+			{
+				name:  `regex, unindexed, nonzero result`,
+				query: `^func.*$ patterntype:regexp index:only count:1 stable:yes type:file`,
+			},
+			{
+				name:  `regex, fork only, nonzero result`,
+				query: `fork:only patterntype:regexp FORK_SENTINEL`,
+			},
+			{
+				name:  `regex, filter by language`,
+				query: `\bfunc\b lang:go count:1 stable:yes type:file patterntype:regexp`,
+			},
+			{
+				name:       `regex, filename, zero results`,
+				query:      `file:asdfasdf.go patterntype:regexp`,
+				zeroResult: true,
+			},
+			{
+				name:  `regexp, filename, nonzero result`,
+				query: `file:doc.go patterntype:regexp count:1`,
+			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
 				results, err := client.SearchFiles(test.query)
 				if err != nil {
 					t.Fatal(err)
+				}
+
+				if results.Alert != nil {
+					t.Fatalf("Unexpected alert: %v", results.Alert)
 				}
 
 				if test.zeroResult {
@@ -337,12 +448,12 @@ func TestSearch(t *testing.T) {
 	})
 
 	t.Run("timeout search options", func(t *testing.T) {
-		alert, err := client.SearchAlert(`router index:no timeout:1ns`)
+		results, err := client.SearchFiles(`router index:no timeout:1ns`)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if alert == nil {
+		if results.Alert == nil {
 			t.Fatal("Want search alert but got nil")
 		}
 	})

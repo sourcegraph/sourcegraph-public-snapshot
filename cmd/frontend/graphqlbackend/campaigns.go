@@ -179,12 +179,13 @@ type ChangesetCountsArgs struct {
 }
 
 type ListChangesetsArgs struct {
-	First            *int32
-	PublicationState *campaigns.ChangesetPublicationState
-	ReconcilerState  *campaigns.ReconcilerState
-	ExternalState    *campaigns.ChangesetExternalState
-	ReviewState      *campaigns.ChangesetReviewState
-	CheckState       *campaigns.ChangesetCheckState
+	First                       *int32
+	PublicationState            *campaigns.ChangesetPublicationState
+	ReconcilerState             *campaigns.ReconcilerState
+	ExternalState               *campaigns.ChangesetExternalState
+	ReviewState                 *campaigns.ChangesetReviewState
+	CheckState                  *campaigns.ChangesetCheckState
+	OnlyPublishedByThisCampaign *bool
 }
 
 type CampaignResolver interface {
