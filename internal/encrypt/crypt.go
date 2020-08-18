@@ -46,7 +46,7 @@ func GenerateRandomAESKey() ([]byte, error) {
 // Returns an error only when encryption is enabled, and encryption fails.
 func EncryptBytesIfPossible(b []byte) (string, error) {
 	if configuredToEncrypt {
-		return CryptObject.EncryptBytes(b)
+		return cryptObject.EncryptBytes(b)
 	}
 	return string(b), nil
 }
@@ -55,7 +55,7 @@ func EncryptBytesIfPossible(b []byte) (string, error) {
 // Returns an error only when encryption is enabled, and encryption fails.
 func EncryptIfPossible(value string) (string, error) {
 	if configuredToEncrypt {
-		return CryptObject.Encrypt(value)
+		return cryptObject.Encrypt(value)
 	}
 	return value, nil
 }
@@ -64,7 +64,7 @@ func EncryptIfPossible(value string) (string, error) {
 // It returns an error only if encryption is enabled and it cannot Decrypt the string
 func DecryptIfPossible(value string) (string, error) {
 	if configuredToEncrypt {
-		return CryptObject.Decrypt(value)
+		return cryptObject.Decrypt(value)
 	}
 	return value, nil
 }
@@ -73,7 +73,7 @@ func DecryptIfPossible(value string) (string, error) {
 // It returns an error only if encryption is enabled and it cannot Decrypt the string
 func DecryptBytesIfPossible(b []byte) (string, error) {
 	if configuredToEncrypt {
-		return CryptObject.DecryptBytes(b)
+		return cryptObject.DecryptBytes(b)
 	}
 	return string(b), nil
 }
@@ -86,7 +86,6 @@ type Encryptor struct {
 
 // Returns an encrypted string.
 func (e *Encryptor) EncryptBytes(b []byte) (string, error) {
-
 	if len(e.EncryptionKeys) == 0 || e.EncryptionKeys[primaryKeyIndex] == nil {
 		return string(b), nil
 	}
@@ -151,7 +150,6 @@ func (e *Encryptor) DecryptBytes(b []byte) (string, error) {
 
 // Decrypts the string, returning the decrypted value.
 func (e *Encryptor) Decrypt(encodedValue string) (string, error) {
-
 	// handle plaintext use case
 	if len(e.EncryptionKeys) == 0 {
 		return encodedValue, nil

@@ -12,8 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
-// TODO: Make private, access via functions
-var CryptObject Encryptor
+var cryptObject Encryptor
 var configuredToEncrypt bool
 var doOnce sync.Once
 
@@ -74,7 +73,7 @@ func initCryptObject() {
 
 		newKey, oldKey := gatherKeys(encryptionKey)
 
-		CryptObject.EncryptionKeys = [][]byte{primaryKeyIndex: newKey, secondaryKeyIndex: oldKey}
+		cryptObject.EncryptionKeys = [][]byte{primaryKeyIndex: newKey, secondaryKeyIndex: oldKey}
 		configuredToEncrypt = true
 		return
 	}
@@ -85,7 +84,7 @@ func initCryptObject() {
 			panic(fmt.Sprintf("encryption key must be %d characters", validKeyLength))
 		}
 		newKey, oldKey := gatherKeys(encryptionKey)
-		CryptObject.EncryptionKeys = [][]byte{primaryKeyIndex: newKey, secondaryKeyIndex: oldKey}
+		cryptObject.EncryptionKeys = [][]byte{primaryKeyIndex: newKey, secondaryKeyIndex: oldKey}
 		configuredToEncrypt = true
 		return
 	}
@@ -107,7 +106,7 @@ func initCryptObject() {
 			panic("failed to make secrets file read only.")
 		}
 		newKey, _ := gatherKeys(b)
-		CryptObject.EncryptionKeys = [][]byte{primaryKeyIndex: newKey}
+		cryptObject.EncryptionKeys = [][]byte{primaryKeyIndex: newKey}
 		configuredToEncrypt = true
 		return
 	}
