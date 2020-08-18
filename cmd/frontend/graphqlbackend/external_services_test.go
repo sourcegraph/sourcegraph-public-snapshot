@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -23,6 +24,13 @@ func TestAddExternalService(t *testing.T) {
 		defer func() {
 			db.Mocks.Users = db.MockUsers{}
 		}()
+
+		oldMock := backend.MockCheckActorHasTag
+		defer func() {
+			backend.MockCheckActorHasTag = oldMock
+		}()
+
+		backend.MockCheckActorHasTag = func(context.Context, string) error { return errors.New("no tag") }
 
 		t.Run("user mode not enabled and no namespace", func(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -98,6 +106,49 @@ func TestAddExternalService(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			userID := int32(1)
 			gqlID := MarshalUserID(userID)
+			result, err := (&schemaResolver{}).AddExternalService(ctx, &addExternalServiceArgs{
+				Input: addExternalServiceInput{
+					Namespace: &gqlID,
+				},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// We want to check the namespace field is populated
+			if result.externalService.NamespaceUserID == nil {
+				t.Fatal("NamespaceUserID: want non-nil but got nil")
+			} else if *result.externalService.NamespaceUserID != userID {
+				t.Fatalf("NamespaceUserID: want %d but got %d", userID, *result.externalService.NamespaceUserID)
+			}
+		})
+
+		t.Run("user mode disabled but user has public tag", func(t *testing.T) {
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					ExternalServiceUserMode: "disabled",
+				},
+			})
+			defer conf.Mock(nil)
+
+			db.Mocks.ExternalServices.Create = func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error {
+				return nil
+			}
+			defer func() {
+				db.Mocks.ExternalServices = db.MockExternalServices{}
+			}()
+
+			oldMock := backend.MockCheckActorHasTag
+			defer func() {
+				backend.MockCheckActorHasTag = oldMock
+			}()
+
+			backend.MockCheckActorHasTag = func(context.Context, string) error { return nil }
+
+			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			userID := int32(1)
+			gqlID := MarshalUserID(userID)
+
 			result, err := (&schemaResolver{}).AddExternalService(ctx, &addExternalServiceArgs{
 				Input: addExternalServiceInput{
 					Namespace: &gqlID,

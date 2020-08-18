@@ -16,6 +16,7 @@ func MakeRandomHardToGuessPassword() string {
 }
 
 var MockMakePasswordResetURL func(ctx context.Context, userID int32) (*url.URL, error)
+var MockCheckActorHasTag func(ctx context.Context, tag string) error
 
 func MakePasswordResetURL(ctx context.Context, userID int32) (*url.URL, error) {
 	if MockMakePasswordResetURL != nil {
@@ -34,6 +35,10 @@ func MakePasswordResetURL(ctx context.Context, userID int32) (*url.URL, error) {
 // CheckActorHasTag reports whether the context actor has the given tag. If not, or if an error
 // occurs, a non-nil error is returned.
 func CheckActorHasTag(ctx context.Context, tag string) error {
+	if MockCheckActorHasTag != nil {
+		return MockCheckActorHasTag(ctx, tag)
+	}
+
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return ErrNotAuthenticated
@@ -52,3 +57,7 @@ func CheckActorHasTag(ctx context.Context, tag string) error {
 	}
 	return fmt.Errorf("actor lacks required tag %q", tag)
 }
+
+const (
+	TagAllowUserExternalServicePublic = "AllowUserExternalServicePublic"
+)
