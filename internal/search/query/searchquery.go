@@ -26,6 +26,7 @@ const (
 	FieldPatternType        = "patterntype"
 	FieldContent            = "content"
 	FieldVisibility         = "visibility"
+	FieldRev                = "rev"
 
 	// For diff and commit search only:
 	FieldBefore    = "before"

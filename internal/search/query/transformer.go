@@ -563,3 +563,70 @@ func FuzzifyRegexPatterns(nodes []Node) []Node {
 		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 	})
 }
+
+// mapRevFilters removes rev: filters from []Node and attaches their value as @rev to the repo: filters.
+// All rev: filters are assumed to be on the top-level, i.e. mapRevFilter will not traverse the tree.
+// To be compatible with the output of the parser with and without DNF we handle both, []Node with
+// an explicit top-level And operator and []Node with an implicit And.
+func mapRevFilters(nodes []Node) ([]Node, error) {
+	if len(nodes) == 0 {
+		return nodes, nil
+	}
+
+	// top-level And
+	if op, isOperator := nodes[0].(Operator); len(nodes) == 1 && isOperator && op.Kind == And {
+		nodes, err := mapRevFiltersFlat(op.Operands)
+		if err != nil {
+			return nil, err
+		}
+		return newOperator(nodes, And), nil
+	} else {
+		return mapRevFiltersFlat(nodes)
+	}
+}
+
+func mapRevFiltersFlat(nodes []Node) ([]Node, error) {
+	var revs []string
+	for _, o := range nodes {
+		if param, ok := o.(Parameter); !ok || param.Field != FieldRev {
+			continue
+		} else {
+			revs = append(revs, param.Value)
+		}
+	}
+	if len(revs) == 0 {
+		return nodes, nil
+	}
+	if len(revs) > 1 {
+		return nil, fmt.Errorf("invalid syntax. You have specified multiple revisions (%s) and "+
+			" I don't know how to interpret this. Remove all but one rev: keywords"+
+			" and try again", strings.Join(revs, ", "))
+	}
+	operands := make([]Node, len(nodes))
+	i := 0
+	for _, o := range nodes {
+		switch o.(type) {
+		case Parameter:
+			param := o.(Parameter)
+			switch param.Field {
+			case FieldRepo:
+				if strings.ContainsRune(param.Value, '@') {
+					return nil, fmt.Errorf("invalid syntax. You have specified @ and rev: for the same" +
+						" repo: filter and I don't know how to interpret this. Remove either @ or rev: and try again")
+				}
+				param.Value += "@" + revs[0]
+				operands[i] = param
+				i++
+			case FieldRev:
+				continue
+			default:
+				operands[i] = o
+				i++
+			}
+		default:
+			operands[i] = o
+			i++
+		}
+	}
+	return operands[:i], nil
+}

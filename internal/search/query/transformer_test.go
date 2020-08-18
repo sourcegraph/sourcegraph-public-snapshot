@@ -765,3 +765,105 @@ func TestMapGlobToRegex(t *testing.T) {
 		})
 	}
 }
+
+func TestMapRevFilters(t *testing.T) {
+	cases := []struct {
+		input string
+		want  string
+	}{
+		{
+			input: "repo:foo",
+			want:  `("repo:foo")`,
+		},
+		{
+			input: "repo:foo rev:a",
+			want:  `("repo:foo@a")`,
+		},
+		{
+			input: "repo:foo repo:bar rev:a",
+			want:  `("repo:foo@a" "repo:bar@a")`,
+		},
+		{
+			input: "repo:foo bar and bas rev:a",
+			want:  `("repo:foo@a" "bar" "bas")`,
+		},
+		{
+			input: "(repo:foo rev:a) or (repo:foo rev:b)",
+			want:  `("repo:foo@a") OR ("repo:foo@b")`,
+		},
+		{
+			input: "repo:foo file:bas qux AND (rev:a or rev:b)",
+			want:  `("repo:foo@a" "file:bas" "qux") OR ("repo:foo@b" "file:bas" "qux")`,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.input, func(t *testing.T) {
+			query, _ := ParseAndOr(c.input, SearchTypeRegex)
+			queries := dnf(query)
+
+			var queriesStr []string
+			for _, q := range queries {
+				qMapped, err := mapRevFilters(q)
+				if err != nil {
+					t.Fatal(err)
+				}
+				queriesStr = append(queriesStr, prettyPrint(qMapped))
+			}
+			got := "(" + strings.Join(queriesStr, ") OR (") + ")"
+			if diff := cmp.Diff(c.want, got); diff != "" {
+				t.Error(diff)
+			}
+		})
+	}
+}
+
+func TestMapRevFiltersTopLevelAnd(t *testing.T) {
+	cases := []struct {
+		input string
+		want  string
+	}{
+		{
+			input: "repo:sourcegraph",
+			want:  `"repo:sourcegraph"`,
+		},
+		{
+			input: "repo:sourcegraph rev:b",
+			want:  `"repo:sourcegraph@b"`,
+		},
+		{
+			input: "repo:sourcegraph foo and bar rev:b",
+			want:  `(and "repo:sourcegraph@b" "foo" "bar")`,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.input, func(t *testing.T) {
+			query, _ := ParseAndOr(c.input, SearchTypeRegex)
+			qMapped, err := mapRevFilters(query)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(c.want, prettyPrint(qMapped)); diff != "" {
+				t.Error(diff)
+			}
+		})
+	}
+}
+
+func TestMapRevFiltersForInvalidSyntax(t *testing.T) {
+	cases := []string{
+		"repo:foo rev:a rev:b",
+		"repo:foo@a rev:b",
+	}
+	for _, c := range cases {
+		t.Run(c, func(t *testing.T) {
+			query, _ := ParseAndOr(c, SearchTypeRegex)
+			queries := dnf(query)
+			for _, q := range queries {
+				_, err := mapRevFilters(q)
+				if err == nil {
+					t.Fatal("Expected err, but got nil")
+				}
+			}
+		})
+	}
+}
