@@ -14,7 +14,7 @@
         font-size: 14px;
 
         /* $text-muted */
-        color: $text-muted;
+        color: #6d727c;
     }
 
     // &__body-title {
@@ -47,4 +47,12 @@
     // .btn-link {
     //     text-decoration: none !important;
     // }
+}
+
+.theme-light {
+    .extension-card {
+        &__name {
+            color: #6078a9;
+        }
+    }
 }
