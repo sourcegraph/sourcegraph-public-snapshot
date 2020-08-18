@@ -1,4 +1,11 @@
-import { ChangesetExternalState, ChangesetCheckState, ChangesetReviewState } from '../../graphql-operations'
+import {
+    ChangesetExternalState,
+    ChangesetCheckState,
+    ChangesetReviewState,
+    ChangesetFields,
+    ChangesetReconcilerState,
+    ChangesetPublicationState,
+} from '../../graphql-operations'
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import {
     RepoSpec,
@@ -32,5 +39,45 @@ export function getLSPTextDocumentPositionParameters(
         commitID: hoveredToken.commitID,
         position: hoveredToken,
         mode: getModeFromPath(hoveredToken.filePath || ''),
+    }
+}
+
+export enum ChangesetUIState {
+    UNPUBLISHED = 'UNPUBLISHED',
+    ERRORED = 'ERRORED',
+    PROCESSING = 'PROCESSING',
+    OPEN = 'OPEN',
+    CLOSED = 'CLOSED',
+    MERGED = 'MERGED',
+    DELETED = 'DELETED',
+}
+
+export function isValidChangesetUIState(input: string): input is ChangesetUIState {
+    return Object.values<string>(ChangesetUIState).includes(input)
+}
+
+export function computeChangesetUIState(
+    changeset: Pick<ChangesetFields, 'reconcilerState' | 'publicationState' | 'externalState'>
+): ChangesetUIState {
+    if (changeset.reconcilerState === ChangesetReconcilerState.ERRORED) {
+        return ChangesetUIState.ERRORED
+    }
+    if (changeset.reconcilerState !== ChangesetReconcilerState.COMPLETED) {
+        return ChangesetUIState.PROCESSING
+    }
+    if (changeset.publicationState === ChangesetPublicationState.UNPUBLISHED) {
+        return ChangesetUIState.UNPUBLISHED
+    }
+    // Must be set, because changesetPublicationState !== UNPUBLISHED.
+    const externalState = changeset.externalState!
+    switch (externalState) {
+        case ChangesetExternalState.OPEN:
+            return ChangesetUIState.OPEN
+        case ChangesetExternalState.CLOSED:
+            return ChangesetUIState.CLOSED
+        case ChangesetExternalState.MERGED:
+            return ChangesetUIState.MERGED
+        case ChangesetExternalState.DELETED:
+            return ChangesetUIState.DELETED
     }
 }

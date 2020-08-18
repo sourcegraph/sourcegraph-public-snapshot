@@ -164,6 +164,7 @@ export const queryChangesets = ({
     reviewState,
     checkState,
     publicationState,
+    reconcilerState,
     onlyPublishedByThisCampaign,
 }: CampaignChangesetsVariables): Observable<
     (CampaignChangesetsResult['node'] & { __typename: 'Campaign' })['changesets']
@@ -177,6 +178,7 @@ export const queryChangesets = ({
                 $reviewState: ChangesetReviewState
                 $checkState: ChangesetCheckState
                 $publicationState: ChangesetPublicationState
+                $reconcilerState: ChangesetReconcilerState
                 $onlyPublishedByThisCampaign: Boolean
             ) {
                 node(id: $campaign) {
@@ -186,6 +188,7 @@ export const queryChangesets = ({
                             first: $first
                             externalState: $externalState
                             publicationState: $publicationState
+                            reconcilerState: $reconcilerState
                             reviewState: $reviewState
                             checkState: $checkState
                             onlyPublishedByThisCampaign: $onlyPublishedByThisCampaign
@@ -212,6 +215,7 @@ export const queryChangesets = ({
             reviewState,
             checkState,
             publicationState,
+            reconcilerState,
             onlyPublishedByThisCampaign,
         },
     }).pipe(

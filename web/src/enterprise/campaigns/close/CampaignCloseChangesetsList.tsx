@@ -66,6 +66,7 @@ export const CampaignCloseChangesetsList: React.FunctionComponent<Props> = ({
             queryChangesets({
                 externalState: ChangesetExternalState.OPEN,
                 publicationState: ChangesetPublicationState.PUBLISHED,
+                reconcilerState: null,
                 checkState: null,
                 reviewState: null,
                 first: args.first ?? null,
