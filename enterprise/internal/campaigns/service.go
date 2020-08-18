@@ -780,11 +780,13 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets, 
 			ctx := trace.ContextWithTrace(context.Background(), tr)
 
 			open := campaigns.ChangesetExternalStateOpen
+			published := campaigns.ChangesetPublicationStatePublished
 			createdByCampaign := true
 			cs, _, err := s.store.ListChangesets(ctx, ListChangesetsOpts{
 				OwnedByCampaignID: campaign.ID,
 				CreatedByCampaign: &createdByCampaign,
 				ExternalState:     &open,
+				PublicationState:  &published,
 				Limit:             -1,
 			})
 			if err != nil {
