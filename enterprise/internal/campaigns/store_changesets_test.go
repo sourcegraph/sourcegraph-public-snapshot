@@ -83,7 +83,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				CurrentSpecID:     int64(i) + 1,
 				PreviousSpecID:    int64(i) + 1,
 				OwnedByCampaignID: int64(i) + 1,
-				CreatedByCampaign: true,
 				PublicationState:  cmpgn.ChangesetPublicationStatePublished,
 
 				ReconcilerState: cmpgn.ReconcilerStateCompleted,
