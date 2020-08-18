@@ -1,6 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AddIcon from 'mdi-react/AddIcon'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
+import HelpCircleOutline from 'mdi-react/HelpCircleOutlineIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
@@ -148,9 +149,20 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                 <>
                     <PageTitle title="New extension" />
                     <ModalPage className="registry-new-extension-page">
-                        <h2>
+                        <h2 className="mb-4">
                             <PuzzleIcon className="icon-inline" /> New extension
                         </h2>
+                        <div className="mb-3">
+                            <span>
+                                <a
+                                    href="https://docs.sourcegraph.com/extensions/authoring"
+                                    className="registry-new-extension-page__docs-link"
+                                >
+                                    Learn more
+                                </a>{' '}
+                                about authoring Sourcegraph extensions <HelpCircleOutline size={18} />
+                            </span>
+                        </div>
                         <Form onSubmit={this.onSubmit}>
                             <RegistryPublisherFormGroup
                                 value={this.state.publisher}
