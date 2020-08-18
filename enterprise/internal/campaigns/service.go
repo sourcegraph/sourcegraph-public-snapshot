@@ -781,10 +781,8 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets, 
 
 			open := campaigns.ChangesetExternalStateOpen
 			published := campaigns.ChangesetPublicationStatePublished
-			createdByCampaign := true
 			cs, _, err := s.store.ListChangesets(ctx, ListChangesetsOpts{
 				OwnedByCampaignID: campaign.ID,
-				CreatedByCampaign: &createdByCampaign,
 				ExternalState:     &open,
 				PublicationState:  &published,
 				Limit:             -1,

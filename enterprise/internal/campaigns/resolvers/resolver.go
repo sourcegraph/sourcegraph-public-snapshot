@@ -507,11 +507,9 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, campaign
 	}
 	if args.OnlyPublishedByThisCampaign != nil {
 		published := campaigns.ChangesetPublicationStatePublished
-		createdByCampaign := true
 
 		opts.OwnedByCampaignID = campaignID
 		opts.PublicationState = &published
-		opts.CreatedByCampaign = &createdByCampaign
 	}
 
 	return opts, safe, nil

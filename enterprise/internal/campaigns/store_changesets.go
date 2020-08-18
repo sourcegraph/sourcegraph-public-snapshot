@@ -186,7 +186,6 @@ type CountChangesetsOpts struct {
 	ExternalReviewState *campaigns.ChangesetReviewState
 	ExternalCheckState  *campaigns.ChangesetCheckState
 	ReconcilerState     *campaigns.ReconcilerState
-	CreatedByCampaign   *bool
 	OwnedByCampaignID   int64
 }
 
@@ -226,9 +225,6 @@ func countChangesetsQuery(opts *CountChangesetsOpts) *sqlf.Query {
 	}
 	if opts.OwnedByCampaignID != 0 {
 		preds = append(preds, sqlf.Sprintf("changesets.owned_by_campaign_id = %s", opts.OwnedByCampaignID))
-	}
-	if opts.CreatedByCampaign != nil {
-		preds = append(preds, sqlf.Sprintf("changesets.created_by_campaign = %t", *opts.CreatedByCampaign))
 	}
 
 	return sqlf.Sprintf(countChangesetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
@@ -375,7 +371,6 @@ type ListChangesetsOpts struct {
 	ExternalState        *campaigns.ChangesetExternalState
 	ExternalReviewState  *campaigns.ChangesetReviewState
 	ExternalCheckState   *campaigns.ChangesetCheckState
-	CreatedByCampaign    *bool
 	OwnedByCampaignID    int64
 	OnlyWithoutDiffStats bool
 }
@@ -463,9 +458,6 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	}
 	if opts.OwnedByCampaignID != 0 {
 		preds = append(preds, sqlf.Sprintf("changesets.owned_by_campaign_id = %s", opts.OwnedByCampaignID))
-	}
-	if opts.CreatedByCampaign != nil {
-		preds = append(preds, sqlf.Sprintf("changesets.created_by_campaign = %t", *opts.CreatedByCampaign))
 	}
 
 	if opts.OnlyWithoutDiffStats {

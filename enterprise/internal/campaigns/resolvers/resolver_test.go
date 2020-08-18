@@ -703,7 +703,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			},
 			wantErr: "changeset check state not valid",
 		},
-		// Setting only createdByCampaign true.
+		// Setting OnlyPublishedByThisCampaign true.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
 				OnlyPublishedByThisCampaign: &wantOnlyPublishedByThisCampaign[0],
@@ -711,7 +711,6 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			wantSafe: true,
 			wantParsed: ee.ListChangesetsOpts{
 				PublicationState:  &wantPublicationStates[0],
-				CreatedByCampaign: &wantOnlyPublishedByThisCampaign[0],
 				OwnedByCampaignID: campaignID,
 			},
 		},
