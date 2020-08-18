@@ -121,28 +121,28 @@ export function createAddCodeStepTooltip(tour: Shepherd.Tour): HTMLElement {
  * A map containing the language filter and the example to be displayed
  * in the "add code to your query" tooltip.
  */
-export const languageFilterToSearchExamples: { [key: string]: string } = {
-    'lang:c': 'try {:[my_match]}',
-    'lang:cpp': 'try {:[my_match]}',
-    'lang:csharp': 'try {:[my_match]}',
-    'lang:css': 'body {:[my_match]}',
-    'lang:go': 'for {:[my_match]}',
-    'lang:graphql': 'Query {:[my_match]}',
-    'lang:haskell': 'if :[my_match] else',
-    'lang:html': '<div class="panel">:[my_match]</div>',
-    'lang:java': 'try {:[my_match]}',
-    'lang:javascript': 'try {:[my_match]}',
-    'lang:json': '"object":{:[my_match]}',
-    'lang:lua': 'function update() :[my_match] end',
-    'lang:markdown': '',
-    'lang:php': 'try {:[my_match]}',
-    'lang:powershell': 'try {:[my_match]}',
-    'lang:python': 'try:[my_match] except',
-    'lang:r': 'tryCatch( :[my_match )',
-    'lang:ruby': 'while :[my_match] end',
-    'lang:sass': 'transition( :[my_match] )',
-    'lang:swift': 'switch :[a]{:[b]}',
-    'lang:typescript': 'try{:[my_match]}',
+export const languageFilterToSearchExamples: { [key: string]: { query: string; patternType: SearchPatternType } } = {
+    'lang:c': { query: 'try {:[my_match]}', patternType: SearchPatternType.structural },
+    'lang:cpp': { query: 'try {:[my_match]}', patternType: SearchPatternType.structural },
+    'lang:csharp': { query: 'try {:[my_match]}', patternType: SearchPatternType.structural },
+    'lang:css': { query: 'body {:[my_match]}', patternType: SearchPatternType.structural },
+    'lang:go': { query: 'for {:[my_match]}', patternType: SearchPatternType.structural },
+    'lang:graphql': { query: 'Query {:[my_match]}', patternType: SearchPatternType.structural },
+    'lang:haskell': { query: 'if :[my_match] else', patternType: SearchPatternType.structural },
+    'lang:html': { query: '<div class="panel">:[my_match]</div>', patternType: SearchPatternType.structural },
+    'lang:java': { query: 'try {:[my_match]}', patternType: SearchPatternType.structural },
+    'lang:javascript': { query: 'try {:[my_match]}', patternType: SearchPatternType.structural },
+    'lang:json': { query: '"object":{:[my_match]}', patternType: SearchPatternType.structural },
+    'lang:lua': { query: 'function update() :[my_match] end', patternType: SearchPatternType.structural },
+    'lang:markdown': { query: '', patternType: SearchPatternType.structural },
+    'lang:php': { query: 'try {:[my_match]}', patternType: SearchPatternType.structural },
+    'lang:powershell': { query: 'try {:[my_match]}', patternType: SearchPatternType.structural },
+    'lang:python': { query: 'try:[my_match] except', patternType: SearchPatternType.structural },
+    'lang:r': { query: 'tryCatch( :[my_match )', patternType: SearchPatternType.structural },
+    'lang:ruby': { query: 'while :[my_match] end', patternType: SearchPatternType.structural },
+    'lang:sass': { query: 'transition( :[my_match] )', patternType: SearchPatternType.structural },
+    'lang:swift': { query: 'switch :[a]{:[b]}', patternType: SearchPatternType.structural },
+    'lang:typescript': { query: 'try{:[my_match]}', patternType: SearchPatternType.structural },
 }
 
 /**
@@ -169,17 +169,17 @@ export function createAddCodeStepWithLanguageExampleTooltip(
     exampleButton.className = 'btn btn-link test-tour-language-example'
 
     const langsList = languageFilterToSearchExamples
-    let example = ''
+    let example = { query: '', patternType: SearchPatternType.literal }
     if (languageQuery && Object.keys(langsList).includes(languageQuery)) {
         example = langsList[languageQuery]
     }
     const codeElement = document.createElement('code')
-    codeElement.textContent = example
+    codeElement.textContent = example.query
     exampleButton.append(codeElement)
 
     exampleButton.addEventListener('click', () => {
         const fullQuery = [languageQuery, example].join(' ')
-        exampleCallback(fullQuery, SearchPatternType.structural)
+        exampleCallback(fullQuery, example.patternType)
         tour.show('view-search-reference')
     })
     listItem.append(exampleButton)
