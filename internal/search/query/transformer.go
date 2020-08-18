@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
+
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // SubstituteAliases substitutes field name aliases for their canonical names.
@@ -46,80 +48,66 @@ func translateCharacterClass(r []rune, startIx int) (int, string, error) {
 	sb := strings.Builder{}
 	i := startIx
 	lenR := len(r)
-Loop:
+
+	switch r[i] {
+	case '!':
+		if i < lenR-1 && r[i+1] == ']' {
+			// the character class cannot contain just "!"
+			return -1, "", ErrBadGlobPattern
+		}
+		sb.WriteRune('^')
+		i++
+	case '^':
+		sb.WriteString("//^")
+		i++
+	}
+
 	for i < lenR {
-		switch r[i] {
-		case '!':
-			if i == startIx {
-				sb.WriteRune('^')
-			} else {
-				sb.WriteRune(r[i])
-			}
-			i++
-		case ']':
+		if r[i] == ']' {
 			if i > startIx {
-				break Loop
+				break
 			}
 			sb.WriteRune(r[i])
 			i++
-		default: // translate character range lo-hi.
-
-			// '-' is treated literally at the start and end of
-			// of a character class.
-			if r[i] == '-' {
-				if i == lenR-1 {
-					// no closing bracket
-					return -1, "", ErrBadGlobPattern
-				}
-
-				if i > startIx && r[i+1] != ']' {
-					// '-' cannot be the lower end of a range
-					// unless it is the first character within
-					// the character class.
-					return -1, "", ErrBadGlobPattern
-				}
-			}
-			lo := r[i]
-			sb.WriteRune(r[i]) // lo
-			i++
-
-			if i == lenR {
-				// no closing bracket
-				return -1, "", ErrBadGlobPattern
-			}
-
-			// lo = hi
-			if r[i] != '-' {
-				continue
-			}
-
-			sb.WriteRune(r[i]) // -
-			i++
-
-			if i == lenR {
-				// no closing bracket
-				return -1, "", ErrBadGlobPattern
-			}
-
-			if r[i] == ']' {
-				continue
-			}
-
-			hi := r[i]
-			if lo > hi {
-				// range is reversed
-				return -1, "", ErrBadGlobPattern
-			}
-			sb.WriteRune(r[i]) // hi
-			i++
+			continue
 		}
+
+		lo := r[i]
+		sb.WriteRune(r[i]) // lo
+		i++
+		if i == lenR {
+			// no closing bracket
+			return -1, "", ErrBadGlobPattern
+		}
+
+		// lo = hi
+		if r[i] != '-' {
+			continue
+		}
+
+		sb.WriteRune(r[i]) // -
+		i++
+		if i == lenR {
+			// no closing bracket
+			return -1, "", ErrBadGlobPattern
+		}
+
+		if r[i] == ']' {
+			continue
+		}
+
+		hi := r[i]
+		if lo > hi {
+			// range is reversed
+			return -1, "", ErrBadGlobPattern
+		}
+		sb.WriteRune(r[i]) // hi
+		i++
 	}
 	if i == lenR {
 		return -1, "", ErrBadGlobPattern
 	}
-
 	return i - startIx, sb.String(), nil
-
 }
 
 var globSpecialSymbols = map[rune]struct{}{
@@ -140,14 +128,13 @@ func globToRegex(value string) (string, error) {
 	l := len(r)
 	sb := strings.Builder{}
 
-	i := 0
-	// Add regex anchor "^" if glob does not start with *.
-	if r[i] != '*' {
-		sb.WriteRune('^')
-	}
-	for i = 0; i < l; i++ {
+	// Add regex anchor "^" as prefix to all patterns
+	sb.WriteRune('^')
+
+	for i := 0; i < l; i++ {
 		switch r[i] {
 		case '*':
+			// **
 			if i < l-1 && r[i+1] == '*' {
 				sb.WriteString(".*?")
 			} else {
@@ -174,6 +161,9 @@ func globToRegex(value string) (string, error) {
 			}
 			sb.WriteRune(r[i])
 		case '[':
+			if i == l-1 {
+				return "", ErrBadGlobPattern
+			}
 			sb.WriteRune('[')
 			i++
 
@@ -190,11 +180,8 @@ func globToRegex(value string) (string, error) {
 			sb.WriteString(regexp.QuoteMeta(string(r[i])))
 		}
 	}
-
-	// add regex anchor "$" if glob doesn't end with *
-	if r[l-1] != '*' {
-		sb.WriteRune('$')
-	}
+	// add regex anchor '$' as suffix to all patterns
+	sb.WriteRune('$')
 	return sb.String(), nil
 }
 
@@ -214,7 +201,12 @@ func (g globError) Error() string {
 // from glob to regex.
 func reporevToRegex(value string) (string, error) {
 	reporev := strings.SplitN(value, "@", 2)
-	repo, err := globToRegex(reporev[0])
+	containsNoRev := len(reporev) == 1
+	repo := reporev[0]
+	if containsNoRev && ContainsNoGlobSyntax(repo) {
+		repo = fuzzifyGlobPattern(repo)
+	}
+	repo, err := globToRegex(repo)
 	if err != nil {
 		return "", err
 	}
@@ -223,6 +215,22 @@ func reporevToRegex(value string) (string, error) {
 		value = value + "@" + reporev[1]
 	}
 	return value, nil
+}
+
+var globSyntax = lazyregexp.New(`[][*?]`)
+
+func ContainsNoGlobSyntax(value string) bool {
+	return !globSyntax.MatchString(value)
+}
+
+func fuzzifyGlobPattern(value string) string {
+	if value == "" {
+		return value
+	}
+	if strings.HasPrefix(value, "github.com") {
+		return value + "**"
+	}
+	return "**" + value + "**"
 }
 
 // mapGlobToRegex translates glob to regexp for fields repo, file, and repohasfile.
@@ -235,6 +243,9 @@ func mapGlobToRegex(nodes []Node) ([]Node, error) {
 		case FieldRepo:
 			value, err = reporevToRegex(value)
 		case FieldFile, FieldRepoHasFile:
+			if ContainsNoGlobSyntax(value) {
+				value = fuzzifyGlobPattern(value)
+			}
 			value, err = globToRegex(value)
 		}
 		if err != nil {
@@ -498,6 +509,26 @@ func substituteConcat(nodes []Node, separator string) []Node {
 	return new
 }
 
+// TrailingParensToLiteral is a heuristic used in the context of regular
+// expression search. It checks whether any pattern is annotated with a label
+// HeusticDanglingParens. This label implies that the regular expression is not
+// well-formed, for example, "foo.*bar(" or "foo(.*bar". As a special case for
+// usability we escape a trailing parenthesis and treat it literally. Any other
+// forms are ignored, and will likely not pass validation.
+func TrailingParensToLiteral(nodes []Node) []Node {
+	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
+		if annotation.Labels.isSet(HeuristicDanglingParens) && strings.HasSuffix(value, "(") {
+			value = strings.TrimSuffix(value, "(")
+			value += `\(`
+		}
+		return Pattern{
+			Value:      value,
+			Negated:    negated,
+			Annotation: annotation,
+		}
+	})
+}
+
 // EmptyGroupsToLiteral is a heuristic used in the context of regular expression
 // search. It labels any pattern containing "()" as a literal pattern since in
 // regex it implies the empty string, which is meaningless as a search query and
@@ -522,4 +553,13 @@ func Map(query []Node, fns ...func([]Node) []Node) []Node {
 		query = fn(query)
 	}
 	return query
+}
+
+func FuzzifyRegexPatterns(nodes []Node) []Node {
+	return MapParameter(nodes, func(field string, value string, negated bool, annotation Annotation) Node {
+		if field == FieldRepo || field == FieldFile || field == FieldRepoHasFile {
+			value = strings.TrimSuffix(value, "$")
+		}
+		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
+	})
 }

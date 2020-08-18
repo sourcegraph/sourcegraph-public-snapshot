@@ -43,8 +43,8 @@ describe('e2e test suite', () => {
             'sourcegraph/go-diff',
             'sourcegraph/appdash',
             'sourcegraph/sourcegraph-typescript',
-            'sourcegraph-testing/automation-test-test',
-            'sourcegraph/test-test-private-repository',
+            'sourcegraph-testing/automation-e2e-test',
+            'sourcegraph/e2e-test-private-repository',
         ]
         const alwaysCloningRepoSlugs = ['sourcegraphtest/AlwaysCloningTest']
         await driver.ensureLoggedIn({ username: 'test', password: config.testUserPassword, email: 'test@test.com' })
@@ -356,7 +356,7 @@ describe('e2e test suite', () => {
         })
 
         test('Search visibility:private|public', async () => {
-            const privateRepos = ['github.com/sourcegraph/test-test-private-repository']
+            const privateRepos = ['github.com/sourcegraph/e2e-test-private-repository']
 
             await driver.page.goto(sourcegraphBaseUrl + '/search?q=type:repo+visibility:private')
             await driver.page.waitForFunction(() => document.querySelectorAll('.test-search-result').length >= 1)
@@ -793,7 +793,7 @@ describe('e2e test suite', () => {
                     line: 65,
                 },
                 {
-                    name: 'highlights correct line for Typescript',
+                    name: 'highlights correct line for TypeScript',
                     filePath:
                         '/github.com/sourcegraph/sourcegraph-typescript@a7b7a61e31af76dad3543adec359fa68737a58a1/-/blob/server/src/cancellation.ts',
                     index: 2,

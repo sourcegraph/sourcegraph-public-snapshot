@@ -849,69 +849,6 @@ func TestSearchRevspecs(t *testing.T) {
 	}
 }
 
-func TestCompareSearchResults(t *testing.T) {
-	type testCase struct {
-		a       SearchResultResolver
-		b       SearchResultResolver
-		aIsLess bool
-	}
-
-	tests := []testCase{{
-		// Different repo matches
-		a: &RepositoryResolver{
-			repo: &types.Repo{Name: api.RepoName("a")},
-		},
-		b: &RepositoryResolver{
-			repo: &types.Repo{Name: api.RepoName("b")},
-		},
-		aIsLess: true,
-	}, {
-		// Repo match vs file match in same repo
-		a: &FileMatchResolver{
-			Repo: &RepositoryResolver{repo: &types.Repo{Name: "a"}},
-
-			JPath: "a",
-		},
-		b: &RepositoryResolver{
-			repo: &types.Repo{Name: api.RepoName("a")},
-		},
-		aIsLess: false,
-	}, {
-		// Same repo, different files
-		a: &FileMatchResolver{
-			Repo: &RepositoryResolver{repo: &types.Repo{Name: "a"}},
-
-			JPath: "a",
-		},
-		b: &FileMatchResolver{
-			Repo: &RepositoryResolver{repo: &types.Repo{Name: "a"}},
-
-			JPath: "b",
-		},
-		aIsLess: true,
-	}, {
-		// different repo, same file name
-		a: &FileMatchResolver{
-			Repo: &RepositoryResolver{repo: &types.Repo{Name: "a"}},
-
-			JPath: "a",
-		},
-		b: &FileMatchResolver{
-			Repo: &RepositoryResolver{repo: &types.Repo{Name: "b"}},
-
-			JPath: "a",
-		},
-		aIsLess: true,
-	}}
-
-	for i, test := range tests {
-		got := compareSearchResults(test.a, test.b)
-		if got != test.aIsLess {
-			t.Errorf("[%d] incorrect comparison. got %t, expected %t", i, got, test.aIsLess)
-		}
-	}
-}
-
 func TestLonger(t *testing.T) {
 	N := 2
 	noise := time.Nanosecond
@@ -1317,4 +1254,249 @@ func TestSearchResolver_evaluateWarning(t *testing.T) {
 			t.Fatalf("got alert description %s, want %s", got.alert.description, wantPrefix)
 		}
 	})
+}
+
+func TestGetExactFilePatterns(t *testing.T) {
+	tests := []struct {
+		in   string
+		want map[string]struct{}
+	}{
+		{
+			in:   "file:foo.bar file:*.bas",
+			want: map[string]struct{}{"foo.bar": {}},
+		},
+		{
+			in:   "file:foo.bar file:foo.bas",
+			want: map[string]struct{}{"foo.bar": {}, "foo.bas": {}},
+		},
+		{
+			in:   "file:*.bar",
+			want: map[string]struct{}{},
+		},
+		{
+			in:   "repo:github.com/foo/bar file:foo.bar",
+			want: map[string]struct{}{"foo.bar": {}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.in, func(t *testing.T) {
+			q, err := query.ProcessAndOr(tt.in, query.ParserOptions{Globbing: true, SearchType: query.SearchTypeLiteral})
+			if err != nil {
+				t.Fatal(err)
+			}
+			r := searchResolver{query: q, originalQuery: tt.in}
+			if got := r.getExactFilePatterns(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getExactFilePatterns() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+type mockSearchResultURIGetter struct {
+	repo string
+	file string
+}
+
+func (m mockSearchResultURIGetter) searchResultURIs() (string, string) {
+	return m.repo, m.file
+}
+
+func TestCompareSearchResults(t *testing.T) {
+	tests := []struct {
+		name              string
+		a                 searchResultURIGetter
+		b                 searchResultURIGetter
+		exactFilePatterns map[string]struct{}
+		aIsLess           bool
+	}{
+		{
+			name:              "prefer exact match",
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
+			b:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
+			exactFilePatterns: map[string]struct{}{"file": {}},
+			aIsLess:           false,
+		},
+		{
+			name:              "reverse a and b",
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
+			b:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
+			exactFilePatterns: map[string]struct{}{"file": {}},
+			aIsLess:           true,
+		},
+		{
+			name:              "alphabetical order if exactFilePatterns is empty",
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
+			b:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
+			exactFilePatterns: map[string]struct{}{},
+			aIsLess:           true,
+		},
+		{
+			name:              "alphabetical order if exactFilePatterns is nil",
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
+			b:                 mockSearchResultURIGetter{repo: "arepo", file: "bfile"},
+			exactFilePatterns: nil,
+			aIsLess:           true,
+		},
+		{
+			name:              "same length, different files",
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: "bfile"},
+			b:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
+			exactFilePatterns: nil,
+			aIsLess:           false,
+		},
+		{
+			name:              "exact matches with different length",
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: "adir1/file"},
+			b:                 mockSearchResultURIGetter{repo: "arepo", file: "dir1/file"},
+			exactFilePatterns: map[string]struct{}{"file": {}},
+			aIsLess:           false,
+		},
+		{
+			name:              "exact matches with same length",
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: "dir2/file"},
+			b:                 mockSearchResultURIGetter{repo: "arepo", file: "dir1/file"},
+			exactFilePatterns: map[string]struct{}{"file": {}},
+			aIsLess:           false,
+		},
+		{
+			name:              "no match",
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
+			b:                 mockSearchResultURIGetter{repo: "arepo", file: "bfile"},
+			exactFilePatterns: map[string]struct{}{"file": {}},
+			aIsLess:           true,
+		},
+		{
+			name:              "different repo, 1 exact match",
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
+			b:                 mockSearchResultURIGetter{repo: "brepo", file: "afile"},
+			exactFilePatterns: map[string]struct{}{"file": {}},
+			aIsLess:           true,
+		},
+		{
+			name:              "different repo, no exact patterns",
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
+			b:                 mockSearchResultURIGetter{repo: "brepo", file: "afile"},
+			exactFilePatterns: nil,
+			aIsLess:           true,
+		},
+		{
+			name:              "different repo, 2 exact matches",
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
+			b:                 mockSearchResultURIGetter{repo: "brepo", file: "file"},
+			exactFilePatterns: map[string]struct{}{"file": {}},
+			aIsLess:           true,
+		},
+		{
+			name:              "repo matches only",
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: ""},
+			b:                 mockSearchResultURIGetter{repo: "brepo", file: ""},
+			exactFilePatterns: nil,
+			aIsLess:           true,
+		},
+		{
+			name:              "repo match and file match, same repo",
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
+			b:                 mockSearchResultURIGetter{repo: "arepo", file: ""},
+			exactFilePatterns: nil,
+			aIsLess:           false,
+		},
+		{
+			name:              "repo match and file match, different repos",
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: ""},
+			b:                 mockSearchResultURIGetter{repo: "brepo", file: "file"},
+			exactFilePatterns: nil,
+			aIsLess:           true,
+		},
+		{
+			name:              "prefer repo matches",
+			a:                 mockSearchResultURIGetter{repo: "arepo", file: ""},
+			b:                 mockSearchResultURIGetter{repo: "brepo", file: "file"},
+			exactFilePatterns: map[string]struct{}{"file": {}},
+			aIsLess:           true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run("test", func(t *testing.T) {
+			if got := compareSearchResults(tt.a, tt.b, tt.exactFilePatterns); got != tt.aIsLess {
+				t.Errorf("compareSearchResults() = %v, aIsLess %v", got, tt.aIsLess)
+			}
+		})
+	}
+}
+
+func TestEvaluateAnd(t *testing.T) {
+	tests := []struct {
+		name         string
+		query        string
+		zoektMatches int
+		filesSkipped int
+		wantAlert    bool
+	}{
+		{
+			name:         "zoekt returns enough matches, exhausted",
+			query:        "foo and bar index:only count:5",
+			zoektMatches: 5,
+			filesSkipped: 0,
+			wantAlert:    false,
+		},
+		{
+			name:         "zoekt does not return enough matches, not exhausted",
+			query:        "foo and bar index:only count:50",
+			zoektMatches: 10,
+			filesSkipped: 1,
+			wantAlert:    true,
+		},
+		{
+			name:         "zoekt returns enough matches, not exhausted",
+			query:        "foo and bar index:only count:50",
+			zoektMatches: 50,
+			filesSkipped: 1,
+			wantAlert:    false,
+		},
+	}
+
+	minimalRepos, _, zoektRepos := generateRepos(5000)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			zoektFileMatches := generateZoektMatches(tt.zoektMatches)
+			z := &searchbackend.Zoekt{
+				Client: &fakeSearcher{
+					repos:  zoektRepos,
+					result: &zoekt.SearchResult{Files: zoektFileMatches, Stats: zoekt.Stats{FilesSkipped: tt.filesSkipped}},
+				},
+				DisableCache: true,
+			}
+
+			ctx := context.Background()
+
+			mockDecodedViewerFinalSettings = &schema.Settings{}
+			defer func() { mockDecodedViewerFinalSettings = nil }()
+
+			db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
+				return minimalRepos, nil
+			}
+			db.Mocks.Repos.Count = func(ctx context.Context, opt db.ReposListOptions) (int, error) {
+				return len(minimalRepos), nil
+			}
+			defer func() { db.Mocks = db.MockStores{} }()
+
+			q, err := query.ProcessAndOr(tt.query, query.ParserOptions{SearchType: query.SearchTypeLiteral})
+			if err != nil {
+				t.Fatal(err)
+			}
+			resolver := &searchResolver{query: q, zoekt: z}
+			results, err := resolver.Results(ctx)
+			if err != nil {
+				t.Fatal("Results:", err)
+			}
+			if tt.wantAlert {
+				if results.alert == nil {
+					t.Errorf("Expected results")
+				}
+			} else if int(results.MatchCount()) != len(zoektFileMatches) {
+				t.Errorf("wrong results length. want=%d, have=%d\n", len(zoektFileMatches), results.MatchCount())
+			}
+		})
+	}
 }

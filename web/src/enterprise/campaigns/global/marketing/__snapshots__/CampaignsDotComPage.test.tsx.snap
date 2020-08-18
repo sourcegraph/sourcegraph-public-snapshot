@@ -106,12 +106,15 @@ exports[`CampaignsDotComPage renders 1`] = `
       <h1
         className="font-weight-bold display-4"
       >
-        Campaigns 
-        <span
-          className="badge badge-info"
-        >
-          Beta
-        </span>
+        Campaigns
+         
+        <sup>
+          <span
+            className="badge badge-info text-uppercase"
+          >
+            Beta
+          </span>
+        </sup>
       </h1>
       <h2
         className="mb-5"
@@ -224,7 +227,7 @@ exports[`CampaignsDotComPage renders 1`] = `
       >
         <PrivateCodeCta>
           <div
-            className="private-code-cta shadow d-flex flex-row card"
+            className="web-content private-code-cta shadow d-flex flex-row card"
           >
             <div
               className="private-code-cta__icon-column d-flex flex-column align-items-center"
@@ -239,26 +242,16 @@ exports[`CampaignsDotComPage renders 1`] = `
                 Search your private code
               </h3>
               <p>
-                Set up a private Sourcegraph instance to search your private repositories on GitHub, GitLab, Bitbucket and local installations of git, perforce, svn and other code repositories.
+                Set up a self-hosted Sourcegraph instance to search your private repositories on GitHub, GitLab, Bitbucket and local installations of Git, Perforce, Subversion and other code repositories.
               </p>
-              <AnchorLink
+              <a
+                className="btn btn-primary ga-cta-install-now"
+                href="https://docs.sourcegraph.com/"
                 rel="noreferrer"
                 target="_blank"
-                to="https://docs.sourcegraph.com/"
               >
-                <a
-                  href="https://docs.sourcegraph.com/"
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  <button
-                    className="btn btn-primary ga-cta-install-now"
-                    type="button"
-                  >
-                    Install now
-                  </button>
-                </a>
-              </AnchorLink>
+                Install now
+              </a>
             </div>
           </div>
         </PrivateCodeCta>

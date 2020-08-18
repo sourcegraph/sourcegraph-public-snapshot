@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"math/rand"
 	"regexp"
 	regexpsyntax "regexp/syntax"
 	"sort"
@@ -43,6 +42,8 @@ import (
 // logic that spans out into all the other search_* files.
 var mockResolveRepositories func(effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*search.RepositoryRevisions, excludedRepos *excludedRepos, overLimit bool, err error)
 
+var disallowLogQuery = lazyregexp.New(`(type:symbol|type:commit|type:diff)`)
+
 func maxReposToSearch() int {
 	switch max := conf.Get().MaxReposToSearch; {
 	case max <= 0:
@@ -71,9 +72,6 @@ type SearchImplementer interface {
 
 // NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
 func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
-	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
-	defer tr.Finish()
-
 	settings, err := decodedViewerFinalSettings(ctx)
 	if err != nil {
 		return nil, err
@@ -92,8 +90,8 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 	}
 
 	if envvar.SourcegraphDotComMode() {
-		// Instrumentation to log 1 in 10 search inputs for differential testing, see #12477.
-		if rand.Intn(10) == 0 {
+		// Instrumentation to log search inputs for differential testing, see #12477.
+		if !disallowLogQuery.MatchString(args.Query) {
 			log15.Info("search input", "type", searchType, "magic-887c6d4c", args.Query)
 		}
 	}
@@ -249,7 +247,7 @@ func overrideSearchType(input string, searchType query.SearchType, useNewParser 
 			// parse errors will be raised by subsequent parser calls.
 			return searchType
 		}
-		query.VisitField(q, "patterntype", func(value string, _ bool) {
+		query.VisitField(q, "patterntype", func(value string, _ bool, _ query.Annotation) {
 			switch value {
 			case "regex", "regexp":
 				searchType = query.SearchTypeRegex
@@ -430,34 +428,52 @@ func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.R
 	if q == nil {
 		return &excludedRepos{}
 	}
-	var err error
+
+	// PERF: We query concurrently since each count call can be slow on
+	// Sourcegraph.com (100ms+).
+	var wg sync.WaitGroup
 	var numExcludedForks, numExcludedArchived int
+
 	forkStr, _ := q.StringValue(query.FieldFork)
 	fork := parseYesNoOnly(forkStr)
 	if fork == Invalid && !exactlyOneRepo(op.IncludePatterns) {
-		// 'fork:...' was not specified and forks are excluded, find out
-		// which repos are excluded.
-		selectForks := op
-		selectForks.OnlyForks = true
-		selectForks.NoForks = false
-		numExcludedForks, err = db.Repos.Count(ctx, selectForks)
-		if err != nil {
-			log15.Warn("repo count for excluded fork", "err", err)
-		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			// 'fork:...' was not specified and forks are excluded, find out
+			// which repos are excluded.
+			selectForks := op
+			selectForks.OnlyForks = true
+			selectForks.NoForks = false
+			var err error
+			numExcludedForks, err = db.Repos.Count(ctx, selectForks)
+			if err != nil {
+				log15.Warn("repo count for excluded fork", "err", err)
+			}
+		}()
 	}
+
 	archivedStr, _ := q.StringValue(query.FieldArchived)
 	archived := parseYesNoOnly(archivedStr)
 	if archived == Invalid && !exactlyOneRepo(op.IncludePatterns) {
-		// archived...: was not specified and archives are excluded,
-		// find out which repos are excluded.
-		selectArchived := op
-		selectArchived.OnlyArchived = true
-		selectArchived.NoArchived = false
-		numExcludedArchived, err = db.Repos.Count(ctx, selectArchived)
-		if err != nil {
-			log15.Warn("repo count for excluded archive", "err", err)
-		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			// archived...: was not specified and archives are excluded,
+			// find out which repos are excluded.
+			selectArchived := op
+			selectArchived.OnlyArchived = true
+			selectArchived.NoArchived = false
+			var err error
+			numExcludedArchived, err = db.Repos.Count(ctx, selectArchived)
+			if err != nil {
+				log15.Warn("repo count for excluded archive", "err", err)
+			}
+		}()
 	}
+
+	wg.Wait()
+
 	return &excludedRepos{forks: numExcludedForks, archived: numExcludedArchived}
 }
 
@@ -667,8 +683,55 @@ type resolveRepoOp struct {
 	query              query.QueryInfo
 }
 
-func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, overLimit bool, excludedRepos *excludedRepos, err error) {
-	tr, ctx := trace.New(ctx, "resolveRepositories", fmt.Sprintf("%+v", op))
+func (op *resolveRepoOp) String() string {
+	var b strings.Builder
+	if len(op.repoFilters) == 0 {
+		b.WriteString("r=[]")
+	}
+	for i, r := range op.repoFilters {
+		if i != 0 {
+			b.WriteByte(' ')
+		}
+		b.WriteString(strconv.Quote(r))
+	}
+
+	if len(op.minusRepoFilters) > 0 {
+		_, _ = fmt.Fprintf(&b, " -r=%v", op.minusRepoFilters)
+	}
+	if len(op.repoGroupFilters) > 0 {
+		_, _ = fmt.Fprintf(&b, " groups=%v", op.repoGroupFilters)
+	}
+	if op.versionContextName != "" {
+		_, _ = fmt.Fprintf(&b, " versionContext=%q", op.versionContextName)
+	}
+	if op.commitAfter != "" {
+		_, _ = fmt.Fprintf(&b, " commitAfter=%q", op.commitAfter)
+	}
+
+	if op.noForks {
+		b.WriteString(" noForks")
+	}
+	if op.onlyForks {
+		b.WriteString(" onlyForks")
+	}
+	if op.noArchived {
+		b.WriteString(" noArchived")
+	}
+	if op.onlyArchived {
+		b.WriteString(" onlyArchived")
+	}
+	if op.onlyPrivate {
+		b.WriteString(" onlyPrivate")
+	}
+	if op.onlyPublic {
+		b.WriteString(" onlyPublic")
+	}
+
+	return b.String()
+}
+
+func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, overLimit bool, excluded *excludedRepos, err error) {
+	tr, ctx := trace.New(ctx, "resolveRepositories", op.String())
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -698,6 +761,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 				patterns = append(patterns, "^"+regexp.QuoteMeta(string(repo.Name))+"$")
 			}
 		}
+		tr.LazyPrintf("repogroups: adding %d repos to include pattern", len(patterns))
 		includePatterns = append(includePatterns, unionRegExps(patterns))
 
 		// Ensure we don't omit any repos explicitly included via a repo group.
@@ -731,10 +795,12 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 
 	var defaultRepos []*types.Repo
 	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 {
+		start := time.Now()
 		defaultRepos, err = defaultRepositories(ctx, db.DefaultRepos.List, search.Indexed(), excludePatterns)
 		if err != nil {
 			return nil, nil, false, nil, errors.Wrap(err, "getting list of default repos")
 		}
+		tr.LazyPrintf("defaultrepos: took %s to add %d repos", time.Since(start), len(defaultRepos))
 
 		// Search all default repos since indexed search is fast.
 		if len(defaultRepos) > maxRepoListSize {
@@ -764,9 +830,20 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 			NoPrivate:    op.onlyPublic,
 			OnlyPrivate:  op.onlyPrivate,
 		}
-		excludedRepos = computeExcludedRepositories(ctx, op.query, options)
+
+		// PERF: We query concurrently since Count and List call can be slow
+		// on Sourcegraph.com (100ms+).
+		excludedC := make(chan *excludedRepos)
+		go func() {
+			excludedC <- computeExcludedRepositories(ctx, op.query, options)
+		}()
+
 		repos, err = db.Repos.List(ctx, options)
 		tr.LazyPrintf("Repos.List - done")
+
+		excluded = <-excludedC
+		tr.LazyPrintf("excluded repos: %+v", excluded)
+
 		if err != nil {
 			return nil, nil, false, nil, err
 		}
@@ -848,10 +925,13 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	tr.LazyPrintf("Associate/validate revs - done")
 
 	if op.commitAfter != "" {
+		start := time.Now()
+		before := len(repoRevisions)
 		repoRevisions, err = filterRepoHasCommitAfter(ctx, repoRevisions, op.commitAfter)
+		tr.LazyPrintf("repohascommitafter removed %d repos in %s", before-len(repoRevisions), time.Since(start))
 	}
 
-	return repoRevisions, missingRepoRevisions, overLimit, excludedRepos, err
+	return repoRevisions, missingRepoRevisions, overLimit, excluded, err
 }
 
 type defaultReposFunc func(ctx context.Context) ([]*types.Repo, error)
@@ -944,7 +1024,7 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 }
 
 func optimizeRepoPatternWithHeuristics(repoPattern string) string {
-	if envvar.SourcegraphDotComMode() && strings.HasPrefix(string(repoPattern), "github.com") {
+	if envvar.SourcegraphDotComMode() && (strings.HasPrefix(string(repoPattern), "github.com") || strings.HasPrefix(string(repoPattern), `github\.com`)) {
 		repoPattern = "^" + repoPattern
 	}
 	// Optimization: make the "." in "github.com" a literal dot

@@ -441,6 +441,17 @@ type Mutation {
 
     # Enqueue the given changeset for high-priority syncing.
     syncChangeset(changeset: ID!): EmptyResponse!
+
+    #
+    # OBSERVABILITY
+    #
+
+    # Set the status of a test alert of the specified parameters - useful for validating
+    # 'observability.alerts' configuration. Alerts may take up to a minute to fire.
+    triggerObservabilityTestAlert(
+        # Level of alert to test - either warning or critical.
+        level: String!
+    ): EmptyResponse!
 }
 
 # The type of the changeset spec.
@@ -569,6 +580,11 @@ type GitBranchChangesetDescription {
     # The total diff of the changeset diff.
     diff: PreviewRepositoryComparison!
 
+    # The diffstat of this changeset spec. This data is also available
+    # indirectly through the diff field above, but if only the diffStat is
+    # required, this field is cheaper to access.
+    diffStat: DiffStat!
+
     # Whether or not the changeset described here should be created right after
     # applying the ChangesetSpec this description belongs to.
     #
@@ -581,8 +597,6 @@ type GitBranchChangesetDescription {
 }
 
 # A description of a Git commit.
-#
-# TODO: Support specifying committer/author.
 type GitCommitDescription {
     # The Git commit message.
     message: String!
@@ -618,7 +632,10 @@ type CampaignDescription {
 type CampaignSpec implements Node {
     # The unique ID for a campaign spec.
     #
-    # TODO(sqs): document permissions and ID guessability
+    # The ID is unguessable (i.e., long and randomly generated, not sequential).
+    # Consider a campaign to fix a security vulnerability: the campaign author may prefer
+    # to prepare the campaign, including the description in private so that the window
+    # between revealing the problem and merging the fixes is as short as possible.
     id: ID!
 
     # The original YAML or JSON input that was used to create this campaign spec.
@@ -641,17 +658,25 @@ type CampaignSpec implements Node {
     createdAt: DateTime!
 
     # The namespace (either a user or organization) of the campaign spec.
-    namespace: Namespace
+    namespace: Namespace!
 
     # The date, if any, when this campaign spec expires and is automatically purged. A campaign spec
     # never expires if it has been applied.
     expiresAt: DateTime
 
-    # The URL of a web page that displays a preview of creating a campaign from this spec.
-    previewURL: String!
+    # The URL of a web page that allows applying this campaign spec and
+    # displays a preview of which changesets will be created by applying it.
+    applyURL: String!
 
     # When true, the viewing user can apply this spec.
     viewerCanAdminister: Boolean!
+
+    # The diff stat for all the changeset specs in the campaign spec.
+    diffStat: DiffStat!
+
+    # The campaign this spec will update when applied. If it's null, the
+    # campaign doesn't yet exist.
+    appliesToCampaign: Campaign
 }
 
 # A user (identified either by username or email address) with its repository permission.
@@ -678,11 +703,15 @@ type Campaign implements Node {
     # The description (as Markdown).
     description: String
 
-    # The branch of the changesets.
-    branch: String
+    # The user that created the initial spec. In an org, this will be different from the namespace, or null if the user was deleted.
+    specCreator: User
 
-    # The user who authored the campaign.
-    author: User!
+    # The user who created the campaign initially by applying the spec for the first time, or null if the user was deleted.
+    initialApplier: User
+
+    # The user who last updated the campaign by applying a spec to this campaign.
+    # If the campaign hasn't been updated, the lastApplier is the initialApplier, or null if the user was deleted.
+    lastApplier: User
 
     # Whether the current user can edit or delete this campaign.
     viewerCanAdminister: Boolean!
@@ -693,20 +722,31 @@ type Campaign implements Node {
     # The date and time when the campaign was created.
     createdAt: DateTime!
 
-    # The date and time when the campaign was updated.
+    # The date and time when the campaign was updated. That can be by applying a spec, or by an internal process.
+    # For reading the time the campaign spec was changed last, see lastAppliedAt.
     updatedAt: DateTime!
+
+    # The date and time when the campaign was last updated with a new spec.
+    lastAppliedAt: DateTime!
+
+    # The date and time when the campaign was closed. If set, applying a spec for this campaign will fail with an error.
+    closedAt: DateTime
 
     # The changesets in this campaign that already exist on the code host.
     changesets(
         first: Int
-        # Only include changesets with the given state.
-        state: ChangesetState
+        # Only include changesets with the given reconciler state.
+        reconcilerState: ChangesetReconcilerState
+        # Only include changesets with the given publication state.
+        publicationState: ChangesetPublicationState
         # Only include changesets with the given external state.
         externalState: ChangesetExternalState
         # Only include changesets with the given review state.
         reviewState: ChangesetReviewState
         # Only include changesets with the given check state.
         checkState: ChangesetCheckState
+        # Only return changesets that have been published by this campaign. Imported changesets will be omitted.
+        onlyPublishedByThisCampaign: Boolean
     ): ChangesetConnection!
 
     # The changeset counts over time, in 1-day intervals backwards from the point in time given in
@@ -718,9 +758,6 @@ type Campaign implements Node {
         # current time.
         to: DateTime
     ): [ChangesetCounts!]!
-
-    # The date and time when the campaign was closed. If set, applying a spec for this campaign will fail with an error.
-    closedAt: DateTime
 
     # The diff stat for all the changesets in the campaign.
     diffStat: DiffStat!
@@ -758,16 +795,30 @@ type CampaignConnection {
     pageInfo: PageInfo!
 }
 
-# The internal state of a changeset on Sourcegraph.
-enum ChangesetState {
-    # The changeset has not yet been created on the code host and is not scheduled to be.
+# The publication state of a changeset on Sourcegraph
+enum ChangesetPublicationState {
+    # The changeset has not yet been created on the code host.
     UNPUBLISHED
-    # The changeset is currently being created or updated on the code host.
-    PUBLISHING
-    # An error occurred while publishing or syncing this changeset.
+    # The changeset has been created on the code host.
+    PUBLISHED
+}
+
+# The reconciler state of a changeset on Sourcegraph
+enum ChangesetReconcilerState {
+    # The changeset is enqueued for the reconciler to process it.
+    QUEUED
+
+    # The changeset reconciler is currently computing the delta between the
+    # If a delta exists, the reconciler tries to update the state of the
+    # changeset on the code host and on Sourcegraph to the desired state.
+    PROCESSING
+
+    # The changeset reconciler ran into a problem while processing the
+    # changeset.
     ERRORED
-    # The changeset is likely up to date and no changes are pending execution.
-    SYNCED
+
+    # The changeset is not enqueued for processing.
+    COMPLETED
 }
 
 # The state of a changeset on the code host on which it's hosted.
@@ -813,12 +864,19 @@ interface Changeset {
     campaigns(
         # Returns the first n campaigns from the list.
         first: Int
+        # Opaque pagination cursor.
+        after: String
         # Only return campaigns in this state.
         state: CampaignState
+        # Only include campaigns that the viewer can administer.
+        viewerCanAdminister: Boolean
     ): CampaignConnection!
 
-    # The state of the changeset.
-    state: ChangesetState!
+    # The publication state of the changeset.
+    publicationState: ChangesetPublicationState!
+
+    # The reconciler state of the changeset.
+    reconcilerState: ChangesetReconcilerState!
 
     # The external state of the changeset, or null when not yet published to the code host.
     externalState: ChangesetExternalState
@@ -842,12 +900,19 @@ type HiddenExternalChangeset implements Node & Changeset {
     campaigns(
         # Returns the first n campaigns from the list.
         first: Int
+        # Opaque pagination cursor.
+        after: String
         # Only return campaigns in this state.
         state: CampaignState
+        # Only include campaigns that the viewer can administer.
+        viewerCanAdminister: Boolean
     ): CampaignConnection!
 
-    # The state of the changeset.
-    state: ChangesetState!
+    # The publication state of the changeset.
+    publicationState: ChangesetPublicationState!
+
+    # The reconciler state of the changeset.
+    reconcilerState: ChangesetReconcilerState!
 
     # The external state of the changeset, or null when not yet opened.
     externalState: ChangesetExternalState
@@ -878,6 +943,8 @@ type ExternalChangeset implements Node & Changeset {
     campaigns(
         # Returns the first n campaigns from the list.
         first: Int
+        # Opaque pagination cursor.
+        after: String
         # Only return campaigns in this state.
         state: CampaignState
         # Only include campaigns that the viewer can administer.
@@ -902,8 +969,11 @@ type ExternalChangeset implements Node & Changeset {
     # The body of the changeset.
     body: String!
 
-    # The state of the changeset.
-    state: ChangesetState!
+    # The publication state of the changeset.
+    publicationState: ChangesetPublicationState!
+
+    # The reconciler state of the changeset.
+    reconcilerState: ChangesetReconcilerState!
 
     # The external state of the changeset, or null when not yet published to the code host.
     externalState: ChangesetExternalState
@@ -1003,6 +1073,9 @@ input AddExternalServiceInput {
     displayName: String!
     # The JSON configuration of the external service.
     config: String!
+    # The namespace this external service belongs to.
+    # Currently, this can only be used for a user.
+    namespace: ID
 }
 
 # Fields to update for an existing external service.
@@ -1172,6 +1245,9 @@ type Query {
     campaigns(
         # Returns the first n campaigns from the list.
         first: Int
+        # Opaque pagination cursor.
+        after: String
+        # Only return campaigns in this state.
         state: CampaignState
         # Only include campaigns that the viewer can administer.
         viewerCanAdminister: Boolean
@@ -1200,10 +1276,16 @@ type Query {
         # Will not actually check the code host to see if the repository actually exists.
         cloneURL: String
     ): RepositoryRedirect
-    # Lists all external services.
+    # Lists external services under given namespace.
+    # If no namespace is given, it returns all external services.
     externalServices(
+        # The namespace to scope returned external services.
+        # Currently, this can only be used for a user.
+        namespace: ID
         # Returns the first n external services from the list.
         first: Int
+        # Opaque pagination cursor.
+        after: String
     ): ExternalServiceConnection!
     # List all repositories.
     repositories(
@@ -1215,9 +1297,6 @@ type Query {
         names: [String!]
         # Include cloned repositories.
         cloned: Boolean = true
-        # Include repositories that are currently being cloned.
-        # DEPRECATED: This will be removed.
-        cloneInProgress: Boolean = true
         # Include repositories that are not yet cloned and for which cloning is not in progress.
         notCloned: Boolean = true
         # Include repositories that have a text search index.
@@ -1474,7 +1553,7 @@ type SearchFilterSuggestions {
 }
 
 # A search result.
-union SearchResult = FileMatch | CommitSearchResult | Repository | CodemodResult
+union SearchResult = FileMatch | CommitSearchResult | Repository
 
 # An object representing a markdown string.
 type Markdown {
@@ -1704,24 +1783,6 @@ type CommitSearchResult implements GenericSearchResultInterface {
     diffPreview: HighlightedString
 }
 
-# The result of a code modification query.
-type CodemodResult implements GenericSearchResultInterface {
-    # URL to an icon that is displayed with every search result.
-    icon: String!
-    # A markdown string that is rendered prominently.
-    label: Markdown!
-    # The URL of the result.
-    url: String!
-    # A markdown string that is rendered less prominently.
-    detail: Markdown!
-    # A list of matches in this search result.
-    matches: [SearchResultMatch!]!
-    # The commit whose contents the codemod was run against.
-    commit: GitCommit!
-    # The raw diff of the modification.
-    rawDiff: String!
-}
-
 # A search result that is a diff between two diffable Git objects.
 type DiffSearchResult {
     # The diff that matched the search query.
@@ -1786,6 +1847,8 @@ type ExternalService implements Node {
     createdAt: DateTime!
     # When the external service was last updated.
     updatedAt: DateTime!
+    # The namespace this external service belongs to.
+    namespace: ID
     # An optional URL that will be populated when webhooks have been configured for the external service.
     webhookURL: String
     # This is an optional field that's populated when we ran into errors on the
@@ -3297,6 +3360,18 @@ type User implements Node & SettingsSubject & Namespace {
     # The permissions information of the user over repositories.
     # It is null when there is no permissions data stored for the user.
     permissionsInfo: PermissionsInfo
+
+    # A list of campaigns applied under this user's namespace.
+    campaigns(
+        # Returns the first n campaigns from the list.
+        first: Int
+        # Opaque pagination cursor.
+        after: String
+        # Only return campaigns in this state.
+        state: CampaignState
+        # Only include campaigns that the viewer can administer.
+        viewerCanAdminister: Boolean
+    ): CampaignConnection!
 }
 
 # An access token that grants to the holder the privileges of the user who created it.
@@ -3489,6 +3564,18 @@ type Org implements Node & SettingsSubject & Namespace {
 
     # The name of this user namespace's component. For organizations, this is the organization's name.
     namespaceName: String!
+
+    # A list of campaigns initially applied in this organization.
+    campaigns(
+        # Returns the first n campaigns from the list.
+        first: Int
+        # Opaque pagination cursor.
+        after: String
+        # Only return campaigns in this state.
+        state: CampaignState
+        # Only include campaigns that the viewer can administer.
+        viewerCanAdminister: Boolean
+    ): CampaignConnection!
 }
 
 # The result of Mutation.inviteUserToOrganization.
@@ -3918,6 +4005,8 @@ type MonitoringAlert {
     name: String!
     # Name of the service that fired the alert.
     serviceName: String!
+    # Owner of the fired alert.
+    owner: String!
     # Average percentage of time (between [0, 1]) that the event was firing over the 12h of recorded data. e.g.
     # 1.0 if it was firing 100% of the time on average during that 12h window, 0.5 if it was firing 50% of the
     # time on average, etc.

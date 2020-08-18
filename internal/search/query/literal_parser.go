@@ -66,6 +66,7 @@ loop:
 		case unicode.IsSpace(r) && balanced == 0:
 			// Stop scanning a potential pattern when we see
 			// whitespace in a balanced state.
+			count = start
 			break loop
 		case r == '(':
 			balanced++

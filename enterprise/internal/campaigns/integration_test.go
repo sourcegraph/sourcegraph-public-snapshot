@@ -33,9 +33,7 @@ func TestIntegration(t *testing.T) {
 
 	t.Run("GitHubWebhook", testGitHubWebhook(db, userID))
 	t.Run("BitbucketWebhook", testBitbucketWebhook(db, userID))
-
-	// The following tests need to be separate because testStore above wraps everything in a global transaction
-	t.Run("StoreLocking", testStoreLocking(db))
+	t.Run("GitLabWebhook", testGitLabWebhook(db, userID))
 }
 
 func truncateTables(t *testing.T, db *sql.DB, tables ...string) {
@@ -45,6 +43,17 @@ func truncateTables(t *testing.T, db *sql.DB, tables ...string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func insertTestOrg(t *testing.T, db *sql.DB) (orgID int32) {
+	t.Helper()
+
+	err := db.QueryRow("INSERT INTO orgs (name) VALUES ('bbs-org') RETURNING id").Scan(&orgID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return orgID
 }
 
 func insertTestUser(t *testing.T, db *sql.DB) (userID int32) {

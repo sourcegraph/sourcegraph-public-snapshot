@@ -38,7 +38,7 @@ func changeReceivers(ctx context.Context, log log15.Logger, change ChangeContext
 	}
 
 	// reset and generate new notifiers configuration
-	receivers, routes := newRoutesAndReceivers(newConfig.Alerts, newProblem)
+	receivers, routes := newRoutesAndReceivers(newConfig.Alerts, newConfig.ExternalURL, newProblem)
 	change.AMConfig.Receivers = append(receivers, &amconfig.Receiver{
 		// stub receiver
 		Name: alertmanagerNoopReceiver,
@@ -47,7 +47,7 @@ func changeReceivers(ctx context.Context, log log15.Logger, change ChangeContext
 		// include `alertname` for now to accommodate non-generator alerts - in the long run, we want to remove grouping on `alertname`
 		// because all alerts should have some predefined labels
 		// https://github.com/sourcegraph/sourcegraph/issues/5370
-		GroupByStr: []string{"alertname", "level", "service_name", "name"},
+		GroupByStr: []string{"alertname", "level", "service_name", "name", "owner"},
 
 		// How long to initially wait to send a notification for a group - each group matches exactly one alert, so fire immediately
 		GroupWait: duration(1 * time.Second),

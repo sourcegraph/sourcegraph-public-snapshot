@@ -317,6 +317,12 @@ func (r *UserResolver) ViewerCanChangeUsername(ctx context.Context) bool {
 	return viewerCanChangeUsername(ctx, r.user.ID)
 }
 
+func (r *UserResolver) Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error) {
+	id := r.ID()
+	args.Namespace = &id
+	return EnterpriseResolvers.campaignsResolver.Campaigns(ctx, args)
+}
+
 func viewerCanChangeUsername(ctx context.Context, userID int32) bool {
 	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
 		return false

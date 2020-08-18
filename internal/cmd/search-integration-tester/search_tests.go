@@ -22,7 +22,7 @@ var tests = []test{
 	},
 	{
 		Name:  `Global search, repo search by name, case yes, nonzero result`,
-		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ String case:yes count:1 stable:yes`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ String case:yes count:1 stable:yes type:file`,
 	},
 	{
 		Name:  `True is an alias for yes when fork is set`,
@@ -31,15 +31,15 @@ var tests = []test{
 	// Text search, focused to repo.
 	{
 		Name:  `Repo search, non-master branch, nonzero result`,
-		Query: `repo:^github.com/facebook/react$@0.3-stable var ExecutionEnvironment = require('ExecutionEnvironment'); patterntype:literal count:1 stable:yes`,
+		Query: `repo:^github.com/facebook/react$@0.3-stable var ExecutionEnvironment = require('ExecutionEnvironment'); patterntype:literal count:1 stable:yes type:file`,
 	},
 	{
 		Name:  `Repo search, indexed multiline search, nonzero result`,
-		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ \nimport index:only count:1 stable:yes`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ \nimport index:only count:1 stable:yes type:file`,
 	},
 	{
 		Name:  `Repo search, unindexed multiline search, nonzero result`,
-		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ \nimport index:no count:1 stable:yes`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ \nimport index:no count:1 stable:yes type:file`,
 	},
 	{
 		Name:  `Repo search, zero results`,
@@ -67,21 +67,21 @@ var tests = []test{
 	},
 	{
 		Name:  `Global search, double-quoted pattern, nonzero result`,
-		Query: `"error type:\n" patterntype:regexp count:1 stable:yes`,
+		Query: `"error type:\n" patterntype:regexp count:1 stable:yes type:file`,
 	},
 	{
 		Name:  `Global search, exclude repo, nonzero result`,
-		Query: `"error type:\n" -repo:DirectXMan12 patterntype:regexp count:1 stable:yes`,
+		Query: `"error type:\n" -repo:DirectXMan12 patterntype:regexp count:1 stable:yes type:file`,
 	},
 	// Repohascommitafter.
 	{
-		Name:  `Global search, repohascommitafter, nonzero result`,
-		Query: `repohascommitafter:"5 months ago" test patterntype:literal count:1 stable:yes`,
+		Name:  `Repohascommitafter, nonzero result`,
+		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$ repohascommitafter:"5 months ago" test patterntype:literal count:1`,
 	},
 	// Global regex text search.
 	{
 		Name:  `Global search, regex, unindexed, nonzero result`,
-		Query: `^func.*$ patterntype:regexp index:only count:1 stable:yes`,
+		Query: `^func.*$ patterntype:regexp index:only count:1 stable:yes type:file`,
 	},
 	{
 		Name:  `Global search, fork only, nonzero result`,
@@ -89,7 +89,7 @@ var tests = []test{
 	},
 	{
 		Name:  `Global search, filter by language`,
-		Query: `\bfunc\b lang:go count:1 stable:yes`,
+		Query: `\bfunc\b lang:go count:1 stable:yes type:file`,
 	},
 	{
 		Name:  `Global search, filename, zero results`,
@@ -97,12 +97,12 @@ var tests = []test{
 	},
 	{
 		Name:  `Global search, filename, nonzero result`,
-		Query: `file:router.go count:1 stable:yes`,
+		Query: `file:router.go count:1`,
 	},
 	// Symbol search.
 	{
 		Name:  `Global search, symbols, nonzero result`,
-		Query: `type:symbol test count:1 stable:yes`,
+		Query: `-repo:sourcegraph type:symbol test count:1`,
 	},
 	// Structural search.
 	{
@@ -145,6 +145,10 @@ var tests = []test{
 	{
 		Name:  `Global search, exclude counts for fork and archive`,
 		Query: `repo:mux|archive|caddy`,
+	},
+	{
+		Name:  `Repo visibility`,
+		Query: `repo:github.com/rvantonderp/adjust-go-wrk visibility:public`,
 	},
 	// And/Or queries.
 	{
@@ -274,6 +278,10 @@ var tests = []test{
 	{
 		Name:  `Intersect file matches per file against an empty result set`,
 		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^cmd/adapter/adapter\.go func and doesnotexist838338`,
+	},
+	{
+		Name:  `Dedupe union operation`,
+		Query: `file:cors_filter.go|ginkgo_dsl.go|funcs.go repo:rvantonderp/DirectXMan12-k8s-prometheus-adapter  :[[i]], :[[x]] := range :[src.] { :[[dst]][:[i]] = :[[x]] } or if strings.ToLower(:[s1]) == strings.ToLower(:[s2]) patterntype:structural`,
 	},
 }
 

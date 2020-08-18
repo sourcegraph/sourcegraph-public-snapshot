@@ -96,8 +96,6 @@ require (
 	github.com/kylelemons/godebug v1.1.0
 	github.com/leanovate/gopter v0.2.8
 	github.com/lib/pq v1.7.0
-	github.com/lightstep/lightstep-tracer-common/golang/gogo v0.0.0-20200310182322-adf4263e074b // indirect
-	github.com/lightstep/lightstep-tracer-go v0.20.0
 	github.com/machinebox/graphql v0.2.2
 	github.com/matryer/is v1.3.0 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
@@ -110,7 +108,7 @@ require (
 	github.com/onsi/gomega v1.10.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opentracing-contrib/go-stdlib v1.0.0
-	github.com/opentracing/opentracing-go v1.1.0
+	github.com/opentracing/opentracing-go v1.2.0
 	github.com/peterbourgon/ff v1.7.0
 	github.com/peterhellberg/link v1.1.0
 	github.com/pkg/errors v0.9.1
@@ -126,7 +124,6 @@ require (
 	github.com/schollz/progressbar/v3 v3.3.4
 	github.com/segmentio/fasthash v1.0.2
 	github.com/sergi/go-diff v1.1.0
-	github.com/shirou/gopsutil v2.20.5+incompatible // indirect
 	github.com/shurcooL/github_flavored_markdown v0.0.0-20181002035957-2122de532470
 	github.com/shurcooL/go v0.0.0-20200502201357-93f07166e636 // indirect
 	github.com/shurcooL/highlight_diff v0.0.0-20181222201841-111da2e7d480 // indirect
@@ -150,11 +147,12 @@ require (
 	github.com/src-d/enry/v2 v2.1.0
 	github.com/stretchr/testify v1.6.1 // indirect
 	github.com/stripe/stripe-go v70.15.0+incompatible
+	github.com/teivah/onecontext v0.0.0-20200513185103-40f981bfd775
 	github.com/temoto/robotstxt v1.1.1
 	github.com/tinylib/msgp v1.1.2 // indirect
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80
 	github.com/uber/gonduit v0.6.1
-	github.com/uber/jaeger-client-go v2.24.0+incompatible
+	github.com/uber/jaeger-client-go v2.25.0+incompatible
 	github.com/uber/jaeger-lib v2.2.0+incompatible
 	github.com/vmihailenco/msgpack/v4 v4.3.12 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
@@ -172,7 +170,7 @@ require (
 	golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae
 	golang.org/x/text v0.3.3 // indirect
 	golang.org/x/time v0.0.0-20200416051211-89c76fbcd5d1
-	golang.org/x/tools v0.0.0-20200626032829-bcbc01e07a20
+	golang.org/x/tools v0.0.0-20200731060945-b5fad4ed8dd6
 	google.golang.org/api v0.28.0 // indirect
 	google.golang.org/appengine v1.6.6 // indirect
 	google.golang.org/grpc v1.30.0 // indirect
@@ -200,7 +198,7 @@ replace (
 )
 
 // We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200728073129-dae6fc7ecc8f
+replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200813180605-1373c3986c6d
 
 replace github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
 

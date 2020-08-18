@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/pkg/errors"
 )
@@ -30,10 +29,10 @@ type MergeRequest struct {
 	Title        string            `json:"title"`
 	Description  string            `json:"description"`
 	State        MergeRequestState `json:"state"`
-	CreatedAt    time.Time         `json:"created_at"`
-	UpdatedAt    time.Time         `json:"updated_at"`
-	MergedAt     *time.Time        `json:"merged_at"`
-	ClosedAt     *time.Time        `json:"closed_at"`
+	CreatedAt    Time              `json:"created_at"`
+	UpdatedAt    Time              `json:"updated_at"`
+	MergedAt     *Time             `json:"merged_at"`
+	ClosedAt     *Time             `json:"closed_at"`
 	HeadPipeline *Pipeline         `json:"head_pipeline"`
 	Labels       []string          `json:"labels"`
 	SourceBranch string            `json:"source_branch"`

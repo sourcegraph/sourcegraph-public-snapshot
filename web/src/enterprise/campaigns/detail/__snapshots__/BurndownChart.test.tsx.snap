@@ -2,22 +2,9 @@
 
 exports[`CampaignBurndownChart renders an alert when data for less than 2 days is present 1`] = `
 <CampaignBurndownChart
-  changesetCountsOverTime={
-    Array [
-      Object {
-        "__typename": "ChangesetCounts",
-        "closed": 1,
-        "date": "2019-11-13T12:00:00Z",
-        "merged": 1,
-        "open": 8,
-        "openApproved": 1,
-        "openChangesRequested": 1,
-        "openPending": 1,
-        "total": 10,
-      },
-    ]
-  }
+  campaignID="123"
   history="[History]"
+  queryChangesetCountsOverTime={[Function]}
   width={500}
 >
   <p>
@@ -30,33 +17,9 @@ exports[`CampaignBurndownChart renders an alert when data for less than 2 days i
 
 exports[`CampaignBurndownChart renders an alert when no datapoints are in a set of more than 1 day of data 1`] = `
 <CampaignBurndownChart
-  changesetCountsOverTime={
-    Array [
-      Object {
-        "__typename": "ChangesetCounts",
-        "closed": 0,
-        "date": "2019-11-13T12:00:00Z",
-        "merged": 0,
-        "open": 0,
-        "openApproved": 0,
-        "openChangesRequested": 0,
-        "openPending": 0,
-        "total": 0,
-      },
-      Object {
-        "__typename": "ChangesetCounts",
-        "closed": 0,
-        "date": "2019-11-14T12:00:00Z",
-        "merged": 0,
-        "open": 0,
-        "openApproved": 0,
-        "openChangesRequested": 0,
-        "openPending": 0,
-        "total": 0,
-      },
-    ]
-  }
+  campaignID="123"
   history="[History]"
+  queryChangesetCountsOverTime={[Function]}
   width={500}
 >
   <p>
@@ -69,33 +32,9 @@ exports[`CampaignBurndownChart renders an alert when no datapoints are in a set 
 
 exports[`CampaignBurndownChart renders the chart 1`] = `
 <CampaignBurndownChart
-  changesetCountsOverTime={
-    Array [
-      Object {
-        "__typename": "ChangesetCounts",
-        "closed": 1,
-        "date": "2019-11-13T12:00:00Z",
-        "merged": 1,
-        "open": 8,
-        "openApproved": 1,
-        "openChangesRequested": 1,
-        "openPending": 1,
-        "total": 10,
-      },
-      Object {
-        "__typename": "ChangesetCounts",
-        "closed": 1,
-        "date": "2019-11-14T12:00:00Z",
-        "merged": 5,
-        "open": 4,
-        "openApproved": 1,
-        "openChangesRequested": 1,
-        "openPending": 1,
-        "total": 10,
-      },
-    ]
-  }
+  campaignID="123"
   history="[History]"
+  queryChangesetCountsOverTime={[Function]}
   width={500}
 >
   <ResponsiveContainer
@@ -121,22 +60,18 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
         data={
           Array [
             Object {
-              "__typename": "ChangesetCounts",
               "closed": 1,
               "date": 1573646400000,
               "merged": 1,
-              "open": 8,
               "openApproved": 1,
               "openChangesRequested": 1,
               "openPending": 1,
               "total": 10,
             },
             Object {
-              "__typename": "ChangesetCounts",
               "closed": 1,
               "date": 1573732800000,
               "merged": 5,
-              "open": 4,
               "openApproved": 1,
               "openChangesRequested": 1,
               "openPending": 1,
@@ -824,11 +759,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                   Array [
                     Object {
                       "payload": Object {
-                        "__typename": "ChangesetCounts",
                         "closed": 1,
                         "date": 1573646400000,
                         "merged": 1,
-                        "open": 8,
                         "openApproved": 1,
                         "openChangesRequested": 1,
                         "openPending": 1,
@@ -843,11 +776,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                     },
                     Object {
                       "payload": Object {
-                        "__typename": "ChangesetCounts",
                         "closed": 1,
                         "date": 1573732800000,
                         "merged": 5,
-                        "open": 4,
                         "openApproved": 1,
                         "openChangesRequested": 1,
                         "openPending": 1,
@@ -1014,11 +945,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                             Array [
                               Object {
                                 "payload": Object {
-                                  "__typename": "ChangesetCounts",
                                   "closed": 1,
                                   "date": 1573646400000,
                                   "merged": 1,
-                                  "open": 8,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
                                   "openPending": 1,
@@ -1033,11 +962,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                               },
                               Object {
                                 "payload": Object {
-                                  "__typename": "ChangesetCounts",
                                   "closed": 1,
                                   "date": 1573732800000,
                                   "merged": 5,
-                                  "open": 4,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
                                   "openPending": 1,
@@ -1175,11 +1102,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                             Array [
                               Object {
                                 "payload": Object {
-                                  "__typename": "ChangesetCounts",
                                   "closed": 1,
                                   "date": 1573646400000,
                                   "merged": 1,
-                                  "open": 8,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
                                   "openPending": 1,
@@ -1194,11 +1119,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                               },
                               Object {
                                 "payload": Object {
-                                  "__typename": "ChangesetCounts",
                                   "closed": 1,
                                   "date": 1573732800000,
                                   "merged": 5,
-                                  "open": 4,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
                                   "openPending": 1,
@@ -1272,11 +1195,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                   Array [
                     Object {
                       "payload": Object {
-                        "__typename": "ChangesetCounts",
                         "closed": 1,
                         "date": 1573646400000,
                         "merged": 1,
-                        "open": 8,
                         "openApproved": 1,
                         "openChangesRequested": 1,
                         "openPending": 1,
@@ -1291,11 +1212,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                     },
                     Object {
                       "payload": Object {
-                        "__typename": "ChangesetCounts",
                         "closed": 1,
                         "date": 1573732800000,
                         "merged": 5,
-                        "open": 4,
                         "openApproved": 1,
                         "openChangesRequested": 1,
                         "openPending": 1,
@@ -1462,11 +1381,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                             Array [
                               Object {
                                 "payload": Object {
-                                  "__typename": "ChangesetCounts",
                                   "closed": 1,
                                   "date": 1573646400000,
                                   "merged": 1,
-                                  "open": 8,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
                                   "openPending": 1,
@@ -1481,11 +1398,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                               },
                               Object {
                                 "payload": Object {
-                                  "__typename": "ChangesetCounts",
                                   "closed": 1,
                                   "date": 1573732800000,
                                   "merged": 5,
-                                  "open": 4,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
                                   "openPending": 1,
@@ -1623,11 +1538,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                             Array [
                               Object {
                                 "payload": Object {
-                                  "__typename": "ChangesetCounts",
                                   "closed": 1,
                                   "date": 1573646400000,
                                   "merged": 1,
-                                  "open": 8,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
                                   "openPending": 1,
@@ -1642,11 +1555,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                               },
                               Object {
                                 "payload": Object {
-                                  "__typename": "ChangesetCounts",
                                   "closed": 1,
                                   "date": 1573732800000,
                                   "merged": 5,
-                                  "open": 4,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
                                   "openPending": 1,
@@ -1720,11 +1631,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                   Array [
                     Object {
                       "payload": Object {
-                        "__typename": "ChangesetCounts",
                         "closed": 1,
                         "date": 1573646400000,
                         "merged": 1,
-                        "open": 8,
                         "openApproved": 1,
                         "openChangesRequested": 1,
                         "openPending": 1,
@@ -1739,11 +1648,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                     },
                     Object {
                       "payload": Object {
-                        "__typename": "ChangesetCounts",
                         "closed": 1,
                         "date": 1573732800000,
                         "merged": 5,
-                        "open": 4,
                         "openApproved": 1,
                         "openChangesRequested": 1,
                         "openPending": 1,
@@ -1910,11 +1817,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                             Array [
                               Object {
                                 "payload": Object {
-                                  "__typename": "ChangesetCounts",
                                   "closed": 1,
                                   "date": 1573646400000,
                                   "merged": 1,
-                                  "open": 8,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
                                   "openPending": 1,
@@ -1929,11 +1834,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                               },
                               Object {
                                 "payload": Object {
-                                  "__typename": "ChangesetCounts",
                                   "closed": 1,
                                   "date": 1573732800000,
                                   "merged": 5,
-                                  "open": 4,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
                                   "openPending": 1,
@@ -2071,11 +1974,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                             Array [
                               Object {
                                 "payload": Object {
-                                  "__typename": "ChangesetCounts",
                                   "closed": 1,
                                   "date": 1573646400000,
                                   "merged": 1,
-                                  "open": 8,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
                                   "openPending": 1,
@@ -2090,11 +1991,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                               },
                               Object {
                                 "payload": Object {
-                                  "__typename": "ChangesetCounts",
                                   "closed": 1,
                                   "date": 1573732800000,
                                   "merged": 5,
-                                  "open": 4,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
                                   "openPending": 1,
@@ -2168,11 +2067,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                   Array [
                     Object {
                       "payload": Object {
-                        "__typename": "ChangesetCounts",
                         "closed": 1,
                         "date": 1573646400000,
                         "merged": 1,
-                        "open": 8,
                         "openApproved": 1,
                         "openChangesRequested": 1,
                         "openPending": 1,
@@ -2187,11 +2084,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                     },
                     Object {
                       "payload": Object {
-                        "__typename": "ChangesetCounts",
                         "closed": 1,
                         "date": 1573732800000,
                         "merged": 5,
-                        "open": 4,
                         "openApproved": 1,
                         "openChangesRequested": 1,
                         "openPending": 1,
@@ -2358,11 +2253,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                             Array [
                               Object {
                                 "payload": Object {
-                                  "__typename": "ChangesetCounts",
                                   "closed": 1,
                                   "date": 1573646400000,
                                   "merged": 1,
-                                  "open": 8,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
                                   "openPending": 1,
@@ -2377,11 +2270,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                               },
                               Object {
                                 "payload": Object {
-                                  "__typename": "ChangesetCounts",
                                   "closed": 1,
                                   "date": 1573732800000,
                                   "merged": 5,
-                                  "open": 4,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
                                   "openPending": 1,
@@ -2519,11 +2410,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                             Array [
                               Object {
                                 "payload": Object {
-                                  "__typename": "ChangesetCounts",
                                   "closed": 1,
                                   "date": 1573646400000,
                                   "merged": 1,
-                                  "open": 8,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
                                   "openPending": 1,
@@ -2538,11 +2427,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                               },
                               Object {
                                 "payload": Object {
-                                  "__typename": "ChangesetCounts",
                                   "closed": 1,
                                   "date": 1573732800000,
                                   "merged": 5,
-                                  "open": 4,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
                                   "openPending": 1,
@@ -2616,11 +2503,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                   Array [
                     Object {
                       "payload": Object {
-                        "__typename": "ChangesetCounts",
                         "closed": 1,
                         "date": 1573646400000,
                         "merged": 1,
-                        "open": 8,
                         "openApproved": 1,
                         "openChangesRequested": 1,
                         "openPending": 1,
@@ -2635,11 +2520,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                     },
                     Object {
                       "payload": Object {
-                        "__typename": "ChangesetCounts",
                         "closed": 1,
                         "date": 1573732800000,
                         "merged": 5,
-                        "open": 4,
                         "openApproved": 1,
                         "openChangesRequested": 1,
                         "openPending": 1,
@@ -2806,11 +2689,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                             Array [
                               Object {
                                 "payload": Object {
-                                  "__typename": "ChangesetCounts",
                                   "closed": 1,
                                   "date": 1573646400000,
                                   "merged": 1,
-                                  "open": 8,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
                                   "openPending": 1,
@@ -2825,11 +2706,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                               },
                               Object {
                                 "payload": Object {
-                                  "__typename": "ChangesetCounts",
                                   "closed": 1,
                                   "date": 1573732800000,
                                   "merged": 5,
-                                  "open": 4,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
                                   "openPending": 1,
@@ -2967,11 +2846,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                             Array [
                               Object {
                                 "payload": Object {
-                                  "__typename": "ChangesetCounts",
                                   "closed": 1,
                                   "date": 1573646400000,
                                   "merged": 1,
-                                  "open": 8,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
                                   "openPending": 1,
@@ -2986,11 +2863,9 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                               },
                               Object {
                                 "payload": Object {
-                                  "__typename": "ChangesetCounts",
                                   "closed": 1,
                                   "date": 1573732800000,
                                   "merged": 5,
-                                  "open": 4,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
                                   "openPending": 1,

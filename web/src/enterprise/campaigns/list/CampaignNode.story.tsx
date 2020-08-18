@@ -1,17 +1,18 @@
 import { storiesOf } from '@storybook/react'
-import { radios } from '@storybook/addon-knobs'
+import { radios, boolean } from '@storybook/addon-knobs'
 import React from 'react'
-import { CampaignNode, CampaignNodeProps } from './CampaignNode'
+import { CampaignNode } from './CampaignNode'
 import { createMemoryHistory } from 'history'
 import webStyles from '../../../enterprise.scss'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
 import isChromatic from 'chromatic/isChromatic'
+import { ListCampaign } from '../../../graphql-operations'
 
-export const nodes: Record<string, CampaignNodeProps['node']> = {
+export const nodes: Record<string, ListCampaign> = {
     'Open campaign': {
         id: 'test',
         name: 'Awesome campaign',
-        description: `# Description
+        description: `# What this does
 
 This is my thorough explanation. And it can also get very long, in that case the UI doesn't break though, which is good. And one more line to finally be longer than the viewport.`,
         createdAt: new Date('2020-05-05').toISOString(),
@@ -23,8 +24,9 @@ This is my thorough explanation. And it can also get very long, in that case the
                 merged: 5,
             },
         },
-        author: {
-            username: 'alice',
+        namespace: {
+            namespaceName: 'alice',
+            url: '/users/alice',
         },
     },
     'No description': {
@@ -40,14 +42,15 @@ This is my thorough explanation. And it can also get very long, in that case the
                 merged: 5,
             },
         },
-        author: {
-            username: 'alice',
+        namespace: {
+            namespaceName: 'alice',
+            url: '/users/alice',
         },
     },
     'Closed campaign': {
         id: 'test3',
         name: 'Awesome campaign',
-        description: `# Description
+        description: `# My campaign
 
         This is my thorough explanation.`,
         createdAt: new Date('2020-05-05').toISOString(),
@@ -59,8 +62,9 @@ This is my thorough explanation. And it can also get very long, in that case the
                 merged: 5,
             },
         },
-        author: {
-            username: 'alice',
+        namespace: {
+            namespaceName: 'alice',
+            url: '/users/alice',
         },
     },
 }
@@ -73,7 +77,7 @@ const { add } = storiesOf('web/campaigns/CampaignNode', module).addDecorator(sto
         <>
             <Tooltip />
             <style>{webStyles}</style>
-            <div className="p-3 container">{story()}</div>
+            <div className="p-3 container web-content campaign-list-page__grid">{story()}</div>
         </>
     )
 })
@@ -82,6 +86,7 @@ for (const key of Object.keys(nodes)) {
     add(key, () => (
         <CampaignNode
             node={nodes[key]}
+            displayNamespace={boolean('Display namespace', true)}
             now={isChromatic() ? new Date('2020-05-05') : undefined}
             history={createMemoryHistory()}
         />

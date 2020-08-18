@@ -636,13 +636,16 @@ func BenchmarkSearchResults(b *testing.B) {
 	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 		return minimalRepos, nil
 	}
+	db.Mocks.Repos.Count = func(ctx context.Context, opt db.ReposListOptions) (int, error) {
+		return len(minimalRepos), nil
+	}
 	defer func() { db.Mocks = db.MockStores{} }()
 
 	b.ResetTimer()
 	b.ReportAllocs()
 
 	for n := 0; n < b.N; n++ {
-		q, err := query.ParseAndCheck(`print index:only count:350`)
+		q, err := query.ProcessAndOr(`print index:only count:350`, query.ParserOptions{SearchType: query.SearchTypeLiteral})
 		if err != nil {
 			b.Fatal(err)
 		}

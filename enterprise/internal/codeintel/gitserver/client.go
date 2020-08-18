@@ -13,10 +13,6 @@ type Client interface {
 	// Head determines the tip commit of the default branch for the given repository.
 	Head(ctx context.Context, store store.Store, repositoryID int) (string, error)
 
-	// CommitsNear returns a map from a commit to parent commits. The commits populating the
-	// map are the MaxCommitsPerUpdate closest ancestors from the given commit.
-	CommitsNear(ctx context.Context, store store.Store, repositoryID int, commit string) (map[string][]string, error)
-
 	// CommitGraph returns the commit graph for the given repository as a mapping from a commit
 	// to its parents.
 	CommitGraph(ctx context.Context, store store.Store, repositoryID int) (map[string][]string, error)
@@ -44,10 +40,6 @@ var DefaultClient Client = &defaultClient{}
 
 func (c *defaultClient) Head(ctx context.Context, store store.Store, repositoryID int) (string, error) {
 	return Head(ctx, store, repositoryID)
-}
-
-func (c *defaultClient) CommitsNear(ctx context.Context, store store.Store, repositoryID int, commit string) (map[string][]string, error) {
-	return CommitsNear(ctx, store, repositoryID, commit)
 }
 
 func (c *defaultClient) CommitGraph(ctx context.Context, store store.Store, repositoryID int) (map[string][]string, error) {

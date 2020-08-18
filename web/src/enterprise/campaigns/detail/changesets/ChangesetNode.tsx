@@ -1,5 +1,4 @@
 import * as H from 'history'
-import { Changeset } from '../../../../../../shared/src/graphql/schema'
 import React from 'react'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { Observer } from 'rxjs'
@@ -10,9 +9,11 @@ import { HoverMerged } from '../../../../../../shared/src/api/client/types/hover
 import { ActionItemAction } from '../../../../../../shared/src/actions/ActionItem'
 import { ExternalChangesetNode } from './ExternalChangesetNode'
 import { HiddenExternalChangesetNode } from './HiddenExternalChangesetNode'
+import { ChangesetFields } from '../../../../graphql-operations'
+import { queryExternalChangesetWithFileDiffs } from '../backend'
 
 export interface ChangesetNodeProps extends ThemeProps {
-    node: Changeset
+    node: ChangesetFields
     viewerCanAdminister: boolean
     campaignUpdates?: Pick<Observer<void>, 'next'>
     history: H.History
@@ -20,11 +21,22 @@ export interface ChangesetNodeProps extends ThemeProps {
     extensionInfo?: {
         hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
     } & ExtensionsControllerProps
+    queryExternalChangesetWithFileDiffs?: typeof queryExternalChangesetWithFileDiffs
 }
 
 export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({ node, ...props }) => {
     if (node.__typename === 'ExternalChangeset') {
-        return <ExternalChangesetNode node={node} {...props} />
+        return (
+            <>
+                <span className="changeset-spec-node__separator" />
+                <ExternalChangesetNode node={node} {...props} />
+            </>
+        )
     }
-    return <HiddenExternalChangesetNode node={node} {...props} />
+    return (
+        <>
+            <span className="changeset-spec-node__separator" />
+            <HiddenExternalChangesetNode node={node} {...props} />
+        </>
+    )
 }

@@ -9,11 +9,13 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	commitupdater "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/commit-updater"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/resetter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/server"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/worker"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commits"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -21,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -30,16 +33,18 @@ import (
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
+	logging.Init()
 	tracer.Init()
 
 	sqliteutil.MustRegisterSqlite3WithPcre()
 
 	var (
-		bundleManagerURL   = mustGet(rawBundleManagerURL, "PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL")
-		workerPollInterval = mustParseInterval(rawWorkerPollInterval, "PRECISE_CODE_INTEL_WORKER_POLL_INTERVAL")
-		workerConcurrency  = mustParseInt(rawWorkerConcurrency, "PRECISE_CODE_INTEL_WORKER_CONCURRENCY")
-		workerBudget       = mustParseInt64(rawWorkerBudget, "PRECISE_CODE_INTEL_WORKER_BUDGET")
-		resetInterval      = mustParseInterval(rawResetInterval, "PRECISE_CODE_INTEL_RESET_INTERVAL")
+		bundleManagerURL      = mustGet(rawBundleManagerURL, "PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL")
+		workerPollInterval    = mustParseInterval(rawWorkerPollInterval, "PRECISE_CODE_INTEL_WORKER_POLL_INTERVAL")
+		workerConcurrency     = mustParseInt(rawWorkerConcurrency, "PRECISE_CODE_INTEL_WORKER_CONCURRENCY")
+		workerBudget          = mustParseInt64(rawWorkerBudget, "PRECISE_CODE_INTEL_WORKER_BUDGET")
+		resetInterval         = mustParseInterval(rawResetInterval, "PRECISE_CODE_INTEL_RESET_INTERVAL")
+		commitUpdaterInterval = mustParseInterval(rawCommitUpdaterInterval, "PRECISE_CODE_INTEL_COMMIT_UPDATER_INTERVAL")
 	)
 
 	observationContext := &observation.Context{
@@ -54,6 +59,13 @@ func main() {
 	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
 	server := server.New()
 	uploadResetter := resetter.NewUploadResetter(store, resetInterval, resetterMetrics)
+	commitUpdater := commitupdater.NewUpdater(
+		store,
+		commits.NewUpdater(store, gitserver.DefaultClient),
+		commitupdater.UpdaterOptions{
+			Interval: commitUpdaterInterval,
+		},
+	)
 	worker := worker.NewWorker(
 		store,
 		bundles.New(bundleManagerURL),
@@ -66,6 +78,7 @@ func main() {
 
 	go server.Start()
 	go uploadResetter.Start()
+	go commitUpdater.Start()
 	go worker.Start()
 	go debugserver.Start()
 
@@ -82,6 +95,7 @@ func main() {
 
 	server.Stop()
 	uploadResetter.Stop()
+	commitUpdater.Stop()
 	worker.Stop()
 }
 

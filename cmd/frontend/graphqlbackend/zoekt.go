@@ -12,6 +12,7 @@ import (
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -19,6 +20,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 type indexedRequestType string
@@ -164,7 +167,7 @@ func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResol
 	case symbolRequest:
 		return zoektSearch(ctx, s.args, s.repos, s.typ, since)
 	case fileRequest:
-		return zoektSearchHEADOnlyFiles(ctx, s.args, s.repos.repoRevs, false, since)
+		return zoektSearchHEADOnlyFiles(ctx, s.args, s.repos, false, since)
 	default:
 		return nil, false, nil, fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
 	}
@@ -194,8 +197,24 @@ func zoektResultCountFactor(numRepos int, query *search.TextPatternInfo) int {
 	return k
 }
 
-func zoektSearchOpts(k int, query *search.TextPatternInfo) zoekt.SearchOptions {
+func getSpanContext(ctx context.Context) (shouldTrace bool, spanContext map[string]string) {
+	if !ot.ShouldTrace(ctx) {
+		return false, nil
+	}
+
+	spanContext = make(map[string]string)
+	if err := ot.GetTracer(ctx).Inject(opentracing.SpanFromContext(ctx).Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err != nil {
+		log15.Warn("Error injecting span context into map: %s", err)
+		return true, nil
+	}
+	return true, spanContext
+}
+
+func zoektSearchOpts(ctx context.Context, k int, query *search.TextPatternInfo) zoekt.SearchOptions {
+	shouldTrace, spanContext := getSpanContext(ctx)
 	searchOpts := zoekt.SearchOptions{
+		Trace:                  shouldTrace,
+		SpanContext:            spanContext,
 		MaxWallTime:            defaultTimeout,
 		ShardMaxMatchCount:     100 * k,
 		TotalMaxMatchCount:     100 * k,
@@ -240,7 +259,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 	finalQuery := zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, queryExceptRepos)
 
 	k := zoektResultCountFactor(len(repos.repoBranches), args.PatternInfo)
-	searchOpts := zoektSearchOpts(k, args.PatternInfo)
+	searchOpts := zoektSearchOpts(ctx, k, args.PatternInfo)
 
 	if args.UseFullDeadline {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
@@ -253,15 +272,8 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		// We'll create a new context that gets cancelled if the other context is cancelled for any
 		// reason other than the deadline being exceeded. This essentially means the deadline for the new context
 		// will be `deadline + time for zoekt to cancel + network latency`.
-		cNew, cancel := context.WithCancel(context.Background())
-		go func(cOld context.Context) {
-			<-cOld.Done()
-			// cancel the new context if the old one is done for some reason other than the deadline passing.
-			if cOld.Err() != context.DeadlineExceeded {
-				cancel()
-			}
-		}(ctx)
-		ctx = cNew
+		var cancel context.CancelFunc
+		ctx, cancel = contextWithoutDeadline(ctx)
 		defer cancel()
 	}
 
@@ -431,6 +443,30 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 	}
 
 	return symbols
+}
+
+// contextWithoutDeadline returns a context which will cancel if the cOld is
+// canceled.
+func contextWithoutDeadline(cOld context.Context) (context.Context, context.CancelFunc) {
+	cNew, cancel := context.WithCancel(context.Background())
+
+	// Set trace context so we still get spans propagated
+	if tr := trace.TraceFromContext(cOld); tr != nil {
+		cNew = trace.ContextWithTrace(cNew, tr)
+	}
+
+	go func() {
+		select {
+		case <-cOld.Done():
+			// cancel the new context if the old one is done for some reason other than the deadline passing.
+			if cOld.Err() != context.DeadlineExceeded {
+				cancel()
+			}
+		case <-cNew.Done():
+		}
+	}()
+
+	return cNew, cancel
 }
 
 func noOpAnyChar(re *syntax.Regexp) {

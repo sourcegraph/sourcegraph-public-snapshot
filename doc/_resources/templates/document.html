@@ -9,12 +9,12 @@
 {{define "versionSelector"}}
     <div id="version-selector" class="dropdown version-dropdown ml-2">
         <button class="btn btn-outline dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            {{.ContentVersion}}{{/* If no version is specified we are on the master branch */}}{{if eq .ContentVersion ""}}master{{end}}
+            {{.ContentVersion}}{{/* If no version is specified we are on the main branch */}}{{if eq .ContentVersion ""}}main{{end}}
         </button>
         <details-menu aria-label="Sourcegraph version" class="dropdown-menu m-0 p-0" aria-labelledby="Version Dropdown">
 
-            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.17.3"}} {{$previousReleaseVersion := "3.17"}} {{$currentReleaseRevspec := "v3.18.0"}} {{$currentReleaseVersion := "3.18"}} {{$nextReleaseVersion := "master"}}
-            <a rel="nofollow" class="dropdown-item {{if eq .ContentVersion " "}}active{{end}}" href="/{{.ContentPagePath}}">master</a>
+            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.17.3"}} {{$previousReleaseVersion := "3.17"}} {{$currentReleaseRevspec := "v3.18.0"}} {{$currentReleaseVersion := "3.18"}} {{$nextReleaseVersion := "main"}}
+            <a rel="nofollow" class="dropdown-item {{if eq .ContentVersion " "}}active{{end}}" href="/{{.ContentPagePath}}">main</a>
             <a rel="nofollow" class=" dropdown-item {{if eq $currentReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$currentReleaseVersion}}/{{.ContentPagePath}}">{{$currentReleaseVersion}}<span class="current-branch ml-1">current</span></a>
             <a rel="nofollow" class=" dropdown-item {{if eq $previousReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$previousReleaseVersion}}/{{.ContentPagePath}}">{{$previousReleaseVersion}}</a>
         </details-menu>
@@ -91,8 +91,8 @@
                             <li class="content-nav-no-hover">
                                 <ul class="content-nav-section-subsection">
                                     <li><a href="/user/code_intelligence/basic_code_intelligence">Basic code intelligence</a></li>
-                                    <li><a href="/user/code_intelligence/lsif">LSIF</a></li>
-                                    <li><a href="/user/code_intelligence/lsif_quickstart">LSIF quickstart</a></li>
+                                    <li><a href="/user/code_intelligence/precise_code_intelligence">Precise code intelligence</a></li>
+                                    <li><a href="/user/code_intelligence/lsif_quickstart">Quickstart guide</a></li>
                                     <li><a href="/user/code_intelligence/adding_lsif_to_workflows">Adding LSIF to workflows</a></li>
                                     <li><a href="/user/code_intelligence/languages">Language-specific guides</a></li>
                                     <li><a href="/user/code_intelligence/writing_an_indexer">Writing an indexer</a></li>
@@ -116,7 +116,7 @@
                             <li><a href="/user/usage_statistics">Usage statistics</a></li>
                             <li><a href="/user/user_surveys">User surveys</a></li>
                             <li><a href="/user/quick_links">Quick links</a></li>
-                            <li><a href="/user/campaigns">Campaigns</a></li>
+                            <li><a href="/user/campaigns">Campaigns <span class="badge badge-primary">Beta</span></a></li>
                         </ul>
                     </li>
                 </ul>
@@ -347,6 +347,7 @@
                         <a class="content-nav-section-header" href="/dev">Developing Sourcegraph</a>
                         <ul class="content-nav-section-group">
                             <li><a href="/dev/campaigns_development">Developing campaigns</a></li>
+                            <li><a href="/dev/codeintel">Developing code intelligence</a></li>
                             <li><a href="/dev/graphql_api">Developing the Sourcegraph GraphQL API</a></li>
                             <li><a href="/dev/local_development">Getting started with developing Sourcegraph</a></li>
                             <li><a href="/dev/postgresql">PostgreSQL storage tips</a></li>
@@ -403,7 +404,7 @@
             <ul>{{template "doc_nav_nested" .}}</ul>
         {{end}}
     {{end}}
-    <a class="nav-edit-button btn btn-outline-secondary btn-sm" target="blank" href="https://github.com/sourcegraph/sourcegraph/edit/master/doc/{{.FilePath}}">Edit this page on GitHub</a>
+    <a class="nav-edit-button btn btn-outline-secondary btn-sm" target="blank" href="https://github.com/sourcegraph/sourcegraph/edit/main/doc/{{.FilePath}}">Edit this page on GitHub</a>
 {{end}}
 
 {{define "doc_nav"}}

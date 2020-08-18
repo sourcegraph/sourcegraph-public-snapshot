@@ -335,11 +335,12 @@ func prometheusGraphQLRequestName(requestName string) string {
 
 func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz AuthzResolver) (*graphql.Schema, error) {
 	resolver := &schemaResolver{
-		// CampaignsResolver: defaultCampaignsResolver{},
+		CampaignsResolver: defaultCampaignsResolver{},
 		AuthzResolver:     defaultAuthzResolver{},
 		CodeIntelResolver: defaultCodeIntelResolver{},
 	}
 	if campaigns != nil {
+		EnterpriseResolvers.campaignsResolver = campaigns
 		resolver.CampaignsResolver = campaigns
 	}
 	if codeIntel != nil {
@@ -524,9 +525,11 @@ type schemaResolver struct {
 var EnterpriseResolvers = struct {
 	codeIntelResolver CodeIntelResolver
 	authzResolver     AuthzResolver
+	campaignsResolver CampaignsResolver
 }{
 	codeIntelResolver: defaultCodeIntelResolver{},
 	authzResolver:     defaultAuthzResolver{},
+	campaignsResolver: defaultCampaignsResolver{},
 }
 
 // DEPRECATED

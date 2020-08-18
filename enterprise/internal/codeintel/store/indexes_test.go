@@ -267,7 +267,7 @@ func TestInsertIndex(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	store := rawTestStore()
+	store := testStore()
 
 	insertRepo(t, dbconn.Global, 50, "")
 
@@ -313,7 +313,7 @@ func TestMarkIndexComplete(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	store := rawTestStore()
+	store := testStore()
 
 	insertIndexes(t, dbconn.Global, Index{ID: 1, State: "queued"})
 
@@ -335,7 +335,7 @@ func TestMarkIndexErrored(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	store := rawTestStore()
+	store := testStore()
 
 	insertIndexes(t, dbconn.Global, Index{ID: 1, State: "queued"})
 
@@ -555,7 +555,7 @@ func TestRequeueIndex(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	store := rawTestStore()
+	store := testStore()
 
 	insertIndexes(t, dbconn.Global, Index{ID: 1, State: "processing"})
 

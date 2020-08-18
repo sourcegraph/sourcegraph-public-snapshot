@@ -405,7 +405,7 @@ A pattern to search. By default the pattern is searched literally. The kind of s
       </tr>
       <tr class="r">
         <td class="ks"></td>
-        <td class="d"><code class="c"><a href="#fork">fork<a/></code></td>
+        <td class="d"><code class="c"><a href="#fork">fork</a></code></td>
         <td class="ke"></td>
       </tr>
       <tr class="r">
@@ -469,8 +469,13 @@ Search parameters allow you to filter search results or modify search behavior.
                 <td class="te"></td>
               </tr>
               <tr class="r">
-                <td class="ls"></td>
+                <td class="ks"></td>
                 <td class="d"><code class="c">–</code></td>
+                <td class="ke"></td>
+              </tr>
+              <tr class="r">
+                <td class="ls"></td>
+                <td class="d"><code class="c">NOT</code></td>
                 <td class="le"></td>
               </tr>
             </tbody>
@@ -629,8 +634,13 @@ You can search multiple revisions by separating the revisions with `:`. Specify 
                 <td class="te"></td>
               </tr>
               <tr class="r">
-                <td class="ls"></td>
+                <td class="ks"></td>
                 <td class="d"><code class="c">–</code></td>
+                <td class="ke"></td>
+              </tr>
+              <tr class="r">
+                <td class="ls"></td>
+                <td class="d"><code class="c">NOT</code></td>
                 <td class="le"></td>
               </tr>
             </tbody>
@@ -696,8 +706,6 @@ excludes the file from being searched.
       </tr>
     </tbody>
   </table>
-</tbody>
-</table>
 </div>
 
 Only search files in the specified programming language, like `typescript` or
@@ -712,6 +720,27 @@ Only search files in the specified programming language, like `typescript` or
     <tbody>
       <tr class="r">
         <td class="d"></td>
+        <td class="d">
+          <table class="r">
+            <tbody>
+              <tr class="r">
+                <td class="ts"></td>
+                <td class="d">&nbsp;</td>
+                <td class="te"></td>
+              </tr>
+              <tr class="r">
+                <td class="ks"></td>
+                <td class="d"><code class="c">–</code></td>
+                <td class="ke"></td>
+              </tr>
+              <tr class="r">
+                <td class="ls"></td>
+                <td class="d"><code class="c">NOT</code></td>
+                <td class="le"></td>
+              </tr>
+            </tbody>
+          </table>
+        </td>
         <td class="d"><code class="c">content:</code></td>
         <td class="d"></td>
         <td class="d"><code class="c"><a href="#quoted-string">quoted string</a></code></td>
@@ -974,8 +1003,13 @@ exists.
                 <td class="te"></td>
               </tr>
               <tr class="r">
-                <td class="ls"></td>
+                <td class="ks"></td>
                 <td class="d"><code class="c">–</code></td>
+                <td class="ke"></td>
+              </tr>
+              <tr class="r">
+                <td class="ls"></td>
+                <td class="d"><code class="c">NOT</code></td>
                 <td class="le"></td>
               </tr>
             </tbody>

@@ -206,7 +206,7 @@ export const CodeIntelUploadsPage: FunctionComponent<Props> = ({
             <p>
                 Enable precise code intelligence by{' '}
                 <a
-                    href="https://docs.sourcegraph.com/user/code_intelligence/lsif"
+                    href="https://docs.sourcegraph.com/user/code_intelligence/precise_code_intelligence"
                     target="_blank"
                     rel="noreferrer noopener"
                 >

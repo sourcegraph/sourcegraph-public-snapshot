@@ -1,11 +1,40 @@
 package main
 
+import "time"
+
 func GitHubProxy() *Container {
 	return &Container{
 		Name:        "github-proxy",
 		Title:       "GitHub Proxy",
 		Description: "Proxies all requests to github.com, keeping track of and managing rate limits.",
 		Groups: []Group{
+			{
+				Title: "GitHub API monitoring",
+				Rows: []Row{
+					{
+						{
+							Name:              "github_core_rate_limit_remaining",
+							Description:       "remaining calls to GitHub before hitting the rate limit",
+							Query:             `src_github_rate_limit_remaining{resource="core"}`,
+							DataMayNotExist:   true,
+							Critical:          Alert{LessOrEqual: 500, For: 5 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("calls remaining"),
+							Owner:             ObservableOwnerSearch,
+							PossibleSolutions: `Try restarting the pod to get a different public IP.`,
+						},
+						{
+							Name:              "github_search_rate_limit_remaining",
+							Description:       "remaining calls to GitHub search before hitting the rate limit",
+							Query:             `src_github_rate_limit_remaining{resource="search"}`,
+							DataMayNotExist:   true,
+							Warning:           Alert{LessOrEqual: 5},
+							PanelOptions:      PanelOptions().LegendFormat("calls remaining"),
+							Owner:             ObservableOwnerSearch,
+							PossibleSolutions: `Try restarting the pod to get a different public IP.`,
+						},
+					},
+				},
+			},
 			{
 				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
@@ -25,12 +54,12 @@ func GitHubProxy() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage7d("github-proxy"),
-						sharedProvisioningMemoryUsage7d("github-proxy"),
+						sharedProvisioningCPUUsageLongTerm("github-proxy"),
+						sharedProvisioningMemoryUsageLongTerm("github-proxy"),
 					},
 					{
-						sharedProvisioningCPUUsage5m("github-proxy"),
-						sharedProvisioningMemoryUsage5m("github-proxy"),
+						sharedProvisioningCPUUsageShortTerm("github-proxy"),
+						sharedProvisioningMemoryUsageShortTerm("github-proxy"),
 					},
 				},
 			},

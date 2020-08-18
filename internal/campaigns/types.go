@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	gitlabwebhooks "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/xeipuuv/gojsonschema"
@@ -54,18 +55,25 @@ func IsKindSupported(extSvcKind string) bool {
 
 // A Campaign of changesets over multiple Repos over time.
 type Campaign struct {
-	ID              int64
-	Name            string
-	Description     string
-	Branch          string
-	AuthorID        int32
+	ID          int64
+	Name        string
+	Description string
+
+	CampaignSpecID int64
+
+	InitialApplierID int32
+	LastApplierID    int32
+	LastAppliedAt    time.Time
+
 	NamespaceUserID int32
 	NamespaceOrgID  int32
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	ChangesetIDs    []int64
-	ClosedAt        time.Time
-	CampaignSpecID  int64
+
+	ChangesetIDs []int64
+
+	ClosedAt time.Time
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // Clone returns a clone of a Campaign.
@@ -85,6 +93,9 @@ func (c *Campaign) RemoveChangesetID(id int64) {
 	}
 }
 
+// Closed returns true when the ClosedAt timestamp has been set.
+func (c *Campaign) Closed() bool { return !c.ClosedAt.IsZero() }
+
 // GenChangesetBody creates the markdown to be used as the body of a changeset.
 // It includes a URL back to the campaign on the Sourcegraph instance.
 func (c *Campaign) GenChangesetBody(externalURL string) string {
@@ -94,29 +105,62 @@ func (c *Campaign) GenChangesetBody(externalURL string) string {
 	return description
 }
 
-// ChangesetState defines the possible states of a Changeset.
-type ChangesetState string
+// ChangesetPublicationState defines the possible publication states of a Changeset.
+type ChangesetPublicationState string
 
 // ChangesetState constants.
 const (
-	ChangesetStateUnpublished ChangesetState = "UNPUBLISHED"
-	ChangesetStatePublishing  ChangesetState = "PUBLISHING"
-	ChangesetStateErrored     ChangesetState = "ERRORED"
-	ChangesetStateSynced      ChangesetState = "SYNCED"
+	ChangesetPublicationStateUnpublished ChangesetPublicationState = "UNPUBLISHED"
+	ChangesetPublicationStatePublished   ChangesetPublicationState = "PUBLISHED"
 )
 
-// Valid returns true if the given ChangesetState is valid.
-func (s ChangesetState) Valid() bool {
+// Valid returns true if the given ChangesetPublicationState is valid.
+func (s ChangesetPublicationState) Valid() bool {
 	switch s {
-	case ChangesetStateUnpublished,
-		ChangesetStatePublishing,
-		ChangesetStateErrored,
-		ChangesetStateSynced:
+	case ChangesetPublicationStateUnpublished, ChangesetPublicationStatePublished:
 		return true
 	default:
 		return false
 	}
 }
+
+// Published returns true if the given state is ChangesetPublicationStatePublished.
+func (s ChangesetPublicationState) Published() bool { return s == ChangesetPublicationStatePublished }
+
+// Unpublished returns true if the given state is ChangesetPublicationStateUnpublished.
+func (s ChangesetPublicationState) Unpublished() bool {
+	return s == ChangesetPublicationStateUnpublished
+}
+
+// ReconcilerState defines the possible states of a Reconciler.
+type ReconcilerState string
+
+// ReconcilerState constants.
+const (
+	ReconcilerStateQueued     ReconcilerState = "QUEUED"
+	ReconcilerStateProcessing ReconcilerState = "PROCESSING"
+	ReconcilerStateErrored    ReconcilerState = "ERRORED"
+	ReconcilerStateCompleted  ReconcilerState = "COMPLETED"
+)
+
+// Valid returns true if the given ReconcilerState is valid.
+func (s ReconcilerState) Valid() bool {
+	switch s {
+	case ReconcilerStateQueued,
+		ReconcilerStateProcessing,
+		ReconcilerStateErrored,
+		ReconcilerStateCompleted:
+		return true
+	default:
+		return false
+	}
+}
+
+// ToDB returns the database representation of the reconciler state. That's
+// needed because we want to use UPPERCASE ReconcilerStates in the application
+// and GraphQL layer, but need to use lowercase in the database to make it work
+// with workerutil.Worker.
+func (s ReconcilerState) ToDB() string { return strings.ToLower(string(s)) }
 
 // ChangesetExternalState defines the possible states of a Changeset on a code host.
 type ChangesetExternalState string
@@ -224,13 +268,35 @@ type Changeset struct {
 	ExternalState       ChangesetExternalState
 	ExternalReviewState ChangesetReviewState
 	ExternalCheckState  ChangesetCheckState
-	CreatedByCampaign   bool
-	AddedToCampaign     bool
 	DiffStatAdded       *int32
 	DiffStatChanged     *int32
 	DiffStatDeleted     *int32
 	SyncState           ChangesetSyncState
+
+	// The campaign that "owns" this changeset: it can create/close it on code host.
+	OwnedByCampaignID int64
+	// Whether this changeset was created by a campaign on a code host.
+	CreatedByCampaign bool
+	// Whether it was imported/tracked by a campaign.
+	AddedToCampaign bool
+
+	// This is 0 if the Changeset isn't owned by Sourcegraph.
+	CurrentSpecID  int64
+	PreviousSpecID int64
+
+	PublicationState ChangesetPublicationState // "unpublished", "published"
+
+	// All of the following fields are used by workerutil.Worker.
+	ReconcilerState ReconcilerState
+	FailureMessage  *string
+	StartedAt       time.Time
+	FinishedAt      time.Time
+	ProcessAfter    time.Time
+	NumResets       int64
 }
+
+// RecordID is needed to implement the workerutil.Record interface.
+func (c *Changeset) RecordID() int { return int(c.ID) }
 
 // Clone returns a clone of a Changeset.
 func (c *Changeset) Clone() *Changeset {
@@ -289,7 +355,7 @@ func (c *Changeset) SetMetadata(meta interface{}) error {
 		c.ExternalID = strconv.FormatInt(int64(pr.IID), 10)
 		c.ExternalServiceType = extsvc.TypeGitLab
 		c.ExternalBranch = pr.SourceBranch
-		c.ExternalUpdatedAt = pr.UpdatedAt
+		c.ExternalUpdatedAt = pr.UpdatedAt.Time
 	default:
 		return errors.New("unknown changeset type")
 	}
@@ -330,7 +396,7 @@ func (c *Changeset) ExternalCreatedAt() time.Time {
 	case *bitbucketserver.PullRequest:
 		return unixMilliToTime(int64(m.CreatedDate))
 	case *gitlab.MergeRequest:
-		return m.CreatedAt
+		return m.CreatedAt.Time
 	default:
 		return time.Time{}
 	}
@@ -418,6 +484,22 @@ func (c *Changeset) URL() (s string, err error) {
 	}
 }
 
+// ChangesetSpecs is a slice of *ChangesetSpecs.
+type ChangesetSpecs []*ChangesetSpec
+
+// IDs returns the unique RepoIDs of all changeset specs in the slice.
+func (cs ChangesetSpecs) RepoIDs() []api.RepoID {
+	repoIDMap := make(map[api.RepoID]struct{})
+	for _, c := range cs {
+		repoIDMap[c.RepoID] = struct{}{}
+	}
+	repoIDs := make([]api.RepoID, 0)
+	for id := range repoIDMap {
+		repoIDs = append(repoIDs, id)
+	}
+	return repoIDs
+}
+
 // Changesets is a slice of *Changesets.
 type Changesets []*Changeset
 
@@ -430,11 +512,15 @@ func (cs Changesets) IDs() []int64 {
 	return ids
 }
 
-// IDs returns the RepoIDs of all changesets in the slice.
+// IDs returns the unique RepoIDs of all changesets in the slice.
 func (cs Changesets) RepoIDs() []api.RepoID {
-	repoIDs := make([]api.RepoID, len(cs))
-	for i, c := range cs {
-		repoIDs[i] = c.RepoID
+	repoIDMap := make(map[api.RepoID]struct{})
+	for _, c := range cs {
+		repoIDMap[c.RepoID] = struct{}{}
+	}
+	repoIDs := make([]api.RepoID, len(repoIDMap))
+	for id := range repoIDMap {
+		repoIDs = append(repoIDs, id)
 	}
 	return repoIDs
 }
@@ -449,6 +535,30 @@ func (cs Changesets) Filter(predicate func(*Changeset) bool) (filtered Changeset
 	}
 
 	return filtered
+}
+
+// Find returns the first changeset in the slice for which the predicate
+// returned true.
+func (cs Changesets) Find(predicate func(*Changeset) bool) *Changeset {
+	for _, c := range cs {
+		if predicate(c) {
+			return c
+		}
+	}
+
+	return nil
+}
+
+// WithCurrentSpecID returns a predicate function that can be passed to
+// Changesets.Filter/Find, etc.
+func WithCurrentSpecID(id int64) func(*Changeset) bool {
+	return func(c *Changeset) bool { return c.CurrentSpecID == id }
+}
+
+// WithExternalID returns a predicate function that can be passed to
+// Changesets.Filter/Find, etc.
+func WithExternalID(id string) func(*Changeset) bool {
+	return func(c *Changeset) bool { return c.ExternalID == id }
 }
 
 // Keyer represents items that return a unique key
@@ -812,48 +922,56 @@ func (e *ChangesetEvent) Changeset() int64 {
 func (e *ChangesetEvent) Timestamp() time.Time {
 	var t time.Time
 
-	switch e := e.Metadata.(type) {
+	switch ev := e.Metadata.(type) {
 	case *github.AssignedEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.ClosedEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.IssueComment:
-		t = e.UpdatedAt
+		t = ev.UpdatedAt
 	case *github.RenamedTitleEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.MergedEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.PullRequestReview:
-		t = e.UpdatedAt
+		t = ev.UpdatedAt
 	case *github.PullRequestReviewComment:
-		t = e.UpdatedAt
+		t = ev.UpdatedAt
 	case *github.ReopenedEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.ReviewDismissedEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.ReviewRequestRemovedEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.ReviewRequestedEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.UnassignedEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.LabelEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.CommitStatus:
-		t = e.ReceivedAt
+		t = ev.ReceivedAt
 	case *github.CheckSuite:
-		return e.ReceivedAt
+		return ev.ReceivedAt
 	case *github.CheckRun:
-		return e.ReceivedAt
+		return ev.ReceivedAt
 	case *bitbucketserver.Activity:
-		t = unixMilliToTime(int64(e.CreatedDate))
+		t = unixMilliToTime(int64(ev.CreatedDate))
 	case *bitbucketserver.ParticipantStatusEvent:
-		t = unixMilliToTime(int64(e.CreatedDate))
+		t = unixMilliToTime(int64(ev.CreatedDate))
 	case *bitbucketserver.CommitStatus:
-		t = unixMilliToTime(int64(e.Status.DateAdded))
+		t = unixMilliToTime(int64(ev.Status.DateAdded))
 	case *gitlab.ReviewApproved:
-		return e.CreatedAt
+		return ev.CreatedAt.Time
 	case *gitlab.ReviewUnapproved:
+		return ev.CreatedAt.Time
+	case *gitlabwebhooks.MergeRequestCloseEvent,
+		*gitlabwebhooks.MergeRequestMergeEvent,
+		*gitlabwebhooks.MergeRequestReopenEvent,
+		*gitlabwebhooks.PipelineEvent:
+		// These events do not inherently have timestamps from GitLab, so we
+		// fall back to the event record we created when we received the
+		// webhook.
 		return e.CreatedAt
 	}
 
@@ -861,9 +979,27 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 }
 
 // Update updates the metadata of e with new metadata in o.
-func (e *ChangesetEvent) Update(o *ChangesetEvent) {
-	if e.ChangesetID != o.ChangesetID || e.Kind != o.Kind || e.Key != o.Key {
-		return
+func (e *ChangesetEvent) Update(o *ChangesetEvent) error {
+	if e.ChangesetID != o.ChangesetID {
+		return &changesetEventUpdateMismatchError{
+			field:    "ChangesetID",
+			original: e.ChangesetID,
+			revised:  o.ChangesetID,
+		}
+	}
+	if e.Kind != o.Kind {
+		return &changesetEventUpdateMismatchError{
+			field:    "Kind",
+			original: e.Kind,
+			revised:  o.Kind,
+		}
+	}
+	if e.Key != o.Key {
+		return &changesetEventUpdateMismatchError{
+			field:    "Key",
+			original: e.Key,
+			revised:  o.Key,
+		}
 	}
 
 	switch e := e.Metadata.(type) {
@@ -1201,9 +1337,41 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) {
 		// We always get the full event, so safe to replace it
 		*e = *o
 
+	case *gitlabwebhooks.MergeRequestCloseEvent:
+		o := o.Metadata.(*gitlabwebhooks.MergeRequestCloseEvent)
+		// We always get the full event, so safe to replace it
+		*e = *o
+
+	case *gitlabwebhooks.MergeRequestMergeEvent:
+		o := o.Metadata.(*gitlabwebhooks.MergeRequestMergeEvent)
+		// We always get the full event, so safe to replace it
+		*e = *o
+
+	case *gitlabwebhooks.MergeRequestReopenEvent:
+		o := o.Metadata.(*gitlabwebhooks.MergeRequestReopenEvent)
+		// We always get the full event, so safe to replace it
+		*e = *o
+
+	case *gitlabwebhooks.PipelineEvent:
+		o := o.Metadata.(*gitlabwebhooks.PipelineEvent)
+		// We always get the full event, so safe to replace it
+		*e = *o
+
 	default:
-		panic(errors.Errorf("unknown changeset event metadata %T", e))
+		return errors.Errorf("unknown changeset event metadata %T", e)
 	}
+
+	return nil
+}
+
+type changesetEventUpdateMismatchError struct {
+	field    string
+	original interface{}
+	revised  interface{}
+}
+
+func (e *changesetEventUpdateMismatchError) Error() string {
+	return fmt.Sprintf("%s '%v' on the revised changeset event does not match %s '%v' on the original changeset event", e.field, e.revised, e.field, e.original)
 }
 
 func updateGithubCheckRun(e, o *github.CheckRun) {
@@ -1340,6 +1508,12 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 		return ChangesetEventKindGitLabApproved
 	case *gitlab.ReviewUnapproved:
 		return ChangesetEventKindGitLabUnapproved
+	case *gitlabwebhooks.MergeRequestCloseEvent:
+		return ChangesetEventKindGitLabClosed
+	case *gitlabwebhooks.MergeRequestMergeEvent:
+		return ChangesetEventKindGitLabMerged
+	case *gitlabwebhooks.MergeRequestReopenEvent:
+		return ChangesetEventKindGitLabReopened
 	default:
 		panic(errors.Errorf("unknown changeset event kind for %T", e))
 	}
@@ -1405,6 +1579,12 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 			return new(gitlab.Pipeline), nil
 		case ChangesetEventKindGitLabUnapproved:
 			return new(gitlab.ReviewUnapproved), nil
+		case ChangesetEventKindGitLabClosed:
+			return new(gitlabwebhooks.MergeRequestCloseEvent), nil
+		case ChangesetEventKindGitLabMerged:
+			return new(gitlabwebhooks.MergeRequestMergeEvent), nil
+		case ChangesetEventKindGitLabReopened:
+			return new(gitlabwebhooks.MergeRequestReopenEvent), nil
 		}
 	}
 	return nil, errors.Errorf("unknown changeset event kind %q", k)
@@ -1453,7 +1633,10 @@ const (
 	ChangesetEventKindBitbucketServerDismissed ChangesetEventKind = "bitbucketserver:participant_status:unapproved"
 
 	ChangesetEventKindGitLabApproved   ChangesetEventKind = "gitlab:approved"
+	ChangesetEventKindGitLabClosed     ChangesetEventKind = "gitlab:closed"
+	ChangesetEventKindGitLabMerged     ChangesetEventKind = "gitlab:merged"
 	ChangesetEventKindGitLabPipeline   ChangesetEventKind = "gitlab:pipeline"
+	ChangesetEventKindGitLabReopened   ChangesetEventKind = "gitlab:reopened"
 	ChangesetEventKindGitLabUnapproved ChangesetEventKind = "gitlab:unapproved"
 )
 
@@ -1579,7 +1762,7 @@ type ChangesetSpec struct {
 
 	RawSpec string
 	// TODO(mrnugget): should we rename the "spec" column to "description"?
-	Spec ChangesetSpecDescription
+	Spec *ChangesetSpecDescription
 
 	DiffStatAdded   int32
 	DiffStatChanged int32
@@ -1603,7 +1786,7 @@ func (cs *ChangesetSpec) Clone() *ChangesetSpec {
 // diff stat fields that can be retrieved with DiffStat().
 // If the Diff is invalid or parsing failed, an error is returned.
 func (cs *ChangesetSpec) computeDiffStat() error {
-	if cs.Spec.IsExisting() {
+	if cs.Spec.IsImportingExisting() {
 		return nil
 	}
 
@@ -1686,8 +1869,7 @@ type ChangesetSpecDescription struct {
 
 	// If this is not empty, the description is a reference to an existing
 	// changeset and the rest of these fields are empty.
-	// TODO(mrnugget): Id or ID, that is the question?
-	ExternalID string `json:"externalId,omitempty"`
+	ExternalID string `json:"externalID,omitempty"`
 
 	BaseRev string `json:"baseRev,omitempty"`
 	BaseRef string `json:"baseRef,omitempty"`
@@ -1713,7 +1895,7 @@ func (d *ChangesetSpecDescription) Type() ChangesetSpecDescriptionType {
 
 // IsExisting returns whether the description is of type
 // ChangesetSpecDescriptionTypeExisting.
-func (d *ChangesetSpecDescription) IsExisting() bool {
+func (d *ChangesetSpecDescription) IsImportingExisting() bool {
 	return d.Type() == ChangesetSpecDescriptionTypeExisting
 }
 
@@ -1748,6 +1930,18 @@ func (d *ChangesetSpecDescription) Diff() (string, error) {
 		return "", ErrNoCommits
 	}
 	return d.Commits[0].Diff, nil
+}
+
+// CommitMessage returns the Message of the first GitCommitDescription in Commits. If the
+// ChangesetSpecDescription doesn't have Commits it returns ErrNoCommits.
+//
+// We currently only support a single commit in Commits. Once we support more,
+// this method will need to be revisited.
+func (d *ChangesetSpecDescription) CommitMessage() (string, error) {
+	if len(d.Commits) == 0 {
+		return "", ErrNoCommits
+	}
+	return d.Commits[0].Message, nil
 }
 
 type GitCommitDescription struct {

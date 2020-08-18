@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React from 'react'
+import React, { useMemo } from 'react'
 import {
     Area,
     ComposedChart,
@@ -11,11 +11,18 @@ import {
     YAxis,
     TooltipPayload,
 } from 'recharts'
-import { ICampaign, IChangesetCounts } from '../../../../../shared/src/graphql/schema'
+import { ChangesetCountsOverTimeFields, Scalars } from '../../../graphql-operations'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { useObservable } from '../../../../../shared/src/util/useObservable'
+import { queryChangesetCountsOverTime as _queryChangesetCountsOverTime } from './backend'
 
-interface Props extends Pick<ICampaign, 'changesetCountsOverTime'> {
+interface Props {
+    campaignID: Scalars['ID']
     history: H.History
     width?: string | number
+
+    /** For testing only. */
+    queryChangesetCountsOverTime?: typeof _queryChangesetCountsOverTime
 }
 
 const dateTickFormat = new Intl.DateTimeFormat(undefined, { month: 'long', day: 'numeric' })
@@ -47,7 +54,7 @@ interface StateDefinition {
 }
 
 type DisplayableChangesetCounts = Pick<
-    IChangesetCounts,
+    ChangesetCountsOverTimeFields,
     'openPending' | 'openChangesRequested' | 'openApproved' | 'closed' | 'merged'
 >
 
@@ -65,7 +72,27 @@ const tooltipItemSorter = ({ dataKey }: TooltipPayload): number =>
 /**
  * A burndown chart showing progress of the campaigns changesets.
  */
-export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changesetCountsOverTime, width = '100%' }) => {
+export const CampaignBurndownChart: React.FunctionComponent<Props> = ({
+    campaignID,
+    queryChangesetCountsOverTime = _queryChangesetCountsOverTime,
+    width = '100%',
+}) => {
+    const changesetCountsOverTime: ChangesetCountsOverTimeFields[] | undefined = useObservable(
+        useMemo(() => queryChangesetCountsOverTime({ campaign: campaignID }), [
+            campaignID,
+            queryChangesetCountsOverTime,
+        ])
+    )
+
+    // Is loading.
+    if (changesetCountsOverTime === undefined) {
+        return (
+            <div className="text-center">
+                <LoadingSpinner className="icon-inline mx-auto my-4" />
+            </div>
+        )
+    }
+
     if (changesetCountsOverTime.length <= 1) {
         return (
             <p>

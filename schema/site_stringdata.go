@@ -381,6 +381,12 @@ const SiteSchemaJSON = `{
       ],
       "group": "Security"
     },
+    "externalService.userMode": {
+      "description": "Enable to allow users to add external services for public reposirories to the Sourcegraph instance.",
+      "type": "string",
+      "enum": ["public", "disabled"],
+      "default": "disabled"
+    },
     "permissions.userMapping": {
       "description": "Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's ` + "`" + `authorization` + "`" + ` field is set).",
       "type": "object",
@@ -593,17 +599,6 @@ const SiteSchemaJSON = `{
       "description": "The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called ` + "`" + `appURL` + "`" + `. Only root URLs are allowed.",
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
-    },
-    "lightstepAccessToken": {
-      "description": "DEPRECATED. Use Jaeger (` + "`" + `\"observability.tracing\": { \"sampling\": \"selective\" }` + "`" + `), instead.",
-      "type": "string",
-      "group": "Misc."
-    },
-    "lightstepProject": {
-      "description": "DEPRECATED. Use Jaeger (` + "`" + `\"observability.tracing\": { \"sampling\": \"selective\" }` + "`" + `), instead.",
-      "type": "string",
-      "examples": ["myproject"],
-      "group": "Misc."
     },
     "useJaeger": {
       "description": "DEPRECATED. Use ` + "`" + `\"observability.tracing\": { \"sampling\": \"all\" }` + "`" + `, instead. Enables Jaeger tracing.",
@@ -1124,7 +1119,7 @@ const SiteSchemaJSON = `{
     "NotifierOpsGenie": {
       "description": "OpsGenie notifier",
       "type": "object",
-      "required": ["type", "apiKey", "apiUrl"],
+      "required": ["type", "apiKey"],
       "properties": {
         "type": {
           "type": "string",

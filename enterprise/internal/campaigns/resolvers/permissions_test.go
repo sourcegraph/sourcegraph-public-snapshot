@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
@@ -22,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -38,6 +40,12 @@ func TestPermissionLevels(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	// SyncChangeset uses EnqueueChangesetSync and tries to talk to repo-updater, hence we need to mock it.
+	repoupdater.MockEnqueueChangesetSync = func(ctx context.Context, ids []int64) error {
+		return nil
+	}
+	t.Cleanup(func() { repoupdater.MockEnqueueChangesetSync = nil })
 
 	ctx := context.Background()
 
@@ -56,17 +64,20 @@ func TestPermissionLevels(t *testing.T) {
 		ExternalServiceType: "github",
 		ExternalID:          "1234",
 	}
-	if err := store.CreateChangesets(ctx, changeset); err != nil {
+	if err := store.CreateChangeset(ctx, changeset); err != nil {
 		t.Fatal(err)
 	}
 
-	createCampaign := func(t *testing.T, s *ee.Store, name string, userID int32) (campaignID int64) {
+	createCampaign := func(t *testing.T, s *ee.Store, name string, userID int32, campaignSpecID int64) (campaignID int64) {
 		t.Helper()
 
 		c := &campaigns.Campaign{
-			Name:            name,
-			AuthorID:        userID,
-			NamespaceUserID: userID,
+			Name:             name,
+			InitialApplierID: userID,
+			NamespaceUserID:  userID,
+			LastApplierID:    userID,
+			LastAppliedAt:    time.Now(),
+			CampaignSpecID:   campaignSpecID,
 			// We attach the changeset to the campaign so we can test syncChangeset
 			ChangesetIDs: []int64{changeset.ID},
 		}
@@ -82,7 +93,7 @@ func TestPermissionLevels(t *testing.T) {
 		return c.ID
 	}
 
-	createCampaignSpec := func(t *testing.T, s *ee.Store, userID int32) (randID string) {
+	createCampaignSpec := func(t *testing.T, s *ee.Store, userID int32) (randID string, id int64) {
 		t.Helper()
 
 		cs := &campaigns.CampaignSpec{UserID: userID, NamespaceUserID: userID}
@@ -90,13 +101,13 @@ func TestPermissionLevels(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		return cs.RandID
+		return cs.RandID, cs.ID
 	}
 
 	cleanUpCampaigns := func(t *testing.T, s *ee.Store) {
 		t.Helper()
 
-		campaigns, next, err := store.ListCampaigns(ctx, ee.ListCampaignsOpts{Limit: 1000})
+		campaigns, next, err := s.ListCampaigns(ctx, ee.ListCampaignsOpts{Limit: 1000})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -105,7 +116,7 @@ func TestPermissionLevels(t *testing.T) {
 		}
 
 		for _, c := range campaigns {
-			if err := store.DeleteCampaign(ctx, c.ID); err != nil {
+			if err := s.DeleteCampaign(ctx, c.ID); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -124,10 +135,10 @@ func TestPermissionLevels(t *testing.T) {
 
 		cleanUpCampaigns(t, store)
 
-		adminCampaign := createCampaign(t, store, "admin", adminID)
-		adminCampaignSpec := createCampaignSpec(t, store, adminID)
-		userCampaign := createCampaign(t, store, "user", userID)
-		userCampaignSpec := createCampaignSpec(t, store, userID)
+		adminCampaignSpec, adminCampaignSpecID := createCampaignSpec(t, store, adminID)
+		adminCampaign := createCampaign(t, store, "admin", adminID, adminCampaignSpecID)
+		userCampaignSpec, userCampaignSpecID := createCampaignSpec(t, store, userID)
+		userCampaign := createCampaign(t, store, "user", userID, userCampaignSpecID)
 
 		t.Run("CampaignByID", func(t *testing.T) {
 			tests := []struct {
@@ -390,21 +401,21 @@ func TestPermissionLevels(t *testing.T) {
 					t.Run(tc.name, func(t *testing.T) {
 						cleanUpCampaigns(t, store)
 
-						campaignID := createCampaign(t, store, "test-campaign", tc.campaignAuthor)
-						campaignSpecID := createCampaignSpec(t, store, tc.campaignAuthor)
+						campaignSpecRandID, campaignSpecID := createCampaignSpec(t, store, tc.campaignAuthor)
+						campaignID := createCampaign(t, store, "test-campaign", tc.campaignAuthor, campaignSpecID)
 
 						// We add the changeset to the campaign. It doesn't matter
 						// for the addChangesetsToCampaign mutation, since that is
 						// idempotent and we want to solely check for auth errors.
 						changeset.CampaignIDs = []int64{campaignID}
-						if err := store.UpdateChangesets(ctx, changeset); err != nil {
+						if err := store.UpdateChangeset(ctx, changeset); err != nil {
 							t.Fatal(err)
 						}
 
 						mutation := m.mutationFunc(
 							string(campaigns.MarshalCampaignID(campaignID)),
 							string(marshalChangesetID(changeset.ID)),
-							string(marshalCampaignSpecRandID(campaignSpecID)),
+							string(marshalCampaignSpecRandID(campaignSpecRandID)),
 						)
 
 						actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
@@ -439,8 +450,6 @@ func TestRepositoryPermissions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
-	// now := time.Now().UTC().Truncate(time.Microsecond)
 
 	// We need to enable read access so that non-site-admin users can access
 	// the API and we can check for their admin rights.
@@ -499,23 +508,36 @@ func TestRepositoryPermissions(t *testing.T) {
 				ExternalState:       campaigns.ChangesetExternalStateOpen,
 				ExternalCheckState:  campaigns.ChangesetCheckStatePassed,
 				ExternalReviewState: campaigns.ChangesetReviewStateChangesRequested,
+				PublicationState:    campaigns.ChangesetPublicationStatePublished,
+				ReconcilerState:     campaigns.ReconcilerStateCompleted,
 				Metadata: &github.PullRequest{
 					BaseRefOid: changesetBaseRefOid,
 					HeadRefOid: changesetHeadRefOid,
 				},
 			}
 			c.SetDiffStat(changesetDiffStat.ToDiffStat())
-			if err := store.CreateChangesets(ctx, c); err != nil {
+			if err := store.CreateChangeset(ctx, c); err != nil {
 				t.Fatal(err)
 			}
 			changesets = append(changesets, c)
 			changesetIDs = append(changesetIDs, c.ID)
 		}
 
-		campaign := &campaigns.Campaign{
-			Name:            "my campaign",
-			AuthorID:        userID,
+		spec := &campaigns.CampaignSpec{
 			NamespaceUserID: userID,
+			UserID:          userID,
+		}
+		if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+			t.Fatal(err)
+		}
+
+		campaign := &campaigns.Campaign{
+			Name:             "my campaign",
+			InitialApplierID: userID,
+			NamespaceUserID:  userID,
+			LastApplierID:    userID,
+			LastAppliedAt:    time.Now(),
+			CampaignSpecID:   spec.ID,
 			// We attach the two changesets to the campaign
 			ChangesetIDs: changesetIDs,
 		}
@@ -524,9 +546,9 @@ func TestRepositoryPermissions(t *testing.T) {
 		}
 		for _, c := range changesets {
 			c.CampaignIDs = []int64{campaign.ID}
-		}
-		if err := store.UpdateChangesets(ctx, changesets...); err != nil {
-			t.Fatal(err)
+			if err := store.UpdateChangeset(ctx, c); err != nil {
+				t.Fatal(err)
+			}
 		}
 
 		// Query campaign and check that we get all changesets
@@ -538,6 +560,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		testCampaignResponse(t, s, userCtx, input, wantCampaignResponse{
 			changesetTypes:  map[string]int{"ExternalChangeset": 2},
 			changesetsCount: 2,
+			changesetStats:  apitest.ChangesetConnectionStats{Open: 2, Total: 2},
 			campaignDiffStat: apitest.DiffStat{
 				Added:   2 * changesetDiffStat.Added,
 				Changed: 2 * changesetDiffStat.Changed,
@@ -562,6 +585,7 @@ func TestRepositoryPermissions(t *testing.T) {
 				"HiddenExternalChangeset": 1,
 			},
 			changesetsCount: 2,
+			changesetStats:  apitest.ChangesetConnectionStats{Open: 2, Total: 2},
 			campaignDiffStat: apitest.DiffStat{
 				Added:   1 * changesetDiffStat.Added,
 				Changed: 1 * changesetDiffStat.Changed,
@@ -588,6 +612,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		}
 		wantCheckStateResponse := want
 		wantCheckStateResponse.changesetsCount = 1
+		wantCheckStateResponse.changesetStats = apitest.ChangesetConnectionStats{Open: 1, Total: 1}
 		wantCheckStateResponse.changesetTypes = map[string]int{
 			"ExternalChangeset": 1,
 			// No HiddenExternalChangeset
@@ -598,12 +623,7 @@ func TestRepositoryPermissions(t *testing.T) {
 			"campaign":    string(campaigns.MarshalCampaignID(campaign.ID)),
 			"reviewState": string(campaigns.ChangesetReviewStateChangesRequested),
 		}
-		wantReviewStateResponse := want
-		wantReviewStateResponse.changesetsCount = 1
-		wantReviewStateResponse.changesetTypes = map[string]int{
-			"ExternalChangeset": 1,
-			// No HiddenExternalChangeset
-		}
+		wantReviewStateResponse := wantCheckStateResponse
 		testCampaignResponse(t, s, userCtx, input, wantReviewStateResponse)
 	})
 
@@ -619,9 +639,12 @@ func TestRepositoryPermissions(t *testing.T) {
 		changesetSpecs := make([]*campaigns.ChangesetSpec, 0, len(repos))
 		for _, r := range repos {
 			c := &campaigns.ChangesetSpec{
-				RepoID:         r.ID,
-				UserID:         userID,
-				CampaignSpecID: campaignSpec.ID,
+				RepoID:          r.ID,
+				UserID:          userID,
+				CampaignSpecID:  campaignSpec.ID,
+				DiffStatAdded:   4,
+				DiffStatChanged: 4,
+				DiffStatDeleted: 4,
 			}
 			if err := store.CreateChangesetSpec(ctx, c); err != nil {
 				t.Fatal(err)
@@ -634,6 +657,9 @@ func TestRepositoryPermissions(t *testing.T) {
 		testCampaignSpecResponse(t, s, userCtx, campaignSpec.RandID, wantCampaignSpecResponse{
 			changesetSpecTypes:  map[string]int{"VisibleChangesetSpec": 2},
 			changesetSpecsCount: 2,
+			campaignSpecDiffStat: apitest.DiffStat{
+				Added: 8, Changed: 8, Deleted: 8,
+			},
 		})
 
 		// Now query the changesetSpecs as single nodes, to make sure that fetching/preloading
@@ -655,6 +681,9 @@ func TestRepositoryPermissions(t *testing.T) {
 				"HiddenChangesetSpec":  1,
 			},
 			changesetSpecsCount: 2,
+			campaignSpecDiffStat: apitest.DiffStat{
+				Added: 4, Changed: 4, Deleted: 4,
+			},
 		})
 
 		// Query the single changesetSpec nodes again
@@ -672,6 +701,7 @@ func TestRepositoryPermissions(t *testing.T) {
 type wantCampaignResponse struct {
 	changesetTypes   map[string]int
 	changesetsCount  int
+	changesetStats   apitest.ChangesetConnectionStats
 	campaignDiffStat apitest.DiffStat
 }
 
@@ -687,6 +717,10 @@ func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, 
 
 	if diff := cmp.Diff(w.changesetsCount, response.Node.Changesets.TotalCount); diff != "" {
 		t.Fatalf("unexpected changesets total count (-want +got):\n%s", diff)
+	}
+
+	if diff := cmp.Diff(w.changesetStats, response.Node.Changesets.Stats); diff != "" {
+		t.Fatalf("unexpected changesets stats (-want +got):\n%s", diff)
 	}
 
 	changesetTypes := map[string]int{}
@@ -710,6 +744,7 @@ query($campaign: ID!, $reviewState: ChangesetReviewState, $checkState: Changeset
 
       changesets(first: 100, reviewState: $reviewState, checkState: $checkState) {
         totalCount
+		stats { unpublished, open, merged, closed, total }
         nodes {
           __typename
           ... on HiddenExternalChangeset {
@@ -746,8 +781,16 @@ func testChangesetResponse(t *testing.T, s *graphql.Schema, ctx context.Context,
 		t.Fatalf("changeset has wrong typename. want=%q, have=%q", want, have)
 	}
 
+	if have, want := res.Node.PublicationState, string(campaigns.ChangesetPublicationStatePublished); have != want {
+		t.Fatalf("changeset has wrong publication state. want=%q, have=%q", want, have)
+	}
+
+	if have, want := res.Node.ReconcilerState, string(campaigns.ReconcilerStateCompleted); have != want {
+		t.Fatalf("changeset has wrong reconciler state. want=%q, have=%q", want, have)
+	}
+
 	if have, want := res.Node.ExternalState, string(campaigns.ChangesetExternalStateOpen); have != want {
-		t.Fatalf("changeset has wrong state. want=%q, have=%q", want, have)
+		t.Fatalf("changeset has wrong external state. want=%q, have=%q", want, have)
 	}
 
 	if have, want := res.Node.Campaigns.TotalCount, 1; have != want {
@@ -775,6 +818,8 @@ query {
     ... on HiddenExternalChangeset {
       id
 
+	  publicationState
+	  reconcilerState
 	  externalState
 	  createdAt
 	  updatedAt
@@ -786,6 +831,8 @@ query {
     ... on ExternalChangeset {
       id
 
+	  publicationState
+	  reconcilerState
 	  externalState
 	  createdAt
 	  updatedAt
@@ -804,8 +851,9 @@ query {
 `
 
 type wantCampaignSpecResponse struct {
-	changesetSpecTypes  map[string]int
-	changesetSpecsCount int
+	changesetSpecTypes   map[string]int
+	changesetSpecsCount  int
+	campaignSpecDiffStat apitest.DiffStat
 }
 
 func testCampaignSpecResponse(t *testing.T, s *graphql.Schema, ctx context.Context, campaignSpecRandID string, w wantCampaignSpecResponse) {
@@ -877,7 +925,7 @@ query($campaignSpec: ID!) {
 }
 `
 
-func testChangesetSpecResponse(t *testing.T, s *graphql.Schema, ctx context.Context, randID string, wantType string) {
+func testChangesetSpecResponse(t *testing.T, s *graphql.Schema, ctx context.Context, randID, wantType string) {
 	t.Helper()
 
 	var res struct{ Node apitest.ChangesetSpec }

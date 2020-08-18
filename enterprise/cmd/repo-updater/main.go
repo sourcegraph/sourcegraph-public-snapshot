@@ -55,19 +55,39 @@ func enterpriseInit(
 	}
 
 	sourcer := repos.NewSourcer(cf)
-	go campaigns.RunWorkers(ctx, campaignsStore, clock, gitserver.DefaultClient, sourcer, 5*time.Second)
+	go campaigns.RunWorkers(ctx, campaignsStore, gitserver.DefaultClient, sourcer)
 
 	// Set up expired spec deletion
 	go func() {
 		for {
-			if err := campaignsStore.DeleteExpiredCampaignSpecs(ctx); err != nil {
-				log15.Error("DeleteExpiredCampaignSpecs", "error", err)
-			}
+			// We first need to delete expired ChangesetSpecs...
 			if err := campaignsStore.DeleteExpiredChangesetSpecs(ctx); err != nil {
 				log15.Error("DeleteExpiredChangesetSpecs", "error", err)
 			}
+			// ... and then the CampaignSpecs, due to the campaign_spec_id
+			// foreign key on changeset_specs.
+			if err := campaignsStore.DeleteExpiredCampaignSpecs(ctx); err != nil {
+				log15.Error("DeleteExpiredCampaignSpecs", "error", err)
+			}
 
 			time.Sleep(2 * time.Minute)
+		}
+	}()
+
+	// Migrate pre-spec campaigns. We'll try to do this every five minutes
+	// until it succeeds, at which point it will never happen again.
+	//
+	// This code can be removed in Sourcegraph 3.21 or later.
+	go func() {
+		for {
+			svc := campaigns.NewServiceWithClock(campaignsStore, nil, clock)
+			if err := svc.MigratePreSpecCampaigns(ctx); err != nil {
+				log15.Error("MigratePreSpecCampaigns", "error", err)
+			} else {
+				return
+			}
+
+			time.Sleep(5 * time.Minute)
 		}
 	}()
 

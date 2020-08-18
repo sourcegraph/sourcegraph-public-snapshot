@@ -29,14 +29,14 @@ import (
 
 // newExternalHTTPHandler creates and returns the HTTP handler that serves the app and API pages to
 // external clients.
-func newExternalHTTPHandler(schema *graphql.Schema, githubWebhook, bitbucketServerWebhook http.Handler, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler) (http.Handler, error) {
+func newExternalHTTPHandler(schema *graphql.Schema, gitHubWebhook, gitLabWebhook, bitbucketServerWebhook http.Handler, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, newCodeIntelInternalProxyHandler enterprise.NewCodeIntelInternalProxyHandler) (http.Handler, error) {
 	// Each auth middleware determines on a per-request basis whether it should be enabled (if not, it
 	// immediately delegates the request to the next middleware in the chain).
 	authMiddlewares := auth.AuthMiddleware()
 
 	// HTTP API handler, the call order of middleware is LIFO.
 	r := router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter())
-	apiHandler := internalhttpapi.NewHandler(r, schema, githubWebhook, bitbucketServerWebhook, newCodeIntelUploadHandler)
+	apiHandler := internalhttpapi.NewHandler(r, schema, gitHubWebhook, gitLabWebhook, bitbucketServerWebhook, newCodeIntelUploadHandler)
 	if hooks.PostAuthMiddleware != nil {
 		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
 		apiHandler = hooks.PostAuthMiddleware(apiHandler)
@@ -47,6 +47,9 @@ func newExternalHTTPHandler(schema *graphql.Schema, githubWebhook, bitbucketServ
 	apiHandler = session.CookieMiddlewareWithCSRFSafety(apiHandler, corsAllowHeader, isTrustedOrigin) // API accepts cookies with special header
 	apiHandler = internalhttpapi.AccessTokenAuthMiddleware(apiHandler)                                // API accepts access tokens
 	apiHandler = gziphandler.GzipHandler(apiHandler)
+
+	// 🚨 SECURITY: This handler implements its own token auth inside enterprise
+	internalCodeIntelHandler := newCodeIntelInternalProxyHandler()
 
 	// App handler (HTML pages), the call order of middleware is LIFO.
 	appHandler := app.NewHandler()
@@ -64,6 +67,7 @@ func newExternalHTTPHandler(schema *graphql.Schema, githubWebhook, bitbucketServ
 	// Mount handlers and assets.
 	sm := http.NewServeMux()
 	sm.Handle("/.api/", apiHandler)
+	sm.Handle("/.internal-code-intel/", internalCodeIntelHandler)
 	sm.Handle("/", appHandler)
 	assetsutil.Mount(sm)
 

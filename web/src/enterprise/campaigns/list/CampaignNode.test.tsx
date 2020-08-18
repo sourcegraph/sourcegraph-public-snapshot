@@ -3,14 +3,12 @@ import { CampaignNode } from './CampaignNode'
 import { parseISO } from 'date-fns'
 import { createMemoryHistory } from 'history'
 import { mount } from 'enzyme'
+import { ListCampaign } from '../../../graphql-operations'
 
 const now = parseISO('2019-01-01T23:15:01Z')
 
-jest.mock('../icons', () => ({ CampaignsIcon: 'CampaignsIcon' }))
-
 describe('CampaignNode', () => {
-    const node = {
-        __typename: 'Campaign',
+    const node: ListCampaign = {
         id: '123',
         name: 'Upgrade lodash to v4',
         description: `
@@ -19,22 +17,30 @@ describe('CampaignNode', () => {
 - and renders in markdown
         `,
         changesets: { stats: { merged: 0, open: 1, closed: 3 } },
-        patches: { totalCount: 2 },
         createdAt: '2019-12-04T23:15:01Z',
         closedAt: null,
-        author: {
-            username: 'alice',
+        namespace: {
+            namespaceName: 'alice',
+            url: '/users/alice',
         },
     }
 
     test('open campaign', () => {
-        expect(mount(<CampaignNode node={node} now={now} history={createMemoryHistory()} />)).toMatchSnapshot()
+        expect(
+            mount(<CampaignNode displayNamespace={true} node={node} now={now} history={createMemoryHistory()} />)
+        ).toMatchSnapshot()
+    })
+    test('open campaign on user page', () => {
+        expect(
+            mount(<CampaignNode displayNamespace={false} node={node} now={now} history={createMemoryHistory()} />)
+        ).toMatchSnapshot()
     })
     test('closed campaign', () => {
         expect(
             mount(
                 <CampaignNode
                     node={{ ...node, closedAt: '2019-12-04T23:19:01Z' }}
+                    displayNamespace={true}
                     now={now}
                     history={createMemoryHistory()}
                 />
@@ -49,6 +55,7 @@ describe('CampaignNode', () => {
                         ...node,
                         description: null,
                     }}
+                    displayNamespace={true}
                     now={now}
                     history={createMemoryHistory()}
                 />
