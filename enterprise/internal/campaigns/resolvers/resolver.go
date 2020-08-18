@@ -505,8 +505,13 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, campaign
 		// changesets, since that would leak information.
 		safe = false
 	}
-	if args.OnlyCreatedByThisCampaign != nil {
-		opts.CreatedByCampaign = campaignID
+	if args.OnlyPublishedByThisCampaign != nil {
+		published := campaigns.ChangesetPublicationStatePublished
+		createdByCampaign := true
+
+		opts.OwnedByCampaignID = campaignID
+		opts.PublicationState = &published
+		opts.CreatedByCampaign = &createdByCampaign
 	}
 
 	return opts, safe, nil

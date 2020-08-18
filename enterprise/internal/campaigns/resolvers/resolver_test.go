@@ -601,7 +601,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 	wantExternalStates := []campaigns.ChangesetExternalState{"OPEN", "INVALID"}
 	wantReviewStates := []campaigns.ChangesetReviewState{"APPROVED", "INVALID"}
 	wantCheckStates := []campaigns.ChangesetCheckState{"PENDING", "INVALID"}
-	wantOnlyCreatedByThisCampaign := []bool{true}
+	wantOnlyPublishedByThisCampaign := []bool{true}
 	var campaignID int64 = 1
 
 	tcs := []struct {
@@ -706,11 +706,13 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		// Setting only createdByCampaign true.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				OnlyCreatedByThisCampaign: &wantOnlyCreatedByThisCampaign[0],
+				OnlyPublishedByThisCampaign: &wantOnlyPublishedByThisCampaign[0],
 			},
 			wantSafe: true,
 			wantParsed: ee.ListChangesetsOpts{
-				CreatedByCampaign: campaignID,
+				PublicationState:  &wantPublicationStates[0],
+				CreatedByCampaign: &wantOnlyPublishedByThisCampaign[0],
+				OwnedByCampaignID: campaignID,
 			},
 		},
 	}

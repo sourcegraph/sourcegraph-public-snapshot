@@ -752,8 +752,8 @@ type Campaign implements Node {
         reviewState: ChangesetReviewState
         # Only include changesets with the given check state.
         checkState: ChangesetCheckState
-        # Only return changesets that have been created by this campaign. Imported changesets will be omitted.
-        onlyCreatedByThisCampaign: Boolean
+        # Only return changesets that have been published by this campaign. Imported changesets will be omitted.
+        onlyPublishedByThisCampaign: Boolean
     ): ChangesetConnection!
 
     # The changeset counts over time, in 1-day intervals backwards from the point in time given in
