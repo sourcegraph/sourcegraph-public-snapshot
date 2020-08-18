@@ -106,6 +106,8 @@
 // 1528395701_burn_the_campaigns_boats.up.sql (3.377kB)
 // 1528395702_changeset_user_fk.down.sql (272B)
 // 1528395702_changeset_user_fk.up.sql (300B)
+// 1528395703_remove_owner_on_campaign_delete.down.sql (261B)
+// 1528395703_remove_owner_on_campaign_delete.up.sql (288B)
 
 package migrations
 
@@ -2294,6 +2296,46 @@ func _1528395702_changeset_user_fkUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395703_remove_owner_on_campaign_deleteDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\xcf\x31\xab\x83\x30\x14\x05\xe0\x3d\xbf\xe2\x8c\x3e\x78\xff\xc0\x29\x9a\xab\x84\xa7\xc9\xe3\x26\x43\x3b\x05\xab\xa9\x95\x52\x5b\xb0\x50\xfc\xf7\x45\xa1\xc5\xa1\x43\xef\x7a\xbf\x73\xe0\x64\x54\x6a\x93\x0a\x21\x2b\x4f\x0c\x2f\xb3\x8a\xd0\x9e\x9a\xb1\x8f\x53\xbc\x4f\x02\x00\x14\xdb\x7f\xe4\xd6\x38\xcf\x52\x1b\x0f\x5d\x80\x76\xda\x79\xb7\x81\xe1\xfa\x18\x63\x17\x0e\x73\x68\x9b\xcb\xad\x19\xfa\x31\x0c\x5d\x38\x9e\xe3\xfc\xbb\x76\x48\xa5\xb6\x15\xdf\x04\xd7\xdc\x72\x85\x65\xd2\xa5\xc1\x1f\xed\x91\x7c\xe2\x3f\x6f\xca\x54\x10\x93\xc9\xc9\xe1\xf5\x9f\x90\x6c\x85\x5a\x04\x2f\x33\x53\x21\x72\x5b\xd7\xda\xa7\xe2\x19\x00\x00\xff\xff\x39\x16\x25\xdd\x05\x01\x00\x00")
+
+func _1528395703_remove_owner_on_campaign_deleteDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395703_remove_owner_on_campaign_deleteDownSql,
+		"1528395703_remove_owner_on_campaign_delete.down.sql",
+	)
+}
+
+func _1528395703_remove_owner_on_campaign_deleteDownSql() (*asset, error) {
+	bytes, err := _1528395703_remove_owner_on_campaign_deleteDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395703_remove_owner_on_campaign_delete.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xd3, 0x55, 0xb1, 0x56, 0xb4, 0xf9, 0xba, 0xbb, 0xc2, 0xcd, 0xa2, 0xb3, 0xa5, 0xf8, 0xc, 0x10, 0xe9, 0x5e, 0x3d, 0xd3, 0xba, 0xf8, 0xc7, 0xe0, 0x42, 0x25, 0xf9, 0x8b, 0xdb, 0x2f, 0x8a, 0x5d}}
+	return a, nil
+}
+
+var __1528395703_remove_owner_on_campaign_deleteUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x90\xc1\x6a\x84\x30\x14\x45\xf7\xf9\x8a\xbb\xb4\xd0\x3f\x70\x15\xcd\x53\x42\x63\x52\x92\x57\x68\x57\xc1\x6a\x6a\xa5\xd4\x19\x70\x60\xf0\xef\x07\x85\x11\x17\xb3\x98\xb7\xbd\xe7\x9c\xc5\x2b\xa8\xd6\x36\x17\x42\x1a\x26\x0f\x96\x85\x21\x74\xbf\xed\x34\xa4\x39\x5d\x66\x01\x00\xca\xbb\x77\x94\xce\x06\xf6\x52\x5b\x86\xae\x40\x9f\x3a\x70\x38\x80\xf1\x74\x9d\x52\x1f\xbf\x97\xd8\xb5\xff\xe7\x76\x1c\xa6\x38\xf6\xf1\xe7\x2f\x2d\xaf\x5b\x43\x2a\x75\x4c\x3c\x23\x6e\xde\x7a\x95\xf3\xa4\x6b\x8b\x37\xfa\x42\xf6\x08\x7f\xd9\x51\x4f\x15\x79\xb2\x25\x05\xdc\xf7\x19\xd9\x91\x70\x16\x8a\x0c\x31\x21\x10\xc3\x7e\x18\xb3\x4f\x6a\x95\xfd\xfa\x81\x5c\x88\xd2\x35\x8d\xe6\x5c\xdc\x02\x00\x00\xff\xff\xdd\x2e\x9b\x3b\x20\x01\x00\x00")
+
+func _1528395703_remove_owner_on_campaign_deleteUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395703_remove_owner_on_campaign_deleteUpSql,
+		"1528395703_remove_owner_on_campaign_delete.up.sql",
+	)
+}
+
+func _1528395703_remove_owner_on_campaign_deleteUpSql() (*asset, error) {
+	bytes, err := _1528395703_remove_owner_on_campaign_deleteUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395703_remove_owner_on_campaign_delete.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xd3, 0x25, 0xd, 0xa, 0x7e, 0x9c, 0xc8, 0xfa, 0x59, 0xa1, 0x6b, 0x5a, 0x32, 0x49, 0xcc, 0x7, 0xc8, 0xd4, 0xb2, 0xee, 0xcb, 0xb8, 0x4a, 0x8a, 0x95, 0x69, 0xc6, 0xd8, 0x11, 0x83, 0xf3, 0xd3}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2491,6 +2533,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395701_burn_the_campaigns_boats.up.sql":                              _1528395701_burn_the_campaigns_boatsUpSql,
 	"1528395702_changeset_user_fk.down.sql":                                   _1528395702_changeset_user_fkDownSql,
 	"1528395702_changeset_user_fk.up.sql":                                     _1528395702_changeset_user_fkUpSql,
+	"1528395703_remove_owner_on_campaign_delete.down.sql":                     _1528395703_remove_owner_on_campaign_deleteDownSql,
+	"1528395703_remove_owner_on_campaign_delete.up.sql":                       _1528395703_remove_owner_on_campaign_deleteUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2643,6 +2687,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395701_burn_the_campaigns_boats.up.sql":                              {_1528395701_burn_the_campaigns_boatsUpSql, map[string]*bintree{}},
 	"1528395702_changeset_user_fk.down.sql":                                   {_1528395702_changeset_user_fkDownSql, map[string]*bintree{}},
 	"1528395702_changeset_user_fk.up.sql":                                     {_1528395702_changeset_user_fkUpSql, map[string]*bintree{}},
+	"1528395703_remove_owner_on_campaign_delete.down.sql":                     {_1528395703_remove_owner_on_campaign_deleteDownSql, map[string]*bintree{}},
+	"1528395703_remove_owner_on_campaign_delete.up.sql":                       {_1528395703_remove_owner_on_campaign_deleteUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
