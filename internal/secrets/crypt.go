@@ -1,4 +1,4 @@
-package encrypt
+package secrets
 
 import (
 	"crypto/aes"
@@ -46,7 +46,7 @@ func GenerateRandomAESKey() ([]byte, error) {
 // Returns an error only when encryption is enabled, and encryption fails.
 func EncryptBytesIfPossible(b []byte) (string, error) {
 	if configuredToEncrypt {
-		return cryptObject.EncryptBytes(b)
+		return defaultEncryptor.EncryptBytes(b)
 	}
 	return string(b), nil
 }
@@ -55,7 +55,7 @@ func EncryptBytesIfPossible(b []byte) (string, error) {
 // Returns an error only when encryption is enabled, and encryption fails.
 func EncryptIfPossible(value string) (string, error) {
 	if configuredToEncrypt {
-		return cryptObject.Encrypt(value)
+		return defaultEncryptor.Encrypt(value)
 	}
 	return value, nil
 }
@@ -64,7 +64,7 @@ func EncryptIfPossible(value string) (string, error) {
 // It returns an error only if encryption is enabled and it cannot Decrypt the string
 func DecryptIfPossible(value string) (string, error) {
 	if configuredToEncrypt {
-		return cryptObject.Decrypt(value)
+		return defaultEncryptor.Decrypt(value)
 	}
 	return value, nil
 }
@@ -73,7 +73,7 @@ func DecryptIfPossible(value string) (string, error) {
 // It returns an error only if encryption is enabled and it cannot Decrypt the string
 func DecryptBytesIfPossible(b []byte) (string, error) {
 	if configuredToEncrypt {
-		return cryptObject.DecryptBytes(b)
+		return defaultEncryptor.DecryptBytes(b)
 	}
 	return string(b), nil
 }

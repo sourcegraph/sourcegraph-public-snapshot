@@ -15,10 +15,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/encrypt"
-
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -35,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/processrestart"
+	"github.com/sourcegraph/sourcegraph/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -196,13 +196,17 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
 	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background()) })
-	goroutine.Go(func() { encrypt.InitializeSecrets() })
 	go updatecheck.Start()
 
 	// Parse GraphQL schema and set up resolvers that depend on dbconn.Global
 	// being initialized
 	if dbconn.Global == nil {
 		return errors.New("dbconn.Global is nil when trying to parse GraphQL schema")
+	}
+
+	err := secrets.Init()
+	if err != nil {
+		return err
 	}
 
 	schema, err := graphqlbackend.NewSchema(enterprise.CampaignsResolver, enterprise.CodeIntelResolver, enterprise.AuthzResolver)
