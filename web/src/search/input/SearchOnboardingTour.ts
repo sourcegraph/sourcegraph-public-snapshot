@@ -2,6 +2,7 @@
  * This file contains utility functions for the search onboarding tour.
  */
 import Shepherd from 'shepherd.js'
+import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 
 export const HAS_CANCELLED_TOUR_KEY = 'has-cancelled-onboarding-tour'
 export const HAS_SEEN_TOUR_KEY = 'has-seen-onboarding-tour'
@@ -155,7 +156,7 @@ export const languageFilterToSearchExamples: { [key: string]: string } = {
 export function createAddCodeStepWithLanguageExampleTooltip(
     tour: Shepherd.Tour,
     languageQuery: string,
-    exampleCallback: (query: string) => void
+    exampleCallback: (query: string, patternType: SearchPatternType) => void
 ): HTMLElement {
     const list = document.createElement('ul')
     list.className = 'my-4 list-group'
@@ -178,8 +179,8 @@ export function createAddCodeStepWithLanguageExampleTooltip(
 
     exampleButton.addEventListener('click', () => {
         const fullQuery = [languageQuery, example].join(' ')
-        exampleCallback(fullQuery)
-        tour.show('step-4')
+        exampleCallback(fullQuery, SearchPatternType.structural)
+        tour.show('view-search-reference')
     })
     listItem.append(exampleButton)
     list.append(listItem)
@@ -224,7 +225,11 @@ type advanceStandardStep = advanceStepCallback & { handler: (tour: Shepherd.Tour
  * content for the next step.
  */
 type advanceLanguageInputStep = advanceStepCallback & {
-    handler: (tour: Shepherd.Tour, query: string, setQueryHandler: (query: string) => void) => void
+    handler: (
+        tour: Shepherd.Tour,
+        query: string,
+        setQueryHandler: (query: string, patternType?: SearchPatternType) => void
+    ) => void
 }
 
 export type callbackToAdvanceTourStep = advanceStandardStep | advanceLanguageInputStep
@@ -234,23 +239,29 @@ export type callbackToAdvanceTourStep = advanceStandardStep | advanceLanguageInp
  */
 export const stepCallbacks: callbackToAdvanceTourStep[] = [
     {
-        stepToAdvance: 'step-2-repo',
+        stepToAdvance: 'filter-repository',
         handler: (tour: Shepherd.Tour, query: string): void => {
-            if (tour.getById('step-2-repo').isOpen() && query.endsWith(' ')) {
-                tour.show('step-3')
-                tour.getById('step-3').updateStepOptions({ text: createAddCodeStepTooltip(tour) })
+            if (tour.getById('filter-repository').isOpen() && query.endsWith(' ')) {
+                tour.show('add-query-term')
+                tour.getById('add-query-term').updateStepOptions({ text: createAddCodeStepTooltip(tour) })
             }
         },
         queryConditions: (query: string): boolean => query !== 'repo:',
     },
     {
-        stepToAdvance: 'step-2-lang',
-        handler: (tour: Shepherd.Tour, query: string, setQueryHandler: (query: string) => void): void => {
-            if (tour.getById('step-2-lang').isOpen()) {
-                tour.show('step-3')
-                tour.getById('step-3').updateStepOptions({
-                    text: createAddCodeStepWithLanguageExampleTooltip(tour, query ?? '', (newQuery: string) =>
-                        setQueryHandler(newQuery)
+        stepToAdvance: 'filter-lang',
+        handler: (
+            tour: Shepherd.Tour,
+            query: string,
+            setQueryHandler: (query: string, patternType?: SearchPatternType) => void
+        ): void => {
+            if (tour.getById('filter-lang').isOpen()) {
+                tour.show('add-query-term')
+                tour.getById('add-query-term').updateStepOptions({
+                    text: createAddCodeStepWithLanguageExampleTooltip(
+                        tour,
+                        query ?? '',
+                        (newQuery: string, patternType: SearchPatternType) => setQueryHandler(newQuery, patternType)
                     ),
                 })
             }
@@ -258,10 +269,10 @@ export const stepCallbacks: callbackToAdvanceTourStep[] = [
         queryConditions: (query: string): boolean => query !== 'lang:' && isValidLangQuery(query),
     },
     {
-        stepToAdvance: 'step-3',
+        stepToAdvance: 'add-query-term',
         handler: (tour: Shepherd.Tour): void => {
-            if (tour.getById('step-3').isOpen()) {
-                tour.show('step-4')
+            if (tour.getById('add-query-term').isOpen()) {
+                tour.show('view-search-reference')
             }
         },
         queryConditions: (query: string): boolean => query !== 'repo:' && query !== 'lang:',

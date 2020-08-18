@@ -373,9 +373,9 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                     .subscribe(queryState => {
                         // Trigger the suggestions popup for `repo:` and `lang:` fields
                         if (
-                            (isEqual(tour.getCurrentStep(), tour.getById('step-2-repo')) &&
+                            (isEqual(tour.getCurrentStep(), tour.getById('filter-repository')) &&
                                 queryState.query === 'repo:') ||
-                            (isEqual(tour.getCurrentStep(), tour.getById('step-2-lang')) &&
+                            (isEqual(tour.getCurrentStep(), tour.getById('filter-lang')) &&
                                 queryState.query === 'lang:')
                         ) {
                             this.suggestionTriggers.next()
@@ -388,18 +388,25 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                                     advanceStepCallback.queryConditions &&
                                     advanceStepCallback.queryConditions(queryState.query)
                                 ) {
-                                    if (advanceStepCallback.stepToAdvance === 'step-2-lang') {
+                                    if (advanceStepCallback.stepToAdvance === 'filter-lang') {
                                         // In step 2, users are asked to type to filter the language suggestions list. We only want
                                         // to advance when they are done with the suggestions dropdown, so ensure it's closed
                                         // before advancing.
                                         if (!this.suggestionsVisible) {
-                                            advanceStepCallback.handler(tour, queryState.query, (newQuery: string) => {
-                                                this.props.onChange({
-                                                    query: newQuery,
-                                                    cursorPosition: newQuery.length,
-                                                    fromUserInput: true,
-                                                })
-                                            })
+                                            advanceStepCallback.handler(
+                                                tour,
+                                                queryState.query,
+                                                (newQuery: string, patternType?: SearchPatternType) => {
+                                                    if (patternType) {
+                                                        this.props.setPatternType(patternType)
+                                                    }
+                                                    this.props.onChange({
+                                                        query: newQuery,
+                                                        cursorPosition: newQuery.length,
+                                                        fromUserInput: true,
+                                                    })
+                                                }
+                                            )
                                         }
                                         break
                                     } else {
