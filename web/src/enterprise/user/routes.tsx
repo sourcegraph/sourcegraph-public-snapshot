@@ -7,6 +7,7 @@ import { UserCampaignListPageProps } from '../campaigns/list/CampaignListPage'
 import { lazyComponent } from '../../util/lazyComponent'
 import { CampaignApplyPageProps } from '../campaigns/apply/CampaignApplyPage'
 import { CampaignDetailsProps } from '../campaigns/detail/CampaignDetails'
+import { CreateCampaignPageProps } from '../campaigns/create/CreateCampaignPage'
 
 const UserCampaignListPage = lazyComponent<UserCampaignListPageProps, 'UserCampaignListPage'>(
     () => import('../campaigns/list/CampaignListPage'),
@@ -15,6 +16,10 @@ const UserCampaignListPage = lazyComponent<UserCampaignListPageProps, 'UserCampa
 const CampaignApplyPage = lazyComponent<CampaignApplyPageProps, 'CampaignApplyPage'>(
     () => import('../campaigns/apply/CampaignApplyPage'),
     'CampaignApplyPage'
+)
+const CreateCampaignPage = lazyComponent<CreateCampaignPageProps, 'CreateCampaignPage'>(
+    () => import('../campaigns/create/CreateCampaignPage'),
+    'CreateCampaignPage'
 )
 const CampaignDetails = lazyComponent<CampaignDetailsProps, 'CampaignDetails'>(
     () => import('../campaigns/detail/CampaignDetails'),
@@ -41,6 +46,16 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
         render: ({ match, ...props }: UserAreaRouteContext & RouteComponentProps<{ specID: string }>) => (
             <div className="web-content">
                 <CampaignApplyPage {...props} specID={match.params.specID} />
+            </div>
+        ),
+        condition: ({ isSourcegraphDotCom }) =>
+            !isSourcegraphDotCom && window.context.experimentalFeatures?.automation === 'enabled',
+    },
+    {
+        path: '/campaigns/create',
+        render: props => (
+            <div className="web-content">
+                <CreateCampaignPage {...props} />
             </div>
         ),
         condition: ({ isSourcegraphDotCom }) =>
