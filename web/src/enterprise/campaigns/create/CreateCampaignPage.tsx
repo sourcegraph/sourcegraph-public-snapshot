@@ -1,7 +1,7 @@
 import React from 'react'
 import { PageTitle } from '../../../components/PageTitle'
 import { CampaignHeader } from '../detail/CampaignHeader'
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 
 const campaignSpec = `name: hello-world
 description: Add Hello World to READMEs
@@ -40,10 +40,10 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
             <h2>New to campaigns?</h2>
             <p className="lead">
                 Read the{' '}
-                <a href="https://docs.sourcegraph.com" rel="noopener noreferrer" target="_blank">
-                    creating a campaign
+                <a href="https://docs.sourcegraph.com/user/campaigns" rel="noopener noreferrer" target="_blank">
+                    campaigns documentation page
                 </a>{' '}
-                documentation page to learn about creating campaign specifications, using src-cli and publishing
+                to learn how to create campaign specifications, using Sourcegraph's CLI tool src-cli and publishing
                 changesets.
             </p>
             <h2>Quick start</h2>
@@ -53,8 +53,9 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                     download="hello-world.campaign.yaml"
                     href={helloWorldDownloadUrl}
                     className="text-right btn btn-secondary text-nowrap"
+                    data-tooltip="Download hello-world.campaign.yaml"
                 >
-                    <MagnifyIcon className="icon-inline" /> Download yaml
+                    <FileDownloadIcon className="icon-inline" /> Download yaml
                 </a>
             </div>
             <div className="bg-light rounded p-2 mb-3">
