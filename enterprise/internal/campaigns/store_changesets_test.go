@@ -281,6 +281,17 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				t.Fatalf("have countProcessing: %d, want: %d", have, want)
 			}
 		})
+
+		t.Run("OwnedByCampaignID", func(t *testing.T) {
+			count, err := s.CountChangesets(ctx, CountChangesetsOpts{OwnedByCampaignID: int64(1)})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := count, 1; have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
+		})
 	})
 
 	t.Run("List", func(t *testing.T) {
@@ -410,7 +421,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			}
 		}
 
-		// Limit of -1 should return all ChangeSets
+		// Limit of -1 should return all Changesets
 		{
 			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{Limit: -1})
 			if err != nil {
@@ -510,6 +521,12 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 					ExternalReviewState: &stateChangesRequested,
 				},
 				wantCount: 0,
+			},
+			{
+				opts: ListChangesetsOpts{
+					OwnedByCampaignID: int64(1),
+				},
+				wantCount: 1,
 			},
 		}
 
