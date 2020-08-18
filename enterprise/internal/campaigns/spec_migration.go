@@ -219,6 +219,18 @@ func (svc *Service) MigratePreSpecCampaigns(ctx context.Context) (err error) {
 		// copied the table exactly but didn't recreate campaigns or its ID
 		// sequence, which means we know the sequence is already past the ID
 		// that was on the old campaign.
+		//
+		// This is a two step process. First, we need to update the campaign
+		// IDs that are embedded with the changesets. (An alternative approach
+		// here would have been to modify ApplyCampaign to be able to set the
+		// campaign ID explicitly, but it's nice to have these temporary
+		// migration changes isolated in a single place.)
+		if err = store.updateChangesetsCampaignID(campaignCtx, nc.ID, c.ID); err != nil {
+			err = errors.Wrapf(err, "updating campaign ID from %d to %d on changesets", nc.ID, c.ID)
+			return
+		}
+
+		// Second, we need to update the actual campaign record.
 		err = store.updateCampaignID(ctx, nc, c.ID)
 		if err != nil {
 			err = errors.Wrapf(err, "resetting campaign ID %d", c.ID)
