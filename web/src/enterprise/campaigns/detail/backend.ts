@@ -164,7 +164,7 @@ export const queryChangesets = ({
     reviewState,
     checkState,
     publicationState,
-    onlyCreatedByThisCampaign,
+    onlyPublishedByThisCampaign,
 }: CampaignChangesetsVariables): Observable<
     (CampaignChangesetsResult['node'] & { __typename: 'Campaign' })['changesets']
 > =>
@@ -177,7 +177,7 @@ export const queryChangesets = ({
                 $reviewState: ChangesetReviewState
                 $checkState: ChangesetCheckState
                 $publicationState: ChangesetPublicationState
-                $onlyCreatedByThisCampaign: Boolean
+                $onlyPublishedByThisCampaign: Boolean
             ) {
                 node(id: $campaign) {
                     __typename
@@ -188,7 +188,7 @@ export const queryChangesets = ({
                             publicationState: $publicationState
                             reviewState: $reviewState
                             checkState: $checkState
-                            onlyCreatedByThisCampaign: $onlyCreatedByThisCampaign
+                            onlyPublishedByThisCampaign: $onlyPublishedByThisCampaign
                         ) {
                             totalCount
                             pageInfo {
@@ -212,7 +212,7 @@ export const queryChangesets = ({
             reviewState,
             checkState,
             publicationState,
-            onlyCreatedByThisCampaign,
+            onlyPublishedByThisCampaign,
         },
     }).pipe(
         map(dataOrThrowErrors),

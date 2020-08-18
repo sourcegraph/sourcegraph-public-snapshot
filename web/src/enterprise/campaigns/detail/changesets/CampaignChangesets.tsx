@@ -97,7 +97,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                         ...(onlyOpen ? { externalState: ChangesetExternalState.OPEN } : {}),
                         first: args.first ?? null,
                         campaign: campaignID,
-                        onlyCreatedByThisCampaign: null,
+                        onlyPublishedByThisCampaign: null,
                     }).pipe(repeatWhen(notifier => notifier.pipe(delay(5000))))
                 )
             ),
