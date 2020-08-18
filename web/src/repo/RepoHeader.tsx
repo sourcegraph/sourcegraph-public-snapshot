@@ -181,7 +181,7 @@ export const RepoHeader: React.FunctionComponent<Props> = ({ onLifecyclePropsCha
     return (
         <nav className="repo-header navbar navbar-expand">
             <div className="d-flex align-items-center">
-                {/* Breadcrump for the nav elements */}
+                {/* Breadcrumb for the nav elements */}
                 <Breadcrumbs breadcrumbs={props.breadcrumbs} />
             </div>
             <ul className="navbar-nav">

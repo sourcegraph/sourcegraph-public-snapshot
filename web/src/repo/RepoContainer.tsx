@@ -185,55 +185,61 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     >()
 
     // The breadcrumbs and breadcrumb props for the repo header.
-    const { breadcrumbs, setBreadcrumb } = useBreadcrumbs()
+    const { breadcrumbs, useSetBreadcrumb: useSetRepositories } = useBreadcrumbs()
 
-    useEffect(
-        () =>
-            setBreadcrumb({
+    const { useSetBreadcrumb: useSetRepository } = useSetRepositories(
+        useMemo(
+            () => ({
                 key: 'repositories',
                 element: <>Repositories</>,
             }),
-        [setBreadcrumb]
+            []
+        )
     )
-    useEffect(() => {
-        if (isErrorLike(repoOrError) || !repoOrError) {
-            return
-        }
-        const [repoDirectory, repoBase] = splitPath(displayRepoName(repoOrError.name))
-        return setBreadcrumb({
-            key: 'repository',
-            element: (
-                <>
-                    <Link
-                        to={
-                            resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
-                                ? resolvedRevisionOrError.rootTreeURL
-                                : repoOrError.url
-                        }
-                        className="repo-header__repo"
-                    >
-                        {repoDirectory ? `${repoDirectory}/` : ''}
-                        <span className="font-weight-semibold">{repoBase}</span>
-                    </Link>
-                    <button
-                        type="button"
-                        id="repo-popover"
-                        className="btn btn-link px-0"
-                        aria-label="Change repository"
-                    >
-                        <MenuDownIcon className="icon-inline" />
-                    </button>
-                    <UncontrolledPopover placement="bottom-start" target="repo-popover" trigger="legacy">
-                        <RepositoriesPopover
-                            currentRepo={repoOrError.id}
-                            history={props.history}
-                            location={props.location}
-                        />
-                    </UncontrolledPopover>
-                </>
-            ),
-        })
-    }, [setBreadcrumb, repoOrError, resolvedRevisionOrError, props.history, props.location])
+
+    const breadcrumbSetters = useSetRepository(
+        useMemo(() => {
+            if (isErrorLike(repoOrError) || !repoOrError) {
+                return
+            }
+
+            const [repoDirectory, repoBase] = splitPath(displayRepoName(repoOrError.name))
+
+            return {
+                key: 'repository',
+                element: (
+                    <>
+                        <Link
+                            to={
+                                resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
+                                    ? resolvedRevisionOrError.rootTreeURL
+                                    : repoOrError.url
+                            }
+                            className="repo-header__repo"
+                        >
+                            {repoDirectory ? `${repoDirectory}/` : ''}
+                            <span className="font-weight-semibold">{repoBase}</span>
+                        </Link>
+                        <button
+                            type="button"
+                            id="repo-popover"
+                            className="btn btn-link px-0"
+                            aria-label="Change repository"
+                        >
+                            <MenuDownIcon className="icon-inline" />
+                        </button>
+                        <UncontrolledPopover placement="bottom-start" target="repo-popover" trigger="legacy">
+                            <RepositoriesPopover
+                                currentRepo={repoOrError.id}
+                                history={props.history}
+                                location={props.location}
+                            />
+                        </UncontrolledPopover>
+                    </>
+                ),
+            }
+        }, [repoOrError, resolvedRevisionOrError, props.history, props.location])
+    )
 
     // Update the workspace roots service to reflect the current repo / resolved revision
     useEffect(() => {
@@ -324,7 +330,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     const context: RepoContainerContext = {
         ...props,
         ...repoHeaderContributionsLifecycleProps,
-        setBreadcrumb,
+        ...breadcrumbSetters,
         repo: repoOrError,
         routePrefix: repoMatchURL,
         onDidUpdateExternalLinks: setExternalLinks,
@@ -377,6 +383,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                 <RepoRevisionContainer
                                     {...routeComponentProps}
                                     {...context}
+                                    {...breadcrumbSetters}
                                     routes={props.repoRevisionContainerRoutes}
                                     revision={revision || ''}
                                     resolvedRevisionOrError={resolvedRevisionOrError}

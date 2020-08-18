@@ -1,6 +1,6 @@
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -106,31 +106,34 @@ interface Props
 export const BlobPage: React.FunctionComponent<Props> = props => {
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = ToggleRenderedFileMode.getModeFromURL(props.location)
-    const { repoName, revision, commitID, filePath, isLightTheme, setBreadcrumb } = props
+    const { repoName, revision, commitID, filePath, isLightTheme, useSetBreadcrumb } = props
 
     // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
     useEffect(() => {
         eventLogger.logViewEvent('Blob')
     }, [repoName, commitID, filePath, isLightTheme, renderMode])
 
-    useEffect(() => {
-        if (!filePath) {
-            return
-        }
-        return setBreadcrumb({
-            key: 'filePath',
-            element: (
-                // TODO should these be "flattened" all using setBreadcrumb()?
-                <FilePathBreadcrumbs
-                    key="path"
-                    repoName={repoName}
-                    revision={revision}
-                    filePath={filePath}
-                    isDir={false}
-                />
-            ),
-        })
-    }, [filePath, revision, repoName, setBreadcrumb])
+    useSetBreadcrumb(
+        useMemo(() => {
+            if (!filePath) {
+                return
+            }
+
+            return {
+                key: 'filePath',
+                element: (
+                    // TODO should these be "flattened" all using setBreadcrumb()?
+                    <FilePathBreadcrumbs
+                        key="path"
+                        repoName={repoName}
+                        revision={revision}
+                        filePath={filePath}
+                        isDir={false}
+                    />
+                ),
+            }
+        }, [filePath, revision, repoName])
+    )
 
     const [nextFetchWithDisabledTimeout, blobOrError] = useEventObservable(
         useCallback(

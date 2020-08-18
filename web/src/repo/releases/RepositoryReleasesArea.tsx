@@ -1,5 +1,5 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useEffect } from 'react'
+import React, { useMemo } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { HeroPage } from '../../components/HeroPage'
@@ -38,14 +38,15 @@ export interface RepositoryReleasesAreaPageProps {
 /**
  * Renders pages related to repository branches.
  */
-export const RepositoryReleasesArea: React.FunctionComponent<Props> = ({ setBreadcrumb, repo, routePrefix }) => {
-    useEffect(
-        () =>
-            setBreadcrumb({
+export const RepositoryReleasesArea: React.FunctionComponent<Props> = ({ useSetBreadcrumb, repo, routePrefix }) => {
+    useSetBreadcrumb(
+        useMemo(
+            () => ({
                 key: 'tags',
                 element: <RepoHeaderBreadcrumbNavItem key="tags">Tags</RepoHeaderBreadcrumbNavItem>,
             }),
-        [setBreadcrumb]
+            []
+        )
     )
 
     const transferProps: { repo: GQL.IRepository } = {

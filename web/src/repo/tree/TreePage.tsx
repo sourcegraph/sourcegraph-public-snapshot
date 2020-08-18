@@ -179,7 +179,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
     patternType,
     caseSensitive,
     settingsCascade,
-    setBreadcrumb,
+    useSetBreadcrumb,
     ...props
 }) => {
     useEffect(() => {
@@ -190,24 +190,25 @@ export const TreePage: React.FunctionComponent<Props> = ({
         }
     }, [filePath])
 
-    useEffect(() => {
-        if (!filePath) {
-            return
-        }
-        return setBreadcrumb({
-            key: 'treePath',
-            divider: null,
-            element: (
-                <FilePathBreadcrumbs
-                    key="path"
-                    repoName={repoName}
-                    revision={revision}
-                    filePath={filePath}
-                    isDir={true}
-                />
-            ),
-        })
-    }, [repoName, revision, filePath, setBreadcrumb])
+    useSetBreadcrumb(
+        useMemo(() => {
+            if (!filePath) {
+                return
+            }
+            return {
+                key: 'treePath',
+                element: (
+                    <FilePathBreadcrumbs
+                        key="path"
+                        repoName={repoName}
+                        revision={revision}
+                        filePath={filePath}
+                        isDir={true}
+                    />
+                ),
+            }
+        }, [repoName, revision, filePath])
+    )
 
     const [showOlderCommits, setShowOlderCommits] = useState(false)
 

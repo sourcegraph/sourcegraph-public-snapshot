@@ -1,5 +1,5 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useEffect } from 'react'
+import React, { useMemo } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { HeroPage } from '../../components/HeroPage'
@@ -34,18 +34,19 @@ export interface RepositoryBranchesAreaPageProps {
 /**
  * Renders pages related to repository branches.
  */
-export const RepositoryBranchesArea: React.FunctionComponent<Props> = ({ setBreadcrumb, repo, match }) => {
+export const RepositoryBranchesArea: React.FunctionComponent<Props> = ({ useSetBreadcrumb, repo, match }) => {
     const transferProps: { repo: GQL.IRepository } = {
         repo,
     }
 
-    useEffect(
-        () =>
-            setBreadcrumb({
+    useSetBreadcrumb(
+        useMemo(
+            () => ({
                 key: 'branches',
                 element: <RepoHeaderBreadcrumbNavItem key="branches">Branches</RepoHeaderBreadcrumbNavItem>,
             }),
-        [setBreadcrumb]
+            []
+        )
     )
 
     return (
