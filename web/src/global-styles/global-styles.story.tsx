@@ -3,7 +3,7 @@
 // documentation for that. Its primary purpose is to show what Bootstrap's componenents look like with our styling
 // customizations.
 
-import React from 'react'
+import React, { useState } from 'react'
 import { storiesOf } from '@storybook/react'
 import classNames from 'classnames'
 import webStyles from '../SourcegraphWebApp.scss'
@@ -508,6 +508,8 @@ add(
                 sizes, states, and more.{' '}
                 <a href="https://getbootstrap.com/docs/4.5/components/buttons/">Bootstrap documentation</a>
             </p>
+
+            <h2>Semantic variants</h2>
             <p>
                 {semanticColors.map(semantic => (
                     <React.Fragment key={semantic}>
@@ -515,6 +517,22 @@ add(
                             type="button"
                             key={semantic}
                             className={classNames('btn', `btn-${semantic}`)}
+                            onClick={flow(preventDefault, action('button clicked'))}
+                        >
+                            {startCase(semantic)}
+                        </button>{' '}
+                    </React.Fragment>
+                ))}
+            </p>
+
+            <h2>Outline variants</h2>
+            <p>
+                {semanticColors.map(semantic => (
+                    <React.Fragment key={semantic}>
+                        <button
+                            type="button"
+                            key={semantic}
+                            className={classNames('btn', `btn-outline-${semantic}`)}
                             onClick={flow(preventDefault, action('button clicked'))}
                         >
                             {startCase(semantic)}
@@ -540,6 +558,135 @@ add(
             </a>
         </>
     ),
+    {
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=35%3A11',
+        },
+    }
+)
+
+add(
+    'Button groups',
+    () => {
+        const [active, setActive] = useState<'Left' | 'Middle' | 'Right'>('Left')
+        return (
+            <>
+                <h1>Button groups</h1>
+                <p>
+                    Group a series of buttons together on a single line with the button group.{' '}
+                    <a href="https://getbootstrap.com/docs/4.5/components/buttons/">Bootstrap documentation</a>
+                </p>
+
+                <h2>Example</h2>
+                <div className="mb-2">
+                    <p>
+                        Button groups have no styles on their own, they just group buttons together. This means they can
+                        be used to group any other semantic or outline button variant.
+                    </p>
+                    <div className="mb-2">
+                        <div className="btn-group" role="group" aria-label="Basic example">
+                            <button type="button" className="btn btn-secondary">
+                                Left
+                            </button>
+                            <button type="button" className="btn btn-secondary">
+                                Middle
+                            </button>
+                            <button type="button" className="btn btn-secondary">
+                                Right
+                            </button>
+                        </div>{' '}
+                        Example with <code>btn-secondary</code>
+                    </div>
+                    <div className="mb-2">
+                        <div className="btn-group" role="group" aria-label="Basic example">
+                            <button type="button" className="btn btn-outline-secondary">
+                                Left
+                            </button>
+                            <button type="button" className="btn btn-outline-secondary">
+                                Middle
+                            </button>
+                            <button type="button" className="btn btn-outline-secondary">
+                                Right
+                            </button>
+                        </div>{' '}
+                        Example with <code>btn-outline-secondary</code>
+                    </div>
+                    <div className="mb-2">
+                        <div className="btn-group" role="group" aria-label="Basic example">
+                            <button type="button" className="btn btn-outline-primary">
+                                Left
+                            </button>
+                            <button type="button" className="btn btn-outline-primary">
+                                Middle
+                            </button>
+                            <button type="button" className="btn btn-outline-primary">
+                                Right
+                            </button>
+                        </div>{' '}
+                        Example with <code>btn-outline-primary</code>
+                    </div>
+                </div>
+
+                <h2 className="mt-3">Sizing</h2>
+                <p>
+                    Just like buttons, button groups have <code>sm</code> and <code>lg</code> size variants.
+                </p>
+                <div className="mb-2">
+                    {['btn-group-lg', '', 'btn-group-sm'].map(size => (
+                        <div key={size} className="mb-2">
+                            <div className={classNames('btn-group', size)} role="group" aria-label="Sizing example">
+                                <button type="button" className="btn btn-outline-primary">
+                                    Left
+                                </button>
+                                <button type="button" className="btn btn-outline-primary">
+                                    Middle
+                                </button>
+                                <button type="button" className="btn btn-outline-primary">
+                                    Right
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <h2 className="mt-3">Active state</h2>
+                <p>
+                    The <code>active</code> class can be used to craft toggles out of button groups.
+                </p>
+                <div className="mb-2">
+                    <div className="btn-group" role="group" aria-label="Basic example">
+                        {(['Left', 'Middle', 'Right'] as const).map(option => (
+                            <button
+                                key={option}
+                                className={classNames('btn', 'btn-outline-secondary', option === active && 'active')}
+                                onClick={() => setActive(option)}
+                                aria-pressed={option === active}
+                            >
+                                {option}
+                            </button>
+                        ))}
+                    </div>{' '}
+                    Example with <code>btn-outline-secondary</code>
+                </div>
+                <div className="mb-2">
+                    <div className="btn-group" role="group" aria-label="Basic example">
+                        {(['Left', 'Middle', 'Right'] as const).map(option => (
+                            <button
+                                key={option}
+                                className={classNames('btn', 'btn-outline-primary', option === active && 'active')}
+                                onClick={() => setActive(option)}
+                                aria-pressed={option === active}
+                            >
+                                {option}
+                            </button>
+                        ))}
+                    </div>{' '}
+                    Example with <code>btn-outline-primary</code>
+                </div>
+            </>
+        )
+    },
     {
         design: {
             type: 'figma',
