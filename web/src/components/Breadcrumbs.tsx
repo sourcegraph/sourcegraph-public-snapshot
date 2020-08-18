@@ -60,8 +60,7 @@ export const useBreadcrumbs = (): {
         function useSetBreadcrumb(breadcrumb: BreadcrumbOrFalsy): BreadcrumbSetters {
             useEffect(() => _internalSetBreadcrumb(breadcrumb), [breadcrumb])
 
-            const breadcrumbSetters = useMemo(() => createBreadcrumbSetters(depth + 1), [])
-            return breadcrumbSetters
+            return useMemo(() => createBreadcrumbSetters(depth + 1), [])
         }
 
         /** 'Vanilla function' for backcompat with class components */
