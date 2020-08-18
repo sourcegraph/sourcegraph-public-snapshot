@@ -77,9 +77,11 @@ export const useBreadcrumbs = (): {
         }
     }, [])
 
+    const breadcrumbSetters = useMemo(() => createBreadcrumbSetters(), [createBreadcrumbSetters])
+
     return {
         breadcrumbs: breadcrumbsByDepth,
-        ...createBreadcrumbSetters(),
+        ...breadcrumbSetters,
     }
 }
 
