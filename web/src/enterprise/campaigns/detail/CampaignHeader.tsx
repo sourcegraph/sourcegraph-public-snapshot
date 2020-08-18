@@ -12,6 +12,7 @@ interface Props {
     createdAt?: string
     creator?: CampaignFields['initialApplier'] | null
     verb?: string
+    actionSection?: JSX.Element
 }
 
 /**
@@ -24,25 +25,30 @@ export const CampaignHeader: React.FunctionComponent<Props> = ({
     creator,
     createdAt,
     verb = 'Created',
+    actionSection,
 }) => (
-    <div className={classNames(className)}>
-        <h1 className="d-inline-block">
-            <CampaignsIcon className="icon-inline mr-2 text-muted" />
-            {namespace && (
-                <>
-                    <Link to={namespace.url + '/campaigns'}>{namespace.namespaceName}</Link> /{' '}
-                </>
+    <div className={classNames('d-flex w-100 mb-2 justify-content-between align-items-center', className)}>
+        <div>
+            <h1 className="d-inline-block mb-0">
+                <CampaignsIcon className="icon-inline mr-2 text-muted" />
+                {namespace && (
+                    <>
+                        <Link to={namespace.url + '/campaigns'}>{namespace.namespaceName}</Link> /{' '}
+                    </>
+                )}
+                {name ?? 'Campaigns'}
+                <sup>
+                    <span className="ml-2 badge badge-merged text-uppercase">Beta</span>
+                </sup>
+            </h1>
+            {creator !== undefined && createdAt && (
+                <span className="text-muted ml-3">
+                    {verb} <Timestamp date={createdAt} /> by{' '}
+                    {creator && <Link to={creator.url}>{creator.username}</Link>}
+                    {!creator && <strong>deleted user</strong>}
+                </span>
             )}
-            {name ?? 'Campaigns'}
-            <sup>
-                <span className="ml-2 badge badge-merged text-uppercase">Beta</span>
-            </sup>
-        </h1>
-        {creator !== undefined && createdAt && (
-            <span className="text-muted ml-3">
-                {verb} <Timestamp date={createdAt} /> by {creator && <Link to={creator.url}>{creator.username}</Link>}
-                {!creator && <strong>deleted user</strong>}
-            </span>
-        )}
+        </div>
+        {actionSection}
     </div>
 )
