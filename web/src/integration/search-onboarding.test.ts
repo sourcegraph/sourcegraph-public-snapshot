@@ -76,7 +76,9 @@ describe('Search onboarding', () => {
             await driver.page.click('.test-search-help-dropdown-button-icon')
             await driver.page.waitForSelector('.test-tour-step-5')
             await driver.page.click('.test-search-button')
-            await driver.assertWindowLocation('/search?q=lang:typescript+try%7B:%5Bmy_match%5D%7D&patternType=literal')
+            await driver.assertWindowLocation(
+                '/search?q=lang:typescript+try%7B:%5Bmy_match%5D%7D&patternType=structural'
+            )
         })
 
         it('displays all steps in the repo onboarding flow', async () => {
