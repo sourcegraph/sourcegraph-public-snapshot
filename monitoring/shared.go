@@ -38,7 +38,7 @@ var sharedFrontendInternalAPIErrorResponses sharedObservable = func(containerNam
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 2, For: 5 * time.Minute},
 		PanelOptions:    PanelOptions().LegendFormat("{{category}}").Unit(Percentage),
-		Owner:           ObservableOwnerBackendInfrastructure,
+		Owner:           ObservableOwnerCloud,
 		PossibleSolutions: strings.Replace(`
 			- **Single-container deployments:** Check 'docker logs $CONTAINER_ID' for logs starting with 'repo-updater' that indicate requests to the frontend service are failing.
 			- **Kubernetes:**
