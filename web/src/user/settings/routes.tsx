@@ -2,8 +2,14 @@ import React from 'react'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { lazyComponent } from '../../util/lazyComponent'
 import { UserSettingsAreaRoute } from './UserSettingsArea'
+import { eventLogger } from '../../tracking/eventLogger'
 
 const SettingsArea = lazyComponent(() => import('../../settings/SettingsArea'), 'SettingsArea')
+
+const AddExternalServicesPage = lazyComponent(
+    () => import('./externalServices/AddExternalServicesPage'),
+    'AddExternalServicesPage'
+)
 
 export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
@@ -56,5 +62,20 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
             'UserSettingsCreateAccessTokenPage'
         ),
         condition: () => window.context.accessTokensAllow !== 'none',
+    },
+    {
+        path: '/external-services',
+        render: lazyComponent(() => import('./externalServices/ExternalServicesPage'), 'ExternalServicesPage'),
+        exact: true,
+    },
+    {
+        path: '/external-services/new',
+        render: props => <AddExternalServicesPage {...props} eventLogger={eventLogger} />,
+        exact: true,
+    },
+    {
+        path: '/external-services/:id',
+        render: lazyComponent(() => import('./externalServices/ExternalServicePage'), 'ExternalServicePage'),
+        exact: true,
     },
 ]
