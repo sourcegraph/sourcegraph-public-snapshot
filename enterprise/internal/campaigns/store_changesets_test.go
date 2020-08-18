@@ -285,7 +285,18 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 		t.Run("CreatedByCampaign", func(t *testing.T) {
 			createdByCampaign := true
-			count, err := s.CountChangesets(ctx, CountChangesetsOpts{CreatedByCampaign: &createdByCampaign, OwnedByCampaignID: int64(1)})
+			count, err := s.CountChangesets(ctx, CountChangesetsOpts{CreatedByCampaign: &createdByCampaign})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := count, 3; have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
+		})
+
+		t.Run("OwnedByCampaignID", func(t *testing.T) {
+			count, err := s.CountChangesets(ctx, CountChangesetsOpts{OwnedByCampaignID: int64(1)})
 			if err != nil {
 				t.Fatal(err)
 			}
