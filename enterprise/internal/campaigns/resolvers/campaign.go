@@ -133,7 +133,7 @@ func (r *campaignResolver) Changesets(
 	ctx context.Context,
 	args *graphqlbackend.ListChangesetsArgs,
 ) (graphqlbackend.ChangesetsConnectionResolver, error) {
-	opts, safe, err := listChangesetOptsFromArgs(args)
+	opts, safe, err := listChangesetOptsFromArgs(args, r.Campaign.ID)
 	if err != nil {
 		return nil, err
 	}
