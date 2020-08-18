@@ -10,7 +10,7 @@ exports[`CampaignsNavItem renders 1`] = `
     >
       <LinkWithIconOnlyTooltip
         activeClassName="active"
-        className="nav-link btn btn-link px-1 text-decoration-none test-campaign-nav-entry 123"
+        className="nav-link btn btn-link px-1 text-decoration-none 123"
         icon={
           Object {
             "$$typeof": Symbol(react.memo),
@@ -23,12 +23,12 @@ exports[`CampaignsNavItem renders 1`] = `
       >
         <NavLink
           activeClassName="active"
-          className="nav-link btn btn-link px-1 text-decoration-none test-campaign-nav-entry 123 d-flex align-items-center"
+          className="nav-link btn btn-link px-1 text-decoration-none 123 d-flex align-items-center"
           to="/campaigns"
         >
           <Link
             aria-current={null}
-            className="nav-link btn btn-link px-1 text-decoration-none test-campaign-nav-entry 123 d-flex align-items-center"
+            className="nav-link btn btn-link px-1 text-decoration-none 123 d-flex align-items-center"
             to={
               Object {
                 "hash": "",
@@ -41,13 +41,13 @@ exports[`CampaignsNavItem renders 1`] = `
           >
             <LinkAnchor
               aria-current={null}
-              className="nav-link btn btn-link px-1 text-decoration-none test-campaign-nav-entry 123 d-flex align-items-center"
+              className="nav-link btn btn-link px-1 text-decoration-none 123 d-flex align-items-center"
               href="/campaigns"
               navigate={[Function]}
             >
               <a
                 aria-current={null}
-                className="nav-link btn btn-link px-1 text-decoration-none test-campaign-nav-entry 123 d-flex align-items-center"
+                className="nav-link btn btn-link px-1 text-decoration-none 123 d-flex align-items-center"
                 href="/campaigns"
                 onClick={[Function]}
               >
