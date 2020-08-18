@@ -178,7 +178,7 @@ export function createAddCodeStepWithLanguageExampleTooltip(
     exampleButton.append(codeElement)
 
     exampleButton.addEventListener('click', () => {
-        const fullQuery = [languageQuery, example].join(' ')
+        const fullQuery = [languageQuery, example.query].join(' ')
         exampleCallback(fullQuery, example.patternType)
         tour.show('view-search-reference')
     })
