@@ -5,11 +5,9 @@ interface Props {
 }
 
 export const ShowMoreExtensions: React.FunctionComponent<Props> = ({ setShowMoreExtensions }) => (
-    <button
-        type="button"
-        className="btn ml-2 btn-light show-more-extensions"
-        onClick={() => setShowMoreExtensions(true)}
-    >
+    <div className="show-more-extensions__container">
+    <button type="button" className="btn show-more-extensions" onClick={() => setShowMoreExtensions(true)}>
         Show more extensions
     </button>
+    </div>
 )

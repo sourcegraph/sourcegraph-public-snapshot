@@ -27,6 +27,7 @@ import {
 import { categorizeExtensionRegistry, CategorizedExtensionRegistry, applyExtensionsEnablement } from './extensions'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '../../../shared/src/schema/extensionSchema'
 import { ShowMoreExtensions } from './ShowMoreExtensions'
+import { createExtensionBanner } from './ExtensionBanner'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'settings' | 'updateSettings' | 'requestGraphQL'> {
     subject: Pick<SettingsSubject, 'id' | 'viewerCanAdminister'>
@@ -190,37 +191,47 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
 
     /**
      * Helper function to enable rendering logic outside of JSX without boilerplate
+     *
+     * TODO: extract to layout component
      */
-    function registryLayout(content: JSX.Element): React.ReactElement {
+    function registryLayout(content: JSX.Element, showShowMore: boolean = false): React.ReactElement {
         return (
-            <div className="extensions-list">
-                <Form onSubmit={preventDefault} className="form-inline">
-                    <input
-                        className="form-control flex-grow-1 mr-1 mb-2 test-extension-registry-input"
-                        type="search"
-                        placeholder="Search extensions..."
-                        name="query"
-                        value={query}
-                        onChange={onQueryChangeEvent}
-                        autoFocus={true}
-                        autoComplete="off"
-                        autoCorrect="off"
-                        autoCapitalize="off"
-                        spellCheck={false}
+            <>
+                <div className="extensions-list">
+                    <p>Improve your workflow with code intelligence, test coverage, and other useful information.</p>
+                    <Form onSubmit={preventDefault} className="form-inline">
+                        <input
+                            className="form-control flex-grow-1 mr-1 mb-2 test-extension-registry-input extensions-list__input"
+                            type="search"
+                            placeholder="Search extensions..."
+                            name="query"
+                            value={query}
+                            onChange={onQueryChangeEvent}
+                            autoFocus={true}
+                            autoComplete="off"
+                            autoCorrect="off"
+                            autoCapitalize="off"
+                            spellCheck={false}
+                        />
+                    </Form>
+
+                    <ExtensionsQueryInputToolbar
+                        query={query}
+                        onQueryChange={onQueryChangeImmediate}
+                        selectedCategories={selectedCategories}
+                        setSelectedCategories={setSelectedCategories}
+                        enablementFilter={enablementFilter}
+                        setEnablementFilter={setEnablementFilter}
                     />
-                </Form>
 
-                <ExtensionsQueryInputToolbar
-                    query={query}
-                    onQueryChange={onQueryChangeImmediate}
-                    selectedCategories={selectedCategories}
-                    setSelectedCategories={setSelectedCategories}
-                    enablementFilter={enablementFilter}
-                    setEnablementFilter={setEnablementFilter}
-                />
+                    {content}
+                </div>
 
-                {content}
-            </div>
+                {showShowMore && <ShowMoreExtensions setShowMoreExtensions={setShowMoreExtensions} />}
+
+                {/* don't show banner when loading */}
+                {data && data !== LOADING && createExtensionBanner}
+            </>
         )
     }
 
@@ -282,7 +293,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
         if (filteredCategories[category].length > 0) {
             categorySections.push(
                 <div key={category} className="mt-1">
-                    <h3 className="extensions-list__category">category: {category}</h3>
+                    <h3 className="extensions-list__category mt-4">{category}</h3>
                     <div className="extensions-list__cards mt-1">
                         {filteredCategories[category].map(extensionId => (
                             <ExtensionCard
@@ -310,10 +321,8 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
                     No extensions match <strong>{query}</strong> in the selected categories.
                 </div>
             )}
-            {!showMoreExtensions && selectedCategories.length === 0 && (
-                <ShowMoreExtensions setShowMoreExtensions={setShowMoreExtensions} />
-            )}
-        </>
+        </>,
+        !showMoreExtensions && selectedCategories.length === 0
     )
 }
 

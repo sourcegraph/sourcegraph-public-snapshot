@@ -17,6 +17,7 @@ import { EventLoggerProps } from '../tracking/eventLogger'
 import { ActionButtonDescriptor } from '../util/contributions'
 import { ResolvedRevision } from './backend'
 import { RepositoriesPopover } from './RepositoriesPopover'
+import { SettingsCascadeOrError } from '../../../shared/src/settings/settings'
 /**
  * Stores the list of RepoHeaderContributions, manages addition/deletion, and ensures they are sorted.
  *
@@ -160,6 +161,10 @@ interface Props extends PlatformContextProps, ExtensionsControllerProps, EventLo
      */
     onLifecyclePropsChange: (lifecycleProps: RepoHeaderContributionsLifecycleProps) => void
 
+    settingsCascade: SettingsCascadeOrError
+
+    authenticatedUser: GQL.IUser | null
+
     location: H.Location
     history: H.History
 }
@@ -191,6 +196,9 @@ export class RepoHeader extends React.PureComponent<Props, State> {
             repoName: this.props.repo.name,
             encodedRev: this.props.revision,
         }
+
+        const showAddExtensions = determineShowAddExtensions(this.props)
+
         return (
             <nav className="repo-header navbar navbar-expand">
                 <div className="d-flex align-items-center">
@@ -230,6 +238,13 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                     ))}
                 </ul>
                 <div className="repo-header__spacer" />
+                {showAddExtensions && (
+                    <Link to="/extensions">
+                        <button type="button" id="add-extensions" className="btn btn-link">
+                            Add extensions
+                        </button>
+                    </Link>
+                )}
                 <ul className="navbar-nav">
                     <WebActionsNavItems
                         {...this.props}
@@ -269,4 +284,20 @@ export class RepoHeader extends React.PureComponent<Props, State> {
     }
 
     private repoHeaderContributionStore = new RepoHeaderContributionStore(stateUpdate => this.setState(stateUpdate))
+}
+
+/**
+ * Determine whether to show the "add extensions" button.
+ *
+ * For now, it returns true when the user isn't authenticated. Later, also show the button
+ * to authenticated users who only have default extensions enabled
+ */
+function determineShowAddExtensions({ settingsCascade, authenticatedUser }: Props): boolean {
+    if (!authenticatedUser) {
+        return true
+    }
+    // if (!isErrorLike(settingsCascade.final) && settingsCascade.final) {
+    //     return false
+    // }
+    return true
 }

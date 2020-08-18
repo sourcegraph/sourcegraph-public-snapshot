@@ -1,3 +1,28 @@
 .show-more-extensions {
-    border-color: $color-light-bg-4;
+    border-width: 1px;
+    border-radius: 2px;
+
+    border-color: $gray-19;
+    color: #93a9c8;
+    background-color: $gray-22;
+
+    &__container {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+    }
+}
+
+.theme-light {
+    .show-more-extensions {
+        color: $gray-19;
+        border-color: $gray-02;
+        background-color: transparent;
+
+        &:hover {
+            border-color: $gray-19;
+            color: #93a9c8;
+            background-color: $gray-22;
+        }
+    }
 }

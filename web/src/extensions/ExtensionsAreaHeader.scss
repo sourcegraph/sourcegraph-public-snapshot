@@ -1,0 +1,30 @@
+.extensions-header {
+    font-weight: 500;
+    font-size: 32px;
+
+    /* $grey-08 */
+    color: #95a5c6;
+
+    &__subtitle {
+        font-size: 14px;
+
+        /* $body-color/dark */
+        color: #ffffff;
+    }
+}
+
+.theme-light {
+    .extensions-header {
+        font-size: 32px;
+
+        /* $grey-17 */
+        color: #39496a;
+
+        &__subtitle {
+            font-size: 14px;
+
+            /* $web-styles/body-color/light */
+            color: #32405d;
+        }
+    }
+}

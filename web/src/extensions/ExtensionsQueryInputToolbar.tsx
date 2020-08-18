@@ -49,9 +49,7 @@ export class ExtensionsQueryInputToolbar extends React.PureComponent<Props, Stat
                         return (
                             <button
                                 type="button"
-                                className={`btn btn-sm text-nowrap filter-chip ${
-                                    selected ? 'filter-chip--selected' : ''
-                                }`}
+                                className={`extension-filter-chip ${selected ? 'extension-filter-chip__selected' : ''}`}
                                 data-test-extension-category={category}
                                 key={category}
                                 onClick={() =>

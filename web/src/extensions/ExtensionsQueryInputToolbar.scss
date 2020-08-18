@@ -1,0 +1,35 @@
+.extension-filter-chip {
+    padding: 1px 12px;
+    border-radius: 2px;
+    margin: 0.25rem 0.5rem 0.25rem 0;
+    font-size: 12px;
+    background-color: $gray-22;
+    color: #93a9c8;
+    border: 1px solid #2b3750;
+
+    &__selected {
+        background-color: $gray-19;
+    }
+
+    &:hover {
+        background-color: $gray-19;
+        transition: 0.3s ease;
+    }
+}
+
+.theme-light {
+    .extension-filter-chip {
+        background-color: transparent;
+        color: $gray-19;
+        border: 1px solid #cbd2e0;
+
+        &__selected {
+            background-color: #cbd2e0;
+        }
+
+        &:hover {
+            background-color: #cbd2e0;
+            transition: 0.3s ease;
+        }
+    }
+}

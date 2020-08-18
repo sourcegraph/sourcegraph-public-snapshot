@@ -1,0 +1,24 @@
+.extension-banner {
+    &__divider {
+        border-top: 1px;
+        margin-top: 3rem;
+        margin-bottom: 3rem;
+    }
+
+    &__card {
+        display: flex;
+    }
+
+    margin-top: 3rem;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.theme-light {
+    .extension-banner {
+        &__divider {
+            // border-color: $color-light-border;
+        }
+    }
+}

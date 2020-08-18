@@ -1,7 +1,5 @@
 import WarningIcon from 'mdi-react/WarningIcon'
 import * as React from 'react'
-import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
-import { Path } from '../../../shared/src/components/Path'
 import { ConfiguredRegistryExtension } from '../../../shared/src/extensions/extension'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
@@ -13,6 +11,7 @@ import { ExtensionConfigurationState } from './extension/ExtensionConfigurationS
 import { WorkInProgressBadge } from './extension/WorkInProgressBadge'
 import { ExtensionToggle } from './ExtensionToggle'
 import { isEncodedImage } from '../../../shared/src/util/icon'
+import { Link } from 'react-router-dom'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
     extension: Pick<
@@ -51,6 +50,12 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
         return url
     }, [manifest])
 
+    const [publisher, name] = React.useMemo(() => {
+        const id = extension.registryExtension ? extension.registryExtension.extensionIDWithoutRegistry : extension.id
+
+        return id.split('/')
+    }, [extension])
+
     return (
         <div className="d-flex">
             <div className="extension-card card">
@@ -65,15 +70,17 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
                         <div className="text-truncate w-100">
                             <div className="d-flex align-items-center">
                                 <h4 className="card-title extension-card__body-title mb-0 mr-1 text-truncate font-weight-normal flex-1">
-                                    <LinkOrSpan to={extension.registryExtension?.url} className="stretched-link">
-                                        <Path
-                                            path={
-                                                extension.registryExtension
-                                                    ? extension.registryExtension.extensionIDWithoutRegistry
-                                                    : extension.id
-                                            }
-                                        />
-                                    </LinkOrSpan>
+                                    <Link
+                                        to={`/extensions/${
+                                            extension.registryExtension
+                                                ? extension.registryExtension.extensionIDWithoutRegistry
+                                                : extension.id
+                                        }`}
+                                        className="extension-card__name"
+                                    >
+                                        {name}
+                                    </Link>
+                                    <span className="extension-card__publisher"> by {publisher}</span>
                                 </h4>
                                 {extension.registryExtension?.isWorkInProgress && (
                                     <WorkInProgressBadge
