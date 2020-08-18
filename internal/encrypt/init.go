@@ -35,7 +35,7 @@ func gatherKeys(data []byte) (oldKey, newKey []byte) {
 	return parts[0], parts[1]
 }
 
-//InitializeSecrets should only be called once per Sourcegraph instance to ingest user encryption key(s)
+// InitializeSecrets should only be called once per Sourcegraph instance to ingest user encryption key(s)
 func InitializeSecrets() {
 	doOnce.Do(initCryptObject)
 }
