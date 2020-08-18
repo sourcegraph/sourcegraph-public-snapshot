@@ -11,20 +11,12 @@ import {
 } from '../backend'
 import { repeatWhen, delay, withLatestFrom, map, filter, switchMap } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
-import { createHoverifier, HoveredToken } from '@sourcegraph/codeintellify'
-import {
-    RepoSpec,
-    RevisionSpec,
-    FileSpec,
-    ResolvedRevisionSpec,
-    UIPositionSpec,
-    ModeSpec,
-} from '../../../../../../shared/src/util/url'
+import { createHoverifier } from '@sourcegraph/codeintellify'
+import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '../../../../../../shared/src/util/url'
 import { HoverMerged } from '../../../../../../shared/src/api/client/types/hover'
 import { ActionItemAction } from '../../../../../../shared/src/actions/ActionItem'
 import { getHoverActions } from '../../../../../../shared/src/hover/actions'
 import { WebHoverOverlay } from '../../../../components/shared'
-import { getModeFromPath } from '../../../../../../shared/src/languages'
 import { getHover, getDocumentHighlights } from '../../../../backend/features'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../../shared/src/telemetry/telemetryService'
@@ -37,7 +29,12 @@ import {
     ChangesetCheckState,
     Scalars,
 } from '../../../../graphql-operations'
-import { isValidChangesetExternalState, isValidChangesetReviewState, isValidChangesetCheckState } from '../../utils'
+import {
+    isValidChangesetExternalState,
+    isValidChangesetReviewState,
+    isValidChangesetCheckState,
+    getLSPTextDocumentPositionParameters,
+} from '../../utils'
 import classNames from 'classnames'
 import { CampaignChangesetsHeader } from './CampaignChangesetsHeader'
 
@@ -96,9 +93,11 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                         externalState: changesetFilters.externalState,
                         reviewState: changesetFilters.reviewState,
                         checkState: changesetFilters.checkState,
+                        publicationState: null,
                         ...(onlyOpen ? { externalState: ChangesetExternalState.OPEN } : {}),
                         first: args.first ?? null,
                         campaign: campaignID,
+                        onlyCreatedByThisCampaign: null,
                     }).pipe(repeatWhen(notifier => notifier.pipe(delay(5000))))
                 )
             ),
@@ -170,7 +169,9 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
     return (
         <>
             {!hideFilters && (
-                <ChangesetFilterRow history={history} location={location} onFiltersChange={setChangesetFilters} />
+                <div className="d-flex justify-content-end">
+                    <ChangesetFilterRow history={history} location={location} onFiltersChange={setChangesetFilters} />
+                </div>
             )}
             <div className="list-group position-relative" ref={nextContainerElement}>
                 <FilteredConnection<ChangesetFields, Omit<ChangesetNodeProps, 'node'>>
@@ -321,16 +322,3 @@ export const ChangesetFilter = <T extends string>({
         </select>
     </>
 )
-
-function getLSPTextDocumentPositionParameters(
-    hoveredToken: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
-): RepoSpec & RevisionSpec & ResolvedRevisionSpec & FileSpec & UIPositionSpec & ModeSpec {
-    return {
-        repoName: hoveredToken.repoName,
-        revision: hoveredToken.revision,
-        filePath: hoveredToken.filePath,
-        commitID: hoveredToken.commitID,
-        position: hoveredToken,
-        mode: getModeFromPath(hoveredToken.filePath || ''),
-    }
-}

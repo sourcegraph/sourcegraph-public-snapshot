@@ -1,0 +1,6 @@
+.campaign-changesets-header {
+    &__title {
+        // Make it full width in the current row.
+        grid-column: 1 / -1;
+    }
+}
