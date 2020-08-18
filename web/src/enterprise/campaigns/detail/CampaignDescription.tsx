@@ -3,6 +3,7 @@ import React from 'react'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { CampaignFields } from '../../../graphql-operations'
+import classNames from 'classnames'
 
 interface CampaignDescriptionProps extends Pick<CampaignFields, 'description'> {
     history: H.History
@@ -14,7 +15,7 @@ export const CampaignDescription: React.FunctionComponent<CampaignDescriptionPro
     history,
     className,
 }) => (
-    <div className={className}>
+    <div className={classNames(className)}>
         <h3>Campaign description</h3>
         <hr />
         <div className="pl-3 pt-3">

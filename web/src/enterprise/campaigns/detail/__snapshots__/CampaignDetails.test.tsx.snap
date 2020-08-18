@@ -339,7 +339,9 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
     description="d"
     history="[History]"
   >
-    <div>
+    <div
+      className=""
+    >
       <h3>
         Campaign description
       </h3>
@@ -1043,7 +1045,9 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
     description="d"
     history="[History]"
   >
-    <div>
+    <div
+      className=""
+    >
       <h3>
         Campaign description
       </h3>
