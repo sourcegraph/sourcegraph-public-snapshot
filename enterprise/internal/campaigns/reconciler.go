@@ -98,11 +98,28 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 	return nil
 }
 
+// ErrPublishSameBranch is returned by publish changeset if a changeset with the same external branch
+// already exists in the database and is owned by another campaign.
+var ErrPublishSameBranch = errors.New("cannot create changeset on the same branch in multiple campaigns")
+
 // publishChangeset creates the given changeset on its code host.
 func (r *reconciler) publishChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset, spec *campaigns.ChangesetSpec) (err error) {
 	repo, extSvc, err := loadAssociations(ctx, tx, ch)
 	if err != nil {
 		return errors.Wrap(err, "failed to load associations")
+	}
+
+	existingSameBranch, err := tx.GetChangeset(ctx, GetChangesetOpts{
+		ExternalServiceType: ch.ExternalServiceType,
+		RepoID:              ch.RepoID,
+		ExternalBranch:      git.AbbreviateRef(spec.Spec.HeadRef),
+	})
+	if err != nil && err != ErrNoResults {
+		return err
+	}
+
+	if existingSameBranch != nil && existingSameBranch.ID != ch.ID {
+		return ErrPublishSameBranch
 	}
 
 	// Set up a source with which we can create a changeset

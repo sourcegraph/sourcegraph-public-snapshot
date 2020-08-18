@@ -74,7 +74,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				CampaignIDs:         []int64{int64(i) + 1},
 				ExternalID:          fmt.Sprintf("foobar-%d", i),
 				ExternalServiceType: extsvc.TypeGitHub,
-				ExternalBranch:      "campaigns/test",
+				ExternalBranch:      fmt.Sprintf("campaigns/test/%d", i),
 				ExternalUpdatedAt:   clock.now(),
 				ExternalState:       cmpgn.ChangesetExternalStateOpen,
 				ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
@@ -178,7 +178,11 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	})
 
 	t.Run("GetChangesetExternalIDs", func(t *testing.T) {
-		have, err := s.GetChangesetExternalIDs(ctx, repo.ExternalRepo, []string{githubPR.HeadRefName})
+		refs := make([]string, len(changesets))
+		for i, c := range changesets {
+			refs[i] = c.ExternalBranch
+		}
+		have, err := s.GetChangesetExternalIDs(ctx, repo.ExternalRepo, refs)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -636,6 +640,22 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 			if have != want {
 				t.Fatalf("have err %v, want %v", have, want)
+			}
+		})
+
+		t.Run("ExternalBranch", func(t *testing.T) {
+			for _, c := range changesets {
+				opts := GetChangesetOpts{ExternalBranch: c.ExternalBranch}
+
+				have, err := s.GetChangeset(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+				want := c
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
 			}
 		})
 	})

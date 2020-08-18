@@ -233,6 +233,7 @@ type GetChangesetOpts struct {
 	RepoID              api.RepoID
 	ExternalID          string
 	ExternalServiceType string
+	ExternalBranch      string
 }
 
 // GetChangeset gets a changeset matching the given options.
@@ -277,6 +278,9 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 			sqlf.Sprintf("changesets.external_id = %s", opts.ExternalID),
 			sqlf.Sprintf("changesets.external_service_type = %s", opts.ExternalServiceType),
 		)
+	}
+	if opts.ExternalBranch != "" {
+		preds = append(preds, sqlf.Sprintf("changesets.external_branch = %s", opts.ExternalBranch))
 	}
 
 	return sqlf.Sprintf(
