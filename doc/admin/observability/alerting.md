@@ -71,6 +71,7 @@ Webhook events provide the following fields relevant for Sourcegraph alerts that
     // Use the service name and alert name to find solutions in https://docs.sourcegraph.com/admin/observability/alert_solutions
     "service_name": "<string>",
     "name": "<string>",
+    "description": "<string>",
     // This field can be provided to Sourcegraph to help direct support.
     "owner": "<string>"
   },

@@ -29,7 +29,7 @@ const (
 // for alerts provided by the Sourcegraph generator.
 //
 // When changing this, make sure to update the webhook body documentation in /doc/admin/observability/alerting.md
-var commonLabels = []string{"alertname", "level", "service_name", "name", "owner"}
+var commonLabels = []string{"alertname", "level", "service_name", "name", "owner", "description"}
 
 // Static alertmanager templates
 var (
