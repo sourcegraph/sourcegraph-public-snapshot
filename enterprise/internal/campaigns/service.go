@@ -204,7 +204,7 @@ func (o ApplyCampaignOpts) String() string {
 // detached changesets.
 // This is a temporary mock that should be removed once we move closing of
 // changesets into the background.
-var mockApplyCampaignCloseChangesets func(campaigns.Changesets)
+var mockApplyCampaignCloseChangesets func(context.Context, campaigns.Changesets)
 
 // ApplyCampaign creates the CampaignSpec.
 func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (campaign *campaigns.Campaign, err error) {
@@ -217,8 +217,12 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	// Setup a defer func that gets executed _after_ the `tx.Done(err)` below.
 	toClose := campaigns.Changesets{}
 	defer func() {
+		user := actor.FromContext(ctx)
+		actorCtx := contextWithActor(context.Background(), user.UID)
+		ctx := trace.ContextWithTrace(actorCtx, tr)
+
 		if mockApplyCampaignCloseChangesets != nil {
-			mockApplyCampaignCloseChangesets(toClose)
+			mockApplyCampaignCloseChangesets(ctx, toClose)
 			return
 		}
 
@@ -226,11 +230,10 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		if err != nil {
 			return
 		}
+
 		// If not, we launch a goroutine that closes the changesets added to
 		// toClose in the background.
 		go func() {
-			ctx := trace.ContextWithTrace(context.Background(), tr)
-
 			// Close only the changesets that are open
 			err := s.CloseOpenChangesets(ctx, toClose)
 			if err != nil {
@@ -776,9 +779,11 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets, 
 	}
 
 	if closeChangesets {
-		closer := func() {
-			ctx := trace.ContextWithTrace(context.Background(), tr)
+		user := actor.FromContext(ctx)
+		actorCtx := contextWithActor(context.Background(), user.UID)
+		ctx := trace.ContextWithTrace(actorCtx, tr)
 
+		closer := func() {
 			open := campaigns.ChangesetExternalStateOpen
 			published := campaigns.ChangesetPublicationStatePublished
 			cs, _, err := s.store.ListChangesets(ctx, ListChangesetsOpts{
@@ -830,8 +835,19 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64) (err error) {
 	return s.store.DeleteCampaign(ctx, id)
 }
 
+// mockCloseOpenChangesets is used to test CloseOpenChangesets closing
+// the correct changesets with the correct context.
+// This is a temporary mock that should be removed once we move closing of
+// changesets into the background.
+var mockCloseChangesets func(context.Context, campaigns.Changesets)
+
 // CloseOpenChangesets closes the given Changesets on their respective codehosts and syncs them.
 func (s *Service) CloseOpenChangesets(ctx context.Context, cs campaigns.Changesets) (err error) {
+	if mockCloseChangesets != nil {
+		mockCloseChangesets(ctx, cs)
+		return nil
+	}
+
 	cs = cs.Filter(func(c *campaigns.Changeset) bool {
 		return c.ExternalState == campaigns.ChangesetExternalStateOpen
 	})
