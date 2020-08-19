@@ -7,6 +7,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -79,7 +80,11 @@ func (r *campaignSpecResolver) Description() graphqlbackend.CampaignDescriptionR
 }
 
 func (r *campaignSpecResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return graphqlbackend.UserByIDInt32(ctx, r.campaignSpec.UserID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, r.campaignSpec.UserID)
+	if errcode.IsNotFound(err) {
+		return nil, nil
+	}
+	return user, err
 }
 
 func (r *campaignSpecResolver) Namespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
@@ -101,7 +106,7 @@ func (r *campaignSpecResolver) computeNamespace(ctx context.Context) (*graphqlba
 
 		if errcode.IsNotFound(err) {
 			r.namespace = nil
-			r.namespaceErr = nil
+			r.namespaceErr = errors.New("namespace of campaign spec has been deleted")
 			return
 		}
 

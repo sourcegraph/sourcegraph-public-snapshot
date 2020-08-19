@@ -6,6 +6,8 @@ import (
 
 	"testing"
 
+	"github.com/pkg/errors"
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
@@ -40,6 +42,13 @@ func TestReconcilerProcess(t *testing.T) {
 		VCS:  protocol.VCSInfo{URL: rs[0].URI},
 	})
 	defer state.Unmock()
+
+	// diffStat is the diff stat that MockChangesetSyncState will provide from the source.
+	diffStat := &diff.Stat{
+		Added:   1,
+		Changed: 1,
+		Deleted: 3,
+	}
 
 	githubPR := buildGithubPR(clock(), "12345", "Remote title", "Remote body", "head-ref-on-github")
 
@@ -118,9 +127,9 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       "12345",
 				externalBranch:   "head-ref-on-github",
-
-				title: "Remote title",
-				body:  "Remote body",
+				title:            "Remote title",
+				body:             "Remote body",
+				diffStat:         diffStat,
 			},
 		},
 		"retry publish changeset": {
@@ -147,9 +156,9 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       "12345",
 				externalBranch:   "head-ref-on-github",
-
-				title: "Remote title",
-				body:  "Remote body",
+				title:            "Remote title",
+				body:             "Remote body",
+				diffStat:         diffStat,
 			},
 		},
 		"update published changeset metadata": {
@@ -184,7 +193,7 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       "12345",
 				externalBranch:   "head-ref-on-github",
-
+				diffStat:         diffStat,
 				// We update the title/body but want the title/body returned by the code host.
 				title: "Remote title",
 				body:  "Remote body",
@@ -225,7 +234,7 @@ func TestReconcilerProcess(t *testing.T) {
 				externalBranch:   "head-ref-on-github",
 				title:            "Remote title",
 				body:             "Remote body",
-
+				diffStat:         diffStat,
 				// failureMessage should be nil
 			},
 		},
@@ -432,6 +441,72 @@ func TestReconcilerProcess(t *testing.T) {
 				t.Fatalf("wrong UpdateChangeset call. wantCalled=%t, wasCalled=%t", want, have)
 			}
 		})
+	}
+}
+
+func TestReconcilerProcess_PublishedChangesetDuplicateBranch(t *testing.T) {
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+
+	store := NewStore(dbconn.Global)
+
+	admin := createTestUser(ctx, t)
+	if !admin.SiteAdmin {
+		t.Fatalf("admin is not site admin")
+	}
+
+	rs, _ := createTestRepos(t, ctx, dbconn.Global, 1)
+
+	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
+		Name: api.RepoName(rs[0].Name),
+		VCS:  protocol.VCSInfo{URL: rs[0].URI},
+	})
+	defer state.Unmock()
+
+	commonHeadRef := "refs/heads/collision"
+
+	// Create a published changeset.
+	campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
+	campaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
+	changesetSpec := createChangesetSpec(t, ctx, store, testSpecOpts{
+		user:         admin.ID,
+		repo:         rs[0].ID,
+		campaignSpec: campaignSpec.ID,
+		headRef:      commonHeadRef,
+	})
+	createChangeset(t, ctx, store, testChangesetOpts{
+		repo:             rs[0].ID,
+		publicationState: campaigns.ChangesetPublicationStatePublished,
+		campaign:         campaign.ID,
+		ownedByCampaign:  campaign.ID,
+		currentSpec:      changesetSpec.ID,
+		externalBranch:   git.AbbreviateRef(commonHeadRef),
+		externalID:       "123",
+	})
+
+	// Try to publish a changeset on the same HeadRef/ExternalBranch.
+	otherCampaignSpec := createCampaignSpec(t, ctx, store, "other-test-campaign", admin.ID)
+	otherCampaign := createCampaign(t, ctx, store, "other-test-campaign", admin.ID, otherCampaignSpec.ID)
+	otherChangesetSpec := createChangesetSpec(t, ctx, store, testSpecOpts{
+		user:         admin.ID,
+		repo:         rs[0].ID,
+		campaignSpec: otherCampaignSpec.ID,
+		headRef:      commonHeadRef,
+		published:    true,
+	})
+	otherChangeset := createChangeset(t, ctx, store, testChangesetOpts{
+		repo:             rs[0].ID,
+		publicationState: campaigns.ChangesetPublicationStateUnpublished,
+		campaign:         otherCampaign.ID,
+		ownedByCampaign:  otherCampaign.ID,
+		currentSpec:      otherChangesetSpec.ID,
+	})
+
+	// Run the reconciler
+	rec := reconciler{store: store}
+	haveErr := rec.process(ctx, store, otherChangeset)
+	if !errors.Is(haveErr, ErrPublishSameBranch) {
+		t.Fatalf("reconciler process failed with wrong error: %s", haveErr)
 	}
 }
 

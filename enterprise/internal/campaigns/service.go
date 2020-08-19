@@ -542,6 +542,10 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 				ReconcilerState:  campaigns.ReconcilerStateQueued,
 			}
 
+			// Copy over diff stat, the preview diff doesn't change.
+			diffStat := spec.DiffStat()
+			newChangeset.SetDiffStat(&diffStat)
+
 			if err = tx.CreateChangeset(ctx, newChangeset); err != nil {
 				return nil, err
 			}
@@ -561,6 +565,10 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 			// reconciler wakes up, compares old and new spec and, if
 			// necessary, updates the changesets accordingly.
 			c.ReconcilerState = campaigns.ReconcilerStateQueued
+
+			// Copy over diff stat, the preview diff doesn't change.
+			diffStat := spec.DiffStat()
+			c.SetDiffStat(&diffStat)
 
 			if err = tx.UpdateChangeset(ctx, c); err != nil {
 				return nil, err
@@ -772,10 +780,12 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets, 
 			ctx := trace.ContextWithTrace(context.Background(), tr)
 
 			open := campaigns.ChangesetExternalStateOpen
+			published := campaigns.ChangesetPublicationStatePublished
 			cs, _, err := s.store.ListChangesets(ctx, ListChangesetsOpts{
-				CampaignID:    campaign.ID,
-				ExternalState: &open,
-				Limit:         -1,
+				OwnedByCampaignID: campaign.ID,
+				ExternalState:     &open,
+				PublicationState:  &published,
+				Limit:             -1,
 			})
 			if err != nil {
 				log15.Error("ListChangesets", "err", err)

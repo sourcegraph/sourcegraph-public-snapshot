@@ -14,19 +14,10 @@ import {
     SyncChangesetResult,
     SyncChangesetVariables,
     Scalars,
+    ChangesetCountsOverTimeVariables,
+    ChangesetCountsOverTimeFields,
+    ChangesetCountsOverTimeResult,
 } from '../../../graphql-operations'
-
-const changesetCountsOverTimeFragment = gql`
-    fragment ChangesetCountsOverTimeFields on ChangesetCounts {
-        date
-        merged
-        closed
-        openApproved
-        openChangesRequested
-        openPending
-        total
-    }
-`
 
 const campaignFragment = gql`
     fragment CampaignFields on Campaign {
@@ -40,17 +31,13 @@ const campaignFragment = gql`
         description
         initialApplier {
             username
-            avatarURL
-        }
-        namespace {
-            namespaceName
+            url
         }
         createdAt
         updatedAt
         closedAt
         viewerCanAdminister
         changesets {
-            totalCount
             stats {
                 total
                 closed
@@ -59,16 +46,10 @@ const campaignFragment = gql`
                 unpublished
             }
         }
-        # TODO move to separate query and configure from/to
-        changesetCountsOverTime {
-            ...ChangesetCountsOverTimeFields
-        }
         diffStat {
             ...DiffStatFields
         }
     }
-
-    ${changesetCountsOverTimeFragment}
 
     ${diffStatFields}
 `
@@ -108,46 +89,69 @@ export const fetchCampaignById = (campaign: Scalars['ID']): Observable<CampaignF
         })
     )
 
-export const changesetFieldsFragment = gql`
-    fragment ChangesetFields on Changeset {
+export const hiddenExternalChangesetFieldsFragment = gql`
+    fragment HiddenExternalChangesetFields on HiddenExternalChangeset {
         __typename
-
+        id
         createdAt
         updatedAt
         nextSyncAt
         externalState
         publicationState
         reconcilerState
-        ... on HiddenExternalChangeset {
-            id
+    }
+`
+export const externalChangesetFieldsFragment = gql`
+    fragment ExternalChangesetFields on ExternalChangeset {
+        __typename
+        id
+        title
+        body
+        publicationState
+        reconcilerState
+        externalState
+        reviewState
+        checkState
+        error
+        labels {
+            ...ChangesetLabelFields
         }
-        ... on ExternalChangeset {
+        repository {
             id
-            title
-            body
-            reviewState
-            checkState
-            labels {
-                ...ChangesetLabelFields
-            }
-            repository {
-                id
-                name
-                url
-            }
-            externalURL {
-                url
-            }
-            externalID
-            diffStat {
-                ...DiffStatFields
-            }
+            name
+            url
         }
+        externalURL {
+            url
+        }
+        externalID
+        diffStat {
+            ...DiffStatFields
+        }
+        createdAt
+        updatedAt
+        nextSyncAt
     }
 
     ${diffStatFields}
 
     ${changesetLabelFragment}
+`
+
+export const changesetFieldsFragment = gql`
+    fragment ChangesetFields on Changeset {
+        __typename
+        ... on HiddenExternalChangeset {
+            ...HiddenExternalChangesetFields
+        }
+        ... on ExternalChangeset {
+            ...ExternalChangesetFields
+        }
+    }
+
+    ${hiddenExternalChangesetFieldsFragment}
+
+    ${externalChangesetFieldsFragment}
 `
 
 export const queryChangesets = ({
@@ -178,6 +182,10 @@ export const queryChangesets = ({
                             checkState: $checkState
                         ) {
                             totalCount
+                            pageInfo {
+                                endCursor
+                                hasNextPage
+                            }
                             nodes {
                                 ...ChangesetFields
                             }
@@ -259,9 +267,6 @@ export const externalChangesetFileDiffsFields = gql`
                         hasNextPage
                         endCursor
                     }
-                    diffStat {
-                        ...DiffStatFields
-                    }
                 }
             }
             ... on PreviewRepositoryComparison {
@@ -274,17 +279,12 @@ export const externalChangesetFileDiffsFields = gql`
                         hasNextPage
                         endCursor
                     }
-                    diffStat {
-                        ...DiffStatFields
-                    }
                 }
             }
         }
     }
 
     ${fileDiffFields}
-
-    ${diffStatFields}
 
     ${gitRefSpecFields}
 `
@@ -322,5 +322,49 @@ export const queryExternalChangesetWithFileDiffs = ({
                 throw new Error(`The given ID is a ${node.__typename}, not an ExternalChangeset`)
             }
             return node
+        })
+    )
+
+const changesetCountsOverTimeFragment = gql`
+    fragment ChangesetCountsOverTimeFields on ChangesetCounts {
+        date
+        merged
+        closed
+        openApproved
+        openChangesRequested
+        openPending
+        total
+    }
+`
+
+export const queryChangesetCountsOverTime = ({
+    campaign,
+}: ChangesetCountsOverTimeVariables): Observable<ChangesetCountsOverTimeFields[]> =>
+    requestGraphQL<ChangesetCountsOverTimeResult, ChangesetCountsOverTimeVariables>({
+        request: gql`
+            query ChangesetCountsOverTime($campaign: ID!) {
+                node(id: $campaign) {
+                    __typename
+                    ... on Campaign {
+                        changesetCountsOverTime {
+                            ...ChangesetCountsOverTimeFields
+                        }
+                    }
+                }
+            }
+
+            ${changesetCountsOverTimeFragment}
+        `,
+        variables: { campaign },
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error(`Campaign with ID ${campaign} does not exist`)
+            }
+            if (node.__typename !== 'Campaign') {
+                throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
+            }
+            return node.changesetCountsOverTime
         })
     )

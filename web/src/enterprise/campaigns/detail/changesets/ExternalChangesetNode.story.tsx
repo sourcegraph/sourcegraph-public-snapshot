@@ -13,6 +13,7 @@ import {
     ChangesetCheckState,
     ChangesetReviewState,
 } from '../../../../graphql-operations'
+import { of } from 'rxjs'
 
 let isLightTheme = true
 
@@ -25,7 +26,7 @@ const { add } = storiesOf('web/campaigns/ExternalChangesetNode', module).addDeco
         <>
             <Tooltip />
             <style>{webStyles}</style>
-            <div className="p-3 container">{story()}</div>
+            <div className="p-3 container web-content campaign-changesets__grid">{story()}</div>
         </>
     )
 })
@@ -47,6 +48,7 @@ add('All external states', () => {
                         title: 'Changeset title on code host',
                         reconcilerState: ChangesetReconcilerState.COMPLETED,
                         publicationState: ChangesetPublicationState.PUBLISHED,
+                        error: null,
                         body: 'This changeset does the following things:\nIs awesome\nIs useful',
                         checkState: ChangesetCheckState.PENDING,
                         createdAt: now.toISOString(),
@@ -71,8 +73,79 @@ add('All external states', () => {
                     location={history.location}
                     isLightTheme={isLightTheme}
                     viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                    queryExternalChangesetWithFileDiffs={() =>
+                        of({
+                            diff: {
+                                __typename: 'PreviewRepositoryComparison',
+                                fileDiffs: {
+                                    nodes: [],
+                                    totalCount: 0,
+                                    pageInfo: {
+                                        endCursor: null,
+                                        hasNextPage: false,
+                                    },
+                                },
+                            },
+                        })
+                    }
                 />
             ))}
         </>
+    )
+})
+
+add('Unpublished', () => {
+    const now = new Date()
+    const history = H.createMemoryHistory()
+    return (
+        <ExternalChangesetNode
+            node={{
+                __typename: 'ExternalChangeset',
+                id: 'somechangeset',
+                updatedAt: now.toISOString(),
+                nextSyncAt: null,
+                externalState: null,
+                title: 'Changeset title on code host',
+                reconcilerState: ChangesetReconcilerState.QUEUED,
+                publicationState: ChangesetPublicationState.UNPUBLISHED,
+                error: null,
+                body: 'This changeset does the following things:\nIs awesome\nIs useful',
+                checkState: null,
+                createdAt: now.toISOString(),
+                externalID: null,
+                externalURL: null,
+                diffStat: {
+                    added: 10,
+                    changed: 20,
+                    deleted: 8,
+                },
+                labels: [],
+                repository: {
+                    id: 'repoid',
+                    name: 'github.com/sourcegraph/sourcegraph',
+                    url: 'http://test.test/sourcegraph/sourcegraph',
+                },
+                reviewState: null,
+            }}
+            history={history}
+            location={history.location}
+            isLightTheme={isLightTheme}
+            viewerCanAdminister={boolean('viewerCanAdminister', true)}
+            queryExternalChangesetWithFileDiffs={() =>
+                of({
+                    diff: {
+                        __typename: 'PreviewRepositoryComparison',
+                        fileDiffs: {
+                            nodes: [],
+                            totalCount: 0,
+                            pageInfo: {
+                                endCursor: null,
+                                hasNextPage: false,
+                            },
+                        },
+                    },
+                })
+            }
+        />
     )
 })

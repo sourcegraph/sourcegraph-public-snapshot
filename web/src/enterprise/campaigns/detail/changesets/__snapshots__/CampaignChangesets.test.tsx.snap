@@ -23,10 +23,10 @@ exports[`CampaignChangesets renders 1`] = `
     onFiltersChange={[Function]}
   >
     <div
-      className="form-inline mb-0 mt-2"
+      className="form-inline m-0"
     >
       <ChangesetFilter
-        htmlID="changeset-state-filter"
+        className="mr-2"
         label="State"
         onChange={[Function]}
         values={
@@ -38,20 +38,14 @@ exports[`CampaignChangesets renders 1`] = `
           ]
         }
       >
-        <label
-          htmlFor="changeset-state-filter"
-        >
-          State
-        </label>
         <select
-          className="form-control mx-2"
-          id="changeset-state-filter"
+          className="form-control mr-2"
           onChange={[Function]}
         >
           <option
             value=""
           >
-            All
+            State
           </option>
           <option
             key="OPEN"
@@ -80,7 +74,7 @@ exports[`CampaignChangesets renders 1`] = `
         </select>
       </ChangesetFilter>
       <ChangesetFilter
-        htmlID="changeset-review-state-filter"
+        className="mr-2"
         label="Review state"
         onChange={[Function]}
         values={
@@ -93,20 +87,14 @@ exports[`CampaignChangesets renders 1`] = `
           ]
         }
       >
-        <label
-          htmlFor="changeset-review-state-filter"
-        >
-          Review state
-        </label>
         <select
-          className="form-control mx-2"
-          id="changeset-review-state-filter"
+          className="form-control mr-2"
           onChange={[Function]}
         >
           <option
             value=""
           >
-            All
+            Review state
           </option>
           <option
             key="APPROVED"
@@ -141,7 +129,6 @@ exports[`CampaignChangesets renders 1`] = `
         </select>
       </ChangesetFilter>
       <ChangesetFilter
-        htmlID="changeset-check-state-filter"
         label="Check state"
         onChange={[Function]}
         values={
@@ -152,20 +139,14 @@ exports[`CampaignChangesets renders 1`] = `
           ]
         }
       >
-        <label
-          htmlFor="changeset-check-state-filter"
-        >
-          Check state
-        </label>
         <select
-          className="form-control mx-2"
-          id="changeset-check-state-filter"
+          className="form-control"
           onChange={[Function]}
         >
           <option
             value=""
           >
-            All
+            Check state
           </option>
           <option
             key="PENDING"
@@ -195,8 +176,11 @@ exports[`CampaignChangesets renders 1`] = `
     <FilteredConnection
       className="mt-2"
       defaultFirst={15}
+      headComponent={[Function]}
       hideSearch={true}
       history="[History]"
+      listClassName="campaign-changesets__grid mb-3"
+      listComponent="div"
       location="[Location path=/]"
       nodeComponent={[Function]}
       nodeComponentProps={
@@ -220,6 +204,7 @@ exports[`CampaignChangesets renders 1`] = `
           "history": "[History]",
           "isLightTheme": true,
           "location": "[Location path=/]",
+          "queryExternalChangesetWithFileDiffs": undefined,
           "viewerCanAdminister": true,
         }
       }
@@ -246,11 +231,18 @@ exports[`CampaignChangesets renders 1`] = `
                   "updatedAt": "2020-01-04T00:00:00.000Z",
                 },
               ],
+              "pageInfo": Object {
+                "endCursor": null,
+                "hasNextPage": false,
+              },
               "totalCount": 1,
             }
           }
           connectionQuery=""
           first={15}
+          headComponent={[Function]}
+          listClassName="campaign-changesets__grid mb-3"
+          listComponent="div"
           loading={false}
           location="[Location path=/]"
           nodeComponent={[Function]}
@@ -275,6 +267,7 @@ exports[`CampaignChangesets renders 1`] = `
               "history": "[History]",
               "isLightTheme": true,
               "location": "[Location path=/]",
+              "queryExternalChangesetWithFileDiffs": undefined,
               "viewerCanAdminister": true,
             }
           }
@@ -283,9 +276,64 @@ exports[`CampaignChangesets renders 1`] = `
           pluralNoun="changesets"
           query=""
         >
-          <ul
-            className="filtered-connection__nodes "
+          <div
+            className="filtered-connection__nodes campaign-changesets__grid mb-3"
           >
+            <CampaignChangesetsHeader
+              nodes={
+                Array [
+                  Object {
+                    "__typename": "HiddenExternalChangeset",
+                    "createdAt": "2020-01-03T00:00:00.000Z",
+                    "externalState": "OPEN",
+                    "id": "0",
+                    "nextSyncAt": null,
+                    "publicationState": "PUBLISHED",
+                    "reconcilerState": "COMPLETED",
+                    "updatedAt": "2020-01-04T00:00:00.000Z",
+                  },
+                ]
+              }
+              totalCount={1}
+            >
+              <div
+                className="changeset-spec-list-header__title mb-2"
+              >
+                <strong>
+                  Displaying 
+                  1
+                   of 
+                  1
+                   changesets
+                </strong>
+              </div>
+              <span />
+              <h5
+                className="text-uppercase text-center text-nowrap text-muted"
+              >
+                Status
+              </h5>
+              <h5
+                className="text-uppercase text-nowrap text-muted"
+              >
+                Changeset information
+              </h5>
+              <h5
+                className="text-uppercase text-center text-nowrap text-muted"
+              >
+                Check state
+              </h5>
+              <h5
+                className="text-uppercase text-center text-nowrap text-muted"
+              >
+                Review state
+              </h5>
+              <h5
+                className="text-uppercase text-right text-nowrap text-muted"
+              >
+                Changes
+              </h5>
+            </CampaignChangesetsHeader>
             <ChangesetNode
               campaignUpdates="[Subject]"
               extensionInfo={
@@ -323,6 +371,9 @@ exports[`CampaignChangesets renders 1`] = `
               }
               viewerCanAdminister={true}
             >
+              <span
+                className="changeset-spec-node__separator"
+              />
               <HiddenExternalChangesetNode
                 campaignUpdates="[Subject]"
                 extensionInfo={
@@ -359,110 +410,116 @@ exports[`CampaignChangesets renders 1`] = `
                 }
                 viewerCanAdminister={true}
               >
-                <li
-                  className="list-group-item test-changeset-node"
+                <span />
+                <ChangesetStatusCell
+                  changeset={
+                    Object {
+                      "__typename": "HiddenExternalChangeset",
+                      "createdAt": "2020-01-03T00:00:00.000Z",
+                      "externalState": "OPEN",
+                      "id": "0",
+                      "nextSyncAt": null,
+                      "publicationState": "PUBLISHED",
+                      "reconcilerState": "COMPLETED",
+                      "updatedAt": "2020-01-04T00:00:00.000Z",
+                    }
+                  }
+                >
+                  <ChangesetStatusOpen>
+                    <div
+                      className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center text-success"
+                    >
+                      <Memo(SourcePullIcon)>
+                        <svg
+                          className="mdi-icon "
+                          fill="currentColor"
+                          height={24}
+                          viewBox="0 0 24 24"
+                          width={24}
+                        >
+                          <path
+                            d="M6,3A3,3 0 0,1 9,6C9,7.31 8.17,8.42 7,8.83V15.17C8.17,15.58 9,16.69 9,18A3,3 0 0,1 6,21A3,3 0 0,1 3,18C3,16.69 3.83,15.58 5,15.17V8.83C3.83,8.42 3,7.31 3,6A3,3 0 0,1 6,3M6,5A1,1 0 0,0 5,6A1,1 0 0,0 6,7A1,1 0 0,0 7,6A1,1 0 0,0 6,5M6,17A1,1 0 0,0 5,18A1,1 0 0,0 6,19A1,1 0 0,0 7,18A1,1 0 0,0 6,17M21,18A3,3 0 0,1 18,21A3,3 0 0,1 15,18C15,16.69 15.83,15.58 17,15.17V7H15V10.25L10.75,6L15,1.75V5H17A2,2 0 0,1 19,7V15.17C20.17,15.58 21,16.69 21,18M18,17A1,1 0 0,0 17,18A1,1 0 0,0 18,19A1,1 0 0,0 19,18A1,1 0 0,0 18,17Z"
+                          />
+                        </svg>
+                      </Memo(SourcePullIcon)>
+                      <span
+                        className="text-muted"
+                      >
+                        Open
+                      </span>
+                    </div>
+                  </ChangesetStatusOpen>
+                </ChangesetStatusCell>
+                <div
+                  className="d-flex flex-column"
                 >
                   <div
-                    className="changeset-node__content changeset-node__content--no-collapse flex-fill"
+                    className="m-0 mb-2"
                   >
-                    <div
-                      className="d-flex align-items-start m-1 ml-2"
+                    <h3
+                      className="m-0 d-inline"
                     >
-                      <div
-                        className="changeset-node__content flex-fill"
+                      <span
+                        className="text-muted"
                       >
-                        <div
-                          className="d-flex flex-column"
-                        >
-                          <div
-                            className="m-0 mb-2"
-                          >
-                            <h3
-                              className="m-0 d-inline"
-                            >
-                              <ChangesetStateIcon
-                                externalState="OPEN"
-                              >
-                                <Memo(SourcePullIcon)
-                                  className="mr-1 icon-inline text-success"
-                                  data-tooltip="open"
-                                >
-                                  <svg
-                                    className="mdi-icon mr-1 icon-inline text-success"
-                                    data-tooltip="open"
-                                    fill="currentColor"
-                                    height={24}
-                                    viewBox="0 0 24 24"
-                                    width={24}
-                                  >
-                                    <path
-                                      d="M6,3A3,3 0 0,1 9,6C9,7.31 8.17,8.42 7,8.83V15.17C8.17,15.58 9,16.69 9,18A3,3 0 0,1 6,21A3,3 0 0,1 3,18C3,16.69 3.83,15.58 5,15.17V8.83C3.83,8.42 3,7.31 3,6A3,3 0 0,1 6,3M6,5A1,1 0 0,0 5,6A1,1 0 0,0 6,7A1,1 0 0,0 7,6A1,1 0 0,0 6,5M6,17A1,1 0 0,0 5,18A1,1 0 0,0 6,19A1,1 0 0,0 7,18A1,1 0 0,0 6,17M21,18A3,3 0 0,1 18,21A3,3 0 0,1 15,18C15,16.69 15.83,15.58 17,15.17V7H15V10.25L10.75,6L15,1.75V5H17A2,2 0 0,1 19,7V15.17C20.17,15.58 21,16.69 21,18M18,17A1,1 0 0,0 17,18A1,1 0 0,0 18,19A1,1 0 0,0 19,18A1,1 0 0,0 18,17Z"
-                                    />
-                                  </svg>
-                                </Memo(SourcePullIcon)>
-                              </ChangesetStateIcon>
-                              <span
-                                className="text-muted"
-                              >
-                                Changeset in a private repository
-                              </span>
-                            </h3>
-                          </div>
-                          <div>
-                            <ChangesetLastSynced
-                              changeset={
-                                Object {
-                                  "__typename": "HiddenExternalChangeset",
-                                  "createdAt": "2020-01-03T00:00:00.000Z",
-                                  "externalState": "OPEN",
-                                  "id": "0",
-                                  "nextSyncAt": null,
-                                  "publicationState": "PUBLISHED",
-                                  "reconcilerState": "COMPLETED",
-                                  "updatedAt": "2020-01-04T00:00:00.000Z",
-                                }
-                              }
-                              viewerCanAdminister={false}
-                            >
-                              <small
-                                className="text-muted"
-                              >
-                                Last synced 
-                                about 14 years
-                                 ago.
-                                 
-                                <span
-                                  data-tooltip="Not scheduled for syncing."
-                                >
-                                  <Memo(InfoCircleOutlineIcon)
-                                    className="icon-inline"
-                                    onClick={[Function]}
-                                  >
-                                    <svg
-                                      className="mdi-icon icon-inline"
-                                      fill="currentColor"
-                                      height={24}
-                                      onClick={[Function]}
-                                      viewBox="0 0 24 24"
-                                      width={24}
-                                    >
-                                      <path
-                                        d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z"
-                                      />
-                                    </svg>
-                                  </Memo(InfoCircleOutlineIcon)>
-                                </span>
-                              </small>
-                            </ChangesetLastSynced>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                        Changeset in a private repository
+                      </span>
+                    </h3>
                   </div>
-                </li>
+                  <div>
+                    <ChangesetLastSynced
+                      changeset={
+                        Object {
+                          "__typename": "HiddenExternalChangeset",
+                          "createdAt": "2020-01-03T00:00:00.000Z",
+                          "externalState": "OPEN",
+                          "id": "0",
+                          "nextSyncAt": null,
+                          "publicationState": "PUBLISHED",
+                          "reconcilerState": "COMPLETED",
+                          "updatedAt": "2020-01-04T00:00:00.000Z",
+                        }
+                      }
+                      viewerCanAdminister={false}
+                    >
+                      <small
+                        className="text-muted"
+                      >
+                        Last synced 
+                        about 14 years
+                         ago.
+                         
+                        <span
+                          data-tooltip="Not scheduled for syncing."
+                        >
+                          <Memo(InfoCircleOutlineIcon)
+                            className="icon-inline"
+                            onClick={[Function]}
+                          >
+                            <svg
+                              className="mdi-icon icon-inline"
+                              fill="currentColor"
+                              height={24}
+                              onClick={[Function]}
+                              viewBox="0 0 24 24"
+                              width={24}
+                            >
+                              <path
+                                d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z"
+                              />
+                            </svg>
+                          </Memo(InfoCircleOutlineIcon)>
+                        </span>
+                      </small>
+                    </ChangesetLastSynced>
+                  </div>
+                </div>
+                <span />
+                <span />
+                <span />
               </HiddenExternalChangesetNode>
             </ChangesetNode>
-          </ul>
+          </div>
           <p
             className="filtered-connection__summary"
           >

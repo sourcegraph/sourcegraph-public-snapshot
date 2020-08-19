@@ -2058,6 +2058,15 @@
   resolved "https://registry.npmjs.org/@mdx-js/react/-/react-1.6.6.tgz#71ece2a24261eed0e184c0ef9814fcb77b1a4aee"
   integrity sha512-zOOdNreHUNSFQ0dg3wYYg9sOGg2csf7Sk8JGBigeBq+4Xk4LO0QdycGAmgKNfeme+SyBV5LBIPjt1NNsScyWEQ==
 
+"@mermaid-js/mermaid-cli@^8.7.0":
+  version "8.7.0"
+  resolved "https://registry.npmjs.org/@mermaid-js/mermaid-cli/-/mermaid-cli-8.7.0.tgz#8c798996b9fa0bec8acf6b946cbafc6407e51870"
+  integrity sha512-Eh5ivob7wS4YCbL9K90/I0TYTqrknCCWAIYipeU8T1Klrpqb6/1LszkoBFzDogM9UK94Lg8vH1XBYv5J4f3/EA==
+  dependencies:
+    chalk "^4.1.0"
+    commander "^6.0.0"
+    puppeteer "^5.0.0"
+
 "@mrmlnc/readdir-enhanced@^2.2.1":
   version "2.2.1"
   resolved "https://registry.npmjs.org/@mrmlnc/readdir-enhanced/-/readdir-enhanced-2.2.1.tgz#524af240d1a360527b730475ecfa1344aa540dde"
@@ -7660,6 +7669,11 @@ commander@^5.1.0:
   version "5.1.0"
   resolved "https://registry.npmjs.org/commander/-/commander-5.1.0.tgz#46abbd1652f8e059bddaef99bbdcb2ad9cf179ae"
   integrity sha512-P0CysNDQ7rtVw4QIQtm+MRxV66vKFSvlsQvGYXZWR3qFU0jlMKHZZZgw8e+8DSah4UDKMqnknRDQz+xuQXQ/Zg==
+
+commander@^6.0.0:
+  version "6.0.0"
+  resolved "https://registry.npmjs.org/commander/-/commander-6.0.0.tgz#2b270da94f8fb9014455312f829a1129dbf8887e"
+  integrity sha512-s7EA+hDtTYNhuXkTlhqew4txMZVdszBmKWSPEMxGr8ru8JXR7bLUFIAtPhcSuFdJQ0ILMxnJi8GkQL0yvDy/YA==
 
 comment-parser@^0.7.5:
   version "0.7.5"
@@ -18486,7 +18500,7 @@ puppeteer-firefox@^0.5.1:
     rimraf "^2.6.1"
     ws "^6.1.0"
 
-puppeteer@5.2.1:
+puppeteer@5.2.1, puppeteer@^5.0.0:
   version "5.2.1"
   resolved "https://registry.npmjs.org/puppeteer/-/puppeteer-5.2.1.tgz#7f0564f0a5384f352a38c8cc42af875cd87f4ea6"
   integrity sha512-PZoZG7u+T6N1GFWBQmGVG162Ak5MAy8nYSVpeeQrwJK2oYUlDWpHEJPcd/zopyuEMTv7DiztS1blgny1txR2qw==

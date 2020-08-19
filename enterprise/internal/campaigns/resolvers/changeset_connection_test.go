@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -39,10 +40,21 @@ func TestChangesetConnectionResolver(t *testing.T) {
 	}
 	ct.AuthzFilterRepos(t, inaccessibleRepo.ID)
 
+	spec := &campaigns.CampaignSpec{
+		NamespaceUserID: userID,
+		UserID:          userID,
+	}
+	if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+		t.Fatal(err)
+	}
+
 	campaign := &campaigns.Campaign{
 		Name:             "my-unique-name",
 		NamespaceUserID:  userID,
 		InitialApplierID: userID,
+		LastApplierID:    userID,
+		LastAppliedAt:    time.Now(),
+		CampaignSpecID:   spec.ID,
 	}
 	if err := store.CreateCampaign(ctx, campaign); err != nil {
 		t.Fatal(err)

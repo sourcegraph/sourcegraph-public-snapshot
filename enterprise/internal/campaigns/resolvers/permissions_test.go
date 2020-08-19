@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
@@ -67,13 +68,16 @@ func TestPermissionLevels(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	createCampaign := func(t *testing.T, s *ee.Store, name string, userID int32) (campaignID int64) {
+	createCampaign := func(t *testing.T, s *ee.Store, name string, userID int32, campaignSpecID int64) (campaignID int64) {
 		t.Helper()
 
 		c := &campaigns.Campaign{
 			Name:             name,
 			InitialApplierID: userID,
 			NamespaceUserID:  userID,
+			LastApplierID:    userID,
+			LastAppliedAt:    time.Now(),
+			CampaignSpecID:   campaignSpecID,
 			// We attach the changeset to the campaign so we can test syncChangeset
 			ChangesetIDs: []int64{changeset.ID},
 		}
@@ -89,7 +93,7 @@ func TestPermissionLevels(t *testing.T) {
 		return c.ID
 	}
 
-	createCampaignSpec := func(t *testing.T, s *ee.Store, userID int32) (randID string) {
+	createCampaignSpec := func(t *testing.T, s *ee.Store, userID int32) (randID string, id int64) {
 		t.Helper()
 
 		cs := &campaigns.CampaignSpec{UserID: userID, NamespaceUserID: userID}
@@ -97,7 +101,7 @@ func TestPermissionLevels(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		return cs.RandID
+		return cs.RandID, cs.ID
 	}
 
 	cleanUpCampaigns := func(t *testing.T, s *ee.Store) {
@@ -131,10 +135,10 @@ func TestPermissionLevels(t *testing.T) {
 
 		cleanUpCampaigns(t, store)
 
-		adminCampaign := createCampaign(t, store, "admin", adminID)
-		adminCampaignSpec := createCampaignSpec(t, store, adminID)
-		userCampaign := createCampaign(t, store, "user", userID)
-		userCampaignSpec := createCampaignSpec(t, store, userID)
+		adminCampaignSpec, adminCampaignSpecID := createCampaignSpec(t, store, adminID)
+		adminCampaign := createCampaign(t, store, "admin", adminID, adminCampaignSpecID)
+		userCampaignSpec, userCampaignSpecID := createCampaignSpec(t, store, userID)
+		userCampaign := createCampaign(t, store, "user", userID, userCampaignSpecID)
 
 		t.Run("CampaignByID", func(t *testing.T) {
 			tests := []struct {
@@ -397,8 +401,8 @@ func TestPermissionLevels(t *testing.T) {
 					t.Run(tc.name, func(t *testing.T) {
 						cleanUpCampaigns(t, store)
 
-						campaignID := createCampaign(t, store, "test-campaign", tc.campaignAuthor)
-						campaignSpecID := createCampaignSpec(t, store, tc.campaignAuthor)
+						campaignSpecRandID, campaignSpecID := createCampaignSpec(t, store, tc.campaignAuthor)
+						campaignID := createCampaign(t, store, "test-campaign", tc.campaignAuthor, campaignSpecID)
 
 						// We add the changeset to the campaign. It doesn't matter
 						// for the addChangesetsToCampaign mutation, since that is
@@ -411,7 +415,7 @@ func TestPermissionLevels(t *testing.T) {
 						mutation := m.mutationFunc(
 							string(campaigns.MarshalCampaignID(campaignID)),
 							string(marshalChangesetID(changeset.ID)),
-							string(marshalCampaignSpecRandID(campaignSpecID)),
+							string(marshalCampaignSpecRandID(campaignSpecRandID)),
 						)
 
 						actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
@@ -519,10 +523,21 @@ func TestRepositoryPermissions(t *testing.T) {
 			changesetIDs = append(changesetIDs, c.ID)
 		}
 
+		spec := &campaigns.CampaignSpec{
+			NamespaceUserID: userID,
+			UserID:          userID,
+		}
+		if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+			t.Fatal(err)
+		}
+
 		campaign := &campaigns.Campaign{
 			Name:             "my campaign",
 			InitialApplierID: userID,
 			NamespaceUserID:  userID,
+			LastApplierID:    userID,
+			LastAppliedAt:    time.Now(),
+			CampaignSpecID:   spec.ID,
 			// We attach the two changesets to the campaign
 			ChangesetIDs: changesetIDs,
 		}

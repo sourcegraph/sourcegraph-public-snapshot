@@ -143,22 +143,16 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
     private componentUpdates = new ReplaySubject<MonacoQueryInputProps>(1)
     private searchQueries = this.componentUpdates.pipe(
         map(({ queryState }) => queryState.query),
-        distinctUntilChanged(),
-        publishReplay(1),
-        refCount()
+        distinctUntilChanged()
     )
     private patternTypes = this.componentUpdates.pipe(
         map(({ patternType }) => patternType),
-        distinctUntilChanged(),
-        publishReplay(1),
-        refCount()
+        distinctUntilChanged()
     )
 
     private globbing = this.componentUpdates.pipe(
         map(({ globbing }) => globbing),
-        distinctUntilChanged(),
-        publishReplay(1),
-        refCount()
+        distinctUntilChanged()
     )
     private containerRefs = new Subject<HTMLElement | null>()
     private editorRefs = new Subject<Monaco.editor.IStandaloneCodeEditor | null>()
@@ -241,6 +235,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
             quickSuggestions: false,
             fixedOverflowWidgets: true,
             contextmenu: false,
+            links: false,
             // Display the cursor as a 1px line.
             cursorStyle: 'line',
             cursorWidth: 1,
