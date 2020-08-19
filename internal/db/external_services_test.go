@@ -146,7 +146,10 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 				test.setup(t)
 			}
 
-			err := (&ExternalServicesStore{}).ValidateConfig(context.Background(), 0, test.kind, test.config, nil)
+			err := ExternalServices.ValidateConfig(context.Background(), ValidateExternalServiceConfigOptions{
+				Kind:   test.kind,
+				Config: test.config,
+			})
 			gotErr := fmt.Sprintf("%v", err)
 			if gotErr != test.wantErr {
 				t.Errorf("error: want %q but got %q", test.wantErr, gotErr)
