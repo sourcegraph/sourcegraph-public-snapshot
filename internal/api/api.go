@@ -1,4 +1,4 @@
-// Package api provides a basic client library for the Sourcegraph GraphQL API.
+// Package api provides a basic client library for the Sourcegraph API.
 package api
 
 import (
@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/kballard/go-shellquote"
@@ -25,6 +26,12 @@ type Client interface {
 
 	// NewRequest creates a GraphQL request.
 	NewRequest(query string, vars map[string]interface{}) Request
+
+	// NewHTTPRequest creates an http.Request for the Sourcegraph API.
+	//
+	// path is joined against the API route. For example on Sourcegraph.com this
+	// will result the URL: https://sourcegraph.com/.api/path.
+	NewHTTPRequest(ctx context.Context, method, path string, body io.Reader) (*http.Request, error)
 }
 
 // Request instances represent GraphQL requests.
@@ -104,8 +111,21 @@ func (c *client) NewRequest(query string, vars map[string]interface{}) Request {
 	}
 }
 
-func (c *client) url() string {
-	return c.opts.Endpoint + "/.api/graphql"
+func (c *client) NewHTTPRequest(ctx context.Context, method, p string, body io.Reader) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, method, c.opts.Endpoint+path.Join("/.api", p), body)
+	if err != nil {
+		return nil, err
+	}
+	if c.opts.AccessToken != "" {
+		req.Header.Set("Authorization", "token "+c.opts.AccessToken)
+	}
+	if *c.opts.Flags.trace {
+		req.Header.Set("X-Sourcegraph-Should-Trace", "true")
+	}
+	for k, v := range c.opts.AdditionalHeaders {
+		req.Header.Set(k, v)
+	}
+	return req, nil
 }
 
 func (r *request) do(ctx context.Context, result interface{}) (bool, error) {
@@ -128,18 +148,9 @@ func (r *request) do(ctx context.Context, result interface{}) (bool, error) {
 	}
 
 	// Create the HTTP request.
-	req, err := http.NewRequestWithContext(ctx, "POST", r.client.url(), bytes.NewBuffer(reqBody))
+	req, err := r.client.NewHTTPRequest(ctx, "POST", "graphql", bytes.NewBuffer(reqBody))
 	if err != nil {
 		return false, err
-	}
-	if r.client.opts.AccessToken != "" {
-		req.Header.Set("Authorization", "token "+r.client.opts.AccessToken)
-	}
-	if *r.client.opts.Flags.trace {
-		req.Header.Set("X-Sourcegraph-Should-Trace", "true")
-	}
-	for k, v := range r.client.opts.AdditionalHeaders {
-		req.Header.Set(k, v)
 	}
 
 	// Perform the request.
@@ -224,6 +235,6 @@ func (r *request) curlCmd() (string, error) {
 		s += fmt.Sprintf("   %s \\\n", shellquote.Join("-H", k+": "+v))
 	}
 	s += fmt.Sprintf("   %s \\\n", shellquote.Join("-d", string(data)))
-	s += fmt.Sprintf("   %s", shellquote.Join(r.client.url()))
+	s += fmt.Sprintf("   %s", shellquote.Join(r.client.opts.Endpoint+"/.api/graphql"))
 	return s, nil
 }
