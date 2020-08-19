@@ -45,6 +45,10 @@ export const queryCampaigns = ({
                     nodes {
                         ...ListCampaign
                     }
+                    pageInfo {
+                        endCursor
+                        hasNextPage
+                    }
                     totalCount
                 }
             }
@@ -89,6 +93,10 @@ export const queryCampaignsByUser = ({
                         ) {
                             nodes {
                                 ...ListCampaign
+                            }
+                            pageInfo {
+                                endCursor
+                                hasNextPage
                             }
                             totalCount
                         }
@@ -139,6 +147,10 @@ export const queryCampaignsByOrg = ({
                         ) {
                             nodes {
                                 ...ListCampaign
+                            }
+                            pageInfo {
+                                endCursor
+                                hasNextPage
                             }
                             totalCount
                         }
