@@ -217,7 +217,7 @@ export interface advanceStepCallback {
 /**
  * Defines a callback to advance a step.
  */
-type advanceStandardStep = advanceStepCallback & { handler: (tour: Shepherd.Tour) => void }
+type AdvanceStandardStep = AdvanceStepCallback & { handler: (tour: Shepherd.Tour) => void }
 
 /**
  * A special case type to define a callback for a the "add code to your query" step on the language path.
