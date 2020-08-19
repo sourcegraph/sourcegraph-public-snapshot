@@ -90,18 +90,18 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
                 onChange={setUIState}
                 className="mr-2"
             />
-            <ChangesetFilter<ChangesetReviewState>
-                values={Object.values(ChangesetReviewState)}
-                label="Review state"
-                selected={reviewState}
-                onChange={setReviewState}
-                className="mr-2"
-            />
             <ChangesetFilter<ChangesetCheckState>
                 values={Object.values(ChangesetCheckState)}
                 label="Check state"
                 selected={checkState}
                 onChange={setCheckState}
+                className="mr-2"
+            />
+            <ChangesetFilter<ChangesetReviewState>
+                values={Object.values(ChangesetReviewState)}
+                label="Review state"
+                selected={reviewState}
+                onChange={setReviewState}
             />
         </div>
     )
