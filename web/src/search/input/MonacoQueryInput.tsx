@@ -26,8 +26,8 @@ import { hasProperty, isDefined } from '../../../../shared/src/util/types'
 import { KeyboardShortcut } from '../../../../shared/src/keyboardShortcuts'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 import { observeResize } from '../../util/dom'
-import { callbackToAdvanceTourStep } from './SearchOnboardingTour'
 import Shepherd from 'shepherd.js'
+import { CallbackToAdvanceTourStep } from './SearchOnboardingTour'
 
 export interface MonacoQueryInputProps
     extends Omit<TogglesProps, 'navbarSearchQuery' | 'filtersInQuery'>,
@@ -50,7 +50,7 @@ export interface MonacoQueryInputProps
      * A list of callbacks to advance steps in the search onboarding tour.
      * These callbacks are called when the query in this query input is updated.
      */
-    tourAdvanceStepCallbacks?: callbackToAdvanceTourStep[]
+    tourAdvanceStepCallbacks?: CallbackToAdvanceTourStep[]
 
     // Whether globbing is enabled for filters.
     globbing: boolean
