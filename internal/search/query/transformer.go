@@ -585,8 +585,8 @@ func mapRevFilters(nodes []Node) ([]Node, error) {
 
 func mapRevFiltersFlat(nodes []Node) ([]Node, error) {
 	var revs []string
-	for _, o := range nodes {
-		if param, ok := o.(Parameter); !ok || param.Field != FieldRev {
+	for _, n := range nodes {
+		if param, ok := n.(Parameter); !ok || param.Field != FieldRev {
 			continue
 		} else {
 			revs = append(revs, param.Value)
@@ -602,27 +602,26 @@ func mapRevFiltersFlat(nodes []Node) ([]Node, error) {
 	}
 	operands := make([]Node, len(nodes))
 	i := 0
-	for _, o := range nodes {
-		switch o.(type) {
+	for _, n := range nodes {
+		switch p := n.(type) {
 		case Parameter:
-			param := o.(Parameter)
-			switch param.Field {
+			switch p.Field {
 			case FieldRepo:
-				if strings.ContainsRune(param.Value, '@') {
+				if strings.ContainsRune(p.Value, '@') {
 					return nil, fmt.Errorf("invalid syntax. You have specified @ and rev: for the same" +
 						" repo: filter and I don't know how to interpret this. Remove either @ or rev: and try again")
 				}
-				param.Value += "@" + revs[0]
-				operands[i] = param
+				p.Value += "@" + revs[0]
+				operands[i] = p
 				i++
 			case FieldRev:
 				continue
 			default:
-				operands[i] = o
+				operands[i] = n
 				i++
 			}
 		default:
-			operands[i] = o
+			operands[i] = n
 			i++
 		}
 	}
