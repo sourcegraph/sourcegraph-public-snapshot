@@ -1,4 +1,4 @@
-// Packager searcher provides a client for our just in time text searching
+// Package searcher provides a client for our just in time text searching
 // service "searcher".
 package searcher
 
