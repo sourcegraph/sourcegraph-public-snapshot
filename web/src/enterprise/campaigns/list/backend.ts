@@ -13,6 +13,7 @@ import {
 const ListCampaignFragment = gql`
     fragment ListCampaign on Campaign {
         id
+        url
         name
         namespace {
             namespaceName

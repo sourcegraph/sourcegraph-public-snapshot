@@ -54,7 +54,7 @@ export const CampaignNode: React.FunctionComponent<CampaignNodeProps> = ({
                             <span className="text-muted d-inline-block mx-1">/</span>
                         </>
                     )}
-                    <Link to={`/campaigns/${node.id}`}>{node.name}</Link>
+                    <Link to={node.url}>{node.name}</Link>
                 </h3>
                 <small className="ml-2 text-muted">
                     created{' '}

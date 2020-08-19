@@ -1,26 +1,27 @@
-import { ThemeProps } from '../../../../../../shared/src/theme'
 import { Observer } from 'rxjs'
 import { Hoverifier } from '@sourcegraph/codeintellify'
-import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '../../../../../../shared/src/util/url'
-import { HoverMerged } from '../../../../../../shared/src/api/client/types/hover'
-import { ActionItemAction } from '../../../../../../shared/src/actions/ActionItem'
-import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import * as H from 'history'
 import React, { useState, useCallback } from 'react'
-import { DiffStat } from '../../../../components/diff/DiffStat'
-import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../backend'
-import { ExternalChangesetFields } from '../../../../graphql-operations'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import { ChangesetStatusCell } from './ChangesetStatusCell'
-import { ChangesetCheckStatusCell } from './ChangesetCheckStatusCell'
-import { ChangesetReviewStatusCell } from './ChangesetReviewStatusCell'
-import { ErrorAlert } from '../../../../components/alerts'
-import { ChangesetFileDiff } from './ChangesetFileDiff'
-import { ExternalChangesetInfoCell } from './ExternalChangesetInfoCell'
+import { ThemeProps } from '../../../../../shared/src/theme'
+import { ExternalChangesetFields } from '../../../graphql-operations'
+import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '../../../../../shared/src/util/url'
+import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
+import { ActionItemAction } from '../../../../../shared/src/actions/ActionItem'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
+import { ChangesetCheckStatusCell } from '../detail/changesets/ChangesetCheckStatusCell'
+import { ChangesetReviewStatusCell } from '../detail/changesets/ChangesetReviewStatusCell'
+import { DiffStat } from '../../../components/diff/DiffStat'
+import { ErrorAlert } from '../../../components/alerts'
+import { ChangesetFileDiff } from '../detail/changesets/ChangesetFileDiff'
+import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../detail/backend'
+import { ChangesetCloseActionClose, ChangesetCloseActionKept } from './ChangesetCloseAction'
+import { ExternalChangesetInfoCell } from '../detail/changesets/ExternalChangesetInfoCell'
 
-export interface ExternalChangesetNodeProps extends ThemeProps {
+export interface ExternalChangesetCloseNodeProps extends ThemeProps {
     node: ExternalChangesetFields
+    willClose: boolean
     viewerCanAdminister: boolean
     campaignUpdates?: Pick<Observer<void>, 'next'>
     history: H.History
@@ -32,8 +33,9 @@ export interface ExternalChangesetNodeProps extends ThemeProps {
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
 }
 
-export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNodeProps> = ({
+export const ExternalChangesetCloseNode: React.FunctionComponent<ExternalChangesetCloseNodeProps> = ({
     node,
+    willClose,
     viewerCanAdminister,
     campaignUpdates,
     isLightTheme,
@@ -65,7 +67,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                     <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                 )}
             </button>
-            <ChangesetStatusCell changeset={node} />
+            {willClose ? <ChangesetCloseActionClose /> : <ChangesetCloseActionKept />}
             <ExternalChangesetInfoCell
                 node={node}
                 viewerCanAdminister={viewerCanAdminister}
@@ -73,11 +75,11 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
             />
             <span>{node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} />}</span>
             <span>{node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} />}</span>
-            <div className="external-changeset-node__diffstat">
+            <div className="external-changeset-close-node__diffstat">
                 {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} />}
             </div>
             {isExpanded && (
-                <div className="external-changeset-node__expanded-section">
+                <div className="external-changeset-close-node__expanded-section">
                     {node.error && <ErrorAlert error={node.error} history={history} />}
                     <ChangesetFileDiff
                         changesetID={node.id}
