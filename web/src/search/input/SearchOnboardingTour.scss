@@ -1,10 +1,14 @@
-.shepherd-element {
-    background: #1d2535;
-}
-
 .tour-card {
     box-shadow: 0 4px 36px rgba(0, 0, 0, 0.4);
     border-radius: 10px;
+
+    &__description {
+        max-width: 24rem;
+    }
+}
+
+.shepherd-element {
+    background: #1d2535;
 }
 
 .shepherd-arrow::after {

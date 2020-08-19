@@ -39,6 +39,7 @@ import {
     stepCallbacks,
     HAS_SEEN_TOUR_KEY,
     HAS_CANCELLED_TOUR_KEY,
+    defaultTourOptions,
 } from './SearchOnboardingTour'
 import { useLocalStorage } from '../../util/useLocalStorage'
 import Shepherd from 'shepherd.js'
@@ -107,29 +108,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
 
     const showOnboardingTour = props.showOnboardingTour && isHomepage
 
-    const tour = useMemo(
-        () =>
-            new Shepherd.Tour({
-                useModalOverlay: true,
-                defaultStepOptions: {
-                    arrow: true,
-                    classes: 'web-content tour-card card py-4 px-3',
-                    popperOptions: {
-                        // Removes default behavior of autofocusing steps
-                        modifiers: [
-                            {
-                                name: 'focusAfterRender',
-                                enabled: false,
-                            },
-                            { name: 'offset', options: { offset: [0, 8] } },
-                        ],
-                    },
-                    attachTo: { on: 'bottom' },
-                    scrollTo: false,
-                },
-            }),
-        []
-    )
+    const tour = useMemo(() => new Shepherd.Tour(defaultTourOptions), [])
 
     useEffect(() => {
         if (showOnboardingTour) {

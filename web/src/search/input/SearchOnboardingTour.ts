@@ -7,6 +7,25 @@ import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 export const HAS_CANCELLED_TOUR_KEY = 'has-cancelled-onboarding-tour'
 export const HAS_SEEN_TOUR_KEY = 'has-seen-onboarding-tour'
 
+export const defaultTourOptions: Shepherd.Tour.TourOptions = {
+    useModalOverlay: true,
+    defaultStepOptions: {
+        arrow: true,
+        classes: 'web-content tour-card card py-4 px-3',
+        popperOptions: {
+            // Removes default behavior of autofocusing steps
+            modifiers: [
+                {
+                    name: 'focusAfterRender',
+                    enabled: false,
+                },
+                { name: 'offset', options: { offset: [0, 8] } },
+            ],
+        },
+        attachTo: { on: 'bottom' },
+        scrollTo: false,
+    },
+}
 /**
  * generateStep creates the content for tooltips for the search tour. All steps that just contain
  * simple text should use this function to populate the step's `text` field.
@@ -25,8 +44,9 @@ export function generateStepTooltip(
     titleElement.className = 'font-weight-bold'
     element.append(titleElement)
     if (description) {
-        const descriptionElement = document.createElement('h4')
+        const descriptionElement = document.createElement('p')
         descriptionElement.textContent = description
+        descriptionElement.className = 'tour-card__description mb-0'
         element.append(descriptionElement)
     }
     if (additionalContent) {
@@ -48,7 +68,7 @@ export function generateStepTooltip(
 export function generateBottomRow(tour: Shepherd.Tour, stepNumber: number): HTMLElement {
     const stepNumberLabel = document.createElement('span')
     stepNumberLabel.className = 'font-weight-light font-italic'
-    stepNumberLabel.textContent = `${stepNumber} of 5`
+    stepNumberLabel.textContent = `${stepNumber} of 6`
 
     const closeTourButton = document.createElement('button')
     closeTourButton.className = 'btn btn-link p-0'
