@@ -36,7 +36,7 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
                     rel="noopener noreferrer"
                 >
                     {node.title}
-                    {node.externalID && <>(#{node.externalID}) </>}
+                    {node.externalID && <> (#{node.externalID}) </>}
                     {node.externalURL && node.externalState !== ChangesetExternalState.DELETED && (
                         <>
                             {' '}

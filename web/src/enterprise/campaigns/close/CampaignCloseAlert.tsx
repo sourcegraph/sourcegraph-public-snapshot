@@ -52,7 +52,7 @@ export const CampaignCloseAlert: React.FunctionComponent<CampaignCloseAlertProps
                 <div className="card-body p-3">
                     <p>
                         <strong>
-                            By closing this campaign, it will be read-only and no new campaign specs can be applied.
+                            After closing this campaign, it will be read-only and no new campaign specs can be applied.
                         </strong>
                     </p>
                     <p>By default, all changesets remain untouched.</p>
@@ -65,7 +65,15 @@ export const CampaignCloseAlert: React.FunctionComponent<CampaignCloseAlertProps
                         />{' '}
                         Also close open changesets on code hosts.
                     </p>
-                    {!viewerCanAdminister && <p className="text-warning">You cannot modify this campaign.</p>}
+                    {!viewerCanAdminister && (
+                        <p className="text-warning">
+                            You don't have permission to close this campaign. See{' '}
+                            <a href="https://docs.sourcegraph.com/user/campaigns/managing_access">
+                                Managing access to campaigns
+                            </a>{' '}
+                            for more information about the campaigns permission model.
+                        </p>
+                    )}
                     <div className="d-flex justify-content-end">
                         <button
                             type="button"
