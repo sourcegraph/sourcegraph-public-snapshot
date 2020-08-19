@@ -34,7 +34,7 @@ COPY --from=comby/comby:0.15.0@sha256:b3b57ed810be1489ccd1ef8fa42210d87d2d396e41
 COPY --from=sourcegraph/syntect_server:ff37f90@sha256:aa93514b7bc3aaf7a4e9c92e5ff52ee5052db6fb101255a69f054e5b8cdb46ff /syntect_server /usr/local/bin/
 
 # install postgres 11
-# hadolint ignore=DL3022,DL3003,DL3018,DL3019
+# hadolint ignore=DL3022,DL3003,DL3018,DL3019,SC2035
 RUN wget https://storage.googleapis.com/apktmp/postgres-11-5-for-alpine-3-12-4cc8106a5e.tar.gz && \
     tar -xzf postgres-11-5-for-alpine-3-12-4cc8106a5e.tar.gz && \
     cd target/main/x86_64/ && \
@@ -43,7 +43,7 @@ RUN wget https://storage.googleapis.com/apktmp/postgres-11-5-for-alpine-3-12-4cc
     rm -rf target/
 
 # install git edge
-# hadolint ignore=DL3022,DL3003,DL3018,DL3019
+# hadolint ignore=DL3022,DL3003,DL3018,DL3019,SC2035
 RUN wget https://storage.googleapis.com/apktmp/git-edge-for-alpine-3-12-0bd5f13f2f.tar.gz  && \
     tar -xzf git-edge-for-alpine-3-12-0bd5f13f2f.tar.gz && \
     cd target/main/x86_64/ && \
