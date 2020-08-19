@@ -51,9 +51,9 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 		repoName := repo.Name
 		switch repoName {
 		case "indexed/one":
-			return []*FileMatchResolver{{JPath: indexedFileName}}, false, nil
+			return []*FileMatchResolver{mkFileMatch(nil, indexedFileName)}, false, nil
 		case "unindexed/one":
-			return []*FileMatchResolver{{JPath: "unindexed.go"}}, false, nil
+			return []*FileMatchResolver{mkFileMatch(nil, "unindexed.go")}, false, nil
 		default:
 			return nil, false, errors.New("Unexpected repo")
 		}
@@ -104,8 +104,8 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 	}
 
 	fm, _ := results.Results()[0].ToFileMatch()
-	if fm.JPath != indexedFileName {
-		t.Fatalf("wrong indexed filename. want=%s, have=%s\n", indexedFileName, fm.JPath)
+	if got, want := fm.JPath, indexedFileName; got != want {
+		t.Fatalf("wrong indexed filename. want=%s, have=%s\n", want, got)
 	}
 }
 

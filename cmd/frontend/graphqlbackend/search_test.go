@@ -760,3 +760,22 @@ func TestComputeExcludedRepositories(t *testing.T) {
 		})
 	}
 }
+
+func mkFileMatch(repo *types.Repo, path string, lineNumbers ...int32) *FileMatchResolver {
+	if repo == nil {
+		repo = &types.Repo{
+			ID:   1,
+			Name: "repo",
+		}
+	}
+	var lines []*lineMatch
+	for _, n := range lineNumbers {
+		lines = append(lines, &lineMatch{JLineNumber: n})
+	}
+	return &FileMatchResolver{
+		uri:          fileMatchURI(repo.Name, "", path),
+		JPath:        path,
+		JLineMatches: lines,
+		Repo:         &RepositoryResolver{repo: repo},
+	}
+}
