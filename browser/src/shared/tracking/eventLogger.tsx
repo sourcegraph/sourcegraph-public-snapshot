@@ -40,11 +40,13 @@ export class ConditionalTelemetryService implements TelemetryService {
 
     public async log(eventName: string, eventProperties?: any): Promise<void> {
         if (await this.isEnabledPromise) {
+            console.log(`ConditionalTelemetryService log ${eventName}`)
             this.innerTelemetryService.log(eventName, eventProperties)
         }
     }
     public async logViewEvent(eventName: string): Promise<void> {
         if (await this.isEnabledPromise) {
+            console.log(`ConditionalTelemetryService log ${eventName}`)
             this.innerTelemetryService.logViewEvent(eventName)
         }
     }

@@ -80,7 +80,7 @@ import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platfo
 import { toTextDocumentIdentifier, toTextDocumentPositionParameters } from '../../backend/extension-api-conversion'
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
 import { resolveRevision, retryWhenCloneInProgressError } from '../../repo/backend'
-import { EventLogger } from '../../tracking/eventLogger'
+import { EventLogger, ConditionalTelemetryService } from '../../tracking/eventLogger'
 import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
 import { featureFlags } from '../../util/featureFlags'
 import { bitbucketServerCodeHost } from '../bitbucket/codeHost'
@@ -1062,12 +1062,16 @@ export function injectCodeIntelligenceToCodeHost(
         isExtension
     )
     const { requestGraphQL } = platformContext
-    const sendTelemetry = featureFlags.isEnabled('sendTelemetry').then(value => {
+    const sendTelemetry = featureFlags.isEnabled('sendTelemetry')
+
+    // Debug message:
+    sendTelemetry.then(value => {
         console.log('Value of feature flag sendTelemetry in injectCodeIntelligenceToCodeHost:', value)
     })
 
     console.log('Creating telemetry service')
-    const telemetryService = new EventLogger(isExtension, requestGraphQL)
+    const innerTelemetryService = new EventLogger(isExtension, requestGraphQL)
+    const telemetryService = new ConditionalTelemetryService(innerTelemetryService, sendTelemetry)
 
     subscriptions.add(extensionsController)
 
