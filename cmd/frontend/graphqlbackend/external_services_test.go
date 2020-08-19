@@ -123,7 +123,7 @@ func TestAddExternalService(t *testing.T) {
 			}
 		})
 
-		t.Run("user mode disabled but user has public tag", func(t *testing.T) {
+		t.Run("user mode not enabled but user has public tag", func(t *testing.T) {
 			conf.Mock(&conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
 					ExternalServiceUserMode: "disabled",
