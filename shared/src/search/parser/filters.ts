@@ -154,6 +154,10 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         description: 'Include results from repositories with the matching visibility (private, public, any).',
         singular: true,
     },
+    [FilterType.rev]: {
+        description: 'Search a revision instead of the default branch.',
+        singular: true,
+    },
 }
 
 export const discreteValueAliases: { [key: string]: string[] } = {

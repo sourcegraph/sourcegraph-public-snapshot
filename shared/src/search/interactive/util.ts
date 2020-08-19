@@ -40,6 +40,8 @@ export enum FilterType {
     patterntype = 'patterntype',
     index = 'index',
     stable = 'stable',
+    // eslint-disable-next-line unicorn/prevent-abbreviations
+    rev = 'rev',
 }
 
 export enum AliasedFilterType {
