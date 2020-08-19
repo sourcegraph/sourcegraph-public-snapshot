@@ -61,6 +61,7 @@ export const CampaignCloseAlert: React.FunctionComponent<CampaignCloseAlertProps
                             type="checkbox"
                             checked={closeChangesets}
                             onChange={onChangeCloseChangesets}
+                            className="test-campaigns-close-changesets-checkbox"
                             disabled={isClosing === true || !viewerCanAdminister}
                         />{' '}
                         Also close open changesets on code hosts.
@@ -85,7 +86,7 @@ export const CampaignCloseAlert: React.FunctionComponent<CampaignCloseAlertProps
                         </button>
                         <button
                             type="button"
-                            className="btn btn-danger"
+                            className="btn btn-danger test-campaigns-confirm-close-btn"
                             onClick={onClose}
                             disabled={isClosing === true || !viewerCanAdminister}
                         >

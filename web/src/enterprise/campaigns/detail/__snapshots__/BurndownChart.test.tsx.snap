@@ -38,12 +38,13 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
   width={500}
 >
   <ResponsiveContainer
+    className="test-campaigns-chart"
     debounce={0}
     height={300}
     width={500}
   >
     <div
-      className="recharts-responsive-container"
+      className="recharts-responsive-container test-campaigns-chart"
       style={
         Object {
           "height": 300,

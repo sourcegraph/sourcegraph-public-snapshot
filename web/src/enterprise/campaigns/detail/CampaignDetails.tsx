@@ -115,7 +115,7 @@ export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
                         history={history}
                     />
                 }
-                className="mb-3"
+                className="mb-3 test-campaign-details-page"
             />
             <CampaignStatsCard closedAt={campaign.closedAt} stats={campaign.changesets.stats} className="mb-3" />
             <CampaignDescription history={history} description={campaign.description} />

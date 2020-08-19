@@ -54,7 +54,7 @@ export const CampaignDetailsActionSection: React.FunctionComponent<CampaignDetai
     return (
         <Link
             to={`${location.pathname}/close`}
-            className="btn btn-outline-danger"
+            className="btn btn-outline-danger test-campaigns-close-btn"
             data-tooltip="View a preview of all changes that will happen when you close this campaign."
         >
             <DeleteIcon className="icon-inline" /> Close
