@@ -67,6 +67,7 @@ describe('Search onboarding', () => {
 
             await driver.page.waitForSelector('.test-tour-step-2')
             await driver.page.keyboard.type('typescript')
+            await driver.page.keyboard.press('Space')
             await driver.page.waitForSelector('.test-tour-step-3')
             await driver.page.waitForSelector('.test-tour-language-example')
             await driver.page.click('.test-tour-language-example')
