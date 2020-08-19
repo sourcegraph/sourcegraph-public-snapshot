@@ -145,7 +145,7 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			kind:         extsvc.KindGitHub,
 			config:       `{"url": "https://github.com", "repositoryPathPattern": "github/{nameWithOwner}" // comments}`,
 			hasNamespace: true,
-			wantErr:      `field "repositoryPathPattern" is not allowed to be used by users`,
+			wantErr:      `field "repositoryPathPattern" is not allowed in a user-added external service`,
 		},
 	}
 	for _, test := range tests {
