@@ -4,8 +4,7 @@ This document contains possible solutions for when you find alerts are firing in
 If your alert isn't mentioned here, or if the solution doesn't help, [contact us](mailto:support@sourcegraph.com)
 for assistance.
 
-To learn more about Sourcegraph's alerting, see [our alerting documentation](https://docs.sourcegraph.com/admin/observability/alerting)
-and learn more about alert labels and metrics in our [metrics guide](metrics_guide).
+To learn more about Sourcegraph's alerting, see [our alerting documentation](https://docs.sourcegraph.com/admin/observability/alerting).
 
 <!-- DO NOT EDIT: generated via: go generate ./monitoring -->
 
