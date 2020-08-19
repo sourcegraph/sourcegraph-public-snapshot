@@ -572,7 +572,6 @@ func mapRevFilters(nodes []Node) ([]Node, error) {
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-
 	// top-level And
 	if op, isOperator := nodes[0].(Operator); len(nodes) == 1 && isOperator && op.Kind == And {
 		nodes, err := mapRevFiltersFlat(op.Operands)
@@ -580,9 +579,8 @@ func mapRevFilters(nodes []Node) ([]Node, error) {
 			return nil, err
 		}
 		return newOperator(nodes, And), nil
-	} else {
-		return mapRevFiltersFlat(nodes)
 	}
+	return mapRevFiltersFlat(nodes)
 }
 
 func mapRevFiltersFlat(nodes []Node) ([]Node, error) {
