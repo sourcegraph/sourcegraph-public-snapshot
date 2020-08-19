@@ -80,11 +80,12 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 
 func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 	tests := []struct {
-		name    string
-		kind    string
-		config  string
-		setup   func(t *testing.T)
-		wantErr string
+		name         string
+		kind         string
+		config       string
+		hasNamespace bool
+		setup        func(t *testing.T)
+		wantErr      string
 	}{
 		{
 			name:    "0 errors",
@@ -139,6 +140,13 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			},
 			wantErr: "1 error occurred:\n\t* existing external service, \"GITHUB 1\", already has a rate limit set\n\n",
 		},
+		{
+			name:         "prevent disallowed fields",
+			kind:         extsvc.KindGitHub,
+			config:       `{"url": "https://github.com", "repositoryPathPattern": "github/{nameWithOwner}" // comments}`,
+			hasNamespace: true,
+			wantErr:      `field "repositoryPathPattern" is not allowed to be used by users`,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -147,8 +155,9 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			}
 
 			err := ExternalServices.ValidateConfig(context.Background(), ValidateExternalServiceConfigOptions{
-				Kind:   test.kind,
-				Config: test.config,
+				Kind:         test.kind,
+				Config:       test.config,
+				HasNamespace: test.hasNamespace,
 			})
 			gotErr := fmt.Sprintf("%v", err)
 			if gotErr != test.wantErr {

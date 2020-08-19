@@ -149,6 +149,7 @@ require (
 	github.com/stripe/stripe-go v70.15.0+incompatible
 	github.com/teivah/onecontext v0.0.0-20200513185103-40f981bfd775
 	github.com/temoto/robotstxt v1.1.1
+	github.com/tidwall/gjson v1.6.0
 	github.com/tinylib/msgp v1.1.2 // indirect
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80
 	github.com/uber/gonduit v0.6.1
@@ -163,7 +164,6 @@ require (
 	go.uber.org/atomic v1.6.0
 	go.uber.org/automaxprocs v1.3.0
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
-	golang.org/x/mod v0.3.0 // indirect
 	golang.org/x/net v0.0.0-20200625001655-4c5254603344
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208

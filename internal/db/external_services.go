@@ -13,6 +13,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
+	"github.com/tidwall/gjson"
 	"github.com/xeipuuv/gojsonschema"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -106,6 +107,17 @@ type ValidateExternalServiceConfigOptions struct {
 // ValidateConfig validates the given external service configuration.
 // A non zero id indicates we are updating an existing service, 0 indicates we are adding a new one.
 func (e *ExternalServicesStore) ValidateConfig(ctx context.Context, opt ValidateExternalServiceConfigOptions) error {
+	// For user-added external services, we need to prevent them from using disallowed fields.
+	if opt.HasNamespace {
+		disallowedFields := []string{"repositoryPathPattern"}
+		results := gjson.GetMany(opt.Config, disallowedFields...)
+		for i, r := range results {
+			if r.Exists() {
+				return errors.Errorf("field %q is not allowed in a user-added external service", disallowedFields[i])
+			}
+		}
+	}
+
 	ext, ok := ExternalServiceKinds[opt.Kind]
 	if !ok {
 		return fmt.Errorf("invalid external service kind: %s", opt.Kind)
@@ -345,9 +357,10 @@ type ExternalServiceUpdate struct {
 	Config      *string
 }
 
-// Update updates a external service.
+// Update updates an external service.
 //
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin,
+// or has the legitimate access to the external service (i.e. the owner).
 func (e *ExternalServicesStore) Update(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) error {
 	if Mocks.ExternalServices.Update != nil {
 		return Mocks.ExternalServices.Update(ctx, ps, id, update)
