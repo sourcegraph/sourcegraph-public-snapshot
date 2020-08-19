@@ -32,7 +32,7 @@
 
 .theme-light {
     .shepherd-element {
-        background: #ffffff;
+        background: $white;
     }
     .shepherd-arrow::after {
         border-color: transparent transparent $white transparent;
