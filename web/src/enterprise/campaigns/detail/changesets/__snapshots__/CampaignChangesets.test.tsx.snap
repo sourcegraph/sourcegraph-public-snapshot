@@ -30,10 +30,13 @@ exports[`CampaignChangesets renders 1`] = `
       >
         <ChangesetFilter
           className="mr-2"
-          label="State"
+          label="Status"
           onChange={[Function]}
           values={
             Array [
+              "UNPUBLISHED",
+              "ERRORED",
+              "PROCESSING",
               "OPEN",
               "CLOSED",
               "MERGED",
@@ -48,7 +51,25 @@ exports[`CampaignChangesets renders 1`] = `
             <option
               value=""
             >
-              State
+              Status
+            </option>
+            <option
+              key="UNPUBLISHED"
+              value="UNPUBLISHED"
+            >
+              Unpublished
+            </option>
+            <option
+              key="ERRORED"
+              value="ERRORED"
+            >
+              Errored
+            </option>
+            <option
+              key="PROCESSING"
+              value="PROCESSING"
+            >
+              Processing
             </option>
             <option
               key="OPEN"
@@ -78,6 +99,46 @@ exports[`CampaignChangesets renders 1`] = `
         </ChangesetFilter>
         <ChangesetFilter
           className="mr-2"
+          label="Check state"
+          onChange={[Function]}
+          values={
+            Array [
+              "PENDING",
+              "PASSED",
+              "FAILED",
+            ]
+          }
+        >
+          <select
+            className="form-control mr-2"
+            onChange={[Function]}
+          >
+            <option
+              value=""
+            >
+              Check state
+            </option>
+            <option
+              key="PENDING"
+              value="PENDING"
+            >
+              Pending
+            </option>
+            <option
+              key="PASSED"
+              value="PASSED"
+            >
+              Passed
+            </option>
+            <option
+              key="FAILED"
+              value="FAILED"
+            >
+              Failed
+            </option>
+          </select>
+        </ChangesetFilter>
+        <ChangesetFilter
           label="Review state"
           onChange={[Function]}
           values={
@@ -91,7 +152,7 @@ exports[`CampaignChangesets renders 1`] = `
           }
         >
           <select
-            className="form-control mr-2"
+            className="form-control"
             onChange={[Function]}
           >
             <option
@@ -128,46 +189,6 @@ exports[`CampaignChangesets renders 1`] = `
               value="DISMISSED"
             >
               Dismissed
-            </option>
-          </select>
-        </ChangesetFilter>
-        <ChangesetFilter
-          label="Check state"
-          onChange={[Function]}
-          values={
-            Array [
-              "PENDING",
-              "PASSED",
-              "FAILED",
-            ]
-          }
-        >
-          <select
-            className="form-control"
-            onChange={[Function]}
-          >
-            <option
-              value=""
-            >
-              Check state
-            </option>
-            <option
-              key="PENDING"
-              value="PENDING"
-            >
-              Pending
-            </option>
-            <option
-              key="PASSED"
-              value="PASSED"
-            >
-              Passed
-            </option>
-            <option
-              key="FAILED"
-              value="FAILED"
-            >
-              Failed
             </option>
           </select>
         </ChangesetFilter>
