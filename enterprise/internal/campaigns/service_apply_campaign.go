@@ -48,7 +48,7 @@ func (o ApplyCampaignOpts) String() string {
 // detached changesets.
 // This is a temporary mock that should be removed once we move closing of
 // changesets into the background.
-var mockApplyCampaignCloseChangesets func(campaigns.Changesets)
+var mockApplyCampaignCloseChangesets func(context.Context, campaigns.Changesets)
 
 // ApplyCampaign creates the CampaignSpec.
 func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (campaign *campaigns.Campaign, err error) {
@@ -61,8 +61,12 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	// Setup a defer func that gets executed _after_ the `tx.Done(err)` below.
 	toClose := campaigns.Changesets{}
 	defer func() {
+		user := actor.FromContext(ctx)
+		actorCtx := contextWithActor(context.Background(), user.UID)
+		ctx := trace.ContextWithTrace(actorCtx, tr)
+
 		if mockApplyCampaignCloseChangesets != nil {
-			mockApplyCampaignCloseChangesets(toClose)
+			mockApplyCampaignCloseChangesets(ctx, toClose)
 			return
 		}
 
