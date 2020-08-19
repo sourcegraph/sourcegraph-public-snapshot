@@ -45,9 +45,14 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 	// 🚨 SECURITY: Only site admins may add external services if user mode is disabled.
 	namespaceUserID := int32(0)
 	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
-	enabled := conf.ExternalServiceUserMode()
+	allowUserExternalServices := conf.ExternalServiceUserMode()
+	if !allowUserExternalServices {
+		// The user may have a tag that opts them in
+		err := backend.CheckActorHasTag(ctx, backend.TagAllowUserExternalServicePublic)
+		allowUserExternalServices = err == nil
+	}
 	if args.Input.Namespace != nil {
-		if !enabled {
+		if !allowUserExternalServices {
 			return nil, errors.New("allow users to add external services is not enabled")
 		}
 

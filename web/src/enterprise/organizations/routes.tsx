@@ -7,6 +7,7 @@ import { OrgCampaignListPageProps } from '../campaigns/list/CampaignListPage'
 import { CampaignApplyPageProps } from '../campaigns/apply/CampaignApplyPage'
 import { RouteComponentProps } from 'react-router'
 import { CampaignDetailsProps } from '../campaigns/detail/CampaignDetails'
+import { CampaignClosePageProps } from '../campaigns/close/CampaignClosePage'
 import { CreateCampaignPageProps } from '../campaigns/create/CreateCampaignPage'
 
 const OrgCampaignListPage = lazyComponent<OrgCampaignListPageProps, 'OrgCampaignListPage'>(
@@ -24,6 +25,10 @@ const CreateCampaignPage = lazyComponent<CreateCampaignPageProps, 'CreateCampaig
 const CampaignDetails = lazyComponent<CampaignDetailsProps, 'CampaignDetails'>(
     () => import('../campaigns/detail/CampaignDetails'),
     'CampaignDetails'
+)
+const CampaignClosePage = lazyComponent<CampaignClosePageProps, 'CampaignClosePage'>(
+    () => import('../campaigns/close/CampaignClosePage'),
+    'CampaignClosePage'
 )
 
 export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
@@ -45,6 +50,26 @@ export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
         render: props => (
             <div className="web-content">
                 <CreateCampaignPage {...props} />
+            </div>
+        ),
+        condition: ({ isSourcegraphDotCom }) =>
+            !isSourcegraphDotCom && window.context.experimentalFeatures?.automation === 'enabled',
+    },
+    {
+        path: '/campaigns/create',
+        render: props => (
+            <div className="web-content">
+                <CreateCampaignPage {...props} />
+            </div>
+        ),
+        condition: ({ isSourcegraphDotCom }) =>
+            !isSourcegraphDotCom && window.context.experimentalFeatures?.automation === 'enabled',
+    },
+    {
+        path: '/campaigns/:campaignID/close',
+        render: ({ match, ...props }: OrgAreaPageProps & RouteComponentProps<{ campaignID: string }>) => (
+            <div className="web-content">
+                <CampaignClosePage {...props} campaignID={match.params.campaignID} />
             </div>
         ),
         condition: ({ isSourcegraphDotCom }) =>

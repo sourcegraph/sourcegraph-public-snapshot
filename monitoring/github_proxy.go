@@ -19,7 +19,7 @@ func GitHubProxy() *Container {
 							DataMayNotExist:   true,
 							Critical:          Alert{LessOrEqual: 500, For: 5 * time.Minute},
 							PanelOptions:      PanelOptions().LegendFormat("calls remaining"),
-							Owner:             ObservableOwnerSearch,
+							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: `Try restarting the pod to get a different public IP.`,
 						},
 						{
@@ -29,7 +29,7 @@ func GitHubProxy() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{LessOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("calls remaining"),
-							Owner:             ObservableOwnerSearch,
+							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: `Try restarting the pod to get a different public IP.`,
 						},
 					},
@@ -40,12 +40,12 @@ func GitHubProxy() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerCPUUsage("github-proxy"),
-						sharedContainerMemoryUsage("github-proxy"),
+						sharedContainerCPUUsage("github-proxy", ObservableOwnerCloud),
+						sharedContainerMemoryUsage("github-proxy", ObservableOwnerCloud),
 					},
 					{
-						sharedContainerRestarts("github-proxy"),
-						sharedContainerFsInodes("github-proxy"),
+						sharedContainerRestarts("github-proxy", ObservableOwnerCloud),
+						sharedContainerFsInodes("github-proxy", ObservableOwnerCloud),
 					},
 				},
 			},
@@ -54,12 +54,12 @@ func GitHubProxy() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("github-proxy"),
-						sharedProvisioningMemoryUsageLongTerm("github-proxy"),
+						sharedProvisioningCPUUsageLongTerm("github-proxy", ObservableOwnerCloud),
+						sharedProvisioningMemoryUsageLongTerm("github-proxy", ObservableOwnerCloud),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("github-proxy"),
-						sharedProvisioningMemoryUsageShortTerm("github-proxy"),
+						sharedProvisioningCPUUsageShortTerm("github-proxy", ObservableOwnerCloud),
+						sharedProvisioningMemoryUsageShortTerm("github-proxy", ObservableOwnerCloud),
 					},
 				},
 			},
@@ -68,8 +68,8 @@ func GitHubProxy() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedGoGoroutines("github-proxy"),
-						sharedGoGcDuration("github-proxy"),
+						sharedGoGoroutines("github-proxy", ObservableOwnerCloud),
+						sharedGoGcDuration("github-proxy", ObservableOwnerCloud),
 					},
 				},
 			},
@@ -78,7 +78,7 @@ func GitHubProxy() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedKubernetesPodsAvailable("github-proxy"),
+						sharedKubernetesPodsAvailable("github-proxy", ObservableOwnerCloud),
 					},
 				},
 			},

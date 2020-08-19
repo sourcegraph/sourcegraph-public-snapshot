@@ -146,15 +146,9 @@ func TestSearchResults(t *testing.T) {
 			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
-			return []*FileMatchResolver{
-				{
-					uri:          "git://repo?rev#dir/file",
-					JPath:        "dir/file",
-					JLineMatches: []*lineMatch{{JLineNumber: 123}},
-					Repo:         &RepositoryResolver{repo: &types.Repo{ID: 1}},
-				},
-			}, &searchResultsCommon{repos: []*types.Repo{{ID: 1}}}, nil
-
+			repo := &types.Repo{ID: 1, Name: "repo"}
+			fm := mkFileMatch(repo, "dir/file", 123)
+			return []*FileMatchResolver{fm}, &searchResultsCommon{repos: []*types.Repo{repo}}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -218,14 +212,9 @@ func TestSearchResults(t *testing.T) {
 			if want := `foo\\d "bar\*"`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
-			return []*FileMatchResolver{
-				{
-					uri:          "git://repo?rev#dir/file",
-					JPath:        "dir/file",
-					JLineMatches: []*lineMatch{{JLineNumber: 123}},
-					Repo:         &RepositoryResolver{repo: &types.Repo{ID: 1}},
-				},
-			}, &searchResultsCommon{repos: []*types.Repo{{ID: 1}}}, nil
+			repo := &types.Repo{ID: 1, Name: "repo"}
+			fm := mkFileMatch(repo, "dir/file", 123)
+			return []*FileMatchResolver{fm}, &searchResultsCommon{repos: []*types.Repo{repo}}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -533,52 +522,16 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 
 func TestSearchResolver_DynamicFilters(t *testing.T) {
 	repo := &types.Repo{Name: "testRepo"}
-
 	repoMatch := &RepositoryResolver{
 		repo: repo,
 	}
-
-	fileMatch := &FileMatchResolver{
-		JPath: "/testFile.md",
-		Repo:  repoMatch,
-	}
-
-	tsFileMatch := &FileMatchResolver{
-		JPath: "/testFile.ts",
-		Repo:  repoMatch,
-	}
-
-	tsxFileMatch := &FileMatchResolver{
-		JPath: "/testFile.tsx",
-		Repo:  repoMatch,
-	}
-
-	ignoreListFileMatch := &FileMatchResolver{
-		JPath: "/.gitignore",
-		Repo:  repoMatch,
-	}
-
-	goTestFileMatch := &FileMatchResolver{
-		JPath: "/foo_test.go",
-		Repo:  repoMatch,
-	}
-
-	nodeModulesMatchSub := &FileMatchResolver{
-		JPath: "/anything/node_modules/testFile.md",
-		Repo:  repoMatch,
-	}
-
-	nodeModulesMatchRoot := &FileMatchResolver{
-		JPath: "/node_modules/testFile.md",
-		Repo:  repoMatch,
+	fileMatch := func(path string) *FileMatchResolver {
+		return mkFileMatch(repo, path)
 	}
 
 	rev := "develop3.0"
-	fileMatchRev := &FileMatchResolver{
-		JPath:    "/testFile.md",
-		Repo:     repoMatch,
-		InputRev: &rev,
-	}
+	fileMatchRev := fileMatch("/testFile.md")
+	fileMatchRev.InputRev = &rev
 
 	type testCase struct {
 		descr                             string
@@ -602,7 +555,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 
 		{
 			descr:         "single file match without revision in query",
-			searchResults: []SearchResultResolver{fileMatch},
+			searchResults: []SearchResultResolver{fileMatch("/testFile.md")},
 			expectedDynamicFilterStrsRegexp: map[string]struct{}{
 				`repo:^testRepo$`: {},
 				`lang:markdown`:   {},
@@ -627,7 +580,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		},
 		{
 			descr:         "file match from a language with two file extensions, using first extension",
-			searchResults: []SearchResultResolver{tsFileMatch},
+			searchResults: []SearchResultResolver{fileMatch("/testFile.ts")},
 			expectedDynamicFilterStrsRegexp: map[string]struct{}{
 				`repo:^testRepo$`: {},
 				`lang:typescript`: {},
@@ -639,7 +592,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		},
 		{
 			descr:         "file match from a language with two file extensions, using second extension",
-			searchResults: []SearchResultResolver{tsxFileMatch},
+			searchResults: []SearchResultResolver{fileMatch("/testFile.tsx")},
 			expectedDynamicFilterStrsRegexp: map[string]struct{}{
 				`repo:^testRepo$`: {},
 				`lang:typescript`: {},
@@ -651,7 +604,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		},
 		{
 			descr:         "file match which matches one of the common file filters",
-			searchResults: []SearchResultResolver{nodeModulesMatchSub},
+			searchResults: []SearchResultResolver{fileMatch("/anything/node_modules/testFile.md")},
 			expectedDynamicFilterStrsRegexp: map[string]struct{}{
 				`repo:^testRepo$`:          {},
 				`-file:(^|/)node_modules/`: {},
@@ -665,7 +618,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		},
 		{
 			descr:         "file match which matches one of the common file filters",
-			searchResults: []SearchResultResolver{nodeModulesMatchRoot},
+			searchResults: []SearchResultResolver{fileMatch("/node_modules/testFile.md")},
 			expectedDynamicFilterStrsRegexp: map[string]struct{}{
 				`repo:^testRepo$`:          {},
 				`-file:(^|/)node_modules/`: {},
@@ -679,7 +632,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		},
 		{
 			descr:         "file match which matches one of the common file filters",
-			searchResults: []SearchResultResolver{goTestFileMatch},
+			searchResults: []SearchResultResolver{fileMatch("/foo_test.go")},
 			expectedDynamicFilterStrsRegexp: map[string]struct{}{
 				`repo:^testRepo$`:  {},
 				`-file:_test\.go$`: {},
@@ -701,7 +654,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		},
 		{
 			descr:         "values containing spaces are quoted",
-			searchResults: []SearchResultResolver{ignoreListFileMatch},
+			searchResults: []SearchResultResolver{fileMatch("/.gitignore")},
 			expectedDynamicFilterStrsRegexp: map[string]struct{}{
 				`repo:^testRepo$`:    {},
 				`lang:"ignore list"`: {},

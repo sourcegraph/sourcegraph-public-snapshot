@@ -194,7 +194,7 @@ func PreciseCodeIntelIndexer() *Container {
 						},
 					},
 					{
-						sharedFrontendInternalAPIErrorResponses("precise-code-intel-indexer"),
+						sharedFrontendInternalAPIErrorResponses("precise-code-intel-indexer", ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -203,12 +203,12 @@ func PreciseCodeIntelIndexer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerCPUUsage("precise-code-intel-indexer"),
-						sharedContainerMemoryUsage("precise-code-intel-indexer"),
+						sharedContainerCPUUsage("precise-code-intel-indexer", ObservableOwnerCodeIntel),
+						sharedContainerMemoryUsage("precise-code-intel-indexer", ObservableOwnerCodeIntel),
 					},
 					{
-						sharedContainerRestarts("precise-code-intel-indexer"),
-						sharedContainerFsInodes("precise-code-intel-indexer"),
+						sharedContainerRestarts("precise-code-intel-indexer", ObservableOwnerCodeIntel),
+						sharedContainerFsInodes("precise-code-intel-indexer", ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -217,12 +217,12 @@ func PreciseCodeIntelIndexer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("precise-code-intel-indexer"),
-						sharedProvisioningMemoryUsageLongTerm("precise-code-intel-indexer"),
+						sharedProvisioningCPUUsageLongTerm("precise-code-intel-indexer", ObservableOwnerCodeIntel),
+						sharedProvisioningMemoryUsageLongTerm("precise-code-intel-indexer", ObservableOwnerCodeIntel),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("precise-code-intel-indexer"),
-						sharedProvisioningMemoryUsageShortTerm("precise-code-intel-indexer"),
+						sharedProvisioningCPUUsageShortTerm("precise-code-intel-indexer", ObservableOwnerCodeIntel),
+						sharedProvisioningMemoryUsageShortTerm("precise-code-intel-indexer", ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -231,8 +231,8 @@ func PreciseCodeIntelIndexer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedGoGoroutines("precise-code-intel-indexer"),
-						sharedGoGcDuration("precise-code-intel-indexer"),
+						sharedGoGoroutines("precise-code-intel-indexer", ObservableOwnerCodeIntel),
+						sharedGoGcDuration("precise-code-intel-indexer", ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -241,7 +241,7 @@ func PreciseCodeIntelIndexer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedKubernetesPodsAvailable("precise-code-intel-indexer"),
+						sharedKubernetesPodsAvailable("precise-code-intel-indexer", ObservableOwnerCodeIntel),
 					},
 				},
 			},

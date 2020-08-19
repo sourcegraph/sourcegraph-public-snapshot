@@ -17,12 +17,15 @@ import {
     ChangesetCountsOverTimeVariables,
     ChangesetCountsOverTimeFields,
     ChangesetCountsOverTimeResult,
+    DeleteCampaignResult,
+    DeleteCampaignVariables,
 } from '../../../graphql-operations'
 
 const campaignFragment = gql`
     fragment CampaignFields on Campaign {
         __typename
         id
+        url
         name
         namespace {
             namespaceName
@@ -160,6 +163,9 @@ export const queryChangesets = ({
     externalState,
     reviewState,
     checkState,
+    publicationState,
+    reconcilerState,
+    onlyPublishedByThisCampaign,
 }: CampaignChangesetsVariables): Observable<
     (CampaignChangesetsResult['node'] & { __typename: 'Campaign' })['changesets']
 > =>
@@ -171,6 +177,9 @@ export const queryChangesets = ({
                 $externalState: ChangesetExternalState
                 $reviewState: ChangesetReviewState
                 $checkState: ChangesetCheckState
+                $publicationState: ChangesetPublicationState
+                $reconcilerState: ChangesetReconcilerState
+                $onlyPublishedByThisCampaign: Boolean
             ) {
                 node(id: $campaign) {
                     __typename
@@ -178,8 +187,11 @@ export const queryChangesets = ({
                         changesets(
                             first: $first
                             externalState: $externalState
+                            publicationState: $publicationState
+                            reconcilerState: $reconcilerState
                             reviewState: $reviewState
                             checkState: $checkState
+                            onlyPublishedByThisCampaign: $onlyPublishedByThisCampaign
                         ) {
                             totalCount
                             pageInfo {
@@ -196,7 +208,16 @@ export const queryChangesets = ({
 
             ${changesetFieldsFragment}
         `,
-        variables: { campaign, first, externalState, reviewState, checkState },
+        variables: {
+            campaign,
+            first,
+            externalState,
+            reviewState,
+            checkState,
+            publicationState,
+            reconcilerState,
+            onlyPublishedByThisCampaign,
+        },
     }).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
@@ -368,3 +389,17 @@ export const queryChangesetCountsOverTime = ({
             return node.changesetCountsOverTime
         })
     )
+
+export async function deleteCampaign(campaign: Scalars['ID']): Promise<void> {
+    const result = await requestGraphQL<DeleteCampaignResult, DeleteCampaignVariables>({
+        request: gql`
+            mutation DeleteCampaign($campaign: ID!) {
+                deleteCampaign(campaign: $campaign) {
+                    alwaysNil
+                }
+            }
+        `,
+        variables: { campaign },
+    }).toPromise()
+    dataOrThrowErrors(result)
+}
