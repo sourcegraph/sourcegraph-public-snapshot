@@ -337,3 +337,10 @@ func AuthMinPasswordLength() int {
 	}
 	return val
 }
+
+// ExternalServiceUserMode returns true if users are allowed to add external services
+// for public repositories.
+func ExternalServiceUserMode() bool {
+	val := Get().ExternalServiceUserMode
+	return val == "public"
+}

@@ -16,6 +16,7 @@ import {
     ChangesetCheckState,
     ChangesetReviewState,
 } from '../../../../graphql-operations'
+import { queryExternalChangesetWithFileDiffs } from '../backend'
 
 let isLightTheme = true
 
@@ -28,7 +29,7 @@ const { add } = storiesOf('web/campaigns/CampaignChangesets', module).addDecorat
         <>
             <Tooltip />
             <style>{webStyles}</style>
-            <div className="p-3 container">{story()}</div>
+            <div className="p-3 container web-content">{story()}</div>
         </>
     )
 })
@@ -38,7 +39,7 @@ const history = H.createMemoryHistory()
 const nodes: ChangesetFields[] = [
     ...Object.values(ChangesetExternalState).map(
         (externalState): ChangesetFields => ({
-            __typename: 'ExternalChangeset' as const,
+            __typename: 'ExternalChangeset',
             id: 'somechangeset' + externalState,
             updatedAt: now.toISOString(),
             nextSyncAt: addHours(now, 1).toISOString(),
@@ -65,6 +66,7 @@ const nodes: ChangesetFields[] = [
                 url: 'http://test.test/sourcegraph/sourcegraph',
             },
             reviewState: ChangesetReviewState.COMMENTED,
+            error: null,
         })
     ),
     ...Object.values(ChangesetExternalState).map(
@@ -80,12 +82,28 @@ const nodes: ChangesetFields[] = [
         })
     ),
 ]
-const queryChangesets = () => of({ totalCount: nodes.length, nodes })
+const queryChangesets = () => of({ totalCount: nodes.length, nodes, pageInfo: { endCursor: null, hasNextPage: false } })
 const updates = new Subject<void>()
+
+const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWithFileDiffs = () =>
+    of({
+        diff: {
+            __typename: 'PreviewRepositoryComparison',
+            fileDiffs: {
+                nodes: [],
+                totalCount: 0,
+                pageInfo: {
+                    endCursor: null,
+                    hasNextPage: false,
+                },
+            },
+        },
+    })
 
 add('List of changesets', () => (
     <CampaignChangesets
         queryChangesets={queryChangesets}
+        queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
         extensionsController={undefined as any}
         platformContext={undefined as any}
         campaignID="campaignid"

@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
@@ -39,14 +40,20 @@ func TestCampaignSpecResolver(t *testing.T) {
 	repoID := graphqlbackend.MarshalRepositoryID(repo.ID)
 
 	username := "campaign-spec-by-id-user-name"
+	orgname := "test-org"
 	userID := insertTestUser(t, dbconn.Global, username, false)
+	org, err := db.Orgs.Create(ctx, orgname, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	orgID := org.ID
 
 	spec, err := campaigns.NewCampaignSpecFromRaw(ct.TestRawCampaignSpec)
 	if err != nil {
 		t.Fatal(err)
 	}
 	spec.UserID = userID
-	spec.NamespaceUserID = userID
+	spec.NamespaceOrgID = orgID
 	if err := store.CreateCampaignSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
@@ -65,8 +72,11 @@ func TestCampaignSpecResolver(t *testing.T) {
 
 	matchingCampaign := &campaigns.Campaign{
 		Name:             spec.Spec.Name,
-		NamespaceUserID:  userID,
+		NamespaceOrgID:   orgID,
 		InitialApplierID: userID,
+		LastApplierID:    userID,
+		LastAppliedAt:    time.Now(),
+		CampaignSpecID:   spec.ID,
 	}
 	if err := store.CreateCampaign(ctx, matchingCampaign); err != nil {
 		t.Fatal(err)
@@ -79,10 +89,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 
 	apiID := string(marshalCampaignSpecRandID(spec.RandID))
 	userAPIID := string(graphqlbackend.MarshalUserID(userID))
-
-	input := map[string]interface{}{"campaignSpec": apiID}
-	var response struct{ Node apitest.CampaignSpec }
-	apitest.MustExec(ctx, t, s, input, &response, queryCampaignSpecNode)
+	orgAPIID := string(graphqlbackend.MarshalOrgID(orgID))
 
 	var unmarshaled interface{}
 	err = json.Unmarshal([]byte(spec.RawSpec), &unmarshaled)
@@ -97,9 +104,9 @@ func TestCampaignSpecResolver(t *testing.T) {
 		OriginalInput: spec.RawSpec,
 		ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
 
-		ApplyURL:            fmt.Sprintf("/users/%s/campaigns/apply?spec=%s", username, apiID),
-		Namespace:           apitest.UserOrg{ID: userAPIID, DatabaseID: userID},
-		Creator:             apitest.User{ID: userAPIID, DatabaseID: userID},
+		ApplyURL:            fmt.Sprintf("/organizations/%s/campaigns/apply/%s", orgname, apiID),
+		Namespace:           apitest.UserOrg{ID: orgAPIID, Name: orgname},
+		Creator:             &apitest.User{ID: userAPIID, DatabaseID: userID},
 		ViewerCanAdminister: true,
 
 		CreatedAt: graphqlbackend.DateTime{Time: spec.CreatedAt.Truncate(time.Second)},
@@ -132,8 +139,48 @@ func TestCampaignSpecResolver(t *testing.T) {
 		},
 	}
 
-	if diff := cmp.Diff(want, response.Node); diff != "" {
-		t.Fatalf("unexpected response (-want +got):\n%s", diff)
+	input := map[string]interface{}{"campaignSpec": apiID}
+	{
+		var response struct{ Node apitest.CampaignSpec }
+		apitest.MustExec(ctx, t, s, input, &response, queryCampaignSpecNode)
+
+		if diff := cmp.Diff(want, response.Node); diff != "" {
+			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		}
+	}
+
+	// Now soft-delete the creator and check that the campaign spec is still retrievable.
+	err = db.Users.Delete(ctx, userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	{
+		var response struct{ Node apitest.CampaignSpec }
+		apitest.MustExec(ctx, t, s, input, &response, queryCampaignSpecNode)
+
+		// Expect creator to not be returned anymore.
+		want.Creator = nil
+
+		if diff := cmp.Diff(want, response.Node); diff != "" {
+			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		}
+	}
+
+	// Now hard-delete the creator and check that the campaign spec is still retrievable.
+	err = db.Users.HardDelete(ctx, userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	{
+		var response struct{ Node apitest.CampaignSpec }
+		apitest.MustExec(ctx, t, s, input, &response, queryCampaignSpecNode)
+
+		// Expect creator to not be returned anymore.
+		want.Creator = nil
+
+		if diff := cmp.Diff(want, response.Node); diff != "" {
+			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		}
 	}
 }
 

@@ -13,7 +13,7 @@ const { add } = storiesOf('web/campaigns/CampaignStatsCard', module).addDecorato
         <>
             <Tooltip />
             <style>{webStyles}</style>
-            <div className="p-3 container">{story()}</div>
+            <div className="p-3 container web-content">{story()}</div>
         </>
     )
 })
@@ -27,6 +27,19 @@ add('All states', () => (
             total: 100,
             unpublished: 70,
         }}
+        closedAt={null}
+    />
+))
+add('Campaign closed', () => (
+    <CampaignStatsCard
+        stats={{
+            closed: 10,
+            merged: 10,
+            open: 10,
+            total: 100,
+            unpublished: 70,
+        }}
+        closedAt={new Date().toISOString()}
     />
 ))
 add('Campaign done', () => (
@@ -38,5 +51,6 @@ add('Campaign done', () => (
             total: 100,
             unpublished: 0,
         }}
+        closedAt={null}
     />
 ))

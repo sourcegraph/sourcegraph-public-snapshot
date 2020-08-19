@@ -305,6 +305,8 @@ You need a fresh Postgres database and a database user that has full ownership o
     ```
     # For Linux users, first access the postgres user shell
     sudo su - postgres
+    # For Mac OS users
+    sudo su - _postgres
     ```
 
     ```

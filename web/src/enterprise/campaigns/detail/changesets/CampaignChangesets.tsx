@@ -5,7 +5,10 @@ import { ThemeProps } from '../../../../../../shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
 import { Subject, merge, of } from 'rxjs'
 import { upperFirst, lowerCase } from 'lodash'
-import { queryChangesets as _queryChangesets } from '../backend'
+import {
+    queryChangesets as _queryChangesets,
+    queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
+} from '../backend'
 import { repeatWhen, delay, withLatestFrom, map, filter, switchMap } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { createHoverifier, HoveredToken } from '@sourcegraph/codeintellify'
@@ -35,6 +38,8 @@ import {
     Scalars,
 } from '../../../../graphql-operations'
 import { isValidChangesetExternalState, isValidChangesetReviewState, isValidChangesetCheckState } from '../../utils'
+import classNames from 'classnames'
+import { CampaignChangesetsHeader } from './CampaignChangesetsHeader'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
     campaignID: Scalars['ID']
@@ -49,6 +54,8 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
 
     /** For testing only. */
     queryChangesets?: typeof _queryChangesets
+    /** For testing only. */
+    queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
 }
 
 interface ChangesetFilters {
@@ -74,6 +81,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
     onlyOpen = false,
     hideFilters = false,
     queryChangesets = _queryChangesets,
+    queryExternalChangesetWithFileDiffs,
 }) => {
     const [changesetFilters, setChangesetFilters] = useState<ChangesetFilters>({
         checkState: null,
@@ -175,6 +183,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                         location,
                         campaignUpdates,
                         extensionInfo: { extensionsController, hoverifier },
+                        queryExternalChangesetWithFileDiffs,
                     }}
                     queryConnection={queryChangesetsConnection}
                     hideSearch={true}
@@ -184,6 +193,9 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                     history={history}
                     location={location}
                     useURLQuery={true}
+                    listComponent="div"
+                    listClassName="campaign-changesets__grid mb-3"
+                    headComponent={CampaignChangesetsHeader}
                 />
                 {hoverState?.hoverOverlayProps && (
                     <WebHoverOverlay
@@ -254,25 +266,24 @@ const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps> = ({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [externalState, reviewState, checkState])
     return (
-        <div className="form-inline mb-0 mt-2">
+        <div className="form-inline m-0">
             <ChangesetFilter<ChangesetExternalState>
                 values={Object.values(ChangesetExternalState)}
                 label="State"
-                htmlID="changeset-state-filter"
                 selected={externalState}
                 onChange={setExternalState}
+                className="mr-2"
             />
             <ChangesetFilter<ChangesetReviewState>
                 values={Object.values(ChangesetReviewState)}
                 label="Review state"
-                htmlID="changeset-review-state-filter"
                 selected={reviewState}
                 onChange={setReviewState}
+                className="mr-2"
             />
             <ChangesetFilter<ChangesetCheckState>
                 values={Object.values(ChangesetCheckState)}
                 label="Check state"
-                htmlID="changeset-check-state-filter"
                 selected={checkState}
                 onChange={setCheckState}
             />
@@ -282,28 +293,26 @@ const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps> = ({
 
 interface ChangesetFilterProps<T extends string> {
     label: string
-    htmlID: string
     values: T[]
     selected: T | undefined
     onChange: (value: T | undefined) => void
+    className?: string
 }
 
 export const ChangesetFilter = <T extends string>({
-    htmlID,
     label,
     values,
     selected,
     onChange,
+    className,
 }: ChangesetFilterProps<T>): React.ReactElement<ChangesetFilterProps<T>> => (
     <>
-        <label htmlFor={htmlID}>{label}</label>
         <select
-            className="form-control mx-2"
+            className={classNames('form-control', className)}
             value={selected}
             onChange={event => onChange((event.target.value ?? undefined) as T | undefined)}
-            id={htmlID}
         >
-            <option value="">All</option>
+            <option value="">{label}</option>
             {values.map(state => (
                 <option value={state} key={state}>
                     {upperFirst(lowerCase(state))}

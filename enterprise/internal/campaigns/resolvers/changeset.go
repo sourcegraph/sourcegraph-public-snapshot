@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"sort"
+	"strconv"
 	"sync"
 	"time"
 
@@ -179,6 +180,13 @@ func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.
 	opts.State = state
 	if args.First != nil {
 		opts.Limit = int(*args.First)
+	}
+	if args.After != nil {
+		cursor, err := strconv.ParseInt(*args.After, 10, 32)
+		if err != nil {
+			return nil, err
+		}
+		opts.Cursor = cursor
 	}
 
 	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx)

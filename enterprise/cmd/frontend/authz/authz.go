@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 func Init(d dbutil.DB, clock func() time.Time) {
@@ -36,44 +37,35 @@ func Init(d dbutil.DB, clock func() time.Time) {
 			return nil
 		}
 
-		var authzTypes []string
-		ctx := context.Background()
-
-		githubs, err := db.ExternalServices.ListGitHubConnections(ctx)
-		if err != nil {
-			return []*graphqlbackend.Alert{{
-				TypeValue:    graphqlbackend.AlertTypeError,
-				MessageValue: fmt.Sprintf("Unable to fetch GitHub external services: %s", err),
-			}}
+		// We can ignore problems returned here because they would have been surfaced in other places.
+		_, providers, _, _ := eauthz.ProvidersFromConfig(context.Background(), conf.Get(), db.ExternalServices)
+		if len(providers) == 0 {
+			return nil
 		}
-		for _, g := range githubs {
-			if g.Authorization != nil {
-				authzTypes = append(authzTypes, "GitHub")
-				break
+
+		// We currently support three types of authz providers: GitHub, GitLab and Bitbucket Server.
+		authzTypes := make(map[string]struct{}, 3)
+		for _, p := range providers {
+			authzTypes[p.ServiceType()] = struct{}{}
+		}
+
+		authzNames := make([]string, 0, len(authzTypes))
+		for t := range authzTypes {
+			switch t {
+			case extsvc.TypeGitHub:
+				authzNames = append(authzNames, "GitHub")
+			case extsvc.TypeGitLab:
+				authzNames = append(authzNames, "GitLab")
+			case extsvc.TypeBitbucketServer:
+				authzNames = append(authzNames, "Bitbucket Server")
+			default:
+				authzNames = append(authzNames, t)
 			}
 		}
-
-		gitlabs, err := db.ExternalServices.ListGitLabConnections(ctx)
-		if err != nil {
-			return []*graphqlbackend.Alert{{
-				TypeValue:    graphqlbackend.AlertTypeError,
-				MessageValue: fmt.Sprintf("Unable to fetch GitLab external services: %s", err),
-			}}
-		}
-		for _, g := range gitlabs {
-			if g.Authorization != nil {
-				authzTypes = append(authzTypes, "GitLab")
-				break
-			}
-		}
-
-		if len(authzTypes) > 0 {
-			return []*graphqlbackend.Alert{{
-				TypeValue:    graphqlbackend.AlertTypeError,
-				MessageValue: fmt.Sprintf("A Sourcegraph license is required to enable repository permissions for the following code hosts: %s. [**Get a license.**](/site-admin/license)", strings.Join(authzTypes, ", ")),
-			}}
-		}
-		return nil
+		return []*graphqlbackend.Alert{{
+			TypeValue:    graphqlbackend.AlertTypeError,
+			MessageValue: fmt.Sprintf("A Sourcegraph license is required to enable repository permissions for the following code hosts: %s. [**Get a license.**](/site-admin/license)", strings.Join(authzNames, ", ")),
+		}}
 	})
 
 	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {

@@ -1,6 +1,7 @@
 import { from } from 'rxjs'
 import { requestGraphQL } from '../../../../shared/src/graphql/graphql'
 import { background } from '../../browser-extension/web-extension-api/runtime'
+import { isBackground } from '../context'
 
 /**
  * Returns a platform-appropriate implementation of the function used to make requests to our GraphQL API.
@@ -16,7 +17,7 @@ export const requestGraphQlHelper = (isExtension: boolean, baseUrl: string) => <
     request: string
     variables: V
 }) =>
-    isExtension
+    isExtension && !isBackground
         ? from(
               background.requestGraphQL<T, V>({ request, variables })
           )

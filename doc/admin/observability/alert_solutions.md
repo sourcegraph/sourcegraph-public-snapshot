@@ -574,22 +574,6 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
-## frontend: 90th_percentile_updatecheck_requests
-
-**Descriptions:**
-
-- _frontend: 0.1s+ 90th percentile successful update-check requests (sourcegraph.com only)_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_90th_percentile_updatecheck_requests"
-]
-```
-
 ## frontend: observability_test_alert_warning
 
 **Descriptions:**

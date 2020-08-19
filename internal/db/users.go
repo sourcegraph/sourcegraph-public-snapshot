@@ -153,13 +153,13 @@ func (u *users) Create(ctx context.Context, info NewUser) (newUser *types.User, 
 // This safety limit is to protect us from a DDOS attack caused by hashing very large passwords on Sourcegraph.com.
 const maxPasswordRunes = 256
 
-// checkPasswordLength returns an error if the password is too long.
-func checkPasswordLength(pw string) error {
+// CheckPasswordLength returns an error if the length of the password is not in the required range.
+func CheckPasswordLength(pw string) error {
 	pwLen := utf8.RuneCountInString(pw)
 	minPasswordRunes := conf.AuthMinPasswordLength()
 	if pwLen < minPasswordRunes ||
 		pwLen > maxPasswordRunes {
-		return errcode.NewPresentationError(fmt.Sprintf("Passwords may not be less than %d or be more than %d characters.", minPasswordRunes, maxPasswordRunes))
+		return errcode.NewPresentationError(fmt.Sprintf("Password may not be less than %d or be more than %d characters.", minPasswordRunes, maxPasswordRunes))
 	}
 	return nil
 }
@@ -172,7 +172,7 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 	}
 
 	if info.EnforcePasswordLength {
-		if err := checkPasswordLength(info.Password); err != nil {
+		if err := CheckPasswordLength(info.Password); err != nil {
 			return nil, err
 		}
 	}
@@ -385,6 +385,7 @@ func (u *users) Update(ctx context.Context, id int32, update UserUpdate) error {
 	return nil
 }
 
+// Delete performs a soft-delete of the user and all resources associated with this user.
 func (u *users) Delete(ctx context.Context, id int32) error {
 	if Mocks.Users.Delete != nil {
 		return Mocks.Users.Delete(ctx, id)
@@ -442,6 +443,7 @@ func (u *users) Delete(ctx context.Context, id int32) error {
 	return nil
 }
 
+// HardDelete removes the user and all resources associated with this user.
 func (u *users) HardDelete(ctx context.Context, id int32) error {
 	if Mocks.Users.HardDelete != nil {
 		return Mocks.Users.HardDelete(ctx, id)
