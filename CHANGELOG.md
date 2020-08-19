@@ -9,6 +9,12 @@
 
 All notable changes to `src-cli` are documented in this file.
 
+## 3.17.1
+
+### Added
+
+- Add -upload-route to the lsif upload command.
+
 ## 3.17.0
 
 ### Added
