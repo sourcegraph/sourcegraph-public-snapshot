@@ -104,7 +104,7 @@ describe('Search onboarding', () => {
             await driver.page.click('.test-search-button')
             await driver.assertWindowLocation('/search?q=repo:sourcegraph+test&patternType=literal')
         })
-        it('advances filter-lang only after the autocomplete is closed', async () => {
+        it('advances filter-lang only after the autocomplete is closed and there is whitespace after the filter', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await driver.page.evaluate(() => localStorage.setItem('has-seen-onboarding-tour', 'false'))
             await driver.page.evaluate(() => localStorage.setItem('has-cancelled-onboarding-tour', 'false'))
@@ -125,6 +125,7 @@ describe('Search onboarding', () => {
             expect(tourStep3).toBeNull()
             await driver.page.keyboard.type('script')
             await driver.page.keyboard.press('Tab')
+            await driver.page.keyboard.press('Space')
             await driver.page.waitForSelector('.test-tour-step-3')
             tourStep3 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-3'))
             tourStep2 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-2'))
