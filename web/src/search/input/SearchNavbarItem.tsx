@@ -10,6 +10,7 @@ import {
     SmartSearchFieldProps,
     CopyQueryButtonProps,
     OnboardingTourProps,
+    parseSearchURLPatternType,
 } from '..'
 import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
 import { QueryInput } from './QueryInput'
@@ -25,6 +26,7 @@ import {
     HAS_CANCELLED_TOUR_KEY,
 } from './SearchOnboardingTour'
 import { useLocalStorage } from '../../util/useLocalStorage'
+import { SearchPatternType } from '../../graphql-operations'
 
 interface Props
     extends ActivationProps,
@@ -97,7 +99,8 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
 
     useEffect(() => {
         const url = new URLSearchParams(props.location.search)
-        if (url.has('onboardingTour') && props.showOnboardingTour) {
+        const isStructuralSearch = parseSearchURLPatternType(props.location.search) === SearchPatternType.structural
+        if (url.has('onboardingTour') && isStructuralSearch && props.showOnboardingTour) {
             tour.start()
         }
     }, [tour, props.showOnboardingTour, props.location.search])
