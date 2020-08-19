@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -37,7 +38,22 @@ func (svc *Service) MigratePreSpecCampaigns(ctx context.Context) (err error) {
 
 	// Basically: if err is not nil, we'll rollback at the end of the function,
 	// otherwise we commit.
-	defer func() { store.Done(err) }()
+	defer func() {
+		if err == nil {
+			err = store.Done(nil)
+		} else {
+			var errs *multierror.Error
+
+			// We don't want to overwrite err, but we do want to note an additional
+			// error if one occurs.
+			errs = multierror.Append(err)
+			if derr := store.Done(err); derr != nil {
+				errs = multierror.Append(derr)
+			}
+
+			err = errs
+		}
+	}()
 
 	// We also need a service instance that uses the transaction we just began.
 	txSvc := NewServiceWithClock(store, svc.cf, svc.clock)
