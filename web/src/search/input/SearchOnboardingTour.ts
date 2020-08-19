@@ -232,7 +232,7 @@ type advanceLanguageInputStep = advanceStepCallback & {
     ) => void
 }
 
-export type callbackToAdvanceTourStep = advanceStandardStep | advanceLanguageInputStep
+export type CallbackToAdvanceTourStep = AdvanceStandardStep | AdvanceLanguageInputStep
 
 /**
  * A list of callbacks that will advance certain steps when the query input's value is changed.
