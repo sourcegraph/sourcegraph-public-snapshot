@@ -52,3 +52,7 @@ func CheckActorHasTag(ctx context.Context, tag string) error {
 	}
 	return fmt.Errorf("actor lacks required tag %q", tag)
 }
+
+const (
+	TagAllowUserExternalServicePublic = "AllowUserExternalServicePublic"
+)
