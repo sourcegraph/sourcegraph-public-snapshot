@@ -2,17 +2,15 @@ package secrets
 
 import (
 	"bytes"
-	"errors"
-	"fmt"
+	"crypto/rand"
 	"io/ioutil"
 	"os"
 	"sync"
 
+	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
-
-var defaultEncryptor encryptorObject
-var configuredToEncrypt bool
 
 const (
 	// #nosec G101
@@ -20,17 +18,16 @@ const (
 	sourcegraphCryptEnvvar      = "SOURCEGRAPH_CRYPT_KEY"
 )
 
-// gatherKeys splits the encryption string into its potential two components
-func gatherKeys(data []byte) (oldKey, newKey []byte) {
+// gatherKeys splits the comma-seperated encryption data into its potential two components: old and new keys.
+func gatherKeys(data []byte) (oldKey, newKey []byte, err error) {
 	parts := bytes.Split(data, []byte(","))
 	if len(parts) > 2 {
-		panic("no more than two encryption keys should be specified.")
+		return nil, nil, errors.Errorf("expect at most two encryption keys but got %d", len(parts))
 	}
 	if len(parts) == 1 {
-		return parts[0], nil
+		return parts[0], nil, nil
 	}
-
-	return parts[0], parts[1]
+	return parts[0], parts[1], nil
 }
 
 var initErr error
@@ -46,9 +43,9 @@ func Init() error {
 	return initErr
 }
 
-func initDefaultEncryptor() error {
-	configuredToEncrypt = false
+var defaultEncryptor Encryptor
 
+func initDefaultEncryptor() error {
 	var encryptionKey []byte
 
 	// set the default location if none exists
@@ -63,23 +60,24 @@ func initDefaultEncryptor() error {
 	if err == nil {
 		perm := fileInfo.Mode().Perm()
 		if perm != os.FileMode(0400) {
-			return errors.New("encryption key file is not 0400")
+			return errors.New("key file permissions are not 0400")
 		}
 
 		contents, readErr := ioutil.ReadFile(secretFile)
 		if readErr != nil {
-			panic(fmt.Sprintf("couldn't read file %s", sourcegraphSecretfileEnvvar))
+			return errors.Wrapf(readErr, "couldn't read file %s", sourcegraphSecretfileEnvvar)
 		}
 		if len(contents) < validKeyLength {
-			panic(fmt.Sprintf("key length of %d characters is required.", validKeyLength))
+			return errors.Errorf("key length of %d characters is required", validKeyLength)
 		}
 		encryptionKey = contents
 
-		newKey, oldKey := gatherKeys(encryptionKey)
+		newKey, oldKey, err := gatherKeys(encryptionKey)
+		if err != nil {
+			return err
+		}
 
-		defaultEncryptor.primary = newKey
-		defaultEncryptor.secondary = oldKey
-		configuredToEncrypt = true
+		defaultEncryptor = newEncryptor(newKey, oldKey)
 		return nil
 	}
 
@@ -87,44 +85,62 @@ func initDefaultEncryptor() error {
 	// environment is second order
 	if cryptOK {
 		if len(envCryptKey) != validKeyLength {
-			panic(fmt.Sprintf("encryption key must be %d characters", validKeyLength))
+			return errors.Errorf("encryption key must be %d characters", validKeyLength)
 		}
-		newKey, oldKey := gatherKeys(encryptionKey)
-		defaultEncryptor.primary = newKey
-		defaultEncryptor.secondary = oldKey
-		configuredToEncrypt = true
+		newKey, oldKey, err := gatherKeys(encryptionKey)
+		if err != nil {
+			return err
+		}
+
+		defaultEncryptor = newEncryptor(newKey, oldKey)
 		return nil
 	}
 
 	// for the single docker case, we generate the secret
 	deployType := conf.DeployType()
 	if conf.IsDeployTypeSingleDockerContainer(deployType) {
-		b, err := GenerateRandomAESKey()
+		b, err := generateRandomAESKey()
 		if err != nil {
-			panic(fmt.Sprintf("unable to read from random source: %v", err))
+			return errors.Wrap(err, "unable to generate random key")
 		}
 		err = ioutil.WriteFile(secretFile, b, 0600)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		err = os.Chmod(secretFile, 0400)
 		if err != nil {
-			panic("failed to make secrets file read only.")
+			return errors.Wrap(err, "unable to change key file permissions to 0400")
 		}
-		newKey, _ := gatherKeys(b)
-		defaultEncryptor.primary = newKey
-		configuredToEncrypt = true
+		newKey, _, err := gatherKeys(b)
+		if err != nil {
+			return err
+		}
+
+		defaultEncryptor = newEncryptor(newKey, nil)
 		return nil
 	}
 
 	// wrapping in deploytype check so that we can still compile and test locally
 	if os.Getenv("CI") != "" || conf.IsDev(deployType) {
+		defaultEncryptor = noOpEncryptor{}
 		return nil
-	} else {
-		// for k8s & docker compose, expect a secret to be provided
-		panic(fmt.Sprintf("Either specify environment variable %s or provide the secrets file %s.",
-			sourcegraphCryptEnvvar,
-			sourcegraphSecretfileEnvvar))
 	}
+
+	// TODO: How do we allow no encryption
+
+	// for k8s & docker compose, expect a secret to be provided
+	return errors.Errorf("Either specify environment variable %s or provide the secrets file %s",
+		sourcegraphCryptEnvvar,
+		sourcegraphSecretfileEnvvar)
+}
+
+// generateRandomAESKey generates a random key that can be used for AES-256 encryption.
+func generateRandomAESKey() ([]byte, error) {
+	b := make([]byte, validKeyLength)
+	_, err := rand.Read(b)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
 }
