@@ -236,6 +236,7 @@ func TestService(t *testing.T) {
 			VCS:  protocol.VCSInfo{URL: rs[0].URI},
 		})
 		defer state.Unmock()
+
 		createCampaign := func(t *testing.T) *campaigns.Campaign {
 			t.Helper()
 
@@ -251,10 +252,19 @@ func TestService(t *testing.T) {
 			return campaign
 		}
 
+		adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
+
 		closeConfirm := func(t *testing.T, c *campaigns.Campaign, closeChangesets bool) {
 			t.Helper()
 
-			closedCampaign, err := svc.CloseCampaign(ctx, c.ID, closeChangesets, false)
+			mockCloseChangesets = func(ctx context.Context, cs campaigns.Changesets) {
+				if a := actor.FromContext(ctx); a.UID != admin.ID {
+					t.Fatalf("wrong actor in context. want=%d, have=%d", admin.ID, a.UID)
+				}
+			}
+			defer func() { mockCloseChangesets = nil }()
+
+			closedCampaign, err := svc.CloseCampaign(adminCtx, c.ID, closeChangesets, false)
 			if err != nil {
 				t.Fatalf("campaign not closed: %s", err)
 			}
@@ -278,7 +288,7 @@ func TestService(t *testing.T) {
 			}
 
 			// should fail
-			_, err := svc.CloseCampaign(ctx, campaign.ID, true, false)
+			_, err := svc.CloseCampaign(adminCtx, campaign.ID, true, false)
 			if err != ErrCloseProcessingCampaign {
 				t.Fatalf("CloseCampaign returned unexpected error: %s", err)
 			}
@@ -1141,7 +1151,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			// We need to make it look "published", otherwise it won't be closed.
 			setChangesetPublished(t, ctx, store, wantClosed, oldSpec4.Spec.HeadRef, "98765")
 
-			verifyClosed := assertChangesetsClose(t, wantClosed)
+			verifyClosed := assertChangesetsClose(t, admin.ID, wantClosed)
 
 			// Apply and expect 5 changesets
 			campaign, cs := applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 5)
@@ -1249,7 +1259,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			// tracked changeset should not be closed, since the campaign is
 			// not the owner.
 			//
-			verifyClosed := assertChangesetsClose(t)
+			verifyClosed := assertChangesetsClose(t, admin.ID)
 			applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 0)
 			verifyClosed()
 		})
@@ -1272,7 +1282,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			campaignSpec2 := createCampaignSpec(t, ctx, store, "unpublished-changesets", admin.ID)
 
 			// That should close no changesets, but leave the campaign with 0 changesets
-			verifyClosed := assertChangesetsClose(t)
+			verifyClosed := assertChangesetsClose(t, admin.ID)
 			applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 0)
 			verifyClosed()
 
@@ -1724,13 +1734,18 @@ func applyAndListChangesets(ctx context.Context, t *testing.T, svc *Service, cam
 	return campaign, changesets
 }
 
-func assertChangesetsClose(t *testing.T, want ...*campaigns.Changeset) (verify func()) {
+func assertChangesetsClose(t *testing.T, wantActor int32, want ...*campaigns.Changeset) (verify func()) {
 	t.Helper()
 
 	closedCalled := false
 
-	mockApplyCampaignCloseChangesets = func(toClose campaigns.Changesets) {
+	mockApplyCampaignCloseChangesets = func(ctx context.Context, toClose campaigns.Changesets) {
 		closedCalled = true
+
+		if a := actor.FromContext(ctx); a.UID != wantActor {
+			t.Fatalf("wrong actor in context. want=%d, have=%d", wantActor, a.UID)
+		}
+
 		if have, want := len(toClose), len(want); have != want {
 			t.Fatalf("closing wrong number of changesets. want=%d, have=%d", want, have)
 		}
