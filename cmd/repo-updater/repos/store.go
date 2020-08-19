@@ -46,6 +46,9 @@ type StoreListReposArgs struct {
 	Kinds []string
 	// ExternalRepos of repos to list. When zero-valued, this is omitted from the predicate set.
 	ExternalRepos []api.ExternalRepoSpec
+	// ExternalServiceID, if non zero, will only return repos added by the given external service.
+	// The id is that of the external_services table NOT the external_service_id in the repo table
+	ExternalServiceID int64
 	// Limit the total number of repos returned. Zero means no limit
 	Limit int64
 	// PerPage determines the number of repos returned on each page. Zero means it defaults to 10000.
@@ -591,7 +594,7 @@ SELECT
   updated_at,
   deleted_at,
   external_service_type,
-  external_service_id,
+  repo.external_service_id,
   external_id,
   archived,
   cloned,
@@ -614,10 +617,14 @@ SELECT
 	    svcs.deleted_at IS NULL
   ),
   metadata
-FROM repo
+-- repo or repo joined with external_service_repos
+FROM %s
 WHERE id > %s
+-- preds
 AND %s
 AND deleted_at IS NULL
+-- join filters
+AND %s
 ORDER BY id ASC LIMIT %s
 `
 
@@ -659,6 +666,13 @@ func listReposQuery(args StoreListReposArgs) paginatedQuery {
 		preds = append(preds, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n OR ")))
 	}
 
+	fromClause := sqlf.Sprintf("repo")
+	joinFilter := sqlf.Sprintf("TRUE")
+	if args.ExternalServiceID != 0 {
+		fromClause = sqlf.Sprintf("repo JOIN external_service_repos e ON repo.id = e.repo_id")
+		joinFilter = sqlf.Sprintf("e.external_service_id = %d", args.ExternalServiceID)
+	}
+
 	if args.PrivateOnly {
 		preds = append(preds, sqlf.Sprintf("private = TRUE"))
 	}
@@ -681,8 +695,10 @@ func listReposQuery(args StoreListReposArgs) paginatedQuery {
 	return func(cursor, limit int64) *sqlf.Query {
 		return sqlf.Sprintf(
 			listReposQueryFmtstr,
+			fromClause,
 			cursor,
 			sqlf.Sprintf("(%s)", predQ),
+			joinFilter,
 			limit,
 		)
 	}

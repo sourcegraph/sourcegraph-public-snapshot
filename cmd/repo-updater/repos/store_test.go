@@ -1685,6 +1685,19 @@ func testStoreListRepos(t *testing.T, store repos.Store) func(*testing.T) {
 		repos: repos.Assert.ReposEqual(),
 	})
 
+	{
+		testCases = append(testCases, testCase{
+			name:   "limit by external service",
+			stored: repositories,
+			args: func(repos.Repos) repos.StoreListReposArgs {
+				return repos.StoreListReposArgs{
+					ExternalServiceID: servicesPerKind[extsvc.KindGitHub].ID,
+				}
+			},
+			repos: repos.Assert.ReposEqual(&github),
+		})
+	}
+
 	return func(t *testing.T) {
 		t.Helper()
 
