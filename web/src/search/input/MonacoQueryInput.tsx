@@ -330,7 +330,6 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                     label: 'Close',
                     precondition: 'suggestWidgetVisible',
                     run: () => {
-                        console.log('close')
                         this.suggestionsVisible = false
                     },
                 })
