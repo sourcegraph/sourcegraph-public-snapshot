@@ -7,6 +7,7 @@ import webStyles from '../../../enterprise.scss'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
 import isChromatic from 'chromatic/isChromatic'
 import { ListCampaign } from '../../../graphql-operations'
+import { subDays } from 'date-fns'
 
 export const nodes: Record<string, ListCampaign> = {
     'Open campaign': {
@@ -15,7 +16,7 @@ export const nodes: Record<string, ListCampaign> = {
         description: `# What this does
 
 This is my thorough explanation. And it can also get very long, in that case the UI doesn't break though, which is good. And one more line to finally be longer than the viewport.`,
-        createdAt: new Date('2020-05-05').toISOString(),
+        createdAt: subDays(new Date(), 5).toISOString(),
         closedAt: null,
         changesets: {
             stats: {
@@ -33,7 +34,7 @@ This is my thorough explanation. And it can also get very long, in that case the
         id: 'test2',
         name: 'Awesome campaign',
         description: null,
-        createdAt: new Date('2020-05-05').toISOString(),
+        createdAt: subDays(new Date(), 5).toISOString(),
         closedAt: null,
         changesets: {
             stats: {
@@ -53,8 +54,8 @@ This is my thorough explanation. And it can also get very long, in that case the
         description: `# My campaign
 
         This is my thorough explanation.`,
-        createdAt: new Date('2020-05-05').toISOString(),
-        closedAt: new Date('2020-06-05').toISOString(),
+        createdAt: subDays(new Date(), 5).toISOString(),
+        closedAt: subDays(new Date(), 3).toISOString(),
         changesets: {
             stats: {
                 open: 0,
@@ -87,7 +88,7 @@ for (const key of Object.keys(nodes)) {
         <CampaignNode
             node={nodes[key]}
             displayNamespace={boolean('Display namespace', true)}
-            now={isChromatic() ? new Date('2020-05-05') : undefined}
+            now={isChromatic() ? subDays(new Date(), 5) : undefined}
             history={createMemoryHistory()}
         />
     ))
