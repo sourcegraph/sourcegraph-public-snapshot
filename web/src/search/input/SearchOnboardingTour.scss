@@ -15,7 +15,7 @@
     box-sizing: border-box;
     // stylelint-disable-next-line declaration-property-unit-whitelist
     border: 8px solid #000000;
-    border-color: transparent transparent #1d2535 transparent;
+    border-color: transparent transparent $gray-21 transparent;
     transform-origin: 0 0;
     margin-left: -0.5rem;
 }
