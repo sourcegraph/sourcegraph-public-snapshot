@@ -179,7 +179,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
     patternType,
     caseSensitive,
     settingsCascade,
-    useSetBreadcrumb,
+    useBreadcrumbSetters,
     ...props
 }) => {
     useEffect(() => {
@@ -190,7 +190,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
         }
     }, [filePath])
 
-    useSetBreadcrumb(
+    useBreadcrumbSetters(
         useMemo(() => {
             if (!filePath) {
                 return

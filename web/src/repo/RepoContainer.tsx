@@ -185,9 +185,9 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     >()
 
     // The breadcrumbs and breadcrumb props for the repo header.
-    const { breadcrumbs, useSetBreadcrumb: useSetRepositories } = useBreadcrumbs()
+    const { breadcrumbs, useBreadcrumbSetters: useSetRepositories } = useBreadcrumbs()
 
-    const { useSetBreadcrumb: useSetRepository } = useSetRepositories(
+    const repositorySetters = useSetRepositories(
         useMemo(
             () => ({
                 key: 'repositories',
@@ -197,7 +197,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         )
     )
 
-    const breadcrumbSetters = useSetRepository(
+    const breadcrumbSetters = repositorySetters.useBreadcrumbSetters(
         useMemo(() => {
             if (isErrorLike(repoOrError) || !repoOrError) {
                 return

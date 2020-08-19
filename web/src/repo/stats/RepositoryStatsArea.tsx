@@ -36,8 +36,12 @@ const showNavbar = false
 /**
  * Renders pages related to repository stats.
  */
-export const RepositoryStatsArea: React.FunctionComponent<Props> = ({ useSetBreadcrumb, ...props }) => {
-    useSetBreadcrumb(useMemo(() => ({ key: 'contributors', element: 'Contributors' }), []))
+export const RepositoryStatsArea: React.FunctionComponent<Props> = ({
+    useBreadcrumbSetters,
+
+    ...props
+}) => {
+    useBreadcrumbSetters(useMemo(() => ({ key: 'contributors', element: 'Contributors' }), []))
 
     return (
         <div className="repository-stats-area container mt-3">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import { Link } from '../../../shared/src/components/Link'
+import { sortBy } from 'lodash'
 
 export interface Breadcrumb {
     key: string
@@ -13,22 +14,26 @@ export interface BreadcrumbsProps {
 }
 
 export interface UpdateBreadcrumbsProps {
-    useSetBreadcrumb: UseSetBreadcrumb
+    useBreadcrumbSetters: UseBreadcrumbSetters
     setBreadcrumb: SetBreadcrumb
 }
 
 type BreadcrumbOrFalsy = Breadcrumb | false | null | undefined
 
-export type UseSetBreadcrumb = (breadcrumb: BreadcrumbOrFalsy) => BreadcrumbSetters
+export type UseBreadcrumbSetters = (breadcrumb: BreadcrumbOrFalsy) => BreadcrumbSetters
 
 export type SetBreadcrumb = (breadcrumb: BreadcrumbOrFalsy) => BreadcrumbSetters & { cleanup: () => void }
 
 interface BreadcrumbSetters {
-    useSetBreadcrumb: UseSetBreadcrumb
+    useBreadcrumbSetters: UseBreadcrumbSetters
     setBreadcrumb: SetBreadcrumb
 }
 
-type BreadcrumbsByDepth = [number, BreadcrumbOrFalsy][]
+interface BreadcrumbAtDepth {
+    depth: number
+    breadcrumb: BreadcrumbOrFalsy
+}
+type BreadcrumbsByDepth = BreadcrumbAtDepth[]
 
 /**
  *
@@ -37,17 +42,17 @@ type BreadcrumbsByDepth = [number, BreadcrumbOrFalsy][]
  */
 export const useBreadcrumbs = (): {
     breadcrumbs: BreadcrumbsByDepth
-    useSetBreadcrumb: UseSetBreadcrumb
+    useBreadcrumbSetters: UseBreadcrumbSetters
     setBreadcrumb: SetBreadcrumb
 } => {
     const [breadcrumbsByDepth, setBreadcrumbsByDepth] = useState<BreadcrumbsByDepth>([
-        [0, { key: 'home', element: <Link to="/search">Home</Link>, divider: null }],
+        { depth: 0, breadcrumb: { key: 'home', element: <Link to="/search">Home</Link>, divider: null } },
     ])
 
     const createBreadcrumbSetters = useCallback((depth: number = 1): BreadcrumbSetters => {
         /** Shared logic between plain function and hook */
         function _internalSetBreadcrumb(breadcrumb: BreadcrumbOrFalsy): () => void {
-            const entry: [number, BreadcrumbOrFalsy] = [depth, breadcrumb]
+            const entry: BreadcrumbAtDepth = { depth, breadcrumb }
 
             setBreadcrumbsByDepth(breadcrumbs => [...breadcrumbs, entry])
             // cleanup
@@ -57,7 +62,7 @@ export const useBreadcrumbs = (): {
         }
 
         /** Convenience hook for function components */
-        function useSetBreadcrumb(breadcrumb: BreadcrumbOrFalsy): BreadcrumbSetters {
+        function useBreadcrumbSetters(breadcrumb: BreadcrumbOrFalsy): BreadcrumbSetters {
             useEffect(() => _internalSetBreadcrumb(breadcrumb), [breadcrumb])
 
             return useMemo(() => createBreadcrumbSetters(depth + 1), [])
@@ -72,7 +77,7 @@ export const useBreadcrumbs = (): {
         }
 
         return {
-            useSetBreadcrumb,
+            useBreadcrumbSetters,
             setBreadcrumb,
         }
     }, [])
@@ -89,9 +94,7 @@ export const useBreadcrumbs = (): {
 export const Breadcrumbs: React.FC<{ breadcrumbs: BreadcrumbsByDepth }> = ({ breadcrumbs }) => {
     const nodes: React.ReactNode[] = []
 
-    breadcrumbs.sort((a, b) => a[0] - b[0])
-
-    for (const [_depth, breadcrumb] of breadcrumbs) {
+    for (const { breadcrumb } of sortBy(breadcrumbs, 'depth')) {
         if (breadcrumb) {
             const divider =
                 breadcrumb.divider === undefined ? <ChevronRightIcon className="icon-inline" /> : breadcrumb.divider

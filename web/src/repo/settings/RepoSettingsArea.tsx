@@ -44,13 +44,17 @@ interface Props extends RouteComponentProps<{}>, UpdateBreadcrumbsProps {
  * Renders a layout of a sidebar and a content area to display pages related to
  * a repository's settings.
  */
-export const RepoSettingsArea: React.FunctionComponent<Props> = ({ useSetBreadcrumb, ...props }) => {
+export const RepoSettingsArea: React.FunctionComponent<Props> = ({
+    useBreadcrumbSetters,
+
+    ...props
+}) => {
     const repoName = props.repo.name
     const repoOrError = useObservable(
         useMemo(() => fetchRepository(repoName).pipe(catchError(error => of<ErrorLike>(asError(error)))), [repoName])
     )
 
-    useSetBreadcrumb(useMemo(() => ({ key: 'settings', element: 'Settings' }), []))
+    useBreadcrumbSetters(useMemo(() => ({ key: 'settings', element: 'Settings' }), []))
 
     if (repoOrError === undefined) {
         return null

@@ -37,7 +37,7 @@ import * as H from 'history'
 import { VersionContextProps } from '../../../shared/src/search/util'
 import { RevisionSpec } from '../../../shared/src/util/url'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
-import { UpdateBreadcrumbsProps, UseSetBreadcrumb } from '../components/Breadcrumbs'
+import { UpdateBreadcrumbsProps, UseBreadcrumbSetters } from '../components/Breadcrumbs'
 
 /** Props passed to sub-routes of {@link RepoRevisionContainer}. */
 export interface RepoRevisionContainerContext
@@ -102,7 +102,7 @@ interface RepoRevisionContainerProps
 
     globbing: boolean
 
-    useSetBreadcrumb: UseSetBreadcrumb
+    useBreadcrumbSetters: UseBreadcrumbSetters
 }
 
 /**
@@ -110,10 +110,10 @@ interface RepoRevisionContainerProps
  * blob and tree pages are revisioned, but the repository settings page is not.)
  */
 export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContainerProps> = ({
-    useSetBreadcrumb,
+    useBreadcrumbSetters,
     ...props
 }) => {
-    const breadcrumbSetters = useSetBreadcrumb(
+    const breadcrumbSetters = useBreadcrumbSetters(
         useMemo(() => {
             if (!props.resolvedRevisionOrError || isErrorLike(props.resolvedRevisionOrError)) {
                 return
