@@ -135,6 +135,10 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} results from repos that contain a matching file`,
     },
+    [FilterType.rev]: {
+        description: 'Search a revision instead of the default branch.',
+        singular: true,
+    },
     [FilterType.stable]: {
         discreteValues: ['yes', 'no'],
         default: 'no',
@@ -152,10 +156,6 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     [FilterType.visibility]: {
         discreteValues: ['any', 'private', 'public'],
         description: 'Include results from repositories with the matching visibility (private, public, any).',
-        singular: true,
-    },
-    [FilterType.rev]: {
-        description: 'Search a revision instead of the default branch.',
         singular: true,
     },
 }
