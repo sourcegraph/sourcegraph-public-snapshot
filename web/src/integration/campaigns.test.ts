@@ -3,7 +3,7 @@ import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
-import { subDays } from 'date-fns'
+import { subDays, addDays } from 'date-fns'
 import { createJsContext } from './jscontext'
 import {
     ChangesetCheckState,
@@ -19,8 +19,87 @@ import {
     CampaignChangesetsResult,
     WebGraphQlOperations,
 } from '../graphql-operations'
-import { DiffHunkLineType } from '../../../shared/src/graphql/schema'
+import { DiffHunkLineType, ChangesetSpecType } from '../../../shared/src/graphql/schema'
 import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
+
+const mockDiff = {
+    __typename: 'RepositoryComparison' as const,
+    fileDiffs: {
+        nodes: [
+            {
+                __typename: 'FileDiff' as const,
+                internalID: 'intid123',
+                oldPath: '/somefile.md',
+                newPath: '/somefile.md',
+                oldFile: {
+                    __typename: 'GitBlob' as const,
+                    binary: false,
+                    byteSize: 0,
+                },
+                newFile: {
+                    __typename: 'GitBlob' as const,
+                    binary: false,
+                    byteSize: 0,
+                },
+                mostRelevantFile: {
+                    __typename: 'GitBlob' as const,
+                    url: 'http://test.test/fileurl',
+                },
+                hunks: [
+                    {
+                        section: "@@ -70,33 +81,154 @@ super('awesome', () => {",
+                        oldRange: {
+                            startLine: 70,
+                            lines: 33,
+                        },
+                        newRange: {
+                            startLine: 81,
+                            lines: 154,
+                        },
+                        oldNoNewlineAt: false,
+                        highlight: {
+                            aborted: false,
+                            lines: [
+                                {
+                                    html: 'some fiel content',
+                                    kind: DiffHunkLineType.DELETED,
+                                },
+                                {
+                                    html: 'some file content',
+                                    kind: DiffHunkLineType.ADDED,
+                                },
+                            ],
+                        },
+                    },
+                ],
+                stat: {
+                    added: 10,
+                    changed: 3,
+                    deleted: 8,
+                },
+            },
+        ],
+        pageInfo: {
+            endCursor: null,
+            hasNextPage: false,
+        },
+        totalCount: 1,
+    },
+    range: {
+        base: {
+            __typename: 'GitRef' as const,
+            target: {
+                oid: 'abc123base',
+            },
+        },
+        head: {
+            __typename: 'GitRef' as const,
+            target: {
+                oid: 'abc123head',
+            },
+        },
+    },
+}
 
 const ChangesetCountsOverTime: (variables: ChangesetCountsOverTimeVariables) => ChangesetCountsOverTimeResult = () => ({
     node: {
@@ -53,84 +132,7 @@ const ExternalChangesetFileDiffs: (
 ) => ExternalChangesetFileDiffsResult = () => ({
     node: {
         __typename: 'ExternalChangeset',
-        diff: {
-            __typename: 'RepositoryComparison',
-            fileDiffs: {
-                nodes: [
-                    {
-                        __typename: 'FileDiff',
-                        internalID: 'intid123',
-                        oldPath: '/somefile.md',
-                        newPath: '/somefile.md',
-                        oldFile: {
-                            __typename: 'GitBlob',
-                            binary: false,
-                            byteSize: 0,
-                        },
-                        newFile: {
-                            __typename: 'GitBlob',
-                            binary: false,
-                            byteSize: 0,
-                        },
-                        mostRelevantFile: {
-                            __typename: 'GitBlob',
-                            url: 'http://test.test/fileurl',
-                        },
-                        hunks: [
-                            {
-                                section: "@@ -70,33 +81,154 @@ super('awesome', () => {",
-                                oldRange: {
-                                    startLine: 70,
-                                    lines: 33,
-                                },
-                                newRange: {
-                                    startLine: 81,
-                                    lines: 154,
-                                },
-                                oldNoNewlineAt: false,
-                                highlight: {
-                                    aborted: false,
-                                    lines: [
-                                        {
-                                            html: 'some fiel content',
-                                            kind: DiffHunkLineType.DELETED,
-                                        },
-                                        {
-                                            html: 'some file content',
-                                            kind: DiffHunkLineType.ADDED,
-                                        },
-                                    ],
-                                },
-                            },
-                        ],
-                        stat: {
-                            added: 10,
-                            changed: 3,
-                            deleted: 8,
-                        },
-                    },
-                ],
-                pageInfo: {
-                    endCursor: null,
-                    hasNextPage: false,
-                },
-                totalCount: 1,
-            },
-            range: {
-                base: {
-                    __typename: 'GitRef',
-                    target: {
-                        oid: 'abc123base',
-                    },
-                },
-                head: {
-                    __typename: 'GitRef',
-                    target: {
-                        oid: 'abc123head',
-                    },
-                },
-            },
-        },
+        diff: mockDiff,
     },
 })
 
@@ -445,6 +447,132 @@ describe('Campaigns', () => {
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
                     testContext.driver.sourcegraphBaseUrl + namespaceURL + '/campaigns/campaign123/close'
+                )
+            })
+        }
+    })
+
+    describe('Campaign spec preview', () => {
+        for (const entityType of ['user', 'org'] as ('user' | 'org')[]) {
+            it(`displays a preview of a campaign spec in ${entityType} namespace`, async () => {
+                const namespaceURL = entityType === 'user' ? '/users/alice' : '/organizations/test-org'
+                testContext.overrideGraphQL({
+                    ...commonWebGraphQlResults,
+                    ...mockCommonGraphQLResponses(entityType),
+                    CampaignSpecByID: () => ({
+                        node: {
+                            __typename: 'CampaignSpec',
+                            id: 'spec123',
+                            appliesToCampaign: null,
+                            createdAt: subDays(new Date(), 2).toISOString(),
+                            creator: {
+                                username: 'alice',
+                                url: '/users/alice',
+                                avatarURL: null,
+                            },
+                            description: {
+                                name: 'test-campaign',
+                                description: '### Very great campaign',
+                            },
+                            diffStat: {
+                                added: 1000,
+                                changed: 100,
+                                deleted: 182,
+                            },
+                            expiresAt: addDays(new Date(), 3).toISOString(),
+                            namespace:
+                                entityType === 'user'
+                                    ? {
+                                          namespaceName: 'alice',
+                                          url: '/users/alice',
+                                      }
+                                    : {
+                                          namespaceName: 'test-org',
+                                          url: '/organizations/test-org',
+                                      },
+                            viewerCanAdminister: true,
+                        },
+                    }),
+                    CampaignSpecChangesetSpecs: () => ({
+                        node: {
+                            __typename: 'CampaignSpec',
+                            changesetSpecs: {
+                                nodes: [
+                                    {
+                                        __typename: 'VisibleChangesetSpec',
+                                        description: {
+                                            __typename: 'GitBranchChangesetDescription',
+                                            baseRef: 'main',
+                                            headRef: 'head-ref',
+                                            baseRepository: {
+                                                name: 'github.com/sourcegraph/repo',
+                                                url: 'http://test.test/repo',
+                                            },
+                                            published: true,
+                                            body: 'Body',
+                                            commits: [
+                                                {
+                                                    message: 'Commit message',
+                                                },
+                                            ],
+                                            diffStat: {
+                                                added: 10,
+                                                changed: 2,
+                                                deleted: 9,
+                                            },
+                                            title: 'Changeset title',
+                                        },
+                                        expiresAt: addDays(new Date(), 3).toISOString(),
+                                        id: 'changesetspec123',
+                                        type: ChangesetSpecType.BRANCH,
+                                    },
+                                ],
+                                pageInfo: {
+                                    endCursor: null,
+                                    hasNextPage: false,
+                                },
+                                totalCount: 1,
+                            },
+                        },
+                    }),
+                    ChangesetSpecFileDiffs: () => ({
+                        node: {
+                            __typename: 'VisibleChangesetSpec',
+                            description: {
+                                __typename: 'GitBranchChangesetDescription',
+                                diff: mockDiff,
+                            },
+                        },
+                    }),
+                    CreateCampaign: () => ({
+                        createCampaign: {
+                            id: 'campaign123',
+                            url: namespaceURL + '/campaigns/campaign123',
+                        },
+                    }),
+                })
+
+                await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/campaigns/apply/spec123')
+                // View overview page.
+                await driver.page.waitForSelector('.test-campaign-apply-page')
+
+                // Expand one changeset.
+                await driver.page.click('.test-campaigns-expand-changeset-spec')
+                // Expect one diff to be rendered.
+                await driver.page.waitForSelector('.test-file-diff-node')
+
+                // Apply campaign.
+                driver.page.once('dialog', dialog => {
+                    dialog.accept().catch(error => console.error('Failed to accept dialog', error))
+                })
+                await Promise.all([
+                    driver.page.click('.test-campaigns-confirm-apply-btn'),
+                    driver.page.waitForNavigation(),
+                ])
+                // Expect to be back at campaign overview page.
+                assert.strictEqual(
+                    await driver.page.evaluate(() => window.location.href),
+                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/campaigns/campaign123'
                 )
             })
         }

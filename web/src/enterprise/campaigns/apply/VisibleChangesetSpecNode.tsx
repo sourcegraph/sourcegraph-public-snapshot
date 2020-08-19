@@ -61,7 +61,7 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
         <>
             <button
                 type="button"
-                className="btn btn-icon"
+                className="btn btn-icon test-campaigns-expand-changeset-spec"
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
