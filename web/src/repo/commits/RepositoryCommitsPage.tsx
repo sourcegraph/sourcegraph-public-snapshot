@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { useEffect, useCallback } from 'react'
+import React, { useEffect, useCallback, useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { gql } from '../../../../shared/src/graphql/graphql'
@@ -112,11 +112,13 @@ interface Props
 }
 
 /** A page that shows a repository's commits at the current revision. */
-export const RepositoryCommitsPage: React.FunctionComponent<Props> = ({ setBreadcrumb, ...props }) => {
+export const RepositoryCommitsPage: React.FunctionComponent<Props> = ({ useBreadcrumbSetters, ...props }) => {
     useEffect(() => {
         eventLogger.logViewEvent('RepositoryCommits')
     }, [])
-    useEffect(() => setBreadcrumb({ key: 'commits', element: <>Commits</> }), [setBreadcrumb])
+
+    useBreadcrumbSetters(useMemo(() => ({ key: 'commits', element: <>Commits</> }), []))
+
     const queryCommits = useCallback(
         (args: FilteredConnectionQueryArgs): Observable<GQL.IGitCommitConnection> =>
             fetchGitCommits({ ...args, repo: props.repo.id, revspec: props.commitID }),

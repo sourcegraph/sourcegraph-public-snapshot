@@ -1,7 +1,7 @@
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import DoNotDisturbIcon from 'mdi-react/DoNotDisturbIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useMemo, useEffect } from 'react'
+import React, { useMemo } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
@@ -44,12 +44,17 @@ interface Props extends RouteComponentProps<{}>, UpdateBreadcrumbsProps {
  * Renders a layout of a sidebar and a content area to display pages related to
  * a repository's settings.
  */
-export const RepoSettingsArea: React.FunctionComponent<Props> = ({ setBreadcrumb, ...props }) => {
+export const RepoSettingsArea: React.FunctionComponent<Props> = ({
+    useBreadcrumbSetters,
+
+    ...props
+}) => {
     const repoName = props.repo.name
     const repoOrError = useObservable(
         useMemo(() => fetchRepository(repoName).pipe(catchError(error => of<ErrorLike>(asError(error)))), [repoName])
     )
-    useEffect(() => setBreadcrumb({ key: 'settings', element: 'Settings' }), [setBreadcrumb])
+
+    useBreadcrumbSetters(useMemo(() => ({ key: 'settings', element: 'Settings' }), []))
 
     if (repoOrError === undefined) {
         return null

@@ -1,5 +1,5 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useEffect } from 'react'
+import React, { useMemo } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { HeroPage } from '../../components/HeroPage'
@@ -36,8 +36,13 @@ const showNavbar = false
 /**
  * Renders pages related to repository stats.
  */
-export const RepositoryStatsArea: React.FunctionComponent<Props> = ({ setBreadcrumb, ...props }) => {
-    useEffect(() => setBreadcrumb({ key: 'contributors', element: 'Contributors' }), [setBreadcrumb])
+export const RepositoryStatsArea: React.FunctionComponent<Props> = ({
+    useBreadcrumbSetters,
+
+    ...props
+}) => {
+    useBreadcrumbSetters(useMemo(() => ({ key: 'contributors', element: 'Contributors' }), []))
+
     return (
         <div className="repository-stats-area container mt-3">
             {showNavbar && <RepositoryStatsNavbar className="mb-3" repo={props.repo.name} />}

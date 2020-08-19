@@ -148,7 +148,8 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
 
     public componentDidMount(): void {
         this.componentUpdates.next(this.props)
-        this.subscriptions.add(this.props.setBreadcrumb({ key: 'compare', element: 'Compare' }))
+        const { cleanup } = this.props.setBreadcrumb({ key: 'compare', element: 'Compare' })
+        this.subscriptions.add(cleanup)
     }
 
     public shouldComponentUpdate(nextProps: Readonly<RepositoryCompareAreaProps>, nextState: Readonly<State>): boolean {
