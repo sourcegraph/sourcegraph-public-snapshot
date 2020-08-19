@@ -59,6 +59,24 @@ Once configured, Sourcegraph alerts will automatically be routed to the appropri
 ]
 ```
 
+Webhook events provide the following fields relevant for Sourcegraph alerts that we recommend you leverage:
+
+<!-- Refer to `commonLabels` on receivers.go for labels we can guarantee will be provided in commonLabels -->
+
+```json
+{
+  "status": "<resolved|firing>",
+  "commonLabels": {
+    "level": "<critical|warning>",
+    "service_name": "<string>",
+    "name": "<string>",
+    "owner": "<string>"
+  },
+}
+```
+
+For the complete set of fields, please refer to the [Alertmanager webhook documentation](https://prometheus.io/docs/alerting/latest/configuration/#webhook_config).
+
 #### Email
 
 Note that to receive email notifications, the [`email.address`](../config/site_config.md#email-address) and [`email.smtp`](../config/site_config.md#email-smtp) fields must be configured in site configuration.
