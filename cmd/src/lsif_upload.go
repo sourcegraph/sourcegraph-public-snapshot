@@ -50,6 +50,7 @@ Examples:
 		noProgress           *bool
 		maxPayloadSizeMb     *int
 		ignoreUploadFailures *bool
+		uploadRoute          *string
 	}
 
 	flagSet := flag.NewFlagSet("upload", flag.ExitOnError)
@@ -64,6 +65,7 @@ Examples:
 	flags.noProgress = flagSet.Bool("no-progress", false, `Do not display a progress bar.`)
 	flags.maxPayloadSizeMb = flagSet.Int("max-payload-size", 100, `The maximum upload size (in megabytes). Indexes exceeding this limit will be uploaded over multiple HTTP requests.`)
 	flags.ignoreUploadFailures = flagSet.Bool("ignore-upload-failure", false, `Exit with status code zero on upload failure.`)
+	flags.uploadRoute = flagSet.String("upload-route", "/.api/lsif/upload", "The path of the upload route.")
 
 	parseAndValidateFlags := func(args []string) error {
 		flagSet.Parse(args)
@@ -159,6 +161,7 @@ Examples:
 			Endpoint:             cfg.Endpoint,
 			AccessToken:          cfg.AccessToken,
 			AdditionalHeaders:    cfg.AdditionalHeaders,
+			Path:                 *flags.uploadRoute,
 			Repo:                 *flags.repo,
 			Commit:               *flags.commit,
 			Root:                 *flags.root,
