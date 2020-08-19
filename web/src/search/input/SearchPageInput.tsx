@@ -93,19 +93,12 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
     const quickLinks =
         (isSettingsValid<Settings>(props.settingsCascade) && props.settingsCascade.final.quicklinks) || []
 
-    const onSubmit = useCallback(
-        (event?: React.FormEvent<HTMLFormElement>): void => {
-            // False positive
-            // eslint-disable-next-line no-unused-expressions
-            event?.preventDefault()
-
-            submitSearch({ ...props, query: userQueryState.query, source: 'home' })
-        },
-        [props, userQueryState.query]
-    )
-
     const [hasSeenTour, setHasSeenTour] = useLocalStorage(HAS_SEEN_TOUR_KEY, false)
     const [hasCancelledTour, setHasCancelledTour] = useLocalStorage(HAS_CANCELLED_TOUR_KEY, false)
+
+    // tourWasActive denotes whether the tour was ever active while this component was rendered, in order
+    // for us to know whether to show the structural search informational step on the results page.
+    const [tourWasActive, setTourWasActive] = useState(false)
 
     const isHomepage = useMemo(
         () => props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search),
@@ -212,6 +205,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
 
     useEffect(() => {
         if (showOnboardingTour && !hasCancelledTour && !hasSeenTour) {
+            setTourWasActive(true)
             tour.start()
         }
         return
@@ -233,8 +227,26 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
         })
         tour.on('cancel', () => {
             setHasCancelledTour(true)
+            // If the user closed the tour, we don't want to show
+            // any further popups, so set this to false.
+            setTourWasActive(false)
         })
     }, [tour, setHasSeenTour, setHasCancelledTour])
+
+    const onSubmit = useCallback(
+        (event?: React.FormEvent<HTMLFormElement>): void => {
+            // False positive
+            // eslint-disable-next-line no-unused-expressions
+            event?.preventDefault()
+            submitSearch({
+                ...props,
+                query: userQueryState.query,
+                source: 'home',
+                searchParameters: tourWasActive ? [{ key: 'onboardingTour', value: 'true' }] : undefined,
+            })
+        },
+        [props, userQueryState.query, tourWasActive]
+    )
 
     return (
         <div className="d-flex flex-row flex-shrink-past-contents">
