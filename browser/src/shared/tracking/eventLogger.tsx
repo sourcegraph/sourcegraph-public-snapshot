@@ -12,6 +12,44 @@ import { observeSourcegraphURL, getPlatformName } from '../util/context'
 
 const uidKey = 'sourcegraphAnonymousUid'
 
+/**
+ * Telemetry Service which only logs when the enable condition is set. Accepts a
+ * promise as the enabled value, to allow to instantiate the logger and use it
+ * before the enablement state is determined.
+ *
+ * TODO: Potential to be improved by accepting an observable of the enabled state
+ * and updating accordingly.
+ */
+export class ConditionalTelemetryService implements TelemetryService {
+    private innerTelemetryService: TelemetryService
+
+    /**
+     * The enabled state is a promise so that we can start logging events before
+     * the result of the enabled setting is available
+     */
+    private isEnabledPromise: Promise<boolean>
+
+    constructor(innerTelemetryService: TelemetryService, isEnabled: boolean | Promise<boolean>) {
+        this.innerTelemetryService = innerTelemetryService
+        this.isEnabledPromise = Promise.resolve(isEnabled)
+    }
+
+    public setEnabled(isEnabled: boolean | Promise<boolean>): void {
+        this.isEnabledPromise = Promise.resolve(isEnabled)
+    }
+
+    public async log(eventName: string, eventProperties?: any): Promise<void> {
+        if (await this.isEnabledPromise) {
+            this.innerTelemetryService.log(eventName, eventProperties)
+        }
+    }
+    public async logViewEvent(eventName: string): Promise<void> {
+        if (await this.isEnabledPromise) {
+            this.innerTelemetryService.logViewEvent(eventName)
+        }
+    }
+}
+
 export class EventLogger implements TelemetryService {
     private uid: string | null = null
 
