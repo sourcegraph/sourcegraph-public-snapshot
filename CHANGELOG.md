@@ -19,12 +19,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
-## 3.19
-
-### Added
-
-- Emails can be now be sent to SMTP servers with self-signed certificates, using `email.smtp.disableTLS`. [#12359](https://github.com/sourcegraph/sourcegraph/pull/12359)
-
 ## 3.19.0
 
 ### Added
