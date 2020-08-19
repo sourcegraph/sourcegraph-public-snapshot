@@ -138,7 +138,7 @@ export const languageFilterToSearchExamples: { [key: string]: { query: string; p
     'lang:php': { query: 'try {:[my_match]}', patternType: SearchPatternType.structural },
     'lang:powershell': { query: 'try {:[my_match]}', patternType: SearchPatternType.structural },
     'lang:python': { query: 'try:[my_match] except', patternType: SearchPatternType.structural },
-    'lang:r': { query: 'tryCatch( :[my_match )', patternType: SearchPatternType.structural },
+    'lang:r': { query: 'tryCatch( :[my_match] )', patternType: SearchPatternType.structural },
     'lang:ruby': { query: 'while :[my_match] end', patternType: SearchPatternType.structural },
     'lang:sass': { query: 'transition( :[my_match] )', patternType: SearchPatternType.structural },
     'lang:swift': { query: 'switch :[a]{:[b]}', patternType: SearchPatternType.structural },
@@ -203,7 +203,7 @@ export const isValidLangQuery = (query: string): boolean => Object.keys(language
  * Steps that aren't included here use Shepherd's built-in `advanceOn` field to specify events to advance on.
  */
 
-export interface advanceStepCallback {
+export interface AdvanceStepCallback {
     /**
      * The ID of the step to advance from.
      */
@@ -224,7 +224,7 @@ type AdvanceStandardStep = AdvanceStepCallback & { handler: (tour: Shepherd.Tour
  * The handler takes a query and setQueryHandler, which allows us to generate the appropriate tooltip
  * content for the next step.
  */
-type advanceLanguageInputStep = advanceStepCallback & {
+type AdvanceLanguageInputStep = AdvanceStepCallback & {
     handler: (
         tour: Shepherd.Tour,
         query: string,
@@ -237,7 +237,7 @@ export type CallbackToAdvanceTourStep = AdvanceStandardStep | AdvanceLanguageInp
 /**
  * A list of callbacks that will advance certain steps when the query input's value is changed.
  */
-export const stepCallbacks: callbackToAdvanceTourStep[] = [
+export const stepCallbacks: CallbackToAdvanceTourStep[] = [
     {
         stepToAdvance: 'filter-repository',
         handler: (tour: Shepherd.Tour, query: string): void => {

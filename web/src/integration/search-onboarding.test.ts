@@ -113,7 +113,6 @@ describe('Search onboarding', () => {
             await driver.page.waitForSelector('.test-tour-language-button')
             await driver.page.click('.test-tour-language-button')
             await driver.page.waitForSelector('#monaco-query-input')
-            // eslint-disable-next-line unicorn/prefer-text-content
             const inputContents = await driver.page.evaluate(
                 () => document.querySelector('#monaco-query-input .view-lines')?.textContent
             )
@@ -140,7 +139,6 @@ describe('Search onboarding', () => {
             await driver.page.waitForSelector('.test-tour-repo-button')
             await driver.page.click('.test-tour-repo-button')
             await driver.page.waitForSelector('#monaco-query-input')
-            // eslint-disable-next-line unicorn/prefer-text-content
             const inputContents = await driver.page.evaluate(
                 () => document.querySelector('#monaco-query-input .view-lines')?.textContent
             )
