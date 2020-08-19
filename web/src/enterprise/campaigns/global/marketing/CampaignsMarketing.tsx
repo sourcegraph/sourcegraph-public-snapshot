@@ -1,4 +1,5 @@
 import React from 'react'
+import { CampaignHeader } from '../../detail/CampaignHeader'
 
 export interface CampaignsMarketingProps {
     body: JSX.Element
@@ -13,12 +14,7 @@ export const CampaignsMarketing: React.FunctionComponent<CampaignsMarketingProps
 }) => (
     <>
         <section className="mt-3 mb-5">
-            <h1 className="font-weight-bold display-4">
-                Campaigns{' '}
-                <sup>
-                    <span className="badge badge-info text-uppercase">Beta</span>
-                </sup>
-            </h1>
+            <CampaignHeader />
             <h2 className="mb-5">Make and track large-scale changes across all code</h2>
 
             <div className="text-center">

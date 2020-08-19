@@ -1,11 +1,11 @@
 import React from 'react'
-import { ChangesetLastSynced } from './ChangesetLastSynced'
-import { ChangesetFields } from '../../../../graphql-operations'
+import { HiddenExternalChangesetFields } from '../../../../graphql-operations'
 import { ChangesetStatusCell } from './ChangesetStatusCell'
+import { HiddenExternalChangesetInfoCell } from './HiddenExternalChangesetInfoCell'
 
 export interface HiddenExternalChangesetNodeProps {
     node: Pick<
-        ChangesetFields,
+        HiddenExternalChangesetFields,
         'id' | 'nextSyncAt' | 'updatedAt' | 'externalState' | 'publicationState' | 'reconcilerState'
     >
 }
@@ -14,16 +14,7 @@ export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternal
     <>
         <span />
         <ChangesetStatusCell changeset={node} />
-        <div className="d-flex flex-column">
-            <div className="m-0 mb-2">
-                <h3 className="m-0 d-inline">
-                    <span className="text-muted">Changeset in a private repository</span>
-                </h3>
-            </div>
-            <div>
-                <ChangesetLastSynced changeset={node} viewerCanAdminister={false} />
-            </div>
-        </div>
+        <HiddenExternalChangesetInfoCell node={node} />
         <span />
         <span />
         <span />

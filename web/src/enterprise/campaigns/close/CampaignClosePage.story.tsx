@@ -1,31 +1,30 @@
+import React from 'react'
 import * as H from 'history'
 import { storiesOf } from '@storybook/react'
 import { radios, boolean } from '@storybook/addon-knobs'
-import React from 'react'
 import webStyles from '../../../enterprise.scss'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
-import { CampaignDetails } from './CampaignDetails'
-import { of } from 'rxjs'
+import { CampaignClosePage } from './CampaignClosePage'
 import {
-    CampaignFields,
+    queryChangesets as _queryChangesets,
+    queryExternalChangesetWithFileDiffs,
+    fetchCampaignById,
+} from '../detail/backend'
+import { of } from 'rxjs'
+import { subDays } from 'date-fns'
+import {
     ChangesetExternalState,
     ChangesetPublicationState,
     ChangesetReconcilerState,
     ChangesetCheckState,
     ChangesetReviewState,
+    CampaignFields,
 } from '../../../graphql-operations'
-import {
-    fetchCampaignById,
-    queryChangesets as _queryChangesets,
-    queryExternalChangesetWithFileDiffs,
-    queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
-} from './backend'
-import { subDays } from 'date-fns'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 import { useMemo, useCallback } from '@storybook/addons'
 
 let isLightTheme = true
-const { add } = storiesOf('web/campaigns/details/CampaignDetails', module).addDecorator(story => {
+const { add } = storiesOf('web/campaigns/close/CampaignClosePage', module).addDecorator(story => {
     const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
     document.body.classList.toggle('theme-light', theme === 'light')
     document.body.classList.toggle('theme-dark', theme === 'dark')
@@ -163,69 +162,9 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
         },
     })
 
-const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
-    of([
-        {
-            date: subDays(new Date(), 5).toISOString(),
-            closed: 0,
-            merged: 0,
-            openPending: 10,
-            total: 10,
-            openChangesRequested: 0,
-            openApproved: 0,
-        },
-        {
-            date: subDays(new Date(), 4).toISOString(),
-            closed: 0,
-            merged: 0,
-            openPending: 7,
-            total: 10,
-            openChangesRequested: 0,
-            openApproved: 3,
-        },
-        {
-            date: subDays(new Date(), 3).toISOString(),
-            closed: 0,
-            merged: 2,
-            openPending: 5,
-            total: 10,
-            openChangesRequested: 0,
-            openApproved: 3,
-        },
-        {
-            date: subDays(new Date(), 2).toISOString(),
-            closed: 0,
-            merged: 3,
-            openPending: 3,
-            total: 10,
-            openChangesRequested: 1,
-            openApproved: 3,
-        },
-        {
-            date: subDays(new Date(), 1).toISOString(),
-            closed: 1,
-            merged: 5,
-            openPending: 2,
-            total: 10,
-            openChangesRequested: 0,
-            openApproved: 2,
-        },
-        {
-            date: new Date().toISOString(),
-            closed: 1,
-            merged: 5,
-            openPending: 0,
-            total: 10,
-            openChangesRequested: 0,
-            openApproved: 4,
-        },
-    ])
-
-const deleteCampaign = () => Promise.resolve(undefined)
-
 add('Overview', () => {
+    const history = H.createMemoryHistory()
     const viewerCanAdminister = boolean('viewerCanAdminister', true)
-    const isClosed = boolean('isClosed', false)
     const campaign: CampaignFields = useMemo(
         () => ({
             __typename: 'Campaign',
@@ -255,30 +194,26 @@ add('Overview', () => {
                 url: '/users/alice',
             },
             viewerCanAdminister,
-            closedAt: isClosed ? subDays(new Date(), 1).toISOString() : null,
+            closedAt: null,
             description: '## What this campaign does\n\nTruly awesome things for example.',
             name: 'awesome-campaign',
             updatedAt: subDays(new Date(), 5).toISOString(),
         }),
-        [viewerCanAdminister, isClosed]
+        [viewerCanAdminister]
     )
-
     const fetchCampaign: typeof fetchCampaignById = useCallback(() => of(campaign), [campaign])
-    const history = H.createMemoryHistory({ initialEntries: [window.location.href] })
     return (
-        <CampaignDetails
-            campaignID="123123"
-            fetchCampaignById={fetchCampaign}
-            queryChangesets={queryChangesets}
-            queryChangesetCountsOverTime={queryChangesetCountsOverTime}
-            queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
-            deleteCampaign={deleteCampaign}
+        <CampaignClosePage
             history={history}
             location={history.location}
-            isLightTheme={isLightTheme}
-            telemetryService={NOOP_TELEMETRY_SERVICE}
-            platformContext={{} as any}
+            queryChangesets={queryChangesets}
+            queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
+            campaignID="123"
+            fetchCampaignById={fetchCampaign}
             extensionsController={{} as any}
+            platformContext={{} as any}
+            telemetryService={NOOP_TELEMETRY_SERVICE}
+            isLightTheme={isLightTheme}
         />
     )
 })
