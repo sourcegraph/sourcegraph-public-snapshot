@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 
@@ -25,12 +24,12 @@ func TestAddExternalService(t *testing.T) {
 			db.Mocks.Users = db.MockUsers{}
 		}()
 
-		oldMock := backend.MockCheckActorHasTag
+		db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+			return &types.User{ID: 1}, nil
+		}
 		defer func() {
-			backend.MockCheckActorHasTag = oldMock
+			db.Mocks.Users = db.MockUsers{}
 		}()
-
-		backend.MockCheckActorHasTag = func(context.Context, string) error { return errors.New("no tag") }
 
 		t.Run("user mode not enabled and no namespace", func(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -138,12 +137,17 @@ func TestAddExternalService(t *testing.T) {
 				db.Mocks.ExternalServices = db.MockExternalServices{}
 			}()
 
-			oldMock := backend.MockCheckActorHasTag
+			db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+				return &types.User{
+					ID: 1,
+					Tags: []string{
+						backend.TagAllowUserExternalServicePublic,
+					},
+				}, nil
+			}
 			defer func() {
-				backend.MockCheckActorHasTag = oldMock
+				db.Mocks.Users = db.MockUsers{}
 			}()
-
-			backend.MockCheckActorHasTag = func(context.Context, string) error { return nil }
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			userID := int32(1)
