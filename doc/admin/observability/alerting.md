@@ -4,7 +4,7 @@ Alerts can be configured to notify site admins when there is something wrong or 
 
 ## Understanding alerts
 
-See [alert solutions](alert_solutions.md) for possible solutions when alerts are firing.
+See [alert solutions](alert_solutions.md) for possible solutions when alerts are firing, and learn more about alert labels and metrics in our [metrics guide](metrics_guide).
 
 ## Setting up alerting
 
@@ -68,8 +68,10 @@ Webhook events provide the following fields relevant for Sourcegraph alerts that
   "status": "<resolved|firing>",
   "commonLabels": {
     "level": "<critical|warning>",
+    // Use the service name and alert name to find solutions in https://docs.sourcegraph.com/admin/observability/alert_solutions
     "service_name": "<string>",
     "name": "<string>",
+    // This field can be provided to Sourcegraph to help direct support.
     "owner": "<string>"
   },
 }
