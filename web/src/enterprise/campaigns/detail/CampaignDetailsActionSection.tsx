@@ -41,7 +41,7 @@ export const CampaignDetailsActionSection: React.FunctionComponent<CampaignDetai
         return (
             <button
                 type="button"
-                className="btn btn-outline-danger"
+                className="btn btn-outline-danger test-campaigns-delete-btn"
                 onClick={onDeleteCampaign}
                 data-tooltip="Deleting this campaign is a final action."
                 disabled={isDeleting === true}

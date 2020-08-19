@@ -78,7 +78,7 @@ export const CampaignCloseAlert: React.FunctionComponent<CampaignCloseAlertProps
                     <div className="d-flex justify-content-end">
                         <button
                             type="button"
-                            className="btn btn-secondary mr-3"
+                            className="btn btn-secondary mr-3 test-campaigns-close-abort-btn"
                             onClick={onCancel}
                             disabled={isClosing === true || !viewerCanAdminister}
                         >

@@ -18,6 +18,7 @@ import {
     CampaignChangesetsVariables,
     CampaignChangesetsResult,
     WebGraphQlOperations,
+    CampaignByIDResult,
 } from '../graphql-operations'
 import { DiffHunkLineType, ChangesetSpecType } from '../../../shared/src/graphql/schema'
 import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
@@ -188,7 +189,8 @@ const CampaignChangesets: (variables: CampaignChangesetsVariables) => CampaignCh
 })
 
 function mockCommonGraphQLResponses(
-    entityType: 'user' | 'org'
+    entityType: 'user' | 'org',
+    campaignOverrides?: Partial<NonNullable<CampaignByIDResult['node']>>
 ): Partial<WebGraphQlOperations & SharedGraphQlOperations> {
     const namespaceURL = entityType === 'user' ? '/users/alice' : '/organizations/test-org'
     return {
@@ -258,6 +260,7 @@ function mockCommonGraphQLResponses(
                     deleted: 817,
                 },
                 viewerCanAdminister: true,
+                ...campaignOverrides,
             },
         }),
     }
@@ -447,6 +450,41 @@ describe('Campaigns', () => {
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
                     testContext.driver.sourcegraphBaseUrl + namespaceURL + '/campaigns/campaign123/close'
+                )
+                await driver.page.waitForSelector('.test-campaign-close-page')
+                // Change overrides to make campaign appear closed.
+                testContext.overrideGraphQL({
+                    ...commonWebGraphQlResults,
+                    ...mockCommonGraphQLResponses(entityType, { closedAt: subDays(new Date(), 1).toISOString() }),
+                    CampaignChangesets,
+                    ChangesetCountsOverTime,
+                    ExternalChangesetFileDiffs,
+                    DeleteCampaign: () => ({
+                        deleteCampaign: {
+                            alwaysNil: null,
+                        },
+                    }),
+                })
+
+                // Return to details page.
+                await Promise.all([
+                    driver.page.click('.test-campaigns-close-abort-btn'),
+                    driver.page.waitForNavigation(),
+                ])
+                await driver.page.waitForSelector('.test-campaign-details-page')
+                assert.strictEqual(
+                    await driver.page.evaluate(() => window.location.href),
+                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/campaigns/campaign123'
+                )
+
+                // Delete the closed campaign.
+                driver.page.once('dialog', dialog => {
+                    dialog.accept().catch(error => console.error('Failed to accept dialog', error))
+                })
+                await Promise.all([driver.page.click('.test-campaigns-delete-btn'), driver.page.waitForNavigation()])
+                assert.strictEqual(
+                    await driver.page.evaluate(() => window.location.href),
+                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/campaigns'
                 )
             })
         }
