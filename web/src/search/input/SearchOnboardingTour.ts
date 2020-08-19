@@ -260,13 +260,13 @@ export const stepCallbacks: CallbackToAdvanceTourStep[] = [
                 tour.getById('add-query-term').updateStepOptions({
                     text: createAddCodeStepWithLanguageExampleTooltip(
                         tour,
-                        query ?? '',
+                        query.trim() ?? '',
                         (newQuery: string, patternType: SearchPatternType) => setQueryHandler(newQuery, patternType)
                     ),
                 })
             }
         },
-        queryConditions: (query: string): boolean => query !== 'lang:' && isValidLangQuery(query),
+        queryConditions: (query: string): boolean => query !== 'lang:' && isValidLangQuery(query.trim()),
     },
     {
         stepToAdvance: 'add-query-term',

@@ -328,7 +328,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                 editor.addAction({
                     id: 'detectSuggestionsClose',
                     label: 'Close',
-                    precondition: 'suggestWidgetVisible',
+                    precondition: '!suggestWidgetVisible',
                     run: () => {
                         this.suggestionsVisible = false
                     },
@@ -341,7 +341,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                 editor.addAction({
                     id: 'detectSuggestionsOpen',
                     label: 'Open',
-                    precondition: '!suggestWidgetVisible',
+                    precondition: 'suggestWidgetVisible',
                     run: (): void => {
                         this.suggestionsVisible = true
                     },
