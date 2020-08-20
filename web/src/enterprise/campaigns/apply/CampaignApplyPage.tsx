@@ -61,7 +61,7 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
                 createdAt={spec.createdAt}
                 creator={spec.creator}
                 verb="Uploaded"
-                className="mb-3"
+                className="mb-3 test-campaign-apply-page"
             />
             <CreateUpdateCampaignAlert
                 history={history}

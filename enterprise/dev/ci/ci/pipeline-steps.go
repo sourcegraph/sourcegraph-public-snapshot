@@ -108,6 +108,7 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 		// Client integration tests
 		pipeline.AddStep(":puppeteer::electric_plug:",
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+			bk.Env("ENTERPRISE", "1"),
 			bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-run.sh build-web"),
 			bk.Cmd("yarn run cover-integration"),
 			bk.Cmd("yarn nyc report -r json"),

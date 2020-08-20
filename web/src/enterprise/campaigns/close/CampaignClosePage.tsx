@@ -79,7 +79,7 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
                 namespace={campaign.namespace}
                 creator={campaign.initialApplier}
                 createdAt={campaign.createdAt}
-                className="mb-3"
+                className="mb-3 test-campaign-close-page"
             />
             <CampaignCloseAlert
                 campaignID={campaignID}
@@ -90,7 +90,11 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
                 closeCampaign={closeCampaign}
                 viewerCanAdminister={campaign.viewerCanAdminister}
             />
-            {closeChangesets && <h2>Closing the campaign will close the following changesets:</h2>}
+            {closeChangesets && (
+                <h2 className="test-campaigns-close-willclose-header">
+                    Closing the campaign will close the following changesets:
+                </h2>
+            )}
             {!closeChangesets && <h2>The following changesets will remain open:</h2>}
             <CampaignCloseChangesetsList
                 campaignID={campaignID}

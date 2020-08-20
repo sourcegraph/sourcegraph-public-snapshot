@@ -29,7 +29,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
         history="[History]"
       />
     }
-    className="mb-3"
+    className="mb-3 test-campaign-details-page"
     createdAt="2020-01-01"
     creator={
       Object {
@@ -46,7 +46,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
     }
   >
     <div
-      className="d-flex w-100 mb-2 justify-content-between align-items-center mb-3"
+      className="d-flex w-100 mb-2 justify-content-between align-items-center mb-3 test-campaign-details-page"
     >
       <div>
         <h1
@@ -123,12 +123,12 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
         history="[History]"
       >
         <AnchorLink
-          className="btn btn-outline-danger"
+          className="btn btn-outline-danger test-campaigns-close-btn"
           data-tooltip="View a preview of all changes that will happen when you close this campaign."
           to="//close"
         >
           <a
-            className="btn btn-outline-danger"
+            className="btn btn-outline-danger test-campaigns-close-btn"
             data-tooltip="View a preview of all changes that will happen when you close this campaign."
             href="//close"
           >
@@ -497,7 +497,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
         </a>
       </li>
       <li
-        className="nav-item"
+        className="nav-item test-campaigns-chart-tab"
       >
         <a
           className="nav-link"
@@ -810,7 +810,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
         history="[History]"
       />
     }
-    className="mb-3"
+    className="mb-3 test-campaign-details-page"
     createdAt="2020-01-01"
     creator={
       Object {
@@ -827,7 +827,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
     }
   >
     <div
-      className="d-flex w-100 mb-2 justify-content-between align-items-center mb-3"
+      className="d-flex w-100 mb-2 justify-content-between align-items-center mb-3 test-campaign-details-page"
     >
       <div>
         <h1
@@ -904,12 +904,12 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
         history="[History]"
       >
         <AnchorLink
-          className="btn btn-outline-danger"
+          className="btn btn-outline-danger test-campaigns-close-btn"
           data-tooltip="View a preview of all changes that will happen when you close this campaign."
           to="//close"
         >
           <a
-            className="btn btn-outline-danger"
+            className="btn btn-outline-danger test-campaigns-close-btn"
             data-tooltip="View a preview of all changes that will happen when you close this campaign."
             href="//close"
           >
@@ -1278,7 +1278,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
         </a>
       </li>
       <li
-        className="nav-item"
+        className="nav-item test-campaigns-chart-tab"
       >
         <a
           className="nav-link"

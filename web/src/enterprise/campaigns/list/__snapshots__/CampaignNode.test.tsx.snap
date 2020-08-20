@@ -49,11 +49,11 @@ exports[`CampaignNode campaign without description 1`] = `
         className="m-0 d-inline-block"
       >
         <AnchorLink
-          className="text-muted"
+          className="text-muted test-campaign-namespace-link"
           to="/users/alice/campaigns"
         >
           <a
-            className="text-muted"
+            className="text-muted test-campaign-namespace-link"
             href="/users/alice/campaigns"
           >
             alice
@@ -65,9 +65,11 @@ exports[`CampaignNode campaign without description 1`] = `
           /
         </span>
         <AnchorLink
+          className="test-campaign-link"
           to="/users/alice/campaigns/123"
         >
           <a
+            className="test-campaign-link"
             href="/users/alice/campaigns/123"
           >
             Upgrade lodash to v4
@@ -265,11 +267,11 @@ exports[`CampaignNode closed campaign 1`] = `
         className="m-0 d-inline-block"
       >
         <AnchorLink
-          className="text-muted"
+          className="text-muted test-campaign-namespace-link"
           to="/users/alice/campaigns"
         >
           <a
-            className="text-muted"
+            className="text-muted test-campaign-namespace-link"
             href="/users/alice/campaigns"
           >
             alice
@@ -281,9 +283,11 @@ exports[`CampaignNode closed campaign 1`] = `
           /
         </span>
         <AnchorLink
+          className="test-campaign-link"
           to="/users/alice/campaigns/123"
         >
           <a
+            className="test-campaign-link"
             href="/users/alice/campaigns/123"
           >
             Upgrade lodash to v4
@@ -489,11 +493,11 @@ exports[`CampaignNode open campaign 1`] = `
         className="m-0 d-inline-block"
       >
         <AnchorLink
-          className="text-muted"
+          className="text-muted test-campaign-namespace-link"
           to="/users/alice/campaigns"
         >
           <a
-            className="text-muted"
+            className="text-muted test-campaign-namespace-link"
             href="/users/alice/campaigns"
           >
             alice
@@ -505,9 +509,11 @@ exports[`CampaignNode open campaign 1`] = `
           /
         </span>
         <AnchorLink
+          className="test-campaign-link"
           to="/users/alice/campaigns/123"
         >
           <a
+            className="test-campaign-link"
             href="/users/alice/campaigns/123"
           >
             Upgrade lodash to v4
@@ -713,9 +719,11 @@ exports[`CampaignNode open campaign on user page 1`] = `
         className="m-0 d-inline-block"
       >
         <AnchorLink
+          className="test-campaign-link"
           to="/users/alice/campaigns/123"
         >
           <a
+            className="test-campaign-link"
             href="/users/alice/campaigns/123"
           >
             Upgrade lodash to v4

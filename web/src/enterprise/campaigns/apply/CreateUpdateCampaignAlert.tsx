@@ -60,7 +60,7 @@ export const CreateUpdateCampaignAlert: React.FunctionComponent<CreateUpdateCamp
                 <button
                     type="button"
                     className={classNames(
-                        'btn btn-primary',
+                        'btn btn-primary test-campaigns-confirm-apply-btn',
                         isLoading === true || (!viewerCanAdminister && 'disabled')
                     )}
                     onClick={onApply}
