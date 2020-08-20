@@ -6,7 +6,7 @@ Campaigns let you make large-scale code changes across many repositories.
 
 ## About campaigns
 
-A campaign streamlines the creation and tracking of pull requests across many repositories and code hosts. After you create a campaign, you tell it what changes to make (by providing a list of repositories and a script to run in each). The campaign lets you create pull requests on all affected repositories, and it tracks their progress until they're all merged. You can preview the changes and update them at any time.
+A campaign streamlines the creation and tracking of pull requests across many repositories and code hosts. After you create a campaign, you tell it what changes to make by providing a list of repositories and a script to run in each. The campaign lets you create pull requests on all affected repositories, and it tracks their progress until they're all merged. You can preview the changes and update them at any time.
 
 People usually use campaigns to make the following kinds of changes:
 
@@ -15,8 +15,6 @@ People usually use campaigns to make the following kinds of changes:
 - Upgrading dependencies
 - Patching critical security issues
 - Standardizing build, configuration, and deployment files
-
-For step-by-step instructions to create your first campaign, see [Hello World Campaign](hello_world_campaign.md).
 
 <!-- TODO(sqs): Add video here, similar to https://www.youtube.com/aqcCrqRB17w (which will need to be updated for the new campaign flow). -->
 
@@ -39,18 +37,13 @@ You can view a list of all campaigns by clicking the <img src="campaigns-icon.sv
 
 Use the filters to switch between showing all campaigns, open campaigns, or closed campaigns.
 
-If you lack read access to a repository in a campaign, you can only see [limited information about the changes to that repository](managing_access.md#repository-permissions-for-campaigns) (and not the repository name, file paths, or diff).
+If you lack read access to a repository in a campaign, you can only see [limited information about the changes to that repository](managing_access.md#repository-permissions-for-campaigns).
 
 ### Campaign specs
 
 You can create or update a campaign from a campaign spec, which is a YAML file that defines a campaign.
 
-See the "[Creating a campaign](#creating-a-campaign)" section for an example campaign spec YAML file.
-
-For more information, see:
-
-- [Creating a campaign](#creating-a-campaign) from a campaign spec
-- [Updating a campaign](#updating-a-campaign) from a campaign spec
+See the [Creating a campaign](#creating-a-campaign) section for an example campaign spec YAML file.
 <!-- - TODO(sqs) <u>Campaign spec YAML reference</u> -->
 
 ## Creating a campaign
