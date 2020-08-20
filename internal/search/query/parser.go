@@ -981,6 +981,11 @@ func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 		query = Map(query, EmptyGroupsToLiteral, TrailingParensToLiteral)
 	}
 
+	query, err = concatRevFilters(query)
+	if err != nil {
+		return nil, err
+	}
+
 	if options.Globbing {
 		query, err = mapGlobToRegex(query)
 		if err != nil {

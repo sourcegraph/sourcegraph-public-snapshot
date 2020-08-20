@@ -563,3 +563,66 @@ func FuzzifyRegexPatterns(nodes []Node) []Node {
 		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 	})
 }
+
+// concatRevFilters removes rev: filters from []Node and attaches their value as @rev to the repo: filters.
+// Invariant: we assume that all rev: filters are at the top-level of []Node, or in one of it's direct children.
+// This invariant is ensured when the query is normalized to DNF.
+func concatRevFilters(nodes []Node) ([]Node, error) {
+	if len(nodes) == 0 {
+		return nodes, nil
+	}
+	// top-level And
+	if op, isOperator := nodes[0].(Operator); len(nodes) == 1 && isOperator && op.Kind == And {
+		nodes, err := concatRevFiltersFlat(op.Operands)
+		if err != nil {
+			return nil, err
+		}
+		return newOperator(nodes, And), nil
+	}
+	return concatRevFiltersFlat(nodes)
+}
+
+func concatRevFiltersFlat(nodes []Node) ([]Node, error) {
+	var revs []string
+	for _, n := range nodes {
+		if param, ok := n.(Parameter); !ok || param.Field != FieldRev {
+			continue
+		} else {
+			revs = append(revs, param.Value)
+		}
+	}
+	if len(revs) == 0 {
+		return nodes, nil
+	}
+	if len(revs) > 1 {
+		return nil, fmt.Errorf("invalid syntax. You have specified multiple revisions (%s) and"+
+			" I don't know how to interpret this. Remove all but one rev: keywords"+
+			" and try again", strings.Join(revs, ", "))
+	}
+	operands := make([]Node, len(nodes))
+	i := 0
+	for _, n := range nodes {
+		switch p := n.(type) {
+		case Parameter:
+			switch p.Field {
+			case FieldRepo:
+				if strings.ContainsRune(p.Value, '@') {
+					return nil, fmt.Errorf("invalid syntax. You have specified @ and rev: for the same" +
+						" repo: filter and I don't know how to interpret this. Remove either @ or rev: and try again")
+				}
+				p.Value += "@" + revs[0]
+				operands[i] = p
+				i++
+			case FieldRev:
+				continue
+			default:
+				operands[i] = n
+				i++
+			}
+		default:
+			operands[i] = n
+			i++
+		}
+	}
+	return operands[:i], nil
+}
