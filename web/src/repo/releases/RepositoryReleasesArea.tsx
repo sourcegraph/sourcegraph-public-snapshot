@@ -7,7 +7,7 @@ import { RepoContainerContext } from '../RepoContainer'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepositoryReleasesTagsPage } from './RepositoryReleasesTagsPage'
 import * as H from 'history'
-import { UpdateBreadcrumbsProps } from '../../components/Breadcrumbs'
+import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -20,7 +20,7 @@ const NotFoundPage: React.FunctionComponent = () => (
 interface Props
     extends RouteComponentProps<{}>,
         Pick<RepoContainerContext, 'repo' | 'routePrefix' | 'repoHeaderContributionsLifecycleProps'>,
-        UpdateBreadcrumbsProps {
+        BreadcrumbSetters {
     repo: GQL.IRepository
     history: H.History
 }

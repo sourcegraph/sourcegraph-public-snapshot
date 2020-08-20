@@ -14,7 +14,7 @@ import { ErrorMessage } from '../../components/alerts'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import * as H from 'history'
 import { useObservable } from '../../../../shared/src/util/useObservable'
-import { UpdateBreadcrumbsProps } from '../../components/Breadcrumbs'
+import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -31,7 +31,7 @@ export interface RepoSettingsAreaRouteContext {
 
 export interface RepoSettingsAreaRoute extends RouteDescriptor<RepoSettingsAreaRouteContext> {}
 
-interface Props extends RouteComponentProps<{}>, UpdateBreadcrumbsProps {
+interface Props extends RouteComponentProps<{}>, BreadcrumbSetters {
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: RepoSettingsSideBarGroups
     repo: GQL.IRepository

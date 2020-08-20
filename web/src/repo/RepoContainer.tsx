@@ -44,7 +44,7 @@ import { QueryState } from '../search/helpers'
 import { FiltersToTypeAndValue, FilterType } from '../../../shared/src/search/interactive/util'
 import * as H from 'history'
 import { VersionContextProps } from '../../../shared/src/search/util'
-import { UpdateBreadcrumbsProps, useBreadcrumbs } from '../components/Breadcrumbs'
+import { BreadcrumbSetters, useBreadcrumbs } from '../components/Breadcrumbs'
 import { useObservable, useEventObservable } from '../../../shared/src/util/useObservable'
 import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
@@ -69,7 +69,7 @@ export interface RepoContainerContext
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps,
-        UpdateBreadcrumbsProps {
+        BreadcrumbSetters {
     repo: GQL.IRepository
     authenticatedUser: GQL.IUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]

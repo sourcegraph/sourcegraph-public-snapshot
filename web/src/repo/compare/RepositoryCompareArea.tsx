@@ -34,7 +34,7 @@ import { RepositoryCompareOverviewPage } from './RepositoryCompareOverviewPage'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorMessage } from '../../components/alerts'
 import * as H from 'history'
-import { UpdateBreadcrumbsProps } from '../../components/Breadcrumbs'
+import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -51,7 +51,7 @@ interface RepositoryCompareAreaProps
         EventLoggerProps,
         ExtensionsControllerProps,
         ThemeProps,
-        UpdateBreadcrumbsProps {
+        BreadcrumbSetters {
     repo: GQL.IRepository
     history: H.History
 }
@@ -148,8 +148,7 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
 
     public componentDidMount(): void {
         this.componentUpdates.next(this.props)
-        const { cleanup } = this.props.setBreadcrumb({ key: 'compare', element: 'Compare' })
-        this.subscriptions.add(cleanup)
+        this.subscriptions.add(this.props.setBreadcrumb({ key: 'compare', element: <>Compare</> }))
     }
 
     public shouldComponentUpdate(nextProps: Readonly<RepositoryCompareAreaProps>, nextState: Readonly<State>): boolean {

@@ -37,7 +37,7 @@ import * as H from 'history'
 import { VersionContextProps } from '../../../shared/src/search/util'
 import { RevisionSpec } from '../../../shared/src/util/url'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
-import { UpdateBreadcrumbsProps, UseBreadcrumbSetters } from '../components/Breadcrumbs'
+import { BreadcrumbSetters, UseBreadcrumbSetters } from '../components/Breadcrumbs'
 
 /** Props passed to sub-routes of {@link RepoRevisionContainer}. */
 export interface RepoRevisionContainerContext
@@ -57,7 +57,7 @@ export interface RepoRevisionContainerContext
         CopyQueryButtonProps,
         VersionContextProps,
         RevisionSpec,
-        UpdateBreadcrumbsProps {
+        BreadcrumbSetters {
     repo: GQL.IRepository
     resolvedRev: ResolvedRevision
 
@@ -84,7 +84,7 @@ interface RepoRevisionContainerProps
         CopyQueryButtonProps,
         VersionContextProps,
         RevisionSpec,
-        UpdateBreadcrumbsProps {
+        BreadcrumbSetters {
     routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]

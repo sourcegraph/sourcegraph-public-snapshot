@@ -6,7 +6,7 @@ import { HeroPage } from '../../components/HeroPage'
 import { RepositoryStatsContributorsPage } from './RepositoryStatsContributorsPage'
 import { RepositoryStatsNavbar } from './RepositoryStatsNavbar'
 import { PatternTypeProps } from '../../search'
-import { UpdateBreadcrumbsProps } from '../../components/Breadcrumbs'
+import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -16,7 +16,7 @@ const NotFoundPage: React.FunctionComponent = () => (
     />
 )
 
-interface Props extends RouteComponentProps<{}>, UpdateBreadcrumbsProps, Omit<PatternTypeProps, 'setPatternType'> {
+interface Props extends RouteComponentProps<{}>, BreadcrumbSetters, Omit<PatternTypeProps, 'setPatternType'> {
     repo: GQL.IRepository
     globbing: boolean
 }

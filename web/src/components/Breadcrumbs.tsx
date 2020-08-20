@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import { Link } from '../../../shared/src/components/Link'
 import { sortBy } from 'lodash'
+import { Unsubscribable } from 'sourcegraph'
 
 export interface Breadcrumb {
     key: string
@@ -10,21 +11,16 @@ export interface Breadcrumb {
 }
 
 export interface BreadcrumbsProps {
-    breadcrumbs: BreadcrumbsByDepth
-}
-
-export interface UpdateBreadcrumbsProps {
-    useBreadcrumbSetters: UseBreadcrumbSetters
-    setBreadcrumb: SetBreadcrumb
+    breadcrumbs: BreadcrumbAtDepth[]
 }
 
 type BreadcrumbOrFalsy = Breadcrumb | false | null | undefined
 
 export type UseBreadcrumbSetters = (breadcrumb: BreadcrumbOrFalsy) => BreadcrumbSetters
 
-export type SetBreadcrumb = (breadcrumb: BreadcrumbOrFalsy) => BreadcrumbSetters & { cleanup: () => void }
+export type SetBreadcrumb = (breadcrumb: BreadcrumbOrFalsy) => BreadcrumbSetters & Unsubscribable
 
-interface BreadcrumbSetters {
+export interface BreadcrumbSetters {
     useBreadcrumbSetters: UseBreadcrumbSetters
     setBreadcrumb: SetBreadcrumb
 }
@@ -33,19 +29,14 @@ interface BreadcrumbAtDepth {
     depth: number
     breadcrumb: BreadcrumbOrFalsy
 }
-type BreadcrumbsByDepth = BreadcrumbAtDepth[]
 
 /**
  *
  *
  * TODO: Document how to use `useBreadcrumbs`
  */
-export const useBreadcrumbs = (): {
-    breadcrumbs: BreadcrumbsByDepth
-    useBreadcrumbSetters: UseBreadcrumbSetters
-    setBreadcrumb: SetBreadcrumb
-} => {
-    const [breadcrumbsByDepth, setBreadcrumbsByDepth] = useState<BreadcrumbsByDepth>([
+export const useBreadcrumbs = (): BreadcrumbsProps & BreadcrumbSetters => {
+    const [breadcrumbsByDepth, setBreadcrumbsByDepth] = useState<BreadcrumbAtDepth[]>([
         { depth: 0, breadcrumb: { key: 'home', element: <Link to="/search">Home</Link>, divider: null } },
     ])
 
@@ -69,9 +60,9 @@ export const useBreadcrumbs = (): {
         }
 
         /** 'Vanilla function' for backcompat with class components */
-        function setBreadcrumb(breadcrumb: BreadcrumbOrFalsy): BreadcrumbSetters & { cleanup: () => void } {
+        function setBreadcrumb(breadcrumb: BreadcrumbOrFalsy): BreadcrumbSetters & Unsubscribable {
             return {
-                cleanup: _internalSetBreadcrumb(breadcrumb),
+                unsubscribe: _internalSetBreadcrumb(breadcrumb),
                 ...createBreadcrumbSetters(depth + 1),
             }
         }
@@ -91,7 +82,7 @@ export const useBreadcrumbs = (): {
 }
 
 /** Renders breadcrumbs by depth */
-export const Breadcrumbs: React.FC<{ breadcrumbs: BreadcrumbsByDepth }> = ({ breadcrumbs }) => {
+export const Breadcrumbs: React.FC<{ breadcrumbs: BreadcrumbAtDepth[] }> = ({ breadcrumbs }) => {
     const nodes: React.ReactNode[] = []
 
     for (const { breadcrumb } of sortBy(breadcrumbs, 'depth')) {

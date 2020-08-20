@@ -35,7 +35,7 @@ import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorMessage } from '../../components/alerts'
 import { Redirect } from 'react-router'
 import { toTreeURL } from '../../util/url'
-import { UpdateBreadcrumbsProps } from '../../components/Breadcrumbs'
+import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { useEventObservable } from '../../../../shared/src/util/useObservable'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 
@@ -96,7 +96,7 @@ interface Props
         EventLoggerProps,
         ExtensionsControllerProps,
         ThemeProps,
-        UpdateBreadcrumbsProps {
+        BreadcrumbSetters {
     location: H.Location
     history: H.History
     repoID: GQL.ID

@@ -43,7 +43,7 @@ import { getViewsForContainer } from '../../../../shared/src/api/client/services
 import { Settings } from '../../schema/settings.schema'
 import { ViewGrid } from './ViewGrid'
 import { VersionContextProps } from '../../../../shared/src/search/util'
-import { UpdateBreadcrumbsProps } from '../../components/Breadcrumbs'
+import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 
 const TreeEntry: React.FunctionComponent<{
@@ -156,7 +156,7 @@ interface Props
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps,
-        UpdateBreadcrumbsProps {
+        BreadcrumbSetters {
     repoName: string
     repoID: GQL.ID
     repoDescription: string

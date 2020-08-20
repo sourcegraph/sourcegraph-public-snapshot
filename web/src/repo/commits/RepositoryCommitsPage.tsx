@@ -12,7 +12,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { GitCommitNode, GitCommitNodeProps } from './GitCommitNode'
 import { RevisionSpec, ResolvedRevisionSpec } from '../../../../shared/src/util/url'
-import { UpdateBreadcrumbsProps } from '../../components/Breadcrumbs'
+import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 
 export const gitCommitFragment = gql`
     fragment GitCommitFields on GitCommit {
@@ -104,7 +104,7 @@ interface Props
     extends RepoHeaderContributionsLifecycleProps,
         Partial<RevisionSpec>,
         ResolvedRevisionSpec,
-        UpdateBreadcrumbsProps {
+        BreadcrumbSetters {
     repo: GQL.IRepository
 
     history: H.History
