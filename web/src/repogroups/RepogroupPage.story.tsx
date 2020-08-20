@@ -154,7 +154,6 @@ const commonProps: RepogroupPageProps = {
     keyboardShortcuts: [],
     onFiltersInQueryChange: sinon.spy(() => {}),
     setCaseSensitivity: sinon.spy(() => {}),
-    smartSearchField: true,
     splitSearchModes: true,
     telemetryService: ({
         ...NOOP_TELEMETRY_SERVICE,
@@ -187,6 +186,6 @@ add('Repogroup page with smart search field', () => (
 
 add('Repogroup page without smart search field', () => (
     <MemoryRouter>
-        <RepogroupPage {...commonProps} smartSearchField={false} />
+        <RepogroupPage {...commonProps} />
     </MemoryRouter>
 ))

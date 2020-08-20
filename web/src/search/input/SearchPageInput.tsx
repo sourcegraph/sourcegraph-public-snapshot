@@ -6,8 +6,7 @@ import { Form } from 'reactstrap'
 import { SearchModeToggle } from './interactive/SearchModeToggle'
 import { VersionContextDropdown } from '../../nav/VersionContextDropdown'
 import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
-import { QueryInput } from './QueryInput'
-import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR, KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
+import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { SearchButton } from './SearchButton'
 import { Link } from '../../../../shared/src/components/Link'
 import { SearchScopes } from './SearchScopes'
@@ -22,7 +21,6 @@ import {
     PatternTypeProps,
     CaseSensitivityProps,
     InteractiveSearchProps,
-    SmartSearchFieldProps,
     CopyQueryButtonProps,
     OnboardingTourProps,
     parseSearchURLQuery,
@@ -56,7 +54,6 @@ interface Props
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         InteractiveSearchProps,
-        SmartSearchFieldProps,
         CopyQueryButtonProps,
         Pick<SubmitSearchParams, 'source'>,
         VersionContextProps,
@@ -254,31 +251,16 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                                 setVersionContext={props.setVersionContext}
                                 availableVersionContexts={props.availableVersionContexts}
                             />
-                            {props.smartSearchField ? (
-                                <LazyMonacoQueryInput
-                                    {...props}
-                                    hasGlobalQueryBehavior={true}
-                                    queryState={userQueryState}
-                                    onChange={setUserQueryState}
-                                    onSubmit={onSubmit}
-                                    autoFocus={props.autoFocus !== false}
-                                    tour={showOnboardingTour ? tour : undefined}
-                                    tourAdvanceStepCallbacks={stepCallbacks}
-                                />
-                            ) : (
-                                <QueryInput
-                                    {...props}
-                                    value={userQueryState}
-                                    onChange={setUserQueryState}
-                                    // We always want to set this to 'cursor-at-end' when true.
-                                    autoFocus={props.autoFocus ? 'cursor-at-end' : props.autoFocus}
-                                    hasGlobalQueryBehavior={true}
-                                    patternType={props.patternType}
-                                    setPatternType={props.setPatternType}
-                                    withSearchModeToggle={props.splitSearchModes}
-                                    keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
-                                />
-                            )}
+                            <LazyMonacoQueryInput
+                                {...props}
+                                hasGlobalQueryBehavior={true}
+                                queryState={userQueryState}
+                                onChange={setUserQueryState}
+                                onSubmit={onSubmit}
+                                autoFocus={props.autoFocus !== false}
+                                tour={showOnboardingTour ? tour : undefined}
+                                tourAdvanceStepCallbacks={stepCallbacks}
+                            />
                             <SearchButton />
                         </div>
                         <div className="search-page__input-sub-container">

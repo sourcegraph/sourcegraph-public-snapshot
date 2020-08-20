@@ -48,7 +48,6 @@ export function experimentalFeaturesFromSettings(
     settingsCascade: SettingsCascadeOrError
 ): {
     splitSearchModes: boolean
-    smartSearchField: boolean
     copyQueryButton: boolean
     showRepogroupHomepage: boolean
     showOnboardingTour: boolean
@@ -59,11 +58,10 @@ export function experimentalFeaturesFromSettings(
 
     const {
         splitSearchModes = true,
-        smartSearchField = true,
         copyQueryButton = false,
         showRepogroupHomepage = false,
         showOnboardingTour = false,
     } = experimentalFeatures
 
-    return { splitSearchModes, smartSearchField, copyQueryButton, showRepogroupHomepage, showOnboardingTour }
+    return { splitSearchModes, copyQueryButton, showRepogroupHomepage, showOnboardingTour }
 }

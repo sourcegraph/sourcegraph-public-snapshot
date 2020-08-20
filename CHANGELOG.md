@@ -19,6 +19,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+- The smartSearchField feature is now always enabled. The `experimentalFeatures.smartSearchField` settings option has been removed.
+
 ## 3.19.0
 
 ### Added

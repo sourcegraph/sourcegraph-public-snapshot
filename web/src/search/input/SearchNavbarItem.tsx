@@ -7,17 +7,14 @@ import { SearchButton } from './SearchButton'
 import {
     PatternTypeProps,
     CaseSensitivityProps,
-    SmartSearchFieldProps,
     CopyQueryButtonProps,
     OnboardingTourProps,
     parseSearchURLPatternType,
 } from '..'
 import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
-import { QueryInput } from './QueryInput'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { VersionContextProps } from '../../../../shared/src/search/util'
-import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 import Shepherd from 'shepherd.js'
 import { defaultTourOptions, generateStepTooltip } from './SearchOnboardingTour'
 import { SearchPatternType } from '../../graphql-operations'
@@ -26,7 +23,6 @@ interface Props
     extends ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        SmartSearchFieldProps,
         SettingsCascadeProps,
         ThemeProps,
         CopyQueryButtonProps,
@@ -117,23 +113,13 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
             className="search--navbar-item d-flex align-items-flex-start flex-grow-1 flex-shrink-past-contents"
             onSubmit={onFormSubmit}
         >
-            {props.smartSearchField ? (
-                <LazyMonacoQueryInput
-                    {...props}
-                    hasGlobalQueryBehavior={true}
-                    queryState={props.navbarSearchState}
-                    onSubmit={onSubmit}
-                    autoFocus={true}
-                />
-            ) : (
-                <QueryInput
-                    {...props}
-                    value={props.navbarSearchState}
-                    autoFocus={props.location.pathname === '/search' ? 'cursor-at-end' : undefined}
-                    keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
-                    hasGlobalQueryBehavior={true}
-                />
-            )}
+            <LazyMonacoQueryInput
+                {...props}
+                hasGlobalQueryBehavior={true}
+                queryState={props.navbarSearchState}
+                onSubmit={onSubmit}
+                autoFocus={true}
+            />
             <SearchButton />
         </Form>
     )
