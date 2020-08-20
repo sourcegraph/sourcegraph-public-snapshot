@@ -5,7 +5,6 @@ import { PageHeader } from './PageHeader'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import { text } from '@storybook/addon-knobs'
 import ClockOutlineIcon from 'mdi-react/ClockOutlineIcon'
-import { RepoHeaderBreadcrumbNavItem } from '../repo/RepoHeaderBreadcrumbNavItem'
 
 const { add } = storiesOf('web/PageHeader', module).addDecorator(story => (
     <>
@@ -18,58 +17,14 @@ const { add } = storiesOf('web/PageHeader', module).addDecorator(story => (
 
 add('Basic header', () => {
     const title = text('Title', 'Page name')
-    return (
-        <PageHeader
-            title={title}
-            breadcrumbs={[
-                {
-                    depth: 1,
-                    breadcrumb: {
-                        key: '1',
-                        element: <RepoHeaderBreadcrumbNavItem>{title}</RepoHeaderBreadcrumbNavItem>,
-                    },
-                },
-            ]}
-            icon={<PuzzleOutlineIcon size={32} />}
-        />
-    )
+    return <PageHeader title={title} icon={PuzzleOutlineIcon} />
 })
 
 add(
     'Complex header',
     () => {
         const title = text('Title', 'Page name')
-        const badge = text('Badge', 'prototype')
-        return (
-            <PageHeader
-                title={title}
-                breadcrumbs={[
-                    {
-                        depth: 1,
-                        breadcrumb: {
-                            key: '1',
-                            element: <RepoHeaderBreadcrumbNavItem>Level 2</RepoHeaderBreadcrumbNavItem>,
-                        },
-                    },
-                    {
-                        depth: 2,
-                        breadcrumb: {
-                            key: '2',
-                            element: <RepoHeaderBreadcrumbNavItem>Level 3</RepoHeaderBreadcrumbNavItem>,
-                        },
-                    },
-                    {
-                        depth: 3,
-                        breadcrumb: {
-                            key: '3',
-                            element: <RepoHeaderBreadcrumbNavItem>Page name</RepoHeaderBreadcrumbNavItem>,
-                        },
-                    },
-                ]}
-                icon={<ClockOutlineIcon size={32} className="inline-icon" />}
-                badge={badge}
-            />
-        )
+        return <PageHeader title={title} icon={ClockOutlineIcon} />
     },
     {
         design: {

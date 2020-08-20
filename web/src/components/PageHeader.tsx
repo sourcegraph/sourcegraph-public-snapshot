@@ -1,24 +1,16 @@
 import React from 'react'
-import { Breadcrumbs, BreadcrumbsProps } from './Breadcrumbs'
 
-interface Props extends BreadcrumbsProps {
-    title: string
-    icon: React.ReactNode
+interface Props {
+    title: React.ReactNode
+    icon: React.ComponentType<{ className?: string }>
     actions?: React.ReactNode
-    badge?: string // TODO: consider support for multiple badges
 }
 
-export const PageHeader: React.FunctionComponent<Props> = ({ title, icon, actions, badge, breadcrumbs }) => (
+export const PageHeader: React.FunctionComponent<Props> = ({ title, icon: Icon, actions }) => (
     <>
-        <Breadcrumbs breadcrumbs={breadcrumbs} />
-        <div className="d-flex align-items-center">
+        <div className="d-flex flex-wrap align-items-center">
             <h1 className="flex-grow-1">
-                {icon} {title}{' '}
-                {badge && (
-                    <sup>
-                        <span className="badge badge-info text-uppercase">{badge}</span>
-                    </sup>
-                )}
+                <Icon className="icon-inline" /> {title}
             </h1>
             {actions}
         </div>

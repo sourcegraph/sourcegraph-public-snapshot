@@ -120,7 +120,7 @@ export const useBreadcrumbs = (): BreadcrumbsProps & BreadcrumbSetters => {
  * Renders breadcrumbs by depth.
  */
 export const Breadcrumbs: React.FC<{ breadcrumbs: BreadcrumbAtDepth[] }> = ({ breadcrumbs }) => (
-    <nav className="d-flex" aria-label="Breadcrumbs">
+    <nav className="d-flex p-2" aria-label="Breadcrumbs">
         {sortBy(breadcrumbs, 'depth')
             .map(({ breadcrumb }) => breadcrumb)
             .filter(isDefined)
