@@ -28,15 +28,23 @@ interface Props extends ThemeProps, TelemetryProps {
 const LOADING = 'loading' as const
 
 /**
- * Page for adding a single external service
+ * Page for adding a single external service.
  */
-export const AddExternalServicePage: React.FunctionComponent<Props> = props => {
-    const [config, setConfig] = useState(props.externalService.defaultConfig)
-    const [displayName, setDisplayName] = useState(props.externalService.defaultDisplayName)
+export const AddExternalServicePage: React.FunctionComponent<Props> = ({
+    afterCreateRoute,
+    externalService,
+    history,
+    isLightTheme,
+    routingPrefix,
+    telemetryService,
+    userID,
+}) => {
+    const [config, setConfig] = useState(externalService.defaultConfig)
+    const [displayName, setDisplayName] = useState(externalService.defaultDisplayName)
 
     useEffect(() => {
-        props.telemetryService.logViewEvent('AddExternalService')
-    }, [props.telemetryService])
+        telemetryService.logViewEvent('AddExternalService')
+    }, [telemetryService])
 
     const [nextSubmit, createdServiceOrError] = useEventObservable(
         useCallback(
@@ -48,13 +56,13 @@ export const AddExternalServicePage: React.FunctionComponent<Props> = props => {
                         concat(
                             [LOADING],
                             addExternalService(
-                                { input: { ...input, namespace: props.userID ?? null } },
-                                props.telemetryService
+                                { input: { ...input, namespace: userID ?? null } },
+                                telemetryService
                             ).pipe(catchError(error => [asError(error)]))
                         )
                     )
                 ),
-            [props.telemetryService]
+            [telemetryService, userID]
         )
     )
 
@@ -62,19 +70,19 @@ export const AddExternalServicePage: React.FunctionComponent<Props> = props => {
         if (createdServiceOrError && createdServiceOrError !== LOADING && !isErrorLike(createdServiceOrError)) {
             // Refresh site flags so that global site alerts
             // reflect the latest configuration.
-            // eslint-disable-next-line rxjs/no-nested-subscribe, rxjs/no-ignored-subscription
+            // eslint-disable-next-line rxjs/no-ignored-subscription
             refreshSiteFlags().subscribe({ error: error => console.error(error) })
-            props.history.push(props.afterCreateRoute)
+            history.push(afterCreateRoute)
         }
-    }, [createdServiceOrError, props.history, props.afterCreateRoute])
+    }, [createdServiceOrError, history, afterCreateRoute])
 
     const getExternalServiceInput = useCallback(
         (): GQL.IAddExternalServiceInput => ({
             displayName,
             config,
-            kind: props.externalService.kind,
+            kind: externalService.kind,
         }),
-        [displayName, config, props.externalService.kind]
+        [displayName, config, externalService.kind]
     )
 
     const onChange = useCallback(
@@ -106,33 +114,35 @@ export const AddExternalServicePage: React.FunctionComponent<Props> = props => {
                 <div>
                     <div className="mb-3">
                         <ExternalServiceCard
-                            {...props.externalService}
+                            {...externalService}
                             title={createdServiceOrError.displayName}
                             shortDescription="Update this external service configuration to manage repository mirroring."
-                            to={`${props.routingPrefix}/external-services/${createdServiceOrError.id}`}
+                            to={`${routingPrefix}/external-services/${createdServiceOrError.id}`}
                         />
                     </div>
                     <div className="alert alert-warning">
                         <h4>Warning</h4>
                         <Markdown
                             dangerousInnerHTML={renderMarkdown(createdServiceOrError.warning)}
-                            history={props.history}
+                            history={history}
                         />
                     </div>
                 </div>
             ) : (
                 <div>
                     <div className="mb-3">
-                        <ExternalServiceCard {...props.externalService} />
+                        <ExternalServiceCard {...externalService} />
                     </div>
                     <h3>Instructions:</h3>
-                    <div className="mb-4">{props.externalService.instructions}</div>
+                    <div className="mb-4">{externalService.instructions}</div>
                     <ExternalServiceForm
-                        {...props}
+                        history={history}
+                        isLightTheme={isLightTheme}
+                        telemetryService={telemetryService}
                         error={isErrorLike(createdServiceOrError) ? createdServiceOrError : undefined}
                         input={getExternalServiceInput()}
-                        editorActions={props.externalService.editorActions}
-                        jsonSchema={props.externalService.jsonSchema}
+                        editorActions={externalService.editorActions}
+                        jsonSchema={externalService.jsonSchema}
                         mode="create"
                         onSubmit={onSubmit}
                         onChange={onChange}

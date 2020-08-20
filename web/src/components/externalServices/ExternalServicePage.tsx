@@ -90,7 +90,7 @@ export const ExternalServicePage: React.FunctionComponent<Props> = ({
                 history.push(afterUpdateRoute)
             }
         }
-    }, [updatedServiceOrError, history])
+    }, [updatedServiceOrError, history, afterUpdateRoute])
 
     const onSubmit = useCallback(
         (event?: React.FormEvent<HTMLFormElement>): void => {

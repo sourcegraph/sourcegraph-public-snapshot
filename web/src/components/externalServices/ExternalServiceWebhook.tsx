@@ -6,8 +6,8 @@ interface Props {
     externalService: Pick<ExternalServiceFields, 'kind' | 'webhookURL'>
 }
 
-export const ExternalServiceWebhook: React.FunctionComponent<Props> = props => {
-    const { kind, webhookURL } = props.externalService
+export const ExternalServiceWebhook: React.FunctionComponent<Props> = ({ externalService }) => {
+    const { kind, webhookURL } = externalService
 
     if (!webhookURL) {
         return <></>

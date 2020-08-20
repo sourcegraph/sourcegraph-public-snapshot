@@ -91,9 +91,9 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
                 afterCreateRoute={props.user.url + '/settings/external-services'}
                 userID={props.user.id}
                 codeHostExternalServices={{
-                    github: codeHostExternalServices['github'],
-                    gitlabcom: codeHostExternalServices['gitlabcom'],
-                    bitbucket: codeHostExternalServices['bitbucket'],
+                    github: codeHostExternalServices.github,
+                    gitlabcom: codeHostExternalServices.gitlabcom,
+                    bitbucket: codeHostExternalServices.bitbucket,
                 }}
                 nonCodeHostExternalServices={{}}
             />

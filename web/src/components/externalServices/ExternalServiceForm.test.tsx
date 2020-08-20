@@ -1,4 +1,4 @@
-jest.mock('../settings/DynamicallyImportedMonacoSettingsEditor', () => ({
+jest.mock('../../settings/DynamicallyImportedMonacoSettingsEditor', () => ({
     DynamicallyImportedMonacoSettingsEditor: () => 'DynamicallyImportedMonacoSettingsEditor',
 }))
 

@@ -1,6 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
-import * as React from 'react'
+import React, { useCallback } from 'react'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { ErrorLike } from '../../../../shared/src/util/errors'
 import { Form } from '../Form'
@@ -26,80 +26,96 @@ interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorAc
 /**
  * Form for submitting a new or updated external service.
  */
-export class ExternalServiceForm extends React.Component<Props, {}> {
-    public render(): JSX.Element | null {
-        return (
-            <Form className="external-service-form" onSubmit={this.props.onSubmit}>
-                {this.props.error && <ErrorAlert error={this.props.error} history={this.props.history} />}
-                {this.props.warning && (
-                    <div className="alert alert-warning">
-                        <h4>Warning</h4>
-                        <ErrorMessage error={this.props.warning} history={this.props.history} />
-                    </div>
-                )}
-                {this.props.hideDisplayNameField || (
-                    <div className="form-group">
-                        <label className="font-weight-bold" htmlFor="test-external-service-form-display-name">
-                            Display name:
-                        </label>
-                        <input
-                            id="test-external-service-form-display-name"
-                            type="text"
-                            className="form-control"
-                            required={true}
-                            autoCorrect="off"
-                            autoComplete="off"
-                            autoFocus={true}
-                            spellCheck={false}
-                            value={this.props.input.displayName}
-                            onChange={this.onDisplayNameChange}
-                            disabled={this.props.loading}
-                        />
-                    </div>
-                )}
+export const ExternalServiceForm: React.FunctionComponent<Props> = ({
+    history,
+    isLightTheme,
+    telemetryService,
+    jsonSchema,
+    editorActions,
+    input,
+    error,
+    warning,
+    mode,
+    loading,
+    hideDisplayNameField,
+    submitName,
+    onSubmit,
+    onChange,
+}) => {
+    const onDisplayNameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+        event => {
+            onChange({ ...input, displayName: event.currentTarget.value })
+        },
+        [input, onChange]
+    )
 
-                <div className="form-group">
-                    <DynamicallyImportedMonacoSettingsEditor
-                        // DynamicallyImportedMonacoSettingsEditor does not re-render the passed input.config
-                        // if it thinks the config is dirty. We want to always replace the config if the kind changes
-                        // so the editor is keyed on the kind.
-                        value={this.props.input.config}
-                        jsonSchema={this.props.jsonSchema}
-                        canEdit={false}
-                        loading={this.props.loading}
-                        height={350}
-                        isLightTheme={this.props.isLightTheme}
-                        onChange={this.onConfigChange}
-                        history={this.props.history}
-                        actions={this.props.editorActions}
-                        className="test-external-service-editor"
-                        telemetryService={this.props.telemetryService}
-                    />
-                    <p className="form-text text-muted">
-                        <small>Use Ctrl+Space for completion, and hover over JSON properties for documentation.</small>
-                    </p>
+    const onConfigChange = useCallback(
+        (config: string): void => {
+            onChange({ ...input, config })
+        },
+        [input, onChange]
+    )
+    return (
+        <Form className="external-service-form" onSubmit={onSubmit}>
+            {error && <ErrorAlert error={error} history={history} />}
+            {warning && (
+                <div className="alert alert-warning">
+                    <h4>Warning</h4>
+                    <ErrorMessage error={warning} history={history} />
                 </div>
-                <button
-                    type="submit"
-                    className={`btn btn-primary mb-3 ${
-                        this.props.mode === 'create'
-                            ? 'test-add-external-service-button'
-                            : 'test-update-external-service-button'
-                    }`}
-                    disabled={this.props.loading}
-                >
-                    {this.props.loading && <LoadingSpinner className="icon-inline" />}
-                    {this.props.submitName ?? (this.props.mode === 'edit' ? 'Update repositories' : 'Add repositories')}
-                </button>
-            </Form>
-        )
-    }
+            )}
+            {hideDisplayNameField || (
+                <div className="form-group">
+                    <label className="font-weight-bold" htmlFor="test-external-service-form-display-name">
+                        Display name:
+                    </label>
+                    <input
+                        id="test-external-service-form-display-name"
+                        type="text"
+                        className="form-control"
+                        required={true}
+                        autoCorrect="off"
+                        autoComplete="off"
+                        autoFocus={true}
+                        spellCheck={false}
+                        value={input.displayName}
+                        onChange={onDisplayNameChange}
+                        disabled={loading}
+                    />
+                </div>
+            )}
 
-    private onDisplayNameChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        this.props.onChange({ ...this.props.input, displayName: event.currentTarget.value })
-    }
-
-    private onConfigChange = (config: string): void => {
-        this.props.onChange({ ...this.props.input, config })
-    }
+            <div className="form-group">
+                <DynamicallyImportedMonacoSettingsEditor
+                    // DynamicallyImportedMonacoSettingsEditor does not re-render the passed input.config
+                    // if it thinks the config is dirty. We want to always replace the config if the kind changes
+                    // so the editor is keyed on the kind.
+                    value={input.config}
+                    jsonSchema={jsonSchema}
+                    canEdit={false}
+                    loading={loading}
+                    height={350}
+                    isLightTheme={isLightTheme}
+                    onChange={onConfigChange}
+                    history={history}
+                    actions={editorActions}
+                    className="test-external-service-editor"
+                    telemetryService={telemetryService}
+                />
+                <p className="form-text text-muted">
+                    <small>Use Ctrl+Space for completion, and hover over JSON properties for documentation.</small>
+                </p>
+            </div>
+            <button
+                type="submit"
+                className={`btn btn-primary mb-3 ${
+                    mode === 'create' ? 'test-add-external-service-button' : 'test-update-external-service-button'
+                }`}
+                disabled={loading}
+            >
+                {loading && <LoadingSpinner className="icon-inline" />}
+                {submitName ?? (mode === 'edit' ? 'Update repositories' : 'Add repositories')}
+            </button>
+        </Form>
+    )
 }

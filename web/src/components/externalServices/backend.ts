@@ -20,6 +20,17 @@ import {
 
 const LOADING = 'loading' as const
 
+export const externalServiceFragment = gql`
+    fragment ExternalServiceFields on ExternalService {
+        id
+        kind
+        displayName
+        config
+        warning
+        webhookURL
+    }
+`
+
 export function addExternalService(
     variables: AddExternalServiceVariables,
     eventLogger: TelemetryService
@@ -52,17 +63,6 @@ export function isExternalService(
 ): externalServiceOrError is ExternalServiceFields {
     return externalServiceOrError !== LOADING && !isErrorLike(externalServiceOrError)
 }
-
-export const externalServiceFragment = gql`
-    fragment ExternalServiceFields on ExternalService {
-        id
-        kind
-        displayName
-        config
-        warning
-        webhookURL
-    }
-`
 
 export function updateExternalService(
     variables: UpdateExternalServiceVariables
