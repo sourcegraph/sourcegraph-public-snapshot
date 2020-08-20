@@ -47,10 +47,19 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		_ = os.RemoveAll(repoDir)
 	}()
 
+	uploadURL, err := makeUploadURL(h.options.FrontendURLFromDocker, h.options.AuthToken)
+	if err != nil {
+		return err
+	}
+
 	indexAndUploadCommand := []string{
 		"lsif-go",
 		"&&",
-		"src", "-endpoint", fmt.Sprintf(h.options.FrontendURLFromDocker), "lsif", "upload", "-repo", index.RepositoryName, "-commit", index.Commit,
+		fmt.Sprintf("SRC_ENDPOINT=%s", uploadURL.String()),
+		"src", "lsif", "upload",
+		"-repo", index.RepositoryName,
+		"-commit", index.Commit,
+		"-upload-route", "/.internal-code-intel/lsif/upload",
 	}
 
 	if err := h.commander.Run(
@@ -122,4 +131,14 @@ func makeCloneURL(baseURL, authToken, repositoryName string) (*url.URL, error) {
 	base.User = url.UserPassword("indexer", authToken)
 
 	return base.ResolveReference(&url.URL{Path: path.Join(".internal-code-intel", "git", repositoryName)}), nil
+}
+
+func makeUploadURL(baseURL, authToken string) (*url.URL, error) {
+	base, err := url.Parse(baseURL)
+	if err != nil {
+		return nil, err
+	}
+	base.User = url.UserPassword("indexer", authToken)
+
+	return base, nil
 }
