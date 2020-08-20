@@ -69,13 +69,20 @@ interface BreadcrumbAtDepth {
 /**
  * Hook to start a breadcrumb tree.
  *
- * TODO: Document how to use `useBreadcrumbs`
+ * @returns An object with `breadcrumbs` to be passed to the `Breadcrumbs` component and a pair of breadcrumb setters
+ * to pass down to child components to register child breadcrumbs. Be sure to pass down the returned breadcrumb setters,
+ * not the setters that were passed to the component. Otherwise, your breadcrumbs may render out of order.
+ *
  */
 export const useBreadcrumbs = (): BreadcrumbsProps & BreadcrumbSetters => {
     const [breadcrumbsByDepth, setBreadcrumbsByDepth] = useState<BreadcrumbAtDepth[]>([
         { depth: 0, breadcrumb: { key: 'home', element: <Link to="/search">Home</Link>, divider: null } },
     ])
 
+    /**
+     * @param depth The relative depth of the next breadcrumb to be added with the
+     * returned breadcrumb setters. This should always be called with $CURRENT_DEPTH + 1.
+     */
     const createBreadcrumbSetters = useCallback((depth: number = 1): BreadcrumbSetters => {
         /** Shared logic between plain function and hook */
         function internalSetBreadcrumb(breadcrumb: NullableBreadcrumb): () => void {
@@ -95,7 +102,7 @@ export const useBreadcrumbs = (): BreadcrumbsProps & BreadcrumbSetters => {
             return useMemo(() => createBreadcrumbSetters(depth + 1), [])
         }
 
-        /** 'Vanilla function' for backcompat with class components */
+        /** Plain function for backcompat with class components */
         function setBreadcrumb(breadcrumb: NullableBreadcrumb): BreadcrumbSetters & Unsubscribable {
             const cleanup = internalSetBreadcrumb(breadcrumb)
             const setters = createBreadcrumbSetters(depth + 1)
