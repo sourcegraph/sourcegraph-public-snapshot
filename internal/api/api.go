@@ -13,6 +13,7 @@ import (
 	"path"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/jig/teereadcloser"
 	"github.com/kballard/go-shellquote"
 	"github.com/mattn/go-isatty"
 	"github.com/pkg/errors"
@@ -138,6 +139,21 @@ func (r *request) do(ctx context.Context, result interface{}) (bool, error) {
 		return false, nil
 	}
 
+	if *r.client.opts.Flags.dump {
+		fmt.Fprintf(r.client.opts.Out, "<-- query:\n%s\n\n", r.query)
+		if len(r.vars) > 0 {
+			fmt.Fprintln(r.client.opts.Out, "<-- variables:")
+			for k, v := range r.vars {
+				value, err := json.Marshal(v)
+				if err != nil {
+					return false, err
+				}
+				fmt.Fprintf(r.client.opts.Out, "    %s: %s\n", k, string(value))
+			}
+			fmt.Fprintln(r.client.opts.Out, "")
+		}
+	}
+
 	// Create the JSON object.
 	reqBody, err := json.Marshal(map[string]interface{}{
 		"query":     r.query,
@@ -181,8 +197,19 @@ func (r *request) do(ctx context.Context, result interface{}) (bool, error) {
 		return false, fmt.Errorf("error: %s\n\n%s", resp.Status, body)
 	}
 
+	body := resp.Body
+	if *r.client.opts.Flags.dump {
+		var buf bytes.Buffer
+		body = ioaux.TeeReadCloser(resp.Body, &buf)
+		defer func() {
+			var out bytes.Buffer
+			json.Indent(&out, buf.Bytes(), "    ", "    ")
+			fmt.Fprintf(r.client.opts.Out, "--> %s\n\n", out.String())
+		}()
+	}
+
 	// Decode the response.
-	if err := json.NewDecoder(resp.Body).Decode(result); err != nil {
+	if err := json.NewDecoder(body).Decode(result); err != nil {
 		return false, err
 	}
 
