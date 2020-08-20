@@ -39,6 +39,7 @@ import {
     stepCallbacks,
     HAS_SEEN_TOUR_KEY,
     HAS_CANCELLED_TOUR_KEY,
+    defaultTourOptions,
 } from './SearchOnboardingTour'
 import { useLocalStorage } from '../../util/useLocalStorage'
 import Shepherd from 'shepherd.js'
@@ -93,19 +94,12 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
     const quickLinks =
         (isSettingsValid<Settings>(props.settingsCascade) && props.settingsCascade.final.quicklinks) || []
 
-    const onSubmit = useCallback(
-        (event?: React.FormEvent<HTMLFormElement>): void => {
-            // False positive
-            // eslint-disable-next-line no-unused-expressions
-            event?.preventDefault()
-
-            submitSearch({ ...props, query: userQueryState.query, source: 'home' })
-        },
-        [props, userQueryState.query]
-    )
-
     const [hasSeenTour, setHasSeenTour] = useLocalStorage(HAS_SEEN_TOUR_KEY, false)
     const [hasCancelledTour, setHasCancelledTour] = useLocalStorage(HAS_CANCELLED_TOUR_KEY, false)
+
+    // tourWasActive denotes whether the tour was ever active while this component was rendered, in order
+    // for us to know whether to show the structural search informational step on the results page.
+    const [tourWasActive, setTourWasActive] = useState(false)
 
     const isHomepage = useMemo(
         () => props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search),
@@ -114,29 +108,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
 
     const showOnboardingTour = props.showOnboardingTour && isHomepage
 
-    const tour = useMemo(
-        () =>
-            new Shepherd.Tour({
-                useModalOverlay: true,
-                defaultStepOptions: {
-                    arrow: true,
-                    classes: 'web-content tour-card card py-4 px-3',
-                    popperOptions: {
-                        // Removes default behavior of autofocusing steps
-                        modifiers: [
-                            {
-                                name: 'focusAfterRender',
-                                enabled: false,
-                            },
-                            { name: 'offset', options: { offset: [0, 8] } },
-                        ],
-                    },
-                    attachTo: { on: 'bottom' },
-                    scrollTo: false,
-                },
-            }),
-        []
-    )
+    const tour = useMemo(() => new Shepherd.Tour(defaultTourOptions), [])
 
     useEffect(() => {
         if (showOnboardingTour) {
@@ -212,6 +184,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
 
     useEffect(() => {
         if (showOnboardingTour && !hasCancelledTour && !hasSeenTour) {
+            setTourWasActive(true)
             tour.start()
         }
         return
@@ -233,8 +206,26 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
         })
         tour.on('cancel', () => {
             setHasCancelledTour(true)
+            // If the user closed the tour, we don't want to show
+            // any further popups, so set this to false.
+            setTourWasActive(false)
         })
     }, [tour, setHasSeenTour, setHasCancelledTour])
+
+    const onSubmit = useCallback(
+        (event?: React.FormEvent<HTMLFormElement>): void => {
+            // False positive
+            // eslint-disable-next-line no-unused-expressions
+            event?.preventDefault()
+            submitSearch({
+                ...props,
+                query: userQueryState.query,
+                source: 'home',
+                searchParameters: tourWasActive ? [{ key: 'onboardingTour', value: 'true' }] : undefined,
+            })
+        },
+        [props, userQueryState.query, tourWasActive]
+    )
 
     return (
         <div className="d-flex flex-row flex-shrink-past-contents">
