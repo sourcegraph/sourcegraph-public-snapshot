@@ -26,7 +26,7 @@ import (
 func TestSyncer_Sync(t *testing.T) {
 	t.Parallel()
 
-	testSyncerSync(t, new(repos.FakeStore))(t)
+	testSyncerSync(new(repos.FakeStore))(t)
 
 	github := repos.ExternalService{ID: 1, Kind: extsvc.KindGitHub}
 	gitlab := repos.ExternalService{ID: 2, Kind: extsvc.KindGitLab}
@@ -89,10 +89,11 @@ func TestSyncer_Sync(t *testing.T) {
 	}
 }
 
-func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
-	servicesPerKind := createExternalServices(t, s)
-
-	githubService := servicesPerKind[extsvc.KindGitHub]
+func testSyncerSync(s repos.Store) func(*testing.T) {
+	githubService := &repos.ExternalService{
+		ID:   1,
+		Kind: extsvc.KindGitHub,
+	}
 
 	githubRepo := (&repos.Repo{
 		Name:     "github.com/org/foo",
@@ -106,7 +107,10 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 		repos.Opt.RepoSources(githubService.URN()),
 	)
 
-	gitlabService := servicesPerKind[extsvc.KindGitLab]
+	gitlabService := &repos.ExternalService{
+		ID:   10,
+		Kind: extsvc.KindGitLab,
+	}
 
 	gitlabRepo := (&repos.Repo{
 		Name:     "gitlab.com/org/foo",
@@ -120,7 +124,10 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 		repos.Opt.RepoSources(gitlabService.URN()),
 	)
 
-	bitbucketServerService := servicesPerKind[extsvc.KindBitbucketServer]
+	bitbucketServerService := &repos.ExternalService{
+		ID:   20,
+		Kind: extsvc.KindBitbucketServer,
+	}
 
 	bitbucketServerRepo := (&repos.Repo{
 		Name:     "bitbucketserver.mycorp.com/org/foo",
@@ -134,7 +141,10 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 		repos.Opt.RepoSources(bitbucketServerService.URN()),
 	)
 
-	awsCodeCommitService := servicesPerKind[extsvc.KindAWSCodeCommit]
+	awsCodeCommitService := &repos.ExternalService{
+		ID:   30,
+		Kind: extsvc.KindAWSCodeCommit,
+	}
 
 	awsCodeCommitRepo := (&repos.Repo{
 		Name:     "git-codecommit.us-west-1.amazonaws.com/stripe-go",
@@ -148,7 +158,10 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 		repos.Opt.RepoSources(awsCodeCommitService.URN()),
 	)
 
-	otherService := servicesPerKind[extsvc.KindOther]
+	otherService := &repos.ExternalService{
+		ID:   40,
+		Kind: extsvc.KindOther,
+	}
 
 	otherRepo := (&repos.Repo{
 		Name: "git-host.com/org/foo",
@@ -161,7 +174,10 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 		repos.Opt.RepoSources(otherService.URN()),
 	)
 
-	gitoliteService := servicesPerKind[extsvc.KindGitolite]
+	gitoliteService := &repos.ExternalService{
+		ID:   50,
+		Kind: extsvc.KindGitolite,
+	}
 
 	gitoliteRepo := (&repos.Repo{
 		Name:     "gitolite.mycorp.com/foo",
@@ -175,7 +191,10 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 		repos.Opt.RepoSources(gitoliteService.URN()),
 	)
 
-	bitbucketCloudService := servicesPerKind[extsvc.KindBitbucketCloud]
+	bitbucketCloudService := &repos.ExternalService{
+		ID:   60,
+		Kind: extsvc.KindBitbucketCloud,
+	}
 
 	bitbucketCloudRepo := (&repos.Repo{
 		Name:     "bitbucket.org/team/foo",
@@ -190,24 +209,6 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 	)
 
 	clock := repos.NewFakeClock(time.Now(), 0)
-
-	svcdup := repos.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "Github2 - Test",
-		Config:      `{"url": "https://github.com"}`,
-		CreatedAt:   clock.Now(),
-		UpdatedAt:   clock.Now(),
-	}
-
-	// create a few external services
-	if err := s.UpsertExternalServices(context.Background(), &svcdup); err != nil {
-		t.Fatalf("failed to insert external services: %v", err)
-	}
-
-	var services []repos.ExternalService
-	for _, svc := range servicesPerKind {
-		services = append(services, *svc)
-	}
 
 	type testCase struct {
 		name    string
@@ -233,9 +234,10 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 		{repo: gitoliteRepo, svc: gitoliteService},
 		{repo: bitbucketCloudRepo, svc: bitbucketCloudService},
 	} {
+		svcdup := tc.svc.With(repos.Opt.ExternalServiceID(tc.svc.ID + 1))
 		testCases = append(testCases,
 			testCase{
-				name: tc.repo.Name + "/new repo",
+				name: "new repo",
 				sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone()),
 				),
@@ -249,7 +251,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				err: "<nil>",
 			},
 			testCase{
-				name: tc.repo.Name + "/new repo sources",
+				name: "new repo sources",
 				sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone()),
 					repos.NewFakeSource(svcdup.Clone(), nil, tc.repo.Clone()),
@@ -264,7 +266,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				err: "<nil>",
 			},
 			testCase{
-				name: tc.repo.Name + "/deleted repo source",
+				name: "deleted repo source",
 				sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone()),
 				),
@@ -279,7 +281,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				err: "<nil>",
 			},
 			testCase{
-				name:    tc.repo.Name + "/deleted ALL repo sources",
+				name:    "deleted ALL repo sources",
 				sourcer: repos.NewFakeSourcer(nil),
 				store:   s,
 				stored: repos.Repos{tc.repo.With(
@@ -292,7 +294,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				err: "<nil>",
 			},
 			testCase{
-				name:    tc.repo.Name + "/renamed repo is detected via external_id",
+				name:    "renamed repo is detected via external_id",
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone())),
 				store:   s,
 				stored: repos.Repos{tc.repo.With(func(r *repos.Repo) {
@@ -306,7 +308,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				err: "<nil>",
 			},
 			testCase{
-				name: tc.repo.Name + "/repo got renamed to another repo that gets deleted",
+				name: "repo got renamed to another repo that gets deleted",
 				sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(tc.svc.Clone(), nil,
 						tc.repo.With(func(r *repos.Repo) { r.ExternalRepo.ID = "another-id" }),
@@ -339,7 +341,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				err: "<nil>",
 			},
 			testCase{
-				name: tc.repo.Name + "/repo inserted with same name as another repo that gets deleted",
+				name: "repo inserted with same name as another repo that gets deleted",
 				sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(tc.svc.Clone(), nil,
 						tc.repo,
@@ -369,7 +371,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				err: "<nil>",
 			},
 			testCase{
-				name: tc.repo.Name + "/repo inserted with same name as repo without id",
+				name: "repo inserted with same name as repo without id",
 				sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(tc.svc.Clone(), nil,
 						tc.repo,
@@ -401,7 +403,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				err: "<nil>",
 			},
 			testCase{
-				name:    tc.repo.Name + "/renamed repo which was deleted is detected and added",
+				name:    "renamed repo which was deleted is detected and added",
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone())),
 				store:   s,
 				stored: repos.Repos{tc.repo.With(func(r *repos.Repo) {
@@ -417,7 +419,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				err: "<nil>",
 			},
 			testCase{
-				name: tc.repo.Name + "/repos have their names swapped",
+				name: "repos have their names swapped",
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil,
 					tc.repo.With(func(r *repos.Repo) {
 						r.Name = "foo"
@@ -457,7 +459,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				err: "<nil>",
 			},
 			testCase{
-				name: tc.repo.Name + "/case insensitive name",
+				name: "case insensitive name",
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil,
 					tc.repo.Clone(),
 					tc.repo.With(repos.Opt.RepoName(strings.ToUpper(tc.repo.Name))),
@@ -492,7 +494,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				}
 
 				return testCase{
-					name: tc.repo.Name + "/metadata update",
+					name: "metadata update",
 					sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil,
 						tc.repo.With(repos.Opt.RepoModifiedAt(clock.Time(1)),
 							repos.Opt.RepoMetadata(update)),
@@ -508,6 +510,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				}
 			}(),
 		)
+
 	}
 
 	return func(t *testing.T) {
@@ -540,8 +543,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				}
 
 				if st != nil && len(tc.stored) > 0 {
-					cloned := tc.stored.Clone()
-					if err := st.InsertRepos(ctx, cloned...); err != nil {
+					if err := st.UpsertRepos(ctx, tc.stored.Clone()...); err != nil {
 						t.Fatalf("failed to prepare store: %v", err)
 					}
 				}
@@ -581,13 +583,11 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 func TestSync_SyncSubset(t *testing.T) {
 	t.Parallel()
 
-	testSyncSubset(t, new(repos.FakeStore))(t)
+	testSyncSubset(new(repos.FakeStore))(t)
 }
 
-func testSyncSubset(t *testing.T, s repos.Store) func(*testing.T) {
+func testSyncSubset(s repos.Store) func(*testing.T) {
 	clock := repos.NewFakeClock(time.Now(), time.Second)
-
-	servicesPerKind := createExternalServices(t, s)
 
 	repo := &repos.Repo{
 		ID:          0, // explicitly make default value for sourced repo
@@ -602,8 +602,8 @@ func testSyncSubset(t *testing.T, s repos.Store) func(*testing.T) {
 			ServiceID:   "https://github.com/",
 		},
 		Sources: map[string]*repos.SourceInfo{
-			servicesPerKind[extsvc.KindGitHub].URN(): {
-				ID:       servicesPerKind[extsvc.KindGitHub].URN(),
+			"extsvc:123": {
+				ID:       "extsvc:123",
 				CloneURL: "git@github.com:foo/bar.git",
 			},
 		},
@@ -687,7 +687,7 @@ func testSyncSubset(t *testing.T, s repos.Store) func(*testing.T) {
 				}()
 
 				if len(tc.stored) > 0 {
-					if err := st.InsertRepos(ctx, tc.stored.Clone()...); err != nil {
+					if err := st.UpsertRepos(ctx, tc.stored.Clone()...); err != nil {
 						t.Fatalf("failed to prepare store: %v", err)
 					}
 				}
@@ -1013,7 +1013,7 @@ func TestSync_Run(t *testing.T) {
 	}
 
 	// Initial repos in store
-	syncer.Store.InsertRepos(ctx, stored...)
+	syncer.Store.UpsertRepos(ctx, stored...)
 
 	done := make(chan struct{})
 	go func() {

@@ -891,13 +891,13 @@ func createTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) (
 
 	var rs []*repos.Repo
 	for i := 0; i < count; i++ {
-		r := testRepo(t, rstore, extsvc.TypeGitHub)
+		r := testRepo(i, extsvc.TypeGitHub)
 		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
 
 		rs = append(rs, r)
 	}
 
-	err := rstore.InsertRepos(ctx, rs...)
+	err := rstore.UpsertRepos(ctx, rs...)
 	if err != nil {
 		t.Fatal(err)
 	}

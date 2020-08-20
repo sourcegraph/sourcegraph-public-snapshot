@@ -33,9 +33,9 @@ func TestChangesetConnectionResolver(t *testing.T) {
 	store := ee.NewStore(dbconn.Global)
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, rstore))
-	inaccessibleRepo := newGitHubTestRepo("github.com/sourcegraph/private", newGitHubExternalService(t, rstore))
-	if err := rstore.InsertRepos(ctx, repo, inaccessibleRepo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", 1)
+	inaccessibleRepo := newGitHubTestRepo("github.com/sourcegraph/private", 2)
+	if err := rstore.UpsertRepos(ctx, repo, inaccessibleRepo); err != nil {
 		t.Fatal(err)
 	}
 	ct.AuthzFilterRepos(t, inaccessibleRepo.ID)

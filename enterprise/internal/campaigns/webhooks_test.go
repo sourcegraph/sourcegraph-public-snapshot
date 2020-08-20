@@ -76,7 +76,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		err = repoStore.InsertRepos(ctx, githubRepo)
+		err = repoStore.UpsertRepos(ctx, githubRepo)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -250,7 +250,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal("repo not found")
 		}
 
-		err = repoStore.InsertRepos(ctx, bitbucketRepo)
+		err = repoStore.UpsertRepos(ctx, bitbucketRepo)
 		if err != nil {
 			t.Fatal(err)
 		}
