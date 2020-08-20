@@ -89,7 +89,7 @@ export const useBreadcrumbs = (): BreadcrumbsProps & BreadcrumbSetters => {
         }
 
         /** Convenience hook for function components */
-        function useBreadcrumbSetters(breadcrumb: NullableBreadcrumb): BreadcrumbSetters {
+        function useBreadcrumb(breadcrumb: NullableBreadcrumb): BreadcrumbSetters {
             useEffect(() => internalSetBreadcrumb(breadcrumb), [breadcrumb])
 
             return useMemo(() => createBreadcrumbSetters(depth + 1), [])
