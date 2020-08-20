@@ -222,7 +222,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                         <button
                             type="button"
                             id="repo-popover"
-                            className="btn btn-link px-0"
+                            className="btn btn-icon px-0"
                             aria-label="Change repository"
                         >
                             <MenuDownIcon className="icon-inline" />

@@ -1,12 +1,9 @@
-@import './actions/CopyLinkAction';
 @import './RepositoriesPopover';
 @import './RepoHeaderBreadcrumbNavItem';
 
 .repo-header {
     flex: none;
-    padding-top: 0;
-    padding-bottom: 0;
-    padding-right: 0;
+    padding: 0;
     align-items: stretch;
     border-style: solid;
     border-width: 0 0 1px;

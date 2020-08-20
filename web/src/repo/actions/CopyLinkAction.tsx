@@ -29,7 +29,7 @@ export class CopyLinkAction extends React.PureComponent<Props, State> {
         return (
             <button
                 type="button"
-                className="copy-link-action btn btn-link btn-link-sm"
+                className="btn btn-icon"
                 data-tooltip={this.state.copied ? 'Copied!' : 'Copy link to clipboard'}
                 aria-label="Copy link"
                 onClick={this.onClick}
