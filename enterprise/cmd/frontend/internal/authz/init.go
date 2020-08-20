@@ -26,9 +26,7 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 		}
 	}()
 
-	enterpriseServices.AuthzResolver = resolvers.NewResolver(dbconn.Global, func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
-	})
+	enterpriseServices.AuthzResolver = resolvers.NewResolver(dbconn.Global, msResolutionClock)
 
 	return nil
 }

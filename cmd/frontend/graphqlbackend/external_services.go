@@ -10,10 +10,13 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -23,25 +26,63 @@ import (
 
 var extsvcConfigAllowEdits, _ = strconv.ParseBool(env.Get("EXTSVC_CONFIG_ALLOW_EDITS", "false", "When EXTSVC_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
 
-func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
-	Input struct {
-		Kind        string
-		DisplayName string
-		Config      string
-	}
-}) (*externalServiceResolver, error) {
-	// 🚨 SECURITY: Only site admins may add external services.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
+type addExternalServiceArgs struct {
+	Input addExternalServiceInput
+}
+
+type addExternalServiceInput struct {
+	Kind        string
+	DisplayName string
+	Config      string
+	Namespace   *graphql.ID
+}
+
+func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExternalServiceArgs) (*externalServiceResolver, error) {
 	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
+	}
+
+	// 🚨 SECURITY: Only site admins may add external services if user mode is disabled.
+	namespaceUserID := int32(0)
+	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
+	allowUserExternalServices := conf.ExternalServiceUserMode()
+	if !allowUserExternalServices {
+		// The user may have a tag that opts them in
+		err := backend.CheckActorHasTag(ctx, backend.TagAllowUserExternalServicePublic)
+		allowUserExternalServices = err == nil
+	}
+	if args.Input.Namespace != nil {
+		if !allowUserExternalServices {
+			return nil, errors.New("allow users to add external services is not enabled")
+		}
+
+		var err error
+		switch relay.UnmarshalKind(*args.Input.Namespace) {
+		case "User":
+			err = relay.UnmarshalSpec(*args.Input.Namespace, &namespaceUserID)
+		default:
+			err = errors.Errorf("invalid namespace %q", *args.Input.Namespace)
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		if namespaceUserID != actor.FromContext(ctx).UID {
+			return nil, errors.New("the namespace is not same as the authenticated user")
+		}
+
+	} else if !isSiteAdmin {
+		return nil, backend.ErrMustBeSiteAdmin
 	}
 
 	externalService := &types.ExternalService{
 		Kind:        args.Input.Kind,
 		DisplayName: args.Input.DisplayName,
 		Config:      args.Input.Config,
+	}
+	if namespaceUserID > 0 {
+		externalService.NamespaceUserID = &namespaceUserID
 	}
 
 	if err := db.ExternalServices.Create(ctx, conf.Get, externalService); err != nil {
@@ -113,13 +154,16 @@ func syncExternalService(ctx context.Context, svc *types.ExternalService) error 
 	defer cancel()
 
 	_, err := repoupdater.DefaultClient.SyncExternalService(ctx, api.ExternalService{
-		ID:          svc.ID,
-		Kind:        svc.Kind,
-		DisplayName: svc.DisplayName,
-		Config:      svc.Config,
-		CreatedAt:   svc.CreatedAt,
-		UpdatedAt:   svc.UpdatedAt,
-		DeletedAt:   svc.DeletedAt,
+		ID:              svc.ID,
+		Kind:            svc.Kind,
+		DisplayName:     svc.DisplayName,
+		Config:          svc.Config,
+		CreatedAt:       svc.CreatedAt,
+		UpdatedAt:       svc.UpdatedAt,
+		DeletedAt:       svc.DeletedAt,
+		LastSyncAt:      svc.LastSyncAt,
+		NextSyncAt:      svc.NextSyncAt,
+		NamespaceUserID: svc.NamespaceUserID,
 	})
 	if err != nil && ctx.Err() == nil {
 		return err
@@ -164,14 +208,52 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
-func (r *schemaResolver) ExternalServices(ctx context.Context, args *struct {
+type ExternalServicesArgs struct {
+	Namespace *graphql.ID
 	graphqlutil.ConnectionArgs
-}) (*externalServiceConnectionResolver, error) {
-	// 🚨 SECURITY: Only site admins may read external services (they have secrets).
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
+	After *string
+}
+
+var errMustBeSiteAdminOrSameUser = errors.New("must be site admin or the namespace is same as the authenticated user")
+
+func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalServicesArgs) (*externalServiceConnectionResolver, error) {
+	var namespaceUserID int32
+	if args.Namespace != nil {
+		var err error
+		switch relay.UnmarshalKind(*args.Namespace) {
+		case "User":
+			err = relay.UnmarshalSpec(*args.Namespace, &namespaceUserID)
+		default:
+			err = errors.Errorf("invalid namespace %q", *args.Namespace)
+		}
+
+		if err != nil {
+			return nil, err
+		}
 	}
-	var opt db.ExternalServicesListOptions
+
+	// 🚨 SECURITY: Only site admins may read all or a user's external services.
+	// Otherwise, the authenticated user can only read external services under the same namespace.
+	if backend.CheckSiteAdminOrSameUser(ctx, namespaceUserID) != nil {
+		// NOTE: We do not directly return the err here because it contains the desired username,
+		// which then allows attacker to brute force over our database ID and get corresponding
+		// username.
+		return nil, errMustBeSiteAdminOrSameUser
+	}
+
+	var afterID int64
+	if args.After != nil {
+		var err error
+		afterID, err = unmarshalExternalServiceID(graphql.ID(*args.After))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	opt := db.ExternalServicesListOptions{
+		NamespaceUserID: namespaceUserID,
+		AfterID:         afterID,
+	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &externalServiceConnectionResolver{opt: opt}, nil
 }
@@ -214,7 +296,13 @@ func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*grap
 	if err != nil {
 		return nil, err
 	}
-	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(externalServices) >= r.opt.Limit), nil
+
+	hasNextPage := r.opt.LimitOffset != nil && len(externalServices) >= r.opt.Limit
+	if hasNextPage {
+		endCursorID := externalServices[len(externalServices)-1].ID
+		return graphqlutil.NextPageCursor(string(marshalExternalServiceID(endCursorID))), nil
+	}
+	return graphqlutil.HasNextPage(false), nil
 }
 
 type computedExternalServiceConnectionResolver struct {

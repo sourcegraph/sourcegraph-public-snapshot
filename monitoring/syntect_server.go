@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 func SyntectServer() *Container {
 	return &Container{
 		Name:        "syntect-server",
@@ -13,13 +15,25 @@ func SyntectServer() *Container {
 						{
 							Name:              "syntax_highlighting_errors",
 							Description:       "syntax highlighting errors every 5m",
-							Query:             `sum(increase(src_syntax_highlighting_requests{status="error"}[5m]))`,
+							Query:             `sum(increase(src_syntax_highlighting_requests{status="error"}[5m])) / sum(increase(src_syntax_highlighting_requests[5m])) * 100`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 5},
-							PanelOptions:      PanelOptions().LegendFormat("error"),
+							Warning:           Alert{GreaterOrEqual: 5, For: 5 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("error").Unit(Percentage),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
+						{
+							Name:              "syntax_highlighting_timeouts",
+							Description:       "syntax highlighting timeouts every 5m",
+							Query:             `sum(increase(src_syntax_highlighting_requests{status="timeout"}[5m])) / sum(increase(src_syntax_highlighting_requests[5m])) * 100`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 5, For: 5 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("timeout").Unit(Percentage),
+							Owner:             ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+					},
+					{
 						{
 							Name:              "syntax_highlighting_panics",
 							Description:       "syntax highlighting panics every 5m",
@@ -27,18 +41,6 @@ func SyntectServer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("panic"),
-							Owner:             ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
-						},
-					},
-					{
-						{
-							Name:              "syntax_highlighting_timeouts",
-							Description:       "syntax highlighting timeouts every 5m",
-							Query:             `sum(increase(src_syntax_highlighting_requests{status="timeout"}[5m]))`,
-							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 5},
-							PanelOptions:      PanelOptions().LegendFormat("timeout"),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
@@ -60,12 +62,12 @@ func SyntectServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerCPUUsage("syntect-server"),
-						sharedContainerMemoryUsage("syntect-server"),
+						sharedContainerCPUUsage("syntect-server", ObservableOwnerCodeIntel),
+						sharedContainerMemoryUsage("syntect-server", ObservableOwnerCodeIntel),
 					},
 					{
-						sharedContainerRestarts("syntect-server"),
-						sharedContainerFsInodes("syntect-server"),
+						sharedContainerRestarts("syntect-server", ObservableOwnerCodeIntel),
+						sharedContainerFsInodes("syntect-server", ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -74,12 +76,12 @@ func SyntectServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage7d("syntect-server"),
-						sharedProvisioningMemoryUsage7d("syntect-server"),
+						sharedProvisioningCPUUsageLongTerm("syntect-server", ObservableOwnerCodeIntel),
+						sharedProvisioningMemoryUsageLongTerm("syntect-server", ObservableOwnerCodeIntel),
 					},
 					{
-						sharedProvisioningCPUUsage5m("syntect-server"),
-						sharedProvisioningMemoryUsage5m("syntect-server"),
+						sharedProvisioningCPUUsageShortTerm("syntect-server", ObservableOwnerCodeIntel),
+						sharedProvisioningMemoryUsageShortTerm("syntect-server", ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -88,7 +90,7 @@ func SyntectServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedKubernetesPodsAvailable("syntect-server"),
+						sharedKubernetesPodsAvailable("syntect-server", ObservableOwnerCodeIntel),
 					},
 				},
 			},

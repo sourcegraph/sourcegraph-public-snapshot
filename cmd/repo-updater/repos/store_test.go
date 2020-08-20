@@ -2,6 +2,7 @@ package repos_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
@@ -10,11 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp/cmpopts"
-
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -23,7 +24,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestFakeStore(t *testing.T) {
@@ -273,18 +276,45 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 			},
 			assert: repos.Assert.ExternalServicesEqual(&phabricatorService),
 		},
-	)
-
-	testCases = append(testCases, testCase{
-		name:   "returns svcs by their ids",
-		stored: svcs,
-		args: func(stored repos.ExternalServices) repos.StoreListExternalServicesArgs {
-			return repos.StoreListExternalServicesArgs{
-				IDs: []int64{stored[0].ID, stored[1].ID},
-			}
+		testCase{
+			name:   "returns svcs by their ids",
+			stored: svcs,
+			args: func(stored repos.ExternalServices) repos.StoreListExternalServicesArgs {
+				return repos.StoreListExternalServicesArgs{
+					IDs: []int64{stored[0].ID, stored[1].ID},
+				}
+			},
+			assert: repos.Assert.ExternalServicesEqual(svcs[:2].Clone()...),
 		},
-		assert: repos.Assert.ExternalServicesEqual(svcs[:2].Clone()...),
-	})
+		testCase{
+			name:   "limit and zero cursor",
+			stored: svcs,
+			args: func(repos.ExternalServices) (args repos.StoreListExternalServicesArgs) {
+				args.Cursor = 0
+				args.Limit = 1
+				return args
+			},
+			assert: repos.Assert.ExternalServicesEqual(func() (es repos.ExternalServices) {
+				return repos.ExternalServices{
+					svcs[0],
+				}
+			}()...),
+		},
+		testCase{
+			name:   "limit and non-zero cursor",
+			stored: svcs,
+			args: func(repos repos.ExternalServices) (args repos.StoreListExternalServicesArgs) {
+				args.Cursor = repos[0].ID
+				args.Limit = 1
+				return args
+			},
+			assert: repos.Assert.ExternalServicesEqual(func() (es repos.ExternalServices) {
+				return repos.ExternalServices{
+					svcs[1],
+				}
+			}()...),
+		},
+	)
 
 	return func(t *testing.T) {
 		t.Helper()
@@ -1373,6 +1403,57 @@ func testStoreListReposPagination(store repos.Store) func(*testing.T) {
 				}
 			}
 		}))
+	}
+}
+
+func testSyncRateLimiters(store repos.Store) func(*testing.T) {
+	clock := repos.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
+	return func(t *testing.T) {
+		ctx := context.Background()
+		transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			toCreate := 501 // Larger than default page size in order to test pagination
+			services := make([]*repos.ExternalService, 0, toCreate)
+			for i := 0; i < toCreate; i++ {
+				svc := &repos.ExternalService{
+					ID:          int64(i) + 1,
+					Kind:        "GitHub",
+					DisplayName: "GitHub",
+					CreatedAt:   now,
+					UpdatedAt:   now,
+					DeletedAt:   time.Time{},
+				}
+				config := schema.GitLabConnection{
+					Url: fmt.Sprintf("http://example%d.com/", i),
+					RateLimit: &schema.GitLabRateLimit{
+						RequestsPerHour: 3600,
+						Enabled:         true,
+					},
+				}
+				data, err := json.Marshal(config)
+				if err != nil {
+					t.Fatal(err)
+				}
+				svc.Config = string(data)
+				services = append(services, svc)
+			}
+
+			if err := tx.UpsertExternalServices(ctx, services...); err != nil {
+				t.Fatalf("failed to setup store: %v", err)
+			}
+
+			registry := ratelimit.NewRegistry()
+			syncer := repos.NewRateLimitSyncer(registry, tx)
+			err := syncer.SyncRateLimiters(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			have := registry.Count()
+			if have != toCreate {
+				t.Fatalf("Want %d, got %d", toCreate, have)
+			}
+		})(t)
 	}
 }
 

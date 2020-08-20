@@ -2,7 +2,7 @@
 name: Tracking issue
 about: An issue to capture planned and on-going work of a team's milestone.
 title: 'WIP: $TEAM $MILESTONE Tracking issue'
-labels: 'tracking'
+labels: tracking
 assignees: ''
 
 ---

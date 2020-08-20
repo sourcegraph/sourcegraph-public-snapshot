@@ -14,13 +14,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // NewService returns a Service.
@@ -43,42 +41,6 @@ type Service struct {
 	sourcer repos.Sourcer
 
 	clock func() time.Time
-}
-
-// CreateCampaign creates the Campaign.
-func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign) (err error) {
-	tr, ctx := trace.New(ctx, "Service.CreateCampaign", fmt.Sprintf("Name: %q", c.Name))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	if c.Name == "" {
-		return ErrCampaignNameBlank
-	}
-
-	tx, err := s.store.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	c.CreatedAt = s.clock()
-	c.UpdatedAt = c.CreatedAt
-
-	err = tx.CreateCampaign(ctx, c)
-	if err != nil {
-		return err
-	}
-
-	if c.Branch != "" {
-		err = validateCampaignBranch(c.Branch)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 type CreateCampaignSpecOpts struct {
@@ -113,18 +75,19 @@ func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpe
 	spec.NamespaceUserID = opts.NamespaceUserID
 	spec.UserID = actor.UID
 
+	if len(opts.ChangesetSpecRandIDs) == 0 {
+		return spec, s.store.CreateCampaignSpec(ctx, spec)
+	}
+
 	listOpts := ListChangesetSpecsOpts{Limit: -1, RandIDs: opts.ChangesetSpecRandIDs}
 	cs, _, err := s.store.ListChangesetSpecs(ctx, listOpts)
 	if err != nil {
 		return nil, err
 	}
 
-	repoIDs := make([]api.RepoID, 0, len(cs))
-	for _, c := range cs {
-		repoIDs = append(repoIDs, c.RepoID)
-	}
-
-	accessibleReposByID, err := accessibleRepos(ctx, repoIDs)
+	// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
+	// filters out repositories that the user doesn't have access to.
+	accessibleReposByID, err := db.Repos.GetReposSetByIDs(ctx, cs.RepoIDs()...)
 	if err != nil {
 		return nil, err
 	}
@@ -210,433 +173,25 @@ func (e *changesetSpecNotFoundErr) Error() string {
 
 func (e *changesetSpecNotFoundErr) NotFound() bool { return true }
 
-type ApplyCampaignOpts struct {
-	CampaignSpecRandID string
-	EnsureCampaignID   int64
-}
-
-func (o ApplyCampaignOpts) String() string {
-	return fmt.Sprintf(
-		"CampaignSpec %s, EnsureCampaignID %d",
-		o.CampaignSpecRandID,
-		o.EnsureCampaignID,
-	)
-}
-
-// mockApplyCampaignCloseChangesets is used to test ApplyCampaign closing
-// detached changesets.
-// This is a temporary mock that should be removed once we move closing of
-// changesets into the background.
-var mockApplyCampaignCloseChangesets func(campaigns.Changesets)
-
-// ApplyCampaign creates the CampaignSpec.
-func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (campaign *campaigns.Campaign, err error) {
-	tr, ctx := trace.New(ctx, "Service.ApplyCampaign", opts.String())
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	// Setup a defer func that gets executed _after_ the `tx.Done(err)` below.
-	toClose := campaigns.Changesets{}
-	defer func() {
-		if mockApplyCampaignCloseChangesets != nil {
-			mockApplyCampaignCloseChangesets(toClose)
-			return
-		}
-
-		// So if err is not nil, the transaction has been rolled back.
-		if err != nil {
-			return
-		}
-		// If not, we launch a goroutine that closes the changesets added to
-		// toClose in the background.
-		go func() {
-			ctx := trace.ContextWithTrace(context.Background(), tr)
-
-			// Close only the changesets that are open
-			err := s.CloseOpenChangesets(ctx, toClose)
-			if err != nil {
-				log15.Error("CloseCampaignChangesets", "err", err)
-			}
-		}()
-	}()
-
-	tx, err := s.store.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	rstore := repos.NewDBStore(tx.DB(), sql.TxOptions{})
-
-	campaignSpec, err := tx.GetCampaignSpec(ctx, GetCampaignSpecOpts{
-		RandID: opts.CampaignSpecRandID,
-	})
-	if err != nil {
-		return nil, err
+// GetCampaignMatchingCampaignSpec returns the Campaign that the CampaignSpec
+// applies to, if that Campaign already exists.
+// If it doesn't exist yet, both return values are nil.
+// It accepts a *Store so that it can be used inside a transaction.
+func (s *Service) GetCampaignMatchingCampaignSpec(ctx context.Context, tx *Store, spec *campaigns.CampaignSpec) (*campaigns.Campaign, error) {
+	opts := GetCampaignOpts{
+		Name:            spec.Spec.Name,
+		NamespaceUserID: spec.NamespaceUserID,
+		NamespaceOrgID:  spec.NamespaceOrgID,
 	}
 
-	// 🚨 SECURITY: Only site-admins or the creator of campaignSpec can apply
-	// campaignSpec.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, campaignSpec.UserID); err != nil {
-		return nil, err
-	}
-
-	getOpts := GetCampaignOpts{
-		Name:            campaignSpec.Spec.Name,
-		NamespaceUserID: campaignSpec.NamespaceUserID,
-		NamespaceOrgID:  campaignSpec.NamespaceOrgID,
-	}
-
-	campaign, err = tx.GetCampaign(ctx, getOpts)
+	campaign, err := tx.GetCampaign(ctx, opts)
 	if err != nil {
 		if err != ErrNoResults {
 			return nil, err
 		}
 		err = nil
 	}
-	if campaign == nil {
-		campaign = &campaigns.Campaign{}
-	}
-
-	if opts.EnsureCampaignID != 0 && campaign.ID != opts.EnsureCampaignID {
-		return nil, ErrEnsureCampaignFailed
-	}
-
-	if campaign.CampaignSpecID == campaignSpec.ID {
-		return campaign, nil
-	}
-
-	campaign.CampaignSpecID = campaignSpec.ID
-	campaign.AuthorID = campaignSpec.UserID
-	campaign.NamespaceOrgID = campaignSpec.NamespaceOrgID
-	campaign.NamespaceUserID = campaignSpec.NamespaceUserID
-	campaign.Name = campaignSpec.Spec.Name
-
-	campaign.Description = campaignSpec.Spec.Description
-	// TODO(mrnugget): This doesn't need to be populated, since the branch is
-	// now ChangesetSpec.Spec.HeadRef.
-	campaign.Branch = campaignSpec.Spec.ChangesetTemplate.Branch
-
-	if campaign.ID == 0 {
-		err := tx.CreateCampaign(ctx, campaign)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// Now we need to wire up the ChangesetSpecs of the new CampaignSpec
-	// correctly with the Changesets so that the reconciler can create/update
-	// them.
-
-	// Load all of the new ChangesetSpecs
-	newChangesetSpecs, _, err := tx.ListChangesetSpecs(ctx, ListChangesetSpecsOpts{
-		Limit:          -1,
-		CampaignSpecID: campaign.CampaignSpecID,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	// Load all Changesets attached to this Campaign.
-	changesets, _, err := tx.ListChangesets(ctx, ListChangesetsOpts{CampaignID: campaign.ID})
-	if err != nil {
-		return nil, err
-	}
-
-	// We load all the repositories involved, checking for repository permissions
-	// under the hood.
-	repoIDs := make([]api.RepoID, 0, len(newChangesetSpecs)+len(changesets))
-	for _, spec := range newChangesetSpecs {
-		repoIDs = append(repoIDs, spec.RepoID)
-	}
-	for _, changeset := range changesets {
-		repoIDs = append(repoIDs, changeset.RepoID)
-	}
-	accessibleReposByID, err := accessibleRepos(ctx, repoIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	// Now we have two lists:
-
-	// ┌───────────────────────────────────────┐   ┌───────────────────────────────┐
-	// │Changeset 1 | Repo A | #111 | run-gofmt│   │  Spec 1 | Repo A | run-gofmt  │
-	// └───────────────────────────────────────┘   └───────────────────────────────┘
-	// ┌───────────────────────────────────────┐   ┌───────────────────────────────┐
-	// │Changeset 2 | Repo B |      | run-gofmt│   │  Spec 2 | Repo B | run-gofmt  │
-	// └───────────────────────────────────────┘   └───────────────────────────────┘
-	// ┌───────────────────────────────────────┐   ┌───────────────────────────────────┐
-	// │Changeset 3 | Repo C | #222 | run-gofmt│   │  Spec 3 | Repo C | run-goimports  │
-	// └───────────────────────────────────────┘   └───────────────────────────────────┘
-	// ┌───────────────────────────────────────┐   ┌───────────────────────────────┐
-	// │Changeset 4 | Repo C | #333 | older-pr │   │    Spec 4 | Repo C | #333     │
-	// └───────────────────────────────────────┘   └───────────────────────────────┘
-
-	// We need to:
-	// 1. Find out whether our new specs should _update_ an existing
-	//    changeset, or whether we need to create a new one.
-	// 2. Since we can have multiple changesets per repository, we need to match
-	//    based on repo and external ID.
-	// 3. But if a changeset wasn't published yet, it doesn't have an external ID.
-	//    In that case, we need to check whether the branch on which we _might_
-	//    push the commit (because the changeset might not be published
-	//    yet) is the same.
-
-	// What we want:
-	//
-	// ┌───────────────────────────────────────┐    ┌───────────────────────────────┐
-	// │Changeset 1 | Repo A | #111 | run-gofmt│───▶│  Spec 1 | Repo A | run-gofmt  │
-	// └───────────────────────────────────────┘    └───────────────────────────────┘
-	// ┌───────────────────────────────────────┐    ┌───────────────────────────────┐
-	// │Changeset 2 | Repo B |      | run-gofmt│───▶│  Spec 2 | Repo B | run-gofmt  │
-	// └───────────────────────────────────────┘    └───────────────────────────────┘
-	// ┌───────────────────────────────────────┐
-	// │Changeset 3 | Repo C | #222 | run-gofmt│
-	// └───────────────────────────────────────┘
-	// ┌───────────────────────────────────────┐    ┌───────────────────────────────┐
-	// │Changeset 4 | Repo C | #333 | older-pr │───▶│    Spec 4 | Repo C | #333     │
-	// └───────────────────────────────────────┘    └───────────────────────────────┘
-	// ┌───────────────────────────────────────┐    ┌───────────────────────────────────┐
-	// │Changeset 5 | Repo C | | run-goimports │───▶│  Spec 3 | Repo C | run-goimports  │
-	// └───────────────────────────────────────┘    └───────────────────────────────────┘
-	//
-	// Spec 1 should be attached to Changeset 1 and (possibly) update its title/body/diff.
-	// Spec 2 should be attached to Changeset 2 and publish it on the code host.
-	// Spec 3 should get a new Changeset, since its branch doesn't match Changeset 3's branch.
-	// Spec 4 should be attached to Changeset 4, since it tracks PR #333 in Repo C.
-	// Changeset 3 doesn't have a matching spec and should be detached from the campaign (and closed).
-
-	type repoHeadRef struct {
-		repo    api.RepoID
-		headRef string
-	}
-	changesetsByRepoHeadRef := map[repoHeadRef]*campaigns.Changeset{}
-
-	type repoExternalID struct {
-		repo       api.RepoID
-		externalID string
-	}
-	changesetsByRepoExternalID := map[repoExternalID]*campaigns.Changeset{}
-
-	currentSpecsByChangeset := map[int64]*campaigns.ChangesetSpec{}
-
-	for _, c := range changesets {
-		// This is an n+1
-		s, err := tx.GetChangesetSpecByID(ctx, c.CurrentSpecID)
-		if err != nil {
-			return nil, err
-		}
-		currentSpecsByChangeset[c.ID] = s
-
-		if c.ExternalID != "" {
-			k := repoExternalID{repo: c.RepoID, externalID: c.ExternalID}
-			changesetsByRepoExternalID[k] = c
-
-			// If it has an externalID but no CurrentSpecID, it is a tracked
-			// changeset, and we're done and don't need to match it by HeadRef
-			if c.CurrentSpecID == 0 {
-				continue
-			}
-		}
-
-		k := repoHeadRef{repo: c.RepoID}
-		if c.ExternalBranch != "" {
-			k.headRef = git.EnsureRefPrefix(c.ExternalBranch)
-			changesetsByRepoHeadRef[k] = c
-			continue
-		}
-
-		// If we don't have an ExternalBranch, the changeset hasn't been
-		// published yet (or hasn't been synced yet).
-		if c.CurrentSpecID != 0 {
-			// If we're here, the changeset doesn't have an external branch
-			//
-			// So we load the spec to get the branch where we _would_ push
-			// the commit.
-
-			k.headRef = git.EnsureRefPrefix(s.Spec.HeadRef)
-			changesetsByRepoHeadRef[k] = c
-		}
-	}
-
-	attachedChangesets := map[int64]bool{}
-	for _, spec := range newChangesetSpecs {
-		// If we don't have access to a repository, we return an error. Why not
-		// simply skip the repository? If we skip it, the user can't reapply
-		// the same campaign spec, since it's already applied and re-applying
-		// would require a new spec.
-		repo, ok := accessibleReposByID[spec.RepoID]
-		if !ok {
-			return nil, &db.RepoNotFoundErr{ID: spec.RepoID}
-		}
-
-		if err := checkRepoSupported(repo); err != nil {
-			return nil, err
-		}
-
-		// If we need to track a changeset, we need to find it.
-		if spec.Spec.IsImportingExisting() {
-			k := repoExternalID{repo: spec.RepoID, externalID: spec.Spec.ExternalID}
-
-			c, ok := changesetsByRepoExternalID[k]
-			if ok {
-				// If we have the changeset, it's already attached to the campaign
-				// but we need to keep track of all changesets in campaign
-				attachedChangesets[c.ID] = true
-			} else {
-				// We don't have a changeset with the given repoID and external ID
-				existing, err := tx.GetChangeset(ctx, GetChangesetOpts{
-					RepoID:              repo.ID,
-					ExternalID:          spec.Spec.ExternalID,
-					ExternalServiceType: repo.ExternalRepo.ServiceType,
-				})
-				if err != nil && err != ErrNoResults {
-					return nil, err
-				}
-				if existing != nil {
-					// We already have a changeset with the given repoID and
-					// externalID, so we can track it.
-					existing.AddedToCampaign = true
-					existing.CampaignIDs = append(existing.CampaignIDs, campaign.ID)
-					if err = tx.UpdateChangeset(ctx, existing); err != nil {
-						return nil, err
-					}
-					attachedChangesets[existing.ID] = true
-				} else {
-					newChangeset := &campaigns.Changeset{
-						RepoID:              spec.RepoID,
-						ExternalServiceType: repo.ExternalRepo.ServiceType,
-
-						CampaignIDs:     []int64{campaign.ID},
-						ExternalID:      k.externalID,
-						AddedToCampaign: true,
-						// Note: no CurrentSpecID, because we merely track this one
-
-						PublicationState: campaigns.ChangesetPublicationStatePublished,
-						ReconcilerState:  campaigns.ReconcilerStateCompleted,
-					}
-
-					if err = tx.CreateChangeset(ctx, newChangeset); err != nil {
-						return nil, err
-					}
-
-					// TODO: Now we're syncing in the request path to ensure
-					// that the remote changeset exists and also to remove the possibility
-					// of an unsynced changeset entering our database
-					// IMPORTANT: We need to move that to the reconciler/syncer/background.
-					if err = SyncChangesets(ctx, rstore, tx, s.cf, newChangeset); err != nil {
-						return nil, errors.Wrapf(err, "syncing changeset failed. repo=%q, externalID=%q", repo.Name, k.externalID)
-					}
-
-					attachedChangesets[newChangeset.ID] = true
-				}
-
-			}
-			// We handled both cases for "track existing changeset" spec:
-			// 1. Add existing changeset to campaign
-			// 2. Create new changeset and sync it
-			continue
-		}
-
-		// What we're now looking at is a spec that says:
-		//   1. Create a PR on this branch in this repo with this title/body/diff
-		// or, if the a PR on this branch with this repo already exists:
-		//   2. Update the PR on this branch in this repo to have this new title/body/diff
-		//
-		// So, let's check:
-		// Do we already have a changeset on this branch in this repo?
-		k := repoHeadRef{repo: spec.RepoID, headRef: git.EnsureRefPrefix(spec.Spec.HeadRef)}
-		c, ok := changesetsByRepoHeadRef[k]
-		if !ok {
-			// No, we don't have a changeset on that branch in this repo.
-			// We're going to create one so the changeset reconciler picks it up,
-			// creates a commit and pushes it to the branch.
-			// Except, of course, if spec.Spec.Published is false, then it doesn't do anything.
-			newChangeset := &campaigns.Changeset{
-				RepoID:              spec.RepoID,
-				ExternalServiceType: repo.ExternalRepo.ServiceType,
-
-				CampaignIDs:       []int64{campaign.ID},
-				OwnedByCampaignID: campaign.ID,
-				CurrentSpecID:     spec.ID,
-
-				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
-				ReconcilerState:  campaigns.ReconcilerStateQueued,
-			}
-
-			if err = tx.CreateChangeset(ctx, newChangeset); err != nil {
-				return nil, err
-			}
-			attachedChangesets[newChangeset.ID] = true
-		} else {
-			// But if we already have a changeset in the given repository with
-			// the given branch:
-			//
-			// We know we want to keep it in the campaign
-			attachedChangesets[c.ID] = true
-
-			// And we need to update it to have the new spec
-			c.PreviousSpecID = c.CurrentSpecID
-			c.CurrentSpecID = spec.ID
-
-			// And we need to enqueue it for the changeset reconciler, so the
-			// reconciler wakes up, compares old and new spec and, if
-			// necessary, updates the changesets accordingly.
-			c.ReconcilerState = campaigns.ReconcilerStateQueued
-
-			if err = tx.UpdateChangeset(ctx, c); err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	// We went through all the new changeset specs and either created or
-	// updated a changeset.
-	// Their IDs are all the IDs of changesets that should be in the campaign:
-	campaign.ChangesetIDs = []int64{}
-	for changesetID := range attachedChangesets {
-		campaign.ChangesetIDs = append(campaign.ChangesetIDs, changesetID)
-	}
-
-	// But it's possible that changesets are now detached, like Changeset 3 in
-	// the example above.
-	// This we need to detach and close.
-	for _, c := range changesets {
-		if _, ok := attachedChangesets[c.ID]; ok {
-			continue
-		}
-
-		// If we don't have access to a repository, we don't detach nor close the changeset.
-		_, ok := accessibleReposByID[c.RepoID]
-		if !ok {
-			continue
-		}
-
-		if c.CurrentSpecID != 0 && c.OwnedByCampaignID == campaign.ID {
-			// If we have a current spec ID and the changeset was created by
-			// _this_ campaign that means we should detach and close it.
-
-			// But only if it was created on the code host:
-			if c.PublicationState.Published() {
-				toClose = append(toClose, c)
-			} else {
-				// otherwise we simply delete it.
-				if err = tx.DeleteChangeset(ctx, c.ID); err != nil {
-					return nil, err
-				}
-				continue
-			}
-		}
-
-		c.RemoveCampaignID(campaign.ID)
-		if err = tx.UpdateChangeset(ctx, c); err != nil {
-			return nil, err
-		}
-	}
-
-	return campaign, tx.UpdateCampaign(ctx, campaign)
+	return campaign, err
 }
 
 type MoveCampaignOpts struct {
@@ -679,7 +234,7 @@ func (s *Service) MoveCampaign(ctx context.Context, opts MoveCampaignOpts) (camp
 	}
 
 	// 🚨 SECURITY: Only the Author of the campaign can move it.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.InitialApplierID); err != nil {
 		return nil, err
 	}
 	// Check if current user has access to target namespace if set.
@@ -711,12 +266,12 @@ func (s *Service) MoveCampaign(ctx context.Context, opts MoveCampaignOpts) (camp
 var ErrEnsureCampaignFailed = errors.New("a campaign in the given namespace and with the given name exists but does not match the given ID")
 
 // ErrCloseProcessingCampaign is returned by CloseCampaign if the Campaign has
-// been published at the time of closing but its ChangesetJobs have not
-// finished execution.
-var ErrCloseProcessingCampaign = errors.New("cannot close a Campaign while changesets are being created on codehosts")
+// been published at the time of closing but its Changesets are still being
+// processed by the reconciler.
+var ErrCloseProcessingCampaign = errors.New("cannot close a campaign while changesets are being processed")
 
 // CloseCampaign closes the Campaign with the given ID if it has not been closed yet.
-func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets bool) (campaign *campaigns.Campaign, err error) {
+func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets, closeAsync bool) (campaign *campaigns.Campaign, err error) {
 	traceTitle := fmt.Sprintf("campaign: %d, closeChangesets: %t", id, closeChangesets)
 	tr, ctx := trace.New(ctx, "service.CloseCampaign", traceTitle)
 	defer func() {
@@ -736,19 +291,28 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 			return errors.Wrap(err, "getting campaign")
 		}
 
-		if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID); err != nil {
-			return err
-		}
-
-		// TODO: Implement logic to find changesets in PUBLISHING state.
-		processing := false
-		if processing {
-			err = ErrCloseProcessingCampaign
-			return err
-		}
-
-		if !campaign.ClosedAt.IsZero() {
+		if campaign.Closed() {
 			return nil
+		}
+
+		if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.InitialApplierID); err != nil {
+			return err
+		}
+
+		if closeChangesets {
+			processingState := campaigns.ReconcilerStateProcessing
+			countOpts := CountChangesetsOpts{
+				CampaignID:      campaign.ID,
+				ReconcilerState: &processingState,
+			}
+			processingCount, err := tx.CountChangesets(ctx, countOpts)
+			if err != nil {
+				return errors.Wrap(err, "checking for processing changesets")
+			}
+			if processingCount != 0 {
+				err = ErrCloseProcessingCampaign
+				return err
+			}
 		}
 
 		campaign.ClosedAt = time.Now().UTC()
@@ -762,12 +326,18 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 	}
 
 	if closeChangesets {
-		go func() {
-			ctx := trace.ContextWithTrace(context.Background(), tr)
+		user := actor.FromContext(ctx)
+		actorCtx := contextWithActor(context.Background(), user.UID)
+		ctx := trace.ContextWithTrace(actorCtx, tr)
 
+		closer := func() {
+			open := campaigns.ChangesetExternalStateOpen
+			published := campaigns.ChangesetPublicationStatePublished
 			cs, _, err := s.store.ListChangesets(ctx, ListChangesetsOpts{
-				CampaignID: campaign.ID,
-				Limit:      -1,
+				OwnedByCampaignID: campaign.ID,
+				ExternalState:     &open,
+				PublicationState:  &published,
+				Limit:             -1,
 			})
 			if err != nil {
 				log15.Error("ListChangesets", "err", err)
@@ -779,20 +349,19 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 			if err != nil {
 				log15.Error("CloseCampaignChangesets", "err", err)
 			}
-		}()
+		}
+		if closeAsync {
+			go closer()
+		} else {
+			closer()
+		}
 	}
 
 	return campaign, nil
 }
 
-// ErrDeleteProcessingCampaign is returned by DeleteCampaign if the Campaign
-// has been published at the time of deletion but its ChangesetJobs have not
-// finished execution.
-var ErrDeleteProcessingCampaign = errors.New("cannot delete a Campaign while changesets are being created on codehosts")
-
 // DeleteCampaign deletes the Campaign with the given ID if it hasn't been
-// deleted yet. If closeChangesets is true, the changesets associated with the
-// Campaign will be closed on the codehosts.
+// deleted yet.
 func (s *Service) DeleteCampaign(ctx context.Context, id int64) (err error) {
 	traceTitle := fmt.Sprintf("campaign: %d", id)
 	tr, ctx := trace.New(ctx, "service.DeleteCampaign", traceTitle)
@@ -806,31 +375,26 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64) (err error) {
 		return err
 	}
 
-	if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.InitialApplierID); err != nil {
 		return err
 	}
 
-	transaction := func() (err error) {
-		tx, err := s.store.Transact(ctx)
-		if err != nil {
-			return err
-		}
-		defer func() { err = tx.Done(err) }()
-
-		// TODO: Implement logic to find changesets in PUBLISHING state.
-		processing := false
-		if processing {
-			return ErrDeleteProcessingCampaign
-		}
-
-		return tx.DeleteCampaign(ctx, id)
-	}
-
-	return transaction()
+	return s.store.DeleteCampaign(ctx, id)
 }
+
+// mockCloseOpenChangesets is used to test CloseOpenChangesets closing
+// the correct changesets with the correct context.
+// This is a temporary mock that should be removed once we move closing of
+// changesets into the background.
+var mockCloseChangesets func(context.Context, campaigns.Changesets)
 
 // CloseOpenChangesets closes the given Changesets on their respective codehosts and syncs them.
 func (s *Service) CloseOpenChangesets(ctx context.Context, cs campaigns.Changesets) (err error) {
+	if mockCloseChangesets != nil {
+		mockCloseChangesets(ctx, cs)
+		return nil
+	}
+
 	cs = cs.Filter(func(c *campaigns.Changeset) bool {
 		return c.ExternalState == campaigns.ChangesetExternalStateOpen
 	})
@@ -839,7 +403,9 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs campaigns.Changese
 		return nil
 	}
 
-	accessibleReposByID, err := accessibleRepos(ctx, cs.RepoIDs())
+	// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
+	// filters out repositories that the user doesn't have access to.
+	accessibleReposByID, err := db.Repos.GetReposSetByIDs(ctx, cs.RepoIDs()...)
 	if err != nil {
 		return err
 	}
@@ -911,7 +477,7 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 	)
 
 	for _, c := range campaigns {
-		err := backend.CheckSiteAdminOrSameUser(ctx, c.AuthorID)
+		err := backend.CheckSiteAdminOrSameUser(ctx, c.InitialApplierID)
 		if err != nil {
 			authErr = err
 		} else {
@@ -934,43 +500,6 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 // ErrCampaignNameBlank is returned by CreateCampaign or UpdateCampaign if the
 // specified Campaign name is blank.
 var ErrCampaignNameBlank = errors.New("Campaign title cannot be blank")
-
-// ErrCampaignBranchBlank is returned by CreateCampaign or UpdateCampaign if the specified Campaign's
-// branch is blank.
-var ErrCampaignBranchBlank = errors.New("Campaign branch cannot be blank")
-
-// ErrCampaignBranchInvalid is returned by CreateCampaign or UpdateCampaign if the specified Campaign's
-// branch is invalid.
-var ErrCampaignBranchInvalid = errors.New("Campaign branch is invalid")
-
-func validateCampaignBranch(branch string) error {
-	if branch == "" {
-		return ErrCampaignBranchBlank
-	}
-	if !git.ValidateBranchName(branch) {
-		return ErrCampaignBranchInvalid
-	}
-	return nil
-}
-
-// accessibleRepos collects the RepoIDs of the changesets and returns a set of
-// the api.RepoID for which the subset of repositories for which the actor in
-// ctx has read permissions.
-func accessibleRepos(ctx context.Context, ids []api.RepoID) (map[api.RepoID]*types.Repo, error) {
-	// 🚨 SECURITY: We use db.Repos.GetByIDs to filter out repositories the
-	// user doesn't have access to.
-	accessibleRepos, err := db.Repos.GetByIDs(ctx, ids...)
-	if err != nil {
-		return nil, err
-	}
-
-	accessibleRepoIDs := make(map[api.RepoID]*types.Repo, len(accessibleRepos))
-	for _, r := range accessibleRepos {
-		accessibleRepoIDs[r.ID] = r
-	}
-
-	return accessibleRepoIDs, nil
-}
 
 // checkNamespaceAccess checks whether the current user in the ctx has access
 // to either the user ID or the org ID as a namespace.

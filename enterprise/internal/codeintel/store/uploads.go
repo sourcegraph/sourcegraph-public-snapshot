@@ -8,6 +8,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // Upload is a subset of the lsif_uploads table and stores both processed and unprocessed
@@ -486,12 +487,12 @@ func (s *store) ResetStalled(ctx context.Context, now time.Time) ([]int, []int, 
 	return s.makeUploadWorkQueueStore().ResetStalled(ctx)
 }
 
-func (s *store) makeUploadWorkQueueStore() workerutil.Store {
+func (s *store) makeUploadWorkQueueStore() dbworkerstore.Store {
 	return WorkerutilUploadStore(s)
 }
 
-func WorkerutilUploadStore(s Store) workerutil.Store {
-	return workerutil.NewStore(s.Handle(), workerutil.StoreOptions{
+func WorkerutilUploadStore(s Store) dbworkerstore.Store {
+	return dbworkerstore.NewStore(s.Handle(), dbworkerstore.StoreOptions{
 		TableName:         "lsif_uploads",
 		ViewName:          "lsif_uploads_with_repository_name u",
 		ColumnExpressions: uploadColumnsWithNullRank,

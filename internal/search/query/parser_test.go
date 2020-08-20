@@ -128,10 +128,16 @@ func TestParseParameterList(t *testing.T) {
 			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":4}}`,
 			WantLabels: Literal | Quoted,
 		},
+		{
+			Input:      `foo.*bar(`,
+			Want:       `{"value":"foo.*bar(","negated":false}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":9}}`,
+			WantLabels: Regexp | HeuristicDanglingParens,
+		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
-			parser := &parser{buf: []byte(tt.Input)}
+			parser := &parser{buf: []byte(tt.Input), heuristics: parensAsPatterns | allowDanglingParens}
 			result, err := parser.parseLeavesRegexp()
 			if err != nil {
 				t.Fatal(fmt.Sprintf("Unexpected error: %s", err))
@@ -707,7 +713,7 @@ func TestParse(t *testing.T) {
 		},
 		{
 			Input:         `repo:foo /b\/ar/`,
-			WantGrammar:   `(and "repo:foo" "/b\\/ar/")`,
+			WantGrammar:   `(and "repo:foo" "b/ar")`,
 			WantHeuristic: Same,
 		},
 		{
@@ -722,7 +728,17 @@ func TestParse(t *testing.T) {
 		},
 		{
 			Input:         `repo:foo /a/ /another/path/`,
-			WantGrammar:   `(and "repo:foo" (concat "/a/" "/another/path/"))`,
+			WantGrammar:   `(and "repo:foo" (concat "a" "/another/path/"))`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `repo:foo /\s+b\d+ar/ `,
+			WantGrammar:   `(and "repo:foo" "\\s+b\\d+ar")`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `repo:foo /bar/ `,
+			WantGrammar:   `(and "repo:foo" "bar")`,
 			WantHeuristic: Same,
 		},
 		{
@@ -863,11 +879,11 @@ func TestScanDelimited(t *testing.T) {
 					t.Errorf("expected panic for ScanDelimited")
 				}
 			}()
-			_, _, _ = ScanDelimited([]byte(tt.input), tt.delimiter)
+			_, _, _ = ScanDelimited([]byte(tt.input), true, tt.delimiter)
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			value, count, err := ScanDelimited([]byte(tt.input), tt.delimiter)
+			value, count, err := ScanDelimited([]byte(tt.input), true, tt.delimiter)
 			var errMsg string
 			if err != nil {
 				errMsg = err.Error()

@@ -5,7 +5,6 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
-import { USE_CODEMOD } from '../enterprise/codemod'
 import { SearchSuggestion } from '../../../shared/src/search/suggestions'
 import { Remote } from 'comlink'
 import { FlatExtHostAPI } from '../../../shared/src/api/contract'
@@ -31,7 +30,6 @@ export function search(
                         $query: String!
                         $version: SearchVersion!
                         $patternType: SearchPatternType!
-                        $useCodemod: Boolean!
                         $versionContext: String
                     ) {
                         search(
@@ -163,31 +161,6 @@ export function search(
                                         }
                                         # end of genericSearchResultInterfaceFields inline fragment
                                     }
-                                    ... on CodemodResult @include(if: $useCodemod) {
-                                        # TODO: Make this a proper fragment, blocked by https://github.com/graph-gophers/graphql-go/issues/241.
-                                        # beginning of genericSearchResultInterfaceFields inline fragment
-                                        label {
-                                            html
-                                        }
-                                        url
-                                        icon
-                                        detail {
-                                            html
-                                        }
-                                        matches {
-                                            url
-                                            body {
-                                                text
-                                                html
-                                            }
-                                            highlights {
-                                                line
-                                                character
-                                                length
-                                            }
-                                        }
-                                        # end of genericSearchResultInterfaceFields inline fragment
-                                    }
                                 }
                                 alert {
                                     title
@@ -202,7 +175,7 @@ export function search(
                         }
                     }
                 `,
-                { query, version, patternType, versionContext, useCodemod: USE_CODEMOD }
+                { query, version, patternType, versionContext }
             ).pipe(
                 map(({ data, errors }) => {
                     if (!data || !data.search || !data.search.results) {

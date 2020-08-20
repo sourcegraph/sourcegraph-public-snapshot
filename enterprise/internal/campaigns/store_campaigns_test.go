@@ -8,8 +8,11 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 )
 
 func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock clock) {
@@ -18,25 +21,27 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 	t.Run("Create", func(t *testing.T) {
 		for i := 0; i < cap(campaigns); i++ {
 			c := &cmpgn.Campaign{
-				Name:           fmt.Sprintf("test-campaign-%d", i),
-				Description:    "All the Javascripts are belong to us",
-				Branch:         "upgrade-es-lint",
-				AuthorID:       int32(i) + 50,
+				Name:        fmt.Sprintf("test-campaign-%d", i),
+				Description: "All the Javascripts are belong to us",
+
+				InitialApplierID: int32(i) + 50,
+				LastAppliedAt:    clock.now(),
+				LastApplierID:    int32(i) + 99,
+
 				ChangesetIDs:   []int64{int64(i) + 1},
 				CampaignSpecID: 1742 + int64(i),
 				ClosedAt:       clock.now(),
 			}
+
 			if i == 0 {
-				// don't have associations for the first one
-				c.CampaignSpecID = 0
-				// Don't close the first one
+				// Check for nullability of fields by not setting them
 				c.ClosedAt = time.Time{}
 			}
 
 			if i%2 == 0 {
 				c.NamespaceOrgID = int32(i) + 23
 			} else {
-				c.NamespaceUserID = c.AuthorID
+				c.NamespaceUserID = c.InitialApplierID
 			}
 
 			want := c.Clone()
@@ -84,12 +89,60 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 
 		t.Run("OnlyForAuthor set", func(t *testing.T) {
 			for _, c := range campaigns {
-				count, err = s.CountCampaigns(ctx, CountCampaignsOpts{OnlyForAuthor: c.AuthorID})
+				count, err = s.CountCampaigns(ctx, CountCampaignsOpts{InitialApplierID: c.InitialApplierID})
 				if err != nil {
 					t.Fatal(err)
 				}
 				if have, want := count, 1; have != want {
 					t.Fatalf("Incorrect number of campaigns counted, want=%d have=%d", want, have)
+				}
+			}
+		})
+
+		t.Run("NamespaceUserID", func(t *testing.T) {
+			wantCounts := map[int32]int{}
+			for _, c := range campaigns {
+				if c.NamespaceUserID == 0 {
+					continue
+				}
+				wantCounts[c.NamespaceUserID] += 1
+			}
+			if len(wantCounts) == 0 {
+				t.Fatalf("No campaigns with NamespaceUserID")
+			}
+
+			for userID, want := range wantCounts {
+				have, err := s.CountCampaigns(ctx, CountCampaignsOpts{NamespaceUserID: userID})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have != want {
+					t.Fatalf("campaigns count for NamespaceUserID=%d wrong. want=%d, have=%d", userID, want, have)
+				}
+			}
+		})
+
+		t.Run("NamespaceOrgID", func(t *testing.T) {
+			wantCounts := map[int32]int{}
+			for _, c := range campaigns {
+				if c.NamespaceOrgID == 0 {
+					continue
+				}
+				wantCounts[c.NamespaceOrgID] += 1
+			}
+			if len(wantCounts) == 0 {
+				t.Fatalf("No campaigns with NamespaceOrgID")
+			}
+
+			for orgID, want := range wantCounts {
+				have, err := s.CountCampaigns(ctx, CountCampaignsOpts{NamespaceOrgID: orgID})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have != want {
+					t.Fatalf("campaigns count for NamespaceOrgID=%d wrong. want=%d, have=%d", orgID, want, have)
 				}
 			}
 		})
@@ -201,7 +254,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 
 		t.Run("ListCampaigns OnlyForAuthor set", func(t *testing.T) {
 			for _, c := range campaigns {
-				have, next, err := s.ListCampaigns(ctx, ListCampaignsOpts{OnlyForAuthor: c.AuthorID})
+				have, next, err := s.ListCampaigns(ctx, ListCampaignsOpts{InitialApplierID: c.InitialApplierID})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -216,13 +269,51 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 				}
 			}
 		})
+
+		t.Run("ListCampaigns by NamespaceUserID", func(t *testing.T) {
+			for _, c := range campaigns {
+				if c.NamespaceUserID == 0 {
+					continue
+				}
+				opts := ListCampaignsOpts{NamespaceUserID: c.NamespaceUserID}
+				have, _, err := s.ListCampaigns(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				for _, haveCampaign := range have {
+					if have, want := haveCampaign.NamespaceUserID, opts.NamespaceUserID; have != want {
+						t.Fatalf("campaign has wrong NamespaceUserID. want=%d, have=%d", want, have)
+					}
+				}
+			}
+		})
+
+		t.Run("ListCampaigns by NamespaceOrgID", func(t *testing.T) {
+			for _, c := range campaigns {
+				if c.NamespaceOrgID == 0 {
+					continue
+				}
+				opts := ListCampaignsOpts{NamespaceOrgID: c.NamespaceOrgID}
+				have, _, err := s.ListCampaigns(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				for _, haveCampaign := range have {
+					if have, want := haveCampaign.NamespaceOrgID, opts.NamespaceOrgID; have != want {
+						t.Fatalf("campaign has wrong NamespaceOrgID. want=%d, have=%d", want, have)
+					}
+				}
+			}
+		})
 	})
 
 	t.Run("Update", func(t *testing.T) {
 		for _, c := range campaigns {
 			c.Name += "-updated"
 			c.Description += "-updated"
-			c.AuthorID++
+			c.InitialApplierID++
 			c.ClosedAt = c.ClosedAt.Add(5 * time.Second)
 
 			if c.NamespaceUserID != 0 {
@@ -398,4 +489,90 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 			}
 		}
 	})
+}
+
+func TestUserDeleteCascades(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	db := dbtest.NewDB(t, *dsn)
+	orgID := insertTestOrg(t, db)
+	userID := insertTestUser(t, db)
+
+	t.Run("user delete", storeTest(db, func(t *testing.T, ctx context.Context, store *Store, rs repos.Store, clock clock) {
+		// Set up two campaigns and specs: one in the user's namespace (which
+		// should be deleted when the user is hard deleted), and one that is
+		// merely created by the user (which should remain).
+		ownedSpec := &campaigns.CampaignSpec{
+			NamespaceUserID: userID,
+			UserID:          userID,
+		}
+		if err := store.CreateCampaignSpec(ctx, ownedSpec); err != nil {
+			t.Fatal(err)
+		}
+
+		unownedSpec := &campaigns.CampaignSpec{
+			NamespaceOrgID: orgID,
+			UserID:         userID,
+		}
+		if err := store.CreateCampaignSpec(ctx, unownedSpec); err != nil {
+			t.Fatal(err)
+		}
+
+		ownedCampaign := &campaigns.Campaign{
+			Name:             "owned",
+			NamespaceUserID:  userID,
+			InitialApplierID: userID,
+			LastApplierID:    userID,
+			LastAppliedAt:    clock.now(),
+			CampaignSpecID:   ownedSpec.ID,
+		}
+		if err := store.CreateCampaign(ctx, ownedCampaign); err != nil {
+			t.Fatal(err)
+		}
+
+		unownedCampaign := &campaigns.Campaign{
+			Name:             "unowned",
+			NamespaceOrgID:   orgID,
+			InitialApplierID: userID,
+			LastApplierID:    userID,
+			LastAppliedAt:    clock.now(),
+			CampaignSpecID:   ownedSpec.ID,
+		}
+		if err := store.CreateCampaign(ctx, unownedCampaign); err != nil {
+			t.Fatal(err)
+		}
+
+		// Now we'll try actually deleting the user.
+		if err := store.Store.Exec(ctx, sqlf.Sprintf(
+			"DELETE FROM users WHERE id = %s",
+			userID,
+		)); err != nil {
+			t.Fatal(err)
+		}
+
+		// We should now have the unowned campaign still be valid, but the
+		// owned campaign should have gone away.
+		cs, _, err := store.ListCampaigns(ctx, ListCampaignsOpts{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(cs) != 1 {
+			t.Errorf("unexpected number of campaigns: have %d; want %d", len(cs), 1)
+		}
+		if cs[0].ID != unownedCampaign.ID {
+			t.Errorf("unexpected campaign: %+v", cs[0])
+		}
+
+		// Both campaign specs should still be in place, at least until we add
+		// a foreign key constraint to campaign_specs.namespace_user_id.
+		specs, _, err := store.ListCampaignSpecs(ctx, ListCampaignSpecsOpts{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(specs) != 2 {
+			t.Errorf("unexpected number of campaign specs: have %d; want %d", len(specs), 2)
+		}
+	}))
 }

@@ -31,9 +31,14 @@ describe('CampaignChangesets', () => {
                                     updatedAt: new Date('2020-01-04').toISOString(),
                                 },
                             ],
+                            pageInfo: {
+                                endCursor: null,
+                                hasNextPage: false,
+                            },
                         })
                     }
-                    campaign={{ id: '123', closedAt: null, viewerCanAdminister: true }}
+                    campaignID="123"
+                    viewerCanAdminister={true}
                     history={history}
                     location={history.location}
                     isLightTheme={true}

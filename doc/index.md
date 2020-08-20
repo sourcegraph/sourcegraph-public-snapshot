@@ -12,9 +12,9 @@ It takes less than 5 minutes to run and install Sourcegraph using Docker:
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
 
-<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.18.0</code></pre>
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.19.0</code></pre>
 
-Once the server is ready (logo is displayed in the terminal), navigate to the hostname or IP address on port `7080`.  Create the admin account, then you'll be guided through setting up Sourcegraph for code searching and navigation.
+Once the server is ready (logo is displayed in the terminal), navigate to the hostname or IP address on port `7080`. Create the admin account, then you'll be guided through setting up Sourcegraph for code searching and navigation.
 
 <!--
 TODO(ryan): Replace with updated screencast
@@ -32,7 +32,7 @@ For next steps and further configuration options, visit the [site administration
 <span class="virtual-br"></span>
 
 > NOTE: If you run Docker on an OS such as RHEL, Fedora, or CentOS with SELinux enabled, sVirt doesn't allow the Docker process
-to access `~/.sourcegraph/config` and `~/.sourcegraph/data`. In that case, you will see the following message:
+> to access `~/.sourcegraph/config` and `~/.sourcegraph/data`. In that case, you will see the following message:
 
 > `Failed to setup nginx:failed to generate nginx configuration to /etc/sourcegraph: open /etc/sourcegraph/nginx.conf: permission denied`.
 
@@ -49,7 +49,7 @@ We actively maintain the two most recent monthly releases of Sourcegraph.
 Upgrades should happen across consecutive minor versions of Sourcegraph. For example, if you are
 running Sourcegraph 3.1 and want to upgrade to 3.3, you should upgrade to 3.2 and then 3.3.
 
-> The Docker server image tags follow SemVer semantics, so version `3.18.0` can be found at `sourcegraph/server:3.18.0`. You can see the full list of tags on our [Docker Hub page](https://hub.docker.com/r/sourcegraph/server/tags).
+> The Docker server image tags follow SemVer semantics, so version `3.19.0` can be found at `sourcegraph/server:3.19.0`. You can see the full list of tags on our [Docker Hub page](https://hub.docker.com/r/sourcegraph/server/tags).
 
 ## Documentation
 

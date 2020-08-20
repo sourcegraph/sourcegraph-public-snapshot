@@ -240,14 +240,19 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, _ repos
 		overTTL := clock.now().Add(-cmpgn.CampaignSpecTTL - 1*time.Minute)
 
 		tests := []struct {
-			createdAt   time.Time
-			hasCampaign bool
-			wantDeleted bool
+			createdAt         time.Time
+			hasCampaign       bool
+			hasChangesetSpecs bool
+			wantDeleted       bool
 		}{
-			{hasCampaign: false, createdAt: underTTL, wantDeleted: false},
-			{hasCampaign: false, createdAt: overTTL, wantDeleted: true},
-			{hasCampaign: true, createdAt: underTTL, wantDeleted: false},
-			{hasCampaign: true, createdAt: overTTL, wantDeleted: false},
+			{hasCampaign: false, hasChangesetSpecs: false, createdAt: underTTL, wantDeleted: false},
+			{hasCampaign: false, hasChangesetSpecs: false, createdAt: overTTL, wantDeleted: true},
+
+			{hasCampaign: false, hasChangesetSpecs: true, createdAt: underTTL, wantDeleted: false},
+			{hasCampaign: false, hasChangesetSpecs: true, createdAt: overTTL, wantDeleted: false},
+
+			{hasCampaign: true, hasChangesetSpecs: true, createdAt: underTTL, wantDeleted: false},
+			{hasCampaign: true, hasChangesetSpecs: true, createdAt: overTTL, wantDeleted: false},
 		}
 
 		for _, tc := range tests {
@@ -263,12 +268,24 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, _ repos
 
 			if tc.hasCampaign {
 				campaign := &cmpgn.Campaign{
-					Name:            "not-blank",
-					AuthorID:        1,
-					NamespaceUserID: 1,
-					CampaignSpecID:  campaignSpec.ID,
+					Name:             "not-blank",
+					InitialApplierID: 1,
+					NamespaceUserID:  1,
+					CampaignSpecID:   campaignSpec.ID,
+					LastApplierID:    1,
+					LastAppliedAt:    time.Now(),
 				}
 				if err := s.CreateCampaign(ctx, campaign); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			if tc.hasChangesetSpecs {
+				changesetSpec := &cmpgn.ChangesetSpec{
+					RepoID:         1,
+					CampaignSpecID: campaignSpec.ID,
+				}
+				if err := s.CreateChangesetSpec(ctx, changesetSpec); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -287,7 +304,7 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, _ repos
 			}
 
 			if !tc.wantDeleted && err == ErrNoResults {
-				t.Fatalf("want patch set not to be deleted, but got deleted")
+				t.Fatalf("tc=%+v\n\t want campaign spec NOT to be deleted, but got deleted", tc)
 			}
 		}
 	})

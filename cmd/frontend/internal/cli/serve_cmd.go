@@ -19,6 +19,7 @@ import (
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
@@ -31,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/processrestart"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -45,7 +47,7 @@ var (
 	printLogo, _ = strconv.ParseBool(env.Get("LOGO", "false", "print Sourcegraph logo upon startup"))
 
 	httpAddr         = env.Get("SRC_HTTP_ADDR", ":3080", "HTTP listen address for app and HTTP API")
-	httpAddrInternal = env.Get("SRC_HTTP_ADDR_INTERNAL", ":3090", "HTTP listen address for internal HTTP API. This should never be exposed externally, as it lacks certain authz checks.")
+	httpAddrInternal = envvar.HTTPAddrInternal
 
 	nginxAddr = env.Get("SRC_NGINX_HTTP_ADDR", "", "HTTP listen address for nginx reverse proxy to SRC_HTTP_ADDR. Has preference over SRC_HTTP_ADDR for ExternalURL.")
 
@@ -129,7 +131,8 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 
 	// Filter trace logs
 	d, _ := time.ParseDuration(traceThreshold)
-	tracer.Init(tracer.Filter(loghandlers.Trace(strings.Fields(trace), d)))
+	logging.Init(logging.Filter(loghandlers.Trace(strings.Fields(trace), d)))
+	tracer.Init()
 
 	// Run enterprise setup hook
 	enterprise := enterpriseSetupHook()
@@ -207,7 +210,7 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 	}
 
 	// Create the external HTTP handler.
-	externalHandler, err := newExternalHTTPHandler(schema, enterprise.GitHubWebhook, enterprise.GitLabWebhook, enterprise.BitbucketServerWebhook, enterprise.NewCodeIntelUploadHandler)
+	externalHandler, err := newExternalHTTPHandler(schema, enterprise.GitHubWebhook, enterprise.GitLabWebhook, enterprise.BitbucketServerWebhook, enterprise.NewCodeIntelUploadHandler, enterprise.NewCodeIntelInternalProxyHandler)
 	if err != nil {
 		return err
 	}

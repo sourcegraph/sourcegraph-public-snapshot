@@ -69,10 +69,6 @@ func (r *commitSearchResultResolver) ToCommitSearchResult() (*commitSearchResult
 	return r, true
 }
 
-func (r *commitSearchResultResolver) ToCodemodResult() (*codemodResultResolver, bool) {
-	return nil, false
-}
-
 func (r *commitSearchResultResolver) searchResultURIs() (string, string) {
 	// Diffs aren't going to be returned with other types of results
 	// and are already ordered in the desired order, so we'll just leave them in place.

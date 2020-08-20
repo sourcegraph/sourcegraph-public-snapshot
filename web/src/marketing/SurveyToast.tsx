@@ -20,7 +20,7 @@ export class SurveyCTA extends React.PureComponent<SurveyCTAProps> {
     public render(): JSX.Element | null {
         return (
             <div className={this.props.className}>
-                {range(0, 10).map(score => {
+                {range(0, 11).map(score => {
                     const pressed = score === this.props.score
                     return (
                         /* eslint-disable react/jsx-no-bind */

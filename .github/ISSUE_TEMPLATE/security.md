@@ -1,6 +1,7 @@
 ---
 name: Security vulnerability
-about: Do NOT file security issues here. See https://about.sourcegraph.com/handbook/engineering/security#how-to-report-a-security-vulnerability instead.
+about: Do NOT file security issues here. See https://about.sourcegraph.com/handbook/engineering/security#how-to-report-a-security-vulnerability
+  instead.
 title: ''
 labels: ''
 assignees: ''

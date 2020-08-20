@@ -11,8 +11,8 @@ import {
     PatternTypeProps,
     CaseSensitivityProps,
     InteractiveSearchProps,
-    SmartSearchFieldProps,
     CopyQueryButtonProps,
+    OnboardingTourProps,
 } from '../search'
 import { EventLoggerProps, eventLogger } from '../tracking/eventLogger'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
@@ -42,9 +42,9 @@ export interface RepogroupPageProps
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         InteractiveSearchProps,
-        SmartSearchFieldProps,
         CopyQueryButtonProps,
-        VersionContextProps {
+        VersionContextProps,
+        OnboardingTourProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History

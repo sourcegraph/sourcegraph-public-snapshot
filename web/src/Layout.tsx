@@ -36,9 +36,9 @@ import {
     PatternTypeProps,
     InteractiveSearchProps,
     CaseSensitivityProps,
-    SmartSearchFieldProps,
     CopyQueryButtonProps,
     RepogroupHomepageProps,
+    OnboardingTourProps,
 } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -74,10 +74,10 @@ export interface LayoutProps
         PatternTypeProps,
         CaseSensitivityProps,
         InteractiveSearchProps,
-        SmartSearchFieldProps,
         CopyQueryButtonProps,
         VersionContextProps,
-        RepogroupHomepageProps {
+        RepogroupHomepageProps,
+        OnboardingTourProps {
     exploreSections: readonly ExploreSectionDescriptor[]
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]

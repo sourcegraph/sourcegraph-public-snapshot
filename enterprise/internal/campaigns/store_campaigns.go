@@ -8,6 +8,42 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
+// campaignColumns are used by the campaign related Store methods to insert,
+// update and query campaigns.
+var campaignColumns = []*sqlf.Query{
+	sqlf.Sprintf("campaigns.id"),
+	sqlf.Sprintf("campaigns.name"),
+	sqlf.Sprintf("campaigns.description"),
+	sqlf.Sprintf("campaigns.initial_applier_id"),
+	sqlf.Sprintf("campaigns.last_applier_id"),
+	sqlf.Sprintf("campaigns.last_applied_at"),
+	sqlf.Sprintf("campaigns.namespace_user_id"),
+	sqlf.Sprintf("campaigns.namespace_org_id"),
+	sqlf.Sprintf("campaigns.created_at"),
+	sqlf.Sprintf("campaigns.updated_at"),
+	sqlf.Sprintf("campaigns.changeset_ids"),
+	sqlf.Sprintf("campaigns.closed_at"),
+	sqlf.Sprintf("campaigns.campaign_spec_id"),
+}
+
+// campaignInsertColumns is the list of campaign columns that are modified in
+// CreateCampaign and UpdateCampaign.
+// update and query campaigns.
+var campaignInsertColumns = []*sqlf.Query{
+	sqlf.Sprintf("name"),
+	sqlf.Sprintf("description"),
+	sqlf.Sprintf("initial_applier_id"),
+	sqlf.Sprintf("last_applier_id"),
+	sqlf.Sprintf("last_applied_at"),
+	sqlf.Sprintf("namespace_user_id"),
+	sqlf.Sprintf("namespace_org_id"),
+	sqlf.Sprintf("created_at"),
+	sqlf.Sprintf("updated_at"),
+	sqlf.Sprintf("changeset_ids"),
+	sqlf.Sprintf("closed_at"),
+	sqlf.Sprintf("campaign_spec_id"),
+}
+
 // CreateCampaign creates the given Campaign.
 func (s *Store) CreateCampaign(ctx context.Context, c *campaigns.Campaign) error {
 	q, err := s.createCampaignQuery(c)
@@ -22,33 +58,9 @@ func (s *Store) CreateCampaign(ctx context.Context, c *campaigns.Campaign) error
 
 var createCampaignQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:CreateCampaign
-INSERT INTO campaigns (
-  name,
-  description,
-  branch,
-  author_id,
-  namespace_user_id,
-  namespace_org_id,
-  created_at,
-  updated_at,
-  changeset_ids,
-  closed_at,
-  campaign_spec_id
-)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-RETURNING
-  id,
-  name,
-  description,
-  branch,
-  author_id,
-  namespace_user_id,
-  namespace_org_id,
-  created_at,
-  updated_at,
-  changeset_ids,
-  closed_at,
-  campaign_spec_id
+INSERT INTO campaigns (%s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+RETURNING %s
 `
 
 func (s *Store) createCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) {
@@ -67,17 +79,20 @@ func (s *Store) createCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) 
 
 	return sqlf.Sprintf(
 		createCampaignQueryFmtstr,
+		sqlf.Join(campaignInsertColumns, ", "),
 		c.Name,
 		c.Description,
-		c.Branch,
-		c.AuthorID,
+		nullInt32Column(c.InitialApplierID),
+		nullInt32Column(c.LastApplierID),
+		c.LastAppliedAt,
 		nullInt32Column(c.NamespaceUserID),
 		nullInt32Column(c.NamespaceOrgID),
 		c.CreatedAt,
 		c.UpdatedAt,
 		changesetIDs,
 		nullTimeColumn(c.ClosedAt),
-		nullInt64Column(c.CampaignSpecID),
+		c.CampaignSpecID,
+		sqlf.Join(campaignColumns, ", "),
 	), nil
 }
 
@@ -94,32 +109,9 @@ func (s *Store) UpdateCampaign(ctx context.Context, c *campaigns.Campaign) error
 var updateCampaignQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:UpdateCampaign
 UPDATE campaigns
-SET (
-  name,
-  description,
-  branch,
-  author_id,
-  namespace_user_id,
-  namespace_org_id,
-  updated_at,
-  changeset_ids,
-  closed_at,
-  campaign_spec_id
-) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
-RETURNING
-  id,
-  name,
-  description,
-  branch,
-  author_id,
-  namespace_user_id,
-  namespace_org_id,
-  created_at,
-  updated_at,
-  changeset_ids,
-  closed_at,
-  campaign_spec_id
+RETURNING %s
 `
 
 func (s *Store) updateCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) {
@@ -132,17 +124,21 @@ func (s *Store) updateCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) 
 
 	return sqlf.Sprintf(
 		updateCampaignQueryFmtstr,
+		sqlf.Join(campaignInsertColumns, ", "),
 		c.Name,
 		c.Description,
-		c.Branch,
-		c.AuthorID,
+		nullInt32Column(c.InitialApplierID),
+		nullInt32Column(c.LastApplierID),
+		c.LastAppliedAt,
 		nullInt32Column(c.NamespaceUserID),
 		nullInt32Column(c.NamespaceOrgID),
+		c.CreatedAt,
 		c.UpdatedAt,
 		changesetIDs,
 		nullTimeColumn(c.ClosedAt),
-		nullInt64Column(c.CampaignSpecID),
+		c.CampaignSpecID,
 		c.ID,
+		sqlf.Join(campaignColumns, ", "),
 	), nil
 }
 
@@ -161,8 +157,11 @@ DELETE FROM campaigns WHERE id = %s
 type CountCampaignsOpts struct {
 	ChangesetID int64
 	State       campaigns.CampaignState
-	// Only return campaigns where author_id is the given.
-	OnlyForAuthor int32
+
+	InitialApplierID int32
+
+	NamespaceUserID int32
+	NamespaceOrgID  int32
 }
 
 // CountCampaigns returns the number of campaigns in the database.
@@ -190,8 +189,16 @@ func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("closed_at IS NOT NULL"))
 	}
 
-	if opts.OnlyForAuthor != 0 {
-		preds = append(preds, sqlf.Sprintf("author_id = %d", opts.OnlyForAuthor))
+	if opts.InitialApplierID != 0 {
+		preds = append(preds, sqlf.Sprintf("initial_applier_id = %d", opts.InitialApplierID))
+	}
+
+	if opts.NamespaceUserID != 0 {
+		preds = append(preds, sqlf.Sprintf("namespace_user_id = %s", opts.NamespaceUserID))
+	}
+
+	if opts.NamespaceOrgID != 0 {
+		preds = append(preds, sqlf.Sprintf("namespace_org_id = %s", opts.NamespaceOrgID))
 	}
 
 	if len(preds) == 0 {
@@ -233,20 +240,7 @@ func (s *Store) GetCampaign(ctx context.Context, opts GetCampaignOpts) (*campaig
 
 var getCampaignsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:GetCampaign
-SELECT
-  campaigns.id,
-  campaigns.name,
-  campaigns.description,
-  campaigns.branch,
-  campaigns.author_id,
-  campaigns.namespace_user_id,
-  campaigns.namespace_org_id,
-  campaigns.created_at,
-  campaigns.updated_at,
-  campaigns.changeset_ids,
-  campaigns.closed_at,
-  campaigns.campaign_spec_id
-FROM campaigns
+SELECT %s FROM campaigns
 WHERE %s
 LIMIT 1
 `
@@ -280,6 +274,7 @@ func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		getCampaignsQueryFmtstr,
+		sqlf.Join(campaignColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -291,8 +286,11 @@ type ListCampaignsOpts struct {
 	Cursor      int64
 	Limit       int
 	State       campaigns.CampaignState
-	// Only return campaigns where author_id is the given.
-	OnlyForAuthor int32
+
+	InitialApplierID int32
+
+	NamespaceUserID int32
+	NamespaceOrgID  int32
 }
 
 // ListCampaigns lists Campaigns with the given filters.
@@ -319,20 +317,7 @@ func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs [
 
 var listCampaignsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:ListCampaigns
-SELECT
-  id,
-  name,
-  description,
-  branch,
-  author_id,
-  namespace_user_id,
-  namespace_org_id,
-  created_at,
-  updated_at,
-  changeset_ids,
-  closed_at,
-  campaign_spec_id
-FROM campaigns
+SELECT %s FROM campaigns
 WHERE %s
 ORDER BY id ASC
 LIMIT %s
@@ -359,12 +344,21 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("closed_at IS NOT NULL"))
 	}
 
-	if opts.OnlyForAuthor != 0 {
-		preds = append(preds, sqlf.Sprintf("author_id = %d", opts.OnlyForAuthor))
+	if opts.InitialApplierID != 0 {
+		preds = append(preds, sqlf.Sprintf("initial_applier_id = %d", opts.InitialApplierID))
+	}
+
+	if opts.NamespaceUserID != 0 {
+		preds = append(preds, sqlf.Sprintf("campaigns.namespace_user_id = %s", opts.NamespaceUserID))
+	}
+
+	if opts.NamespaceOrgID != 0 {
+		preds = append(preds, sqlf.Sprintf("campaigns.namespace_org_id = %s", opts.NamespaceOrgID))
 	}
 
 	return sqlf.Sprintf(
 		listCampaignsQueryFmtstr,
+		sqlf.Join(campaignColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 		opts.Limit,
 	)
@@ -375,14 +369,15 @@ func scanCampaign(c *campaigns.Campaign, s scanner) error {
 		&c.ID,
 		&c.Name,
 		&dbutil.NullString{S: &c.Description},
-		&dbutil.NullString{S: &c.Branch},
-		&c.AuthorID,
+		&dbutil.NullInt32{N: &c.InitialApplierID},
+		&dbutil.NullInt32{N: &c.LastApplierID},
+		&c.LastAppliedAt,
 		&dbutil.NullInt32{N: &c.NamespaceUserID},
 		&dbutil.NullInt32{N: &c.NamespaceOrgID},
 		&c.CreatedAt,
 		&c.UpdatedAt,
 		&dbutil.JSONInt64Set{Set: &c.ChangesetIDs},
 		&dbutil.NullTime{Time: &c.ClosedAt},
-		&dbutil.NullInt64{N: &c.CampaignSpecID},
+		&c.CampaignSpecID,
 	)
 }

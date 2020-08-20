@@ -147,8 +147,11 @@ func GetSiteUsageStatistics(opt *SiteUsageStatisticsOptions) (*types.SiteUsageSt
 }
 
 // GetUsersActiveTodayCount returns a count of users that have been active today.
-func GetUsersActiveTodayCount() (int, error) {
-	c := pool.Get()
+func GetUsersActiveTodayCount(ctx context.Context) (int, error) {
+	c, err := pool.GetContext(ctx)
+	if err != nil {
+		return 0, err
+	}
 	defer c.Close()
 
 	count, err := redis.Int(c.Do("SCARD", usersActiveKeyFromDaysAgo(0)))

@@ -30,25 +30,27 @@ func canonicalize(state *State) {
 // the correlation state.
 func canonicalizeDocuments(state *State) {
 	documentIDs := map[string][]int{}
-	for documentID, doc := range state.DocumentData {
-		documentIDs[doc.URI] = append(documentIDs[doc.URI], documentID)
+	for documentID, uri := range state.DocumentData {
+		documentIDs[uri] = append(documentIDs[uri], documentID)
 	}
 	for _, v := range documentIDs {
 		sort.Ints(v)
 	}
 
-	for documentID, doc := range state.DocumentData {
+	for documentID, uri := range state.DocumentData {
 		// Choose canonical document alphabetically
-		if canonicalID := documentIDs[doc.URI][0]; documentID != canonicalID {
-			// Move ranges into the canonical document
-			state.DocumentData[canonicalID].Contains.Union(state.DocumentData[documentID].Contains)
+		if canonicalID := documentIDs[uri][0]; documentID != canonicalID {
+			// Move ranges and diagnostics into the canonical document
+			state.Contains.SetUnion(canonicalID, state.Contains.Get(documentID))
+			state.Diagnostics.SetUnion(canonicalID, state.Diagnostics.Get(documentID))
 
-			// Move definition/reference data into the canonical document
 			canonicalizeDocumentsInDefinitionReferences(state, state.DefinitionData, documentID, canonicalID)
 			canonicalizeDocumentsInDefinitionReferences(state, state.ReferenceData, documentID, canonicalID)
 
 			// Remove non-canonical document
 			delete(state.DocumentData, documentID)
+			state.Contains.Delete(documentID)
+			state.Diagnostics.Delete(documentID)
 		}
 	}
 }
@@ -56,18 +58,15 @@ func canonicalizeDocuments(state *State) {
 // canonicalizeDocumentsInDefinitionReferences moves definition or reference result data from the
 // given document to the given canonical document and removes all references to the non-canonical
 // document.
-func canonicalizeDocumentsInDefinitionReferences(state *State, definitionReferenceData map[int]datastructures.DefaultIDSetMap, documentID, canonicalID int) {
+func canonicalizeDocumentsInDefinitionReferences(state *State, definitionReferenceData map[int]*datastructures.DefaultIDSetMap, documentID, canonicalID int) {
 	for _, documentRanges := range definitionReferenceData {
-		rangeIDs, ok := documentRanges[documentID]
-		if !ok {
-			continue
+		if rangeIDs := documentRanges.Get(documentID); rangeIDs != nil {
+			// Move definition/reference data into the canonical document
+			documentRanges.SetUnion(canonicalID, rangeIDs)
+
+			// Remove references to non-canonical document
+			documentRanges.Delete(documentID)
 		}
-
-		// Move definition/reference data into the canonical document
-		documentRanges.GetOrCreate(canonicalID).Union(rangeIDs)
-
-		// Remove references to non-canonical document
-		delete(documentRanges, documentID)
 	}
 }
 
@@ -80,10 +79,10 @@ func canonicalizeReferenceResults(state *State) {
 	// Maintain a map from a reference result to its canonical identifier
 	canonicalIDs := map[int]int{}
 
-	for referenceResultID := range state.LinkedReferenceResults {
+	state.LinkedReferenceResults.Each(func(referenceResultID int, v *datastructures.IDSet) {
 		if _, ok := canonicalIDs[referenceResultID]; ok {
 			// Already processed
-			continue
+			return
 		}
 
 		// Find all reachable items in this set
@@ -96,13 +95,13 @@ func canonicalizeReferenceResults(state *State) {
 			canonicalIDs[linkedID] = canonicalID
 
 			if linkedID != canonicalID {
-				for documentID, rangeIDs := range state.ReferenceData[linkedID] {
+				state.ReferenceData[linkedID].Each(func(documentID int, rangeIDs *datastructures.IDSet) {
 					// Move range data into the canonical document
-					canonicalReferenceResult.GetOrCreate(documentID).Union(rangeIDs)
-				}
+					canonicalReferenceResult.SetUnion(documentID, rangeIDs)
+				})
 			}
 		})
-	}
+	})
 
 	for id, item := range state.RangeData {
 		if canonicalID, ok := canonicalIDs[item.ReferenceResultID]; ok {
@@ -140,8 +139,8 @@ func canonicalizeResultSets(state *State) {
 		canonicalizeResultSetData(state, resultSetID, resultSetData)
 	}
 
-	for resultSetID, resultSetData := range state.ResultSetData {
-		state.ResultSetData[resultSetID] = resultSetData.SetMonikerIDs(gatherMonikers(state, resultSetData.MonikerIDs))
+	for resultSetID := range state.ResultSetData {
+		state.Monikers.SetUnion(resultSetID, gatherMonikers(state, state.Monikers.Get(resultSetID)))
 	}
 }
 
@@ -153,14 +152,15 @@ func canonicalizeResultSets(state *State) {
 // of a range may not have all of the necessary data to perform this canonicalization step.
 func canonicalizeRanges(state *State) {
 	for rangeID, rangeData := range state.RangeData {
-		if _, nextItem, ok := next(state, rangeID); ok {
+		if nextID, nextItem, ok := next(state, rangeID); ok {
 			// Merge range and next element
-			rangeData = mergeNextRangeData(rangeData, nextItem)
+			rangeData = mergeNextRangeData(state, rangeID, rangeData, nextID, nextItem)
 			// Delete next data to prevent us from re-performing this step
 			delete(state.NextData, rangeID)
 		}
 
-		state.RangeData[rangeID] = rangeData.SetMonikerIDs(gatherMonikers(state, rangeData.MonikerIDs))
+		state.RangeData[rangeID] = rangeData
+		state.Monikers.SetUnion(rangeID, gatherMonikers(state, state.Monikers.Get(rangeID)))
 	}
 }
 
@@ -172,7 +172,7 @@ func canonicalizeResultSetData(state *State, id int, item lsif.ResultSet) lsif.R
 		// Recursively canonicalize the next element
 		nextItem = canonicalizeResultSetData(state, nextID, nextItem)
 		// Merge result set and canonicalized next element
-		item = mergeNextResultSetData(item, nextItem)
+		item = mergeNextResultSetData(state, id, item, nextID, nextItem)
 		// Delete next data to prevent us from re-performing this step
 		delete(state.NextData, id)
 	}
@@ -184,7 +184,7 @@ func canonicalizeResultSetData(state *State, id int, item lsif.ResultSet) lsif.R
 // mergeNextResultSetData merges the definition, reference, and hover result identifiers from
 // nextItem into item when not already defined. The moniker identifiers of nextItem are unioned
 // into the moniker identifiers of item.
-func mergeNextResultSetData(item, nextItem lsif.ResultSet) lsif.ResultSet {
+func mergeNextResultSetData(state *State, itemID int, item lsif.ResultSet, nextID int, nextItem lsif.ResultSet) lsif.ResultSet {
 	if item.DefinitionResultID == 0 {
 		item = item.SetDefinitionResultID(nextItem.DefinitionResultID)
 	}
@@ -195,14 +195,14 @@ func mergeNextResultSetData(item, nextItem lsif.ResultSet) lsif.ResultSet {
 		item = item.SetHoverResultID(nextItem.HoverResultID)
 	}
 
-	item.MonikerIDs.Union(nextItem.MonikerIDs)
+	state.Monikers.SetUnion(itemID, state.Monikers.Get(nextID))
 	return item
 }
 
 // mergeNextRangeData merges the definition, reference, and hover result identifiers from nextItem
 // into item when not already defined. The moniker identifiers of nextItem are unioned into the
 // moniker identifiers of item.
-func mergeNextRangeData(item lsif.Range, nextItem lsif.ResultSet) lsif.Range {
+func mergeNextRangeData(state *State, itemID int, item lsif.Range, nextID int, nextItem lsif.ResultSet) lsif.Range {
 	if item.DefinitionResultID == 0 {
 		item = item.SetDefinitionResultID(nextItem.DefinitionResultID)
 	}
@@ -213,7 +213,7 @@ func mergeNextRangeData(item lsif.Range, nextItem lsif.ResultSet) lsif.Range {
 		item = item.SetHoverResultID(nextItem.HoverResultID)
 	}
 
-	item.MonikerIDs.Union(nextItem.MonikerIDs)
+	state.Monikers.SetUnion(itemID, state.Monikers.Get(nextID))
 	return item
 }
 
@@ -222,6 +222,10 @@ func mergeNextRangeData(item lsif.Range, nextItem lsif.ResultSet) lsif.Range {
 // moniker identifier in the original set. This ignores adding any local-kind monikers to the new
 // set.
 func gatherMonikers(state *State, source *datastructures.IDSet) *datastructures.IDSet {
+	if source == nil || source.Len() == 0 {
+		return nil
+	}
+
 	monikers := datastructures.NewIDSet()
 
 	source.Each(func(sourceID int) {
