@@ -5,9 +5,14 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/inconshreveable/log15"
+	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type phabricator struct{}
@@ -106,20 +111,50 @@ func (p *phabricator) GetByName(ctx context.Context, name api.RepoName) (*types.
 		return Mocks.Phabricator.GetByName(name)
 	}
 
-	connections, err := ExternalServices.ListPhabricatorConnections(ctx)
-	if err != nil {
-		return nil, err
+	opt := ExternalServicesListOptions{
+		Kinds: []string{extsvc.KindPhabricator},
+		LimitOffset: &LimitOffset{
+			Limit: 500, // The number is randomly chosen
+		},
 	}
+	for {
+		svcs, err := ExternalServices.List(ctx, opt)
+		if err != nil {
+			return nil, errors.Wrap(err, "list")
+		}
+		if len(svcs) == 0 {
+			break // No more results, exiting
+		}
+		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
 
-	for _, config := range connections {
-		for _, repo := range config.Repos {
-			if api.RepoName(repo.Path) == name {
-				return &types.PhabricatorRepo{
-					Name:     api.RepoName(repo.Path),
-					Callsign: repo.Callsign,
-					URL:      config.Url,
-				}, nil
+		for _, svc := range svcs {
+			cfg, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+			if err != nil {
+				return nil, errors.Wrap(err, "parse config")
 			}
+
+			var conn *schema.PhabricatorConnection
+			switch c := cfg.(type) {
+			case *schema.PhabricatorConnection:
+				conn = c
+			default:
+				log15.Error("phabricator.GetByName", "error", errors.Errorf("want *schema.PhabricatorConnection but got %T", cfg))
+				continue
+			}
+
+			for _, repo := range conn.Repos {
+				if api.RepoName(repo.Path) == name {
+					return &types.PhabricatorRepo{
+						Name:     api.RepoName(repo.Path),
+						Callsign: repo.Callsign,
+						URL:      conn.Url,
+					}, nil
+				}
+			}
+		}
+
+		if len(svcs) < opt.Limit {
+			break // Less results than limit means we've reached end
 		}
 	}
 

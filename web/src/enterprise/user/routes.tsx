@@ -7,6 +7,8 @@ import { UserCampaignListPageProps } from '../campaigns/list/CampaignListPage'
 import { lazyComponent } from '../../util/lazyComponent'
 import { CampaignApplyPageProps } from '../campaigns/apply/CampaignApplyPage'
 import { CampaignDetailsProps } from '../campaigns/detail/CampaignDetails'
+import { CampaignClosePageProps } from '../campaigns/close/CampaignClosePage'
+import { CreateCampaignPageProps } from '../campaigns/create/CreateCampaignPage'
 
 const UserCampaignListPage = lazyComponent<UserCampaignListPageProps, 'UserCampaignListPage'>(
     () => import('../campaigns/list/CampaignListPage'),
@@ -16,9 +18,17 @@ const CampaignApplyPage = lazyComponent<CampaignApplyPageProps, 'CampaignApplyPa
     () => import('../campaigns/apply/CampaignApplyPage'),
     'CampaignApplyPage'
 )
+const CreateCampaignPage = lazyComponent<CreateCampaignPageProps, 'CreateCampaignPage'>(
+    () => import('../campaigns/create/CreateCampaignPage'),
+    'CreateCampaignPage'
+)
 const CampaignDetails = lazyComponent<CampaignDetailsProps, 'CampaignDetails'>(
     () => import('../campaigns/detail/CampaignDetails'),
     'CampaignDetails'
+)
+const CampaignClosePage = lazyComponent<CampaignClosePageProps, 'CampaignClosePage'>(
+    () => import('../campaigns/close/CampaignClosePage'),
+    'CampaignClosePage'
 )
 
 export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
@@ -41,6 +51,26 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
         render: ({ match, ...props }: UserAreaRouteContext & RouteComponentProps<{ specID: string }>) => (
             <div className="web-content">
                 <CampaignApplyPage {...props} specID={match.params.specID} />
+            </div>
+        ),
+        condition: ({ isSourcegraphDotCom }) =>
+            !isSourcegraphDotCom && window.context.experimentalFeatures?.automation === 'enabled',
+    },
+    {
+        path: '/campaigns/create',
+        render: props => (
+            <div className="web-content">
+                <CreateCampaignPage {...props} />
+            </div>
+        ),
+        condition: ({ isSourcegraphDotCom }) =>
+            !isSourcegraphDotCom && window.context.experimentalFeatures?.automation === 'enabled',
+    },
+    {
+        path: '/campaigns/:campaignID/close',
+        render: ({ match, ...props }: UserAreaRouteContext & RouteComponentProps<{ campaignID: string }>) => (
+            <div className="web-content">
+                <CampaignClosePage {...props} campaignID={match.params.campaignID} />
             </div>
         ),
         condition: ({ isSourcegraphDotCom }) =>

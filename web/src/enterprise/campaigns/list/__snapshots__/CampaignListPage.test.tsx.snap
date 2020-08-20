@@ -3,6 +3,17 @@
 exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
 <Fragment>
   <CampaignHeader
+    actionSection={
+      <AnchorLink
+        className="btn btn-primary"
+        to="//create"
+      >
+        <Memo(PlusIcon)
+          className="icon-inline"
+        />
+         New campaign
+      </AnchorLink>
+    }
     className="mb-3"
   />
   <CampaignsListBetaNotice />
@@ -65,6 +76,17 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
 exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
 <Fragment>
   <CampaignHeader
+    actionSection={
+      <AnchorLink
+        className="btn btn-primary"
+        to="//create"
+      >
+        <Memo(PlusIcon)
+          className="icon-inline"
+        />
+         New campaign
+      </AnchorLink>
+    }
     className="mb-3"
   />
   <CampaignsListBetaNotice />
@@ -127,6 +149,17 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
 exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
 <Fragment>
   <CampaignHeader
+    actionSection={
+      <AnchorLink
+        className="btn btn-primary"
+        to="//create"
+      >
+        <Memo(PlusIcon)
+          className="icon-inline"
+        />
+         New campaign
+      </AnchorLink>
+    }
     className="mb-3"
   />
   <CampaignsListBetaNotice />
@@ -189,6 +222,17 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
 exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
 <Fragment>
   <CampaignHeader
+    actionSection={
+      <AnchorLink
+        className="btn btn-primary"
+        to="//create"
+      >
+        <Memo(PlusIcon)
+          className="icon-inline"
+        />
+         New campaign
+      </AnchorLink>
+    }
     className="mb-3"
   />
   <CampaignsListBetaNotice />

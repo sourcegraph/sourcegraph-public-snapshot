@@ -1,6 +1,5 @@
 import React from 'react'
 import { RouteComponentProps, Switch, Route } from 'react-router'
-import { CampaignDetails } from '../detail/CampaignDetails'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
@@ -11,6 +10,7 @@ import { CampaignsSiteAdminMarketingPage } from './marketing/CampaignsSiteAdminM
 import { CampaignsUserMarketingPage } from './marketing/CampaignsUserMarketingPage'
 import { AuthenticatedUser } from '../../../auth'
 import { CampaignListPage } from '../list/CampaignListPage'
+import { CreateCampaignPage } from '../create/CreateCampaignPage'
 
 interface Props
     extends RouteComponentProps<{}>,
@@ -59,10 +59,9 @@ export const AuthenticatedCampaignsArea = withAuthenticatedUser<AuthenticatedPro
                         exact={true}
                     />
                     <Route
-                        path={`${match.url}/:campaignID`}
-                        render={({ match, ...props }: RouteComponentProps<{ campaignID: string }>) => (
-                            <CampaignDetails {...outerProps} {...props} campaignID={match.params.campaignID} />
-                        )}
+                        path={`${match.url}/create`}
+                        render={props => <CreateCampaignPage {...outerProps} {...props} />}
+                        exact={true}
                     />
                 </Switch>
                 {/* eslint-enable react/jsx-no-bind */}

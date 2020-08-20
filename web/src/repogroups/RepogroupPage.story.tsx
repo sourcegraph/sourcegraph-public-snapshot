@@ -175,6 +175,7 @@ const commonProps: RepogroupPageProps = {
     repogroupMetadata: python2To3Metadata,
     autoFocus: false,
     globbing: false,
+    showOnboardingTour: false,
 }
 
 add('Repogroup page with smart search field', () => (

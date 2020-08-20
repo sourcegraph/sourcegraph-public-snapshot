@@ -385,6 +385,7 @@ func (u *users) Update(ctx context.Context, id int32, update UserUpdate) error {
 	return nil
 }
 
+// Delete performs a soft-delete of the user and all resources associated with this user.
 func (u *users) Delete(ctx context.Context, id int32) error {
 	if Mocks.Users.Delete != nil {
 		return Mocks.Users.Delete(ctx, id)
@@ -442,6 +443,7 @@ func (u *users) Delete(ctx context.Context, id int32) error {
 	return nil
 }
 
+// HardDelete removes the user and all resources associated with this user.
 func (u *users) HardDelete(ctx context.Context, id int32) error {
 	if Mocks.Users.HardDelete != nil {
 		return Mocks.Users.HardDelete(ctx, id)

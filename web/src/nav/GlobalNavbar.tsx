@@ -13,6 +13,7 @@ import {
     InteractiveSearchProps,
     CaseSensitivityProps,
     CopyQueryButtonProps,
+    OnboardingTourProps,
 } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { EventLoggerProps } from '../tracking/eventLogger'
@@ -44,7 +45,8 @@ interface Props
         CaseSensitivityProps,
         InteractiveSearchProps,
         CopyQueryButtonProps,
-        VersionContextProps {
+        VersionContextProps,
+        OnboardingTourProps {
     history: H.History
     location: H.Location<{ query: string }>
     authenticatedUser: GQL.IUser | null

@@ -597,8 +597,6 @@ type GitBranchChangesetDescription {
 }
 
 # A description of a Git commit.
-#
-# TODO: Support specifying committer/author.
 type GitCommitDescription {
     # The Git commit message.
     message: String!
@@ -634,7 +632,10 @@ type CampaignDescription {
 type CampaignSpec implements Node {
     # The unique ID for a campaign spec.
     #
-    # TODO(sqs): document permissions and ID guessability
+    # The ID is unguessable (i.e., long and randomly generated, not sequential).
+    # Consider a campaign to fix a security vulnerability: the campaign author may prefer
+    # to prepare the campaign, including the description in private so that the window
+    # between revealing the problem and merging the fixes is as short as possible.
     id: ID!
 
     # The original YAML or JSON input that was used to create this campaign spec.
@@ -744,6 +745,8 @@ type Campaign implements Node {
         reviewState: ChangesetReviewState
         # Only include changesets with the given check state.
         checkState: ChangesetCheckState
+        # Only return changesets that have been published by this campaign. Imported changesets will be omitted.
+        onlyPublishedByThisCampaign: Boolean
     ): ChangesetConnection!
 
     # The changeset counts over time, in 1-day intervals backwards from the point in time given in
@@ -1070,6 +1073,9 @@ input AddExternalServiceInput {
     displayName: String!
     # The JSON configuration of the external service.
     config: String!
+    # The namespace this external service belongs to.
+    # Currently, this can only be used for a user.
+    namespace: ID
 }
 
 # Fields to update for an existing external service.
@@ -1841,6 +1847,8 @@ type ExternalService implements Node {
     createdAt: DateTime!
     # When the external service was last updated.
     updatedAt: DateTime!
+    # The namespace this external service belongs to.
+    namespace: ID
     # An optional URL that will be populated when webhooks have been configured for the external service.
     webhookURL: String
     # This is an optional field that's populated when we ran into errors on the

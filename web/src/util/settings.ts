@@ -50,12 +50,18 @@ export function experimentalFeaturesFromSettings(
     splitSearchModes: boolean
     copyQueryButton: boolean
     showRepogroupHomepage: boolean
+    showOnboardingTour: boolean
 } {
     const experimentalFeatures: SettingsExperimentalFeatures =
         (settingsCascade.final && !isErrorLike(settingsCascade.final) && settingsCascade.final.experimentalFeatures) ||
         {}
 
-    const { splitSearchModes = true, copyQueryButton = false, showRepogroupHomepage = false } = experimentalFeatures
+    const {
+        splitSearchModes = true,
+        copyQueryButton = false,
+        showRepogroupHomepage = false,
+        showOnboardingTour = false,
+    } = experimentalFeatures
 
-    return { splitSearchModes, copyQueryButton, showRepogroupHomepage }
+    return { splitSearchModes, copyQueryButton, showRepogroupHomepage, showOnboardingTour }
 }

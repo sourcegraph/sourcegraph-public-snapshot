@@ -13,6 +13,7 @@ import {
 const ListCampaignFragment = gql`
     fragment ListCampaign on Campaign {
         id
+        url
         name
         namespace {
             namespaceName
@@ -43,6 +44,10 @@ export const queryCampaigns = ({
                 campaigns(first: $first, after: $after, state: $state, viewerCanAdminister: $viewerCanAdminister) {
                     nodes {
                         ...ListCampaign
+                    }
+                    pageInfo {
+                        endCursor
+                        hasNextPage
                     }
                     totalCount
                 }
@@ -88,6 +93,10 @@ export const queryCampaignsByUser = ({
                         ) {
                             nodes {
                                 ...ListCampaign
+                            }
+                            pageInfo {
+                                endCursor
+                                hasNextPage
                             }
                             totalCount
                         }
@@ -138,6 +147,10 @@ export const queryCampaignsByOrg = ({
                         ) {
                             nodes {
                                 ...ListCampaign
+                            }
+                            pageInfo {
+                                endCursor
+                                hasNextPage
                             }
                             totalCount
                         }

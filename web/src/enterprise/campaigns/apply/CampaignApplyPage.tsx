@@ -7,7 +7,6 @@ import {
     queryChangesetSpecs,
     queryChangesetSpecFileDiffs,
 } from './backend'
-import { ErrorAlert } from '../../../components/alerts'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { CampaignHeader } from '../detail/CampaignHeader'
 import { ChangesetSpecList } from './ChangesetSpecList'
@@ -41,12 +40,6 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
 }) => {
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
     const spec = useObservable(useMemo(() => fetchCampaignSpecById(specID), [specID, fetchCampaignSpecById]))
-    if (spec === undefined) {
-        return <LoadingSpinner />
-    }
-    if (spec === null) {
-        return <ErrorAlert history={history} error={new Error('Campaign spec not found')} />
-    }
 
     if (spec === undefined) {
         return (

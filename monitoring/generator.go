@@ -107,22 +107,17 @@ func (r Row) validate() error {
 }
 
 // ObservableOwner denotes a team that owns an Observable. The current teams are described in
-// the handbook: https://about.sourcegraph.com/handbook/engineering/2021_org
+// the handbook: https://about.sourcegraph.com/company/team/org_chart#engineering
 type ObservableOwner string
 
 const (
-	// Core products teams
-	ObservableOwnerSearch               ObservableOwner = "search"
-	ObservableOwnerCampaigns            ObservableOwner = "campaigns"
-	ObservableOwnerCodeIntel            ObservableOwner = "code-intel"
-	ObservableOwnerExtensibility        ObservableOwner = "extensibility"
-	ObservableOwnerCodeHostIntegrations ObservableOwner = "code-host-integrations"
-
-	// Core services teams
-	ObservableOwnerBackendInfrastructure ObservableOwner = "backend-infrastructure"
-	ObservableOwnerDistribution          ObservableOwner = "distribution"
-	ObservableOwnerSecurity              ObservableOwner = "security"
-	ObservableOwnerWebInfrastructure     ObservableOwner = "web-infrastructure"
+	ObservableOwnerSearch       ObservableOwner = "search"
+	ObservableOwnerCampaigns    ObservableOwner = "campaigns"
+	ObservableOwnerCodeIntel    ObservableOwner = "code-intel"
+	ObservableOwnerDistribution ObservableOwner = "distribution"
+	ObservableOwnerSecurity     ObservableOwner = "security"
+	ObservableOwnerWeb          ObservableOwner = "web"
+	ObservableOwnerCloud        ObservableOwner = "cloud"
 )
 
 // Observable describes a metric about a container that can be observed. For example, memory usage.

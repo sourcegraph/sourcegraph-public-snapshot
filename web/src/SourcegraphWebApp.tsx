@@ -168,6 +168,8 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
 
     showRepogroupHomepage: boolean
 
+    showOnboardingTour: boolean
+
     /**
      * Whether globbing is enabled for filters.
      */
@@ -251,6 +253,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             availableVersionContexts,
             previousVersionContext,
             showRepogroupHomepage: false,
+            showOnboardingTour: false,
             globbing: false,
         }
     }
@@ -409,6 +412,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     availableVersionContexts={this.state.availableVersionContexts}
                                     previousVersionContext={this.state.previousVersionContext}
                                     showRepogroupHomepage={this.state.showRepogroupHomepage}
+                                    showOnboardingTour={this.state.showOnboardingTour}
                                     globbing={this.state.globbing}
                                 />
                             )}

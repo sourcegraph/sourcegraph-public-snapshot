@@ -312,6 +312,7 @@
     "rxjs": "^6.6.2",
     "sanitize-html": "^1.26.0",
     "semver": "^7.3.2",
+    "shepherd.js": "^8.0.2",
     "slugify": "^1.4.5",
     "sourcegraph": "link:packages/sourcegraph-extension-api",
     "string-score": "^1.0.1",

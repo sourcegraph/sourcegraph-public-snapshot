@@ -7,7 +7,13 @@ import { SettingsCascadeProps, Settings, isSettingsValid } from '../../../shared
 import { ThemeProps } from '../../../shared/src/theme'
 import { ThemePreferenceProps } from '../theme'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
-import { PatternTypeProps, CaseSensitivityProps, InteractiveSearchProps, CopyQueryButtonProps } from '../search'
+import {
+    PatternTypeProps,
+    CaseSensitivityProps,
+    InteractiveSearchProps,
+    CopyQueryButtonProps,
+    OnboardingTourProps,
+} from '../search'
 import { EventLoggerProps, eventLogger } from '../tracking/eventLogger'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
@@ -37,7 +43,8 @@ export interface RepogroupPageProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         InteractiveSearchProps,
         CopyQueryButtonProps,
-        VersionContextProps {
+        VersionContextProps,
+        OnboardingTourProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History

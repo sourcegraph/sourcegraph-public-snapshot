@@ -27,7 +27,7 @@ add('All states', () => (
             of(
                 [
                     {
-                        __typename: 'ChangesetCounts' as const,
+                        __typename: 'ChangesetCounts',
                         date: '2019-11-13T12:00:00Z',
                         closed: 0,
                         merged: 0,
@@ -38,7 +38,7 @@ add('All states', () => (
                         open: 10,
                     },
                     {
-                        __typename: 'ChangesetCounts' as const,
+                        __typename: 'ChangesetCounts',
                         date: '2019-11-14T12:00:00Z',
                         closed: 0,
                         merged: 0,
@@ -49,7 +49,7 @@ add('All states', () => (
                         open: 10,
                     },
                     {
-                        __typename: 'ChangesetCounts' as const,
+                        __typename: 'ChangesetCounts',
                         date: '2019-11-15T12:00:00Z',
                         closed: 0,
                         merged: 1,
@@ -60,7 +60,7 @@ add('All states', () => (
                         open: 8,
                     },
                     {
-                        __typename: 'ChangesetCounts' as const,
+                        __typename: 'ChangesetCounts',
                         date: '2019-11-16T12:00:00Z',
                         closed: 1,
                         merged: 1,
@@ -71,7 +71,7 @@ add('All states', () => (
                         open: 7,
                     },
                     {
-                        __typename: 'ChangesetCounts' as const,
+                        __typename: 'ChangesetCounts',
                         date: '2019-11-17T12:00:00Z',
                         closed: 1,
                         merged: 2,
@@ -82,7 +82,7 @@ add('All states', () => (
                         open: 6,
                     },
                     {
-                        __typename: 'ChangesetCounts' as const,
+                        __typename: 'ChangesetCounts',
                         date: '2019-11-18T12:00:00Z',
                         closed: 2,
                         merged: 4,
@@ -93,7 +93,7 @@ add('All states', () => (
                         open: 4,
                     },
                     {
-                        __typename: 'ChangesetCounts' as const,
+                        __typename: 'ChangesetCounts',
                         date: '2019-11-19T12:00:00Z',
                         closed: 2,
                         merged: 4,
@@ -104,7 +104,7 @@ add('All states', () => (
                         open: 4,
                     },
                     {
-                        __typename: 'ChangesetCounts' as const,
+                        __typename: 'ChangesetCounts',
                         date: '2019-11-20T12:00:00Z',
                         closed: 2,
                         merged: 4,
@@ -115,7 +115,7 @@ add('All states', () => (
                         open: 4,
                     },
                     {
-                        __typename: 'ChangesetCounts' as const,
+                        __typename: 'ChangesetCounts',
                         date: '2019-11-21T12:00:00Z',
                         closed: 2,
                         merged: 5,
@@ -126,7 +126,7 @@ add('All states', () => (
                         open: 3,
                     },
                     {
-                        __typename: 'ChangesetCounts' as const,
+                        __typename: 'ChangesetCounts',
                         date: '2019-11-22T12:00:00Z',
                         closed: 2,
                         merged: 8,
