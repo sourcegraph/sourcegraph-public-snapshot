@@ -766,7 +766,7 @@ func TestMapGlobToRegex(t *testing.T) {
 	}
 }
 
-func TestMapRevFilters(t *testing.T) {
+func TestConcatRevFilters(t *testing.T) {
 	cases := []struct {
 		input string
 		want  string
@@ -803,11 +803,11 @@ func TestMapRevFilters(t *testing.T) {
 
 			var queriesStr []string
 			for _, q := range queries {
-				qMapped, err := mapRevFilters(q)
+				qConcat, err := concatRevFilters(q)
 				if err != nil {
 					t.Fatal(err)
 				}
-				queriesStr = append(queriesStr, prettyPrint(qMapped))
+				queriesStr = append(queriesStr, prettyPrint(qConcat))
 			}
 			got := "(" + strings.Join(queriesStr, ") OR (") + ")"
 			if diff := cmp.Diff(c.want, got); diff != "" {
@@ -817,7 +817,7 @@ func TestMapRevFilters(t *testing.T) {
 	}
 }
 
-func TestMapRevFiltersTopLevelAnd(t *testing.T) {
+func TestConcatRevFiltersTopLevelAnd(t *testing.T) {
 	cases := []struct {
 		input string
 		want  string
@@ -838,18 +838,18 @@ func TestMapRevFiltersTopLevelAnd(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
 			query, _ := ParseAndOr(c.input, SearchTypeRegex)
-			qMapped, err := mapRevFilters(query)
+			qConcat, err := concatRevFilters(query)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(c.want, prettyPrint(qMapped)); diff != "" {
+			if diff := cmp.Diff(c.want, prettyPrint(qConcat)); diff != "" {
 				t.Error(diff)
 			}
 		})
 	}
 }
 
-func TestMapRevFiltersForInvalidSyntax(t *testing.T) {
+func TestConcatRevFiltersForInvalidSyntax(t *testing.T) {
 	cases := []string{
 		"repo:foo rev:a rev:b",
 		"repo:foo@a rev:b",
@@ -859,7 +859,7 @@ func TestMapRevFiltersForInvalidSyntax(t *testing.T) {
 			query, _ := ParseAndOr(c, SearchTypeRegex)
 			queries := dnf(query)
 			for _, q := range queries {
-				_, err := mapRevFilters(q)
+				_, err := concatRevFilters(q)
 				if err == nil {
 					t.Fatal("Expected err, but got nil")
 				}

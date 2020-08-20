@@ -564,26 +564,26 @@ func FuzzifyRegexPatterns(nodes []Node) []Node {
 	})
 }
 
-// mapRevFilters removes rev: filters from []Node and attaches their value as @rev to the repo: filters.
+// concatRevFilters removes rev: filters from []Node and attaches their value as @rev to the repo: filters.
 // All rev: filters are assumed to be on the top-level, i.e. mapRevFilter will not traverse the tree.
 // To be compatible with the output of the parser with and without DNF we handle both, []Node with
 // an explicit top-level And operator and []Node with an implicit And.
-func mapRevFilters(nodes []Node) ([]Node, error) {
+func concatRevFilters(nodes []Node) ([]Node, error) {
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
 	// top-level And
 	if op, isOperator := nodes[0].(Operator); len(nodes) == 1 && isOperator && op.Kind == And {
-		nodes, err := mapRevFiltersFlat(op.Operands)
+		nodes, err := concatRevFiltersFlat(op.Operands)
 		if err != nil {
 			return nil, err
 		}
 		return newOperator(nodes, And), nil
 	}
-	return mapRevFiltersFlat(nodes)
+	return concatRevFiltersFlat(nodes)
 }
 
-func mapRevFiltersFlat(nodes []Node) ([]Node, error) {
+func concatRevFiltersFlat(nodes []Node) ([]Node, error) {
 	var revs []string
 	for _, n := range nodes {
 		if param, ok := n.(Parameter); !ok || param.Field != FieldRev {

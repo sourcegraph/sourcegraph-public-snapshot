@@ -981,7 +981,7 @@ func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 		query = Map(query, EmptyGroupsToLiteral, TrailingParensToLiteral)
 	}
 
-	query, err = mapRevFilters(query)
+	query, err = concatRevFilters(query)
 	if err != nil {
 		return nil, err
 	}
