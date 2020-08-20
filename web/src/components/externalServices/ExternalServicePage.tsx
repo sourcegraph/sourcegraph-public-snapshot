@@ -3,44 +3,43 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { useEffect, useState, useCallback } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { concat, Observable } from 'rxjs'
-import { catchError, startWith, switchMap, map } from 'rxjs/operators'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { PageTitle } from '../../../components/PageTitle'
-import { ExternalServiceCard } from '../../../components/ExternalServiceCard'
-import { ExternalServiceForm } from './ExternalServiceForm'
-import { ErrorAlert } from '../../../components/alerts'
-import { defaultExternalServices, codeHostExternalServices } from '../../../site-admin/externalServices'
-import { hasProperty } from '../../../../../shared/src/util/types'
+import { catchError, startWith, switchMap } from 'rxjs/operators'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { PageTitle } from '../PageTitle'
+import { ExternalServiceCard } from './ExternalServiceCard'
+import { ErrorAlert } from '../alerts'
+import { defaultExternalServices, codeHostExternalServices } from './externalServices'
+import { hasProperty } from '../../../../shared/src/util/types'
 import * as H from 'history'
-import { useEventObservable } from '../../../../../shared/src/util/useObservable'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import { mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
-import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
+import { useEventObservable } from '../../../../shared/src/util/useObservable'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { isExternalService, updateExternalService, fetchExternalService } from './backend'
+import { LOADING } from '@sourcegraph/codeintellify'
 import { ExternalServiceWebhook } from './ExternalServiceWebhook'
-
-type ExternalService = Pick<GQL.IExternalService, 'id' | 'kind' | 'displayName' | 'config' | 'warning' | 'webhookURL'>
+import { ExternalServiceForm } from './ExternalServiceForm'
+import { ExternalServiceFields } from '../../graphql-operations'
 
 interface Props extends RouteComponentProps<{ id: GQL.ID }>, TelemetryProps {
     isLightTheme: boolean
     history: H.History
+    afterUpdateRoute: string
 }
-
-const LOADING = 'loading' as const
 
 export const ExternalServicePage: React.FunctionComponent<Props> = ({
     match,
     history,
     isLightTheme,
     telemetryService,
+    afterUpdateRoute,
 }) => {
     useEffect(() => {
-        telemetryService.logViewEvent('ExternalService')
+        telemetryService.logViewEvent('SiteAdminExternalService')
     }, [telemetryService])
 
-    const [externalServiceOrError, setExternalServiceOrError] = useState<typeof LOADING | ExternalService | ErrorLike>(
-        LOADING
-    )
+    const [externalServiceOrError, setExternalServiceOrError] = useState<
+        typeof LOADING | ExternalServiceFields | ErrorLike
+    >(LOADING)
 
     useEffect(() => {
         const subscription = fetchExternalService(match.params.id)
@@ -65,12 +64,14 @@ export const ExternalServicePage: React.FunctionComponent<Props> = ({
 
     const [nextSubmit, updatedServiceOrError] = useEventObservable(
         useCallback(
-            (submits: Observable<GQL.IExternalService>): Observable<typeof LOADING | ErrorLike | ExternalService> =>
+            (
+                submits: Observable<ExternalServiceFields>
+            ): Observable<typeof LOADING | ErrorLike | ExternalServiceFields> =>
                 submits.pipe(
                     switchMap(input =>
                         concat(
                             [LOADING],
-                            updateExternalService(input).pipe(catchError((error: Error) => [asError(error)]))
+                            updateExternalService({ input }).pipe(catchError((error: Error) => [asError(error)]))
                         )
                     )
                 ),
@@ -86,7 +87,7 @@ export const ExternalServicePage: React.FunctionComponent<Props> = ({
             if (updatedServiceOrError.warning) {
                 setExternalServiceOrError(updatedServiceOrError)
             } else {
-                history.push(`./${updatedServiceOrError.id}`)
+                history.push(afterUpdateRoute)
             }
         }
     }, [updatedServiceOrError, history])
@@ -169,65 +170,5 @@ export const ExternalServicePage: React.FunctionComponent<Props> = ({
             )}
             {externalService && <ExternalServiceWebhook externalService={externalService} />}
         </div>
-    )
-}
-
-function isExternalService(
-    externalServiceOrError: typeof LOADING | ExternalService | ErrorLike
-): externalServiceOrError is GQL.IExternalService {
-    return externalServiceOrError !== LOADING && !isErrorLike(externalServiceOrError)
-}
-
-const externalServiceFragment = gql`
-    fragment externalServiceFields on ExternalService {
-        id
-        kind
-        displayName
-        config
-        warning
-        webhookURL
-    }
-`
-
-function updateExternalService(input: GQL.IUpdateExternalServiceInput): Observable<ExternalService> {
-    return mutateGraphQL(
-        gql`
-            mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
-                updateExternalService(input: $input) {
-                    ...externalServiceFields
-                }
-            }
-            ${externalServiceFragment}
-        `,
-        { input }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.updateExternalService)
-    )
-}
-
-function fetchExternalService(id: GQL.ID): Observable<ExternalService> {
-    return queryGraphQL(
-        gql`
-            query ExternalService($id: ID!) {
-                node(id: $id) {
-                    __typename
-                    ...externalServiceFields
-                }
-            }
-            ${externalServiceFragment}
-        `,
-        { id }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                throw new Error('External service not found')
-            }
-            if (node.__typename !== 'ExternalService') {
-                throw new Error(`Node is a ${node.__typename}, not a ExternalService`)
-            }
-            return node
-        })
     )
 }

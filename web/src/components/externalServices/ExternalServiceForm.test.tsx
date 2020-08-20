@@ -6,11 +6,11 @@ import * as H from 'history'
 import React from 'react'
 import renderer from 'react-test-renderer'
 import { noop } from 'rxjs'
-import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
-import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
-import { NOOP_TELEMETRY_SERVICE } from '../../../shared/src/telemetry/telemetryService'
+import { ExternalServiceKind } from '../../../../shared/src/graphql/schema'
+import { ExternalServiceForm } from './ExternalServiceForm'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
 
-describe('<SiteAdminExternalServiceForm />', () => {
+describe('ExternalServiceForm', () => {
     const baseProps = {
         history: H.createMemoryHistory(),
         isLightTheme: true,
@@ -22,7 +22,7 @@ describe('<SiteAdminExternalServiceForm />', () => {
 
     test('create GitHub', () => {
         const component = renderer.create(
-            <SiteAdminExternalServiceForm
+            <ExternalServiceForm
                 {...baseProps}
                 input={{
                     kind: ExternalServiceKind.GITHUB,
@@ -38,7 +38,7 @@ describe('<SiteAdminExternalServiceForm />', () => {
     })
     test('edit GitHub', () => {
         const component = renderer.create(
-            <SiteAdminExternalServiceForm
+            <ExternalServiceForm
                 {...baseProps}
                 input={{
                     kind: ExternalServiceKind.GITHUB,
@@ -54,7 +54,7 @@ describe('<SiteAdminExternalServiceForm />', () => {
     })
     test('edit GitHub, loading', () => {
         const component = renderer.create(
-            <SiteAdminExternalServiceForm
+            <ExternalServiceForm
                 {...baseProps}
                 input={{
                     kind: ExternalServiceKind.GITHUB,

@@ -2,7 +2,7 @@ import * as H from 'history'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React from 'react'
 import { Link } from 'react-router-dom'
-import * as GQL from '../../../shared/src/graphql/schema'
+import { ExternalServiceKind } from '../../graphql-operations'
 
 interface ExternalServiceCardProps {
     /**
@@ -20,7 +20,7 @@ interface ExternalServiceCardProps {
      */
     shortDescription?: string
 
-    kind: GQL.ExternalServiceKind
+    kind: ExternalServiceKind
 
     to?: H.LocationDescriptor
     className?: string

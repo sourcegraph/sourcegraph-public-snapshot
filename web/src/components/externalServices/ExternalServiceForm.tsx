@@ -1,14 +1,14 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import * as React from 'react'
-import * as GQL from '../../../shared/src/graphql/schema'
-import { ErrorLike } from '../../../shared/src/util/errors'
-import { Form } from '../components/Form'
-import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { ErrorLike } from '../../../../shared/src/util/errors'
+import { Form } from '../Form'
+import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 import { AddExternalServiceOptions } from './externalServices'
-import { ErrorAlert, ErrorMessage } from '../components/alerts'
-import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
-import { ThemeProps } from '../../../shared/src/theme'
+import { ErrorAlert, ErrorMessage } from '../alerts'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { ThemeProps } from '../../../../shared/src/theme'
 
 interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions'>, ThemeProps, TelemetryProps {
     history: H.History
@@ -26,7 +26,7 @@ interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorAc
 /**
  * Form for submitting a new or updated external service.
  */
-export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
+export class ExternalServiceForm extends React.Component<Props, {}> {
     public render(): JSX.Element | null {
         return (
             <Form className="external-service-form" onSubmit={this.props.onSubmit}>

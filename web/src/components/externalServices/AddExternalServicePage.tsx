@@ -1,28 +1,28 @@
 import * as H from 'history'
 import React, { useEffect, useCallback, useState } from 'react'
 import { Observable, concat } from 'rxjs'
-import { catchError, map, switchMap } from 'rxjs/operators'
-import { Markdown } from '../../../../../shared/src/components/Markdown'
-import { gql } from '../../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { createAggregateError, ErrorLike, asError, isErrorLike } from '../../../../../shared/src/util/errors'
-import { renderMarkdown } from '../../../../../shared/src/util/markdown'
-import { mutateGraphQL } from '../../../backend/graphql'
-import { PageTitle } from '../../../components/PageTitle'
-import { refreshSiteFlags } from '../../../site/backend'
-import { ThemeProps } from '../../../../../shared/src/theme'
-import { ExternalServiceCard } from '../../../components/ExternalServiceCard'
+import { catchError, switchMap } from 'rxjs/operators'
+import { Markdown } from '../../../../shared/src/components/Markdown'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { ErrorLike, asError, isErrorLike } from '../../../../shared/src/util/errors'
+import { renderMarkdown } from '../../../../shared/src/util/markdown'
+import { PageTitle } from '../PageTitle'
+import { refreshSiteFlags } from '../../site/backend'
+import { ThemeProps } from '../../../../shared/src/theme'
+import { ExternalServiceCard } from './ExternalServiceCard'
+import { AddExternalServiceOptions } from './externalServices'
+import { useEventObservable } from '../../../../shared/src/util/useObservable'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { ExternalServiceForm } from './ExternalServiceForm'
-import { AddExternalServiceOptions } from '../../../site-admin/externalServices'
-import { useEventObservable } from '../../../../../shared/src/util/useObservable'
+import { addExternalService } from './backend'
+import { ExternalServiceFields, Scalars } from '../../graphql-operations'
 
-interface Props extends ThemeProps {
+interface Props extends ThemeProps, TelemetryProps {
     history: H.History
     externalService: AddExternalServiceOptions
-    eventLogger: {
-        logViewEvent: (event: 'AddExternalService') => void
-        log: (event: 'AddExternalServiceFailed' | 'AddExternalServiceSucceeded', eventProperties?: any) => void
-    }
+    routingPrefix: string
+    afterCreateRoute: string
+    userID?: Scalars['ID']
 }
 
 const LOADING = 'loading' as const
@@ -35,23 +35,26 @@ export const AddExternalServicePage: React.FunctionComponent<Props> = props => {
     const [displayName, setDisplayName] = useState(props.externalService.defaultDisplayName)
 
     useEffect(() => {
-        props.eventLogger.logViewEvent('AddExternalService')
-    }, [props.eventLogger])
+        props.telemetryService.logViewEvent('AddExternalService')
+    }, [props.telemetryService])
 
     const [nextSubmit, createdServiceOrError] = useEventObservable(
         useCallback(
             (
                 submits: Observable<GQL.IAddExternalServiceInput>
-            ): Observable<typeof LOADING | ErrorLike | GQL.IExternalService> =>
+            ): Observable<typeof LOADING | ErrorLike | ExternalServiceFields> =>
                 submits.pipe(
                     switchMap(input =>
                         concat(
                             [LOADING],
-                            addExternalService(input, props.eventLogger).pipe(catchError(error => [asError(error)]))
+                            addExternalService(
+                                { input: { ...input, namespace: props.userID ?? null } },
+                                props.telemetryService
+                            ).pipe(catchError(error => [asError(error)]))
                         )
                     )
                 ),
-            [props.eventLogger]
+            [props.telemetryService]
         )
     )
 
@@ -61,18 +64,17 @@ export const AddExternalServicePage: React.FunctionComponent<Props> = props => {
             // reflect the latest configuration.
             // eslint-disable-next-line rxjs/no-nested-subscribe, rxjs/no-ignored-subscription
             refreshSiteFlags().subscribe({ error: error => console.error(error) })
-            props.history.push(`./${createdServiceOrError.id}`)
+            props.history.push(props.afterCreateRoute)
         }
-    }, [createdServiceOrError, props.history])
+    }, [createdServiceOrError, props.history, props.afterCreateRoute])
 
     const getExternalServiceInput = useCallback(
         (): GQL.IAddExternalServiceInput => ({
             displayName,
             config,
             kind: props.externalService.kind,
-            namespace: props.user.id,
         }),
-        [displayName, config, props.externalService.kind, props.user.id]
+        [displayName, config, props.externalService.kind]
     )
 
     const onChange = useCallback(
@@ -107,7 +109,7 @@ export const AddExternalServicePage: React.FunctionComponent<Props> = props => {
                             {...props.externalService}
                             title={createdServiceOrError.displayName}
                             shortDescription="Update this external service configuration to manage repository mirroring."
-                            to={`./external-services/${createdServiceOrError.id}`}
+                            to={`${props.routingPrefix}/external-services/${createdServiceOrError.id}`}
                         />
                     </div>
                     <div className="alert alert-warning">
@@ -139,33 +141,5 @@ export const AddExternalServicePage: React.FunctionComponent<Props> = props => {
                 </div>
             )}
         </div>
-    )
-}
-
-export function addExternalService(
-    input: GQL.IAddExternalServiceInput,
-    eventLogger: Pick<Props['eventLogger'], 'log'>
-): Observable<GQL.IExternalService> {
-    return mutateGraphQL(
-        gql`
-            mutation addExternalService($input: AddExternalServiceInput!) {
-                addExternalService(input: $input) {
-                    id
-                    kind
-                    displayName
-                    warning
-                }
-            }
-        `,
-        { input }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.addExternalService || (errors && errors.length > 0)) {
-                eventLogger.log('AddExternalServiceFailed')
-                throw createAggregateError(errors)
-            }
-            eventLogger.log('AddExternalServiceSucceeded')
-            return data.addExternalService
-        })
     )
 }

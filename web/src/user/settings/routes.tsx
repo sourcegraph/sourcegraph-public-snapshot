@@ -2,13 +2,20 @@ import React from 'react'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { lazyComponent } from '../../util/lazyComponent'
 import { UserSettingsAreaRoute } from './UserSettingsArea'
-import { eventLogger } from '../../tracking/eventLogger'
+import { codeHostExternalServices } from '../../components/externalServices/externalServices'
 
 const SettingsArea = lazyComponent(() => import('../../settings/SettingsArea'), 'SettingsArea')
-
+const ExternalServicesPage = lazyComponent(
+    () => import('../../components/externalServices/ExternalServicesPage'),
+    'ExternalServicesPage'
+)
 const AddExternalServicesPage = lazyComponent(
-    () => import('./externalServices/AddExternalServicesPage'),
+    () => import('../../components/externalServices/AddExternalServicesPage'),
     'AddExternalServicesPage'
+)
+const ExternalServicePage = lazyComponent(
+    () => import('../../components/externalServices/ExternalServicePage'),
+    'ExternalServicePage'
 )
 
 export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
@@ -65,17 +72,39 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     },
     {
         path: '/external-services',
-        render: lazyComponent(() => import('./externalServices/ExternalServicesPage'), 'ExternalServicesPage'),
+        render: props => (
+            <ExternalServicesPage
+                {...props}
+                userID={props.user.id}
+                routingPrefix={props.user.url + '/settings'}
+                afterDeleteRoute={props.user.url + '/settings/external-services'}
+            />
+        ),
         exact: true,
     },
     {
         path: '/external-services/new',
-        render: props => <AddExternalServicesPage {...props} eventLogger={eventLogger} />,
+        render: props => (
+            <AddExternalServicesPage
+                {...props}
+                routingPrefix={props.user.url + '/settings'}
+                afterCreateRoute={props.user.url + '/settings/external-services'}
+                userID={props.user.id}
+                codeHostExternalServices={{
+                    github: codeHostExternalServices['github'],
+                    gitlabcom: codeHostExternalServices['gitlabcom'],
+                    bitbucket: codeHostExternalServices['bitbucket'],
+                }}
+                nonCodeHostExternalServices={{}}
+            />
+        ),
         exact: true,
     },
     {
         path: '/external-services/:id',
-        render: lazyComponent(() => import('./externalServices/ExternalServicePage'), 'ExternalServicePage'),
+        render: props => (
+            <ExternalServicePage {...props} afterUpdateRoute={props.user.url + '/settings/external-services'} />
+        ),
         exact: true,
     },
 ]
