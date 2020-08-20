@@ -274,6 +274,11 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 	}
 	fmt.Printf("✱ Sourcegraph is ready at: %s\n", globals.ExternalURL())
 
+	// now that sourcegraph is ready, let's look to rotating our keys
+	if encrypt.ConfiguredToEncrypt() {
+
+	}
+
 	srv.Wait()
 	return nil
 }
