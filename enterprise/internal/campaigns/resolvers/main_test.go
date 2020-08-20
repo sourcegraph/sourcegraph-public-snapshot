@@ -147,7 +147,7 @@ func insertTestUser(t *testing.T, db *sql.DB, name string, isAdmin bool) (userID
 	return userID
 }
 
-func newGithubExternalService(t *testing.T, store repos.Store) *repos.ExternalService {
+func newGitHubExternalService(t *testing.T, store repos.Store) *repos.ExternalService {
 	t.Helper()
 
 	clock := repos.NewFakeClock(time.Now(), 0)
