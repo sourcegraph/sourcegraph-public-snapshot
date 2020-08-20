@@ -38,7 +38,7 @@
         margin-left: 0;
         padding-left: 0;
 
-        li:before {
+        li::before {
             content: '–';
         }
     }
