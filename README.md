@@ -1,4 +1,3 @@
-hello world
 # <a href="https://sourcegraph.com"><img alt="Sourcegraph" src="https://sourcegraphstatic.com/sourcegraph-logo.png" height="32px" /></a>
 
 [![build](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=master)](https://buildkite.com/sourcegraph/sourcegraph)
@@ -9,6 +8,8 @@ hello world
 ![Screenshot](https://user-images.githubusercontent.com/1646931/46309383-09ba9800-c571-11e8-8ee4-1a2ec32072f2.png)
 
 **Features**
+
+Hello world
 
 - Fast global code search with a hybrid backend that combines a trigram index with in-memory streaming.
 - Code intelligence for many languages via the [Language Server Index Format](https://lsif.dev/).
