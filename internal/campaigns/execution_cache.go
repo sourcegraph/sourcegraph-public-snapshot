@@ -21,13 +21,12 @@ func UserCacheDir() (string, error) {
 }
 
 type ExecutionCacheKey struct {
-	Repo ActionRepo
-	Runs []*ActionStep
+	*Task
 }
 
 type ExecutionCache interface {
-	Get(ctx context.Context, key ExecutionCacheKey) (result PatchInput, ok bool, err error)
-	Set(ctx context.Context, key ExecutionCacheKey, result PatchInput) error
+	Get(ctx context.Context, key ExecutionCacheKey) (result *ChangesetSpec, err error)
+	Set(ctx context.Context, key ExecutionCacheKey, result *ChangesetSpec) error
 	Clear(ctx context.Context, key ExecutionCacheKey) error
 }
 
@@ -47,10 +46,10 @@ func (c ExecutionDiskCache) cacheFilePath(key ExecutionCacheKey) (string, error)
 	return filepath.Join(c.Dir, keyString+".json"), nil
 }
 
-func (c ExecutionDiskCache) Get(ctx context.Context, key ExecutionCacheKey) (PatchInput, bool, error) {
+func (c ExecutionDiskCache) Get(ctx context.Context, key ExecutionCacheKey) (*ChangesetSpec, error) {
 	path, err := c.cacheFilePath(key)
 	if err != nil {
-		return PatchInput{}, false, err
+		return nil, err
 	}
 
 	data, err := ioutil.ReadFile(path)
@@ -58,22 +57,22 @@ func (c ExecutionDiskCache) Get(ctx context.Context, key ExecutionCacheKey) (Pat
 		if os.IsNotExist(err) {
 			err = nil // treat as not-found
 		}
-		return PatchInput{}, false, err
+		return nil, err
 	}
 
-	var result PatchInput
+	var result ChangesetSpec
 	if err := json.Unmarshal(data, &result); err != nil {
 		// Delete the invalid data to avoid causing an error for next time.
 		if err := os.Remove(path); err != nil {
-			return PatchInput{}, false, errors.Wrap(err, "while deleting cache file with invalid JSON")
+			return nil, errors.Wrap(err, "while deleting cache file with invalid JSON")
 		}
-		return PatchInput{}, false, errors.Wrapf(err, "reading cache file %s", path)
+		return nil, errors.Wrapf(err, "reading cache file %s", path)
 	}
 
-	return result, true, nil
+	return &result, nil
 }
 
-func (c ExecutionDiskCache) Set(ctx context.Context, key ExecutionCacheKey, result PatchInput) error {
+func (c ExecutionDiskCache) Set(ctx context.Context, key ExecutionCacheKey, result *ChangesetSpec) error {
 	data, err := json.Marshal(result)
 	if err != nil {
 		return err
@@ -108,11 +107,11 @@ func (c ExecutionDiskCache) Clear(ctx context.Context, key ExecutionCacheKey) er
 // retrieve cache entries.
 type ExecutionNoOpCache struct{}
 
-func (ExecutionNoOpCache) Get(ctx context.Context, key ExecutionCacheKey) (result PatchInput, ok bool, err error) {
-	return PatchInput{}, false, nil
+func (ExecutionNoOpCache) Get(ctx context.Context, key ExecutionCacheKey) (result *ChangesetSpec, err error) {
+	return nil, nil
 }
 
-func (ExecutionNoOpCache) Set(ctx context.Context, key ExecutionCacheKey, result PatchInput) error {
+func (ExecutionNoOpCache) Set(ctx context.Context, key ExecutionCacheKey, result *ChangesetSpec) error {
 	return nil
 }
 

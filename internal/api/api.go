@@ -10,7 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"path"
+	"strings"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/jig/teereadcloser"
@@ -113,7 +113,7 @@ func (c *client) NewRequest(query string, vars map[string]interface{}) Request {
 }
 
 func (c *client) NewHTTPRequest(ctx context.Context, method, p string, body io.Reader) (*http.Request, error) {
-	req, err := http.NewRequestWithContext(ctx, method, c.opts.Endpoint+path.Join("/.api", p), body)
+	req, err := http.NewRequestWithContext(ctx, method, strings.TrimRight(c.opts.Endpoint, "/")+"/"+p, body)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +164,7 @@ func (r *request) do(ctx context.Context, result interface{}) (bool, error) {
 	}
 
 	// Create the HTTP request.
-	req, err := r.client.NewHTTPRequest(ctx, "POST", "graphql", bytes.NewBuffer(reqBody))
+	req, err := r.client.NewHTTPRequest(ctx, "POST", ".api/graphql", bytes.NewBuffer(reqBody))
 	if err != nil {
 		return false, err
 	}

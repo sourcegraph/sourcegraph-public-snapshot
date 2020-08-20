@@ -4,15 +4,33 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/src-cli/internal/api"
+	"github.com/sourcegraph/src-cli/internal/campaigns/graphql"
 )
 
-type ActionRepoStatus struct {
+type Executor interface {
+	AddTask(repo *graphql.Repository, steps []Step, template *ChangesetTemplate) *TaskStatus
+	LogFiles() []string
+	Start(ctx context.Context)
+	Wait() ([]*ChangesetSpec, error)
+}
+
+type Task struct {
+	Repository *graphql.Repository
+	Steps      []Step
+	Template   *ChangesetTemplate
+}
+
+func (t *Task) cacheKey() ExecutionCacheKey {
+	return ExecutionCacheKey{t}
+}
+
+type TaskStatus struct {
 	Cached bool
 
 	LogFile    string
@@ -20,190 +38,196 @@ type ActionRepoStatus struct {
 	StartedAt  time.Time
 	FinishedAt time.Time
 
-	Patch PatchInput
-	Err   error
+	// TODO: add current step and progress fields.
+
+	// Result fields.
+	ChangesetSpec *ChangesetSpec
+	Err           error
 }
 
-type ExecutorOpts struct {
-	Endpoint          string
-	AccessToken       string
-	AdditionalHeaders map[string]string
+type ExecutorUpdateCallback func(*Task, TaskStatus)
 
-	KeepLogs bool
-	Timeout  time.Duration
+type executor struct {
+	ExecutorOpts
 
-	ClearCache bool
-	Cache      ExecutionCache
-}
-
-type Executor struct {
-	action Action
-	opt    ExecutorOpts
-
-	reposMu sync.Mutex
-	repos   map[ActionRepo]ActionRepoStatus
+	cache  ExecutionCache
+	client api.Client
+	logger *LogManager
+	tasks  sync.Map
 
 	par           *parallel.Run
 	doneEnqueuing chan struct{}
 
-	logger *ActionLogger
+	update ExecutorUpdateCallback
+
+	specs   []*ChangesetSpec
+	specsMu sync.Mutex
 }
 
-func NewExecutor(action Action, parallelism int, logger *ActionLogger, opt ExecutorOpts) *Executor {
-	if opt.Cache == nil {
-		opt.Cache = ExecutionNoOpCache{}
-	}
-
-	return &Executor{
-		action: action,
-		opt:    opt,
-		repos:  map[ActionRepo]ActionRepoStatus{},
-		par:    parallel.NewRun(parallelism),
-		logger: logger,
-
+func newExecutor(opts ExecutorOpts, client api.Client, update ExecutorUpdateCallback) *executor {
+	return &executor{
+		ExecutorOpts:  opts,
+		cache:         opts.Cache,
+		client:        client,
 		doneEnqueuing: make(chan struct{}),
+		logger:        NewLogManager(opts.KeepLogs),
+		par:           parallel.NewRun(opts.Parallelism),
+		update:        update,
 	}
 }
 
-func (x *Executor) EnqueueRepo(repo ActionRepo) {
-	x.updateRepoStatus(repo, ActionRepoStatus{EnqueuedAt: time.Now()})
+func (x *executor) AddTask(repo *graphql.Repository, steps []Step, template *ChangesetTemplate) *TaskStatus {
+	task := &Task{repo, steps, template}
+	ts := &TaskStatus{EnqueuedAt: time.Now()}
+	x.tasks.Store(task, ts)
+	return ts
 }
 
-func (x *Executor) updateRepoStatus(repo ActionRepo, status ActionRepoStatus) {
-	x.reposMu.Lock()
-	defer x.reposMu.Unlock()
-
-	// Perform delta update.
-	prev := x.repos[repo]
-	if status.LogFile == "" {
-		status.LogFile = prev.LogFile
-	}
-	if status.EnqueuedAt.IsZero() {
-		status.EnqueuedAt = prev.EnqueuedAt
-	}
-	if status.StartedAt.IsZero() {
-		status.StartedAt = prev.StartedAt
-	}
-	if status.FinishedAt.IsZero() {
-		status.FinishedAt = prev.FinishedAt
-	}
-	if status.Patch == (PatchInput{}) {
-		status.Patch = prev.Patch
-	}
-	if status.Err == nil {
-		status.Err = prev.Err
-	}
-
-	x.repos[repo] = status
+func (x *executor) LogFiles() []string {
+	return x.logger.LogFiles()
 }
 
-func (x *Executor) AllPatches() []PatchInput {
-	patches := make([]PatchInput, 0, len(x.repos))
-	x.reposMu.Lock()
-	defer x.reposMu.Unlock()
-	for _, status := range x.repos {
-		if patch := status.Patch; patch != (PatchInput{}) && status.Err == nil {
-			patches = append(patches, status.Patch)
-		}
-	}
-	return patches
-}
-
-func (x *Executor) Start(ctx context.Context) {
-	x.reposMu.Lock()
-	allRepos := make([]ActionRepo, 0, len(x.repos))
-	for repo := range x.repos {
-		allRepos = append(allRepos, repo)
-	}
-	x.reposMu.Unlock()
-
-	for _, repo := range allRepos {
+func (x *executor) Start(ctx context.Context) {
+	x.tasks.Range(func(k, v interface{}) bool {
 		x.par.Acquire()
-		go func(repo ActionRepo) {
+
+		go func(task *Task) {
 			defer x.par.Release()
-			err := x.do(ctx, repo)
+			err := x.do(ctx, task)
 			if err != nil {
 				x.par.Error(err)
 			}
-		}(repo)
-	}
+		}(k.(*Task))
+
+		return true
+	})
 
 	close(x.doneEnqueuing)
 }
 
-func (x *Executor) Wait() error {
+func (x *executor) Wait() ([]*ChangesetSpec, error) {
 	<-x.doneEnqueuing
-	return x.par.Wait()
+	if err := x.par.Wait(); err != nil {
+		return nil, err
+	}
+	return x.specs, nil
 }
 
-func (x *Executor) do(ctx context.Context, repo ActionRepo) (err error) {
-	// Check if cached.
-	cacheKey := ExecutionCacheKey{Repo: repo, Runs: x.action.Steps}
-	if x.opt.ClearCache {
-		if err := x.opt.Cache.Clear(ctx, cacheKey); err != nil {
-			return errors.Wrapf(err, "clearing cache for %s", repo.Name)
+func (x *executor) do(ctx context.Context, task *Task) (err error) {
+	// Set up the task status so we can update it as we progress.
+	ts, _ := x.tasks.LoadOrStore(task, &TaskStatus{})
+	status, ok := ts.(*TaskStatus)
+	if !ok {
+		return errors.Errorf("unexpected non-TaskStatus value of type %T: %+v", ts, ts)
+	}
+
+	// Ensure that the status is updated when we're done.
+	defer func() {
+		status.FinishedAt = time.Now()
+		status.Err = err
+		x.updateTaskStatus(task, status)
+	}()
+
+	// We're away!
+	status.StartedAt = time.Now()
+	x.updateTaskStatus(task, status)
+
+	// Check if the task is cached.
+	cacheKey := task.cacheKey()
+	if x.ClearCache {
+		if err = x.cache.Clear(ctx, cacheKey); err != nil {
+			err = errors.Wrapf(err, "clearing cache for %q", task.Repository.Name)
+			return
 		}
 	} else {
-		if result, ok, err := x.opt.Cache.Get(ctx, cacheKey); err != nil {
-			return errors.Wrapf(err, "checking cache for %s", repo.Name)
-		} else if ok {
-			status := ActionRepoStatus{Cached: true, Patch: result}
-			x.updateRepoStatus(repo, status)
-			x.logger.RepoCacheHit(repo, len(x.action.Steps), status.Patch != PatchInput{})
-			return nil
+		var result *ChangesetSpec
+		if result, err = x.cache.Get(ctx, cacheKey); err != nil {
+			err = errors.Wrapf(err, "checking cache for %q", task.Repository.Name)
+			return
+		} else if result != nil {
+			status.Cached = true
+			status.ChangesetSpec = result
+			status.FinishedAt = time.Now()
+			x.updateTaskStatus(task, status)
+
+			// Add the spec to the executor's list of completed specs.
+			x.specsMu.Lock()
+			x.specs = append(x.specs, result)
+			x.specsMu.Unlock()
+
+			return
 		}
 	}
 
-	prefix := "action-" + strings.Replace(strings.Replace(repo.Name, "/", "-", -1), "github.com-", "", -1)
-
-	logFileName, err := x.logger.AddRepo(repo)
+	// It isn't, so let's get ready to run the task. First, let's set up our
+	// logging.
+	log, err := x.logger.AddTask(task)
 	if err != nil {
-		return errors.Wrapf(err, "failed to setup logging for repo %s", repo.Name)
+		err = errors.Wrap(err, "creating log file")
+		return
 	}
+	defer func() {
+		if err != nil {
+			err = errors.Wrapf(err, "Error executing task. The log file can be found at:\n%s\n", log.Path())
+			log.MarkErrored()
+		}
+		log.Close()
+	}()
 
-	x.updateRepoStatus(repo, ActionRepoStatus{
-		LogFile:   logFileName,
-		StartedAt: time.Now(),
-	})
-
-	runCtx, cancel := context.WithTimeout(ctx, x.opt.Timeout)
+	// Set up our timeout.
+	runCtx, cancel := context.WithTimeout(ctx, x.Timeout)
 	defer cancel()
 
-	patch, err := runAction(runCtx, x.opt.Endpoint, x.opt.AccessToken, x.opt.AdditionalHeaders, prefix, repo.Name, repo.Rev, x.action.Steps, x.logger)
-	status := ActionRepoStatus{
-		FinishedAt: time.Now(),
-	}
-	if len(patch) > 0 {
-		status.Patch = PatchInput{
-			Repository:   repo.ID,
-			BaseRevision: repo.Rev,
-			BaseRef:      repo.BaseRef,
-			Patch:        string(patch),
-		}
-	}
+	// Actually execute the steps.
+	diff, err := runSteps(runCtx, x.client, task.Repository, task.Steps, log)
 	if err != nil {
 		if reachedTimeout(runCtx, err) {
-			err = &errTimeoutReached{timeout: x.opt.Timeout}
+			err = &errTimeoutReached{timeout: x.Timeout}
 		}
-		status.Err = err
+		return
 	}
 
-	x.updateRepoStatus(repo, status)
-	lerr := x.logger.RepoFinished(repo.Name, len(patch) > 0, err)
-	if lerr != nil {
-		return lerr
+	// Build the changeset spec.
+	spec := &ChangesetSpec{
+		BaseRepository: task.Repository.ID,
+		CreatedChangeset: &CreatedChangeset{
+			BaseRef:        task.Repository.BaseRef(),
+			BaseRev:        task.Repository.Rev(),
+			HeadRepository: task.Repository.ID,
+			HeadRef:        "refs/heads/" + task.Template.Branch,
+			Title:          task.Template.Title,
+			Body:           task.Template.Body,
+			Commits: []GitCommitDescription{
+				{
+					Message: task.Template.Commit.Message,
+					Diff:    string(diff),
+				},
+			},
+			Published: task.Template.Published,
+		},
+	}
+	status.ChangesetSpec = spec
+	x.updateTaskStatus(task, status)
+
+	// Add the spec to the executor's list of completed specs.
+	x.specsMu.Lock()
+	x.specs = append(x.specs, spec)
+	x.specsMu.Unlock()
+
+	// Add to the cache. We don't use runCtx here because we want to write to
+	// the cache even if we've now reached the timeout.
+	if err = x.cache.Set(ctx, cacheKey, spec); err != nil {
+		err = errors.Wrapf(err, "caching result for %q", task.Repository.Name)
 	}
 
-	// Add to cache if successful.
-	if err == nil {
-		// We don't use runCtx here because we want to write to the cache even
-		// if we've now reached the timeout
-		if err := x.opt.Cache.Set(ctx, cacheKey, status.Patch); err != nil {
-			return errors.Wrapf(err, "caching result for %s", repo.Name)
-		}
-	}
+	return
+}
 
-	return err
+func (x *executor) updateTaskStatus(task *Task, status *TaskStatus) {
+	x.tasks.Store(task, status)
+	if x.update != nil {
+		x.update(task, *status)
+	}
 }
 
 type errTimeoutReached struct{ timeout time.Duration }
