@@ -17,6 +17,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- User satisfaction/NPS surveys will now correctly provide a range from 0–10, rather than 0–9.
+
 ### Removed
 
 ## 3.19.0
