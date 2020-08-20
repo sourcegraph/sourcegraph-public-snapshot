@@ -62,7 +62,7 @@ func newInternalProxyHandler(uploadHandler http.Handler) (func() http.Handler, e
 		base.Path("/index-queue/{rest:(?:dequeue|complete|heartbeat)}").Handler(reverseProxy(indexerOrigin))
 
 		// Upload LSIF indexes without a sudo access token or github tokens
-		base.Path("/lsif/upload").Handler(uploadHandler)
+		base.Path("/lsif/upload").Methods("POST").Handler(uploadHandler)
 
 		return internalProxyAuthTokenMiddleware(base)
 	}
