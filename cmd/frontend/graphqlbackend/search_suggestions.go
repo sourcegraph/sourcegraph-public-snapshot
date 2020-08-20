@@ -48,7 +48,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	// If globbing is activated, convert regex patterns of repo, file, and repohasfile
 	// from "field:^foo$" to "field:^foo".
 	globbing := false
-	if settings, err := decodedViewerFinalSettings(ctx); err == nil && getBoolPtr(settings.SearchGlobbing, false) {
+	if getBoolPtr(r.userSettings.SearchGlobbing, false) {
 		globbing = true
 	}
 	if AndOrQuery, isAndOr := r.query.(*query.AndOrQuery); globbing && isAndOr {

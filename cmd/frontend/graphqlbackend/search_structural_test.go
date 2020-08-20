@@ -28,9 +28,6 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 
 	unindexedRepo := &types.Repo{Name: api.RepoName("unindexed/one")}
 
-	mockDecodedViewerFinalSettings = &schema.Settings{}
-	defer func() { mockDecodedViewerFinalSettings = nil }()
-
 	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 		return []*types.Repo{indexedRepo, unindexedRepo}, nil
 	}
@@ -97,6 +94,7 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 		patternType:  query.SearchTypeStructural,
 		zoekt:        z,
 		searcherURLs: endpoint.Static("test"),
+		userSettings: &schema.Settings{},
 	}
 	results, err := resolver.Results(ctx)
 	if err != nil {

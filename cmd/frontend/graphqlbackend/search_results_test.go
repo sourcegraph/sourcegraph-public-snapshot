@@ -914,9 +914,6 @@ func TestSearchResultsHydration(t *testing.T) {
 			Fork:        false,
 		}}
 
-	mockDecodedViewerFinalSettings = &schema.Settings{}
-	defer func() { mockDecodedViewerFinalSettings = nil }()
-
 	db.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 		return hydratedRepo, nil
 	}
@@ -962,7 +959,7 @@ func TestSearchResultsHydration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resolver := &searchResolver{query: q, zoekt: z}
+	resolver := &searchResolver{query: q, zoekt: z, userSettings: &schema.Settings{}}
 	results, err := resolver.Results(ctx)
 	if err != nil {
 		t.Fatal("Results:", err)
@@ -1423,9 +1420,6 @@ func TestEvaluateAnd(t *testing.T) {
 
 			ctx := context.Background()
 
-			mockDecodedViewerFinalSettings = &schema.Settings{}
-			defer func() { mockDecodedViewerFinalSettings = nil }()
-
 			db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 				return minimalRepos, nil
 			}
@@ -1438,7 +1432,7 @@ func TestEvaluateAnd(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			resolver := &searchResolver{query: q, zoekt: z}
+			resolver := &searchResolver{query: q, zoekt: z, userSettings: &schema.Settings{}}
 			results, err := resolver.Results(ctx)
 			if err != nil {
 				t.Fatal("Results:", err)
