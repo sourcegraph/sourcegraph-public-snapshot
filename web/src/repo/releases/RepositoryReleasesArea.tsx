@@ -38,8 +38,8 @@ export interface RepositoryReleasesAreaPageProps {
 /**
  * Renders pages related to repository branches.
  */
-export const RepositoryReleasesArea: React.FunctionComponent<Props> = ({ useBreadcrumbSetters, repo, routePrefix }) => {
-    useBreadcrumbSetters(
+export const RepositoryReleasesArea: React.FunctionComponent<Props> = ({ useBreadcrumb, repo, routePrefix }) => {
+    useBreadcrumb(
         useMemo(
             () => ({
                 key: 'tags',

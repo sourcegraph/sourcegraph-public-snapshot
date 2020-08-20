@@ -45,7 +45,7 @@ interface Props extends RouteComponentProps<{}>, BreadcrumbSetters {
  * a repository's settings.
  */
 export const RepoSettingsArea: React.FunctionComponent<Props> = ({
-    useBreadcrumbSetters,
+    useBreadcrumb,
 
     ...props
 }) => {
@@ -54,7 +54,7 @@ export const RepoSettingsArea: React.FunctionComponent<Props> = ({
         useMemo(() => fetchRepository(repoName).pipe(catchError(error => of<ErrorLike>(asError(error)))), [repoName])
     )
 
-    useBreadcrumbSetters(useMemo(() => ({ key: 'settings', element: 'Settings' }), []))
+    useBreadcrumb(useMemo(() => ({ key: 'settings', element: 'Settings' }), []))
 
     if (repoOrError === undefined) {
         return null

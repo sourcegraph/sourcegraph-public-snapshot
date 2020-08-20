@@ -18,7 +18,7 @@ interface InsightsPageProps
         BreadcrumbsProps,
         BreadcrumbSetters {}
 export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props => {
-    props.useBreadcrumbSetters(
+    props.useBreadcrumb(
         useMemo(
             () => ({
                 key: 'Insights',

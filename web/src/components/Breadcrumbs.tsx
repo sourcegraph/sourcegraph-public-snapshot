@@ -41,7 +41,7 @@ export interface BreadcrumbSetters {
      * @param breadcrumb The breadcrumb to register. If a falsy value is passed the breadcrumb will not be included.
      * @returns Another breadcrumb setters object to pass down to child components to register child breadcrumbs.
      */
-    useBreadcrumbSetters: (breadcrumb: NullableBreadcrumb) => BreadcrumbSetters
+    useBreadcrumb: (breadcrumb: NullableBreadcrumb) => BreadcrumbSetters
 
     /**
      * Imperative method for class components to register a breadcrumb.
@@ -103,7 +103,7 @@ export const useBreadcrumbs = (): BreadcrumbsProps & BreadcrumbSetters => {
         }
 
         return {
-            useBreadcrumbSetters,
+            useBreadcrumb,
             setBreadcrumb,
         }
     }, [])

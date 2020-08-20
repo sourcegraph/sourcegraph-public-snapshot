@@ -112,12 +112,12 @@ interface Props
 }
 
 /** A page that shows a repository's commits at the current revision. */
-export const RepositoryCommitsPage: React.FunctionComponent<Props> = ({ useBreadcrumbSetters, ...props }) => {
+export const RepositoryCommitsPage: React.FunctionComponent<Props> = ({ useBreadcrumb, ...props }) => {
     useEffect(() => {
         eventLogger.logViewEvent('RepositoryCommits')
     }, [])
 
-    useBreadcrumbSetters(useMemo(() => ({ key: 'commits', element: <>Commits</> }), []))
+    useBreadcrumb(useMemo(() => ({ key: 'commits', element: <>Commits</> }), []))
 
     const queryCommits = useCallback(
         (args: FilteredConnectionQueryArgs): Observable<GQL.IGitCommitConnection> =>

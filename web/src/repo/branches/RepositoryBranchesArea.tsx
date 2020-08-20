@@ -34,12 +34,12 @@ export interface RepositoryBranchesAreaPageProps {
 /**
  * Renders pages related to repository branches.
  */
-export const RepositoryBranchesArea: React.FunctionComponent<Props> = ({ useBreadcrumbSetters, repo, match }) => {
+export const RepositoryBranchesArea: React.FunctionComponent<Props> = ({ useBreadcrumb, repo, match }) => {
     const transferProps: { repo: GQL.IRepository } = {
         repo,
     }
 
-    useBreadcrumbSetters(
+    useBreadcrumb(
         useMemo(
             () => ({
                 key: 'branches',

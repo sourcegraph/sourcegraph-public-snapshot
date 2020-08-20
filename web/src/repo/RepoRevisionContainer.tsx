@@ -108,10 +108,10 @@ interface RepoRevisionContainerProps
  * blob and tree pages are revisioned, but the repository settings page is not.)
  */
 export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContainerProps> = ({
-    useBreadcrumbSetters,
+    useBreadcrumb,
     ...props
 }) => {
-    const breadcrumbSetters = useBreadcrumbSetters(
+    const breadcrumbSetters = useBreadcrumb(
         useMemo(() => {
             if (!props.resolvedRevisionOrError || isErrorLike(props.resolvedRevisionOrError)) {
                 return

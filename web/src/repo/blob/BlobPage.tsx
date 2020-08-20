@@ -106,14 +106,14 @@ interface Props
 export const BlobPage: React.FunctionComponent<Props> = props => {
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = ToggleRenderedFileMode.getModeFromURL(props.location)
-    const { repoName, revision, commitID, filePath, isLightTheme, useBreadcrumbSetters } = props
+    const { repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb } = props
 
     // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
     useEffect(() => {
         eventLogger.logViewEvent('Blob')
     }, [repoName, commitID, filePath, isLightTheme, renderMode])
 
-    useBreadcrumbSetters(
+    useBreadcrumb(
         useMemo(() => {
             if (!filePath) {
                 return
