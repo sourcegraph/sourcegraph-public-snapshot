@@ -77,8 +77,9 @@ describe('Search onboarding', () => {
             await driver.page.waitForSelector('.test-tour-step-5')
             await driver.page.click('.test-search-button')
             await driver.assertWindowLocation(
-                '/search?q=lang:typescript+try%7B:%5Bmy_match%5D%7D&patternType=structural'
+                '/search?q=lang:typescript+try%7B:%5Bmy_match%5D%7D&patternType=structural&onboardingTour=true'
             )
+            await driver.page.waitForSelector('.test-tour-step-6')
         })
 
         it('displays all steps in the repo onboarding flow', async () => {
@@ -103,7 +104,7 @@ describe('Search onboarding', () => {
             await driver.page.click('.test-search-help-dropdown-button-icon')
             await driver.page.waitForSelector('.test-tour-step-5')
             await driver.page.click('.test-search-button')
-            await driver.assertWindowLocation('/search?q=repo:sourcegraph+test&patternType=literal')
+            await driver.assertWindowLocation('/search?q=repo:sourcegraph+test&patternType=literal&onboardingTour=true')
         })
         it('advances filter-lang only after the autocomplete is closed and there is whitespace after the filter', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')

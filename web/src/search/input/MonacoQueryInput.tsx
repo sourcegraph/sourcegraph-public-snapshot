@@ -79,6 +79,7 @@ function addSouregraphSearchCodeIntelligence(
     subscriptions.add(
         toUnsubscribable(monaco.languages.registerCompletionItemProvider(SOURCEGRAPH_SEARCH, providers.completion))
     )
+
     subscriptions.add(
         providers.diagnostics.subscribe(markers => {
             monaco.editor.setModelMarkers(monaco.editor.getModels()[0], 'diagnostics', markers)
@@ -374,9 +375,10 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                                 ) {
                                     if (advanceStepCallback.stepToAdvance === 'filter-lang') {
                                         // In step 2, users are asked to type to filter the language suggestions list. We only want
-                                        // to advance when they are done with the suggestions dropdown, so ensure it's closed
+                                        // to advance when they are done with the suggestions dropdown, so ensure it's closed or there
+                                        // is whitespace at the end of the query, indicating the user is ready to type another term
                                         // before advancing.
-                                        if (!this.suggestionsVisible) {
+                                        if (!this.suggestionsVisible || queryState.query.endsWith(' ')) {
                                             advanceStepCallback.handler(
                                                 tour,
                                                 queryState.query,
