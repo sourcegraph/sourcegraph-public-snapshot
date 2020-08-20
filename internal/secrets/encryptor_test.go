@@ -120,7 +120,7 @@ func TestBadKeysFailToDecrypt(t *testing.T) {
 // Test that different strings EncryptBytes to different outputs
 func TestDifferentOutputs(t *testing.T) {
 	key, _ := generateRandomAESKey()
-	e := Encryptor{EncryptionKeys: [][]byte{primaryKeyIndex: key}}
+	e := newEncryptor(key, nil)
 	messages := []string{
 		"This may or may",
 		"This is not the same as that",
@@ -131,8 +131,8 @@ func TestDifferentOutputs(t *testing.T) {
 
 	var crypts []string
 	for _, m := range messages {
-		encrypted, _ := e.Encrypt(m)
-		crypts = append(crypts, encrypted)
+		encrypted, _ := e.EncryptBytes([]byte(m))
+		crypts = append(crypts, string(encrypted))
 	}
 
 	for _, c := range crypts {
@@ -172,12 +172,12 @@ func TestFilePermissions(t *testing.T) {
 
 func TestSampleNoRepeats(t *testing.T) {
 	key, _ := generateRandomAESKey()
-	e := Encryptor{EncryptionKeys: [][]byte{primaryKeyIndex: key}}
+	e := newEncryptor(key, nil)
 
 	var crypts []string
 	for i := 0; i < 10000; i++ {
-		encrypted, _ := e.Encrypt(messageToEncrypt)
-		crypts = append(crypts, encrypted)
+		encrypted, _ := e.EncryptBytes(messageToEncrypt)
+		crypts = append(crypts, string(encrypted))
 	}
 
 	for _, item := range crypts {
@@ -197,25 +197,22 @@ func TestKeyMigration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	encryptorA, err := newEncryptor(keyA, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	encryptorA := newEncryptor(keyA, nil)
 
 	message := "encrypted with Key A"
-	encryptedMessage, err := encryptorA.Encrypt(message)
+	encryptedMessage, err := encryptorA.EncryptBytes([]byte(message))
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// now rotate keys to use Key B
-	encryptorB
-	decryptedMessage, err := encryptorB.Decrypt(encryptedMessage)
+	encryptorB := newEncryptor(keyB, keyA)
+	decryptedMessage, err := encryptorB.DecryptBytes(encryptedMessage)
 	if err != nil {
 		t.Fatalf("unable to Decrypt string: %v", err)
 	}
 
-	if decryptedMessage != message {
+	if string(decryptedMessage) != message {
 		t.Fatalf("messages do not match")
 	}
 
@@ -267,85 +264,97 @@ func TestKeyMigration(t *testing.T) {
 
 func TestEncryptAndDecryptBytesIfPossible(t *testing.T) {
 	initialKey, _ := generateRandomAESKey()
-	configuredToEncrypt = true
-	e := Encryptor{EncryptionKeys: [][]byte{primaryKeyIndex: initialKey}}
-
-	encString, err := e.EncryptBytesIfPossible([]byte(messageToEncrypt))
+	e := newEncryptor(initialKey, nil)
+	encString, err := e.EncryptBytes(messageToEncrypt)
 	if err != nil {
 		t.Fatalf("Failed to EncryptBytes")
 	}
-	if encString == messageToEncrypt {
+	if bytes.Equal(encString, messageToEncrypt) {
 		t.Fatalf("Encryption failed.")
 	}
 
-	decString, err := e.DecryptBytesIfPossible([]byte(encString))
+	decString, err := e.DecryptBytes(encString)
 	if err != nil {
 		t.Fatalf("Failed to Decrypt")
 	}
-	if decString != messageToEncrypt {
+	if !bytes.Equal(decString, messageToEncrypt) {
 		t.Fatalf("Decryption failed.")
 	}
 
 	// now test when we cannot EncryptBytes
 
-	e = Encryptor{}
-	configuredToEncrypt = false // setting this false means that EncryptBytesIfPossible will not return an err
-	encString, err = e.EncryptBytesIfPossible([]byte(messageToEncrypt))
+	e = noOpEncryptor{}
+	encString, err = e.EncryptBytes(messageToEncrypt)
 	if err != nil {
 		t.Fatalf("Received error when code path should be nil. %v", err)
 	}
-	if encString != messageToEncrypt {
+	if !bytes.Equal(encString, messageToEncrypt) {
 		t.Fatalf("Received encrypted string, expected unencrypted.")
 	}
-	configuredToEncrypt = true
-	decString, err = e.DecryptBytesIfPossible([]byte(encString))
+	decString, err = e.DecryptBytes([]byte(encString))
 	if err != nil {
 		t.Fatalf("Received error when code path should be nil. %v", err)
 	}
-	if decString != messageToEncrypt {
+	if !bytes.Equal(decString, messageToEncrypt) {
 		t.Fatalf("Received encrypted string, expected unencrypted.")
 	}
 }
 
 func Test_gatherKeys(t *testing.T) {
 	tests := []struct {
-		name       string
-		data       []byte
-		wantOldKey []byte
-		wantNewKey []byte
+		name             string
+		data             []byte
+		wantPrimaryKey   []byte
+		wantSecondaryKey []byte
+		wantErr          bool
 	}{
 		{
 			"base-case",
 			[]byte("key123,key345"),
-			[]byte("key345"),
 			[]byte("key123"),
+			[]byte("key345"),
+			false,
 		},
 		{
 			"no key set",
 			[]byte("key123"),
-			nil,
 			[]byte("key123"),
+			nil,
+			false,
+		},
+		{
+			"3 key err case",
+			[]byte("look mom, I am a key, me too"),
+			nil,
+			nil,
+			true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotOldKey, gotNewKey := gatherKeys(tt.data)
-			if bytes.Equal(gotOldKey, tt.wantOldKey) {
-				t.Errorf("gatherKeys() oOldKey = %v, want %v", gotOldKey, tt.wantOldKey)
+			gotPrimaryKey, gotSecondaryKey, err := gatherKeys(tt.data)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("gatherKeys() error = %v, wantErr %v", err, tt.wantErr)
+				return
 			}
-			if bytes.Equal(gotNewKey, tt.wantNewKey) {
-				t.Errorf("gathrKeys() gotNewKey = %v, want %v", gotNewKey, tt.wantNewKey)
+
+			if !bytes.Equal(gotPrimaryKey, tt.wantPrimaryKey) {
+				t.Errorf("gatherKeys() oOldKey = %v, want %v", gotSecondaryKey, tt.wantPrimaryKey)
+			}
+			if !bytes.Equal(gotSecondaryKey, tt.wantSecondaryKey) {
+				t.Errorf("gathrKeys() gotPrimaryKey = %v, want %v", gotPrimaryKey, tt.wantSecondaryKey)
 			}
 		})
 	}
 
-	data := []byte("look mom, I am a key, me too")
-	defer func() {
-		p := recover()
-		if p == nil {
-			fmt.Println("t.Fail: should have panicked")
-		}
-	}()
-	gatherKeys(data)
+	//data := []byte("look mom, I am a key, me too")
+	//defer func() {
+	//	p := recover()
+	//	if p == nil {
+	//		fmt.Println("t.Fail: should have panicked")
+	//	}
+	//}()
+	//gatherKeys(data)
 
 }

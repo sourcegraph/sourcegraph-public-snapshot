@@ -18,8 +18,9 @@ const (
 	sourcegraphCryptEnvvar      = "SOURCEGRAPH_CRYPT_KEY"
 )
 
-// gatherKeys splits the comma-seperated encryption data into its potential two components: old and new keys.
-func gatherKeys(data []byte) (oldKey, newKey []byte, err error) {
+// gatherKeys splits the comma-separated encryption data into its potential two components: primary and secondary keys
+// the first key in the comma-separated data is always the primary key
+func gatherKeys(data []byte) (primaryKey, secondaryKey []byte, err error) {
 	parts := bytes.Split(data, []byte(","))
 	if len(parts) > 2 {
 		return nil, nil, errors.Errorf("expect at most two encryption keys but got %d", len(parts))
@@ -72,12 +73,12 @@ func initDefaultEncryptor() error {
 		}
 		encryptionKey = contents
 
-		newKey, oldKey, err := gatherKeys(encryptionKey)
+		primaryKey, secondaryKey, err := gatherKeys(encryptionKey)
 		if err != nil {
 			return err
 		}
 
-		defaultEncryptor = newEncryptor(newKey, oldKey)
+		defaultEncryptor = newEncryptor(primaryKey, secondaryKey)
 		return nil
 	}
 
@@ -87,12 +88,12 @@ func initDefaultEncryptor() error {
 		if len(envCryptKey) != validKeyLength {
 			return errors.Errorf("encryption key must be %d characters", validKeyLength)
 		}
-		newKey, oldKey, err := gatherKeys(encryptionKey)
+		primaryKey, secondaryKey, err := gatherKeys(encryptionKey)
 		if err != nil {
 			return err
 		}
 
-		defaultEncryptor = newEncryptor(newKey, oldKey)
+		defaultEncryptor = newEncryptor(primaryKey, secondaryKey)
 		return nil
 	}
 
