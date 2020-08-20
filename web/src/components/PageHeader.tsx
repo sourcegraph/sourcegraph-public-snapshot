@@ -1,8 +1,7 @@
 import React from 'react'
-import { Breadcrumbs } from './Breadcrumbs'
-import { BreadcrumbProps } from 'reactstrap'
+import { Breadcrumbs, BreadcrumbsProps } from './Breadcrumbs'
 
-interface Props extends BreadcrumbProps {
+interface Props extends BreadcrumbsProps {
     title: string
     icon: React.ReactNode
     actions?: React.ReactNode
@@ -13,7 +12,7 @@ export const PageHeader: React.FunctionComponent<Props> = ({ title, icon, action
     <>
         <Breadcrumbs breadcrumbs={breadcrumbs} />
         <div className="d-flex align-items-center">
-            <h1 className="flex-grow-1 text-nowrap">
+            <h1 className="flex-grow-1">
                 {icon} {title}{' '}
                 {badge && (
                     <sup>

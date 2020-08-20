@@ -10,9 +10,23 @@ import { Link } from '../../../shared/src/components/Link'
 import GearIcon from 'mdi-react/GearIcon'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageHeader } from '../components/PageHeader'
+import { BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
 
-interface InsightsPageProps extends ExtensionsControllerProps, Omit<ViewGridProps, 'views'> {}
+interface InsightsPageProps
+    extends ExtensionsControllerProps,
+        Omit<ViewGridProps, 'views'>,
+        BreadcrumbsProps,
+        BreadcrumbSetters {}
 export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props => {
+    props.useBreadcrumbSetters(
+        useMemo(
+            () => ({
+                key: 'Insights',
+                element: <>Insights</>,
+            }),
+            []
+        )
+    )
     const views = useObservable(
         useMemo(
             () =>
@@ -29,7 +43,7 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
             <PageHeader
                 title="Insights"
                 icon={<InsightsIcon />}
-                breadcrumbs={['Insights']}
+                breadcrumbs={props.breadcrumbs}
                 actions={
                     <>
                         <Link to="/user/settings" className="btn btn-secondary mr-1">

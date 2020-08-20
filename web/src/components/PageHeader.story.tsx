@@ -21,7 +21,15 @@ add('Basic header', () => {
     return (
         <PageHeader
             title={title}
-            breadcrumbs={[{ key: '1', element: <RepoHeaderBreadcrumbNavItem>{title}</RepoHeaderBreadcrumbNavItem> }]}
+            breadcrumbs={[
+                {
+                    depth: 1,
+                    breadcrumb: {
+                        key: '1',
+                        element: <RepoHeaderBreadcrumbNavItem>{title}</RepoHeaderBreadcrumbNavItem>,
+                    },
+                },
+            ]}
             icon={<PuzzleOutlineIcon size={32} />}
         />
     )
@@ -36,9 +44,27 @@ add(
             <PageHeader
                 title={title}
                 breadcrumbs={[
-                    { key: '1', element: <RepoHeaderBreadcrumbNavItem>Level 2</RepoHeaderBreadcrumbNavItem> },
-                    { key: '2', element: <RepoHeaderBreadcrumbNavItem>Level 3</RepoHeaderBreadcrumbNavItem> },
-                    { key: '3', element: <RepoHeaderBreadcrumbNavItem>Page name</RepoHeaderBreadcrumbNavItem> },
+                    {
+                        depth: 1,
+                        breadcrumb: {
+                            key: '1',
+                            element: <RepoHeaderBreadcrumbNavItem>Level 2</RepoHeaderBreadcrumbNavItem>,
+                        },
+                    },
+                    {
+                        depth: 2,
+                        breadcrumb: {
+                            key: '2',
+                            element: <RepoHeaderBreadcrumbNavItem>Level 3</RepoHeaderBreadcrumbNavItem>,
+                        },
+                    },
+                    {
+                        depth: 3,
+                        breadcrumb: {
+                            key: '3',
+                            element: <RepoHeaderBreadcrumbNavItem>Page name</RepoHeaderBreadcrumbNavItem>,
+                        },
+                    },
                 ]}
                 icon={<ClockOutlineIcon size={32} className="inline-icon" />}
                 badge={badge}

@@ -44,7 +44,7 @@ import { QueryState } from '../search/helpers'
 import { FiltersToTypeAndValue, FilterType } from '../../../shared/src/search/interactive/util'
 import * as H from 'history'
 import { VersionContextProps } from '../../../shared/src/search/util'
-import { BreadcrumbSetters, useBreadcrumbs } from '../components/Breadcrumbs'
+import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { useObservable, useEventObservable } from '../../../shared/src/util/useObservable'
 import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
@@ -103,7 +103,9 @@ interface RepoContainerProps
         CaseSensitivityProps,
         InteractiveSearchProps,
         CopyQueryButtonProps,
-        VersionContextProps {
+        VersionContextProps,
+        BreadcrumbSetters,
+        BreadcrumbsProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
@@ -184,10 +186,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         RepoHeaderContributionsLifecycleProps
     >()
 
-    // The breadcrumbs and breadcrumb props for the repo header.
-    const { breadcrumbs, useBreadcrumbSetters: useSetRepositories } = useBreadcrumbs()
-
-    const repositorySetters = useSetRepositories(
+    const repositoryBreadcrumbSetters = props.useBreadcrumbSetters(
         useMemo(
             () => ({
                 key: 'repositories',
@@ -197,7 +196,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         )
     )
 
-    const breadcrumbSetters = repositorySetters.useBreadcrumbSetters(
+    const childBreadcrumbSetters = repositoryBreadcrumbSetters.useBreadcrumbSetters(
         useMemo(() => {
             if (isErrorLike(repoOrError) || !repoOrError) {
                 return
@@ -330,7 +329,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     const context: RepoContainerContext = {
         ...props,
         ...repoHeaderContributionsLifecycleProps,
-        ...breadcrumbSetters,
+        ...childBreadcrumbSetters,
         repo: repoOrError,
         routePrefix: repoMatchURL,
         onDidUpdateExternalLinks: setExternalLinks,
@@ -362,7 +361,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 revision={revision}
                 repo={repoOrError}
                 resolvedRev={resolvedRevisionOrError}
-                breadcrumbs={breadcrumbs}
                 onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
             />
             <ErrorBoundary location={props.location}>
@@ -383,7 +381,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                 <RepoRevisionContainer
                                     {...routeComponentProps}
                                     {...context}
-                                    {...breadcrumbSetters}
+                                    {...childBreadcrumbSetters}
                                     routes={props.repoRevisionContainerRoutes}
                                     revision={revision || ''}
                                     resolvedRevisionOrError={resolvedRevisionOrError}
