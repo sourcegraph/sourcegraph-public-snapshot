@@ -185,13 +185,11 @@ func syncExternalService(ctx context.Context, svc *types.ExternalService) error 
 	return nil
 }
 
-func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
+type deleteExternalServiceArgs struct {
 	ExternalService graphql.ID
-}) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins can delete external services.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
+}
+
+func (*schemaResolver) DeleteExternalService(ctx context.Context, args *deleteExternalServiceArgs) (*EmptyResponse, error) {
 	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("deleting external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
@@ -201,21 +199,31 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	externalService, err := db.ExternalServices.GetByID(ctx, id)
+	es, err := db.ExternalServices.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
+	}
+
+	// 🚨 SECURITY: Only site admins may delete all or a user's external services.
+	// Otherwise, the authenticated user can only delete external services under the same namespace.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		if es.NamespaceUserID == nil {
+			return nil, err
+		} else if actor.FromContext(ctx).UID != *es.NamespaceUserID {
+			return nil, errors.New("the authenticated user does not have access to this external service")
+		}
 	}
 
 	if err := db.ExternalServices.Delete(ctx, id); err != nil {
 		return nil, err
 	}
 	now := time.Now()
-	externalService.DeletedAt = &now
+	es.DeletedAt = &now
 
 	// The user doesn't care if triggering syncing failed when deleting a
 	// service, so kick off in the background.
 	go func() {
-		_ = syncExternalService(context.Background(), externalService)
+		_ = syncExternalService(context.Background(), es)
 	}()
 
 	return &EmptyResponse{}, nil
