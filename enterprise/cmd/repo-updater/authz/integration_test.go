@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
@@ -65,45 +66,21 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	token := os.Getenv("GITHUB_TOKEN")
 	cli := extsvcGitHub.NewClient(uri, token, doer)
 
-	testDB := dbtest.NewDB(t, *dsn)
-	ctx := context.Background()
-
-	clock := func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
-	}
-
-	reposStore := repos.NewDBStore(testDB, sql.TxOptions{})
-
-	svc := repos.ExternalService{
-		Kind:      extsvc.KindGitHub,
-		CreatedAt: clock(),
-		Config:    `{"url": "https://github.com", "authorization": {}}`,
-	}
-	err = reposStore.UpsertExternalServices(ctx, &svc)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	provider := authzGitHub.NewProvider(svc.URN(), uri, token, cli)
+	provider := authzGitHub.NewProvider("extsvc:github:1", uri, token, cli)
 
 	authz.SetProviders(false, []authz.Provider{provider})
 	defer authz.SetProviders(true, nil)
 
-	repo := repos.Repo{
-		Name:    "github.com/sourcegraph-vcr-repos/private-org-repo-1",
-		Private: true,
-		URI:     "github.com/sourcegraph-vcr-repos/private-org-repo-1",
-		ExternalRepo: api.ExternalRepoSpec{
-			ServiceType: extsvc.TypeGitHub,
-			ServiceID:   "https://github.com/",
-		},
-		Sources: map[string]*repos.SourceInfo{
-			svc.URN(): {
-				ID: svc.URN(),
-			},
-		},
-	}
-	err = reposStore.InsertRepos(ctx, &repo)
+	testDB := dbtest.NewDB(t, *dsn)
+	ctx := context.Background()
+
+	// Set up repository, user, and user external account
+	q := sqlf.Sprintf(`
+INSERT INTO repo (id, name, description, language, fork, private,
+					uri, external_service_type, external_service_id, sources)
+	VALUES (1, 'github.com/sourcegraph-vcr-repos/private-org-repo-1', '', '', FALSE, TRUE,
+			'github.com/sourcegraph-vcr-repos/private-org-repo-1', 'github', 'https://github.com/', '{"extsvc:github:1": {}}'::jsonb)`)
+	_, err = testDB.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -124,10 +101,14 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	clock := func() time.Time {
+		return time.Now().UTC().Truncate(time.Microsecond)
+	}
+	reposStore := repos.NewDBStore(testDB, sql.TxOptions{})
 	permsStore := edb.NewPermsStore(testDB, clock)
 	syncer := NewPermsSyncer(reposStore, permsStore, clock, nil)
 
-	err = syncer.syncRepoPerms(ctx, repo.ID, false)
+	err = syncer.syncRepoPerms(ctx, api.RepoID(1), true)
 	if err != nil {
 		t.Fatal(err)
 	}
