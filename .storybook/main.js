@@ -15,6 +15,7 @@ const config = {
   webpackFinal: config => {
     // Include sourcemaps
     config.mode = 'development'
+    config.devtool = 'cheap-module-eval-source-map'
     const definePlugin = config.plugins.find(plugin => plugin instanceof DefinePlugin)
     // @ts-ignore
     definePlugin.definitions.NODE_ENV = JSON.stringify('development')

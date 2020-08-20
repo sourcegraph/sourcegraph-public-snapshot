@@ -14,24 +14,18 @@ import {
     SyncChangesetResult,
     SyncChangesetVariables,
     Scalars,
+    ChangesetCountsOverTimeVariables,
+    ChangesetCountsOverTimeFields,
+    ChangesetCountsOverTimeResult,
+    DeleteCampaignResult,
+    DeleteCampaignVariables,
 } from '../../../graphql-operations'
-
-const changesetCountsOverTimeFragment = gql`
-    fragment ChangesetCountsOverTimeFields on ChangesetCounts {
-        date
-        merged
-        closed
-        openApproved
-        openChangesRequested
-        openPending
-        total
-    }
-`
 
 const campaignFragment = gql`
     fragment CampaignFields on Campaign {
         __typename
         id
+        url
         name
         namespace {
             namespaceName
@@ -40,17 +34,13 @@ const campaignFragment = gql`
         description
         initialApplier {
             username
-            avatarURL
-        }
-        namespace {
-            namespaceName
+            url
         }
         createdAt
         updatedAt
         closedAt
         viewerCanAdminister
         changesets {
-            totalCount
             stats {
                 total
                 closed
@@ -59,16 +49,10 @@ const campaignFragment = gql`
                 unpublished
             }
         }
-        # TODO move to separate query and configure from/to
-        changesetCountsOverTime {
-            ...ChangesetCountsOverTimeFields
-        }
         diffStat {
             ...DiffStatFields
         }
     }
-
-    ${changesetCountsOverTimeFragment}
 
     ${diffStatFields}
 `
@@ -108,46 +92,69 @@ export const fetchCampaignById = (campaign: Scalars['ID']): Observable<CampaignF
         })
     )
 
-export const changesetFieldsFragment = gql`
-    fragment ChangesetFields on Changeset {
+export const hiddenExternalChangesetFieldsFragment = gql`
+    fragment HiddenExternalChangesetFields on HiddenExternalChangeset {
         __typename
-
+        id
         createdAt
         updatedAt
         nextSyncAt
         externalState
         publicationState
         reconcilerState
-        ... on HiddenExternalChangeset {
-            id
+    }
+`
+export const externalChangesetFieldsFragment = gql`
+    fragment ExternalChangesetFields on ExternalChangeset {
+        __typename
+        id
+        title
+        body
+        publicationState
+        reconcilerState
+        externalState
+        reviewState
+        checkState
+        error
+        labels {
+            ...ChangesetLabelFields
         }
-        ... on ExternalChangeset {
+        repository {
             id
-            title
-            body
-            reviewState
-            checkState
-            labels {
-                ...ChangesetLabelFields
-            }
-            repository {
-                id
-                name
-                url
-            }
-            externalURL {
-                url
-            }
-            externalID
-            diffStat {
-                ...DiffStatFields
-            }
+            name
+            url
         }
+        externalURL {
+            url
+        }
+        externalID
+        diffStat {
+            ...DiffStatFields
+        }
+        createdAt
+        updatedAt
+        nextSyncAt
     }
 
     ${diffStatFields}
 
     ${changesetLabelFragment}
+`
+
+export const changesetFieldsFragment = gql`
+    fragment ChangesetFields on Changeset {
+        __typename
+        ... on HiddenExternalChangeset {
+            ...HiddenExternalChangesetFields
+        }
+        ... on ExternalChangeset {
+            ...ExternalChangesetFields
+        }
+    }
+
+    ${hiddenExternalChangesetFieldsFragment}
+
+    ${externalChangesetFieldsFragment}
 `
 
 export const queryChangesets = ({
@@ -156,6 +163,9 @@ export const queryChangesets = ({
     externalState,
     reviewState,
     checkState,
+    publicationState,
+    reconcilerState,
+    onlyPublishedByThisCampaign,
 }: CampaignChangesetsVariables): Observable<
     (CampaignChangesetsResult['node'] & { __typename: 'Campaign' })['changesets']
 > =>
@@ -167,6 +177,9 @@ export const queryChangesets = ({
                 $externalState: ChangesetExternalState
                 $reviewState: ChangesetReviewState
                 $checkState: ChangesetCheckState
+                $publicationState: ChangesetPublicationState
+                $reconcilerState: ChangesetReconcilerState
+                $onlyPublishedByThisCampaign: Boolean
             ) {
                 node(id: $campaign) {
                     __typename
@@ -174,10 +187,17 @@ export const queryChangesets = ({
                         changesets(
                             first: $first
                             externalState: $externalState
+                            publicationState: $publicationState
+                            reconcilerState: $reconcilerState
                             reviewState: $reviewState
                             checkState: $checkState
+                            onlyPublishedByThisCampaign: $onlyPublishedByThisCampaign
                         ) {
                             totalCount
+                            pageInfo {
+                                endCursor
+                                hasNextPage
+                            }
                             nodes {
                                 ...ChangesetFields
                             }
@@ -188,7 +208,16 @@ export const queryChangesets = ({
 
             ${changesetFieldsFragment}
         `,
-        variables: { campaign, first, externalState, reviewState, checkState },
+        variables: {
+            campaign,
+            first,
+            externalState,
+            reviewState,
+            checkState,
+            publicationState,
+            reconcilerState,
+            onlyPublishedByThisCampaign,
+        },
     }).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
@@ -259,9 +288,6 @@ export const externalChangesetFileDiffsFields = gql`
                         hasNextPage
                         endCursor
                     }
-                    diffStat {
-                        ...DiffStatFields
-                    }
                 }
             }
             ... on PreviewRepositoryComparison {
@@ -274,17 +300,12 @@ export const externalChangesetFileDiffsFields = gql`
                         hasNextPage
                         endCursor
                     }
-                    diffStat {
-                        ...DiffStatFields
-                    }
                 }
             }
         }
     }
 
     ${fileDiffFields}
-
-    ${diffStatFields}
 
     ${gitRefSpecFields}
 `
@@ -324,3 +345,61 @@ export const queryExternalChangesetWithFileDiffs = ({
             return node
         })
     )
+
+const changesetCountsOverTimeFragment = gql`
+    fragment ChangesetCountsOverTimeFields on ChangesetCounts {
+        date
+        merged
+        closed
+        openApproved
+        openChangesRequested
+        openPending
+        total
+    }
+`
+
+export const queryChangesetCountsOverTime = ({
+    campaign,
+}: ChangesetCountsOverTimeVariables): Observable<ChangesetCountsOverTimeFields[]> =>
+    requestGraphQL<ChangesetCountsOverTimeResult, ChangesetCountsOverTimeVariables>({
+        request: gql`
+            query ChangesetCountsOverTime($campaign: ID!) {
+                node(id: $campaign) {
+                    __typename
+                    ... on Campaign {
+                        changesetCountsOverTime {
+                            ...ChangesetCountsOverTimeFields
+                        }
+                    }
+                }
+            }
+
+            ${changesetCountsOverTimeFragment}
+        `,
+        variables: { campaign },
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error(`Campaign with ID ${campaign} does not exist`)
+            }
+            if (node.__typename !== 'Campaign') {
+                throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
+            }
+            return node.changesetCountsOverTime
+        })
+    )
+
+export async function deleteCampaign(campaign: Scalars['ID']): Promise<void> {
+    const result = await requestGraphQL<DeleteCampaignResult, DeleteCampaignVariables>({
+        request: gql`
+            mutation DeleteCampaign($campaign: ID!) {
+                deleteCampaign(campaign: $campaign) {
+                    alwaysNil
+                }
+            }
+        `,
+        variables: { campaign },
+    }).toPromise()
+    dataOrThrowErrors(result)
+}

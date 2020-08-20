@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"reflect"
 	"strings"
 	"time"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
+	"github.com/tidwall/gjson"
 	"github.com/xeipuuv/gojsonschema"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -91,12 +91,36 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	return conds
 }
 
+type ValidateExternalServiceConfigOptions struct {
+	// The ID of the external service, 0 is a valid value for not-yet-created external service.
+	ID int64
+	// The kind of external service.
+	Kind string
+	// The actual config of the external service.
+	Config string
+	// The list of authN providers configured on the instance.
+	AuthProviders []schema.AuthProviders
+	// When true, indicates this is a user-added the external service.
+	HasNamespace bool
+}
+
 // ValidateConfig validates the given external service configuration.
 // A non zero id indicates we are updating an existing service, 0 indicates we are adding a new one.
-func (e *ExternalServicesStore) ValidateConfig(ctx context.Context, id int64, kind, config string, ps []schema.AuthProviders) error {
-	ext, ok := ExternalServiceKinds[kind]
+func (e *ExternalServicesStore) ValidateConfig(ctx context.Context, opt ValidateExternalServiceConfigOptions) error {
+	// For user-added external services, we need to prevent them from using disallowed fields.
+	if opt.HasNamespace {
+		disallowedFields := []string{"repositoryPathPattern"}
+		results := gjson.GetMany(opt.Config, disallowedFields...)
+		for i, r := range results {
+			if r.Exists() {
+				return errors.Errorf("field %q is not allowed in a user-added external service", disallowedFields[i])
+			}
+		}
+	}
+
+	ext, ok := ExternalServiceKinds[opt.Kind]
 	if !ok {
-		return fmt.Errorf("invalid external service kind: %s", kind)
+		return fmt.Errorf("invalid external service kind: %s", opt.Kind)
 	}
 
 	// All configs must be valid JSON.
@@ -106,17 +130,17 @@ func (e *ExternalServicesStore) ValidateConfig(ctx context.Context, id int64, ki
 	sl := gojsonschema.NewSchemaLoader()
 	sc, err := sl.Compile(gojsonschema.NewStringLoader(ext.JSONSchema))
 	if err != nil {
-		return errors.Wrapf(err, "failed to compile schema for external service of kind %q", kind)
+		return errors.Wrapf(err, "unable to compile schema for external service of kind %q", opt.Kind)
 	}
 
-	normalized, err := jsonc.Parse(config)
+	normalized, err := jsonc.Parse(opt.Config)
 	if err != nil {
-		return errors.Wrapf(err, "failed to normalize JSON")
+		return errors.Wrapf(err, "unable to normalize JSON")
 	}
 
 	res, err := sc.Validate(gojsonschema.NewBytesLoader(normalized))
 	if err != nil {
-		return errors.Wrap(err, "failed to validate config against schema")
+		return errors.Wrap(err, "unable to validate config against schema")
 	}
 
 	var errs *multierror.Error
@@ -129,34 +153,34 @@ func (e *ExternalServicesStore) ValidateConfig(ctx context.Context, id int64, ki
 	}
 
 	// Extra validation not based on JSON Schema.
-	switch kind {
+	switch opt.Kind {
 	case extsvc.KindGitHub:
 		var c schema.GitHubConnection
 		if err = json.Unmarshal(normalized, &c); err != nil {
 			return err
 		}
-		err = e.validateGitHubConnection(ctx, id, &c)
+		err = e.validateGitHubConnection(ctx, opt.ID, &c)
 
 	case extsvc.KindGitLab:
 		var c schema.GitLabConnection
 		if err = json.Unmarshal(normalized, &c); err != nil {
 			return err
 		}
-		err = e.validateGitLabConnection(ctx, id, &c, ps)
+		err = e.validateGitLabConnection(ctx, opt.ID, &c, opt.AuthProviders)
 
 	case extsvc.KindBitbucketServer:
 		var c schema.BitbucketServerConnection
 		if err = json.Unmarshal(normalized, &c); err != nil {
 			return err
 		}
-		err = e.validateBitbucketServerConnection(ctx, id, &c)
+		err = e.validateBitbucketServerConnection(ctx, opt.ID, &c)
 
 	case extsvc.KindBitbucketCloud:
 		var c schema.BitbucketCloudConnection
 		if err = json.Unmarshal(normalized, &c); err != nil {
 			return err
 		}
-		err = e.validateBitbucketCloudConnection(ctx, id, &c)
+		err = e.validateBitbucketCloudConnection(ctx, opt.ID, &c)
 
 	case extsvc.KindOther:
 		var c schema.OtherExternalServiceConnection
@@ -291,7 +315,7 @@ func (e *ExternalServicesStore) validateDuplicateRateLimits(ctx context.Context,
 	return nil
 }
 
-// Create creates a external service.
+// Create creates an external service.
 //
 // Since this method is used before the configuration server has started
 // (search for "EXTSVC_CONFIG_FILE") you must pass the conf.Get function in so
@@ -300,13 +324,20 @@ func (e *ExternalServicesStore) validateDuplicateRateLimits(ctx context.Context,
 // determines a deadlock occurred.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+// Otherwise, `es.NamespaceUserID` must be specified (i.e. non-nil) for
+// a user-added external service.
 func (e *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf.Unified, es *types.ExternalService) error {
 	if Mocks.ExternalServices.Create != nil {
 		return Mocks.ExternalServices.Create(ctx, confGet, es)
 	}
 
 	ps := confGet().AuthProviders
-	if err := e.ValidateConfig(ctx, 0, es.Kind, es.Config, ps); err != nil {
+	if err := e.ValidateConfig(ctx, ValidateExternalServiceConfigOptions{
+		Kind:          es.Kind,
+		Config:        es.Config,
+		AuthProviders: ps,
+		HasNamespace:  es.NamespaceUserID != nil,
+	}); err != nil {
 		return err
 	}
 
@@ -326,9 +357,10 @@ type ExternalServiceUpdate struct {
 	Config      *string
 }
 
-// Update updates a external service.
+// Update updates an external service.
 //
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin,
+// or has the legitimate access to the external service (i.e. the owner).
 func (e *ExternalServicesStore) Update(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) error {
 	if Mocks.ExternalServices.Update != nil {
 		return Mocks.ExternalServices.Update(ctx, ps, id, update)
@@ -341,7 +373,13 @@ func (e *ExternalServicesStore) Update(ctx context.Context, ps []schema.AuthProv
 			return err
 		}
 
-		if err := e.ValidateConfig(ctx, id, externalService.Kind, *update.Config, ps); err != nil {
+		if err := e.ValidateConfig(ctx, ValidateExternalServiceConfigOptions{
+			ID:            id,
+			Kind:          externalService.Kind,
+			Config:        *update.Config,
+			AuthProviders: ps,
+			HasNamespace:  externalService.NamespaceUserID != nil,
+		}); err != nil {
 			return err
 		}
 	}
@@ -463,142 +501,6 @@ WHERE deleted_at IS NULL
 	}
 
 	return kinds, nil
-}
-
-// listConfigs decodes the list of configs into result. In addition to populating
-// loaded configs into the given result, it also calls the "SetURN(string)" method
-// of elements in result when the method exists.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) listConfigs(ctx context.Context, kind string, result interface{}) error {
-	services, err := e.List(ctx, ExternalServicesListOptions{Kinds: []string{kind}})
-	if err != nil {
-		return err
-	}
-
-	// Decode the jsonc configs into Go objects.
-	cfgs := make([]interface{}, 0, len(services))
-	urns := make([]string, 0, len(services))
-	for _, service := range services {
-		var cfg interface{}
-		if err := jsonc.Unmarshal(service.Config, &cfg); err != nil {
-			return err
-		}
-		cfgs = append(cfgs, cfg)
-		urns = append(urns, service.URN())
-	}
-
-	// Now move our untyped config list into the typed list (result). We could
-	// do this using reflection, but JSON marshaling and unmarshaling is easier
-	// and fast enough for our purposes. Note that service.Config is jsonc, not
-	// plain JSON so we could not simply treat it as json.RawMessage.
-	buf, err := json.Marshal(cfgs)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(buf, result)
-	if err != nil {
-		return err
-	}
-
-	conns := reflect.ValueOf(result).Elem()
-	for i := 0; i < conns.Len(); i++ {
-		field, ok := conns.Index(i).Interface().(interface{ SetURN(string) })
-		if ok {
-			field.SetURN(urns[i])
-		}
-	}
-
-	return nil
-}
-
-// ListAWSCodeCommitConnections returns a list of AWSCodeCommit configs.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListAWSCodeCommitConnections(ctx context.Context) ([]*types.AWSCodeCommitConnection, error) {
-	var connections []*types.AWSCodeCommitConnection
-	if err := e.listConfigs(ctx, extsvc.KindAWSCodeCommit, &connections); err != nil {
-		return nil, err
-	}
-	return connections, nil
-}
-
-// ListBitbucketCloudConnections returns a list of BitbucketCloud configs.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListBitbucketCloudConnections(ctx context.Context) ([]*types.BitbucketCloudConnection, error) {
-	var connections []*types.BitbucketCloudConnection
-	if err := e.listConfigs(ctx, extsvc.KindBitbucketCloud, &connections); err != nil {
-		return nil, err
-	}
-	return connections, nil
-}
-
-// ListBitbucketServerConnections returns a list of BitbucketServer configs.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListBitbucketServerConnections(ctx context.Context) ([]*types.BitbucketServerConnection, error) {
-	var connections []*types.BitbucketServerConnection
-	if err := e.listConfigs(ctx, extsvc.KindBitbucketServer, &connections); err != nil {
-		return nil, err
-	}
-	return connections, nil
-}
-
-// ListGitHubConnections returns a list of GitHubConnection configs.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListGitHubConnections(ctx context.Context) ([]*types.GitHubConnection, error) {
-	var connections []*types.GitHubConnection
-	if err := e.listConfigs(ctx, extsvc.KindGitHub, &connections); err != nil {
-		return nil, err
-	}
-	return connections, nil
-}
-
-// ListGitLabConnections returns a list of GitLabConnection configs.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListGitLabConnections(ctx context.Context) ([]*types.GitLabConnection, error) {
-	var connections []*types.GitLabConnection
-	if err := e.listConfigs(ctx, extsvc.KindGitLab, &connections); err != nil {
-		return nil, err
-	}
-	return connections, nil
-}
-
-// ListGitoliteConnections returns a list of GitoliteConnection configs.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListGitoliteConnections(ctx context.Context) ([]*types.GitoliteConnection, error) {
-	var connections []*types.GitoliteConnection
-	if err := e.listConfigs(ctx, extsvc.KindGitolite, &connections); err != nil {
-		return nil, err
-	}
-	return connections, nil
-}
-
-// ListPhabricatorConnections returns a list of PhabricatorConnection configs.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListPhabricatorConnections(ctx context.Context) ([]*types.PhabricatorConnection, error) {
-	var connections []*types.PhabricatorConnection
-	if err := e.listConfigs(ctx, extsvc.KindPhabricator, &connections); err != nil {
-		return nil, err
-	}
-	return connections, nil
-}
-
-// ListOtherExternalServicesConnections returns a list of OtherExternalServiceConnection configs.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListOtherExternalServicesConnections(ctx context.Context) ([]*types.OtherExternalServiceConnection, error) {
-	var connections []*types.OtherExternalServiceConnection
-	if err := e.listConfigs(ctx, extsvc.KindOther, &connections); err != nil {
-		return nil, err
-	}
-	return connections, nil
 }
 
 func (*ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*types.ExternalService, error) {

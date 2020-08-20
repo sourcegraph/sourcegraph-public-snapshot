@@ -196,11 +196,11 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
                 password: this.state.password,
             }),
         })
-            .then(response => {
+            .then(async response => {
                 if (response.status === 200) {
                     this.setState({ submitOrError: null })
-                } else if (response.status === 401) {
-                    this.setState({ submitOrError: new Error('Password reset code was invalid or expired.') })
+                } else if (response.status >= 400 && response.status < 500) {
+                    this.setState({ submitOrError: new Error(await response.text()) })
                 } else {
                     this.setState({ submitOrError: new Error('Password reset failed.') })
                 }

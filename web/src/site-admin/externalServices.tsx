@@ -911,7 +911,46 @@ const GITLAB_SELF_MANAGED: AddExternalServiceOptions = {
   ]
 }`,
 }
+const SRC_SERVE_GIT: AddExternalServiceOptions = {
+    kind: GQL.ExternalServiceKind.OTHER,
+    title: 'Sourcegraph CLI Serve-Git',
+    icon: GitIcon,
+    jsonSchema: otherExternalServiceSchemaJSON,
+    defaultDisplayName: 'src serve-git',
+    defaultConfig: `{
+  // url is the http url to 'src serve-git'.
+  // url should be reachable by Sourcegraph.
+  "url": "http://addr.for.src.serve:3434",
 
+  // Do not change this. Sourcegraph uses this as a signal that url is 'src serve'.
+  "repos": ["src-serve"]
+}`,
+    instructions: (
+        <div>
+            <p>
+                In the configuration below, set <Field>url</Field> to be the URL of src serve-git.
+            </p>
+            <p>
+                Install the{' '}
+                <a rel="noopener noreferrer" target="_blank" href="https://github.com/sourcegraph/src-cli">
+                    Sourcegraph CLI (src)
+                </a>
+                . src serve-git allows you to serve any git repositories that you have on disk.
+            </p>
+        </div>
+    ),
+    editorActions: [
+        {
+            id: 'setURL',
+            label: 'Sourcegraph in Docker and src serve-git running on host',
+            run: config => {
+                const value = 'http://host.docker.internal:3434'
+                const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
+            },
+        },
+    ],
+}
 const GITOLITE: AddExternalServiceOptions = {
     kind: GQL.ExternalServiceKind.GITOLITE,
     title: 'Gitolite',
@@ -1082,6 +1121,7 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     bitbucket: BITBUCKET_CLOUD,
     bitbucketserver: BITBUCKET_SERVER,
     aws_codecommit: AWS_CODE_COMMIT,
+    srcservegit: SRC_SERVE_GIT,
     gitolite: GITOLITE,
     git: GENERIC_GIT,
 }

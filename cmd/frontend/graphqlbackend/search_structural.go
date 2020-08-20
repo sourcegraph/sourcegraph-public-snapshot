@@ -137,7 +137,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 	}
 
 	k := zoektResultCountFactor(len(repos.repoBranches), args.PatternInfo)
-	searchOpts := zoektSearchOpts(k, args.PatternInfo)
+	searchOpts := zoektSearchOpts(ctx, k, args.PatternInfo)
 
 	if args.UseFullDeadline {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.

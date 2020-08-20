@@ -99,6 +99,10 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
                 value: 'visibility:',
                 description: 'any | public | private',
             },
+            {
+                value: 'stable',
+                description: 'yes | no',
+            },
         ].map(
             assign({
                 type: NonFilterSuggestionType.Filters,
@@ -216,6 +220,13 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
         values: [{ value: 'no' }, { value: 'only' }, { value: 'yes' }].map(
             assign({
                 type: FilterType.index,
+            })
+        ),
+    },
+    stable: {
+        values: [{ value: 'no' }, { value: 'yes' }].map(
+            assign({
+                type: FilterType.stable,
             })
         ),
     },

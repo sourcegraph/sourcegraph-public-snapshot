@@ -87,7 +87,7 @@ describe('parseSearchQuery()', () => {
     })
 
     test('filter', () =>
-        expect(parseSearchQuery('a:b')).toMatchObject({
+        expect(parseSearchQuery('f:b')).toMatchObject({
             range: {
                 end: 3,
                 start: 0,
@@ -107,7 +107,7 @@ describe('parseSearchQuery()', () => {
                                 },
                                 token: {
                                     type: 'literal',
-                                    value: 'a',
+                                    value: 'f',
                                 },
                                 type: 'success',
                             },
@@ -132,7 +132,7 @@ describe('parseSearchQuery()', () => {
         }))
 
     test('negated filter', () =>
-        expect(parseSearchQuery('-a:b')).toMatchObject({
+        expect(parseSearchQuery('-f:b')).toMatchObject({
             range: {
                 end: 4,
                 start: 0,
@@ -152,7 +152,7 @@ describe('parseSearchQuery()', () => {
                                 },
                                 token: {
                                     type: 'literal',
-                                    value: '-a',
+                                    value: '-f',
                                 },
                                 type: 'success',
                             },
@@ -177,7 +177,7 @@ describe('parseSearchQuery()', () => {
         }))
 
     test('filter with quoted value', () => {
-        expect(parseSearchQuery('a:"b"')).toMatchObject({
+        expect(parseSearchQuery('f:"b"')).toMatchObject({
             range: {
                 end: 5,
                 start: 0,
@@ -197,7 +197,7 @@ describe('parseSearchQuery()', () => {
                                 },
                                 token: {
                                     type: 'literal',
-                                    value: 'a',
+                                    value: 'f',
                                 },
                                 type: 'success',
                             },
@@ -811,6 +811,54 @@ describe('parseSearchQuery()', () => {
                         },
                         token: {
                             type: 'closingParen',
+                        },
+                    },
+                ],
+                type: 'sequence',
+            },
+            type: 'success',
+        })
+    })
+
+    test('do not treat links as filters', () => {
+        expect(parseSearchQuery('http://example.com repo:a')).toMatchObject({
+            range: {
+                end: 25,
+                start: 0,
+            },
+            token: {
+                members: [
+                    {
+                        range: {
+                            end: 18,
+                            start: 0,
+                        },
+                        token: {
+                            type: 'literal',
+                            value: 'http://example.com',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 19,
+                            start: 18,
+                        },
+                        token: {
+                            type: 'whitespace',
+                        },
+                    },
+                    {
+                        range: {
+                            end: 25,
+                            start: 19,
+                        },
+                        token: {
+                            filterType: {
+                                range: {
+                                    end: 23,
+                                    start: 19,
+                                },
+                            },
                         },
                     },
                 ],

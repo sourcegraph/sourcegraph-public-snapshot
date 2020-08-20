@@ -23,6 +23,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	nettrace "golang.org/x/net/trace"
@@ -208,7 +209,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	defer cancel()
 
 	getZf := func() (string, *store.ZipFile, error) {
-		path, err := s.Store.PrepareZip(prepareCtx, p.GitserverRepo(), p.Commit)
+		path, err := s.Store.PrepareZip(prepareCtx, gitserver.Repo{Name: p.Repo}, p.Commit)
 		if err != nil {
 			return "", nil, err
 		}

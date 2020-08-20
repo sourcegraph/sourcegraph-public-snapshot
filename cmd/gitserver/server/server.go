@@ -574,7 +574,9 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 				fetchDuration = cmdStart.Sub(start)
 			}
 
-			if honey.Enabled() || traceLogs {
+			isSlow := cmdDuration > shortGitCommandSlow(req.Args)
+			isSlowFetch := fetchDuration > 10*time.Second
+			if honey.Enabled() || traceLogs || isSlow || isSlowFetch {
 				ev := honey.Event("gitserver-exec")
 				ev.AddField("repo", req.Repo)
 				ev.AddField("remote_url", req.URL)
@@ -602,13 +604,12 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 				if traceLogs {
 					log15.Debug("TRACE gitserver exec", mapToLog15Ctx(ev.Fields())...)
 				}
-			}
-
-			if cmdDuration > shortGitCommandSlow(req.Args) {
-				log15.Warn("Long exec request", "repo", req.Repo, "args", req.Args, "duration", cmdDuration.Round(time.Millisecond))
-			}
-			if fetchDuration > 10*time.Second {
-				log15.Warn("Slow fetch/clone for exec request", "repo", req.Repo, "args", req.Args, "duration", fetchDuration)
+				if isSlow {
+					log15.Warn("Long exec request", mapToLog15Ctx(ev.Fields())...)
+				}
+				if isSlowFetch {
+					log15.Warn("Slow fetch/clone for exec request", mapToLog15Ctx(ev.Fields())...)
+				}
 			}
 		}()
 	}

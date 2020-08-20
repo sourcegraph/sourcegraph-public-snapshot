@@ -3,9 +3,17 @@ import { android } from './Android'
 import { kubernetes } from './Kubernetes'
 import { golang } from './Golang'
 import { reactHooks } from './ReactHooks'
+import { stanford } from './Stanford'
 import { RepogroupMetadata } from './types'
 
-export const repogroupList: RepogroupMetadata[] = [python2To3Metadata, kubernetes, golang, reactHooks, android]
+export const repogroupList: RepogroupMetadata[] = [
+    python2To3Metadata,
+    android,
+    kubernetes,
+    golang,
+    reactHooks,
+    stanford,
+]
 
 export const homepageLanguageList: { name: string; filterName: string }[] = [
     { name: 'C', filterName: 'c' },
@@ -13,20 +21,20 @@ export const homepageLanguageList: { name: string; filterName: string }[] = [
     { name: 'C#', filterName: 'csharp' },
     { name: 'CSS', filterName: 'css' },
     { name: 'Go', filterName: 'go' },
-    { name: 'Graphql', filterName: 'graphql' },
+    { name: 'GraphQL', filterName: 'graphql' },
     { name: 'Haskell', filterName: 'haskell' },
-    { name: 'Html', filterName: 'html' },
+    { name: 'HTML', filterName: 'html' },
     { name: 'Java', filterName: 'java' },
-    { name: 'Javascript', filterName: 'javascript' },
-    { name: 'Json', filterName: 'json' },
+    { name: 'JavaScript', filterName: 'javascript' },
+    { name: 'JSON', filterName: 'json' },
     { name: 'Lua', filterName: 'lua' },
     { name: 'Markdown', filterName: 'markdown' },
-    { name: 'Php', filterName: 'php' },
-    { name: 'Powershell', filterName: 'powershell' },
+    { name: 'PHP', filterName: 'php' },
+    { name: 'PowerShell', filterName: 'powershell' },
     { name: 'Python', filterName: 'python' },
     { name: 'R', filterName: 'r' },
     { name: 'Ruby', filterName: 'ruby' },
     { name: 'Sass', filterName: 'sass' },
     { name: 'Swift', filterName: 'swift' },
-    { name: 'Typescript', filterName: 'typescript' },
+    { name: 'TypeScript', filterName: 'typescript' },
 ]

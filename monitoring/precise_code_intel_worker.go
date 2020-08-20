@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 func PreciseCodeIntelWorker() *Container {
 	return &Container{
 		Name:        "precise-code-intel-worker",
@@ -143,22 +145,23 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
-							Owner:             ObservableOwnerCodeIntel,
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						{
 							Name:              "gitserver_error_responses",
 							Description:       "gitserver error responses every 5m",
-							Query:             `sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="precise-code-intel-worker",code!~"2.."}[5m]))`,
+							Query:             `sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="precise-code-intel-worker",code!~"2.."}[5m])) / ignoring(code) group_left sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="precise-code-intel-worker"}[5m])) * 100`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 5},
-							PanelOptions:      PanelOptions().LegendFormat("{{category}}"),
-							Owner:             ObservableOwnerCodeIntel,
+							DataMayBeNaN:      true, // ratio denominator could be 0
+							Warning:           Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Percentage),
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 					},
 					{
-						sharedFrontendInternalAPIErrorResponses("precise-code-intel-worker"),
+						sharedFrontendInternalAPIErrorResponses("precise-code-intel-worker", ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -167,12 +170,12 @@ func PreciseCodeIntelWorker() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerCPUUsage("precise-code-intel-worker"),
-						sharedContainerMemoryUsage("precise-code-intel-worker"),
+						sharedContainerCPUUsage("precise-code-intel-worker", ObservableOwnerCodeIntel),
+						sharedContainerMemoryUsage("precise-code-intel-worker", ObservableOwnerCodeIntel),
 					},
 					{
-						sharedContainerRestarts("precise-code-intel-worker"),
-						sharedContainerFsInodes("precise-code-intel-worker"),
+						sharedContainerRestarts("precise-code-intel-worker", ObservableOwnerCodeIntel),
+						sharedContainerFsInodes("precise-code-intel-worker", ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -181,12 +184,12 @@ func PreciseCodeIntelWorker() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("precise-code-intel-worker"),
-						sharedProvisioningMemoryUsageLongTerm("precise-code-intel-worker"),
+						sharedProvisioningCPUUsageLongTerm("precise-code-intel-worker", ObservableOwnerCodeIntel),
+						sharedProvisioningMemoryUsageLongTerm("precise-code-intel-worker", ObservableOwnerCodeIntel),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("precise-code-intel-worker"),
-						sharedProvisioningMemoryUsageShortTerm("precise-code-intel-worker"),
+						sharedProvisioningCPUUsageShortTerm("precise-code-intel-worker", ObservableOwnerCodeIntel),
+						sharedProvisioningMemoryUsageShortTerm("precise-code-intel-worker", ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -195,8 +198,8 @@ func PreciseCodeIntelWorker() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedGoGoroutines("precise-code-intel-worker"),
-						sharedGoGcDuration("precise-code-intel-worker"),
+						sharedGoGoroutines("precise-code-intel-worker", ObservableOwnerCodeIntel),
+						sharedGoGcDuration("precise-code-intel-worker", ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -205,7 +208,7 @@ func PreciseCodeIntelWorker() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedKubernetesPodsAvailable("precise-code-intel-worker"),
+						sharedKubernetesPodsAvailable("precise-code-intel-worker", ObservableOwnerCodeIntel),
 					},
 				},
 			},

@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestChangesetSpecResolver(t *testing.T) {
@@ -64,11 +65,11 @@ func TestChangesetSpecResolver(t *testing.T) {
 							ID: string(spec.Spec.BaseRepository),
 						},
 						ExternalID: "",
-						BaseRef:    spec.Spec.BaseRef,
+						BaseRef:    git.AbbreviateRef(spec.Spec.BaseRef),
 						HeadRepository: apitest.Repository{
 							ID: string(spec.Spec.HeadRepository),
 						},
-						HeadRef: spec.Spec.HeadRef,
+						HeadRef: git.AbbreviateRef(spec.Spec.HeadRef),
 						Title:   spec.Spec.Title,
 						Body:    spec.Spec.Body,
 						Commits: []apitest.GitCommitDescription{
@@ -83,6 +84,11 @@ func TestChangesetSpecResolver(t *testing.T) {
 									Changed: 2,
 								},
 							},
+						},
+						DiffStat: apitest.DiffStat{
+							Added:   1,
+							Deleted: 1,
+							Changed: 2,
 						},
 					},
 					ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
@@ -175,11 +181,12 @@ query($id: ID!) {
 
           published
 
-		  diff {
-		    fileDiffs {
-			  diffStat { added, changed, deleted }
-			}
-		  }
+          diff {
+            fileDiffs {
+              diffStat { added, changed, deleted }
+            }
+          }
+          diffStat { added, changed, deleted }
         }
       }
 

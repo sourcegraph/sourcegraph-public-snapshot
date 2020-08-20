@@ -768,14 +768,7 @@ func bitbucketChangeset(updatedAt time.Time, state, reviewStatus string) *campai
 		UpdatedAt:           updatedAt,
 		Metadata: &bitbucketserver.PullRequest{
 			State: state,
-			// TODO: Reviewers should be its own struct
-			Reviewers: []struct {
-				User               *bitbucketserver.User `json:"user"`
-				LastReviewedCommit string                `json:"lastReviewedCommit"`
-				Role               string                `json:"role"`
-				Approved           bool                  `json:"approved"`
-				Status             string                `json:"status"`
-			}{
+			Reviewers: []bitbucketserver.Reviewer{
 				{Status: reviewStatus},
 			},
 		},
