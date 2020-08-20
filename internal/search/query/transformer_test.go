@@ -699,8 +699,8 @@ func TestFuzzifyGlobPattern(t *testing.T) {
 			want: "**foo**",
 		},
 		{
-			in:   "github.com/foo/bar",
-			want: "github.com/foo/bar**",
+			in:   "sourcegraph/sourcegraph",
+			want: "**sourcegraph/sourcegraph**",
 		},
 		{
 			in:   "",
@@ -736,6 +736,10 @@ func TestMapGlobToRegex(t *testing.T) {
 		{
 			input: "repo:github.com/sourcegraph/sourcegraph@v3.18.0",
 			want:  `"repo:^github\\.com/sourcegraph/sourcegraph$@v3.18.0"`,
+		},
+		{
+			input: "github.com/foo/bar",
+			want:  `"github.com/foo/bar"`,
 		},
 		{
 			input: "repo:**sourcegraph",

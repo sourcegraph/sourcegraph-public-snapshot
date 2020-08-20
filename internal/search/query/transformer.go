@@ -203,7 +203,7 @@ func reporevToRegex(value string) (string, error) {
 	reporev := strings.SplitN(value, "@", 2)
 	containsNoRev := len(reporev) == 1
 	repo := reporev[0]
-	if containsNoRev && ContainsNoGlobSyntax(repo) {
+	if containsNoRev && ContainsNoGlobSyntax(repo) && !LooksLikeGitHubRepo(repo) {
 		repo = fuzzifyGlobPattern(repo)
 	}
 	repo, err := globToRegex(repo)
@@ -221,6 +221,17 @@ var globSyntax = lazyregexp.New(`[][*?]`)
 
 func ContainsNoGlobSyntax(value string) bool {
 	return !globSyntax.MatchString(value)
+}
+
+// LooksLikeGitHubRepo returns whether string value looks like a valid
+// GitHub repo path. This condition is used to guess whether we should
+// make a pattern fuzzy, or try it as an exact match.
+func LooksLikeGitHubRepo(value string) bool {
+	result, err := regexp.MatchString(`github\.com\/([a-z\d]+-)*[a-z\d]+\/(.+)`, value)
+	if err != nil {
+		panic(err)
+	}
+	return result
 }
 
 func fuzzifyGlobPattern(value string) string {
