@@ -35,7 +35,8 @@ export function generateStepTooltip(
     title: string,
     stepNumber: number,
     description?: string,
-    additionalContent?: HTMLElement
+    additionalContent?: HTMLElement,
+    dontShowStepCount?: boolean
 ): HTMLElement {
     const element = document.createElement('div')
     element.className = `d-flex flex-column test-tour-step-${stepNumber}`
@@ -54,7 +55,7 @@ export function generateStepTooltip(
         additionalContentContainer.append(additionalContent)
         element.append(additionalContent)
     }
-    const bottomRow = generateBottomRow(tour, stepNumber)
+    const bottomRow = generateBottomRow(tour, stepNumber, dontShowStepCount)
     element.append(bottomRow)
     return element
 }
@@ -65,11 +66,7 @@ export function generateStepTooltip(
  * @param tour the tour instance.
  * @param stepNumber the step number.
  */
-export function generateBottomRow(tour: Shepherd.Tour, stepNumber: number): HTMLElement {
-    const stepNumberLabel = document.createElement('span')
-    stepNumberLabel.className = 'font-weight-light font-italic'
-    stepNumberLabel.textContent = `${stepNumber} of 6`
-
+export function generateBottomRow(tour: Shepherd.Tour, stepNumber: number, dontShowStepCount?: boolean): HTMLElement {
     const closeTourButton = document.createElement('button')
     closeTourButton.className = 'btn btn-link p-0'
     closeTourButton.textContent = 'Close tour'
@@ -80,7 +77,14 @@ export function generateBottomRow(tour: Shepherd.Tour, stepNumber: number): HTML
 
     const bottomRow = document.createElement('div')
     bottomRow.className = 'd-flex justify-content-between'
-    bottomRow.append(stepNumberLabel)
+
+    if (!dontShowStepCount) {
+        const stepNumberLabel = document.createElement('span')
+        stepNumberLabel.className = 'font-weight-light font-italic'
+        stepNumberLabel.textContent = `${stepNumber} of 5`
+        bottomRow.append(stepNumberLabel)
+    }
+
     bottomRow.append(closeTourButton)
     return bottomRow
 }

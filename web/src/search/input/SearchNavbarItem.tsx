@@ -88,7 +88,8 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 but simple with structural search. Tip: 'my_match' is a name for the\n
                 code we matched between code boundries. This is similar to a named capture\n
                 group in regex.`,
-                createStructuralSearchTourTooltip()
+                createStructuralSearchTourTooltip(),
+                true
             ),
             attachTo: {
                 element: '.test-structural-search-toggle',
