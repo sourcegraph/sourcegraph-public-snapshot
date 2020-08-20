@@ -40,16 +40,18 @@ interface Props
 }
 
 function createStructuralSearchTourTooltip(): HTMLElement {
+    const list = document.createElement('ul')
+    list.className = 'caret-list mb-0'
     const listItem = document.createElement('li')
     listItem.className = 'list-group-item p-0 border-0 my-4'
-    listItem.textContent = '>'
+    list.append(listItem)
     const exampleButton = document.createElement('a')
     exampleButton.href = 'https://docs.sourcegraph.com/user/search/structural'
     exampleButton.target = '_blank'
     exampleButton.className = 'btn btn-link test-tour-language-example'
     exampleButton.textContent = 'Structural search documentation'
     listItem.append(exampleButton)
-    return listItem
+    return list
 }
 
 /**
