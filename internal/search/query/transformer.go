@@ -596,7 +596,7 @@ func concatRevFiltersFlat(nodes []Node) ([]Node, error) {
 		return nodes, nil
 	}
 	if len(revs) > 1 {
-		return nil, fmt.Errorf("invalid syntax. You have specified multiple revisions (%s) and "+
+		return nil, fmt.Errorf("invalid syntax. You have specified multiple revisions (%s) and"+
 			" I don't know how to interpret this. Remove all but one rev: keywords"+
 			" and try again", strings.Join(revs, ", "))
 	}
