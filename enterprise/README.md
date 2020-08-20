@@ -8,3 +8,4 @@ This directory contains Sourcegraph Enterprise code. The [`../src/enterprise/` d
 ## Dev
 
 See [Local development: For Sourcegraph employees](https://docs.sourcegraph.com/dev/local_development#for-sourcegraph-employees) for how to work on this code.
+Hello World

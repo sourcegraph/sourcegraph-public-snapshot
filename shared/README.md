@@ -17,3 +17,4 @@ Common TypeScript/React client application code for [Sourcegraph extension](http
 yarn
 yarn test
 ```
+Hello World

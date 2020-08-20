@@ -22,3 +22,4 @@ will be detected automatically while Grafana is running.
 
 More behavior can be controlled with
 [environmental variables](https://grafana.com/docs/installation/configuration/).
+Hello World

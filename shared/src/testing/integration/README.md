@@ -17,3 +17,4 @@ Responses will be intercepted and saved as JSON in the `__fixtures__` directory.
 When running the tests, static JS/CSS assets will be served from the `ui/assets` directory. Other requests will be intercepted, and responded to using fixture data.
 
 Before running tests, call `yarn build` to make sure to have up-to-date assets.
+Hello World
