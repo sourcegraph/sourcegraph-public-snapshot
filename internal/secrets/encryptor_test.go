@@ -2,9 +2,6 @@ package secrets
 
 import (
 	"bytes"
-	"fmt"
-	"io/ioutil"
-	"os"
 	"testing"
 )
 
@@ -151,23 +148,6 @@ func isInSliceOnce(item string, slice []string) bool {
 	}
 
 	return found == 1
-}
-
-func TestFilePermissions(t *testing.T) {
-	secretFile := "secretFile"
-	err := ioutil.WriteFile(secretFile, nil, 0600)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	fileInfo, err := os.Stat(secretFile)
-	if err != nil {
-		t.Fatal(err)
-	}
-	perm := fileInfo.Mode().Perm()
-	fmt.Printf("%#o\n", perm)
-	fmt.Println(perm == os.FileMode(0400))
-	fmt.Println(perm == os.FileMode(0600))
 }
 
 func TestSampleNoRepeats(t *testing.T) {
