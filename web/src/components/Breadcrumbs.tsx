@@ -12,7 +12,10 @@ export interface Breadcrumb {
     /** The breadcrumb element being displayed. */
     element: React.ReactNode
 
-    /** Optionally a custom divider displayed before the element. */
+    /**
+     * Optionally a custom divider displayed before the element.
+     * By default a chevron icon `>` is used.
+     */
     divider?: React.ReactNode
 }
 
