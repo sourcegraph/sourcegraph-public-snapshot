@@ -284,6 +284,13 @@ func getBoolPtr(b *bool, def bool) bool {
 	return *b
 }
 
+type resolvedRepositories struct {
+	repoRevs        []*search.RepositoryRevisions
+	missingRepoRevs []*search.RepositoryRevisions
+	excludedRepos   *excludedRepos
+	overLimit       bool
+}
+
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
 	query          query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
@@ -293,11 +300,9 @@ type searchResolver struct {
 	versionContext *string
 
 	// Cached resolveRepositories results.
-	reposMu                   sync.Mutex
-	repoRevs, missingRepoRevs []*search.RepositoryRevisions
-	excludedRepos             *excludedRepos
-	repoOverLimit             bool
-	repoErr                   error
+	reposMu  sync.Mutex
+	resolved resolvedRepositories
+	repoErr  error
 
 	zoekt        *searchbackend.Zoekt
 	searcherURLs *endpoint.Map
@@ -477,13 +482,6 @@ func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.R
 	return &excludedRepos{forks: numExcludedForks, archived: numExcludedArchived}
 }
 
-type resolvedRepositories struct {
-	repoRevs        []*search.RepositoryRevisions
-	missingRepoRevs []*search.RepositoryRevisions
-	excludedRepos   *excludedRepos
-	overLimit       bool
-}
-
 // resolveRepositories calls doResolveRepositories, caching the result for the common
 // case where effectiveRepoFieldValues == nil.
 func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (resolved resolvedRepositories, err error) {
@@ -503,14 +501,9 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	if effectiveRepoFieldValues == nil {
 		r.reposMu.Lock()
 		defer r.reposMu.Unlock()
-		if r.repoRevs != nil || r.missingRepoRevs != nil || r.excludedRepos != nil || r.repoErr != nil {
+		if r.resolved.repoRevs != nil || r.resolved.missingRepoRevs != nil || r.resolved.excludedRepos != nil || r.repoErr != nil {
 			tr.LazyPrintf("cached")
-			return resolvedRepositories{
-				repoRevs:        r.repoRevs,
-				missingRepoRevs: r.missingRepoRevs,
-				excludedRepos:   r.excludedRepos,
-				overLimit:       r.repoOverLimit,
-			}, r.repoErr
+			return r.resolved, r.repoErr
 		}
 	}
 
@@ -578,10 +571,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	resolved, err = resolveRepositories(ctx, options)
 	tr.LazyPrintf("resolveRepositories - done")
 	if effectiveRepoFieldValues == nil {
-		r.repoRevs = resolved.repoRevs
-		r.missingRepoRevs = resolved.missingRepoRevs
-		r.excludedRepos = resolved.excludedRepos
-		r.repoOverLimit = resolved.overLimit
+		r.resolved = resolved
 		r.repoErr = err
 	}
 	return resolved, err
