@@ -3,7 +3,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { useEffect, useState, useCallback } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { concat, Observable } from 'rxjs'
-import { catchError, startWith, switchMap } from 'rxjs/operators'
+import { catchError, switchMap } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { PageTitle } from '../PageTitle'
@@ -15,7 +15,6 @@ import * as H from 'history'
 import { useEventObservable } from '../../../../shared/src/util/useObservable'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { isExternalService, updateExternalService, fetchExternalService } from './backend'
-import { LOADING } from '@sourcegraph/codeintellify'
 import { ExternalServiceWebhook } from './ExternalServiceWebhook'
 import { ExternalServiceForm } from './ExternalServiceForm'
 import { ExternalServiceFields } from '../../graphql-operations'
@@ -37,16 +36,11 @@ export const ExternalServicePage: React.FunctionComponent<Props> = ({
         telemetryService.logViewEvent('SiteAdminExternalService')
     }, [telemetryService])
 
-    const [externalServiceOrError, setExternalServiceOrError] = useState<
-        typeof LOADING | ExternalServiceFields | ErrorLike
-    >(LOADING)
+    const [externalServiceOrError, setExternalServiceOrError] = useState<ExternalServiceFields | ErrorLike>()
 
     useEffect(() => {
         const subscription = fetchExternalService(match.params.id)
-            .pipe(
-                startWith(LOADING),
-                catchError(error => [asError(error)])
-            )
+            .pipe(catchError(error => [asError(error)]))
             .subscribe(result => {
                 setExternalServiceOrError(result)
             })
@@ -64,15 +58,10 @@ export const ExternalServicePage: React.FunctionComponent<Props> = ({
 
     const [nextSubmit, updatedServiceOrError] = useEventObservable(
         useCallback(
-            (
-                submits: Observable<ExternalServiceFields>
-            ): Observable<typeof LOADING | ErrorLike | ExternalServiceFields> =>
+            (submits: Observable<ExternalServiceFields>): Observable<ErrorLike | ExternalServiceFields> =>
                 submits.pipe(
                     switchMap(input =>
-                        concat(
-                            [LOADING],
-                            updateExternalService({ input }).pipe(catchError((error: Error) => [asError(error)]))
-                        )
+                        concat(updateExternalService({ input }).pipe(catchError((error: Error) => [asError(error)])))
                     )
                 ),
             []
@@ -83,7 +72,7 @@ export const ExternalServicePage: React.FunctionComponent<Props> = ({
     // repositories page, adding `?repositoriesUpdated` to the query string so that we display
     // a banner at the top of the page.
     useEffect(() => {
-        if (updatedServiceOrError && updatedServiceOrError !== LOADING && !isErrorLike(updatedServiceOrError)) {
+        if (updatedServiceOrError && !isErrorLike(updatedServiceOrError)) {
             if (updatedServiceOrError.warning) {
                 setExternalServiceOrError(updatedServiceOrError)
             } else {
@@ -108,9 +97,7 @@ export const ExternalServicePage: React.FunctionComponent<Props> = ({
         error = updatedServiceOrError
     }
 
-    const externalService =
-        (!isErrorLike(externalServiceOrError) && externalServiceOrError !== LOADING && externalServiceOrError) ||
-        undefined
+    const externalService = (!isErrorLike(externalServiceOrError) && externalServiceOrError) || undefined
 
     let externalServiceCategory = externalService && defaultExternalServices[externalService.kind]
     if (
@@ -143,7 +130,7 @@ export const ExternalServicePage: React.FunctionComponent<Props> = ({
                 <PageTitle title="External service" />
             )}
             <h2>Update synced repositories</h2>
-            {externalServiceOrError === LOADING && <LoadingSpinner className="icon-inline" />}
+            {externalServiceOrError === undefined && <LoadingSpinner className="icon-inline" />}
             {isErrorLike(externalServiceOrError) && (
                 <ErrorAlert className="mb-3" error={externalServiceOrError} history={history} />
             )}
@@ -160,7 +147,7 @@ export const ExternalServicePage: React.FunctionComponent<Props> = ({
                     error={error}
                     warning={externalService.warning}
                     mode="edit"
-                    loading={updatedServiceOrError === LOADING}
+                    loading={updatedServiceOrError === undefined}
                     onSubmit={onSubmit}
                     onChange={onChange}
                     history={history}

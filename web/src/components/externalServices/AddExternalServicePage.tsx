@@ -25,8 +25,6 @@ interface Props extends ThemeProps, TelemetryProps {
     userID?: Scalars['ID']
 }
 
-const LOADING = 'loading' as const
-
 /**
  * Page for adding a single external service.
  */
@@ -48,13 +46,10 @@ export const AddExternalServicePage: React.FunctionComponent<Props> = ({
 
     const [nextSubmit, createdServiceOrError] = useEventObservable(
         useCallback(
-            (
-                submits: Observable<GQL.IAddExternalServiceInput>
-            ): Observable<typeof LOADING | ErrorLike | ExternalServiceFields> =>
+            (submits: Observable<GQL.IAddExternalServiceInput>): Observable<ErrorLike | ExternalServiceFields> =>
                 submits.pipe(
                     switchMap(input =>
                         concat(
-                            [LOADING],
                             addExternalService(
                                 { input: { ...input, namespace: userID ?? null } },
                                 telemetryService
@@ -67,7 +62,7 @@ export const AddExternalServicePage: React.FunctionComponent<Props> = ({
     )
 
     useEffect(() => {
-        if (createdServiceOrError && createdServiceOrError !== LOADING && !isErrorLike(createdServiceOrError)) {
+        if (createdServiceOrError && !isErrorLike(createdServiceOrError)) {
             // Refresh site flags so that global site alerts
             // reflect the latest configuration.
             // eslint-disable-next-line rxjs/no-ignored-subscription
@@ -107,10 +102,7 @@ export const AddExternalServicePage: React.FunctionComponent<Props> = ({
         <div className="add-external-service-page mt-3">
             <PageTitle title="Add repositories" />
             <h2>Add repositories</h2>
-            {createdServiceOrError &&
-            createdServiceOrError !== LOADING &&
-            !isErrorLike(createdServiceOrError) &&
-            createdServiceOrError.warning ? (
+            {createdServiceOrError && !isErrorLike(createdServiceOrError) && createdServiceOrError.warning ? (
                 <div>
                     <div className="mb-3">
                         <ExternalServiceCard
@@ -146,7 +138,7 @@ export const AddExternalServicePage: React.FunctionComponent<Props> = ({
                         mode="create"
                         onSubmit={onSubmit}
                         onChange={onChange}
-                        loading={createdServiceOrError === LOADING}
+                        loading={createdServiceOrError === undefined}
                     />
                 </div>
             )}

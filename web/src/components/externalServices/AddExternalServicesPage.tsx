@@ -21,7 +21,16 @@ interface Props extends ThemeProps, TelemetryProps {
 /**
  * Page for choosing a service kind and variant to add, among the available options.
  */
-export const AddExternalServicesPage: React.FunctionComponent<Props> = props => {
+export const AddExternalServicesPage: React.FunctionComponent<Props> = ({
+    afterCreateRoute,
+    codeHostExternalServices,
+    history,
+    isLightTheme,
+    nonCodeHostExternalServices,
+    routingPrefix,
+    telemetryService,
+    userID,
+}) => {
     const [hasDismissedPrivacyWarning, setHasDismissedPrivacyWarning] = useLocalStorage(
         'hasDismissedCodeHostPrivacyWarning',
         false
@@ -29,11 +38,21 @@ export const AddExternalServicesPage: React.FunctionComponent<Props> = props => 
     const dismissPrivacyWarning = (): void => {
         setHasDismissedPrivacyWarning(true)
     }
-    const id = new URLSearchParams(props.history.location.search).get('id')
+    const id = new URLSearchParams(history.location.search).get('id')
     if (id) {
         const externalService = allExternalServices[id]
         if (externalService) {
-            return <AddExternalServicePage {...props} externalService={externalService} />
+            return (
+                <AddExternalServicePage
+                    afterCreateRoute={afterCreateRoute}
+                    history={history}
+                    isLightTheme={isLightTheme}
+                    routingPrefix={routingPrefix}
+                    telemetryService={telemetryService}
+                    userID={userID}
+                    externalService={externalService}
+                />
+            )
         }
     }
 
@@ -46,7 +65,7 @@ export const AddExternalServicesPage: React.FunctionComponent<Props> = props => 
             <p className="mt-2">Add repositories from one of these code hosts.</p>
             {!hasDismissedPrivacyWarning && (
                 <div className="alert alert-info">
-                    {!props.userID && (
+                    {!userID && (
                         <p>
                             This Sourcegraph installation will never send your code, repository names, file names, or
                             any other specific code data to Sourcegraph.com or any other destination. Your code is kept
@@ -91,17 +110,17 @@ export const AddExternalServicesPage: React.FunctionComponent<Props> = props => 
                     </div>
                 </div>
             )}
-            {Object.entries(props.codeHostExternalServices).map(([id, externalService]) => (
+            {Object.entries(codeHostExternalServices).map(([id, externalService]) => (
                 <div className="add-external-services-page__card" key={id}>
                     <ExternalServiceCard to={getAddURL(id)} {...externalService} />
                 </div>
             ))}
-            {Object.entries(props.nonCodeHostExternalServices).length > 0 && (
+            {Object.entries(nonCodeHostExternalServices).length > 0 && (
                 <>
                     <br />
                     <h2>Other connections</h2>
                     <p className="mt-2">Add connections to non-code-host services.</p>
-                    {Object.entries(props.nonCodeHostExternalServices).map(([id, externalService]) => (
+                    {Object.entries(nonCodeHostExternalServices).map(([id, externalService]) => (
                         <div className="add-external-services-page__card" key={id}>
                             <ExternalServiceCard to={getAddURL(id)} {...externalService} />
                         </div>

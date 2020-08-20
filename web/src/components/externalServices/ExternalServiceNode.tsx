@@ -34,7 +34,6 @@ export const ExternalServiceNode: React.FunctionComponent<ExternalServiceNodePro
                     filter(() => window.confirm(`Delete the external service ${node.displayName}?`)),
                     switchMap(() =>
                         concat(
-                            ['in-progress' as const],
                             from(deleteExternalService(node.id)).pipe(
                                 mapTo(true as const),
                                 catchError((error): [ErrorLike] => [asError(error)])
@@ -70,7 +69,7 @@ export const ExternalServiceNode: React.FunctionComponent<ExternalServiceNodePro
                         type="button"
                         className="btn btn-sm btn-danger test-delete-external-service-button"
                         onClick={nextDeleteClick}
-                        disabled={deletedOrError === 'in-progress'}
+                        disabled={deletedOrError === undefined}
                         data-tooltip="Delete external service"
                     >
                         <DeleteIcon className="icon-inline" />

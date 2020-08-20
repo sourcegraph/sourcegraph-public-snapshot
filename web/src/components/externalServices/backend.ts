@@ -18,8 +18,6 @@ import {
     ExternalServicesResult,
 } from '../../graphql-operations'
 
-const LOADING = 'loading' as const
-
 export const externalServiceFragment = gql`
     fragment ExternalServiceFields on ExternalService {
         id
@@ -59,9 +57,9 @@ export function addExternalService(
 }
 
 export function isExternalService(
-    externalServiceOrError: typeof LOADING | ExternalServiceFields | ErrorLike
+    externalServiceOrError?: ExternalServiceFields | ErrorLike
 ): externalServiceOrError is ExternalServiceFields {
-    return externalServiceOrError !== LOADING && !isErrorLike(externalServiceOrError)
+    return !!externalServiceOrError && !isErrorLike(externalServiceOrError)
 }
 
 export function updateExternalService(
