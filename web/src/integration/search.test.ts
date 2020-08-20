@@ -392,11 +392,11 @@ describe('Search', () => {
                 Search: searchResults,
             })
 
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=literal')
-            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            await driver.page.waitForSelector('.test-search-button', { visible: true })
             await driver.page.keyboard.type(' hello')
             await driver.page.click('.test-search-button')
-            await driver.assertWindowLocation('/search?q=test+hello&patternType=literal')
+            await driver.assertWindowLocation('/search?q=test+hello&patternType=regexp')
         })
     })
 })
