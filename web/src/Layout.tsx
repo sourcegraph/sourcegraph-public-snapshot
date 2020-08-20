@@ -39,6 +39,7 @@ import {
     SmartSearchFieldProps,
     CopyQueryButtonProps,
     RepogroupHomepageProps,
+    OnboardingTourProps,
 } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -77,7 +78,8 @@ export interface LayoutProps
         SmartSearchFieldProps,
         CopyQueryButtonProps,
         VersionContextProps,
-        RepogroupHomepageProps {
+        RepogroupHomepageProps,
+        OnboardingTourProps {
     exploreSections: readonly ExploreSectionDescriptor[]
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
