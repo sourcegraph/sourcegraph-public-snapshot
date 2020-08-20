@@ -37,7 +37,7 @@ import * as H from 'history'
 import { VersionContextProps } from '../../../shared/src/search/util'
 import { RevisionSpec } from '../../../shared/src/util/url'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
-import { BreadcrumbSetters, UseBreadcrumbSetters } from '../components/Breadcrumbs'
+import { BreadcrumbSetters } from '../components/Breadcrumbs'
 
 /** Props passed to sub-routes of {@link RepoRevisionContainer}. */
 export interface RepoRevisionContainerContext
@@ -101,8 +101,6 @@ interface RepoRevisionContainerProps
     history: H.History
 
     globbing: boolean
-
-    useBreadcrumbSetters: UseBreadcrumbSetters
 }
 
 /**
