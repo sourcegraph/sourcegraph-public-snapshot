@@ -16,7 +16,12 @@ func (g repoGroup) Name() string { return g.name }
 func (g repoGroup) Repositories() []string { return repoNamesToStrings(g.repositories) }
 
 func (r *schemaResolver) RepoGroups(ctx context.Context) ([]*repoGroup, error) {
-	groupsByName, err := resolveRepoGroups(ctx)
+	settings, err := decodedViewerFinalSettings(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	groupsByName, err := resolveRepoGroups(settings)
 	if err != nil {
 		return nil, err
 	}

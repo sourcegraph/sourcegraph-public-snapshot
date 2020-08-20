@@ -130,16 +130,14 @@ func alertForQuotesInQueryInLiteralMode(p syntax.ParseTree) *searchAlert {
 // returns 0 repos or fails, it returns false. It is a helper function for
 // raising NoResolvedRepos alerts with suggestions when we know the original
 // query does not contain any repos to search.
-func reposExist(ctx context.Context, options resolveRepoOp) bool {
+func (r *searchResolver) reposExist(ctx context.Context, options resolveRepoOp) bool {
+	options.userSettings = r.userSettings
 	repos, _, _, _, err := resolveRepositories(ctx, options)
 	return err == nil && len(repos) > 0
 }
 
 func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAlert {
-	globbing := false
-	if settings, err := decodedViewerFinalSettings(ctx); err == nil {
-		globbing = getBoolPtr(settings.SearchGlobbing, false)
-	}
+	globbing := getBoolPtr(r.userSettings.SearchGlobbing, false)
 
 	repoFilters, minusRepoFilters := r.query.RegexpPatterns(query.FieldRepo)
 	repoGroupFilters, _ := r.query.StringValues(query.FieldRepoGroup)
@@ -200,7 +198,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			onlyForks:        onlyForks,
 			noForks:          noForks,
 		}
-		if reposExist(ctx, tryRemoveRepoGroup) {
+		if r.reposExist(ctx, tryRemoveRepoGroup) {
 			proposedQueries = []*searchQueryDescription{
 				{
 					description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
@@ -218,7 +216,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			onlyForks:        onlyForks,
 			noForks:          noForks,
 		}
-		if reposExist(ctx, tryAnyRepo) {
+		if r.reposExist(ctx, tryAnyRepo) {
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
 				description: "include repositories satisfying any (not all) of your repo: filters",
 				query:       withoutRepoFields + fmt.Sprintf(" repo:%s", unionRepoFilter),
@@ -255,7 +253,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			onlyForks:        onlyForks,
 			noForks:          noForks,
 		}
-		if reposExist(ctx, tryRemoveRepoGroup) {
+		if r.reposExist(ctx, tryRemoveRepoGroup) {
 			proposedQueries = []*searchQueryDescription{
 				{
 					description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
@@ -294,7 +292,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			onlyForks:        onlyForks,
 			noForks:          noForks,
 		}
-		if reposExist(ctx, tryAnyRepo) {
+		if r.reposExist(ctx, tryAnyRepo) {
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
 				description: "include repositories satisfying any (not all) of your repo: filters",
 				query:       withoutRepoFields + fmt.Sprintf(" repo:%s", unionRepoFilter),
@@ -347,7 +345,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 				minusRepoFilters: minusRepoFilters,
 				noForks:          false,
 			}
-			if reposExist(ctx, tryIncludeForks) {
+			if r.reposExist(ctx, tryIncludeForks) {
 				proposedQueries = append(proposedQueries, &searchQueryDescription{
 					description: "include forked repositories in your query.",
 					query:       r.originalQuery + " fork:yes",
@@ -364,7 +362,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 				noForks:          noForks,
 				onlyArchived:     true,
 			}
-			if reposExist(ctx, tryIncludeArchived) {
+			if r.reposExist(ctx, tryIncludeArchived) {
 				proposedQueries = append(proposedQueries, &searchQueryDescription{
 					description: "include archived repositories in your query.",
 					query:       r.originalQuery + " archived:yes",
@@ -428,7 +426,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 
 	// If globbing is active we return a simple alert for now. The alert is still
 	// helpful but it doesn't contain any proposed queries.
-	if settings, err := decodedViewerFinalSettings(ctx); err == nil && getBoolPtr(settings.SearchGlobbing, false) {
+	if getBoolPtr(r.userSettings.SearchGlobbing, false) {
 		return buildAlert(proposedQueries, description)
 	}
 

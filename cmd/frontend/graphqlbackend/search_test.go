@@ -539,9 +539,6 @@ func TestVersionContext(t *testing.T) {
 	})
 	defer conf.Mock(nil)
 
-	mockDecodedViewerFinalSettings = &schema.Settings{}
-	defer func() { mockDecodedViewerFinalSettings = nil }()
-
 	tcs := []struct {
 		name           string
 		searchQuery    string
@@ -632,6 +629,7 @@ func TestVersionContext(t *testing.T) {
 			resolver := searchResolver{
 				query:          qinfo,
 				versionContext: &tc.versionContext,
+				userSettings:   &schema.Settings{},
 			}
 
 			db.Mocks.Repos.List = func(ctx context.Context, opts db.ReposListOptions) ([]*types.Repo, error) {
