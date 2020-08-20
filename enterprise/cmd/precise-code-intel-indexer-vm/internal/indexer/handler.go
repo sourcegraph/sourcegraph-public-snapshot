@@ -50,7 +50,11 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 	indexAndUploadCommand := []string{
 		"lsif-go",
 		"&&",
-		"src", "-endpoint", fmt.Sprintf(h.options.FrontendURLFromDocker), "lsif", "upload", "-repo", index.RepositoryName, "-commit", index.Commit,
+		fmt.Sprintf("SRC_ENDPOINT=%s", h.options.FrontendURLFromDocker),
+		"src", "lsif", "upload",
+		"-repo", index.RepositoryName,
+		"-commit", index.Commit,
+		"-upload-route", "/.internal-code-intel/lsif/upload",
 	}
 
 	if err := h.commander.Run(
