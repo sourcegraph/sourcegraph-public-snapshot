@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { PageTitle } from '../../../components/PageTitle'
 import {
@@ -38,7 +38,6 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
     queryChangesetSpecs,
     queryChangesetSpecFileDiffs,
 }) => {
-    const [isLoading, setIsLoading] = useState<boolean | Error>(false)
     const spec = useObservable(useMemo(() => fetchCampaignSpecById(specID), [specID, fetchCampaignSpecById]))
 
     if (spec === undefined) {
@@ -67,8 +66,6 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
                 history={history}
                 specID={spec.id}
                 campaign={spec.appliesToCampaign}
-                isLoading={isLoading}
-                setIsLoading={setIsLoading}
                 viewerCanAdminister={spec.viewerCanAdminister}
             />
             <CampaignDescription history={history} description={spec.description.description} className="mb-3" />
@@ -79,14 +76,6 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
                 isLightTheme={isLightTheme}
                 queryChangesetSpecs={queryChangesetSpecs}
                 queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
-            />
-            <CreateUpdateCampaignAlert
-                history={history}
-                specID={spec.id}
-                campaign={spec.appliesToCampaign}
-                isLoading={isLoading}
-                setIsLoading={setIsLoading}
-                viewerCanAdminister={spec.viewerCanAdminister}
             />
         </>
     )
