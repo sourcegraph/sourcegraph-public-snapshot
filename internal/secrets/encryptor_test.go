@@ -10,7 +10,7 @@ import (
 
 var messageToEncrypt = []byte("I Madam. I made radio, So I dared. Am I mad? Am I?")
 
-func TestRandomAESKey(t *testing.T) {
+func TestGenerateRandomAESKey(t *testing.T) {
 	key, err := generateRandomAESKey()
 	if err != nil {
 		t.Fatal(err)
