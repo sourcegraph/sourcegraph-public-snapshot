@@ -1431,6 +1431,26 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceO
 	return resultTypes
 }
 
+func (r *searchResolver) determineReposForGlobbing(ctx context.Context, tr *trace.Trace, start time.Time) (resolved resolvedRepositories, res *SearchResultsResolver, err error) {
+	originalQuery := r.query.(*query.AndOrQuery).Query
+	tryQuery := query.MapField(
+		r.query.(*query.AndOrQuery).Query,
+		query.FieldRepo,
+		func(value string, negated bool, annotation query.Annotation) query.Node {
+			value = strings.TrimSuffix(value, ".*?$")
+			value += "$"
+			return query.Parameter{Field: "repo", Value: value, Negated: negated, Annotation: annotation}
+		})
+	r.query.(*query.AndOrQuery).Query = tryQuery
+	resolved, res, err = r.determineRepos(ctx, tr, start)
+	if len(resolved.repoRevs) > 0 {
+		return resolved, res, err
+	}
+	// No exact matches, showing results for fuzzy instead...
+	r.query.(*query.AndOrQuery).Query = originalQuery
+	return r.determineRepos(ctx, tr, start)
+}
+
 func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (resolved resolvedRepositories, res *SearchResultsResolver, err error) {
 	resolved, err = r.resolveRepositories(ctx, nil)
 	if err != nil {
@@ -1503,7 +1523,13 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 	defer cancel()
 
-	resolved, alertResult, err := r.determineRepos(ctx, tr, start)
+	var resolved resolvedRepositories
+	var alertResult *SearchResultsResolver
+	if settings, err := decodedViewerFinalSettings(ctx); err == nil && getBoolPtr(settings.SearchGlobbing, false) {
+		resolved, alertResult, err = r.determineReposForGlobbing(ctx, tr, start)
+	} else {
+		resolved, alertResult, err = r.determineRepos(ctx, tr, start)
+	}
 	if err != nil {
 		return nil, err
 	}

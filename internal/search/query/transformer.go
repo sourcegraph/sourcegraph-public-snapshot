@@ -245,6 +245,7 @@ func mapGlobToRegex(nodes []Node) ([]Node, error) {
 		case FieldFile, FieldRepoHasFile:
 			if ContainsNoGlobSyntax(value) {
 				value = fuzzifyGlobPattern(value)
+				annotation.Labels.set(FuzzyRepoGlobPattern)
 			}
 			value, err = globToRegex(value)
 		}

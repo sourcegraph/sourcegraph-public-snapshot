@@ -91,12 +91,12 @@ func (s *PatternMapper) MapPattern(mapper Mapper, value string, negated bool, an
 type FieldMapper struct {
 	BaseMapper
 	field    string
-	callback func(value string, negated bool) Node
+	callback func(value string, negated bool, annotation Annotation) Node
 }
 
 func (s *FieldMapper) MapParameter(mapper Mapper, field, value string, negated bool, annotation Annotation) Node {
 	if s.field == field {
-		return s.callback(value, negated)
+		return s.callback(value, negated, annotation)
 	}
 	return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 }
@@ -129,7 +129,7 @@ func MapPattern(nodes []Node, callback func(value string, negated bool, annotati
 // whose field matches the field argument, substituting them for callback's
 // return value. callback supplies the node's value, and whether the value is
 // negated.
-func MapField(nodes []Node, field string, callback func(value string, negated bool) Node) []Node {
+func MapField(nodes []Node, field string, callback func(value string, negated bool, annotation Annotation) Node) []Node {
 	mapper := &FieldMapper{callback: callback, field: field}
 	return mapper.MapNodes(mapper, nodes)
 }
