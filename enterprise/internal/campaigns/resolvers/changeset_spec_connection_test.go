@@ -43,7 +43,7 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 	repos := make([]*repos.Repo, 0, 3)
 	for i := 0; i < cap(repos); i++ {
 		name := fmt.Sprintf("github.com/sourcegraph/repo-%d", i)
-		r := newGitHubTestRepo(name, newGithubExternalService(t, reposStore))
+		r := newGitHubTestRepo(name, newGitHubExternalService(t, reposStore))
 		if err := reposStore.InsertRepos(ctx, r); err != nil {
 			t.Fatal(err)
 		}
