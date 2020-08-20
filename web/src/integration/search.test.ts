@@ -384,4 +384,18 @@ describe('Search', () => {
             await driver.assertWindowLocation('/search?q=test&patternType=literal')
         })
     })
+
+    describe('Search button', () => {
+        test('Clicking search button executes search', async () => {
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
+                Search: searchResults,
+            })
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test')
+            await driver.page.waitForSelector('.test-search-button', { visible: true })
+            await driver.page.click('.test-search-button')
+            await driver.assertWindowLocation('/search?q=test&patternType=regexp')
+        })
+    })
 })
