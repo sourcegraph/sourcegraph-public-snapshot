@@ -19,13 +19,7 @@ import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 import Shepherd from 'shepherd.js'
-import {
-    defaultTourOptions,
-    generateStepTooltip,
-    HAS_SEEN_TOUR_KEY,
-    HAS_CANCELLED_TOUR_KEY,
-} from './SearchOnboardingTour'
-import { useLocalStorage } from '../../util/useLocalStorage'
+import { defaultTourOptions, generateStepTooltip } from './SearchOnboardingTour'
 import { SearchPatternType } from '../../graphql-operations'
 
 interface Props
