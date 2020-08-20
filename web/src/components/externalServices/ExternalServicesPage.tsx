@@ -66,13 +66,6 @@ export const ExternalServicesPage: React.FunctionComponent<Props> = ({
         [userID, activation]
     )
 
-    const nodeProps: Omit<ExternalServiceNodeProps, 'node'> = {
-        onDidUpdate: onDidUpdateExternalServices,
-        history,
-        routingPrefix,
-        afterDeleteRoute,
-    }
-
     if (noExternalServices === true) {
         return <Redirect to={`${routingPrefix}/external-services/new`} />
     }
@@ -95,7 +88,12 @@ export const ExternalServicesPage: React.FunctionComponent<Props> = ({
                 pluralNoun="external services"
                 queryConnection={queryConnection}
                 nodeComponent={ExternalServiceNode}
-                nodeComponentProps={nodeProps}
+                nodeComponentProps={{
+                    onDidUpdate: onDidUpdateExternalServices,
+                    history,
+                    routingPrefix,
+                    afterDeleteRoute,
+                }}
                 hideSearch={true}
                 noSummaryIfAllNodesVisible={true}
                 cursorPaging={true}

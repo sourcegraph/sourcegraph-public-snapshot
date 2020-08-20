@@ -32,6 +32,8 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = {
         {
             label: 'Manage repositories',
             to: '/external-services',
+            // TODO: check site config.
+            condition: () => true,
         },
     ],
 }
