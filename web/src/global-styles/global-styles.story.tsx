@@ -542,14 +542,34 @@ add(
             </p>
 
             <h2>Disabled</h2>
-            <p>
-                <button type="button" className="btn btn-primary" disabled={true}>
-                    I am disabled
-                </button>{' '}
-                <button type="button" className="btn btn-secondary" disabled={true}>
-                    I am disabled
-                </button>
-            </p>
+            <div className="mb-2">
+                {semanticColors.map(semantic => (
+                    <React.Fragment key={semantic}>
+                        <button
+                            type="button"
+                            key={semantic}
+                            className={classNames('btn', `btn-${semantic}`)}
+                            disabled={true}
+                        >
+                            Disabled
+                        </button>{' '}
+                    </React.Fragment>
+                ))}
+            </div>
+            <div className="mb-2">
+                {semanticColors.map(semantic => (
+                    <React.Fragment key={semantic}>
+                        <button
+                            type="button"
+                            key={semantic}
+                            className={classNames('btn', `btn-outline-${semantic}`)}
+                            disabled={true}
+                        >
+                            Disabled
+                        </button>{' '}
+                    </React.Fragment>
+                ))}
+            </div>
 
             <h2>Links</h2>
             <p>Links can be made to look like buttons too.</p>
