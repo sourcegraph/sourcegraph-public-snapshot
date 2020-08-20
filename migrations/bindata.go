@@ -93,7 +93,7 @@
 // 1528395695_lsif_remove_commits.down.sql (1.075kB)
 // 1528395695_lsif_remove_commits.up.sql (734B)
 // 1528395696_repo_name_index.down.sql (53B)
-// 1528395696_repo_name_index.up.sql (198B)
+// 1528395696_repo_name_index.up.sql (340B)
 // 1528395697_add_changeset_state_machine.down.sql (767B)
 // 1528395697_add_changeset_state_machine.up.sql (2.213kB)
 // 1528395698_add_sync_time_and_user_id_to_external_services.down.sql (335B)
@@ -110,6 +110,8 @@
 // 1528395703_soft_delete_external_service_upon_user_deletion.up.sql (688B)
 // 1528395704_remove_owner_on_campaign_delete.down.sql (261B)
 // 1528395704_remove_owner_on_campaign_delete.up.sql (288B)
+// 1528395705_remove_bad_migration.down.sql (14B)
+// 1528395705_remove_bad_migration.up.sql (387B)
 
 package migrations
 
@@ -2038,7 +2040,7 @@ func _1528395696_repo_name_indexDownSql() (*asset, error) {
 	return a, nil
 }
 
-var __1528395696_repo_name_indexUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\x8d\x41\x6a\x84\x30\x18\x46\xf7\x73\x8a\x8f\x59\xcd\x2c\xf4\x00\x76\x55\xd2\xb4\x04\x24\x01\x8d\x60\x57\x12\xe3\x8f\x84\xa6\x89\xc4\x5f\xea\xf1\x8b\x07\x98\xed\xe3\x3d\x5e\x55\x41\x67\xa6\x06\xa2\x93\xef\x56\x42\xe9\x0f\x39\x42\x18\x2d\x86\xae\x93\xda\xb6\xdf\xf0\x2e\xa5\xcc\x28\x47\x42\x48\x7b\x58\x08\x0e\x5c\x5c\xda\x9d\xe7\x90\x13\xe6\x98\xfd\xcf\xed\x75\xaf\x3e\xa1\x8d\x85\x1c\x55\x6f\x7b\x14\xda\xf2\x94\xdc\x2f\x4d\x61\x39\x61\x34\xb6\x63\x8e\xc1\xd7\x17\xc7\xd0\x2b\xfd\x85\x99\x0b\x11\x1e\x31\xff\x51\x79\x5c\x6a\xd3\x30\x9d\xfc\x84\x30\x6d\x7b\x4d\xb6\x75\xf2\x8e\x5d\xcc\x6b\x7d\x17\xf7\xe7\xdb\xed\x3f\x00\x00\xff\xff\xb3\x7e\x5b\x04\xc6\x00\x00\x00")
+var __1528395696_repo_name_indexUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\x8f\xc1\x6a\xea\x40\x18\x85\xf7\x3e\xc5\xc1\x95\xc2\x4d\x88\x11\xb9\xd7\xdc\x95\xa4\x69\x09\xc8\x04\x4c\x04\xbb\x0a\x7f\x66\x7e\xd2\xa1\x71\x26\x9d\x99\xa8\x8f\x5f\xe2\xa2\xbb\x6e\x0f\x1f\xe7\x3b\x27\x8a\x20\x6c\xe0\x0c\xf9\xa9\x38\x34\x05\x4a\xf1\x52\x5c\x90\x57\x22\x3f\x9f\x4e\x85\x68\x8e\xef\x90\x64\x8c\x0d\x70\x93\x81\x36\x5e\x2b\x06\x21\x38\x32\x9e\x64\xd0\xd6\xa0\x1b\xac\xfc\x5c\x2c\xa2\x28\xc2\x61\xea\x91\x26\x7f\x90\x26\x69\x92\xa1\xf9\xd0\x1e\x57\xdd\x3b\x7a\x72\x77\xf2\x70\xac\x48\x06\x56\x20\x0f\x1d\x20\x69\xf2\xac\x30\x8d\xbd\x23\xc5\x50\x4c\x6a\x2e\xf3\xd0\x06\xb7\x6d\xbc\xd9\xc7\x49\x8c\x9a\x19\x34\x78\x8b\xcd\x2e\xfd\xb7\xdd\xef\xfe\x26\xbb\xd6\xf1\xd5\xde\xb8\xed\x48\xb5\x3f\x82\x78\x1a\x63\xff\x35\x3c\x87\xfc\xfe\xa6\x7c\x85\xa8\x1a\x14\x97\xb2\x6e\x6a\x38\x1e\x6d\x6b\xe8\xca\xad\x56\x0f\x54\x02\xe3\xd4\x0d\x5a\xc6\x73\x8e\x73\x5d\x8a\x37\x74\xc1\x31\x63\x35\xd8\x3b\xbb\xd5\x8c\x66\x59\xe0\x47\x58\x23\xaf\x8e\xc7\x59\x32\xf6\xad\xa4\x40\x83\xed\xe3\x65\xbe\x5c\xff\x5f\x7c\x07\x00\x00\xff\xff\xbb\xc8\xee\x41\x54\x01\x00\x00")
 
 func _1528395696_repo_name_indexUpSqlBytes() ([]byte, error) {
 	return bindataRead(
@@ -2054,7 +2056,7 @@ func _1528395696_repo_name_indexUpSql() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "1528395696_repo_name_index.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x8d, 0xba, 0x1f, 0xd2, 0x5f, 0x2a, 0xfe, 0x6e, 0xe8, 0x7a, 0x7, 0x91, 0x4e, 0xe6, 0x13, 0xc5, 0xd7, 0xfb, 0x72, 0x9f, 0xe7, 0x85, 0x7d, 0xde, 0x9f, 0x6e, 0x81, 0x8d, 0x37, 0xfd, 0xbf, 0x14}}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xe9, 0xba, 0xbd, 0x56, 0xa6, 0x22, 0x45, 0xb6, 0xe5, 0xee, 0xfa, 0x48, 0x60, 0xd4, 0x73, 0xb0, 0xab, 0xe0, 0x1d, 0x29, 0x2a, 0x1, 0x0, 0xee, 0x6b, 0x25, 0x8d, 0xb4, 0xac, 0xdd, 0x23, 0x8a}}
 	return a, nil
 }
 
@@ -2378,6 +2380,46 @@ func _1528395704_remove_owner_on_campaign_deleteUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395705_remove_bad_migrationDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\xf6\xf7\xf5\xf5\x0c\xb1\x06\x04\x00\x00\xff\xff\x9c\x68\x80\xd7\x0e\x00\x00\x00")
+
+func _1528395705_remove_bad_migrationDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395705_remove_bad_migrationDownSql,
+		"1528395705_remove_bad_migration.down.sql",
+	)
+}
+
+func _1528395705_remove_bad_migrationDownSql() (*asset, error) {
+	bytes, err := _1528395705_remove_bad_migrationDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395705_remove_bad_migration.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x49, 0xba, 0xb2, 0x25, 0x1d, 0x9e, 0x96, 0xfa, 0xb9, 0x5e, 0x10, 0xdd, 0xb8, 0xc6, 0x3d, 0xa, 0x45, 0xbb, 0x91, 0xd4, 0x96, 0xea, 0xdf, 0x43, 0x96, 0xac, 0x3c, 0xce, 0xa3, 0xe8, 0xa3, 0x4e}}
+	return a, nil
+}
+
+var __1528395705_remove_bad_migrationUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x64\x90\xc1\x6e\xe2\x30\x10\x86\xef\x79\x8a\xff\xb8\x2b\x81\xb5\x2c\x02\x81\xb8\xed\x42\xab\x1c\x80\xaa\x50\x89\x1b\x9a\xc4\xd3\xd8\xc2\xb1\xd3\xb1\x13\xc8\xdb\x57\x69\x7b\xa0\xea\x03\xcc\xf7\x7d\xf3\xff\xdb\x3c\xe6\xbb\x55\x96\x8d\xc7\x78\xf1\x3a\x70\x44\x32\x8c\x82\x34\x6a\x5b\x09\x25\x1b\x3c\x26\xb3\xbf\x8b\xe9\x72\x36\x5f\xce\xcf\xc2\x4d\x38\x7b\xaa\xf9\x6c\xbd\xe6\x9b\x6a\x1b\x15\xdf\x1c\xac\x87\xe6\xc6\x85\xbe\x66\x9f\x06\x04\x25\x18\xd2\xb0\x09\x12\x9c\x63\x8d\xd0\x26\x14\xfc\x1a\x84\x07\x55\x37\x55\x93\xa5\x9a\xe0\x4a\x11\xc2\x8e\x29\xb2\xc6\xaf\x46\x6c\x4d\x62\x5d\x8f\x18\x5a\x29\xb9\x12\x6a\x8c\x2a\x43\x3d\xc2\x65\x11\x55\xac\x34\x77\x2a\x48\x35\x02\x79\x8d\x90\x0c\x0b\xac\x4f\x2c\x9e\xdc\x37\xff\x18\x45\x9b\x06\x0f\xb9\x18\x90\x02\x2e\xcc\x0d\xca\xe0\xa3\x8d\x89\x7d\xd9\x0f\xc1\x9f\xf7\x3f\xb2\x6b\xea\x61\xa8\x63\x08\xf9\xaf\xce\x3f\xb8\x1a\x5b\x9a\x8f\x8f\x92\xb1\x11\x45\x5b\xc1\xd9\x0b\x23\xb2\x74\x2c\x83\xe9\x8e\xa3\x7e\x67\xeb\xe7\xfd\x13\xf2\xdd\x7a\x73\x42\xfe\x80\xcd\x29\x3f\x1c\x0f\xb8\xdb\x4e\xdf\x56\x59\xf6\x7f\xbf\xdd\xe6\xc7\x55\xf6\x1e\x00\x00\xff\xff\x8a\xc7\x02\x39\x83\x01\x00\x00")
+
+func _1528395705_remove_bad_migrationUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395705_remove_bad_migrationUpSql,
+		"1528395705_remove_bad_migration.up.sql",
+	)
+}
+
+func _1528395705_remove_bad_migrationUpSql() (*asset, error) {
+	bytes, err := _1528395705_remove_bad_migrationUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395705_remove_bad_migration.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x68, 0x9a, 0x5d, 0x8d, 0x12, 0xe8, 0xa8, 0xa4, 0x21, 0x48, 0xbf, 0xa0, 0xfe, 0xd1, 0xa0, 0x9e, 0x6b, 0x6f, 0x3, 0xd, 0x1c, 0x75, 0xc6, 0xa2, 0xc, 0x65, 0x62, 0x18, 0xe6, 0x22, 0x9a, 0x6f}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2579,6 +2621,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395703_soft_delete_external_service_upon_user_deletion.up.sql":       _1528395703_soft_delete_external_service_upon_user_deletionUpSql,
 	"1528395704_remove_owner_on_campaign_delete.down.sql":                     _1528395704_remove_owner_on_campaign_deleteDownSql,
 	"1528395704_remove_owner_on_campaign_delete.up.sql":                       _1528395704_remove_owner_on_campaign_deleteUpSql,
+	"1528395705_remove_bad_migration.down.sql":                                _1528395705_remove_bad_migrationDownSql,
+	"1528395705_remove_bad_migration.up.sql":                                  _1528395705_remove_bad_migrationUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2735,6 +2779,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395703_soft_delete_external_service_upon_user_deletion.up.sql":       {_1528395703_soft_delete_external_service_upon_user_deletionUpSql, map[string]*bintree{}},
 	"1528395704_remove_owner_on_campaign_delete.down.sql":                     {_1528395704_remove_owner_on_campaign_deleteDownSql, map[string]*bintree{}},
 	"1528395704_remove_owner_on_campaign_delete.up.sql":                       {_1528395704_remove_owner_on_campaign_deleteUpSql, map[string]*bintree{}},
+	"1528395705_remove_bad_migration.down.sql":                                {_1528395705_remove_bad_migrationDownSql, map[string]*bintree{}},
+	"1528395705_remove_bad_migration.up.sql":                                  {_1528395705_remove_bad_migrationUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
