@@ -308,7 +308,10 @@ func (r *externalServiceConnectionResolver) Nodes(ctx context.Context) ([]*exter
 }
 
 func (r *externalServiceConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	count, err := db.ExternalServices.Count(ctx, r.opt)
+	opt := r.opt
+	opt.AfterID = 0
+	opt.LimitOffset = nil
+	count, err := db.ExternalServices.Count(ctx, opt)
 	return int32(count), err
 }
 

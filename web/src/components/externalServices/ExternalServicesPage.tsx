@@ -56,9 +56,11 @@ export class ExternalServicesPage extends React.PureComponent<Props, State> {
     private queryExternalServices = (
         args: FilteredConnectionQueryArgs
     ): Observable<ExternalServicesResult['externalServices']> =>
-        queryExternalServices({ first: args.first ?? null, namespace: this.props.userID ?? null }).pipe(
-            tap(externalServices => this.completeConnectedCodeHostActivation(externalServices))
-        )
+        queryExternalServices({
+            first: args.first ?? null,
+            after: args.after ?? null,
+            namespace: this.props.userID ?? null,
+        }).pipe(tap(externalServices => this.completeConnectedCodeHostActivation(externalServices)))
 
     public render(): JSX.Element | null {
         const nodeProps: Omit<ExternalServiceNodeProps, 'node'> = {
@@ -93,6 +95,7 @@ export class ExternalServicesPage extends React.PureComponent<Props, State> {
                     nodeComponentProps={nodeProps}
                     hideSearch={true}
                     noSummaryIfAllNodesVisible={true}
+                    cursorPaging={true}
                     updates={this.updates}
                     history={this.props.history}
                     location={this.props.location}

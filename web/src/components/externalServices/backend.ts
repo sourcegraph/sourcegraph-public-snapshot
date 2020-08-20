@@ -137,13 +137,14 @@ export function queryExternalServices(
 ): Observable<ExternalServicesResult['externalServices']> {
     return requestGraphQL<ExternalServicesResult, ExternalServicesVariables>({
         request: gql`
-            query ExternalServices($first: Int, $namespace: ID) {
-                externalServices(first: $first, namespace: $namespace) {
+            query ExternalServices($first: Int, $after: String, $namespace: ID) {
+                externalServices(first: $first, after: $after, namespace: $namespace) {
                     nodes {
                         ...ListExternalServiceFields
                     }
                     totalCount
                     pageInfo {
+                        endCursor
                         hasNextPage
                     }
                 }
