@@ -105,7 +105,7 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
             },
             {
                 value: 'rev',
-                description: 'revision syntax',
+                description: 'repository revision (branch, commit hash, or tag), ',
             },
         ].map(
             assign({
