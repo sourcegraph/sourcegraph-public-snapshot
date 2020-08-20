@@ -338,9 +338,18 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
     return (
         <div className="repo-container test-repo-container w-100 d-flex flex-column">
+            <RepoHeader
+                {...props}
+                actionButtons={props.repoHeaderActionButtons}
+                revision={revision}
+                repo={repoOrError}
+                resolvedRev={resolvedRevisionOrError}
+                onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
+            />
             <RepoHeaderContributionPortal
                 position="right"
                 priority={2}
+                {...repoHeaderContributionsLifecycleProps}
                 element={
                     <GoToCodeHostAction
                         key="go-to-code-host"
@@ -354,14 +363,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                         externalLinks={externalLinks}
                     />
                 }
-            />
-            <RepoHeader
-                {...props}
-                actionButtons={props.repoHeaderActionButtons}
-                revision={revision}
-                repo={repoOrError}
-                resolvedRev={resolvedRevisionOrError}
-                onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
             />
             <ErrorBoundary location={props.location}>
                 <Switch>
