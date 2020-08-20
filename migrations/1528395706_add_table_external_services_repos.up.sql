@@ -6,6 +6,24 @@ CREATE TABLE IF NOT EXISTS external_service_repos (
     clone_url text NOT NULL
 );
 
+-- Lock the repo table before running the migration.
+LOCK TABLE ONLY repo IN EXCLUSIVE MODE;
+
+
+-- Mark the sources columns as read-only using a trigger.
+CREATE FUNCTION make_repo_sources_column_read_only() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+        IF (OLD.sources != NEW.sources) THEN
+            RAISE EXCEPTION 'sources is read-only';
+        END IF;
+
+        RETURN OLD;
+    END;
+$$;
+CREATE TRIGGER trig_read_only_repo_sources_column BEFORE UPDATE OF sources ON repo FOR EACH ROW EXECUTE PROCEDURE make_repo_sources_column_read_only();
+
 -- Migrate repo.sources column content to the external_service_repos table.
 -- Each repo.sources value is a jsonb containing one or more source.
 -- Each source must be extracted as a single row in the external_service_repos table.
@@ -18,7 +36,7 @@ DECLARE
    _sources jsonb;
 BEGIN
     FOR _repo_id, _sources IN
-        SELECT id, sources FROM repo
+        SELECT id, sources FROM repo WHERE deleted_at IS NULL
     LOOP
         FOR _key, _value IN
             SELECT * FROM jsonb_each_text(_sources)
@@ -38,8 +56,6 @@ ALTER TABLE ONLY external_service_repos
 
 ALTER TABLE ONLY external_service_repos
     ADD CONSTRAINT external_service_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE;
-
-ALTER TABLE repo DROP COLUMN IF EXISTS sources;
 
 CREATE FUNCTION delete_repo_ref_on_external_service_repos() RETURNS trigger
     LANGUAGE plpgsql
