@@ -9,6 +9,16 @@
 
 All notable changes to `src-cli` are documented in this file.
 
+## 3.18.0
+
+### Added
+
+- Add `-dump-requests` as an option to all commands that interact with the Sourcegraph API. [#266](https://github.com/sourcegraph/src-cli/pull/266)
+
+### Changed
+
+- Reworked the `src campaigns` family of commands to [align with the new spec-based workflow](https://docs.sourcegraph.com/user/campaigns). Most notably, campaigns are now created and applied using the new `src campaigns apply` command, and use [the new YAML spec format](https://docs.sourcegraph.com/user/campaigns#creating-a-campaign). [#260](https://github.com/sourcegraph/src-cli/pull/260)
+
 ## 3.17.1
 
 ### Added
