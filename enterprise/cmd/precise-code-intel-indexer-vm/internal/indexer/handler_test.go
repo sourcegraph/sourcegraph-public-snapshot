@@ -51,7 +51,7 @@ func TestHandle(t *testing.T) {
 			"git -C /tmp/testing init",
 			"git -C /tmp/testing -c protocol.version=2 fetch https://indexer:hunter2@sourcegraph.test:1234/.internal-code-intel/git/github.com/sourcegraph/sourcegraph e2249f2173e8ca0c8c2541644847e7bf01aaef4a",
 			"git -C /tmp/testing checkout e2249f2173e8ca0c8c2541644847e7bf01aaef4a",
-			"docker run --rm -v /tmp/testing:/data -w /data sourcegraph/lsif-go:latest bash -c lsif-go && src -endpoint https://sourcegraph.test:5432 lsif upload -repo github.com/sourcegraph/sourcegraph -commit e2249f2173e8ca0c8c2541644847e7bf01aaef4a",
+			"docker run --rm -v /tmp/testing:/data -w /data sourcegraph/lsif-go:latest bash -c lsif-go && SRC_ENDPOINT=https://indexer:hunter2@sourcegraph.test:5432 src lsif upload -repo github.com/sourcegraph/sourcegraph -commit e2249f2173e8ca0c8c2541644847e7bf01aaef4a -upload-route /.internal-code-intel/lsif/upload",
 		}
 
 		calls := commander.RunFunc.History()
