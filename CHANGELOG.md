@@ -17,6 +17,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- User satisfaction/NPS surveys will now correctly provide a range from 0–10, rather than 0–9. [#13163](https://github.com/sourcegraph/sourcegraph/pull/13163)
+
 ### Removed
 
 - The smartSearchField feature is now always enabled. The `experimentalFeatures.smartSearchField` settings option has been removed.
