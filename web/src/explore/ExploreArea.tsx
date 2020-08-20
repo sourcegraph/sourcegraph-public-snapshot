@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SettingsCascadeOrError } from '../../../shared/src/settings/settings'
@@ -8,7 +8,7 @@ import { ComponentDescriptor } from '../util/contributions'
 import { PatternTypeProps } from '../search'
 import { ThemeProps } from '../../../shared/src/theme'
 import { PageHeader } from '../components/PageHeader'
-import { Breadcrumbs, BreadcrumbsProps } from '../components/Breadcrumbs'
+import { Breadcrumbs, BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
 import CompassOutlineIcon from 'mdi-react/CompassOutlineIcon'
 
 /**
@@ -17,7 +17,8 @@ import CompassOutlineIcon from 'mdi-react/CompassOutlineIcon'
 export interface ExploreAreaSectionContext
     extends ExtensionsControllerProps,
         ThemeProps,
-        Omit<PatternTypeProps, 'setPatternType'> {
+        Omit<PatternTypeProps, 'setPatternType'>,
+        BreadcrumbSetters {
     /** The currently authenticated user. */
     authenticatedUser: GQL.IUser | null
 
@@ -43,26 +44,41 @@ interface ExploreAreaProps extends ExploreAreaSectionContext, BreadcrumbsProps {
  * to expose information at a glance and make it easy to navigate to features (without requiring them to add a link
  * on the space-constrained global nav).
  */
-export const ExploreArea: React.FunctionComponent<ExploreAreaProps> = props => {
+export const ExploreArea: React.FunctionComponent<ExploreAreaProps> = ({
+    extensionsController,
+    authenticatedUser,
+    viewerSubject,
+    settingsCascade,
+    isLightTheme,
+    location,
+    history,
+    patternType,
+    exploreSections,
+    breadcrumbs,
+    useBreadcrumb,
+}) => {
     useEffect(() => eventLogger.logViewEvent('Explore'), [])
 
+    const childBreadcrumbSetters = useBreadcrumb(useMemo(() => ({ key: 'explore', element: <>Explore</> }), []))
+
     const context: ExploreAreaSectionContext = {
-        extensionsController: props.extensionsController,
-        authenticatedUser: props.authenticatedUser,
-        viewerSubject: props.viewerSubject,
-        settingsCascade: props.settingsCascade,
-        isLightTheme: props.isLightTheme,
-        location: props.location,
-        history: props.history,
-        patternType: props.patternType,
+        extensionsController,
+        authenticatedUser,
+        viewerSubject,
+        settingsCascade,
+        isLightTheme,
+        location,
+        history,
+        patternType,
+        ...childBreadcrumbSetters,
     }
 
     return (
         <div className="explore-area w-100 web-content">
-            <Breadcrumbs breadcrumbs={props.breadcrumbs} />
+            <Breadcrumbs breadcrumbs={breadcrumbs} />
             <div className="container">
                 <PageHeader title="Explore" icon={CompassOutlineIcon} />
-                {props.exploreSections.map(
+                {exploreSections.map(
                     ({ condition = () => true, render }, index) =>
                         condition(context) && (
                             <div className="mb-5" key={index}>
