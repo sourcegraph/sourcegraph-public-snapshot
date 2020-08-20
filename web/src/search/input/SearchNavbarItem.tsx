@@ -54,16 +54,12 @@ function createStructuralSearchTourTooltip(): HTMLElement {
  * The search item in the navbar
  */
 export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) => {
-    const onSubmit = useCallback((): void => {
-        submitSearch({ ...props, query: props.navbarSearchState.query, source: 'nav' })
-    }, [props])
-
-    const onFormSubmit = useCallback(
-        () => (event: React.FormEvent): void => {
-            event.preventDefault()
-            onSubmit()
+    const onSubmit = useCallback(
+        (event?: React.FormEvent): void => {
+            event?.preventDefault()
+            submitSearch({ ...props, query: props.navbarSearchState.query, source: 'nav' })
         },
-        [onSubmit]
+        [props]
     )
 
     const tour = useMemo(() => new Shepherd.Tour(defaultTourOptions), [])
@@ -111,7 +107,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
     return (
         <Form
             className="search--navbar-item d-flex align-items-flex-start flex-grow-1 flex-shrink-past-contents"
-            onSubmit={onFormSubmit}
+            onSubmit={onSubmit}
         >
             <LazyMonacoQueryInput
                 {...props}
