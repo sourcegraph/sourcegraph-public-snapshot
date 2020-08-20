@@ -1,4 +1,4 @@
-import mkdirp from 'mkdirp-promise'
+import { mkdir } from 'mz/fs'
 import * as path from 'path'
 import * as puppeteer from 'puppeteer'
 import { afterEach } from 'mocha'
@@ -31,7 +31,7 @@ async function takeScreenshot({
     screenshotDir: string
     testName: string
 }): Promise<void> {
-    await mkdirp(screenshotDir)
+    await mkdir(screenshotDir, { recursive: true })
     const fileName = testName.replace(/\W/g, '_') + '.png'
     const filePath = path.join(screenshotDir, fileName)
     const screenshot = await page.screenshot({ path: filePath })
