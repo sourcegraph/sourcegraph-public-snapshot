@@ -223,15 +223,13 @@ func ContainsNoGlobSyntax(value string) bool {
 	return !globSyntax.MatchString(value)
 }
 
+var gitHubRepoPath = lazyregexp.New(`github\.com\/([a-z\d]+-)*[a-z\d]+\/(.+)`)
+
 // LooksLikeGitHubRepo returns whether string value looks like a valid
 // GitHub repo path. This condition is used to guess whether we should
 // make a pattern fuzzy, or try it as an exact match.
 func LooksLikeGitHubRepo(value string) bool {
-	result, err := regexp.MatchString(`github\.com\/([a-z\d]+-)*[a-z\d]+\/(.+)`, value)
-	if err != nil {
-		panic(err)
-	}
-	return result
+	return gitHubRepoPath.MatchString(value)
 }
 
 func fuzzifyGlobPattern(value string) string {
