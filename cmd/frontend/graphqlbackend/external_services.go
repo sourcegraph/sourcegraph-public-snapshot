@@ -97,31 +97,43 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 	return res, nil
 }
 
-type UpdateExternalServiceInput struct {
+type updateExternalServiceArgs struct {
+	Input updateExternalServiceInput
+}
+
+type updateExternalServiceInput struct {
 	ID          graphql.ID
 	DisplayName *string
 	Config      *string
 }
 
-func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
-	Input UpdateExternalServiceInput
-}) (*externalServiceResolver, error) {
-	// 🚨 SECURITY: Only site admins are allowed to update the user.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
-	externalServiceID, err := unmarshalExternalServiceID(args.Input.ID)
-	if err != nil {
-		return nil, err
-	}
-
+func (*schemaResolver) UpdateExternalService(ctx context.Context, args *updateExternalServiceArgs) (*externalServiceResolver, error) {
 	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("updating external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 
+	id, err := unmarshalExternalServiceID(args.Input.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	es, err := db.ExternalServices.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Only site admins may update all or a user's external services.
+	// Otherwise, the authenticated user can only update external services under the same namespace.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		if es.NamespaceUserID == nil {
+			return nil, err
+		} else if actor.FromContext(ctx).UID != *es.NamespaceUserID {
+			return nil, errors.New("the authenticated user does not have access to this external service")
+		}
+	}
+
 	if args.Input.Config != nil && strings.TrimSpace(*args.Input.Config) == "" {
-		return nil, fmt.Errorf("blank external service configuration is invalid (must be valid JSONC)")
+		return nil, errors.New("blank external service configuration is invalid (must be valid JSONC)")
 	}
 
 	ps := conf.Get().AuthProviders
@@ -129,17 +141,18 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 		DisplayName: args.Input.DisplayName,
 		Config:      args.Input.Config,
 	}
-	if err := db.ExternalServices.Update(ctx, ps, externalServiceID, update); err != nil {
+	if err := db.ExternalServices.Update(ctx, ps, id, update); err != nil {
 		return nil, err
 	}
 
-	externalService, err := db.ExternalServices.GetByID(ctx, externalServiceID)
+	// Fetch from database again to get all fields with updated values.
+	es, err = db.ExternalServices.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	res := &externalServiceResolver{externalService: externalService}
-	if err = syncExternalService(ctx, externalService); err != nil {
+	res := &externalServiceResolver{externalService: es}
+	if err = syncExternalService(ctx, es); err != nil {
 		res.warning = fmt.Sprintf("External service updated, but we encountered a problem while validating the external service: %s", err)
 	}
 

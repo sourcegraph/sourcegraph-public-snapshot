@@ -20,10 +20,6 @@ func TestAddExternalService(t *testing.T) {
 		db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 			return &types.User{ID: 1}, nil
 		}
-		defer func() {
-			db.Mocks.Users = db.MockUsers{}
-		}()
-
 		db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 			return &types.User{ID: 1}, nil
 		}
@@ -216,35 +212,114 @@ func TestAddExternalService(t *testing.T) {
 func TestUpdateExternalService(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-			return &types.User{}, nil
+			return &types.User{ID: 1}, nil
 		}
-		t.Cleanup(func() {
+		defer func() {
 			db.Mocks.Users = db.MockUsers{}
+		}()
+
+		t.Run("no namespace", func(t *testing.T) {
+			db.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
+				return &types.ExternalService{
+					ID: id,
+				}, nil
+			}
+			defer func() {
+				db.Mocks.ExternalServices = db.MockExternalServices{}
+			}()
+
+			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			result, err := (&schemaResolver{}).UpdateExternalService(ctx, &updateExternalServiceArgs{
+				Input: updateExternalServiceInput{
+					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
+				},
+			})
+			if want := backend.ErrMustBeSiteAdmin; err != want {
+				t.Errorf("err: want %q but got %v", want, err)
+			}
+			if result != nil {
+				t.Errorf("result: want nil but got %v", result)
+			}
 		})
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&schemaResolver{}).UpdateExternalService(ctx, nil)
-		if want := backend.ErrMustBeSiteAdmin; err != want {
-			t.Errorf("err: want %q but got %v", want, err)
-		}
-		if result != nil {
-			t.Errorf("result: want nil but got %v", result)
-		}
+		t.Run("has mismatched namespace", func(t *testing.T) {
+			userID := int32(2)
+			db.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
+				return &types.ExternalService{
+					ID:              id,
+					NamespaceUserID: &userID,
+				}, nil
+			}
+			defer func() {
+				db.Mocks.ExternalServices = db.MockExternalServices{}
+			}()
+
+			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			result, err := (&schemaResolver{}).UpdateExternalService(ctx, &updateExternalServiceArgs{
+				Input: updateExternalServiceInput{
+					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
+				},
+			})
+
+			want := "the authenticated user does not have access to this external service"
+			got := fmt.Sprintf("%v", err)
+			if got != want {
+				t.Errorf("err: want %q but got %q", want, got)
+			}
+			if result != nil {
+				t.Errorf("result: want nil but got %v", result)
+			}
+		})
+
+		t.Run("has matching namespace", func(t *testing.T) {
+			userID := int32(1)
+			db.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
+				return &types.ExternalService{
+					ID:              id,
+					NamespaceUserID: &userID,
+				}, nil
+			}
+			calledUpdate := false
+			db.Mocks.ExternalServices.Update = func(ctx context.Context, ps []schema.AuthProviders, id int64, update *db.ExternalServiceUpdate) error {
+				calledUpdate = true
+				return nil
+			}
+			defer func() {
+				db.Mocks.ExternalServices = db.MockExternalServices{}
+			}()
+
+			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			_, err := (&schemaResolver{}).UpdateExternalService(ctx, &updateExternalServiceArgs{
+				Input: updateExternalServiceInput{
+					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
+				},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !calledUpdate {
+				t.Fatal("!calledUpdate")
+			}
+		})
 	})
 
 	t.Run("empty config", func(t *testing.T) {
 		db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 			return &types.User{SiteAdmin: true}, nil
 		}
-		t.Cleanup(func() {
+		db.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
+			return &types.ExternalService{
+				ID: id,
+			}, nil
+		}
+		defer func() {
 			db.Mocks.Users = db.MockUsers{}
-		})
+			db.Mocks.ExternalServices = db.MockExternalServices{}
+		}()
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&schemaResolver{}).UpdateExternalService(ctx, &struct {
-			Input UpdateExternalServiceInput
-		}{
-			Input: UpdateExternalServiceInput{
+		result, err := (&schemaResolver{}).UpdateExternalService(ctx, &updateExternalServiceArgs{
+			Input: updateExternalServiceInput{
 				ID:     "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				Config: strptr(""),
 			},
@@ -259,7 +334,8 @@ func TestUpdateExternalService(t *testing.T) {
 		}
 	})
 
-	cachedUpdate := &db.ExternalServiceUpdate{}
+	userID := int32(1)
+	var cachedUpdate *db.ExternalServiceUpdate
 	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 		return &types.User{SiteAdmin: true}, nil
 	}
@@ -268,10 +344,17 @@ func TestUpdateExternalService(t *testing.T) {
 		return nil
 	}
 	db.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
+		if cachedUpdate == nil {
+			return &types.ExternalService{
+				ID:              id,
+				NamespaceUserID: &userID,
+			}, nil
+		}
 		return &types.ExternalService{
-			ID:          id,
-			DisplayName: *cachedUpdate.DisplayName,
-			Config:      *cachedUpdate.Config,
+			ID:              id,
+			DisplayName:     *cachedUpdate.DisplayName,
+			Config:          *cachedUpdate.Config,
+			NamespaceUserID: &userID,
 		}, nil
 	}
 	t.Cleanup(func() {
