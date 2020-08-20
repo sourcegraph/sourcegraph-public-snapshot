@@ -1,12 +1,15 @@
 package conf
 
 import (
+	"fmt"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // AuthProviderType returns the type string for the auth provider.
 func AuthProviderType(p schema.AuthProviders) string {
+	fmt.Println("Hello world")
 	switch {
 	case p.Builtin != nil:
 		return p.Builtin.Type

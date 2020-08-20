@@ -9,8 +9,6 @@
 
 **Features**
 
-Hello world
-
 - Fast global code search with a hybrid backend that combines a trigram index with in-memory streaming.
 - Code intelligence for many languages via the [Language Server Index Format](https://lsif.dev/).
 - Enhances GitHub, GitLab, Phabricator, and other code hosts and code review tools via the [Sourcegraph browser extension](https://docs.sourcegraph.com/integration/browser_extension).
