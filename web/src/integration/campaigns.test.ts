@@ -19,31 +19,48 @@ import {
     CampaignChangesetsResult,
     WebGraphQlOperations,
     CampaignByIDResult,
+    ExternalChangesetFileDiffsFields,
+    DiffHunkLineType,
+    ChangesetSpecType,
+    ListCampaign,
 } from '../graphql-operations'
-import { DiffHunkLineType, ChangesetSpecType } from '../../../shared/src/graphql/schema'
 import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
 
-const mockDiff = {
-    __typename: 'RepositoryComparison' as const,
+const campaignListNode: ListCampaign = {
+    id: 'campaign123',
+    url: '/users/alice/campaigns/campaign123',
+    name: 'campaign123',
+    createdAt: subDays(new Date(), 5).toISOString(),
+    changesets: { stats: { closed: 4, merged: 10, open: 5 } },
+    closedAt: null,
+    description: null,
+    namespace: {
+        namespaceName: 'alice',
+        url: '/users/alice',
+    },
+}
+
+const mockDiff: NonNullable<ExternalChangesetFileDiffsFields['diff']> = {
+    __typename: 'RepositoryComparison',
     fileDiffs: {
         nodes: [
             {
-                __typename: 'FileDiff' as const,
+                __typename: 'FileDiff',
                 internalID: 'intid123',
                 oldPath: '/somefile.md',
                 newPath: '/somefile.md',
                 oldFile: {
-                    __typename: 'GitBlob' as const,
+                    __typename: 'GitBlob',
                     binary: false,
                     byteSize: 0,
                 },
                 newFile: {
-                    __typename: 'GitBlob' as const,
+                    __typename: 'GitBlob',
                     binary: false,
                     byteSize: 0,
                 },
                 mostRelevantFile: {
-                    __typename: 'GitBlob' as const,
+                    __typename: 'GitBlob',
                     url: 'http://test.test/fileurl',
                 },
                 hunks: [
@@ -88,13 +105,13 @@ const mockDiff = {
     },
     range: {
         base: {
-            __typename: 'GitRef' as const,
+            __typename: 'GitRef',
             target: {
                 oid: 'abc123base',
             },
         },
         head: {
-            __typename: 'GitRef' as const,
+            __typename: 'GitRef',
             target: {
                 oid: 'abc123head',
             },
@@ -211,7 +228,7 @@ function mockCommonGraphQLResponses(
         User: () => ({
             user: {
                 __typename: 'User',
-                id: 'VXNlcjoxODkyNw==',
+                id: 'user123',
                 username: 'alice',
                 displayName: 'alice',
                 url: namespaceURL,
@@ -240,20 +257,11 @@ function mockCommonGraphQLResponses(
                     username: 'alice',
                 },
                 name: 'test-campaign',
-                namespace:
-                    entityType === 'user'
-                        ? {
-                              namespaceName: 'alice',
-                              url: namespaceURL,
-                          }
-                        : {
-                              namespaceName: 'test-org',
-                              url: namespaceURL,
-                          },
-                url:
-                    entityType === 'user'
-                        ? `${namespaceURL}/campaigns/campaign123`
-                        : `${namespaceURL}/campaigns/campaign123`,
+                namespace: {
+                    namespaceName: entityType === 'user' ? 'alice' : 'test-org',
+                    url: namespaceURL,
+                },
+                url: `${namespaceURL}/campaigns/campaign123`,
                 diffStat: {
                     added: 1000,
                     changed: 29,
@@ -295,21 +303,7 @@ describe('Campaigns', () => {
                 ...commonWebGraphQlResults,
                 Campaigns: () => ({
                     campaigns: {
-                        nodes: [
-                            {
-                                id: 'campaign123',
-                                url: '/users/alice/campaigns/campaign123',
-                                name: 'campaign123',
-                                createdAt: subDays(new Date(), 5).toISOString(),
-                                changesets: { stats: { closed: 4, merged: 10, open: 5 } },
-                                closedAt: null,
-                                description: null,
-                                namespace: {
-                                    namespaceName: 'alice',
-                                    url: '/users/alice',
-                                },
-                            },
-                        ],
+                        nodes: [campaignListNode],
                         pageInfo: {
                             endCursor: null,
                             hasNextPage: false,
@@ -320,14 +314,18 @@ describe('Campaigns', () => {
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/campaigns')
             await driver.page.waitForSelector('.test-campaign-list-page')
-            const namespaceLink = await driver.page.waitForSelector('.test-campaign-namespace-link')
-            const campaignLink = await driver.page.waitForSelector('.test-campaign-link')
+            await driver.page.waitForSelector('.test-campaign-namespace-link')
+            await driver.page.waitForSelector('.test-campaign-link')
             assert.strictEqual(
-                await namespaceLink.evaluate(element => (element as HTMLAnchorElement).href),
+                await driver.page.evaluate(
+                    () => document.querySelector<HTMLAnchorElement>('.test-campaign-namespace-link')?.href
+                ),
                 testContext.driver.sourcegraphBaseUrl + '/users/alice/campaigns'
             )
             assert.strictEqual(
-                await campaignLink.evaluate(element => (element as HTMLAnchorElement).href),
+                await driver.page.evaluate(
+                    () => document.querySelector<HTMLAnchorElement>('.test-campaign-link')?.href
+                ),
                 testContext.driver.sourcegraphBaseUrl + '/users/alice/campaigns/campaign123'
             )
         })
@@ -340,21 +338,7 @@ describe('Campaigns', () => {
                     node: {
                         __typename: 'User',
                         campaigns: {
-                            nodes: [
-                                {
-                                    id: 'campaign123',
-                                    url: '/users/alice/campaigns/campaign123',
-                                    name: 'campaign123',
-                                    createdAt: subDays(new Date(), 5).toISOString(),
-                                    changesets: { stats: { closed: 4, merged: 10, open: 5 } },
-                                    closedAt: null,
-                                    description: null,
-                                    namespace: {
-                                        namespaceName: 'alice',
-                                        url: '/users/alice',
-                                    },
-                                },
-                            ],
+                            nodes: [campaignListNode],
                             pageInfo: {
                                 endCursor: null,
                                 hasNextPage: false,
@@ -367,9 +351,11 @@ describe('Campaigns', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/users/alice/campaigns')
 
             await driver.page.waitForSelector('.test-campaign-list-page')
-            const campaignLink = await driver.page.waitForSelector('.test-campaign-link')
+            await driver.page.waitForSelector('.test-campaign-link')
             assert.strictEqual(
-                await campaignLink.evaluate(element => (element as HTMLAnchorElement).href),
+                await driver.page.evaluate(
+                    () => document.querySelector<HTMLAnchorElement>('.test-campaign-link')?.href
+                ),
                 testContext.driver.sourcegraphBaseUrl + '/users/alice/campaigns/campaign123'
             )
             assert.strictEqual(await driver.page.$('.test-campaign-namespace-link'), null)
@@ -385,13 +371,8 @@ describe('Campaigns', () => {
                         campaigns: {
                             nodes: [
                                 {
-                                    id: 'campaign123',
+                                    ...campaignListNode,
                                     url: '/organizations/test-org/campaigns/campaign123',
-                                    name: 'campaign123',
-                                    createdAt: subDays(new Date(), 5).toISOString(),
-                                    changesets: { stats: { closed: 4, merged: 10, open: 5 } },
-                                    closedAt: null,
-                                    description: null,
                                     namespace: {
                                         namespaceName: 'test-org',
                                         url: '/organizations/test-org',
@@ -411,9 +392,11 @@ describe('Campaigns', () => {
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/organizations/test-org/campaigns')
             await driver.page.waitForSelector('.test-campaign-list-page')
-            const campaignLink = await driver.page.waitForSelector('.test-campaign-link')
+            await driver.page.waitForSelector('.test-campaign-link')
             assert.strictEqual(
-                await campaignLink.evaluate(element => (element as HTMLAnchorElement).href),
+                await driver.page.evaluate(
+                    () => document.querySelector<HTMLAnchorElement>('.test-campaign-link')?.href
+                ),
                 testContext.driver.sourcegraphBaseUrl + '/organizations/test-org/campaigns/campaign123'
             )
             assert.strictEqual(await driver.page.$('.test-campaign-namespace-link'), null)
@@ -421,7 +404,7 @@ describe('Campaigns', () => {
     })
 
     describe('Campaign details', () => {
-        for (const entityType of ['user', 'org'] as ('user' | 'org')[]) {
+        for (const entityType of ['user', 'org'] as const) {
             it(`displays a single campaign for ${entityType}`, async () => {
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,
@@ -446,7 +429,7 @@ describe('Campaigns', () => {
                 await driver.page.waitForSelector('.test-campaigns-chart')
 
                 // Go to close page via button.
-                await Promise.all([driver.page.click('.test-campaigns-close-btn'), driver.page.waitForNavigation()])
+                await Promise.all([driver.page.waitForNavigation(), driver.page.click('.test-campaigns-close-btn')])
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
                     testContext.driver.sourcegraphBaseUrl + namespaceURL + '/campaigns/campaign123/close'
@@ -468,8 +451,8 @@ describe('Campaigns', () => {
 
                 // Return to details page.
                 await Promise.all([
-                    driver.page.click('.test-campaigns-close-abort-btn'),
                     driver.page.waitForNavigation(),
+                    driver.page.click('.test-campaigns-close-abort-btn'),
                 ])
                 await driver.page.waitForSelector('.test-campaign-details-page')
                 assert.strictEqual(
@@ -478,10 +461,11 @@ describe('Campaigns', () => {
                 )
 
                 // Delete the closed campaign.
-                driver.page.once('dialog', dialog => {
-                    dialog.accept().catch(error => console.error('Failed to accept dialog', error))
-                })
-                await Promise.all([driver.page.click('.test-campaigns-delete-btn'), driver.page.waitForNavigation()])
+                await Promise.all([
+                    driver.page.waitForNavigation(),
+                    driver.acceptNextDialog(),
+                    driver.page.click('.test-campaigns-delete-btn'),
+                ])
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
                     testContext.driver.sourcegraphBaseUrl + namespaceURL + '/campaigns'
@@ -491,7 +475,7 @@ describe('Campaigns', () => {
     })
 
     describe('Campaign spec preview', () => {
-        for (const entityType of ['user', 'org'] as ('user' | 'org')[]) {
+        for (const entityType of ['user', 'org'] as const) {
             it(`displays a preview of a campaign spec in ${entityType} namespace`, async () => {
                 const namespaceURL = entityType === 'user' ? '/users/alice' : '/organizations/test-org'
                 testContext.overrideGraphQL({
@@ -600,12 +584,10 @@ describe('Campaigns', () => {
                 await driver.page.waitForSelector('.test-file-diff-node')
 
                 // Apply campaign.
-                driver.page.once('dialog', dialog => {
-                    dialog.accept().catch(error => console.error('Failed to accept dialog', error))
-                })
                 await Promise.all([
-                    driver.page.click('.test-campaigns-confirm-apply-btn'),
                     driver.page.waitForNavigation(),
+                    driver.acceptNextDialog(),
+                    driver.page.click('.test-campaigns-confirm-apply-btn'),
                 ])
                 // Expect to be back at campaign overview page.
                 assert.strictEqual(
@@ -617,7 +599,7 @@ describe('Campaigns', () => {
     })
 
     describe('Campaign close preview', () => {
-        for (const entityType of ['user', 'org'] as ('user' | 'org')[]) {
+        for (const entityType of ['user', 'org'] as const) {
             it(`displays a preview for closing a campaign in ${entityType} namespace`, async () => {
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,
@@ -648,8 +630,8 @@ describe('Campaigns', () => {
 
                 // Close campaign.
                 await Promise.all([
-                    driver.page.click('.test-campaigns-confirm-close-btn'),
                     driver.page.waitForNavigation(),
+                    driver.page.click('.test-campaigns-confirm-close-btn'),
                 ])
                 // Expect to be back at campaign overview page.
                 assert.strictEqual(
