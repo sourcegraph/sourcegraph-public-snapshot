@@ -235,6 +235,20 @@ func NewStoreMetrics() StoreMetrics {
 				Help: "Total number of errors when upserting repos",
 			}, []string{}),
 		},
+		UpsertSources: &metrics.OperationMetrics{
+			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+				Name: "src_repoupdater_store_upsert_sources_duration_seconds",
+				Help: "Time spent upserting sources",
+			}, []string{}),
+			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_store_upsert_sources_total",
+				Help: "Total number of upserted sources",
+			}, []string{}),
+			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_store_upsert_sources_errors_total",
+				Help: "Total number of errors when upserting sources",
+			}, []string{}),
+		},
 		ListRepos: &metrics.OperationMetrics{
 			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 				Name: "src_repoupdater_store_list_repos_duration_seconds",
