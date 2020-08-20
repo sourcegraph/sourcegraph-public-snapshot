@@ -233,26 +233,26 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 	}
 
 	filters := map[string]*searchFilterResolver{}
-	repoToMatchCount := make(map[string]int)
-	add := func(value string, label string, count int, limitHit bool, kind string, score score) {
+	repoToMatchCount := make(map[string]int32)
+	add := func(value string, label string, count int32, limitHit bool, kind string, score score) {
 		sf, ok := filters[value]
 		if !ok {
 			sf = &searchFilterResolver{
 				value:    value,
 				label:    label,
-				count:    int32(count),
+				count:    count,
 				limitHit: limitHit,
 				kind:     kind,
 			}
 			filters[value] = sf
 		} else {
-			sf.count = int32(count)
+			sf.count = count
 		}
 
 		sf.score = score
 	}
 
-	addRepoFilter := func(uri string, rev string, lineMatchCount int) {
+	addRepoFilter := func(uri string, rev string, lineMatchCount int32) {
 		var filter string
 		if globbing {
 			filter = fmt.Sprintf(`repo:%s`, uri)
@@ -271,7 +271,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 		add(filter, uri, repoToMatchCount[uri], limitHit, "repo", scoreDefault)
 	}
 
-	addFileFilter := func(fileMatchPath string, lineMatchCount int, limitHit bool) {
+	addFileFilter := func(fileMatchPath string, lineMatchCount int32, limitHit bool) {
 		for _, ff := range commonFileFilters {
 			// use regexp to match file paths unconditionally, whether globbing is enabled or not,
 			// since we have no native library call to match `**` for globs.
@@ -285,7 +285,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 		}
 	}
 
-	addLangFilter := func(fileMatchPath string, lineMatchCount int, limitHit bool) {
+	addLangFilter := func(fileMatchPath string, lineMatchCount int32, limitHit bool) {
 		extensionToLanguageLookup := func(path string) string {
 			language, _ := inventory.GetLanguageByFilename(path)
 			return strings.ToLower(language)
@@ -303,10 +303,10 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 	}
 
 	if sr.searchResultsCommon.excluded.forks > 0 {
-		add("fork:yes", "fork:yes", sr.searchResultsCommon.excluded.forks, sr.limitHit, "repo", scoreImportant)
+		add("fork:yes", "fork:yes", int32(sr.searchResultsCommon.excluded.forks), sr.limitHit, "repo", scoreImportant)
 	}
 	if sr.searchResultsCommon.excluded.archived > 0 {
-		add("archived:yes", "archived:yes", sr.searchResultsCommon.excluded.archived, sr.limitHit, "repo", scoreImportant)
+		add("archived:yes", "archived:yes", int32(sr.searchResultsCommon.excluded.archived), sr.limitHit, "repo", scoreImportant)
 	}
 	for _, result := range sr.SearchResults {
 		if fm, ok := result.ToFileMatch(); ok {
@@ -314,12 +314,13 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 			if fm.InputRev != nil {
 				rev = *fm.InputRev
 			}
-			addRepoFilter(fm.Repo.Name(), rev, len(fm.LineMatches()))
-			addLangFilter(fm.JPath, len(fm.LineMatches()), fm.JLimitHit)
-			addFileFilter(fm.JPath, len(fm.LineMatches()), fm.JLimitHit)
+			lines := fm.resultCount()
+			addRepoFilter(fm.Repo.Name(), rev, lines)
+			addLangFilter(fm.path(), lines, fm.LimitHit())
+			addFileFilter(fm.path(), lines, fm.LimitHit())
 
 			if len(fm.symbols) > 0 {
-				add("type:symbol", "type:symbol", 1, fm.JLimitHit, "symbol", scoreDefault)
+				add("type:symbol", "type:symbol", 1, fm.LimitHit(), "symbol", scoreDefault)
 			}
 		} else if r, ok := result.ToRepository(); ok {
 			// It should be fine to leave this blank since revision specifiers
@@ -425,7 +426,7 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *FileMat
 		return time.Time{}, nil
 	}
 	lm := fm.LineMatches()[0]
-	hunks, err := git.BlameFile(ctx, gitserver.Repo{Name: fm.Repo.repo.Name}, fm.JPath, &git.BlameOptions{
+	hunks, err := git.BlameFile(ctx, gitserver.Repo{Name: fm.Repo.repo.Name}, fm.path(), &git.BlameOptions{
 		NewestCommit: fm.CommitID,
 		StartLine:    int(lm.LineNumber()),
 		EndLine:      int(lm.LineNumber()),
@@ -712,9 +713,7 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 		}
 
 		// merge line matches with a file match that already exists.
-		rightFileMatch.JLineMatches = append(rightFileMatch.JLineMatches, leftFileMatch.JLineMatches...)
-		rightFileMatch.MatchCount += leftFileMatch.MatchCount
-		rightFileMatch.JLimitHit = rightFileMatch.JLimitHit || leftFileMatch.JLimitHit
+		rightFileMatch.appendMatches(leftFileMatch)
 		rightFileMatches[leftFileMatch.uri] = rightFileMatch
 	}
 
@@ -768,9 +767,7 @@ func intersectMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 			continue
 		}
 
-		leftFileMatch.JLineMatches = append(leftFileMatch.JLineMatches, rightFileMatch.JLineMatches...)
-		leftFileMatch.MatchCount += rightFileMatch.MatchCount
-		leftFileMatch.JLimitHit = leftFileMatch.JLimitHit || rightFileMatch.JLimitHit
+		leftFileMatch.appendMatches(rightFileMatch)
 		merged = append(merged, leftMatch)
 	}
 	left.SearchResults = merged
@@ -1696,6 +1693,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					fileMatchesMu.Lock()
 					m, ok := fileMatches[key]
 					if ok {
+						// TODO(keegan) This looks broken? It isn't merging.
 						// merge line match results with an existing symbol result
 						m.JLimitHit = m.JLimitHit || r.JLimitHit
 						m.JLineMatches = r.JLineMatches

@@ -113,6 +113,20 @@ func (fm *FileMatchResolver) ToCommitSearchResult() (*commitSearchResultResolver
 	return nil, false
 }
 
+// path returns the path in repository for the file. This isn't directly
+// exposed in the GraphQL API (we expose a URI), but is used a lot internally.
+func (fm *FileMatchResolver) path() string {
+	return fm.JPath
+}
+
+// appendMatches appends the line matches from src as well as updating match
+// counts and limit.
+func (fm *FileMatchResolver) appendMatches(src *FileMatchResolver) {
+	fm.JLineMatches = append(fm.JLineMatches, src.JLineMatches...)
+	fm.MatchCount += src.MatchCount
+	fm.JLimitHit = fm.JLimitHit || src.JLimitHit
+}
+
 func (fm *FileMatchResolver) searchResultURIs() (string, string) {
 	return fm.Repo.Name(), fm.JPath
 }
