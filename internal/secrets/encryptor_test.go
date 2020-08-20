@@ -113,7 +113,7 @@ func TestBadKeysFailToDecrypt(t *testing.T) {
 	}
 
 	if bytes.Equal(decrypted, decryptedAgain) {
-		t.Fatal("Should not have been able to Decrypt string with a second set of secrets.")
+		t.Fatal("Should not have been able to Decrypt string with an invalid secret key.")
 	}
 }
 
