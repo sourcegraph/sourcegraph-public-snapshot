@@ -4,7 +4,7 @@ Alerts can be configured to notify site admins when there is something wrong or 
 
 ## Understanding alerts
 
-See [alert solutions](alert_solutions.md) for possible solutions when alerts are firing, and learn more about alert labels and metrics in our [metrics guide](metrics_guide).
+See [alert solutions](alert_solutions.md) for possible solutions when alerts are firing, and learn more about alert labels and metrics in our [metrics guide](metrics_guide.md).
 
 ## Setting up alerting
 
