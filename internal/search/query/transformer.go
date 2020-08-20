@@ -565,9 +565,8 @@ func FuzzifyRegexPatterns(nodes []Node) []Node {
 }
 
 // concatRevFilters removes rev: filters from []Node and attaches their value as @rev to the repo: filters.
-// All rev: filters are assumed to be on the top-level, i.e. mapRevFilter will not traverse the tree.
-// To be compatible with the output of the parser with and without DNF we handle both, []Node with
-// an explicit top-level And operator and []Node with an implicit And.
+// Invariant: we assume that all rev: filters are at the top-level of []Node, or in one of it's direct children.
+// This invariant is ensured when the query is normalized to DNF.
 func concatRevFilters(nodes []Node) ([]Node, error) {
 	if len(nodes) == 0 {
 		return nodes, nil
