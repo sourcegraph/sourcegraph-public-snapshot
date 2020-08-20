@@ -80,7 +80,7 @@ func (e encryptor) EncryptBytes(plaintext []byte) ([]byte, error) {
 
 func (e encryptor) DecryptBytes(ciphertext []byte) ([]byte, error) {
 	if len(e.primaryKey) < validKeyLength && len(e.secondaryKey) < validKeyLength {
-		return nil, &EncryptionError{errors.New("no keys available")}
+		return nil, &EncryptionError{errors.New("no valid keys available")}
 	}
 
 	// encrypted, err := base64.StdEncoding.DecodeString(encodedValue)
