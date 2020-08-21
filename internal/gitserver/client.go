@@ -239,7 +239,6 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
-		fmt.Printf("CTX ERR: %v\n", err)
 		deadlineExceededCounter.Inc()
 		return nil, nil, err
 	}
