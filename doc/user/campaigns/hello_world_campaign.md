@@ -62,7 +62,7 @@ Let's see the changes that will be made. Don't worry---no commits, branches, or 
 
 1. In your terminal, run this command:
 
-    <pre><code>src campaign apply -f hello-world.campaign.yaml -preview</code></pre>
+    <pre><code>src campaign apply -f hello-world.campaign.yaml</code></pre>
 1. Wait for it to run and compute the changes for each repository.
 1. When it's done, click the displayed link to see all of the changes that will be made.
 1. Make sure the changes look right.

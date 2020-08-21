@@ -31,9 +31,9 @@ fi
 docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
 
 # Generate Grafana dashboards
-pushd monitoring
+pushd monitoring >/dev/null || exit 1
 DEV=true RELOAD=false go generate
-popd
+popd >/dev/null || exit 1
 
 # Log file location: since we log outside of the Docker container, we should
 # log somewhere that's _not_ ~/.sourcegraph-dev/data/grafana, since that gets
