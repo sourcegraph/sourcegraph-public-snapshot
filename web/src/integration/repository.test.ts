@@ -369,22 +369,17 @@ describe('Repository', () => {
             await driver.assertWindowLocation(`${repositorySourcegraphUrl}/-/blob/${clickedFileName}`)
 
             // Assert breadcrumb order
-            await driver.page.waitForSelector('[aria-label="Breadcrumbs"]')
-            const breadcrumbsText = await driver.page.evaluate(() => {
-                const textContents: string[] = []
-                document
-                    .querySelector('[aria-label="Breadcrumbs"]')
-                    ?.childNodes.forEach(node => node.textContent && textContents.push(node.textContent))
-                return textContents
-            })
-            const expectedBreadCrumbsText = ['Home', 'Repositories', shortRepositoryName, '@master', clickedFileName]
-
-            for (const [index, textContent] of breadcrumbsText.entries()) {
-                assert.strictEqual(textContent, expectedBreadCrumbsText[index])
-            }
-
-            // // Assert that the file is loaded
-            // await assertSelectorHasText('.breadcrumb .part-last', clickedFileName)
+            await driver.page.waitForSelector('.test-breadcrumb')
+            const breadcrumbTexts = await driver.page.evaluate(() =>
+                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
+            )
+            assert.deepStrictEqual(breadcrumbTexts, [
+                'Home',
+                'Repositories',
+                shortRepositoryName,
+                '@master',
+                clickedFileName,
+            ])
 
             // Return to repo page
             await driver.page.click('a.repo-header__repo')
@@ -453,20 +448,11 @@ describe('Repository', () => {
             await driver.page.click('.test-tree-file-link')
             await driver.page.waitForSelector('.test-repo-blob')
 
-            // Assert breadcrumb order
-            await driver.page.waitForSelector('[aria-label="Breadcrumbs"]')
-            const breadcrumbsText = await driver.page.evaluate(() => {
-                const textContents: string[] = []
-                document
-                    .querySelector('[aria-label="Breadcrumbs"]')
-                    ?.childNodes.forEach(node => node.textContent && textContents.push(node.textContent))
-                return textContents
-            })
-            const expectedBreadCrumbsText = ['Home', 'Repositories', shortRepositoryName, '@master', filePath]
-
-            for (const [index, textContent] of breadcrumbsText.entries()) {
-                assert.strictEqual(textContent, expectedBreadCrumbsText[index])
-            }
+            await driver.page.waitForSelector('.test-breadcrumb')
+            const breadcrumbTexts = await driver.page.evaluate(() =>
+                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
+            )
+            assert.deepStrictEqual(breadcrumbTexts, ['Home', 'Repositories', shortRepositoryName, '@master', filePath])
 
             // TODO, broken: https://github.com/sourcegraph/sourcegraph/issues/12296
             // await driver.page.waitForSelector('#monaco-query-input .view-lines')

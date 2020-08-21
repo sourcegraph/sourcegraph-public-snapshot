@@ -135,7 +135,7 @@ export const Breadcrumbs: React.FC<{ breadcrumbs: BreadcrumbAtDepth[] }> = ({ br
                 const divider =
                     breadcrumb.divider === undefined ? <ChevronRightIcon className="icon-inline" /> : breadcrumb.divider
                 return (
-                    <span key={breadcrumb.key} className="text-muted d-flex align-items-center">
+                    <span key={breadcrumb.key} className="text-muted d-flex align-items-center test-breadcrumb">
                         <span className="font-weight-semibold">{divider}</span>
                         {breadcrumb.element}
                     </span>
