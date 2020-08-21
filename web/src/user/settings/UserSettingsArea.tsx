@@ -13,6 +13,7 @@ import { UserSettingsSidebar, UserSettingsSidebarItems } from './UserSettingsSid
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { OnboardingTourProps } from '../../search'
 import { AuthenticatedUser } from '../../auth'
+import { UserAreaUserFields } from '../../graphql-operations'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -34,7 +35,7 @@ export interface UserSettingsAreaRouteContext extends UserSettingsAreaProps {
      * The user who is the subject of the page. This can differ from the authenticatedUser (e.g., when a site admin
      * is viewing another user's account page).
      */
-    user: GQL.IUser
+    user: UserAreaUserFields
     newToken?: GQL.ICreateAccessTokenResult
     onDidCreateAccessToken: (value?: GQL.ICreateAccessTokenResult) => void
     onDidPresentNewToken: (value?: GQL.ICreateAccessTokenResult) => void

@@ -262,7 +262,8 @@ const SiteSchemaJSON = `{
       "description": "Enables/disables the campaigns feature.",
       "type": "boolean",
       "!go": { "pointer": true },
-      "group": "Campaigns"
+      "group": "Campaigns",
+      "default": true
     },
     "campaigns.readAccess.enabled": {
       "description": "DEPRECATED: Enables read-only access to campaigns for non-site-admin users. This doesn't have an effect anymore.",
