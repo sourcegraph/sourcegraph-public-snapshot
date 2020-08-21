@@ -1,4 +1,4 @@
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { testSingleFilePage } from './shared'
@@ -44,7 +44,7 @@ describe('Sourcegraph browser extension on Gitlab Server', () => {
     })
 
     // Take a screenshot when a test fails.
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
 
     const url = new URL(
         '/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go',

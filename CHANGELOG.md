@@ -15,6 +15,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- Introduced the new `external_service_repos` join table. Please note that the migration required to make this change could take a couple of minutes.
+
 ### Fixed
 
 - User satisfaction/NPS surveys will now correctly provide a range from 0–10, rather than 0–9. [#13163](https://github.com/sourcegraph/sourcegraph/pull/13163)
@@ -22,6 +24,12 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 - The smartSearchField feature is now always enabled. The `experimentalFeatures.smartSearchField` settings option has been removed.
+
+## 3.19.1
+
+### Fixed
+
+- migrations: revert migration causing deadlocks in some deployments [#13194](https://github.com/sourcegraph/sourcegraph/pull/13194)
 
 ## 3.19.0
 
