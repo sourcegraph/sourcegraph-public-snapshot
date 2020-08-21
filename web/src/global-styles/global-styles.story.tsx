@@ -120,25 +120,45 @@ const TextStory: React.FunctionComponent = () => (
         </ul>
     </>
 )
-add('Text', () => (
-    <>
-        <h1>Typography</h1>
+add(
+    'Text',
+    () => (
+        <>
+            <h1>Typography</h1>
 
-        <TextStory />
-    </>
-))
+            <TextStory />
+        </>
+    ),
+    {
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/HWLuLefEdev5KYtoEGHjFj/Sourcegraph-Components-Contractor?node-id=771%3A0',
+        },
+    }
+)
 
-add('Web content', () => (
-    <div className="web-content">
-        <h1>Web content</h1>
-        <p>
-            The <code>web-content</code> class changes the text styles of all descendants for content that more closely
-            matches rich web sites as opposed to our high-information-density, application-like code content areas.
-        </p>
+add(
+    'Web content',
+    () => (
+        <div className="web-content">
+            <h1>Web content</h1>
+            <p>
+                The <code>web-content</code> class changes the text styles of all descendants for content that more
+                closely matches rich web sites as opposed to our high-information-density, application-like code content
+                areas.
+            </p>
 
-        <TextStory />
-    </div>
-))
+            <TextStory />
+        </div>
+    ),
+    {
+        design: {
+            type: 'figma',
+            url:
+                'https://www.figma.com/file/HWLuLefEdev5KYtoEGHjFj/Sourcegraph-Components-Contractor?node-id=742%3A532',
+        },
+    }
+)
 
 add('Code', () => (
     <>
