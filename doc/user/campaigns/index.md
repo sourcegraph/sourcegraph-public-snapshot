@@ -94,7 +94,7 @@ You can share the link to your campaign with other people if you want their help
 
 If a person viewing the campaign lacks read access to a repository in the campaign, they can only see [limited information about the changes to that repository](managing_access.md#repository-permissions-for-campaigns) (and not the repository name, file paths, or diff).
 
-You can update a campaign's changes at any time, even after you've published changesets. For more information, see "[Updating a campaign](#updating-a-campaign)".
+You can update a campaign's changes at any time, even after you've published changesets. For more information, see [Updating a campaign](#updating-a-campaign).
 
 ## Publishing changesets to the code host
 
@@ -233,7 +233,7 @@ Site admins can also:
 - A campaign has many **changeset specs**, which are produced by executing the campaign spec (i.e., running the commands on each selected repository) and then using its changeset template to produce a list of changesets, including the diffs, commit messages, changeset title, and changeset body. You don't need to view or edit the raw changeset specs; you will edit the campaign spec and view the changesets in the UI.
 - The **campaign controller** reconciles the actual state of the campaign's changesets on the code host so that they match your desired intent (as described in the changeset specs).
 
-To learn about the internals of campaigns, see "[Campaigns](../../dev/campaigns_development.md)" in the developer documentation.
+To learn about the internals of campaigns, see [Campaigns](../../dev/campaigns_development.md) in the developer documentation.
 
 ### Known issues
 
