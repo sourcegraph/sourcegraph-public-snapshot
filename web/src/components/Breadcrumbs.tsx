@@ -38,7 +38,7 @@ export interface BreadcrumbSetters {
     /**
      * Hook for function components to register a breadcrumb.
      *
-     * @param breadcrumb The breadcrumb to register. If a falsy value is passed the breadcrumb will not be included.
+     * @param breadcrumb The breadcrumb to register. If a falsy value is passed the breadcrumb will not be included. **NOTE: The argument MUST be wrapped in `useMemo()`**.
      * @returns Another breadcrumb setters object to pass down to child components to register child breadcrumbs.
      */
     useBreadcrumb: (breadcrumb: NullableBreadcrumb) => BreadcrumbSetters
