@@ -44,6 +44,7 @@ func Init() error {
 	return initErr
 }
 
+// defaultEncryptor is configured during init, if no keys are provided it will implement noOpEncryptor
 var defaultEncryptor Encryptor
 
 func initDefaultEncryptor() error {

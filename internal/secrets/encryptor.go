@@ -18,19 +18,17 @@ type EncryptionError struct {
 	error
 }
 
-// TODO: docstring
+// Encryptor is an interface that provides encryption & decryption primitives
 type Encryptor interface {
-	// TODO: docstring
 	EncryptBytes(b []byte) ([]byte, error)
-	// TODO: docstring
 	DecryptBytes(b []byte) ([]byte, error)
 }
 
 // encryptor performs encryption and decryption.
 type encryptor struct {
-	// TODO: docstring
+	// primaryKey is always used for encryption
 	primaryKey []byte
-	// TODO: docstring
+	// secondaryKey is used during key rotation to provide decryption during key rotations
 	secondaryKey []byte
 }
 
@@ -51,7 +49,7 @@ func (e encryptor) EncryptBytes(plaintext []byte) (ciphertext []byte, err error)
 		return nil, &EncryptionError{errors.New("primary key is not available")}
 	}
 
-	block, err := aes.NewCipher(e.primaryKey[:])
+	block, err := aes.NewCipher(e.primaryKey)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +66,6 @@ func (e encryptor) EncryptBytes(plaintext []byte) (ciphertext []byte, err error)
 	}
 
 	return gcm.Seal(nonce, nonce, plaintext, nil), nil
-
 }
 
 // Decrypt decrypts data using 256-bit AES-GCM.  This both hides the content of
@@ -121,7 +118,7 @@ func (noOpEncryptor) DecryptBytes(b []byte) ([]byte, error) {
 	return b, nil
 }
 
-// EncryptBytes encrypts the plaintxt and returns the encrypted value.
+// EncryptBytes encrypts the plaintext and returns the encrypted value.
 // An error is returned when encryption fails. It returns the original
 // content if encryption is not configured.
 func EncryptBytes(plaintext []byte) ([]byte, error) {

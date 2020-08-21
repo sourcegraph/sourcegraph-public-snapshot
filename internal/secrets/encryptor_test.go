@@ -195,7 +195,6 @@ func TestKeyMigration(t *testing.T) {
 	if string(decryptedMessage) != message {
 		t.Fatalf("messages do not match")
 	}
-
 }
 
 func TestEncryptAndDecryptBytesIfPossible(t *testing.T) {
@@ -227,7 +226,7 @@ func TestEncryptAndDecryptBytesIfPossible(t *testing.T) {
 	if !bytes.Equal(encString, messageToEncrypt) {
 		t.Fatalf("Received encrypted string, expected unencrypted.")
 	}
-	decString, err = e.DecryptBytes([]byte(encString))
+	decString, err = e.DecryptBytes(encString)
 	if err != nil {
 		t.Fatalf("Received error when code path should be nil. %v", err)
 	}
@@ -283,5 +282,4 @@ func Test_gatherKeys(t *testing.T) {
 			}
 		})
 	}
-
 }
