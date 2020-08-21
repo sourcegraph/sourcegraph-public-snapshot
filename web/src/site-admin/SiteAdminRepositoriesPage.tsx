@@ -2,13 +2,11 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import CloudOutlineIcon from 'mdi-react/CloudOutlineIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
-import React, { useEffect, useCallback, useMemo } from 'react'
+import React, { useEffect, useCallback } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
-import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { RepoLink } from '../../../shared/src/components/RepoLink'
-import * as GQL from '../../../shared/src/graphql/schema'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
@@ -17,29 +15,28 @@ import {
 import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
 import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning } from './backend'
-import * as H from 'history'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { RepositoriesResult, SiteAdminRepositoryFields } from '../graphql-operations'
 
-interface RepositoryNodeProps extends ActivationProps {
-    node: GQL.IRepository
-    history: H.History
+interface RepositoryNodeProps {
+    node: SiteAdminRepositoryFields
 }
 
-const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = props => (
+const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node }) => (
     <li
         className="repository-node list-group-item py-2"
-        data-test-repository={props.node.name}
-        data-test-cloned={props.node.mirrorInfo.cloned}
+        data-test-repository={node.name}
+        data-test-cloned={node.mirrorInfo.cloned}
     >
         <div className="d-flex align-items-center justify-content-between">
             <div>
-                <RepoLink repoName={props.node.name} to={props.node.url} />
-                {props.node.mirrorInfo.cloneInProgress && (
+                <RepoLink repoName={node.name} to={node.url} />
+                {node.mirrorInfo.cloneInProgress && (
                     <small className="ml-2 text-success">
                         <LoadingSpinner className="icon-inline" /> Cloning
                     </small>
                 )}
-                {!props.node.mirrorInfo.cloneInProgress && !props.node.mirrorInfo.cloned && (
+                {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
                     <small
                         className="ml-2 text-muted"
                         data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
@@ -49,15 +46,15 @@ const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = props => (
                 )}
             </div>
             <div className="repository-node__actions">
-                {!props.node.mirrorInfo.cloneInProgress && !props.node.mirrorInfo.cloned && (
-                    <Link className="btn btn-sm btn-secondary" to={props.node.url}>
+                {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
+                    <Link className="btn btn-sm btn-secondary" to={node.url}>
                         <CloudDownloadIcon className="icon-inline" /> Clone now
                     </Link>
                 )}{' '}
                 {
                     <Link
                         className="btn btn-secondary btn-sm"
-                        to={`/${props.node.name}/-/settings`}
+                        to={`/${node.name}/-/settings`}
                         data-tooltip="Repository settings"
                     >
                         <SettingsIcon className="icon-inline" /> Settings
@@ -68,7 +65,7 @@ const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = props => (
     </li>
 )
 
-interface Props extends RouteComponentProps<{}>, ActivationProps, TelemetryProps {}
+interface Props extends RouteComponentProps<{}>, TelemetryProps {}
 
 const FILTERS: FilteredConnectionFilter[] = [
     {
@@ -100,10 +97,10 @@ const FILTERS: FilteredConnectionFilter[] = [
 /**
  * A page displaying the repositories on this site.
  */
-export const SiteAdminRepositoriesPage: React.FunctionComponent<Props> = props => {
+export const SiteAdminRepositoriesPage: React.FunctionComponent<Props> = ({ history, location, telemetryService }) => {
     useEffect(() => {
-        props.telemetryService.logViewEvent('SiteAdminRepos')
-    }, [props.telemetryService])
+        telemetryService.logViewEvent('SiteAdminRepos')
+    }, [telemetryService])
 
     // Refresh global alert about enabling repositories when the user visits & navigates away from this page.
     useEffect(() => {
@@ -116,19 +113,12 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<Props> = props =
                 .then(null, error => console.error(error))
         }
     }, [])
-    const nodeProps: Omit<RepositoryNodeProps, 'node'> = useMemo(
-        () => ({
-            activation: props.activation,
-            history: props.history,
-        }),
-        [props.activation, props.history]
-    )
     const queryRepositories = useCallback(
-        (args: FilteredConnectionQueryArgs): Observable<GQL.IRepositoryConnection> =>
-            fetchAllRepositoriesAndPollIfEmptyOrAnyCloning({ ...args }),
+        (args: FilteredConnectionQueryArgs): Observable<RepositoriesResult['repositories']> =>
+            fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(args),
         []
     )
-    const showRepositoriesAddedBanner = new URLSearchParams(props.location.search).has('repositoriesUpdated')
+    const showRepositoriesAddedBanner = new URLSearchParams(location.search).has('repositoriesUpdated')
 
     return (
         <div className="site-admin-repositories-page">
@@ -144,16 +134,15 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<Props> = props =
                 Repositories are synced from connected{' '}
                 <Link to="/site-admin/external-services">code host connections</Link>.
             </p>
-            <FilteredConnection<GQL.IRepository, Omit<RepositoryNodeProps, 'node'>>
+            <FilteredConnection<SiteAdminRepositoryFields, Omit<RepositoryNodeProps, 'node'>>
                 className="list-group list-group-flush mt-3"
                 noun="repository"
                 pluralNoun="repositories"
                 queryConnection={queryRepositories}
                 nodeComponent={RepositoryNode}
-                nodeComponentProps={nodeProps}
                 filters={FILTERS}
-                history={props.history}
-                location={props.location}
+                history={history}
+                location={location}
             />
         </div>
     )
