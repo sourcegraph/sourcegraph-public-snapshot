@@ -994,14 +994,6 @@ type ExternalChangeset implements Node & Changeset {
     # The review state of this changeset. This is only set once the changeset is published on the code host.
     reviewState: ChangesetReviewState
 
-    # The base of the diff ("old" or "left-hand side"). It could be null in some cases, for example
-    # when a force push has occured.
-    base: GitRef
-
-    # The head of the diff ("new" or "right-hand side"). It is common for branches to be deleted
-    # after merge in which case head could be null.
-    head: GitRef
-
     # The diff of this changeset, or null if the changeset is closed (without merging) or is already merged.
     diff: RepositoryComparisonInterface
 

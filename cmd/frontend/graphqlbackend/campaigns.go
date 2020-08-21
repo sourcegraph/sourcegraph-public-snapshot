@@ -277,8 +277,6 @@ type ExternalChangesetResolver interface {
 	Events(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (ChangesetEventsConnectionResolver, error)
 	Diff(ctx context.Context) (RepositoryComparisonInterface, error)
 	DiffStat(ctx context.Context) (*DiffStat, error)
-	Head(ctx context.Context) (*GitRefResolver, error)
-	Base(ctx context.Context) (*GitRefResolver, error)
 	Labels(ctx context.Context) ([]ChangesetLabelResolver, error)
 
 	Error() *string
