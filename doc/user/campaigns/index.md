@@ -50,7 +50,7 @@ See the [Creating a campaign](#creating-a-campaign) section for an example campa
 
 > **Creating your first campaign?** See [Hello World Campaign](hello_world_campaign.md) in Sourcegraph Guides for step-by-step instructions.
 
-You can create a campaign from a [campaign spec](#campaign-specs), which is a YAML file that describes your campaign.
+You can create a campaign from a campaign spec, which is a YAML file that describes your campaign.
 
 The following example campaign spec adds "Hello World" to all `README.md` files:
 
@@ -82,9 +82,10 @@ changesetTemplate:
     <pre><code>src campaign apply -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em> -preview</code></pre>
 
     > **Don't worry!** Before any branches are pushed or changesets (e.g., GitHub pull requests) are created, you will see a preview of all changes and can confirm each one before proceeding.
+
 1. Wait for it to run and compute the changes for each repository (using the repositories and commands in the campaign spec).
 1. Open the preview URL that the command printed out.
-1. Examine the preview. Confirm that the changes are what you intended. (If not, edit the campaign spec and then rerun the command above.)
+1. Examine the preview. Confirm that the changes are what you intended. If not, edit the campaign spec and then rerun the command above.
 1. Click the **Create campaign** button.
 
 After you've applied a campaign spec, you can [publish changesets](#publishing-changesets-to-the-code-host) to the code host when you're ready. This will turn the patches into commits, branches, and changesets (such as GitHub pull requests) for others to review and merge.
@@ -99,9 +100,9 @@ You can update a campaign's changes at any time, even after you've published cha
 
 After you've added patches, you can see a preview of the changesets (e.g., GitHub pull requests) that will be created from the patches. Publishing the changesets will, for each repository:
 
-- Create a commit with the changes (from the patches for that repository)
-- Push a branch (using the branch name you chose when creating the campaign)
-- Create a changeset (e.g., GitHub pull request) on the code host for review and merging
+- Create a commit with the changes from the patches for that repository.
+- Push a branch using the branch name you chose when creating the campaign.
+- Create a changeset (e.g., GitHub pull request) on the code host for review and merging.
 
 > NOTE: When pushing the branch Sourcegraph will use a force push. Make sure that the branch names are unused, otherwise previous commits will be overwritten.
 
@@ -119,9 +120,9 @@ changesetTemplate:
 
 Then run the `src campaign apply` command again.
 
-In the Sourcegraph web UI you'll see a progress indicators that the changesets are being published. Any errors will be shown, and you can retry publishing after you've resolved the problem by running `src campaign apply` again. You don't need to worry about it creating multiple branches or pull requests when you retry, because it uses the same branch name.
+In the Sourcegraph web UI you'll see a progress indicator for the changesets that are being published. Any errors will be shown, and you can retry publishing after you've resolved the problem by running `src campaign apply` again. You don't need to worry about it creating multiple branches or pull requests when you retry because it uses the same branch name.
 
-To publish a changeset, you need admin access to the campaign and write access to the changeset's repository (on the code host). For more information, see "[Code host interactions in campaigns](managing_access.md#code-host-interactions-in-campaigns)". [Forking the repository](#known-issues) is not yet supported.
+To publish a changeset, you need admin access to the campaign and write access to the changeset's repository (on the code host). For more information, see [Code host interactions in campaigns](managing_access.md#code-host-interactions-in-campaigns). [Forking the repository](#known-issues) is not yet supported.
 
 ## Tracking campaign progress and changeset statuses
 
@@ -139,7 +140,7 @@ In the list of changesets, you can see the detailed status for each changeset.
 
 <!-- > TODO(sqs) screenshot -->
 
-If you lack read access to a repository, you can only see [limited information about the changes to that repository](managing_access.md#repository-permissions-for-campaigns) (and not the repository name, file paths, or diff).
+If you lack read access to a repository, you can only see [limited information about the changes to that repository](managing_access.md#repository-permissions-for-campaigns).
 
 ## Updating a campaign
 
@@ -154,8 +155,9 @@ To update a campaign, you need [admin access to the campaign](managing_access.md
     <pre><code>src campaign apply -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em> -preview</code></pre>
 
     > **Don't worry!** Before any branches or changesets are modified, you will see a preview of all changes and can confirm before proceeding.
+
 1. Open the preview URL that the command printed out.
-1. Examine the preview. Confirm that the changes are what you intended. (If not, edit your campaign spec and then rerun the command above.)
+1. Examine the preview. Confirm that the changes are what you intended. If not, edit your campaign spec and then rerun the command above.
 1. Click the **Update campaign** button.
 
 All of the changesets on your code host will be updated to the desired state that was shown in the preview.
@@ -184,14 +186,14 @@ importChangesets:
     <pre><code>src campaign apply -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em> -preview</code></pre>
 
 1. Open the preview URL that the command printed out.
-1. Examine the preview. Confirm that the changesets are the ones you intended to track. (If not, edit the campaign spec and then rerun the command above.)
+1. Examine the preview. Confirm that the changesets are the ones you intended to track. If not, edit the campaign spec and then rerun the command above.
 1. Click the **Create campaign** button.
 
-You'll see the existing changeset in the list. The campaign will track the changeset's status and include it in the overall campaign progress (in the same way as if it had been created by the campaign). For more information, see "[Tracking campaign progress and changeset statuses](#tracking-campaign-progress-and-changeset-statuses)".
+You'll see the existing changeset in the list. The campaign will track the changeset's status and include it in the overall campaign progress (in the same way as if it had been created by the campaign). For more information, see [Tracking campaign progress and changeset statuses](#tracking-campaign-progress-and-changeset-statuses).
 
 ## Closing or deleting a campaign
 
-You can close a campaign when you don't need it anymore, when all changes have been merged, or when you decided not to proceed with making all of the changes. A closed campaign still appears in the [campaigns list](#viewing-campaigns). To completely remove it, you can delete the campaign.
+You can close a campaign when you don't need it anymore, when all changes have been merged, or when you decide not to proceed with making changes. A closed campaign still appears in the [campaigns list](#viewing-campaigns). To completely remove it, you can delete the campaign.
 
 Any person with [admin access to the campaign](managing_access.md#permission-levels-for-campaigns) can close or delete it.
 
@@ -201,15 +203,15 @@ Any person with [admin access to the campaign](managing_access.md#permission-lev
 1. Select whether you want to close all of the campaign's changesets (e.g., closing all associated GitHub pull requests on the code host).
 1. Click **TODO(sqs)** <!-- decide/confirm button label -->.
 
-## [Managing access to campaigns](managing_access.md)
+## Managing access to campaigns
 
-See "[Managing access to campaigns](managing_access.md)".
+See [Managing access to campaigns](managing_access.md).
 
 ## Code host and repository permissions in campaigns
 
-All actions on the code host (such as pushing a branch or opening a changeset) are performed by your individual user account, not by a bot user. For more information, see "[Code host interactions in campaigns](managing_access.md#code-host-interactions-in-campaigns)".
+All actions on the code host (such as pushing a branch or opening a changeset) are performed by your individual user account, not by a bot user. For more information, see [Code host interactions in campaigns](managing_access.md#code-host-interactions-in-campaigns).
 
-[Repository permissions](../../admin/repo/permissions.md) are enforced when campaigns display information. For more information, see "[Repository permissions in campaigns](managing_access.md#repository-permissions-for-campaigns)".
+[Repository permissions](../../admin/repo/permissions.md) are enforced when campaigns display information. For more information, see [Repository permissions in campaigns](managing_access.md#repository-permissions-for-campaigns).
 
 ## Site admin configuration for campaigns
 
@@ -217,9 +219,9 @@ Using campaigns requires a [code host connection](../../admin/external_service/i
 
 Site admins can also:
 
-- [Allow users to authenticate via the code host](../../admin/auth/index.md#github), which makes it easier for users to authorize [code host interactions in campaigns](managing_access.md#code-host-interactions-in-campaigns)
-- [Configure repository permissions](../../admin/repo/permissions.md), which campaigns will respect
-- [Disable campaigns for all users](managing_access.md#disabling-campaigns-for-all-users)
+- [Allow users to authenticate via the code host](../../admin/auth/index.md#github), which makes it easier for users to authorize [code host interactions in campaigns](managing_access.md#code-host-interactions-in-campaigns).
+- [Configure repository permissions](../../admin/repo/permissions.md), which campaigns will respect.
+- [Disable campaigns for all users](managing_access.md#disabling-campaigns-for-all-users).
 
 ## Concepts
 
