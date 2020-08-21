@@ -74,6 +74,10 @@ func newObservationOperation() *observation.Operation {
 }
 
 func scanSyncJob(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
+	if err != nil {
+		return nil, false, err
+	}
+
 	var job SyncJob
 
 	for rows.Next() {
