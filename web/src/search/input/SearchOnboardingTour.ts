@@ -105,7 +105,7 @@ export function createStep1Tooltip(
     const list = document.createElement('ul')
     list.className = 'my-4 list-group dash-list'
     const languageListItem = document.createElement('li')
-    languageListItem.className = 'list-group-item p-0 border-0 mb-2'
+    languageListItem.className = 'p-0 border-0 mb-2'
 
     const languageButton = document.createElement('button')
     languageButton.className = 'btn btn-link p-0 pl-1 test-tour-language-button'
@@ -116,7 +116,7 @@ export function createStep1Tooltip(
         eventLogger.log('OnboardingTourLanguageOptionClicked')
     })
     const repositoryListItem = document.createElement('li')
-    repositoryListItem.className = 'list-group-item p-0 border-0 mb-2 test-tour-repo-button'
+    repositoryListItem.className = 'p-0 border-0 mb-2 test-tour-repo-button'
     const repositoryButton = document.createElement('button')
     repositoryButton.className = 'btn btn-link p-0 pl-1'
     repositoryButton.textContent = 'Search a repository'
@@ -189,7 +189,7 @@ export function createAddCodeStepWithLanguageExampleTooltip(
     list.className = 'my-4 list-group caret-list'
 
     const listItem = document.createElement('li')
-    listItem.className = 'list-group-item p-0 border-0'
+    listItem.className = 'p-0 border-0'
 
     const exampleButton = document.createElement('button')
     exampleButton.className = 'btn btn-link test-tour-language-example'
