@@ -2,7 +2,7 @@ import assert from 'assert'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
 import { WebGraphQlOperations, OrganizationResult } from '../graphql-operations'
 import { emptyResponse } from '../../../shared/src/testing/integration/graphQlResults'
@@ -36,7 +36,7 @@ describe('Organizations', () => {
             directory: __dirname,
         })
     })
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
     describe('Site admin organizations page', () => {

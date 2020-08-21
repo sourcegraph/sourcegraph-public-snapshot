@@ -2,7 +2,7 @@ import assert from 'assert'
 import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { subDays, addDays } from 'date-fns'
 import { createJsContext } from './jscontext'
 import {
@@ -294,7 +294,7 @@ describe('Campaigns', () => {
             experimentalFeatures: { automation: 'enabled' },
         })
     })
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
     describe('Campaigns list', () => {
