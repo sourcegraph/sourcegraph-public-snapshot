@@ -49,3 +49,17 @@ sub {
 sup {
     top: -1em;
 }
+
+.list-dashed {
+    list-style: none;
+    position: relative;
+    > li::before {
+        content: '–';
+        position: absolute;
+        width: 2.5rem;
+        left: 0;
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        padding-right: 0.5em;
+        text-align: right;
+    }
+}

@@ -72,24 +72,4 @@
             color: $body-color-light;
         }
     }
-
-    .dash-list {
-        list-style: none;
-        margin-left: 0;
-        padding-left: 0;
-
-        li::before {
-            content: '–';
-        }
-    }
-
-    .caret-list {
-        list-style: none;
-        margin-left: 0;
-        padding-left: 0;
-
-        li::before {
-            content: '>';
-        }
-    }
 }

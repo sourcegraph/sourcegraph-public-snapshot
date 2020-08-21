@@ -103,12 +103,12 @@ export function createStep1Tooltip(
     repositoryButtonHandler: () => void
 ): HTMLElement {
     const list = document.createElement('ul')
-    list.className = 'my-4 list-group dash-list'
+    list.className = 'my-4 list-group list-dashed'
     const languageListItem = document.createElement('li')
     languageListItem.className = 'list-group-item p-0 border-0 mb-2'
 
     const languageButton = document.createElement('button')
-    languageButton.className = 'btn btn-link p-0 pl-1 test-tour-language-button'
+    languageButton.className = 'btn btn-link p-0 test-tour-language-button'
     languageButton.textContent = 'Search a language'
     languageListItem.append(languageButton)
     languageButton.addEventListener('click', () => {
@@ -118,7 +118,7 @@ export function createStep1Tooltip(
     const repositoryListItem = document.createElement('li')
     repositoryListItem.className = 'list-group-item p-0 border-0 mb-2 test-tour-repo-button'
     const repositoryButton = document.createElement('button')
-    repositoryButton.className = 'btn btn-link p-0 pl-1'
+    repositoryButton.className = 'btn btn-link p-0'
     repositoryButton.textContent = 'Search a repository'
     repositoryButton.addEventListener('click', () => {
         repositoryButtonHandler()
@@ -186,7 +186,7 @@ export function createAddCodeStepWithLanguageExampleTooltip(
     exampleCallback: (query: string, patternType: SearchPatternType) => void
 ): HTMLElement {
     const list = document.createElement('ul')
-    list.className = 'my-4 list-group caret-list'
+    list.className = 'my-4 list-group list-dashed'
 
     const listItem = document.createElement('li')
     listItem.className = 'list-group-item p-0 border-0'
