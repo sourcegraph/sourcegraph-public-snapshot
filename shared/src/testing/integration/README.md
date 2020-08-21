@@ -16,4 +16,6 @@ Responses will be intercepted and saved as JSON in the `__fixtures__` directory.
 
 When running the tests, static JS/CSS assets will be served from the `ui/assets` directory. Other requests will be intercepted, and responded to using fixture data.
 
-Before running tests, call `yarn build` to make sure to have up-to-date assets.
+Before running tests, call `yarn build-web` to make sure to have up-to-date assets.
+
+For more information about integration tests, read the [Client integration tests documentation](https://docs.sourcegraph.com/dev/testing#client-integration-tests).
