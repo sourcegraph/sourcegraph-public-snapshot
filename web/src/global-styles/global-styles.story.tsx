@@ -110,34 +110,89 @@ const TextStory: React.FunctionComponent = () => (
         <h2>Lists</h2>
         <h3>Ordered</h3>
         <ol>
-            <li>Item</li>
-            <li>Item</li>
-            <li>Item</li>
+            <li>
+                Dolor est laborum aute adipisicing quis duis mollit pariatur nostrud eiusmod Lorem pariatur elit mollit.
+                Sint pariatur culpa occaecat aute mollit enim amet nisi sunt aute ea aliqua esse laboris. Incididunt ad
+                duis laborum elit dolore esse sint nisi. Nulla in ea ipsum dolore irure sit labore commodo aute aliquip
+                esse. Consectetur non tempor qui sunt cillum est velit ut id sint id amet et commodo.
+            </li>
+            <li>
+                Eu nulla Lorem et ipsum commodo. Sint anim minim aute deserunt elit adipisicing minim sunt est tempor.
+                Exercitation non ad minim culpa fugiat nulla nulla.
+            </li>
+            <li>
+                Ex officia amet excepteur Lorem officia sit elit. Aute esse laboris consequat ea sint aute amet anim.
+                Laboris dolore dolor Lorem anim voluptate eiusmod nisi occaecat anim ipsum laboris ad.
+            </li>
         </ol>
 
         <h3>Unordered</h3>
+
+        <h4>Dots</h4>
         <ul>
-            <li>Item</li>
-            <li>Item</li>
-            <li>Item</li>
+            <li>
+                Ullamco exercitation voluptate veniam et in incididunt Lorem id consequat dolor reprehenderit amet. Id
+                exercitation et labore do sint eiusmod irure. Lorem cupidatat dolor nulla sunt qui culpa esse cupidatat
+                ea. Esse elit voluptate ea officia excepteur nostrud veniam dolore tempor sint anim dolor ipsum eu.
+            </li>
+            <li>
+                Magna veniam in anim ea cupidatat nostrud. Pariatur mollit eiusmod incididunt irure pariatur amet. Est
+                adipisicing voluptate nulla Lorem esse laborum aliqua.
+            </li>
+            <li>
+                Proident nisi velit incididunt labore sunt eiusmod magna occaecat aliqua. Labore veniam ex adipisicing
+                ex magna qui officia dolor. Eiusmod excepteur dolor consequat deserunt enim ullamco eiusmod ullamco.
+            </li>
         </ul>
 
+        <h4>Dashes</h4>
         <p>
-            Using <code>dash-list</code>:
+            Dashed lists are created using <code>dash-list</code>.
         </p>
         <ul className="dash-list">
-            <li>Item</li>
-            <li>Item</li>
-            <li>Item</li>
+            <li>
+                Ad deserunt amet Lorem in exercitation. Deserunt labore anim non minim. Dolor dolore adipisicing anim
+                cupidatat nulla. Sit voluptate aliqua exercitation occaecat nulla aute ex quis excepteur quis
+                exercitation fugiat et. Voluptate sint magna labore culpa nulla eu tempor labore in eiusmod excepteur.
+            </li>
+            <li>
+                Quis do proident non deserunt aliquip eiusmod dolor nisi et eiusmod irure labore irure. Veniam labore
+                aliquip ea irure dolore est cillum laborum exercitation. Anim pariatur occaecat reprehenderit ea et elit
+                excepteur nisi mollit tempor. Consequat ullamco do velit irure laboris adipisicing nulla enim.
+            </li>
+            <li>
+                Incididunt occaecat consequat aliqua fugiat sint veniam anim cupidatat. Laborum ex aliqua quis et labore
+                laboris. Quis laborum excepteur do nisi proident dolor duis sint cupidatat commodo proident sunt. Tempor
+                nisi consectetur ex culpa occaecat. Qui mollit mollit reprehenderit ea consequat quis aliqua minim anim
+                ullamco ullamco incididunt duis amet. Occaecat anim adipisicing laborum excepteur mollit do ullamco id
+                fugiat duis.
+            </li>
         </ul>
 
+        <h4>Carets</h4>
         <p>
-            Using <code>caret-list</code>:
+            Lists with carets are created using <code>caret-list</code>.
         </p>
         <ul className="caret-list">
-            <li>Item</li>
-            <li>Item</li>
-            <li>Item</li>
+            <li>
+                Cillum laboris aliquip deserunt veniam ex pariatur consectetur proident in laborum. Fugiat eiusmod sunt
+                amet do. Ipsum reprehenderit Lorem officia aliqua sint minim labore eu reprehenderit laboris labore ut
+                cupidatat deserunt. Eu ad quis enim qui nulla Lorem dolor dolore ea id enim excepteur. Quis duis dolor
+                consectetur occaecat eu non proident eu incididunt aliquip incididunt Lorem voluptate.
+            </li>
+            <li>
+                Cupidatat culpa minim reprehenderit esse aute ullamco minim minim exercitation cillum nisi sit. Amet
+                dolore proident voluptate consequat esse reprehenderit consequat ipsum. Proident labore velit irure
+                consequat magna dolore.
+            </li>
+            <li>
+                Labore ullamco dolor enim duis magna aliqua cillum tempor voluptate excepteur est laborum nostrud. Ad ut
+                in nostrud proident eiusmod officia consequat aliquip laboris adipisicing ea consectetur. Exercitation
+                voluptate excepteur do sit. Id consequat velit non sit pariatur sint ad ullamco consectetur occaecat.
+                Dolore aliquip reprehenderit culpa tempor officia nostrud et cillum et do et proident dolore. Quis do
+                culpa deserunt eiusmod officia cillum non consectetur. Culpa consequat reprehenderit non adipisicing
+                laborum.
+            </li>
         </ul>
     </>
 )
