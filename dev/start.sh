@@ -153,7 +153,7 @@ ctags-image: cd $(pwd) && ./cmd/symbols/build-ctags.sh
 EOF
 
 # Kick off all build processes in parallel
-goreman --set-ports=false --exit-on-error -f ${tmp_install_procfile} start
+goreman --set-ports=false --exit-on-error -f "${tmp_install_procfile}" start
 
 # Once we've built the Go code and the frontend coce, we build the frontend
 # code once in the background to make sure editor codeintel works.
