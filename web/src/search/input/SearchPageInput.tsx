@@ -25,7 +25,7 @@ import {
     OnboardingTourProps,
     parseSearchURLQuery,
 } from '..'
-import { EventLoggerProps } from '../../tracking/eventLogger'
+import { EventLoggerProps, eventLogger } from '../../tracking/eventLogger'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { VersionContextProps } from '../../../../shared/src/search/util'
@@ -183,6 +183,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
         if (showOnboardingTour && !hasCancelledTour && !hasSeenTour) {
             setTourWasActive(true)
             tour.start()
+            eventLogger.log('ViewOnboardingTour')
         }
         return
     }, [tour, showOnboardingTour, hasCancelledTour, hasSeenTour])

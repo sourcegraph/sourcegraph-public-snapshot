@@ -3,6 +3,7 @@
  */
 import Shepherd from 'shepherd.js'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
+import { eventLogger } from '../../tracking/eventLogger'
 
 export const HAS_CANCELLED_TOUR_KEY = 'has-cancelled-onboarding-tour'
 export const HAS_SEEN_TOUR_KEY = 'has-seen-onboarding-tour'
@@ -73,6 +74,7 @@ export function generateBottomRow(tour: Shepherd.Tour, stepNumber: number, dontS
     closeTourButton.addEventListener('click', () => {
         tour.cancel()
         localStorage.setItem(HAS_CANCELLED_TOUR_KEY, 'true')
+        eventLogger.log('CloseOnboardingTourClicked', { stage: stepNumber })
     })
 
     const bottomRow = document.createElement('div')
