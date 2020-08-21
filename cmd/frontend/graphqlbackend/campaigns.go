@@ -180,6 +180,7 @@ type ChangesetCountsArgs struct {
 
 type ListChangesetsArgs struct {
 	First                       *int32
+	After                       *string
 	PublicationState            *campaigns.ChangesetPublicationState
 	ReconcilerState             *campaigns.ReconcilerState
 	ExternalState               *campaigns.ChangesetExternalState

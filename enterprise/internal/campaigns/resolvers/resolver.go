@@ -462,6 +462,14 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, campaign
 		opts.Limit = int(*args.First)
 	}
 
+	if args.After != nil {
+		cursor, err := strconv.ParseInt(*args.After, 10, 32)
+		if err != nil {
+			return opts, false, errors.Wrap(err, "parsing after cursor")
+		}
+		opts.Cursor = cursor
+	}
+
 	if args.PublicationState != nil {
 		publicationState := *args.PublicationState
 		if !publicationState.Valid() {
