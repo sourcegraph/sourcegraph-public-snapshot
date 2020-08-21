@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/kylelemons/godebug/pretty"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -1257,7 +1258,11 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			}
 
 			s := NewExternalServicesStore()
-			err := s.ValidateConfig(context.Background(), 0, tc.kind, tc.config, tc.ps)
+			err := s.ValidateConfig(context.Background(), db.ValidateExternalServiceConfigOptions{
+				Kind:          tc.kind,
+				Config:        tc.config,
+				AuthProviders: tc.ps,
+			})
 			switch e := err.(type) {
 			case nil:
 				have = append(have, "<nil>")

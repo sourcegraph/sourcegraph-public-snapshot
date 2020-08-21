@@ -103,6 +103,10 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
                 value: 'stable',
                 description: 'yes | no',
             },
+            {
+                value: 'rev',
+                description: 'repository revision (branch, commit hash, or tag), ',
+            },
         ].map(
             assign({
                 type: NonFilterSuggestionType.Filters,
@@ -229,5 +233,8 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
                 type: FilterType.stable,
             })
         ),
+    },
+    rev: {
+        values: [],
     },
 }

@@ -108,6 +108,7 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 		// Client integration tests
 		pipeline.AddStep(":puppeteer::electric_plug:",
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+			bk.Env("ENTERPRISE", "1"),
 			bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-run.sh build-web"),
 			bk.Cmd("yarn run cover-integration"),
 			bk.Cmd("yarn nyc report -r json"),
@@ -142,8 +143,7 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 
 // Adds PostgreSQL backcompat tests.
 func addPostgresBackcompat(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":postgres:",
-		bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
+	// TODO: We do not test Postgres DB backcompat anymore.
 }
 
 // Adds the Go test step.

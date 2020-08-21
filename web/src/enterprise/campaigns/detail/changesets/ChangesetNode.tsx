@@ -28,14 +28,14 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({ nod
     if (node.__typename === 'ExternalChangeset') {
         return (
             <>
-                <span className="changeset-spec-node__separator" />
+                <span className="changeset-node__separator" />
                 <ExternalChangesetNode node={node} {...props} />
             </>
         )
     }
     return (
         <>
-            <span className="changeset-spec-node__separator" />
+            <span className="changeset-node__separator" />
             <HiddenExternalChangesetNode node={node} {...props} />
         </>
     )

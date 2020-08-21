@@ -22,6 +22,7 @@ exports[`CampaignNode campaign without description 1`] = `
         "namespaceName": "alice",
         "url": "/users/alice",
       },
+      "url": "/users/alice/campaigns/123",
     }
   }
   now={2019-01-01T23:15:01.000Z}
@@ -48,11 +49,11 @@ exports[`CampaignNode campaign without description 1`] = `
         className="m-0 d-inline-block"
       >
         <AnchorLink
-          className="text-muted"
+          className="text-muted test-campaign-namespace-link"
           to="/users/alice/campaigns"
         >
           <a
-            className="text-muted"
+            className="text-muted test-campaign-namespace-link"
             href="/users/alice/campaigns"
           >
             alice
@@ -64,10 +65,12 @@ exports[`CampaignNode campaign without description 1`] = `
           /
         </span>
         <AnchorLink
-          to="/campaigns/123"
+          className="test-campaign-link"
+          to="/users/alice/campaigns/123"
         >
           <a
-            href="/campaigns/123"
+            className="test-campaign-link"
+            href="/users/alice/campaigns/123"
           >
             Upgrade lodash to v4
           </a>
@@ -237,6 +240,7 @@ exports[`CampaignNode closed campaign 1`] = `
         "namespaceName": "alice",
         "url": "/users/alice",
       },
+      "url": "/users/alice/campaigns/123",
     }
   }
   now={2019-01-01T23:15:01.000Z}
@@ -263,11 +267,11 @@ exports[`CampaignNode closed campaign 1`] = `
         className="m-0 d-inline-block"
       >
         <AnchorLink
-          className="text-muted"
+          className="text-muted test-campaign-namespace-link"
           to="/users/alice/campaigns"
         >
           <a
-            className="text-muted"
+            className="text-muted test-campaign-namespace-link"
             href="/users/alice/campaigns"
           >
             alice
@@ -279,10 +283,12 @@ exports[`CampaignNode closed campaign 1`] = `
           /
         </span>
         <AnchorLink
-          to="/campaigns/123"
+          className="test-campaign-link"
+          to="/users/alice/campaigns/123"
         >
           <a
-            href="/campaigns/123"
+            className="test-campaign-link"
+            href="/users/alice/campaigns/123"
           >
             Upgrade lodash to v4
           </a>
@@ -460,6 +466,7 @@ exports[`CampaignNode open campaign 1`] = `
         "namespaceName": "alice",
         "url": "/users/alice",
       },
+      "url": "/users/alice/campaigns/123",
     }
   }
   now={2019-01-01T23:15:01.000Z}
@@ -486,11 +493,11 @@ exports[`CampaignNode open campaign 1`] = `
         className="m-0 d-inline-block"
       >
         <AnchorLink
-          className="text-muted"
+          className="text-muted test-campaign-namespace-link"
           to="/users/alice/campaigns"
         >
           <a
-            className="text-muted"
+            className="text-muted test-campaign-namespace-link"
             href="/users/alice/campaigns"
           >
             alice
@@ -502,10 +509,12 @@ exports[`CampaignNode open campaign 1`] = `
           /
         </span>
         <AnchorLink
-          to="/campaigns/123"
+          className="test-campaign-link"
+          to="/users/alice/campaigns/123"
         >
           <a
-            href="/campaigns/123"
+            className="test-campaign-link"
+            href="/users/alice/campaigns/123"
           >
             Upgrade lodash to v4
           </a>
@@ -683,6 +692,7 @@ exports[`CampaignNode open campaign on user page 1`] = `
         "namespaceName": "alice",
         "url": "/users/alice",
       },
+      "url": "/users/alice/campaigns/123",
     }
   }
   now={2019-01-01T23:15:01.000Z}
@@ -709,10 +719,12 @@ exports[`CampaignNode open campaign on user page 1`] = `
         className="m-0 d-inline-block"
       >
         <AnchorLink
-          to="/campaigns/123"
+          className="test-campaign-link"
+          to="/users/alice/campaigns/123"
         >
           <a
-            href="/campaigns/123"
+            className="test-campaign-link"
+            href="/users/alice/campaigns/123"
           >
             Upgrade lodash to v4
           </a>

@@ -103,7 +103,7 @@ func Frontend() *Container {
 							DataMayNotExist: true,
 							Critical:        Alert{GreaterOrEqual: 2},
 							PanelOptions:    PanelOptions().LegendFormat("latency").Unit(Seconds),
-							Owner:           ObservableOwnerSearch,
+							Owner:           ObservableOwnerCloud,
 							PossibleSolutions: `
 								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
 								- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
@@ -116,7 +116,7 @@ func Frontend() *Container {
 							DataMayNotExist: true,
 							Critical:        Alert{GreaterOrEqual: 5},
 							PanelOptions:    PanelOptions().LegendFormat("latency").Unit(Seconds),
-							Owner:           ObservableOwnerSearch,
+							Owner:           ObservableOwnerCloud,
 							PossibleSolutions: `
 								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
 								- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
@@ -402,7 +402,7 @@ func Frontend() *Container {
 							DataMayBeNaN:    true, // ratio denominator could be 0
 							Warning:         Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
 							PanelOptions:    PanelOptions().LegendFormat("{{category}}").Unit(Percentage),
-							Owner:           ObservableOwnerSearch,
+							Owner:           ObservableOwnerCloud,
 							PossibleSolutions: `
 								- May not be a substantial issue, check the 'frontend' logs for potential causes.
 							`,
@@ -452,7 +452,7 @@ func Frontend() *Container {
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
-							Owner:             ObservableOwnerSearch,
+							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "none",
 						},
 						{
@@ -463,7 +463,7 @@ func Frontend() *Container {
 							DataMayBeNaN:      true, // ratio denominator could be 0
 							Warning:           Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Percentage),
-							Owner:             ObservableOwnerSearch,
+							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "none",
 						},
 					},
@@ -496,12 +496,12 @@ func Frontend() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerCPUUsage("frontend"),
-						sharedContainerMemoryUsage("frontend"),
+						sharedContainerCPUUsage("frontend", ObservableOwnerCloud),
+						sharedContainerMemoryUsage("frontend", ObservableOwnerCloud),
 					},
 					{
-						sharedContainerRestarts("frontend"),
-						sharedContainerFsInodes("frontend"),
+						sharedContainerRestarts("frontend", ObservableOwnerCloud),
+						sharedContainerFsInodes("frontend", ObservableOwnerCloud),
 					},
 				},
 			},
@@ -510,12 +510,12 @@ func Frontend() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("frontend"),
-						sharedProvisioningMemoryUsageLongTerm("frontend"),
+						sharedProvisioningCPUUsageLongTerm("frontend", ObservableOwnerCloud),
+						sharedProvisioningMemoryUsageLongTerm("frontend", ObservableOwnerCloud),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("frontend"),
-						sharedProvisioningMemoryUsageShortTerm("frontend"),
+						sharedProvisioningCPUUsageShortTerm("frontend", ObservableOwnerCloud),
+						sharedProvisioningMemoryUsageShortTerm("frontend", ObservableOwnerCloud),
 					},
 				},
 			},
@@ -524,8 +524,8 @@ func Frontend() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedGoGoroutines("frontend"),
-						sharedGoGcDuration("frontend"),
+						sharedGoGoroutines("frontend", ObservableOwnerCloud),
+						sharedGoGcDuration("frontend", ObservableOwnerCloud),
 					},
 				},
 			},
@@ -534,7 +534,7 @@ func Frontend() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedKubernetesPodsAvailable("frontend"),
+						sharedKubernetesPodsAvailable("frontend", ObservableOwnerCloud),
 					},
 				},
 			},

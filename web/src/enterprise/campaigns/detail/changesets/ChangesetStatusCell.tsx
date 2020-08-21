@@ -1,10 +1,5 @@
 import React from 'react'
-import {
-    ChangesetFields,
-    ChangesetPublicationState,
-    ChangesetReconcilerState,
-    ChangesetExternalState,
-} from '../../../../graphql-operations'
+import { ChangesetFields } from '../../../../graphql-operations'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SourcePullIcon from 'mdi-react/SourcePullIcon'
 import SourceMergeIcon from 'mdi-react/SourceMergeIcon'
@@ -12,6 +7,7 @@ import DeleteIcon from 'mdi-react/DeleteIcon'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import classNames from 'classnames'
+import { computeChangesetUIState, ChangesetUIState } from '../../utils'
 
 export interface ChangesetStatusCellProps {
     className?: string
@@ -19,25 +15,20 @@ export interface ChangesetStatusCellProps {
 }
 
 export const ChangesetStatusCell: React.FunctionComponent<ChangesetStatusCellProps> = ({ changeset }) => {
-    if (changeset.reconcilerState === ChangesetReconcilerState.ERRORED) {
-        return <ChangesetStatusError />
-    }
-    if (changeset.reconcilerState !== ChangesetReconcilerState.COMPLETED) {
-        return <ChangesetStatusProcessing />
-    }
-    if (changeset.publicationState === ChangesetPublicationState.UNPUBLISHED) {
-        return <ChangesetStatusUnpublished />
-    }
-    // Must be set, because changesetPublicationState !== UNPUBLISHED.
-    const externalState = changeset.externalState!
-    switch (externalState) {
-        case ChangesetExternalState.OPEN:
+    switch (computeChangesetUIState(changeset)) {
+        case ChangesetUIState.ERRORED:
+            return <ChangesetStatusError />
+        case ChangesetUIState.PROCESSING:
+            return <ChangesetStatusProcessing />
+        case ChangesetUIState.UNPUBLISHED:
+            return <ChangesetStatusUnpublished />
+        case ChangesetUIState.OPEN:
             return <ChangesetStatusOpen />
-        case ChangesetExternalState.CLOSED:
+        case ChangesetUIState.CLOSED:
             return <ChangesetStatusClosed />
-        case ChangesetExternalState.MERGED:
+        case ChangesetUIState.MERGED:
             return <ChangesetStatusMerged />
-        case ChangesetExternalState.DELETED:
+        case ChangesetUIState.DELETED:
             return <ChangesetStatusDeleted />
     }
 }

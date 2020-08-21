@@ -699,8 +699,8 @@ func TestFuzzifyGlobPattern(t *testing.T) {
 			want: "**foo**",
 		},
 		{
-			in:   "github.com/foo/bar",
-			want: "github.com/foo/bar**",
+			in:   "sourcegraph/sourcegraph",
+			want: "**sourcegraph/sourcegraph**",
 		},
 		{
 			in:   "",
@@ -738,6 +738,10 @@ func TestMapGlobToRegex(t *testing.T) {
 			want:  `"repo:^github\\.com/sourcegraph/sourcegraph$@v3.18.0"`,
 		},
 		{
+			input: "github.com/foo/bar",
+			want:  `"github.com/foo/bar"`,
+		},
+		{
 			input: "repo:**sourcegraph",
 			want:  `"repo:^.*?sourcegraph$"`,
 		},
@@ -761,6 +765,108 @@ func TestMapGlobToRegex(t *testing.T) {
 			got := prettyPrint(regexQuery)
 			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestConcatRevFilters(t *testing.T) {
+	cases := []struct {
+		input string
+		want  string
+	}{
+		{
+			input: "repo:foo",
+			want:  `("repo:foo")`,
+		},
+		{
+			input: "repo:foo rev:a",
+			want:  `("repo:foo@a")`,
+		},
+		{
+			input: "repo:foo repo:bar rev:a",
+			want:  `("repo:foo@a" "repo:bar@a")`,
+		},
+		{
+			input: "repo:foo bar and bas rev:a",
+			want:  `("repo:foo@a" "bar" "bas")`,
+		},
+		{
+			input: "(repo:foo rev:a) or (repo:foo rev:b)",
+			want:  `("repo:foo@a") OR ("repo:foo@b")`,
+		},
+		{
+			input: "repo:foo file:bas qux AND (rev:a or rev:b)",
+			want:  `("repo:foo@a" "file:bas" "qux") OR ("repo:foo@b" "file:bas" "qux")`,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.input, func(t *testing.T) {
+			query, _ := ParseAndOr(c.input, SearchTypeRegex)
+			queries := dnf(query)
+
+			var queriesStr []string
+			for _, q := range queries {
+				qConcat, err := concatRevFilters(q)
+				if err != nil {
+					t.Fatal(err)
+				}
+				queriesStr = append(queriesStr, prettyPrint(qConcat))
+			}
+			got := "(" + strings.Join(queriesStr, ") OR (") + ")"
+			if diff := cmp.Diff(c.want, got); diff != "" {
+				t.Error(diff)
+			}
+		})
+	}
+}
+
+func TestConcatRevFiltersTopLevelAnd(t *testing.T) {
+	cases := []struct {
+		input string
+		want  string
+	}{
+		{
+			input: "repo:sourcegraph",
+			want:  `"repo:sourcegraph"`,
+		},
+		{
+			input: "repo:sourcegraph rev:b",
+			want:  `"repo:sourcegraph@b"`,
+		},
+		{
+			input: "repo:sourcegraph foo and bar rev:b",
+			want:  `(and "repo:sourcegraph@b" "foo" "bar")`,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.input, func(t *testing.T) {
+			query, _ := ParseAndOr(c.input, SearchTypeRegex)
+			qConcat, err := concatRevFilters(query)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(c.want, prettyPrint(qConcat)); diff != "" {
+				t.Error(diff)
+			}
+		})
+	}
+}
+
+func TestConcatRevFiltersForInvalidSyntax(t *testing.T) {
+	cases := []string{
+		"repo:foo rev:a rev:b",
+		"repo:foo@a rev:b",
+	}
+	for _, c := range cases {
+		t.Run(c, func(t *testing.T) {
+			query, _ := ParseAndOr(c, SearchTypeRegex)
+			queries := dnf(query)
+			for _, q := range queries {
+				_, err := concatRevFilters(q)
+				if err == nil {
+					t.Fatal("Expected err, but got nil")
+				}
 			}
 		})
 	}

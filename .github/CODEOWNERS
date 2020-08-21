@@ -146,6 +146,7 @@
 /enterprise/cmd/frontend/internal/campaigns @sourcegraph/campaigns
 /internal/campaigns @sourcegraph/campaigns
 /web/**/campaigns/** @sourcegraph/campaigns
+/web/src/integration/campaigns.test.ts @sourcegraph/campaigns
 
 # Search
 */search/**/* @sourcegraph/search

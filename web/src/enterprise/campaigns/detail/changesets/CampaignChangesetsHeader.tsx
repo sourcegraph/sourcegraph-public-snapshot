@@ -11,7 +11,7 @@ export const CampaignChangesetsHeader: React.FunctionComponent<CampaignChangeset
     totalCount,
 }) => (
     <>
-        <div className="changeset-spec-list-header__title mb-2">
+        <div className="campaign-changesets-header__title mb-2">
             <strong>
                 Displaying {nodes.length}
                 {totalCount && <> of {totalCount}</>} changesets

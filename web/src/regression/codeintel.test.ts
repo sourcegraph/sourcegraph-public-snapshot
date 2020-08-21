@@ -18,7 +18,7 @@ import { Driver } from '../../../shared/src/testing/driver'
 import { Config, getConfig } from '../../../shared/src/testing/config'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import { overwriteSettings } from '../../../shared/src/settings/edit'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { asError } from '../../../shared/src/util/errors'
 
 describe('Code intelligence regression test suite', () => {
@@ -144,7 +144,7 @@ describe('Code intelligence regression test suite', () => {
         outerResourceManager.add('Global setting', 'codeIntel.includeForks', await setIncludeForks(gqlClient, true))
     })
 
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
 
     after(async () => {
         if (!config.noCleanup) {

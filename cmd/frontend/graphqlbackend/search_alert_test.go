@@ -302,14 +302,17 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			mockDecodedViewerFinalSettings = &schema.Settings{SearchGlobbing: &test.globbing}
-			defer func() { mockDecodedViewerFinalSettings = nil }()
 			setMockResolveRepositories(test.repoRevs)
 			q, err := query.ProcessAndOr(test.query, query.ParserOptions{SearchType: query.SearchType(0), Globbing: test.globbing})
 			if err != nil {
 				t.Fatal(err)
 			}
-			sr := searchResolver{query: q}
+			sr := searchResolver{
+				query: q,
+				userSettings: &schema.Settings{
+					SearchGlobbing: &test.globbing,
+				},
+			}
 
 			ctx, cancel := context.WithCancel(context.Background())
 			if test.cancelContext {

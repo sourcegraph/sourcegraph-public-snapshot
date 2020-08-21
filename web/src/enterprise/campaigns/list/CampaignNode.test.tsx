@@ -10,6 +10,7 @@ const now = parseISO('2019-01-01T23:15:01Z')
 describe('CampaignNode', () => {
     const node: ListCampaign = {
         id: '123',
+        url: '/users/alice/campaigns/123',
         name: 'Upgrade lodash to v4',
         description: `
 # Removes lodash

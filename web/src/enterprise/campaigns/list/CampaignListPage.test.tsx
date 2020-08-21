@@ -17,7 +17,11 @@ describe('CampaignListPage', () => {
                         history={history}
                         location={history.location}
                         queryCampaigns={() =>
-                            of({ totalCount: Object.values(nodes).length, nodes: Object.values(nodes) })
+                            of({
+                                totalCount: Object.values(nodes).length,
+                                nodes: Object.values(nodes),
+                                pageInfo: { endCursor: null, hasNextPage: false },
+                            })
                         }
                         telemetryService={NOOP_TELEMETRY_SERVICE}
                     />
@@ -31,7 +35,11 @@ describe('CampaignListPage', () => {
                         history={history}
                         location={history.location}
                         queryCampaigns={() =>
-                            of({ totalCount: Object.values(nodes).length, nodes: Object.values(nodes) })
+                            of({
+                                totalCount: Object.values(nodes).length,
+                                nodes: Object.values(nodes),
+                                pageInfo: { endCursor: null, hasNextPage: false },
+                            })
                         }
                         telemetryService={NOOP_TELEMETRY_SERVICE}
                     />

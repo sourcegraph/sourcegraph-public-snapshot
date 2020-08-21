@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -530,4 +531,63 @@ func buildGithubPR(now time.Time, externalID, title, body, headRef string) inter
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
+}
+
+type testChangesetOpts struct {
+	repo         api.RepoID
+	campaign     int64
+	currentSpec  int64
+	previousSpec int64
+
+	externalServiceType string
+	externalID          string
+	externalBranch      string
+
+	publicationState campaigns.ChangesetPublicationState
+	failureMessage   string
+
+	createdByCampaign bool
+	ownedByCampaign   int64
+}
+
+func createChangeset(
+	t *testing.T,
+	ctx context.Context,
+	store *Store,
+	opts testChangesetOpts,
+) *campaigns.Changeset {
+	t.Helper()
+
+	if opts.externalServiceType == "" {
+		opts.externalServiceType = extsvc.TypeGitHub
+	}
+
+	changeset := &campaigns.Changeset{
+		RepoID:         opts.repo,
+		CurrentSpecID:  opts.currentSpec,
+		PreviousSpecID: opts.previousSpec,
+
+		ExternalServiceType: opts.externalServiceType,
+		ExternalID:          opts.externalID,
+		ExternalBranch:      opts.externalBranch,
+
+		PublicationState: opts.publicationState,
+
+		CreatedByCampaign: opts.createdByCampaign,
+		OwnedByCampaignID: opts.ownedByCampaign,
+	}
+
+	if opts.failureMessage != "" {
+		changeset.FailureMessage = &opts.failureMessage
+	}
+
+	if opts.campaign != 0 {
+		changeset.CampaignIDs = []int64{opts.campaign}
+	}
+
+	if err := store.CreateChangeset(ctx, changeset); err != nil {
+		t.Fatalf("creating changeset failed: %s", err)
+	}
+
+	return changeset
 }

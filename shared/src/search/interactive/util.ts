@@ -40,6 +40,8 @@ export enum FilterType {
     patterntype = 'patterntype',
     index = 'index',
     stable = 'stable',
+    // eslint-disable-next-line unicorn/prevent-abbreviations
+    rev = 'rev',
 }
 
 export enum AliasedFilterType {
@@ -52,6 +54,7 @@ export enum AliasedFilterType {
     since = 'after',
     m = 'message',
     'msg' = 'message',
+    revision = 'rev',
 }
 
 export const isFilterType = (filter: string): filter is FilterType => filter in FilterType
