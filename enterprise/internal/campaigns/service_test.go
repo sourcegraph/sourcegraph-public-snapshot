@@ -253,15 +253,15 @@ func TestService(t *testing.T) {
 
 		adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
 
+		mockCloseChangesets = func(ctx context.Context, cs campaigns.Changesets) {
+			if a := actor.FromContext(ctx); a.UID != admin.ID {
+				t.Errorf("wrong actor in context. want=%d, have=%d", admin.ID, a.UID)
+			}
+		}
+		t.Cleanup(func() { mockCloseChangesets = nil })
+
 		closeConfirm := func(t *testing.T, c *campaigns.Campaign, closeChangesets bool) {
 			t.Helper()
-
-			mockCloseChangesets = func(ctx context.Context, cs campaigns.Changesets) {
-				if a := actor.FromContext(ctx); a.UID != admin.ID {
-					t.Fatalf("wrong actor in context. want=%d, have=%d", admin.ID, a.UID)
-				}
-			}
-			defer func() { mockCloseChangesets = nil }()
 
 			closedCampaign, err := svc.CloseCampaign(adminCtx, c.ID, closeChangesets, false)
 			if err != nil {
