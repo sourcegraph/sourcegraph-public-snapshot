@@ -69,7 +69,7 @@ export GOBIN="$tmpdir"
 
 TAGS='dev'
 if [ -n "$DELVE" ]; then
-  echo -e >&2 "Building Go code with optimizations disabled (for debugging)."
+  echo -e "Building Go code with optimizations disabled (for debugging)." >&2
   GCFLAGS='all=-N -l'
   TAGS="$TAGS delve"
 fi
