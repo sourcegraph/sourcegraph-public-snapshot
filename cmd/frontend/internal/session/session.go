@@ -265,14 +265,18 @@ func deleteSession(w http.ResponseWriter, r *http.Request) error {
 
 // InvalidateSessions invalidates all sessions for a user
 // If an error occurs, it returns the error
-func InvalidateSessions(w http.ResponseWriter, r *http.Request, ID int32) error {
+func InvalidateSessions(w http.ResponseWriter, r *http.Request, id int32) error {
 	// Get the user from the body
+	user, err := db.Users.GetByID(r.Context(), id)
+	if err != nil {
+		return err
+	}
 
-	// Get the user's sessions
-	// First, get the names of the sessions (cookiestore?)
-	// Then, get the sesions from sessionStore.get(r, cookieName)
+	// Update the user's last invalidated time to now
 
-	// Invalidate them all by setting sesion.Options.MaxAge = -1
+	// Save to the database
+
+	// If the user is the current user, invalidate the current session
 
 	return nil
 }
