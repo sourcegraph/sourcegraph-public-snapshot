@@ -16,7 +16,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - Introduced the new `external_service_repos` join table. Please note that the migration required to make this change could take a couple of minutes.
-- The new site configuration property `campaigns.enabled` can be used to enable or disable campaigns for all users. The properties `campaigns.readAccess`, `automation.readAccess.enabled`, and `"experimentalFeatures": { "automation": "enabled" }}` are deprecated and without any effect.
+- Campaigns are enabled by default for all users, with site admins having read/write access and users only read access. The new site configuration property `campaigns.enabled` can be used to disable campaigns for all users. The properties `campaigns.readAccess`, `automation.readAccess.enabled`, and `"experimentalFeatures": { "automation": "enabled" }}` are deprecated and without any effect.
 
 ### Fixed
 
