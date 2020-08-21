@@ -114,6 +114,8 @@
 // 1528395705_remove_bad_migration.up.sql (387B)
 // 1528395706_add_table_external_services_repos.down.sql (526B)
 // 1528395706_add_table_external_services_repos.up.sql (3.203kB)
+// 1528395707_add_index_to_external_services_repos_repo_id.down.sql (139B)
+// 1528395707_add_index_to_external_services_repos_repo_id.up.sql (182B)
 
 package migrations
 
@@ -2462,6 +2464,46 @@ func _1528395706_add_table_external_services_reposUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395707_add_index_to_external_services_repos_repo_idDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\xcb\xb1\x0a\xc2\x30\x10\x06\xe0\x3d\x4f\xf1\xbf\x40\x5f\x40\xc7\xb6\x42\x40\x52\x49\x2b\xd4\x29\xc4\xf4\x86\x60\xb9\x93\xcb\x29\x3e\xbe\xe0\xee\xf2\x6d\x5f\xd7\x21\x88\xd1\x01\x43\x9c\x2e\xf0\x61\x18\x57\xf4\x53\xe8\xaf\x31\x8e\x61\x39\xdf\x50\x32\xb3\x18\xf4\xc5\xa8\xdc\xea\x46\xc8\x30\xcd\xdc\x72\xb1\x2a\x8c\xfb\x2e\xe5\xe1\xdc\xbf\xee\x4f\x18\x57\x3f\x2f\x33\xe8\x63\xa4\x9c\xf7\xd4\x48\xdf\xb5\x50\x52\x7a\x4a\xfb\x99\xea\x76\x74\xee\x1b\x00\x00\xff\xff\xc0\x04\x79\xd9\x8b\x00\x00\x00")
+
+func _1528395707_add_index_to_external_services_repos_repo_idDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395707_add_index_to_external_services_repos_repo_idDownSql,
+		"1528395707_add_index_to_external_services_repos_repo_id.down.sql",
+	)
+}
+
+func _1528395707_add_index_to_external_services_repos_repo_idDownSql() (*asset, error) {
+	bytes, err := _1528395707_add_index_to_external_services_repos_repo_idDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395707_add_index_to_external_services_repos_repo_id.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x63, 0x28, 0x4, 0x9d, 0x6f, 0x47, 0x3e, 0xa8, 0xad, 0x9b, 0x8, 0xc3, 0xc1, 0xe1, 0xa4, 0x98, 0xd, 0x9f, 0xf9, 0x92, 0x5a, 0x67, 0x64, 0xab, 0xcc, 0x28, 0xec, 0xe3, 0xf0, 0xb6, 0x64, 0x0}}
+	return a, nil
+}
+
+var __1528395707_add_index_to_external_services_repos_repo_idUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\xcc\xb1\xaa\xc2\x30\x14\x87\xf1\x3d\x4f\xf1\x1f\xef\x1d\xfa\x02\x3a\x49\x8d\x10\x90\x13\x48\x23\xd4\x29\xc4\xf4\x0c\xc1\x72\x22\x49\x14\x1f\x5f\x10\xd7\x2e\xdf\xf4\xe3\x1b\x06\x50\xe9\xbc\xc3\xe8\xf4\xc1\x6b\x18\x3a\xea\x19\xa3\xa5\xf1\xe2\x9c\x26\x7f\xbe\x22\x45\x91\xd2\x51\x9f\x82\x2c\x2d\x2f\x8c\x88\x5e\xa3\xb4\x98\x7a\x2e\x82\xdb\x5a\xd2\x5d\xa9\xed\x81\x39\x81\xac\x87\x9e\xcd\xe4\x27\xf0\xbb\x73\x95\xb8\x86\xc6\xf5\x95\x13\x87\xca\x8f\xd2\xbe\x0d\x79\x81\xa5\x0d\xf1\xf7\x13\xff\x7b\xa5\x3e\x01\x00\x00\xff\xff\x47\x69\x96\x52\xb6\x00\x00\x00")
+
+func _1528395707_add_index_to_external_services_repos_repo_idUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395707_add_index_to_external_services_repos_repo_idUpSql,
+		"1528395707_add_index_to_external_services_repos_repo_id.up.sql",
+	)
+}
+
+func _1528395707_add_index_to_external_services_repos_repo_idUpSql() (*asset, error) {
+	bytes, err := _1528395707_add_index_to_external_services_repos_repo_idUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395707_add_index_to_external_services_repos_repo_id.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x0, 0xa4, 0xff, 0x3f, 0x1a, 0xd0, 0xd5, 0xf5, 0x46, 0x65, 0x1a, 0xcb, 0xa9, 0x12, 0x88, 0x81, 0xe3, 0x61, 0xfc, 0x17, 0xb7, 0xde, 0x39, 0x48, 0x4f, 0xaa, 0x18, 0x97, 0x57, 0xb3, 0x82, 0xc1}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2667,6 +2709,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395705_remove_bad_migration.up.sql":                                  _1528395705_remove_bad_migrationUpSql,
 	"1528395706_add_table_external_services_repos.down.sql":                   _1528395706_add_table_external_services_reposDownSql,
 	"1528395706_add_table_external_services_repos.up.sql":                     _1528395706_add_table_external_services_reposUpSql,
+	"1528395707_add_index_to_external_services_repos_repo_id.down.sql":        _1528395707_add_index_to_external_services_repos_repo_idDownSql,
+	"1528395707_add_index_to_external_services_repos_repo_id.up.sql":          _1528395707_add_index_to_external_services_repos_repo_idUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2827,6 +2871,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395705_remove_bad_migration.up.sql":                                  {_1528395705_remove_bad_migrationUpSql, map[string]*bintree{}},
 	"1528395706_add_table_external_services_repos.down.sql":                   {_1528395706_add_table_external_services_reposDownSql, map[string]*bintree{}},
 	"1528395706_add_table_external_services_repos.up.sql":                     {_1528395706_add_table_external_services_reposUpSql, map[string]*bintree{}},
+	"1528395707_add_index_to_external_services_repos_repo_id.down.sql":        {_1528395707_add_index_to_external_services_repos_repo_idDownSql, map[string]*bintree{}},
+	"1528395707_add_index_to_external_services_repos_repo_id.up.sql":          {_1528395707_add_index_to_external_services_repos_repo_idUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
