@@ -51,9 +51,9 @@ See the [query syntax](queries.md#diff-and-commit-searches-only) documentation f
 
 ### Commit message search
 
-Searching over commit messages is supported in Sourcegraph by adding `type:commit` to your search query. Separately, you can also use the `message:"any string"` parameter to filter `type:diff` searches for a given commit message.
+Searching over commit messages is supported in Sourcegraph by adding `type:commit` to your search query. Separately, you can also use the `message:"any string"` parameter to filter `type:diff` searches for a given commit message. Commit message searches can narrowed down further with filters such as author and time. 
 
-Commit message searches can narrowed down further with filters such as author and time. See our [query syntax ](queries.md#diff-and-commit-searches-only) documentation for a comprehensive list of supported parameters.
+See our [query syntax ](queries.md#diff-and-commit-searches-only) documentation for a comprehensive list of supported parameters.
 
 ### Symbol search
 
