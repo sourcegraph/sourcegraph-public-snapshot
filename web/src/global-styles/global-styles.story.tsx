@@ -64,13 +64,13 @@ const TextStory: React.FunctionComponent = () => (
             Minim nisi tempor Lorem do incididunt exercitation ipsum consectetur laboris elit est aute irure velit.
             Voluptate irure excepteur sint reprehenderit culpa laboris. Elit id nostrud enim laboris irure. Est sunt ex
             ipisicing aute elit voluptate consectetur.Do laboris anim fugiat ipsum sunt elit sunt amet consequat trud
-            irure labore cupidatat laboris.Voluptate eiusmod veniam nisi reprehenderit cillum Lorem veniam at amet ea
-            dolore enim.Ea laborum fugiat Lorem ea amet amet exercitation dolor culpa. Do consequat dolor ad elit ipsum
-            nostrud non laboris voluptate aliquip est reprehenderit incididunt. Eu nulla ad te enim.Pariatur duis
+            irure labore cupidatat laboris. Voluptate eiusmod veniam nisi reprehenderit cillum Lorem veniam at amet ea
+            dolore enim. Ea laborum fugiat Lorem ea amet amet exercitation dolor culpa. Do consequat dolor ad elit ipsum
+            nostrud non laboris voluptate aliquip est reprehenderit incididunt. Eu nulla ad te enim. Pariatur duis
             pariatur sit adipisicing pariatur nulla quis do sint deserunt aliqua Lorem aborum. Dolor esse aute cupidatat
-            deserunt anim ad eiusmod quis quis laborum magna nisi occaecat.Eu is eiusmod sint aliquip duis est sit irure
-            velit reprehenderit id. Cillum est esse et nulla ut adipisicing velit anim id exercitation nostrud. Duis
-            veniam sit laboris tempor quis sit cupidatat elit.
+            deserunt anim ad eiusmod quis quis laborum magna nisi occaecat. Eu is eiusmod sint aliquip duis est sit
+            irure velit reprehenderit id. Cillum est esse et nulla ut adipisicing velit anim id exercitation nostrud.
+            Duis veniam sit laboris tempor quis sit cupidatat elit.
         </p>
 
         <p>
