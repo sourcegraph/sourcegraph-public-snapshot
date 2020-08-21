@@ -29,10 +29,10 @@ export const externalServiceFragment = gql`
     }
 `
 
-export function addExternalService(
+export async function addExternalService(
     variables: AddExternalServiceVariables,
     eventLogger: TelemetryService
-): Observable<AddExternalServiceResult['addExternalService']> {
+): Promise<AddExternalServiceResult['addExternalService']> {
     return requestGraphQL<AddExternalServiceResult, AddExternalServiceVariables>({
         request: gql`
             mutation AddExternalService($input: AddExternalServiceInput!) {
@@ -44,16 +44,18 @@ export function addExternalService(
             ${externalServiceFragment}
         `,
         variables,
-    }).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.addExternalService || (errors && errors.length > 0)) {
-                eventLogger.log('AddExternalServiceFailed')
-                throw createAggregateError(errors)
-            }
-            eventLogger.log('AddExternalServiceSucceeded')
-            return data.addExternalService
-        })
-    )
+    })
+        .pipe(
+            map(({ data, errors }) => {
+                if (!data || !data.addExternalService || (errors && errors.length > 0)) {
+                    eventLogger.log('AddExternalServiceFailed')
+                    throw createAggregateError(errors)
+                }
+                eventLogger.log('AddExternalServiceSucceeded')
+                return data.addExternalService
+            })
+        )
+        .toPromise()
 }
 
 export function isExternalService(
@@ -64,7 +66,7 @@ export function isExternalService(
 
 export function updateExternalService(
     variables: UpdateExternalServiceVariables
-): Observable<UpdateExternalServiceResult['updateExternalService']> {
+): Promise<UpdateExternalServiceResult['updateExternalService']> {
     return requestGraphQL<UpdateExternalServiceResult, UpdateExternalServiceVariables>({
         request: gql`
             mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
@@ -75,10 +77,12 @@ export function updateExternalService(
             ${externalServiceFragment}
         `,
         variables,
-    }).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.updateExternalService)
-    )
+    })
+        .pipe(
+            map(dataOrThrowErrors),
+            map(data => data.updateExternalService)
+        )
+        .toPromise()
 }
 
 export function fetchExternalService(id: Scalars['ID']): Observable<ExternalServiceFields> {

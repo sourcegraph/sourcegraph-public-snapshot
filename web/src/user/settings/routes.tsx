@@ -1,8 +1,10 @@
 import React from 'react'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { lazyComponent } from '../../util/lazyComponent'
-import { UserSettingsAreaRoute } from './UserSettingsArea'
+import { UserSettingsAreaRoute, UserSettingsAreaRouteContext } from './UserSettingsArea'
 import { codeHostExternalServices } from '../../components/externalServices/externalServices'
+import { Scalars } from '../../graphql-operations'
+import { RouteComponentProps } from 'react-router'
 
 const SettingsArea = lazyComponent(() => import('../../settings/SettingsArea'), 'SettingsArea')
 const ExternalServicesPage = lazyComponent(
@@ -102,8 +104,12 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     },
     {
         path: '/external-services/:id',
-        render: props => (
-            <ExternalServicePage {...props} afterUpdateRoute={props.user.url + '/settings/external-services'} />
+        render: ({ match, ...props }: RouteComponentProps<{ id: Scalars['ID'] }> & UserSettingsAreaRouteContext) => (
+            <ExternalServicePage
+                {...props}
+                externalServiceID={match.params.id}
+                afterUpdateRoute={props.user.url + '/settings/external-services'}
+            />
         ),
         exact: true,
     },

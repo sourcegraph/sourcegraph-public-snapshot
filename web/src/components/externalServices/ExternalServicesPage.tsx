@@ -1,18 +1,18 @@
 import AddIcon from 'mdi-react/AddIcon'
 import React, { useEffect, useMemo, useCallback } from 'react'
 import { Redirect } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Subject } from 'rxjs'
 import { map, tap } from 'rxjs/operators'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../FilteredConnection'
 import { PageTitle } from '../PageTitle'
 import * as H from 'history'
-import { queryExternalServices } from './backend'
+import { queryExternalServices as _queryExternalServices } from './backend'
 import { ExternalServiceNodeProps, ExternalServiceNode } from './ExternalServiceNode'
 import { ListExternalServiceFields, Scalars } from '../../graphql-operations'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { Link } from '../../../../shared/src/components/Link'
 
 interface Props extends ActivationProps, TelemetryProps {
     history: H.History
@@ -20,6 +20,9 @@ interface Props extends ActivationProps, TelemetryProps {
     routingPrefix: string
     afterDeleteRoute: string
     userID?: Scalars['ID']
+
+    /** For testing only. */
+    queryExternalServices?: typeof _queryExternalServices
 }
 
 /**
@@ -33,6 +36,7 @@ export const ExternalServicesPage: React.FunctionComponent<Props> = ({
     activation,
     userID,
     telemetryService,
+    queryExternalServices = _queryExternalServices,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminExternalServices')
@@ -46,7 +50,7 @@ export const ExternalServicesPage: React.FunctionComponent<Props> = ({
                 queryExternalServices({ first: 1, after: null, namespace: userID ?? null }).pipe(
                     map(externalServicesResult => externalServicesResult.totalCount === 0)
                 ),
-            [userID]
+            [userID, queryExternalServices]
         )
     )
 
@@ -63,7 +67,7 @@ export const ExternalServicesPage: React.FunctionComponent<Props> = ({
                     }
                 })
             ),
-        [userID, activation]
+        [userID, activation, queryExternalServices]
     )
 
     if (noExternalServices === true) {

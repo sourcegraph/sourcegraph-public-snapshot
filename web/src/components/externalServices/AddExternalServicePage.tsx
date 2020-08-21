@@ -1,21 +1,17 @@
 import * as H from 'history'
 import React, { useEffect, useCallback, useState } from 'react'
-import { Observable, concat } from 'rxjs'
-import { catchError, switchMap } from 'rxjs/operators'
 import { Markdown } from '../../../../shared/src/components/Markdown'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { ErrorLike, asError, isErrorLike } from '../../../../shared/src/util/errors'
+import { asError, isErrorLike } from '../../../../shared/src/util/errors'
 import { renderMarkdown } from '../../../../shared/src/util/markdown'
 import { PageTitle } from '../PageTitle'
 import { refreshSiteFlags } from '../../site/backend'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ExternalServiceCard } from './ExternalServiceCard'
 import { AddExternalServiceOptions } from './externalServices'
-import { useEventObservable } from '../../../../shared/src/util/useObservable'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { ExternalServiceForm } from './ExternalServiceForm'
 import { addExternalService } from './backend'
-import { ExternalServiceFields, Scalars } from '../../graphql-operations'
+import { ExternalServiceFields, Scalars, AddExternalServiceInput } from '../../graphql-operations'
 
 interface Props extends ThemeProps, TelemetryProps {
     history: H.History
@@ -23,6 +19,9 @@ interface Props extends ThemeProps, TelemetryProps {
     routingPrefix: string
     afterCreateRoute: string
     userID?: Scalars['ID']
+
+    /** For testing only. */
+    autoFocusForm?: boolean
 }
 
 /**
@@ -36,6 +35,7 @@ export const AddExternalServicePage: React.FunctionComponent<Props> = ({
     routingPrefix,
     telemetryService,
     userID,
+    autoFocusForm,
 }) => {
     const [config, setConfig] = useState(externalService.defaultConfig)
     const [displayName, setDisplayName] = useState(externalService.defaultDisplayName)
@@ -44,35 +44,8 @@ export const AddExternalServicePage: React.FunctionComponent<Props> = ({
         telemetryService.logViewEvent('AddExternalService')
     }, [telemetryService])
 
-    const [nextSubmit, createdServiceOrError] = useEventObservable(
-        useCallback(
-            (submits: Observable<GQL.IAddExternalServiceInput>): Observable<ErrorLike | ExternalServiceFields> =>
-                submits.pipe(
-                    switchMap(input =>
-                        concat(
-                            addExternalService(
-                                { input: { ...input, namespace: userID ?? null } },
-                                telemetryService
-                            ).pipe(catchError(error => [asError(error)]))
-                        )
-                    )
-                ),
-            [telemetryService, userID]
-        )
-    )
-
-    useEffect(() => {
-        if (createdServiceOrError && !isErrorLike(createdServiceOrError)) {
-            // Refresh site flags so that global site alerts
-            // reflect the latest configuration.
-            // eslint-disable-next-line rxjs/no-ignored-subscription
-            refreshSiteFlags().subscribe({ error: error => console.error(error) })
-            history.push(afterCreateRoute)
-        }
-    }, [createdServiceOrError, history, afterCreateRoute])
-
     const getExternalServiceInput = useCallback(
-        (): GQL.IAddExternalServiceInput => ({
+        (): AddExternalServiceInput => ({
             displayName,
             config,
             kind: externalService.kind,
@@ -81,41 +54,57 @@ export const AddExternalServicePage: React.FunctionComponent<Props> = ({
     )
 
     const onChange = useCallback(
-        (input: GQL.IAddExternalServiceInput): void => {
+        (input: AddExternalServiceInput): void => {
             setDisplayName(input.displayName)
             setConfig(input.config)
         },
         [setDisplayName, setConfig]
     )
 
+    const [isCreating, setIsCreating] = useState<boolean | Error>(false)
+    const [createdExternalService, setCreatedExternalService] = useState<ExternalServiceFields>()
     const onSubmit = useCallback(
-        (event?: React.FormEvent<HTMLFormElement>): void => {
+        async (event?: React.FormEvent<HTMLFormElement>): Promise<void> => {
             if (event) {
                 event.preventDefault()
             }
-            nextSubmit(getExternalServiceInput())
+            setIsCreating(true)
+            try {
+                const service = await addExternalService(
+                    { input: { ...getExternalServiceInput(), namespace: userID ?? null } },
+                    telemetryService
+                )
+                setCreatedExternalService(service)
+                // Refresh site flags so that global site alerts
+                // reflect the latest configuration.
+                // eslint-disable-next-line rxjs/no-ignored-subscription
+                refreshSiteFlags().subscribe({ error: error => console.error(error) })
+                history.push(afterCreateRoute)
+            } catch (error) {
+                setIsCreating(asError(error))
+            }
         },
-        [nextSubmit, getExternalServiceInput]
+        [afterCreateRoute, getExternalServiceInput, history, telemetryService, userID]
     )
 
     return (
         <div className="add-external-service-page mt-3">
             <PageTitle title="Add repositories" />
             <h2>Add repositories</h2>
-            {createdServiceOrError && !isErrorLike(createdServiceOrError) && createdServiceOrError.warning ? (
+            {createdExternalService?.warning ? (
                 <div>
                     <div className="mb-3">
                         <ExternalServiceCard
                             {...externalService}
-                            title={createdServiceOrError.displayName}
+                            title={createdExternalService.displayName}
                             shortDescription="Update this external service configuration to manage repository mirroring."
-                            to={`${routingPrefix}/external-services/${createdServiceOrError.id}`}
+                            to={`${routingPrefix}/external-services/${createdExternalService.id}`}
                         />
                     </div>
                     <div className="alert alert-warning">
                         <h4>Warning</h4>
                         <Markdown
-                            dangerousInnerHTML={renderMarkdown(createdServiceOrError.warning)}
+                            dangerousInnerHTML={renderMarkdown(createdExternalService.warning)}
                             history={history}
                         />
                     </div>
@@ -131,14 +120,15 @@ export const AddExternalServicePage: React.FunctionComponent<Props> = ({
                         history={history}
                         isLightTheme={isLightTheme}
                         telemetryService={telemetryService}
-                        error={isErrorLike(createdServiceOrError) ? createdServiceOrError : undefined}
+                        error={isErrorLike(isCreating) ? isCreating : undefined}
                         input={getExternalServiceInput()}
                         editorActions={externalService.editorActions}
                         jsonSchema={externalService.jsonSchema}
                         mode="create"
                         onSubmit={onSubmit}
                         onChange={onChange}
-                        loading={createdServiceOrError === undefined}
+                        loading={isCreating === true}
+                        autoFocus={autoFocusForm}
                     />
                 </div>
             )}

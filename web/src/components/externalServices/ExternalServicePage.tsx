@@ -1,9 +1,7 @@
 import { parse as parseJSONC } from '@sqs/jsonc-parser'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { useEffect, useState, useCallback } from 'react'
-import { RouteComponentProps } from 'react-router'
-import { concat, Observable } from 'rxjs'
-import { catchError, switchMap } from 'rxjs/operators'
+import { catchError } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { PageTitle } from '../PageTitle'
@@ -12,25 +10,32 @@ import { ErrorAlert } from '../alerts'
 import { defaultExternalServices, codeHostExternalServices } from './externalServices'
 import { hasProperty } from '../../../../shared/src/util/types'
 import * as H from 'history'
-import { useEventObservable } from '../../../../shared/src/util/useObservable'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-import { isExternalService, updateExternalService, fetchExternalService } from './backend'
+import { isExternalService, updateExternalService, fetchExternalService as _fetchExternalService } from './backend'
 import { ExternalServiceWebhook } from './ExternalServiceWebhook'
 import { ExternalServiceForm } from './ExternalServiceForm'
-import { ExternalServiceFields } from '../../graphql-operations'
+import { ExternalServiceFields, Scalars } from '../../graphql-operations'
 
-interface Props extends RouteComponentProps<{ id: GQL.ID }>, TelemetryProps {
+interface Props extends TelemetryProps {
+    externalServiceID: Scalars['ID']
     isLightTheme: boolean
     history: H.History
     afterUpdateRoute: string
+
+    /** For testing only. */
+    fetchExternalService?: typeof _fetchExternalService
+    /** For testing only. */
+    autoFocusForm?: boolean
 }
 
 export const ExternalServicePage: React.FunctionComponent<Props> = ({
-    match,
+    externalServiceID,
     history,
     isLightTheme,
     telemetryService,
     afterUpdateRoute,
+    fetchExternalService = _fetchExternalService,
+    autoFocusForm,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminExternalService')
@@ -39,13 +44,13 @@ export const ExternalServicePage: React.FunctionComponent<Props> = ({
     const [externalServiceOrError, setExternalServiceOrError] = useState<ExternalServiceFields | ErrorLike>()
 
     useEffect(() => {
-        const subscription = fetchExternalService(match.params.id)
+        const subscription = fetchExternalService(externalServiceID)
             .pipe(catchError(error => [asError(error)]))
             .subscribe(result => {
                 setExternalServiceOrError(result)
             })
         return () => subscription.unsubscribe()
-    }, [match.params.id])
+    }, [externalServiceID, fetchExternalService])
 
     const onChange = useCallback(
         (input: GQL.IAddExternalServiceInput) => {
@@ -56,45 +61,35 @@ export const ExternalServicePage: React.FunctionComponent<Props> = ({
         [externalServiceOrError, setExternalServiceOrError]
     )
 
-    const [nextSubmit, updatedServiceOrError] = useEventObservable(
-        useCallback(
-            (submits: Observable<ExternalServiceFields>): Observable<ErrorLike | ExternalServiceFields> =>
-                submits.pipe(
-                    switchMap(input =>
-                        concat(updateExternalService({ input }).pipe(catchError((error: Error) => [asError(error)])))
-                    )
-                ),
-            []
-        )
-    )
-
-    // If the update was successful, and did not surface a warning, redirect to the
-    // repositories page, adding `?repositoriesUpdated` to the query string so that we display
-    // a banner at the top of the page.
-    useEffect(() => {
-        if (updatedServiceOrError && !isErrorLike(updatedServiceOrError)) {
-            if (updatedServiceOrError.warning) {
-                setExternalServiceOrError(updatedServiceOrError)
-            } else {
-                history.push(afterUpdateRoute)
-            }
-        }
-    }, [updatedServiceOrError, history, afterUpdateRoute])
-
+    const [isUpdating, setIsUpdating] = useState<boolean | Error>()
     const onSubmit = useCallback(
-        (event?: React.FormEvent<HTMLFormElement>): void => {
+        async (event?: React.FormEvent<HTMLFormElement>): Promise<void> => {
             if (event) {
                 event.preventDefault()
             }
             if (isExternalService(externalServiceOrError)) {
-                nextSubmit(externalServiceOrError)
+                try {
+                    setIsUpdating(true)
+                    const updatedService = await updateExternalService({ input: externalServiceOrError })
+                    // If the update was successful, and did not surface a warning, redirect to the
+                    // repositories page, adding `?repositoriesUpdated` to the query string so that we display
+                    // a banner at the top of the page.
+                    if (updatedService.warning) {
+                        setExternalServiceOrError(updatedService)
+                        setIsUpdating(false)
+                    } else {
+                        history.push(afterUpdateRoute)
+                    }
+                } catch (error) {
+                    setIsUpdating(asError(error))
+                }
             }
         },
-        [externalServiceOrError, nextSubmit]
+        [afterUpdateRoute, externalServiceOrError, history]
     )
     let error: ErrorLike | undefined
-    if (isErrorLike(updatedServiceOrError)) {
-        error = updatedServiceOrError
+    if (isErrorLike(isUpdating)) {
+        error = isUpdating
     }
 
     const externalService = (!isErrorLike(externalServiceOrError) && externalServiceOrError) || undefined
@@ -147,12 +142,13 @@ export const ExternalServicePage: React.FunctionComponent<Props> = ({
                     error={error}
                     warning={externalService.warning}
                     mode="edit"
-                    loading={updatedServiceOrError === undefined}
+                    loading={isUpdating === true}
                     onSubmit={onSubmit}
                     onChange={onChange}
                     history={history}
                     isLightTheme={isLightTheme}
                     telemetryService={telemetryService}
+                    autoFocus={autoFocusForm}
                 />
             )}
             {externalService && <ExternalServiceWebhook externalService={externalService} />}

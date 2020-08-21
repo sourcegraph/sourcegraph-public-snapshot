@@ -21,6 +21,7 @@ interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorAc
     submitName?: string
     onSubmit: (event?: React.FormEvent<HTMLFormElement>) => void
     onChange: (change: GQL.IAddExternalServiceInput) => void
+    autoFocus?: boolean
 }
 
 /**
@@ -41,6 +42,7 @@ export const ExternalServiceForm: React.FunctionComponent<Props> = ({
     submitName,
     onSubmit,
     onChange,
+    autoFocus = true,
 }) => {
     const onDisplayNameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
         event => {
@@ -76,7 +78,7 @@ export const ExternalServiceForm: React.FunctionComponent<Props> = ({
                         required={true}
                         autoCorrect="off"
                         autoComplete="off"
-                        autoFocus={true}
+                        autoFocus={autoFocus}
                         spellCheck={false}
                         value={input.displayName}
                         onChange={onDisplayNameChange}

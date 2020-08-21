@@ -16,6 +16,9 @@ interface Props extends ThemeProps, TelemetryProps {
     userID?: Scalars['ID']
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     nonCodeHostExternalServices: Record<string, AddExternalServiceOptions>
+
+    /** For testing only. */
+    autoFocusForm?: boolean
 }
 
 /**
@@ -30,6 +33,7 @@ export const AddExternalServicesPage: React.FunctionComponent<Props> = ({
     routingPrefix,
     telemetryService,
     userID,
+    autoFocusForm,
 }) => {
     const [hasDismissedPrivacyWarning, setHasDismissedPrivacyWarning] = useLocalStorage(
         'hasDismissedCodeHostPrivacyWarning',
@@ -51,6 +55,7 @@ export const AddExternalServicesPage: React.FunctionComponent<Props> = ({
                     telemetryService={telemetryService}
                     userID={userID}
                     externalService={externalService}
+                    autoFocusForm={autoFocusForm}
                 />
             )
         }
