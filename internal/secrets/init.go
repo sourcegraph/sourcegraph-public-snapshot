@@ -18,8 +18,8 @@ const (
 	sourcegraphCryptEnvvar      = "SOURCEGRAPH_CRYPT_KEY"
 )
 
-// gatherKeys splits the comma-separated encryption data into its potential two components: primary and secondary keys
-// the first key in the comma-separated data is always the primary key
+// gatherKeys splits the comma-separated encryption data into its potential two components: 
+// primary and secondary keys, where the first key is assumed to be the primary key.
 func gatherKeys(data []byte) (primaryKey, secondaryKey []byte, err error) {
 	parts := bytes.Split(data, []byte(","))
 	if len(parts) > 2 {
