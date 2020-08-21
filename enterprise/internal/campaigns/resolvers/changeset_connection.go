@@ -39,12 +39,12 @@ type changesetsConnectionResolver struct {
 }
 
 func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetResolver, error) {
-	_, changesets, reposByID, err := r.compute(ctx)
+	_, changesetsPage, reposByID, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	syncData, err := r.store.ListChangesetSyncData(ctx, ee.ListChangesetSyncDataOpts{ChangesetIDs: changesets.IDs()})
+	syncData, err := r.store.ListChangesetSyncData(ctx, ee.ListChangesetSyncDataOpts{ChangesetIDs: changesetsPage.IDs()})
 	if err != nil {
 		return nil, err
 	}
@@ -53,8 +53,8 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 		scheduledSyncs[d.ChangesetID] = ee.NextSync(time.Now, d)
 	}
 
-	resolvers := make([]graphqlbackend.ChangesetResolver, 0, len(changesets))
-	for _, c := range changesets {
+	resolvers := make([]graphqlbackend.ChangesetResolver, 0, len(changesetsPage))
+	for _, c := range changesetsPage {
 		nextSyncAt, isPreloaded := scheduledSyncs[c.ID]
 		var preloadedNextSyncAt *time.Time
 		if isPreloaded {
