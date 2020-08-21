@@ -269,8 +269,7 @@ func Test_gatherKeys(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gotPrimaryKey, gotSecondaryKey, err := gatherKeys(tt.data)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("gatherKeys() error = %v, wantErr %v", err, tt.wantErr)
-				return
+				t.Fatalf("gatherKeys() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			if !bytes.Equal(gotPrimaryKey, tt.wantPrimaryKey) {
