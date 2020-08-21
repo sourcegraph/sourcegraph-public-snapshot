@@ -19,11 +19,10 @@ import { readEnvironmentBoolean, retry } from './utils'
 import { formatPuppeteerConsoleMessage } from './console'
 import * as path from 'path'
 import { escapeRegExp } from 'lodash'
-import { readFile, appendFile } from 'mz/fs'
+import { readFile, appendFile, mkdir } from 'mz/fs'
 import { Settings } from '../settings/settings'
 import { fromEvent, merge } from 'rxjs'
 import { filter, map, concatAll, mergeMap } from 'rxjs/operators'
-import mkdirpPromise from 'mkdirp-promise'
 import getFreePort from 'get-port'
 import puppeteerFirefox from 'puppeteer-firefox'
 import webExt from 'web-ext'
@@ -653,7 +652,7 @@ async function getFirefoxCfgPath(): Promise<string> {
     if (process.platform === 'darwin') {
         configPath = path.join(firefoxFolder, '..', 'Resources')
     } else if (process.platform === 'linux') {
-        await mkdirpPromise(path.join(firefoxFolder, 'browser', 'defaults', 'preferences'))
+        await mkdir(path.join(firefoxFolder, 'browser', 'defaults', 'preferences'), { recursive: true })
         configPath = firefoxFolder
     } else if (process.platform === 'win32') {
         configPath = firefoxFolder
