@@ -147,9 +147,9 @@ const TextStory: React.FunctionComponent = () => (
 
         <h4>Dashes</h4>
         <p>
-            Dashed lists are created using <code>dash-list</code>.
+            Dashed lists are created using <code>list-dashed</code>.
         </p>
-        <ul className="dash-list">
+        <ul className="list-dashed">
             <li>
                 Ad deserunt amet Lorem in exercitation. Deserunt labore anim non minim. Dolor dolore adipisicing anim
                 cupidatat nulla. Sit voluptate aliqua exercitation occaecat nulla aute ex quis excepteur quis

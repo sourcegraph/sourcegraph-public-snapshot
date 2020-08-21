@@ -103,7 +103,7 @@ export function createStep1Tooltip(
     repositoryButtonHandler: () => void
 ): HTMLElement {
     const list = document.createElement('ul')
-    list.className = 'my-4 list-group dash-list'
+    list.className = 'my-4 list-group list-dashed'
     const languageListItem = document.createElement('li')
     languageListItem.className = 'list-group-item p-0 border-0 mb-2'
 
@@ -186,7 +186,7 @@ export function createAddCodeStepWithLanguageExampleTooltip(
     exampleCallback: (query: string, patternType: SearchPatternType) => void
 ): HTMLElement {
     const list = document.createElement('ul')
-    list.className = 'my-4 list-group dash-list'
+    list.className = 'my-4 list-group list-dashed'
 
     const listItem = document.createElement('li')
     listItem.className = 'list-group-item p-0 border-0'
