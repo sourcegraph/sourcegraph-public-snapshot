@@ -10,11 +10,11 @@ A campaign streamlines the creation and tracking of pull requests across many re
 
 People usually use campaigns to make the following kinds of changes:
 
-- Cleaning up common problems using linters
-- Updating uses of deprecated library APIs
-- Upgrading dependencies
-- Patching critical security issues
-- Standardizing build, configuration, and deployment files
+- Cleaning up common problems using linters.
+- Updating uses of deprecated library APIs.
+- Upgrading dependencies.
+- Patching critical security issues.
+- Standardizing build, configuration, and deployment files.
 
 <!-- TODO(sqs): Add video here, similar to https://www.youtube.com/aqcCrqRB17w (which will need to be updated for the new campaign flow). -->
 
@@ -22,12 +22,12 @@ People usually use campaigns to make the following kinds of changes:
 
 The generic term **changeset** is used to refer to any of the following:
 
-- GitHub pull requests
-- Bitbucket Server pull requests
-- GitLab merge requests
-- Bitbucket Cloud pull requests (not yet supported)
-- Phabricator diffs (not yet supported)
-- Gerrit changes (not yet supported)
+- GitHub pull requests.
+- Bitbucket Server pull requests.
+- GitLab merge requests.
+- Bitbucket Cloud pull requests (not yet supported).
+- Phabricator diffs (not yet supported).
+- Gerrit changes (not yet supported).
 
 A single campaign can span many repositories and many code hosts.
 
@@ -43,7 +43,7 @@ If you lack read access to a repository in a campaign, you can only see [limited
 
 You can create or update a campaign from a campaign spec, which is a YAML file that defines a campaign.
 
-See the "[Creating a campaign](#creating-a-campaign)" section for an example campaign spec YAML file.
+See the [Creating a campaign](#creating-a-campaign) section for an example campaign spec YAML file.
 
 <!-- - TODO(sqs) <u>Campaign spec YAML reference</u> -->
 
