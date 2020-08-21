@@ -252,7 +252,6 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 	}
 	resp, err := c.client.httpPost(ctx, repoName, "exec", req)
 	if err != nil {
-		fmt.Printf("POST ERR: %v\n", err)
 		return nil, nil, err
 	}
 
@@ -321,26 +320,22 @@ func (c *Client) Command(name string, arg ...string) *Cmd {
 func (c *Cmd) DividedOutput(ctx context.Context) ([]byte, []byte, error) {
 	rc, trailer, err := c.sendExec(ctx)
 	if err != nil {
-		fmt.Printf("A %s\n", err)
 		return nil, nil, err
 	}
 
 	stdout, err := ioutil.ReadAll(rc)
 	rc.Close()
 	if err != nil {
-		fmt.Printf("B %s\n", err)
 		return nil, nil, err
 	}
 
 	c.ExitStatus, err = strconv.Atoi(trailer.Get("X-Exec-Exit-Status"))
 	if err != nil {
-		fmt.Printf("C %s\n", err)
 		return nil, nil, err
 	}
 
 	stderr := []byte(trailer.Get("X-Exec-Stderr"))
 	if errorMsg := trailer.Get("X-Exec-Error"); errorMsg != "" {
-		fmt.Printf("D %s\n", err)
 		return stdout, stderr, errors.New(errorMsg)
 	}
 
