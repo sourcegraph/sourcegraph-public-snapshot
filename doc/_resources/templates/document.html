@@ -15,7 +15,7 @@
         <details-menu aria-label="Sourcegraph version" class="dropdown-menu m-0 p-0" aria-labelledby="Version Dropdown">
             <a rel="nofollow" class=" dropdown-item {{if eq .ContentVersion " "}}active{{end}}" href="/@{{$currentReleaseVersion}}/{{.ContentPagePath}}">{{$currentReleaseVersion}}<span class="current-branch ml-1">current</span></a>
             <a rel="nofollow" class=" dropdown-item {{if eq $previousReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$previousReleaseVersion}}/{{.ContentPagePath}}">{{$previousReleaseVersion}}</a>
-            <a rel="nofollow" class="dropdown-item {{if eq $nextReleaseVersion .ContentVersion " "}}active{{end}}" href="/{{.ContentPagePath}}">main</a>
+            <a rel="nofollow" class="dropdown-item {{if eq $nextReleaseVersion .ContentVersion " "}}active{{end}}" href="/{{.ContentPagePath}}">Unreleased</a>
         </details-menu>
     </div>
 {{end}}
