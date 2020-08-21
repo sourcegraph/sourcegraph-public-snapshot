@@ -9,6 +9,5 @@ DROP FUNCTION IF EXISTS delete_external_service_ref_on_external_service_repos();
 DROP FUNCTION IF EXISTS make_repo_sources_column_read_only();
 
 DROP TABLE IF EXISTS external_service_repos;
-ALTER TABLE repo ADD COLUMN sources jsonb DEFAULT '{}'::jsonb NOT NULL;
 
 COMMIT;
