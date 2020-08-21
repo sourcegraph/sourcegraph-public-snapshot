@@ -277,7 +277,7 @@ func Test_gatherKeys(t *testing.T) {
 				t.Errorf("gatherKeys() oOldKey = %s, want %s", gotSecondaryKey, tt.wantPrimaryKey)
 			}
 			if !bytes.Equal(gotSecondaryKey, tt.wantSecondaryKey) {
-				t.Errorf("gathrKeys() gotPrimaryKey = %v, want %v", gotPrimaryKey, tt.wantSecondaryKey)
+				t.Errorf("gathrKeys() gotPrimaryKey = %s, want %s", gotPrimaryKey, tt.wantSecondaryKey)
 			}
 		})
 	}
