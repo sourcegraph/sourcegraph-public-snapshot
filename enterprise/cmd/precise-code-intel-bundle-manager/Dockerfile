@@ -30,6 +30,7 @@ RUN apk --no-cache add pcre-dev
 # then one of the precise-code-intel processes would be unable to create the `/lsif-storage` because it
 # would  be trying to do so in a directory owned by `root` as the user `sourcegraph`. And no, this is not
 # dumb, this is just Docker: https://github.com/docker/compose/issues/3270#issuecomment-363478501.
+# hadolint ignore=DL3002
 USER root
 RUN mkdir -p /lsif-storage && chown -R sourcegraph:sourcegraph /lsif-storage
 
