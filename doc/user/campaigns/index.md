@@ -204,9 +204,9 @@ Any person with [admin access to the campaign](managing_access.md#permission-lev
 
 1. Click the <img src="campaigns-icon.svg" alt="Campaigns icon" /> campaigns icon in the top navigation bar.
 1. In the list of campaigns, click the campaign that you'd like to close or delete.
-1. In the top right, click the **Close**.
+1. In the top right, click the **Close** button.
 1. Select whether you want to close all of the campaign's changesets (e.g., closing all associated GitHub pull requests on the code host).
-1. Click **TODO(sqs)** <!-- decide/confirm button label -->.
+1. Click **Close campaign**.
 
 ## [Managing access to campaigns](managing_access.md)
 
