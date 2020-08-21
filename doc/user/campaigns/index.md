@@ -80,7 +80,7 @@ changesetTemplate:
 
 1. Get started by running the following [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) command:
 
-    <pre><code>src campaign apply -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em></code></pre>
+    <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em></code></pre>
 
     > **Don't worry!** Before any branches are pushed or changesets (e.g., GitHub pull requests) are created, you will see a preview of all changes and can confirm each one before proceeding.
 
@@ -119,7 +119,7 @@ changesetTemplate:
   published: false
 ```
 
-Then run the `src campaign apply` command again.
+Then run the `src campaign preview` command again, or `src campaign apply` to immediately publish the changesets.
 
 In the Sourcegraph web UI you'll see a progress indicator for the changesets that are being published. Any errors will be shown, and you can retry publishing after you've resolved the problem by running `src campaign apply` again. You don't need to worry about it creating multiple branches or pull requests when you retry, because it uses the same branch name.
 
@@ -153,7 +153,7 @@ To update a campaign, you need [admin access to the campaign](managing_access.md
 
 1. In your terminal, run the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) command shown. The command will execute your campaign spec to generate changes and then upload them to the campaign for you to preview and accept.
 
-    <pre><code>src campaign apply -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em></code></pre>
+    <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em></code></pre>
 
     > **Don't worry!** Before any branches or changesets are modified, you will see a preview of all changes and can confirm before proceeding.
 
@@ -184,7 +184,7 @@ importChangesets:
 
 1. Create a campaign from the campaign spec by running the following [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) command:
 
-    <pre><code>src campaign apply -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em></code></pre>
+    <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em></code></pre>
 
 1. Open the preview URL that the command printed out.
 1. Examine the preview. Confirm that the changesets are the ones you intended to track. If not, edit the campaign spec and then rerun the command above.
