@@ -28,7 +28,8 @@ type Encryptor interface {
 type encryptor struct {
 	// primaryKey is always used for encryption
 	primaryKey []byte
-	// secondaryKey is used during key rotation to provide decryption during key rotations
+	// secondaryKey is used during key rotation to provide decryption during key rotations.
+	// It was the primary key that was used for encryption before the key rotation.
 	secondaryKey []byte
 }
 
