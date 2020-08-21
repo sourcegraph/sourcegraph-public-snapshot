@@ -48,8 +48,10 @@ sup {
 .dash-list,
 .caret-list {
     list-style: none;
-    margin-left: 0;
-    padding-left: 0;
+}
+.dash-list > li::before,
+.caret-list > li::before {
+    margin-right: 0.25rem;
 }
 .dash-list > li::before {
     content: '–';
