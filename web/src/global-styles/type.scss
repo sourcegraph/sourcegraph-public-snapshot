@@ -27,10 +27,14 @@ h4 {
 
 h5 {
     font-size: 14px;
-    letter-spacing: 1px;
+    letter-spacing: 0.05em;
     font-weight: 500;
     text-transform: uppercase;
     margin: 0;
+}
+
+h6 {
+    font-weight: 600;
 }
 
 small {

@@ -51,7 +51,7 @@ const TextStory: React.FunctionComponent = () => (
                             </code>
                         </td>
                         <td>
-                            <Heading>Heading</Heading>
+                            <Heading>This is an {Heading.toUpperCase()}</Heading>
                         </td>
                     </tr>
                 ))}
