@@ -15,6 +15,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- Introduced the new `external_service_repos` join table. Please note that the migration required to make this change could take a couple of minutes.
+
 ### Fixed
 
 - User satisfaction/NPS surveys will now correctly provide a range from 0–10, rather than 0–9. [#13163](https://github.com/sourcegraph/sourcegraph/pull/13163)
