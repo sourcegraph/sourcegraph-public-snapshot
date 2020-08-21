@@ -29,7 +29,7 @@ interface NegatableFilterDefinition extends Omit<BaseFilterDefinition, 'descript
 
 export type FilterDefinition = BaseFilterDefinition | NegatableFilterDefinition
 
-const LANGUAGES: string[] = [
+export const LANGUAGES: string[] = [
     'c',
     'cpp',
     'csharp',
@@ -134,6 +134,10 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         negatable: true,
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} results from repos that contain a matching file`,
+    },
+    [FilterType.rev]: {
+        description: 'Search a revision (branch, commit hash, or tag) instead of the default branch.',
+        singular: true,
     },
     [FilterType.stable]: {
         discreteValues: ['yes', 'no'],

@@ -10,7 +10,7 @@ func RepoUpdater() *Container {
 				Title: "General",
 				Rows: []Row{
 					{
-						sharedFrontendInternalAPIErrorResponses("repo-updater"),
+						sharedFrontendInternalAPIErrorResponses("repo-updater", ObservableOwnerCloud),
 					},
 				},
 			},
@@ -19,12 +19,12 @@ func RepoUpdater() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerCPUUsage("repo-updater"),
-						sharedContainerMemoryUsage("repo-updater"),
+						sharedContainerCPUUsage("repo-updater", ObservableOwnerCloud),
+						sharedContainerMemoryUsage("repo-updater", ObservableOwnerCloud),
 					},
 					{
-						sharedContainerRestarts("repo-updater"),
-						sharedContainerFsInodes("repo-updater"),
+						sharedContainerRestarts("repo-updater", ObservableOwnerCloud),
+						sharedContainerFsInodes("repo-updater", ObservableOwnerCloud),
 					},
 				},
 			},
@@ -33,12 +33,12 @@ func RepoUpdater() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("repo-updater"),
-						sharedProvisioningMemoryUsageLongTerm("repo-updater"),
+						sharedProvisioningCPUUsageLongTerm("repo-updater", ObservableOwnerCloud),
+						sharedProvisioningMemoryUsageLongTerm("repo-updater", ObservableOwnerCloud),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("repo-updater"),
-						sharedProvisioningMemoryUsageShortTerm("repo-updater"),
+						sharedProvisioningCPUUsageShortTerm("repo-updater", ObservableOwnerCloud),
+						sharedProvisioningMemoryUsageShortTerm("repo-updater", ObservableOwnerCloud),
 					},
 				},
 			},
@@ -47,8 +47,8 @@ func RepoUpdater() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedGoGoroutines("repo-updater"),
-						sharedGoGcDuration("repo-updater"),
+						sharedGoGoroutines("repo-updater", ObservableOwnerCloud),
+						sharedGoGcDuration("repo-updater", ObservableOwnerCloud),
 					},
 				},
 			},
@@ -57,7 +57,7 @@ func RepoUpdater() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedKubernetesPodsAvailable("repo-updater"),
+						sharedKubernetesPodsAvailable("repo-updater", ObservableOwnerCloud),
 					},
 				},
 			},

@@ -539,9 +539,6 @@ func TestVersionContext(t *testing.T) {
 	})
 	defer conf.Mock(nil)
 
-	mockDecodedViewerFinalSettings = &schema.Settings{}
-	defer func() { mockDecodedViewerFinalSettings = nil }()
-
 	tcs := []struct {
 		name           string
 		searchQuery    string
@@ -632,6 +629,7 @@ func TestVersionContext(t *testing.T) {
 			resolver := searchResolver{
 				query:          qinfo,
 				versionContext: &tc.versionContext,
+				userSettings:   &schema.Settings{},
 			}
 
 			db.Mocks.Repos.List = func(ctx context.Context, opts db.ReposListOptions) ([]*types.Repo, error) {
@@ -758,5 +756,24 @@ func TestComputeExcludedRepositories(t *testing.T) {
 				t.Fatalf("results = %+v, want %+v", got, c.WantExcludedRepos)
 			}
 		})
+	}
+}
+
+func mkFileMatch(repo *types.Repo, path string, lineNumbers ...int32) *FileMatchResolver {
+	if repo == nil {
+		repo = &types.Repo{
+			ID:   1,
+			Name: "repo",
+		}
+	}
+	var lines []*lineMatch
+	for _, n := range lineNumbers {
+		lines = append(lines, &lineMatch{JLineNumber: n})
+	}
+	return &FileMatchResolver{
+		uri:          fileMatchURI(repo.Name, "", path),
+		JPath:        path,
+		JLineMatches: lines,
+		Repo:         &RepositoryResolver{repo: repo},
 	}
 }

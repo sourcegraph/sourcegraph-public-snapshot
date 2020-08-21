@@ -147,11 +147,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     splitSearchModes: boolean
 
     /**
-     * Whether to display the MonacoQueryInput search field.
-     */
-    smartSearchField: boolean
-
-    /**
      * Whether to display the copy query button.
      */
     copyQueryButton: boolean
@@ -172,6 +167,8 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     previousVersionContext: string | null
 
     showRepogroupHomepage: boolean
+
+    showOnboardingTour: boolean
 
     /**
      * Whether globbing is enabled for filters.
@@ -252,11 +249,11 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             splitSearchModes: true,
             interactiveSearchMode: currentSearchMode ? currentSearchMode === 'interactive' : false,
             copyQueryButton: false,
-            smartSearchField: true,
             versionContext: resolvedVersionContext,
             availableVersionContexts,
             previousVersionContext,
             showRepogroupHomepage: false,
+            showOnboardingTour: false,
             globbing: false,
         }
     }
@@ -409,13 +406,13 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     onFiltersInQueryChange={this.onFiltersInQueryChange}
                                     setPatternType={this.setPatternType}
                                     setCaseSensitivity={this.setCaseSensitivity}
-                                    smartSearchField={this.state.smartSearchField}
                                     copyQueryButton={this.state.copyQueryButton}
                                     versionContext={this.state.versionContext}
                                     setVersionContext={this.setVersionContext}
                                     availableVersionContexts={this.state.availableVersionContexts}
                                     previousVersionContext={this.state.previousVersionContext}
                                     showRepogroupHomepage={this.state.showRepogroupHomepage}
+                                    showOnboardingTour={this.state.showOnboardingTour}
                                     globbing={this.state.globbing}
                                 />
                             )}

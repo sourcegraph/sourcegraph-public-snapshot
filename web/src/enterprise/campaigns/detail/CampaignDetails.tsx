@@ -9,6 +9,7 @@ import {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
+    deleteCampaign as _deleteCampaign,
 } from './backend'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import * as H from 'history'
@@ -23,6 +24,7 @@ import { CampaignDescription } from './CampaignDescription'
 import { CampaignStatsCard } from './CampaignStatsCard'
 import { CampaignHeader } from './CampaignHeader'
 import { CampaignTabs } from './CampaignTabs'
+import { CampaignDetailsActionSection } from './CampaignDetailsActionSection'
 
 export interface CampaignDetailsProps
     extends ThemeProps,
@@ -44,6 +46,8 @@ export interface CampaignDetailsProps
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
     /** For testing only. */
     queryChangesetCountsOverTime?: typeof _queryChangesetCountsOverTime
+    /** For testing only. */
+    deleteCampaign?: typeof _deleteCampaign
 }
 
 /**
@@ -61,6 +65,7 @@ export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
     queryChangesets,
     queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime,
+    deleteCampaign,
 }) => {
     /** Retrigger fetching */
     const campaignUpdates = useMemo(() => new Subject<void>(), [])
@@ -101,7 +106,16 @@ export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
                 namespace={campaign.namespace}
                 creator={campaign.initialApplier}
                 createdAt={campaign.createdAt}
-                className="mb-3"
+                actionSection={
+                    <CampaignDetailsActionSection
+                        campaignID={campaign.id}
+                        campaignClosed={!!campaign.closedAt}
+                        deleteCampaign={deleteCampaign}
+                        campaignNamespaceURL={campaign.namespace.url}
+                        history={history}
+                    />
+                }
+                className="mb-3 test-campaign-details-page"
             />
             <CampaignStatsCard closedAt={campaign.closedAt} stats={campaign.changesets.stats} className="mb-3" />
             <CampaignDescription history={history} description={campaign.description} />

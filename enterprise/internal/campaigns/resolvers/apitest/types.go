@@ -11,17 +11,6 @@ type GitTarget struct {
 	TargetType     string `json:"type"`
 }
 
-type GitRef struct {
-	Name        string
-	AbbrevName  string
-	DisplayName string
-	Prefix      string
-	RefType     string `json:"type"`
-	Repository  struct{ ID string }
-	URL         string
-	Target      GitTarget
-}
-
 type DiffRange struct{ StartLine, Lines int }
 
 type DiffStat struct{ Added, Deleted, Changed int32 }
@@ -144,8 +133,6 @@ type Changeset struct {
 	ReviewState      string
 	CheckState       string
 	Events           ChangesetEventConnection
-	Head             GitRef
-	Base             GitRef
 
 	Diff Comparison
 

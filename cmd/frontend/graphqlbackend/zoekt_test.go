@@ -630,9 +630,6 @@ func BenchmarkSearchResults(b *testing.B) {
 
 	ctx := context.Background()
 
-	mockDecodedViewerFinalSettings = &schema.Settings{}
-	defer func() { mockDecodedViewerFinalSettings = nil }()
-
 	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 		return minimalRepos, nil
 	}
@@ -649,7 +646,7 @@ func BenchmarkSearchResults(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		resolver := &searchResolver{query: q, zoekt: z}
+		resolver := &searchResolver{query: q, zoekt: z, userSettings: &schema.Settings{}}
 		results, err := resolver.Results(ctx)
 		if err != nil {
 			b.Fatal("Results:", err)

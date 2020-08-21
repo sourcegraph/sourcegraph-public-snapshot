@@ -9,6 +9,8 @@ package campaigns
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
@@ -156,3 +158,26 @@ func scanPreSpecChangeset(t *campaigns.Changeset, s scanner) error {
 
 	return nil
 }
+
+func (s *Store) updateChangesetsCampaignID(ctx context.Context, oldID, newID int64) error {
+	oldstr := strconv.FormatInt(oldID, 10)
+
+	q := sqlf.Sprintf(
+		updateChangesetsCampaignIDFmtstr,
+		oldstr,
+		fmt.Sprintf(`{"%d":null}`, newID),
+		oldstr,
+	)
+
+	return s.Exec(ctx, q)
+}
+
+const updateChangesetsCampaignIDFmtstr = `
+-- source: enterprise/internal/campaigns/spec_migration_changesets.go:updateChangesetsCampaignID
+UPDATE
+	changesets
+SET
+	campaign_ids = campaign_ids - %s || %s
+WHERE
+	campaign_ids ? %s
+`

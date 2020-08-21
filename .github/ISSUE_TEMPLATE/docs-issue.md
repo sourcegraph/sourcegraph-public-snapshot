@@ -6,8 +6,6 @@ labels: docs
 assignees: kghopson
 
 ---
-
-add-space-in-headers
 #### Describe the issue
 <!-- Be as specific as possible -->
 

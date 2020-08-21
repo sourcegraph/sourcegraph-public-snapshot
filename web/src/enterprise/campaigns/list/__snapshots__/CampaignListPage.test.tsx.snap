@@ -14,7 +14,7 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
          New campaign
       </AnchorLink>
     }
-    className="mb-3"
+    className="mb-3 test-campaign-list-page"
   />
   <CampaignsListBetaNotice />
   <FilteredConnection
@@ -87,7 +87,7 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
          New campaign
       </AnchorLink>
     }
-    className="mb-3"
+    className="mb-3 test-campaign-list-page"
   />
   <CampaignsListBetaNotice />
   <FilteredConnection
@@ -160,7 +160,7 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
          New campaign
       </AnchorLink>
     }
-    className="mb-3"
+    className="mb-3 test-campaign-list-page"
   />
   <CampaignsListBetaNotice />
   <FilteredConnection
@@ -233,7 +233,7 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
          New campaign
       </AnchorLink>
     }
-    className="mb-3"
+    className="mb-3 test-campaign-list-page"
   />
   <CampaignsListBetaNotice />
   <FilteredConnection

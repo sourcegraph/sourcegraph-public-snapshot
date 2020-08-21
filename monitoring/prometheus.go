@@ -45,12 +45,12 @@ func Prometheus() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerCPUUsage("prometheus"),
-						sharedContainerMemoryUsage("prometheus"),
+						sharedContainerCPUUsage("prometheus", ObservableOwnerDistribution),
+						sharedContainerMemoryUsage("prometheus", ObservableOwnerDistribution),
 					},
 					{
-						sharedContainerRestarts("prometheus"),
-						sharedContainerFsInodes("prometheus"),
+						sharedContainerRestarts("prometheus", ObservableOwnerDistribution),
+						sharedContainerFsInodes("prometheus", ObservableOwnerDistribution),
 					},
 				},
 			},
@@ -59,12 +59,12 @@ func Prometheus() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("prometheus"),
-						sharedProvisioningMemoryUsageLongTerm("prometheus"),
+						sharedProvisioningCPUUsageLongTerm("prometheus", ObservableOwnerDistribution),
+						sharedProvisioningMemoryUsageLongTerm("prometheus", ObservableOwnerDistribution),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("prometheus"),
-						sharedProvisioningMemoryUsageShortTerm("prometheus"),
+						sharedProvisioningCPUUsageShortTerm("prometheus", ObservableOwnerDistribution),
+						sharedProvisioningMemoryUsageShortTerm("prometheus", ObservableOwnerDistribution),
 					},
 				},
 			},
@@ -73,7 +73,7 @@ func Prometheus() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedKubernetesPodsAvailable("prometheus"),
+						sharedKubernetesPodsAvailable("prometheus", ObservableOwnerDistribution),
 					},
 				},
 			},

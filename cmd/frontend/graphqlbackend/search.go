@@ -145,6 +145,7 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 		query:          queryInfo,
 		originalQuery:  args.Query,
 		versionContext: args.VersionContext,
+		userSettings:   settings,
 		pagination:     pagination,
 		patternType:    searchType,
 		zoekt:          search.Indexed(),
@@ -291,6 +292,7 @@ type searchResolver struct {
 	pagination     *searchPaginationInfo // pagination information, or nil if the request is not paginated.
 	patternType    query.SearchType
 	versionContext *string
+	userSettings   *schema.Settings
 
 	// Cached resolveRepositories results.
 	reposMu                   sync.Mutex
@@ -360,18 +362,13 @@ func decodedViewerFinalSettings(ctx context.Context) (*schema.Settings, error) {
 
 var mockResolveRepoGroups func() (map[string][]*types.Repo, error)
 
-func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
+func resolveRepoGroups(settings *schema.Settings) (map[string][]*types.Repo, error) {
 	if mockResolveRepoGroups != nil {
 		return mockResolveRepoGroups()
 	}
 
 	groups := map[string][]*types.Repo{}
 
-	// Repo groups can be defined in the search.repoGroups settings field.
-	settings, err := decodedViewerFinalSettings(ctx)
-	if err != nil {
-		return nil, err
-	}
 	for name, repoPaths := range settings.SearchRepositoryGroups {
 		repos := make([]*types.Repo, len(repoPaths))
 		for i, repoPath := range repoPaths {
@@ -508,15 +505,11 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	}
 	repoGroupFilters, _ := r.query.StringValues(query.FieldRepoGroup)
 
-	settings, err := decodedViewerFinalSettings(ctx)
-	if err != nil {
-		return nil, nil, nil, false, err
-	}
 	var settingForks, settingArchived bool
-	if v := settings.SearchIncludeForks; v != nil {
+	if v := r.userSettings.SearchIncludeForks; v != nil {
 		settingForks = *v
 	}
-	if v := settings.SearchIncludeArchived; v != nil {
+	if v := r.userSettings.SearchIncludeArchived; v != nil {
 		settingArchived = *v
 	}
 
@@ -554,6 +547,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		minusRepoFilters:   minusRepoFilters,
 		repoGroupFilters:   repoGroupFilters,
 		versionContextName: versionContextName,
+		userSettings:       r.userSettings,
 		onlyForks:          fork == Only,
 		noForks:            fork == No,
 		onlyArchived:       archived == Only,
@@ -673,6 +667,7 @@ type resolveRepoOp struct {
 	minusRepoFilters   []string
 	repoGroupFilters   []string
 	versionContextName string
+	userSettings       *schema.Settings
 	noForks            bool
 	onlyForks          bool
 	noArchived         bool
@@ -751,7 +746,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	// groups and the set of repos specified with repo:. (If none are specified
 	// with repo:, then include all from the group.)
 	if groupNames := op.repoGroupFilters; len(groupNames) > 0 {
-		groups, err := resolveRepoGroups(ctx)
+		groups, err := resolveRepoGroups(op.userSettings)
 		if err != nil {
 			return nil, nil, false, nil, err
 		}

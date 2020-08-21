@@ -5,8 +5,7 @@ const { DEFAULT_OPTIONS, DEFAULT_TYPE_MAP } = require('@gql2ts/language-typescri
 const { buildSchema, graphql, introspectionQuery } = require('graphql')
 const gulp = require('gulp')
 const { compile: compileJSONSchema } = require('json-schema-to-typescript')
-const mkdirp = require('mkdirp-promise')
-const { readFile, writeFile } = require('mz/fs')
+const { readFile, writeFile, mkdir } = require('mz/fs')
 const path = require('path')
 const { format, resolveConfig } = require('prettier')
 
@@ -101,7 +100,7 @@ const draftV7resolver = {
  */
 async function schema() {
   const outputDirectory = path.join(__dirname, '..', 'web', 'src', 'schema')
-  await mkdirp(outputDirectory)
+  await mkdir(outputDirectory, { recursive: true })
   const schemaDirectory = path.join(__dirname, '..', 'schema')
   await Promise.all(
     ['json-schema-draft-07', 'settings', 'site'].map(async file => {
