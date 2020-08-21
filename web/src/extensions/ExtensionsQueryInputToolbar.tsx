@@ -2,6 +2,7 @@ import React from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { EXTENSION_CATEGORIES, ExtensionCategory } from '../../../shared/src/schema/extensionSchema'
 import { ExtensionsEnablement } from './ExtensionsList'
+import { SettingsCascadeOrError } from '../../../shared/src/settings/settings'
 
 interface Props {
     /** The current extensions registry list query. */
@@ -19,6 +20,9 @@ interface Props {
     enablementFilter: ExtensionsEnablement
 
     setEnablementFilter: React.Dispatch<React.SetStateAction<ExtensionsEnablement>>
+
+    /** used to programmatically change reactstrap colors */
+    isLightTheme: boolean
 }
 
 type DropdownMenuID = 'categories' | 'options'
@@ -49,7 +53,19 @@ export class ExtensionsQueryInputToolbar extends React.PureComponent<Props, Stat
                         return (
                             <button
                                 type="button"
-                                className={`extension-filter-chip ${selected ? 'extension-filter-chip__selected' : ''}`}
+                                className={`btn btn-sm mr-2 ${
+                                    this.props.isLightTheme
+                                        ? selected
+                                            ? 'btn-secondary'
+                                            : 'btn-outline-secondary'
+                                        : selected
+                                        ? 'btn-outline-secondary'
+                                        : 'btn-secondary'
+                                }`}
+                                style={{
+                                    backgroundColor: !this.props.isLightTheme ? '#151C28' : undefined,
+                                    color: !this.props.isLightTheme ? 'A2B0CD' : undefined,
+                                }}
                                 data-test-extension-category={category}
                                 key={category}
                                 onClick={() =>
@@ -68,12 +84,18 @@ export class ExtensionsQueryInputToolbar extends React.PureComponent<Props, Stat
                     })}
                 </div>
 
-                <ButtonDropdown
-                    style={{ backgroundColor: 'transparent' }}
-                    isOpen={this.state.open === 'options'}
-                    toggle={this.toggleOptions}
-                >
-                    <DropdownToggle caret={true}>Options</DropdownToggle>
+                <ButtonDropdown isOpen={this.state.open === 'options'} toggle={this.toggleOptions}>
+                    <DropdownToggle
+                        className="btn-sm"
+                        caret={true}
+                        color={this.props.isLightTheme ? 'outline-secondary' : 'secondary'}
+                        style={{
+                            backgroundColor: !this.props.isLightTheme ? '#151C28' : undefined,
+                            color: !this.props.isLightTheme ? 'A2B0CD' : undefined,
+                        }}
+                    >
+                        Options
+                    </DropdownToggle>
                     <DropdownMenu right={true}>
                         <DropdownItem
                             // eslint-disable-next-line react/jsx-no-bind

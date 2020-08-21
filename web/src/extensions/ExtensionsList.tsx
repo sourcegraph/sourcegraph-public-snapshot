@@ -28,8 +28,12 @@ import { categorizeExtensionRegistry, CategorizedExtensionRegistry, applyExtensi
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '../../../shared/src/schema/extensionSchema'
 import { ShowMoreExtensions } from './ShowMoreExtensions'
 import { createExtensionBanner } from './ExtensionBanner'
+import { ThemeProps } from '../../../shared/src/theme'
 
-interface Props extends SettingsCascadeProps, PlatformContextProps<'settings' | 'updateSettings' | 'requestGraphQL'> {
+interface Props
+    extends SettingsCascadeProps,
+        PlatformContextProps<'settings' | 'updateSettings' | 'requestGraphQL'>,
+        ThemeProps {
     subject: Pick<SettingsSubject, 'id' | 'viewerCanAdminister'>
     location: H.Location
     history: H.History
@@ -98,6 +102,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
     subject,
     settingsCascade,
     platformContext,
+    isLightTheme,
 }) => {
     const { current: configuredExtensionCache } = useRef(
         new Map<string, ConfiguredRegistryExtension<RegistryExtensionFieldsForList>>()
@@ -222,6 +227,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
                         setSelectedCategories={setSelectedCategories}
                         enablementFilter={enablementFilter}
                         setEnablementFilter={setEnablementFilter}
+                        isLightTheme={isLightTheme}
                     />
 
                     {content}
