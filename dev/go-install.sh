@@ -49,20 +49,6 @@ mkdir -p .bin
 export GOBIN="${PWD}/.bin"
 export GO111MODULE=on
 
-INSTALL_GO_TOOLS=(
-  "github.com/mattn/goreman@v0.3.4"
-)
-
-# Need to go to a temp directory for tools or we update our go.mod. We use
-# GOPROXY=direct to avoid always consulting a proxy for dlv.
-pushd "${TMPDIR:-/tmp}" >/dev/null || exit 1
-if ! GOPROXY=direct go get -v "${INSTALL_GO_TOOLS[@]}" 2>go-install.log; then
-  cat go-install.log
-  echo >&2 "failed to install prerequisite tools, aborting."
-  exit 1
-fi
-popd >/dev/null || exit 1
-
 INSTALL_GO_PKGS=(
   "github.com/google/zoekt/cmd/zoekt-archive-index"
   "github.com/google/zoekt/cmd/zoekt-git-index"
@@ -83,7 +69,7 @@ export GOBIN="$tmpdir"
 
 TAGS='dev'
 if [ -n "$DELVE" ]; then
-  echo -e >&2 "\n--- Building Go code with optimizations disabled (for debugging). Make sure you have at least go1.10 installed."
+  echo -e >&2 "Building Go code with optimizations disabled (for debugging)."
   GCFLAGS='all=-N -l'
   TAGS="$TAGS delve"
 fi
@@ -149,10 +135,10 @@ do_install() {
 }
 
 if [ ${#raced[@]} -ge 1 ]; then
-  echo >&2 "--- Go race detector enabled for: $GORACED."
+  echo >&2 "Go race detector enabled for: $GORACED."
   do_install true "${raced[@]}"
 else
-  echo >&2 "--- Go race detector disabled. You can enable it for specific commands by setting GORACED (e.g. GORACED=frontend,searcher or GORACED=all for all commands)"
+  echo >&2 "Go race detector disabled. You can enable it for specific commands by setting GORACED (e.g. GORACED=frontend,searcher or GORACED=all for all commands)"
 fi
 
 if [ ${#unraced[@]} -ge 1 ]; then
