@@ -11,7 +11,7 @@ Code intelligence is enabled by [Sourcegraph extensions](../../extensions/index.
 
 **Basic** is [search-based code intelligence](./basic_code_intelligence.md) that works out of the box with all of the most popular programming languages via [extensions](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22). 
 
-**Precise** code intelligence is an opt-in feature that is enabled in your admin settings and requires you to upload [LSIF data](./lsif_quickstart.md) for each repository to your Sourcegraph instance. Once setup is complete on Sourcegraph, precise code intelligence is available for use across popular development tools::
+**Precise** code intelligence is an opt-in feature that is enabled in your admin settings and requires you to upload [LSIF data](./lsif_quickstart.md) for each repository to your Sourcegraph instance. Once setup is complete on Sourcegraph, precise code intelligence is available for use across popular development tools:
 
 - On the Sourcegraph web UI
 - On code files on your code host, via [integrations](../../integration/index.md)
@@ -24,10 +24,10 @@ Basic code intelligence is available by default on all Sourcegraph instances and
 
 Precise code intelligence returns metadata from a knowledge graph that is generated through code analysis. The precomputation step is used to generate the graph results in lookups that are fast and have a high degree of accuracy. 
 
-To learn more about how to work with each type of code intelligence visit the [basic](./basic_code_intelligence.md) and [precise](./precise_code_intelligence.md) sections..
+To learn more about how to work with each type of code intelligence visit the [basic](./basic_code_intelligence.md) and [precise](./precise_code_intelligence.md) sections.
 
 ## Getting started
 
-- Setup your [Sourcegraph instance](../../admin/install/index.md), then enable the [Sourcegraph extension](../index.md) for each language you want to use. The language extensions should be on by default for a new instance.
-- To add code intelligence to your code host and/or code review tool, see the [browser extension documentation](../../integration/browser_extension.md).
-- Interested in trying it out on public code? See [this sample file](https://sourcegraph.com/github.com/dgrijalva/jwt-go/-/blob/token.go#L37:6$references) on Sourcegraph.com.
+- Setup your [Sourcegraph instance](../../admin/install/index.md), then enable the [Sourcegraph extension](https://docs.sourcegraph.com/extensions) for each language you want to use. The language extensions should be on by default for a new instance.
+- To add code intelligence to your code host and/or code review tool, see the [browser extension](../../integration/browser_extension.md) documentation.
+- Interested in trying it out on public code? See [this sample file](https://sourcegraph.com/github.com/dgrijalva/jwt-go/-/blob/token.go#L37:6$references) on Sourcegraph Cloud.
