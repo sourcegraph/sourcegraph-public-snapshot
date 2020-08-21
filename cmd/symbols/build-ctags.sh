@@ -5,6 +5,13 @@
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -eu
 
+# If CTAGS_COMMAND is set, we don't need to build the image. See
+# ./universal-ctags-dev.
+if [[ -n "${CTAGS_COMMAND}" ]]; then
+  echo "CTAGS_COMMAND set. Building of Docker image not necessary."
+  exit 0
+fi
+
 OUTPUT=$(mktemp -d -t sgdockerbuild_XXXXXXX)
 cleanup() {
   rm -rf "$OUTPUT"
