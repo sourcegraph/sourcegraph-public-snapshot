@@ -16,7 +16,8 @@ func Go(f func()) {
 	go func() {
 		defer func() {
 			if err := recover(); err != nil {
-				log.Printf("goroutine panic: %v\n%s", err, debug.Stack())
+				stack := debug.Stack()
+				log.Printf("goroutine panic: %v\n%s", err, stack)
 			}
 		}()
 
