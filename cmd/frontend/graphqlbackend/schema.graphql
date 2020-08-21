@@ -742,6 +742,8 @@ type Campaign implements Node {
     # The changesets in this campaign that already exist on the code host.
     changesets(
         first: Int
+        # Opaque pagination cursor.
+        after: String
         # Only include changesets with the given reconciler state.
         reconcilerState: ChangesetReconcilerState
         # Only include changesets with the given publication state.

@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"strconv"
 	"sync"
 	"time"
 
@@ -25,26 +26,20 @@ type changesetsConnectionResolver struct {
 	// set to true.
 	optsSafe bool
 
-	// cache results because they are used by multiple fields
-	once       sync.Once
-	changesets campaigns.Changesets
-	reposByID  map[api.RepoID]*types.Repo
-	err        error
-
-	// allAccessibleChangesets contains all changesets in this connection,
+	// changesets contains all changesets in this connection,
 	// without any pagination.
-	// We need them for TotalCount and Stats and we need to load all, without a
-	// limit, because some might be filtered out by the authzFilter.
-	//
-	// NOTE: In the future, as an optimization, we can combine this with
-	// `changesets`, since changesets is a subset of `allAccessibleChangesets`.
-	allAccessibleChangesetsOnce sync.Once
-	allAccessibleChangesets     campaigns.Changesets
-	allAccessibleChangesetsErr  error
+	// We need them to reliably determine pages, TotalCount and Stats and we
+	// need to load all, without a limit, because some might be filtered out by
+	// the authzFilter.
+	once           sync.Once
+	changesets     campaigns.Changesets
+	changesetsPage campaigns.Changesets
+	err            error
+	reposByID      map[api.RepoID]*types.Repo
 }
 
 func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetResolver, error) {
-	changesets, reposByID, err := r.compute(ctx)
+	_, changesets, reposByID, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +53,7 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 		scheduledSyncs[d.ChangesetID] = ee.NextSync(time.Now, d)
 	}
 
-	resolvers := make([]graphqlbackend.ChangesetResolver, 0)
+	resolvers := make([]graphqlbackend.ChangesetResolver, 0, len(changesets))
 	for _, c := range changesets {
 		nextSyncAt, isPreloaded := scheduledSyncs[c.ID]
 		var preloadedNextSyncAt *time.Time
@@ -66,24 +61,14 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 			preloadedNextSyncAt = &nextSyncAt
 		}
 
-		repo, repoFound := reposByID[c.RepoID]
-		// If it's not in reposByID the repository was filtered out by the
-		// authz-filter. In that case we want to return a changesetResolver
-		// that doesn't reveal all information.
-		// But if the filter opts would leak information about the hidden
-		// changesets, we skip the hidden changeset.
-		if !repoFound && !r.optsSafe {
-			continue
-		}
-
-		resolvers = append(resolvers, NewChangesetResolverWithNextSync(r.store, r.httpFactory, c, repo, preloadedNextSyncAt))
+		resolvers = append(resolvers, NewChangesetResolverWithNextSync(r.store, r.httpFactory, c, reposByID[c.RepoID], preloadedNextSyncAt))
 	}
 
 	return resolvers, nil
 }
 
 func (r *changesetsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	cs, err := r.computeAllAccessibleChangesets(ctx)
+	cs, _, _, err := r.compute(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -91,25 +76,46 @@ func (r *changesetsConnectionResolver) TotalCount(ctx context.Context) (int32, e
 }
 
 func (r *changesetsConnectionResolver) Stats(ctx context.Context) (graphqlbackend.ChangesetsConnectionStatsResolver, error) {
-	cs, err := r.computeAllAccessibleChangesets(ctx)
+	cs, _, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return newChangesetConnectionStats(cs), nil
 }
 
-// computeAllChangesets loads all changesets matched by r.opts, but without a
+// compute loads all changesets matched by r.opts, but without a
 // limit.
 // If r.optsSafe is true, it returns all of them. If not, it filters out the
 // ones to which the user doesn't have access.
-func (r *changesetsConnectionResolver) computeAllAccessibleChangesets(ctx context.Context) (campaigns.Changesets, error) {
-	r.allAccessibleChangesetsOnce.Do(func() {
+func (r *changesetsConnectionResolver) compute(ctx context.Context) (allChangesets, currentPage campaigns.Changesets, reposByID map[api.RepoID]*types.Repo, err error) {
+	r.once.Do(func() {
+		pageSlice := func(changesets campaigns.Changesets) campaigns.Changesets {
+			limit := r.opts.Limit
+			if limit <= 0 {
+				limit = len(changesets)
+			}
+			slice := changesets.Filter(func(cs *campaigns.Changeset) bool { return cs.ID > r.opts.Cursor })
+			if len(slice) > limit {
+				slice = slice[:limit]
+			}
+			return slice
+		}
+
 		opts := r.opts
 		opts.Limit = -1
+		opts.Cursor = 0
 
 		cs, _, err := r.store.ListChangesets(ctx, opts)
 		if err != nil {
-			r.allAccessibleChangesetsErr = err
+			r.err = err
+			return
+		}
+
+		// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
+		// filters out repositories that the user doesn't have access to.
+		r.reposByID, err = db.Repos.GetReposSetByIDs(ctx, cs.RepoIDs()...)
+		if err != nil {
+			r.err = err
 			return
 		}
 
@@ -117,58 +123,37 @@ func (r *changesetsConnectionResolver) computeAllAccessibleChangesets(ctx contex
 		// number of changesets. Otherwise we have to filter the changesets by
 		// accessible repos.
 		if r.optsSafe {
-			r.allAccessibleChangesets = cs
+			r.changesets = cs
+			r.changesetsPage = pageSlice(cs)
 			return
 		}
 
-		// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
-		// filters out repositories that the user doesn't have access to.
-		accessibleRepos, err := db.Repos.GetReposSetByIDs(ctx, cs.RepoIDs()...)
-		if err != nil {
-			r.allAccessibleChangesetsErr = err
-			return
-		}
-
-		var accessibleChangesets []*campaigns.Changeset
+		accessibleChangesets := make(campaigns.Changesets, 0)
 		for _, c := range cs {
-			if _, ok := accessibleRepos[c.RepoID]; !ok {
+			if _, ok := r.reposByID[c.RepoID]; !ok {
 				continue
 			}
 			accessibleChangesets = append(accessibleChangesets, c)
 		}
 
-		r.allAccessibleChangesets = accessibleChangesets
+		r.changesets = accessibleChangesets
+		r.changesetsPage = pageSlice(accessibleChangesets)
 	})
 
-	return r.allAccessibleChangesets, r.allAccessibleChangesetsErr
+	return r.changesets, r.changesetsPage, r.reposByID, r.err
 }
 
 func (r *changesetsConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	page, _, err := r.compute(ctx)
-	if err != nil {
-		return nil, err
-	}
-	all, err := r.computeAllAccessibleChangesets(ctx)
+	all, page, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return graphqlutil.HasNextPage(len(page) < len(all)), nil
-}
+	if len(all) > 0 && len(page) > 0 && page[len(page)-1].ID != all[len(all)-1].ID {
+		return graphqlutil.NextPageCursor(strconv.Itoa(int(page[len(page)-1].ID))), nil
+	}
 
-func (r *changesetsConnectionResolver) compute(ctx context.Context) (campaigns.Changesets, map[api.RepoID]*types.Repo, error) {
-	r.once.Do(func() {
-		r.changesets, _, r.err = r.store.ListChangesets(ctx, r.opts)
-		if r.err != nil {
-			return
-		}
-
-		// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
-		// filters out repositories that the user doesn't have access to.
-		r.reposByID, r.err = db.Repos.GetReposSetByIDs(ctx, r.changesets.RepoIDs()...)
-	})
-
-	return r.changesets, r.reposByID, r.err
+	return graphqlutil.HasNextPage(false), nil
 }
 
 func newChangesetConnectionStats(cs []*campaigns.Changeset) *changesetsConnectionStatsResolver {
