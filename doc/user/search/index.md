@@ -39,7 +39,7 @@ See the [query syntax](queries.md) and [query reference](language.md) documentat
 
 Sourcegraph supports advanced code search for specifically matching patterns inside code structures, like function parameters and loop bodies. 
 
-See our [structural search](structural.md) documentation for a detailed explanation of this search mode.
+See the [structural search](structural.md) documentation for a detailed explanation of this search mode.
 
 ### Commit diff search
 
@@ -177,4 +177,4 @@ By default, files larger than 1 MB are excluded from search results. Use the [se
 
 ## Sourcegraph Cloud
 
-[Sourcegraph Cloud](https://sourcegraph.com/search) is a public instance of [Sourcegraph](../../admin/install/index.md) that lets you search inside any open-source project on GitHub. For demo purposes, you'll be prompted to narrow your query if it would search across more than 50 repositories. To lift this limitation or to search your organization's internal code, [run your own Sourcegraph instance](../../admin/install/index.md).
+[Sourcegraph Cloud](https://sourcegraph.com/search) is a public instance of Sourcegraph that lets you search inside any open-source project on GitHub. For demo purposes, you'll be prompted to narrow your query if it would search across more than 50 repositories. To lift this limitation or to search your organization's internal code, [run your own Sourcegraph instance](../../admin/install/index.md).
