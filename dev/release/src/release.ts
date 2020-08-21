@@ -349,6 +349,17 @@ Key dates:
                     ],
                     title: `Update latest release to ${parsedVersion.version}`,
                 },
+                {
+                    owner: 'sourcegraph',
+                    repo: 'deploy-sourcegraph-dot-com',
+                    base: 'release',
+                    head: `publish-${parsedVersion.version}`,
+                    commitMessage: `Update latest release to ${parsedVersion.version}`,
+                    bashEditCommands: [
+                        `${sed} -i -E 's/"defaultContentBranch":"[[:alnum:]\\.]+"/"defaultContentBranch":"${parsedVersion.major}.${parsedVersion.minor}"/g' configure/docs-sourcegraph-com/docs-sourcegraph-com.Deployment.yaml`,
+                    ],
+                    title: `Update latest release to ${parsedVersion.version}`,
+                },
             ]
             for (const changeset of changes) {
                 await createBranchWithChanges(changeset)

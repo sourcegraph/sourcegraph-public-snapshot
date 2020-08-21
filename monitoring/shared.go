@@ -139,7 +139,7 @@ var sharedProvisioningCPUUsageShortTerm sharedObservable = func(containerName st
 		Description:     "container cpu usage total (5m maximum) across all cores by instance",
 		Query:           fmt.Sprintf(`max_over_time(cadvisor_container_cpu_usage_percentage_total{%s}[5m])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
-		Warning:         Alert{GreaterOrEqual: 90},
+		Warning:         Alert{GreaterOrEqual: 90, For: 30 * time.Minute},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Interval(100).Max(100).Min(0),
 		Owner:           owner,
 		PossibleSolutions: strings.Replace(`

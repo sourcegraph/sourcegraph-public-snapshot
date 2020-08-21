@@ -160,6 +160,7 @@ export const changesetFieldsFragment = gql`
 export const queryChangesets = ({
     campaign,
     first,
+    after,
     externalState,
     reviewState,
     checkState,
@@ -174,6 +175,7 @@ export const queryChangesets = ({
             query CampaignChangesets(
                 $campaign: ID!
                 $first: Int
+                $after: String
                 $externalState: ChangesetExternalState
                 $reviewState: ChangesetReviewState
                 $checkState: ChangesetCheckState
@@ -186,6 +188,7 @@ export const queryChangesets = ({
                     ... on Campaign {
                         changesets(
                             first: $first
+                            after: $after
                             externalState: $externalState
                             publicationState: $publicationState
                             reconcilerState: $reconcilerState
@@ -211,6 +214,7 @@ export const queryChangesets = ({
         variables: {
             campaign,
             first,
+            after,
             externalState,
             reviewState,
             checkState,

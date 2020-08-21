@@ -34,9 +34,9 @@ docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
 
 cp ${PROM_TARGETS} "${CONFIG_DIR}"/prometheus_targets.yml
 
-pushd monitoring
+pushd monitoring >/dev/null || exit 1
 DEV=true RELOAD=false go generate
-popd
+popd >/dev/null || exit 1
 
 PROMETHEUS_LOGS="${HOME}/.sourcegraph-dev/logs/prometheus"
 mkdir -p "${PROMETHEUS_LOGS}"

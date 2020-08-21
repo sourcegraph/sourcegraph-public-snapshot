@@ -1,6 +1,6 @@
 import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteID, siteGQLID } from './jscontext'
 import assert from 'assert'
@@ -50,7 +50,7 @@ describe('Search onboarding', () => {
             }),
         })
     })
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
     describe('Onboarding', () => {

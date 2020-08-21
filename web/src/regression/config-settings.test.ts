@@ -11,7 +11,7 @@ import { retry } from '../../../shared/src/testing/utils'
 import { BuiltinAuthProvider, SiteConfiguration } from '../schema/site.schema'
 import { fetchSiteConfiguration } from './util/api'
 import { GraphQLClient } from './util/GraphQlClient'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 
 describe('Site config test suite', () => {
     const formattingOptions = { eol: '\n', insertSpaces: true, tabSize: 2 }
@@ -33,7 +33,7 @@ describe('Site config test suite', () => {
         ;({ driver, resourceManager, gqlClient } = await getTestTools(config))
     })
 
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
 
     beforeEach(() => {
         resourceManager = new TestResourceManager()
