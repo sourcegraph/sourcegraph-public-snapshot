@@ -120,7 +120,7 @@ export LIBSQLITE3_PCRE
 ./cmd/symbols/build-ctags.sh
 
 # Make sure chokidar-cli is installed in the background
-printf >&2 "Concurrently installing Yarn and Go dependencies...\n\n"
+echo >&2 "--- Concurrently installing Yarn and Go dependencies..."
 yarn_pid=''
 [ -n "${OFFLINE-}" ] || {
   yarn --no-progress &
@@ -151,7 +151,7 @@ export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
 # This is fast if no changes were made.
 # Don't fail if it errors as this is only for codeintel, not for the build.
 trap 'kill $build_ts_pid; exit' EXIT
-(yarn run build-ts || true) &
+(yarn --silent run build-ts || true) &
 build_ts_pid="$!"
 
 export PROCFILE=${PROCFILE:-dev/Procfile}
@@ -194,11 +194,11 @@ if [ -n "${only}" ] || [ -n "${except}" ]; then
 fi
 
 if [ -n "${only}" ]; then
-  printf >&2 "\nStarting binaries %s...\n\n" "${only}"
+  printf >&2 "\n--- Starting binaries %s...\n\n" "${only}"
 elif [ -n "${except}" ]; then
-  printf >&2 "\nStarting all binaries, except %s...\n\n" "${except}"
+  printf >&2 "\n--- Starting all binaries, except %s...\n\n" "${except}"
 else
-  printf >&2 "\nStarting all binaries...\n\n"
+  printf >&2 "\n--- Starting all binaries...\n\n"
 fi
 
 export GOREMAN="goreman --set-ports=false --exit-on-error -f ${PROCFILE}"

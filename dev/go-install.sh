@@ -83,7 +83,7 @@ export GOBIN="$tmpdir"
 
 TAGS='dev'
 if [ -n "$DELVE" ]; then
-  echo >&2 'Building with optimizations disabled (for debugging). Make sure you have at least go1.10 installed.'
+  echo -e >&2 "\n--- Building Go code with optimizations disabled (for debugging). Make sure you have at least go1.10 installed."
   GCFLAGS='all=-N -l'
   TAGS="$TAGS delve"
 fi
@@ -149,10 +149,10 @@ do_install() {
 }
 
 if [ ${#raced[@]} -ge 1 ]; then
-  echo >&2 "Go race detector enabled for: $GORACED."
+  echo >&2 "--- Go race detector enabled for: $GORACED."
   do_install true "${raced[@]}"
 else
-  echo >&2 "Go race detector disabled. You can enable it for specific commands by setting GORACED (e.g. GORACED=frontend,searcher or GORACED=all for all commands)"
+  echo >&2 "--- Go race detector disabled. You can enable it for specific commands by setting GORACED (e.g. GORACED=frontend,searcher or GORACED=all for all commands)"
 fi
 
 if [ ${#unraced[@]} -ge 1 ]; then
