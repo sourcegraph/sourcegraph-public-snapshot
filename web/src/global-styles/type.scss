@@ -45,11 +45,11 @@ sup {
     top: -1em;
 }
 
-.dash-list,
-.caret-list {
+.dash-list {
     list-style: none;
     position: relative;
     > li::before {
+        content: '–';
         position: absolute;
         width: 2.5rem;
         left: 0;
@@ -57,10 +57,4 @@ sup {
         padding-right: 0.5em;
         text-align: right;
     }
-}
-.dash-list > li::before {
-    content: '–';
-}
-.caret-list > li::before {
-    content: '>';
 }

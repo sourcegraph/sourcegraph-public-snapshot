@@ -168,32 +168,6 @@ const TextStory: React.FunctionComponent = () => (
                 fugiat duis.
             </li>
         </ul>
-
-        <h4>Carets</h4>
-        <p>
-            Lists with carets are created using <code>caret-list</code>.
-        </p>
-        <ul className="caret-list">
-            <li>
-                Cillum laboris aliquip deserunt veniam ex pariatur consectetur proident in laborum. Fugiat eiusmod sunt
-                amet do. Ipsum reprehenderit Lorem officia aliqua sint minim labore eu reprehenderit laboris labore ut
-                cupidatat deserunt. Eu ad quis enim qui nulla Lorem dolor dolore ea id enim excepteur. Quis duis dolor
-                consectetur occaecat eu non proident eu incididunt aliquip incididunt Lorem voluptate.
-            </li>
-            <li>
-                Cupidatat culpa minim reprehenderit esse aute ullamco minim minim exercitation cillum nisi sit. Amet
-                dolore proident voluptate consequat esse reprehenderit consequat ipsum. Proident labore velit irure
-                consequat magna dolore.
-            </li>
-            <li>
-                Labore ullamco dolor enim duis magna aliqua cillum tempor voluptate excepteur est laborum nostrud. Ad ut
-                in nostrud proident eiusmod officia consequat aliquip laboris adipisicing ea consectetur. Exercitation
-                voluptate excepteur do sit. Id consequat velit non sit pariatur sint ad ullamco consectetur occaecat.
-                Dolore aliquip reprehenderit culpa tempor officia nostrud et cillum et do et proident dolore. Quis do
-                culpa deserunt eiusmod officia cillum non consectetur. Culpa consequat reprehenderit non adipisicing
-                laborum.
-            </li>
-        </ul>
     </>
 )
 add('Text', () => (

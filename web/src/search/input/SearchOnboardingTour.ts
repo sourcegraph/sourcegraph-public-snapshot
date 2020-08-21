@@ -186,7 +186,7 @@ export function createAddCodeStepWithLanguageExampleTooltip(
     exampleCallback: (query: string, patternType: SearchPatternType) => void
 ): HTMLElement {
     const list = document.createElement('ul')
-    list.className = 'my-4 list-group caret-list'
+    list.className = 'my-4 list-group dash-list'
 
     const listItem = document.createElement('li')
     listItem.className = 'list-group-item p-0 border-0'
