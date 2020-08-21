@@ -3,6 +3,7 @@
  */
 import Shepherd from 'shepherd.js'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
+import { eventLogger } from '../../tracking/eventLogger'
 
 export const HAS_CANCELLED_TOUR_KEY = 'has-cancelled-onboarding-tour'
 export const HAS_SEEN_TOUR_KEY = 'has-seen-onboarding-tour'
@@ -73,6 +74,7 @@ export function generateBottomRow(tour: Shepherd.Tour, stepNumber: number, dontS
     closeTourButton.addEventListener('click', () => {
         tour.cancel()
         localStorage.setItem(HAS_CANCELLED_TOUR_KEY, 'true')
+        eventLogger.log('CloseOnboardingTourClicked', { stage: stepNumber })
     })
 
     const bottomRow = document.createElement('div')
@@ -111,6 +113,7 @@ export function createStep1Tooltip(
     languageListItem.append(languageButton)
     languageButton.addEventListener('click', () => {
         languageButtonHandler()
+        eventLogger.log('OnboardingTourLanguageOptionClicked')
     })
     const repositoryListItem = document.createElement('li')
     repositoryListItem.className = 'list-group-item p-0 border-0 mb-2 test-tour-repo-button'
@@ -119,6 +122,7 @@ export function createStep1Tooltip(
     repositoryButton.textContent = 'Search a repository'
     repositoryButton.addEventListener('click', () => {
         repositoryButtonHandler()
+        eventLogger.log('OnboardingTourRepositoryOptionClicked')
     })
     repositoryListItem.append(repositoryButton)
     list.append(languageListItem)
@@ -203,6 +207,7 @@ export function createAddCodeStepWithLanguageExampleTooltip(
         const fullQuery = [languageQuery, example.query].join(' ')
         exampleCallback(fullQuery, example.patternType)
         tour.show('view-search-reference')
+        eventLogger.log('OnboardingTourExampleQueryClicked')
     })
     listItem.append(exampleButton)
     list.append(listItem)
