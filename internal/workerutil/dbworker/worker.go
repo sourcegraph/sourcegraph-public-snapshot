@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -16,7 +17,7 @@ type WorkerOptions struct {
 	Metrics     workerutil.WorkerMetrics
 }
 
-func NewWorker(ctx context.Context, store store.Store, options WorkerOptions) *workerutil.Worker {
+func NewWorker(ctx context.Context, store store.Store, options WorkerOptions) goroutine.BackgroundRoutine {
 	return workerutil.NewWorker(ctx, newStoreShim(store), workerutil.WorkerOptions{
 		Name:        options.Name,
 		Handler:     newHandlerShim(options.Handler),

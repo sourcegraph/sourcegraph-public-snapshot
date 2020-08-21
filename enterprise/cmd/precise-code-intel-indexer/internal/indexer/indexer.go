@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -18,7 +19,7 @@ func NewIndexer(
 	frontendURL string,
 	pollInterval time.Duration,
 	metrics IndexerMetrics,
-) *workerutil.Worker {
+) goroutine.BackgroundRoutine {
 	rootContext := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
 
 	processor := &processor{

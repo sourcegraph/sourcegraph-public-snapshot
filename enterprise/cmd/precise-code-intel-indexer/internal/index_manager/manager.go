@@ -10,21 +10,13 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/teivah/onecontext"
 )
 
 // Manager tracks which index records are assigned to which indexers.
 type Manager interface {
-	// Start runs the routine that handles expiration of transactions for indexers which have become
-	// unresponsive. This method blocks until Stop has been called.
-	Start()
-
-	// Stop will cause Start to exit after the current request. This method blocks until Start has
-	// returned. All active transactions known by the manager will be rolled back. Requests to the
-	// Dequeue, Complete, or Heartbeat methods should not occur after this method has been called.
-	Stop()
-
 	// Dequeue pulls an unprocessed index record from the database and assigns the transaction that
 	// locks that record to the given indexer.
 	Dequeue(ctx context.Context, indexerName string) (store.Index, bool, error)
@@ -42,6 +34,7 @@ type Manager interface {
 // goroutine to simplify bookkeeping of live transactions.
 type ThreadedManager interface {
 	Manager
+	goroutine.Handler
 }
 
 type ManagerOptions struct {
@@ -81,6 +74,7 @@ type manager struct {
 }
 
 var _ Manager = &manager{}
+var _ goroutine.Handler = &manager{}
 
 // indexerMeta tracks the last request time of an indexer along with the set of index records which it
 // is currently processing.
@@ -121,22 +115,15 @@ func newManager(store dbworkerstore.Store, options ManagerOptions, clock glock.C
 	}
 }
 
-// Start runs the routine that handles expiration of transactions for indexers which have become
-// unresponsive. This method blocks until Stop has been called.
-func (m *manager) Start() {
-	defer close(m.finished)
+func (m *manager) Handle(ctx context.Context) error {
+	return m.requeueIndexes(m.ctx, m.pruneIndexers())
+}
 
-loop:
-	for {
-		m.cleanup()
+func (m *manager) HandleError(err error) {
+	log15.Error("Failed to requeue indexes", "err", err)
+}
 
-		select {
-		case <-m.clock.After(m.options.CleanupInterval):
-		case <-m.ctx.Done():
-			break loop
-		}
-	}
-
+func (m *manager) OnShutdown() {
 	m.m.Lock()
 	defer m.m.Unlock()
 
@@ -152,9 +139,7 @@ loop:
 // cleanup requeues every locked index record assigned to indexers which have not been updated
 // for longer than the death threshold.
 func (m *manager) cleanup() {
-	if err := m.requeueIndexes(m.ctx, m.pruneIndexers()); err != nil {
-		log15.Error("Failed to requeue indexes", "err", err)
-	}
+
 }
 
 // pruneIndexers removes the data associated with indexers which have not been updated for longer
@@ -173,14 +158,6 @@ func (m *manager) pruneIndexers() (metas []indexMeta) {
 	}
 
 	return metas
-}
-
-// Stop will cause Start to exit after the current request. This method blocks until Start has
-// returned. All active transactions known by the manager will be rolled back. Requests to the
-// Dequeue, Complete, or Heartbeat methods should not occur after this method has been called.
-func (m *manager) Stop() {
-	m.cancel()
-	<-m.finished
 }
 
 // Dequeue pulls an unprocessed index record from the database and assigns the transaction that

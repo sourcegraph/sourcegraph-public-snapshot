@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 )
@@ -21,7 +22,7 @@ func NewWorker(
 	numProcessorRoutines int,
 	budgetMax int64,
 	metrics metrics.WorkerMetrics,
-) *workerutil.Worker {
+) goroutine.BackgroundRoutine {
 	rootContext := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
 
 	handler := &handler{

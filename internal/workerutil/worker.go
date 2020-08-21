@@ -8,12 +8,13 @@ import (
 	"github.com/efritz/glock"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
-// Worker is a generic consumer of records from the workerutil store.
-type Worker struct {
+// worker is a generic consumer of records from the workerutil store.
+type worker struct {
 	store            Store
 	options          WorkerOptions
 	clock            glock.Clock
@@ -36,11 +37,11 @@ type WorkerMetrics struct {
 	HandleOperation *observation.Operation
 }
 
-func NewWorker(ctx context.Context, store Store, options WorkerOptions) *Worker {
+func NewWorker(ctx context.Context, store Store, options WorkerOptions) goroutine.BackgroundRoutine {
 	return newWorker(ctx, store, options, glock.NewRealClock())
 }
 
-func newWorker(ctx context.Context, store Store, options WorkerOptions, clock glock.Clock) *Worker {
+func newWorker(ctx context.Context, store Store, options WorkerOptions, clock glock.Clock) goroutine.BackgroundRoutine {
 	ctx, cancel := context.WithCancel(ctx)
 
 	handlerSemaphore := make(chan struct{}, options.NumHandlers)
@@ -48,7 +49,7 @@ func newWorker(ctx context.Context, store Store, options WorkerOptions, clock gl
 		handlerSemaphore <- struct{}{}
 	}
 
-	return &Worker{
+	return &worker{
 		store:            store,
 		options:          options,
 		clock:            clock,
@@ -60,7 +61,7 @@ func newWorker(ctx context.Context, store Store, options WorkerOptions, clock gl
 }
 
 // Start begins polling for work from the underlying store and processing records.
-func (w *Worker) Start() {
+func (w *worker) Start() {
 	defer close(w.finished)
 
 loop:
@@ -98,7 +99,7 @@ loop:
 // Stop will cause the worker loop to exit after the current iteration. This is done by canceling the
 // context passed to the database and the handler functions (which may cause the currently processing
 // unit of work to fail). This method blocks until all handler goroutines have exited.
-func (w *Worker) Stop() {
+func (w *worker) Stop() {
 	w.cancel()
 	<-w.finished
 }
@@ -106,7 +107,7 @@ func (w *Worker) Stop() {
 // dequeueAndHandle selects a queued record to process. This method returns false if no such record
 // can be dequeued and returns an error only on failure to dequeue a new record - no handler errors
 // will bubble up.
-func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
+func (w *worker) dequeueAndHandle() (dequeued bool, err error) {
 	select {
 	// If we block here we are waiting for a handler to exit so that we do not
 	// exceed our configured concurrency limit.
@@ -172,7 +173,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 // handle processes the given record locked by the given transaction. This method returns an
 // error only if there is an issue committing the transaction - no handler errors will bubble
 // up.
-func (w *Worker) handle(tx Store, record Record) (err error) {
+func (w *worker) handle(tx Store, record Record) (err error) {
 	// Enable tracing on the context and trace the remainder of the operation including the
 	// transaction commit call in the following deferred function.
 	ctx, endOperation := w.options.Metrics.HandleOperation.With(ot.WithShouldTrace(w.ctx, true), &err, observation.Args{})
@@ -206,7 +207,7 @@ func (w *Worker) handle(tx Store, record Record) (err error) {
 }
 
 // preDequeueHook invokes the handler's pre-dequeue hook if it exists.
-func (w *Worker) preDequeueHook() (dequeueable bool, extraDequeueArguments interface{}, err error) {
+func (w *worker) preDequeueHook() (dequeueable bool, extraDequeueArguments interface{}, err error) {
 	if o, ok := w.options.Handler.(WithPreDequeue); ok {
 		return o.PreDequeue(w.ctx)
 	}

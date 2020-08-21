@@ -2,9 +2,6 @@ package main
 
 import (
 	"log"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -22,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -106,41 +104,27 @@ func main() {
 	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
 	janitor := janitor.New(s, janitorInterval, janitorMetrics)
 
-	go server.Start()
-	go indexResetter.Start()
-	go indexabilityUpdater.Start()
-	go scheduler.Start()
-	go debugserver.Start()
+	routines := []goroutine.BackgroundRoutine{
+		server,
+		indexResetter,
+		indexabilityUpdater,
+		scheduler,
+	}
 
 	if !disableIndexer {
-		go indexer.Start()
+		routines = append(routines, indexer)
 	} else {
 		log15.Warn("Indexer process is disabled.")
 	}
 
 	if !disableJanitor {
-		go janitor.Run()
+		routines = append(routines, janitor)
 	} else {
 		log15.Warn("Janitor process is disabled.")
 	}
 
-	// Attempt to clean up after first shutdown signal
-	signals := make(chan os.Signal, 2)
-	signal.Notify(signals, syscall.SIGINT, syscall.SIGHUP)
-	<-signals
-
-	go func() {
-		// Insta-shutdown on a second signal
-		<-signals
-		os.Exit(0)
-	}()
-
-	server.Stop()
-	indexResetter.Stop()
-	indexer.Stop()
-	scheduler.Stop()
-	indexabilityUpdater.Stop()
-	janitor.Stop()
+	go debugserver.Start()
+	goroutine.MonitorBackgroundRoutines(routines...)
 }
 
 func mustInitializeStore() store.Store {

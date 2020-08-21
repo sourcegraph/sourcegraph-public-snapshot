@@ -1,11 +1,6 @@
 package main
 
 import (
-	"context"
-	"os"
-	"os/signal"
-	"syscall"
-
 	"github.com/google/uuid"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
@@ -17,6 +12,7 @@ import (
 	queue "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/queue/client"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -56,11 +52,11 @@ func main() {
 	)
 	indexManager := indexmanager.New()
 	server := server.New()
-	heartbeater := heartbeat.NewHeartbeater(context.Background(), queueClient, indexManager, heartbeat.HeartbeaterOptions{
+	heartbeater := heartbeat.NewHeartbeater(queueClient, indexManager, heartbeat.HeartbeaterOptions{
 		Interval: indexerHeartbeatInterval,
 	})
 	indexerMetrics := indexer.NewIndexerMetrics(observationContext)
-	indexer := indexer.NewIndexer(context.Background(), queueClient, indexManager, indexer.IndexerOptions{
+	indexer := indexer.NewIndexer(queueClient, indexManager, indexer.IndexerOptions{
 		NumIndexers: numContainers,
 		Interval:    indexerPollInterval,
 		Metrics:     indexerMetrics,
@@ -71,22 +67,6 @@ func main() {
 		},
 	})
 
-	go server.Start()
-	go indexer.Start()
 	go debugserver.Start()
-	go heartbeater.Start()
-
-	signals := make(chan os.Signal, 2)
-	signal.Notify(signals, syscall.SIGINT, syscall.SIGHUP)
-	<-signals
-
-	go func() {
-		// Insta-shutdown on a second signal
-		<-signals
-		os.Exit(0)
-	}()
-
-	server.Stop()
-	indexer.Stop()
-	heartbeater.Stop()
+	goroutine.MonitorBackgroundRoutines(server, indexer, heartbeater)
 }
