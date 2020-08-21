@@ -291,6 +291,16 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 		if args.ClonedOnly {
 			preds = append(preds, r.Cloned)
 		}
+		if args.ExternalServiceID > 0 {
+			found := false
+			for _, info := range r.Sources {
+				if info.ExternalServiceID() == args.ExternalServiceID {
+					found = true
+					break
+				}
+			}
+			preds = append(preds, found)
+		}
 
 		if (args.UseOr && evalOr(preds...)) || (!args.UseOr && evalAnd(preds...)) {
 			repos = append(repos, r)
