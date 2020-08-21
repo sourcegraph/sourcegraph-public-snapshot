@@ -36,42 +36,8 @@ const { add } = storiesOf('web/Global styles', module).addDecorator(story => {
     )
 })
 
-add('Text', () => (
+const TextStory: React.FunctionComponent = () => (
     <>
-        <h1>Typography</h1>
-        <h2>Prose</h2>
-        <p>Text uses system fonts. The fonts should never be overridden.</p>
-        <p>
-            Minim nisi tempor Lorem do incididunt exercitation ipsum consectetur laboris elit est aute irure velit.
-            Voluptate irure excepteur sint reprehenderit culpa laboris. Elit id nostrud enim laboris irure. Est sunt ex
-            adipisicing aute elit voluptate consectetur. Do laboris anim fugiat ipsum sunt elit sunt amet consequat
-            nostrud irure labore cupidatat laboris. Voluptate eiusmod veniam nisi reprehenderit cillum Lorem veniam
-            fugiat amet ea dolore enim. Ea laborum fugiat Lorem ea amet amet exercitation dolor culpa. Do consequat
-            labore dolor ad elit ipsum nostrud non laboris voluptate aliquip est reprehenderit incididunt. Eu nulla ad
-            voluptate enim. Pariatur duis pariatur sit adipisicing pariatur nulla quis do sint deserunt aliqua Lorem
-            tempor laborum. Dolor esse aute cupidatat deserunt anim ad eiusmod quis quis laborum magna nisi occaecat. Eu
-            aliquip duis eiusmod sint aliquip duis est sit irure velit reprehenderit id. Cillum est esse et nulla ut
-            adipisicing velit anim id exercitation nostrud. Duis veniam sit laboris tempor quis sit cupidatat elit.
-        </p>
-
-        <p>
-            Text can be <em>emphasized</em> or made <strong>strong</strong>.
-        </p>
-
-        <p>
-            Text can have superscripts<sup>sup</sup> with <code>{'<sup>'}</code>.
-        </p>
-
-        <p>
-            Text can have subscripts<sub>sub</sub> with <code>{'<sub>'}</code>.
-        </p>
-
-        <p>
-            <small>
-                You can use <code>{'<small>'}</code> to make small text. Use sparingly.
-            </small>
-        </p>
-
         <h2>Headings</h2>
         <table className="table">
             <tbody>
@@ -92,6 +58,55 @@ add('Text', () => (
             </tbody>
         </table>
 
+        <h2>Prose</h2>
+        <p>Text uses system fonts. The fonts should never be overridden.</p>
+        <p>
+            Minim nisi tempor Lorem do incididunt exercitation ipsum consectetur laboris elit est aute irure velit.
+            Voluptate irure excepteur sint reprehenderit culpa laboris. Elit id nostrud enim laboris irure. Est sunt ex
+            ipisicing aute elit voluptate consectetur.Do laboris anim fugiat ipsum sunt elit sunt amet consequat trud
+            irure labore cupidatat laboris.Voluptate eiusmod veniam nisi reprehenderit cillum Lorem veniam at amet ea
+            dolore enim.Ea laborum fugiat Lorem ea amet amet exercitation dolor culpa. Do consequat dolor ad elit ipsum
+            nostrud non laboris voluptate aliquip est reprehenderit incididunt. Eu nulla ad te enim.Pariatur duis
+            pariatur sit adipisicing pariatur nulla quis do sint deserunt aliqua Lorem aborum. Dolor esse aute cupidatat
+            deserunt anim ad eiusmod quis quis laborum magna nisi occaecat.Eu is eiusmod sint aliquip duis est sit irure
+            velit reprehenderit id. Cillum est esse et nulla ut adipisicing velit anim id exercitation nostrud. Duis
+            veniam sit laboris tempor quis sit cupidatat elit.
+        </p>
+
+        <p>
+            Text can contain links, which <a href="">trigger a navigation to a different page</a>.
+        </p>
+
+        <p>
+            Text can be <em>emphasized</em> or made <strong>strong</strong>.
+        </p>
+
+        <p>
+            Text can have superscripts<sup>sup</sup> with <code>{'<sup>'}</code>.
+        </p>
+
+        <p>
+            Text can have subscripts<sub>sub</sub> with <code>{'<sub>'}</code>.
+        </p>
+
+        <p>
+            <small>
+                You can use <code>{'<small>'}</code> to make small text. Use sparingly.
+            </small>
+        </p>
+
+        <h2>Color variations</h2>
+        <p>
+            <code>text-*</code> classes can be used to apply semantic coloring to text.
+        </p>
+        <div className="mb-3">
+            {['muted', ...semanticColors].map(color => (
+                <div key={color} className={'text-' + color}>
+                    This is text-{color}
+                </div>
+            ))}
+        </div>
+
         <h2>Lists</h2>
         <ol>
             <li>Item</li>
@@ -104,6 +119,25 @@ add('Text', () => (
             <li>Item</li>
         </ul>
     </>
+)
+add('Text', () => (
+    <>
+        <h1>Typography</h1>
+
+        <TextStory />
+    </>
+))
+
+add('Web content', () => (
+    <div className="web-content">
+        <h1>Web content</h1>
+        <p>
+            The <code>web-content</code> class changes the text styles of all descendants for content that more closely
+            matches rich web sites as opposed to our high-information-density, application-like code content areas.
+        </p>
+
+        <TextStory />
+    </div>
 ))
 
 add('Code', () => (
