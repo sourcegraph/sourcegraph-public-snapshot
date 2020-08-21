@@ -15,7 +15,6 @@
     h1,
     h2 {
         color: $gray-08;
-        font-weight: 500;
 
         .theme-light & {
             color: $gray-17;
@@ -24,7 +23,6 @@
 
     h3 {
         color: $gray-08;
-        font-weight: 500;
 
         .theme-light & {
             color: $gray-15;
@@ -32,8 +30,6 @@
     }
 
     h4 {
-        font-weight: 500;
-
         .theme-light & {
             color: $gray-14;
         }
@@ -41,7 +37,6 @@
 
     h5 {
         color: $gray-04;
-        font-weight: normal;
 
         .theme-light & {
             color: $gray-13;
@@ -49,7 +44,6 @@
     }
     h6 {
         color: $gray-04;
-        font-weight: 600;
 
         .theme-light & {
             color: $gray-13;
