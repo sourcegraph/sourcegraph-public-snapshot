@@ -3,9 +3,7 @@ package secrets
 import (
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/hmac"
 	"crypto/rand"
-	"crypto/sha256"
 	"io"
 
 	"github.com/pkg/errors"
@@ -13,7 +11,6 @@ import (
 
 const (
 	validKeyLength = 32 // 32 bytes is the required length for AES-256.
-	hmacSize       = sha256.Size
 )
 
 // EncryptionError is an error about encryption or decryption.
@@ -44,86 +41,73 @@ func newEncryptor(primaryKey, secondaryKey []byte) Encryptor {
 	}
 }
 
-func (e encryptor) EncryptBytes(plaintext []byte) ([]byte, error) {
+// Encrypt encrypts data using 256-bit AES-GCM.  This both hides the content of
+// the data and provides a check that it hasn't been altered. Output takes the
+// form nonce|ciphertext|tag where '|' indicates concatenation.
+// From https://github.com/gtank/cryptopasta/blob/1f550f6f2f69009f6ae57347c188e0a67cd4e500/encrypt.go#L37
+func (e encryptor) EncryptBytes(plaintext []byte) (ciphertext []byte, err error) {
 	// ONLY use the primary key to EncryptBytes
 	if len(e.primaryKey) < validKeyLength {
 		return nil, &EncryptionError{errors.New("primary key is not available")}
 	}
 
-	// Create a one time nonce of standard length, without repetitions
-	block, err := aes.NewCipher(e.primaryKey)
+	block, err := aes.NewCipher(e.primaryKey[:])
 	if err != nil {
-		return nil, &EncryptionError{errors.Errorf("unable to create new cipher: %v", err)}
+		return nil, err
 	}
 
-	encrypted := make([]byte, aes.BlockSize+len(plaintext))
-	nonce := encrypted[:aes.BlockSize]
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
 
+	nonce := make([]byte, gcm.NonceSize())
 	_, err = io.ReadFull(rand.Reader, nonce)
 	if err != nil {
-		return nil, &EncryptionError{errors.Errorf("unable to read nonce: %v", err)}
+		return nil, err
 	}
 
-	stream := cipher.NewCFBEncrypter(block, nonce)
-	stream.XORKeyStream(encrypted[aes.BlockSize:], plaintext)
+	return gcm.Seal(nonce, nonce, plaintext, nil), nil
 
-	// Compute HMAC checksum then append to encrypted bytes
-	// TODO(Dax): We should stretch the key above rather than try to reuse this
-	mac := hmac.New(sha256.New, e.primaryKey)
-	_, _ = mac.Write(encrypted)
-	macSum := mac.Sum(nil)
-	encrypted = append(encrypted, macSum...)
-
-	// return base64.StdEncoding.EncodeToString(encrypted), nil
-	return encrypted, nil
 }
 
-func (e encryptor) DecryptBytes(ciphertext []byte) ([]byte, error) {
+// Decrypt decrypts data using 256-bit AES-GCM.  This both hides the content of
+// the data and provides a check that it hasn't been altered. Expects input
+// form nonce|ciphertext|tag where '|' indicates concatenation.
+// From https://github.com/gtank/cryptopasta/blob/1f550f6f2f69009f6ae57347c188e0a67cd4e500/encrypt.go#L60
+func (e encryptor) DecryptBytes(ciphertext []byte) (plaintext []byte, err error) {
 	if len(e.primaryKey) < validKeyLength && len(e.secondaryKey) < validKeyLength {
 		return nil, &EncryptionError{errors.New("no valid keys available")}
 	}
 
-	// encrypted, err := base64.StdEncoding.DecodeString(encodedValue)
-	// if err != nil {
-	// 	return "", &EncryptionError{Err: ErrNotEncoded}
-	// }
+	validate := func(key, ciphertext []byte) ([]byte, error) {
+		block, err := aes.NewCipher(key)
+		if err != nil {
+			return nil, err
+		}
 
-	// Extract HAMC from cipher text
-	extractedMac := ciphertext[len(ciphertext)-hmacSize:]
-	encryptedValue := ciphertext[:len(ciphertext)-hmacSize]
-	if len(encryptedValue) < aes.BlockSize {
-		return nil, &EncryptionError{errors.New("invalid block size.")}
+		gcm, err := cipher.NewGCM(block)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(ciphertext) < gcm.NonceSize() {
+			return nil, errors.New("malformed ciphertext")
+		}
+
+		return gcm.Open(nil,
+			ciphertext[:gcm.NonceSize()],
+			ciphertext[gcm.NonceSize():],
+			nil,
+		)
 	}
-
-	// TODO(Dax): We should stretch the key above rather than try to reuse
-
-	// validate hmac
-	validate := func(key []byte) bool {
-		mac := hmac.New(sha256.New, key)
-		_, _ = mac.Write(encryptedValue)
-		expectedMac := mac.Sum(nil)
-		return hmac.Equal(extractedMac, expectedMac)
+	if plaintext, err = validate(e.primaryKey, ciphertext); err == nil {
+		return plaintext, nil
 	}
-
-	var keyToDecrypt []byte
-	if validate(e.primaryKey) {
-		keyToDecrypt = e.primaryKey
-	} else if validate(e.secondaryKey) {
-		keyToDecrypt = e.secondaryKey
-	} else {
-		return nil, &EncryptionError{errors.New("no valid key")}
+	if plaintext, err = validate(e.secondaryKey, ciphertext); err == nil {
+		return plaintext, nil
 	}
-
-	block, err := aes.NewCipher(keyToDecrypt)
-	if err != nil {
-		return nil, &EncryptionError{errors.Errorf("unable to create new cipher: %v", err)}
-	}
-
-	nonce := encryptedValue[:aes.BlockSize]
-	value := encryptedValue[aes.BlockSize:]
-	stream := cipher.NewCFBDecrypter(block, nonce)
-	stream.XORKeyStream(value, value)
-	return value, nil
+	return nil, &EncryptionError{err}
 }
 
 // noOpEncryptor always returns original content and does no encryption or decryption.

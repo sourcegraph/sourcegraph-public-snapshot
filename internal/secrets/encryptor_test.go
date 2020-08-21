@@ -198,50 +198,6 @@ func TestKeyMigration(t *testing.T) {
 
 }
 
-// func TestEncryptAndDecryptIfPossible(t *testing.T) {
-// 	initialKey, _ := generateRandomAESKey()
-// 	e := Encryptor{EncryptionKeys: [][]byte{primaryKeyIndex: initialKey}}
-
-// 	encString, err := e.EncryptIfPossible(messageToEncrypt)
-// 	if err != nil {
-// 		t.Fatalf("Failed to EncryptBytes")
-// 	}
-// 	if encString == messageToEncrypt {
-// 		t.Fatalf("Encryption failed.")
-// 	}
-
-// 	decString, err := e.DecryptIfPossible(encString)
-// 	if err != nil {
-// 		t.Fatalf("Failed to Decrypt")
-// 	}
-// 	if decString != messageToEncrypt {
-// 		t.Fatalf("Decryption failed.")
-// 	}
-
-// 	// now test when we cannot EncryptBytes
-
-// 	e = Encryptor{}
-// 	configuredToEncrypt = false // setting this false means that EncryptIfPossible will not return an err
-// 	encString, err = e.EncryptIfPossible(messageToEncrypt)
-// 	if err != nil {
-// 		t.Fatalf("Received error when no err expected %v", err)
-// 	}
-// 	if encString != messageToEncrypt {
-// 		t.Fatalf("Received encrypted string, expected unencrypted.")
-// 	}
-// 	configuredToEncrypt = true
-// 	/* TODO(Dax): Need input here, if we enable encryption when our encryption object does not have an encryption key
-// 	then should we get an error?
-// 	*/
-// 	decString, err = e.DecryptIfPossible(encString)
-// 	if err != nil {
-// 		t.Fatalf("Received error when code path should be nil. %v", err)
-// 	}
-// 	if decString != messageToEncrypt {
-// 		t.Fatalf("Received encrypted string, expected unencrypted.")
-// 	}
-// }
-
 func TestEncryptAndDecryptBytesIfPossible(t *testing.T) {
 	initialKey, _ := generateRandomAESKey()
 	e := newEncryptor(initialKey, nil)
@@ -327,14 +283,5 @@ func Test_gatherKeys(t *testing.T) {
 			}
 		})
 	}
-
-	//data := []byte("look mom, I am a key, me too")
-	//defer func() {
-	//	p := recover()
-	//	if p == nil {
-	//		fmt.Println("t.Fail: should have panicked")
-	//	}
-	//}()
-	//gatherKeys(data)
 
 }
