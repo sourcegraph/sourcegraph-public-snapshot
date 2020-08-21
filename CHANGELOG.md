@@ -9,6 +9,12 @@
 
 All notable changes to `src-cli` are documented in this file.
 
+## Unreleased changes
+
+### Fixed
+
+- `src campaigns` output has been improved in the Windows console. [#274](https://github.com/sourcegraph/src-cli/pull/274)
+
 ## 3.18.0
 
 ### Added

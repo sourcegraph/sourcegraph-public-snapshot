@@ -22,7 +22,7 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/net v0.0.0-20200625001655-4c5254603344
-	golang.org/x/sys v0.0.0-20200622214017-ed371f2e16b4 // indirect
+	golang.org/x/sys v0.0.0-20200622214017-ed371f2e16b4
 	gopkg.in/yaml.v2 v2.3.0
 	jaytaylor.com/html2text v0.0.0-20200412013138-3577fbdbcff7
 )

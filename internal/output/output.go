@@ -47,13 +47,24 @@ type OutputOpts struct {
 	Verbose    bool
 }
 
+// newOutputPlatformQuirks provides a way for conditionally compiled code to
+// hook into NewOutput to perform any required setup.
+var newOutputPlatformQuirks func(o *Output) error
+
 func NewOutput(w io.Writer, opts OutputOpts) *Output {
 	caps := detectCapabilities()
 	if opts.ForceColor {
 		caps.Color = true
 	}
 
-	return &Output{caps: caps, opts: opts, w: w}
+	o := &Output{caps: caps, opts: opts, w: w}
+	if newOutputPlatformQuirks != nil {
+		if err := newOutputPlatformQuirks(o); err != nil {
+			o.Verbosef("Error handling platform quirks: %v", err)
+		}
+	}
+
+	return o
 }
 
 func (o *Output) Verbose(s string) {
