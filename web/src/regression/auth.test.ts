@@ -19,7 +19,7 @@ import {
     SAMLAuthProvider,
     OpenIDConnectAuthProvider,
 } from '../schema/site.schema'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 
 const oktaUserAmy = 'beyang+sg-test-regression-test-amy@sourcegraph.com'
 
@@ -100,7 +100,7 @@ describe('Auth regression test suite', () => {
         await setUserSiteAdmin(gqlClient, user.id, true)
     })
 
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
 
     after(async function () {
         this.timeout(10 * 1000)
