@@ -2,10 +2,10 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import CloudOutlineIcon from 'mdi-react/CloudOutlineIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
-import React, { useEffect, useCallback } from 'react'
+import React, { useEffect, useCallback, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
-import { Subject, Observable } from 'rxjs'
+import { Observable } from 'rxjs'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { RepoLink } from '../../../shared/src/components/RepoLink'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -16,13 +16,12 @@ import {
 } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
-import { eventLogger } from '../tracking/eventLogger'
 import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning } from './backend'
 import * as H from 'history'
+import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
 interface RepositoryNodeProps extends ActivationProps {
     node: GQL.IRepository
-    onDidUpdate?: () => void
     history: H.History
 }
 
@@ -69,7 +68,7 @@ const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = props => (
     </li>
 )
 
-interface Props extends RouteComponentProps<{}>, ActivationProps {}
+interface Props extends RouteComponentProps<{}>, ActivationProps, TelemetryProps {}
 
 const FILTERS: FilteredConnectionFilter[] = [
     {
@@ -103,8 +102,8 @@ const FILTERS: FilteredConnectionFilter[] = [
  */
 export const SiteAdminRepositoriesPage: React.FunctionComponent<Props> = props => {
     useEffect(() => {
-        eventLogger.logViewEvent('SiteAdminRepos')
-    })
+        props.telemetryService.logViewEvent('SiteAdminRepos')
+    }, [props.telemetryService])
 
     // Refresh global alert about enabling repositories when the user visits & navigates away from this page.
     useEffect(() => {
@@ -116,13 +115,14 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<Props> = props =
                 .toPromise()
                 .then(null, error => console.error(error))
         }
-    })
-    const repositoryUpdates = new Subject<void>()
-    const nodeProps: Omit<RepositoryNodeProps, 'node'> = {
-        onDidUpdate: repositoryUpdates.next.bind(repositoryUpdates),
-        activation: props.activation,
-        history: props.history,
-    }
+    }, [])
+    const nodeProps: Omit<RepositoryNodeProps, 'node'> = useMemo(
+        () => ({
+            activation: props.activation,
+            history: props.history,
+        }),
+        [props.activation, props.history]
+    )
     const queryRepositories = useCallback(
         (args: FilteredConnectionQueryArgs): Observable<GQL.IRepositoryConnection> =>
             fetchAllRepositoriesAndPollIfEmptyOrAnyCloning({ ...args }),
@@ -151,7 +151,6 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<Props> = props =
                 queryConnection={queryRepositories}
                 nodeComponent={RepositoryNode}
                 nodeComponentProps={nodeProps}
-                updates={repositoryUpdates}
                 filters={FILTERS}
                 history={props.history}
                 location={props.location}
