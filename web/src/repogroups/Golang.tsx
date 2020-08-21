@@ -3,7 +3,7 @@ import { SearchPatternType } from '../../../shared/src/graphql/schema'
 import * as React from 'react'
 
 export const golang: RepogroupMetadata = {
-    title: 'Golang',
+    title: 'Go',
     name: 'golang',
     url: '/golang',
     description: 'Use these search examples to explore Go repositories on GitHub.',

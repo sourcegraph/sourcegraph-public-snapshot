@@ -2,8 +2,6 @@
 
 > NOTE: This documentation describes the current work-in-progress version of campaigns. [Click here](https://docs.sourcegraph.com/@3.18/user/campaigns) to read the documentation for campaigns in Sourcegraph 3.18.
 
-<!-- TODO(sqs): This will eventually go in a new "Sourcegraph Guides" docs section, but it lives here for now. -->
-
 Have you ever needed to make the same kind of change to many repositories at once? Campaigns make this much easier. To get you started, let's run a very simple campaign: adding the line `Hello World` to all of your repositories' `README.md` files. After completing this exercise, you'll be able to create your own campaigns to make useful changes, fixes, refactors, and more.
 
 You'll learn how to:
@@ -64,7 +62,7 @@ Let's see the changes that will be made. Don't worry---no commits, branches, or 
 
 1. In your terminal, run this command:
 
-    <pre><code>src campaign apply -f hello-world.campaign.yaml -preview</code></pre>
+    <pre><code>src campaign apply -f hello-world.campaign.yaml</code></pre>
 1. Wait for it to run and compute the changes for each repository.
 1. When it's done, click the displayed link to see all of the changes that will be made.
 1. Make sure the changes look right.
@@ -85,11 +83,5 @@ You probably don't want to publish these toy "Hello World" changesets to activel
 You've created your first campaign! 🎉🎉
 
 You can customize your campaign spec and experiment with making other types of changes. To update your campaign, edit `hello-world.campaign.yaml` and run `src campaign apply -f hello-world.campaign.yaml -preview` again. (As before, you'll see a preview before any changes are applied.)
-
-Here are some [example campaigns](examples/index.md) for inspiratiopn:
-
-- [Using ESLint to automatically migrate to a new TypeScript version](examples/eslint_typescript_version.md)
-- [Adding a GitHub action to upload LSIF data to Sourcegraph](examples/lsif_action.md)
-- [Refactoring Go code using Comby](examples/refactor_go_comby.md)
 
 To learn what else you can do with campaigns, see "[Campaigns](index.md)" in Sourcegraph documentation.

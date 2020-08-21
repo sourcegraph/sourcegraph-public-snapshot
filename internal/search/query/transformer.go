@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
+
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // SubstituteAliases substitutes field name aliases for their canonical names.
@@ -199,7 +201,12 @@ func (g globError) Error() string {
 // from glob to regex.
 func reporevToRegex(value string) (string, error) {
 	reporev := strings.SplitN(value, "@", 2)
-	repo, err := globToRegex(reporev[0])
+	containsNoRev := len(reporev) == 1
+	repo := reporev[0]
+	if containsNoRev && ContainsNoGlobSyntax(repo) && !LooksLikeGitHubRepo(repo) {
+		repo = fuzzifyGlobPattern(repo)
+	}
+	repo, err := globToRegex(repo)
 	if err != nil {
 		return "", err
 	}
@@ -208,6 +215,31 @@ func reporevToRegex(value string) (string, error) {
 		value = value + "@" + reporev[1]
 	}
 	return value, nil
+}
+
+var globSyntax = lazyregexp.New(`[][*?]`)
+
+func ContainsNoGlobSyntax(value string) bool {
+	return !globSyntax.MatchString(value)
+}
+
+var gitHubRepoPath = lazyregexp.New(`github\.com\/([a-z\d]+-)*[a-z\d]+\/(.+)`)
+
+// LooksLikeGitHubRepo returns whether string value looks like a valid
+// GitHub repo path. This condition is used to guess whether we should
+// make a pattern fuzzy, or try it as an exact match.
+func LooksLikeGitHubRepo(value string) bool {
+	return gitHubRepoPath.MatchString(value)
+}
+
+func fuzzifyGlobPattern(value string) string {
+	if value == "" {
+		return value
+	}
+	if strings.HasPrefix(value, "github.com") {
+		return value + "**"
+	}
+	return "**" + value + "**"
 }
 
 // mapGlobToRegex translates glob to regexp for fields repo, file, and repohasfile.
@@ -220,6 +252,9 @@ func mapGlobToRegex(nodes []Node) ([]Node, error) {
 		case FieldRepo:
 			value, err = reporevToRegex(value)
 		case FieldFile, FieldRepoHasFile:
+			if ContainsNoGlobSyntax(value) {
+				value = fuzzifyGlobPattern(value)
+			}
 			value, err = globToRegex(value)
 		}
 		if err != nil {
@@ -483,6 +518,26 @@ func substituteConcat(nodes []Node, separator string) []Node {
 	return new
 }
 
+// TrailingParensToLiteral is a heuristic used in the context of regular
+// expression search. It checks whether any pattern is annotated with a label
+// HeusticDanglingParens. This label implies that the regular expression is not
+// well-formed, for example, "foo.*bar(" or "foo(.*bar". As a special case for
+// usability we escape a trailing parenthesis and treat it literally. Any other
+// forms are ignored, and will likely not pass validation.
+func TrailingParensToLiteral(nodes []Node) []Node {
+	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
+		if annotation.Labels.isSet(HeuristicDanglingParens) && strings.HasSuffix(value, "(") {
+			value = strings.TrimSuffix(value, "(")
+			value += `\(`
+		}
+		return Pattern{
+			Value:      value,
+			Negated:    negated,
+			Annotation: annotation,
+		}
+	})
+}
+
 // EmptyGroupsToLiteral is a heuristic used in the context of regular expression
 // search. It labels any pattern containing "()" as a literal pattern since in
 // regex it implies the empty string, which is meaningless as a search query and
@@ -516,4 +571,67 @@ func FuzzifyRegexPatterns(nodes []Node) []Node {
 		}
 		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 	})
+}
+
+// concatRevFilters removes rev: filters from []Node and attaches their value as @rev to the repo: filters.
+// Invariant: we assume that all rev: filters are at the top-level of []Node, or in one of it's direct children.
+// This invariant is ensured when the query is normalized to DNF.
+func concatRevFilters(nodes []Node) ([]Node, error) {
+	if len(nodes) == 0 {
+		return nodes, nil
+	}
+	// top-level And
+	if op, isOperator := nodes[0].(Operator); len(nodes) == 1 && isOperator && op.Kind == And {
+		nodes, err := concatRevFiltersFlat(op.Operands)
+		if err != nil {
+			return nil, err
+		}
+		return newOperator(nodes, And), nil
+	}
+	return concatRevFiltersFlat(nodes)
+}
+
+func concatRevFiltersFlat(nodes []Node) ([]Node, error) {
+	var revs []string
+	for _, n := range nodes {
+		if param, ok := n.(Parameter); !ok || param.Field != FieldRev {
+			continue
+		} else {
+			revs = append(revs, param.Value)
+		}
+	}
+	if len(revs) == 0 {
+		return nodes, nil
+	}
+	if len(revs) > 1 {
+		return nil, fmt.Errorf("invalid syntax. You have specified multiple revisions (%s) and"+
+			" I don't know how to interpret this. Remove all but one rev: keywords"+
+			" and try again", strings.Join(revs, ", "))
+	}
+	operands := make([]Node, len(nodes))
+	i := 0
+	for _, n := range nodes {
+		switch p := n.(type) {
+		case Parameter:
+			switch p.Field {
+			case FieldRepo:
+				if strings.ContainsRune(p.Value, '@') {
+					return nil, fmt.Errorf("invalid syntax. You have specified @ and rev: for the same" +
+						" repo: filter and I don't know how to interpret this. Remove either @ or rev: and try again")
+				}
+				p.Value += "@" + revs[0]
+				operands[i] = p
+				i++
+			case FieldRev:
+				continue
+			default:
+				operands[i] = n
+				i++
+			}
+		default:
+			operands[i] = n
+			i++
+		}
+	}
+	return operands[:i], nil
 }

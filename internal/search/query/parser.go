@@ -304,8 +304,10 @@ func (p *parser) parseNegatedLeafNode() (Node, error) {
 // delimiter, returning the undelimited value, and the end position of the
 // original delimited value (i.e., including quotes). `\` is treated as an
 // escape character for the delimiter and traditional string escape sequences.
+// The `strict` input parameter sets whether this delimiter may contain only
+// recognized escaped characters (strict), or arbitrary ones.
 // The input buffer must start with the chosen delimiter.
-func ScanDelimited(buf []byte, delimiter rune) (string, int, error) {
+func ScanDelimited(buf []byte, strict bool, delimiter rune) (string, int, error) {
 	var count, advance int
 	var r rune
 	var result []rune
@@ -344,7 +346,12 @@ loop:
 				case '\\', delimiter:
 					result = append(result, r)
 				default:
-					return "", count, errors.New("unrecognized escape sequence")
+					if strict {
+						return "", count, errors.New("unrecognized escape sequence")
+					} else {
+						// Accept anything else literally.
+						result = append(result, '\\', r)
+					}
 				}
 				if len(buf) == 0 {
 					return "", count, errors.New("unterminated literal: expected " + string(delimiter))
@@ -476,11 +483,18 @@ func ScanValue(buf []byte, allowDanglingParens bool) (string, int, bool) {
 // succeeded, and the interpreted (i.e., unquoted) value if it succeeds.
 func (p *parser) TryParseDelimiter() (string, bool) {
 	delimited := func(delimiter rune) (string, error) {
-		value, advance, err := ScanDelimited(p.buf[p.pos:], delimiter)
+		start := p.pos
+		value, advance, err := ScanDelimited(p.buf[p.pos:], false, delimiter)
 		if err != nil {
 			return "", err
 		}
 		p.pos += advance
+		if !p.done() {
+			if r, _ := utf8.DecodeRune([]byte{p.buf[p.pos]}); !unicode.IsSpace(r) {
+				p.pos = start // backtrack
+				return "", errors.New("delimited value should be followed by whitespace")
+			}
+		}
 		return value, nil
 	}
 	tryScanDelimiter := func() (string, error) {
@@ -489,6 +503,9 @@ func (p *parser) TryParseDelimiter() (string, bool) {
 		}
 		if p.match(DQUOTE) {
 			return delimited('"')
+		}
+		if p.match("/") {
+			return delimited('/')
 		}
 		return "", errors.New("failed to scan delimiter")
 	}
@@ -503,7 +520,7 @@ func (p *parser) TryParseDelimiter() (string, bool) {
 // returned.
 func (p *parser) ParseFieldValue() (string, error) {
 	delimited := func(delimiter rune) (string, error) {
-		value, advance, err := ScanDelimited(p.buf[p.pos:], delimiter)
+		value, advance, err := ScanDelimited(p.buf[p.pos:], true, delimiter)
 		if err != nil {
 			return "", err
 		}
@@ -548,11 +565,7 @@ func (p *parser) ParsePattern() Pattern {
 	value, advance, sawDanglingParen := ScanValue(p.buf[p.pos:], isSet(p.heuristics, allowDanglingParens))
 	var labels labels
 	if sawDanglingParen {
-		// If we saw a dangling parenthesis, this is not a well-formed
-		// regular expression and we will interpret it as a literal.
-		// TODO(rvantonder): Try to still support a trailing parentheses
-		// combined with regex, like "foo.*bar(".
-		labels = HeuristicDanglingParens | Literal
+		labels = HeuristicDanglingParens | Regexp
 	} else {
 		labels = Regexp
 	}
@@ -965,7 +978,12 @@ func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 		}
 		query = substituteConcat(query, " ")
 	case SearchTypeRegex:
-		query = EmptyGroupsToLiteral(query)
+		query = Map(query, EmptyGroupsToLiteral, TrailingParensToLiteral)
+	}
+
+	query, err = concatRevFilters(query)
+	if err != nil {
+		return nil, err
 	}
 
 	if options.Globbing {

@@ -2,6 +2,7 @@ package repos_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
@@ -10,11 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp/cmpopts"
-
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -23,7 +24,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestFakeStore(t *testing.T) {
@@ -34,16 +37,19 @@ func TestFakeStore(t *testing.T) {
 
 	for _, tc := range []struct {
 		name string
-		test func(repos.Store) func(*testing.T)
+		test func(*testing.T, repos.Store) func(*testing.T)
 	}{
 		{"ListExternalServices", testStoreListExternalServices},
 		{"UpsertExternalServices", testStoreUpsertExternalServices},
 		{"ListRepos", testStoreListRepos},
 		{"ListRepos_Pagination", testStoreListReposPagination},
+		{"InsertRepos", testStoreInsertRepos},
+		{"DeleteRepos", testStoreDeleteRepos},
 		{"UpsertRepos", testStoreUpsertRepos},
+		{"UpsertSources", testStoreUpsertSources},
 		{"SetClonedRepos", testStoreSetClonedRepos},
 	} {
-		t.Run(tc.name, tc.test(repos.NewObservedStore(
+		t.Run(tc.name, tc.test(t, repos.NewObservedStore(
 			new(repos.FakeStore),
 			lg,
 			repos.NewStoreMetrics(),
@@ -52,7 +58,7 @@ func TestFakeStore(t *testing.T) {
 	}
 }
 
-func testStoreListExternalServicesByRepos(store repos.Store) func(*testing.T) {
+func testStoreListExternalServicesByRepos(t *testing.T, store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Helper()
 
@@ -87,7 +93,9 @@ func testStoreListExternalServicesByRepos(store repos.Store) func(*testing.T) {
 				{
 					Name: "github.com/foo/bar",
 					Sources: map[string]*repos.SourceInfo{
-						fmt.Sprintf("extsvc:github:%d", github.ID): {},
+						fmt.Sprintf("extsvc:github:%d", github.ID): {
+							ID: fmt.Sprintf("extsvc:github:%d", github.ID),
+						},
 					},
 					ExternalRepo: api.ExternalRepoSpec{
 						ID:          "bar",
@@ -98,7 +106,9 @@ func testStoreListExternalServicesByRepos(store repos.Store) func(*testing.T) {
 				{
 					Name: "github.com/foo/baz",
 					Sources: map[string]*repos.SourceInfo{
-						fmt.Sprintf("extsvc:github:%d", github.ID): {},
+						fmt.Sprintf("extsvc:github:%d", github.ID): {
+							ID: fmt.Sprintf("extsvc:github:%d", github.ID),
+						},
 					},
 					ExternalRepo: api.ExternalRepoSpec{
 						ID:          "baz",
@@ -109,7 +119,9 @@ func testStoreListExternalServicesByRepos(store repos.Store) func(*testing.T) {
 				{
 					Name: "gitlab.com/foo/bar",
 					Sources: map[string]*repos.SourceInfo{
-						fmt.Sprintf("extsvc:gitlab:%d", gitlab.ID): {},
+						fmt.Sprintf("extsvc:gitlab:%d", gitlab.ID): {
+							ID: fmt.Sprintf("extsvc:gitlab:%d", gitlab.ID),
+						},
 					},
 					ExternalRepo: api.ExternalRepoSpec{
 						ID:          "bar",
@@ -119,7 +131,7 @@ func testStoreListExternalServicesByRepos(store repos.Store) func(*testing.T) {
 				},
 			}
 
-			if err := tx.UpsertRepos(ctx, repositories...); err != nil {
+			if err := tx.InsertRepos(ctx, repositories...); err != nil {
 				t.Fatalf("failed to setup store: %v", err)
 			}
 
@@ -137,7 +149,7 @@ func testStoreListExternalServicesByRepos(store repos.Store) func(*testing.T) {
 	}
 }
 
-func testStoreListExternalServices(store repos.Store) func(*testing.T) {
+func testStoreListExternalServices(t *testing.T, store repos.Store) func(*testing.T) {
 	clock := repos.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
@@ -273,18 +285,45 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 			},
 			assert: repos.Assert.ExternalServicesEqual(&phabricatorService),
 		},
-	)
-
-	testCases = append(testCases, testCase{
-		name:   "returns svcs by their ids",
-		stored: svcs,
-		args: func(stored repos.ExternalServices) repos.StoreListExternalServicesArgs {
-			return repos.StoreListExternalServicesArgs{
-				IDs: []int64{stored[0].ID, stored[1].ID},
-			}
+		testCase{
+			name:   "returns svcs by their ids",
+			stored: svcs,
+			args: func(stored repos.ExternalServices) repos.StoreListExternalServicesArgs {
+				return repos.StoreListExternalServicesArgs{
+					IDs: []int64{stored[0].ID, stored[1].ID},
+				}
+			},
+			assert: repos.Assert.ExternalServicesEqual(svcs[:2].Clone()...),
 		},
-		assert: repos.Assert.ExternalServicesEqual(svcs[:2].Clone()...),
-	})
+		testCase{
+			name:   "limit and zero cursor",
+			stored: svcs,
+			args: func(repos.ExternalServices) (args repos.StoreListExternalServicesArgs) {
+				args.Cursor = 0
+				args.Limit = 1
+				return args
+			},
+			assert: repos.Assert.ExternalServicesEqual(func() (es repos.ExternalServices) {
+				return repos.ExternalServices{
+					svcs[0],
+				}
+			}()...),
+		},
+		testCase{
+			name:   "limit and non-zero cursor",
+			stored: svcs,
+			args: func(repos repos.ExternalServices) (args repos.StoreListExternalServicesArgs) {
+				args.Cursor = repos[0].ID
+				args.Limit = 1
+				return args
+			},
+			assert: repos.Assert.ExternalServicesEqual(func() (es repos.ExternalServices) {
+				return repos.ExternalServices{
+					svcs[1],
+				}
+			}()...),
+		},
+	)
 
 	return func(t *testing.T) {
 		t.Helper()
@@ -309,6 +348,9 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
 				}
 
+				for i, svc := range es {
+					t.Logf("Service %d: %#v\n", i, svc)
+				}
 				if tc.assert != nil {
 					tc.assert(t, es)
 				}
@@ -317,7 +359,7 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 	}
 }
 
-func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
+func testStoreUpsertExternalServices(t *testing.T, store repos.Store) func(*testing.T) {
 	clock := repos.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
@@ -448,7 +490,181 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 	}
 }
 
-func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
+func testStoreInsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
+	clock := repos.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
+	return func(t *testing.T) {
+		t.Helper()
+
+		servicesPerKind := createExternalServices(t, store)
+
+		repo1 := repos.Repo{
+			Name:        "github.com/foo/bar",
+			URI:         "github.com/foo/bar",
+			Description: "The description",
+			Language:    "barlang",
+			CreatedAt:   now,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "AAAAA==",
+				ServiceType: "github",
+				ServiceID:   "http://github.com",
+			},
+			Sources: map[string]*repos.SourceInfo{
+				servicesPerKind[extsvc.KindGitHub].URN(): {
+					ID:       servicesPerKind[extsvc.KindGitHub].URN(),
+					CloneURL: "git@github.com:foo/bar.git",
+				},
+				servicesPerKind[extsvc.KindBitbucketServer].URN(): {
+					ID:       servicesPerKind[extsvc.KindBitbucketServer].URN(),
+					CloneURL: "git@bitbucketserver.mycorp.com:foo/bar.git",
+				},
+			},
+			Metadata: new(github.Repository),
+		}
+
+		repo2 := repos.Repo{
+			Name:        "gitlab.com/foo/bar",
+			URI:         "gitlab.com/foo/bar",
+			Description: "The description",
+			Language:    "barlang",
+			CreatedAt:   now,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "1234",
+				ServiceType: extsvc.TypeGitLab,
+				ServiceID:   "http://gitlab.com",
+			},
+			Sources: map[string]*repos.SourceInfo{
+				servicesPerKind[extsvc.KindGitLab].URN(): {
+					ID:       servicesPerKind[extsvc.KindGitLab].URN(),
+					CloneURL: "git@gitlab.com:foo/bar.git",
+				},
+			},
+			Metadata: new(gitlab.Project),
+		}
+
+		ctx := context.Background()
+
+		t.Run("no repos should not fail", func(t *testing.T) {
+			if err := store.InsertRepos(ctx); err != nil {
+				t.Fatalf("InsertRepos error: %s", err)
+			}
+		})
+
+		t.Run("many repos", transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			want := mkRepos(7, &repo1, &repo2)
+
+			if err := tx.InsertRepos(ctx, want...); err != nil {
+				t.Fatalf("InsertRepos error: %s", err)
+			}
+
+			sort.Sort(want)
+
+			if noID := want.Filter(hasNoID); len(noID) > 0 {
+				t.Fatalf("InsertRepos didn't assign an ID to all repos: %v", noID.Names())
+			}
+
+			have, err := tx.ListRepos(ctx, repos.StoreListReposArgs{})
+			if err != nil {
+				t.Fatalf("ListRepos error: %s", err)
+			}
+
+			if diff := cmp.Diff(have, []*repos.Repo(want), cmpopts.EquateEmpty()); diff != "" {
+				t.Fatalf("ListRepos:\n%s", diff)
+			}
+		}))
+	}
+}
+
+func testStoreDeleteRepos(t *testing.T, store repos.Store) func(*testing.T) {
+	clock := repos.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
+	return func(t *testing.T) {
+		t.Helper()
+
+		servicesPerKind := createExternalServices(t, store)
+
+		repo1 := repos.Repo{
+			Name:        "github.com/foo/bar",
+			URI:         "github.com/foo/bar",
+			Description: "The description",
+			Language:    "barlang",
+			CreatedAt:   now,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "AAAAA==",
+				ServiceType: "github",
+				ServiceID:   "http://github.com",
+			},
+			Sources: map[string]*repos.SourceInfo{
+				servicesPerKind[extsvc.KindGitHub].URN(): {
+					ID:       servicesPerKind[extsvc.KindGitHub].URN(),
+					CloneURL: "git@github.com:foo/bar.git",
+				},
+				servicesPerKind[extsvc.KindBitbucketServer].URN(): {
+					ID:       servicesPerKind[extsvc.KindBitbucketServer].URN(),
+					CloneURL: "git@bitbucketserver.mycorp.com:foo/bar.git",
+				},
+			},
+			Metadata: new(github.Repository),
+		}
+
+		repo2 := repos.Repo{
+			Name:        "gitlab.com/foo/bar",
+			URI:         "gitlab.com/foo/bar",
+			Description: "The description",
+			Language:    "barlang",
+			CreatedAt:   now,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "1234",
+				ServiceType: extsvc.TypeGitLab,
+				ServiceID:   "http://gitlab.com",
+			},
+			Sources: map[string]*repos.SourceInfo{
+				servicesPerKind[extsvc.KindGitLab].URN(): {
+					ID:       servicesPerKind[extsvc.KindGitLab].URN(),
+					CloneURL: "git@gitlab.com:foo/bar.git",
+				},
+			},
+			Metadata: new(gitlab.Project),
+		}
+
+		ctx := context.Background()
+
+		t.Run("no repos should not fail", func(t *testing.T) {
+			if err := store.DeleteRepos(ctx); err != nil {
+				t.Fatalf("DeleteRepos error: %s", err)
+			}
+		})
+
+		t.Run("many repos", transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			rs := mkRepos(7, &repo1, &repo2)
+
+			if err := tx.InsertRepos(ctx, rs...); err != nil {
+				t.Fatalf("InsertRepos error: %s", err)
+			}
+
+			sort.Sort(rs)
+
+			toDelete, want := rs[:3], rs[3:]
+
+			if err := tx.DeleteRepos(ctx, toDelete.IDs()...); err != nil {
+				t.Fatalf("DeleteRepos error: %s", err)
+			}
+
+			have, err := tx.ListRepos(ctx, repos.StoreListReposArgs{})
+			if err != nil {
+				t.Fatalf("ListRepos error: %s", err)
+			}
+
+			if diff := cmp.Diff(have, []*repos.Repo(want), cmpopts.EquateEmpty()); diff != "" {
+				t.Fatalf("ListRepos:\n%s", diff)
+			}
+		}))
+	}
+}
+
+func testStoreUpsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
 	clock := repos.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
@@ -464,6 +680,8 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			extsvc.KindGitolite,
 		}
 
+		servicesPerKind := createExternalServices(t, store)
+
 		github := repos.Repo{
 			Name:        "github.com/foo/bar",
 			URI:         "github.com/foo/bar",
@@ -476,8 +694,8 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 				ServiceID:   "http://github.com",
 			},
 			Sources: map[string]*repos.SourceInfo{
-				"extsvc:1": {
-					ID:       "extsvc:1",
+				servicesPerKind[extsvc.KindGitHub].URN(): {
+					ID:       servicesPerKind[extsvc.KindGitHub].URN(),
 					CloneURL: "git@github.com:foo/bar.git",
 				},
 			},
@@ -496,8 +714,8 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 				ServiceID:   "http://gitlab.com",
 			},
 			Sources: map[string]*repos.SourceInfo{
-				"extsvc:2": {
-					ID:       "extsvc:2",
+				servicesPerKind[extsvc.KindGitLab].URN(): {
+					ID:       servicesPerKind[extsvc.KindGitLab].URN(),
 					CloneURL: "git@gitlab.com:foo/bar.git",
 				},
 			},
@@ -516,8 +734,8 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 				ServiceID:   "http://bitbucketserver.mycorp.com",
 			},
 			Sources: map[string]*repos.SourceInfo{
-				"extsvc:3": {
-					ID:       "extsvc:3",
+				servicesPerKind[extsvc.KindBitbucketServer].URN(): {
+					ID:       servicesPerKind[extsvc.KindBitbucketServer].URN(),
 					CloneURL: "git@bitbucketserver.mycorp.com:foo/bar.git",
 				},
 			},
@@ -536,8 +754,8 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 				ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
 			},
 			Sources: map[string]*repos.SourceInfo{
-				"extsvc:4": {
-					ID:       "extsvc:4",
+				servicesPerKind[extsvc.KindAWSCodeCommit].URN(): {
+					ID:       servicesPerKind[extsvc.KindAWSCodeCommit].URN(),
 					CloneURL: "git@git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
 				},
 			},
@@ -553,8 +771,8 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 				ServiceType: extsvc.TypeOther,
 			},
 			Sources: map[string]*repos.SourceInfo{
-				"extsvc:5": {
-					ID:       "extsvc:5",
+				servicesPerKind[extsvc.KindOther].URN(): {
+					ID:       servicesPerKind[extsvc.KindOther].URN(),
 					CloneURL: "https://git-host.com/org/foo",
 				},
 			},
@@ -570,8 +788,8 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 				ServiceID:   "git@gitolite.mycorp.com",
 			},
 			Sources: map[string]*repos.SourceInfo{
-				"extsvc:5": {
-					ID:       "extsvc:5",
+				servicesPerKind[extsvc.KindGitolite].URN(): {
+					ID:       servicesPerKind[extsvc.KindGitolite].URN(),
 					CloneURL: "git@gitolite.mycorp.com:bar.git",
 				},
 			},
@@ -600,6 +818,9 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 
 			if err := tx.UpsertRepos(ctx, want...); err != nil {
 				t.Fatalf("UpsertRepos error: %s", err)
+			}
+			if err := tx.UpsertSources(ctx, want.Sources(), nil, nil); err != nil {
+				t.Fatalf("UpsertSources error: %s", err)
 			}
 
 			sort.Sort(want)
@@ -634,6 +855,8 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 
 			if err = tx.UpsertRepos(ctx, want.Clone()...); err != nil {
 				t.Errorf("UpsertRepos error: %s", err)
+			} else if err = tx.UpsertSources(ctx, want.Clone().Sources(), nil, nil); err != nil {
+				t.Fatalf("UpsertSources error: %s", err)
 			} else if have, err = tx.ListRepos(ctx, repos.StoreListReposArgs{}); err != nil {
 				t.Errorf("ListRepos error: %s", err)
 			} else if diff := cmp.Diff(have, []*repos.Repo(want), cmpopts.EquateEmpty()); diff != "" {
@@ -654,6 +877,8 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			// Insert previously soft-deleted repos. Ensure we get back the same ID.
 			if err = tx.UpsertRepos(ctx, want.Clone().With(repos.Opt.RepoID(0))...); err != nil {
 				t.Errorf("UpsertRepos error: %s", err)
+			} else if err = tx.UpsertSources(ctx, want.Clone().Sources(), nil, nil); err != nil {
+				t.Fatalf("UpsertSources error: %s", err)
 			} else if have, err = tx.ListRepos(ctx, repos.StoreListReposArgs{}); err != nil {
 				t.Errorf("ListRepos error: %s", err)
 			} else if diff := cmp.Diff(have, []*repos.Repo(want), cmpopts.EquateEmpty()); diff != "" {
@@ -670,6 +895,8 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 				t.Fatalf("UpsertRepos deleted error: %s", err)
 			} else if err = tx.UpsertRepos(ctx, want...); err != nil {
 				t.Fatalf("UpsertRepos want error: %s", err)
+			} else if err = tx.UpsertSources(ctx, want.Sources(), nil, nil); err != nil {
+				t.Fatalf("UpsertSources error: %s", err)
 			} else if have, err = tx.ListRepos(ctx, repos.StoreListReposArgs{}); err != nil {
 				t.Errorf("ListRepos error: %s", err)
 			} else if diff := cmp.Diff(have, []*repos.Repo(want), cmpopts.EquateEmpty()); diff != "" {
@@ -684,6 +911,9 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 
 			if err := tx.UpsertRepos(ctx, all...); err != nil {
 				t.Fatalf("UpsertRepos error: %s", err)
+			}
+			if err := tx.UpsertSources(ctx, all.Sources(), nil, nil); err != nil {
+				t.Fatalf("UpsertSources error: %s", err)
 			}
 
 			sort.Sort(all)
@@ -722,6 +952,9 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			}
 			if upsert[0].ID == 0 {
 				t.Fatalf("Repo ID is zero")
+			}
+			if err := tx.UpsertSources(ctx, upsert.Sources(), nil, nil); err != nil {
+				t.Fatalf("UpsertSources error: %s", err)
 			}
 
 			if have, err = tx.ListRepos(ctx, repos.StoreListReposArgs{}); err != nil {
@@ -769,11 +1002,209 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 	}
 }
 
+func testStoreUpsertSources(t *testing.T, store repos.Store) func(*testing.T) {
+	clock := repos.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
+	servicesPerKind := createExternalServices(t, store)
+
+	return func(t *testing.T) {
+		t.Helper()
+
+		github := repos.Repo{
+			Name:        "github.com/foo/bar",
+			URI:         "github.com/foo/bar",
+			Description: "The description",
+			Language:    "barlang",
+			CreatedAt:   now,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "AAAAA==",
+				ServiceType: "github",
+				ServiceID:   "http://github.com",
+			},
+			Sources: map[string]*repos.SourceInfo{
+				servicesPerKind[extsvc.KindGitHub].URN(): {
+					ID:       servicesPerKind[extsvc.KindGitHub].URN(),
+					CloneURL: "git@github.com:foo/bar.git",
+				},
+			},
+			Metadata: new(github.Repository),
+		}
+
+		gitlab := repos.Repo{
+			Name:        "gitlab.com/foo/bar",
+			URI:         "gitlab.com/foo/bar",
+			Description: "The description",
+			Language:    "barlang",
+			CreatedAt:   now,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "1234",
+				ServiceType: extsvc.TypeGitLab,
+				ServiceID:   "http://gitlab.com",
+			},
+			Sources: map[string]*repos.SourceInfo{
+				servicesPerKind[extsvc.KindGitLab].URN(): {
+					ID:       servicesPerKind[extsvc.KindGitLab].URN(),
+					CloneURL: "git@gitlab.com:foo/bar.git",
+				},
+			},
+			Metadata: new(gitlab.Project),
+		}
+
+		repositories := repos.Repos{
+			&github,
+			&gitlab,
+		}
+
+		ctx := context.Background()
+
+		t.Run("no sources", func(t *testing.T) {
+			if err := store.UpsertSources(ctx, nil, nil, nil); err != nil {
+				t.Fatalf("UpsertSources error: %s", err)
+			}
+		})
+
+		t.Run("delete repo", transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			want := mkRepos(7, repositories...)
+
+			if err := tx.UpsertRepos(ctx, want...); err != nil {
+				t.Fatalf("UpsertRepos error: %s", err)
+			}
+
+			sources := want.Sources()
+
+			if err := tx.UpsertSources(ctx, sources, nil, nil); err != nil {
+				t.Fatalf("UpsertSources error: %s", err)
+			}
+
+			// delete a repository
+			want[0].DeletedAt = now
+			if err := tx.DeleteRepos(ctx, want[0].ID); err != nil {
+				t.Fatalf("UpsertRepos error: %s", err)
+			}
+
+			// un delete it
+			want[0].DeletedAt = time.Time{}
+			if err := tx.UpsertRepos(ctx, want...); err != nil {
+				t.Fatalf("UpsertRepos error: %s", err)
+			}
+
+			// it should not contain any source
+			want[0].Sources = nil
+
+			got, err := tx.ListRepos(ctx, repos.StoreListReposArgs{})
+			if err != nil {
+				t.Fatalf("ListRepos error: %s", err)
+			}
+
+			if diff := cmp.Diff([]*repos.Repo(want), got, cmpopts.EquateEmpty()); diff != "" {
+				t.Fatalf("ListRepos:\n%s", diff)
+			}
+		}))
+
+		t.Run("delete external service", transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			want := mkRepos(7, repositories...)
+
+			if err := tx.UpsertRepos(ctx, want...); err != nil {
+				t.Fatalf("UpsertRepos error: %s", err)
+			}
+
+			sources := want.Sources()
+
+			if err := tx.UpsertSources(ctx, sources, nil, nil); err != nil {
+				t.Fatalf("UpsertSources error: %s", err)
+			}
+
+			// delete an external service
+			svc := servicesPerKind[extsvc.KindGitHub]
+			svc.DeletedAt = now
+			if err := tx.UpsertExternalServices(ctx, svc); err != nil {
+				t.Fatalf("UpsertExternalServices error: %s", err)
+			}
+
+			// un delete it
+			svc.DeletedAt = time.Time{}
+			if err := tx.UpsertExternalServices(ctx, svc); err != nil {
+				t.Fatalf("UpsertExternalServices error: %s", err)
+			}
+
+			// all github sources should be deleted
+			want.Apply(func(r *repos.Repo) {
+				for urn := range r.Sources {
+					if strings.Contains(urn, "github") {
+						delete(r.Sources, urn)
+					}
+				}
+			})
+
+			got, err := tx.ListRepos(ctx, repos.StoreListReposArgs{})
+			if err != nil {
+				t.Fatalf("ListRepos error: %s", err)
+			}
+
+			if diff := cmp.Diff([]*repos.Repo(want), got, cmpopts.EquateEmpty()); diff != "" {
+				t.Fatalf("ListRepos:\n%s", diff)
+			}
+		}))
+
+		t.Run("inserts updates and deletes", transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			want := mkRepos(7, repositories...)
+
+			if err := tx.UpsertRepos(ctx, want...); err != nil {
+				t.Fatalf("UpsertRepos error: %s", err)
+			}
+
+			sources := want.Sources()
+
+			if err := tx.UpsertSources(ctx, sources, nil, nil); err != nil {
+				t.Fatalf("UpsertSources error: %s", err)
+			}
+
+			have, err := tx.ListRepos(ctx, repos.StoreListReposArgs{})
+			if err != nil {
+				t.Fatalf("ListRepos error: %s", err)
+			}
+
+			if diff := cmp.Diff([]*repos.Repo(want), have, cmpopts.EquateEmpty()); diff != "" {
+				t.Fatalf("ListRepos:\n%s", diff)
+			}
+
+			updates := make(map[api.RepoID][]repos.SourceInfo)
+			deletes := make(map[api.RepoID][]repos.SourceInfo)
+
+			updates[want[0].ID] = sources[want[0].ID]
+			updates[want[0].ID][0].CloneURL = "something-else"
+			deletes[want[1].ID] = sources[want[1].ID]
+
+			if err := tx.UpsertSources(ctx, nil, updates, deletes); err != nil {
+				t.Fatalf("UpsertSources error: %s", err)
+			}
+
+			want[0].Sources[servicesPerKind[extsvc.KindGitHub].URN()] = &repos.SourceInfo{
+				CloneURL: "something-else",
+				ID:       servicesPerKind[extsvc.KindGitHub].URN(),
+			}
+			want[1].Sources = nil
+
+			have, err = tx.ListRepos(ctx, repos.StoreListReposArgs{})
+			if err != nil {
+				t.Fatalf("ListRepos error: %s", err)
+			}
+
+			if diff := cmp.Diff([]*repos.Repo(want), have, cmpopts.EquateEmpty()); diff != "" {
+				t.Fatalf("ListRepos:\n%s", diff)
+			}
+		}))
+	}
+}
+
 func isCloned(r *repos.Repo) bool {
 	return r.Cloned
 }
 
-func testStoreSetClonedRepos(store repos.Store) func(*testing.T) {
+func testStoreSetClonedRepos(t *testing.T, store repos.Store) func(*testing.T) {
+	servicesPerKind := createExternalServices(t, store)
+
 	return func(t *testing.T) {
 		t.Helper()
 
@@ -789,8 +1220,8 @@ func testStoreSetClonedRepos(store repos.Store) func(*testing.T) {
 					ServiceID:   "http://github.com",
 				},
 				Sources: map[string]*repos.SourceInfo{
-					"extsvc:3": {
-						ID:       "extsvc:3",
+					servicesPerKind[extsvc.KindGitHub].URN(): {
+						ID:       servicesPerKind[extsvc.KindGitHub].URN(),
 						CloneURL: "git@github.com:foo/bar.git",
 					},
 				},
@@ -825,8 +1256,8 @@ func testStoreSetClonedRepos(store repos.Store) func(*testing.T) {
 		t.Run("many repo names", transact(ctx, store, func(t testing.TB, tx repos.Store) {
 			stored := mkRepos(9, repositories...)
 
-			if err := tx.UpsertRepos(ctx, stored...); err != nil {
-				t.Fatalf("UpsertRepos error: %s", err)
+			if err := tx.InsertRepos(ctx, stored...); err != nil {
+				t.Fatalf("InsertRepos error: %s", err)
 			}
 
 			sort.Sort(stored)
@@ -864,8 +1295,8 @@ func testStoreSetClonedRepos(store repos.Store) func(*testing.T) {
 				}
 			}
 
-			if err := tx.UpsertRepos(ctx, stored...); err != nil {
-				t.Fatalf("UpsertRepos error: %s", err)
+			if err := tx.InsertRepos(ctx, stored...); err != nil {
+				t.Fatalf("InsertRepos error: %s", err)
 			}
 
 			sort.Sort(stored)
@@ -887,9 +1318,11 @@ func testStoreSetClonedRepos(store repos.Store) func(*testing.T) {
 	}
 }
 
-func testStoreCountNotClonedRepos(store repos.Store) func(*testing.T) {
+func testStoreCountNotClonedRepos(t *testing.T, store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Helper()
+
+		servicesPerKind := createExternalServices(t, store)
 
 		var repositories repos.Repos
 		for i := 0; i < 3; i++ {
@@ -903,8 +1336,8 @@ func testStoreCountNotClonedRepos(store repos.Store) func(*testing.T) {
 					ServiceID:   "http://github.com",
 				},
 				Sources: map[string]*repos.SourceInfo{
-					"extsvc:3": {
-						ID:       "extsvc:3",
+					servicesPerKind[extsvc.KindGitHub].URN(): {
+						ID:       servicesPerKind[extsvc.KindGitHub].URN(),
 						CloneURL: "git@github.com:foo/bar.git",
 					},
 				},
@@ -927,8 +1360,8 @@ func testStoreCountNotClonedRepos(store repos.Store) func(*testing.T) {
 		t.Run("multiple cloned repos", transact(ctx, store, func(t testing.TB, tx repos.Store) {
 			stored := mkRepos(10, repositories...)
 
-			if err := tx.UpsertRepos(ctx, stored...); err != nil {
-				t.Fatalf("UpsertRepos error: %s", err)
+			if err := tx.InsertRepos(ctx, stored...); err != nil {
+				t.Fatalf("InsertRepos error: %s", err)
 			}
 
 			sort.Sort(stored)
@@ -952,8 +1385,8 @@ func testStoreCountNotClonedRepos(store repos.Store) func(*testing.T) {
 		t.Run("deleted non cloned repos", transact(ctx, store, func(t testing.TB, tx repos.Store) {
 			stored := mkRepos(10, repositories...)
 
-			if err := tx.UpsertRepos(ctx, stored...); err != nil {
-				t.Fatalf("UpsertRepos error: %s", err)
+			if err := tx.InsertRepos(ctx, stored...); err != nil {
+				t.Fatalf("InsertRepos error: %s", err)
 			}
 
 			sort.Sort(stored)
@@ -964,11 +1397,9 @@ func testStoreCountNotClonedRepos(store repos.Store) func(*testing.T) {
 			}
 
 			sort.Strings(cloned)
-			deletedCloned := stored[8:].With(func(r *repos.Repo) {
-				r.DeletedAt = time.Now()
-			})
+			deletedCloned := stored[8:]
 
-			if err := tx.UpsertRepos(ctx, deletedCloned...); err != nil {
+			if err := tx.DeleteRepos(ctx, deletedCloned.IDs()...); err != nil {
 				t.Fatalf("UpsertRepos error: %s", err)
 			}
 
@@ -998,9 +1429,11 @@ func hasID(ids ...api.RepoID) func(r *repos.Repo) bool {
 	}
 }
 
-func testStoreListRepos(store repos.Store) func(*testing.T) {
+func testStoreListRepos(t *testing.T, store repos.Store) func(*testing.T) {
 	clock := repos.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
+
+	servicesPerKind := createExternalServices(t, store)
 
 	unmanaged := repos.Repo{
 		Name:     "unmanaged",
@@ -1016,8 +1449,8 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 	github := repos.Repo{
 		Name: "github.com/bar/foo",
 		Sources: map[string]*repos.SourceInfo{
-			"extsvc:123": {
-				ID:       "extsvc:123",
+			servicesPerKind[extsvc.KindGitHub].URN(): {
+				ID:       servicesPerKind[extsvc.KindGitHub].URN(),
 				CloneURL: "git@github.com:bar/foo.git",
 			},
 		},
@@ -1033,8 +1466,8 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 		Name:    "gitlab.com/bar/foo",
 		Private: true,
 		Sources: map[string]*repos.SourceInfo{
-			"extsvc:123": {
-				ID:       "extsvc:123",
+			servicesPerKind[extsvc.KindGitLab].URN(): {
+				ID:       servicesPerKind[extsvc.KindGitLab].URN(),
 				CloneURL: "git@gitlab.com:bar/foo.git",
 			},
 		},
@@ -1049,8 +1482,8 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 	bitbucketServer := repos.Repo{
 		Name: "bitbucketserver.mycorp.com/foo/bar",
 		Sources: map[string]*repos.SourceInfo{
-			"extsvc:123": {
-				ID:       "extsvc:123",
+			servicesPerKind[extsvc.KindBitbucketServer].URN(): {
+				ID:       servicesPerKind[extsvc.KindBitbucketServer].URN(),
 				CloneURL: "git@bitbucketserver.mycorp.com:foo/bar.git",
 			},
 		},
@@ -1070,8 +1503,8 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 			ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
 		},
 		Sources: map[string]*repos.SourceInfo{
-			"extsvc:4": {
-				ID:       "extsvc:4",
+			servicesPerKind[extsvc.KindAWSCodeCommit].URN(): {
+				ID:       servicesPerKind[extsvc.KindAWSCodeCommit].URN(),
 				CloneURL: "git@git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
 			},
 		},
@@ -1086,8 +1519,8 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 			ServiceType: extsvc.TypeOther,
 		},
 		Sources: map[string]*repos.SourceInfo{
-			"extsvc:4": {
-				ID:       "extsvc:4",
+			servicesPerKind[extsvc.KindOther].URN(): {
+				ID:       servicesPerKind[extsvc.KindOther].URN(),
 				CloneURL: "https://git-host.com/org/foo",
 			},
 		},
@@ -1102,8 +1535,8 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 			ServiceID:   "git@gitolite.mycorp.com",
 		},
 		Sources: map[string]*repos.SourceInfo{
-			"extsvc:5": {
-				ID:       "extsvc:5",
+			servicesPerKind[extsvc.KindGitolite].URN(): {
+				ID:       servicesPerKind[extsvc.KindGitolite].URN(),
 				CloneURL: "git@gitolite.mycorp.com:bar.git",
 			},
 		},
@@ -1252,6 +1685,19 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 		repos: repos.Assert.ReposEqual(),
 	})
 
+	{
+		testCases = append(testCases, testCase{
+			name:   "limit by external service",
+			stored: repositories,
+			args: func(repos.Repos) repos.StoreListReposArgs {
+				return repos.StoreListReposArgs{
+					ExternalServiceID: servicesPerKind[extsvc.KindGitHub].ID,
+				}
+			},
+			repos: repos.Assert.ReposEqual(&github),
+		})
+	}
+
 	return func(t *testing.T) {
 		t.Helper()
 
@@ -1262,7 +1708,8 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 
 			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
 				stored := tc.stored.Clone()
-				if err := tx.UpsertRepos(ctx, stored...); err != nil {
+
+				if err := tx.InsertRepos(ctx, stored...); err != nil {
 					t.Fatalf("failed to setup store: %v", err)
 				}
 
@@ -1284,7 +1731,7 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 
 		t.Run("only include cloned", transact(ctx, store, func(t testing.TB, tx repos.Store) {
 			stored := mkRepos(5, repositories...).Clone()
-			if err := tx.UpsertRepos(ctx, stored...); err != nil {
+			if err := tx.InsertRepos(ctx, stored...); err != nil {
 				t.Fatalf("failed to setup store: %v", err)
 			}
 
@@ -1313,9 +1760,11 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 	}
 }
 
-func testStoreListReposPagination(store repos.Store) func(*testing.T) {
+func testStoreListReposPagination(t *testing.T, store repos.Store) func(*testing.T) {
 	clock := repos.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
+
+	servicesPerKind := createExternalServices(t, store)
 
 	github := repos.Repo{
 		Name:        "foo/bar",
@@ -1329,8 +1778,8 @@ func testStoreListReposPagination(store repos.Store) func(*testing.T) {
 			ServiceID:   "http://github.com",
 		},
 		Sources: map[string]*repos.SourceInfo{
-			"extsvc:1": {
-				ID:       "extsvc:1",
+			servicesPerKind[extsvc.KindGitHub].URN(): {
+				ID:       servicesPerKind[extsvc.KindGitHub].URN(),
 				CloneURL: "git@github.com:foo/bar.git",
 			},
 		},
@@ -1341,8 +1790,8 @@ func testStoreListReposPagination(store repos.Store) func(*testing.T) {
 		ctx := context.Background()
 		t.Run("", transact(ctx, store, func(t testing.TB, tx repos.Store) {
 			stored := mkRepos(7, &github)
-			if err := tx.UpsertRepos(ctx, stored...); err != nil {
-				t.Fatalf("UpsertRepos error: %s", err)
+			if err := tx.InsertRepos(ctx, stored...); err != nil {
+				t.Fatalf("InsertRepos error: %s", err)
 			}
 
 			sort.Sort(stored)
@@ -1373,6 +1822,57 @@ func testStoreListReposPagination(store repos.Store) func(*testing.T) {
 				}
 			}
 		}))
+	}
+}
+
+func testSyncRateLimiters(t *testing.T, store repos.Store) func(*testing.T) {
+	clock := repos.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
+	return func(t *testing.T) {
+		ctx := context.Background()
+		transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			toCreate := 501 // Larger than default page size in order to test pagination
+			services := make([]*repos.ExternalService, 0, toCreate)
+			for i := 0; i < toCreate; i++ {
+				svc := &repos.ExternalService{
+					ID:          int64(i) + 1,
+					Kind:        "GitHub",
+					DisplayName: "GitHub",
+					CreatedAt:   now,
+					UpdatedAt:   now,
+					DeletedAt:   time.Time{},
+				}
+				config := schema.GitLabConnection{
+					Url: fmt.Sprintf("http://example%d.com/", i),
+					RateLimit: &schema.GitLabRateLimit{
+						RequestsPerHour: 3600,
+						Enabled:         true,
+					},
+				}
+				data, err := json.Marshal(config)
+				if err != nil {
+					t.Fatal(err)
+				}
+				svc.Config = string(data)
+				services = append(services, svc)
+			}
+
+			if err := tx.UpsertExternalServices(ctx, services...); err != nil {
+				t.Fatalf("failed to setup store: %v", err)
+			}
+
+			registry := ratelimit.NewRegistry()
+			syncer := repos.NewRateLimitSyncer(registry, tx)
+			err := syncer.SyncRateLimiters(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			have := registry.Count()
+			if have != toCreate {
+				t.Fatalf("Want %d, got %d", toCreate, have)
+			}
+		})(t)
 	}
 }
 
@@ -1469,4 +1969,92 @@ func (tx *noopTxStore) Done(errs ...*error) {
 		tx.Fatal(fmt.Sprintf("unexpected error in noopTxStore: %v", *errs[0]))
 	}
 	tx.count--
+}
+
+func createExternalServices(t *testing.T, store repos.Store) map[string]*repos.ExternalService {
+	clock := repos.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
+	githubSvc := repos.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "Github - Test",
+		Config:      `{"url": "https://github.com"}`,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	gitlabSvc := repos.ExternalService{
+		Kind:        extsvc.KindGitLab,
+		DisplayName: "GitLab - Test",
+		Config:      `{"url": "https://gitlab.com"}`,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	bitbucketServerSvc := repos.ExternalService{
+		Kind:        extsvc.KindBitbucketServer,
+		DisplayName: "Bitbucket Server - Test",
+		Config:      `{"url": "https://bitbucket.com"}`,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	bitbucketCloudSvc := repos.ExternalService{
+		Kind:        extsvc.KindBitbucketCloud,
+		DisplayName: "Bitbucket Cloud - Test",
+		Config:      `{"url": "https://bitbucket.com"}`,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	awsSvc := repos.ExternalService{
+		Kind:        extsvc.KindAWSCodeCommit,
+		DisplayName: "AWS Code - Test",
+		Config:      `{"url": "https://aws.com"}`,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	otherSvc := repos.ExternalService{
+		Kind:        extsvc.KindOther,
+		DisplayName: "Other - Test",
+		Config:      `{"url": "https://other.com"}`,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	gitoliteSvc := repos.ExternalService{
+		Kind:        extsvc.KindGitolite,
+		DisplayName: "Gitolite - Test",
+		Config:      `{"url": "https://gitolite.com"}`,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	svcs := []*repos.ExternalService{
+		&githubSvc,
+		&gitlabSvc,
+		&bitbucketServerSvc,
+		&bitbucketCloudSvc,
+		&awsSvc,
+		&otherSvc,
+		&gitoliteSvc,
+	}
+
+	// create a few external services
+	if err := store.UpsertExternalServices(context.Background(), svcs...); err != nil {
+		t.Fatalf("failed to insert external services: %v", err)
+	}
+
+	services, err := store.ListExternalServices(context.Background(), repos.StoreListExternalServicesArgs{})
+	if err != nil {
+		t.Fatal("failed to list external services")
+	}
+
+	servicesPerKind := make(map[string]*repos.ExternalService)
+	for _, svc := range services {
+		servicesPerKind[svc.Kind] = svc
+	}
+
+	return servicesPerKind
 }

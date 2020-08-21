@@ -66,6 +66,9 @@ type Server struct {
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("/repo-update-scheduler-info", s.handleRepoUpdateSchedulerInfo)
 	mux.HandleFunc("/repo-lookup", s.handleRepoLookup)
 	mux.HandleFunc("/repo-external-services", s.handleRepoExternalServices)
@@ -518,6 +521,12 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 			}
 			return nil, err
 		}
+	}
+
+	if repo.Private {
+		return &protocol.RepoLookupResult{
+			ErrorNotFound: true,
+		}, nil
 	}
 
 	err = s.Syncer.SyncSubset(ctx, repo)

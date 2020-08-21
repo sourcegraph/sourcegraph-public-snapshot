@@ -21,7 +21,7 @@ import { RouteDescriptor } from '../../util/contributions'
 import { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from '../settings/UserSettingsSidebar'
 import { UserAreaHeader, UserAreaHeaderNavItem } from './UserAreaHeader'
-import { PatternTypeProps } from '../../search'
+import { PatternTypeProps, OnboardingTourProps } from '../../search'
 import { ErrorMessage } from '../../components/alerts'
 import { isDefined } from '../../../../shared/src/util/types'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
@@ -85,6 +85,7 @@ interface UserAreaProps
         ThemeProps,
         TelemetryProps,
         ActivationProps,
+        OnboardingTourProps,
         Omit<PatternTypeProps, 'setPatternType'> {
     userAreaRoutes: readonly UserAreaRoute[]
     userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
@@ -96,6 +97,8 @@ interface UserAreaProps
      * parameter.
      */
     authenticatedUser: GQL.IUser | null
+
+    isSourcegraphDotCom: boolean
 }
 
 interface UserAreaState {
@@ -117,6 +120,7 @@ export interface UserAreaRouteContext
         TelemetryProps,
         ActivationProps,
         NamespaceProps,
+        OnboardingTourProps,
         Omit<PatternTypeProps, 'setPatternType'> {
     /** The user area main URL. */
     url: string
@@ -138,6 +142,8 @@ export interface UserAreaRouteContext
     authenticatedUser: GQL.IUser | null
     userSettingsSideBarItems: UserSettingsSidebarItems
     userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
+
+    isSourcegraphDotCom: boolean
 }
 
 /**

@@ -11,7 +11,7 @@ import (
 )
 
 // AuthzFilterRepos sets up a mock for the authzFilter in the db package that
-// filters out the repositories with the given IDs IDs.
+// filters out the repositories with the given IDs.
 func AuthzFilterRepos(t *test.T, ids ...api.RepoID) {
 	toFilter := map[api.RepoID]struct{}{}
 	for _, id := range ids {

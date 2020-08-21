@@ -151,10 +151,6 @@ export interface InteractiveSearchProps {
     toggleSearchMode: (event: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
-export interface SmartSearchFieldProps {
-    smartSearchField: boolean
-}
-
 export interface CopyQueryButtonProps {
     copyQueryButton: boolean
 }
@@ -163,6 +159,9 @@ export interface RepogroupHomepageProps {
     showRepogroupHomepage: boolean
 }
 
+export interface OnboardingTourProps {
+    showOnboardingTour: boolean
+}
 /**
  * Verifies whether a version context exists on an instance.
  *

@@ -116,6 +116,12 @@ const authUser = {
     databaseID: 0,
     namespaceName: '',
     permissionsInfo: null,
+    campaigns: {
+        __typename: 'CampaignConnection',
+        totalCount: 0,
+        pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
+        nodes: [] as GQL.ICampaign[],
+    },
 } as GQL.IUser
 
 const commonProps: RepogroupPageProps = {
@@ -148,7 +154,6 @@ const commonProps: RepogroupPageProps = {
     keyboardShortcuts: [],
     onFiltersInQueryChange: sinon.spy(() => {}),
     setCaseSensitivity: sinon.spy(() => {}),
-    smartSearchField: true,
     splitSearchModes: true,
     telemetryService: ({
         ...NOOP_TELEMETRY_SERVICE,
@@ -170,6 +175,7 @@ const commonProps: RepogroupPageProps = {
     repogroupMetadata: python2To3Metadata,
     autoFocus: false,
     globbing: false,
+    showOnboardingTour: false,
 }
 
 add('Repogroup page with smart search field', () => (
@@ -180,6 +186,6 @@ add('Repogroup page with smart search field', () => (
 
 add('Repogroup page without smart search field', () => (
     <MemoryRouter>
-        <RepogroupPage {...commonProps} smartSearchField={false} />
+        <RepogroupPage {...commonProps} />
     </MemoryRouter>
 ))

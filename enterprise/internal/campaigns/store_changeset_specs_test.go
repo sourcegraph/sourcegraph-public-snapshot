@@ -2,6 +2,7 @@ package campaigns
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -12,14 +13,17 @@ import (
 )
 
 func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs repos.Store, clock clock) {
-	repo := testRepo(1, extsvc.TypeGitHub)
-	deletedRepo := testRepo(2, extsvc.TypeGitHub).With(repos.Opt.RepoDeletedAt(clock.now()))
+	repo := testRepo(t, rs, extsvc.TypeGitHub)
+	deletedRepo := testRepo(t, rs, extsvc.TypeGitHub).With(repos.Opt.RepoDeletedAt(clock.now()))
 
-	if err := rs.UpsertRepos(ctx, deletedRepo, repo); err != nil {
+	if err := rs.InsertRepos(ctx, repo); err != nil {
+		t.Fatal(err)
+	}
+	if err := rs.DeleteRepos(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
 
-	changesetSpecs := make([]*cmpgn.ChangesetSpec, 0, 3)
+	changesetSpecs := make(cmpgn.ChangesetSpecs, 0, 3)
 	for i := 0; i < cap(changesetSpecs); i++ {
 		c := &cmpgn.ChangesetSpec{
 			RawSpec: `{"externalID":"12345"}`,
@@ -53,7 +57,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 	}
 
 	t.Run("Create", func(t *testing.T) {
-		toCreate := make([]*cmpgn.ChangesetSpec, 0, len(changesetSpecs)+1)
+		toCreate := make(cmpgn.ChangesetSpecs, 0, len(changesetSpecs)+1)
 		toCreate = append(toCreate, changesetSpecDeletedRepo)
 		toCreate = append(toCreate, changesetSpecs...)
 
@@ -208,7 +212,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 					t.Fatal(err)
 				}
 
-				want := []*cmpgn.ChangesetSpec{c}
+				want := cmpgn.ChangesetSpecs{c}
 				if diff := cmp.Diff(have, want); diff != "" {
 					t.Fatalf("opts: %+v, diff: %s", opts, diff)
 				}
@@ -223,7 +227,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 					t.Fatal(err)
 				}
 
-				want := []*cmpgn.ChangesetSpec{c}
+				want := cmpgn.ChangesetSpecs{c}
 				if diff := cmp.Diff(have, want); diff != "" {
 					t.Fatalf("opts: %+v, diff: %s", opts, diff)
 				}
@@ -325,15 +329,49 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 		underTTL := clock.now().Add(-cmpgn.ChangesetSpecTTL + 24*time.Hour)
 		overTTL := clock.now().Add(-cmpgn.ChangesetSpecTTL - 24*time.Hour)
 
-		tests := []struct {
-			createdAt       time.Time
-			hasCampaignSpec bool
-			wantDeleted     bool
-		}{
+		type testCase struct {
+			createdAt time.Time
+
+			hasCampaignSpec     bool
+			campaignSpecApplied bool
+
+			isCurrentSpec  bool
+			isPreviousSpec bool
+
+			wantDeleted bool
+		}
+
+		printTestCase := func(tc testCase) string {
+			var tooOld bool
+			if tc.createdAt.Equal(overTTL) {
+				tooOld = true
+			}
+
+			return fmt.Sprintf(
+				"[tooOld=%t, hasCampaignSpec=%t, campaignSpecApplied=%t, isCurrentSpec=%t, isPreviousSpec=%t]",
+				tooOld, tc.hasCampaignSpec, tc.campaignSpecApplied, tc.isCurrentSpec, tc.isPreviousSpec,
+			)
+		}
+
+		tests := []testCase{
+			// ChangesetSpec was created but never attached to a CampaignSpec
 			{hasCampaignSpec: false, createdAt: underTTL, wantDeleted: false},
 			{hasCampaignSpec: false, createdAt: overTTL, wantDeleted: true},
+
+			// Attached to CampaignSpec that's applied to a Campaign
+			{hasCampaignSpec: true, campaignSpecApplied: true, isCurrentSpec: true, createdAt: underTTL, wantDeleted: false},
+			{hasCampaignSpec: true, campaignSpecApplied: true, isCurrentSpec: true, createdAt: overTTL, wantDeleted: false},
+
+			// CampaignSpec is not applied to a Campaign anymore and the
+			// ChangesetSpecs are now the PreviousSpec.
+			{hasCampaignSpec: true, isPreviousSpec: true, createdAt: underTTL, wantDeleted: false},
+			{hasCampaignSpec: true, isPreviousSpec: true, createdAt: overTTL, wantDeleted: false},
+
+			// Has a CampaignSpec, but that CampaignSpec is not applied
+			// anymore, and the ChangesetSpec is neither the current, nor the
+			// previous spec.
 			{hasCampaignSpec: true, createdAt: underTTL, wantDeleted: false},
-			{hasCampaignSpec: true, createdAt: overTTL, wantDeleted: false},
+			{hasCampaignSpec: true, createdAt: overTTL, wantDeleted: true},
 		}
 
 		for _, tc := range tests {
@@ -342,6 +380,20 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 			if tc.hasCampaignSpec {
 				if err := s.CreateCampaignSpec(ctx, campaignSpec); err != nil {
 					t.Fatal(err)
+				}
+
+				if tc.campaignSpecApplied {
+					campaign := &cmpgn.Campaign{
+						Name:             fmt.Sprintf("campaign for spec %d", campaignSpec.ID),
+						CampaignSpecID:   campaignSpec.ID,
+						InitialApplierID: campaignSpec.UserID,
+						NamespaceUserID:  campaignSpec.NamespaceUserID,
+						LastApplierID:    campaignSpec.UserID,
+						LastAppliedAt:    time.Now(),
+					}
+					if err := s.CreateCampaign(ctx, campaign); err != nil {
+						t.Fatal(err)
+					}
 				}
 			}
 
@@ -356,21 +408,43 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 				t.Fatal(err)
 			}
 
+			if tc.isCurrentSpec {
+				changeset := &cmpgn.Changeset{
+					ExternalServiceType: "github",
+					RepoID:              1,
+					CurrentSpecID:       changesetSpec.ID,
+				}
+				if err := s.CreateChangeset(ctx, changeset); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			if tc.isPreviousSpec {
+				changeset := &cmpgn.Changeset{
+					ExternalServiceType: "github",
+					RepoID:              1,
+					PreviousSpecID:      changesetSpec.ID,
+				}
+				if err := s.CreateChangeset(ctx, changeset); err != nil {
+					t.Fatal(err)
+				}
+			}
+
 			if err := s.DeleteExpiredChangesetSpecs(ctx); err != nil {
 				t.Fatal(err)
 			}
 
-			haveChangesetSpec, err := s.GetChangesetSpec(ctx, GetChangesetSpecOpts{ID: changesetSpec.ID})
+			_, err := s.GetChangesetSpec(ctx, GetChangesetSpecOpts{ID: changesetSpec.ID})
 			if err != nil && err != ErrNoResults {
 				t.Fatal(err)
 			}
 
 			if tc.wantDeleted && err == nil {
-				t.Fatalf("tc=%+v\n\t want changeset spec to be deleted. got: %v", tc, haveChangesetSpec)
+				t.Fatalf("tc=%s\n\t want changeset spec to be deleted, but was NOT", printTestCase(tc))
 			}
 
 			if !tc.wantDeleted && err == ErrNoResults {
-				t.Fatalf("want patch set not to be deleted, but got deleted")
+				t.Fatalf("tc=%s\n\t want changeset spec NOT to be deleted, but got deleted", printTestCase(tc))
 			}
 		}
 	})

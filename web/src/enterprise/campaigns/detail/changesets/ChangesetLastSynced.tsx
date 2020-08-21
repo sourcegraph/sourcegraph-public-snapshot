@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { IExternalChangeset } from '../../../../../../shared/src/graphql/schema'
 import classNames from 'classnames'
 import { formatDistance, parseISO } from 'date-fns'
 import { syncChangeset } from '../backend'
@@ -9,9 +8,10 @@ import { Observer } from 'rxjs'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import { isErrorLike } from '../../../../../../shared/src/util/errors'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
+import { ChangesetFields } from '../../../../graphql-operations'
 
 interface Props {
-    changeset: Pick<IExternalChangeset, 'id' | 'nextSyncAt' | 'updatedAt'>
+    changeset: Pick<ChangesetFields, 'id' | 'nextSyncAt' | 'updatedAt'>
     viewerCanAdminister: boolean
     campaignUpdates?: Pick<Observer<void>, 'next'>
     /** For testing purposes only */

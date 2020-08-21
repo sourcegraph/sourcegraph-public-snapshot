@@ -317,6 +317,8 @@ type CampaignSpec struct {
 	ChangesetTemplate *ChangesetTemplate `json:"changesetTemplate,omitempty"`
 	// Description description: The description of the campaign.
 	Description string `json:"description,omitempty"`
+	// ImportChangesets description: Import existing changesets on code hosts.
+	ImportChangesets []*ImportChangesets `json:"importChangesets,omitempty"`
 	// Name description: The name of the campaign, which is unique among all campaigns in the namespace. A campaign's name is case-preserving.
 	Name string `json:"name"`
 	// On description: The set of repositories (and branches) to run the campaign on, specified as a list of search queries (that match repositories) and/or specific repositories.
@@ -725,6 +727,13 @@ func (v *IdentityProvider) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"oauth", "username", "external"})
 }
 
+type ImportChangesets struct {
+	// ExternalIDs description: The changesets to import from the code host. For GitHub this is the PR number, for GitLab this is the MR number, for Bitbucket Server this is the PR number.
+	ExternalIDs []interface{} `json:"externalIDs"`
+	// Repository description: The repository name as configured on your Sourcegraph instance.
+	Repository string `json:"repository"`
+}
+
 // Log description: Configuration for logging and alerting, including to external services.
 type Log struct {
 	// Sentry description: Configuration for Sentry
@@ -1102,10 +1111,10 @@ type SettingsExperimentalFeatures struct {
 	SearchStats *bool `json:"searchStats,omitempty"`
 	// ShowBadgeAttachments description: Enables the UI indicators for code intelligence precision.
 	ShowBadgeAttachments *bool `json:"showBadgeAttachments,omitempty"`
+	// ShowOnboardingTour description: Enables the onboarding tour.
+	ShowOnboardingTour *bool `json:"showOnboardingTour,omitempty"`
 	// ShowRepogroupHomepage description: Enables the repository group homepage
 	ShowRepogroupHomepage *bool `json:"showRepogroupHomepage,omitempty"`
-	// SmartSearchField description: Enables displaying a search field that provides syntax highlighting, hover tooltips and diagnostics for search queries.
-	SmartSearchField *bool `json:"smartSearchField,omitempty"`
 	// SplitSearchModes description: Enables toggling between the current omni search mode, and experimental interactive search mode.
 	SplitSearchModes *bool `json:"splitSearchModes,omitempty"`
 }
@@ -1170,6 +1179,8 @@ type SiteConfiguration struct {
 	ExperimentalFeatures *ExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	// Extensions description: Configures Sourcegraph extensions.
 	Extensions *Extensions `json:"extensions,omitempty"`
+	// ExternalServiceUserMode description: Enable to allow users to add external services for public reposirories to the Sourcegraph instance.
+	ExternalServiceUserMode string `json:"externalService.userMode,omitempty"`
 	// ExternalURL description: The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called `appURL`. Only root URLs are allowed.
 	ExternalURL string `json:"externalURL,omitempty"`
 	// GitCloneURLToRepositoryName description: JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.

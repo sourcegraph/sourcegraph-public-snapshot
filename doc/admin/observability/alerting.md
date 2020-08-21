@@ -4,7 +4,7 @@ Alerts can be configured to notify site admins when there is something wrong or 
 
 ## Understanding alerts
 
-See [alert solutions](alert_solutions.md) for possible solutions when alerts are firing.
+See [alert solutions](alert_solutions.md) for possible solutions when alerts are firing, and learn more about alert labels and metrics in our [metrics guide](metrics_guide.md).
 
 ## Setting up alerting
 
@@ -58,6 +58,27 @@ Once configured, Sourcegraph alerts will automatically be routed to the appropri
   }
 ]
 ```
+
+Webhook events provide the following fields relevant for Sourcegraph alerts that we recommend you leverage:
+
+<!-- Refer to `commonLabels` on receivers.go for labels we can guarantee will be provided in commonLabels -->
+
+```json
+{
+  "status": "<resolved|firing>",
+  "commonLabels": {
+    "level": "<critical|warning>",
+    // Use the service name and alert name to find solutions in https://docs.sourcegraph.com/admin/observability/alert_solutions
+    "service_name": "<string>",
+    "name": "<string>",
+    "description": "<string>",
+    // This field can be provided to Sourcegraph to help direct support.
+    "owner": "<string>"
+  },
+}
+```
+
+For the complete set of fields, please refer to the [Alertmanager webhook documentation](https://prometheus.io/docs/alerting/latest/configuration/#webhook_config).
 
 #### Email
 

@@ -10,6 +10,7 @@ import { ActionItemAction } from '../../../../../../shared/src/actions/ActionIte
 import { ExternalChangesetNode } from './ExternalChangesetNode'
 import { HiddenExternalChangesetNode } from './HiddenExternalChangesetNode'
 import { ChangesetFields } from '../../../../graphql-operations'
+import { queryExternalChangesetWithFileDiffs } from '../backend'
 
 export interface ChangesetNodeProps extends ThemeProps {
     node: ChangesetFields
@@ -20,11 +21,22 @@ export interface ChangesetNodeProps extends ThemeProps {
     extensionInfo?: {
         hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
     } & ExtensionsControllerProps
+    queryExternalChangesetWithFileDiffs?: typeof queryExternalChangesetWithFileDiffs
 }
 
 export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({ node, ...props }) => {
     if (node.__typename === 'ExternalChangeset') {
-        return <ExternalChangesetNode node={node} {...props} />
+        return (
+            <>
+                <span className="changeset-node__separator" />
+                <ExternalChangesetNode node={node} {...props} />
+            </>
+        )
     }
-    return <HiddenExternalChangesetNode node={node} {...props} />
+    return (
+        <>
+            <span className="changeset-node__separator" />
+            <HiddenExternalChangesetNode node={node} {...props} />
+        </>
+    )
 }

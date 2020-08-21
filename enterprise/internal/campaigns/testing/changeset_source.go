@@ -80,7 +80,7 @@ func (s *FakeChangesetSource) UpdateChangeset(ctx context.Context, c *repos.Chan
 	return c.SetMetadata(s.FakeMetadata)
 }
 
-var fakeNotImplemented = errors.New("not implement in FakeChangesetSource")
+var fakeNotImplemented = errors.New("not implemented in FakeChangesetSource")
 
 func (s *FakeChangesetSource) ListRepos(ctx context.Context, results chan repos.SourceResult) {
 	s.ListReposCalled = true

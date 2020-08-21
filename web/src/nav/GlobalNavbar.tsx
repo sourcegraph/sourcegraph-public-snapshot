@@ -12,8 +12,8 @@ import {
     PatternTypeProps,
     InteractiveSearchProps,
     CaseSensitivityProps,
-    SmartSearchFieldProps,
     CopyQueryButtonProps,
+    OnboardingTourProps,
 } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { EventLoggerProps } from '../tracking/eventLogger'
@@ -44,9 +44,9 @@ interface Props
         PatternTypeProps,
         CaseSensitivityProps,
         InteractiveSearchProps,
-        SmartSearchFieldProps,
         CopyQueryButtonProps,
-        VersionContextProps {
+        VersionContextProps,
+        OnboardingTourProps {
     history: H.History
     location: H.Location<{ query: string }>
     authenticatedUser: GQL.IUser | null
@@ -250,7 +250,6 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                             {...this.props}
                                             navbarSearchState={this.props.navbarSearchQueryState}
                                             onChange={this.props.onNavbarQueryChange}
-                                            smartSearchField={this.props.smartSearchField}
                                         />
                                     </div>
                                 )}

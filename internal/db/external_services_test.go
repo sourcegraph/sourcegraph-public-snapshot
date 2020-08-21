@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -12,18 +13,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 	tests := []struct {
-		name      string
-		kinds     []string
-		wantQuery string
-		wantArgs  []interface{}
+		name            string
+		noNamespace     bool
+		namespaceUserID int32
+		kinds           []string
+		afterID         int64
+		wantQuery       string
+		wantArgs        []interface{}
 	}{
 		{
-			name:      "no kind",
+			name:      "no condition",
 			wantQuery: "deleted_at IS NULL",
 		},
 		{
@@ -38,11 +41,32 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			wantQuery: "deleted_at IS NULL AND kind IN ($1 , $2)",
 			wantArgs:  []interface{}{extsvc.KindGitHub, extsvc.KindGitLab},
 		},
+		{
+			name:            "has namespace user ID",
+			namespaceUserID: 1,
+			wantQuery:       "deleted_at IS NULL AND namespace_user_id = $1",
+			wantArgs:        []interface{}{int32(1)},
+		},
+		{
+			name:            "want no namespace",
+			noNamespace:     true,
+			namespaceUserID: 1,
+			wantQuery:       "deleted_at IS NULL AND namespace_user_id IS NULL",
+		},
+		{
+			name:      "has after ID",
+			afterID:   10,
+			wantQuery: "deleted_at IS NULL AND id < $1",
+			wantArgs:  []interface{}{int64(10)},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			opts := ExternalServicesListOptions{
-				Kinds: test.kinds,
+				NoNamespace:     test.noNamespace,
+				NamespaceUserID: test.namespaceUserID,
+				Kinds:           test.kinds,
+				AfterID:         test.afterID,
 			}
 			q := sqlf.Join(opts.sqlConditions(), "AND")
 			if diff := cmp.Diff(test.wantQuery, q.Query(sqlf.PostgresBindVar)); diff != "" {
@@ -56,11 +80,12 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 
 func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 	tests := []struct {
-		name    string
-		kind    string
-		config  string
-		setup   func(t *testing.T)
-		wantErr string
+		name         string
+		kind         string
+		config       string
+		hasNamespace bool
+		setup        func(t *testing.T)
+		wantErr      string
 	}{
 		{
 			name:    "0 errors",
@@ -115,6 +140,13 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			},
 			wantErr: "1 error occurred:\n\t* existing external service, \"GITHUB 1\", already has a rate limit set\n\n",
 		},
+		{
+			name:         "prevent disallowed fields",
+			kind:         extsvc.KindGitHub,
+			config:       `{"url": "https://github.com", "repositoryPathPattern": "github/{nameWithOwner}" // comments}`,
+			hasNamespace: true,
+			wantErr:      `field "repositoryPathPattern" is not allowed in a user-added external service`,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -122,7 +154,11 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 				test.setup(t)
 			}
 
-			err := (&ExternalServicesStore{}).ValidateConfig(context.Background(), 0, test.kind, test.config, nil)
+			err := ExternalServices.ValidateConfig(context.Background(), ValidateExternalServiceConfigOptions{
+				Kind:         test.kind,
+				Config:       test.config,
+				HasNamespace: test.hasNamespace,
+			})
 			gotErr := fmt.Sprintf("%v", err)
 			if gotErr != test.wantErr {
 				t.Errorf("error: want %q but got %q", test.wantErr, gotErr)
@@ -294,29 +330,161 @@ func TestExternalServicesStore_List(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	// Create a new external service
+	// Create test user
+	user, err := Users.Create(ctx, NewUser{
+		Email:           "alice@example.com",
+		Username:        "alice",
+		Password:        "password",
+		EmailIsVerified: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create new external services
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
-	es := &types.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	ess := []*types.ExternalService{
+		{
+			Kind:            extsvc.KindGitHub,
+			DisplayName:     "GITHUB #1",
+			Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+			NamespaceUserID: &user.ID,
+		},
+		{
+			Kind:        extsvc.KindGitHub,
+			DisplayName: "GITHUB #2",
+			Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`,
+		},
 	}
-	err := (&ExternalServicesStore{}).Create(ctx, confGet, es)
+	for _, es := range ess {
+		err := ExternalServices.Create(ctx, confGet, es)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	t.Run("list all external services", func(t *testing.T) {
+		got, err := (&ExternalServicesStore{}).List(ctx, ExternalServicesListOptions{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		sort.Slice(got, func(i, j int) bool { return got[i].ID < got[j].ID })
+
+		if diff := cmp.Diff(ess, got); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("list external services with no namespace", func(t *testing.T) {
+		got, err := (&ExternalServicesStore{}).List(ctx, ExternalServicesListOptions{
+			NoNamespace: true,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(got) != 1 {
+			t.Fatalf("Want 1 external service but got %d", len(ess))
+		} else if diff := cmp.Diff(ess[1], got[0]); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("list only test user's external services", func(t *testing.T) {
+		got, err := (&ExternalServicesStore{}).List(ctx, ExternalServicesListOptions{
+			NamespaceUserID: user.ID,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(got) != 1 {
+			t.Fatalf("Want 1 external service but got %d", len(ess))
+		} else if diff := cmp.Diff(ess[0], got[0]); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("list non-exist user's external services", func(t *testing.T) {
+		ess, err := (&ExternalServicesStore{}).List(ctx, ExternalServicesListOptions{
+			NamespaceUserID: 404,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(ess) != 0 {
+			t.Fatalf("Want 0 external service but got %d", len(ess))
+		}
+	})
+}
+
+func TestExternalServicesStore_DistinctKinds(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	t.Run("no external service won't blow up", func(t *testing.T) {
+		kinds, err := ExternalServices.DistinctKinds(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(kinds) != 0 {
+			t.Fatalf("Kinds: want 0 but got %d", len(kinds))
+		}
+	})
+
+	// Create new external services in different kinds
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	ess := []*types.ExternalService{
+		{
+			Kind:        extsvc.KindGitHub,
+			DisplayName: "GITHUB #1",
+			Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		},
+		{
+			Kind:        extsvc.KindGitHub,
+			DisplayName: "GITHUB #2",
+			Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`,
+		},
+		{
+			Kind:        extsvc.KindGitLab,
+			DisplayName: "GITLAB #1",
+			Config:      `{"url": "https://github.com", "projectQuery": ["none"], "token": "abc"}`,
+		},
+		{
+			Kind:        extsvc.KindOther,
+			DisplayName: "OTHER #1",
+			Config:      `{"repos": []}`,
+		},
+	}
+	for _, es := range ess {
+		err := ExternalServices.Create(ctx, confGet, es)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Delete the last external service which should be excluded from the result
+	err := ExternalServices.Delete(ctx, ess[3].ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	ess, err := (&ExternalServicesStore{}).List(ctx, ExternalServicesListOptions{})
+	kinds, err := ExternalServices.DistinctKinds(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	if len(ess) != 1 {
-		t.Fatalf("Want 1 external service but got %d", len(ess))
-	} else if diff := cmp.Diff(es, ess[0]); diff != "" {
-		t.Fatalf("(-want +got):\n%s", diff)
+	sort.Strings(kinds)
+	wantKinds := []string{extsvc.KindGitHub, extsvc.KindGitLab}
+	if diff := cmp.Diff(wantKinds, kinds); diff != "" {
+		t.Fatalf("Kinds mismatch (-want +got):\n%s", diff)
 	}
 }
 
@@ -349,56 +517,4 @@ func TestExternalServicesStore_Count(t *testing.T) {
 	if count != 1 {
 		t.Fatalf("Want 1 external service but got %d", count)
 	}
-}
-
-func TestListConfigs(t *testing.T) {
-	t.Run("call SetURN method", func(t *testing.T) {
-		Mocks.ExternalServices.List = func(opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
-			return []*types.ExternalService{
-				{
-					ID:          1,
-					Kind:        extsvc.KindGitHub,
-					DisplayName: "GITHUB #1",
-					Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-				},
-			}, nil
-		}
-		defer func() { Mocks.ExternalServices = MockExternalServices{} }()
-
-		var connections []*types.GitHubConnection
-		err := ExternalServices.listConfigs(context.Background(), extsvc.KindGitHub, &connections)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		urns := make([]string, 0, len(connections))
-		for _, conn := range connections {
-			urns = append(urns, conn.URN)
-		}
-
-		wantURNs := []string{"extsvc:github:1"}
-		if diff := cmp.Diff(wantURNs, urns); diff != "" {
-			t.Fatalf("URNs mismatch (-want +got):\n%s", diff)
-		}
-	})
-
-	t.Run("should not fail when no SetURN method", func(t *testing.T) {
-		Mocks.ExternalServices.List = func(opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
-			return []*types.ExternalService{
-				{
-					ID:          1,
-					Kind:        extsvc.KindGitHub,
-					DisplayName: "GITHUB #1",
-					Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-				},
-			}, nil
-		}
-		defer func() { Mocks.ExternalServices = MockExternalServices{} }()
-
-		var connections []*schema.GitHubConnection
-		err := ExternalServices.listConfigs(context.Background(), extsvc.KindGitHub, &connections)
-		if err != nil {
-			t.Fatal(err)
-		}
-	})
 }

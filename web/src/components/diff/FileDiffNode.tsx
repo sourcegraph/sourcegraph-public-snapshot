@@ -89,7 +89,7 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
         return (
             <>
                 <a id={anchor} />
-                <div className={`file-diff-node card ${this.props.className || ''}`}>
+                <div className={`file-diff-node test-file-diff-node card ${this.props.className || ''}`}>
                     <div className="card-header file-diff-node__header">
                         <button type="button" className="btn btn-sm btn-icon mr-2" onClick={this.toggleExpand}>
                             {this.state.expanded ? (

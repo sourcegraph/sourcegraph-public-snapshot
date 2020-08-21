@@ -171,6 +171,12 @@ func (o *OrgResolver) ViewerIsMember(ctx context.Context) (bool, error) {
 
 func (o *OrgResolver) NamespaceName() string { return o.org.Name }
 
+func (o *OrgResolver) Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error) {
+	id := o.ID()
+	args.Namespace = &id
+	return EnterpriseResolvers.campaignsResolver.Campaigns(ctx, args)
+}
+
 func (*schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	Name        string
 	DisplayName *string

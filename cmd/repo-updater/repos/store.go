@@ -26,8 +26,11 @@ type Store interface {
 	ListExternalServices(context.Context, StoreListExternalServicesArgs) ([]*ExternalService, error)
 	UpsertExternalServices(ctx context.Context, svcs ...*ExternalService) error
 
+	InsertRepos(context.Context, ...*Repo) error
 	ListRepos(context.Context, StoreListReposArgs) ([]*Repo, error)
+	DeleteRepos(ctx context.Context, ids ...api.RepoID) error
 	UpsertRepos(ctx context.Context, repos ...*Repo) error
+	UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]SourceInfo) error
 	SetClonedRepos(ctx context.Context, repoNames ...string) error
 	CountNotClonedRepos(ctx context.Context) (uint64, error)
 }
@@ -43,6 +46,9 @@ type StoreListReposArgs struct {
 	Kinds []string
 	// ExternalRepos of repos to list. When zero-valued, this is omitted from the predicate set.
 	ExternalRepos []api.ExternalRepoSpec
+	// ExternalServiceID, if non zero, will only return repos added by the given external service.
+	// The id is that of the external_services table NOT the external_service_id in the repo table
+	ExternalServiceID int64
 	// Limit the total number of repos returned. Zero means no limit
 	Limit int64
 	// PerPage determines the number of repos returned on each page. Zero means it defaults to 10000.
@@ -56,6 +62,8 @@ type StoreListReposArgs struct {
 	UseOr bool
 }
 
+const DefaultListExternalServicesPerPage = 500
+
 // StoreListExternalServicesArgs is a query arguments type used by
 // the ListExternalServices method of Store implementations.
 //
@@ -67,6 +75,15 @@ type StoreListExternalServicesArgs struct {
 	RepoIDs []api.RepoID
 	// Kinds of external services to list. When zero-valued, this is omitted from the predicate set.
 	Kinds []string
+
+	// Limit is the total number of items to list. The zero value means no limit.
+	Limit int64
+	// Cursor will limit the query to external services that have an id greater than Cursor.
+	Cursor int64
+
+	// PerPage defines how many external services to fetch per page when listing all services. If zero-valued
+	// DefaultListExternalServicePageSize will be used.
+	PerPage int64
 }
 
 // ErrNoResults is returned by Store method invocations that yield no result set.
@@ -85,6 +102,64 @@ type Transactor interface {
 type TxStore interface {
 	Store
 	Done(...*error)
+}
+
+// repoRecord is the json representation of a repository as used in this package
+// Postgres CTEs.
+type repoRecord struct {
+	ID                  api.RepoID      `json:"id"`
+	Name                string          `json:"name"`
+	URI                 *string         `json:"uri,omitempty"`
+	Description         string          `json:"description"`
+	Language            string          `json:"language"`
+	CreatedAt           time.Time       `json:"created_at"`
+	UpdatedAt           *time.Time      `json:"updated_at,omitempty"`
+	DeletedAt           *time.Time      `json:"deleted_at,omitempty"`
+	ExternalServiceType *string         `json:"external_service_type,omitempty"`
+	ExternalServiceID   *string         `json:"external_service_id,omitempty"`
+	ExternalID          *string         `json:"external_id,omitempty"`
+	Archived            bool            `json:"archived"`
+	Fork                bool            `json:"fork"`
+	Private             bool            `json:"private"`
+	Metadata            json.RawMessage `json:"metadata"`
+	Sources             json.RawMessage `json:"sources,omitempty"`
+}
+
+func newRepoRecord(r *Repo) (*repoRecord, error) {
+	metadata, err := metadataColumn(r.Metadata)
+	if err != nil {
+		return nil, errors.Wrapf(err, "newRecord: metadata marshalling failed")
+	}
+
+	sources, err := sourcesColumn(r.ID, r.Sources)
+	if err != nil {
+		return nil, errors.Wrapf(err, "newRecord: sources marshalling failed")
+	}
+
+	return &repoRecord{
+		ID:                  r.ID,
+		Name:                r.Name,
+		URI:                 nullStringColumn(r.URI),
+		Description:         r.Description,
+		Language:            r.Language,
+		CreatedAt:           r.CreatedAt.UTC(),
+		UpdatedAt:           nullTimeColumn(r.UpdatedAt.UTC()),
+		DeletedAt:           nullTimeColumn(r.DeletedAt.UTC()),
+		ExternalServiceType: nullStringColumn(r.ExternalRepo.ServiceType),
+		ExternalServiceID:   nullStringColumn(r.ExternalRepo.ServiceID),
+		ExternalID:          nullStringColumn(r.ExternalRepo.ID),
+		Archived:            r.Archived,
+		Fork:                r.Fork,
+		Private:             r.Private,
+		Metadata:            metadata,
+		Sources:             sources,
+	}, nil
+}
+
+type sourceRecord struct {
+	ExternalServiceID int64  `json:"external_service_id"`
+	RepoID            int64  `json:"repo_id"`
+	CloneURL          string `json:"clone_url"`
 }
 
 // DBStore implements the Store interface for reading and writing repos directly
@@ -145,7 +220,10 @@ func (s *DBStore) Done(errs ...*error) {
 
 // ListExternalServices lists all stored external services matching the given args.
 func (s DBStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) (svcs []*ExternalService, _ error) {
-	return svcs, s.paginate(ctx, 0, 500, listExternalServicesQuery(args),
+	if args.PerPage <= 0 {
+		args.PerPage = DefaultListExternalServicesPerPage
+	}
+	return svcs, s.paginate(ctx, args.Limit, args.PerPage, args.Cursor, listExternalServicesQuery(args),
 		func(sc scanner) (last, count int64, err error) {
 			var svc ExternalService
 			err = scanExternalService(&svc, sc)
@@ -167,7 +245,10 @@ SELECT
   config,
   created_at,
   updated_at,
-  deleted_at
+  deleted_at,
+  last_sync_at,
+  next_sync_at,
+  namespace_user_id
 FROM external_services
 WHERE id > %s
 AND %s
@@ -175,9 +256,9 @@ ORDER BY id ASC LIMIT %s
 `
 
 const listRepoExternalServiceIDsSubquery = `
-SELECT DISTINCT(split_part(jsonb_object_keys(sources), ':', 3)::bigint) repo_external_service_ids
-FROM repo
-WHERE id IN (%s)
+SELECT DISTINCT(external_service_id) repo_external_service_ids
+FROM external_service_repos
+WHERE repo_id IN (%s)
 `
 
 func listExternalServicesQuery(args StoreListExternalServicesArgs) paginatedQuery {
@@ -247,7 +328,7 @@ func (s DBStore) UpsertExternalServices(ctx context.Context, svcs ...*ExternalSe
 	_, _, err = scanAll(rows, func(sc scanner) (last, count int64, err error) {
 		i++
 		err = scanExternalService(svcs[i], sc)
-		return int64(svcs[i].ID), 1, err
+		return svcs[i].ID, 1, err
 	})
 
 	return err
@@ -265,6 +346,9 @@ func upsertExternalServicesQuery(svcs []*ExternalService) *sqlf.Query {
 			s.CreatedAt.UTC(),
 			s.UpdatedAt.UTC(),
 			nullTimeColumn(s.DeletedAt.UTC()),
+			nullTimeColumn(s.LastSyncAt.UTC()),
+			nullTimeColumn(s.NextSyncAt.UTC()),
+			nullInt32Column(s.NamespaceUserID),
 		))
 	}
 
@@ -275,7 +359,7 @@ func upsertExternalServicesQuery(svcs []*ExternalService) *sqlf.Query {
 }
 
 const upsertExternalServicesQueryValueFmtstr = `
-  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s)
+  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s)
 `
 
 const upsertExternalServicesQueryFmtstr = `
@@ -287,7 +371,10 @@ INSERT INTO external_services (
   config,
   created_at,
   updated_at,
-  deleted_at
+  deleted_at,
+  last_sync_at,
+  next_sync_at,
+  namespace_user_id
 )
 VALUES %s
 ON CONFLICT(id) DO UPDATE
@@ -297,16 +384,196 @@ SET
   config       = excluded.config,
   created_at   = excluded.created_at,
   updated_at   = excluded.updated_at,
-  deleted_at   = excluded.deleted_at
+  deleted_at   = excluded.deleted_at,
+  last_sync_at = excluded.last_sync_at,
+  next_sync_at = excluded.next_sync_at,
+  namespace_user_id = excluded.namespace_user_id
 RETURNING *
+`
+
+// InsertRepos inserts the given repos and their associated sources.
+// It sets the ID field of each given repo to the value of its corresponding row.
+func (s DBStore) InsertRepos(ctx context.Context, repos ...*Repo) error {
+	records := make([]*repoRecord, 0, len(repos))
+
+	for _, r := range repos {
+		repoRec, err := newRepoRecord(r)
+		if err != nil {
+			return err
+		}
+
+		records = append(records, repoRec)
+	}
+
+	encodedRepos, err := json.Marshal(records)
+	if err != nil {
+		return err
+	}
+
+	q := sqlf.Sprintf(insertReposQuery, string(encodedRepos))
+
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return errors.Wrap(err, "insert")
+	}
+	defer rows.Close()
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	for i := 0; rows.Next(); i++ {
+		if err := rows.Scan(&repos[i].ID); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+var insertReposQuery = `
+WITH repos_list AS (
+  SELECT * FROM ROWS FROM (
+	json_to_recordset(%s)
+	AS (
+		name                  citext,
+		uri                   citext,
+		description           text,
+		language              text,
+		created_at            timestamptz,
+		updated_at            timestamptz,
+		deleted_at            timestamptz,
+		external_service_type text,
+		external_service_id   text,
+		external_id           text,
+		archived              boolean,
+		fork                  boolean,
+		private               boolean,
+		metadata              jsonb,
+		sources               jsonb
+	  )
+	)
+	WITH ORDINALITY
+),
+inserted_repos AS (
+  INSERT INTO repo (
+	name,
+	uri,
+	description,
+	language,
+	created_at,
+	updated_at,
+	deleted_at,
+	external_service_type,
+	external_service_id,
+	external_id,
+	archived,
+	fork,
+	private,
+	metadata
+  )
+  SELECT
+	name,
+	NULLIF(BTRIM(uri), ''),
+	description,
+	language,
+	created_at,
+	updated_at,
+	deleted_at,
+	external_service_type,
+	external_service_id,
+	external_id,
+	archived,
+	fork,
+	private,
+	metadata
+  FROM repos_list
+  RETURNING id
+),
+inserted_repos_rows AS (
+  SELECT id, ROW_NUMBER() OVER () AS rn FROM inserted_repos
+),
+repos_list_rows AS (
+  SELECT *, ROW_NUMBER() OVER () AS rn FROM repos_list
+),
+inserted_repos_with_ids AS (
+  SELECT
+	inserted_repos_rows.id,
+	repos_list_rows.*
+  FROM repos_list_rows
+  JOIN inserted_repos_rows USING (rn)
+),
+sources_list AS (
+  SELECT
+    inserted_repos_with_ids.id AS repo_id,
+	sources.external_service_id AS external_service_id,
+	sources.clone_url AS clone_url
+  FROM
+    inserted_repos_with_ids,
+	jsonb_to_recordset(inserted_repos_with_ids.sources)
+	  AS sources(
+		external_service_id bigint,
+		repo_id             integer,
+		clone_url           text
+	  )
+),
+insert_sources AS (
+  INSERT INTO external_service_repos (
+    external_service_id,
+    repo_id,
+    clone_url
+  )
+  SELECT
+    external_service_id,
+    repo_id,
+    clone_url
+  FROM sources_list
+)
+SELECT id FROM inserted_repos_with_ids;
+`
+
+// DeleteRepos deletes repos associated with the given ids and their associated sources.
+func (s DBStore) DeleteRepos(ctx context.Context, ids ...api.RepoID) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	// the number of deleted repos can potentially be higher
+	// than the maximum number of arguments we can pass to postgres.
+	// We pass them as a json array instead to overcome this limitation.
+	encodedIds, err := json.Marshal(ids)
+	if err != nil {
+		return err
+	}
+
+	q := sqlf.Sprintf(deleteReposQuery, string(encodedIds))
+
+	_, err = s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return errors.Wrap(err, "delete")
+	}
+
+	return nil
+}
+
+const deleteReposQuery = `
+WITH repo_ids AS (
+  SELECT jsonb_array_elements_text(%s) AS id
+)
+UPDATE repo
+SET
+  name = 'DELETED-' || extract(epoch from transaction_timestamp()) || '-' || name,
+  deleted_at = transaction_timestamp()
+FROM repo_ids
+WHERE deleted_at IS NULL
+AND repo.id = repo_ids.id::int
 `
 
 // ListRepos lists all stored repos that match the given arguments.
 func (s DBStore) ListRepos(ctx context.Context, args StoreListReposArgs) (repos []*Repo, _ error) {
-	return repos, s.paginate(ctx, args.Limit, args.PerPage, listReposQuery(args),
+	return repos, s.paginate(ctx, args.Limit, args.PerPage, 0, listReposQuery(args),
 		func(sc scanner) (last, count int64, err error) {
 			var r Repo
-			if err = scanRepo(&r, sc); err != nil {
+			if err := scanRepo(&r, sc); err != nil {
 				return 0, 0, err
 			}
 			repos = append(repos, &r)
@@ -327,18 +594,37 @@ SELECT
   updated_at,
   deleted_at,
   external_service_type,
-  external_service_id,
+  repo.external_service_id,
   external_id,
   archived,
   cloned,
   fork,
   private,
-  sources,
+  (
+	SELECT
+	  json_agg(
+	    json_build_object(
+          'CloneURL', esr.clone_url,
+          'ID', esr.external_service_id,
+          'Kind', LOWER(svcs.kind)
+	    )
+	  )
+	FROM external_service_repos AS esr
+	JOIN external_services AS svcs ON esr.external_service_id = svcs.id
+	WHERE
+	    esr.repo_id = repo.id
+	  AND
+	    svcs.deleted_at IS NULL
+  ),
   metadata
-FROM repo
+-- repo or repo joined with external_service_repos
+FROM %s
 WHERE id > %s
+-- preds
 AND %s
 AND deleted_at IS NULL
+-- join filters
+AND %s
 ORDER BY id ASC LIMIT %s
 `
 
@@ -380,6 +666,13 @@ func listReposQuery(args StoreListReposArgs) paginatedQuery {
 		preds = append(preds, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n OR ")))
 	}
 
+	fromClause := sqlf.Sprintf("repo")
+	joinFilter := sqlf.Sprintf("TRUE")
+	if args.ExternalServiceID != 0 {
+		fromClause = sqlf.Sprintf("repo JOIN external_service_repos e ON repo.id = e.repo_id")
+		joinFilter = sqlf.Sprintf("e.external_service_id = %d", args.ExternalServiceID)
+	}
+
 	if args.PrivateOnly {
 		preds = append(preds, sqlf.Sprintf("private = TRUE"))
 	}
@@ -402,12 +695,124 @@ func listReposQuery(args StoreListReposArgs) paginatedQuery {
 	return func(cursor, limit int64) *sqlf.Query {
 		return sqlf.Sprintf(
 			listReposQueryFmtstr,
+			fromClause,
 			cursor,
 			sqlf.Sprintf("(%s)", predQ),
+			joinFilter,
 			limit,
 		)
 	}
 }
+
+func (s DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]SourceInfo) error {
+	type source struct {
+		ExternalServiceID int64  `json:"external_service_id"`
+		RepoID            int64  `json:"repo_id"`
+		CloneURL          string `json:"clone_url"`
+	}
+
+	marshalSourceList := func(sources map[api.RepoID][]SourceInfo) ([]byte, error) {
+		srcs := make([]source, 0, len(sources))
+		for rid, infoList := range sources {
+			for _, info := range infoList {
+				srcs = append(srcs, source{
+					ExternalServiceID: info.ExternalServiceID(),
+					RepoID:            int64(rid),
+					CloneURL:          info.CloneURL,
+				})
+			}
+		}
+		return json.Marshal(srcs)
+	}
+
+	insertedSources, err := marshalSourceList(inserts)
+	if err != nil {
+		return err
+	}
+
+	updatedSources, err := marshalSourceList(updates)
+	if err != nil {
+		return err
+	}
+
+	deletedSources, err := marshalSourceList(deletes)
+	if err != nil {
+		return err
+	}
+
+	q := sqlf.Sprintf(upsertSourcesQueryFmtstr,
+		string(deletedSources),
+		string(updatedSources),
+		string(insertedSources),
+	)
+
+	_, err = s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	return err
+}
+
+const upsertSourcesQueryFmtstr = `
+-- source: cmd/repo-updater/repos/store.go:DBStore.UpsertSources
+WITH deleted_sources_list AS (
+  SELECT * FROM ROWS FROM (
+	json_to_recordset(%s)
+	AS (
+		external_service_id bigint,
+		repo_id             integer,
+		clone_url           text
+	)
+  )
+  WITH ORDINALITY
+),
+updated_sources_list AS (
+  SELECT * FROM ROWS FROM (
+    json_to_recordset(%s)
+    AS (
+      external_service_id bigint,
+      repo_id             integer,
+      clone_url           text
+    )
+  )
+  WITH ORDINALITY
+),
+inserted_sources_list AS (
+  SELECT * FROM ROWS FROM (
+    json_to_recordset(%s)
+    AS (
+        external_service_id bigint,
+        repo_id             integer,
+        clone_url           text
+    )
+  )
+  WITH ORDINALITY
+),
+delete_sources AS (
+  DELETE FROM external_service_repos AS e
+  USING deleted_sources_list AS d
+  WHERE
+	  e.external_service_id = d.external_service_id
+	AND
+      e.repo_id = d.repo_id
+),
+update_sources AS (
+  UPDATE external_service_repos AS e
+  SET
+	clone_url = u.clone_url
+  FROM updated_sources_list AS u
+  WHERE
+      e.repo_id = u.repo_id
+	AND
+	  e.external_service_id = u.external_service_id
+)
+INSERT INTO external_service_repos (
+  external_service_id,
+  repo_id,
+  clone_url
+) SELECT
+  external_service_id,
+  repo_id,
+  clone_url
+FROM inserted_sources_list
+`
 
 // SetClonedRepos updates cloned status for all repositories.
 // All repositories whose name is in repoNames will have their cloned column set to true
@@ -474,29 +879,33 @@ SELECT COUNT(*) FROM repo WHERE deleted_at IS NULL AND NOT cloned
 // parameters
 type paginatedQuery func(cursor, limit int64) *sqlf.Query
 
-func (s DBStore) paginate(ctx context.Context, limit, page int64, q paginatedQuery, scan scanFunc) (err error) {
+func (s DBStore) paginate(ctx context.Context, limit, perPage int64, cursor int64, q paginatedQuery, scan scanFunc) (err error) {
 	const defaultPerPageLimit = 10000
 
-	if page <= 0 {
-		page = defaultPerPageLimit
+	if perPage <= 0 {
+		perPage = defaultPerPageLimit
 	}
 
-	if limit > 0 && page > limit {
-		page = limit
+	if limit > 0 && perPage > limit {
+		perPage = limit
 	}
 
 	var (
-		cursor      = int64(-1)
 		remaining   = limit
 		next, count int64
 	)
 
+	// We need this so that we enter the loop below for the first iteration
+	// since cursor will be < next
+	next = cursor
+	cursor--
+
 	for cursor < next && err == nil && (limit <= 0 || remaining > 0) {
 		cursor = next
-		next, count, err = s.list(ctx, q(cursor, page), scan)
+		next, count, err = s.list(ctx, q(cursor, perPage), scan)
 		if limit > 0 {
-			if remaining -= count; page > remaining {
-				page = remaining
+			if remaining -= count; perPage > remaining {
+				perPage = remaining
 			}
 		}
 	}
@@ -516,6 +925,8 @@ func (s DBStore) list(ctx context.Context, q *sqlf.Query, scan scanFunc) (last, 
 // The ID field is used to distinguish between Repos that need to be updated and Repos
 // that need to be inserted. On inserts, the _ID field of each given Repo is set on inserts.
 // The cloned column is not updated by this function.
+// This method does NOT update sources in the external_services_repo table.
+// Use UpsertSources for that purpose.
 func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 	if len(repos) == 0 {
 		return nil
@@ -541,9 +952,9 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 		query string
 		repos []*Repo
 	}{
-		{"delete", deleteReposQuery, deletes},
-		{"update", updateReposQuery, updates},
-		{"insert", insertReposQuery, inserts},
+		{"delete", batchDeleteReposQuery, deletes},
+		{"update", batchUpdateReposQuery, updates},
+		{"insert", batchInsertReposQuery, inserts},
 		{"list", listRepoIDsQuery, inserts}, // list must run last to pick up inserted IDs
 	} {
 		if len(op.repos) == 0 {
@@ -598,55 +1009,14 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 }
 
 func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
-	type record struct {
-		ID                  api.RepoID      `json:"id"`
-		Name                string          `json:"name"`
-		URI                 *string         `json:"uri,omitempty"`
-		Description         string          `json:"description"`
-		Language            string          `json:"language"`
-		CreatedAt           time.Time       `json:"created_at"`
-		UpdatedAt           *time.Time      `json:"updated_at,omitempty"`
-		DeletedAt           *time.Time      `json:"deleted_at,omitempty"`
-		ExternalServiceType *string         `json:"external_service_type,omitempty"`
-		ExternalServiceID   *string         `json:"external_service_id,omitempty"`
-		ExternalID          *string         `json:"external_id,omitempty"`
-		Archived            bool            `json:"archived"`
-		Fork                bool            `json:"fork"`
-		Private             bool            `json:"private"`
-		Sources             json.RawMessage `json:"sources"`
-		Metadata            json.RawMessage `json:"metadata"`
-	}
-
-	records := make([]record, 0, len(repos))
+	records := make([]*repoRecord, 0, len(repos))
 	for _, r := range repos {
-		sources, err := json.Marshal(r.Sources)
+		rec, err := newRepoRecord(r)
 		if err != nil {
-			return nil, errors.Wrapf(err, "batchReposQuery: sources marshalling failed")
+			return nil, err
 		}
 
-		metadata, err := metadataColumn(r.Metadata)
-		if err != nil {
-			return nil, errors.Wrapf(err, "batchReposQuery: metadata marshalling failed")
-		}
-
-		records = append(records, record{
-			ID:                  r.ID,
-			Name:                r.Name,
-			URI:                 nullStringColumn(r.URI),
-			Description:         r.Description,
-			Language:            r.Language,
-			CreatedAt:           r.CreatedAt.UTC(),
-			UpdatedAt:           nullTimeColumn(r.UpdatedAt.UTC()),
-			DeletedAt:           nullTimeColumn(r.DeletedAt.UTC()),
-			ExternalServiceType: nullStringColumn(r.ExternalRepo.ServiceType),
-			ExternalServiceID:   nullStringColumn(r.ExternalRepo.ServiceID),
-			ExternalID:          nullStringColumn(r.ExternalRepo.ID),
-			Archived:            r.Archived,
-			Fork:                r.Fork,
-			Private:             r.Private,
-			Sources:             sources,
-			Metadata:            metadata,
-		})
+		records = append(records, rec)
 	}
 
 	batch, err := json.MarshalIndent(records, "    ", "    ")
@@ -688,14 +1058,13 @@ WITH batch AS (
       archived              boolean,
       fork                  boolean,
       private               boolean,
-      sources               jsonb,
       metadata              jsonb
     )
   )
   WITH ORDINALITY
 )`
 
-var updateReposQuery = batchReposQueryFmtstr + `
+var batchUpdateReposQuery = batchReposQueryFmtstr + `
 UPDATE repo
 SET
   name                  = batch.name,
@@ -711,7 +1080,6 @@ SET
   archived              = batch.archived,
   fork                  = batch.fork,
   private               = batch.private,
-  sources               = batch.sources,
   metadata              = batch.metadata
 FROM batch
 WHERE repo.external_service_type = batch.external_service_type
@@ -723,7 +1091,7 @@ AND repo.external_id = batch.external_id
 // that constraint. However, the syncer is unaware of soft-deleted
 // repositories. So we update the name to something unique to prevent
 // violating this constraint between active and soft-deleted names.
-var deleteReposQuery = batchReposQueryFmtstr + `
+var batchDeleteReposQuery = batchReposQueryFmtstr + `
 UPDATE repo
 SET
   name = 'DELETED-' || extract(epoch from transaction_timestamp()) || '-' || batch.name,
@@ -733,7 +1101,7 @@ WHERE batch.deleted_at IS NOT NULL
 AND repo.id = batch.id
 `
 
-var insertReposQuery = batchReposQueryFmtstr + `
+var batchInsertReposQuery = batchReposQueryFmtstr + `
 INSERT INTO repo (
   name,
   uri,
@@ -748,7 +1116,6 @@ INSERT INTO repo (
   archived,
   fork,
   private,
-  sources,
   metadata
 )
 SELECT
@@ -765,7 +1132,6 @@ SELECT
   archived,
   fork,
   private,
-  sources,
   metadata
 FROM batch
 ON CONFLICT (external_service_type, external_service_id, external_id) DO NOTHING
@@ -791,6 +1157,13 @@ func nullStringColumn(s string) *string {
 	return &s
 }
 
+func nullInt32Column(i int32) *int32 {
+	if i == 0 {
+		return nil
+	}
+	return &i
+}
+
 func metadataColumn(metadata interface{}) (msg json.RawMessage, err error) {
 	switch m := metadata.(type) {
 	case nil:
@@ -805,6 +1178,19 @@ func metadataColumn(metadata interface{}) (msg json.RawMessage, err error) {
 		msg, err = json.MarshalIndent(m, "        ", "    ")
 	}
 	return
+}
+
+func sourcesColumn(repoID api.RepoID, sources map[string]*SourceInfo) (json.RawMessage, error) {
+	var records []sourceRecord
+	for _, src := range sources {
+		records = append(records, sourceRecord{
+			ExternalServiceID: src.ExternalServiceID(),
+			RepoID:            int64(repoID),
+			CloneURL:          src.CloneURL,
+		})
+	}
+
+	return json.MarshalIndent(records, "        ", "    ")
 }
 
 // scanner captures the Scan method of sql.Rows and sql.Row
@@ -846,11 +1232,15 @@ func scanExternalService(svc *ExternalService, s scanner) error {
 		&svc.CreatedAt,
 		&dbutil.NullTime{Time: &svc.UpdatedAt},
 		&dbutil.NullTime{Time: &svc.DeletedAt},
+		&dbutil.NullTime{Time: &svc.LastSyncAt},
+		&dbutil.NullTime{Time: &svc.NextSyncAt},
+		&dbutil.NullInt32{N: &svc.NamespaceUserID},
 	)
 }
 
 func scanRepo(r *Repo, s scanner) error {
-	var sources, metadata json.RawMessage
+	var sources dbutil.NullJSONRawMessage
+	var metadata json.RawMessage
 	err := s.Scan(
 		&r.ID,
 		&r.Name,
@@ -874,8 +1264,26 @@ func scanRepo(r *Repo, s scanner) error {
 		return err
 	}
 
-	if err = json.Unmarshal(sources, &r.Sources); err != nil {
-		return errors.Wrap(err, "scanRepo: failed to unmarshal sources")
+	type sourceInfo struct {
+		ID       int64
+		CloneURL string
+		Kind     string
+	}
+
+	r.Sources = make(map[string]*SourceInfo)
+
+	if sources.Raw != nil {
+		var srcs []sourceInfo
+		if err = json.Unmarshal(sources.Raw, &srcs); err != nil {
+			return errors.Wrap(err, "scanRepo: failed to unmarshal sources")
+		}
+		for _, src := range srcs {
+			urn := extsvc.URN(src.Kind, src.ID)
+			r.Sources[urn] = &SourceInfo{
+				ID:       urn,
+				CloneURL: src.CloneURL,
+			}
+		}
 	}
 
 	typ, ok := extsvc.ParseServiceType(r.ExternalRepo.ServiceType)
