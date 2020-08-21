@@ -23,6 +23,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 - The smartSearchField feature is now always enabled. The `experimentalFeatures.smartSearchField` settings option has been removed.
 
+## 3.19.1
+
+### Fixed
+
+- migrations: revert migration causing deadlocks in some deployments [#13194](https://github.com/sourcegraph/sourcegraph/pull/13194)
+
 ## 3.19.0
 
 ### Added
