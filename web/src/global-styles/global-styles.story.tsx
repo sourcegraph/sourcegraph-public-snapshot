@@ -108,12 +108,33 @@ const TextStory: React.FunctionComponent = () => (
         </div>
 
         <h2>Lists</h2>
+        <h3>Ordered</h3>
         <ol>
             <li>Item</li>
             <li>Item</li>
             <li>Item</li>
         </ol>
+
+        <h3>Unordered</h3>
         <ul>
+            <li>Item</li>
+            <li>Item</li>
+            <li>Item</li>
+        </ul>
+
+        <p>
+            Using <code>dash-list</code>:
+        </p>
+        <ul className="dash-list">
+            <li>Item</li>
+            <li>Item</li>
+            <li>Item</li>
+        </ul>
+
+        <p>
+            Using <code>caret-list</code>:
+        </p>
+        <ul className="caret-list">
             <li>Item</li>
             <li>Item</li>
             <li>Item</li>
