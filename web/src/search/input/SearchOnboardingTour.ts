@@ -113,6 +113,7 @@ export function createStep1Tooltip(
     languageListItem.append(languageButton)
     languageButton.addEventListener('click', () => {
         languageButtonHandler()
+        eventLogger.log('OnboardingTourLanguageOptionClicked')
     })
     const repositoryListItem = document.createElement('li')
     repositoryListItem.className = 'list-group-item p-0 border-0 mb-2 test-tour-repo-button'
@@ -121,6 +122,7 @@ export function createStep1Tooltip(
     repositoryButton.textContent = 'Search a repository'
     repositoryButton.addEventListener('click', () => {
         repositoryButtonHandler()
+        eventLogger.log('OnboardingTourRepositoryOptionClicked')
     })
     repositoryListItem.append(repositoryButton)
     list.append(languageListItem)
@@ -205,6 +207,7 @@ export function createAddCodeStepWithLanguageExampleTooltip(
         const fullQuery = [languageQuery, example.query].join(' ')
         exampleCallback(fullQuery, example.patternType)
         tour.show('view-search-reference')
+        eventLogger.log('OnboardingTourExampleQueryClicked')
     })
     listItem.append(exampleButton)
     list.append(listItem)

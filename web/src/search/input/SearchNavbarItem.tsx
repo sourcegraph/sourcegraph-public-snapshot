@@ -18,6 +18,7 @@ import { VersionContextProps } from '../../../../shared/src/search/util'
 import Shepherd from 'shepherd.js'
 import { defaultTourOptions, generateStepTooltip } from './SearchOnboardingTour'
 import { SearchPatternType } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 
 interface Props
     extends ActivationProps,
@@ -79,6 +80,11 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 createStructuralSearchTourTooltip(),
                 true
             ),
+            when: {
+                show() {
+                    eventLogger.log('ViewedOnboardingTourStructuralSearchStep')
+                },
+            },
             attachTo: {
                 element: '.test-structural-search-toggle',
                 on: 'bottom',
