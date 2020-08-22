@@ -7,6 +7,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -18,7 +19,7 @@ const (
 	sourcegraphCryptEnvvar      = "SOURCEGRAPH_CRYPT_KEY"
 )
 
-// gatherKeys splits the comma-separated encryption data into its potential two components: 
+// gatherKeys splits the comma-separated encryption data into its potential two components:
 // primary and secondary keys, where the first key is assumed to be the primary key.
 func gatherKeys(data []byte) (primaryKey, secondaryKey []byte, err error) {
 	parts := bytes.Split(data, []byte(","))

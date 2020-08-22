@@ -78,7 +78,7 @@ func (e encryptor) DecryptBytes(ciphertext []byte) (plaintext []byte, err error)
 		return nil, &EncryptionError{errors.New("no valid keys available")}
 	}
 
-	validate := func(key, ciphertext []byte) ([]byte, error) {
+	decrypt := func(key, ciphertext []byte) ([]byte, error) {
 		block, err := aes.NewCipher(key)
 		if err != nil {
 			return nil, err
@@ -99,10 +99,10 @@ func (e encryptor) DecryptBytes(ciphertext []byte) (plaintext []byte, err error)
 			nil,
 		)
 	}
-	if plaintext, err = validate(e.primaryKey, ciphertext); err == nil {
+	if plaintext, err = decrypt(e.primaryKey, ciphertext); err == nil {
 		return plaintext, nil
 	}
-	if plaintext, err = validate(e.secondaryKey, ciphertext); err == nil {
+	if plaintext, err = decrypt(e.secondaryKey, ciphertext); err == nil {
 		return plaintext, nil
 	}
 	return nil, &EncryptionError{err}

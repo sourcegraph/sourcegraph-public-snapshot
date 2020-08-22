@@ -128,7 +128,10 @@ func TestDifferentOutputs(t *testing.T) {
 
 	var crypts []string
 	for _, m := range messages {
-		encrypted, _ := e.EncryptBytes([]byte(m))
+		encrypted, err := e.EncryptBytes([]byte(m))
+		if err != nil {
+			t.Fatal(err)
+		}
 		crypts = append(crypts, string(encrypted))
 	}
 
@@ -151,7 +154,10 @@ func isInSliceOnce(item string, slice []string) bool {
 }
 
 func TestSampleNoRepeats(t *testing.T) {
-	key, _ := generateRandomAESKey()
+	key, err := generateRandomAESKey()
+	if err != nil {
+		t.Fatal(err)
+	}
 	e := newEncryptor(key, nil)
 
 	var crypts []string
@@ -198,7 +204,10 @@ func TestKeyMigration(t *testing.T) {
 }
 
 func TestEncryptAndDecryptBytesIfPossible(t *testing.T) {
-	initialKey, _ := generateRandomAESKey()
+	initialKey, err := generateRandomAESKey()
+	if err != nil {
+		t.Fatal(err)
+	}
 	e := newEncryptor(initialKey, nil)
 	encString, err := e.EncryptBytes(messageToEncrypt)
 	if err != nil {
