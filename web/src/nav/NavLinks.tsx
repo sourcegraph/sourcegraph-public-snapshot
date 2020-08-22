@@ -6,7 +6,6 @@ import { ActivationProps } from '../../../shared/src/components/activation/Activ
 import { ActivationDropdown } from '../../../shared/src/components/activation/ActivationDropdown'
 import { Link } from '../../../shared/src/components/Link'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
@@ -25,6 +24,7 @@ import { isErrorLike } from '../../../shared/src/util/errors'
 import { Settings } from '../schema/settings.schema'
 import CompassOutlineIcon from 'mdi-react/CompassOutlineIcon'
 import { InsightsNavItem } from '../insights/InsightsNavLink'
+import { AuthenticatedUser } from '../auth'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -37,7 +37,7 @@ interface Props
         ActivationProps {
     location: H.Location
     history: H.History
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
     showDotComMarketing: boolean
     showCampaigns: boolean
     isSourcegraphDotCom: boolean

@@ -12,10 +12,11 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { updatePassword } from '../backend'
 import { ErrorAlert } from '../../../components/alerts'
 import * as H from 'history'
+import { AuthenticatedUser } from '../../../auth'
 
 interface Props extends RouteComponentProps<{}> {
     user: GQL.IUser
-    authenticatedUser: GQL.IUser
+    authenticatedUser: AuthenticatedUser
     history: H.History
 }
 

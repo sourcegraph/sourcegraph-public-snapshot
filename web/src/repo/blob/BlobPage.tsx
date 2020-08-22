@@ -36,6 +36,7 @@ import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorMessage } from '../../components/alerts'
 import { Redirect } from 'react-router'
 import { toTreeURL } from '../../util/url'
+import { AuthenticatedUser } from '../../auth'
 
 function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
     return makeRepoURI(parsed) + String(parsed.isLightTheme) + String(parsed.disableTimeout)
@@ -97,7 +98,7 @@ interface Props
     location: H.Location
     history: H.History
     repoID: GQL.ID
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 }
 
 interface State {

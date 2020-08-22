@@ -3,6 +3,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { RouteDescriptor } from '../util/contributions'
 import { PatternTypeProps } from '../search'
 import { ThemeProps } from '../../../shared/src/theme'
+import { AuthenticatedUser } from '../auth'
 
 /**
  * Properties passed to all page components in the namespace area.
@@ -13,7 +14,7 @@ export interface NamespaceAreaContext
         Omit<PatternTypeProps, 'setPatternType'> {
     namespace: Pick<GQL.Namespace, '__typename' | 'id' | 'url'>
 
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 }
 
 export interface NamespaceAreaRoute extends RouteDescriptor<NamespaceAreaContext> {}

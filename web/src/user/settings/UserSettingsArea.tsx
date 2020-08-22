@@ -12,6 +12,7 @@ import { UserAreaRouteContext } from '../area/UserArea'
 import { UserSettingsSidebar, UserSettingsSidebarItems } from './UserSettingsSidebar'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { OnboardingTourProps } from '../../search'
+import { AuthenticatedUser } from '../../auth'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -23,7 +24,7 @@ export interface UserSettingsAreaProps
         ThemeProps,
         TelemetryProps,
         OnboardingTourProps {
-    authenticatedUser: GQL.IUser
+    authenticatedUser: AuthenticatedUser
     sideBarItems: UserSettingsSidebarItems
     routes: readonly UserSettingsAreaRoute[]
 }
