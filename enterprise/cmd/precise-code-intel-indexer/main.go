@@ -107,7 +107,9 @@ func main() {
 
 	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
 	janitor := janitor.New(s, janitorInterval, janitorMetrics)
-	managerRoutine := goroutine.NewPeriodicGoroutine(context.Background(), time.Second, indexManager) // TODO - wth
+
+	// TODO - originally missed calling this at all :(
+	managerRoutine := goroutine.NewPeriodicGoroutine(context.Background(), time.Second, indexManager)
 
 	go managerRoutine.Start()
 	go server.Start()
