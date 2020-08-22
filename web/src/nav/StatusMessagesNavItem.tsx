@@ -7,14 +7,13 @@ import { Observable, Subscription } from 'rxjs'
 import { catchError, map, repeatWhen, delay, distinctUntilChanged } from 'rxjs/operators'
 import { Link } from '../../../shared/src/components/Link'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { requestGraphQL } from '../backend/graphql'
 import classNames from 'classnames'
 import { ErrorAlert } from '../components/alerts'
 import * as H from 'history'
 import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
-import { StatusMessagesResult } from '../graphql-operations'
+import { StatusMessagesResult, StatusMessageFields } from '../graphql-operations'
 import { isEqual } from 'lodash'
 
 export function fetchAllStatusMessages(): Observable<StatusMessagesResult['statusMessages']> {
@@ -22,22 +21,26 @@ export function fetchAllStatusMessages(): Observable<StatusMessagesResult['statu
         gql`
             query StatusMessages {
                 statusMessages {
-                    __typename
+                    ...StatusMessageFields
+                }
+            }
 
-                    ... on CloningProgress {
-                        message
-                    }
+            fragment StatusMessageFields on StatusMessage {
+                __typename
 
-                    ... on SyncError {
-                        message
-                    }
+                ... on CloningProgress {
+                    message
+                }
 
-                    ... on ExternalServiceSyncError {
-                        message
-                        externalService {
-                            id
-                            displayName
-                        }
+                ... on SyncError {
+                    message
+                }
+
+                ... on ExternalServiceSyncError {
+                    message
+                    externalService {
+                        id
+                        displayName
                     }
                 }
             }
@@ -95,13 +98,13 @@ const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProp
 )
 
 interface Props {
-    fetchMessages: () => Observable<GQL.StatusMessage[]>
+    fetchMessages?: () => Observable<StatusMessagesResult['statusMessages']>
     isSiteAdmin: boolean
     history: H.History
 }
 
 interface State {
-    messagesOrError: GQL.StatusMessage[] | ErrorLike
+    messagesOrError: StatusMessagesResult['statusMessages'] | ErrorLike
     isOpen: boolean
 }
 
@@ -118,12 +121,18 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
 
     public state: State = { isOpen: false, messagesOrError: [] }
 
+    private fetchMessages: () => Observable<StatusMessagesResult['statusMessages']>
+
+    constructor(props: Props) {
+        super(props)
+        this.fetchMessages = props.fetchMessages ?? fetchAllStatusMessages
+    }
+
     private toggleIsOpen = (): void => this.setState(previousState => ({ isOpen: !previousState.isOpen }))
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            this.props
-                .fetchMessages()
+            this.fetchMessages()
                 .pipe(
                     catchError(error => [asError(error) as ErrorLike]),
                     // Poll on REFRESH_INTERVAL_MS, or REFRESH_INTERVAL_AFTER_ERROR_MS if there is an error.
@@ -139,7 +148,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    private renderMessage(message: GQL.StatusMessage, key: number): JSX.Element | null {
+    private renderMessage(message: StatusMessageFields, key: number): JSX.Element | null {
         switch (message.__typename) {
             case 'CloningProgress':
                 return (
