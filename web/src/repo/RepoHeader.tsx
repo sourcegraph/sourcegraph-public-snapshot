@@ -18,6 +18,7 @@ import { ActionButtonDescriptor } from '../util/contributions'
 import { ResolvedRevision } from './backend'
 import { RepositoriesPopover } from './RepositoriesPopover'
 import { SettingsCascadeOrError } from '../../../shared/src/settings/settings'
+import { onlyDefaultExtensionsAdded } from '../extensions/extensions'
 /**
  * Stores the list of RepoHeaderContributions, manages addition/deletion, and ensures they are sorted.
  *
@@ -287,17 +288,13 @@ export class RepoHeader extends React.PureComponent<Props, State> {
 }
 
 /**
- * Determine whether to show the "add extensions" button.
- *
- * For now, it returns true when the user isn't authenticated. Later, also show the button
- * to authenticated users who only have default extensions enabled
+ * Determine whether to show the "add extensions" button. Display to all unautenticated users,
+ * and only to authenticated users who have not added extensions.
  */
 function determineShowAddExtensions({ settingsCascade, authenticatedUser }: Props): boolean {
     if (!authenticatedUser) {
         return true
     }
-    // if (!isErrorLike(settingsCascade.final) && settingsCascade.final) {
-    //     return false
-    // }
-    return true
+
+    return onlyDefaultExtensionsAdded(settingsCascade)
 }
