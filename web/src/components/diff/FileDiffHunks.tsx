@@ -91,24 +91,24 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
     ])
 
     useEffect(() => {
-        if (extensionInfo) {
-            const subscription = extensionInfo.hoverifier.hoverify({
-                dom: diffDomFunctions,
-                positionEvents: codeElements.pipe(
-                    filter(isDefined),
-                    findPositionsFromEvents({ domFunctions: diffDomFunctions })
-                ),
-                positionJumps: NEVER, // TODO support diff URLs
-                resolveContext: hoveredToken => {
-                    // if part is undefined, it doesn't matter whether we chose head or base, the line stayed the same
-                    const { repoName, revision, filePath, commitID } = extensionInfo[hoveredToken.part || 'head']
-                    // If a hover or go-to-definition was invoked on this part, we know the file path must exist
-                    return { repoName, filePath: filePath!, revision, commitID }
-                },
-            })
-            return () => subscription.unsubscribe()
+        if (!extensionInfo) {
+            return () => undefined
         }
-        return () => undefined
+        const subscription = extensionInfo.hoverifier.hoverify({
+            dom: diffDomFunctions,
+            positionEvents: codeElements.pipe(
+                filter(isDefined),
+                findPositionsFromEvents({ domFunctions: diffDomFunctions })
+            ),
+            positionJumps: NEVER, // TODO support diff URLs
+            resolveContext: hoveredToken => {
+                // if part is undefined, it doesn't matter whether we chose head or base, the line stayed the same
+                const { repoName, revision, filePath, commitID } = extensionInfo[hoveredToken.part || 'head']
+                // If a hover or go-to-definition was invoked on this part, we know the file path must exist
+                return { repoName, filePath: filePath!, revision, commitID }
+            },
+        })
+        return () => subscription.unsubscribe()
     }, [codeElements, extensionInfo])
 
     // Listen to decorations from extensions and group them by line
