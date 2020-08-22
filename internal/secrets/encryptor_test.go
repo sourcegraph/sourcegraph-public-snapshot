@@ -116,7 +116,10 @@ func TestBadKeysFailToDecrypt(t *testing.T) {
 
 // Test that different strings EncryptBytes to different outputs
 func TestDifferentOutputs(t *testing.T) {
-	key, _ := generateRandomAESKey()
+	key, err := generateRandomAESKey()
+	if err != nil {
+		t.Fatal(err)
+	}
 	e := newEncryptor(key, nil)
 	messages := []string{
 		"This may or may",
@@ -162,7 +165,10 @@ func TestSampleNoRepeats(t *testing.T) {
 
 	var crypts []string
 	for i := 0; i < 10000; i++ {
-		encrypted, _ := e.EncryptBytes(messageToEncrypt)
+		encrypted, err := e.EncryptBytes(messageToEncrypt)
+		if err != nil {
+			t.Fatal(err)
+		}
 		crypts = append(crypts, string(encrypted))
 	}
 
