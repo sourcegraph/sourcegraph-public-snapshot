@@ -25,6 +25,7 @@ import { PatternTypeProps, OnboardingTourProps } from '../../search'
 import { ErrorMessage } from '../../components/alerts'
 import { isDefined } from '../../../../shared/src/util/types'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { AuthenticatedUser } from '../../auth'
 
 const fetchUser = (args: { username: string; siteAdmin: boolean }): Observable<GQL.IUser> =>
     queryGraphQL(
@@ -96,7 +97,7 @@ interface UserAreaProps
      * The currently authenticated user, NOT the user whose username is specified in the URL's "username" route
      * parameter.
      */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 
     isSourcegraphDotCom: boolean
 }
@@ -139,7 +140,7 @@ export interface UserAreaRouteContext
      * For example, if Alice is viewing a user area page about Bob, then the authenticatedUser is Alice and the
      * user is Bob.
      */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
     userSettingsSideBarItems: UserSettingsSidebarItems
     userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
 

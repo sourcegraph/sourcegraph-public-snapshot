@@ -7,7 +7,7 @@ import { orgURL } from '..'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { refreshAuthenticatedUser } from '../../auth'
+import { refreshAuthenticatedUser, AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { mutateGraphQL } from '../../backend/graphql'
 import { Form } from '../../components/Form'
@@ -21,7 +21,7 @@ import { ErrorAlert } from '../../components/alerts'
 import * as H from 'history'
 
 interface Props extends OrgAreaPageProps {
-    authenticatedUser: GQL.IUser
+    authenticatedUser: AuthenticatedUser
 
     /** Called when the viewer responds to the invitation. */
     onDidRespondToInvitation: () => void

@@ -1,7 +1,6 @@
 import * as React from 'react'
 import * as H from 'history'
 import { QueryState, submitSearch } from '../../helpers'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { Form } from '../../../components/Form'
 import { AddFilterRow } from './AddFilterRow'
 import { SelectedFiltersRow } from './SelectedFiltersRow'
@@ -34,6 +33,7 @@ import { VersionContextDropdown } from '../../../nav/VersionContextDropdown'
 import { VersionContextProps } from '../../../../../shared/src/search/util'
 import { VersionContext } from '../../../schema/site.schema'
 import { globbingEnabledFromSettings } from '../../../util/globbing'
+import { AuthenticatedUser } from '../../../auth'
 
 interface InteractiveModeProps
     extends SettingsCascadeProps,
@@ -62,7 +62,7 @@ interface InteractiveModeProps
 
     // For NavLinks
     authRequired?: boolean
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
     showCampaigns: boolean
     isSourcegraphDotCom: boolean
 

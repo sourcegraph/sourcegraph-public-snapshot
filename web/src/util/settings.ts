@@ -4,6 +4,7 @@ import { isErrorLike } from '../../../shared/src/util/errors'
 import { LayoutProps } from '../Layout'
 import { parseSearchURLPatternType } from '../search'
 import { SettingsExperimentalFeatures } from '../schema/settings.schema'
+import { AuthenticatedUser } from '../auth'
 
 /** A fallback settings subject that can be constructed synchronously at initialization time. */
 export const SITE_SUBJECT_NO_ADMIN: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'> = {
@@ -13,7 +14,7 @@ export const SITE_SUBJECT_NO_ADMIN: Pick<GQL.ISettingsSubject, 'id' | 'viewerCan
 
 export function viewerSubjectFromSettings(
     cascade: SettingsCascadeOrError,
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 ): LayoutProps['viewerSubject'] {
     if (authenticatedUser) {
         return authenticatedUser

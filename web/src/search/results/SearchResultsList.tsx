@@ -32,6 +32,7 @@ import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { ErrorAlert } from '../../components/alerts'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { DeployType } from '../../jscontext'
+import { AuthenticatedUser } from '../../auth'
 
 const isSearchResults = (value: unknown): value is GQL.ISearchResults =>
     typeof value === 'object' &&
@@ -51,7 +52,7 @@ export interface SearchResultsListProps
         VersionContextProps {
     location: H.Location
     history: H.History
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     deployType: DeployType
 
