@@ -1,6 +1,7 @@
 package janitor
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"syscall"
@@ -12,7 +13,7 @@ import (
 
 // freeSpace determines the space available on the device containing the bundle directory,
 // then calls cleanOldBundles to free enough space to get back below the disk usage threshold.
-func (j *Janitor) freeSpace() error {
+func (j *Janitor) freeSpace(ctx context.Context) error {
 	var fs syscall.Statfs_t
 	if err := syscall.Statfs(j.bundleDir, &fs); err != nil {
 		return err
@@ -25,15 +26,15 @@ func (j *Janitor) freeSpace() error {
 		return nil
 	}
 
-	return j.evictBundles(desiredFreeBytes - freeBytes)
+	return j.evictBundles(ctx, desiredFreeBytes-freeBytes)
 }
 
 // evictBundles removes completed upload recors from the database and then deletes the
 // associated bundle file from the filesystem until at least bytesToFree, or there are
 // no more prunable bundles.
-func (j *Janitor) evictBundles(bytesToFree uint64) error {
+func (j *Janitor) evictBundles(ctx context.Context, bytesToFree uint64) error {
 	for bytesToFree > 0 {
-		bytesRemoved, pruned, err := j.evictBundle()
+		bytesRemoved, pruned, err := j.evictBundle(ctx)
 		if err != nil {
 			return err
 		}
@@ -54,8 +55,8 @@ func (j *Janitor) evictBundles(bytesToFree uint64) error {
 // evictBundle removes the oldest bundle from the database, then deletes the associated file.
 // This method returns the size of the deleted file on success, and returns a false-valued
 // flag if there are no prunable bundles.
-func (j *Janitor) evictBundle() (uint64, bool, error) {
-	id, prunable, err := j.store.DeleteOldestDump(j.ctx)
+func (j *Janitor) evictBundle(ctx context.Context) (uint64, bool, error) {
+	id, prunable, err := j.store.DeleteOldestDump(ctx)
 	if err != nil {
 		return 0, false, errors.Wrap(err, "store.DeleteOldestDump")
 	}
