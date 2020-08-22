@@ -8,7 +8,7 @@ import {
 import { validCategories } from './extension/extension'
 import { isErrorLike, ErrorLike } from '../../../shared/src/util/errors'
 import { ExtensionsEnablement } from './ExtensionsList'
-import { Settings } from '../../../shared/src/settings/settings'
+import { Settings, SettingsCascadeOrError } from '../../../shared/src/settings/settings'
 
 export interface CategorizedExtensionRegistry {
     /** Maps categories to ids of extensions  */
@@ -87,4 +87,29 @@ export function applyExtensionsEnablement(
         return toRender
         // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     }, {} as Record<ExtensionCategory, string[]>)
+}
+
+/**
+ * Determines if only default extensions are added
+ */
+export function onlyDefaultExtensionsAdded(settings: SettingsCascadeOrError): boolean {
+    if (!isErrorLike(settings.subjects) && settings.subjects) {
+        const userSettings = settings.subjects.find(subject => subject.subject.__typename === 'User')
+        const defaultSettings = settings.subjects.find(subject => subject.subject.__typename === 'DefaultSettings')
+
+        if (userSettings && defaultSettings) {
+            const userExtensions = !isErrorLike(userSettings.settings) && userSettings.settings?.extensions
+            const defaultExtensions = !isErrorLike(defaultSettings.settings) && defaultSettings.settings?.extensions
+
+            if (userExtensions && defaultExtensions) {
+                for (const key of Object.keys(userExtensions)) {
+                    if (!(key in defaultExtensions)) {
+                        return false
+                    }
+                }
+            }
+        }
+    }
+
+    return true
 }
