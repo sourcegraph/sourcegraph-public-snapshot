@@ -2,15 +2,19 @@ package goroutine
 
 import (
 	"os"
+	"syscall"
 	"testing"
 )
 
 func TestMonitorBackgroundRoutines(t *testing.T) {
+	exiter = func() {}
+
 	r1 := NewMockBackgroundRoutine()
 	r2 := NewMockBackgroundRoutine()
 	r3 := NewMockBackgroundRoutine()
 
-	signals := make(chan os.Signal)
+	signals := make(chan os.Signal, 1)
+	defer close(signals)
 	unblocked := make(chan struct{})
 
 	go func() {
@@ -18,7 +22,7 @@ func TestMonitorBackgroundRoutines(t *testing.T) {
 		monitorBackgroundRoutines(signals, r1, r2, r3)
 	}()
 
-	close(signals)
+	signals <- syscall.SIGINT
 	<-unblocked
 
 	for _, r := range []*MockBackgroundRoutine{r1, r2, r3} {

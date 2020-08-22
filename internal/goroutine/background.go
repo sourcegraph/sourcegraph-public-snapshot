@@ -59,14 +59,19 @@ func stopAll(wg *sync.WaitGroup, routines ...BackgroundRoutine) {
 	}
 }
 
-// waitForSignal blocks until either SIGINT or SIGHUP has been received. This will
-// call os.Exit(0) if a second signal is received.
+// exiter exits the process with a status code of zero. This is declared here
+// so it can be replaced by tests without risk of aborting the tests without
+// a good indication to the calling program that the tests didn't in fact pass.
+var exiter = func() { os.Exit(0) }
+
+// waitForSignal blocks until a signal has been received. This will call os.Exit(0)
+// if a second signal is received.
 func waitForSignal(signals <-chan os.Signal) {
 	<-signals
 
 	go func() {
-		// Insta-shutdown on a second signal
+		// Shutdown immediately on a second signal
 		<-signals
-		os.Exit(0)
+		exiter()
 	}()
 }
