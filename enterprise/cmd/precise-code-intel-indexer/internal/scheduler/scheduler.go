@@ -2,7 +2,6 @@ package scheduler
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -22,8 +21,9 @@ type Scheduler struct {
 	minimumSearchRatio          float64
 	minimumPreciseCount         int
 	metrics                     SchedulerMetrics
-	done                        chan struct{}
-	once                        sync.Once
+	ctx                         context.Context
+	cancel                      func()
+	finished                    chan (struct{})
 }
 
 func NewScheduler(
@@ -37,6 +37,8 @@ func NewScheduler(
 	minimumPreciseCount int,
 	metrics SchedulerMetrics,
 ) *Scheduler {
+	ctx, cancel := context.WithCancel(context.Background())
+
 	return &Scheduler{
 		store:                       store,
 		gitserverClient:             gitserverClient,
@@ -47,29 +49,32 @@ func NewScheduler(
 		minimumSearchRatio:          minimumSearchRatio,
 		minimumPreciseCount:         minimumPreciseCount,
 		metrics:                     metrics,
-		done:                        make(chan struct{}),
+		ctx:                         ctx,
+		cancel:                      cancel,
+		finished:                    make(chan struct{}),
 	}
 }
 
 func (s *Scheduler) Start() {
+	defer close(s.finished)
+
 	for {
-		if err := s.update(context.Background()); err != nil {
+		if err := s.update(s.ctx); err != nil {
 			s.metrics.Errors.Inc()
 			log15.Error("Failed to update indexable repositories", "err", err)
 		}
 
 		select {
 		case <-time.After(s.interval):
-		case <-s.done:
+		case <-s.ctx.Done():
 			return
 		}
 	}
 }
 
 func (s *Scheduler) Stop() {
-	s.once.Do(func() {
-		close(s.done)
-	})
+	s.cancel()
+	<-s.finished
 }
 
 func (s *Scheduler) update(ctx context.Context) error {

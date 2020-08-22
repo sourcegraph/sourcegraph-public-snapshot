@@ -1,7 +1,6 @@
 package janitor
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 	"syscall"
@@ -56,7 +55,7 @@ func (j *Janitor) evictBundles(bytesToFree uint64) error {
 // This method returns the size of the deleted file on success, and returns a false-valued
 // flag if there are no prunable bundles.
 func (j *Janitor) evictBundle() (uint64, bool, error) {
-	id, prunable, err := j.store.DeleteOldestDump(context.Background())
+	id, prunable, err := j.store.DeleteOldestDump(j.ctx)
 	if err != nil {
 		return 0, false, errors.Wrap(err, "store.DeleteOldestDump")
 	}
