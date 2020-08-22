@@ -45,7 +45,6 @@ const mockDiff: NonNullable<ExternalChangesetFileDiffsFields['diff']> = {
     fileDiffs: {
         nodes: [
             {
-                __typename: 'FileDiff',
                 internalID: 'intid123',
                 oldPath: '/somefile.md',
                 newPath: '/somefile.md',
