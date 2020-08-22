@@ -173,19 +173,7 @@ exports[`VersionContextDropdown renders the expanded version context dropdown, w
             >
               <Memo(FlagVariantIcon)
                 className="icon-inline small"
-              >
-                <svg
-                  className="mdi-icon icon-inline small"
-                  fill="currentColor"
-                  height={24}
-                  viewBox="0 0 24 24"
-                  width={24}
-                >
-                  <path
-                    d="M6,3A1,1 0 0,1 7,4V4.88C8.06,4.44 9.5,4 11,4C14,4 14,6 16,6C19,6 20,4 20,4V12C20,12 19,14 16,14C13,14 13,12 11,12C8,12 7,14 7,14V21H5V4A1,1 0 0,1 6,3Z"
-                  />
-                </svg>
-              </Memo(FlagVariantIcon)>
+              />
               <span
                 className="version-context-dropdown__button-text ml-2 mr-1"
               >
@@ -194,19 +182,7 @@ exports[`VersionContextDropdown renders the expanded version context dropdown, w
               </span>
               <Memo(MenuDownIcon)
                 className="icon-inline"
-              >
-                <svg
-                  className="mdi-icon icon-inline"
-                  fill="currentColor"
-                  height={24}
-                  viewBox="0 0 24 24"
-                  width={24}
-                >
-                  <path
-                    d="M7,10L12,15L17,10H7Z"
-                  />
-                </svg>
-              </Memo(MenuDownIcon)>
+              />
             </span>
           </ListboxButton>
           <ListboxPopover
@@ -328,19 +304,7 @@ exports[`VersionContextDropdown renders the expanded version context dropdown, w
                           >
                             <Memo(CloseIcon)
                               className="icon-inline small"
-                            >
-                              <svg
-                                className="mdi-icon icon-inline small"
-                                fill="currentColor"
-                                height={24}
-                                viewBox="0 0 24 24"
-                                width={24}
-                              >
-                                <path
-                                  d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-                                />
-                              </svg>
-                            </Memo(CloseIcon)>
+                            />
                           </button>
                         </div>
                         <span
@@ -558,19 +522,7 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
             >
               <Memo(FlagVariantIcon)
                 className="icon-inline small"
-              >
-                <svg
-                  className="mdi-icon icon-inline small"
-                  fill="currentColor"
-                  height={24}
-                  viewBox="0 0 24 24"
-                  width={24}
-                >
-                  <path
-                    d="M6,3A1,1 0 0,1 7,4V4.88C8.06,4.44 9.5,4 11,4C14,4 14,6 16,6C19,6 20,4 20,4V12C20,12 19,14 16,14C13,14 13,12 11,12C8,12 7,14 7,14V21H5V4A1,1 0 0,1 6,3Z"
-                  />
-                </svg>
-              </Memo(FlagVariantIcon)>
+              />
               <span
                 className="version-context-dropdown__button-text ml-2 mr-1 d-sm-none d-md-block"
               >
@@ -578,19 +530,7 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
               </span>
               <Memo(MenuDownIcon)
                 className="icon-inline"
-              >
-                <svg
-                  className="mdi-icon icon-inline"
-                  fill="currentColor"
-                  height={24}
-                  viewBox="0 0 24 24"
-                  width={24}
-                >
-                  <path
-                    d="M7,10L12,15L17,10H7Z"
-                  />
-                </svg>
-              </Memo(MenuDownIcon)>
+              />
             </span>
           </ListboxButton>
           <ListboxPopover
