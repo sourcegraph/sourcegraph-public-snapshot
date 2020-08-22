@@ -40,10 +40,10 @@ func newEncryptor(primaryKey, secondaryKey []byte) Encryptor {
 	}
 }
 
-// Encrypt encrypts data using 256-bit AES-GCM.  This both hides the content of
-// the data and provides a check that it hasn't been altered. Output takes the
-// form nonce|ciphertext|tag where '|' indicates concatenation.
-// From https://github.com/gtank/cryptopasta/blob/1f550f6f2f69009f6ae57347c188e0a67cd4e500/encrypt.go#L37
+// EncryptBytes encrypts data using 256-bit AES-GCM. This both hides the content of
+// the data and provides a check that it hasn't been altered. Output takes the form
+// `nonce|ciphertext|tag` where '|' indicates concatenation. It is a modified version of
+// https://github.com/gtank/cryptopasta/blob/1f550f6f2f69009f6ae57347c188e0a67cd4e500/encrypt.go#L37
 func (e encryptor) EncryptBytes(plaintext []byte) (ciphertext []byte, err error) {
 	// ONLY use the primary key to EncryptBytes
 	if len(e.primaryKey) < validKeyLength {
@@ -69,10 +69,10 @@ func (e encryptor) EncryptBytes(plaintext []byte) (ciphertext []byte, err error)
 	return gcm.Seal(nonce, nonce, plaintext, nil), nil
 }
 
-// Decrypt decrypts data using 256-bit AES-GCM.  This both hides the content of
-// the data and provides a check that it hasn't been altered. Expects input
-// form nonce|ciphertext|tag where '|' indicates concatenation.
-// From https://github.com/gtank/cryptopasta/blob/1f550f6f2f69009f6ae57347c188e0a67cd4e500/encrypt.go#L60
+// DecryptBytes decrypts data using 256-bit AES-GCM. This both hides the content of
+// the data and provides a check that it hasn't been altered. Expects input form
+// `nonce|ciphertext|tag` where '|' indicates concatenation. It is a modified version of
+// https://github.com/gtank/cryptopasta/blob/1f550f6f2f69009f6ae57347c188e0a67cd4e500/encrypt.go#L60
 func (e encryptor) DecryptBytes(ciphertext []byte) (plaintext []byte, err error) {
 	if len(e.primaryKey) < validKeyLength && len(e.secondaryKey) < validKeyLength {
 		return nil, &EncryptionError{errors.New("no valid keys available")}
