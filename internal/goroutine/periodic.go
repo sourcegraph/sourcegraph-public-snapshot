@@ -4,12 +4,15 @@ import (
 	"context"
 	"errors"
 	"time"
+
+	"github.com/efritz/glock"
 )
 
 // PeriodicGoroutine represents a goroutine whose main behavior is reinvoked periodically.
 type PeriodicGoroutine struct {
 	interval time.Duration
 	handler  Handler
+	clock    glock.Clock
 	ctx      context.Context // root context passed to the handler
 	cancel   func()          // cancels the root context
 	finished chan struct{}   // signals that Start has finished
@@ -39,11 +42,16 @@ type Finalizer interface {
 
 // NewPeriodicGoroutine creates a new PeriodicGoroutine with the given handler.
 func NewPeriodicGoroutine(ctx context.Context, interval time.Duration, handler Handler) *PeriodicGoroutine {
+	return newPeriodicGoroutine(ctx, interval, handler, glock.NewRealClock())
+}
+
+func newPeriodicGoroutine(ctx context.Context, interval time.Duration, handler Handler, clock glock.Clock) *PeriodicGoroutine {
 	ctx, cancel := context.WithCancel(ctx)
 
 	return &PeriodicGoroutine{
 		handler:  handler,
 		interval: interval,
+		clock:    clock,
 		ctx:      ctx,
 		cancel:   cancel,
 		finished: make(chan struct{}),
@@ -71,7 +79,7 @@ loop:
 		}
 
 		select {
-		case <-time.After(r.interval):
+		case <-r.clock.After(r.interval):
 		case <-r.ctx.Done():
 			break loop
 		}

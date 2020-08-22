@@ -26,9 +26,15 @@ type BackgroundRoutine interface {
 // and Stop methods of each routine has returned. A second signal will cause the
 // app to shutdown immediately.
 func MonitorBackgroundRoutines(routines ...BackgroundRoutine) {
+	signals := make(chan os.Signal, 2)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGHUP)
+	monitorBackgroundRoutines(signals, routines...)
+}
+
+func monitorBackgroundRoutines(signals <-chan os.Signal, routines ...BackgroundRoutine) {
 	var wg sync.WaitGroup
 	startAll(&wg, routines...)
-	waitForSignal()
+	waitForSignal(signals)
 	stopAll(&wg, routines...)
 	wg.Wait()
 }
@@ -55,9 +61,7 @@ func stopAll(wg *sync.WaitGroup, routines ...BackgroundRoutine) {
 
 // waitForSignal blocks until either SIGINT or SIGHUP has been received. This will
 // call os.Exit(0) if a second signal is received.
-func waitForSignal() {
-	signals := make(chan os.Signal, 2)
-	signal.Notify(signals, syscall.SIGINT, syscall.SIGHUP)
+func waitForSignal(signals <-chan os.Signal) {
 	<-signals
 
 	go func() {
