@@ -2,24 +2,23 @@ import { findPositionsFromEvents, Hoverifier } from '@sourcegraph/codeintellify'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import * as React from 'react'
-import { combineLatest, NEVER, Observable, of, Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, filter, map, switchMap } from 'rxjs/operators'
+import React, { useCallback, useMemo, useState, useEffect } from 'react'
+import { combineLatest, NEVER, Observable, of, Subject } from 'rxjs'
+import { distinctUntilChanged, filter, switchMap } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { DecorationMapByLine, groupDecorationsByLine } from '../../../../shared/src/api/client/services/decoration'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { isDefined } from '../../../../shared/src/util/types'
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec, toURIWithPath } from '../../../../shared/src/util/url'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { DiffHunk } from './DiffHunk'
 import { diffDomFunctions } from '../../repo/compare/dom-functions'
-import { FileDiffFields } from '../../graphql-operations'
+import { FileDiffFields, Scalars } from '../../graphql-operations'
 
 interface PartFileInfo {
     repoName: string
-    repoID: GQL.ID
+    repoID: Scalars['ID']
     revision: string
     commitID: string
 
@@ -59,141 +58,125 @@ interface FileHunksProps extends ThemeProps {
     persistLines?: boolean
 }
 
-interface FileDiffHunksState {
+/** Displays hunks in a unified file diff. */
+export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
+    className,
+    fileDiffAnchor,
+    history,
+    hunks,
+    isLightTheme,
+    lineNumbers,
+    location,
+    extensionInfo,
+    persistLines,
+}) => {
     /**
      * Decorations for the file at the two revisions of the diff
      */
-    decorations: Record<'head' | 'base', DecorationMapByLine>
-}
+    const [decorations, setDecorations] = useState<Record<'head' | 'base', DecorationMapByLine>>({
+        head: new Map(),
+        base: new Map(),
+    })
 
-/** Displays hunks in a unified file diff. */
-export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunksState> {
     /** Emits whenever the ref callback for the code element is called */
-    private codeElements = new Subject<HTMLElement | null>()
-    private nextCodeElement = (element: HTMLElement | null): void => this.codeElements.next(element)
+    const codeElements = useMemo(() => new Subject<HTMLElement | null>(), [])
+    const nextCodeElement = useCallback((element: HTMLElement | null): void => codeElements.next(element), [
+        codeElements,
+    ])
 
     /** Emits whenever the ref callback for the blob element is called */
-    private blobElements = new Subject<HTMLElement | null>()
-    private nextBlobElement = (element: HTMLElement | null): void => this.blobElements.next(element)
+    const blobElements = useMemo(() => new Subject<HTMLElement | null>(), [])
+    const nextBlobElement = useCallback((element: HTMLElement | null): void => blobElements.next(element), [
+        blobElements,
+    ])
 
-    /** Emits with the latest Props on every componentDidUpdate and on componentDidMount */
-    private componentUpdates = new Subject<FileHunksProps>()
-
-    /** Subscriptions to be disposed on unmout */
-    private subscriptions = new Subscription()
-
-    constructor(props: FileHunksProps) {
-        super(props)
-        this.state = {
-            decorations: { head: new Map(), base: new Map() },
+    useEffect(() => {
+        if (extensionInfo) {
+            const subscription = extensionInfo.hoverifier.hoverify({
+                dom: diffDomFunctions,
+                positionEvents: codeElements.pipe(
+                    filter(isDefined),
+                    findPositionsFromEvents({ domFunctions: diffDomFunctions })
+                ),
+                positionJumps: NEVER, // TODO support diff URLs
+                resolveContext: hoveredToken => {
+                    // if part is undefined, it doesn't matter whether we chose head or base, the line stayed the same
+                    const { repoName, revision, filePath, commitID } = extensionInfo[hoveredToken.part || 'head']
+                    // If a hover or go-to-definition was invoked on this part, we know the file path must exist
+                    return { repoName, filePath: filePath!, revision, commitID }
+                },
+            })
+            return () => subscription.unsubscribe()
         }
+        return () => undefined
+    }, [codeElements, extensionInfo])
 
-        if (this.props.extensionInfo) {
-            this.subscriptions.add(
-                this.props.extensionInfo.hoverifier.hoverify({
-                    dom: diffDomFunctions,
-                    positionEvents: this.codeElements.pipe(
-                        filter(isDefined),
-                        findPositionsFromEvents({ domFunctions: diffDomFunctions })
-                    ),
-                    positionJumps: NEVER, // TODO support diff URLs
-                    resolveContext: hoveredToken => {
-                        // if part is undefined, it doesn't matter whether we chose head or base, the line stayed the same
-                        const { repoName, revision, filePath, commitID } = this.props.extensionInfo![
-                            hoveredToken.part || 'head'
-                        ]
-                        // If a hover or go-to-definition was invoked on this part, we know the file path must exist
-                        return { repoName, filePath: filePath!, revision, commitID }
-                    },
+    // Listen to decorations from extensions and group them by line
+    useEffect(() => {
+        const subscription = of(extensionInfo)
+            .pipe(
+                filter(isDefined),
+                distinctUntilChanged(
+                    (a, b) =>
+                        isEqual(a.head, b.head) &&
+                        isEqual(a.base, b.base) &&
+                        a.extensionsController !== b.extensionsController
+                ),
+                switchMap(({ head, base, extensionsController }) => {
+                    const getDecorationsForPart = ({
+                        repoName,
+                        commitID,
+                        filePath,
+                    }: PartFileInfo): Observable<TextDocumentDecoration[] | null> =>
+                        filePath !== null
+                            ? extensionsController.services.textDocumentDecoration.getDecorations({
+                                  uri: toURIWithPath({ repoName, commitID, filePath }),
+                              })
+                            : of(null)
+                    return combineLatest([getDecorationsForPart(head), getDecorationsForPart(base)])
                 })
             )
-        }
-
-        // Listen to decorations from extensions and group them by line
-        this.subscriptions.add(
-            this.componentUpdates
-                .pipe(
-                    map(({ extensionInfo }) => extensionInfo),
-                    filter(isDefined),
-                    distinctUntilChanged(
-                        (a, b) =>
-                            isEqual(a.head, b.head) &&
-                            isEqual(a.base, b.base) &&
-                            a.extensionsController !== b.extensionsController
-                    ),
-                    switchMap(({ head, base, extensionsController }) => {
-                        const getDecorationsForPart = ({
-                            repoName,
-                            commitID,
-                            filePath,
-                        }: PartFileInfo): Observable<TextDocumentDecoration[] | null> =>
-                            filePath !== null
-                                ? extensionsController.services.textDocumentDecoration.getDecorations({
-                                      uri: toURIWithPath({ repoName, commitID, filePath }),
-                                  })
-                                : of(null)
-                        return combineLatest([getDecorationsForPart(head), getDecorationsForPart(base)])
-                    })
-                )
-                .subscribe(([headDecorations, baseDecorations]) => {
-                    this.setState({
-                        decorations: {
-                            head: groupDecorationsByLine(headDecorations),
-                            base: groupDecorationsByLine(baseDecorations),
-                        },
-                    })
+            .subscribe(([headDecorations, baseDecorations]) => {
+                setDecorations({
+                    head: groupDecorationsByLine(headDecorations),
+                    base: groupDecorationsByLine(baseDecorations),
                 })
-        )
-    }
+            })
+        return () => subscription.unsubscribe()
+    }, [extensionInfo])
 
-    public componentDidMount(): void {
-        this.componentUpdates.next(this.props)
-    }
-
-    public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
-    }
-
-    public shouldComponentUpdate(
-        nextProps: Readonly<FileHunksProps>,
-        nextState: Readonly<FileDiffHunksState>
-    ): boolean {
-        return !isEqual(this.props, nextProps) || !isEqual(this.state, nextState)
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    public render(): JSX.Element | null {
-        return (
-            <div className={`file-diff-hunks ${this.props.className}`} ref={this.nextBlobElement}>
-                {this.props.hunks.length === 0 ? (
-                    <div className="text-muted m-2">No changes</div>
-                ) : (
-                    <div className="file-diff-hunks__container" ref={this.nextCodeElement}>
-                        <table className="file-diff-hunks__table">
-                            {this.props.lineNumbers && (
-                                <colgroup>
-                                    <col width="40" />
-                                    <col width="40" />
-                                    <col />
-                                </colgroup>
-                            )}
-                            <tbody>
-                                {this.props.hunks.map((hunk, index) => (
-                                    <DiffHunk
-                                        {...this.props}
-                                        key={index}
-                                        hunk={hunk}
-                                        decorations={this.state.decorations}
-                                    />
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </div>
-        )
-    }
+    return (
+        <div className={`file-diff-hunks ${className}`} ref={nextBlobElement}>
+            {hunks.length === 0 ? (
+                <div className="text-muted m-2">No changes</div>
+            ) : (
+                <div className="file-diff-hunks__container" ref={nextCodeElement}>
+                    <table className="file-diff-hunks__table">
+                        {lineNumbers && (
+                            <colgroup>
+                                <col width="40" />
+                                <col width="40" />
+                                <col />
+                            </colgroup>
+                        )}
+                        <tbody>
+                            {hunks.map((hunk, index) => (
+                                <DiffHunk
+                                    fileDiffAnchor={fileDiffAnchor}
+                                    history={history}
+                                    isLightTheme={isLightTheme}
+                                    lineNumbers={lineNumbers}
+                                    location={location}
+                                    persistLines={persistLines}
+                                    key={index}
+                                    hunk={hunk}
+                                    decorations={decorations}
+                                />
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </div>
+    )
 }
