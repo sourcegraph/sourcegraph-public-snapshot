@@ -3,9 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -111,43 +108,20 @@ func main() {
 	// TODO - originally missed calling this at all :(
 	managerRoutine := goroutine.NewPeriodicGoroutine(context.Background(), time.Second, indexManager)
 
-	go managerRoutine.Start()
-	go server.Start()
-	go indexResetter.Start()
-	go indexabilityUpdater.Start()
-	go scheduler.Start()
-	go debugserver.Start()
-
+	var conditionalRoutines []goroutine.BackgroundRoutine
 	if !disableIndexer {
-		go indexer.Start()
+		conditionalRoutines = append(conditionalRoutines, indexer)
 	} else {
 		log15.Warn("Indexer process is disabled.")
 	}
-
 	if !disableJanitor {
-		go janitor.Start()
+		conditionalRoutines = append(conditionalRoutines, janitor)
 	} else {
 		log15.Warn("Janitor process is disabled.")
 	}
 
-	// Attempt to clean up after first shutdown signal
-	signals := make(chan os.Signal, 2)
-	signal.Notify(signals, syscall.SIGINT, syscall.SIGHUP)
-	<-signals
-
-	go func() {
-		// Insta-shutdown on a second signal
-		<-signals
-		os.Exit(0)
-	}()
-
-	managerRoutine.Stop()
-	server.Stop()
-	indexResetter.Stop()
-	indexer.Stop()
-	scheduler.Stop()
-	indexabilityUpdater.Stop()
-	janitor.Stop()
+	go debugserver.Start()
+	goroutine.MonitorBackgroundRoutines(managerRoutine, server, indexResetter, indexabilityUpdater, scheduler, conditionalRoutines...)
 }
 
 func mustInitializeStore() store.Store {
