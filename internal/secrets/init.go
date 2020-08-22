@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"io/ioutil"
 	"os"
+	"path"
 	"sync"
 
 	"github.com/inconshreveable/log15"
@@ -106,6 +107,12 @@ func initDefaultEncryptor() error {
 		if err != nil {
 			return errors.Wrap(err, "unable to generate random key")
 		}
+
+		err = os.MkdirAll(path.Dir(secretFile), os.ModePerm)
+		if err != nil {
+			return err
+		}
+
 		err = ioutil.WriteFile(secretFile, b, 0600)
 		if err != nil {
 			return err
