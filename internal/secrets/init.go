@@ -130,12 +130,15 @@ func initDefaultEncryptor() error {
 		return nil
 	}
 
-	// TODO: How do we allow no encryption
+	log15.Warn("no encryption option enabled")
+	defaultEncryptor = noOpEncryptor{}
+	return nil
 
+	// TODO: Enable this once docs are in place for
 	// for k8s & docker compose, expect a secret to be provided
-	return errors.Errorf("Either specify environment variable %s or provide the secrets file %s",
-		sourcegraphCryptEnvvar,
-		sourcegraphSecretfileEnvvar)
+	//return errors.Errorf("Either specify environment variable %s or provide the secrets file %s",
+	//	sourcegraphCryptEnvvar,
+	//	sourcegraphSecretfileEnvvar)
 }
 
 // generateRandomAESKey generates a random key that can be used for AES-256 encryption.
