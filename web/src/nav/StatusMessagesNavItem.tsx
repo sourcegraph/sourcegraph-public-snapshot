@@ -4,19 +4,21 @@ import CloudSyncIcon from 'mdi-react/CloudSyncIcon'
 import React from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { Observable, Subscription } from 'rxjs'
-import { catchError, map, repeatWhen, delay } from 'rxjs/operators'
+import { catchError, map, repeatWhen, delay, distinctUntilChanged } from 'rxjs/operators'
 import { Link } from '../../../shared/src/components/Link'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
-import { queryGraphQL } from '../backend/graphql'
+import { requestGraphQL } from '../backend/graphql'
 import classNames from 'classnames'
 import { ErrorAlert } from '../components/alerts'
 import * as H from 'history'
 import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
+import { StatusMessagesResult } from '../graphql-operations'
+import { isEqual } from 'lodash'
 
-export function fetchAllStatusMessages(): Observable<GQL.StatusMessage[]> {
-    return queryGraphQL(
+export function fetchAllStatusMessages(): Observable<StatusMessagesResult['statusMessages']> {
+    return requestGraphQL<StatusMessagesResult>(
         gql`
             query StatusMessages {
                 statusMessages {
@@ -126,7 +128,8 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     catchError(error => [asError(error) as ErrorLike]),
                     // Poll on REFRESH_INTERVAL_MS, or REFRESH_INTERVAL_AFTER_ERROR_MS if there is an error.
                     repeatUntil(messagesOrError => isErrorLike(messagesOrError), { delay: REFRESH_INTERVAL_MS }),
-                    repeatWhen(completions => completions.pipe(delay(REFRESH_INTERVAL_AFTER_ERROR_MS)))
+                    repeatWhen(completions => completions.pipe(delay(REFRESH_INTERVAL_AFTER_ERROR_MS))),
+                    distinctUntilChanged((a, b) => isEqual(a, b))
                 )
                 .subscribe(messagesOrError => this.setState({ messagesOrError }))
         )
