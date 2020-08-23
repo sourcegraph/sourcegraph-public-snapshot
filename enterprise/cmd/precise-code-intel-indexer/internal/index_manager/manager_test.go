@@ -23,7 +23,6 @@ func TestProcessSuccess(t *testing.T) {
 	manager := newManager(mockStore, ManagerOptions{
 		MaximumTransactions:   10,
 		RequeueDelay:          time.Second,
-		CleanupInterval:       time.Second,
 		UnreportedIndexMaxAge: time.Second,
 		DeathThreshold:        time.Second,
 	}, clock)
@@ -69,7 +68,6 @@ func TestProcessFailure(t *testing.T) {
 	manager := newManager(mockStore, ManagerOptions{
 		MaximumTransactions:   10,
 		RequeueDelay:          time.Second,
-		CleanupInterval:       time.Second,
 		UnreportedIndexMaxAge: time.Second,
 		DeathThreshold:        time.Second,
 	}, clock)
@@ -114,7 +112,6 @@ func TestProcessIndexerMismatch(t *testing.T) {
 	manager := newManager(mockStore, ManagerOptions{
 		MaximumTransactions:   10,
 		RequeueDelay:          time.Second,
-		CleanupInterval:       time.Second,
 		UnreportedIndexMaxAge: time.Second,
 		DeathThreshold:        time.Second,
 	}, clock)
@@ -157,7 +154,6 @@ func TestBoundedTransactions(t *testing.T) {
 	manager := newManager(mockStore, ManagerOptions{
 		MaximumTransactions:   10,
 		RequeueDelay:          time.Second,
-		CleanupInterval:       time.Second,
 		UnreportedIndexMaxAge: time.Second,
 		DeathThreshold:        time.Second,
 	}, clock)
@@ -215,7 +211,6 @@ func TestHeartbeatRemovesUnknownIndexes(t *testing.T) {
 	manager := newManager(mockStore, ManagerOptions{
 		MaximumTransactions:   10,
 		RequeueDelay:          time.Second,
-		CleanupInterval:       time.Second,
 		UnreportedIndexMaxAge: time.Second,
 		DeathThreshold:        time.Second,
 	}, clock)
@@ -282,7 +277,6 @@ func TestUnresponsiveIndexer(t *testing.T) {
 	manager := newManager(mockStore, ManagerOptions{
 		MaximumTransactions:   10,
 		RequeueDelay:          time.Second,
-		CleanupInterval:       time.Second,
 		UnreportedIndexMaxAge: time.Second,
 		DeathThreshold:        time.Second,
 	}, clock)
