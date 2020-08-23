@@ -30,14 +30,6 @@ type Manager interface {
 	Heartbeat(ctx context.Context, indexerName string, indexIDs []int) error
 }
 
-// TODO - redocument
-// ThreadedManager is a manager that handles requests that modify database transactions from a single
-// goroutine to simplify bookkeeping of live transactions.
-type ThreadedManager interface {
-	Manager
-	goroutine.Handler
-}
-
 type ManagerOptions struct {
 	// MaximumTransactions is the maximum number of active records that can be given out to indexers. The
 	// manager dequeue method will stop returning records while the number of outstanding transactions is
@@ -47,10 +39,6 @@ type ManagerOptions struct {
 	// RequeueDelay controls how far into the future to make an indexer's records visible to another
 	// agent once it becomes unresponsive.
 	RequeueDelay time.Duration
-
-	// CleanupInterval is the duration between cleanup invocations, in which the index records assigned
-	// to dead indexers are requeued.
-	CleanupInterval time.Duration
 
 	// UnreportedMaxAge is the maximum time between an index record being dequeued and it appearing in
 	// the indexer's heartbeat requests before it being considered lost.
@@ -62,6 +50,13 @@ type ManagerOptions struct {
 	DeathThreshold time.Duration
 }
 
+// ManagerWithHandler combines a index manager with a goroutine handler. This allows the manager's period
+// cleanup process to be wrapped in a periodic routine.
+type ManagerWithHandler interface {
+	Manager
+	goroutine.Handler
+}
+
 type manager struct {
 	store            dbworkerstore.Store
 	options          ManagerOptions
@@ -71,8 +66,7 @@ type manager struct {
 	m                sync.Mutex    // protects indexers
 }
 
-var _ Manager = &manager{}
-var _ goroutine.Handler = &manager{}
+var _ ManagerWithHandler = &manager{}
 
 // indexerMeta tracks the last request time of an indexer along with the set of index records which it
 // is currently processing.
@@ -89,11 +83,11 @@ type indexMeta struct {
 }
 
 // New creates a new manager with the given store and options.
-func New(store dbworkerstore.Store, options ManagerOptions) ThreadedManager {
+func New(store dbworkerstore.Store, options ManagerOptions) ManagerWithHandler {
 	return newManager(store, options, glock.NewRealClock())
 }
 
-func newManager(store dbworkerstore.Store, options ManagerOptions, clock glock.Clock) ThreadedManager {
+func newManager(store dbworkerstore.Store, options ManagerOptions, clock glock.Clock) ManagerWithHandler {
 	dequeueSemaphore := make(chan struct{}, options.MaximumTransactions)
 	for i := 0; i < options.MaximumTransactions; i++ {
 		dequeueSemaphore <- struct{}{}

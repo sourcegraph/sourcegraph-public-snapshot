@@ -71,7 +71,6 @@ func main() {
 	indexManager := indexmanager.New(store.WorkerutilIndexStore(s), indexmanager.ManagerOptions{
 		MaximumTransactions:   maximumTransactions,
 		RequeueDelay:          requeueDelay,
-		CleanupInterval:       cleanupInterval,
 		UnreportedIndexMaxAge: cleanupInterval * time.Duration(maximumMissedHeartbeats),
 		DeathThreshold:        cleanupInterval * time.Duration(maximumMissedHeartbeats),
 	})
@@ -107,16 +106,14 @@ func main() {
 
 	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
 	janitor := janitor.New(s, janitorInterval, janitorMetrics)
+	managerRoutine := goroutine.NewPeriodicGoroutine(context.Background(), cleanupInterval, indexManager)
 
-	// TODO - originally missed calling this at all :(
-	managerRoutine := goroutine.NewPeriodicGoroutine(context.Background(), time.Second, indexManager)
-
-	go managerRoutine.Start()
 	go server.Start()
 	go indexResetter.Start()
 	go indexabilityUpdater.Start()
 	go scheduler.Start()
 	go debugserver.Start()
+	go managerRoutine.Start()
 
 	if !disableIndexer {
 		go indexer.Start()
@@ -141,13 +138,13 @@ func main() {
 		os.Exit(0)
 	}()
 
-	managerRoutine.Stop()
 	server.Stop()
 	indexResetter.Stop()
 	indexer.Stop()
 	scheduler.Stop()
 	indexabilityUpdater.Stop()
 	janitor.Stop()
+	managerRoutine.Stop()
 }
 
 func mustInitializeStore() store.Store {
