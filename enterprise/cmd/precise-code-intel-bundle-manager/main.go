@@ -73,15 +73,18 @@ func main() {
 	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
 	janitor := janitor.New(store, bundleDir, desiredPercentFree, janitorInterval, maxUploadAge, maxUploadPartAge, maxDatabasePartAge, janitorMetrics)
 
-	var conditionalRoutines []goroutine.BackgroundRoutine
+	routines := []goroutine.BackgroundRoutine{
+		server,
+	}
+
 	if !disableJanitor {
-		conditionalRoutines = append(conditionalRoutines, janitor)
+		routines = append(routines, janitor)
 	} else {
 		log15.Warn("Janitor process is disabled.")
 	}
 
 	go debugserver.Start()
-	goroutine.MonitorBackgroundRoutines(server, conditionalRoutines...)
+	goroutine.MonitorBackgroundRoutines(routines...)
 }
 
 func mustInitializeStore() store.Store {

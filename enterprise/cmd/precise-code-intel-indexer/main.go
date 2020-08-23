@@ -108,20 +108,27 @@ func main() {
 	// TODO - originally missed calling this at all :(
 	managerRoutine := goroutine.NewPeriodicGoroutine(context.Background(), time.Second, indexManager)
 
-	var conditionalRoutines []goroutine.BackgroundRoutine
+	routines := []goroutine.BackgroundRoutine{
+		managerRoutine,
+		server,
+		indexResetter,
+		indexabilityUpdater,
+		scheduler,
+	}
+
 	if !disableIndexer {
-		conditionalRoutines = append(conditionalRoutines, indexer)
+		routines = append(routines, indexer)
 	} else {
 		log15.Warn("Indexer process is disabled.")
 	}
 	if !disableJanitor {
-		conditionalRoutines = append(conditionalRoutines, janitor)
+		routines = append(routines, janitor)
 	} else {
 		log15.Warn("Janitor process is disabled.")
 	}
 
 	go debugserver.Start()
-	goroutine.MonitorBackgroundRoutines(managerRoutine, server, indexResetter, indexabilityUpdater, scheduler, conditionalRoutines...)
+	goroutine.MonitorBackgroundRoutines(routines...)
 }
 
 func mustInitializeStore() store.Store {
