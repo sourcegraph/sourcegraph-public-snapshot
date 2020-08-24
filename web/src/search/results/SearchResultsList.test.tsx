@@ -313,4 +313,38 @@ describe('SearchResultsList', () => {
         expect(link).toBeTruthy()
         expect(link.href).toStrictEqual('http://localhost/search?q=repo:test1%7Ctest2&patternType=regexp')
     })
+
+    it('shows both alerts and results if both are present', () => {
+        const resultsOrError = mockResults({ resultCount: 1, limitHit: false })
+        resultsOrError.alert = {
+            __typename: 'SearchAlert',
+            title: 'Test title',
+            description: 'Test description',
+            proposedQueries: [
+                {
+                    __typename: 'SearchQueryDescription',
+                    description: 'test',
+                    query: 'repo:test1|test2',
+                },
+            ],
+        }
+
+        const props = {
+            ...defaultProps,
+            resultsOrError,
+        }
+
+        const { container } = render(
+            <BrowserRouter>
+                <SearchResultsList {...props} />
+            </BrowserRouter>
+        )
+
+        const link = getByTestId(container, 'proposed-query-link') as HTMLAnchorElement
+        const result = getByTestId(container, 'result-container')
+
+        expect(link).toBeTruthy()
+        expect(result).toBeTruthy()
+        expect(link.compareDocumentPosition(result)).toStrictEqual(link.DOCUMENT_POSITION_FOLLOWING)
+    })
 })
