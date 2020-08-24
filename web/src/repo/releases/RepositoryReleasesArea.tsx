@@ -1,16 +1,13 @@
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import * as React from 'react'
+import React, { useMemo } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { Subscription } from 'rxjs'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { HeroPage } from '../../components/HeroPage'
 import { RepoContainerContext } from '../RepoContainer'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
-import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { RepositoryReleasesTagsPage } from './RepositoryReleasesTagsPage'
-import { ErrorMessage } from '../../components/alerts'
 import * as H from 'history'
+import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -22,13 +19,10 @@ const NotFoundPage: React.FunctionComponent = () => (
 
 interface Props
     extends RouteComponentProps<{}>,
-        Pick<RepoContainerContext, 'repo' | 'routePrefix' | 'repoHeaderContributionsLifecycleProps'> {
+        Pick<RepoContainerContext, 'repo' | 'routePrefix' | 'repoHeaderContributionsLifecycleProps'>,
+        BreadcrumbSetters {
     repo: GQL.IRepository
     history: H.History
-}
-
-interface State {
-    error?: string
 }
 
 /**
@@ -44,55 +38,40 @@ export interface RepositoryReleasesAreaPageProps {
 /**
  * Renders pages related to repository branches.
  */
-export class RepositoryReleasesArea extends React.Component<Props> {
-    public state: State = {}
+export const RepositoryReleasesArea: React.FunctionComponent<Props> = ({ useBreadcrumb, repo, routePrefix }) => {
+    useBreadcrumb(
+        useMemo(
+            () => ({
+                key: 'tags',
+                element: <RepoHeaderBreadcrumbNavItem key="tags">Tags</RepoHeaderBreadcrumbNavItem>,
+            }),
+            []
+        )
+    )
 
-    private subscriptions = new Subscription()
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+    const transferProps: { repo: GQL.IRepository } = {
+        repo,
     }
 
-    public render(): JSX.Element | null {
-        if (this.state.error) {
-            return (
-                <HeroPage
-                    icon={AlertCircleIcon}
-                    title="Error"
-                    subtitle={<ErrorMessage error={this.state.error} history={this.props.history} />}
-                />
-            )
-        }
-
-        const transferProps: { repo: GQL.IRepository } = {
-            repo: this.props.repo,
-        }
-
-        return (
-            <div className="repository-graph-area">
-                <RepoHeaderContributionPortal
-                    position="nav"
-                    element={<RepoHeaderBreadcrumbNavItem key="tags">Tags</RepoHeaderBreadcrumbNavItem>}
-                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
-                />
-                <div className="container">
-                    <div className="container-inner">
-                        <Switch>
-                            {/* eslint-disable react/jsx-no-bind */}
-                            <Route
-                                path={`${this.props.routePrefix}/-/tags`}
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                exact={true}
-                                render={routeComponentProps => (
-                                    <RepositoryReleasesTagsPage {...routeComponentProps} {...transferProps} />
-                                )}
-                            />
-                            <Route key="hardcoded-key" component={NotFoundPage} />
-                            {/* eslint-enable react/jsx-no-bind */}
-                        </Switch>
-                    </div>
+    return (
+        <div className="repository-graph-area">
+            <div className="container">
+                <div className="container-inner">
+                    <Switch>
+                        {/* eslint-disable react/jsx-no-bind */}
+                        <Route
+                            path={`${routePrefix}/-/tags`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            exact={true}
+                            render={routeComponentProps => (
+                                <RepositoryReleasesTagsPage {...routeComponentProps} {...transferProps} />
+                            )}
+                        />
+                        <Route key="hardcoded-key" component={NotFoundPage} />
+                        {/* eslint-enable react/jsx-no-bind */}
+                    </Switch>
                 </div>
             </div>
-        )
-    }
+        </div>
+    )
 }
