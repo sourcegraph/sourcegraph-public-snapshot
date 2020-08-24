@@ -377,7 +377,12 @@ func TestService(t *testing.T) {
 		// Repo of changeset2 filtered out by authzFilter
 		ct.AuthzFilterRepos(t, changeset2.RepoID)
 
-		fakeSource := &ct.FakeChangesetSource{Err: nil}
+		fakeSource := &ct.FakeChangesetSource{
+			// Metadata returned by code host doesn't matter in this test, so we
+			// return the same for both changesets.
+			FakeMetadata: changeset1.Metadata,
+			Err:          nil,
+		}
 		sourcer := repos.NewFakeSourcer(nil, fakeSource)
 
 		svc := NewService(store, nil)

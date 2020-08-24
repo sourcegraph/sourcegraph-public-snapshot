@@ -63,6 +63,19 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 	}
 
 	switch action.actionType {
+	case actionSync:
+		log15.Info("Syncing", "changeset", ch.ID)
+
+		if err := r.syncChangeset(ctx, tx, ch); err != nil {
+			return err
+		}
+
+		u, err := ch.URL()
+		if err != nil {
+			return err
+		}
+		log15.Info("Synced changeset", "url", u)
+
 	case actionPublish:
 		log15.Info("Publishing", "changeset", ch.ID)
 		if err := r.publishChangeset(ctx, tx, ch, action.spec); err != nil {
@@ -93,6 +106,16 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 
 	default:
 		return fmt.Errorf("Reconciler action %q not implemented", action.actionType)
+	}
+
+	return nil
+}
+
+func (r *reconciler) syncChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset) error {
+	rstore := repos.NewDBStore(tx.Handle().DB(), sql.TxOptions{})
+
+	if err := SyncChangesets(ctx, rstore, tx, r.sourcer, ch); err != nil {
+		return errors.Wrapf(err, "syncing changeset failed. repo=%d, externalID=%q", ch.RepoID, ch.ExternalID)
 	}
 
 	return nil
@@ -335,6 +358,7 @@ const (
 	actionNone    actionType = "none"
 	actionUpdate  actionType = "update"
 	actionPublish actionType = "publish"
+	actionSync    actionType = "sync"
 )
 
 // reconcilerAction represents the possible actions the reconciler can take for
@@ -362,8 +386,9 @@ func determineAction(ctx context.Context, tx *Store, ch *campaigns.Changeset) (r
 	// If it doesn't have a spec, it's an imported changeset and we can't do
 	// anything.
 	if ch.CurrentSpecID == 0 {
-		// TODO: This would be the place where we check whether it's fully
-		// synced, and if not, we sync it here.
+		if ch.Unsynced {
+			action.actionType = actionSync
+		}
 		return action, nil
 	}
 
