@@ -807,10 +807,7 @@ func TestConcatRevFilters(t *testing.T) {
 
 			var queriesStr []string
 			for _, q := range queries {
-				qConcat, err := concatRevFilters(q)
-				if err != nil {
-					t.Fatal(err)
-				}
+				qConcat := concatRevFilters(q)
 				queriesStr = append(queriesStr, prettyPrint(qConcat))
 			}
 			got := "(" + strings.Join(queriesStr, ") OR (") + ")"
@@ -842,31 +839,9 @@ func TestConcatRevFiltersTopLevelAnd(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
 			query, _ := ParseAndOr(c.input, SearchTypeRegex)
-			qConcat, err := concatRevFilters(query)
-			if err != nil {
-				t.Fatal(err)
-			}
+			qConcat := concatRevFilters(query)
 			if diff := cmp.Diff(c.want, prettyPrint(qConcat)); diff != "" {
 				t.Error(diff)
-			}
-		})
-	}
-}
-
-func TestConcatRevFiltersForInvalidSyntax(t *testing.T) {
-	cases := []string{
-		"repo:foo rev:a rev:b",
-		"repo:foo@a rev:b",
-	}
-	for _, c := range cases {
-		t.Run(c, func(t *testing.T) {
-			query, _ := ParseAndOr(c, SearchTypeRegex)
-			queries := dnf(query)
-			for _, q := range queries {
-				_, err := concatRevFilters(q)
-				if err == nil {
-					t.Fatal("Expected err, but got nil")
-				}
 			}
 		})
 	}

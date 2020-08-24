@@ -16,9 +16,10 @@ import {
     ProductSubscriptionNodeHeader,
     ProductSubscriptionNodeProps,
 } from '../../dotcom/productSubscriptions/ProductSubscriptionNode'
+import { UserAreaUserFields } from '../../../graphql-operations'
 
 interface Props extends RouteComponentProps<{}> {
-    user: GQL.IUser
+    user: UserAreaUserFields
 }
 
 class FilteredProductSubscriptionConnection extends FilteredConnection<

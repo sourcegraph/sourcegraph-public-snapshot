@@ -11,6 +11,7 @@ import { ExtensionAreaHeaderNavItem } from './extension/ExtensionAreaHeader'
 import { ExtensionsAreaHeader, ExtensionsAreaHeaderActionButton } from './ExtensionsAreaHeader'
 import { ThemeProps } from '../../../shared/src/theme'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { AuthenticatedUser } from '../auth'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -25,7 +26,7 @@ export interface ExtensionsAreaRouteContext
         ThemeProps,
         TelemetryProps {
     /** The currently authenticated user. */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 
     /** The subject whose extensions and configuration to display. */
     subject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
@@ -44,7 +45,7 @@ interface ExtensionsAreaProps
     /**
      * The currently authenticated user.
      */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 
     viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
     extensionAreaRoutes: readonly ExtensionAreaRoute[]

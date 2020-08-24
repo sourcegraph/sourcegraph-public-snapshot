@@ -256,20 +256,17 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                             }),
                             tap(() => {
                                 // Flipping the Campaigns feature flag
-                                // ("automation") requires a reload for the
-                                // Campaigns UI to be correctly rendered.
-                                //
-                                // This should be removed once the feature flag
-                                // is removed.
-                                const lastAutomationEnabled =
+                                // requires a reload for the
+                                // Campaigns UI to be correctly rendered in the navbar.
+                                const lastCampaignsEnabled =
                                     (lastConfiguration &&
-                                        (jsonc.parse(lastConfiguration.effectiveContents) as SiteConfiguration)
-                                            ?.experimentalFeatures?.automation) === 'enabled'
-                                const newAutomationEnabled =
-                                    (jsonc.parse(newContents) as SiteConfiguration)?.experimentalFeatures
-                                        ?.automation === 'enabled'
+                                        (jsonc.parse(lastConfiguration.effectiveContents) as SiteConfiguration)?.[
+                                            'campaigns.enabled'
+                                        ]) === true
+                                const newCampaignsEnabled =
+                                    (jsonc.parse(newContents) as SiteConfiguration)?.['campaigns.enabled'] === true
 
-                                if (lastAutomationEnabled !== newAutomationEnabled) {
+                                if (lastCampaignsEnabled !== newCampaignsEnabled) {
                                     window.location.reload()
                                 }
                             })

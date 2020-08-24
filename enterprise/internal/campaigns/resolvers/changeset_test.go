@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestChangesetResolver(t *testing.T) {
@@ -45,11 +44,7 @@ func TestChangesetResolver(t *testing.T) {
 	// PreviewRepositoryComparison uses a subset of the mocks, though.
 	baseRev := "53339e93a17b7934abf3bc4aae3565c15a0631a9"
 	headRev := "fa9e174e4847e5f551b31629542377395d6fc95a"
-	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
-		return api.CommitID(spec), nil
-	}
-	defer func() { git.Mocks.ResolveRevision = nil }()
-	// These are needed in addition for preview repository comparisons.
+	// These are needed for preview repository comparisons.
 	mockBackendCommits(t, api.CommitID(baseRev))
 	mockRepoComparison(t, baseRev, headRev, testDiff)
 
@@ -244,34 +239,6 @@ func TestChangesetResolver(t *testing.T) {
 					{Text: "cool-label", Color: "blue", Description: &labelEventDescriptionText},
 					{Text: "no-description", Color: "121212", Description: nil},
 				},
-				Head: apitest.GitRef{
-					Name:        "refs/heads/open-pr",
-					Prefix:      "refs/heads/",
-					RefType:     "GIT_BRANCH",
-					DisplayName: "open-pr",
-					AbbrevName:  "open-pr",
-					URL:         "/github.com/sourcegraph/sourcegraph@open-pr",
-					Repository:  struct{ ID string }{ID: "UmVwb3NpdG9yeTox"},
-					Target: apitest.GitTarget{
-						OID:            headRev,
-						AbbreviatedOID: headRev[:7],
-						TargetType:     "GIT_COMMIT",
-					},
-				},
-				Base: apitest.GitRef{
-					Name:        "refs/heads/master",
-					Prefix:      "refs/heads/",
-					RefType:     "GIT_BRANCH",
-					DisplayName: "master",
-					AbbrevName:  "master",
-					URL:         "/github.com/sourcegraph/sourcegraph@master",
-					Repository:  struct{ ID string }{ID: "UmVwb3NpdG9yeTox"},
-					Target: apitest.GitTarget{
-						OID:            baseRev,
-						AbbreviatedOID: baseRev[:7],
-						TargetType:     "GIT_COMMIT",
-					},
-				},
 				Diff: apitest.Comparison{
 					Typename:  "RepositoryComparison",
 					FileDiffs: testDiffGraphQL,
@@ -295,21 +262,6 @@ func TestChangesetResolver(t *testing.T) {
 }
 
 const queryChangeset = `
-fragment gitRef on GitRef {
-    name
-    abbrevName
-    displayName
-    prefix
-    type
-    repository { id }
-    url
-    target {
-        oid
-        abbreviatedOID
-        type
-    }
-}
-
 fragment fileDiffNode on FileDiff {
     oldPath
     newPath
@@ -346,9 +298,6 @@ query($changeset: ID!) {
 
       events(first: 100) { totalCount }
       labels { text, color, description }
-
-      head { ...gitRef }
-      base { ...gitRef }
 
       diff {
         __typename

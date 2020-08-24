@@ -15,6 +15,7 @@ import { RouteDescriptor } from '../../util/contributions'
 import { ErrorMessage } from '../../components/alerts'
 import { asError } from '../../../../shared/src/util/errors'
 import * as H from 'history'
+import { AuthenticatedUser } from '../../auth'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -35,7 +36,7 @@ interface Props extends RouteComponentProps<{}>, RepoHeaderContributionsLifecycl
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: RepoSettingsSideBarGroups
     repo: GQL.IRepository
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
     history: H.History
 }

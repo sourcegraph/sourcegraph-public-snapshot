@@ -103,9 +103,9 @@ export function createStep1Tooltip(
     repositoryButtonHandler: () => void
 ): HTMLElement {
     const list = document.createElement('ul')
-    list.className = 'my-4 list-group list-dashed'
+    list.className = 'my-4 list-dashed'
     const languageListItem = document.createElement('li')
-    languageListItem.className = 'list-group-item p-0 border-0 mb-2'
+    languageListItem.className = 'p-0 mb-2'
 
     const languageButton = document.createElement('button')
     languageButton.className = 'btn btn-link p-0 test-tour-language-button'
@@ -116,7 +116,7 @@ export function createStep1Tooltip(
         eventLogger.log('OnboardingTourLanguageOptionClicked')
     })
     const repositoryListItem = document.createElement('li')
-    repositoryListItem.className = 'list-group-item p-0 border-0 mb-2 test-tour-repo-button'
+    repositoryListItem.className = 'p-0 mb-2 test-tour-repo-button'
     const repositoryButton = document.createElement('button')
     repositoryButton.className = 'btn btn-link p-0'
     repositoryButton.textContent = 'Search a repository'
@@ -186,10 +186,10 @@ export function createAddCodeStepWithLanguageExampleTooltip(
     exampleCallback: (query: string, patternType: SearchPatternType) => void
 ): HTMLElement {
     const list = document.createElement('ul')
-    list.className = 'my-4 list-group list-dashed'
+    list.className = 'my-4 list-dashed'
 
     const listItem = document.createElement('li')
-    listItem.className = 'list-group-item p-0 border-0'
+    listItem.className = 'p-0'
 
     const exampleButton = document.createElement('button')
     exampleButton.className = 'btn btn-link test-tour-language-example'

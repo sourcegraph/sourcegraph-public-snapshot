@@ -16,6 +16,7 @@ import { Form } from '../../components/Form'
 import { eventLogger } from '../../tracking/eventLogger'
 import { ErrorAlert } from '../../components/alerts'
 import * as H from 'history'
+import { AuthenticatedUser } from '../../auth'
 
 function inviteUserToOrganization(
     username: string,
@@ -98,7 +99,7 @@ const InvitedNotification: React.FunctionComponent<{
 
 interface Props {
     orgID: string
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 
     /** Called when the organization members list changes. */
     onDidUpdateOrganizationMembers: () => void

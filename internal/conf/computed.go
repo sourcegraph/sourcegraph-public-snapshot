@@ -219,17 +219,11 @@ func SearchIndexEnabled() bool {
 	return DeployType() != DeploySingleDocker
 }
 
-func CampaignsReadAccessEnabled() bool {
-	if v := Get().CampaignsReadAccessEnabled; v != nil {
-		return *v
+func CampaignsEnabled() bool {
+	if enabled := Get().CampaignsEnabled; enabled != nil {
+		return *enabled
 	}
-
-	// DEPRECATED property name.
-	if v := Get().AutomationReadAccessEnabled; v != nil {
-		return *v
-	}
-
-	return false
+	return true
 }
 
 func ExternalURL() string {

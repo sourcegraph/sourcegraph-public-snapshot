@@ -20,6 +20,7 @@ import { ExtensionAreaHeader, ExtensionAreaHeaderNavItem } from './ExtensionArea
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorMessage } from '../../components/alerts'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { AuthenticatedUser } from '../../auth'
 
 export const registryExtensionFragment = gql`
     fragment RegistryExtensionFields on RegistryExtension {
@@ -93,7 +94,7 @@ export interface ExtensionAreaRouteContext
     onDidUpdateExtension: () => void
 
     /** The currently authenticated user. */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 }
 
 /**

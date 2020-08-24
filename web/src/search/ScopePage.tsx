@@ -26,6 +26,7 @@ import * as H from 'history'
 import { VersionContextProps } from '../../../shared/src/search/util'
 import { LazyMonacoQueryInput } from './input/LazyMonacoQueryInput'
 import { ThemeProps } from '../../../shared/src/theme'
+import { AuthenticatedUser } from '../auth'
 
 const ScopeNotFound: React.FunctionComponent = () => (
     <HeroPage
@@ -49,7 +50,7 @@ interface Props
         CopyQueryButtonProps,
         VersionContextProps,
         ThemeProps {
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
     onNavbarQueryChange: (queryState: QueryState) => void
     history: H.History
 

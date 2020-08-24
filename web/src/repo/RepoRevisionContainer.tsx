@@ -40,6 +40,7 @@ import * as H from 'history'
 import { VersionContextProps } from '../../../shared/src/search/util'
 import { RevisionSpec } from '../../../shared/src/util/url'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
+import { AuthenticatedUser } from '../auth'
 
 /** Props passed to sub-routes of {@link RepoRevisionContainer}. */
 export interface RepoRevisionContainerContext
@@ -89,7 +90,7 @@ interface RepoRevisionContainerProps
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     repo: GQL.IRepository
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
     routePrefix: string
 
     /**

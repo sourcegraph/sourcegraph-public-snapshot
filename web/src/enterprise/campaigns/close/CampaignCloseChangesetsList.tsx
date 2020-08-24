@@ -70,6 +70,7 @@ export const CampaignCloseChangesetsList: React.FunctionComponent<Props> = ({
                 checkState: null,
                 reviewState: null,
                 first: args.first ?? null,
+                after: args.after ?? null,
                 campaign: campaignID,
                 onlyPublishedByThisCampaign: true,
             }).pipe(repeatWhen(notifier => notifier.pipe(delay(5000)))),

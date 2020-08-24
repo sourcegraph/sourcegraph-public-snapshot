@@ -40,7 +40,7 @@ function createStructuralSearchTourTooltip(): HTMLElement {
     const list = document.createElement('ul')
     list.className = 'list-dashed mb-0'
     const listItem = document.createElement('li')
-    listItem.className = 'list-group-item p-0 border-0 my-4'
+    listItem.className = 'p-0 my-4'
     list.append(listItem)
     const exampleButton = document.createElement('a')
     exampleButton.href = 'https://docs.sourcegraph.com/user/search/structural'
