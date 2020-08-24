@@ -11,7 +11,7 @@ RUN apk --no-cache add pcre sqlite-libs
 # The comby/comby image is a small binary-only distribution. See the bin and src directories
 # here: https://github.com/comby-tools/comby/tree/master/dockerfiles/alpine
 # hadolint ignore=DL3022
-COPY --from=comby/comby:0.18.1@sha256:cb075442dbf87e2031c2d58ce18dc07cd17c018d7a18c95c6aded8a2da0361f3 /usr/local/bin/comby /usr/local/bin/comby
+COPY --from=comby/comby:0.18.2@sha256:d2cec824611999d378e4085c916d891d6158df9648446930a252f62a81e9aeba /usr/local/bin/comby /usr/local/bin/comby
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
