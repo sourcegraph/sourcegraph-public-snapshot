@@ -2379,6 +2379,14 @@
     "@reach/utils" "^0.10.2"
     tslib "^1.11.2"
 
+"@reach/auto-id@0.11.0":
+  version "0.11.0"
+  resolved "https://registry.npmjs.org/@reach/auto-id/-/auto-id-0.11.0.tgz#274251c1fbf9cd58d874cfc75fba289d1829368c"
+  integrity sha512-KwwnsnYTbTsYvRbSNqtaA1znaXP9G1I0z+bE0eFMNICvR+bHApaTu0aEEZNXfevq2LBrIMP6hZY9BokgTRcB3g==
+  dependencies:
+    "@reach/utils" "0.11.0"
+    tslib "^2.0.0"
+
 "@reach/auto-id@^0.10.1", "@reach/auto-id@^0.10.2":
   version "0.10.2"
   resolved "https://registry.npmjs.org/@reach/auto-id/-/auto-id-0.10.2.tgz#a447af67241123dcb701ecd61931a2c786ed111e"
@@ -2386,6 +2394,14 @@
   dependencies:
     "@reach/utils" "^0.10.2"
     tslib "^1.11.2"
+
+"@reach/descendants@0.11.0":
+  version "0.11.0"
+  resolved "https://registry.npmjs.org/@reach/descendants/-/descendants-0.11.0.tgz#815b094c8a43e21e462b870498d0abf87d1aee0f"
+  integrity sha512-YkkXdAwYuYXlsWEh/mvMqx+ekbOH1tqoBivLe0RxEExvdAmWnVqdT2rVNJ5FvIqWdaVZyrmjWrX2E4OSXIQEFg==
+  dependencies:
+    "@reach/utils" "0.11.0"
+    tslib "^2.0.0"
 
 "@reach/descendants@^0.10.1", "@reach/descendants@^0.10.2":
   version "0.10.2"
@@ -2416,24 +2432,35 @@
     "@xstate/fsm" "^1.4.0"
     tslib "^1.11.1"
 
-"@reach/menu-button@0.10.2":
-  version "0.10.2"
-  resolved "https://registry.npmjs.org/@reach/menu-button/-/menu-button-0.10.2.tgz#606a0aeb66421e35f2e52a21f4bb3b478af77431"
-  integrity sha512-OK/cQRPeed3xO3kyh+vZHYmOr5O12vFqgIEwtwxdyMco/p3UiiTOGHjyD+35v4YvUVyOznXDZHYGOA4JWhxAGQ==
+"@reach/menu-button@0.11.0":
+  version "0.11.0"
+  resolved "https://registry.npmjs.org/@reach/menu-button/-/menu-button-0.11.0.tgz#b0bf8fe58cde7e602c817ce709b926c35a38d770"
+  integrity sha512-0DKmN/Ze/TLdyGj9h8NdTWIDVGkPjRLYsBEib0dsZWAUoryvRZk+7Wq/W9q0vBvAvd+NP11zmlYROx8oaph6GQ==
   dependencies:
-    "@reach/auto-id" "^0.10.2"
-    "@reach/descendants" "^0.10.2"
-    "@reach/popover" "^0.10.2"
-    "@reach/utils" "^0.10.2"
+    "@reach/auto-id" "0.11.0"
+    "@reach/descendants" "0.11.0"
+    "@reach/popover" "0.11.0"
+    "@reach/utils" "0.11.0"
     prop-types "^15.7.2"
-    tslib "^1.11.2"
+    tslib "^2.0.0"
 
-"@reach/observe-rect@^1.1.0":
-  version "1.1.0"
-  resolved "https://registry.npmjs.org/@reach/observe-rect/-/observe-rect-1.1.0.tgz#4e967a93852b6004c3895d9ed8d4e5b41895afde"
-  integrity sha512-kE+jvoj/OyJV24C03VvLt5zclb9ArJi04wWXMMFwQvdZjdHoBlN4g0ZQFjyy/ejPF1Z/dpUD5dhRdBiUmIGZTA==
+"@reach/observe-rect@1.2.0", "@reach/observe-rect@^1.1.0":
+  version "1.2.0"
+  resolved "https://registry.npmjs.org/@reach/observe-rect/-/observe-rect-1.2.0.tgz#d7a6013b8aafcc64c778a0ccb83355a11204d3b2"
+  integrity sha512-Ba7HmkFgfQxZqqaeIWWkNK0rEhpxVQHIoVyW1YDSkGsGIXzcaW4deC8B0pZrNSSyLTdIk7y+5olKt5+g0GmFIQ==
 
-"@reach/popover@^0.10.1", "@reach/popover@^0.10.2":
+"@reach/popover@0.11.0":
+  version "0.11.0"
+  resolved "https://registry.npmjs.org/@reach/popover/-/popover-0.11.0.tgz#c5777547ac43a88d89019869ed3694f96d30ed39"
+  integrity sha512-WOIMdktWuOIGs4NY91ynWyFsxFfDDzObhnMV3490dWBnfuW50ysn6KUSQkoVd7QsxkV6EnifyFvth7YJqirN/w==
+  dependencies:
+    "@reach/portal" "0.11.0"
+    "@reach/rect" "0.11.0"
+    "@reach/utils" "0.11.0"
+    tabbable "^4.0.0"
+    tslib "^2.0.0"
+
+"@reach/popover@^0.10.1":
   version "0.10.2"
   resolved "https://registry.npmjs.org/@reach/popover/-/popover-0.10.2.tgz#a0a047e1253f779c27f7839dfed6d2b82ad52328"
   integrity sha512-NsRZJ1VjBOZLl4tbIAsR4CxYVsrtwYDvw11ZFqm+JszmsIMF2zT/WGnJ/dnbgUXIRg8gHs4YTwd9FvvU6iD8Bw==
@@ -2444,6 +2471,14 @@
     tabbable "^4.0.0"
     tslib "^1.11.2"
 
+"@reach/portal@0.11.0":
+  version "0.11.0"
+  resolved "https://registry.npmjs.org/@reach/portal/-/portal-0.11.0.tgz#efb664144bba5fa94de3ffecc0a2d84317321df8"
+  integrity sha512-eCZAIeD/Te29x6xeoGR8bbjlWH2cDMMC9fFH/z/ai+x2LwvHEPdyCfsklivO8Rgwup2u6ziBUtlHFEZxETWjnA==
+  dependencies:
+    "@reach/utils" "0.11.0"
+    tslib "^2.0.0"
+
 "@reach/portal@^0.10.2":
   version "0.10.2"
   resolved "https://registry.npmjs.org/@reach/portal/-/portal-0.10.2.tgz#a2b4f69eaffad0115320e303d08ea57c8942b398"
@@ -2451,6 +2486,16 @@
   dependencies:
     "@reach/utils" "^0.10.2"
     tslib "^1.11.2"
+
+"@reach/rect@0.11.0":
+  version "0.11.0"
+  resolved "https://registry.npmjs.org/@reach/rect/-/rect-0.11.0.tgz#8550378785c0dbc1d35313de4188d11718598d5b"
+  integrity sha512-67QJffkYZByMBs4BFiB5Ep++MG76Xt1/NfmE55Hjfh62rrxcYTIGTRwGnpwCHVMR0fYvmzNIC3+vSh4hJ3ocxg==
+  dependencies:
+    "@reach/observe-rect" "1.2.0"
+    "@reach/utils" "0.11.0"
+    prop-types "^15.7.2"
+    tslib "^2.0.0"
 
 "@reach/rect@^0.10.2":
   version "0.10.2"
@@ -2472,6 +2517,15 @@
     prop-types "^15.6.1"
     react-lifecycles-compat "^3.0.4"
     warning "^3.0.0"
+
+"@reach/utils@0.11.0":
+  version "0.11.0"
+  resolved "https://registry.npmjs.org/@reach/utils/-/utils-0.11.0.tgz#09ad5e1f42b498253df8a6a4c99ccd0ab2d85464"
+  integrity sha512-A7Ofr1Biq4vUeTBYhbZ/YiLq1B/lEObbEoR2UiuQqCO1r093N95hZNcKqfFwpkRScjD87uob3wSYYGxvq9y/+w==
+  dependencies:
+    "@types/warning" "^3.0.0"
+    tslib "^2.0.0"
+    warning "^4.0.3"
 
 "@reach/utils@^0.10.1", "@reach/utils@^0.10.2":
   version "0.10.2"
@@ -2688,8 +2742,7 @@
   integrity sha512-KWxkyphmlwam8kfYPSmoitKQRMGQCsr1ZRmNZgijT7ABKaVyk/+I5ezt2J213tM04Hi0vyg4L7iH1VCkNvm2Jw==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "0.0.0"
-  uid ""
+  version "2.1.0"
 
 "@sourcegraph/prettierrc@^3.0.3":
   version "3.0.3"
@@ -20918,8 +20971,7 @@ sourcegraph@^24.0.0:
   integrity sha512-PlGvkdBy5r5iHdKAVNY/jsPgWb3oY+2iAdIQ3qR83UHhvBFVgoctDAnyfJ1eMstENY3etBWtAJ8Kleoar3ecaA==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "0.0.0"
-  uid ""
+  version "24.7.0"
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
