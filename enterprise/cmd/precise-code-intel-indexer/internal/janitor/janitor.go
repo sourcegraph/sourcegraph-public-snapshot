@@ -1,7 +1,7 @@
 package janitor
 
 import (
-	"sync"
+	"context"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -13,8 +13,9 @@ type Janitor struct {
 	store           store.Store
 	janitorInterval time.Duration
 	metrics         JanitorMetrics
-	done            chan struct{}
-	once            sync.Once
+	ctx             context.Context
+	cancel          func()
+	finished        chan (struct{})
 }
 
 func New(
@@ -22,16 +23,22 @@ func New(
 	janitorInterval time.Duration,
 	metrics JanitorMetrics,
 ) *Janitor {
+	ctx, cancel := context.WithCancel(context.Background())
+
 	return &Janitor{
 		store:           store,
 		janitorInterval: janitorInterval,
 		metrics:         metrics,
-		done:            make(chan struct{}),
+		ctx:             ctx,
+		cancel:          cancel,
+		finished:        make(chan struct{}),
 	}
 }
 
 // Run periodically performs a best-effort cleanup process.
 func (j *Janitor) Run() {
+	defer close(j.finished)
+
 	for {
 		if err := j.run(); err != nil {
 			j.metrics.Errors.Inc()
@@ -40,16 +47,15 @@ func (j *Janitor) Run() {
 
 		select {
 		case <-time.After(j.janitorInterval):
-		case <-j.done:
+		case <-j.ctx.Done():
 			return
 		}
 	}
 }
 
 func (j *Janitor) Stop() {
-	j.once.Do(func() {
-		close(j.done)
-	})
+	j.cancel()
+	<-j.finished
 }
 
 func (j *Janitor) run() error {

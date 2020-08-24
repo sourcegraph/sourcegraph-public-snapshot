@@ -1,7 +1,6 @@
 package janitor
 
 import (
-	"context"
 	"io/ioutil"
 	"path/filepath"
 	"strconv"
@@ -61,7 +60,7 @@ func (j *Janitor) removeOrphans(pathsByID map[int]string, onRemove func(id int, 
 
 	states := map[int]string{}
 	for _, batch := range batchIntSlice(ids, GetStateBatchSize) {
-		batchStates, err := j.store.GetStates(context.Background(), batch)
+		batchStates, err := j.store.GetStates(j.ctx, batch)
 		if err != nil {
 			return errors.Wrap(err, "store.GetStates")
 		}

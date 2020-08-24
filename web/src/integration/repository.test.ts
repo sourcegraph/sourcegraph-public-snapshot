@@ -368,8 +368,18 @@ describe('Repository', () => {
             await driver.page.waitForSelector('.test-repo-blob')
             await driver.assertWindowLocation(`${repositorySourcegraphUrl}/-/blob/${clickedFileName}`)
 
-            // Assert that the file is loaded
-            await assertSelectorHasText('.breadcrumb .part-last', clickedFileName)
+            // Assert breadcrumb order
+            await driver.page.waitForSelector('.test-breadcrumb')
+            const breadcrumbTexts = await driver.page.evaluate(() =>
+                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
+            )
+            assert.deepStrictEqual(breadcrumbTexts, [
+                'Home',
+                'Repositories',
+                shortRepositoryName,
+                '@master',
+                clickedFileName,
+            ])
 
             // Return to repo page
             await driver.page.click('a.repo-header__repo')
@@ -383,6 +393,7 @@ describe('Repository', () => {
         })
 
         it('works with files with spaces in the name', async () => {
+            const shortRepositoryName = 'ggilmore/q-test'
             const fileName = '% token.4288249258.sql'
             const directoryName = "Geoffrey's random queries.32r242442bf"
             const filePath = path.posix.join(directoryName, fileName)
@@ -437,16 +448,11 @@ describe('Repository', () => {
             await driver.page.click('.test-tree-file-link')
             await driver.page.waitForSelector('.test-repo-blob')
 
-            assert.strictEqual(
-                await driver.page.evaluate(
-                    () => document.querySelector('.test-breadcrumb-part-directory')?.textContent
-                ),
-                directoryName
+            await driver.page.waitForSelector('.test-breadcrumb')
+            const breadcrumbTexts = await driver.page.evaluate(() =>
+                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
             )
-            assert.strictEqual(
-                await driver.page.evaluate(() => document.querySelector('.test-breadcrumb-part-last')?.textContent),
-                fileName
-            )
+            assert.deepStrictEqual(breadcrumbTexts, ['Home', 'Repositories', shortRepositoryName, '@master', filePath])
 
             // TODO, broken: https://github.com/sourcegraph/sourcegraph/issues/12296
             // await driver.page.waitForSelector('#monaco-query-input .view-lines')
