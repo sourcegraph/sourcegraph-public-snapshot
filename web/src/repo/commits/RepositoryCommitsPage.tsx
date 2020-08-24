@@ -13,6 +13,7 @@ import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { GitCommitNode, GitCommitNodeProps } from './GitCommitNode'
 import { RevisionSpec, ResolvedRevisionSpec } from '../../../../shared/src/util/url'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
+import { GitCommitFields } from '../../graphql-operations'
 
 export const gitCommitFragment = gql`
     fragment GitCommitFields on GitCommit {
@@ -54,6 +55,7 @@ export const gitCommitFragment = gql`
                 id
                 username
                 url
+                displayName
             }
         }
         date
@@ -128,7 +130,7 @@ export const RepositoryCommitsPage: React.FunctionComponent<Props> = ({ useBread
     return (
         <div className="repository-commits-page">
             <PageTitle title="Commits" />
-            <FilteredConnection<GQL.IGitCommit, Pick<GitCommitNodeProps, 'className' | 'compact'>>
+            <FilteredConnection<GitCommitFields, Pick<GitCommitNodeProps, 'className' | 'compact'>>
                 className="repository-commits-page__content"
                 listClassName="list-group list-group-flush"
                 noun="commit"

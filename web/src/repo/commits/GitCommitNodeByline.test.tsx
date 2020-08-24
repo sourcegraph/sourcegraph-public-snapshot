@@ -1,8 +1,9 @@
 import React from 'react'
 import renderer from 'react-test-renderer'
 import { GitCommitNodeByline } from './GitCommitNodeByline'
+import { SignatureFields } from '../../graphql-operations'
 
-const FIXTURE_SIGNATURE_1 = {
+const FIXTURE_SIGNATURE_1: SignatureFields = {
     date: '1990-01-01',
     person: {
         name: 'Alice Zhao',
@@ -13,7 +14,7 @@ const FIXTURE_SIGNATURE_1 = {
     },
 }
 
-const FIXTURE_SIGNATURE_2 = {
+const FIXTURE_SIGNATURE_2: SignatureFields = {
     date: '1991-01-01',
     person: {
         name: 'Bob Yang',
@@ -22,6 +23,7 @@ const FIXTURE_SIGNATURE_2 = {
         avatarURL: 'http://example.com/bob.png',
         user: {
             username: 'bYang',
+            id: 'user123',
             displayName: 'Bob Yang',
             url: 'https://example.com/bobyang',
         },
@@ -75,6 +77,7 @@ describe('GitCommitNodeByline', () => {
                                 avatarURL: 'http://example.com/github.png',
                                 user: {
                                     username: 'gitUserName',
+                                    id: 'user123',
                                     displayName: 'Alice',
                                     url: 'https://example.com',
                                 },
