@@ -883,19 +883,32 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 			if rev.RefGlob != "" || rev.ExcludeRefGlob != "" {
 				// Do not validate ref patterns. A ref pattern matching 0 refs is not necessarily
 				// invalid, so it's not clear what validation would even mean.
-			} else if isDefaultBranch := rev.RevSpec == ""; !isDefaultBranch { // skip default branch resolution to save time
-				// Validate the revspec.
+				repoRev.Revs = append(repoRev.Revs, rev)
+				continue
+			}
+			if rev.RevSpec == "" { // skip default branch resolution to save time
+				repoRev.Revs = append(repoRev.Revs, rev)
+				continue
+			}
 
-				// Do not trigger a repo-updater lookup (e.g.,
-				// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
-				// down by a lot (if we're looping over many repos). This means that it'll fail if a
-				// repo is not on gitserver.
-				//
-				// TODO(sqs): make this NOT send gitserver this revspec in EnsureRevision, to avoid
-				// searches like "repo:@foobar" (where foobar is an invalid revspec on most repos)
-				// taking a long time because they all ask gitserver to try to fetch from the remote
-				// repo.
-				if _, err := git.ResolveRevision(ctx, repoRev.GitserverRepo(), nil, rev.RevSpec, git.ResolveRevisionOptions{NoEnsureRevision: true}); gitserver.IsRevisionNotFound(err) || err == context.DeadlineExceeded {
+			// Validate the revspec.
+			// Do not trigger a repo-updater lookup (e.g.,
+			// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
+			// down by a lot (if we're looping over many repos). This means that it'll fail if a
+			// repo is not on gitserver.
+			//
+			// TODO(sqs): make this NOT send gitserver this revspec in EnsureRevision, to avoid
+			// searches like "repo:@foobar" (where foobar is an invalid revspec on most repos)
+			// taking a long time because they all ask gitserver to try to fetch from the remote
+			// repo.
+			if _, err := git.ResolveRevision(ctx, repoRev.GitserverRepo(), nil, rev.RevSpec, git.ResolveRevisionOptions{NoEnsureRevision: true}); err != nil {
+				if errors.Is(err, context.DeadlineExceeded) {
+					return nil, nil, false, nil, context.DeadlineExceeded
+				}
+				if errors.As(err, &git.BadCommitError{}) {
+					return nil, nil, false, nil, err
+				}
+				if gitserver.IsRevisionNotFound(err) {
 					// The revspec does not exist, so don't include it, and report that it's missing.
 					if rev.RevSpec == "" {
 						// Report as HEAD not "" (empty string) to avoid user confusion.
@@ -905,15 +918,13 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 						Repo: repo,
 						Revs: []search.RevisionSpecifier{{RevSpec: rev.RevSpec}},
 					})
-					continue
 				}
 				// If err != nil and is not one of the err values checked for above, cloning and other errors will be handled later, so just ignore an error
 				// if there is one.
+				continue
 			}
-
 			repoRev.Revs = append(repoRev.Revs, rev)
 		}
-
 		repoRevisions = append(repoRevisions, &repoRev)
 	}
 

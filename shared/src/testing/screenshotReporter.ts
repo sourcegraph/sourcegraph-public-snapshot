@@ -7,7 +7,7 @@ import { afterEach } from 'mocha'
  * Registers an `afterEach` hook (for use with Mocha) that takes a screenshot of
  * the browser when a test fails. It is used by e2e and integration tests.
  */
-export function saveScreenshotsUponFailures(getPage: () => puppeteer.Page): void {
+export function afterEachSaveScreenshotIfFailed(getPage: () => puppeteer.Page): void {
     afterEach('Save screenshot', async function () {
         if (this.currentTest && this.currentTest.state === 'failed') {
             await takeScreenshot({

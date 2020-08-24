@@ -2,9 +2,8 @@ import assert from 'assert'
 import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { subDays, addDays } from 'date-fns'
-import { createJsContext } from './jscontext'
 import {
     ChangesetCheckState,
     ChangesetExternalState,
@@ -45,7 +44,6 @@ const mockDiff: NonNullable<ExternalChangesetFileDiffsFields['diff']> = {
     fileDiffs: {
         nodes: [
             {
-                __typename: 'FileDiff',
                 internalID: 'intid123',
                 oldPath: '/somefile.md',
                 newPath: '/somefile.md',
@@ -287,14 +285,8 @@ describe('Campaigns', () => {
             currentTest: this.currentTest!,
             directory: __dirname,
         })
-        testContext.overrideJsContext({
-            ...createJsContext({
-                sourcegraphBaseUrl: testContext.driver.sourcegraphBaseUrl,
-            }),
-            experimentalFeatures: { automation: 'enabled' },
-        })
     })
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
     describe('Campaigns list', () => {

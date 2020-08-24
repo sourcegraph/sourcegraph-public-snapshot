@@ -60,6 +60,8 @@ import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { Settings } from './schema/settings.schema'
 import { Remote } from 'comlink'
 import { FlatExtHostAPI } from '../../shared/src/api/contract'
+import { useBreadcrumbs } from './components/Breadcrumbs'
+import { AuthenticatedUser } from './auth'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -99,7 +101,7 @@ export interface LayoutProps
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     routes: readonly LayoutRouteProps<any>[]
 
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 
     /**
      * The subject GraphQL node ID of the viewer, which is used to look up the viewer's settings. This is either
@@ -144,10 +146,17 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const hideGlobalSearchInput: boolean =
         props.location.pathname === '/stats' || props.location.pathname === '/search/query-builder'
 
+    const breadcrumbProps = useBreadcrumbs()
+
     useScrollToLocationHash(props.location)
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
         return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
+    }
+
+    const context = {
+        ...props,
+        ...breadcrumbProps,
     }
 
     return (
@@ -188,14 +197,14 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                         {/* eslint-disable react/jsx-no-bind */}
                         {props.routes.map(
                             ({ render, condition = () => true, ...route }) =>
-                                condition(props) && (
+                                condition(context) && (
                                     <Route
                                         {...route}
                                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                         component={undefined}
                                         render={routeComponentProps => (
                                             <div className="layout__app-router-container">
-                                                {render({ ...props, ...routeComponentProps })}
+                                                {render({ ...context, ...routeComponentProps })}
                                             </div>
                                         )}
                                     />

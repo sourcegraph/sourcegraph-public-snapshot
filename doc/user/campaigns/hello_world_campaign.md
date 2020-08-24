@@ -62,7 +62,7 @@ Let's see the changes that will be made. Don't worry---no commits, branches, or 
 
 1. In your terminal, run this command:
 
-    <pre><code>src campaign apply -f hello-world.campaign.yaml</code></pre>
+    <pre><code>src campaign preview -f hello-world.campaign.yaml</code></pre>
 1. Wait for it to run and compute the changes for each repository.
 1. When it's done, click the displayed link to see all of the changes that will be made.
 1. Make sure the changes look right.
@@ -82,6 +82,6 @@ You probably don't want to publish these toy "Hello World" changesets to activel
 
 You've created your first campaign! 🎉🎉
 
-You can customize your campaign spec and experiment with making other types of changes. To update your campaign, edit `hello-world.campaign.yaml` and run `src campaign apply -f hello-world.campaign.yaml -preview` again. (As before, you'll see a preview before any changes are applied.)
+You can customize your campaign spec and experiment with making other types of changes. To update your campaign, edit `hello-world.campaign.yaml` and run `src campaign preview -f hello-world.campaign.yaml` again. (As before, you'll see a preview before any changes are applied.)
 
 To learn what else you can do with campaigns, see "[Campaigns](index.md)" in Sourcegraph documentation.

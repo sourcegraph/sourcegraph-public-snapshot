@@ -19,9 +19,9 @@ import {
     SAMLAuthProvider,
     OpenIDConnectAuthProvider,
 } from '../schema/site.schema'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 
-const oktaUserAmy = 'beyang+sg-test-regression-test-amy@sourcegraph.com'
+const oktaUserAmy = 'beyang+sg-e2e-regression-test-amy@sourcegraph.com'
 
 async function testLogin(
     driver: Driver,
@@ -100,7 +100,7 @@ describe('Auth regression test suite', () => {
         await setUserSiteAdmin(gqlClient, user.id, true)
     })
 
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
 
     after(async function () {
         this.timeout(10 * 1000)
@@ -124,7 +124,7 @@ describe('Auth regression test suite', () => {
                 allowSignup: true,
             },
             loginToAuthProvider: () =>
-                loginToGitHub(driver, 'sg-test-regression-test-amy', config.gitHubUserAmyPassword),
+                loginToGitHub(driver, 'sg-e2e-regression-test-amy', config.gitHubUserAmyPassword),
         })
     })
 
@@ -139,7 +139,7 @@ describe('Auth regression test suite', () => {
                 clientSecret: config.gitLabClientSecret,
             },
             loginToAuthProvider: () =>
-                loginToGitLab(driver, 'sg-test-regression-test-amy', config.gitLabUserAmyPassword),
+                loginToGitLab(driver, 'sg-e2e-regression-test-amy', config.gitLabUserAmyPassword),
         })
     })
 

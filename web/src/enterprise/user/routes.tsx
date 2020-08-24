@@ -53,8 +53,7 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
                 <CampaignApplyPage {...props} specID={match.params.specID} />
             </div>
         ),
-        condition: ({ isSourcegraphDotCom }) =>
-            !isSourcegraphDotCom && window.context.experimentalFeatures?.automation === 'enabled',
+        condition: ({ isSourcegraphDotCom }) => !isSourcegraphDotCom && window.context.campaignsEnabled,
     },
     {
         path: '/campaigns/create',
@@ -63,8 +62,7 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
                 <CreateCampaignPage {...props} />
             </div>
         ),
-        condition: ({ isSourcegraphDotCom }) =>
-            !isSourcegraphDotCom && window.context.experimentalFeatures?.automation === 'enabled',
+        condition: ({ isSourcegraphDotCom }) => !isSourcegraphDotCom && window.context.campaignsEnabled,
     },
     {
         path: '/campaigns/:campaignID/close',
@@ -73,8 +71,7 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
                 <CampaignClosePage {...props} campaignID={match.params.campaignID} />
             </div>
         ),
-        condition: ({ isSourcegraphDotCom }) =>
-            !isSourcegraphDotCom && window.context.experimentalFeatures?.automation === 'enabled',
+        condition: ({ isSourcegraphDotCom }) => !isSourcegraphDotCom && window.context.campaignsEnabled,
     },
     {
         path: '/campaigns/:campaignID',
@@ -83,8 +80,7 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
                 <CampaignDetails {...props} campaignID={match.params.campaignID} />
             </div>
         ),
-        condition: ({ isSourcegraphDotCom }) =>
-            !isSourcegraphDotCom && window.context.experimentalFeatures?.automation === 'enabled',
+        condition: ({ isSourcegraphDotCom }) => !isSourcegraphDotCom && window.context.campaignsEnabled,
     },
     {
         path: '/campaigns',
@@ -93,7 +89,6 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
                 <UserCampaignListPage {...props} userID={props.user.id} />
             </div>
         ),
-        condition: ({ isSourcegraphDotCom }) =>
-            !isSourcegraphDotCom && window.context.experimentalFeatures?.automation === 'enabled',
+        condition: ({ isSourcegraphDotCom }) => !isSourcegraphDotCom && window.context.campaignsEnabled,
     },
 ]

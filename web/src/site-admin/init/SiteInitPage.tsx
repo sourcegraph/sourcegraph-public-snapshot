@@ -1,11 +1,11 @@
 import React from 'react'
 import { Redirect } from 'react-router'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { SignUpArgs, SignUpForm } from '../../auth/SignUpForm'
 import { submitTrialRequest } from '../../marketing/backend'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { ThemeProps } from '../../../../shared/src/theme'
 import * as H from 'history'
+import { AuthenticatedUser } from '../../auth'
 
 const initSite = async (args: SignUpArgs): Promise<void> => {
     const response = await fetch('/-/site-init', {
@@ -29,7 +29,7 @@ const initSite = async (args: SignUpArgs): Promise<void> => {
 }
 
 interface Props extends ThemeProps {
-    authenticatedUser: Pick<GQL.IUser, 'username'> | null
+    authenticatedUser: Pick<AuthenticatedUser, 'username'> | null
 
     /**
      * Whether site initialization is needed. If not set, the global value from

@@ -1,5 +1,7 @@
 # NOTE: This layer of the docker image is also used in local development as a wrapper around universal-ctags
-FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a AS ctags
+FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d AS ctags
+# hadolint ignore=DL3002
+USER root
 
 COPY ctags-install-alpine.sh /ctags-install-alpine.sh
 RUN /ctags-install-alpine.sh
@@ -8,12 +10,20 @@ RUN /ctags-install-alpine.sh
 WORKDIR /
 COPY .ctags.d /.ctags.d
 
-FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a as libsqlite3-pcre
+FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d as libsqlite3-pcre
+# hadolint ignore=DL3002
+USER root
 
 COPY libsqlite3-pcre-install-alpine.sh /libsqlite3-pcre-install-alpine.sh
 RUN /libsqlite3-pcre-install-alpine.sh
 
-FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a AS symbols
+FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d AS symbols
+
+# TODO(security): This container should not run as root!
+#
+# See https://github.com/sourcegraph/sourcegraph/issues/13237
+# hadolint ignore=DL3002
+USER root
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
