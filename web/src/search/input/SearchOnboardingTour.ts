@@ -116,7 +116,7 @@ export function createStep1Tooltip(
         eventLogger.log('OnboardingTourLanguageOptionClicked')
     })
     const repositoryListItem = document.createElement('li')
-    repositoryListItem.className = 'p-0 border-0 mb-2 test-tour-repo-button'
+    repositoryListItem.className = 'p-0 mb-2 test-tour-repo-button'
     const repositoryButton = document.createElement('button')
     repositoryButton.className = 'btn btn-link p-0 pl-1'
     repositoryButton.textContent = 'Search a repository'
