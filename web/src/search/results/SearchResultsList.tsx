@@ -357,6 +357,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     ) : (
                         (() => {
                             const results = this.props.resultsOrError
+
                             return (
                                 <>
                                     {/* Info Bar */}
@@ -375,45 +376,9 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         }
                                     />
 
-                                    {/* Results */}
-                                    <VirtualList
-                                        itemsToShow={this.state.resultsShown}
-                                        onShowMoreItems={this.onBottomHit(results.results.length)}
-                                        onVisibilityChange={this.nextItemVisibilityChange}
-                                        items={results.results
-                                            .map(result => this.renderResult(result))
-                                            .filter(isDefined)}
-                                        containment={this.scrollableElementRef || undefined}
-                                        onRef={this.nextVirtualListContainerElement}
-                                    />
-
-                                    {/*
-                                        Show more button
-
-                                        We only show this button at the bottom of the page when the
-                                        user has scrolled completely to the bottom of the virtual
-                                        list (i.e. when resultsShown is results.length).
-
-                                        Note however that when the bottom is hit, this.onBottomHit
-                                        is called to asynchronously update resultsShown to add 10
-                                        which means there is a race condition in which e.g.
-                                        results.length == 30 && resultsShown == 40 so we use >=
-                                        comparison below.
-                                    */}
-                                    {results.limitHit && this.state.resultsShown >= results.results.length && (
-                                        <button
-                                            type="button"
-                                            className="btn btn-secondary btn-block"
-                                            data-testid="search-show-more-button"
-                                            onClick={this.props.onShowMoreResultsClick}
-                                        >
-                                            Show more
-                                        </button>
-                                    )}
-
                                     {/* Server-provided help message */}
                                     {results.alert && (
-                                        <div className="alert alert-info m-2">
+                                        <div className="alert alert-info m-2" data-testid="alert-container">
                                             <h3>
                                                 <AlertCircleIcon className="icon-inline" /> {results.alert.title}
                                             </h3>
@@ -466,6 +431,42 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                         : []
                                                 )}
                                         </div>
+                                    )}
+
+                                    {/* Results */}
+                                    <VirtualList
+                                        itemsToShow={this.state.resultsShown}
+                                        onShowMoreItems={this.onBottomHit(results.results.length)}
+                                        onVisibilityChange={this.nextItemVisibilityChange}
+                                        items={results.results
+                                            .map(result => this.renderResult(result))
+                                            .filter(isDefined)}
+                                        containment={this.scrollableElementRef || undefined}
+                                        onRef={this.nextVirtualListContainerElement}
+                                    />
+
+                                    {/*
+                                        Show more button
+
+                                        We only show this button at the bottom of the page when the
+                                        user has scrolled completely to the bottom of the virtual
+                                        list (i.e. when resultsShown is results.length).
+
+                                        Note however that when the bottom is hit, this.onBottomHit
+                                        is called to asynchronously update resultsShown to add 10
+                                        which means there is a race condition in which e.g.
+                                        results.length == 30 && resultsShown == 40 so we use >=
+                                        comparison below.
+                                    */}
+                                    {results.limitHit && this.state.resultsShown >= results.results.length && (
+                                        <button
+                                            type="button"
+                                            className="btn btn-secondary btn-block"
+                                            data-testid="search-show-more-button"
+                                            onClick={this.props.onShowMoreResultsClick}
+                                        >
+                                            Show more
+                                        </button>
                                     )}
 
                                     {results.matchCount === 0 && !results.alert && (
