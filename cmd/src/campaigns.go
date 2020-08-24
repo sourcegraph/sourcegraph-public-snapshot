@@ -3,10 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io"
-	"os"
-
-	"github.com/pkg/errors"
 )
 
 var campaignsCommands commander
@@ -21,6 +17,7 @@ Usage:
 The commands are:
 
 	apply                 applies a campaign spec to create or update a campaign
+	preview               creates a campaign spec to be previewed or applied
 	repos,repositories    queries the exact repositories that a campaign spec
 	                      will apply to
 	validate              validates a campaign spec
@@ -42,16 +39,4 @@ Use "src campaigns [command] -h" for more information about a command.
 		handler:   handler,
 		usageFunc: func() { fmt.Println(usage) },
 	})
-}
-
-func campaignsOpenFileFlag(flag *string) (io.ReadCloser, error) {
-	if flag == nil || *flag == "" || *flag == "-" {
-		return os.Stdin, nil
-	}
-
-	file, err := os.Open(*flag)
-	if err != nil {
-		return nil, errors.Wrapf(err, "cannot open file %q", *flag)
-	}
-	return file, nil
 }
