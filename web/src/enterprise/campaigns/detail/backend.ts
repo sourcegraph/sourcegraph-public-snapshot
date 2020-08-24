@@ -20,6 +20,7 @@ import {
     CampaignByNamespaceResult,
     CampaignByNamespaceVariables,
 } from '../../../graphql-operations'
+import { gitCommitFragment } from '../../../repo/commits/RepositoryCommitsPage'
 
 const changesetStatsFragment = gql`
     fragment ChangesetStatsFields on ChangesetConnectionStats {
@@ -296,6 +297,12 @@ export const externalChangesetFileDiffsFields = gql`
                         ...GitRefSpecFields
                     }
                 }
+                commits {
+                    totalCount
+                    nodes {
+                        ...GitCommitFields
+                    }
+                }
                 fileDiffs(first: $first, after: $after) {
                     nodes {
                         ...FileDiffFields
@@ -325,6 +332,8 @@ export const externalChangesetFileDiffsFields = gql`
     ${fileDiffFields}
 
     ${gitRefSpecFields}
+
+    ${gitCommitFragment}
 `
 
 export const queryExternalChangesetWithFileDiffs = ({
