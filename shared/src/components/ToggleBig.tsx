@@ -27,48 +27,51 @@ interface Props {
     className?: string
 }
 
-/** A toggle switch input component.
- *
- * TODO: Make it big
- */
-export class ToggleBig extends React.PureComponent<Props> {
-    private onClick = (): void => {
-        if (!this.props.disabled && this.props.onToggle) {
-            this.props.onToggle(!this.props.value)
-        } else if (this.props.disabled && this.props.onToggleDisabled) {
-            this.props.onToggleDisabled(!!this.props.value)
+/** A big toggle switch input component. */
+export const ToggleBig: React.FunctionComponent<Props> = ({
+    disabled,
+    className,
+    id,
+    title,
+    value,
+    tabIndex,
+    onToggle,
+    onToggleDisabled,
+}) => {
+    function onClick(): void {
+        if (!disabled && onToggle) {
+            onToggle(!value)
+        } else if (disabled && onToggleDisabled) {
+            onToggleDisabled(!!value)
         }
     }
-    public render(): JSX.Element | null {
-        return (
-            <button
-                type="button"
-                className={`toggle-big ${this.props.disabled ? 'toggle-big__disabled' : ''} ${
-                    this.props.className || ''
-                }`}
-                id={this.props.id}
-                title={this.props.title}
-                value={this.props.value ? 1 : 0}
-                onClick={this.onClick}
-                tabIndex={this.props.tabIndex}
-            >
-                <span className="toggle-big__container">
-                    <span
-                        className={`toggle-big__bar ${this.props.value ? 'toggle-big__bar--active' : ''} ${
-                            this.props.disabled ? 'toggle-big__bar--disabled' : ''
-                        }`}
-                    />
-                    <span className={`toggle-big__knob ${this.props.value ? 'toggle-big__knob--active' : ''}`} />
-                    <span className={`toggle-big__text ${!this.props.value ? 'toggle-big__text--disabled' : ''}`}>
-                        {this.props.value ? 'Enabled' : 'Disabled'}
-                    </span>
-                    {this.props.value ? (
-                        <Check size={16} className="toggle-big__icon" />
-                    ) : (
-                        <Close size={16} className="toggle-big__icon toggle-big__icon--disabled" />
-                    )}
+
+    return (
+        <button
+            type="button"
+            className={`toggle-big ${disabled ? 'toggle-big__disabled' : ''} ${className || ''}`}
+            id={id}
+            title={title}
+            value={value ? 1 : 0}
+            onClick={onClick}
+            tabIndex={tabIndex}
+        >
+            <span className="toggle-big__container">
+                <span
+                    className={`toggle-big__bar ${value ? 'toggle-big__bar--active' : ''} ${
+                        disabled ? 'toggle-big__bar--disabled' : ''
+                    }`}
+                />
+                <span className={`toggle-big__knob ${value ? 'toggle-big__knob--active' : ''}`} />
+                <span className={`toggle-big__text ${!value ? 'toggle-big__text--disabled' : ''}`}>
+                    {value ? 'Enabled' : 'Disabled'}
                 </span>
-            </button>
-        )
-    }
+                {value ? (
+                    <Check size={16} className="toggle-big__icon" />
+                ) : (
+                    <Close size={16} className="toggle-big__icon toggle-big__icon--disabled" />
+                )}
+            </span>
+        </button>
+    )
 }

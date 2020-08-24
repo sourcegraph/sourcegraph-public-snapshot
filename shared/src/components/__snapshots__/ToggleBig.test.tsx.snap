@@ -1,0 +1,181 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Toggle className 1`] = `
+<button
+  className="toggle-big  c"
+  onClick={[Function]}
+  type="button"
+  value={0}
+>
+  <span
+    className="toggle-big__container"
+  >
+    <span
+      className="toggle-big__bar  "
+    />
+    <span
+      className="toggle-big__knob "
+    />
+    <span
+      className="toggle-big__text toggle-big__text--disabled"
+    >
+      Disabled
+    </span>
+    <svg
+      className="mdi-icon toggle-big__icon toggle-big__icon--disabled"
+      fill="currentColor"
+      height={16}
+      viewBox="0 0 24 24"
+      width={16}
+    >
+      <path
+        d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+      />
+    </svg>
+  </span>
+</button>
+`;
+
+exports[`Toggle disabled 1`] = `
+<button
+  className="toggle-big toggle-big__disabled "
+  onClick={[Function]}
+  type="button"
+  value={0}
+>
+  <span
+    className="toggle-big__container"
+  >
+    <span
+      className="toggle-big__bar  toggle-big__bar--disabled"
+    />
+    <span
+      className="toggle-big__knob "
+    />
+    <span
+      className="toggle-big__text toggle-big__text--disabled"
+    >
+      Disabled
+    </span>
+    <svg
+      className="mdi-icon toggle-big__icon toggle-big__icon--disabled"
+      fill="currentColor"
+      height={16}
+      viewBox="0 0 24 24"
+      width={16}
+    >
+      <path
+        d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+      />
+    </svg>
+  </span>
+</button>
+`;
+
+exports[`Toggle disabled 2`] = `
+<button
+  className="toggle-big toggle-big__disabled "
+  onClick={[Function]}
+  type="button"
+  value={0}
+>
+  <span
+    className="toggle-big__container"
+  >
+    <span
+      className="toggle-big__bar  toggle-big__bar--disabled"
+    />
+    <span
+      className="toggle-big__knob "
+    />
+    <span
+      className="toggle-big__text toggle-big__text--disabled"
+    >
+      Disabled
+    </span>
+    <svg
+      className="mdi-icon toggle-big__icon toggle-big__icon--disabled"
+      fill="currentColor"
+      height={16}
+      viewBox="0 0 24 24"
+      width={16}
+    >
+      <path
+        d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+      />
+    </svg>
+  </span>
+</button>
+`;
+
+exports[`Toggle value is false 1`] = `
+<button
+  className="toggle-big  "
+  onClick={[Function]}
+  type="button"
+  value={0}
+>
+  <span
+    className="toggle-big__container"
+  >
+    <span
+      className="toggle-big__bar  "
+    />
+    <span
+      className="toggle-big__knob "
+    />
+    <span
+      className="toggle-big__text toggle-big__text--disabled"
+    >
+      Disabled
+    </span>
+    <svg
+      className="mdi-icon toggle-big__icon toggle-big__icon--disabled"
+      fill="currentColor"
+      height={16}
+      viewBox="0 0 24 24"
+      width={16}
+    >
+      <path
+        d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+      />
+    </svg>
+  </span>
+</button>
+`;
+
+exports[`Toggle value is true 1`] = `
+<button
+  className="toggle-big  "
+  onClick={[Function]}
+  type="button"
+  value={1}
+>
+  <span
+    className="toggle-big__container"
+  >
+    <span
+      className="toggle-big__bar toggle-big__bar--active "
+    />
+    <span
+      className="toggle-big__knob toggle-big__knob--active"
+    />
+    <span
+      className="toggle-big__text "
+    >
+      Enabled
+    </span>
+    <svg
+      className="mdi-icon toggle-big__icon"
+      fill="currentColor"
+      height={16}
+      viewBox="0 0 24 24"
+      width={16}
+    >
+      <path
+        d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"
+      />
+    </svg>
+  </span>
+</button>
+`;
