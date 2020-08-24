@@ -29,6 +29,8 @@ RUN apk update && apk add --no-cache \
     # https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/postgresql.md#version-requirements
     'bash=5.0.17-r0' \
     'redis=5.0.9-r0' \
+    # Gitserver requires Git protocol v2 https://github.com/sourcegraph/sourcegraph/issues/13168
+    'git>=2.18' \
     'nginx=1.18.0-r0' openssh-client pcre sqlite-libs su-exec 'nodejs-current=14.5.0-r0'
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm
@@ -43,15 +45,6 @@ COPY --from=sourcegraph/syntect_server:ff37f90@sha256:aa93514b7bc3aaf7a4e9c92e5f
 # hadolint ignore=DL3022,DL3003,DL3018,DL3019,SC2035
 RUN wget https://storage.googleapis.com/apktmp/postgres-11-5-for-alpine-3-12-4cc8106a5e.tar.gz && \
     tar -xzf postgres-11-5-for-alpine-3-12-4cc8106a5e.tar.gz && \
-    cd target/main/x86_64/ && \
-    apk add --allow-untrusted *.apk && \
-    cd ../../../ && \
-    rm -rf target/
-
-# install git edge
-# hadolint ignore=DL3022,DL3003,DL3018,DL3019,SC2035
-RUN wget https://storage.googleapis.com/apktmp/git-edge-for-alpine-3-12-0bd5f13f2f.tar.gz  && \
-    tar -xzf git-edge-for-alpine-3-12-0bd5f13f2f.tar.gz && \
     cd target/main/x86_64/ && \
     apk add --allow-untrusted *.apk && \
     cd ../../../ && \
