@@ -392,6 +392,14 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 	}
 }
 
+func (r *searchResolver) alertForInvalidRevision(revision string) *searchAlert {
+	revision = strings.TrimSuffix(revision, "^0")
+	return &searchAlert{
+		title:       "Invalid revision syntax",
+		description: fmt.Sprintf("We don't know how to interpret the revision (%s) you specified. Modify the revision an try again.", revision),
+	}
+}
+
 func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert {
 	// Try to suggest the most helpful repo: filters to narrow the query.
 	//
