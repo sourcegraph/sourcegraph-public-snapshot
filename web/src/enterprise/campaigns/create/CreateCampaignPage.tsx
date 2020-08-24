@@ -26,7 +26,7 @@ changesetTemplate:
 
 const helloWorldDownloadUrl = 'data:text/plain;charset=utf-8,' + encodeURIComponent(campaignSpec)
 
-const sourceApplyCommand = 'src campaign apply -f hello-world.campaign.yaml -preview'
+const sourcePreviewCommand = 'src campaign preview -f hello-world.campaign.yaml'
 
 export interface CreateCampaignPageProps {
     // Nothing for now, but using it so once this changes we get type errors in the routing files.
@@ -63,7 +63,7 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
             </div>
             <p className="lead">Use Sourcegraph src-cli to apply the campaign in preview mode:</p>
             <div className="bg-light rounded p-3 mb-3">
-                <pre className="m-0">{sourceApplyCommand}</pre>
+                <pre className="m-0">{sourcePreviewCommand}</pre>
             </div>
             <p className="lead">
                 Download Sourcegraph's cli tool, src-cli at{' '}
