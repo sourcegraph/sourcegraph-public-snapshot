@@ -121,18 +121,11 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
 
     public state: State = { isOpen: false, messagesOrError: [] }
 
-    private fetchMessages: () => Observable<StatusMessagesResult['statusMessages']>
-
-    constructor(props: Props) {
-        super(props)
-        this.fetchMessages = props.fetchMessages ?? fetchAllStatusMessages
-    }
-
     private toggleIsOpen = (): void => this.setState(previousState => ({ isOpen: !previousState.isOpen }))
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            this.fetchMessages()
+            (this.props.fetchMessages ?? fetchAllStatusMessages)()
                 .pipe(
                     catchError(error => [asError(error) as ErrorLike]),
                     // Poll on REFRESH_INTERVAL_MS, or REFRESH_INTERVAL_AFTER_ERROR_MS if there is an error.
