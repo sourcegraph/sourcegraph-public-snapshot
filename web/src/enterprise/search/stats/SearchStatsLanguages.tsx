@@ -4,6 +4,7 @@ import React, { useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { numberWithCommas, pluralize } from '../../../../../shared/src/util/strings'
 import { buildSearchURLQuery } from '../../../../../shared/src/util/url'
+import { SearchPatternType } from '../../../graphql-operations'
 
 const OTHER_LANGUAGE = 'Other'
 const UNKNOWN_LANGUAGE = 'Unknown'
@@ -51,7 +52,7 @@ export const SearchStatsLanguages: React.FunctionComponent<Props> = ({ query, st
 
     const urlToSearchWithExtraQuery = useCallback(
         (extraQuery: string) =>
-            `/search?${buildSearchURLQuery(`${query} ${extraQuery}`, GQL.SearchPatternType.literal, false)}`,
+            `/search?${buildSearchURLQuery(`${query} ${extraQuery}`, SearchPatternType.literal, false)}`,
         [query]
     )
 

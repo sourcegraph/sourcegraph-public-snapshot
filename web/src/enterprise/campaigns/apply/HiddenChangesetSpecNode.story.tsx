@@ -5,8 +5,7 @@ import webStyles from '../../../enterprise.scss'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { HiddenChangesetSpecNode } from './HiddenChangesetSpecNode'
 import { addDays } from 'date-fns'
-import { ChangesetSpecType } from '../../../../../shared/src/graphql/schema'
-import { HiddenChangesetSpecFields } from '../../../graphql-operations'
+import { HiddenChangesetSpecFields, ChangesetSpecType } from '../../../graphql-operations'
 
 const { add } = storiesOf('web/campaigns/apply/HiddenChangesetSpecNode', module).addDecorator(story => {
     const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')

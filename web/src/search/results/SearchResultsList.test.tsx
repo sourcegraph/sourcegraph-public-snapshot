@@ -17,6 +17,7 @@ import {
 import { SearchResultsList, SearchResultsListProps } from './SearchResultsList'
 import { NEVER } from 'rxjs'
 import { FiltersToTypeAndValue, FilterType } from '../../../../shared/src/search/interactive/util'
+import { SearchPatternType } from '../../../../shared/src/graphql-operations'
 
 let VISIBILITY_CHANGED_CALLBACKS: ((isVisible: boolean) => void)[] = []
 
@@ -113,7 +114,7 @@ describe('SearchResultsList', () => {
         extensionsController: { executeCommand: sinon.spy(), services: extensionsController.services },
         platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER },
         telemetryService: NOOP_TELEMETRY_SERVICE,
-        patternType: GQL.SearchPatternType.regexp,
+        patternType: SearchPatternType.regexp,
         setPatternType: sinon.spy(),
         caseSensitive: false,
         setCaseSensitivity: sinon.spy(),

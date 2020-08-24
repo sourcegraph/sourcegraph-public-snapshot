@@ -5,6 +5,7 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../shared/src/util/errors'
 import { mutateGraphQL } from '../../backend/graphql'
 import { eventLogger } from '../../tracking/eventLogger'
+import { UserEvent, EventSource } from '../../../../shared/src/graphql-operations'
 
 interface UpdateUserOptions {
     username: string | null
@@ -93,7 +94,7 @@ export function setUserEmailVerified(user: GQL.ID, email: string, verified: bool
  *
  * @deprecated Use logEvent
  */
-export function logUserEvent(event: GQL.UserEvent): void {
+export function logUserEvent(event: UserEvent): void {
     mutateGraphQL(
         gql`
             mutation logUserEvent($event: UserEvent!, $userCookieID: String!) {
@@ -142,7 +143,7 @@ export function logEvent(event: string, eventProperties?: any): void {
             event,
             userCookieID: eventLogger.getAnonUserID(),
             url: window.location.href,
-            source: GQL.EventSource.WEB,
+            source: EventSource.WEB,
             argument: eventProperties && JSON.stringify(eventProperties),
         }
     )

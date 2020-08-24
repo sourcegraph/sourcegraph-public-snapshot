@@ -16,6 +16,7 @@ import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../components/alerts'
 import { Subject } from 'rxjs'
 import * as H from 'history'
+import { LSIFUploadState } from '../../../../shared/src/graphql-operations'
 
 const Header: FunctionComponent<{}> = () => (
     <thead>
@@ -94,13 +95,13 @@ const UploadNode: FunctionComponent<UploadNodeProps> = ({ node, onDelete, histor
             </td>
             <td>
                 <Link to={`./uploads/${node.id}`}>
-                    {node.state === GQL.LSIFUploadState.UPLOADING ? (
+                    {node.state === LSIFUploadState.UPLOADING ? (
                         <span>Uploading</span>
-                    ) : node.state === GQL.LSIFUploadState.PROCESSING ? (
+                    ) : node.state === LSIFUploadState.PROCESSING ? (
                         <span>Processing</span>
-                    ) : node.state === GQL.LSIFUploadState.COMPLETED ? (
+                    ) : node.state === LSIFUploadState.COMPLETED ? (
                         <span className="text-success">Completed</span>
-                    ) : node.state === GQL.LSIFUploadState.ERRORED ? (
+                    ) : node.state === LSIFUploadState.ERRORED ? (
                         <span className="text-danger">Failed to process</span>
                     ) : (
                         <span>Waiting to process (#{node.placeInQueue} in line)</span>
@@ -173,19 +174,19 @@ export const CodeIntelUploadsPage: FunctionComponent<Props> = ({
             label: 'Completed',
             id: 'completed',
             tooltip: 'Show completed uploads only',
-            args: { state: GQL.LSIFUploadState.COMPLETED },
+            args: { state: LSIFUploadState.COMPLETED },
         },
         {
             label: 'Errored',
             id: 'errored',
             tooltip: 'Show errored uploads only',
-            args: { state: GQL.LSIFUploadState.ERRORED },
+            args: { state: LSIFUploadState.ERRORED },
         },
         {
             label: 'Queued',
             id: 'queued',
             tooltip: 'Show queued uploads only',
-            args: { state: GQL.LSIFUploadState.QUEUED },
+            args: { state: LSIFUploadState.QUEUED },
         },
     ]
 

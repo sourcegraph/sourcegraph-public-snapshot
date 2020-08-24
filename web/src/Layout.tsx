@@ -62,6 +62,7 @@ import { Remote } from 'comlink'
 import { FlatExtHostAPI } from '../../shared/src/api/contract'
 import { useBreadcrumbs } from './components/Breadcrumbs'
 import { AuthenticatedUser } from './auth'
+import { SearchPatternType } from './graphql-operations'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -118,7 +119,7 @@ export interface LayoutProps
     searchRequest: (
         query: QueryState['query'],
         version: string,
-        patternType: GQL.SearchPatternType,
+        patternType: SearchPatternType,
         versionContext: string | undefined,
         extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
     ) => Observable<GQL.ISearchResults | ErrorLike>

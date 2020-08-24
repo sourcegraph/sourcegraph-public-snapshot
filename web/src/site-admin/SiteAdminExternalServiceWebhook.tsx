@@ -1,6 +1,7 @@
 import React from 'react'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { CopyableText } from '../components/CopyableText'
+import { ExternalServiceKind } from '../../../shared/src/graphql-operations'
 
 interface Props {
     externalService: Pick<GQL.IExternalService, 'kind' | 'webhookURL'>
@@ -16,7 +17,7 @@ export const SiteAdminExternalServiceWebhook: React.FunctionComponent<Props> = p
     let description = <p />
 
     switch (kind) {
-        case GQL.ExternalServiceKind.BITBUCKETSERVER:
+        case ExternalServiceKind.BITBUCKETSERVER:
             description = (
                 <p>
                     <a
@@ -42,11 +43,11 @@ export const SiteAdminExternalServiceWebhook: React.FunctionComponent<Props> = p
             )
             break
 
-        case GQL.ExternalServiceKind.GITHUB:
+        case ExternalServiceKind.GITHUB:
             description = commonDescription('github')
             break
 
-        case GQL.ExternalServiceKind.GITLAB:
+        case ExternalServiceKind.GITLAB:
             description = commonDescription('gitlab')
             break
     }
