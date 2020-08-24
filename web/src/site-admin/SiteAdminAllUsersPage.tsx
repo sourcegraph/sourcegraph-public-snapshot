@@ -19,6 +19,7 @@ import { setUserEmailVerified } from '../user/settings/backend'
 import { deleteUser, fetchAllUsers, randomizeUserPassword, setUserIsSiteAdmin } from './backend'
 import { ErrorAlert } from '../components/alerts'
 import * as H from 'history'
+import { AuthenticatedUser } from '../auth'
 
 interface UserNodeProps {
     /**
@@ -29,7 +30,7 @@ interface UserNodeProps {
     /**
      * The currently authenticated user.
      */
-    authenticatedUser: GQL.IUser
+    authenticatedUser: AuthenticatedUser
 
     /**
      * Called when the user is updated by an action in this list item.
@@ -276,7 +277,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
 }
 
 interface Props extends RouteComponentProps<{}> {
-    authenticatedUser: GQL.IUser
+    authenticatedUser: AuthenticatedUser
     history: H.History
 }
 

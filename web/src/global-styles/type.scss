@@ -44,3 +44,14 @@ sub {
 sup {
     top: -1em;
 }
+
+.font-weight-semibold {
+    font-weight: 600;
+}
+
+// Make sure text color utilities are theme-aware
+.theme-light {
+    @each $color, $value in $theme-colors-light {
+        @include text-emphasis-variant('.text-#{$color}', $value, true);
+    }
+}

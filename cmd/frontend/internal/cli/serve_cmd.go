@@ -17,6 +17,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -34,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/processrestart"
+	"github.com/sourcegraph/sourcegraph/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -202,6 +204,11 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 	// being initialized
 	if dbconn.Global == nil {
 		return errors.New("dbconn.Global is nil when trying to parse GraphQL schema")
+	}
+
+	err := secrets.Init()
+	if err != nil {
+		return err
 	}
 
 	schema, err := graphqlbackend.NewSchema(enterprise.CampaignsResolver, enterprise.CodeIntelResolver, enterprise.AuthzResolver)

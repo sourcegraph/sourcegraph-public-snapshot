@@ -87,9 +87,6 @@ func TestPeriodicGoroutineFinalizer(t *testing.T) {
 	}
 }
 
-//
-//
-
 type MockHandlerWithErrorHandler struct {
 	*MockHandler
 	*MockErrorHandler

@@ -3,16 +3,16 @@ import * as H from 'history'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { KeyboardShortcut } from '../../../shared/src/keyboardShortcuts'
 import { ThemeProps } from '../../../shared/src/theme'
 import { UserAvatar } from '../user/UserAvatar'
 import { ThemePreferenceProps, ThemePreference } from '../theme'
+import { AuthenticatedUser } from '../auth'
 
 interface Props extends ThemeProps, ThemePreferenceProps {
     location: H.Location
     authenticatedUser: Pick<
-        GQL.IUser,
+        AuthenticatedUser,
         'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session'
     >
     showDotComMarketing: boolean

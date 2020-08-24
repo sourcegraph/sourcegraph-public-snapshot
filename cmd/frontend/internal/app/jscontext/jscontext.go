@@ -79,6 +79,8 @@ type JSContext struct {
 
 	Branding *schema.Branding `json:"branding"`
 
+	CampaignsEnabled bool `json:"campaignsEnabled"`
+
 	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
 }
 
@@ -168,6 +170,8 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		Branding: conf.Branding(),
 
+		CampaignsEnabled: conf.CampaignsEnabled(),
+
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
 	}
 }
@@ -181,10 +185,9 @@ func publicSiteConfiguration() schema.SiteConfiguration {
 		updateChannel = "release"
 	}
 	return schema.SiteConfiguration{
-		AuthPublic:                 c.AuthPublic,
-		CampaignsReadAccessEnabled: c.CampaignsReadAccessEnabled,
-		PermissionsBackgroundSync:  c.PermissionsBackgroundSync,
-		UpdateChannel:              updateChannel,
+		AuthPublic:                c.AuthPublic,
+		PermissionsBackgroundSync: c.PermissionsBackgroundSync,
+		UpdateChannel:             updateChannel,
 	}
 }
 
