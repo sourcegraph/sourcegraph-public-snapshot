@@ -42,5 +42,5 @@ fi
 set -e
 echo "Waiting for $URL... done"
 
-echo '--- go test ./dev/gqltest -tags "gqltest"'
-go test ./dev/gqltest -tags "gqltest"
+echo '--- go test ./dev/gqltest -tags "gqltest" -v'
+go test ./dev/gqltest -tags "gqltest" -v

@@ -11,7 +11,7 @@ import (
 //
 // This method requires the authenticated user to be a site admin.
 func (c *Client) WaitForReposToBeCloned(repos ...string) error {
-	return Retry(30*time.Second, func() error {
+	return Retry(60*time.Second, func() error {
 		const query = `
 query Repositories {
 	repositories(first: 1000, cloned: true, notCloned: false) {
@@ -30,7 +30,7 @@ query Repositories {
 //
 // This method requires the authenticated user to be a site admin.
 func (c *Client) WaitForReposToBeIndex(repos ...string) error {
-	return Retry(300*time.Second, func() error {
+	return Retry(180*time.Second, func() error {
 		const query = `
 query Repositories {
 	repositories(first: 1000, notIndexed: false, notCloned: false) {
