@@ -67,7 +67,7 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 
 	enterpriseServices.NewCodeIntelUploadHandler = newCodeIntelUploadHandler
 
-	h, err := newInternalProxyHandler(newCodeIntelUploadHandler(false))
+	h, err := newInternalProxyHandler(newCodeIntelUploadHandler(true))
 	if err != nil {
 		return err
 	}

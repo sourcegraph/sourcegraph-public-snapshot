@@ -37,6 +37,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import { Remote } from 'comlink'
 import { FlatExtHostAPI } from '../../../../shared/src/api/contract'
 import { DeployType } from '../../jscontext'
+import { AuthenticatedUser } from '../../auth'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI' | 'services'>,
@@ -48,7 +49,7 @@ export interface SearchResultsProps
         CaseSensitivityProps,
         InteractiveSearchProps,
         VersionContextProps {
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
     navbarSearchQueryState: QueryState

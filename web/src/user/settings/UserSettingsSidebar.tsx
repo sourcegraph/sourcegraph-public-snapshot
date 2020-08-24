@@ -20,10 +20,11 @@ import { NavItemDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
 import { HAS_SEEN_TOUR_KEY, HAS_CANCELLED_TOUR_KEY } from '../../search/input/SearchOnboardingTour'
 import { OnboardingTourProps } from '../../search'
+import { AuthenticatedUser } from '../../auth'
 
 export interface UserSettingsSidebarItemConditionContext {
     user: Pick<GQL.IUser, 'id' | 'viewerCanAdminister' | 'builtinAuth'>
-    authenticatedUser: Pick<GQL.IUser, 'id' | 'siteAdmin'>
+    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'siteAdmin'>
 }
 
 export type UserSettingsSidebarItems = Record<

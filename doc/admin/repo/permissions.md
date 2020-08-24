@@ -196,7 +196,7 @@ For older versions (Sourcegraph 3.14, 3.15, and 3.16), background permissions sy
 }
 ```
 
-Benefits of backround syncing:
+Benefits of background syncing:
 
 1. More predictable load on the code host API due to maintaining a schedule of permission updates.
 1. Permissions are quickly synced for new repositories added to the Sourcegraph instance.
