@@ -1,4 +1,4 @@
-FROM sourcegraph/alpine:3.10@sha256:4d05cd5669726fc38823e92320659a6d1ef7879e62268adec5df658a0bacf65c
+FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -12,7 +12,8 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 # hadolint ignore=DL3018
 RUN apk update && apk add --no-cache \
     git \
-    tini
+    tini \
+    docker
 
 USER sourcegraph
 EXPOSE 3190

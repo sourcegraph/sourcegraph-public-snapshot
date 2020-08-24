@@ -14,6 +14,7 @@ import { EventLogger } from '../tracking/eventLogger'
 import { Services } from '../../../shared/src/api/client/services'
 import { MemoryRouter } from 'react-router'
 import webStyles from '../SourcegraphWebApp.scss'
+import { AuthenticatedUser } from '../auth'
 
 const { add } = storiesOf('web/RepogroupPage', module)
     .addParameters({
@@ -42,87 +43,27 @@ const PLATFORM_CONTEXT: ActionItemComponentProps['platformContext'] = {
     settings: NEVER,
 }
 
-const NOOP_CONFIG: GQL.IConfiguration = {
-    __typename: 'Configuration',
-    contents: '{}',
-    messages: [],
-}
-
-const NOOP_CONFIG_CASCADE: GQL.IConfigurationCascade = {
-    __typename: 'ConfigurationCascade',
-    subjects: [],
-    merged: NOOP_CONFIG,
-}
-
-const authUser = {
+const authUser: AuthenticatedUser = {
     __typename: 'User',
     id: '0',
     email: 'alice@sourcegraph.com',
     username: 'alice',
     avatarURL: null,
-    session: { __typename: 'Session', canSignOut: true },
+    session: { canSignOut: true },
     displayName: null,
     url: '',
     settingsURL: '#',
-    createdAt: '',
-    updatedAt: null,
     siteAdmin: true,
-    builtinAuth: true,
-    latestSettings: null,
-    settingsCascade: {
-        __typename: 'SettingsCascade',
-        ...NOOP_SETTINGS_CASCADE,
-        subjects: [],
-        final: '{search.repositoryGroups: "python": ["github.com/python/test"]}',
-        merged: NOOP_CONFIG,
-    },
-    configurationCascade: NOOP_CONFIG_CASCADE,
-    organizationMemberships: {
-        __typename: 'OrganizationMembershipConnection',
-        nodes: [],
-        totalCount: 0,
-    },
     organizations: {
-        __typename: 'OrgConnection',
-        totalCount: 3,
         nodes: [
             { id: '0', settingsURL: '#', displayName: 'Acme Corp' },
             { id: '1', settingsURL: '#', displayName: 'Beta Inc' },
         ] as GQL.IOrg[],
     },
     tags: [],
-    usageStatistics: {
-        __typename: 'UserUsageStatistics',
-        searchQueries: 0,
-        pageViews: 0,
-        codeIntelligenceActions: 0,
-        findReferencesActions: 0,
-        lastActiveTime: null,
-        lastActiveCodeHostIntegrationTime: null,
-    },
-    eventLogs: {
-        __typename: 'EventLogsConnection',
-        nodes: [],
-        totalCount: 0,
-        pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
-    } as GQL.IEventLogsConnection,
-    emails: [],
-    accessTokens: {} as GQL.IAccessTokenConnection,
-    externalAccounts: {} as GQL.IExternalAccountConnection,
     viewerCanAdminister: true,
-    viewerCanChangeUsername: true,
-    surveyResponses: [],
-    urlForSiteAdminBilling: null,
     databaseID: 0,
-    namespaceName: '',
-    permissionsInfo: null,
-    campaigns: {
-        __typename: 'CampaignConnection',
-        totalCount: 0,
-        pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
-        nodes: [] as GQL.ICampaign[],
-    },
-} as GQL.IUser
+}
 
 const commonProps: RepogroupPageProps = {
     settingsCascade: {
@@ -154,7 +95,6 @@ const commonProps: RepogroupPageProps = {
     keyboardShortcuts: [],
     onFiltersInQueryChange: sinon.spy(() => {}),
     setCaseSensitivity: sinon.spy(() => {}),
-    smartSearchField: true,
     splitSearchModes: true,
     telemetryService: ({
         ...NOOP_TELEMETRY_SERVICE,
@@ -176,6 +116,7 @@ const commonProps: RepogroupPageProps = {
     repogroupMetadata: python2To3Metadata,
     autoFocus: false,
     globbing: false,
+    showOnboardingTour: false,
 }
 
 add('Repogroup page with smart search field', () => (
@@ -186,6 +127,6 @@ add('Repogroup page with smart search field', () => (
 
 add('Repogroup page without smart search field', () => (
     <MemoryRouter>
-        <RepogroupPage {...commonProps} smartSearchField={false} />
+        <RepogroupPage {...commonProps} />
     </MemoryRouter>
 ))

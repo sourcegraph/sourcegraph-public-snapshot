@@ -1,4 +1,4 @@
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { testSingleFilePage } from './shared'
@@ -72,7 +72,7 @@ describe('Sourcegraph browser extension on GitHub Enterprise', () => {
     })
 
     // Take a screenshot when a test fails.
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
 
     testSingleFilePage({
         getDriver: () => driver,

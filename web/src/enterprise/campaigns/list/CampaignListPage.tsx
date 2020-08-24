@@ -13,6 +13,8 @@ import {
 } from '../../../graphql-operations'
 import { CampaignsListBetaNotice } from './CampaignsListBetaNotice'
 import { CampaignHeader } from '../detail/CampaignHeader'
+import PlusIcon from 'mdi-react/PlusIcon'
+import { Link } from '../../../../../shared/src/components/Link'
 
 interface Props extends TelemetryProps, Pick<RouteComponentProps, 'history' | 'location'> {
     displayNamespace?: boolean
@@ -46,15 +48,24 @@ const FILTERS: FilteredConnectionFilter[] = [
 export const CampaignListPage: React.FunctionComponent<Props> = ({
     queryCampaigns = _queryCampaigns,
     displayNamespace = true,
+    location,
     ...props
 }) => {
     useEffect(() => props.telemetryService.logViewEvent('CampaignsListPage'), [props.telemetryService])
     return (
         <>
-            <CampaignHeader className="mb-3" />
+            <CampaignHeader
+                className="mb-3 test-campaign-list-page"
+                actionSection={
+                    <Link to={`${location.pathname}/create`} className="btn btn-primary">
+                        <PlusIcon className="icon-inline" /> New campaign
+                    </Link>
+                }
+            />
             <CampaignsListBetaNotice />
             <FilteredConnection<ListCampaign, Omit<CampaignNodeProps, 'node'>>
                 {...props}
+                location={location}
                 nodeComponent={CampaignNode}
                 nodeComponentProps={{ history: props.history, displayNamespace }}
                 queryConnection={queryCampaigns}

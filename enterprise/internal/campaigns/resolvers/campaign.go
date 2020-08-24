@@ -133,7 +133,7 @@ func (r *campaignResolver) Changesets(
 	ctx context.Context,
 	args *graphqlbackend.ListChangesetsArgs,
 ) (graphqlbackend.ChangesetsConnectionResolver, error) {
-	opts, safe, err := listChangesetOptsFromArgs(args)
+	opts, safe, err := listChangesetOptsFromArgs(args, r.Campaign.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -149,8 +149,7 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 	ctx context.Context,
 	args *graphqlbackend.ChangesetCountsArgs,
 ) ([]graphqlbackend.ChangesetCountsResolver, error) {
-	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access changesets.
-	if err := allowReadAccess(ctx); err != nil {
+	if err := campaignsEnabled(); err != nil {
 		return nil, err
 	}
 

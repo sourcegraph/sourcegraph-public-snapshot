@@ -179,12 +179,14 @@ type ChangesetCountsArgs struct {
 }
 
 type ListChangesetsArgs struct {
-	First            *int32
-	PublicationState *campaigns.ChangesetPublicationState
-	ReconcilerState  *campaigns.ReconcilerState
-	ExternalState    *campaigns.ChangesetExternalState
-	ReviewState      *campaigns.ChangesetReviewState
-	CheckState       *campaigns.ChangesetCheckState
+	First                       *int32
+	After                       *string
+	PublicationState            *campaigns.ChangesetPublicationState
+	ReconcilerState             *campaigns.ReconcilerState
+	ExternalState               *campaigns.ChangesetExternalState
+	ReviewState                 *campaigns.ChangesetReviewState
+	CheckState                  *campaigns.ChangesetCheckState
+	OnlyPublishedByThisCampaign *bool
 }
 
 type CampaignResolver interface {
@@ -276,8 +278,6 @@ type ExternalChangesetResolver interface {
 	Events(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (ChangesetEventsConnectionResolver, error)
 	Diff(ctx context.Context) (RepositoryComparisonInterface, error)
 	DiffStat(ctx context.Context) (*DiffStat, error)
-	Head(ctx context.Context) (*GitRefResolver, error)
-	Base(ctx context.Context) (*GitRefResolver, error)
 	Labels(ctx context.Context) ([]ChangesetLabelResolver, error)
 
 	Error() *string

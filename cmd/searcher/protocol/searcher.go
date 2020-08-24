@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 // Request represents a request to searcher
@@ -43,9 +42,6 @@ type Request struct {
 	// It is parsed with time.Time.UnmarshalText.
 	Deadline string
 }
-
-// GitserverRepo returns the repository information necessary to perform gitserver requests.
-func (r Request) GitserverRepo() gitserver.Repo { return gitserver.Repo{Name: r.Repo} }
 
 // PatternInfo describes a search request on a repo. Most of the fields
 // are based on PatternInfo used in vscode.

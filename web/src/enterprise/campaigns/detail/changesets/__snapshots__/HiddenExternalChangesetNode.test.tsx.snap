@@ -51,68 +51,81 @@ exports[`HiddenExternalChangesetNode renders 1`] = `
       </div>
     </ChangesetStatusOpen>
   </ChangesetStatusCell>
-  <div
-    className="d-flex flex-column"
+  <HiddenExternalChangesetInfoCell
+    node={
+      Object {
+        "externalState": "OPEN",
+        "id": "test",
+        "nextSyncAt": "2006-01-03T22:04:05.000Z",
+        "publicationState": "PUBLISHED",
+        "reconcilerState": "COMPLETED",
+        "updatedAt": "2006-01-02T22:04:05.000Z",
+      }
+    }
   >
     <div
-      className="m-0 mb-2"
+      className="d-flex flex-column"
     >
-      <h3
-        className="m-0 d-inline"
+      <div
+        className="m-0 mb-2"
       >
-        <span
-          className="text-muted"
+        <h3
+          className="m-0 d-inline"
         >
-          Changeset in a private repository
-        </span>
-      </h3>
-    </div>
-    <div>
-      <ChangesetLastSynced
-        changeset={
-          Object {
-            "externalState": "OPEN",
-            "id": "test",
-            "nextSyncAt": "2006-01-03T22:04:05.000Z",
-            "publicationState": "PUBLISHED",
-            "reconcilerState": "COMPLETED",
-            "updatedAt": "2006-01-02T22:04:05.000Z",
-          }
-        }
-        viewerCanAdminister={false}
-      >
-        <small
-          className="text-muted"
-        >
-          Last synced 
-          less than a minute
-           ago.
-           
           <span
-            data-tooltip="Next refresh in 1 day."
+            className="text-muted"
           >
-            <Memo(InfoCircleOutlineIcon)
-              className="icon-inline"
-              onClick={[Function]}
-            >
-              <svg
-                className="mdi-icon icon-inline"
-                fill="currentColor"
-                height={24}
-                onClick={[Function]}
-                viewBox="0 0 24 24"
-                width={24}
-              >
-                <path
-                  d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z"
-                />
-              </svg>
-            </Memo(InfoCircleOutlineIcon)>
+            Changeset in a private repository
           </span>
-        </small>
-      </ChangesetLastSynced>
+        </h3>
+      </div>
+      <div>
+        <ChangesetLastSynced
+          changeset={
+            Object {
+              "externalState": "OPEN",
+              "id": "test",
+              "nextSyncAt": "2006-01-03T22:04:05.000Z",
+              "publicationState": "PUBLISHED",
+              "reconcilerState": "COMPLETED",
+              "updatedAt": "2006-01-02T22:04:05.000Z",
+            }
+          }
+          viewerCanAdminister={false}
+        >
+          <small
+            className="text-muted"
+          >
+            Last synced 
+            less than a minute
+             ago.
+             
+            <span
+              data-tooltip="Next refresh in 1 day."
+            >
+              <Memo(InfoCircleOutlineIcon)
+                className="icon-inline"
+                onClick={[Function]}
+              >
+                <svg
+                  className="mdi-icon icon-inline"
+                  fill="currentColor"
+                  height={24}
+                  onClick={[Function]}
+                  viewBox="0 0 24 24"
+                  width={24}
+                >
+                  <path
+                    d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z"
+                  />
+                </svg>
+              </Memo(InfoCircleOutlineIcon)>
+            </span>
+          </small>
+        </ChangesetLastSynced>
+      </div>
     </div>
-  </div>
+  </HiddenExternalChangesetInfoCell>
   <span />
   <span />
   <span />

@@ -56,7 +56,7 @@ window.addEventListener('DOMContentLoaded', () => {
             repoSettingsSidebarGroups={enterpriseRepoSettingsSidebarGroups}
             routes={enterpriseRoutes}
             keyboardShortcuts={KEYBOARD_SHORTCUTS}
-            showCampaigns={true}
+            showCampaigns={window.context.campaignsEnabled}
         />,
         document.querySelector('#root')
     )

@@ -31,12 +31,12 @@ func ZoektIndexServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerCPUUsage("zoekt-indexserver"),
-						sharedContainerMemoryUsage("zoekt-indexserver"),
+						sharedContainerCPUUsage("zoekt-indexserver", ObservableOwnerSearch),
+						sharedContainerMemoryUsage("zoekt-indexserver", ObservableOwnerSearch),
 					},
 					{
-						sharedContainerRestarts("zoekt-indexserver"),
-						sharedContainerFsInodes("zoekt-indexserver"),
+						sharedContainerRestarts("zoekt-indexserver", ObservableOwnerSearch),
+						sharedContainerFsInodes("zoekt-indexserver", ObservableOwnerSearch),
 					},
 					{
 						{
@@ -57,12 +57,12 @@ func ZoektIndexServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("zoekt-indexserver"),
-						sharedProvisioningMemoryUsageLongTerm("zoekt-indexserver"),
+						sharedProvisioningCPUUsageLongTerm("zoekt-indexserver", ObservableOwnerSearch),
+						sharedProvisioningMemoryUsageLongTerm("zoekt-indexserver", ObservableOwnerSearch),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("zoekt-indexserver"),
-						sharedProvisioningMemoryUsageShortTerm("zoekt-indexserver"),
+						sharedProvisioningCPUUsageShortTerm("zoekt-indexserver", ObservableOwnerSearch),
+						sharedProvisioningMemoryUsageShortTerm("zoekt-indexserver", ObservableOwnerSearch),
 					},
 				},
 			},
@@ -74,7 +74,7 @@ func ZoektIndexServer() *Container {
 						// zoekt_index_server, zoekt_web_server are deployed together
 						// as part of the indexed-search service, so only show pod
 						// availability here.
-						sharedKubernetesPodsAvailable("indexed-search"),
+						sharedKubernetesPodsAvailable("indexed-search", ObservableOwnerSearch),
 					},
 				},
 			},

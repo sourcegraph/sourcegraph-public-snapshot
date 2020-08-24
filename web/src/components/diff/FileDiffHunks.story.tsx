@@ -4,54 +4,51 @@ import React from 'react'
 import { FileDiffHunks } from './FileDiffHunks'
 import { createMemoryHistory } from 'history'
 import webStyles from '../../SourcegraphWebApp.scss'
-import { DiffHunkLineType, IFileDiffHunk } from '../../../../shared/src/graphql/schema'
+import { FileDiffHunkFields, DiffHunkLineType } from '../../graphql-operations'
 
-export const DEMO_HUNKS: IFileDiffHunk[] = [
+export const DEMO_HUNKS: FileDiffHunkFields[] = [
     {
-        __typename: 'FileDiffHunk',
-        oldRange: { __typename: 'FileDiffHunkRange', lines: 7, startLine: 3 },
-        newRange: { __typename: 'FileDiffHunkRange', lines: 7, startLine: 3 },
+        oldRange: { lines: 7, startLine: 3 },
+        newRange: { lines: 7, startLine: 3 },
         oldNoNewlineAt: false,
         section: 'func awesomeness(param string) (int, error) {',
         highlight: {
-            __typename: 'HighlightedDiffHunkBody',
             aborted: false,
             lines: [
                 {
                     kind: DiffHunkLineType.UNCHANGED,
                     html: '    v, err := makeAwesome()',
-                    __typename: 'HighlightedDiffHunkLine',
                 },
                 {
                     kind: DiffHunkLineType.UNCHANGED,
                     html: '    if err != nil {',
-                    __typename: 'HighlightedDiffHunkLine',
                 },
                 {
                     kind: DiffHunkLineType.UNCHANGED,
                     html: '        fmt.Printf("wow: %v", err)',
-                    __typename: 'HighlightedDiffHunkLine',
                 },
                 {
                     kind: DiffHunkLineType.DELETED,
                     html: '        return err',
-                    __typename: 'HighlightedDiffHunkLine',
                 },
                 {
                     kind: DiffHunkLineType.ADDED,
                     html: '        return nil, err',
-                    __typename: 'HighlightedDiffHunkLine',
                 },
-                { kind: DiffHunkLineType.UNCHANGED, html: '    }', __typename: 'HighlightedDiffHunkLine' },
+                {
+                    kind: DiffHunkLineType.UNCHANGED,
+                    html: '    }',
+                },
                 {
                     kind: DiffHunkLineType.UNCHANGED,
                     html: '    return v.Score, nil',
-                    __typename: 'HighlightedDiffHunkLine',
                 },
-                { kind: DiffHunkLineType.UNCHANGED, html: '}', __typename: 'HighlightedDiffHunkLine' },
+                {
+                    kind: DiffHunkLineType.UNCHANGED,
+                    html: '}',
+                },
             ],
         },
-        body: '',
     },
 ]
 

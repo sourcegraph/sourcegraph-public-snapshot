@@ -1,5 +1,5 @@
 import expect from 'expect'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { PhabricatorMapping } from '../browser-extension/web-extension-api/types'
@@ -169,7 +169,7 @@ describe('Sourcegraph Phabricator extension', () => {
     })
 
     // Take a screenshot when a test fails.
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
 
     it('adds "View on Sourcegraph" buttons to files', async () => {
         await driver.page.goto(

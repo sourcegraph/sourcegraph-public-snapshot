@@ -3,7 +3,18 @@
 exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
 <Fragment>
   <CampaignHeader
-    className="mb-3"
+    actionSection={
+      <AnchorLink
+        className="btn btn-primary"
+        to="//create"
+      >
+        <Memo(PlusIcon)
+          className="icon-inline"
+        />
+         New campaign
+      </AnchorLink>
+    }
+    className="mb-3 test-campaign-list-page"
   />
   <CampaignsListBetaNotice />
   <FilteredConnection
@@ -65,7 +76,18 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
 exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
 <Fragment>
   <CampaignHeader
-    className="mb-3"
+    actionSection={
+      <AnchorLink
+        className="btn btn-primary"
+        to="//create"
+      >
+        <Memo(PlusIcon)
+          className="icon-inline"
+        />
+         New campaign
+      </AnchorLink>
+    }
+    className="mb-3 test-campaign-list-page"
   />
   <CampaignsListBetaNotice />
   <FilteredConnection
@@ -127,7 +149,18 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
 exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
 <Fragment>
   <CampaignHeader
-    className="mb-3"
+    actionSection={
+      <AnchorLink
+        className="btn btn-primary"
+        to="//create"
+      >
+        <Memo(PlusIcon)
+          className="icon-inline"
+        />
+         New campaign
+      </AnchorLink>
+    }
+    className="mb-3 test-campaign-list-page"
   />
   <CampaignsListBetaNotice />
   <FilteredConnection
@@ -189,7 +222,18 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
 exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
 <Fragment>
   <CampaignHeader
-    className="mb-3"
+    actionSection={
+      <AnchorLink
+        className="btn btn-primary"
+        to="//create"
+      >
+        <Memo(PlusIcon)
+          className="icon-inline"
+        />
+         New campaign
+      </AnchorLink>
+    }
+    className="mb-3 test-campaign-list-page"
   />
   <CampaignsListBetaNotice />
   <FilteredConnection

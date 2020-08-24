@@ -34,12 +34,10 @@ add(
                 authenticatedUser={{
                     username: 'alice',
                     avatarURL: null,
-                    session: { __typename: 'Session', canSignOut: true },
+                    session: { canSignOut: true },
                     settingsURL: '#',
                     siteAdmin: true,
                     organizations: {
-                        __typename: 'OrgConnection',
-                        totalCount: 3,
                         nodes: [
                             { id: '0', settingsURL: '#', displayName: 'Acme Corp' },
                             { id: '1', settingsURL: '#', displayName: 'Beta Inc' },

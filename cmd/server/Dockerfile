@@ -1,15 +1,16 @@
-FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a as libsqlite3-pcre
+FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d as libsqlite3-pcre
 
 COPY libsqlite3-pcre-install-alpine.sh /libsqlite3-pcre-install-alpine.sh
 RUN /libsqlite3-pcre-install-alpine.sh
 
-FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a AS ctags
-
-COPY ctags-install-alpine.sh /ctags-install-alpine.sh
-RUN /ctags-install-alpine.sh
-
-# TODO: Make this image use our sourcegraph/alpine:3.10 base image
-FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a
+FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d
+# TODO(security): This container should not be running as root!
+#
+# The default user in sourcegraph/alpine is a non-root `sourcegraph` user but because old deployments
+# cannot be easily migrated we have not changed this from root -> sourcegraph. See:
+# https://github.com/sourcegraph/sourcegraph/issues/13238
+# hadolint ignore=DL3002
+USER root
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -20,35 +21,44 @@ LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
-RUN echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
-    echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
-    echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
-    echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
-    echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
-    echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
-    echo "http://dl-cdn.alpinelinux.org/alpine/v3.12/main" >> /etc/apk/repositories && \
-    echo "http://dl-cdn.alpinelinux.org/alpine/v3.12/community" >> /etc/apk/repositories
-
 # hadolint ignore=DL3018
 RUN apk update && apk add --no-cache \
     # NOTE that the Postgres version we run is different
     # from our *Minimum Supported Version* which alone dictates
     # the features we can depend on. See this link for more information:
     # https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/postgresql.md#version-requirements
-    'bash=5.0.0-r0' 'postgresql-contrib=11.7-r0' 'postgresql=11.7-r0' \
-    bind-tools ca-certificates git@edge \
-    mailcap 'nginx=1.16.1-r2' openssh-client pcre sqlite-libs su-exec tini nodejs-current=12.4.0-r0 curl
+    'bash=5.0.17-r0' \
+    'redis=5.0.9-r0' \
+    'nginx=1.18.0-r0' openssh-client pcre sqlite-libs su-exec 'nodejs-current=14.5.0-r0'
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)
 # have been appropriately set in cmd/server/shared/shared.go.
 # hadolint ignore=DL3022
-COPY --from=comby/comby:0.15.0@sha256:b3b57ed810be1489ccd1ef8fa42210d87d2d396e416c62cee345f615a0dcb09b /usr/local/bin/comby /usr/local/bin/comby
+COPY --from=comby/comby:0.18.1@sha256:cb075442dbf87e2031c2d58ce18dc07cd17c018d7a18c95c6aded8a2da0361f3 /usr/local/bin/comby /usr/local/bin/comby
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/syntect_server:ff37f90@sha256:aa93514b7bc3aaf7a4e9c92e5ff52ee5052db6fb101255a69f054e5b8cdb46ff /syntect_server /usr/local/bin/
-COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
-# hadolint ignore=DL3022
-COPY --from=redis:5-alpine@sha256:abd9d0fc18e163747253aae8d69be344c7e90d6b6d6027fa7f2f2c0e6c20b2b8 /usr/local/bin/redis-* /usr/local/bin/
+
+# install postgres 11
+# hadolint ignore=DL3022,DL3003,DL3018,DL3019,SC2035
+RUN wget https://storage.googleapis.com/apktmp/postgres-11-5-for-alpine-3-12-4cc8106a5e.tar.gz && \
+    tar -xzf postgres-11-5-for-alpine-3-12-4cc8106a5e.tar.gz && \
+    cd target/main/x86_64/ && \
+    apk add --allow-untrusted *.apk && \
+    cd ../../../ && \
+    rm -rf target/
+
+# install git edge
+# hadolint ignore=DL3022,DL3003,DL3018,DL3019,SC2035
+RUN wget https://storage.googleapis.com/apktmp/git-edge-for-alpine-3-12-0bd5f13f2f.tar.gz  && \
+    tar -xzf git-edge-for-alpine-3-12-0bd5f13f2f.tar.gz && \
+    cd target/main/x86_64/ && \
+    apk add --allow-untrusted *.apk && \
+    cd ../../../ && \
+    rm -rf target/
+
+COPY ctags-install-alpine.sh /ctags-install-alpine.sh
+RUN /ctags-install-alpine.sh
 
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/prometheus:server /bin/prom-wrapper /bin

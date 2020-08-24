@@ -3,7 +3,7 @@
 exports[`ChangesetNode renders ExternalChangeset 1`] = `
 <Fragment>
   <span
-    className="changeset-spec-node__separator"
+    className="changeset-node__separator"
   />
   <ExternalChangesetNode
     campaignUpdates="[Subject]"
@@ -23,7 +23,7 @@ exports[`ChangesetNode renders ExternalChangeset 1`] = `
 exports[`ChangesetNode renders HiddenExternalChangeset 1`] = `
 <Fragment>
   <span
-    className="changeset-spec-node__separator"
+    className="changeset-node__separator"
   />
   <HiddenExternalChangesetNode
     campaignUpdates="[Subject]"

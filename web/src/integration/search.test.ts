@@ -4,7 +4,7 @@ import { commonWebGraphQlResults } from './graphQlResults'
 import { ILanguage, IRepository } from '../../../shared/src/graphql/schema'
 import { SearchResult } from '../graphql-operations'
 import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { test } from 'mocha'
 
@@ -79,7 +79,7 @@ describe('Search', () => {
             directory: __dirname,
         })
     })
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
     describe('Interactive search mode', () => {
@@ -382,6 +382,21 @@ describe('Search', () => {
             await driver.page.waitForSelector('.test-structural-search-toggle')
             await driver.page.click('.test-structural-search-toggle')
             await driver.assertWindowLocation('/search?q=test&patternType=literal')
+        })
+    })
+
+    describe('Search button', () => {
+        test('Clicking search button executes search', async () => {
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
+                Search: searchResults,
+            })
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            await driver.page.waitForSelector('.test-search-button', { visible: true })
+            await driver.page.keyboard.type(' hello')
+            await driver.page.click('.test-search-button')
+            await driver.assertWindowLocation('/search?q=test+hello&patternType=regexp')
         })
     })
 })

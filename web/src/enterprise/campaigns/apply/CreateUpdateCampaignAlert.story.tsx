@@ -19,8 +19,6 @@ const { add } = storiesOf('web/campaigns/apply/CreateUpdateCampaignAlert', modul
     )
 })
 
-const setIsLoadingStub = () => undefined
-
 add('Create', () => {
     const history = H.createMemoryHistory()
     return (
@@ -28,8 +26,6 @@ add('Create', () => {
             specID="123"
             campaign={null}
             history={history}
-            isLoading={false}
-            setIsLoading={setIsLoadingStub}
             viewerCanAdminister={boolean('viewerCanAdminister', true)}
         />
     )
@@ -41,8 +37,6 @@ add('Update', () => {
             specID="123"
             campaign={{ id: '123', name: 'awesome-campaign', url: 'http://test.test/awesome' }}
             history={history}
-            isLoading={false}
-            setIsLoading={setIsLoadingStub}
             viewerCanAdminister={boolean('viewerCanAdminister', true)}
         />
     )

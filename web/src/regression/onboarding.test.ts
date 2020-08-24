@@ -18,7 +18,7 @@ import { retry } from '../../../shared/src/testing/utils'
 import { ScreenshotVerifier } from './util/ScreenshotVerifier'
 import { TestResourceManager } from './util/TestResourceManager'
 import delay from 'delay'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 
 const activationNavBarSelector = '.test-activation-nav-item-toggle'
 
@@ -93,7 +93,7 @@ describe('Onboarding', () => {
         )
     })
 
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
 
     after(async () => {
         if (!config.noCleanup) {

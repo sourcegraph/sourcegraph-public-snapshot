@@ -62,12 +62,12 @@ func SyntectServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerCPUUsage("syntect-server"),
-						sharedContainerMemoryUsage("syntect-server"),
+						sharedContainerCPUUsage("syntect-server", ObservableOwnerCodeIntel),
+						sharedContainerMemoryUsage("syntect-server", ObservableOwnerCodeIntel),
 					},
 					{
-						sharedContainerRestarts("syntect-server"),
-						sharedContainerFsInodes("syntect-server"),
+						sharedContainerRestarts("syntect-server", ObservableOwnerCodeIntel),
+						sharedContainerFsInodes("syntect-server", ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -76,12 +76,12 @@ func SyntectServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("syntect-server"),
-						sharedProvisioningMemoryUsageLongTerm("syntect-server"),
+						sharedProvisioningCPUUsageLongTerm("syntect-server", ObservableOwnerCodeIntel),
+						sharedProvisioningMemoryUsageLongTerm("syntect-server", ObservableOwnerCodeIntel),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("syntect-server"),
-						sharedProvisioningMemoryUsageShortTerm("syntect-server"),
+						sharedProvisioningCPUUsageShortTerm("syntect-server", ObservableOwnerCodeIntel),
+						sharedProvisioningMemoryUsageShortTerm("syntect-server", ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -90,7 +90,7 @@ func SyntectServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedKubernetesPodsAvailable("syntect-server"),
+						sharedKubernetesPodsAvailable("syntect-server", ObservableOwnerCodeIntel),
 					},
 				},
 			},

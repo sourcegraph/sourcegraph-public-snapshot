@@ -39,7 +39,6 @@ export const fileDiffHunkFields = gql`
 
 export const fileDiffFields = gql`
     fragment FileDiffFields on FileDiff {
-        __typename
         oldPath
         oldFile {
             __typename

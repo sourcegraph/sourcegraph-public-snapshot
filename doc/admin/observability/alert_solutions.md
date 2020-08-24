@@ -728,7 +728,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _frontend: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+- _frontend: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
 
 **Possible solutions:**
 
@@ -1068,7 +1068,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _gitserver: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+- _gitserver: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
 
 **Possible solutions:**
 
@@ -1284,7 +1284,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _github-proxy: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+- _github-proxy: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
 
 **Possible solutions:**
 
@@ -1687,7 +1687,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+- _precise-code-intel-bundle-manager: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
 
 **Possible solutions:**
 
@@ -2102,7 +2102,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+- _precise-code-intel-worker: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
 
 **Possible solutions:**
 
@@ -2549,7 +2549,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+- _precise-code-intel-indexer: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
 
 **Possible solutions:**
 
@@ -2772,7 +2772,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _query-runner: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+- _query-runner: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
 
 **Possible solutions:**
 
@@ -2995,7 +2995,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+- _repo-updater: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
 
 **Possible solutions:**
 
@@ -3250,7 +3250,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _searcher: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+- _searcher: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
 
 **Possible solutions:**
 
@@ -3505,7 +3505,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _symbols: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+- _symbols: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
 
 **Possible solutions:**
 
@@ -3769,7 +3769,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _syntect-server: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+- _syntect-server: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
 
 **Possible solutions:**
 
@@ -3972,7 +3972,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _zoekt-indexserver: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+- _zoekt-indexserver: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
 
 **Possible solutions:**
 
@@ -4172,7 +4172,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _zoekt-webserver: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+- _zoekt-webserver: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
 
 **Possible solutions:**
 
@@ -4357,7 +4357,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _prometheus: 90%+ container cpu usage total (5m maximum) across all cores by instance_
+- _prometheus: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
 
 **Possible solutions:**
 

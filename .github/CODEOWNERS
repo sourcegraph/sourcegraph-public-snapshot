@@ -26,7 +26,7 @@
 /cmd/frontend/internal/app/pkg @slimsag
 /cmd/frontend/internal/app/router @slimsag
 /cmd/frontend/internal/app/errorutil @slimsag
-/cmd/frontend/internal/goroutine @slimsag
+/cmd/frontend/internal/goroutine @slimsag @efritz
 /cmd/frontend/internal/inventory @slimsag
 /cmd/frontend/internal/cli/middleware @beyang @slimsag
 /cmd/frontend/internal/cli @slimsag
@@ -146,6 +146,7 @@
 /enterprise/cmd/frontend/internal/campaigns @sourcegraph/campaigns
 /internal/campaigns @sourcegraph/campaigns
 /web/**/campaigns/** @sourcegraph/campaigns
+/web/src/integration/campaigns.test.ts @sourcegraph/campaigns
 
 # Search
 */search/**/* @sourcegraph/search

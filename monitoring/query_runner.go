@@ -10,7 +10,7 @@ func QueryRunner() *Container {
 				Title: "General",
 				Rows: []Row{
 					{
-						sharedFrontendInternalAPIErrorResponses("query-runner"),
+						sharedFrontendInternalAPIErrorResponses("query-runner", ObservableOwnerSearch),
 					},
 				},
 			},
@@ -19,12 +19,12 @@ func QueryRunner() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerMemoryUsage("query-runner"),
-						sharedContainerCPUUsage("query-runner"),
+						sharedContainerMemoryUsage("query-runner", ObservableOwnerSearch),
+						sharedContainerCPUUsage("query-runner", ObservableOwnerSearch),
 					},
 					{
-						sharedContainerRestarts("query-runner"),
-						sharedContainerFsInodes("query-runner"),
+						sharedContainerRestarts("query-runner", ObservableOwnerSearch),
+						sharedContainerFsInodes("query-runner", ObservableOwnerSearch),
 					},
 				},
 			},
@@ -33,12 +33,12 @@ func QueryRunner() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("query-runner"),
-						sharedProvisioningMemoryUsageLongTerm("query-runner"),
+						sharedProvisioningCPUUsageLongTerm("query-runner", ObservableOwnerSearch),
+						sharedProvisioningMemoryUsageLongTerm("query-runner", ObservableOwnerSearch),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("query-runner"),
-						sharedProvisioningMemoryUsageShortTerm("query-runner"),
+						sharedProvisioningCPUUsageShortTerm("query-runner", ObservableOwnerSearch),
+						sharedProvisioningMemoryUsageShortTerm("query-runner", ObservableOwnerSearch),
 					},
 				},
 			},
@@ -47,8 +47,8 @@ func QueryRunner() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedGoGoroutines("query-runner"),
-						sharedGoGcDuration("query-runner"),
+						sharedGoGoroutines("query-runner", ObservableOwnerSearch),
+						sharedGoGcDuration("query-runner", ObservableOwnerSearch),
 					},
 				},
 			},
@@ -57,7 +57,7 @@ func QueryRunner() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedKubernetesPodsAvailable("query-runner"),
+						sharedKubernetesPodsAvailable("query-runner", ObservableOwnerSearch),
 					},
 				},
 			},

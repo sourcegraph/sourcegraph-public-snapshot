@@ -43,14 +43,9 @@ go generate ./migrations/
 go generate ./internal/db/
 ```
 
-Verify that the migration is backward-compatible with the following command. This check will determine the
-version of the code that is running on sourcegraph.com, then run those unit tests against the new schema.
-This helps to ensure that during a rolling upgrade from the current version to this version will not fail
-on any of the running instances until the rolling update is complete.
-
-```
-dev/ci/ci-db-backcompat.sh  # NOTE: this checks out a different git revision, so make sure the work tree is clean before running
-```
+Verify that the migration is backward-compatible. We currently have no automated testing for this. You need
+to ensure that an old version of Sourcegraph, like what is currently deployed on Sourcegraph.com, can continue
+to use the DB during a rolling upgrade from the old version to your version.
 
 Some migrations are difficult to do in a single step. For instance, renaming a column, table, or view, or
 adding a column with a non-nullable constraint will all break existing code that accesses that table or view.

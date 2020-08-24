@@ -1,6 +1,5 @@
 import * as readline from 'readline'
-import { readFile, writeFile } from 'mz/fs'
-import mkdirp from 'mkdirp-promise'
+import { readFile, writeFile, mkdir } from 'mz/fs'
 import * as path from 'path'
 
 export async function readLine(prompt: string, cacheFile?: string): Promise<string> {
@@ -12,7 +11,7 @@ export async function readLine(prompt: string, cacheFile?: string): Promise<stri
         return await readFile(cacheFile, { encoding: 'utf8' })
     } catch {
         const userInput = await readLineNoCache(prompt)
-        await mkdirp(path.dirname(cacheFile))
+        await mkdir(path.dirname(cacheFile), { recursive: true })
         await writeFile(cacheFile, userInput)
         return userInput
     }

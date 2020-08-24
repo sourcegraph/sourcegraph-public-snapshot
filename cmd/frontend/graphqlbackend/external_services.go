@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -25,25 +26,63 @@ import (
 
 var extsvcConfigAllowEdits, _ = strconv.ParseBool(env.Get("EXTSVC_CONFIG_ALLOW_EDITS", "false", "When EXTSVC_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
 
-func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
-	Input struct {
-		Kind        string
-		DisplayName string
-		Config      string
-	}
-}) (*externalServiceResolver, error) {
-	// 🚨 SECURITY: Only site admins may add external services.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
+type addExternalServiceArgs struct {
+	Input addExternalServiceInput
+}
+
+type addExternalServiceInput struct {
+	Kind        string
+	DisplayName string
+	Config      string
+	Namespace   *graphql.ID
+}
+
+func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExternalServiceArgs) (*externalServiceResolver, error) {
 	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
+	}
+
+	// 🚨 SECURITY: Only site admins may add external services if user mode is disabled.
+	namespaceUserID := int32(0)
+	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
+	allowUserExternalServices := conf.ExternalServiceUserMode()
+	if !allowUserExternalServices {
+		// The user may have a tag that opts them in
+		err := backend.CheckActorHasTag(ctx, backend.TagAllowUserExternalServicePublic)
+		allowUserExternalServices = err == nil
+	}
+	if args.Input.Namespace != nil {
+		if !allowUserExternalServices {
+			return nil, errors.New("allow users to add external services is not enabled")
+		}
+
+		var err error
+		switch relay.UnmarshalKind(*args.Input.Namespace) {
+		case "User":
+			err = relay.UnmarshalSpec(*args.Input.Namespace, &namespaceUserID)
+		default:
+			err = errors.Errorf("invalid namespace %q", *args.Input.Namespace)
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		if namespaceUserID != actor.FromContext(ctx).UID {
+			return nil, errors.New("the namespace is not same as the authenticated user")
+		}
+
+	} else if !isSiteAdmin {
+		return nil, backend.ErrMustBeSiteAdmin
 	}
 
 	externalService := &types.ExternalService{
 		Kind:        args.Input.Kind,
 		DisplayName: args.Input.DisplayName,
 		Config:      args.Input.Config,
+	}
+	if namespaceUserID > 0 {
+		externalService.NamespaceUserID = &namespaceUserID
 	}
 
 	if err := db.ExternalServices.Create(ctx, conf.Get, externalService); err != nil {
@@ -58,31 +97,43 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 	return res, nil
 }
 
-type UpdateExternalServiceInput struct {
+type updateExternalServiceArgs struct {
+	Input updateExternalServiceInput
+}
+
+type updateExternalServiceInput struct {
 	ID          graphql.ID
 	DisplayName *string
 	Config      *string
 }
 
-func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
-	Input UpdateExternalServiceInput
-}) (*externalServiceResolver, error) {
-	// 🚨 SECURITY: Only site admins are allowed to update the user.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
-	externalServiceID, err := unmarshalExternalServiceID(args.Input.ID)
-	if err != nil {
-		return nil, err
-	}
-
+func (*schemaResolver) UpdateExternalService(ctx context.Context, args *updateExternalServiceArgs) (*externalServiceResolver, error) {
 	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("updating external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 
+	id, err := unmarshalExternalServiceID(args.Input.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	es, err := db.ExternalServices.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Only site admins may update all or a user's external services.
+	// Otherwise, the authenticated user can only update external services under the same namespace.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		if es.NamespaceUserID == nil {
+			return nil, err
+		} else if actor.FromContext(ctx).UID != *es.NamespaceUserID {
+			return nil, errors.New("the authenticated user does not have access to this external service")
+		}
+	}
+
 	if args.Input.Config != nil && strings.TrimSpace(*args.Input.Config) == "" {
-		return nil, fmt.Errorf("blank external service configuration is invalid (must be valid JSONC)")
+		return nil, errors.New("blank external service configuration is invalid (must be valid JSONC)")
 	}
 
 	ps := conf.Get().AuthProviders
@@ -90,17 +141,18 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 		DisplayName: args.Input.DisplayName,
 		Config:      args.Input.Config,
 	}
-	if err := db.ExternalServices.Update(ctx, ps, externalServiceID, update); err != nil {
+	if err := db.ExternalServices.Update(ctx, ps, id, update); err != nil {
 		return nil, err
 	}
 
-	externalService, err := db.ExternalServices.GetByID(ctx, externalServiceID)
+	// Fetch from database again to get all fields with updated values.
+	es, err = db.ExternalServices.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	res := &externalServiceResolver{externalService: externalService}
-	if err = syncExternalService(ctx, externalService); err != nil {
+	res := &externalServiceResolver{externalService: es}
+	if err = syncExternalService(ctx, es); err != nil {
 		res.warning = fmt.Sprintf("External service updated, but we encountered a problem while validating the external service: %s", err)
 	}
 
@@ -133,13 +185,11 @@ func syncExternalService(ctx context.Context, svc *types.ExternalService) error 
 	return nil
 }
 
-func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
+type deleteExternalServiceArgs struct {
 	ExternalService graphql.ID
-}) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins can delete external services.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
+}
+
+func (*schemaResolver) DeleteExternalService(ctx context.Context, args *deleteExternalServiceArgs) (*EmptyResponse, error) {
 	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("deleting external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
@@ -149,21 +199,31 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	externalService, err := db.ExternalServices.GetByID(ctx, id)
+	es, err := db.ExternalServices.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
+	}
+
+	// 🚨 SECURITY: Only site admins may delete all or a user's external services.
+	// Otherwise, the authenticated user can only delete external services under the same namespace.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		if es.NamespaceUserID == nil {
+			return nil, err
+		} else if actor.FromContext(ctx).UID != *es.NamespaceUserID {
+			return nil, errors.New("the authenticated user does not have access to this external service")
+		}
 	}
 
 	if err := db.ExternalServices.Delete(ctx, id); err != nil {
 		return nil, err
 	}
 	now := time.Now()
-	externalService.DeletedAt = &now
+	es.DeletedAt = &now
 
 	// The user doesn't care if triggering syncing failed when deleting a
 	// service, so kick off in the background.
 	go func() {
-		_ = syncExternalService(context.Background(), externalService)
+		_ = syncExternalService(context.Background(), es)
 	}()
 
 	return &EmptyResponse{}, nil

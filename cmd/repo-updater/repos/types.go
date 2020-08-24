@@ -840,6 +840,18 @@ func (rs Repos) ExternalRepos() []api.ExternalRepoSpec {
 	return specs
 }
 
+// Sources returns a map of all the sources per repo id.
+func (rs Repos) Sources() map[api.RepoID][]SourceInfo {
+	sources := make(map[api.RepoID][]SourceInfo)
+	for i := range rs {
+		for _, info := range rs[i].Sources {
+			sources[rs[i].ID] = append(sources[rs[i].ID], *info)
+		}
+	}
+
+	return sources
+}
+
 func (rs Repos) Len() int {
 	return len(rs)
 }
@@ -965,53 +977,69 @@ type externalServiceLister interface {
 	ListExternalServices(context.Context, StoreListExternalServicesArgs) ([]*ExternalService, error)
 }
 
+// RateLimitSyncer syncs rate limits based on external service configuration
+type RateLimitSyncer struct {
+	registry      *ratelimit.Registry
+	serviceLister externalServiceLister
+	// How many services to fetch in each DB call
+	limit int64
+}
+
 // NewRateLimitSyncer returns a new syncer
 func NewRateLimitSyncer(registry *ratelimit.Registry, serviceLister externalServiceLister) *RateLimitSyncer {
 	r := &RateLimitSyncer{
 		registry:      registry,
 		serviceLister: serviceLister,
+		limit:         500,
 	}
 	return r
-}
-
-// RateLimitSyncer syncs rate limits based on external service configuration
-type RateLimitSyncer struct {
-	registry      *ratelimit.Registry
-	serviceLister externalServiceLister
 }
 
 // SyncRateLimiters syncs all rate limiters using current config.
 // We sync them all as we need to pick the most restrictive configured limit per code host
 // and rate limits can be defined in multiple external services for the same host.
 func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context) error {
-	services, err := r.serviceLister.ListExternalServices(ctx, StoreListExternalServicesArgs{})
-	if err != nil {
-		return errors.Wrap(err, "listing external services")
-	}
+	var cursor int64
+	byURL := make(map[string]extsvc.RateLimitConfig)
 
-	var limits []extsvc.RateLimitConfig
-	for _, svc := range services {
-		rlc, err := extsvc.ExtractRateLimitConfig(svc.Config, svc.Kind, svc.DisplayName)
+	for {
+		services, err := r.serviceLister.ListExternalServices(ctx, StoreListExternalServicesArgs{
+			Cursor: cursor,
+			Limit:  r.limit,
+		})
 		if err != nil {
-			if _, ok := err.(extsvc.ErrRateLimitUnsupported); ok {
+			return errors.Wrap(err, "listing external services")
+		}
+
+		if len(services) == 0 {
+			break
+		}
+
+		cursor = services[len(services)-1].ID
+
+		for _, svc := range services {
+			rlc, err := extsvc.ExtractRateLimitConfig(svc.Config, svc.Kind, svc.DisplayName)
+			if err != nil {
+				if _, ok := err.(extsvc.ErrRateLimitUnsupported); ok {
+					continue
+				}
+				return errors.Wrap(err, "getting rate limit configuration")
+			}
+
+			current, ok := byURL[rlc.BaseURL]
+			if !ok || (ok && current.IsDefault) {
+				byURL[rlc.BaseURL] = rlc
 				continue
 			}
-			return errors.Wrap(err, "getting rate limit configuration")
+			// Use the lower limit, but a default value should not override
+			// a limit that has been configured
+			if rlc.Limit < current.Limit && !rlc.IsDefault {
+				byURL[rlc.BaseURL] = rlc
+			}
 		}
-		limits = append(limits, rlc)
-	}
 
-	byURL := make(map[string]extsvc.RateLimitConfig)
-	for _, rlc := range limits {
-		current, ok := byURL[rlc.BaseURL]
-		if !ok || (ok && current.IsDefault) {
-			byURL[rlc.BaseURL] = rlc
-			continue
-		}
-		// Use the lower limit, but a default value should not override
-		// a limit that has been configured
-		if rlc.Limit < current.Limit && !rlc.IsDefault {
-			byURL[rlc.BaseURL] = rlc
+		if len(services) < int(r.limit) {
+			break
 		}
 	}
 

@@ -72,7 +72,7 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
                         <SourceBranchIcon className="icon-inline text-muted mr-1" /> Changesets
                     </a>
                 </li>
-                <li className="nav-item">
+                <li className="nav-item test-campaigns-chart-tab">
                     <a
                         href=""
                         onClick={onSelectChart}

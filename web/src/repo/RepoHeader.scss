@@ -1,13 +1,9 @@
-@import '../components/Breadcrumb';
-@import './actions/CopyLinkAction';
 @import './RepositoriesPopover';
 @import './RepoHeaderBreadcrumbNavItem';
 
 .repo-header {
     flex: none;
-    padding-top: 0;
-    padding-bottom: 0;
-    padding-right: 0;
+    padding: 0;
     align-items: stretch;
     border-style: solid;
     border-width: 0 0 1px;
@@ -51,10 +47,6 @@
         }
     }
 
-    &__repo-basename {
-        font-weight: bold;
-    }
-
     &__alert {
         margin: 0 0.25rem;
         padding: 0.125rem 0.25rem;
@@ -70,8 +62,11 @@
     .copy-link-action {
         opacity: 0;
     }
-    &:hover .copy-link-action {
-        opacity: 1;
+    &:hover,
+    &:focus-within {
+        .copy-link-action {
+            opacity: 1;
+        }
     }
 
     &__spacer {

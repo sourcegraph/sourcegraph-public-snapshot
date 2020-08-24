@@ -992,5 +992,7 @@ func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	query = concatRevFilters(query)
+
 	return &AndOrQuery{Query: query}, nil
 }

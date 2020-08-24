@@ -34,12 +34,12 @@ func ZoektWebServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerCPUUsage("zoekt-webserver"),
-						sharedContainerMemoryUsage("zoekt-webserver"),
+						sharedContainerCPUUsage("zoekt-webserver", ObservableOwnerSearch),
+						sharedContainerMemoryUsage("zoekt-webserver", ObservableOwnerSearch),
 					},
 					{
-						sharedContainerRestarts("zoekt-webserver"),
-						sharedContainerFsInodes("zoekt-webserver"),
+						sharedContainerRestarts("zoekt-webserver", ObservableOwnerSearch),
+						sharedContainerFsInodes("zoekt-webserver", ObservableOwnerSearch),
 					},
 					{
 						{
@@ -60,12 +60,12 @@ func ZoektWebServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("zoekt-webserver"),
-						sharedProvisioningMemoryUsageLongTerm("zoekt-webserver"),
+						sharedProvisioningCPUUsageLongTerm("zoekt-webserver", ObservableOwnerSearch),
+						sharedProvisioningMemoryUsageLongTerm("zoekt-webserver", ObservableOwnerSearch),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("zoekt-webserver"),
-						sharedProvisioningMemoryUsageShortTerm("zoekt-webserver"),
+						sharedProvisioningCPUUsageShortTerm("zoekt-webserver", ObservableOwnerSearch),
+						sharedProvisioningMemoryUsageShortTerm("zoekt-webserver", ObservableOwnerSearch),
 					},
 				},
 			},
