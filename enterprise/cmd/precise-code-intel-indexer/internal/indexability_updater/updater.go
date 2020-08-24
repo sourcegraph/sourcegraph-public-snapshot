@@ -2,7 +2,6 @@ package indexabilityupdater
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -21,8 +20,9 @@ type Updater struct {
 	interval        time.Duration
 	metrics         UpdaterMetrics
 	limiter         *rate.Limiter
-	done            chan struct{}
-	once            sync.Once
+	ctx             context.Context
+	cancel          func()
+	finished        chan (struct{})
 }
 
 func NewUpdater(
@@ -31,35 +31,40 @@ func NewUpdater(
 	interval time.Duration,
 	metrics UpdaterMetrics,
 ) *Updater {
+	ctx, cancel := context.WithCancel(context.Background())
+
 	return &Updater{
 		store:           store,
 		gitserverClient: gitserverClient,
 		interval:        interval,
 		metrics:         metrics,
 		limiter:         rate.NewLimiter(MaxGitserverRequestsPerSecond, 1),
-		done:            make(chan struct{}),
+		ctx:             ctx,
+		cancel:          cancel,
+		finished:        make(chan struct{}),
 	}
 }
 
 func (u *Updater) Start() {
+	defer close(u.finished)
+
 	for {
-		if err := u.update(context.Background()); err != nil {
+		if err := u.update(u.ctx); err != nil {
 			u.metrics.Errors.Inc()
 			log15.Error("Failed to update index queue", "err", err)
 		}
 
 		select {
 		case <-time.After(u.interval):
-		case <-u.done:
+		case <-u.ctx.Done():
 			return
 		}
 	}
 }
 
 func (u *Updater) Stop() {
-	u.once.Do(func() {
-		close(u.done)
-	})
+	u.cancel()
+	<-u.finished
 }
 
 func (u *Updater) update(ctx context.Context) error {
