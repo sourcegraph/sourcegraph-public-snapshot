@@ -11,11 +11,11 @@ func init() {
 		}
 
 		if c.AutomationReadAccessEnabled != nil {
-			problems = append(problems, conf.NewSiteProblem("The `automation.readAccess.enabled` property was deprecated and will be removed in a future release. Use `campaigns.enabled` to enable or disable the campaigns feature instead."))
+			problems = append(problems, conf.NewSiteProblem("The `automation.readAccess.enabled` property is deprecated and will be removed in a future release. Use `campaigns.enabled` to enable or disable the campaigns feature instead."))
 		}
 
 		if c.CampaignsReadAccessEnabled != nil {
-			problems = append(problems, conf.NewSiteProblem("The `campaigns.readAccess.enabled` property was deprecated and will be removed in a future release. Use `campaigns.enabled` to enable or disable the campaigns feature instead."))
+			problems = append(problems, conf.NewSiteProblem("The `campaigns.readAccess.enabled` property is deprecated and will be removed in a future release. Use `campaigns.enabled` to enable or disable the campaigns feature instead."))
 		}
 
 		return
