@@ -45,6 +45,7 @@ import { VersionContextProps } from '../../../../shared/src/search/util'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { GitCommitFields } from '../../graphql-operations'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean
@@ -424,7 +425,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                     {/* eslint-enable react/jsx-no-bind */}
                     <div className="tree-page__section">
                         <h3 className="tree-page__section-header">Changes</h3>
-                        <FilteredConnection<GQL.IGitCommit, Pick<GitCommitNodeProps, 'className' | 'compact'>>
+                        <FilteredConnection<GitCommitFields, Pick<GitCommitNodeProps, 'className' | 'compact'>>
                             location={props.location}
                             className="mt-2 tree-page__section--commits"
                             listClassName="list-group list-group-flush"
