@@ -120,6 +120,8 @@
 // 1528395708_add_index_to_external_services_repos_external_service_id.up.sql (205B)
 // 1528395709_create_external_service_sync_jobs_table.down.sql (191B)
 // 1528395709_create_external_service_sync_jobs_table.up.sql (1.3kB)
+// 1528395710_add_unsynced_flag_to_changesets.down.sql (73B)
+// 1528395710_add_unsynced_flag_to_changesets.up.sql (106B)
 
 package migrations
 
@@ -2588,6 +2590,46 @@ func _1528395709_create_external_service_sync_jobs_tableUpSql() (*asset, error) 
 	return a, nil
 }
 
+var __1528395710_add_unsynced_flag_to_changesetsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x29\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\xcd\x2b\xae\xcc\x4b\x4e\x4d\xb1\xe6\xe2\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x62\x1a\x56\x11\x49\x00\x00\x00")
+
+func _1528395710_add_unsynced_flag_to_changesetsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395710_add_unsynced_flag_to_changesetsDownSql,
+		"1528395710_add_unsynced_flag_to_changesets.down.sql",
+	)
+}
+
+func _1528395710_add_unsynced_flag_to_changesetsDownSql() (*asset, error) {
+	bytes, err := _1528395710_add_unsynced_flag_to_changesetsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395710_add_unsynced_flag_to_changesets.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x3a, 0xc2, 0x59, 0xd5, 0x78, 0xbf, 0x9d, 0x64, 0xf2, 0x12, 0x59, 0xb0, 0x2, 0x5a, 0x39, 0x88, 0xd3, 0x33, 0x22, 0x8d, 0xc1, 0xe0, 0xdd, 0x18, 0x89, 0x72, 0xd8, 0x36, 0x85, 0x22, 0x7c, 0x21}}
+	return a, nil
+}
+
+var __1528395710_add_unsynced_flag_to_changesetsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x1c\xc9\x31\x0e\x42\x21\x0c\x06\xe0\x9d\x53\xfc\xf7\x60\x2a\x8f\x62\x48\x4a\x9b\x48\x49\x5c\xcd\x93\xe8\xc4\x82\x0e\xde\xde\xc4\xf9\x4b\x7c\xa9\x1a\x43\x20\x71\xbe\xc2\x29\x09\xe3\x7c\xdd\xd7\x73\xee\xf9\xde\xa0\x9c\x71\x98\x8c\xa6\xa8\x05\x6a\x0e\xbe\xd5\xee\x1d\x9f\xb5\xbf\xeb\x9c\x0f\x24\x33\x61\xd2\xbf\xe9\x10\x41\xe6\x42\x43\x1c\x85\xa4\x73\x0c\xe1\xb0\xd6\xaa\xc7\xf0\x0b\x00\x00\xff\xff\xd5\x83\xa8\xff\x6a\x00\x00\x00")
+
+func _1528395710_add_unsynced_flag_to_changesetsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395710_add_unsynced_flag_to_changesetsUpSql,
+		"1528395710_add_unsynced_flag_to_changesets.up.sql",
+	)
+}
+
+func _1528395710_add_unsynced_flag_to_changesetsUpSql() (*asset, error) {
+	bytes, err := _1528395710_add_unsynced_flag_to_changesetsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395710_add_unsynced_flag_to_changesets.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xb4, 0x74, 0x8e, 0x80, 0xce, 0xb3, 0x1, 0xec, 0x4, 0x67, 0x85, 0x78, 0xff, 0xe, 0x32, 0xbb, 0x72, 0x8a, 0x3f, 0xec, 0xd5, 0x63, 0xac, 0x1d, 0xa2, 0xdf, 0x53, 0x5b, 0x6f, 0xd1, 0xee, 0xa5}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2799,6 +2841,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395708_add_index_to_external_services_repos_external_service_id.up.sql":   _1528395708_add_index_to_external_services_repos_external_service_idUpSql,
 	"1528395709_create_external_service_sync_jobs_table.down.sql":                  _1528395709_create_external_service_sync_jobs_tableDownSql,
 	"1528395709_create_external_service_sync_jobs_table.up.sql":                    _1528395709_create_external_service_sync_jobs_tableUpSql,
+	"1528395710_add_unsynced_flag_to_changesets.down.sql":                          _1528395710_add_unsynced_flag_to_changesetsDownSql,
+	"1528395710_add_unsynced_flag_to_changesets.up.sql":                            _1528395710_add_unsynced_flag_to_changesetsUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2965,6 +3009,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395708_add_index_to_external_services_repos_external_service_id.up.sql":   {_1528395708_add_index_to_external_services_repos_external_service_idUpSql, map[string]*bintree{}},
 	"1528395709_create_external_service_sync_jobs_table.down.sql":                  {_1528395709_create_external_service_sync_jobs_tableDownSql, map[string]*bintree{}},
 	"1528395709_create_external_service_sync_jobs_table.up.sql":                    {_1528395709_create_external_service_sync_jobs_tableUpSql, map[string]*bintree{}},
+	"1528395710_add_unsynced_flag_to_changesets.down.sql":                          {_1528395710_add_unsynced_flag_to_changesetsDownSql, map[string]*bintree{}},
+	"1528395710_add_unsynced_flag_to_changesets.up.sql":                            {_1528395710_add_unsynced_flag_to_changesetsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

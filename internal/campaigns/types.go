@@ -293,6 +293,10 @@ type Changeset struct {
 	FinishedAt      time.Time
 	ProcessAfter    time.Time
 	NumResets       int64
+
+	// Unsynced is true if the changeset tracks an external changeset but the
+	// data hasn't been synced yet.
+	Unsynced bool
 }
 
 // RecordID is needed to implement the workerutil.Record interface.
