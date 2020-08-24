@@ -6,7 +6,7 @@
     outline: none !important;
     padding: 0;
     position: relative;
-    width: 2.125rem;
+    width: 2rem;
 }
 
 .toggle__bar {
@@ -37,14 +37,23 @@
 
     display: block;
 
-    height: 1rem;
-    width: 1rem;
-    margin-top: 0.125rem;
+    height: 0.75rem;
+    width: 0.75rem;
+    margin-top: 0.25rem;
+    left: 0.125rem;
 
     position: relative;
 }
 
 .toggle__knob--active {
     background-color: var(--primary);
-    transform: translate3d(18px, 0, 0);
+    transform: translate3d(16px, 0, 0);
+}
+
+.toggle__knob--disabled {
+    background-color: rgba(43, 55, 80, 0.2);
+
+    &__active {
+        background-color: rgba(28, 126, 214, 0.2);
+    }
 }
