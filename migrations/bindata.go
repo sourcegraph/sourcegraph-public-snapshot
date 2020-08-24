@@ -118,6 +118,8 @@
 // 1528395707_add_index_to_external_services_repos_repo_id.up.sql (182B)
 // 1528395708_add_index_to_external_services_repos_external_service_id.down.sql (151B)
 // 1528395708_add_index_to_external_services_repos_external_service_id.up.sql (205B)
+// 1528395709_create_external_service_sync_jobs_table.down.sql (191B)
+// 1528395709_create_external_service_sync_jobs_table.up.sql (1.3kB)
 
 package migrations
 
@@ -2546,6 +2548,46 @@ func _1528395708_add_index_to_external_services_repos_external_service_idUpSql()
 	return a, nil
 }
 
+var __1528395709_create_external_service_sync_jobs_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\xf3\x74\x0d\x57\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\x2f\x4e\x2d\x2a\xcb\x4c\x4e\x8d\x2f\xae\xcc\x4b\x8e\xcf\xca\x4f\x2a\x8e\x2f\xcf\x2c\xc9\x88\xcf\x4b\xad\x28\x81\x88\x25\x96\x58\x43\x4c\x08\x71\x74\xf2\x71\x25\xca\x08\xa8\x86\x60\xd7\xc0\x50\x57\x3f\x67\xe2\xf4\xc4\x67\xa6\xc4\x17\xa7\x16\x5a\x73\x71\x39\xfb\xfb\xfa\x7a\x86\x58\x73\x01\x02\x00\x00\xff\xff\xa9\x82\xa6\xf6\xbf\x00\x00\x00")
+
+func _1528395709_create_external_service_sync_jobs_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395709_create_external_service_sync_jobs_tableDownSql,
+		"1528395709_create_external_service_sync_jobs_table.down.sql",
+	)
+}
+
+func _1528395709_create_external_service_sync_jobs_tableDownSql() (*asset, error) {
+	bytes, err := _1528395709_create_external_service_sync_jobs_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395709_create_external_service_sync_jobs_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x1c, 0x60, 0x11, 0xe4, 0xf9, 0xc8, 0xc, 0xac, 0x13, 0xb0, 0xda, 0x2b, 0x0, 0x9f, 0x7f, 0x8a, 0x3b, 0x56, 0x79, 0xdd, 0x80, 0x64, 0xb8, 0x32, 0xe1, 0x2b, 0xad, 0x7a, 0xfd, 0x46, 0x65, 0x3a}}
+	return a, nil
+}
+
+var __1528395709_create_external_service_sync_jobs_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x53\x4d\x73\xaa\x4a\x10\xdd\xf3\x2b\xce\x4e\x53\x15\xad\x97\xad\xa9\xb7\x20\xbc\x31\xa1\x1e\xc2\xbd\x80\xf9\x58\x51\xa3\xb4\x3a\x06\x87\x64\xa6\x89\x9a\x5f\x7f\x0b\x30\x7a\xa3\x56\x12\x76\xd3\x7d\x4e\x0f\x73\xce\xe9\x1b\x71\xeb\x87\xd7\x8e\xe3\xc5\xc2\x4d\x05\x12\xf1\x7b\x2c\x42\x4f\xc0\x1f\x22\x8c\x52\x88\x47\x3f\x49\x13\xd0\x86\xc9\x68\x59\x64\x96\xcc\x9b\x9a\x52\x66\xb7\x7a\x9a\x2d\xcb\x89\xcd\x54\x9e\x59\x7a\x75\x00\x20\x49\xdd\x38\xc5\x83\x9f\xde\xe1\xaa\x29\xf8\xa1\x17\x8b\x91\x08\x53\xdc\x3c\xed\x4a\x61\x84\x91\x1f\xde\xbb\xc1\x58\xec\xcf\xee\xe3\xe1\xec\xb9\xde\x9d\xc0\xd5\xe1\x8f\x52\xf7\x26\xf8\xf9\xef\xa0\xdb\x4c\xe9\xf5\xe0\x95\x45\xb5\xd2\x16\x86\x5e\x2b\x65\x28\xc7\x64\x8b\x75\x69\x9e\xc9\x54\xac\x8a\x7e\xc2\xa5\xa1\x06\xab\x72\x28\xcd\x34\x27\xd3\x5c\x11\x8e\x83\x00\xff\x89\xa1\x3b\x0e\x52\x68\xda\xf0\x9b\x2c\xba\x9d\x6f\x05\xe8\x0c\x06\x86\xe6\xd3\x42\x5a\x7b\x71\xd9\xcc\xb5\x2c\x99\xc0\xb4\xe1\xd3\xb9\x9d\xd7\x8a\x2a\xca\x3b\x83\x41\xdd\x6f\xf1\x33\xa9\x8a\xca\x50\xb6\x22\x6b\xe5\xbc\x65\xee\x27\x19\xa6\x3c\x93\x0c\x56\x2b\xb2\x2c\x57\x2f\x58\x2b\x5e\x34\x47\xbc\x97\x9a\x76\x23\x94\x56\x76\xf1\x13\xe4\x8b\x29\xa7\x64\x6d\x26\x67\x4c\xe6\x1b\xac\xae\x56\x99\x21\x4b\x6c\xf7\x42\xe9\x92\xa1\xab\xa2\xd8\x3f\xe8\x9f\xcb\x0f\xdd\xc5\x86\x8d\xc4\xb4\x55\xbf\x29\x9e\x68\xa7\x72\x4c\xd4\x5c\x69\xbe\x3c\x98\xa5\x2d\x1b\xa9\x34\xb7\x14\x2f\x0a\x93\x34\x76\xfd\x30\x3d\x61\x37\x82\xcf\x9e\x1b\xd8\x30\x8a\x85\x7f\x1b\xe2\x7f\xf1\xd4\x3d\x73\xcb\x45\x03\x8a\xc5\x50\xc4\x75\xa6\x4f\x73\x63\xbb\x35\xe8\xe2\x10\xb6\x28\x46\x2c\x7e\x05\xae\x27\x70\xef\x8b\x87\xaf\x72\x5f\x2b\x95\xd5\xf9\x68\x6b\x92\xe1\x26\xed\x16\x88\x40\x78\x29\x96\x7d\x95\xb7\xef\xfb\xf8\x96\xfd\x26\x12\xc7\xc5\x23\xdf\xcf\x70\x76\xe6\x9f\x10\x0f\x6e\x1f\xb7\x3e\xd9\x7b\xdc\x3c\xf8\x79\xdc\x39\xa3\xe1\x67\x08\xf5\xff\x7e\x71\xeb\x41\x1c\x8d\xce\xda\x6c\x41\x58\x96\x4a\x7f\xb5\xad\x4b\x94\x1a\xd4\x57\x39\xfe\x3d\x7f\xfd\xb5\xe3\xf4\x7a\xf5\xfe\x88\x01\xc2\x12\x4a\xe7\xb4\xa9\x39\xbc\xa0\xdd\x82\xb5\x49\xc3\x5a\x5a\xc8\x3c\xa7\x1c\xd2\x62\x4d\xa0\xcd\x0b\x4d\xb9\xc5\xa9\x77\x42\x39\x03\x2f\x94\x05\xcb\x49\x41\xe0\xb2\x66\x6f\xeb\x9d\x33\xc5\x16\x76\x25\x8b\xc2\x71\xbc\x68\x34\xf2\xd3\x6b\xe7\x4f\x00\x00\x00\xff\xff\x78\xe8\xf9\x1a\x14\x05\x00\x00")
+
+func _1528395709_create_external_service_sync_jobs_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395709_create_external_service_sync_jobs_tableUpSql,
+		"1528395709_create_external_service_sync_jobs_table.up.sql",
+	)
+}
+
+func _1528395709_create_external_service_sync_jobs_tableUpSql() (*asset, error) {
+	bytes, err := _1528395709_create_external_service_sync_jobs_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395709_create_external_service_sync_jobs_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x2c, 0x7b, 0xc6, 0xf8, 0xa5, 0xb6, 0x3b, 0xa9, 0x7, 0x66, 0x75, 0x60, 0x3b, 0x1, 0xe7, 0xca, 0x91, 0x62, 0x4f, 0xc6, 0xf8, 0x25, 0x13, 0x6b, 0x30, 0x64, 0xc5, 0xd7, 0x7e, 0xf6, 0x16, 0x18}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2755,6 +2797,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395707_add_index_to_external_services_repos_repo_id.up.sql":               _1528395707_add_index_to_external_services_repos_repo_idUpSql,
 	"1528395708_add_index_to_external_services_repos_external_service_id.down.sql": _1528395708_add_index_to_external_services_repos_external_service_idDownSql,
 	"1528395708_add_index_to_external_services_repos_external_service_id.up.sql":   _1528395708_add_index_to_external_services_repos_external_service_idUpSql,
+	"1528395709_create_external_service_sync_jobs_table.down.sql":                  _1528395709_create_external_service_sync_jobs_tableDownSql,
+	"1528395709_create_external_service_sync_jobs_table.up.sql":                    _1528395709_create_external_service_sync_jobs_tableUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2919,6 +2963,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395707_add_index_to_external_services_repos_repo_id.up.sql":               {_1528395707_add_index_to_external_services_repos_repo_idUpSql, map[string]*bintree{}},
 	"1528395708_add_index_to_external_services_repos_external_service_id.down.sql": {_1528395708_add_index_to_external_services_repos_external_service_idDownSql, map[string]*bintree{}},
 	"1528395708_add_index_to_external_services_repos_external_service_id.up.sql":   {_1528395708_add_index_to_external_services_repos_external_service_idUpSql, map[string]*bintree{}},
+	"1528395709_create_external_service_sync_jobs_table.down.sql":                  {_1528395709_create_external_service_sync_jobs_tableDownSql, map[string]*bintree{}},
+	"1528395709_create_external_service_sync_jobs_table.up.sql":                    {_1528395709_create_external_service_sync_jobs_tableUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
