@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { RouteComponentProps, Switch, Route } from 'react-router'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { ThemeProps } from '../../../../../shared/src/theme'
@@ -9,13 +9,17 @@ import { CampaignsDotComPage } from './marketing/CampaignsDotComPage'
 import { AuthenticatedUser } from '../../../auth'
 import { CampaignListPage } from '../list/CampaignListPage'
 import { CreateCampaignPage } from '../create/CreateCampaignPage'
+import { BreadcrumbProps } from 'reactstrap'
+import { BreadcrumbSetters, Breadcrumbs } from '../../../components/Breadcrumbs'
 
 interface Props
     extends RouteComponentProps<{}>,
         ThemeProps,
         ExtensionsControllerProps,
         TelemetryProps,
-        PlatformContextProps {
+        PlatformContextProps,
+        BreadcrumbProps,
+        BreadcrumbSetters {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
 }
@@ -24,16 +28,31 @@ interface Props
  * The global campaigns area.
  */
 export const GlobalCampaignsArea: React.FunctionComponent<Props> = props => {
+    props.useBreadcrumb(
+        useMemo(
+            () => ({
+                key: 'Campaigns',
+                element: <>Campaigns</>,
+            }),
+            []
+        )
+    )
     if (props.isSourcegraphDotCom) {
         return (
-            <div className="container web-content mt-4">
-                <CampaignsDotComPage />
+            <div className="w-100">
+                <Breadcrumbs breadcrumbs={props.breadcrumbs} />
+                <div className="container web-content mt-3">
+                    <CampaignsDotComPage />
+                </div>
             </div>
         )
     }
     return (
-        <div className="container web-content mt-4">
-            <AuthenticatedCampaignsArea {...props} />
+        <div className="w-100">
+            <Breadcrumbs breadcrumbs={props.breadcrumbs} />
+            <div className="container web-content mt-3">
+                <AuthenticatedCampaignsArea {...props} />
+            </div>
         </div>
     )
 }

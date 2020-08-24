@@ -1,11 +1,22 @@
 import React from 'react'
-import { CampaignHeader } from '../../detail/CampaignHeader'
 import { PrivateCodeCta } from '../../../../search/input/PrivateCodeCta'
+import { CampaignsIcon } from '../../icons'
+import { PageHeader } from '../../../../components/PageHeader'
 
 export const CampaignsDotComPage: React.FunctionComponent<{}> = () => (
     <>
         <section className="mt-3 mb-5">
-            <CampaignHeader />
+            <PageHeader
+                icon={CampaignsIcon}
+                title={
+                    <>
+                        Campaigns{' '}
+                        <sup>
+                            <span className="badge badge-merged text-uppercase">Beta</span>
+                        </sup>
+                    </>
+                }
+            />
             <h2 className="mb-5">Make and track large-scale changes across all code</h2>
 
             <div className="text-center">

@@ -25,6 +25,7 @@ import { isDefined } from '../../../../shared/src/util/types'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../../auth'
 import { UserResult, UserVariables, UserAreaUserFields } from '../../graphql-operations'
+import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
 
 const fetchUser = (args: { username: string; siteAdmin: boolean }): Observable<UserAreaUserFields> =>
     requestGraphQL<UserResult, UserVariables>({
@@ -90,6 +91,8 @@ interface UserAreaProps
         TelemetryProps,
         ActivationProps,
         OnboardingTourProps,
+        BreadcrumbsProps,
+        BreadcrumbSetters,
         Omit<PatternTypeProps, 'setPatternType'> {
     userAreaRoutes: readonly UserAreaRoute[]
     userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
@@ -125,6 +128,8 @@ export interface UserAreaRouteContext
         ActivationProps,
         NamespaceProps,
         OnboardingTourProps,
+        BreadcrumbsProps,
+        BreadcrumbSetters,
         Omit<PatternTypeProps, 'setPatternType'> {
     /** The user area main URL. */
     url: string
@@ -188,7 +193,15 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                     })
                 )
                 .subscribe(
-                    stateUpdate => this.setState(stateUpdate),
+                    stateUpdate => {
+                        this.setState(stateUpdate)
+                        if (!isErrorLike(stateUpdate.userOrError)) {
+                            this.props.setBreadcrumb({
+                                key: 'User Area',
+                                element: <>{stateUpdate.userOrError?.username}</>,
+                            })
+                        }
+                    },
                     error => console.error(error)
                 )
         )

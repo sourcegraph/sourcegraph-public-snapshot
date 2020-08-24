@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react'
+import React, { useEffect, useCallback, useMemo } from 'react'
 import { queryCampaigns as _queryCampaigns, queryCampaignsByUser, queryCampaignsByOrg } from './backend'
 import { RouteComponentProps } from 'react-router'
 import { FilteredConnection, FilteredConnectionFilter } from '../../../components/FilteredConnection'
@@ -12,11 +12,17 @@ import {
     CampaignsByOrgVariables,
 } from '../../../graphql-operations'
 import { CampaignsListBetaNotice } from './CampaignsListBetaNotice'
-import { CampaignHeader } from '../detail/CampaignHeader'
 import PlusIcon from 'mdi-react/PlusIcon'
 import { Link } from '../../../../../shared/src/components/Link'
+import { PageHeader } from '../../../components/PageHeader'
+import { CampaignsIcon } from '../icons'
+import { Breadcrumbs, BreadcrumbSetters, BreadcrumbsProps } from '../../../components/Breadcrumbs'
 
-interface Props extends TelemetryProps, Pick<RouteComponentProps, 'history' | 'location'> {
+interface Props
+    extends TelemetryProps,
+        Pick<RouteComponentProps, 'history' | 'location'>,
+        BreadcrumbsProps,
+        BreadcrumbSetters {
     displayNamespace?: boolean
     queryCampaigns?: typeof _queryCampaigns
 }
@@ -52,11 +58,29 @@ export const CampaignListPage: React.FunctionComponent<Props> = ({
     ...props
 }) => {
     useEffect(() => props.telemetryService.logViewEvent('CampaignsListPage'), [props.telemetryService])
+    props.useBreadcrumb(
+        useMemo(
+            () => ({
+                key: 'Campaigns list',
+                element: <>Campaigns</>,
+            }),
+            []
+        )
+    )
     return (
         <>
-            <CampaignHeader
-                className="mb-3 test-campaign-list-page"
-                actionSection={
+            <Breadcrumbs breadcrumbs={props.breadcrumbs} />
+            <PageHeader
+                icon={CampaignsIcon}
+                title={
+                    <span className="test-campaign-list-page">
+                        Campaigns{' '}
+                        <sup>
+                            <span className="badge badge-merged text-uppercase">Beta</span>
+                        </sup>
+                    </span>
+                }
+                actions={
                     <Link to={`${location.pathname}/create`} className="btn btn-primary">
                         <PlusIcon className="icon-inline" /> New campaign
                     </Link>

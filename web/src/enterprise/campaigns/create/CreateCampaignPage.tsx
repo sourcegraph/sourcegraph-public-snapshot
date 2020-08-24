@@ -1,7 +1,8 @@
 import React from 'react'
 import { PageTitle } from '../../../components/PageTitle'
-import { CampaignHeader } from '../detail/CampaignHeader'
 import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
+import { PageHeader } from '../../../components/PageHeader'
+import { CampaignsIcon } from '../icons'
 
 const campaignSpec = `name: hello-world
 description: Add Hello World to READMEs
@@ -35,7 +36,17 @@ export interface CreateCampaignPageProps {
 export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps> = () => (
     <>
         <PageTitle title="Create campaign" />
-        <CampaignHeader name="Create campaign" />
+        <PageHeader
+            icon={CampaignsIcon}
+            title={
+                <>
+                    Create campaign{' '}
+                    <sup>
+                        <span className="badge badge-merged text-uppercase">Beta</span>
+                    </sup>
+                </>
+            }
+        />
         <div className="container pt-3">
             <h2>New to campaigns?</h2>
             <p className="lead">
