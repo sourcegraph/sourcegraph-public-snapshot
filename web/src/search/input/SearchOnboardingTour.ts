@@ -105,7 +105,7 @@ export function createStep1Tooltip(
     const list = document.createElement('ul')
     list.className = 'my-4 list-group dash-list'
     const languageListItem = document.createElement('li')
-    languageListItem.className = 'p-0 border-0 mb-2'
+    languageListItem.className = 'p-0 mb-2'
 
     const languageButton = document.createElement('button')
     languageButton.className = 'btn btn-link p-0 pl-1 test-tour-language-button'
