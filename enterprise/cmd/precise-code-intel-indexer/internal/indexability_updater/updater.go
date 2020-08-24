@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"golang.org/x/time/rate"
 )
@@ -17,57 +18,27 @@ const MaxGitserverRequestsPerSecond = 20
 type Updater struct {
 	store           store.Store
 	gitserverClient gitserver.Client
-	interval        time.Duration
 	metrics         UpdaterMetrics
 	limiter         *rate.Limiter
-	ctx             context.Context
-	cancel          func()
-	finished        chan (struct{})
 }
+
+var _ goroutine.Handler = &Updater{}
 
 func NewUpdater(
 	store store.Store,
 	gitserverClient gitserver.Client,
 	interval time.Duration,
 	metrics UpdaterMetrics,
-) *Updater {
-	ctx, cancel := context.WithCancel(context.Background())
-
-	return &Updater{
+) goroutine.BackgroundRoutine {
+	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &Updater{
 		store:           store,
 		gitserverClient: gitserverClient,
-		interval:        interval,
 		metrics:         metrics,
 		limiter:         rate.NewLimiter(MaxGitserverRequestsPerSecond, 1),
-		ctx:             ctx,
-		cancel:          cancel,
-		finished:        make(chan struct{}),
-	}
+	})
 }
 
-func (u *Updater) Start() {
-	defer close(u.finished)
-
-	for {
-		if err := u.update(u.ctx); err != nil {
-			u.metrics.Errors.Inc()
-			log15.Error("Failed to update index queue", "err", err)
-		}
-
-		select {
-		case <-time.After(u.interval):
-		case <-u.ctx.Done():
-			return
-		}
-	}
-}
-
-func (u *Updater) Stop() {
-	u.cancel()
-	<-u.finished
-}
-
-func (u *Updater) update(ctx context.Context) error {
+func (u *Updater) Handle(ctx context.Context) error {
 	start := time.Now().UTC()
 
 	stats, err := u.store.RepoUsageStatistics(ctx)
@@ -93,6 +64,11 @@ func (u *Updater) update(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (u *Updater) HandleError(err error) {
+	u.metrics.Errors.Inc()
+	log15.Error("Failed to update index queue", "err", err)
 }
 
 func (u *Updater) queueRepository(ctx context.Context, repoUsageStatistics store.RepoUsageStatistics) error {

@@ -1,14 +1,15 @@
 package janitor
 
 import (
+	"context"
 	"time"
 
 	"github.com/inconshreveable/log15"
 )
 
 // removeRecordsForDeletedRepositories removes all index records for deleted repositories.
-func (j *Janitor) removeRecordsForDeletedRepositories() error {
-	counts, err := j.store.DeleteIndexesWithoutRepository(j.ctx, time.Now())
+func (j *Janitor) removeRecordsForDeletedRepositories(ctx context.Context) error {
+	counts, err := j.store.DeleteIndexesWithoutRepository(ctx, time.Now())
 	if err != nil {
 		return err
 	}

@@ -79,7 +79,7 @@ func main() {
 	go debugserver.Start()
 
 	if !disableJanitor {
-		go janitor.Run()
+		go janitor.Start()
 	} else {
 		log15.Warn("Janitor process is disabled.")
 	}
