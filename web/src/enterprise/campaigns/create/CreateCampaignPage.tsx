@@ -61,7 +61,9 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
             <div className="bg-light rounded p-2 mb-3">
                 <pre className="m-0">{campaignSpec}</pre>
             </div>
-            <p className="lead">Use Sourcegraph src-cli to apply the campaign in preview mode:</p>
+            <p className="lead">
+                Use src-cli to execute the steps in the campaign spec and upload it, ready to be previewed and applied:
+            </p>
             <div className="bg-light rounded p-3 mb-3">
                 <pre className="m-0">{sourcePreviewCommand}</pre>
             </div>
