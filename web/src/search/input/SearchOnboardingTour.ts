@@ -189,7 +189,7 @@ export function createAddCodeStepWithLanguageExampleTooltip(
     list.className = 'my-4 list-group caret-list'
 
     const listItem = document.createElement('li')
-    listItem.className = 'p-0 border-0'
+    listItem.className = 'p-0'
 
     const exampleButton = document.createElement('button')
     exampleButton.className = 'btn btn-link test-tour-language-example'
