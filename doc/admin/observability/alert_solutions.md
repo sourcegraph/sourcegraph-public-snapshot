@@ -1012,7 +1012,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _gitserver: 5000+ filesystem reads and writes rate over 1h_
+- _gitserver: 5000+ filesystem reads and writes rate by instance over 1h_
 
 **Possible solutions:**
 
@@ -3916,7 +3916,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _zoekt-indexserver: 5000+ filesystem reads and writes rate over 1h_
+- _zoekt-indexserver: 5000+ filesystem reads and writes rate by instance over 1h_
 
 **Possible solutions:**
 
@@ -4116,7 +4116,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _zoekt-webserver: 5000+ filesystem reads and writes rate over 1h_
+- _zoekt-webserver: 5000+ filesystem reads and writes by instance rate over 1h_
 
 **Possible solutions:**
 
