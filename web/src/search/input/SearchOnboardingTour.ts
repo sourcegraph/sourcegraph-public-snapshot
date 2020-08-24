@@ -103,7 +103,7 @@ export function createStep1Tooltip(
     repositoryButtonHandler: () => void
 ): HTMLElement {
     const list = document.createElement('ul')
-    list.className = 'my-4 list-group dash-list'
+    list.className = 'my-4 dash-list'
     const languageListItem = document.createElement('li')
     languageListItem.className = 'p-0 mb-2'
 
