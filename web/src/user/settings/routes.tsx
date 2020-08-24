@@ -83,6 +83,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
             />
         ),
         exact: true,
+        condition: () => window.context.externalServicesUserModeEnabled,
     },
     {
         path: '/external-services/new',
@@ -101,6 +102,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
             />
         ),
         exact: true,
+        condition: () => window.context.externalServicesUserModeEnabled,
     },
     {
         path: '/external-services/:id',
@@ -112,5 +114,6 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
             />
         ),
         exact: true,
+        condition: () => window.context.externalServicesUserModeEnabled,
     },
 ]

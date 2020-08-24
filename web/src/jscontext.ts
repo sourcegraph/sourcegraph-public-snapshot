@@ -83,6 +83,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether the campaigns feature is enabled on the site. */
     campaignsEnabled: boolean
 
+    /** Whether user is allowed to add external services. */
+    externalServicesUserModeEnabled: boolean
+
     /** Authentication provider instances in site config. */
     authProviders?: {
         displayName: string
