@@ -38,6 +38,7 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, 
 		ColumnExpressions: syncJobColumns,
 		StalledMaxAge:     30 * time.Second,
 		// Zero for now as we expect errors to be transient
+		// TODO: Confirm whether this means 0 or infinite retries
 		MaxNumResets: 0,
 	})
 
@@ -120,8 +121,7 @@ func (s *SyncJob) RecordID() int {
 type syncHandler struct{}
 
 func (h *syncHandler) Handle(ctx context.Context, tx workerutil.Store, record workerutil.Record) error {
-	// myStore := h.myStore.With(tx) // combine store handles
-	// myRecord := record.(MyType)   // convert type of record
-	// do processing ...
+	// Temporary handler which will be implemented once we have implemented code to sync a single
+	// external service
 	return errors.New("TODO")
 }

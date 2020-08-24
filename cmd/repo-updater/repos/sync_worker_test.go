@@ -71,9 +71,7 @@ func testSyncWorkerPlumbing(db *sql.DB) func(t *testing.T, repoStore repos.Store
 				t.Fatalf("Expected %d, got %d", testSvc.ID, job.ExternalServiceID)
 			}
 		}
-
 	}
-
 }
 
 type fakeRepoSyncHandler struct {
