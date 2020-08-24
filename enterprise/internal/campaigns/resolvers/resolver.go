@@ -226,6 +226,9 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 	opts := ee.ApplyCampaignOpts{}
 
 	opts.CampaignSpecRandID, err = unmarshalCampaignSpecID(args.CampaignSpec)
+	if err != nil {
+		return nil, err
+	}
 
 	if opts.CampaignSpecRandID == "" {
 		return nil, ErrIDIsZero
