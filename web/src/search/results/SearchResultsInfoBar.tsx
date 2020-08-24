@@ -20,6 +20,7 @@ import { ServerBanner, ServerBannerNoRepo } from '../../marketing/ServerBanner'
 import { PerformanceWarningAlert } from '../../site/PerformanceWarningAlert'
 import { PatternTypeProps } from '..'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import { AuthenticatedUser } from '../../auth'
 
 interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
@@ -27,7 +28,7 @@ interface SearchResultsInfoBarProps
         TelemetryProps,
         PatternTypeProps {
     /** The currently authenticated user or null */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 
     /** The loaded search results and metadata */
     query?: string

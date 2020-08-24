@@ -14,6 +14,7 @@ import { Form } from '../../../../components/Form'
 import { PageTitle } from '../../../../components/PageTitle'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { useEventObservable } from '../../../../../../shared/src/util/useObservable'
+import { AuthenticatedUser } from '../../../../auth'
 
 interface UserCreateSubscriptionNodeProps {
     /**
@@ -115,7 +116,7 @@ const UserCreateSubscriptionNode: React.FunctionComponent<UserCreateSubscription
 class FilteredUserConnection extends FilteredConnection<GQL.IUser, Pick<UserCreateSubscriptionNodeProps, 'history'>> {}
 
 interface Props extends RouteComponentProps<{}> {
-    authenticatedUser: GQL.IUser
+    authenticatedUser: AuthenticatedUser
 }
 
 /**

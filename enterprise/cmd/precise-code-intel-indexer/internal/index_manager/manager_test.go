@@ -23,7 +23,6 @@ func TestProcessSuccess(t *testing.T) {
 	manager := newManager(mockStore, ManagerOptions{
 		MaximumTransactions:   10,
 		RequeueDelay:          time.Second,
-		CleanupInterval:       time.Second,
 		UnreportedIndexMaxAge: time.Second,
 		DeathThreshold:        time.Second,
 	}, clock)
@@ -69,7 +68,6 @@ func TestProcessFailure(t *testing.T) {
 	manager := newManager(mockStore, ManagerOptions{
 		MaximumTransactions:   10,
 		RequeueDelay:          time.Second,
-		CleanupInterval:       time.Second,
 		UnreportedIndexMaxAge: time.Second,
 		DeathThreshold:        time.Second,
 	}, clock)
@@ -114,7 +112,6 @@ func TestProcessIndexerMismatch(t *testing.T) {
 	manager := newManager(mockStore, ManagerOptions{
 		MaximumTransactions:   10,
 		RequeueDelay:          time.Second,
-		CleanupInterval:       time.Second,
 		UnreportedIndexMaxAge: time.Second,
 		DeathThreshold:        time.Second,
 	}, clock)
@@ -157,7 +154,6 @@ func TestBoundedTransactions(t *testing.T) {
 	manager := newManager(mockStore, ManagerOptions{
 		MaximumTransactions:   10,
 		RequeueDelay:          time.Second,
-		CleanupInterval:       time.Second,
 		UnreportedIndexMaxAge: time.Second,
 		DeathThreshold:        time.Second,
 	}, clock)
@@ -215,7 +211,6 @@ func TestHeartbeatRemovesUnknownIndexes(t *testing.T) {
 	manager := newManager(mockStore, ManagerOptions{
 		MaximumTransactions:   10,
 		RequeueDelay:          time.Second,
-		CleanupInterval:       time.Second,
 		UnreportedIndexMaxAge: time.Second,
 		DeathThreshold:        time.Second,
 	}, clock)
@@ -269,8 +264,6 @@ func TestHeartbeatRemovesUnknownIndexes(t *testing.T) {
 }
 
 func TestUnresponsiveIndexer(t *testing.T) {
-	t.Skip() // TODO(efritz) - fix flake; see https://buildkite.com/sourcegraph/sourcegraph/builds/70046#d19d0df6-2760-476b-a661-0d4b409316b6
-
 	mockStore := storemocks.NewMockStore()
 	mockStore.MarkCompleteFunc.SetDefaultReturn(true, nil)
 	clock := glock.NewMockClock()
@@ -284,7 +277,6 @@ func TestUnresponsiveIndexer(t *testing.T) {
 	manager := newManager(mockStore, ManagerOptions{
 		MaximumTransactions:   10,
 		RequeueDelay:          time.Second,
-		CleanupInterval:       time.Second,
 		UnreportedIndexMaxAge: time.Second,
 		DeathThreshold:        time.Second,
 	}, clock)
@@ -318,12 +310,8 @@ func TestUnresponsiveIndexer(t *testing.T) {
 	// Advance by 75% of DeathThreshold
 	clock.Advance(time.Second * 3 / 4)
 
-	go manager.Start()
-	defer manager.Stop()
-
-	// Advance by CleanupInterval
-	// Blocking here ensures we completed at least one cleanup run
-	clock.BlockingAdvance(time.Second)
+	// Perform a cleanup
+	_ = manager.Handle(context.Background())
 
 	if callCount := len(mockStore.RequeueFunc.History()); callCount != 5 {
 		t.Errorf("unexpected requeue call count. want=%d have=%d", 5, callCount)

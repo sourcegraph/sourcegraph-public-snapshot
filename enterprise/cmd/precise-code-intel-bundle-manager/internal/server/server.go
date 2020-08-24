@@ -11,6 +11,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/cache"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -24,6 +25,8 @@ type Server struct {
 	server             *http.Server
 	once               sync.Once
 }
+
+var _ goroutine.BackgroundRoutine = &Server{}
 
 func New(
 	bundleDir string,

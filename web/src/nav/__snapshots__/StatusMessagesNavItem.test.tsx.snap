@@ -47,7 +47,7 @@ exports[`StatusMessagesNavItem no messages 1`] = `
                   href="#"
                   onClick={[Function]}
                 >
-                  <CloudCheckIcon
+                  <Memo(CloudCheckIcon)
                     className="icon-inline"
                     data-tooltip="Repositories up to date"
                   />
@@ -87,7 +87,7 @@ exports[`StatusMessagesNavItem no messages 1`] = `
                     key="All repositories hosted on the configured code hosts are synced."
                   >
                     <h4>
-                      <CloudCheckIcon
+                      <Memo(CloudCheckIcon)
                         className="icon-inline mr-1"
                       />
                       Repositories up to date
@@ -154,7 +154,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
                   href="#"
                   onClick={[Function]}
                 >
-                  <CloudSyncIcon
+                  <Memo(CloudSyncIcon)
                     className="icon-inline"
                     data-tooltip="Cloning repositories..."
                   />
@@ -195,7 +195,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
                     key="Currently cloning repositories..."
                   >
                     <h4>
-                      <CloudSyncIcon
+                      <Memo(CloudSyncIcon)
                         className="icon-inline mr-1"
                       />
                       Repositories cloning
@@ -262,7 +262,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
                   href="#"
                   onClick={[Function]}
                 >
-                  <CloudSyncIcon
+                  <Memo(CloudSyncIcon)
                     className="icon-inline"
                     data-tooltip="Cloning repositories..."
                   />
@@ -303,7 +303,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
                     key="Currently cloning repositories..."
                   >
                     <h4>
-                      <CloudSyncIcon
+                      <Memo(CloudSyncIcon)
                         className="icon-inline mr-1"
                       />
                       Repositories cloning
@@ -385,7 +385,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
                   href="#"
                   onClick={[Function]}
                 >
-                  <CloudAlertIcon
+                  <Memo(CloudAlertIcon)
                     className="icon-inline"
                     data-tooltip="Syncing repositories failed!"
                   />
@@ -426,7 +426,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
                     key="failed to list organization kubernetes repos: request returned status 404: Not Found"
                   >
                     <h4>
-                      <CloudAlertIcon
+                      <Memo(CloudAlertIcon)
                         className="icon-inline mr-1"
                       />
                       Syncing repositories from external service "GitHub.com" failed:
@@ -493,7 +493,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
                   href="#"
                   onClick={[Function]}
                 >
-                  <CloudAlertIcon
+                  <Memo(CloudAlertIcon)
                     className="icon-inline"
                     data-tooltip="Syncing repositories failed!"
                   />
@@ -534,7 +534,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
                     key="failed to list organization kubernetes repos: request returned status 404: Not Found"
                   >
                     <h4>
-                      <CloudAlertIcon
+                      <Memo(CloudAlertIcon)
                         className="icon-inline mr-1"
                       />
                       Syncing repositories from external service "GitHub.com" failed:
@@ -616,7 +616,7 @@ exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
                   href="#"
                   onClick={[Function]}
                 >
-                  <CloudCheckIcon
+                  <Memo(CloudCheckIcon)
                     className="icon-inline"
                     data-tooltip="Repositories up to date"
                   />
@@ -657,7 +657,7 @@ exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
                     key="syncer.sync.store.upsert-repos: pg: unique constraint foobar"
                   >
                     <h4>
-                      <CloudAlertIcon
+                      <Memo(CloudAlertIcon)
                         className="icon-inline mr-1"
                       />
                       Syncing repositories failed:
@@ -724,7 +724,7 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
                   href="#"
                   onClick={[Function]}
                 >
-                  <CloudCheckIcon
+                  <Memo(CloudCheckIcon)
                     className="icon-inline"
                     data-tooltip="Repositories up to date"
                   />
@@ -765,7 +765,7 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
                     key="syncer.sync.store.upsert-repos: pg: unique constraint foobar"
                   >
                     <h4>
-                      <CloudAlertIcon
+                      <Memo(CloudAlertIcon)
                         className="icon-inline mr-1"
                       />
                       Syncing repositories failed:

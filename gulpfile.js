@@ -29,7 +29,7 @@ const build = gulp.series(generate, webWebpack)
 /**
  * Watches everything and rebuilds on file changes.
  */
-const watch = gulp.series(generate, gulp.parallel(watchGenerate, webWebpackDevServer))
+const watch = gulp.parallel(watchGenerate, webWebpackDevServer)
 
 module.exports = {
   generate,

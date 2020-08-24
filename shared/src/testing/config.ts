@@ -95,16 +95,16 @@ const configFields: ConfigFields = {
     },
     gitHubUserAmyPassword: {
         envVar: 'GITHUB_USER_AMY_PASSWORD',
-        description: 'Password of the GitHub user sg-test-regression-test-amy, used to log in to Sourcegraph.',
+        description: 'Password of the GitHub user sg-e2e-regression-test-amy, used to log in to Sourcegraph.',
     },
     gitHubUserBobPassword: {
         envVar: 'GITHUB_USER_BOB_PASSWORD',
-        description: 'Password of the GitHub user sg-test-regression-test-bob, used to log in to Sourcegraph.',
+        description: 'Password of the GitHub user sg-e2e-regression-test-bob, used to log in to Sourcegraph.',
     },
     gitHubUserBobToken: {
         envVar: 'GITHUB_USER_BOB_TOKEN',
         description:
-            "GitHub personal access token with repo scope for user sg-test-regression-test-bob. Used to clone Bob's repositories to Sourcegraph.",
+            "GitHub personal access token with repo scope for user sg-e2e-regression-test-bob. Used to clone Bob's repositories to Sourcegraph.",
     },
     gitLabToken: {
         envVar: 'GITLAB_TOKEN',
@@ -123,7 +123,7 @@ const configFields: ConfigFields = {
     },
     gitLabUserAmyPassword: {
         envVar: 'GITLAB_USER_AMY_PASSWORD',
-        description: 'Password of the GitLab user sg-test-regression-test-amy, used to log in to Sourcegraph.',
+        description: 'Password of the GitLab user sg-e2e-regression-test-amy, used to log in to Sourcegraph.',
     },
     oktaMetadataUrl: {
         envVar: 'OKTA_METADATA_URL',
@@ -131,7 +131,7 @@ const configFields: ConfigFields = {
     },
     oktaUserAmyPassword: {
         envVar: 'OKTA_USER_AMY_PASSWORD',
-        description: 'Password of the Okta user, beyang+sg-test-regression-test-amy@sourcegraph.com',
+        description: 'Password of the Okta user, beyang+sg-e2e-regression-test-amy@sourcegraph.com',
     },
     sourcegraphBaseUrl: {
         envVar: 'SOURCEGRAPH_BASE_URL',
@@ -201,7 +201,7 @@ const configFields: ConfigFields = {
     bitbucketCloudUserBobAppPassword: {
         envVar: 'BITBUCKET_CLOUD_USER_BOB_APP_PASSWORD',
         description:
-            'A Bitbucket Cloud app password associated with the Bitbucket Cloud user sg-test-regression-test-bob, that will be used to sync Bitbucket Cloud repositories.',
+            'A Bitbucket Cloud app password associated with the Bitbucket Cloud user sg-e2e-regression-test-bob, that will be used to sync Bitbucket Cloud repositories.',
     },
 }
 
