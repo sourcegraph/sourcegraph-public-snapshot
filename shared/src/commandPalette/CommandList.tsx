@@ -3,7 +3,7 @@ import classNames from 'classnames'
 import * as H from 'history'
 import { sortBy, uniq, uniqueId } from 'lodash'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
-import MenuIcon from 'mdi-react/MenuIcon'
+import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -343,7 +343,7 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
             id={id}
             onClick={toggleIsOpen}
         >
-            <MenuIcon className="icon-inline" />
+            <ConsoleIcon className="icon-inline" />
             {showCaret && (isOpen ? <MenuUpIcon className="icon-inline" /> : <MenuDownIcon className="icon-inline" />)}
             {/* Need to use TooltipPopoverWrapper to apply classNames to inner element, see https://github.com/reactstrap/reactstrap/issues/1484 */}
             <TooltipPopoverWrapper
