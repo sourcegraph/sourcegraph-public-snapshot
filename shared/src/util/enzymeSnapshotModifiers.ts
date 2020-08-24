@@ -42,8 +42,7 @@ function maskProps(props: Json['props'], key = '', seenProperties: ReadonlySet<u
 }
 
 export function replaceVerboseObjects(json: Json): Json | string {
-    const iconMatch = json.type.match(/Memo\((\w+)Icon\)/)
-    if (iconMatch) {
+    if (/Memo\(\w+Icon\)/.test(json.type)) {
         json.children = []
         return json
     }
