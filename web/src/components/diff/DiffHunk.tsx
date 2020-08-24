@@ -16,7 +16,7 @@ interface DiffBoundaryProps extends FileDiffHunkFields {
     lineNumbers: boolean
 }
 
-const diffHunkTypeIndicators: Record<GQL.DiffHunkLineType, string> = {
+const diffHunkTypeIndicators: Record<DiffHunkLineType, string> = {
     ADDED: '+',
     UNCHANGED: ' ',
     DELETED: '-',
