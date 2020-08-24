@@ -108,7 +108,7 @@ export function createStep1Tooltip(
     languageListItem.className = 'p-0 mb-2'
 
     const languageButton = document.createElement('button')
-    languageButton.className = 'btn btn-link p-0 test-tour-language-button'
+    languageButton.className = 'btn btn-link p-0 pl-1 test-tour-language-button'
     languageButton.textContent = 'Search a language'
     languageListItem.append(languageButton)
     languageButton.addEventListener('click', () => {
@@ -118,7 +118,7 @@ export function createStep1Tooltip(
     const repositoryListItem = document.createElement('li')
     repositoryListItem.className = 'p-0 mb-2 test-tour-repo-button'
     const repositoryButton = document.createElement('button')
-    repositoryButton.className = 'btn btn-link p-0'
+    repositoryButton.className = 'btn btn-link p-0 pl-1'
     repositoryButton.textContent = 'Search a repository'
     repositoryButton.addEventListener('click', () => {
         repositoryButtonHandler()
