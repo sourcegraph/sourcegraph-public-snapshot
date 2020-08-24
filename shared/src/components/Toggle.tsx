@@ -12,6 +12,11 @@ interface Props {
      */
     onToggle?: (value: boolean) => void
 
+    /**
+     * Called when the user clicks the toggle when it is disabled.
+     */
+    onToggleDisabled?: (value: boolean) => void
+
     /** The title attribute (tooltip). */
     title?: string
 
@@ -23,8 +28,10 @@ interface Props {
 /** A toggle switch input component. */
 export class Toggle extends React.PureComponent<Props> {
     private onClick = (): void => {
-        if (this.props.onToggle && !this.props.disabled) {
+        if (!this.props.disabled && this.props.onToggle) {
             this.props.onToggle(!this.props.value)
+        } else if (this.props.disabled && this.props.onToggleDisabled) {
+            this.props.onToggleDisabled(!!this.props.value)
         }
     }
     public render(): JSX.Element | null {

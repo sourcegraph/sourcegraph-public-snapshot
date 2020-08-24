@@ -14,14 +14,17 @@ interface Props {
      */
     onToggle?: (value: boolean) => void
 
+    /**
+     * Called when the user clicks the toggle when it is disabled.
+     */
+    onToggleDisabled?: (value: boolean) => void
+
     /** The title attribute (tooltip). */
     title?: string
 
     disabled?: boolean
     tabIndex?: number
     className?: string
-
-    tooltip?: React.ReactNode
 }
 
 /** A toggle switch input component.
@@ -30,8 +33,10 @@ interface Props {
  */
 export class ToggleBig extends React.PureComponent<Props> {
     private onClick = (): void => {
-        if (this.props.onToggle && !this.props.disabled) {
+        if (!this.props.disabled && this.props.onToggle) {
             this.props.onToggle(!this.props.value)
+        } else if (this.props.disabled && this.props.onToggleDisabled) {
+            this.props.onToggleDisabled(!!this.props.value)
         }
     }
     public render(): JSX.Element | null {
@@ -47,30 +52,22 @@ export class ToggleBig extends React.PureComponent<Props> {
                 onClick={this.onClick}
                 tabIndex={this.props.tabIndex}
             >
-                <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+                <span className="toggle-big__container">
                     <span
                         className={`toggle-big__bar ${this.props.value ? 'toggle-big__bar--active' : ''} ${
                             this.props.disabled ? 'toggle-big__bar--disabled' : ''
                         }`}
                     />
-                    <span
-                        className={`toggle-big__knob ${this.props.value ? 'toggle-big__knob--active' : ''} ${
-                            this.props.disabled
-                                ? this.props.value
-                                    ? 'toggle-big__knob--disabled__active'
-                                    : 'toggle-big__knob--disabled'
-                                : ''
-                        }`}
-                    />
+                    <span className={`toggle-big__knob ${this.props.value ? 'toggle-big__knob--active' : ''}`} />
                     <span className={`toggle-big__text ${!this.props.value ? 'toggle-big__text--disabled' : ''}`}>
                         {this.props.value ? 'Enabled' : 'Disabled'}
                     </span>
                     {this.props.value ? (
-                        <Check size={16} className="toggle-big__knob--icon" />
+                        <Check size={16} className="toggle-big__icon" />
                     ) : (
-                        <Close size={16} className="toggle-big__knob--icon toggle-big__knob--icon__disabled" />
+                        <Close size={16} className="toggle-big__icon toggle-big__icon--disabled" />
                     )}
-                </div>
+                </span>
             </button>
         )
     }
