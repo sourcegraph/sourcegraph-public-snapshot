@@ -77,4 +77,4 @@ If you are not permitted to view a repository on Sourcegraph, then you won't be 
 
 ## Disabling campaigns
 
-A site admin can disable campaigns for other site admins and users by setting the [site configuration](../../admin/config/site_config.md) property `"campaigns.enabled"` to `false`.
+A site admin can disable campaigns for the entire site by setting the [site configuration](../../admin/config/site_config.md) property `"campaigns.enabled"` to `false`.
