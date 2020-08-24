@@ -4,7 +4,6 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
 import { Form } from '../../../components/Form'
 import { PageTitle } from '../../../components/PageTitle'
@@ -13,9 +12,10 @@ import { updatePassword } from '../backend'
 import { ErrorAlert } from '../../../components/alerts'
 import * as H from 'history'
 import { AuthenticatedUser } from '../../../auth'
+import { UserAreaUserFields } from '../../../graphql-operations'
 
 interface Props extends RouteComponentProps<{}> {
-    user: GQL.IUser
+    user: UserAreaUserFields
     authenticatedUser: AuthenticatedUser
     history: H.History
 }

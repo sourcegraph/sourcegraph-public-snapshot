@@ -41,8 +41,7 @@ export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
                 <CampaignApplyPage {...props} specID={match.params.specID} />
             </div>
         ),
-        condition: ({ isSourcegraphDotCom }) =>
-            !isSourcegraphDotCom && window.context.experimentalFeatures?.automation === 'enabled',
+        condition: ({ isSourcegraphDotCom }) => !isSourcegraphDotCom && window.context.campaignsEnabled,
     },
 
     {
@@ -52,8 +51,7 @@ export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
                 <CreateCampaignPage {...props} />
             </div>
         ),
-        condition: ({ isSourcegraphDotCom }) =>
-            !isSourcegraphDotCom && window.context.experimentalFeatures?.automation === 'enabled',
+        condition: ({ isSourcegraphDotCom }) => !isSourcegraphDotCom && window.context.campaignsEnabled,
     },
     {
         path: '/campaigns/create',
@@ -62,8 +60,7 @@ export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
                 <CreateCampaignPage {...props} />
             </div>
         ),
-        condition: ({ isSourcegraphDotCom }) =>
-            !isSourcegraphDotCom && window.context.experimentalFeatures?.automation === 'enabled',
+        condition: ({ isSourcegraphDotCom }) => !isSourcegraphDotCom && window.context.campaignsEnabled,
     },
     {
         path: '/campaigns/:campaignID/close',
@@ -72,8 +69,7 @@ export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
                 <CampaignClosePage {...props} campaignID={match.params.campaignID} />
             </div>
         ),
-        condition: ({ isSourcegraphDotCom }) =>
-            !isSourcegraphDotCom && window.context.experimentalFeatures?.automation === 'enabled',
+        condition: ({ isSourcegraphDotCom }) => !isSourcegraphDotCom && window.context.campaignsEnabled,
     },
     {
         path: '/campaigns/:campaignID',
@@ -82,8 +78,7 @@ export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
                 <CampaignDetails {...props} campaignID={match.params.campaignID} />
             </div>
         ),
-        condition: ({ isSourcegraphDotCom }) =>
-            !isSourcegraphDotCom && window.context.experimentalFeatures?.automation === 'enabled',
+        condition: ({ isSourcegraphDotCom }) => !isSourcegraphDotCom && window.context.campaignsEnabled,
     },
     {
         path: '/campaigns',
@@ -92,7 +87,6 @@ export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
                 <OrgCampaignListPage {...props} orgID={props.org.id} />
             </div>
         ),
-        condition: ({ isSourcegraphDotCom }) =>
-            !isSourcegraphDotCom && window.context.experimentalFeatures?.automation === 'enabled',
+        condition: ({ isSourcegraphDotCom }) => !isSourcegraphDotCom && window.context.campaignsEnabled,
     },
 ]
