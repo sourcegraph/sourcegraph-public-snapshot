@@ -75,9 +75,9 @@ export const ExploreArea: React.FunctionComponent<ExploreAreaProps> = ({
     }
 
     return (
-        <div className="explore-area w-100 web-content">
+        <div className="explore-area w-100">
             <Breadcrumbs breadcrumbs={breadcrumbs} />
-            <div className="container">
+            <div className="container web-content">
                 <PageHeader title="Explore" icon={CompassOutlineIcon} />
                 {exploreSections.map(
                     ({ condition = () => true, render }, index) =>

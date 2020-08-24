@@ -39,9 +39,9 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
         )
     )
     return (
-        <div className="w-100 web-content">
+        <div className="w-100">
             <Breadcrumbs breadcrumbs={props.breadcrumbs} />
-            <div className="container mt-3">
+            <div className="container mt-3 web-content">
                 <PageHeader
                     icon={InsightsIcon}
                     title={
