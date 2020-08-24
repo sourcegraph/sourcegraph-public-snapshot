@@ -33,17 +33,3 @@ add('Dotcom', () => (
         match={{ isExact: true, path: '/campaigns', url: 'http://test.test/campaigns', params: {} }}
     />
 ))
-
-add('Private instance', () => (
-    <GlobalCampaignsArea
-        location={createMemoryHistory().location}
-        history={createMemoryHistory()}
-        isSourcegraphDotCom={false}
-        isLightTheme={true}
-        telemetryService={NOOP_TELEMETRY_SERVICE}
-        platformContext={undefined as any}
-        extensionsController={undefined as any}
-        authenticatedUser={{ username: 'alice', siteAdmin: boolean('Site admin', false) } as AuthenticatedUser}
-        match={{ isExact: true, path: '/campaigns', url: 'http://test.test/campaigns', params: {} }}
-    />
-))

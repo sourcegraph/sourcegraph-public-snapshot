@@ -1436,6 +1436,11 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 			alert := alertForStalePermissions()
 			return nil, nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
 		}
+		e := git.BadCommitError{}
+		if errors.As(err, &e) {
+			alert := r.alertForInvalidRevision(e.Spec)
+			return nil, nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
+		}
 		return nil, nil, nil, nil, err
 	}
 

@@ -1,10 +1,16 @@
-FROM alpine:3.12@sha256:185518070891758909c9f839cf4ca393ee977ac378609f700f60a771a2dfe321 as libsqlite3-pcre
+FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d as libsqlite3-pcre
 
 COPY libsqlite3-pcre-install-alpine.sh /libsqlite3-pcre-install-alpine.sh
 RUN /libsqlite3-pcre-install-alpine.sh
 
-# TODO: Make this image use our sourcegraph/alpine:3.12 base image
-FROM alpine:3.12@sha256:185518070891758909c9f839cf4ca393ee977ac378609f700f60a771a2dfe321
+FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d
+# TODO(security): This container should not be running as root!
+#
+# The default user in sourcegraph/alpine is a non-root `sourcegraph` user but because old deployments
+# cannot be easily migrated we have not changed this from root -> sourcegraph. See:
+# https://github.com/sourcegraph/sourcegraph/issues/13238
+# hadolint ignore=DL3002
+USER root
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -21,15 +27,15 @@ RUN apk update && apk add --no-cache \
     # from our *Minimum Supported Version* which alone dictates
     # the features we can depend on. See this link for more information:
     # https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/postgresql.md#version-requirements
-   'bash=5.0.17-r0' \
-   'redis=5.0.9-r0' bind-tools ca-certificates \
-    mailcap 'nginx=1.18.0-r0' openssh-client pcre sqlite-libs su-exec tini 'nodejs-current=14.5.0-r0' curl
+    'bash=5.0.17-r0' \
+    'redis=5.0.9-r0' \
+    'nginx=1.18.0-r0' openssh-client pcre sqlite-libs su-exec 'nodejs-current=14.5.0-r0'
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)
 # have been appropriately set in cmd/server/shared/shared.go.
 # hadolint ignore=DL3022
-COPY --from=comby/comby:0.15.0@sha256:b3b57ed810be1489ccd1ef8fa42210d87d2d396e416c62cee345f615a0dcb09b /usr/local/bin/comby /usr/local/bin/comby
+COPY --from=comby/comby:0.18.1@sha256:cb075442dbf87e2031c2d58ce18dc07cd17c018d7a18c95c6aded8a2da0361f3 /usr/local/bin/comby /usr/local/bin/comby
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/syntect_server:ff37f90@sha256:aa93514b7bc3aaf7a4e9c92e5ff52ee5052db6fb101255a69f054e5b8cdb46ff /syntect_server /usr/local/bin/
 

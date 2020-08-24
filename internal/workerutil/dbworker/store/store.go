@@ -95,11 +95,11 @@ type StoreOptions struct {
 	// ViewName is an optional name of a view on top of the table containing work records to query when
 	// selecting a candidate and when selecting the record after it has been locked. If this value is
 	// not supplied, `TableName` will be used. The value supplied may also indicate a table alias, which
-	// can be referenced in `OrderByExpression`, `ColumnExpressions`, and the conditions suplied to
+	// can be referenced in `OrderByExpression`, `ColumnExpressions`, and the conditions supplied to
 	// `Dequeue`.
 	//
 	// The target of this column must be a view on top of the configured table with the same column
-	// requirements as the base table descried above.
+	// requirements as the base table described above.
 	//
 	// Example use case:
 	// The processor for LSIF uploads supplies `lsif_uploads_with_repository_name`, a view on top of the
@@ -180,6 +180,15 @@ var columnNames = []string{
 	"finished_at",
 	"process_after",
 	"num_resets",
+}
+
+// DefaultColumnExpressions returns a slice of expressions for the default column name we expect.
+func DefaultColumnExpressions() []*sqlf.Query {
+	expressions := make([]*sqlf.Query, len(columnNames))
+	for i := range columnNames {
+		expressions[i] = sqlf.Sprintf(columnNames[i])
+	}
+	return expressions
 }
 
 func (s *store) Transact(ctx context.Context) (*store, error) {

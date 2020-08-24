@@ -68,7 +68,6 @@ func main() {
 	indexManager := indexmanager.New(store.WorkerutilIndexStore(s), indexmanager.ManagerOptions{
 		MaximumTransactions:   maximumTransactions,
 		RequeueDelay:          requeueDelay,
-		CleanupInterval:       cleanupInterval,
 		UnreportedIndexMaxAge: cleanupInterval * time.Duration(maximumMissedHeartbeats),
 		DeathThreshold:        cleanupInterval * time.Duration(maximumMissedHeartbeats),
 	})
@@ -104,9 +103,7 @@ func main() {
 
 	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
 	janitor := janitor.New(s, janitorInterval, janitorMetrics)
-
-	// TODO - originally missed calling this at all :(
-	managerRoutine := goroutine.NewPeriodicGoroutine(context.Background(), time.Second, indexManager)
+	managerRoutine := goroutine.NewPeriodicGoroutine(context.Background(), cleanupInterval, indexManager)
 
 	routines := []goroutine.BackgroundRoutine{
 		managerRoutine,

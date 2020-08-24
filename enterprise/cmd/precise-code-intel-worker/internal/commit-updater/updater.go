@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commits"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -37,15 +38,18 @@ func NewUpdater(store store.Store, updater commits.Updater, options UpdaterOptio
 func (u *Updater) Handle(ctx context.Context) error {
 	repositoryIDs, err := u.store.DirtyRepositories(ctx)
 	if err != nil {
-		log15.Error("Failed to retrieve dirty repositories", "err", err)
-		return nil
+		return errors.Wrap(err, "store.DirtyRepositories")
 	}
 
 	for repositoryID, dirtyFlag := range repositoryIDs {
 		if err := u.updater.TryUpdate(ctx, repositoryID, dirtyFlag); err != nil {
-			log15.Error("Failed to update repository commit graph", "err", err)
+			return errors.Wrap(err, "updater.TryUpdate")
 		}
 	}
 
 	return nil
+}
+
+func (u *Updater) HandleError(err error) {
+	log15.Error("Failed to run update process", "err", err)
 }
