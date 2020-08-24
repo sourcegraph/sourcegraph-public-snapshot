@@ -1,4 +1,4 @@
-.toggle {
+.toggle-big {
     background: none;
     border: none;
     cursor: pointer;
@@ -9,7 +9,7 @@
     width: 2rem;
 }
 
-.toggle__bar {
+.toggle-big__bar {
     background-color: var(--secondary);
 
     border-radius: 2rem;
@@ -26,11 +26,11 @@
     position: absolute;
 }
 
-.toggle__bar--active {
+.toggle-big__bar--active {
     background-color: rgba(28, 126, 214, 0.2);
 }
 
-.toggle__knob {
+.toggle-big__knob {
     background-color: var(--text-muted);
     opacity: 0.8;
     border-radius: 0.5rem;
@@ -45,12 +45,12 @@
     position: relative;
 }
 
-.toggle__knob--active {
+.toggle-big__knob--active {
     background-color: var(--primary);
-    transform: translate3d(1rem, 0, 0);
+    transform: translate3d(16px, 0, 0);
 }
 
-.toggle__knob--disabled {
+.toggle-big__knob--disabled {
     background-color: rgba(43, 55, 80, 0.2);
 
     &__active {
