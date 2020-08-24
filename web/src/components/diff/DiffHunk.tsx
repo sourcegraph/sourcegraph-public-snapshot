@@ -16,10 +16,16 @@ interface DiffBoundaryProps extends FileDiffHunkFields {
     lineNumbers: boolean
 }
 
+const diffHunkTypeIndicators: Record<GQL.DiffHunkLineType, string> = {
+    ADDED: '+',
+    UNCHANGED: ' ',
+    DELETED: '-',
+}
+
 const DiffBoundary: React.FunctionComponent<DiffBoundaryProps> = props => (
     <tr className="diff-boundary">
         {props.lineNumbers && <td className={`diff-boundary__num ${props.lineNumberClassName}`} colSpan={2} />}
-        <td className={`diff-boundary__content ${props.contentClassName}`}>
+        <td className={`diff-boundary__content ${props.contentClassName}`} data-diff-marker=" ">
             {props.oldRange.lines !== undefined && props.newRange.lines !== undefined && (
                 <code>
                     @@ -{props.oldRange.startLine},{props.oldRange.lines} +{props.newRange.startLine},
@@ -128,8 +134,12 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                         )}
 
                         {/* Needed for decorations */}
-                        {/* eslint-disable-next-line react/forbid-dom-props */}
-                        <td className="diff-hunk__content" style={lineStyle}>
+                        <td
+                            className="diff-hunk__content"
+                            /* eslint-disable-next-line react/forbid-dom-props */
+                            style={lineStyle}
+                            data-diff-marker={diffHunkTypeIndicators[line.kind]}
+                        >
                             <div className="d-inline-block" dangerouslySetInnerHTML={{ __html: line.html }} />
                             {decorationsForLine.filter(property('after', isDefined)).map((decoration, index) => {
                                 const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)
