@@ -10,6 +10,7 @@ import { ThemeProps } from '../../../shared/src/theme'
 import { PageHeader } from '../components/PageHeader'
 import { Breadcrumbs, BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
 import CompassOutlineIcon from 'mdi-react/CompassOutlineIcon'
+import { AuthenticatedUser } from '../auth'
 
 /**
  * Properties passed to all section components in the explore area.
@@ -20,7 +21,7 @@ export interface ExploreAreaSectionContext
         Omit<PatternTypeProps, 'setPatternType'>,
         BreadcrumbSetters {
     /** The currently authenticated user. */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 
     /** The subject whose extensions and settings to display. */
     viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>

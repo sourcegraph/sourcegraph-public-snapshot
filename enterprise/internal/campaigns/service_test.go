@@ -253,15 +253,15 @@ func TestService(t *testing.T) {
 
 		adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
 
+		mockCloseChangesets = func(ctx context.Context, cs campaigns.Changesets) {
+			if a := actor.FromContext(ctx); a.UID != admin.ID {
+				t.Errorf("wrong actor in context. want=%d, have=%d", admin.ID, a.UID)
+			}
+		}
+		t.Cleanup(func() { mockCloseChangesets = nil })
+
 		closeConfirm := func(t *testing.T, c *campaigns.Campaign, closeChangesets bool) {
 			t.Helper()
-
-			mockCloseChangesets = func(ctx context.Context, cs campaigns.Changesets) {
-				if a := actor.FromContext(ctx); a.UID != admin.ID {
-					t.Fatalf("wrong actor in context. want=%d, have=%d", admin.ID, a.UID)
-				}
-			}
-			defer func() { mockCloseChangesets = nil }()
 
 			closedCampaign, err := svc.CloseCampaign(adminCtx, c.ID, closeChangesets, false)
 			if err != nil {
@@ -891,13 +891,13 @@ func createTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) (
 
 	var rs []*repos.Repo
 	for i := 0; i < count; i++ {
-		r := testRepo(i, extsvc.TypeGitHub)
+		r := testRepo(t, rstore, extsvc.TypeGitHub)
 		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
 
 		rs = append(rs, r)
 	}
 
-	err := rstore.UpsertRepos(ctx, rs...)
+	err := rstore.InsertRepos(ctx, rs...)
 	if err != nil {
 		t.Fatal(err)
 	}

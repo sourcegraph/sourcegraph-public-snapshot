@@ -109,7 +109,7 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({
         )
     }
     return (
-        <ResponsiveContainer width={width} height={300}>
+        <ResponsiveContainer width={width} height={300} className="test-campaigns-chart">
             <ComposedChart
                 data={changesetCountsOverTime.map(snapshot => ({ ...snapshot, date: Date.parse(snapshot.date) }))}
             >

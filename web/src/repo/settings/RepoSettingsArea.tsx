@@ -15,6 +15,7 @@ import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/err
 import * as H from 'history'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
+import { AuthenticatedUser } from '../../auth'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -35,7 +36,7 @@ interface Props extends RouteComponentProps<{}>, BreadcrumbSetters {
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: RepoSettingsSideBarGroups
     repo: GQL.IRepository
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
     history: H.History
 }

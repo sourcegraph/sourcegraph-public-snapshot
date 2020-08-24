@@ -261,9 +261,8 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 	k := zoektResultCountFactor(len(repos.repoBranches), args.PatternInfo)
 	searchOpts := zoektSearchOpts(ctx, k, args.PatternInfo)
 
-	if args.UseFullDeadline {
+	if deadline, ok := ctx.Deadline(); ok {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
-		deadline, _ := ctx.Deadline()
 		searchOpts.MaxWallTime = time.Until(deadline)
 
 		// We don't want our context's deadline to cut off zoekt so that we can get the results

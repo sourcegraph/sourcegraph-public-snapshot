@@ -6,8 +6,6 @@ You can customize access to a campaign and propose changes to repositories with 
 
 ## Permission levels for campaigns
 
-Any person with a user account can create a campaign.
-
 The permission levels for a campaign are:
 
 - **Read:** For people who need to view the campaign.
@@ -16,6 +14,8 @@ The permission levels for a campaign are:
 To see the campaign's proposed changes on a repository, a person *also* needs read access to that specific repository. Read or admin access on the campaign does not (by itself) entitle a person to viewing all of the campaign's changes. For more information, see "[Repository permissions for campaigns](#repository-permissions-for-campaigns)".
 
 Site admins have admin permissions on all campaigns.
+
+For now, users only have read access to campaigns. In the future, users will have admin permissions on their own campaigns too.
 
 ### Campaign access for each permission level
 
@@ -75,12 +75,6 @@ Your repository permissions can change at any time:
 
 If you are not permitted to view a repository on Sourcegraph, then you won't be able to perform any operations on it, even if you are authorized on the code host.
 
-## Enabling and disabling campaigns
+## Disabling campaigns
 
-A site admin can enable campaigns for other site admins by setting the [site configuration](../../admin/config/site_config.md) property `"experimentalFeatures": { "automation": "enabled" }`
-
-This setting gives site admins write and read access to campaigns.
-
-## Enabling read-access for non-site-admin users
-
-A site admin can allow non-site-admin users to view campaigns by setting the [site configuration](../../admin/config/site_config.md) property `camapigns.readAccess.enabled` to `true`.
+A site admin can disable campaigns for the entire site by setting the [site configuration](../../admin/config/site_config.md) property `"campaigns.enabled"` to `false`.

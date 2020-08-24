@@ -18,11 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type changesetResolver struct {
@@ -407,99 +404,6 @@ func (r *changesetResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffS
 		return graphqlbackend.NewDiffStat(*stat), nil
 	}
 	return nil, nil
-}
-
-func (r *changesetResolver) Head(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {
-	if r.changeset.PublicationState.Unpublished() {
-		return nil, nil
-	}
-
-	name, err := r.changeset.HeadRef()
-	if err != nil {
-		return nil, err
-	}
-	if name == "" {
-		return nil, errors.New("changeset head ref could not be determined")
-	}
-
-	var oid string
-	if r.changeset.ExternalState == campaigns.ChangesetExternalStateMerged {
-		// The PR was merged, find the merge commit
-		events, err := r.computeEvents(ctx)
-		if err != nil {
-			return nil, errors.Wrap(err, "fetching changeset events")
-		}
-		oid = ee.ChangesetEvents(events).FindMergeCommitID()
-	}
-	if oid == "" {
-		// Fall back to the head ref
-		oid, err = r.changeset.HeadRefOid()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	resolver, err := r.gitRef(ctx, name, oid)
-	if err != nil {
-		if gitserver.IsRevisionNotFound(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return resolver, nil
-}
-
-func (r *changesetResolver) Base(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {
-	if r.changeset.PublicationState.Unpublished() {
-		return nil, nil
-	}
-
-	name, err := r.changeset.BaseRef()
-	if err != nil {
-		return nil, err
-	}
-	if name == "" {
-		return nil, errors.New("changeset base ref could not be determined")
-	}
-
-	oid, err := r.changeset.BaseRefOid()
-	if err != nil {
-		return nil, err
-	}
-
-	resolver, err := r.gitRef(ctx, name, oid)
-	if err != nil {
-		if gitserver.IsRevisionNotFound(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return resolver, nil
-}
-
-func (r *changesetResolver) gitRef(ctx context.Context, name, oid string) (*graphqlbackend.GitRefResolver, error) {
-	if oid == "" {
-		commitID, err := r.commitID(ctx, r.repoResolver, name)
-		if err != nil {
-			return nil, err
-		}
-		oid = string(commitID)
-	}
-
-	return graphqlbackend.NewGitRefResolver(r.repoResolver, name, graphqlbackend.GitObjectID(oid)), nil
-}
-
-func (r *changesetResolver) commitID(ctx context.Context, repo *graphqlbackend.RepositoryResolver, refName string) (api.CommitID, error) {
-	grepo, err := backend.CachedGitRepo(ctx, &types.Repo{
-		ExternalRepo: *repo.ExternalRepo(),
-		Name:         api.RepoName(repo.Name()),
-	})
-	if err != nil {
-		return "", err
-	}
-	// Call ResolveRevision to trigger fetches from remote (in case base/head commits don't
-	// exist).
-	return git.ResolveRevision(ctx, *grepo, nil, refName, git.ResolveRevisionOptions{})
 }
 
 type changesetLabelResolver struct {

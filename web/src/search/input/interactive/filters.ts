@@ -104,4 +104,5 @@ export const FilterTypeToProseNames: Record<FilterType, string> = {
     index: 'Indexed repos',
     visibility: 'Repository visiblity',
     stable: 'Stable result ordering',
+    rev: 'Revision',
 }

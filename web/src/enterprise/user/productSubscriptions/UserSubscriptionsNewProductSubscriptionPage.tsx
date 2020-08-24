@@ -16,13 +16,14 @@ import { BackToAllSubscriptionsLink } from './BackToAllSubscriptionsLink'
 import { ProductSubscriptionForm } from './ProductSubscriptionForm'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { useEventObservable } from '../../../../../shared/src/util/useObservable'
+import { UserAreaUserFields } from '../../../graphql-operations'
 
 interface Props extends RouteComponentProps<{}>, ThemeProps {
     /**
      * The user who will own the new subscription when created, or null when there is no
      * authenticated user and this page is accessed at /subscriptions/new.
      */
-    user: GQL.IUser | null
+    user: UserAreaUserFields | null
     history: H.History
 }
 

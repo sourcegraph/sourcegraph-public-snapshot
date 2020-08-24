@@ -53,6 +53,7 @@ import { UncontrolledPopover } from 'reactstrap'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import { RepositoriesPopover } from './RepositoriesPopover'
 import { displayRepoName, splitPath } from '../../../shared/src/components/RepoFileLink'
+import { AuthenticatedUser } from '../auth'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -71,7 +72,7 @@ export interface RepoContainerContext
         VersionContextProps,
         BreadcrumbSetters {
     repo: GQL.IRepository
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
 
@@ -111,7 +112,7 @@ interface RepoContainerProps
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
     onNavbarQueryChange: (state: QueryState) => void
     history: H.History
     globbing: boolean

@@ -3,6 +3,7 @@
  */
 import Shepherd from 'shepherd.js'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
+import { eventLogger } from '../../tracking/eventLogger'
 
 export const HAS_CANCELLED_TOUR_KEY = 'has-cancelled-onboarding-tour'
 export const HAS_SEEN_TOUR_KEY = 'has-seen-onboarding-tour'
@@ -73,6 +74,7 @@ export function generateBottomRow(tour: Shepherd.Tour, stepNumber: number, dontS
     closeTourButton.addEventListener('click', () => {
         tour.cancel()
         localStorage.setItem(HAS_CANCELLED_TOUR_KEY, 'true')
+        eventLogger.log('CloseOnboardingTourClicked', { stage: stepNumber })
     })
 
     const bottomRow = document.createElement('div')
@@ -101,9 +103,9 @@ export function createStep1Tooltip(
     repositoryButtonHandler: () => void
 ): HTMLElement {
     const list = document.createElement('ul')
-    list.className = 'my-4 list-group dash-list'
+    list.className = 'my-4 dash-list'
     const languageListItem = document.createElement('li')
-    languageListItem.className = 'list-group-item p-0 border-0 mb-2'
+    languageListItem.className = 'p-0 mb-2'
 
     const languageButton = document.createElement('button')
     languageButton.className = 'btn btn-link p-0 pl-1 test-tour-language-button'
@@ -111,14 +113,16 @@ export function createStep1Tooltip(
     languageListItem.append(languageButton)
     languageButton.addEventListener('click', () => {
         languageButtonHandler()
+        eventLogger.log('OnboardingTourLanguageOptionClicked')
     })
     const repositoryListItem = document.createElement('li')
-    repositoryListItem.className = 'list-group-item p-0 border-0 mb-2 test-tour-repo-button'
+    repositoryListItem.className = 'p-0 mb-2 test-tour-repo-button'
     const repositoryButton = document.createElement('button')
     repositoryButton.className = 'btn btn-link p-0 pl-1'
     repositoryButton.textContent = 'Search a repository'
     repositoryButton.addEventListener('click', () => {
         repositoryButtonHandler()
+        eventLogger.log('OnboardingTourRepositoryOptionClicked')
     })
     repositoryListItem.append(repositoryButton)
     list.append(languageListItem)
@@ -182,10 +186,10 @@ export function createAddCodeStepWithLanguageExampleTooltip(
     exampleCallback: (query: string, patternType: SearchPatternType) => void
 ): HTMLElement {
     const list = document.createElement('ul')
-    list.className = 'my-4 list-group caret-list'
+    list.className = 'my-4 caret-list'
 
     const listItem = document.createElement('li')
-    listItem.className = 'list-group-item p-0 border-0'
+    listItem.className = 'p-0'
 
     const exampleButton = document.createElement('button')
     exampleButton.className = 'btn btn-link test-tour-language-example'
@@ -203,6 +207,7 @@ export function createAddCodeStepWithLanguageExampleTooltip(
         const fullQuery = [languageQuery, example.query].join(' ')
         exampleCallback(fullQuery, example.patternType)
         tour.show('view-search-reference')
+        eventLogger.log('OnboardingTourExampleQueryClicked')
     })
     listItem.append(exampleButton)
     list.append(listItem)

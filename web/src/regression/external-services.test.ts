@@ -17,7 +17,7 @@ import {
     updateExternalService,
 } from './util/api'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 
 describe('External services GUI', () => {
     const testUsername = 'test-extsvc'
@@ -56,7 +56,7 @@ describe('External services GUI', () => {
         await setUserSiteAdmin(gqlClient, user.id, true)
     })
 
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
 
     after(async function () {
         this.timeout(10 * 1000)
@@ -248,7 +248,7 @@ describe('External services permissions', () => {
         ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
     })
 
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
 
     after(async function () {
         this.timeout(10 * 1000)

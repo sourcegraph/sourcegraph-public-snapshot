@@ -61,6 +61,7 @@ import { Settings } from './schema/settings.schema'
 import { Remote } from 'comlink'
 import { FlatExtHostAPI } from '../../shared/src/api/contract'
 import { useBreadcrumbs } from './components/Breadcrumbs'
+import { AuthenticatedUser } from './auth'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -100,7 +101,7 @@ export interface LayoutProps
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     routes: readonly LayoutRouteProps<any>[]
 
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 
     /**
      * The subject GraphQL node ID of the viewer, which is used to look up the viewer's settings. This is either

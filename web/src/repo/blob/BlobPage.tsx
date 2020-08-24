@@ -38,6 +38,7 @@ import { toTreeURL } from '../../util/url'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { useEventObservable } from '../../../../shared/src/util/useObservable'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
+import { AuthenticatedUser } from '../../auth'
 
 function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
     return makeRepoURI(parsed) + String(parsed.isLightTheme) + String(parsed.disableTimeout)
@@ -100,7 +101,7 @@ interface Props
     location: H.Location
     history: H.History
     repoID: GQL.ID
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 }
 
 export const BlobPage: React.FunctionComponent<Props> = props => {

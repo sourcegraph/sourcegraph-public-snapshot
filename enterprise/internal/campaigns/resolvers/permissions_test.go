@@ -18,13 +18,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestPermissionLevels(t *testing.T) {
@@ -54,8 +52,8 @@ func TestPermissionLevels(t *testing.T) {
 	userID := insertTestUser(t, dbconn.Global, "perm-level-user", false)
 
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", 1)
-	if err := reposStore.UpsertRepos(ctx, repo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
+	if err := reposStore.InsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -123,16 +121,6 @@ func TestPermissionLevels(t *testing.T) {
 	}
 
 	t.Run("queries", func(t *testing.T) {
-		// We need to enable read access so that non-site-admin users can access
-		// the API and we can check for their admin rights.
-		// This can be removed once we enable campaigns for all users and only
-		// check for permissions.
-		readAccessEnabled := true
-		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-			CampaignsReadAccessEnabled: &readAccessEnabled,
-		}})
-		defer conf.Mock(nil)
-
 		cleanUpCampaigns(t, store)
 
 		adminCampaignSpec, adminCampaignSpecID := createCampaignSpec(t, store, adminID)
@@ -444,22 +432,90 @@ func TestPermissionLevels(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("admin-only create mutations", func(t *testing.T) {
+		// These can be removed once we enable creation of
+		// changesetSpecs/campaignSpecs/applyCampaign for non-site-admin users.
+		mutations := []struct {
+			name         string
+			mutationFunc func(userID string) string
+		}{
+			{
+				name: "createChangesetSpec",
+				mutationFunc: func(_ string) string {
+					return `mutation { createChangesetSpec(changesetSpec: "{}") { type } }`
+				},
+			},
+			{
+				name: "createCampaignSpec",
+				mutationFunc: func(userID string) string {
+					return fmt.Sprintf(`
+					mutation {
+						createCampaignSpec(namespace: %q, campaignSpec: "{}", changesetSpecs: []) {
+							id
+						}
+					}`, userID)
+				},
+			},
+		}
+
+		for _, m := range mutations {
+			t.Run(m.name, func(t *testing.T) {
+				tests := []struct {
+					name        string
+					currentUser int32
+					wantAuthErr bool
+				}{
+					{
+						name:        "authorized user",
+						currentUser: userID,
+						wantAuthErr: true,
+					},
+					{
+						name:        "authorized site-admin",
+						currentUser: adminID,
+						wantAuthErr: false,
+					},
+				}
+
+				for _, tc := range tests {
+					t.Run(tc.name, func(t *testing.T) {
+						cleanUpCampaigns(t, store)
+
+						mutation := m.mutationFunc(string(graphqlbackend.MarshalUserID(tc.currentUser)))
+
+						actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
+
+						var response struct{}
+						errs := apitest.Exec(actorCtx, t, s, nil, &response, mutation)
+
+						if tc.wantAuthErr {
+							if len(errs) != 1 {
+								t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
+							}
+							if !strings.Contains(errs[0].Error(), "must be site admin") {
+								t.Fatalf("wrong error: %s %T", errs[0], errs[0])
+							}
+						} else {
+							// We don't care about other errors, we only want to
+							// check that we didn't get an auth error.
+							for _, e := range errs {
+								if strings.Contains(e.Error(), "must be site admin") {
+									t.Fatalf("auth error wrongly returned: %s %T", errs[0], errs[0])
+								}
+							}
+						}
+					})
+				}
+			})
+		}
+	})
 }
 
 func TestRepositoryPermissions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
-	// We need to enable read access so that non-site-admin users can access
-	// the API and we can check for their admin rights.
-	// This can be removed once we enable campaigns for all users and only
-	// check for permissions.
-	readAccessEnabled := true
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-		CampaignsReadAccessEnabled: &readAccessEnabled,
-	}})
-	defer conf.Mock(nil)
 
 	dbtesting.SetupGlobalTestDB(t)
 
@@ -484,8 +540,8 @@ func TestRepositoryPermissions(t *testing.T) {
 	repos := make([]*repos.Repo, 0, 2)
 	for i := 0; i < cap(repos); i++ {
 		name := fmt.Sprintf("github.com/sourcegraph/repo-%d", i)
-		r := newGitHubTestRepo(name, i)
-		if err := reposStore.UpsertRepos(ctx, r); err != nil {
+		r := newGitHubTestRepo(name, newGitHubExternalService(t, reposStore))
+		if err := reposStore.InsertRepos(ctx, r); err != nil {
 			t.Fatal(err)
 		}
 		repos = append(repos, r)

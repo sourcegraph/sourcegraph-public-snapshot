@@ -41,7 +41,7 @@ export const CampaignDetailsActionSection: React.FunctionComponent<CampaignDetai
         return (
             <button
                 type="button"
-                className="btn btn-outline-danger"
+                className="btn btn-outline-danger test-campaigns-delete-btn"
                 onClick={onDeleteCampaign}
                 data-tooltip="Deleting this campaign is a final action."
                 disabled={isDeleting === true}
@@ -54,7 +54,7 @@ export const CampaignDetailsActionSection: React.FunctionComponent<CampaignDetai
     return (
         <Link
             to={`${location.pathname}/close`}
-            className="btn btn-outline-danger"
+            className="btn btn-outline-danger test-campaigns-close-btn"
             data-tooltip="View a preview of all changes that will happen when you close this campaign."
         >
             <DeleteIcon className="icon-inline" /> Close

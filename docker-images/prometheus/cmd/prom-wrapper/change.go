@@ -44,10 +44,7 @@ func changeReceivers(ctx context.Context, log log15.Logger, change ChangeContext
 		Name: alertmanagerNoopReceiver,
 	})
 	change.AMConfig.Route = &amconfig.Route{
-		// include `alertname` for now to accommodate non-generator alerts - in the long run, we want to remove grouping on `alertname`
-		// because all alerts should have some predefined labels
-		// https://github.com/sourcegraph/sourcegraph/issues/5370
-		GroupByStr: []string{"alertname", "level", "service_name", "name", "owner"},
+		GroupByStr: commonLabels,
 
 		// How long to initially wait to send a notification for a group - each group matches exactly one alert, so fire immediately
 		GroupWait: duration(1 * time.Second),

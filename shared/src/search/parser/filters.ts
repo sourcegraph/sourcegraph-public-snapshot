@@ -135,6 +135,10 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} results from repos that contain a matching file`,
     },
+    [FilterType.rev]: {
+        description: 'Search a revision (branch, commit hash, or tag) instead of the default branch.',
+        singular: true,
+    },
     [FilterType.stable]: {
         discreteValues: ['yes', 'no'],
         default: 'no',

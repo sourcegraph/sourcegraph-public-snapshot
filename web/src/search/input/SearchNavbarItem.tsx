@@ -18,6 +18,7 @@ import { VersionContextProps } from '../../../../shared/src/search/util'
 import Shepherd from 'shepherd.js'
 import { defaultTourOptions, generateStepTooltip } from './SearchOnboardingTour'
 import { SearchPatternType } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 
 interface Props
     extends ActivationProps,
@@ -39,7 +40,7 @@ function createStructuralSearchTourTooltip(): HTMLElement {
     const list = document.createElement('ul')
     list.className = 'caret-list mb-0'
     const listItem = document.createElement('li')
-    listItem.className = 'list-group-item p-0 border-0 my-4'
+    listItem.className = 'p-0 my-4'
     list.append(listItem)
     const exampleButton = document.createElement('a')
     exampleButton.href = 'https://docs.sourcegraph.com/user/search/structural'
@@ -54,16 +55,12 @@ function createStructuralSearchTourTooltip(): HTMLElement {
  * The search item in the navbar
  */
 export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) => {
-    const onSubmit = useCallback((): void => {
-        submitSearch({ ...props, query: props.navbarSearchState.query, source: 'nav' })
-    }, [props])
-
-    const onFormSubmit = useCallback(
-        () => (event: React.FormEvent): void => {
-            event.preventDefault()
-            onSubmit()
+    const onSubmit = useCallback(
+        (event?: React.FormEvent): void => {
+            event?.preventDefault()
+            submitSearch({ ...props, query: props.navbarSearchState.query, source: 'nav' })
         },
-        [onSubmit]
+        [props]
     )
 
     const tour = useMemo(() => new Shepherd.Tour(defaultTourOptions), [])
@@ -83,6 +80,11 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 createStructuralSearchTourTooltip(),
                 true
             ),
+            when: {
+                show() {
+                    eventLogger.log('ViewedOnboardingTourStructuralSearchStep')
+                },
+            },
             attachTo: {
                 element: '.test-structural-search-toggle',
                 on: 'bottom',
@@ -111,7 +113,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
     return (
         <Form
             className="search--navbar-item d-flex align-items-flex-start flex-grow-1 flex-shrink-past-contents"
-            onSubmit={onFormSubmit}
+            onSubmit={onSubmit}
         >
             <LazyMonacoQueryInput
                 {...props}

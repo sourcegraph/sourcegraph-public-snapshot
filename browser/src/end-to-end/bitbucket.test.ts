@@ -1,5 +1,5 @@
 import expect from 'expect'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
 import { retry } from '../../../shared/src/testing/utils'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
@@ -176,7 +176,7 @@ describe('Sourcegraph browser extension on Bitbucket Server', () => {
     })
 
     // Take a screenshot when a test fails.
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
 
     testSingleFilePage({
         getDriver: () => driver,

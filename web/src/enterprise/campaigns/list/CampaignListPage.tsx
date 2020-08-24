@@ -55,7 +55,7 @@ export const CampaignListPage: React.FunctionComponent<Props> = ({
     return (
         <>
             <CampaignHeader
-                className="mb-3"
+                className="mb-3 test-campaign-list-page"
                 actionSection={
                     <Link to={`${location.pathname}/create`} className="btn btn-primary">
                         <PlusIcon className="icon-inline" /> New campaign

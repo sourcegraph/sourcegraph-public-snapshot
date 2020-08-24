@@ -4,7 +4,7 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
 <Fragment>
   <button
     aria-label="Expand section"
-    className="btn btn-icon"
+    className="btn btn-icon test-campaigns-expand-changeset"
     onClick={[Function]}
     type="button"
   >

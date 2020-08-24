@@ -275,7 +275,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 			}
 
 			storedRepos := tc.repos.Clone()
-			err = store.UpsertRepos(ctx, storedRepos...)
+			err = store.InsertRepos(ctx, storedRepos...)
 			if err != nil {
 				t.Fatalf("failed to prepare store: %v", err)
 			}
@@ -379,7 +379,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 			repo.Sources = nil
 
 			store := new(repos.FakeStore)
-			must(store.UpsertRepos(ctx, repo))
+			must(store.InsertRepos(ctx, repo))
 
 			return testCase{
 				name:  "missing clone URL",
@@ -394,7 +394,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 		func() testCase {
 			store := new(repos.FakeStore)
 			repo := repo.Clone()
-			must(store.UpsertRepos(ctx, repo))
+			must(store.InsertRepos(ctx, repo))
 			cloneURL := "https://user:password@github.com/foo/bar"
 			return testCase{
 				name:  "given clone URL is preferred",
@@ -410,7 +410,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 		func() testCase {
 			store := new(repos.FakeStore)
 			repo := repo.Clone()
-			must(store.UpsertRepos(ctx, repo))
+			must(store.InsertRepos(ctx, repo))
 			return testCase{
 				name:  "if missing, clone URL is set when stored",
 				store: store,
@@ -499,7 +499,7 @@ func TestServer_RepoExternalServices(t *testing.T) {
 	ctx := context.Background()
 	store := new(repos.FakeStore)
 	must(store.UpsertExternalServices(ctx, service1, service2))
-	must(store.UpsertRepos(ctx, repoNoSources, repoSources))
+	must(store.InsertRepos(ctx, repoNoSources, repoSources))
 
 	testCases := []struct {
 		name   string
@@ -682,7 +682,7 @@ func TestServer_StatusMessages(t *testing.T) {
 			}
 
 			store := new(repos.FakeStore)
-			err := store.UpsertRepos(ctx, stored...)
+			err := store.InsertRepos(ctx, stored...)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1093,7 +1093,7 @@ func TestRepoLookup(t *testing.T) {
 			ctx := context.Background()
 
 			store := new(repos.FakeStore)
-			err := store.UpsertRepos(ctx, tc.stored.Clone()...)
+			err := store.InsertRepos(ctx, tc.stored.Clone()...)
 			if err != nil {
 				t.Fatal(err)
 			}

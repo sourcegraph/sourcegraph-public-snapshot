@@ -147,17 +147,39 @@ func insertTestUser(t *testing.T, db *sql.DB, name string, isAdmin bool) (userID
 	return userID
 }
 
-func newGitHubTestRepo(name string, externalID int) *repos.Repo {
+func newGitHubExternalService(t *testing.T, store repos.Store) *repos.ExternalService {
+	t.Helper()
+
+	clock := repos.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
+	svc := repos.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "Github - Test",
+		Config:      `{"url": "https://github.com"}`,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	// create a few external services
+	if err := store.UpsertExternalServices(context.Background(), &svc); err != nil {
+		t.Fatalf("failed to insert external services: %v", err)
+	}
+
+	return &svc
+}
+
+func newGitHubTestRepo(name string, externalService *repos.ExternalService) *repos.Repo {
 	return &repos.Repo{
 		Name: name,
 		ExternalRepo: api.ExternalRepoSpec{
-			ID:          fmt.Sprintf("external-id-%d", externalID),
+			ID:          fmt.Sprintf("external-id-%d", externalService.ID),
 			ServiceType: "github",
 			ServiceID:   "https://github.com/",
 		},
 		Sources: map[string]*repos.SourceInfo{
-			"extsvc:github:4": {
-				ID:       "extsvc:github:4",
+			externalService.URN(): {
+				ID:       externalService.URN(),
 				CloneURL: fmt.Sprintf("https://secrettoken@%s", name),
 			},
 		},
