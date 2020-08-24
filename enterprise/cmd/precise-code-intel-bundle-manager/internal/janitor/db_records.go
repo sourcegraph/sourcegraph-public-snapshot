@@ -48,7 +48,7 @@ func (j *Janitor) removeCompletedRecordsWithoutBundleFile(ctx context.Context) e
 			continue
 		}
 
-		deleted, err := j.store.DeleteUploadByID(j.ctx, id)
+		deleted, err := j.store.DeleteUploadByID(ctx, id)
 		if err != nil {
 			return errors.Wrap(err, "store.DeleteUploadByID")
 		}
@@ -67,7 +67,7 @@ func (j *Janitor) removeCompletedRecordsWithoutBundleFile(ctx context.Context) e
 func (j *Janitor) removeOldUploadingRecords(ctx context.Context) error {
 	t := time.Now().UTC().Add(-j.maxUploadPartAge)
 
-	ids, err := j.getUploadIDs(j.ctx, store.GetUploadsOptions{
+	ids, err := j.getUploadIDs(ctx, store.GetUploadsOptions{
 		State:          "uploading",
 		UploadedBefore: &t,
 	})
@@ -76,7 +76,7 @@ func (j *Janitor) removeOldUploadingRecords(ctx context.Context) error {
 	}
 
 	for _, id := range ids {
-		deleted, err := j.store.DeleteUploadByID(j.ctx, id)
+		deleted, err := j.store.DeleteUploadByID(ctx, id)
 		if err != nil {
 			return errors.Wrap(err, "store.DeleteUploadByID")
 		}
