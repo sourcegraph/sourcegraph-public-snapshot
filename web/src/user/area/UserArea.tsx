@@ -8,7 +8,6 @@ import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, fil
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { gql, dataOrThrowErrors, requestGraphQL } from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { isErrorLike, asError } from '../../../../shared/src/util/errors'
