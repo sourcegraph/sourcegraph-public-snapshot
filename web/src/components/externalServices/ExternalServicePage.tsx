@@ -71,12 +71,12 @@ export const ExternalServicePage: React.FunctionComponent<Props> = ({
                 try {
                     setIsUpdating(true)
                     const updatedService = await updateExternalService({ input: externalServiceOrError })
+                    setIsUpdating(false)
                     // If the update was successful, and did not surface a warning, redirect to the
                     // repositories page, adding `?repositoriesUpdated` to the query string so that we display
                     // a banner at the top of the page.
                     if (updatedService.warning) {
                         setExternalServiceOrError(updatedService)
-                        setIsUpdating(false)
                     } else {
                         history.push(afterUpdateRoute)
                     }

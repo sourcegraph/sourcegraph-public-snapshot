@@ -74,18 +74,24 @@ export const AddExternalServicePage: React.FunctionComponent<Props> = ({
                     { input: { ...getExternalServiceInput(), namespace: userID ?? null } },
                     telemetryService
                 )
+                setIsCreating(false)
                 setCreatedExternalService(service)
-                // Refresh site flags so that global site alerts
-                // reflect the latest configuration.
-                // eslint-disable-next-line rxjs/no-ignored-subscription
-                refreshSiteFlags().subscribe({ error: error => console.error(error) })
-                history.push(afterCreateRoute)
             } catch (error) {
                 setIsCreating(asError(error))
             }
         },
-        [afterCreateRoute, getExternalServiceInput, history, telemetryService, userID]
+        [getExternalServiceInput, telemetryService, userID]
     )
+
+    useEffect(() => {
+        if (createdExternalService && !isErrorLike(createdExternalService)) {
+            // Refresh site flags so that global site alerts
+            // reflect the latest configuration.
+            // eslint-disable-next-line rxjs/no-ignored-subscription
+            refreshSiteFlags().subscribe({ error: error => console.error(error) })
+            history.push(afterCreateRoute)
+        }
+    }, [afterCreateRoute, createdExternalService, history])
 
     return (
         <div className="add-external-service-page mt-3">

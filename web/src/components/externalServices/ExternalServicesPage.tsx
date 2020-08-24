@@ -67,7 +67,10 @@ export const ExternalServicesPage: React.FunctionComponent<Props> = ({
                     }
                 })
             ),
-        [userID, activation, queryExternalServices]
+        // Activation changes in here, so we cannot recreate the callback on change,
+        // or queryConnection will constantly change, resulting in infinite refetch loops.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [userID, queryExternalServices]
     )
 
     if (noExternalServices === true) {
@@ -75,7 +78,7 @@ export const ExternalServicesPage: React.FunctionComponent<Props> = ({
     }
     return (
         <div className="site-admin-external-services-page">
-            <PageTitle title="Manage repositories - Admin" />
+            <PageTitle title="Manage repositories" />
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <h2 className="mb-0">Manage repositories</h2>
                 <Link
