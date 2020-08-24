@@ -45,7 +45,11 @@ export class Toggle extends React.PureComponent<Props> {
                 />
                 <span
                     className={`toggle__knob ${this.props.value ? 'toggle__knob--active' : ''} ${
-                        this.props.disabled ? 'toggle__knob--disabled' : ''
+                        this.props.disabled
+                            ? this.props.value
+                                ? 'toggle__knob--disabled__active'
+                                : 'toggle__knob--disabled'
+                            : ''
                     }`}
                 />
             </button>
