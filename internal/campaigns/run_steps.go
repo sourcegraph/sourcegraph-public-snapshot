@@ -49,6 +49,18 @@ func runSteps(ctx context.Context, client api.Client, repo *graphql.Repository, 
 	if _, err := runGitCmd("init"); err != nil {
 		return nil, errors.Wrap(err, "git init failed")
 	}
+
+	// Set user.name and user.email in the local repository. The user name and
+	// e-mail will eventually be ignored anyway, since we're just using the Git
+	// repository to generate diffs, but we don't want git to generate alarming
+	// looking warnings.
+	if _, err := runGitCmd("config", "--local", "user.name", "Sourcegraph"); err != nil {
+		return nil, errors.Wrap(err, "git config user.name failed")
+	}
+	if _, err := runGitCmd("config", "--local", "user.email", "campaigns@sourcegraph.com"); err != nil {
+		return nil, errors.Wrap(err, "git config user.email failed")
+	}
+
 	// --force because we want previously "gitignored" files in the repository
 	if _, err := runGitCmd("add", "--force", "--all"); err != nil {
 		return nil, errors.Wrap(err, "git add failed")

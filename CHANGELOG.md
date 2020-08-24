@@ -18,6 +18,7 @@ All notable changes to `src-cli` are documented in this file.
 ### Fixed
 
 - `src campaigns` output has been improved in the Windows console. [#274](https://github.com/sourcegraph/src-cli/pull/274)
+- `src campaigns` will no longer generate warnings if `user.name` or `user.email` have not been set in the global Git configuration. [#277](https://github.com/sourcegraph/src-cli/pull/277)
 
 ## 3.18.0
 
