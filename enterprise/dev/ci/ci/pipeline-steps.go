@@ -292,7 +292,8 @@ func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 			pipeline.AddWait()
 
 		case strings.HasPrefix(c.branch, "docker-images-patch/"):
-			addDockerImage(c, c.branch[20:], false)(pipeline)
+			image := c.branch[len("docker-images-patch/"):]
+			addDockerImage(c, image, false)(pipeline)
 			pipeline.AddWait()
 		}
 	}
