@@ -311,7 +311,7 @@ func TestUnresponsiveIndexer(t *testing.T) {
 	clock.Advance(time.Second * 3 / 4)
 
 	// Perform a cleanup
-	manager.Handle(context.Background())
+	_ = manager.Handle(context.Background())
 
 	if callCount := len(mockStore.RequeueFunc.History()); callCount != 5 {
 		t.Errorf("unexpected requeue call count. want=%d have=%d", 5, callCount)
