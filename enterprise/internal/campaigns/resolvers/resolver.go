@@ -23,7 +23,7 @@ import (
 )
 
 var ErrIDIsZero = errors.New("invalid node id")
-var ErrCampaignsDisabled = errors.New("campaigns are disabled. Set 'campaigns.enabled' in the site-configuration to enable the feature.")
+var ErrCampaignsDisabled = errors.New("campaigns are disabled. Set 'campaigns.enabled' in the site configuration to enable the feature.")
 var ErrCampaignsDotCom = errors.New("access to campaigns on Sourcegraph.com is currently not available")
 
 // Resolver is the GraphQL resolver of all things related to Campaigns.
