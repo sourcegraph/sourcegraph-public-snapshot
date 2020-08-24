@@ -1,4 +1,6 @@
 import * as React from 'react'
+import Close from 'mdi-react/CloseIcon'
+import Check from 'mdi-react/CheckIcon'
 
 interface Props {
     /** The initial value. */
@@ -18,6 +20,8 @@ interface Props {
     disabled?: boolean
     tabIndex?: number
     className?: string
+
+    tooltip?: React.ReactNode
 }
 
 /** A toggle switch input component.
@@ -34,23 +38,39 @@ export class ToggleBig extends React.PureComponent<Props> {
         return (
             <button
                 type="button"
-                className={`toggle ${this.props.disabled ? 'toggle__disabled' : ''} ${this.props.className || ''}`}
+                className={`toggle-big ${this.props.disabled ? 'toggle-big__disabled' : ''} ${
+                    this.props.className || ''
+                }`}
                 id={this.props.id}
                 title={this.props.title}
                 value={this.props.value ? 1 : 0}
                 onClick={this.onClick}
                 tabIndex={this.props.tabIndex}
             >
-                <span
-                    className={`toggle__bar ${this.props.value ? 'toggle__bar--active' : ''} ${
-                        this.props.disabled ? 'toggle__bar--disabled' : ''
-                    }`}
-                />
-                <span
-                    className={`toggle__knob ${this.props.value ? 'toggle__knob--active' : ''} ${
-                        this.props.disabled ? 'toggle__knob--disabled' : ''
-                    }`}
-                />
+                <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+                    <span
+                        className={`toggle-big__bar ${this.props.value ? 'toggle-big__bar--active' : ''} ${
+                            this.props.disabled ? 'toggle-big__bar--disabled' : ''
+                        }`}
+                    />
+                    <span
+                        className={`toggle-big__knob ${this.props.value ? 'toggle-big__knob--active' : ''} ${
+                            this.props.disabled
+                                ? this.props.value
+                                    ? 'toggle-big__knob--disabled__active'
+                                    : 'toggle-big__knob--disabled'
+                                : ''
+                        }`}
+                    />
+                    <span className={`toggle-big__text ${!this.props.value ? 'toggle-big__text--disabled' : ''}`}>
+                        {this.props.value ? 'Enabled' : 'Disabled'}
+                    </span>
+                    {this.props.value ? (
+                        <Check size={16} className="toggle-big__knob--icon" />
+                    ) : (
+                        <Close size={16} className="toggle-big__knob--icon toggle-big__knob--icon__disabled" />
+                    )}
+                </div>
             </button>
         )
     }
