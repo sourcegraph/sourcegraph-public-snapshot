@@ -83,7 +83,11 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
             />
         ),
         exact: true,
-        condition: () => window.context.externalServicesUserModeEnabled,
+        condition: props =>
+            window.context.externalServicesUserModeEnabled ||
+            (props.user.id === props.authenticatedUser.id &&
+                props.authenticatedUser.tags.includes('AllowUserExternalServicePublic')) ||
+            props.user.tags?.includes('AllowUserExternalServicePublic'),
     },
     {
         path: '/external-services/new',
@@ -102,7 +106,9 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
             />
         ),
         exact: true,
-        condition: () => window.context.externalServicesUserModeEnabled,
+        condition: props =>
+            window.context.externalServicesUserModeEnabled ||
+            props.user.tags?.includes('AllowUserExternalServicePublic'),
     },
     {
         path: '/external-services/:id',
@@ -114,6 +120,10 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
             />
         ),
         exact: true,
-        condition: () => window.context.externalServicesUserModeEnabled,
+        condition: props =>
+            window.context.externalServicesUserModeEnabled ||
+            (props.user.id === props.authenticatedUser.id &&
+                props.authenticatedUser.tags.includes('AllowUserExternalServicePublic')) ||
+            props.user.tags?.includes('AllowUserExternalServicePublic'),
     },
 ]

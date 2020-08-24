@@ -11,7 +11,6 @@ import (
 	"github.com/gorilla/csrf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -132,12 +131,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		sentryDSN = &siteConfig.Log.Sentry.Dsn
 	}
 
-	externalServicesUserModeEnabled := false
-	if actor.IsAuthenticated() {
-		externalServicesUserModeEnabled = conf.ExternalServiceUserMode() ||
-			backend.CheckActorHasTag(req.Context(), backend.TagAllowUserExternalServicePublic) == nil
-	}
-
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
 	// server. Including secret fields here is OK if it is based on the user's
@@ -174,7 +167,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		ResetPasswordEnabled: userpasswd.ResetPasswordEnabled(),
 
-		ExternalServicesUserModeEnabled: externalServicesUserModeEnabled,
+		ExternalServicesUserModeEnabled: conf.ExternalServiceUserMode(),
 
 		AllowSignup: conf.AuthAllowSignup(),
 

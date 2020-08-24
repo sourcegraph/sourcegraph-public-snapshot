@@ -62,6 +62,7 @@ const fetchUser = (args: { username: string; siteAdmin: boolean }): Observable<U
                     syncedAt
                     updatedAt
                 }
+                tags @include(if: $siteAdmin)
             }
         `,
         variables: args,

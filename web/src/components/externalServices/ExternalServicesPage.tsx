@@ -13,6 +13,7 @@ import { ListExternalServiceFields, Scalars } from '../../graphql-operations'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { Link } from '../../../../shared/src/components/Link'
+import { AuthenticatedUser } from '../../auth'
 
 interface Props extends ActivationProps, TelemetryProps {
     history: H.History
@@ -20,6 +21,7 @@ interface Props extends ActivationProps, TelemetryProps {
     routingPrefix: string
     afterDeleteRoute: string
     userID?: Scalars['ID']
+    authenticatedUser: Pick<AuthenticatedUser, 'id'>
 
     /** For testing only. */
     queryExternalServices?: typeof _queryExternalServices
@@ -36,6 +38,7 @@ export const ExternalServicesPage: React.FunctionComponent<Props> = ({
     activation,
     userID,
     telemetryService,
+    authenticatedUser,
     queryExternalServices = _queryExternalServices,
 }) => {
     useEffect(() => {
@@ -73,7 +76,9 @@ export const ExternalServicesPage: React.FunctionComponent<Props> = ({
         [userID, queryExternalServices]
     )
 
-    if (noExternalServices === true) {
+    const isManagingOtherUser = !!userID && userID !== authenticatedUser.id
+
+    if (!isManagingOtherUser && noExternalServices === true) {
         return <Redirect to={`${routingPrefix}/external-services/new`} />
     }
     return (
@@ -81,12 +86,14 @@ export const ExternalServicesPage: React.FunctionComponent<Props> = ({
             <PageTitle title="Manage repositories" />
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <h2 className="mb-0">Manage repositories</h2>
-                <Link
-                    className="btn btn-primary test-goto-add-external-service-page"
-                    to={`${routingPrefix}/external-services/new`}
-                >
-                    <AddIcon className="icon-inline" /> Add repositories
-                </Link>
+                {!isManagingOtherUser && (
+                    <Link
+                        className="btn btn-primary test-goto-add-external-service-page"
+                        to={`${routingPrefix}/external-services/new`}
+                    >
+                        <AddIcon className="icon-inline" /> Add repositories
+                    </Link>
+                )}
             </div>
             <p className="mt-2">Manage code host connections to sync repositories.</p>
             <FilteredConnection<ListExternalServiceFields, Omit<ExternalServiceNodeProps, 'node'>>

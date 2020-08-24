@@ -49,6 +49,7 @@ add('List of external services', () => {
             routingPrefix="/site-admin"
             afterDeleteRoute="/site-admin/after"
             telemetryService={NOOP_TELEMETRY_SERVICE}
+            authenticatedUser={{ id: '123' }}
             queryExternalServices={queryExternalServices}
         />
     )
