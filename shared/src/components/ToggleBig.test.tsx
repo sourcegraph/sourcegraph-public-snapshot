@@ -1,30 +1,25 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { ToggleBig } from './ToggleBig'
+import { mount } from 'enzyme'
+import sinon from 'sinon'
 
-describe('Toggle', () => {
+describe('ToggleBig', () => {
     test('value is false', () => {
-        const component = renderer.create(<ToggleBig value={false} />)
-        const tree = component.toJSON()
-        expect(tree).toMatchSnapshot()
+        expect(mount(<ToggleBig value={false} />)).toMatchSnapshot()
     })
 
     test('value is true', () => {
-        const component = renderer.create(<ToggleBig value={true} />)
-        const tree = component.toJSON()
-        expect(tree).toMatchSnapshot()
+        expect(mount(<ToggleBig value={true} />)).toMatchSnapshot()
     })
 
     test('disabled', () => {
-        const component = renderer.create(<ToggleBig disabled={true} />)
-        let tree = component.toJSON()
-        expect(tree).toMatchSnapshot()
+        const onToggle = sinon.spy(() => undefined)
+        const component = mount(<ToggleBig onToggle={onToggle} disabled={true} />)
 
-        // Clicking while disabled is a noop.
-        tree!.props.onClick({ preventDefault: () => undefined, currentTarget: { blur: () => undefined } })
-        tree = component.toJSON()
-        expect(tree).toMatchSnapshot()
+        component.find('.toggle-big').simulate('click')
+        sinon.assert.notCalled(onToggle)
+        expect(component).toMatchSnapshot()
     })
 
-    test('className', () => expect(renderer.create(<ToggleBig className="c" />).toJSON()).toMatchSnapshot())
+    test('className', () => expect(mount(<ToggleBig className="c" />)).toMatchSnapshot())
 })
