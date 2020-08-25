@@ -13,53 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
-// type CampaignsStore interface {
-//
-// 	// Clock() func() time.Time
-// 	// DB() dbutil.DB
-// 	// Handle() *basestore.TransactableHandle
-// 	// With(other basestore.ShareableStore)
-// 	// Transact(ctx context.Context) (*Store, error)
-//
-// 	CreateCampaignSpec(context.Context, *campaigns.CampaignSpec)
-// 	UpdateCampaignSpec(context.Context, *campaigns.CampaignSpec)
-// 	DeleteCampaignSpec(context.Context, int64)
-// 	CountCampaignSpecs(context.Context) (int, error)
-// 	GetCampaignSpec(context.Context, GetCampaignSpecOpts) (*campaigns.CampaignSpec, error)
-// 	ListCampaignSpecs(context.Context, ListCampaignSpecsOpts) (cs []*campaigns.CampaignSpec, next int64, err error)
-// 	DeleteExpiredCampaignSpecs(context.Context)
-//
-// 	GetChangesetEvent(context.Context, GetChangesetEventOpts) (*campaigns.ChangesetEvent, error)
-// 	ListChangesetEvents(context.Context, ListChangesetEventsOpts) (cs []*campaigns.ChangesetEvent, next int64, err error)
-// 	CountChangesetEvents(context.Context, CountChangesetEventsOpts) (int, error)
-// 	UpsertChangesetEvents(context.Context, ...*campaigns.ChangesetEvent) (err error)
-//
-// 	CreateChangeset(context.Context, *campaigns.Changeset)
-// 	DeleteChangeset(context.Context, int64)
-// 	CountChangesets(context.Context, CountChangesetsOpts) (int, error)
-// 	GetChangeset(context.Context, GetChangesetOpts) (*campaigns.Changeset, error)
-// 	ListChangesetSyncData(context.Context, ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error)
-// 	ListChangesets(context.Context, ListChangesetsOpts) (cs campaigns.Changesets, next int64, err error)
-// 	UpdateChangeset(context.Context, *campaigns.Changeset)
-// 	GetChangesetExternalIDs(context.Context, api.ExternalRepoSpec, []string) ([]string, error)
-//
-// 	CreateCampaign(context.Context, *campaigns.Campaign)
-// 	UpdateCampaign(context.Context, *campaigns.Campaign)
-// 	DeleteCampaign(context.Context, int64)
-// 	CountCampaigns(context.Context, CountCampaignsOpts) (int, error)
-// 	GetCampaign(context.Context, GetCampaignOpts) (*campaigns.Campaign, error)
-// 	ListCampaigns(context.Context, ListCampaignsOpts) (cs []*campaigns.Campaign, next int64, err error)
-//
-// 	CreateChangesetSpec(context.Context, *campaigns.ChangesetSpec)
-// 	UpdateChangesetSpec(context.Context, *campaigns.ChangesetSpec)
-// 	DeleteChangesetSpec(context.Context, int64)
-// 	CountChangesetSpecs(context.Context, CountChangesetSpecsOpts) (int, error)
-// 	GetChangesetSpec(context.Context, GetChangesetSpecOpts) (*campaigns.ChangesetSpec, error)
-// 	GetChangesetSpecByID(context.Context, int64) (*campaigns.ChangesetSpec, error)
-// 	ListChangesetSpecs(context.Context, ListChangesetSpecsOpts) (cs campaigns.ChangesetSpecs, next int64, err error)
-// 	DeleteExpiredChangesetSpecs(context.Context)
-// }
-//
 // seededRand is used to populate the RandID fields on CampaignSpec and
 // ChangesetSpec when creating them.
 var seededRand *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
