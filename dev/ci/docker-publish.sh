@@ -31,7 +31,7 @@ for dst in "$@"; do
   docker push "$dst"
 done
 
-echo "--- summary"
+echo "+++ summary"
 id="$(docker inspect --format='{{.Id}}' "$src")"
 for dst in "$@"; do
   echo "$dst@$id"
