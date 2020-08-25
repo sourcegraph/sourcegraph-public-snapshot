@@ -42,7 +42,7 @@ export function generateStepTooltip(
     const element = document.createElement('div')
     element.className = `d-flex flex-column test-tour-step-${stepNumber}`
     const titleElement = document.createElement('h4')
-    titleElement.textContent = title
+    titleElement.innerHTML = title
     titleElement.className = 'font-weight-bold'
     element.append(titleElement)
     if (description) {
