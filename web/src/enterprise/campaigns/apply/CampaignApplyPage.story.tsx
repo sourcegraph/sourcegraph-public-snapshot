@@ -11,6 +11,7 @@ import { visibleChangesetSpecStories } from './VisibleChangesetSpecNode.story'
 import { hiddenChangesetSpecStories } from './HiddenChangesetSpecNode.story'
 import { fetchCampaignSpecById } from './backend'
 import { addDays, subDays } from 'date-fns'
+import { useBreadcrumbs } from '../../../components/Breadcrumbs'
 
 let isLightTheme = true
 const { add } = storiesOf('web/campaigns/apply/CampaignApplyPage', module).addDecorator(story => {
@@ -87,8 +88,10 @@ const queryEmptyFileDiffs = () =>
 
 add('Create', () => {
     const history = H.createMemoryHistory()
+    const breadcrumbsProps = useBreadcrumbs()
     return (
         <CampaignApplyPage
+            {...breadcrumbsProps}
             specID="123123"
             fetchCampaignSpecById={fetchCampaignSpecCreate}
             queryChangesetSpecs={queryChangesetSpecs}
@@ -102,8 +105,10 @@ add('Create', () => {
 
 add('Update', () => {
     const history = H.createMemoryHistory()
+    const breadcrumbsProps = useBreadcrumbs()
     return (
         <CampaignApplyPage
+            {...breadcrumbsProps}
             specID="123123"
             fetchCampaignSpecById={fetchCampaignSpecUpdate}
             queryChangesetSpecs={queryChangesetSpecs}

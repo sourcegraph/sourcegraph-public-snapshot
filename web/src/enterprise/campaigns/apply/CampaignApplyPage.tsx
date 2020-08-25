@@ -15,8 +15,9 @@ import { CreateUpdateCampaignAlert } from './CreateUpdateCampaignAlert'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { HeroPage } from '../../../components/HeroPage'
 import { CampaignDescription } from '../detail/CampaignDescription'
+import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 
-export interface CampaignApplyPageProps extends ThemeProps {
+export interface CampaignApplyPageProps extends ThemeProps, BreadcrumbSetters {
     specID: string
     history: H.History
     location: H.Location
@@ -34,11 +35,22 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
     history,
     location,
     isLightTheme,
+    useBreadcrumb,
     fetchCampaignSpecById = _fetchCampaignSpecById,
     queryChangesetSpecs,
     queryChangesetSpecFileDiffs,
 }) => {
     const spec = useObservable(useMemo(() => fetchCampaignSpecById(specID), [specID, fetchCampaignSpecById]))
+
+    useBreadcrumb(
+        useMemo(
+            () => ({
+                element: <>Apply spec</>,
+                key: 'applySpecPage',
+            }),
+            []
+        )
+    )
 
     if (spec === undefined) {
         return (
@@ -57,10 +69,7 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
             <CampaignHeader
                 name={spec.description.name}
                 namespace={spec.namespace}
-                createdAt={spec.createdAt}
-                creator={spec.creator}
-                verb="Uploaded"
-                className="mb-3 test-campaign-apply-page"
+                className="test-campaign-apply-page"
             />
             <CreateUpdateCampaignAlert
                 history={history}

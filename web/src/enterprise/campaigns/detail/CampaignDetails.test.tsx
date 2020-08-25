@@ -6,6 +6,7 @@ import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/tele
 import { PageTitle } from '../../../components/PageTitle'
 import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
 import { mount } from 'enzyme'
+import { useBreadcrumbs } from '../../../components/Breadcrumbs'
 
 // This is idempotent, so calling it in multiple tests is not a problem.
 registerHighlightContributions()
@@ -17,8 +18,9 @@ describe('CampaignDetails', () => {
         PageTitle.titleSet = false
     })
 
-    const renderCampaignDetails = ({ viewerCanAdminister }: { viewerCanAdminister: boolean }) => (
+    const RenderCampaignDetails = ({ viewerCanAdminister }: { viewerCanAdminister: boolean }) => (
         <CampaignDetails
+            {...useBreadcrumbs()}
             campaignID="c"
             history={history}
             location={history.location}
@@ -59,7 +61,7 @@ describe('CampaignDetails', () => {
     for (const viewerCanAdminister of [true, false]) {
         describe(`viewerCanAdminister: ${String(viewerCanAdminister)}`, () => {
             test('viewing existing', () => {
-                const rendered = mount(renderCampaignDetails({ viewerCanAdminister }))
+                const rendered = mount(RenderCampaignDetails({ viewerCanAdminister }))
                 expect(rendered).toMatchSnapshot()
             })
         })

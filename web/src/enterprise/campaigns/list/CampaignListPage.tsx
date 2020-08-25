@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useMemo } from 'react'
+import React, { useEffect, useCallback } from 'react'
 import { queryCampaigns as _queryCampaigns, queryCampaignsByUser, queryCampaignsByOrg } from './backend'
 import { RouteComponentProps } from 'react-router'
 import { FilteredConnection, FilteredConnectionFilter } from '../../../components/FilteredConnection'
@@ -16,13 +16,8 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import { Link } from '../../../../../shared/src/components/Link'
 import { PageHeader } from '../../../components/PageHeader'
 import { CampaignsIcon } from '../icons'
-import { Breadcrumbs, BreadcrumbSetters, BreadcrumbsProps } from '../../../components/Breadcrumbs'
 
-interface Props
-    extends TelemetryProps,
-        Pick<RouteComponentProps, 'history' | 'location'>,
-        BreadcrumbsProps,
-        BreadcrumbSetters {
+export interface CampaignListPageProps extends TelemetryProps, Pick<RouteComponentProps, 'history' | 'location'> {
     displayNamespace?: boolean
     queryCampaigns?: typeof _queryCampaigns
 }
@@ -51,25 +46,15 @@ const FILTERS: FilteredConnectionFilter[] = [
 /**
  * A list of all campaigns on the Sourcegraph instance.
  */
-export const CampaignListPage: React.FunctionComponent<Props> = ({
+export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = ({
     queryCampaigns = _queryCampaigns,
     displayNamespace = true,
     location,
     ...props
 }) => {
     useEffect(() => props.telemetryService.logViewEvent('CampaignsListPage'), [props.telemetryService])
-    props.useBreadcrumb(
-        useMemo(
-            () => ({
-                key: 'Campaigns list',
-                element: <>Campaigns</>,
-            }),
-            []
-        )
-    )
     return (
         <>
-            <Breadcrumbs breadcrumbs={props.breadcrumbs} />
             <PageHeader
                 icon={CampaignsIcon}
                 title={
@@ -107,7 +92,7 @@ export const CampaignListPage: React.FunctionComponent<Props> = ({
     )
 }
 
-export interface UserCampaignListPageProps extends Props {
+export interface UserCampaignListPageProps extends CampaignListPageProps {
     userID: Scalars['ID']
 }
 
@@ -130,7 +115,7 @@ export const UserCampaignListPage: React.FunctionComponent<UserCampaignListPageP
     return <CampaignListPage {...props} displayNamespace={false} queryCampaigns={queryConnection} />
 }
 
-export interface OrgCampaignListPageProps extends Props {
+export interface OrgCampaignListPageProps extends CampaignListPageProps {
     orgID: Scalars['ID']
 }
 

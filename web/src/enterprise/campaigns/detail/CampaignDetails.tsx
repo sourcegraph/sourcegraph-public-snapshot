@@ -24,13 +24,12 @@ import { CampaignStatsCard } from './CampaignStatsCard'
 import { CampaignHeader } from './CampaignHeader'
 import { CampaignTabs } from './CampaignTabs'
 import { CampaignDetailsActionSection } from './CampaignDetailsActionSection'
-import { Breadcrumbs, BreadcrumbsProps, BreadcrumbSetters } from '../../../components/Breadcrumbs'
+import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 
 export interface CampaignDetailsProps
     extends ThemeProps,
         ExtensionsControllerProps,
         PlatformContextProps,
-        BreadcrumbsProps,
         BreadcrumbSetters,
         TelemetryProps {
     /**
@@ -63,8 +62,7 @@ export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
     extensionsController,
     platformContext,
     telemetryService,
-    useBreadcrumb,
-    breadcrumbs,
+    setBreadcrumb,
     fetchCampaignById = _fetchCampaignById,
     queryChangesets,
     queryExternalChangesetWithFileDiffs,
@@ -86,6 +84,17 @@ export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
         )
     )
 
+    useEffect(() => {
+        if (campaign) {
+            const subscription = setBreadcrumb({
+                element: <>{campaign.name}</>,
+                key: 'campaignDetails',
+            })
+            return () => subscription.unsubscribe()
+        }
+        return () => undefined
+    }, [campaign, setBreadcrumb])
+
     // Is loading.
     if (campaign === undefined) {
         return (
@@ -102,12 +111,9 @@ export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
     return (
         <>
             <PageTitle title={campaign.name} />
-            <Breadcrumbs breadcrumbs={breadcrumbs} />
             <CampaignHeader
                 name={campaign.name}
                 namespace={campaign.namespace}
-                creator={campaign.initialApplier}
-                createdAt={campaign.createdAt}
                 actionSection={
                     <CampaignDetailsActionSection
                         campaignID={campaign.id}
@@ -117,7 +123,7 @@ export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
                         history={history}
                     />
                 }
-                className="mb-3 test-campaign-details-page"
+                className="test-campaign-details-page"
             />
             <CampaignStatsCard closedAt={campaign.closedAt} stats={campaign.changesets.stats} className="mb-3" />
             <CampaignDescription history={history} description={campaign.description} />

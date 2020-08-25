@@ -3,7 +3,7 @@ import { PageTitle } from '../../../components/PageTitle'
 import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 import { PageHeader } from '../../../components/PageHeader'
 import { CampaignsIcon } from '../icons'
-import { BreadcrumbsProps, BreadcrumbSetters, Breadcrumbs } from '../../../components/Breadcrumbs'
+import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 
 const campaignSpec = `name: hello-world
 description: Add Hello World to READMEs
@@ -30,19 +30,15 @@ const helloWorldDownloadUrl = 'data:text/plain;charset=utf-8,' + encodeURICompon
 
 const sourcePreviewCommand = 'src campaign preview -f hello-world.campaign.yaml'
 
-export interface CreateCampaignPageProps extends BreadcrumbsProps, BreadcrumbSetters {
+export interface CreateCampaignPageProps extends BreadcrumbSetters {
     // Nothing for now, but using it so once this changes we get type errors in the routing files.
 }
 
-export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps> = ({
-    breadcrumbs,
-    useBreadcrumb,
-}) => {
+export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps> = ({ useBreadcrumb }) => {
     useBreadcrumb(useMemo(() => ({ element: <>Create campaign</>, key: 'createCampaignPage' }), []))
     return (
         <>
             <PageTitle title="Create campaign" />
-            <Breadcrumbs breadcrumbs={breadcrumbs} />
             <PageHeader
                 icon={CampaignsIcon}
                 title={

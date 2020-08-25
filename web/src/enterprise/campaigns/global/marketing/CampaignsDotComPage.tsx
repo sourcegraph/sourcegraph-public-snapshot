@@ -3,8 +3,12 @@ import { PrivateCodeCta } from '../../../../search/input/PrivateCodeCta'
 import { CampaignsIcon } from '../../icons'
 import { PageHeader } from '../../../../components/PageHeader'
 
-export const CampaignsDotComPage: React.FunctionComponent<{}> = () => (
-    <>
+export interface CampaignsDotComPageProps {
+    // Nothing for now.
+}
+
+export const CampaignsDotComPage: React.FunctionComponent<CampaignsDotComPageProps> = () => (
+    <div className="container web-content mt-3">
         <section className="mt-3 mb-5">
             <PageHeader
                 icon={CampaignsIcon}
@@ -80,5 +84,5 @@ export const CampaignsDotComPage: React.FunctionComponent<{}> = () => (
                 <PrivateCodeCta />
             </div>
         </div>
-    </>
+    </div>
 )

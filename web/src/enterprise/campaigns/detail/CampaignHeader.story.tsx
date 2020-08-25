@@ -4,7 +4,7 @@ import React from 'react'
 import webStyles from '../../../enterprise.scss'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { CampaignHeader } from './CampaignHeader'
-import { subDays } from 'date-fns'
+import { Link } from '../../../../../shared/src/components/Link'
 
 const { add } = storiesOf('web/campaigns/CampaignHeader', module).addDecorator(story => {
     const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
@@ -19,12 +19,14 @@ const { add } = storiesOf('web/campaigns/CampaignHeader', module).addDecorator(s
     )
 })
 
-add('Plain', () => <CampaignHeader />)
 add('Full', () => (
     <CampaignHeader
-        createdAt={subDays(new Date(), 5).toISOString()}
-        creator={{ username: 'alice', url: 'https://test.test/alice' }}
         namespace={{ namespaceName: 'alice', url: 'https://test.test/alice' }}
         name="awesome-campaign"
+        actionSection={
+            <Link to="/" className="btn btn-secondary">
+                Some button
+            </Link>
+        }
     />
 ))

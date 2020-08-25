@@ -22,6 +22,7 @@ import {
 } from '../../../graphql-operations'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 import { useMemo, useCallback } from '@storybook/addons'
+import { useBreadcrumbs } from '../../../components/Breadcrumbs'
 
 let isLightTheme = true
 const { add } = storiesOf('web/campaigns/close/CampaignClosePage', module).addDecorator(story => {
@@ -165,6 +166,7 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
 add('Overview', () => {
     const history = H.createMemoryHistory()
     const viewerCanAdminister = boolean('viewerCanAdminister', true)
+    const breadcrumbsProps = useBreadcrumbs()
     const campaign: CampaignFields = useMemo(
         () => ({
             __typename: 'Campaign',
@@ -204,6 +206,7 @@ add('Overview', () => {
     const fetchCampaign: typeof fetchCampaignById = useCallback(() => of(campaign), [campaign])
     return (
         <CampaignClosePage
+            {...breadcrumbsProps}
             history={history}
             location={history.location}
             queryChangesets={queryChangesets}

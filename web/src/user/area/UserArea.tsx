@@ -26,6 +26,7 @@ import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryServic
 import { AuthenticatedUser } from '../../auth'
 import { UserResult, UserVariables, UserAreaUserFields } from '../../graphql-operations'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
+import { Link } from '../../../../shared/src/components/Link'
 
 const fetchUser = (args: { username: string; siteAdmin: boolean }): Observable<UserAreaUserFields> =>
     requestGraphQL<UserResult, UserVariables>({
@@ -195,11 +196,15 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                 .subscribe(
                     stateUpdate => {
                         this.setState(stateUpdate)
-                        if (!isErrorLike(stateUpdate.userOrError)) {
-                            this.props.setBreadcrumb({
-                                key: 'User Area',
-                                element: <>{stateUpdate.userOrError?.username}</>,
-                            })
+                        if (stateUpdate.userOrError && !isErrorLike(stateUpdate.userOrError)) {
+                            this.subscriptions.add(
+                                this.props.setBreadcrumb({
+                                    key: 'User Area',
+                                    element: (
+                                        <Link to={stateUpdate.userOrError.url}>{stateUpdate.userOrError.username}</Link>
+                                    ),
+                                })
+                            )
                         }
                     },
                     error => console.error(error)

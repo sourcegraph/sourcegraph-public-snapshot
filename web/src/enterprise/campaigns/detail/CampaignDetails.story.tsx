@@ -23,6 +23,7 @@ import {
 import { subDays } from 'date-fns'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 import { useMemo, useCallback } from '@storybook/addons'
+import { useBreadcrumbs } from '../../../components/Breadcrumbs'
 
 let isLightTheme = true
 const { add } = storiesOf('web/campaigns/details/CampaignDetails', module).addDecorator(story => {
@@ -265,8 +266,10 @@ add('Overview', () => {
 
     const fetchCampaign: typeof fetchCampaignById = useCallback(() => of(campaign), [campaign])
     const history = H.createMemoryHistory({ initialEntries: [window.location.href] })
+    const breadcrumbsProps = useBreadcrumbs()
     return (
         <CampaignDetails
+            {...breadcrumbsProps}
             campaignID="123123"
             fetchCampaignById={fetchCampaign}
             queryChangesets={queryChangesets}

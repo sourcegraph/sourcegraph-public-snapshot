@@ -8,6 +8,7 @@ import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 import { nodes } from './CampaignNode.story'
 import { of } from 'rxjs'
+import { useBreadcrumbs } from '../../../components/Breadcrumbs'
 
 const { add } = storiesOf('web/campaigns/CampaignListPage', module).addDecorator(story => {
     const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
@@ -24,8 +25,10 @@ const { add } = storiesOf('web/campaigns/CampaignListPage', module).addDecorator
 
 add('List of campaigns', () => {
     const history = createMemoryHistory()
+    const breadcrumbProps = useBreadcrumbs()
     return (
         <CampaignListPage
+            {...breadcrumbProps}
             queryCampaigns={() =>
                 of({
                     totalCount: Object.values(nodes).length,
