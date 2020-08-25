@@ -77,7 +77,7 @@ interface AuthenticatedProps extends Props {
 }
 
 export const AuthenticatedCampaignsArea = withAuthenticatedUser<AuthenticatedProps>(({ match, ...outerProps }) => {
-    outerProps.useBreadcrumb(
+    const breadcrumbSetters = outerProps.useBreadcrumb(
         useMemo(
             () => ({
                 key: 'CampaignsArea',
@@ -93,13 +93,13 @@ export const AuthenticatedCampaignsArea = withAuthenticatedUser<AuthenticatedPro
                 {/* eslint-disable react/jsx-no-bind */}
                 <Switch>
                     <Route
-                        render={props => <CampaignListPage {...outerProps} {...props} />}
+                        render={props => <CampaignListPage {...outerProps} {...props} {...breadcrumbSetters} />}
                         path={match.url}
                         exact={true}
                     />
                     <Route
                         path={`${match.url}/create`}
-                        render={props => <CreateCampaignPage {...outerProps} {...props} />}
+                        render={props => <CreateCampaignPage {...outerProps} {...props} {...breadcrumbSetters} />}
                         exact={true}
                     />
                 </Switch>
@@ -116,7 +116,7 @@ export interface UserCampaignsAreaProps extends Props {
 export const UserCampaignsArea = withAuthenticatedUser<
     UserCampaignsAreaProps & { authenticatedUser: AuthenticatedUser }
 >(({ match, userID, ...outerProps }) => {
-    outerProps.useBreadcrumb(
+    const breadcrumbSetters = outerProps.useBreadcrumb(
         useMemo(
             () => ({
                 key: 'CampaignsArea',
@@ -137,28 +137,45 @@ export const UserCampaignsArea = withAuthenticatedUser<
                     <Route
                         path={`${match.url}/apply/:specID`}
                         render={({ match, ...props }: RouteComponentProps<{ specID: string }>) => (
-                            <CampaignApplyPage {...props} {...outerProps} specID={match.params.specID} />
+                            <CampaignApplyPage
+                                {...outerProps}
+                                {...props}
+                                {...breadcrumbSetters}
+                                specID={match.params.specID}
+                            />
                         )}
                     />
                     <Route
                         path={`${match.url}/create`}
-                        render={props => <CreateCampaignPage {...props} {...outerProps} />}
+                        render={props => <CreateCampaignPage {...outerProps} {...props} {...breadcrumbSetters} />}
                     />
                     <Route
                         path={`${match.url}/:campaignID/close`}
                         render={({ match, ...props }: RouteComponentProps<{ campaignID: string }>) => (
-                            <CampaignClosePage {...props} {...outerProps} campaignID={match.params.campaignID} />
+                            <CampaignClosePage
+                                {...outerProps}
+                                {...props}
+                                {...breadcrumbSetters}
+                                campaignID={match.params.campaignID}
+                            />
                         )}
                     />
                     <Route
                         path={`${match.url}/:campaignID`}
                         render={({ match, ...props }: RouteComponentProps<{ campaignID: string }>) => (
-                            <CampaignDetails {...props} {...outerProps} campaignID={match.params.campaignID} />
+                            <CampaignDetails
+                                {...outerProps}
+                                {...props}
+                                {...breadcrumbSetters}
+                                campaignID={match.params.campaignID}
+                            />
                         )}
                     />
                     <Route
                         path={match.url}
-                        render={props => <UserCampaignListPage {...props} {...outerProps} userID={userID} />}
+                        render={props => (
+                            <UserCampaignListPage {...outerProps} {...props} {...breadcrumbSetters} userID={userID} />
+                        )}
                     />
                     {/* eslint-enable react/jsx-no-bind */}
                 </Switch>
@@ -173,7 +190,7 @@ export interface OrgCampaignsAreaProps extends Props {
 
 export const OrgCampaignsArea = withAuthenticatedUser<OrgCampaignsAreaProps & { authenticatedUser: AuthenticatedUser }>(
     ({ match, orgID, ...outerProps }) => {
-        outerProps.useBreadcrumb(
+        const breadcrumbSetters = outerProps.useBreadcrumb(
             useMemo(
                 () => ({
                     key: 'CampaignsArea',
@@ -194,28 +211,45 @@ export const OrgCampaignsArea = withAuthenticatedUser<OrgCampaignsAreaProps & { 
                         <Route
                             path={`${match.url}/apply/:specID`}
                             render={({ match, ...props }: RouteComponentProps<{ specID: string }>) => (
-                                <CampaignApplyPage {...props} {...outerProps} specID={match.params.specID} />
+                                <CampaignApplyPage
+                                    {...props}
+                                    {...outerProps}
+                                    {...breadcrumbSetters}
+                                    specID={match.params.specID}
+                                />
                             )}
                         />
                         <Route
                             path={`${match.url}/create`}
-                            render={props => <CreateCampaignPage {...props} {...outerProps} />}
+                            render={props => <CreateCampaignPage {...props} {...outerProps} {...breadcrumbSetters} />}
                         />
                         <Route
                             path={`${match.url}/:campaignID/close`}
                             render={({ match, ...props }: RouteComponentProps<{ campaignID: string }>) => (
-                                <CampaignClosePage {...props} {...outerProps} campaignID={match.params.campaignID} />
+                                <CampaignClosePage
+                                    {...props}
+                                    {...outerProps}
+                                    {...breadcrumbSetters}
+                                    campaignID={match.params.campaignID}
+                                />
                             )}
                         />
                         <Route
                             path={`${match.url}/:campaignID`}
                             render={({ match, ...props }: RouteComponentProps<{ campaignID: string }>) => (
-                                <CampaignDetails {...props} {...outerProps} campaignID={match.params.campaignID} />
+                                <CampaignDetails
+                                    {...props}
+                                    {...outerProps}
+                                    {...breadcrumbSetters}
+                                    campaignID={match.params.campaignID}
+                                />
                             )}
                         />
                         <Route
                             path={match.url}
-                            render={props => <OrgCampaignListPage {...props} {...outerProps} orgID={orgID} />}
+                            render={props => (
+                                <OrgCampaignListPage {...props} {...outerProps} {...breadcrumbSetters} orgID={orgID} />
+                            )}
                             exact={true}
                         />
                         {/* eslint-enable react/jsx-no-bind */}

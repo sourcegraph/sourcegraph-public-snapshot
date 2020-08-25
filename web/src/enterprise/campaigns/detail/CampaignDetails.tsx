@@ -88,7 +88,7 @@ export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
         if (campaign) {
             const subscription = setBreadcrumb({
                 element: <>{campaign.name}</>,
-                key: 'campaignDetails',
+                key: 'CampaignDetails',
             })
             return () => subscription.unsubscribe()
         }

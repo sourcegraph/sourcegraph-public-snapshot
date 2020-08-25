@@ -96,7 +96,7 @@ interface Props
     isSourcegraphDotCom: boolean
 }
 
-interface State {
+interface State extends BreadcrumbSetters {
     /**
      * The fetched org or an error if an error occurred; undefined while loading.
      */
@@ -132,11 +132,19 @@ export interface OrgAreaPageProps
  * An organization's public profile area.
  */
 export class OrgArea extends React.Component<Props> {
-    public state: State = {}
+    public state: State
 
     private componentUpdates = new Subject<Props>()
     private refreshRequests = new Subject<void>()
     private subscriptions = new Subscription()
+
+    constructor(props: Props) {
+        super(props)
+        this.state = {
+            setBreadcrumb: props.setBreadcrumb,
+            useBreadcrumb: props.useBreadcrumb,
+        }
+    }
 
     public componentDidMount(): void {
         // Changes to the route-matched org name.
@@ -164,14 +172,19 @@ export class OrgArea extends React.Component<Props> {
                 .subscribe(
                     stateUpdate => {
                         if (stateUpdate.orgOrError && !isErrorLike(stateUpdate.orgOrError)) {
-                            this.subscriptions.add(
-                                this.props.setBreadcrumb({
-                                    key: 'OrgArea',
-                                    element: <Link to={stateUpdate.orgOrError.url}>{stateUpdate.orgOrError.name}</Link>,
-                                })
-                            )
+                            const subscription = this.props.setBreadcrumb({
+                                key: 'OrgArea',
+                                element: <Link to={stateUpdate.orgOrError.url}>{stateUpdate.orgOrError.name}</Link>,
+                            })
+                            this.subscriptions.add(subscription)
+                            this.setState({
+                                useBreadcrumb: subscription.useBreadcrumb,
+                                setBreadcrumb: subscription.setBreadcrumb,
+                                orgOrError: stateUpdate.orgOrError,
+                            })
+                        } else {
+                            this.setState(stateUpdate)
                         }
-                        this.setState(stateUpdate)
                     },
                     error => console.error(error)
                 )
@@ -215,8 +228,8 @@ export class OrgArea extends React.Component<Props> {
             telemetryService: this.props.telemetryService,
             isSourcegraphDotCom: this.props.isSourcegraphDotCom,
             breadcrumbs: this.props.breadcrumbs,
-            setBreadcrumb: this.props.setBreadcrumb,
-            useBreadcrumb: this.props.useBreadcrumb,
+            setBreadcrumb: this.state.setBreadcrumb,
+            useBreadcrumb: this.state.useBreadcrumb,
         }
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {

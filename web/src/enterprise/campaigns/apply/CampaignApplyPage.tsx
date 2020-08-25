@@ -46,7 +46,7 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
         useMemo(
             () => ({
                 element: <>Apply spec</>,
-                key: 'applySpecPage',
+                key: 'ApplySpecPage',
             }),
             []
         )

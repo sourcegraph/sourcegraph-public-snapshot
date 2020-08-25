@@ -109,7 +109,7 @@ interface UserAreaProps
     isSourcegraphDotCom: boolean
 }
 
-interface UserAreaState {
+interface UserAreaState extends BreadcrumbSetters {
     /**
      * The fetched user (who is the subject of the page), or an error if an error occurred; undefined while
      * loading.
@@ -160,11 +160,19 @@ export interface UserAreaRouteContext
  * A user's public profile area.
  */
 export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
-    public state: UserAreaState = {}
+    public state: UserAreaState
 
     private componentUpdates = new Subject<UserAreaProps>()
     private refreshRequests = new Subject<void>()
     private subscriptions = new Subscription()
+
+    constructor(props: UserAreaProps) {
+        super(props)
+        this.state = {
+            setBreadcrumb: props.setBreadcrumb,
+            useBreadcrumb: props.useBreadcrumb,
+        }
+    }
 
     public componentDidMount(): void {
         // Changes to the route-matched username.
@@ -195,16 +203,21 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                 )
                 .subscribe(
                     stateUpdate => {
-                        this.setState(stateUpdate)
                         if (stateUpdate.userOrError && !isErrorLike(stateUpdate.userOrError)) {
-                            this.subscriptions.add(
-                                this.props.setBreadcrumb({
-                                    key: 'UserArea',
-                                    element: (
-                                        <Link to={stateUpdate.userOrError.url}>{stateUpdate.userOrError.username}</Link>
-                                    ),
-                                })
-                            )
+                            const subscription = this.props.setBreadcrumb({
+                                key: 'UserArea',
+                                element: (
+                                    <Link to={stateUpdate.userOrError.url}>{stateUpdate.userOrError.username}</Link>
+                                ),
+                            })
+                            this.subscriptions.add(subscription)
+                            this.setState({
+                                ...stateUpdate,
+                                setBreadcrumb: subscription.setBreadcrumb,
+                                useBreadcrumb: subscription.useBreadcrumb,
+                            })
+                        } else {
+                            this.setState(stateUpdate)
                         }
                     },
                     error => console.error(error)
@@ -237,11 +250,25 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
         }
 
         const context: UserAreaRouteContext = {
-            ...this.props,
+            authenticatedUser: this.props.authenticatedUser,
+            extensionsController: this.props.extensionsController,
+            isLightTheme: this.props.isLightTheme,
+            isSourcegraphDotCom: this.props.isSourcegraphDotCom,
+            patternType: this.props.patternType,
+            platformContext: this.props.platformContext,
+            settingsCascade: this.props.settingsCascade,
+            showOnboardingTour: this.props.showOnboardingTour,
+            telemetryService: this.props.telemetryService,
+            userSettingsAreaRoutes: this.props.userSettingsAreaRoutes,
+            userSettingsSideBarItems: this.props.userSettingsSideBarItems,
+            activation: this.props.activation,
             url: this.props.match.url,
             user: this.state.userOrError,
             onDidUpdateUser: this.onDidUpdateUser,
             namespace: this.state.userOrError,
+            breadcrumbs: this.props.breadcrumbs,
+            useBreadcrumb: this.state.useBreadcrumb,
+            setBreadcrumb: this.state.setBreadcrumb,
         }
         return (
             <div className="user-area w-100">

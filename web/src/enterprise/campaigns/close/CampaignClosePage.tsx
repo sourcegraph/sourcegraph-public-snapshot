@@ -63,7 +63,7 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
         if (campaign) {
             const subscription = setBreadcrumb({
                 element: <Link to={campaign.url}>{campaign.name}</Link>,
-                key: 'Campaign page',
+                key: 'CampaignClosePage',
             })
             return () => subscription.unsubscribe()
         }
