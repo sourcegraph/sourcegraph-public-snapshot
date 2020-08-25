@@ -62,15 +62,16 @@ export const ToggleBig: React.FunctionComponent<Props> = ({
                         disabled ? 'toggle-big__bar--disabled' : ''
                     }`}
                 />
-                <span className={`toggle-big__knob ${value ? 'toggle-big__knob--active' : ''}`} />
+                <span className={`toggle-big__knob ${value ? 'toggle-big__knob--active' : ''}`}>
+                    {value ? (
+                        <Check size={16} className="toggle-big__icon" />
+                    ) : (
+                        <Close size={16} className="toggle-big__icon--disabled" />
+                    )}
+                </span>
                 <span className={`toggle-big__text ${!value ? 'toggle-big__text--disabled' : ''}`}>
                     {value ? 'Enabled' : 'Disabled'}
                 </span>
-                {value ? (
-                    <Check size={16} className="toggle-big__icon" />
-                ) : (
-                    <Close size={16} className="toggle-big__icon toggle-big__icon--disabled" />
-                )}
             </span>
         </button>
     )
