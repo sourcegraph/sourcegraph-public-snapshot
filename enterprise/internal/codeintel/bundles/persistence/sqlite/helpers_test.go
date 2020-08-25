@@ -41,7 +41,7 @@ func testReader(t *testing.T, filename string) persistence.Reader {
 	if err != nil {
 		t.Fatalf("unexpected error opening database: %s", err)
 	}
-	t.Cleanup(func() { _ = reader.Close() })
+	t.Cleanup(func() { _ = reader.Close(nil) })
 
 	// Wrap in observed, as that's how it's used in production
 	return persistence.NewObserved(reader, &observation.TestContext)

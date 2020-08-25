@@ -13,5 +13,5 @@ type Reader interface {
 	ReadResultChunk(ctx context.Context, id int) (types.ResultChunkData, bool, error)
 	ReadDefinitions(ctx context.Context, scheme, identifier string, skip, take int) ([]types.Location, int, error)
 	ReadReferences(ctx context.Context, scheme, identifier string, skip, take int) ([]types.Location, int, error)
-	Close() error
+	Close(err error) error
 }

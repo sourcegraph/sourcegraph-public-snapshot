@@ -154,7 +154,7 @@ func TestWrite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error opening database: %s", err)
 	}
-	defer reader.Close()
+	defer reader.Close(nil)
 
 	meta, err := reader.ReadMeta(ctx)
 	if err != nil {

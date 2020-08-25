@@ -114,6 +114,6 @@ func (r *ObservedReader) ReadReferences(ctx context.Context, scheme, identifier 
 	return r.reader.ReadReferences(ctx, scheme, identifier, skip, take)
 }
 
-func (r *ObservedReader) Close() error {
-	return r.reader.Close()
+func (r *ObservedReader) Close(err error) error {
+	return r.reader.Close(err)
 }

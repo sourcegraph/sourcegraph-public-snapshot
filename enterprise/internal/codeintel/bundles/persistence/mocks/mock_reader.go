@@ -42,7 +42,7 @@ type MockReader struct {
 func NewMockReader() *MockReader {
 	return &MockReader{
 		CloseFunc: &ReaderCloseFunc{
-			defaultHook: func() error {
+			defaultHook: func(error) error {
 				return nil
 			},
 		},
@@ -110,23 +110,23 @@ func NewMockReaderFrom(i persistence.Reader) *MockReader {
 // ReaderCloseFunc describes the behavior when the Close method of the
 // parent MockReader instance is invoked.
 type ReaderCloseFunc struct {
-	defaultHook func() error
-	hooks       []func() error
+	defaultHook func(error) error
+	hooks       []func(error) error
 	history     []ReaderCloseFuncCall
 	mutex       sync.Mutex
 }
 
 // Close delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockReader) Close() error {
-	r0 := m.CloseFunc.nextHook()()
-	m.CloseFunc.appendCall(ReaderCloseFuncCall{r0})
+func (m *MockReader) Close(v0 error) error {
+	r0 := m.CloseFunc.nextHook()(v0)
+	m.CloseFunc.appendCall(ReaderCloseFuncCall{v0, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the Close method of the
 // parent MockReader instance is invoked and the hook queue is empty.
-func (f *ReaderCloseFunc) SetDefaultHook(hook func() error) {
+func (f *ReaderCloseFunc) SetDefaultHook(hook func(error) error) {
 	f.defaultHook = hook
 }
 
@@ -134,7 +134,7 @@ func (f *ReaderCloseFunc) SetDefaultHook(hook func() error) {
 // Close method of the parent MockReader instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *ReaderCloseFunc) PushHook(hook func() error) {
+func (f *ReaderCloseFunc) PushHook(hook func(error) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -143,7 +143,7 @@ func (f *ReaderCloseFunc) PushHook(hook func() error) {
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *ReaderCloseFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func() error {
+	f.SetDefaultHook(func(error) error {
 		return r0
 	})
 }
@@ -151,12 +151,12 @@ func (f *ReaderCloseFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *ReaderCloseFunc) PushReturn(r0 error) {
-	f.PushHook(func() error {
+	f.PushHook(func(error) error {
 		return r0
 	})
 }
 
-func (f *ReaderCloseFunc) nextHook() func() error {
+func (f *ReaderCloseFunc) nextHook() func(error) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -189,6 +189,9 @@ func (f *ReaderCloseFunc) History() []ReaderCloseFuncCall {
 // ReaderCloseFuncCall is an object that describes an invocation of method
 // Close on an instance of MockReader.
 type ReaderCloseFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 error
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -197,7 +200,7 @@ type ReaderCloseFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ReaderCloseFuncCall) Args() []interface{} {
-	return []interface{}{}
+	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this

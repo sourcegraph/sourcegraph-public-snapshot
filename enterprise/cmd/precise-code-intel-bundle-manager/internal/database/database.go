@@ -95,7 +95,7 @@ func OpenDatabase(ctx context.Context, filename string, reader persistence.Reade
 
 // Close closes the underlying reader.
 func (db *databaseImpl) Close() error {
-	return db.reader.Close()
+	return db.reader.Close(nil)
 }
 
 // Exists determines if the path exists in the database.

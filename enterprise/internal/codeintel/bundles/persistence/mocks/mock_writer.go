@@ -17,6 +17,15 @@ type MockWriter struct {
 	// CloseFunc is an instance of a mock function object controlling the
 	// behavior of the method Close.
 	CloseFunc *WriterCloseFunc
+	// CreateTablesFunc is an instance of a mock function object controlling
+	// the behavior of the method CreateTables.
+	CreateTablesFunc *WriterCreateTablesFunc
+	// DoneFunc is an instance of a mock function object controlling the
+	// behavior of the method Done.
+	DoneFunc *WriterDoneFunc
+	// TransactFunc is an instance of a mock function object controlling the
+	// behavior of the method Transact.
+	TransactFunc *WriterTransactFunc
 	// WriteDefinitionsFunc is an instance of a mock function object
 	// controlling the behavior of the method WriteDefinitions.
 	WriteDefinitionsFunc *WriterWriteDefinitionsFunc
@@ -41,6 +50,21 @@ func NewMockWriter() *MockWriter {
 		CloseFunc: &WriterCloseFunc{
 			defaultHook: func(error) error {
 				return nil
+			},
+		},
+		CreateTablesFunc: &WriterCreateTablesFunc{
+			defaultHook: func(context.Context) error {
+				return nil
+			},
+		},
+		DoneFunc: &WriterDoneFunc{
+			defaultHook: func(error) error {
+				return nil
+			},
+		},
+		TransactFunc: &WriterTransactFunc{
+			defaultHook: func(context.Context) (persistence.Writer, error) {
+				return nil, nil
 			},
 		},
 		WriteDefinitionsFunc: &WriterWriteDefinitionsFunc{
@@ -77,6 +101,15 @@ func NewMockWriterFrom(i persistence.Writer) *MockWriter {
 	return &MockWriter{
 		CloseFunc: &WriterCloseFunc{
 			defaultHook: i.Close,
+		},
+		CreateTablesFunc: &WriterCreateTablesFunc{
+			defaultHook: i.CreateTables,
+		},
+		DoneFunc: &WriterDoneFunc{
+			defaultHook: i.Done,
+		},
+		TransactFunc: &WriterTransactFunc{
+			defaultHook: i.Transact,
 		},
 		WriteDefinitionsFunc: &WriterWriteDefinitionsFunc{
 			defaultHook: i.WriteDefinitions,
@@ -196,6 +229,315 @@ func (c WriterCloseFuncCall) Args() []interface{} {
 // invocation.
 func (c WriterCloseFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// WriterCreateTablesFunc describes the behavior when the CreateTables
+// method of the parent MockWriter instance is invoked.
+type WriterCreateTablesFunc struct {
+	defaultHook func(context.Context) error
+	hooks       []func(context.Context) error
+	history     []WriterCreateTablesFuncCall
+	mutex       sync.Mutex
+}
+
+// CreateTables delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockWriter) CreateTables(v0 context.Context) error {
+	r0 := m.CreateTablesFunc.nextHook()(v0)
+	m.CreateTablesFunc.appendCall(WriterCreateTablesFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CreateTables method
+// of the parent MockWriter instance is invoked and the hook queue is empty.
+func (f *WriterCreateTablesFunc) SetDefaultHook(hook func(context.Context) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CreateTables method of the parent MockWriter instance inovkes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *WriterCreateTablesFunc) PushHook(hook func(context.Context) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *WriterCreateTablesFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *WriterCreateTablesFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context) error {
+		return r0
+	})
+}
+
+func (f *WriterCreateTablesFunc) nextHook() func(context.Context) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *WriterCreateTablesFunc) appendCall(r0 WriterCreateTablesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of WriterCreateTablesFuncCall objects
+// describing the invocations of this function.
+func (f *WriterCreateTablesFunc) History() []WriterCreateTablesFuncCall {
+	f.mutex.Lock()
+	history := make([]WriterCreateTablesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// WriterCreateTablesFuncCall is an object that describes an invocation of
+// method CreateTables on an instance of MockWriter.
+type WriterCreateTablesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c WriterCreateTablesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c WriterCreateTablesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// WriterDoneFunc describes the behavior when the Done method of the parent
+// MockWriter instance is invoked.
+type WriterDoneFunc struct {
+	defaultHook func(error) error
+	hooks       []func(error) error
+	history     []WriterDoneFuncCall
+	mutex       sync.Mutex
+}
+
+// Done delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockWriter) Done(v0 error) error {
+	r0 := m.DoneFunc.nextHook()(v0)
+	m.DoneFunc.appendCall(WriterDoneFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Done method of the
+// parent MockWriter instance is invoked and the hook queue is empty.
+func (f *WriterDoneFunc) SetDefaultHook(hook func(error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Done method of the parent MockWriter instance inovkes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *WriterDoneFunc) PushHook(hook func(error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *WriterDoneFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *WriterDoneFunc) PushReturn(r0 error) {
+	f.PushHook(func(error) error {
+		return r0
+	})
+}
+
+func (f *WriterDoneFunc) nextHook() func(error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *WriterDoneFunc) appendCall(r0 WriterDoneFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of WriterDoneFuncCall objects describing the
+// invocations of this function.
+func (f *WriterDoneFunc) History() []WriterDoneFuncCall {
+	f.mutex.Lock()
+	history := make([]WriterDoneFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// WriterDoneFuncCall is an object that describes an invocation of method
+// Done on an instance of MockWriter.
+type WriterDoneFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c WriterDoneFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c WriterDoneFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// WriterTransactFunc describes the behavior when the Transact method of the
+// parent MockWriter instance is invoked.
+type WriterTransactFunc struct {
+	defaultHook func(context.Context) (persistence.Writer, error)
+	hooks       []func(context.Context) (persistence.Writer, error)
+	history     []WriterTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// Transact delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockWriter) Transact(v0 context.Context) (persistence.Writer, error) {
+	r0, r1 := m.TransactFunc.nextHook()(v0)
+	m.TransactFunc.appendCall(WriterTransactFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Transact method of
+// the parent MockWriter instance is invoked and the hook queue is empty.
+func (f *WriterTransactFunc) SetDefaultHook(hook func(context.Context) (persistence.Writer, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Transact method of the parent MockWriter instance inovkes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *WriterTransactFunc) PushHook(hook func(context.Context) (persistence.Writer, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *WriterTransactFunc) SetDefaultReturn(r0 persistence.Writer, r1 error) {
+	f.SetDefaultHook(func(context.Context) (persistence.Writer, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *WriterTransactFunc) PushReturn(r0 persistence.Writer, r1 error) {
+	f.PushHook(func(context.Context) (persistence.Writer, error) {
+		return r0, r1
+	})
+}
+
+func (f *WriterTransactFunc) nextHook() func(context.Context) (persistence.Writer, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *WriterTransactFunc) appendCall(r0 WriterTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of WriterTransactFuncCall objects describing
+// the invocations of this function.
+func (f *WriterTransactFunc) History() []WriterTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]WriterTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// WriterTransactFuncCall is an object that describes an invocation of
+// method Transact on an instance of MockWriter.
+type WriterTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 persistence.Writer
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c WriterTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c WriterTransactFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // WriterWriteDefinitionsFunc describes the behavior when the

@@ -225,7 +225,7 @@ func (e *readerCacheEntry) closeOnceUnused() {
 	e.m.Unlock()
 
 	if e.reader != nil {
-		e.reader.Close()
+		e.reader.Close(nil)
 	}
 }
 

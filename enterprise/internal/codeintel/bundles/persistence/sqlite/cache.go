@@ -41,7 +41,7 @@ func NewReaderCache(dataCacheSize int) (cache.ReaderCache, error) {
 		if exists, err := util.PathExists(filename); err != nil {
 			return nil, err
 		} else if !exists {
-			reader.Close()
+			reader.Close(nil)
 			os.Remove(filename) // Possibly created on close
 			return nil, ErrUnknownDatabase
 		}

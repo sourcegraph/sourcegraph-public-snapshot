@@ -150,10 +150,10 @@ func TestReaderCacheDisposedEntry(t *testing.T) {
 	sync := make(chan struct{}) // signals close routine has been scheduled
 
 	reader := persistencemocks.NewMockReader()
-	reader.CloseFunc.PushHook(func() error {
+	reader.CloseFunc.PushHook(func(err error) error {
 		close(sync)
 		<-wait
-		return nil
+		return err
 	})
 
 	opener := func(filename string) (persistence.Reader, error) {
@@ -187,7 +187,7 @@ func TestReaderCacheDisposedEntryContextCanceled(t *testing.T) {
 	sync := make(chan struct{}) // signals close routine has been scheduled
 
 	reader := persistencemocks.NewMockReader()
-	reader.CloseFunc.PushHook(func() error {
+	reader.CloseFunc.PushHook(func(err error) error {
 		close(sync)
 		select {} // block forever
 	})

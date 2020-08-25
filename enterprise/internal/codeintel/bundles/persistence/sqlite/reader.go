@@ -182,8 +182,12 @@ func (r *sqliteReader) readMonikerLocations(ctx context.Context, tableName, sche
 	return locations, nil
 }
 
-func (r *sqliteReader) Close() error {
-	return r.closer()
+func (r *sqliteReader) Close(err error) error {
+	if closeErr := r.closer(); closeErr != nil {
+		err = multierror.Append(err, closeErr)
+	}
+
+	return err
 }
 
 func (r *sqliteReader) getFromCache(key string) interface{} {
