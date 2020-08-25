@@ -2,8 +2,8 @@
  * This file contains utility functions for the search onboarding tour.
  */
 import Shepherd from 'shepherd.js'
-import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { eventLogger } from '../../tracking/eventLogger'
+import { SearchPatternType } from '../../graphql-operations'
 
 export const HAS_CANCELLED_TOUR_KEY = 'has-cancelled-onboarding-tour'
 export const HAS_SEEN_TOUR_KEY = 'has-seen-onboarding-tour'

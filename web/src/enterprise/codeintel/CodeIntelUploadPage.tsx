@@ -17,6 +17,7 @@ import { useObservable } from '../../../../shared/src/util/useObservable'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import { SchedulerLike, timer } from 'rxjs'
 import * as H from 'history'
+import { LSIFUploadState } from '../../../../shared/src/graphql-operations'
 
 const REFRESH_INTERVAL_MS = 5000
 
@@ -32,7 +33,7 @@ interface Props extends RouteComponentProps<{ id: string }> {
     now?: () => Date
 }
 
-const terminalStates = new Set([GQL.LSIFUploadState.COMPLETED, GQL.LSIFUploadState.ERRORED])
+const terminalStates = new Set([LSIFUploadState.COMPLETED, LSIFUploadState.ERRORED])
 
 function shouldReload(upload: Upload | ErrorLike | null | undefined): boolean {
     return !isErrorLike(upload) && !(upload && terminalStates.has(upload.state))
@@ -121,22 +122,22 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
                         </h2>
                     </div>
 
-                    {uploadOrError.state === GQL.LSIFUploadState.UPLOADING ? (
+                    {uploadOrError.state === LSIFUploadState.UPLOADING ? (
                         <div className="alert alert-primary mb-4 mt-3">
                             <LoadingSpinner className="icon-inline" />{' '}
                             <span className="test-upload-state">Still uploading...</span>
                         </div>
-                    ) : uploadOrError.state === GQL.LSIFUploadState.PROCESSING ? (
+                    ) : uploadOrError.state === LSIFUploadState.PROCESSING ? (
                         <div className="alert alert-primary mb-4 mt-3">
                             <LoadingSpinner className="icon-inline" />{' '}
                             <span className="test-upload-state">Upload is currently being processed...</span>
                         </div>
-                    ) : uploadOrError.state === GQL.LSIFUploadState.COMPLETED ? (
+                    ) : uploadOrError.state === LSIFUploadState.COMPLETED ? (
                         <div className="alert alert-success mb-4 mt-3">
                             <CheckIcon className="icon-inline" />{' '}
                             <span className="test-upload-state">Upload processed successfully.</span>
                         </div>
-                    ) : uploadOrError.state === GQL.LSIFUploadState.ERRORED ? (
+                    ) : uploadOrError.state === LSIFUploadState.ERRORED ? (
                         <div className="alert alert-danger mb-4 mt-3">
                             <AlertCircleIcon className="icon-inline" />{' '}
                             <span className="test-upload-state">Upload failed to complete:</span>{' '}
@@ -230,7 +231,7 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
 
                             <tr>
                                 <td>
-                                    {uploadOrError.state === GQL.LSIFUploadState.ERRORED && uploadOrError.finishedAt
+                                    {uploadOrError.state === LSIFUploadState.ERRORED && uploadOrError.finishedAt
                                         ? 'Failed'
                                         : 'Finished'}{' '}
                                     processing

@@ -17,6 +17,7 @@ import { useObservable } from '../../../../shared/src/util/useObservable'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import { SchedulerLike, timer } from 'rxjs'
 import * as H from 'history'
+import { LSIFIndexState } from '../../../../shared/src/graphql-operations'
 
 const REFRESH_INTERVAL_MS = 5000
 
@@ -32,7 +33,7 @@ interface Props extends RouteComponentProps<{ id: string }> {
     now?: () => Date
 }
 
-const terminalStates = new Set([GQL.LSIFIndexState.COMPLETED, GQL.LSIFIndexState.ERRORED])
+const terminalStates = new Set([LSIFIndexState.COMPLETED, LSIFIndexState.ERRORED])
 
 function shouldReload(index: Index | ErrorLike | null | undefined): boolean {
     return !isErrorLike(index) && !(index && terminalStates.has(index.state))
@@ -112,17 +113,17 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
                         </h2>
                     </div>
 
-                    {indexOrError.state === GQL.LSIFIndexState.PROCESSING ? (
+                    {indexOrError.state === LSIFIndexState.PROCESSING ? (
                         <div className="alert alert-primary mb-4 mt-3">
                             <LoadingSpinner className="icon-inline" />{' '}
                             <span className="test-index-state">Index is currently being processed...</span>
                         </div>
-                    ) : indexOrError.state === GQL.LSIFIndexState.COMPLETED ? (
+                    ) : indexOrError.state === LSIFIndexState.COMPLETED ? (
                         <div className="alert alert-success mb-4 mt-3">
                             <CheckIcon className="icon-inline" />{' '}
                             <span className="test-index-state">Index processed successfully.</span>
                         </div>
-                    ) : indexOrError.state === GQL.LSIFIndexState.ERRORED ? (
+                    ) : indexOrError.state === LSIFIndexState.ERRORED ? (
                         <div className="alert alert-danger mb-4 mt-3">
                             <AlertCircleIcon className="icon-inline" />{' '}
                             <span className="test-index-state">Index failed to complete:</span>{' '}
@@ -185,7 +186,7 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
 
                             <tr>
                                 <td>
-                                    {indexOrError.state === GQL.LSIFIndexState.ERRORED && indexOrError.finishedAt
+                                    {indexOrError.state === LSIFIndexState.ERRORED && indexOrError.finishedAt
                                         ? 'Failed'
                                         : 'Finished'}{' '}
                                     processing

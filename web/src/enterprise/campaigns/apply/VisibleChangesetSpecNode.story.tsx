@@ -6,8 +6,7 @@ import webStyles from '../../../enterprise.scss'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { VisibleChangesetSpecNode } from './VisibleChangesetSpecNode'
 import { addDays } from 'date-fns'
-import { ChangesetSpecType } from '../../../../../shared/src/graphql/schema'
-import { VisibleChangesetSpecFields } from '../../../graphql-operations'
+import { VisibleChangesetSpecFields, ChangesetSpecType } from '../../../graphql-operations'
 import { of } from 'rxjs'
 
 let isLightTheme = true

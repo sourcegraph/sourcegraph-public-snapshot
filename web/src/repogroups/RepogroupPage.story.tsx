@@ -15,6 +15,7 @@ import { Services } from '../../../shared/src/api/client/services'
 import { MemoryRouter } from 'react-router'
 import webStyles from '../SourcegraphWebApp.scss'
 import { AuthenticatedUser } from '../auth'
+import { SearchPatternType } from '../graphql-operations'
 
 const { add } = storiesOf('web/RepogroupPage', module)
     .addParameters({
@@ -83,7 +84,7 @@ const commonProps: RepogroupPageProps = {
     isLightTheme: true,
     themePreference: ThemePreference.Light,
     onThemePreferenceChange: sinon.spy(() => {}),
-    patternType: GQL.SearchPatternType.literal,
+    patternType: SearchPatternType.literal,
     setPatternType: sinon.spy(() => {}),
     caseSensitive: false,
     copyQueryButton: false,

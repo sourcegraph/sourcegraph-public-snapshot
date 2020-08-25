@@ -13,7 +13,6 @@ import {
     Controller as ExtensionsController,
     createController as createExtensionsController,
 } from '../../shared/src/extensions/controller'
-import * as GQL from '../../shared/src/graphql/schema'
 import { Notifications } from '../../shared/src/notifications/Notifications'
 import { PlatformContext } from '../../shared/src/platform/context'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '../../shared/src/settings/settings'
@@ -69,6 +68,7 @@ import {
     defaultPatternTypeFromSettings,
     experimentalFeaturesFromSettings,
 } from './util/settings'
+import { SearchPatternType } from '../../shared/src/graphql-operations'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     exploreSections: readonly ExploreSectionDescriptor[]
@@ -119,7 +119,7 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     /**
      * The current search pattern type.
      */
-    searchPatternType: GQL.SearchPatternType
+    searchPatternType: SearchPatternType
 
     /**
      * Whether the current search is case sensitive.
@@ -226,7 +226,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
         // The patternType in the URL query parameter. If none is provided, default to literal.
         // This will be updated with the default in settings when the web app mounts.
-        const urlPatternType = parseSearchURLPatternType(window.location.search) || GQL.SearchPatternType.literal
+        const urlPatternType = parseSearchURLPatternType(window.location.search) || SearchPatternType.literal
         const urlCase = searchURLIsCaseSensitive(window.location.search)
         const currentSearchMode = localStorage.getItem(SEARCH_MODE_KEY)
         const availableVersionContexts = window.context.experimentalFeatures.versionContexts
@@ -442,7 +442,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.setState({ filtersInQuery })
     }
 
-    private setPatternType = (patternType: GQL.SearchPatternType): void => {
+    private setPatternType = (patternType: SearchPatternType): void => {
         this.setState({
             searchPatternType: patternType,
         })
