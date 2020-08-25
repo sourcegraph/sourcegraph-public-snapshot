@@ -63,7 +63,7 @@ func NewMockWriter() *MockWriter {
 			},
 		},
 		TransactFunc: &WriterTransactFunc{
-			defaultHook: func(context.Context) (persistence.Writer, error) {
+			defaultHook: func(context.Context) (persistence.Store, error) {
 				return nil, nil
 			},
 		},
@@ -438,15 +438,15 @@ func (c WriterDoneFuncCall) Results() []interface{} {
 // WriterTransactFunc describes the behavior when the Transact method of the
 // parent MockWriter instance is invoked.
 type WriterTransactFunc struct {
-	defaultHook func(context.Context) (persistence.Writer, error)
-	hooks       []func(context.Context) (persistence.Writer, error)
+	defaultHook func(context.Context) (persistence.Store, error)
+	hooks       []func(context.Context) (persistence.Store, error)
 	history     []WriterTransactFuncCall
 	mutex       sync.Mutex
 }
 
 // Transact delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockWriter) Transact(v0 context.Context) (persistence.Writer, error) {
+func (m *MockWriter) Transact(v0 context.Context) (persistence.Store, error) {
 	r0, r1 := m.TransactFunc.nextHook()(v0)
 	m.TransactFunc.appendCall(WriterTransactFuncCall{v0, r0, r1})
 	return r0, r1
@@ -454,7 +454,7 @@ func (m *MockWriter) Transact(v0 context.Context) (persistence.Writer, error) {
 
 // SetDefaultHook sets function that is called when the Transact method of
 // the parent MockWriter instance is invoked and the hook queue is empty.
-func (f *WriterTransactFunc) SetDefaultHook(hook func(context.Context) (persistence.Writer, error)) {
+func (f *WriterTransactFunc) SetDefaultHook(hook func(context.Context) (persistence.Store, error)) {
 	f.defaultHook = hook
 }
 
@@ -462,7 +462,7 @@ func (f *WriterTransactFunc) SetDefaultHook(hook func(context.Context) (persiste
 // Transact method of the parent MockWriter instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *WriterTransactFunc) PushHook(hook func(context.Context) (persistence.Writer, error)) {
+func (f *WriterTransactFunc) PushHook(hook func(context.Context) (persistence.Store, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -470,21 +470,21 @@ func (f *WriterTransactFunc) PushHook(hook func(context.Context) (persistence.Wr
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *WriterTransactFunc) SetDefaultReturn(r0 persistence.Writer, r1 error) {
-	f.SetDefaultHook(func(context.Context) (persistence.Writer, error) {
+func (f *WriterTransactFunc) SetDefaultReturn(r0 persistence.Store, r1 error) {
+	f.SetDefaultHook(func(context.Context) (persistence.Store, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *WriterTransactFunc) PushReturn(r0 persistence.Writer, r1 error) {
-	f.PushHook(func(context.Context) (persistence.Writer, error) {
+func (f *WriterTransactFunc) PushReturn(r0 persistence.Store, r1 error) {
+	f.PushHook(func(context.Context) (persistence.Store, error) {
 		return r0, r1
 	})
 }
 
-func (f *WriterTransactFunc) nextHook() func(context.Context) (persistence.Writer, error) {
+func (f *WriterTransactFunc) nextHook() func(context.Context) (persistence.Store, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -522,7 +522,7 @@ type WriterTransactFuncCall struct {
 	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 persistence.Writer
+	Result0 persistence.Store
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
