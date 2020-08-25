@@ -21,9 +21,9 @@ describe('OptionsMenu', () => {
         onURLChange: noop,
         onURLSubmit: noop,
         isActivated: true,
-        toggleFeatureFlag: noop,
+        onChangeOptionFlag: noop,
         onToggleActivationClick: noop,
-        onSettingsClick: noop,
+        onClickExpandOptionsMenu: noop,
     }
 
     test('renders a default state', () => {
@@ -93,8 +93,8 @@ describe('OptionsMenu', () => {
             renderer.create(
                 <OptionsMenu
                     {...stubs}
-                    isSettingsOpen={true}
-                    featureFlags={[
+                    isOptionsMenuExpanded={true}
+                    optionFlags={[
                         { key: 'foo', value: true },
                         { key: 'bar', value: false },
                     ]}
@@ -108,12 +108,12 @@ describe('OptionsMenu', () => {
         const { container } = render(
             <OptionsMenu
                 {...stubs}
-                isSettingsOpen={true}
-                featureFlags={[
+                isOptionsMenuExpanded={true}
+                optionFlags={[
                     { key: 'foo', value: true },
                     { key: 'bar', value: false },
                 ]}
-                toggleFeatureFlag={toggleFeatureFlag}
+                onChangeOptionFlag={toggleFeatureFlag}
             />
         )
         const fooCheckbox = container.querySelector('#foo')!

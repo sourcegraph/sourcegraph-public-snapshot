@@ -14,6 +14,7 @@ import { OptionsMenuProps } from '../options-page/OptionsMenu'
 import { initSentry } from '../../shared/sentry'
 import { fetchSite } from '../../shared/backend/server'
 import { featureFlags } from '../../shared/util/featureFlags'
+import { OptionFlagKey } from '../../shared/util/optionFlags'
 import { assertEnvironment } from '../environmentAssertion'
 import { observeSourcegraphURL } from '../../shared/util/context'
 
@@ -30,12 +31,6 @@ type State = Pick<
 
 const keyIsFeatureFlag = (key: string): key is keyof FeatureFlags =>
     !!Object.keys(featureFlagDefaults).find(featureFlag => key === featureFlag)
-
-const toggleFeatureFlag = (key: string): void => {
-    if (keyIsFeatureFlag(key)) {
-        featureFlags.toggle(key).then(noop).catch(noop)
-    }
-}
 
 const fetchCurrentTabStatus = async (): Promise<OptionsMenuProps['currentTabStatus']> => {
     const tabs = await browser.tabs.query({ active: true, currentWindow: true })
@@ -58,6 +53,9 @@ function requestGraphQL<T, V = object>(options: { request: string; variables: V 
     return from(background.requestGraphQL<T, V>(options))
 }
 
+const observeOptionFlags = (): Observable<Partial<FeatureFlags> | undefined> =>
+    observeStorageKey('sync', 'featureFlags')
+
 const ensureValidSite = (): Observable<GQL.ISite> => fetchSite(requestGraphQL)
 
 class Options extends React.Component<{}, State> {
@@ -76,7 +74,7 @@ class Options extends React.Component<{}, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            observeStorageKey('sync', 'featureFlags').subscribe(featureFlags => {
+            observeOptionFlags().subscribe(optionFlags => {
                 const {
                     allowErrorReporting,
                     experimentalLinkPreviews,
@@ -84,7 +82,7 @@ class Options extends React.Component<{}, State> {
                     sendTelemetry,
                 } = {
                     ...featureFlagDefaults,
-                    ...featureFlags,
+                    ...optionFlags,
                 }
                 this.setState({
                     allowErrorReporting,
@@ -136,12 +134,32 @@ class Options extends React.Component<{}, State> {
 
             setSourcegraphURL: (sourcegraphURL: string) => storage.sync.set({ sourcegraphURL }),
             toggleExtensionDisabled: (isActivated: boolean) => storage.sync.set({ disableExtension: !isActivated }),
-            toggleFeatureFlag,
-            featureFlags: [
-                { key: 'sendTelemetry', value: this.state.sendTelemetry },
-                { key: 'allowErrorReporting', value: this.state.allowErrorReporting },
-                { key: 'experimentalLinkPreviews', value: this.state.experimentalLinkPreviews },
-                { key: 'experimentalTextFieldCompletion', value: this.state.experimentalTextFieldCompletion },
+            onChangeOptionFlag: (key: OptionFlagKey, value: boolean) => {
+                if (keyIsFeatureFlag(key)) {
+                    featureFlags.set(key, value).then(noop, noop)
+                }
+            },
+            optionFlags: [
+                {
+                    key: 'sendTelemetry',
+                    label: 'Send telemetry',
+                    value: this.state.sendTelemetry,
+                },
+                {
+                    key: 'allowErrorReporting',
+                    label: 'Allow error reporting',
+                    value: this.state.allowErrorReporting,
+                },
+                {
+                    key: 'experimentalLinkPreviews',
+                    label: 'Experimental link previews',
+                    value: this.state.experimentalLinkPreviews,
+                },
+                {
+                    key: 'experimentalTextFieldCompletion',
+                    label: 'Experimental text field completion',
+                    value: this.state.experimentalTextFieldCompletion,
+                },
             ],
         }
 

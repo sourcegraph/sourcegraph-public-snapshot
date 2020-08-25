@@ -1,13 +1,7 @@
-import { lowerCase, upperFirst } from 'lodash'
 import * as React from 'react'
-
 import { OptionsHeader, OptionsHeaderProps } from './OptionsHeader'
 import { ServerUrlForm, ServerUrlFormProps } from './ServerUrlForm'
-
-interface ConfigurableFeatureFlag {
-    key: string
-    value: boolean
-}
+import { OptionFlagWithValue } from '../../shared/util/optionFlags'
 
 export interface OptionsMenuProps
     extends OptionsHeaderProps,
@@ -16,10 +10,10 @@ export interface OptionsMenuProps
     onURLChange: ServerUrlFormProps['onChange']
     onURLSubmit: ServerUrlFormProps['onSubmit']
 
-    isSettingsOpen?: boolean
+    isOptionsMenuExpanded?: boolean
     isActivated: boolean
-    toggleFeatureFlag: (key: string) => void
-    featureFlags?: ConfigurableFeatureFlag[]
+    onChangeOptionFlag: (key: string, value: boolean) => void
+    optionFlags?: OptionFlagWithValue[]
     currentTabStatus?: {
         host: string
         protocol: string
@@ -27,9 +21,11 @@ export interface OptionsMenuProps
     }
 }
 
-const buildFeatureFlagToggleHandler = (key: string, handler: OptionsMenuProps['toggleFeatureFlag']) => () =>
-    handler(key)
-
+/**
+ * Determine if the options menu is being showed as a popup panel (opened via
+ * the toolbar icon) or as a full page (opened via the options URL on a page of
+ * its owen)
+ */
 const isFullPage = (): boolean => !new URLSearchParams(window.location.search).get('popup')
 
 const buildRequestPermissionsHandler = (
@@ -49,10 +45,10 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
     sourcegraphURL,
     onURLChange,
     onURLSubmit,
-    isSettingsOpen,
+    isOptionsMenuExpanded,
     isActivated,
-    toggleFeatureFlag,
-    featureFlags,
+    onChangeOptionFlag,
+    optionFlags: options,
     status,
     requestPermissions,
     currentTabStatus,
@@ -109,24 +105,27 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
                 .
             </p>
         </div>
-        {isSettingsOpen && featureFlags && (
+        {isOptionsMenuExpanded && options && (
             <div className="options-menu__section">
                 <label>Configuration</label>
                 <div>
-                    {featureFlags.map(({ key, value }) => (
-                        <div className="form-check" key={key}>
-                            <label className="form-check-label">
-                                <input
-                                    id={key}
-                                    onChange={buildFeatureFlagToggleHandler(key, toggleFeatureFlag)}
-                                    className="form-check-input"
-                                    type="checkbox"
-                                    checked={value}
-                                />{' '}
-                                {upperFirst(lowerCase(key))}
-                            </label>
-                        </div>
-                    ))}
+                    {options.map(
+                        ({ label, key, value, hidden }) =>
+                            !hidden && (
+                                <div className="form-check" key={key}>
+                                    <label className="form-check-label">
+                                        <input
+                                            id={key}
+                                            onChange={event => onChangeOptionFlag(key, event.target.checked)}
+                                            className="form-check-input"
+                                            type="checkbox"
+                                            checked={value}
+                                        />{' '}
+                                        {label}
+                                    </label>
+                                </div>
+                            )
+                    )}
                 </div>
             </div>
         )}
