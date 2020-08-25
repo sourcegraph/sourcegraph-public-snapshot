@@ -3,15 +3,29 @@ import { SettingsCascadeOrError } from '../settings/settings'
 import { isErrorLike } from '../util/errors'
 
 interface Props {
-    settingsCascade: SettingsCascadeOrError
+    settingsCascade?: SettingsCascadeOrError
+    sourcegraphURL: string
 }
 
-export const EmptyCommandList: React.FunctionComponent<Props> = ({ settingsCascade }) => {
-    const onlyDefault = onlyDefaultExtensionsAdded(settingsCascade)
-
+export const EmptyCommandList: React.FunctionComponent<Props> = ({ settingsCascade, sourcegraphURL }) => {
+    // if no settings cascade (yet), default to 'no active extensions'
+    const onlyDefault = settingsCascade ? onlyDefaultExtensionsAdded(settingsCascade) : false
+    /**
+     * Three questions:
+     * - no extensions enabled at all? or added on top of default?
+     * - how to deal with styling?
+     * - On the web app, should I use a react router link?
+     */
     return (
         <div>
-            <p>No matching commands</p>
+            <p>{onlyDefault ? "You don't have any extensions enabled" : "You don't have any active actions"}</p>
+            <p>
+                {onlyDefault
+                    ? 'Find extensions in the Sourcegraph extension registry, or learn how to write your own in just a few minutes.'
+                    : 'Commands from your installed extensions will be shown when you navigate to certain pages'}
+            </p>
+            <a href={sourcegraphURL + '/extensions'}>Explore extensions</a>
+            <p style={{ position: 'relative', bottom: 0, right: 0 }}>icon</p>
         </div>
     )
 }
