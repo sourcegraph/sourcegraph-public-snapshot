@@ -28,7 +28,7 @@ func TestWrite(t *testing.T) {
 		t.Fatalf("unexpected error creating cache: %s", err)
 	}
 
-	store, err := NewWriter(context.Background(), filename, cache)
+	store, err := NewStore(context.Background(), filename, cache)
 	if err != nil {
 		t.Fatalf("unexpected error while opening store: %s", err)
 	}
