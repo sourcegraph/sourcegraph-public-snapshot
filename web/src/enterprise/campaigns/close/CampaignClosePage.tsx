@@ -51,7 +51,7 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
     isLightTheme,
     platformContext,
     telemetryService,
-    setBreadcrumb,
+    useBreadcrumb,
     fetchCampaignById = _fetchCampaignById,
     queryChangesets,
     queryExternalChangesetWithFileDiffs,
@@ -60,16 +60,18 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
     const [closeChangesets, setCloseChangesets] = useState<boolean>(false)
     const campaign = useObservable(useMemo(() => fetchCampaignById(campaignID), [campaignID, fetchCampaignById]))
 
-    useEffect(() => {
-        if (campaign) {
-            const subscription = setBreadcrumb({
-                element: <Link to={campaign.url}>{campaign.name}</Link>,
-                key: 'CampaignClosePage',
-            })
-            return () => subscription.unsubscribe()
-        }
-        return () => undefined
-    }, [campaign, setBreadcrumb])
+    useBreadcrumb(
+        useMemo(
+            () =>
+                campaign
+                    ? {
+                          element: <Link to={campaign.url}>{campaign.name}</Link>,
+                          key: 'CampaignClosePage',
+                      }
+                    : null,
+            [campaign]
+        )
+    )
 
     // Is loading.
     if (campaign === undefined) {

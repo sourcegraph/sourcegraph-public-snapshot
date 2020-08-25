@@ -135,6 +135,85 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
       </div>
     </PageHeader>
   </CampaignHeader>
+  <CampaignInfoByline
+    className="mb-3"
+    createdAt="2020-01-01"
+    initialApplier={
+      Object {
+        "url": "/users/alice",
+        "username": "alice",
+      }
+    }
+    lastAppliedAt="2020-01-01"
+    lastApplier={
+      Object {
+        "url": "/users/bob",
+        "username": "bob",
+      }
+    }
+  >
+    <div
+      className="mb-3"
+    >
+      <span
+        className="text-muted"
+      >
+        Created 
+        <Timestamp
+          date="2020-01-01"
+        >
+          <span
+            className="timestamp"
+            data-tooltip="2020-01-01"
+          >
+            in almost 14 years
+          </span>
+        </Timestamp>
+         by
+         
+        <AnchorLink
+          to="/users/alice"
+        >
+          <a
+            href="/users/alice"
+          >
+            alice
+          </a>
+        </AnchorLink>
+      </span>
+      <span
+        className="mx-2 text-muted"
+      >
+        |
+      </span>
+      <span
+        className="text-muted"
+      >
+        Updated 
+        <Timestamp
+          date="2020-01-01"
+        >
+          <span
+            className="timestamp"
+            data-tooltip="2020-01-01"
+          >
+            in almost 14 years
+          </span>
+        </Timestamp>
+         by
+         
+        <AnchorLink
+          to="/users/bob"
+        >
+          <a
+            href="/users/bob"
+          >
+            bob
+          </a>
+        </AnchorLink>
+      </span>
+    </div>
+  </CampaignInfoByline>
   <CampaignStatsCard
     className="mb-3"
     closedAt={null}
@@ -366,6 +445,11 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
         "initialApplier": Object {
           "url": "/users/alice",
           "username": "alice",
+        },
+        "lastAppliedAt": "2020-01-01",
+        "lastApplier": Object {
+          "url": "/users/bob",
+          "username": "bob",
         },
         "name": "n",
         "namespace": Object {
@@ -810,6 +894,85 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
       </div>
     </PageHeader>
   </CampaignHeader>
+  <CampaignInfoByline
+    className="mb-3"
+    createdAt="2020-01-01"
+    initialApplier={
+      Object {
+        "url": "/users/alice",
+        "username": "alice",
+      }
+    }
+    lastAppliedAt="2020-01-01"
+    lastApplier={
+      Object {
+        "url": "/users/bob",
+        "username": "bob",
+      }
+    }
+  >
+    <div
+      className="mb-3"
+    >
+      <span
+        className="text-muted"
+      >
+        Created 
+        <Timestamp
+          date="2020-01-01"
+        >
+          <span
+            className="timestamp"
+            data-tooltip="2020-01-01"
+          >
+            in almost 14 years
+          </span>
+        </Timestamp>
+         by
+         
+        <AnchorLink
+          to="/users/alice"
+        >
+          <a
+            href="/users/alice"
+          >
+            alice
+          </a>
+        </AnchorLink>
+      </span>
+      <span
+        className="mx-2 text-muted"
+      >
+        |
+      </span>
+      <span
+        className="text-muted"
+      >
+        Updated 
+        <Timestamp
+          date="2020-01-01"
+        >
+          <span
+            className="timestamp"
+            data-tooltip="2020-01-01"
+          >
+            in almost 14 years
+          </span>
+        </Timestamp>
+         by
+         
+        <AnchorLink
+          to="/users/bob"
+        >
+          <a
+            href="/users/bob"
+          >
+            bob
+          </a>
+        </AnchorLink>
+      </span>
+    </div>
+  </CampaignInfoByline>
   <CampaignStatsCard
     className="mb-3"
     closedAt={null}
@@ -1041,6 +1204,11 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
         "initialApplier": Object {
           "url": "/users/alice",
           "username": "alice",
+        },
+        "lastAppliedAt": "2020-01-01",
+        "lastApplier": Object {
+          "url": "/users/bob",
+          "username": "bob",
         },
         "name": "n",
         "namespace": Object {
