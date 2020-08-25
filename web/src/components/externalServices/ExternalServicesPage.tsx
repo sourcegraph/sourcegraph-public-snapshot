@@ -1,19 +1,19 @@
 import AddIcon from 'mdi-react/AddIcon'
-import React, { useEffect, useMemo, useCallback } from 'react'
+import React, { useEffect, useMemo, useCallback, useState } from 'react'
 import { Redirect } from 'react-router'
 import { Subject } from 'rxjs'
-import { map, tap } from 'rxjs/operators'
+import { tap } from 'rxjs/operators'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../FilteredConnection'
 import { PageTitle } from '../PageTitle'
 import * as H from 'history'
 import { queryExternalServices as _queryExternalServices } from './backend'
 import { ExternalServiceNodeProps, ExternalServiceNode } from './ExternalServiceNode'
-import { ListExternalServiceFields, Scalars } from '../../graphql-operations'
-import { useObservable } from '../../../../shared/src/util/useObservable'
+import { ListExternalServiceFields, Scalars, ExternalServicesResult } from '../../graphql-operations'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { Link } from '../../../../shared/src/components/Link'
 import { AuthenticatedUser } from '../../auth'
+import { isErrorLike, ErrorLike } from '../../../../shared/src/util/errors'
 
 interface Props extends ActivationProps, TelemetryProps {
     history: H.History
@@ -47,16 +47,6 @@ export const ExternalServicesPage: React.FunctionComponent<Props> = ({
     const updates = useMemo(() => new Subject<void>(), [])
     const onDidUpdateExternalServices = useCallback(() => updates.next(), [updates])
 
-    const noExternalServices = useObservable(
-        useMemo(
-            () =>
-                queryExternalServices({ first: 1, after: null, namespace: userID ?? null }).pipe(
-                    map(externalServicesResult => externalServicesResult.totalCount === 0)
-                ),
-            [userID, queryExternalServices]
-        )
-    )
-
     const queryConnection = useCallback(
         (args: FilteredConnectionQueryArgs) =>
             queryExternalServices({
@@ -76,9 +66,18 @@ export const ExternalServicesPage: React.FunctionComponent<Props> = ({
         [userID, queryExternalServices]
     )
 
+    const [noExternalServices, setNoExternalServices] = useState<boolean>(false)
+    const onUpdate = useCallback<
+        (connection: ExternalServicesResult['externalServices'] | ErrorLike | undefined) => void
+    >(connection => {
+        if (connection && !isErrorLike(connection)) {
+            setNoExternalServices(connection.totalCount === 0)
+        }
+    }, [])
+
     const isManagingOtherUser = !!userID && userID !== authenticatedUser.id
 
-    if (!isManagingOtherUser && noExternalServices === true) {
+    if (!isManagingOtherUser && noExternalServices) {
         return <Redirect to={`${routingPrefix}/external-services/new`} />
     }
     return (
@@ -96,7 +95,11 @@ export const ExternalServicesPage: React.FunctionComponent<Props> = ({
                 )}
             </div>
             <p className="mt-2">Manage code host connections to sync repositories.</p>
-            <FilteredConnection<ListExternalServiceFields, Omit<ExternalServiceNodeProps, 'node'>>
+            <FilteredConnection<
+                ListExternalServiceFields,
+                Omit<ExternalServiceNodeProps, 'node'>,
+                ExternalServicesResult['externalServices']
+            >
                 className="list-group list-group-flush mt-3"
                 noun="external service"
                 pluralNoun="external services"
@@ -114,6 +117,7 @@ export const ExternalServicesPage: React.FunctionComponent<Props> = ({
                 updates={updates}
                 history={history}
                 location={location}
+                onUpdate={onUpdate}
             />
         </div>
     )
