@@ -33,7 +33,7 @@ export const defaultTourOptions: Shepherd.Tour.TourOptions = {
  */
 export function generateStepTooltip(
     tour: Shepherd.Tour,
-    title: string,
+    dangerousTitleHtml: string,
     stepNumber: number,
     description?: string,
     additionalContent?: HTMLElement,
@@ -42,7 +42,7 @@ export function generateStepTooltip(
     const element = document.createElement('div')
     element.className = `d-flex flex-column test-tour-step-${stepNumber}`
     const titleElement = document.createElement('h4')
-    titleElement.innerHTML = title
+    titleElement.innerHTML = dangerousTitleHtml
     titleElement.className = 'font-weight-bold'
     element.append(titleElement)
     if (description) {
