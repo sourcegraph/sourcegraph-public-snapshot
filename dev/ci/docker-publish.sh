@@ -30,3 +30,9 @@ for dst in "$@"; do
   docker tag "$src" "$dst"
   docker push "$dst"
 done
+
+echo "--- summary"
+id="$(docker inspect --format='{{.Id}}' "$src")"
+for dst in "$@"; do
+  echo "$dst@$id"
+done
