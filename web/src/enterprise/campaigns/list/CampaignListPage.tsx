@@ -23,12 +23,6 @@ interface Props extends TelemetryProps, Pick<RouteComponentProps, 'history' | 'l
 
 const FILTERS: FilteredConnectionFilter[] = [
     {
-        label: 'All',
-        id: 'all',
-        tooltip: 'Show all campaigns',
-        args: {},
-    },
-    {
         label: 'Open',
         id: 'open',
         tooltip: 'Show only campaigns that are open',
@@ -39,6 +33,12 @@ const FILTERS: FilteredConnectionFilter[] = [
         id: 'closed',
         tooltip: 'Show only campaigns that are closed',
         args: { state: CampaignState.CLOSED },
+    },
+    {
+        label: 'All',
+        id: 'all',
+        tooltip: 'Show all campaigns',
+        args: {},
     },
 ]
 

@@ -24,12 +24,6 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
     filters={
       Array [
         Object {
-          "args": Object {},
-          "id": "all",
-          "label": "All",
-          "tooltip": "Show all campaigns",
-        },
-        Object {
           "args": Object {
             "state": "OPEN",
           },
@@ -44,6 +38,12 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
           "id": "closed",
           "label": "Closed",
           "tooltip": "Show only campaigns that are closed",
+        },
+        Object {
+          "args": Object {},
+          "id": "all",
+          "label": "All",
+          "tooltip": "Show all campaigns",
         },
       ]
     }
@@ -97,12 +97,6 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
     filters={
       Array [
         Object {
-          "args": Object {},
-          "id": "all",
-          "label": "All",
-          "tooltip": "Show all campaigns",
-        },
-        Object {
           "args": Object {
             "state": "OPEN",
           },
@@ -117,6 +111,12 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
           "id": "closed",
           "label": "Closed",
           "tooltip": "Show only campaigns that are closed",
+        },
+        Object {
+          "args": Object {},
+          "id": "all",
+          "label": "All",
+          "tooltip": "Show all campaigns",
         },
       ]
     }
@@ -170,12 +170,6 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
     filters={
       Array [
         Object {
-          "args": Object {},
-          "id": "all",
-          "label": "All",
-          "tooltip": "Show all campaigns",
-        },
-        Object {
           "args": Object {
             "state": "OPEN",
           },
@@ -190,6 +184,12 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
           "id": "closed",
           "label": "Closed",
           "tooltip": "Show only campaigns that are closed",
+        },
+        Object {
+          "args": Object {},
+          "id": "all",
+          "label": "All",
+          "tooltip": "Show all campaigns",
         },
       ]
     }
@@ -243,12 +243,6 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
     filters={
       Array [
         Object {
-          "args": Object {},
-          "id": "all",
-          "label": "All",
-          "tooltip": "Show all campaigns",
-        },
-        Object {
           "args": Object {
             "state": "OPEN",
           },
@@ -263,6 +257,12 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
           "id": "closed",
           "label": "Closed",
           "tooltip": "Show only campaigns that are closed",
+        },
+        Object {
+          "args": Object {},
+          "id": "all",
+          "label": "All",
+          "tooltip": "Show all campaigns",
         },
       ]
     }
