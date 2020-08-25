@@ -55,60 +55,29 @@ func (r *reconciler) HandlerFunc() dbworker.HandlerFunc {
 // (through the HandlerFunc) will set the changeset's ReconcilerState to
 // errored and set its FailureMessage to the error.
 func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Changeset) error {
-	log15.Info("Processing changeset", "changeset", ch.ID)
-
 	action, err := determineAction(ctx, tx, ch)
 	if err != nil {
 		return err
 	}
 
+	log15.Info("Reconciler processing changeset", "changeset", ch.ID, "action", action.actionType)
+
 	switch action.actionType {
 	case actionSync:
-		log15.Info("Syncing", "changeset", ch.ID)
-
-		if err := r.syncChangeset(ctx, tx, ch); err != nil {
-			return err
-		}
-
-		u, err := ch.URL()
-		if err != nil {
-			return err
-		}
-		log15.Info("Synced changeset", "url", u)
+		return r.syncChangeset(ctx, tx, ch)
 
 	case actionPublish:
-		log15.Info("Publishing", "changeset", ch.ID)
-		if err := r.publishChangeset(ctx, tx, ch, action.spec); err != nil {
-			return err
-		}
-
-		u, err := ch.URL()
-		if err != nil {
-			return err
-		}
-		log15.Info("Published changeset", "url", u)
+		return r.publishChangeset(ctx, tx, ch, action.spec)
 
 	case actionUpdate:
-		log15.Info("Updating", "changeset", ch.ID, "delta", action.delta.String())
-
-		if err := r.updateChangeset(ctx, tx, ch, action.spec, action.delta); err != nil {
-			return err
-		}
-		u, err := ch.URL()
-		if err != nil {
-			return err
-		}
-
-		log15.Info("Updated changeset", "url", u)
+		return r.updateChangeset(ctx, tx, ch, action.spec, action.delta)
 
 	case actionNone:
-		log15.Info("No action", "changeset", ch.ID)
+		return nil
 
 	default:
 		return fmt.Errorf("Reconciler action %q not implemented", action.actionType)
 	}
-
-	return nil
 }
 
 func (r *reconciler) syncChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset) error {
