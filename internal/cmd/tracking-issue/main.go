@@ -591,7 +591,8 @@ func Emoji(category string) string {
 		return "🧶"
 	case "spike":
 		return "🕵️"
-
+	case "quality-of-life":
+		return "🎩"
 	case "bug":
 		return "🐛"
 	case "security":
