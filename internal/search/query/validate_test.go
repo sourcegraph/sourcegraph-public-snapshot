@@ -74,7 +74,7 @@ func TestAndOrQuery_Validation(t *testing.T) {
 		},
 		{
 			input: "repo:foo author:rob@saucegraph.com",
-			want:  `your query contains the field "author", so please also add either type:commit or type:diff to the query`,
+			want:  `your query contains the field 'author', which requires type:commit or type:diff in the query`,
 		},
 	}
 	for _, c := range cases {
