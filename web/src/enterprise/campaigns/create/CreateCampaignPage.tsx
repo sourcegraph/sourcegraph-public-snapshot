@@ -62,13 +62,14 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                 <pre className="m-0">{campaignSpec}</pre>
             </div>
             <p className="lead">
-                Use src-cli to execute the steps in the campaign spec and upload it, ready to be previewed and applied:
+                Use Sourcegraph's CLI tool, <code>src</code>, to execute the steps in the campaign spec and upload it,
+                ready to be previewed and applied:
             </p>
             <div className="bg-light rounded p-3 mb-3">
                 <pre className="m-0">{sourcePreviewCommand}</pre>
             </div>
             <p className="lead">
-                Download Sourcegraph's cli tool, src-cli at{' '}
+                Download <code>src</code> at{' '}
                 <a href="https://github.com/sourcegraph/src-cli" rel="noopener noreferrer" target="_blank">
                     github.com/sourcegraph/src-cli
                 </a>
