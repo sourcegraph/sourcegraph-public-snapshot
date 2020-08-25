@@ -790,6 +790,64 @@ func createChangesetSpec(
 func createCampaignSpec(t *testing.T, ctx context.Context, store *Store, name string, userID int32) *campaigns.CampaignSpec {
 	t.Helper()
 
+	s := buildCampaignSpec(t, name, userID)
+	if err := store.CreateCampaignSpec(ctx, s); err != nil {
+		t.Fatal(err)
+	}
+
+	return s
+}
+
+func createCampaign(t *testing.T, ctx context.Context, store *Store, name string, userID int32, spec int64) *campaigns.Campaign {
+	t.Helper()
+
+	c := buildCampaign(t, store.Clock()(), name, userID, spec)
+
+	if err := store.CreateCampaign(ctx, c); err != nil {
+		t.Fatal(err)
+	}
+
+	return c
+}
+
+func buildChangesetSpec(
+	t *testing.T,
+	opts testSpecOpts,
+) *campaigns.ChangesetSpec {
+	t.Helper()
+
+	spec := &campaigns.ChangesetSpec{
+		UserID:         opts.user,
+		RepoID:         opts.repo,
+		CampaignSpecID: opts.campaignSpec,
+		Spec: &campaigns.ChangesetSpecDescription{
+			BaseRepository: graphqlbackend.MarshalRepositoryID(opts.repo),
+
+			ExternalID: opts.externalID,
+			HeadRef:    opts.headRef,
+			Published:  opts.published,
+
+			Title: opts.title,
+			Body:  opts.body,
+
+			Commits: []campaigns.GitCommitDescription{
+				{
+					Message: opts.commitMessage,
+					Diff:    opts.commitDiff,
+				},
+			},
+		},
+		DiffStatAdded:   10,
+		DiffStatChanged: 5,
+		DiffStatDeleted: 2,
+	}
+
+	return spec
+}
+
+func buildCampaignSpec(t *testing.T, name string, userID int32) *campaigns.CampaignSpec {
+	t.Helper()
+
 	s := &campaigns.CampaignSpec{
 		UserID:          userID,
 		NamespaceUserID: userID,
@@ -802,28 +860,20 @@ func createCampaignSpec(t *testing.T, ctx context.Context, store *Store, name st
 		},
 	}
 
-	if err := store.CreateCampaignSpec(ctx, s); err != nil {
-		t.Fatal(err)
-	}
-
 	return s
 }
 
-func createCampaign(t *testing.T, ctx context.Context, store *Store, name string, userID int32, spec int64) *campaigns.Campaign {
+func buildCampaign(t *testing.T, now time.Time, name string, userID int32, spec int64) *campaigns.Campaign {
 	t.Helper()
 
 	c := &campaigns.Campaign{
 		InitialApplierID: userID,
 		LastApplierID:    userID,
-		LastAppliedAt:    store.Clock()(),
+		LastAppliedAt:    now,
 		NamespaceUserID:  userID,
 		CampaignSpecID:   spec,
 		Name:             name,
 		Description:      "campaign description",
-	}
-
-	if err := store.CreateCampaign(ctx, c); err != nil {
-		t.Fatal(err)
 	}
 
 	return c

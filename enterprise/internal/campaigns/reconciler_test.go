@@ -2,6 +2,8 @@ package campaigns
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"time"
 
 	"testing"
@@ -9,16 +11,21 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
+	basestore "github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestReconcilerProcess(t *testing.T) {
@@ -413,7 +420,12 @@ func TestReconcilerProcess(t *testing.T) {
 			sourcer := repos.NewFakeSourcer(nil, fakeSource)
 
 			// Run the reconciler
-			rec := reconciler{gitserverClient: gitClient, sourcer: sourcer, store: store}
+			rec := reconciler{
+				newReposStore:   repos.NewStore,
+				gitserverClient: gitClient,
+				sourcer:         sourcer,
+				store:           store,
+			}
 			if err := rec.process(ctx, store, changeset); err != nil {
 				t.Fatalf("reconciler process failed: %s", err)
 			}
@@ -513,7 +525,10 @@ func TestReconcilerProcess_PublishedChangesetDuplicateBranch(t *testing.T) {
 	})
 
 	// Run the reconciler
-	rec := reconciler{store: store}
+	rec := reconciler{
+		newReposStore: repos.NewStore,
+		store:         store,
+	}
 	haveErr := rec.process(ctx, store, otherChangeset)
 	if !errors.Is(haveErr, ErrPublishSameBranch) {
 		t.Fatalf("reconciler process failed with wrong error: %s", haveErr)
@@ -543,6 +558,8 @@ func buildGithubPR(now time.Time, externalID, title, body, headRef string) inter
 }
 
 type testChangesetOpts struct {
+	id int64
+
 	repo         api.RepoID
 	campaign     int64
 	currentSpec  int64
@@ -569,11 +586,27 @@ func createChangeset(
 ) *campaigns.Changeset {
 	t.Helper()
 
+	changeset := buildChangeset(t, opts)
+
+	if err := store.CreateChangeset(ctx, changeset); err != nil {
+		t.Fatalf("creating changeset failed: %s", err)
+	}
+
+	return changeset
+}
+
+func buildChangeset(
+	t *testing.T,
+	opts testChangesetOpts,
+) *campaigns.Changeset {
+	t.Helper()
+
 	if opts.externalServiceType == "" {
 		opts.externalServiceType = extsvc.TypeGitHub
 	}
 
 	changeset := &campaigns.Changeset{
+		ID:             opts.id,
 		RepoID:         opts.repo,
 		CurrentSpecID:  opts.currentSpec,
 		PreviousSpecID: opts.previousSpec,
@@ -598,9 +631,481 @@ func createChangeset(
 		changeset.CampaignIDs = []int64{opts.campaign}
 	}
 
-	if err := store.CreateChangeset(ctx, changeset); err != nil {
-		t.Fatalf("creating changeset failed: %s", err)
+	return changeset
+}
+
+func TestReconcilerProcess_Mocked(t *testing.T) {
+	ctx := backend.WithAuthzBypass(context.Background())
+
+	now := time.Now().UTC().Truncate(time.Microsecond)
+
+	fakeReposStore := &repos.FakeStore{}
+	extSvc := &repos.ExternalService{
+		Kind: extsvc.KindGitHub,
+		Config: marshalJSON(t, &schema.GitHubConnection{
+			Url:   "https://github.com",
+			Token: "FAKE_TOKEN",
+		}),
 	}
 
-	return changeset
+	fakeReposStore.UpsertExternalServices(ctx, extSvc)
+
+	repoName := api.RepoName("github.com/sourcegraph/sourcegraph")
+	repo := &repos.Repo{
+		Name: string(repoName),
+		Sources: map[string]*repos.SourceInfo{
+			extSvc.URN(): {
+				ID:       extSvc.URN(),
+				CloneURL: "git@github.com:foo/bar.git",
+			},
+		},
+	}
+	fakeReposStore.InsertRepos(ctx, repo)
+
+	db.Mocks.Repos.Get = func(v0 context.Context, id api.RepoID) (*types.Repo, error) {
+		if id != repo.ID {
+			err := fmt.Errorf("unexpected repository id. want=%d have=%d", repo.ID, id)
+			return nil, err
+		}
+		return &types.Repo{
+			ID:         repo.ID,
+			Name:       api.RepoName(repo.Name),
+			RepoFields: &types.RepoFields{URI: "github.com/sourcegraph/sourcegraph"},
+		}, nil
+	}
+	t.Cleanup(func() { db.Mocks.Repos.Get = nil })
+
+	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
+		Name: api.RepoName(repoName),
+		VCS:  protocol.VCSInfo{URL: "https://" + string(repoName)},
+	})
+	defer state.Unmock()
+
+	// diffStat is the diff stat that MockChangesetSyncState will provide from the source.
+	diffStat := &diff.Stat{
+		Added:   1,
+		Changed: 1,
+		Deleted: 3,
+	}
+
+	githubPR := buildGithubPR(now, "12345", "Remote title", "Remote body", "head-ref-on-github")
+
+	type testCase struct {
+		changeset    testChangesetOpts
+		currentSpec  *testSpecOpts
+		previousSpec *testSpecOpts
+
+		sourcerMetadata interface{}
+		// Whether or not the source responds to CreateChangeset with "already exists"
+		alreadyExists bool
+
+		wantCreateOnHostCode bool
+		wantUpdateOnCodeHost bool
+		wantLoadFromCodeHost bool
+		wantGitserverCommit  bool
+
+		wantChangeset changesetAssertions
+	}
+
+	tests := map[string]testCase{
+		"published unsynced changeset without changesetSpec": {
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       "12345",
+				unsynced:         true,
+			},
+			sourcerMetadata: githubPR,
+
+			wantCreateOnHostCode: false,
+			wantUpdateOnCodeHost: false,
+			wantGitserverCommit:  false,
+
+			wantLoadFromCodeHost: true,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       "12345",
+				externalBranch:   "head-ref-on-github",
+				unsynced:         false,
+				title:            "Remote title",
+				body:             "Remote body",
+				diffStat:         diffStat,
+			},
+		},
+		"unpublished changeset stay unpublished": {
+			currentSpec: &testSpecOpts{
+				headRef:   "refs/heads/repo-1-branch-1",
+				published: false,
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+			},
+			sourcerMetadata: githubPR,
+
+			wantCreateOnHostCode: false,
+			wantUpdateOnCodeHost: false,
+			wantGitserverCommit:  false,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				externalID:       "",
+				externalBranch:   "",
+			},
+		},
+		"publish changeset": {
+			currentSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+			},
+			sourcerMetadata: githubPR,
+
+			wantCreateOnHostCode: true,
+			wantUpdateOnCodeHost: false,
+			wantGitserverCommit:  true,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       "12345",
+				externalBranch:   "head-ref-on-github",
+				title:            "Remote title",
+				body:             "Remote body",
+				diffStat:         diffStat,
+			},
+		},
+		"retry publish changeset": {
+			// This test case makes sure that everything works when the code host says
+			// that the changeset already exists.
+			alreadyExists: true,
+			currentSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+			},
+			changeset: testChangesetOpts{
+				failureMessage:   "publication failed",
+				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+			},
+			sourcerMetadata: githubPR,
+
+			// We first do a create and since that fails with "already exists"
+			// we update.
+			wantCreateOnHostCode: true,
+			wantUpdateOnCodeHost: true,
+			wantGitserverCommit:  true,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       "12345",
+				externalBranch:   "head-ref-on-github",
+				title:            "Remote title",
+				body:             "Remote body",
+				diffStat:         diffStat,
+			},
+		},
+		"update published changeset metadata": {
+			currentSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+
+				title: "new title",
+				body:  "new body",
+			},
+			previousSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+
+				title: "old title",
+				body:  "old body",
+			},
+			changeset: testChangesetOpts{
+				publicationState:  campaigns.ChangesetPublicationStatePublished,
+				externalID:        "12345",
+				externalBranch:    "head-ref-on-github",
+				createdByCampaign: true,
+			},
+			sourcerMetadata: githubPR,
+
+			wantCreateOnHostCode: false,
+			// We don't want a new commit, only an update on the code host.
+			wantUpdateOnCodeHost: true,
+			wantGitserverCommit:  false,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       "12345",
+				externalBranch:   "head-ref-on-github",
+				diffStat:         diffStat,
+				// We update the title/body but want the title/body returned by the code host.
+				title: "Remote title",
+				body:  "Remote body",
+			},
+		},
+		"retry update published changeset metadata": {
+			currentSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+
+				title: "new title",
+				body:  "new body",
+			},
+			previousSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+
+				title: "old title",
+				body:  "old body",
+			},
+			changeset: testChangesetOpts{
+				publicationState:  campaigns.ChangesetPublicationStatePublished,
+				externalID:        "12345",
+				externalBranch:    "head-ref-on-github",
+				createdByCampaign: true,
+				// Previous update failed:
+				failureMessage: "failed to update changeset metadata",
+			},
+			sourcerMetadata: githubPR,
+
+			wantCreateOnHostCode: false,
+			wantUpdateOnCodeHost: true,
+			wantGitserverCommit:  false,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       "12345",
+				externalBranch:   "head-ref-on-github",
+				title:            "Remote title",
+				body:             "Remote body",
+				diffStat:         diffStat,
+				// failureMessage should be nil
+			},
+		},
+		"update published changeset commit": {
+			currentSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+
+				// Title and body the same, but commit changed
+				commitDiff:    "new diff",
+				commitMessage: "new message",
+			},
+			previousSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+
+				commitDiff:    "old diff",
+				commitMessage: "old message",
+			},
+			changeset: testChangesetOpts{
+				publicationState:  campaigns.ChangesetPublicationStatePublished,
+				externalID:        "12345",
+				externalBranch:    "head-ref-on-github",
+				createdByCampaign: true,
+			},
+			sourcerMetadata: githubPR,
+
+			wantCreateOnHostCode: false,
+			// We don't want an update on the code host, only a new commit pushed.
+			wantUpdateOnCodeHost: false,
+			wantGitserverCommit:  true,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       "12345",
+				externalBranch:   "head-ref-on-github",
+			},
+		},
+		"retry update published changeset commit": {
+			currentSpec: &testSpecOpts{
+				headRef:       "refs/heads/head-ref-on-github",
+				published:     true,
+				commitDiff:    "new diff",
+				commitMessage: "new message",
+			},
+			previousSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+
+				commitDiff:    "old diff",
+				commitMessage: "old message",
+			},
+			changeset: testChangesetOpts{
+				publicationState:  campaigns.ChangesetPublicationStatePublished,
+				externalID:        "12345",
+				externalBranch:    "head-ref-on-github",
+				createdByCampaign: true,
+
+				// Previous update failed:
+				failureMessage: "failed to update changeset commit",
+			},
+			sourcerMetadata: githubPR,
+
+			wantCreateOnHostCode: false,
+			wantUpdateOnCodeHost: false,
+			wantGitserverCommit:  true,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       "12345",
+				externalBranch:   "head-ref-on-github",
+				// failureMessage should be nil
+			},
+		},
+		"reprocess published changeset without changes": {
+			// ChangesetSpec is already published and has no previous spec.
+			// Simply a reprocessing of the same changeset.
+			currentSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+
+				title: "title",
+				body:  "body",
+			},
+			changeset: testChangesetOpts{
+				publicationState:  campaigns.ChangesetPublicationStatePublished,
+				externalID:        "12345",
+				externalBranch:    "head-ref-on-github",
+				createdByCampaign: true,
+			},
+			sourcerMetadata: githubPR,
+
+			wantCreateOnHostCode: false,
+			wantUpdateOnCodeHost: false,
+			wantGitserverCommit:  false,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       "12345",
+				externalBranch:   "head-ref-on-github",
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		var (
+			userID int32 = 12345
+
+			changesetSpecID int64 = 7777
+			previousSpecID  int64 = 9999
+		)
+
+		t.Run(name, func(t *testing.T) {
+			// Fresh MockReconcilerStore for each test run
+			mockStore := NewMockReconcilerStore()
+			mockStore.HandleFunc.SetDefaultReturn(basestore.NewHandleWithDB(dbconn.Global))
+			mockStore.TransactSyncStoreFunc.SetDefaultReturn(mockStore, nil)
+
+			// New campaignSpec and new campaign
+			campaignSpec := buildCampaignSpec(t, "reconciler-test-campaign", userID)
+			campaign := buildCampaign(t, now, "reconciler-test-campaign", userID, campaignSpec.ID)
+
+			mockStore.GetCampaignFunc.SetDefaultReturn(campaign, nil)
+			mockStore.GetCampaignSpecFunc.SetDefaultReturn(campaignSpec, nil)
+
+			// Setup the changesetSpec with associations wired up correctly.
+			var changesetSpec *campaigns.ChangesetSpec
+			if tc.currentSpec != nil {
+				specOpts := *tc.currentSpec
+				specOpts.campaignSpec = campaignSpec.ID
+				changesetSpec = buildChangesetSpec(t, specOpts)
+				changesetSpec.ID = changesetSpecID
+			}
+
+			// If we need a previous spec, we need to set that up too.
+			var previousSpec *campaigns.ChangesetSpec
+			if tc.previousSpec != nil {
+				specOpts := *tc.previousSpec
+				previousSpec = buildChangesetSpec(t, specOpts)
+				previousSpec.ID = previousSpecID
+			}
+
+			// Wire up the specs in the MockReconcilerStore
+			mockStore.GetChangesetSpecByIDFunc.SetDefaultHook(func(ctx context.Context, id int64) (*campaigns.ChangesetSpec, error) {
+				if changesetSpec != nil && id == changesetSpec.ID {
+					return changesetSpec, nil
+				}
+				if previousSpec != nil && id == previousSpec.ID {
+					return previousSpec, nil
+				}
+				return nil, ErrNoResults
+			})
+
+			// Create the changeset with correct associations.
+			changesetOpts := tc.changeset
+			changesetOpts.repo = repo.ID
+			changesetOpts.campaign = campaign.ID
+			if changesetSpec != nil {
+				changesetOpts.currentSpec = changesetSpec.ID
+			}
+			if previousSpec != nil {
+				changesetOpts.previousSpec = previousSpec.ID
+			}
+			changeset := buildChangeset(t, changesetOpts)
+
+			// Setup the assertion: wantChangeset is what we want in the database
+			// after the reconciler processed it.
+			metadata := tc.sourcerMetadata
+
+			// Setup gitserver dependency.
+			gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
+			if changesetSpec != nil {
+				gitClient.Response = changesetSpec.Spec.HeadRef
+			}
+
+			// Setup the sourcer that's used to create a Source with which
+			// to create/update a changeset.
+			fakeSource := &ct.FakeChangesetSource{
+				Svc:             nil,
+				Err:             nil,
+				ChangesetExists: tc.alreadyExists,
+				FakeMetadata:    metadata,
+			}
+			if changesetSpec != nil {
+				fakeSource.WantHeadRef = changesetSpec.Spec.HeadRef
+				fakeSource.WantBaseRef = changesetSpec.Spec.BaseRef
+			}
+
+			sourcer := repos.NewFakeSourcer(nil, fakeSource)
+
+			// Run the reconciler
+			rec := reconciler{
+				newReposStore: func(db dbutil.DB, txOpts sql.TxOptions) repos.Store {
+					return fakeReposStore
+				},
+				gitserverClient: gitClient,
+				sourcer:         sourcer,
+			}
+			if err := rec.process(ctx, mockStore, changeset); err != nil {
+				t.Fatalf("reconciler process failed: %s", err)
+			}
+
+			assertions := tc.wantChangeset
+			assertions.repo = changeset.RepoID
+			if changesetSpec != nil {
+				assertions.currentSpec = changesetSpec.ID
+			}
+			if previousSpec != nil {
+				assertions.previousSpec = previousSpec.ID
+			}
+			assertChangeset(t, changeset, assertions)
+
+			// Assert that all the calls happened
+			if have, want := gitClient.CreateCommitFromPatchCalled, tc.wantGitserverCommit; have != want {
+				t.Fatalf("wrong CreateCommitFromPatch call. wantCalled=%t, wasCalled=%t", want, have)
+			}
+
+			if have, want := fakeSource.CreateChangesetCalled, tc.wantCreateOnHostCode; have != want {
+				t.Fatalf("wrong CreateChangeset call. wantCalled=%t, wasCalled=%t", want, have)
+			}
+
+			if have, want := fakeSource.UpdateChangesetCalled, tc.wantUpdateOnCodeHost; have != want {
+				t.Fatalf("wrong UpdateChangeset call. wantCalled=%t, wasCalled=%t", want, have)
+			}
+
+			if have, want := fakeSource.LoadChangesetsCalled, tc.wantLoadFromCodeHost; have != want {
+				t.Fatalf("wrong LoadChangesets call. wantCalled=%t, wasCalled=%t", want, have)
+			}
+		})
+	}
 }

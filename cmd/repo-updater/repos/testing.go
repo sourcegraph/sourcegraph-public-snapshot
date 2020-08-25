@@ -170,7 +170,6 @@ func (s FakeStore) ListExternalServices(ctx context.Context, args StoreListExter
 			((len(kinds) == 0 && k != extsvc.TypePhabricator) || kinds[k]) &&
 			(len(ids) == 0 || ids[svc.ID]) &&
 			!svc.IsDeleted() {
-
 			svcs = append(svcs, svc)
 			set[svc] = true
 

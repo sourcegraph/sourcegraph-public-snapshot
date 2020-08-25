@@ -11,6 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -19,9 +21,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+type ReconcilerStore interface {
+	basestore.ShareableStore
+
+	SyncStore
+
+	GetChangesetSpecByID(context.Context, int64) (*campaigns.ChangesetSpec, error)
+	GetCampaignSpec(context.Context, GetCampaignSpecOpts) (*campaigns.CampaignSpec, error)
+	GetCampaign(context.Context, GetCampaignOpts) (*campaigns.Campaign, error)
+}
+
 type GitserverClient interface {
 	CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error)
 }
+
+// newReposStoreFunc is a function that returns a new repos.Store.
+type newReposStoreFunc func(db dbutil.DB, txOpts sql.TxOptions) repos.Store
 
 // reconciler processes changesets and reconciles their current state — in
 // Sourcegraph or on the code host — with that described in the current
@@ -30,6 +45,7 @@ type reconciler struct {
 	gitserverClient GitserverClient
 	sourcer         repos.Sourcer
 	store           *Store
+	newReposStore   newReposStoreFunc
 }
 
 // HandlerFunc returns a dbworker.HandlerFunc that can be passed to a
@@ -54,7 +70,7 @@ func (r *reconciler) HandlerFunc() dbworker.HandlerFunc {
 // If an error is returned, the workerutil.Worker that called this function
 // (through the HandlerFunc) will set the changeset's ReconcilerState to
 // errored and set its FailureMessage to the error.
-func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Changeset) error {
+func (r *reconciler) process(ctx context.Context, tx ReconcilerStore, ch *campaigns.Changeset) error {
 	action, err := determineAction(ctx, tx, ch)
 	if err != nil {
 		return err
@@ -80,8 +96,8 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 	}
 }
 
-func (r *reconciler) syncChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset) error {
-	rstore := repos.NewDBStore(tx.Handle().DB(), sql.TxOptions{})
+func (r *reconciler) syncChangeset(ctx context.Context, tx ReconcilerStore, ch *campaigns.Changeset) error {
+	rstore := r.newReposStore(tx.Handle().DB(), sql.TxOptions{})
 
 	if err := SyncChangesets(ctx, rstore, tx, r.sourcer, ch); err != nil {
 		return errors.Wrapf(err, "syncing changeset failed. repo=%d, externalID=%q", ch.RepoID, ch.ExternalID)
@@ -95,8 +111,9 @@ func (r *reconciler) syncChangeset(ctx context.Context, tx *Store, ch *campaigns
 var ErrPublishSameBranch = errors.New("cannot create changeset on the same branch in multiple campaigns")
 
 // publishChangeset creates the given changeset on its code host.
-func (r *reconciler) publishChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset, spec *campaigns.ChangesetSpec) (err error) {
-	repo, extSvc, err := loadAssociations(ctx, tx, ch)
+func (r *reconciler) publishChangeset(ctx context.Context, tx ReconcilerStore, ch *campaigns.Changeset, spec *campaigns.ChangesetSpec) (err error) {
+	rstore := r.newReposStore(tx.Handle().DB(), sql.TxOptions{})
+	repo, extSvc, err := loadAssociations(ctx, rstore, ch)
 	if err != nil {
 		return errors.Wrap(err, "failed to load associations")
 	}
@@ -182,8 +199,9 @@ func (r *reconciler) publishChangeset(ctx context.Context, tx *Store, ch *campai
 // create and force push a new commit.
 // If the delta requires updates to the changeset on the code host, it will
 // update the changeset there.
-func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset, spec *campaigns.ChangesetSpec, delta *changesetSpecDelta) (err error) {
-	repo, extSvc, err := loadAssociations(ctx, tx, ch)
+func (r *reconciler) updateChangeset(ctx context.Context, tx ReconcilerStore, ch *campaigns.Changeset, spec *campaigns.ChangesetSpec, delta *changesetSpecDelta) (err error) {
+	rstore := r.newReposStore(tx.Handle().DB(), sql.TxOptions{})
+	repo, extSvc, err := loadAssociations(ctx, rstore, ch)
 	if err != nil {
 		return errors.Wrap(err, "failed to load associations")
 	}
@@ -349,7 +367,7 @@ type reconcilerAction struct {
 // It loads the current ChangesetSpec and if it exists also the previous one.
 // If the current ChangesetSpec is not applied to a campaign, it returns an
 // error.
-func determineAction(ctx context.Context, tx *Store, ch *campaigns.Changeset) (reconcilerAction, error) {
+func determineAction(ctx context.Context, tx ReconcilerStore, ch *campaigns.Changeset) (reconcilerAction, error) {
 	action := reconcilerAction{actionType: actionNone}
 
 	// If it doesn't have a spec, it's an imported changeset and we can't do
@@ -400,7 +418,7 @@ func determineAction(ctx context.Context, tx *Store, ch *campaigns.Changeset) (r
 	return action, nil
 }
 
-func checkSpecAppliedToCampaign(ctx context.Context, tx *Store, spec *campaigns.ChangesetSpec) error {
+func checkSpecAppliedToCampaign(ctx context.Context, tx ReconcilerStore, spec *campaigns.ChangesetSpec) error {
 	campaignSpec, err := tx.GetCampaignSpec(ctx, GetCampaignSpecOpts{ID: spec.CampaignSpecID})
 	if err != nil {
 		return errors.Wrap(err, "failed to load campaign spec")
@@ -418,15 +436,13 @@ func checkSpecAppliedToCampaign(ctx context.Context, tx *Store, spec *campaigns.
 	return nil
 }
 
-func loadAssociations(ctx context.Context, tx *Store, ch *campaigns.Changeset) (*repos.Repo, *repos.ExternalService, error) {
-	reposStore := repos.NewDBStore(tx.Handle().DB(), sql.TxOptions{})
-
-	repo, err := loadRepo(ctx, reposStore, ch.RepoID)
+func loadAssociations(ctx context.Context, tx repos.Store, ch *campaigns.Changeset) (*repos.Repo, *repos.ExternalService, error) {
+	repo, err := loadRepo(ctx, tx, ch.RepoID)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to load repository")
 	}
 
-	extSvc, err := loadExternalService(ctx, reposStore, repo)
+	extSvc, err := loadExternalService(ctx, tx, repo)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to load external service")
 	}

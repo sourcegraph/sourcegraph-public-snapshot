@@ -174,6 +174,11 @@ func NewDBStore(db dbutil.DB, txOpts sql.TxOptions) *DBStore {
 	return &DBStore{db: db, txOpts: txOpts}
 }
 
+// NewStore instantiates and returns a new DBStore as a Store.
+func NewStore(db dbutil.DB, txOpts sql.TxOptions) Store {
+	return &DBStore{db: db, txOpts: txOpts}
+}
+
 // Transact returns a TxStore whose methods operate within the context of a transaction.
 // This method will return an error if the underlying DB cannot be interface upgraded
 // to a TxBeginner.

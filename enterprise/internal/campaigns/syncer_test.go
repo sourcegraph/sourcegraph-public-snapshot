@@ -550,7 +550,8 @@ type MockSyncStore struct {
 	listChangesets        func(context.Context, ListChangesetsOpts) (campaigns.Changesets, int64, error)
 	updateChangeset       func(context.Context, *campaigns.Changeset) error
 	upsertChangesetEvents func(context.Context, ...*campaigns.ChangesetEvent) error
-	transact              func(context.Context) (*Store, error)
+	transact              func(context.Context) (SyncStore, error)
+	done                  func(error) error
 }
 
 func (m MockSyncStore) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
@@ -573,8 +574,12 @@ func (m MockSyncStore) UpsertChangesetEvents(ctx context.Context, cs ...*campaig
 	return m.upsertChangesetEvents(ctx, cs...)
 }
 
-func (m MockSyncStore) Transact(ctx context.Context) (*Store, error) {
+func (m MockSyncStore) TransactSyncStore(ctx context.Context) (SyncStore, error) {
 	return m.transact(ctx)
+}
+
+func (m MockSyncStore) Done(err error) error {
+	return m.done(err)
 }
 
 type MockRepoStore struct {

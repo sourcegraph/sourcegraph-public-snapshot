@@ -27,7 +27,12 @@ func RunWorkers(
 	gitClient GitserverClient,
 	sourcer repos.Sourcer,
 ) {
-	r := &reconciler{gitserverClient: gitClient, sourcer: sourcer, store: s}
+	r := &reconciler{
+		newReposStore:   repos.NewStore,
+		gitserverClient: gitClient,
+		sourcer:         sourcer,
+		store:           s,
+	}
 
 	options := dbworker.WorkerOptions{
 		Handler:     r.HandlerFunc(),

@@ -279,7 +279,9 @@ type SyncStore interface {
 	ListChangesets(context.Context, ListChangesetsOpts) (campaigns.Changesets, int64, error)
 	UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) error
 	UpsertChangesetEvents(ctx context.Context, cs ...*campaigns.ChangesetEvent) error
-	Transact(context.Context) (*Store, error)
+
+	TransactSyncStore(context.Context) (SyncStore, error)
+	Done(error) error
 }
 
 // Run will start the process of changeset syncing. It is long running
@@ -592,7 +594,7 @@ func syncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []
 		}
 	}
 
-	tx, err := store.Transact(ctx)
+	tx, err := store.TransactSyncStore(ctx)
 	if err != nil {
 		return err
 	}

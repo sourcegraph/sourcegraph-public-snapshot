@@ -610,6 +610,7 @@ func changesetGitserverRepo(ctx context.Context, c *campaigns.Changeset) (*gitse
 	if err != nil {
 		return nil, err
 	}
+
 	return &gitserver.Repo{Name: repo.Name, URL: repo.URI}, nil
 }
 
