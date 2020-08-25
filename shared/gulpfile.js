@@ -8,8 +8,7 @@ const { compile: compileJSONSchema } = require('json-schema-to-typescript')
 const { readFile, writeFile, mkdir } = require('mz/fs')
 const path = require('path')
 const { format, resolveConfig } = require('prettier')
-
-const { generateGraphQlOperations } = require('./dev/generateGraphQlOperations')
+const { spawn } = require('child_process')
 
 const GRAPHQL_SCHEMA_PATH = path.join(__dirname, '../cmd/frontend/graphqlbackend/schema.graphql')
 
@@ -72,15 +71,21 @@ async function watchGraphQlSchema() {
 /**
  * Generates the new query-specific types on file changes.
  */
-async function watchGraphQlOperations() {
-  await generateGraphQlOperations({ watch: true })
+function watchGraphQlOperations() {
+  return spawn('yarn', ['-s', 'graphql-codegen', '-c', './shared/dev/codegen.yml', '--watch'], {
+    stdio: 'inherit',
+    shell: true,
+  })
 }
 
 /**
  * Generates the new query-specific types.
  */
-async function graphQlOperations() {
-  await generateGraphQlOperations()
+function graphQlOperations() {
+  return spawn('yarn', ['-s', 'graphql-codegen', '-c', './shared/dev/codegen.yml'], {
+    stdio: 'inherit',
+    shell: true,
+  })
 }
 
 /**

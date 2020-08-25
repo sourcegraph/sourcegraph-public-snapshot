@@ -1,0 +1,74 @@
+schema: ./cmd/frontend/graphqlbackend/schema.graphql
+hooks:
+  afterOneFileWrite: prettier --write
+config:
+  preResolveTypes: true
+  operationResultSuffix: Result
+  omitOperationSuffix: true
+  skipTypename: true
+  namingConvention:
+    typeNames: keep
+    enumValues: keep
+    transformUnderscore: true
+  declarationKind: interface
+  avoidOptionals:
+    field: true
+    inputValue: false
+    object: true
+  scalars:
+    DateTime: string
+    JSON: object
+    JSONValue: unknown
+    GitObjectID: string
+    JSONCString: string
+
+generates:
+  ./browser/src/graphql-operations.ts:
+    documents:
+      - "./browser/src/**/*.{ts,tsx}"
+      - "!./browser/src/end-to-end/**/*.*"
+      - "!**/*.d.ts"
+    config:
+      onlyOperationTypes: true
+      noExport: false
+      enumValues: ../../shared/src/graphql/schema
+      interfaceNameForOperations: BrowserGraphQlOperations
+    plugins:
+      [
+        ./shared/dev/extractGraphQlOperationCodegenPlugin.js,
+        typescript,
+        typescript-operations,
+      ]
+
+  ./web/src/graphql-operations.ts:
+    documents:
+      - "./web/src/**/*.{ts,tsx}"
+      - "!./web/src/regression/**/*.*"
+      - "!./web/src/end-to-end/**/*.*"
+    config:
+      onlyOperationTypes: true
+      noExport: false
+      enumValues: ../../shared/src/graphql/schema
+      interfaceNameForOperations: WebGraphQlOperations
+    plugins:
+      [
+        ./shared/dev/extractGraphQlOperationCodegenPlugin.js,
+        typescript,
+        typescript-operations,
+      ]
+
+  ./shared/src/graphql-operations.ts:
+    documents:
+      - "./shared/src/**/*.{ts,tsx}"
+      - "!./shared/src/testing/**/*.*"
+    config:
+      onlyOperationTypes: true
+      noExport: false
+      enumValues: ./graphql/schema
+      interfaceNameForOperations: SharedGraphQlOperations
+    plugins:
+      [
+        ./shared/dev/extractGraphQlOperationCodegenPlugin.js,
+        typescript,
+        typescript-operations,
+      ]
