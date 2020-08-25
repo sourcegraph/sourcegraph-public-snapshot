@@ -189,6 +189,26 @@ main.go:7:}
 		}, `
 file++.plus:1:filename contains regex metachars
 `},
+
+		{protocol.PatternInfo{Pattern: "World", IsNegated: true}, `
+abc.txt
+file++.plus
+milton.png
+`},
+
+		{protocol.PatternInfo{Pattern: "World", IsCaseSensitive: true, IsNegated: true}, `
+abc.txt
+file++.plus
+main.go
+milton.png
+`},
+
+		{protocol.PatternInfo{Pattern: "fmt", IsNegated: true}, `
+README.md
+abc.txt
+file++.plus
+milton.png
+`},
 	}
 
 	store, cleanup, err := newStore(files)
@@ -336,6 +356,20 @@ func TestSearch_badrequest(t *testing.T) {
 				PathPatternsAreRegExps: true,
 			},
 		},
+
+		// structural search with negated pattern
+		{
+			Repo:   "foo",
+			URL:    "u",
+			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+			PatternInfo: protocol.PatternInfo{
+				Pattern:                "fmt.Println(:[_])",
+				IsNegated:              true,
+				ExcludePattern:         "",
+				PathPatternsAreRegExps: true,
+				IsStructuralPat:        true,
+			},
+		},
 	}
 
 	store, cleanup, err := newStore(nil)
@@ -391,6 +425,9 @@ func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 	}
 	if p.PatternMatchesPath {
 		form.Set("PatternMatchesPath", "true")
+	}
+	if p.IsNegated {
+		form.Set("IsNegated", "true")
 	}
 	resp, err := http.PostForm(u, form)
 	if err != nil {

@@ -295,7 +295,7 @@ func (rg *readerGrep) FindZip(zf *store.ZipFile, f *store.SrcFile) (protocol.Fil
 }
 
 // regexSearch concurrently searches files in zr looking for matches using rg.
-func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool) (fm []protocol.FileMatch, limitHit bool, err error) {
+func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool) (_ []protocol.FileMatch, limitHit bool, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "RegexSearch")
 	ext.Component.Set(span, "regex_search")
 	if rg.re != nil {
@@ -341,13 +341,12 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 		// Fast path for only matching file paths (or with a nil pattern, which matches all files,
 		// so is effectively matching only on file paths).
 		for _, f := range files {
-			if rg.matchPath.MatchPath(f.Name) && rg.matchString(f.Name) {
-				if len(matches) < fileMatchLimit {
-					matches = append(matches, protocol.FileMatch{Path: f.Name})
-				} else {
-					limitHit = true
-					break
-				}
+			if len(matches) >= fileMatchLimit {
+				limitHit = true
+				break
+			}
+			if match := rg.matchPath.MatchPath(f.Name) && rg.matchString(f.Name); match && !isPatternNegated || !match && isPatternNegated {
+				matches = append(matches, protocol.FileMatch{Path: f.Name})
 			}
 		}
 		return matches, limitHit, nil
@@ -411,13 +410,14 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 						fm.Path = f.Name
 					}
 				}
-				if match {
+
+				if match && !isPatternNegated || !match && isPatternNegated {
 					matchesmu.Lock()
-					if len(matches) < fileMatchLimit {
-						matches = append(matches, fm)
-					} else {
+					if len(matches) >= fileMatchLimit {
 						limitHit = true
 						cancel()
+					} else {
+						matches = append(matches, fm)
 					}
 					matchesmu.Unlock()
 				}
