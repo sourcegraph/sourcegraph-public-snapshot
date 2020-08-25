@@ -1428,32 +1428,32 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceO
 	return resultTypes
 }
 
-func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (repos, missingRepoRevs []*search.RepositoryRevisions, excludedRepos *excludedRepos, res *SearchResultsResolver, err error) {
-	repos, missingRepoRevs, excludedRepos, overLimit, err := r.resolveRepositories(ctx, nil)
+func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (resolved resolvedRepositories, res *SearchResultsResolver, err error) {
+	resolved, err = r.resolveRepositories(ctx, nil)
 	if err != nil {
 		if errors.Is(err, authz.ErrStalePermissions{}) {
 			log15.Debug("searchResolver.determineRepos", "err", err)
 			alert := alertForStalePermissions()
-			return nil, nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
+			return resolvedRepositories{}, &SearchResultsResolver{alert: alert, start: start}, nil
 		}
 		e := git.BadCommitError{}
 		if errors.As(err, &e) {
 			alert := r.alertForInvalidRevision(e.Spec)
-			return nil, nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
+			return resolvedRepositories{}, &SearchResultsResolver{alert: alert, start: start}, nil
 		}
-		return nil, nil, nil, nil, err
+		return resolvedRepositories{}, nil, err
 	}
 
-	tr.LazyPrintf("searching %d repos, %d missing", len(repos), len(missingRepoRevs))
-	if len(repos) == 0 {
+	tr.LazyPrintf("searching %d repos, %d missing", len(resolved.repoRevs), len(resolved.missingRepoRevs))
+	if len(resolved.repoRevs) == 0 {
 		alert := r.alertForNoResolvedRepos(ctx)
-		return nil, nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
+		return resolvedRepositories{}, &SearchResultsResolver{alert: alert, start: start}, nil
 	}
-	if overLimit {
+	if resolved.overLimit {
 		alert := r.alertForOverRepoLimit(ctx)
-		return nil, nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
+		return resolvedRepositories{}, &SearchResultsResolver{alert: alert, start: start}, nil
 	}
-	return repos, missingRepoRevs, excludedRepos, nil, nil
+	return resolved, nil, nil
 }
 
 // Surface an alert if a query exceeds limits that we place on search. Currently limits
@@ -1505,7 +1505,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 	defer cancel()
 
-	repos, missingRepoRevs, excludedRepos, alertResult, err := r.determineRepos(ctx, tr, start)
+	resolved, alertResult, err := r.determineRepos(ctx, tr, start)
 	if err != nil {
 		return nil, err
 	}
@@ -1536,7 +1536,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	args := search.TextParameters{
 		PatternInfo:     p,
-		Repos:           repos,
+		Repos:           resolved.repoRevs,
 		Query:           r.query,
 		UseFullDeadline: r.searchTimeoutFieldSet(),
 		Zoekt:           r.zoekt,
@@ -1583,8 +1583,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return &optionalWg
 	}
 
-	if excludedRepos != nil {
-		common.excluded = *excludedRepos
+	if resolved.excludedRepos != nil {
+		common.excluded = *resolved.excludedRepos
 	}
 
 	// Apply search limits and generate warnings before firing off workers.
@@ -1830,8 +1830,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		alert = alertForStructuralSearchNotSet(r.originalQuery)
 	}
 
-	if len(missingRepoRevs) > 0 {
-		alert = alertForMissingRepoRevs(r.patternType, missingRepoRevs)
+	if len(resolved.missingRepoRevs) > 0 {
+		alert = alertForMissingRepoRevs(r.patternType, resolved.missingRepoRevs)
 	}
 
 	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == query.SearchTypeLiteral {
