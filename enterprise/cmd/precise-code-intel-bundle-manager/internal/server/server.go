@@ -20,7 +20,7 @@ const Port = 3187
 
 type Server struct {
 	bundleDir          string
-	readerCache        cache.ReaderCache
+	storeCache         cache.StoreCache
 	observationContext *observation.Context
 	server             *http.Server
 	once               sync.Once
@@ -30,7 +30,7 @@ var _ goroutine.BackgroundRoutine = &Server{}
 
 func New(
 	bundleDir string,
-	readerCache cache.ReaderCache,
+	storeCache cache.StoreCache,
 	observationContext *observation.Context,
 ) *Server {
 	host := ""
@@ -40,7 +40,7 @@ func New(
 
 	s := &Server{
 		bundleDir:          bundleDir,
-		readerCache:        readerCache,
+		storeCache:         storeCache,
 		observationContext: observationContext,
 	}
 
