@@ -43,12 +43,14 @@ func TestIntegration(t *testing.T) {
 		trace.Tracer{Tracer: opentracing.GlobalTracer()},
 	)
 
+	userID := insertTestUser(t, db)
+
 	for _, tc := range []struct {
 		name string
 		test func(*testing.T, repos.Store) func(*testing.T)
 	}{
 		{"DBStore/Transact", func(*testing.T, repos.Store) func(*testing.T) { return testDBStoreTransact(dbstore) }},
-		{"DBStore/ListExternalServices", testStoreListExternalServices},
+		{"DBStore/ListExternalServices", testStoreListExternalServices(userID)},
 		{"DBStore/SyncRateLimiters", testSyncRateLimiters},
 		{"DBStore/ListExternalServices/ByRepo", testStoreListExternalServicesByRepos},
 		{"DBStore/UpsertExternalServices", testStoreUpsertExternalServices},
@@ -74,4 +76,14 @@ func TestIntegration(t *testing.T) {
 			tc.test(t, store)(t)
 		})
 	}
+}
+func insertTestUser(t *testing.T, db *sql.DB) (userID int32) {
+	t.Helper()
+
+	err := db.QueryRow("INSERT INTO users (username) VALUES ('bbs-admin') RETURNING id").Scan(&userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return userID
 }
