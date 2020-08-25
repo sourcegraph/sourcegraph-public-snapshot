@@ -26,7 +26,7 @@ import { CampaignTabs } from './CampaignTabs'
 import { CampaignDetailsActionSection } from './CampaignDetailsActionSection'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 
-export interface CampaignDetailsProps
+export interface CampaignDetailsPageProps
     extends ThemeProps,
         ExtensionsControllerProps,
         PlatformContextProps,
@@ -54,7 +54,7 @@ export interface CampaignDetailsProps
 /**
  * The area for a single campaign.
  */
-export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
+export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPageProps> = ({
     campaignID,
     history,
     location,
@@ -70,8 +70,8 @@ export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
     deleteCampaign,
 }) => {
     useEffect(() => {
-        telemetryService.logViewEvent(campaignID ? 'CampaignDetailsPage' : 'NewCampaignPage')
-    }, [campaignID, telemetryService])
+        telemetryService.logViewEvent('CampaignDetailsPagePage')
+    }, [telemetryService])
 
     const campaign: CampaignFields | null | undefined = useObservable(
         useMemo(
@@ -88,7 +88,7 @@ export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
         if (campaign) {
             const subscription = setBreadcrumb({
                 element: <>{campaign.name}</>,
-                key: 'CampaignDetails',
+                key: 'CampaignDetailsPage',
             })
             return () => subscription.unsubscribe()
         }

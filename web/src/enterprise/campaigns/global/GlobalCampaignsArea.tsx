@@ -12,7 +12,7 @@ import { lazyComponent } from '../../../util/lazyComponent'
 import { UserCampaignListPageProps, CampaignListPageProps, OrgCampaignListPageProps } from '../list/CampaignListPage'
 import { CampaignApplyPageProps } from '../apply/CampaignApplyPage'
 import { CreateCampaignPageProps } from '../create/CreateCampaignPage'
-import { CampaignDetailsProps } from '../detail/CampaignDetails'
+import { CampaignDetailsPageProps } from '../detail/CampaignDetailsPage'
 import { CampaignClosePageProps } from '../close/CampaignClosePage'
 import { CampaignsDotComPageProps } from './marketing/CampaignsDotComPage'
 import { Link } from '../../../../../shared/src/components/Link'
@@ -37,9 +37,9 @@ const CreateCampaignPage = lazyComponent<CreateCampaignPageProps, 'CreateCampaig
     () => import('../create/CreateCampaignPage'),
     'CreateCampaignPage'
 )
-const CampaignDetails = lazyComponent<CampaignDetailsProps, 'CampaignDetails'>(
-    () => import('../detail/CampaignDetails'),
-    'CampaignDetails'
+const CampaignDetailsPage = lazyComponent<CampaignDetailsPageProps, 'CampaignDetailsPage'>(
+    () => import('../detail/CampaignDetailsPage'),
+    'CampaignDetailsPage'
 )
 const CampaignClosePage = lazyComponent<CampaignClosePageProps, 'CampaignClosePage'>(
     () => import('../close/CampaignClosePage'),
@@ -163,7 +163,7 @@ export const UserCampaignsArea = withAuthenticatedUser<
                     <Route
                         path={`${match.url}/:campaignID`}
                         render={({ match, ...props }: RouteComponentProps<{ campaignID: string }>) => (
-                            <CampaignDetails
+                            <CampaignDetailsPage
                                 {...outerProps}
                                 {...props}
                                 {...breadcrumbSetters}
@@ -237,7 +237,7 @@ export const OrgCampaignsArea = withAuthenticatedUser<OrgCampaignsAreaProps & { 
                         <Route
                             path={`${match.url}/:campaignID`}
                             render={({ match, ...props }: RouteComponentProps<{ campaignID: string }>) => (
-                                <CampaignDetails
+                                <CampaignDetailsPage
                                     {...props}
                                     {...outerProps}
                                     {...breadcrumbSetters}
