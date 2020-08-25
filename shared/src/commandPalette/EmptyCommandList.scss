@@ -1,0 +1,28 @@
+.empty-command-list {
+    position: relative;
+    color: #39496a;
+    font-size: 1rem;
+    padding: 1rem;
+
+    &__title {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    &__text {
+        line-height: 150%;
+        margin-bottom: 1.5rem;
+    }
+
+    &__illustration {
+        position: absolute;
+        bottom: 1rem;
+        right: 1rem;
+    }
+}
+
+.theme-dark {
+    .empty-command-list {
+        color: #afbcd4;
+    }
+}
