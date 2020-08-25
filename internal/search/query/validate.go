@@ -363,7 +363,7 @@ func validateCommitParameters(nodes []Node) error {
 		}
 	})
 	if seenCommitParam != "" && !typeCommitExists {
-		return fmt.Errorf(`your query contains the field "%s", so please also add either type:commit or type:diff to the query`, seenCommitParam)
+		return fmt.Errorf(`your query contains the field '%s', which requires type:commit or type:diff in the query`, seenCommitParam)
 	}
 	return nil
 }
