@@ -84,7 +84,7 @@ func (r *reconciler) syncChangeset(ctx context.Context, tx *Store, ch *campaigns
 	rstore := repos.NewDBStore(tx.Handle().DB(), sql.TxOptions{})
 
 	if err := SyncChangesets(ctx, rstore, tx, r.sourcer, ch); err != nil {
-		return errors.Wrapf(err, "syncing changeset failed. repo=%d, externalID=%q", ch.RepoID, ch.ExternalID)
+		return errors.Wrapf(err, "syncing changeset with external ID %q failed", ch.ExternalID)
 	}
 
 	return nil
