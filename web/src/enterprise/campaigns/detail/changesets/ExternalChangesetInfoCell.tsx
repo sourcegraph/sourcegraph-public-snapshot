@@ -32,8 +32,9 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
                     target="_blank"
                     rel="noopener noreferrer"
                 >
-                    {node.title}
-                    {node.externalID && <> (#{node.externalID}) </>}
+                    {node.title ?? 'Importing changeset'}
+                    {!node.title && node.externalID && <> #{node.externalID} </>}
+                    {node.title && node.externalID && <> (#{node.externalID}) </>}
                     {node.externalURL && node.externalState !== ChangesetExternalState.DELETED && (
                         <>
                             {' '}
