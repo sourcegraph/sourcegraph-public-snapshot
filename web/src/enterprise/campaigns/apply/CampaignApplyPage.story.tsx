@@ -37,7 +37,6 @@ const campaignSpec: CampaignSpecFields = {
     appliesToCampaign: null,
     createdAt: subDays(new Date(), 5).toISOString(),
     creator: {
-        avatarURL: 'http://test.test/avatar',
         url: '/users/alice',
         username: 'alice',
     },

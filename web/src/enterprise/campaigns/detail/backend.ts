@@ -42,11 +42,19 @@ const campaignFragment = gql`
             url
         }
         description
+
+        createdAt
         initialApplier {
             username
             url
         }
-        createdAt
+
+        lastAppliedAt
+        lastApplier {
+            username
+            url
+        }
+
         updatedAt
         closedAt
         viewerCanAdminister

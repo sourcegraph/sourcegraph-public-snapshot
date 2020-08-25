@@ -25,6 +25,7 @@ import { CampaignHeader } from './CampaignHeader'
 import { CampaignTabs } from './CampaignTabs'
 import { CampaignDetailsActionSection } from './CampaignDetailsActionSection'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
+import { CampaignInfoByline } from './CampaignInfoByline'
 
 export interface CampaignDetailsPageProps
     extends ThemeProps,
@@ -124,6 +125,13 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
                     />
                 }
                 className="test-campaign-details-page"
+            />
+            <CampaignInfoByline
+                createdAt={campaign.createdAt}
+                initialApplier={campaign.initialApplier}
+                lastAppliedAt={campaign.lastAppliedAt}
+                lastApplier={campaign.lastApplier}
+                className="mb-3"
             />
             <CampaignStatsCard closedAt={campaign.closedAt} stats={campaign.changesets.stats} className="mb-3" />
             <CampaignDescription history={history} description={campaign.description} />

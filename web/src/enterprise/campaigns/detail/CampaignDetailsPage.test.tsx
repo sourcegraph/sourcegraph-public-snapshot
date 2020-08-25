@@ -50,6 +50,11 @@ describe('CampaignDetailsPage', () => {
                         namespaceName: 'alice',
                         url: '/users/alice',
                     },
+                    lastAppliedAt: '2020-01-01',
+                    lastApplier: {
+                        url: '/users/bob',
+                        username: 'bob',
+                    },
                 })
             }
             deleteCampaign={() => Promise.resolve(undefined)}

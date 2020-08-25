@@ -21,6 +21,7 @@ import { HeroPage } from '../../../components/HeroPage'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 import { Link } from '../../../../../shared/src/components/Link'
+import { CampaignInfoByline } from '../detail/CampaignInfoByline'
 
 export interface CampaignClosePageProps
     extends ThemeProps,
@@ -88,6 +89,13 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
         <>
             <PageTitle title="Preview close" />
             <CampaignHeader name={campaign.name} namespace={campaign.namespace} className="test-campaign-close-page" />
+            <CampaignInfoByline
+                createdAt={campaign.createdAt}
+                initialApplier={campaign.initialApplier}
+                lastAppliedAt={campaign.lastAppliedAt}
+                lastApplier={campaign.lastApplier}
+                className="mb-3"
+            />
             <CampaignCloseAlert
                 campaignID={campaignID}
                 campaignURL={campaign.url}

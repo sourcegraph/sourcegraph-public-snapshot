@@ -260,6 +260,11 @@ add('Overview', () => {
             description: '## What this campaign does\n\nTruly awesome things for example.',
             name: 'awesome-campaign',
             updatedAt: subDays(new Date(), 5).toISOString(),
+            lastAppliedAt: subDays(new Date(), 5).toISOString(),
+            lastApplier: {
+                url: '/users/bob',
+                username: 'bob',
+            },
         }),
         [viewerCanAdminister, isClosed]
     )

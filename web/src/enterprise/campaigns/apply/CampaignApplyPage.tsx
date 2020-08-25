@@ -16,6 +16,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { HeroPage } from '../../../components/HeroPage'
 import { CampaignDescription } from '../detail/CampaignDescription'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
+import { CampaignSpecInfoByline } from './CampaignSpecInfoByline'
 
 export interface CampaignApplyPageProps extends ThemeProps, BreadcrumbSetters {
     specID: string
@@ -71,6 +72,7 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
                 namespace={spec.namespace}
                 className="test-campaign-apply-page"
             />
+            <CampaignSpecInfoByline createdAt={spec.createdAt} creator={spec.creator} className="mb-3" />
             <CreateUpdateCampaignAlert
                 history={history}
                 specID={spec.id}

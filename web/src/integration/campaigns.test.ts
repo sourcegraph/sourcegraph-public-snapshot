@@ -266,6 +266,11 @@ function mockCommonGraphQLResponses(
                     deleted: 817,
                 },
                 viewerCanAdminister: true,
+                lastAppliedAt: subDays(new Date(), 5).toISOString(),
+                lastApplier: {
+                    url: '/users/bob',
+                    username: 'bob',
+                },
                 ...campaignOverrides,
             },
         }),
