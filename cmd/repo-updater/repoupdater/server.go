@@ -529,7 +529,7 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 		}, nil
 	}
 
-	err = s.Syncer.SyncSubset(ctx, repo)
+	err = s.Syncer.SyncSubset(ctx, s.Store, repo)
 	if err != nil {
 		return nil, err
 	}
@@ -563,7 +563,7 @@ func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	if e := s.Syncer.LastSyncError(); e != nil {
+	for _, e := range s.Syncer.SyncErrors() {
 		if multiErr, ok := errors.Cause(e).(*multierror.Error); ok {
 			for _, e := range multiErr.Errors {
 				if sourceErr, ok := e.(*repos.SourceError); ok {

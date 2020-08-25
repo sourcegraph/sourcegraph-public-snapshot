@@ -3,7 +3,6 @@ package repos
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -37,16 +36,14 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, 
 		OrderByExpression: sqlf.Sprintf("next_sync_at"),
 		ColumnExpressions: syncJobColumns,
 		StalledMaxAge:     30 * time.Second,
-		// Zero for now as we expect errors to be transient
-		// TODO: Confirm whether this means 0 or infinite retries
-		MaxNumResets: 0,
+		MaxNumResets:      5,
 	})
 
 	return dbworker.NewWorker(ctx, store, dbworker.WorkerOptions{
-		Name:        "sync_worker",
+		Name:        "repo_sync_worker",
 		Handler:     handler,
 		NumHandlers: numHandlers,
-		Interval:    1 * time.Minute,
+		Interval:    10 * time.Second,
 		Metrics: workerutil.WorkerMetrics{
 			HandleOperation: newObservationOperation(),
 		},
@@ -116,12 +113,4 @@ type SyncJob struct {
 // RecordID implements workerutil.Record and indicates the queued item id
 func (s *SyncJob) RecordID() int {
 	return s.ID
-}
-
-type syncHandler struct{}
-
-func (h *syncHandler) Handle(ctx context.Context, tx workerutil.Store, record workerutil.Record) error {
-	// Temporary handler which will be implemented once we have implemented code to sync a single
-	// external service
-	return errors.New("TODO")
 }

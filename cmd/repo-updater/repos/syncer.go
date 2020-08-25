@@ -2,6 +2,8 @@ package repos
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -13,17 +15,15 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // A Syncer periodically synchronizes available repositories from all its given Sources
 // with the stored Repositories in Sourcegraph.
 type Syncer struct {
-	Store   Store
 	Sourcer Sourcer
-
-	// FailFullSync prevents Sync from running. This should only be true for
-	// Sourcegraph.com
-	FailFullSync bool
+	Worker  *workerutil.Worker
 
 	// Synced is sent a collection of Repos that were synced by Sync (only if Synced is non-nil)
 	Synced chan Diff
@@ -37,23 +37,33 @@ type Syncer struct {
 	// Now is time.Now. Can be set by tests to get deterministic output.
 	Now func() time.Time
 
-	// lastSyncErr contains the last error returned by the Sourcer in each
-	// Sync. It's reset with each Sync and if the sync produced no error, it's
+	// syncErrors contains the last error returned by the Sourcer in each
+	// Sync per external service. It's reset with each service Sync and if the sync produced no error, it's
 	// set to nil.
-	lastSyncErr   error
-	lastSyncErrMu sync.Mutex
+	syncErrors   map[int64]error
+	syncErrorsMu sync.Mutex
 
 	syncSignal signal
 }
 
 // Run runs the Sync at the specified interval.
-func (s *Syncer) Run(pctx context.Context, interval func() time.Duration) error {
-	s.initialUnmodifiedDiffFromStore(pctx)
+func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, interval func() time.Duration, isCloud bool) error {
+	s.initialUnmodifiedDiffFromStore(pctx, store)
+
+	log15.Info("Running Syncer.Run")
+	// TODO: Make numhandlers configurable
+	worker := NewSyncWorker(pctx, db, &syncHandler{
+		syncer: s,
+		store:  store,
+	}, 1)
+
+	go worker.Start()
+	defer worker.Stop()
 
 	for pctx.Err() == nil {
 		ctx, cancel := contextWithSignalCancel(pctx, s.syncSignal.Watch())
 
-		if err := s.Sync(ctx); err != nil && s.Logger != nil {
+		if err := store.EnqueueSyncJobs(ctx, isCloud); err != nil {
 			s.Logger.Error("Syncer", "error", err)
 		}
 
@@ -63,6 +73,25 @@ func (s *Syncer) Run(pctx context.Context, interval func() time.Duration) error 
 	}
 
 	return pctx.Err()
+}
+
+type syncHandler struct {
+	syncer *Syncer
+	store  Store
+}
+
+func (s *syncHandler) Handle(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) error {
+	sj, ok := record.(*SyncJob)
+	if !ok {
+		return fmt.Errorf("expected repos.SyncJob, got %T", record)
+	}
+
+	store := s.store
+	if ws, ok := s.store.(WithStore); ok {
+		store = ws.With(tx.Handle().DB())
+	}
+
+	return s.syncer.SyncExternalService(ctx, store, sj.ExternalServiceID)
 }
 
 // contextWithSignalCancel will return a context which will be cancelled if
@@ -95,45 +124,45 @@ func (s *Syncer) TriggerSync() {
 	s.syncSignal.Trigger()
 }
 
-// Sync synchronizes the repositories.
-func (s *Syncer) Sync(ctx context.Context) (err error) {
+// SyncExternalService syncs repos using all of the supplied external services
+func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalServiceID int64) (err error) {
 	var diff Diff
 
-	ctx, save := s.observe(ctx, "Syncer.Sync", "")
+	log15.Info("Syncing external service", "serviceID", externalServiceID)
+	ctx, save := s.observe(ctx, "Syncer.SyncExternalService", "")
 	defer save(&diff, &err)
-	defer s.setOrResetLastSyncErr(&err)
-
-	if s.FailFullSync {
-		return errors.New("Syncer is not enabled")
-	}
+	defer s.setOrResetLastSyncErr(externalServiceID, &err)
 
 	var streamingInserter func(*Repo)
 	if s.SubsetSynced == nil {
 		streamingInserter = func(*Repo) {} //noop
 	} else {
-		streamingInserter, err = s.makeNewRepoInserter(ctx)
+		streamingInserter, err = s.makeNewRepoInserter(ctx, store)
 		if err != nil {
 			return errors.Wrap(err, "syncer.sync.streaming")
 		}
 	}
 
+	ids := []int64{externalServiceID}
+	svcs, err := store.ListExternalServices(ctx, StoreListExternalServicesArgs{IDs: ids})
+	if err != nil {
+		return errors.Wrap(err, "fetching external services")
+	}
+
+	if len(svcs) != 1 {
+		return errors.Wrap(err, "external service not found")
+	}
+	svc := svcs[0]
+
+	// Fetch repos from the source
 	var sourced Repos
-	if sourced, err = s.sourced(ctx, streamingInserter); err != nil {
+	if sourced, err = s.sourced(ctx, svcs, streamingInserter); err != nil {
 		return errors.Wrap(err, "syncer.sync.sourced")
 	}
 
-	store := s.Store
-	if tr, ok := s.Store.(Transactor); ok {
-		var txs TxStore
-		if txs, err = tr.Transact(ctx); err != nil {
-			return errors.Wrap(err, "syncer.sync.transact")
-		}
-		defer txs.Done(&err)
-		store = txs
-	}
-
 	var stored Repos
-	if stored, err = store.ListRepos(ctx, StoreListReposArgs{}); err != nil {
+	// Fetch repos from our DB related to externalServiceID
+	if stored, err = store.ListRepos(ctx, StoreListReposArgs{ExternalServiceID: externalServiceID}); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.list-repos")
 	}
 
@@ -152,6 +181,17 @@ func (s *Syncer) Sync(ctx context.Context) (err error) {
 		return errors.Wrap(err, "syncer.sync.store.upsert-sources")
 	}
 
+	now := s.Now()
+	interval := calcSyncInterval(now, svc.LastSyncAt, diff)
+	log15.Info("Synced external service", "id", externalServiceID, "backoff duration", interval)
+	svc.NextSyncAt = now.Add(interval)
+	svc.LastSyncAt = now
+
+	err = store.UpsertExternalServices(ctx, svc)
+	if err != nil {
+		return errors.Wrap(err, "upserting external service")
+	}
+
 	if s.Synced != nil {
 		select {
 		case s.Synced <- diff:
@@ -162,10 +202,36 @@ func (s *Syncer) Sync(ctx context.Context) (err error) {
 	return nil
 }
 
+func calcSyncInterval(now time.Time, lastSync time.Time, diff Diff) time.Duration {
+	const minSyncInterval = 1 * time.Minute
+	const maxSyncInterval = 8 * time.Hour
+
+	// Special case, we've never synced
+	if lastSync.IsZero() {
+		return minSyncInterval
+	}
+
+	log15.Info("Diffs", "added", len(diff.Added), "deleted", len(diff.Deleted), "modified", len(diff.Modified))
+	// If there is any change, sync again shortly
+	if len(diff.Added) > 0 || len(diff.Deleted) > 0 || len(diff.Modified) > 0 {
+		return minSyncInterval
+	}
+
+	// No change, back off
+	interval := now.Sub(lastSync) * 2
+	if interval < minSyncInterval {
+		return minSyncInterval
+	}
+	if interval > maxSyncInterval {
+		return maxSyncInterval
+	}
+	return interval
+}
+
 // SyncSubset runs the syncer on a subset of the stored repositories. It will
 // only sync the repositories with the same name or external service spec as
 // sourcedSubset repositories.
-func (s *Syncer) SyncSubset(ctx context.Context, sourcedSubset ...*Repo) (err error) {
+func (s *Syncer) SyncSubset(ctx context.Context, store Store, sourcedSubset ...*Repo) (err error) {
 	var diff Diff
 
 	ctx, save := s.observe(ctx, "Syncer.SyncSubset", strings.Join(Repos(sourcedSubset).Names(), " "))
@@ -175,35 +241,34 @@ func (s *Syncer) SyncSubset(ctx context.Context, sourcedSubset ...*Repo) (err er
 		return nil
 	}
 
-	diff, err = s.syncSubset(ctx, false, sourcedSubset...)
+	if tr, ok := store.(Transactor); ok {
+		var txs TxStore
+		if txs, err = tr.Transact(ctx); err != nil {
+			return errors.Wrap(err, "Syncer.SyncSubset.transact")
+		}
+		defer txs.Done(&err)
+		store = txs
+	}
+
+	diff, err = s.syncSubset(ctx, store, false, sourcedSubset...)
 	return err
 }
 
 // insertIfNew is a specialization of SyncSubset. It will insert sourcedRepo
 // if there are no related repositories, otherwise does nothing.
-func (s *Syncer) insertIfNew(ctx context.Context, sourcedRepo *Repo) (err error) {
+func (s *Syncer) insertIfNew(ctx context.Context, store Store, sourcedRepo *Repo) (err error) {
 	var diff Diff
 
 	ctx, save := s.observe(ctx, "Syncer.InsertIfNew", sourcedRepo.Name)
 	defer save(&diff, &err)
 
-	diff, err = s.syncSubset(ctx, true, sourcedRepo)
+	diff, err = s.syncSubset(ctx, store, true, sourcedRepo)
 	return err
 }
 
-func (s *Syncer) syncSubset(ctx context.Context, insertOnly bool, sourcedSubset ...*Repo) (diff Diff, err error) {
+func (s *Syncer) syncSubset(ctx context.Context, store Store, insertOnly bool, sourcedSubset ...*Repo) (diff Diff, err error) {
 	if insertOnly && len(sourcedSubset) != 1 {
 		return Diff{}, errors.Errorf("syncer.syncsubset.insertOnly can only handle one sourced repo, given %d repos", len(sourcedSubset))
-	}
-
-	store := s.Store
-	if tr, ok := s.Store.(Transactor); ok {
-		var txs TxStore
-		if txs, err = tr.Transact(ctx); err != nil {
-			return Diff{}, errors.Wrap(err, "syncer.syncsubset.transact")
-		}
-		defer txs.Done(&err)
-		store = txs
 	}
 
 	var storedSubset Repos
@@ -340,12 +405,12 @@ func (s *Syncer) sourceDiff(repoID api.RepoID, diff *sourceDiff, oldSources, new
 // of s.Synced will receive a list of repos. In particular this is so that the
 // git update scheduler can start working straight away on existing
 // repositories.
-func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context) {
+func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context, store Store) {
 	if s.Synced == nil {
 		return
 	}
 
-	stored, err := s.Store.ListRepos(ctx, StoreListReposArgs{})
+	stored, err := store.ListRepos(ctx, StoreListReposArgs{})
 	if err != nil {
 		s.Logger.Warn("initialUnmodifiedDiffFromStore store.ListRepos", "error", err)
 		return
@@ -464,12 +529,7 @@ func merge(o, n *Repo) {
 	o.Update(n)
 }
 
-func (s *Syncer) sourced(ctx context.Context, observe ...func(*Repo)) ([]*Repo, error) {
-	svcs, err := s.Store.ListExternalServices(ctx, StoreListExternalServicesArgs{})
-	if err != nil {
-		return nil, err
-	}
-
+func (s *Syncer) sourced(ctx context.Context, svcs []*ExternalService, observe ...func(*Repo)) ([]*Repo, error) {
 	srcs, err := s.Sourcer(svcs...)
 	if err != nil {
 		return nil, err
@@ -478,13 +538,13 @@ func (s *Syncer) sourced(ctx context.Context, observe ...func(*Repo)) ([]*Repo, 
 	return listAll(ctx, srcs, observe...)
 }
 
-func (s *Syncer) makeNewRepoInserter(ctx context.Context) (func(*Repo), error) {
+func (s *Syncer) makeNewRepoInserter(ctx context.Context, store Store) (func(*Repo), error) {
 	// syncSubset requires querying the store for related repositories, and
 	// will do nothing if `insertOnly` is set and there are any related repositories. Most
 	// repositories will already have related repos, so to avoid that cost we
 	// ask the store for all repositories and only do syncsubset if it might
 	// be an insert.
-	ids, err := s.storedExternalIDs(ctx)
+	ids, err := s.storedExternalIDs(ctx, store)
 	if err != nil {
 		return nil, err
 	}
@@ -495,7 +555,7 @@ func (s *Syncer) makeNewRepoInserter(ctx context.Context) (func(*Repo), error) {
 			return
 		}
 
-		err := s.insertIfNew(ctx, r)
+		err := s.insertIfNew(ctx, store, r)
 		if err != nil && s.Logger != nil {
 			// Best-effort, final syncer will handle this repo if this failed.
 			s.Logger.Warn("streaming insert failed", "external_id", r.ExternalRepo, "error", err)
@@ -503,8 +563,8 @@ func (s *Syncer) makeNewRepoInserter(ctx context.Context) (func(*Repo), error) {
 	}, nil
 }
 
-func (s *Syncer) storedExternalIDs(ctx context.Context) (map[api.ExternalRepoSpec]struct{}, error) {
-	stored, err := s.Store.ListRepos(ctx, StoreListReposArgs{})
+func (s *Syncer) storedExternalIDs(ctx context.Context, store Store) (map[api.ExternalRepoSpec]struct{}, error) {
+	stored, err := store.ListRepos(ctx, StoreListReposArgs{})
 	if err != nil {
 		return nil, errors.Wrap(err, "syncer.storedExternalIDs")
 	}
@@ -515,24 +575,45 @@ func (s *Syncer) storedExternalIDs(ctx context.Context) (map[api.ExternalRepoSpe
 	return ids, nil
 }
 
-func (s *Syncer) setOrResetLastSyncErr(perr *error) {
+func (s *Syncer) setOrResetLastSyncErr(serviceID int64, perr *error) {
 	var err error
 	if perr != nil {
 		err = *perr
 	}
 
-	s.lastSyncErrMu.Lock()
-	s.lastSyncErr = err
-	s.lastSyncErrMu.Unlock()
+	s.syncErrorsMu.Lock()
+	defer s.syncErrorsMu.Unlock()
+	if s.syncErrors == nil {
+		s.syncErrors = make(map[int64]error)
+	}
+
+	if err == nil {
+		delete(s.syncErrors, serviceID)
+		return
+	}
+	s.syncErrors[serviceID] = err
 }
 
-// LastSyncError returns the error that was produced in the last Sync run. If
-// no error was produced, this returns nil.
-func (s *Syncer) LastSyncError() error {
-	s.lastSyncErrMu.Lock()
-	defer s.lastSyncErrMu.Unlock()
+// SyncErrors returns all errors that was produced in the last Sync run per external sevice. If
+// no error was produced, this returns an empty slice.
+// Errors are sorted by external service id.
+func (s *Syncer) SyncErrors() []error {
+	s.syncErrorsMu.Lock()
+	defer s.syncErrorsMu.Unlock()
 
-	return s.lastSyncErr
+	ids := make([]int, 0, len(s.syncErrors))
+
+	for id := range s.syncErrors {
+		ids = append(ids, int(id))
+	}
+	sort.Ints(ids)
+
+	sorted := make([]error, len(ids))
+	for i, id := range ids {
+		sorted[i] = s.syncErrors[int64(id)]
+	}
+
+	return sorted
 }
 
 func (s *Syncer) observe(ctx context.Context, family, title string) (context.Context, func(*Diff, *error)) {
@@ -556,6 +637,7 @@ func (s *Syncer) observe(ctx context.Context, family, title string) (context.Con
 					otlog.Object(state+".repos", repos.Names()))
 
 				if len(repos) > 0 && s.Logger != nil {
+					s.Logger.Debug(family, "diff."+state, repos.NamesSummary())
 					s.Logger.Debug(family, "diff."+state, repos.NamesSummary())
 				}
 			}

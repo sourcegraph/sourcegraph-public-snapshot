@@ -79,14 +79,14 @@ type fakeRepoSyncHandler struct {
 }
 
 func (h *fakeRepoSyncHandler) Handle(ctx context.Context, tx dbws.Store, record workerutil.Record) error {
-	r, ok := record.(*repos.SyncJob)
+	sj, ok := record.(*repos.SyncJob)
 	if !ok {
 		return fmt.Errorf("expected repos.SyncJob, got %T", record)
 	}
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
-	case h.jobChan <- r:
+	case h.jobChan <- sj:
 		return nil
 	}
 }

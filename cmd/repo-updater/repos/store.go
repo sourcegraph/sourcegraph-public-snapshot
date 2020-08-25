@@ -33,6 +33,11 @@ type Store interface {
 	UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]SourceInfo) error
 	SetClonedRepos(ctx context.Context, repoNames ...string) error
 	CountNotClonedRepos(ctx context.Context) (uint64, error)
+
+	// EnqueueSyncJobs enqueues sync jobs per external service where their next_sync_at time
+	// is in the past.
+	// If ignoreSiteAdmin is true then we only sync user added external services.
+	EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) error
 }
 
 // StoreListReposArgs is a query arguments type used by
@@ -201,6 +206,20 @@ func (s *DBStore) Transact(ctx context.Context) (TxStore, error) {
 		db:     tx,
 		txOpts: s.txOpts,
 	}, nil
+}
+
+// WithStore is a store that can take a db handle and return
+// a new Store implementation that uses it.
+type WithStore interface {
+	With(dbutil.DB) Store
+}
+
+// With returns a new store using the given db handle.
+// It implements the WithStore interface.
+func (s *DBStore) With(db dbutil.DB) Store {
+	return &DBStore{
+		db: db,
+	}
 }
 
 // Done terminates the underlying Tx in a DBStore either by committing or rolling
@@ -1019,6 +1038,32 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 
 	return nil
 }
+
+func (s *DBStore) EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) error {
+	filter := "TRUE"
+	if ignoreSiteAdmin {
+		filter = "namespace_user_id IS NULL"
+	}
+	q := sqlf.Sprintf(enqueueSyncJobsQueryFmtstr, filter)
+	_, err := s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	return err
+}
+
+const enqueueSyncJobsQueryFmtstr = `
+WITH due AS (
+    SELECT id
+    FROM external_services
+    WHERE (next_sync_at < clock_timestamp() OR next_sync_at IS NULL)
+    AND %s
+),
+busy AS (
+    SELECT DISTINCT external_service_id id FROM external_service_sync_jobs
+    WHERE state = 'queued'
+    OR state = 'processing'
+)
+INSERT INTO external_service_sync_jobs (external_service_id)
+SELECT id from due EXCEPT SELECT id from busy
+`
 
 func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 	records := make([]*repoRecord, 0, len(repos))
