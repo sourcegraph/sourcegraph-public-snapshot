@@ -13,9 +13,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
-
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -25,42 +22,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-func TestFakeStore(t *testing.T) {
-	t.Parallel()
-
-	lg := log15.New()
-	lg.SetHandler(log15.DiscardHandler())
-
-	mkStore := func() repos.Store {
-		return repos.NewObservedStore(
-			new(repos.FakeStore),
-			lg,
-			repos.NewStoreMetrics(),
-			trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		)
-	}
-
-	for _, tc := range []struct {
-		name string
-		test func(*testing.T, repos.Store) func(*testing.T)
-	}{
-		{"ListExternalServices", testStoreListExternalServices(1)},
-		{"UpsertExternalServices", testStoreUpsertExternalServices},
-		{"ListRepos", testStoreListRepos},
-		{"ListRepos_Pagination", testStoreListReposPagination},
-		{"InsertRepos", testStoreInsertRepos},
-		{"DeleteRepos", testStoreDeleteRepos},
-		{"UpsertRepos", testStoreUpsertRepos},
-		{"UpsertSources", testStoreUpsertSources},
-		{"SetClonedRepos", testStoreSetClonedRepos},
-	} {
-		t.Run(tc.name, tc.test(t, mkStore()))
-	}
-}
 
 func testStoreListExternalServicesByRepos(t *testing.T, store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
