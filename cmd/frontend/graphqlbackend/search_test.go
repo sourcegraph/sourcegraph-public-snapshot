@@ -643,13 +643,13 @@ func TestVersionContext(t *testing.T) {
 				return repos, nil
 			}
 
-			gotResults, _, _, _, err := resolver.resolveRepositories(context.Background(), nil)
+			gotResult, err := resolver.resolveRepositories(context.Background(), nil)
 			if err != nil {
 				t.Fatal(err)
 			}
 			var got []string
-			for _, reporev := range gotResults {
-				got = append(got, string(reporev.Repo.Name)+"@"+strings.Join(reporev.RevSpecs(), ":"))
+			for _, repoRev := range gotResult.repoRevs {
+				got = append(got, string(repoRev.Repo.Name)+"@"+strings.Join(repoRev.RevSpecs(), ":"))
 			}
 
 			if diff := cmp.Diff(tc.wantResults, got, cmpopts.EquateEmpty()); diff != "" {
