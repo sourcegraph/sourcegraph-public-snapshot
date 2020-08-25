@@ -73,7 +73,9 @@ async function watchGraphQlSchema() {
  * Generates the new query-specific types on file changes.
  */
 async function watchGraphQlOperations() {
-  await generateGraphQlOperations({ watch: true })
+  await new Promise((resolve, reject) => {
+    gulp.watch(GRAPHQL_SCHEMA_PATH, graphQlOperations).on('error', reject)
+  })
 }
 
 /**
