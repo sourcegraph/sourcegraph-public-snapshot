@@ -481,7 +481,10 @@ func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.R
 
 // resolveRepositories calls doResolveRepositories, caching the result for the common
 // case where effectiveRepoFieldValues == nil.
-func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (resolved resolvedRepositories, err error) {
+func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (resolvedRepositories, error) {
+	var err error
+	var repoRevs, missingRepoRevs []*search.RepositoryRevisions
+	var overLimit bool
 	if mockResolveRepositories != nil {
 		return mockResolveRepositories(effectiveRepoFieldValues)
 	}
@@ -491,7 +494,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		if err != nil {
 			tr.SetError(err)
 		} else {
-			tr.LazyPrintf("numRepoRevs: %d, numMissingRepoRevs: %d, overLimit: %v", len(resolved.repoRevs), len(resolved.missingRepoRevs), resolved.overLimit)
+			tr.LazyPrintf("numRepoRevs: %d, numMissingRepoRevs: %d, overLimit: %v", len(repoRevs), len(missingRepoRevs), overLimit)
 		}
 		tr.Finish()
 	}()
@@ -562,7 +565,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		commitAfter:        commitAfter,
 		query:              r.query,
 	}
-	resolved, err = resolveRepositories(ctx, options)
+	resolved, err := resolveRepositories(ctx, options)
 	tr.LazyPrintf("resolveRepositories - done")
 	if effectiveRepoFieldValues == nil {
 		r.resolved = resolved
@@ -727,7 +730,8 @@ func (op *resolveRepoOp) String() string {
 	return b.String()
 }
 
-func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolved resolvedRepositories, err error) {
+func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedRepositories, error) {
+	var err error
 	tr, ctx := trace.New(ctx, "resolveRepositories", op.String())
 	defer func() {
 		tr.SetError(err)
@@ -806,6 +810,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolved resolv
 	}
 
 	var repos []*types.Repo
+	var excluded *excludedRepos
 	if len(defaultRepos) > 0 {
 		repos = defaultRepos
 		if len(repos) > maxRepoListSize {
@@ -838,15 +843,16 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolved resolv
 		repos, err = db.Repos.List(ctx, options)
 		tr.LazyPrintf("Repos.List - done")
 
-		resolved.excludedRepos = <-excludedC
-		tr.LazyPrintf("excluded repos: %+v", resolved.excludedRepos)
+		excluded = <-excludedC
+		tr.LazyPrintf("excluded repos: %+v", excluded)
 
 		if err != nil {
 			return resolvedRepositories{}, err
 		}
 	}
-	resolved.overLimit = len(repos) >= maxRepoListSize
-	resolved.repoRevs = make([]*search.RepositoryRevisions, 0, len(repos))
+	overLimit := len(repos) >= maxRepoListSize
+	repoRevs := make([]*search.RepositoryRevisions, 0, len(repos))
+	var missingRepoRevs []*search.RepositoryRevisions
 	tr.LazyPrintf("Associate/validate revs - start")
 
 	for _, repo := range repos {
@@ -866,7 +872,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolved resolv
 			repoRev.Repo = repo
 			// if multiple specified revisions clash, report this usefully:
 			if len(revs) == 0 && clashingRevs != nil {
-				resolved.missingRepoRevs = append(resolved.missingRepoRevs, &search.RepositoryRevisions{
+				missingRepoRevs = append(missingRepoRevs, &search.RepositoryRevisions{
 					Repo: repo,
 					Revs: clashingRevs,
 				})
@@ -915,7 +921,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolved resolv
 						// Report as HEAD not "" (empty string) to avoid user confusion.
 						rev.RevSpec = "HEAD"
 					}
-					resolved.missingRepoRevs = append(resolved.missingRepoRevs, &search.RepositoryRevisions{
+					missingRepoRevs = append(missingRepoRevs, &search.RepositoryRevisions{
 						Repo: repo,
 						Revs: []search.RevisionSpecifier{{RevSpec: rev.RevSpec}},
 					})
@@ -926,19 +932,24 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolved resolv
 			}
 			repoRev.Revs = append(repoRev.Revs, rev)
 		}
-		resolved.repoRevs = append(resolved.repoRevs, &repoRev)
+		repoRevs = append(repoRevs, &repoRev)
 	}
 
 	tr.LazyPrintf("Associate/validate revs - done")
 
 	if op.commitAfter != "" {
 		start := time.Now()
-		before := len(resolved.repoRevs)
-		resolved.repoRevs, err = filterRepoHasCommitAfter(ctx, resolved.repoRevs, op.commitAfter)
-		tr.LazyPrintf("repohascommitafter removed %d repos in %s", before-len(resolved.repoRevs), time.Since(start))
+		before := len(repoRevs)
+		repoRevs, err = filterRepoHasCommitAfter(ctx, repoRevs, op.commitAfter)
+		tr.LazyPrintf("repohascommitafter removed %d repos in %s", before-len(repoRevs), time.Since(start))
 	}
 
-	return resolved, err
+	return resolvedRepositories{
+		repoRevs:        repoRevs,
+		missingRepoRevs: missingRepoRevs,
+		excludedRepos:   excluded,
+		overLimit:       overLimit,
+	}, err
 }
 
 type defaultReposFunc func(ctx context.Context) ([]*types.Repo, error)
