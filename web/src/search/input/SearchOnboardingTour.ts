@@ -12,7 +12,7 @@ export const defaultTourOptions: Shepherd.Tour.TourOptions = {
     useModalOverlay: true,
     defaultStepOptions: {
         arrow: true,
-        classes: 'web-content tour-card card py-4 px-3',
+        classes: 'web-content tour-card card py-4 px-3 shadow-lg',
         popperOptions: {
             // Removes default behavior of autofocusing steps
             modifiers: [
