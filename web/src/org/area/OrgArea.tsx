@@ -166,7 +166,7 @@ export class OrgArea extends React.Component<Props> {
                         if (stateUpdate.orgOrError && !isErrorLike(stateUpdate.orgOrError)) {
                             this.subscriptions.add(
                                 this.props.setBreadcrumb({
-                                    key: 'orgArea',
+                                    key: 'OrgArea',
                                     element: <Link to={stateUpdate.orgOrError.url}>{stateUpdate.orgOrError.name}</Link>,
                                 })
                             )

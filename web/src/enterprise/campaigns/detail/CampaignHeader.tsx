@@ -20,14 +20,19 @@ export const CampaignHeader: React.FunctionComponent<Props> = ({ className, name
             icon={CampaignsIcon}
             title={
                 <>
-                    <Link to={namespace.url + '/campaigns'}>{namespace.namespaceName}</Link> / {name}
+                    <Link to={namespace.url + '/campaigns'}>{namespace.namespaceName}</Link> / {name}{' '}
                     <sup>
-                        <span className="ml-2 badge badge-merged text-uppercase">Beta</span>
+                        <span className="badge badge-merged text-uppercase">Beta</span>
                     </sup>
                 </>
             }
             actions={actionSection}
             className={className}
         />
+
+        {/* <span className="text-muted ml-3">
+            {verb} <Timestamp date={createdAt} /> by {creator && <Link to={creator.url}>{creator.username}</Link>}
+            {!creator && <strong>deleted user</strong>}
+        </span> */}
     </>
 )

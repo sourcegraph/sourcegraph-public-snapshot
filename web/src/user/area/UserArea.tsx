@@ -199,7 +199,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                         if (stateUpdate.userOrError && !isErrorLike(stateUpdate.userOrError)) {
                             this.subscriptions.add(
                                 this.props.setBreadcrumb({
-                                    key: 'User Area',
+                                    key: 'UserArea',
                                     element: (
                                         <Link to={stateUpdate.userOrError.url}>{stateUpdate.userOrError.username}</Link>
                                     ),
