@@ -35,20 +35,28 @@ func NewWriter(ctx context.Context, filename string) (_ persistence.Writer, err 
 		}
 	}()
 
-	tx, err := store.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
+	return &sqliteWriter{
+		store:      store,
+		closer:     closer,
+		serializer: gobserializer.New(),
+	}, nil
+}
 
-	if err := createTables(ctx, tx); err != nil {
+func (w *sqliteWriter) Transact(ctx context.Context) (persistence.Writer, error) {
+	tx, err := w.store.Transact(ctx)
+	if err != nil {
 		return nil, err
 	}
 
 	return &sqliteWriter{
 		store:      tx,
-		closer:     closer,
-		serializer: gobserializer.New(),
+		closer:     w.closer,
+		serializer: w.serializer,
 	}, nil
+}
+
+func (w *sqliteWriter) Done(err error) error {
+	return w.store.Done(err)
 }
 
 func (w *sqliteWriter) WriteMeta(ctx context.Context, metaData types.MetaData) error {
@@ -83,16 +91,14 @@ func (w *sqliteWriter) WriteReferences(ctx context.Context, monikerLocations cha
 }
 
 func (w *sqliteWriter) Close(err error) error {
-	err = w.store.Done(err)
-
 	if closeErr := w.closer(); closeErr != nil {
 		err = multierror.Append(err, closeErr)
 	}
 
-	return nil
+	return err
 }
 
-func createTables(ctx context.Context, store *store.Store) error {
+func (w *sqliteWriter) CreateTables(ctx context.Context) error {
 	queries := []*sqlf.Query{
 		sqlf.Sprintf(`CREATE TABLE "schema_version" ("version" text NOT NULL)`),
 		sqlf.Sprintf(`CREATE TABLE "meta" ("num_result_chunks" integer NOT NULL)`),
@@ -103,7 +109,7 @@ func createTables(ctx context.Context, store *store.Store) error {
 	}
 
 	for _, query := range queries {
-		if err := store.Exec(ctx, query); err != nil {
+		if err := w.store.Exec(ctx, query); err != nil {
 			return err
 		}
 	}

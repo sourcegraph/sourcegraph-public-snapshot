@@ -28,6 +28,10 @@ func TestWrite(t *testing.T) {
 		t.Fatalf("unexpected error while opening writer: %s", err)
 	}
 
+	if err := writer.CreateTables(context.Background()); err != nil {
+		t.Fatalf("unexpected error while creating tables: %s", err)
+	}
+
 	if err := writer.WriteMeta(ctx, types.MetaData{NumResultChunks: 7}); err != nil {
 		t.Fatalf("unexpected error while writing: %s", err)
 	}
@@ -134,6 +138,9 @@ func TestWrite(t *testing.T) {
 		t.Fatalf("unexpected error while writing references: %s", err)
 	}
 
+	if err := writer.Done(nil); err != nil {
+		t.Fatalf("unexpected error closing transaction: %s", err)
+	}
 	if err := writer.Close(nil); err != nil {
 		t.Fatalf("unexpected error closing writer: %s", err)
 	}

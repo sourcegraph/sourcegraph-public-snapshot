@@ -19,6 +19,10 @@ type IndexedResultChunkData struct {
 }
 
 type Writer interface {
+	Transact(ctx context.Context) (Writer, error)
+	Done(err error) error
+	CreateTables(ctx context.Context) error
+
 	WriteMeta(ctx context.Context, meta types.MetaData) error
 	WriteDocuments(ctx context.Context, documents chan KeyedDocumentData) error
 	WriteResultChunks(ctx context.Context, resultChunks chan IndexedResultChunkData) error

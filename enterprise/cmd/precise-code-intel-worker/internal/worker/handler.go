@@ -200,9 +200,12 @@ func (h *handler) write(ctx context.Context, dirname string, groupedBundleData *
 		return err
 	}
 	defer func() {
-		err = writer.Close(err)
+		err = writer.Close(writer.Done(nil))
 	}()
 
+	if err := writer.CreateTables(ctx); err != nil {
+		return errors.Wrap(err, "writer.CreateTables")
+	}
 	if err := writer.WriteMeta(ctx, groupedBundleData.Meta); err != nil {
 		return errors.Wrap(err, "writer.WriteMeta")
 	}
