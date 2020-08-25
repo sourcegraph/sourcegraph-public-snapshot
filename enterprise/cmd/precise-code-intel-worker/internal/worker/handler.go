@@ -206,7 +206,15 @@ func (h *handler) write(ctx context.Context, dirname string, groupedBundleData *
 		return err
 	}
 	defer func() {
-		err = store.Close(store.Done(nil))
+		err = store.Close(err)
+	}()
+
+	store, err = store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err = store.Done(err)
 	}()
 
 	if err := store.CreateTables(ctx); err != nil {
