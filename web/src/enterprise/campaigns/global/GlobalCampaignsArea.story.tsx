@@ -8,6 +8,7 @@ import { MemoryRouter } from 'react-router'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../../../auth'
 import { useBreadcrumbs } from '../../../components/Breadcrumbs'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 const { add } = storiesOf('web/campaigns/GlobalCampaignsArea', module).addDecorator(story => {
     const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
@@ -16,7 +17,9 @@ const { add } = storiesOf('web/campaigns/GlobalCampaignsArea', module).addDecora
     return (
         <MemoryRouter>
             <style>{webStyles}</style>
-            <div className="p-3 container">{story()}</div>
+            <React.Suspense fallback={<LoadingSpinner />}>
+                <div className="p-3 container">{story()}</div>
+            </React.Suspense>
         </MemoryRouter>
     )
 })
