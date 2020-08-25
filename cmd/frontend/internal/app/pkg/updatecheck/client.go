@@ -9,14 +9,12 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"net/http"
-	"net/url"
 	"strconv"
 	"sync"
 	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
-	"golang.org/x/net/context/ctxhttp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
@@ -24,22 +22,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
 // metricsRecorder records operational metrics for methods.
 var metricsRecorder = metrics.NewOperationMetrics(prometheus.DefaultRegisterer, "updatecheck_client", metrics.WithLabels("method"))
-
-//
-var updateCheckHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
-	Name: "update_check_req",
-	Help: "metrics for update_check",
-})
-
-func init() {
-	prometheus.MustRegister(updateCheckHistogram)
-}
 
 // Status of the check for software updates for Sourcegraph.
 type Status struct {
@@ -73,12 +62,6 @@ func IsPending() bool {
 	mu.Lock()
 	defer mu.Unlock()
 	return startedAt != nil
-}
-
-var baseURL = &url.URL{
-	Scheme: "https",
-	Host:   "sourcegraph.com",
-	Path:   "/.api/updates",
 }
 
 // recordOperation returns a record fn that is called on any given return err. If an error is encountered
@@ -141,6 +124,26 @@ func getAndMarshalCampaignsUsageJSON(ctx context.Context) (_ json.RawMessage, er
 	return json.Marshal(campaignsUsage)
 }
 
+func getAndMarshalGrowthStatisticsJSON(ctx context.Context) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalGrowthStatisticsJSON")(&err)
+
+	growthStatistics, err := usagestats.GetGrowthStatistics(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(growthStatistics)
+}
+
+func getAndMarshalSavedSearchesJSON(ctx context.Context) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalSavedSearchesJSON")(&err)
+
+	savedSearches, err := usagestats.GetSavedSearches(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(savedSearches)
+}
+
 func getAndMarshalAggregatedUsageJSON(ctx context.Context) (_ json.RawMessage, _ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalAggregatedUsageJSON")(&err)
 
@@ -162,10 +165,6 @@ func getAndMarshalAggregatedUsageJSON(ctx context.Context) (_ json.RawMessage, _
 	return serializedCodeIntelUsage, serializedSearchUsage, nil
 }
 
-func updateURL() string {
-	return baseURL.String()
-}
-
 func updateBody(ctx context.Context) (io.Reader, error) {
 	logFunc := log15.Debug
 	if envvar.SourcegraphDotComMode() {
@@ -180,6 +179,8 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		CodeIntelUsage:      []byte("{}"),
 		SearchUsage:         []byte("{}"),
 		CampaignsUsage:      []byte("{}"),
+		GrowthStatistics:    []byte("{}"),
+		SavedSearches:       []byte("{}"),
 	}
 
 	totalUsers, err := getTotalUsersCount(ctx)
@@ -221,6 +222,16 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalCampaignsUsageJSON failed", "error", err)
 		}
+		r.GrowthStatistics, err = getAndMarshalGrowthStatisticsJSON(ctx)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalGrowthStatisticsJSON failed", "error", err)
+		}
+
+		r.SavedSearches, err = getAndMarshalSavedSearchesJSON(ctx)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalSavedSearchesJSON failed", "error", err)
+		}
+
 		r.ExternalServices, err = externalServiceKinds(ctx)
 		if err != nil {
 			logFunc("telemetry: externalServicesKinds failed", "error", err)
@@ -283,15 +294,25 @@ func externalServiceKinds(ctx context.Context) (kinds []string, err error) {
 	return kinds, err
 }
 
-// check performs an update check. It returns the result and updates the global state
-// (returned by Last and IsPending).
-func check(ctx context.Context) (*Status, error) {
+// check performs an update check and updates the global state.
+func check() {
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
+	defer cancel()
+
 	doCheck := func() (updateVersion string, err error) {
 		body, err := updateBody(ctx)
 		if err != nil {
 			return "", err
 		}
-		resp, err := ctxhttp.Post(ctx, nil, updateURL(), "application/json", body)
+
+		req, err := http.NewRequest("POST", "https://sourcegraph.com/.api/updates", body)
+		if err != nil {
+			return "", err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req = req.WithContext(ctx)
+
+		resp, err := httpcli.ExternalHTTPClient().Do(req)
 		if err != nil {
 			return "", err
 		}
@@ -326,6 +347,10 @@ func check(ctx context.Context) (*Status, error) {
 
 	updateVersion, err := doCheck()
 
+	if err != nil {
+		log15.Error("telemetry: updatecheck failed", "error", err)
+	}
+
 	mu.Lock()
 	if startedAt != nil && !startedAt.After(thisCheckStartedAt) {
 		startedAt = nil
@@ -336,8 +361,6 @@ func check(ctx context.Context) (*Status, error) {
 		UpdateVersion: updateVersion,
 	}
 	mu.Unlock()
-
-	return lastStatus, err
 }
 
 var started bool
@@ -353,12 +376,9 @@ func Start() {
 		return // no update check
 	}
 
-	ctx := context.Background()
 	const delay = 30 * time.Minute
 	for {
-		ctx, cancel := context.WithTimeout(ctx, 300*time.Second)
-		_, _ = check(ctx) // updates global state on its own, can safely ignore return value
-		cancel()
+		check()
 
 		// Randomize sleep to prevent thundering herds.
 		randomDelay := time.Duration(rand.Intn(600)) * time.Second

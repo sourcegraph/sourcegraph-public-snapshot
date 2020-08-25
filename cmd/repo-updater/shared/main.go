@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -43,6 +44,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	ctx := context.Background()
 	env.Lock()
 	env.HandleHelpFlag()
+	logging.Init()
 	tracer.Init()
 
 	clock := func() time.Time { return time.Now().UTC() }

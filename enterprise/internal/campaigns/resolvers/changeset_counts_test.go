@@ -45,15 +45,26 @@ func TestChangesetCountsOverTimeResolver(t *testing.T) {
 	store := ee.NewStoreWithClock(dbconn.Global, clock)
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", 1)
-	if err := rstore.UpsertRepos(ctx, repo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, rstore))
+	if err := rstore.InsertRepos(ctx, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	spec := &campaigns.CampaignSpec{
+		NamespaceUserID: userID,
+		UserID:          userID,
+	}
+	if err := store.CreateCampaignSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
 
 	campaign := &campaigns.Campaign{
-		Name:            "my-unique-name",
-		NamespaceUserID: userID,
-		AuthorID:        userID,
+		Name:             "my-unique-name",
+		NamespaceUserID:  userID,
+		InitialApplierID: userID,
+		LastApplierID:    userID,
+		LastAppliedAt:    time.Now(),
+		CampaignSpecID:   spec.ID,
 	}
 	if err := store.CreateCampaign(ctx, campaign); err != nil {
 		t.Fatal(err)
@@ -172,18 +183,29 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = repoStore.UpsertRepos(ctx, githubRepo)
+	err = repoStore.InsertRepos(ctx, githubRepo)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	store := ee.NewStore(dbconn.Global)
 
-	campaign := &campaigns.Campaign{
-		Name:            "Test campaign",
-		Description:     "Testing changeset counts",
-		AuthorID:        userID,
+	spec := &campaigns.CampaignSpec{
 		NamespaceUserID: userID,
+		UserID:          userID,
+	}
+	if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+		t.Fatal(err)
+	}
+
+	campaign := &campaigns.Campaign{
+		Name:             "Test campaign",
+		Description:      "Testing changeset counts",
+		InitialApplierID: userID,
+		NamespaceUserID:  userID,
+		LastApplierID:    userID,
+		LastAppliedAt:    time.Now(),
+		CampaignSpecID:   spec.ID,
 	}
 
 	err = store.CreateCampaign(ctx, campaign)

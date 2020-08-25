@@ -22,6 +22,7 @@ func SubstituteAliases(nodes []Node) []Node {
 		"until":    FieldBefore,
 		"m":        FieldMessage,
 		"msg":      FieldMessage,
+		"revision": FieldRev,
 	}
 	return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
 		if field == "content" {
@@ -201,8 +202,9 @@ func (g globError) Error() string {
 // from glob to regex.
 func reporevToRegex(value string) (string, error) {
 	reporev := strings.SplitN(value, "@", 2)
+	containsNoRev := len(reporev) == 1
 	repo := reporev[0]
-	if ContainsNoGlobSyntax(repo) {
+	if containsNoRev && ContainsNoGlobSyntax(repo) && !LooksLikeGitHubRepo(repo) {
 		repo = fuzzifyGlobPattern(repo)
 	}
 	repo, err := globToRegex(repo)
@@ -222,9 +224,21 @@ func ContainsNoGlobSyntax(value string) bool {
 	return !globSyntax.MatchString(value)
 }
 
+var gitHubRepoPath = lazyregexp.New(`github\.com\/([a-z\d]+-)*[a-z\d]+\/(.+)`)
+
+// LooksLikeGitHubRepo returns whether string value looks like a valid
+// GitHub repo path. This condition is used to guess whether we should
+// make a pattern fuzzy, or try it as an exact match.
+func LooksLikeGitHubRepo(value string) bool {
+	return gitHubRepoPath.MatchString(value)
+}
+
 func fuzzifyGlobPattern(value string) string {
 	if value == "" {
 		return value
+	}
+	if strings.HasPrefix(value, "github.com") {
+		return value + "**"
 	}
 	return "**" + value + "**"
 }
@@ -557,5 +571,24 @@ func FuzzifyRegexPatterns(nodes []Node) []Node {
 			value = strings.TrimSuffix(value, "$")
 		}
 		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
+	})
+}
+
+// concatRevFilters removes rev: filters from []Node and attaches their value as @rev to the repo: filters.
+// Invariant: Guaranteed to succeed on a validated and DNF query.
+func concatRevFilters(nodes []Node) []Node {
+	var revision string
+	nodes = MapField(nodes, FieldRev, func(value string, _ bool) Node {
+		revision = value
+		return nil // remove this node
+	})
+	if revision == "" {
+		return nodes
+	}
+	return MapField(nodes, FieldRepo, func(value string, negated bool) Node {
+		if !negated {
+			return Parameter{Value: value + "@" + revision, Field: FieldRepo, Negated: negated}
+		}
+		return Parameter{Value: value, Field: FieldRepo, Negated: negated}
 	})
 }

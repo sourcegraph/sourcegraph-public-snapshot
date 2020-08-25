@@ -6,8 +6,6 @@ You can customize access to a campaign and propose changes to repositories with 
 
 ## Permission levels for campaigns
 
-Any person with a user account can create a campaign.
-
 The permission levels for a campaign are:
 
 - **Read:** For people who need to view the campaign.
@@ -16,6 +14,8 @@ The permission levels for a campaign are:
 To see the campaign's proposed changes on a repository, a person *also* needs read access to that specific repository. Read or admin access on the campaign does not (by itself) entitle a person to viewing all of the campaign's changes. For more information, see "[Repository permissions for campaigns](#repository-permissions-for-campaigns)".
 
 Site admins have admin permissions on all campaigns.
+
+For now, users only have read access to campaigns. In the future, users will have admin permissions on their own campaigns too.
 
 ### Campaign access for each permission level
 
@@ -44,17 +44,14 @@ All users are automatically given read permissions to a campaign. Granular permi
 
 ## Code host interactions in campaigns
 
-All interactions with the code host are performed by your individual user account on the code host, not by a bot user or Sourcegraph machine account. These operations include:
+All interactions with the code host are performed by Sourcegraph with the token with which you configured the code host. These operations include:
 
 - Pushing a branch with the changes (the Git author and committer will be you, and the Git push will be authenticated with your credentials)
 - Creating a changeset (e.g., on GitHub, the pull request author will be you)
 - Updating a changeset
 - Closing a changeset
 
-If you attempt to perform these operations and haven't yet linked your code host account to your Sourcegraph account, you'll be prompted to do so. You can either:
-
-- Manually enter a personal access token in your user profile
-- Sign in via your code host (currently only supported for GitHub; requires a site admin to [configure GitHub user authentication](../../admin/auth/index.md#github))
+In the future you'll be able to perform all code host interactions with a separate access token or your personal code host account.
 
 ## Repository permissions for campaigns
 
@@ -67,7 +64,7 @@ When you view a campaign, you can see a list of patches and changesets. For each
 
 When you perform any campaign operation that involves repositories or code host interaction, your current repository permissions are taken into account.
 
-- Creating, updating, or publishing a campaign; or publishing a single changeset: You must have access to push a branch to the repositories and create the changesets on your code host (e.g., push branches to and open pull requests on the GitHub repositories).
+- Creating, updating, or publishing a campaign; or publishing a single changeset: You must have access to view the repositories and the configured token must have the rights to push a branch and create the changesets on your code host (e.g., push branches to and open pull requests on the GitHub repositories).
 - Adding existing changesets to a campaign: You must have read access to the existing changesets' repository.
 - Closing or deleting a campaign: If you choose to also close associated changesets on the code host, you must have access to do so on the code host. If you do not have access to close a changeset on the code host, the changeset will remain in its current state. A person with repository permissions for the remaining changesets can view them and manually close them.
 
@@ -78,6 +75,6 @@ Your repository permissions can change at any time:
 
 If you are not permitted to view a repository on Sourcegraph, then you won't be able to perform any operations on it, even if you are authorized on the code host.
 
-## Disabling campaigns for all users
+## Disabling campaigns
 
-A site admin can completely disable campaigns on an instance by setting the [site configuration](../../admin/config/site_config.md) property `campaigns.disable` to `true`. This setting applies to everyone, including site admins. It prevents all viewing, creation, editing, syncing, and other actions on campaigns. Existing campaign changesets on code hosts are left in their current state and are not affected by this setting.
+A site admin can disable campaigns for the entire site by setting the [site configuration](../../admin/config/site_config.md) property `"campaigns.enabled"` to `false`.

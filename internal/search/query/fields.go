@@ -36,4 +36,6 @@ var allFields = map[string]struct{}{
 	FieldMax:                empty,
 	FieldTimeout:            empty,
 	FieldCombyRule:          empty,
+	FieldRev:                empty,
+	"revision":              empty,
 }

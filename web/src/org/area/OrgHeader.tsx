@@ -5,18 +5,25 @@ import { OrgAvatar } from '../OrgAvatar'
 import { OrgAreaPageProps } from './OrgArea'
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
+    isSourcegraphDotCom: boolean
     navItems: readonly OrgAreaHeaderNavItem[]
     className?: string
 }
 
-export type OrgAreaHeaderContext = Pick<Props, 'org'>
+export type OrgAreaHeaderContext = Pick<Props, 'org'> & { isSourcegraphDotCom: boolean }
 
 export interface OrgAreaHeaderNavItem extends NavItemWithIconDescriptor<OrgAreaHeaderContext> {}
 
 /**
  * Header for the organization area.
  */
-export const OrgHeader: React.FunctionComponent<Props> = ({ org, navItems, match, className = '' }) => (
+export const OrgHeader: React.FunctionComponent<Props> = ({
+    org,
+    navItems,
+    match,
+    className = '',
+    isSourcegraphDotCom,
+}) => (
     <div className={`org-header ${className}`}>
         <div className="container">
             {org && (
@@ -29,7 +36,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({ org, navItems, match
                         <ul className="nav nav-tabs border-bottom-0">
                             {navItems.map(
                                 ({ to, label, exact, icon: Icon, condition = () => true }) =>
-                                    condition({ org }) && (
+                                    condition({ org, isSourcegraphDotCom }) && (
                                         <li key={label} className="nav-item">
                                             <NavLink
                                                 to={match.url + to}

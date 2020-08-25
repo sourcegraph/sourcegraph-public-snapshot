@@ -13,10 +13,13 @@ import (
 )
 
 func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs repos.Store, clock clock) {
-	repo := testRepo(1, extsvc.TypeGitHub)
-	deletedRepo := testRepo(2, extsvc.TypeGitHub).With(repos.Opt.RepoDeletedAt(clock.now()))
+	repo := testRepo(t, rs, extsvc.TypeGitHub)
+	deletedRepo := testRepo(t, rs, extsvc.TypeGitHub).With(repos.Opt.RepoDeletedAt(clock.now()))
 
-	if err := rs.UpsertRepos(ctx, deletedRepo, repo); err != nil {
+	if err := rs.InsertRepos(ctx, repo); err != nil {
+		t.Fatal(err)
+	}
+	if err := rs.DeleteRepos(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -381,10 +384,12 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 
 				if tc.campaignSpecApplied {
 					campaign := &cmpgn.Campaign{
-						Name:            fmt.Sprintf("campaign for spec %d", campaignSpec.ID),
-						CampaignSpecID:  campaignSpec.ID,
-						AuthorID:        campaignSpec.UserID,
-						NamespaceUserID: campaignSpec.NamespaceUserID,
+						Name:             fmt.Sprintf("campaign for spec %d", campaignSpec.ID),
+						CampaignSpecID:   campaignSpec.ID,
+						InitialApplierID: campaignSpec.UserID,
+						NamespaceUserID:  campaignSpec.NamespaceUserID,
+						LastApplierID:    campaignSpec.UserID,
+						LastAppliedAt:    time.Now(),
 					}
 					if err := s.CreateCampaign(ctx, campaign); err != nil {
 						t.Fatal(err)

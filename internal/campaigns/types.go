@@ -55,18 +55,25 @@ func IsKindSupported(extSvcKind string) bool {
 
 // A Campaign of changesets over multiple Repos over time.
 type Campaign struct {
-	ID              int64
-	Name            string
-	Description     string
-	Branch          string
-	AuthorID        int32
+	ID          int64
+	Name        string
+	Description string
+
+	CampaignSpecID int64
+
+	InitialApplierID int32
+	LastApplierID    int32
+	LastAppliedAt    time.Time
+
 	NamespaceUserID int32
 	NamespaceOrgID  int32
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	ChangesetIDs    []int64
-	ClosedAt        time.Time
-	CampaignSpecID  int64
+
+	ChangesetIDs []int64
+
+	ClosedAt time.Time
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // Clone returns a clone of a Campaign.
@@ -1862,8 +1869,7 @@ type ChangesetSpecDescription struct {
 
 	// If this is not empty, the description is a reference to an existing
 	// changeset and the rest of these fields are empty.
-	// TODO(mrnugget): Id or ID, that is the question?
-	ExternalID string `json:"externalId,omitempty"`
+	ExternalID string `json:"externalID,omitempty"`
 
 	BaseRev string `json:"baseRev,omitempty"`
 	BaseRef string `json:"baseRef,omitempty"`

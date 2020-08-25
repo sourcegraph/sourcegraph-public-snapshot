@@ -10,6 +10,8 @@ import { kubernetes } from './repogroups/Kubernetes'
 import { golang } from './repogroups/Golang'
 import { reactHooks } from './repogroups/ReactHooks'
 import { android } from './repogroups/Android'
+import { stanford } from './repogroups/Stanford'
+import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
 const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')
@@ -18,7 +20,9 @@ const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea')
 
 interface LayoutRouteComponentProps<Params extends { [K in keyof Params]?: string }>
     extends RouteComponentProps<Params>,
-        Omit<LayoutProps, 'match'> {}
+        Omit<LayoutProps, 'match'>,
+        BreadcrumbsProps,
+        BreadcrumbSetters {}
 
 export interface LayoutRouteProps<Params extends { [K in keyof Params]?: string }> {
     path: string
@@ -193,6 +197,11 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/android',
         render: props => <RepogroupPage {...props} repogroupMetadata={android} />,
+        condition: props => window.context.sourcegraphDotComMode,
+    },
+    {
+        path: '/stanford',
+        render: props => <RepogroupPage {...props} repogroupMetadata={stanford} />,
         condition: props => window.context.sourcegraphDotComMode,
     },
     {

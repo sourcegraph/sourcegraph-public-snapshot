@@ -23,6 +23,7 @@ import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorMessage } from '../../components/alerts'
 import * as H from 'history'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { AuthenticatedUser } from '../../auth'
 
 function queryOrganization(args: { name: string }): Observable<GQL.IOrg> {
     return queryGraphQL(
@@ -83,8 +84,9 @@ interface Props
     /**
      * The currently authenticated user.
      */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
     history: H.History
+    isSourcegraphDotCom: boolean
 }
 
 interface State {
@@ -112,7 +114,9 @@ export interface OrgAreaPageProps
     onOrganizationUpdate: () => void
 
     /** The currently authenticated user. */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
+
+    isSourcegraphDotCom: boolean
 }
 
 /**
@@ -190,6 +194,7 @@ export class OrgArea extends React.Component<Props> {
             namespace: this.state.orgOrError,
             patternType: this.props.patternType,
             telemetryService: this.props.telemetryService,
+            isSourcegraphDotCom: this.props.isSourcegraphDotCom,
         }
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {

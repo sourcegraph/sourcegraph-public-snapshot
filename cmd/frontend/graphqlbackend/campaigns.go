@@ -27,6 +27,7 @@ type MoveCampaignArgs struct {
 
 type ListCampaignArgs struct {
 	First               *int32
+	After               *string
 	State               *string
 	ViewerCanAdminister *bool
 
@@ -97,9 +98,13 @@ type CampaignSpecResolver interface {
 
 	ExpiresAt() *DateTime
 
-	PreviewURL() (string, error)
+	ApplyURL(ctx context.Context) (string, error)
 
 	ViewerCanAdminister(context.Context) (bool, error)
+
+	DiffStat(ctx context.Context) (*DiffStat, error)
+
+	AppliesToCampaign(ctx context.Context) (CampaignResolver, error)
 }
 
 type CampaignDescriptionResolver interface {
@@ -156,6 +161,7 @@ type GitBranchChangesetDescriptionResolver interface {
 	Body() string
 
 	Diff(ctx context.Context) (PreviewRepositoryComparisonResolver, error)
+	DiffStat() *DiffStat
 
 	Commits() []GitCommitDescriptionResolver
 
@@ -173,20 +179,24 @@ type ChangesetCountsArgs struct {
 }
 
 type ListChangesetsArgs struct {
-	First            *int32
-	PublicationState *campaigns.ChangesetPublicationState
-	ReconcilerState  *campaigns.ReconcilerState
-	ExternalState    *campaigns.ChangesetExternalState
-	ReviewState      *campaigns.ChangesetReviewState
-	CheckState       *campaigns.ChangesetCheckState
+	First                       *int32
+	After                       *string
+	PublicationState            *campaigns.ChangesetPublicationState
+	ReconcilerState             *campaigns.ReconcilerState
+	ExternalState               *campaigns.ChangesetExternalState
+	ReviewState                 *campaigns.ChangesetReviewState
+	CheckState                  *campaigns.ChangesetCheckState
+	OnlyPublishedByThisCampaign *bool
 }
 
 type CampaignResolver interface {
 	ID() graphql.ID
 	Name() string
 	Description() *string
-	Branch() *string
-	Author(ctx context.Context) (*UserResolver, error)
+	InitialApplier(ctx context.Context) (*UserResolver, error)
+	LastApplier(ctx context.Context) (*UserResolver, error)
+	LastAppliedAt() DateTime
+	SpecCreator(ctx context.Context) (*UserResolver, error)
 	ViewerCanAdminister(ctx context.Context) (bool, error)
 	URL(ctx context.Context) (string, error)
 	Namespace(ctx context.Context) (n NamespaceResolver, err error)
@@ -268,8 +278,6 @@ type ExternalChangesetResolver interface {
 	Events(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (ChangesetEventsConnectionResolver, error)
 	Diff(ctx context.Context) (RepositoryComparisonInterface, error)
 	DiffStat(ctx context.Context) (*DiffStat, error)
-	Head(ctx context.Context) (*GitRefResolver, error)
-	Base(ctx context.Context) (*GitRefResolver, error)
 	Labels(ctx context.Context) ([]ChangesetLabelResolver, error)
 
 	Error() *string

@@ -26,7 +26,7 @@
 /cmd/frontend/internal/app/pkg @slimsag
 /cmd/frontend/internal/app/router @slimsag
 /cmd/frontend/internal/app/errorutil @slimsag
-/cmd/frontend/internal/goroutine @slimsag
+/cmd/frontend/internal/goroutine @slimsag @efritz
 /cmd/frontend/internal/inventory @slimsag
 /cmd/frontend/internal/cli/middleware @beyang @slimsag
 /cmd/frontend/internal/cli @slimsag
@@ -146,6 +146,7 @@
 /enterprise/cmd/frontend/internal/campaigns @sourcegraph/campaigns
 /internal/campaigns @sourcegraph/campaigns
 /web/**/campaigns/** @sourcegraph/campaigns
+/web/src/integration/campaigns.test.ts @sourcegraph/campaigns
 
 # Search
 */search/**/* @sourcegraph/search
@@ -206,6 +207,7 @@ Dockerfile @sourcegraph/distribution
 /doc/ @sourcegraph/distribution
 /doc/dev/ @nicksnyder
 /doc/dev/web/ @felixfbecker @sourcegraph/web
+/doc/dev/codeintel/ @efritz @sourcegraph/code-intel
 
 # Browser extensions
 /browser/ @sourcegraph/web
@@ -230,6 +232,7 @@ Dockerfile @sourcegraph/distribution
 /enterprise/cmd/precise-code-intel-bundle-manager/ @sourcegraph/code-intel
 /enterprise/cmd/precise-code-intel-worker/ @sourcegraph/code-intel
 /enterprise/cmd/precise-code-intel-indexer/ @sourcegraph/code-intel
+/enterprise/cmd/precise-code-intel-indexer-vm/ @sourcegraph/code-intel
 /enterprise/internal/codeintel @sourcegraph/code-intel
 /enterprise/cmd/frontend/internal/codeintel @sourcegraph/code-intel
 /cmd/frontend/graphqlbackend/codeintel.go @sourcegraph/code-intel

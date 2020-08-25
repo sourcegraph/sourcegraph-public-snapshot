@@ -1,24 +1,15 @@
 import { getDiagnostics } from './diagnostics'
 import { parseSearchQuery, ParseSuccess, Sequence } from './parser'
-import { SearchPatternType } from '../../graphql/schema'
+import { SearchPatternType } from '../../graphql-operations'
 
 describe('getDiagnostics()', () => {
-    test('invalid filter type', () => {
+    test('do not raise invalid filter type', () => {
         expect(
             getDiagnostics(
                 (parseSearchQuery('repos:^github.com/sourcegraph') as ParseSuccess<Sequence>).token,
                 SearchPatternType.literal
             )
-        ).toStrictEqual([
-            {
-                endColumn: 6,
-                endLineNumber: 1,
-                message: 'Invalid filter type.',
-                severity: 8,
-                startColumn: 1,
-                startLineNumber: 1,
-            },
-        ])
+        ).toStrictEqual([])
     })
 
     test('invalid filter value', () => {
@@ -36,7 +27,7 @@ describe('getDiagnostics()', () => {
         ])
     })
 
-    test('search query containing colon, regexp pattern type', () => {
+    test('search query containing colon, regexp pattern type, suggest quotes', () => {
         expect(
             getDiagnostics(
                 (parseSearchQuery('Configuration::doStuff(...)') as ParseSuccess<Sequence>).token,
@@ -44,32 +35,23 @@ describe('getDiagnostics()', () => {
             )
         ).toStrictEqual([
             {
-                endColumn: 14,
+                endColumn: 27,
                 endLineNumber: 1,
-                message: 'Invalid filter type.',
-                severity: 8,
+                message: 'Quoting the query may help if you want a literal match.',
+                severity: 4,
                 startColumn: 1,
                 startLineNumber: 1,
             },
         ])
     })
 
-    test('search query containing colon, literal pattern type', () => {
+    test('search query containing colon, literal pattern type, do not raise error', () => {
         expect(
             getDiagnostics(
                 (parseSearchQuery('Configuration::doStuff(...)') as ParseSuccess<Sequence>).token,
                 SearchPatternType.literal
             )
-        ).toStrictEqual([
-            {
-                endColumn: 14,
-                endLineNumber: 1,
-                message: 'Invalid filter type.',
-                severity: 8,
-                startColumn: 1,
-                startLineNumber: 1,
-            },
-        ])
+        ).toStrictEqual([])
     })
 
     test('search query containing quoted token, regexp pattern type', () => {

@@ -5,7 +5,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/serialization"
-	gobserializer "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/serialization/gob"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 )
 
@@ -15,17 +14,7 @@ type writer struct {
 	writer     *batchWriter
 }
 
-var _ persistence.Writer = &writer{}
-
-func NewWriter(dumpID int) persistence.Writer {
-	return &writer{
-		dumpID:     dumpID,
-		serializer: gobserializer.New(),
-		writer:     newBatchWriter(),
-	}
-}
-
-func (w *writer) WriteMeta(ctx context.Context, meta types.MetaData) error {
+func (w *reader) WriteMeta(ctx context.Context, meta types.MetaData) error {
 	w.writer.Write(
 		`INSERT INTO lsif_data_metadata (dump_id, num_result_chunks) VALUES ($1, $2)`,
 		w.dumpID,
@@ -35,9 +24,9 @@ func (w *writer) WriteMeta(ctx context.Context, meta types.MetaData) error {
 	return nil
 }
 
-func (w *writer) WriteDocuments(ctx context.Context, documents map[string]types.DocumentData) error {
-	for path, document := range documents {
-		data, err := w.serializer.MarshalDocumentData(document)
+func (w *reader) WriteDocuments(ctx context.Context, documents chan persistence.KeyedDocumentData) error {
+	for v := range documents {
+		data, err := w.serializer.MarshalDocumentData(v.Document)
 		if err != nil {
 			return err
 		}
@@ -45,7 +34,7 @@ func (w *writer) WriteDocuments(ctx context.Context, documents map[string]types.
 		w.writer.Write(
 			`INSERT INTO lsif_data_documents (dump_id, path, data) VALUES ($1, $2, $3)`,
 			w.dumpID,
-			path,
+			v.Path,
 			data,
 		)
 	}
@@ -53,9 +42,9 @@ func (w *writer) WriteDocuments(ctx context.Context, documents map[string]types.
 	return nil
 }
 
-func (w *writer) WriteResultChunks(ctx context.Context, resultChunks map[int]types.ResultChunkData) error {
-	for idx, resultChunk := range resultChunks {
-		data, err := w.serializer.MarshalResultChunkData(resultChunk)
+func (w *reader) WriteResultChunks(ctx context.Context, resultChunks chan persistence.IndexedResultChunkData) error {
+	for v := range resultChunks {
+		data, err := w.serializer.MarshalResultChunkData(v.ResultChunk)
 		if err != nil {
 			return err
 		}
@@ -63,7 +52,7 @@ func (w *writer) WriteResultChunks(ctx context.Context, resultChunks map[int]typ
 		w.writer.Write(
 			`INSERT INTO lsif_data_result_chunks (dump_id, idx, data) VALUES ($1, $2, $3)`,
 			w.dumpID,
-			idx,
+			v.Index,
 			data,
 		)
 	}
@@ -71,8 +60,8 @@ func (w *writer) WriteResultChunks(ctx context.Context, resultChunks map[int]typ
 	return nil
 }
 
-func (w *writer) WriteDefinitions(ctx context.Context, monikerLocations []types.MonikerLocations) error {
-	for _, v := range monikerLocations {
+func (w *reader) WriteDefinitions(ctx context.Context, monikerLocations chan types.MonikerLocations) error {
+	for v := range monikerLocations {
 		data, err := w.serializer.MarshalLocations(v.Locations)
 		if err != nil {
 			return err
@@ -90,8 +79,8 @@ func (w *writer) WriteDefinitions(ctx context.Context, monikerLocations []types.
 	return nil
 }
 
-func (w *writer) WriteReferences(ctx context.Context, monikerLocations []types.MonikerLocations) error {
-	for _, v := range monikerLocations {
+func (w *reader) WriteReferences(ctx context.Context, monikerLocations chan types.MonikerLocations) error {
+	for v := range monikerLocations {
 		data, err := w.serializer.MarshalLocations(v.Locations)
 		if err != nil {
 			return err
@@ -109,6 +98,6 @@ func (w *writer) WriteReferences(ctx context.Context, monikerLocations []types.M
 	return nil
 }
 
-func (w *writer) Close(err error) error {
+func (w *reader) Close(err error) error {
 	return w.writer.Flush()
 }

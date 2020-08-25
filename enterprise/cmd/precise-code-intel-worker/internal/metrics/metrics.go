@@ -22,7 +22,7 @@ func NewWorkerMetrics(observationContext *observation.Context) WorkerMetrics {
 		observationContext.Registerer,
 		"upload_queue_processor",
 		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of results returned"),
+		metrics.WithCountHelp("Total number of records processed"),
 	)
 
 	return WorkerMetrics{

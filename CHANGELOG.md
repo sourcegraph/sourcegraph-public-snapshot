@@ -1,6 +1,6 @@
 <!--
 ###################################### READ ME ###########################################
-### This changelog should always be read on `master` branch. Its contents on version   ###
+### This changelog should always be read on `main` branch. Its contents on version   ###
 ### branches do not necessarily reflect the changes that have gone into that branch.   ###
 ##########################################################################################
 -->
@@ -13,20 +13,61 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
-- Emails can be now be sent to SMTP servers with self-signed certificates, using `email.smtp.disableTLS`. [#12359](https://github.com/sourcegraph/sourcegraph/pull/12359)
+### Changed
+
+- Introduced the new `external_service_repos` join table. Please note that the migration required to make this change could take a couple of minutes.
+- Campaigns are enabled by default for all users, with site admins having read/write access and users only read access. The new site configuration property `campaigns.enabled` can be used to disable campaigns for all users. The properties `campaigns.readAccess`, `automation.readAccess.enabled`, and `"experimentalFeatures": { "automation": "enabled" }}` are deprecated and no longer have any effect.
+
+### Fixed
+
+- User satisfaction/NPS surveys will now correctly provide a range from 0–10, rather than 0–9. [#13163](https://github.com/sourcegraph/sourcegraph/pull/13163)
+- Fixed a bug where we returned repositories with invalid revisions in the search results. Now, if a user specifies an invalid revision, we show an alert. [#13271](https://github.com/sourcegraph/sourcegraph/pull/13271)
+
+### Removed
+
+- The smartSearchField feature is now always enabled. The `experimentalFeatures.smartSearchField` settings option has been removed.
+
+## 3.19.1
+
+### Fixed
+
+- migrations: revert migration causing deadlocks in some deployments [#13194](https://github.com/sourcegraph/sourcegraph/pull/13194)
+
+## 3.19.0
+
+### Added
+
+- Emails can be now be sent to SMTP servers with self-signed certificates, using `email.smtp.disableTLS`. [#12243](https://github.com/sourcegraph/sourcegraph/pull/12243)
 - Saved search emails now include a link to the user's saved searches page. [#11651](https://github.com/sourcegraph/sourcegraph/pull/11651)
 - Campaigns can now be synced using GitLab webhooks. [#12139](https://github.com/sourcegraph/sourcegraph/pull/12139)
 - Configured `observability.alerts` can now be tested using a GraphQL endpoint, `triggerObservabilityTestAlert`. [#12532](https://github.com/sourcegraph/sourcegraph/pull/12532)
+- The Sourcegraph CLI can now serve local repositories for Sourcegraph to clone. This was previously in a command called `src-expose`. See [serving local repositories](https://docs.sourcegraph.com/admin/external_service/src_serve_git) in our documentation to find out more. [#12363](https://github.com/sourcegraph/sourcegraph/issues/12363)
+- The count of retained, churned, resurrected, new and deleted users will be sent back in pings. [#12136](https://github.com/sourcegraph/sourcegraph/pull/12136)
+- Saved search usage will be sent back in pings. [#12956](https://github.com/sourcegraph/sourcegraph/pull/12956)
+- Any request with `?trace=1` as a URL query parameter will enable Jaeger tracing (if Jaeger is enabled). [#12291](https://github.com/sourcegraph/sourcegraph/pull/12291)
+- Password reset emails will now be automatically sent to users created by a site admin if email sending is configured and password reset is enabled. Previously, site admins needed to manually send the user this password reset link. [#12803](https://github.com/sourcegraph/sourcegraph/pull/12803)
+- Syntax highlighting for `and` and `or` search operators. [#12694](https://github.com/sourcegraph/sourcegraph/pull/12694)
+- It is now possible to search for file content that excludes a term using the `NOT` operator. Negating pattern syntax requires setting `"search.migrateParser": true` in settings and is currently only supported for literal and regexp queries on indexed repositories. [#12412](https://github.com/sourcegraph/sourcegraph/pull/12412)
+- `NOT` is available as an alternative syntax of `-` on supported keywords `repo`, `file`, `content`, `lang`, and `repohasfile`. `NOT` requires setting `"search.migrateParser": true` option in settings. [#12520](https://github.com/sourcegraph/sourcegraph/pull/12520)
 
 ### Changed
 
+- Repository permissions are now always checked and updated asynchronously ([background permissions syncing](https://docs.sourcegraph.com/admin/repo/permissions#background-permissions-syncing)) instead of blocking each operation. The site config option `permissions.backgroundSync` (which enabled this behavior in previous versions) is now a no-op and is deprecated.
 - [Background permissions syncing](https://docs.sourcegraph.com/admin/repo/permissions#background-permissions-syncing) (`permissions.backgroundSync`) has become the only option for mirroring repository permissions from code hosts. All relevant site configurations are deprecated.
 
 ### Fixed
 
 - Fixed site admins are getting errors when visiting user settings page in OSS version. [#12313](https://github.com/sourcegraph/sourcegraph/pull/12313)
 - `github-proxy` now respects the environment variables `HTTP_PROXY`, `HTTPS_PROXY` and `NO_PROXY` (or the lowercase versions thereof). Other services already respect these variables, but this was missed. If you need a proxy to access github.com set the environment variable for the github-proxy container. [#12377](https://github.com/sourcegraph/sourcegraph/issues/12377)
+- `sourcegraph-frontend` now respects the `tls.external` experimental setting as well as the proxy environment variables. In proxy environments this allows Sourcegraph to fetch extensions. [#12633](https://github.com/sourcegraph/sourcegraph/issues/12633)
 - Fixed a bug that would sometimes cause trailing parentheses to be removed from search queries upon page load. [#12960](https://github.com/sourcegraph/sourcegraph/issues/12690)
+- Indexed search will no longer stall if a specific index job stalls. Additionally at scale many corner cases causing indexing to stall have been fixed. [#12502](https://github.com/sourcegraph/sourcegraph/pull/12502)
+- Indexed search will quickly recover from rebalancing / roll outs. When a indexed search shard goes down, its repositories are re-indexed by other shards. This takes a while and during a rollout leads to effectively re-indexing all repositories. We now avoid indexing the redistributed repositories once a shard comes back online. [#12474](https://github.com/sourcegraph/sourcegraph/pull/12474)
+- Indexed search has many improvements to observability. More detailed Jaeger traces, detailed logging during startup and more prometheus metrics.
+- The site admin repository needs-index page is significantly faster. Previously on large instances it would usually timeout. Now it should load within a second. [#12513](https://github.com/sourcegraph/sourcegraph/pull/12513)
+- User password reset page now respects the value of site config `auth.minPasswordLength`. [#12971](https://github.com/sourcegraph/sourcegraph/pull/12971)
+- Fixed an issue where duplicate search results would show for queries with `or`-expressions. [#12531](https://github.com/sourcegraph/sourcegraph/pull/12531)
+- Faster indexed search queries over a large number of repositories. Searching 100k+ repositories is now ~400ms faster and uses much less memory. [#12546](https://github.com/sourcegraph/sourcegraph/pull/12546)
 
 ### Removed
 
@@ -52,6 +93,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Revisions listed in `experimentalFeatures.versionContext` or `experimentalFeatures.search.index.branches` will be indexed for faster searching. This is the first support towards indexing non-default branches. [#6728](https://github.com/sourcegraph/sourcegraph/issues/6728)
 - Campaigns are now supported on GitLab.
 - Campaigns now support GitLab and allow users to create, update and track merge requests on GitLab instances.
+- Added a new section on the search homepage on Sourcegraph.com. It is currently feature flagged behind `experimentalFeatures.showRepogroupHomepage` in settings.
+- Added new repository group pages.
 
 ### Changed
 
@@ -60,7 +103,6 @@ All notable changes to Sourcegraph are documented in this file.
 - Configuration for `observability.alerts` has changed and notifications are now provided by Prometheus Alertmanager. [#11832](https://github.com/sourcegraph/sourcegraph/pull/11832)
   - Removed: `observability.alerts.id`.
   - Removed: Slack notifiers no longer accept `mentionUsers`, `mentionGroups`, `mentionChannel`, and `token` options.
--
 
 ### Fixed
 

@@ -41,10 +41,14 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		HeadRefName:  "campaigns/test",
 	}
 
-	repo := testRepo(1, extsvc.TypeGitHub)
-	deletedRepo := testRepo(2, extsvc.TypeGitHub).With(repos.Opt.RepoDeletedAt(clock.now()))
+	repo := testRepo(t, reposStore, extsvc.TypeGitHub)
+	otherRepo := testRepo(t, reposStore, extsvc.TypeGitHub)
 
-	if err := reposStore.UpsertRepos(ctx, deletedRepo, repo); err != nil {
+	if err := reposStore.InsertRepos(ctx, repo, otherRepo); err != nil {
+		t.Fatal(err)
+	}
+	deletedRepo := otherRepo.With(repos.Opt.RepoDeletedAt(clock.now()))
+	if err := reposStore.DeleteRepos(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -74,7 +78,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				CampaignIDs:         []int64{int64(i) + 1},
 				ExternalID:          fmt.Sprintf("foobar-%d", i),
 				ExternalServiceType: extsvc.TypeGitHub,
-				ExternalBranch:      "campaigns/test",
+				ExternalBranch:      fmt.Sprintf("campaigns/test/%d", i),
 				ExternalUpdatedAt:   clock.now(),
 				ExternalState:       cmpgn.ChangesetExternalStateOpen,
 				ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
@@ -178,7 +182,11 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	})
 
 	t.Run("GetChangesetExternalIDs", func(t *testing.T) {
-		have, err := s.GetChangesetExternalIDs(ctx, repo.ExternalRepo, []string{githubPR.HeadRefName})
+		refs := make([]string, len(changesets))
+		for i, c := range changesets {
+			refs[i] = c.ExternalBranch
+		}
+		have, err := s.GetChangesetExternalIDs(ctx, repo.ExternalRepo, refs)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -279,6 +287,17 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 			if have, want := countProcessing, 0; have != want {
 				t.Fatalf("have countProcessing: %d, want: %d", have, want)
+			}
+		})
+
+		t.Run("OwnedByCampaignID", func(t *testing.T) {
+			count, err := s.CountChangesets(ctx, CountChangesetsOpts{OwnedByCampaignID: int64(1)})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := count, 1; have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
 			}
 		})
 	})
@@ -410,7 +429,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			}
 		}
 
-		// Limit of -1 should return all ChangeSets
+		// Limit of -1 should return all Changesets
 		{
 			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{Limit: -1})
 			if err != nil {
@@ -510,6 +529,12 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 					ExternalReviewState: &stateChangesRequested,
 				},
 				wantCount: 0,
+			},
+			{
+				opts: ListChangesetsOpts{
+					OwnedByCampaignID: int64(1),
+				},
+				wantCount: 1,
 			},
 		}
 
@@ -636,6 +661,22 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 			if have != want {
 				t.Fatalf("have err %v, want %v", have, want)
+			}
+		})
+
+		t.Run("ExternalBranch", func(t *testing.T) {
+			for _, c := range changesets {
+				opts := GetChangesetOpts{ExternalBranch: c.ExternalBranch}
+
+				have, err := s.GetChangeset(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+				want := c
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
 			}
 		})
 	})
@@ -784,9 +825,8 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		IncludesCreatedEdit: false,
 	}
 
-	var extSvcID int64 = 1
-	repo := testRepo(int(extSvcID), extsvc.TypeGitHub)
-	if err := reposStore.UpsertRepos(ctx, repo); err != nil {
+	repo := testRepo(t, reposStore, extsvc.TypeGitHub)
+	if err := reposStore.InsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -824,6 +864,9 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 			Name:           "ListChangesetSyncData test",
 			ChangesetIDs:   []int64{cs.ID},
 			NamespaceOrgID: 23,
+			LastApplierID:  1,
+			LastAppliedAt:  time.Now(),
+			CampaignSpecID: 42,
 		}
 		err := s.CreateCampaign(ctx, c)
 		if err != nil {

@@ -6,12 +6,12 @@ The [documentation guidelines](https://about.sourcegraph.com/handbook/engineerin
 
 The documentation is organized into the following top-level directories:
 
-- [`user/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/user) for users
-- [`admin/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/admin) for site admins
-  - [`external_service/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/admin/external_service) for documentation for connecting Sourcegraph to code hosts and Phabricator (*for site admins*).
-- [`extensions/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/extensions) for Sourcegraph extensions
-- [`integration/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/integration) for integrations with other products, targeted at the general audience (vs. `admin/external_service/` for site admin-specific docs)
-- [`api/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/api) for the Sourcegraph GraphQL API
+- [`user/`](https://github.com/sourcegraph/sourcegraph/tree/main/doc/user) for users
+- [`admin/`](https://github.com/sourcegraph/sourcegraph/tree/main/doc/admin) for site admins
+  - [`external_service/`](https://github.com/sourcegraph/sourcegraph/tree/main/doc/admin/external_service) for documentation for connecting Sourcegraph to code hosts and Phabricator (*for site admins*).
+- [`extensions/`](https://github.com/sourcegraph/sourcegraph/tree/main/doc/extensions) for Sourcegraph extensions
+- [`integration/`](https://github.com/sourcegraph/sourcegraph/tree/main/doc/integration) for integrations with other products, targeted at the general audience (vs. `admin/external_service/` for site admin-specific docs)
+- [`api/`](https://github.com/sourcegraph/sourcegraph/tree/main/doc/api) for the Sourcegraph GraphQL API
 
 ## Previewing changes locally
 
@@ -30,7 +30,7 @@ We generally try to avoid adding large binary files to our repository. Images to
 
 ## Updating documentation
 
-To update documentation content, templates, or assets on https://docs.sourcegraph.com, push changes in the `doc/` directory to this repository's `master` branch, then wait up to 5 minutes. Every 5 minutes, docs.sourcegraph.com reloads all content, templates, and assets from `master`.
+To update documentation content, templates, or assets on https://docs.sourcegraph.com, push changes in the `doc/` directory to this repository's `main` branch, then wait up to 5 minutes. Every 5 minutes, docs.sourcegraph.com reloads all content, templates, and assets from `main`.
 
 - Documentation content lives in `doc/**/*.md`.
 - Assets and templates live in `doc/_resources/{templates,assets}`.
@@ -85,14 +85,13 @@ If you want to run the doc site *exactly* as it's deployed (reading templates an
 ```bash
 DOCSITE_CONFIG=$(cat <<-'DOCSITE'
 {
-  "templates": "https://codeload.github.com/sourcegraph/sourcegraph/zip/master#*/doc/_resources/templates/",
-  "assets": "https://codeload.github.com/sourcegraph/sourcegraph/zip/master#*/doc/_resources/assets/",
+  "templates": "https://codeload.github.com/sourcegraph/sourcegraph/zip/main#*/doc/_resources/templates/",
+  "assets": "https://codeload.github.com/sourcegraph/sourcegraph/zip/main#*/doc/_resources/assets/",
   "content": "https://codeload.github.com/sourcegraph/sourcegraph/zip/refs/heads/$VERSION#*/doc/",
+  "defaultContentBranch": "main",
   "baseURLPath": "/",
   "assetsBaseURLPath": "/assets/"
 }
 DOCSITE
 ) docsite serve -http=localhost:5081
-
 ```
-

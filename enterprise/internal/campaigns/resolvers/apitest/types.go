@@ -11,17 +11,6 @@ type GitTarget struct {
 	TargetType     string `json:"type"`
 }
 
-type GitRef struct {
-	Name        string
-	AbbrevName  string
-	DisplayName string
-	Prefix      string
-	RefType     string `json:"type"`
-	Repository  struct{ ID string }
-	URL         string
-	Target      GitTarget
-}
-
 type DiffRange struct{ StartLine, Lines int }
 
 type DiffStat struct{ Added, Deleted, Changed int32 }
@@ -49,12 +38,9 @@ type FileDiff struct {
 }
 
 type FileDiffs struct {
-	RawDiff  string
-	DiffStat DiffStat
-	PageInfo struct {
-		HasNextPage bool
-		EndCursor   string
-	}
+	RawDiff    string
+	DiffStat   DiffStat
+	PageInfo   PageInfo
 	Nodes      []FileDiff
 	TotalCount int
 }
@@ -85,12 +71,15 @@ type Campaign struct {
 	ID                      string
 	Name                    string
 	Description             string
-	Branch                  string
-	Author                  User
+	SpecCreator             *User
+	InitialApplier          *User
+	LastApplier             *User
+	LastAppliedAt           string
 	ViewerCanAdminister     bool
 	Namespace               UserOrg
 	CreatedAt               string
 	UpdatedAt               string
+	ClosedAt                string
 	URL                     string
 	Changesets              ChangesetConnection
 	ChangesetCountsOverTime []ChangesetCounts
@@ -137,14 +126,13 @@ type Changeset struct {
 	Body             string
 	PublicationState string
 	ReconcilerState  string
+	Error            string
 	ExternalState    string
 	ExternalID       string
 	ExternalURL      ExternalURL
 	ReviewState      string
 	CheckState       string
 	Events           ChangesetEventConnection
-	Head             GitRef
-	Base             GitRef
 
 	Diff Comparison
 
@@ -195,14 +183,18 @@ type CampaignSpec struct {
 	OriginalInput string
 	ParsedInput   graphqlbackend.JSONValue
 
-	PreviewURL string
+	ApplyURL string
 
 	Namespace UserOrg
-	Creator   User
+	Creator   *User
 
 	ChangesetSpecs ChangesetSpecConnection
 
 	ViewerCanAdminister bool
+
+	DiffStat DiffStat
+
+	AppliesToCampaign Campaign
 
 	CreatedAt graphqlbackend.DateTime
 	ExpiresAt *graphqlbackend.DateTime
@@ -220,10 +212,7 @@ type ChangesetSpec struct {
 type ChangesetSpecConnection struct {
 	Nodes      []ChangesetSpec
 	TotalCount int
-	PageInfo   struct {
-		HasNextPage bool
-		EndCursor   *string
-	}
+	PageInfo   PageInfo
 }
 
 type ChangesetSpecDescription struct {
@@ -246,6 +235,7 @@ type ChangesetSpecDescription struct {
 	Diff struct {
 		FileDiffs FileDiffs
 	}
+	DiffStat DiffStat
 }
 
 type GitCommitDescription struct {
@@ -255,4 +245,5 @@ type GitCommitDescription struct {
 
 type PageInfo struct {
 	HasNextPage bool
+	EndCursor   *string
 }

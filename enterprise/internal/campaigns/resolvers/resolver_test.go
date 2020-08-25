@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
@@ -55,6 +56,7 @@ func TestNullIDResilience(t *testing.T) {
 		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, campaigns.MarshalCampaignID(0)),
 		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, marshalChangesetID(0)),
 		fmt.Sprintf(`mutation { applyCampaign(campaignSpec: %q) { id } }`, marshalCampaignSpecRandID("")),
+		fmt.Sprintf(`mutation { createCampaign(campaignSpec: %q) { id } }`, marshalCampaignSpecRandID("")),
 		fmt.Sprintf(`mutation { moveCampaign(campaign: %q, newName: "foobar") { id } }`, campaigns.MarshalCampaignID(0)),
 	}
 
@@ -78,13 +80,14 @@ func TestCreateCampaignSpec(t *testing.T) {
 	ctx := context.Background()
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "create-campaign-spec", true)
+	username := "create-campaign-spec-username"
+	userID := insertTestUser(t, dbconn.Global, username, true)
 
 	store := ee.NewStore(dbconn.Global)
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", 1)
-	if err := reposStore.UpsertRepos(ctx, repo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
+	if err := reposStore.InsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -103,15 +106,14 @@ func TestCreateCampaignSpec(t *testing.T) {
 	s, err := graphqlbackend.NewSchema(r, nil, nil)
 	if err != nil {
 		t.Fatal(err)
-
 	}
 
-	userApiID := string(graphqlbackend.MarshalUserID(userID))
+	userAPIID := string(graphqlbackend.MarshalUserID(userID))
 	changesetSpecID := marshalChangesetSpecRandID(changesetSpec.RandID)
 	rawSpec := ct.TestRawCampaignSpec
 
 	input := map[string]interface{}{
-		"namespace":      userApiID,
+		"namespace":      userAPIID,
 		"campaignSpec":   rawSpec,
 		"changesetSpecs": []graphql.ID{changesetSpecID},
 	}
@@ -126,13 +128,17 @@ func TestCreateCampaignSpec(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	have := response.CreateCampaignSpec
 
 	want := apitest.CampaignSpec{
+		ID:            have.ID,
+		CreatedAt:     have.CreatedAt,
+		ExpiresAt:     have.ExpiresAt,
 		OriginalInput: rawSpec,
 		ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
-		PreviewURL:    "/campaigns/new?spec=",
-		Namespace:     apitest.UserOrg{ID: userApiID, DatabaseID: userID, SiteAdmin: true},
-		Creator:       apitest.User{ID: userApiID, DatabaseID: userID, SiteAdmin: true},
+		ApplyURL:      fmt.Sprintf("/users/%s/campaigns/apply/%s", username, have.ID),
+		Namespace:     apitest.UserOrg{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
+		Creator:       &apitest.User{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
 		ChangesetSpecs: apitest.ChangesetSpecConnection{
 			Nodes: []apitest.ChangesetSpec{
 				{
@@ -142,12 +148,6 @@ func TestCreateCampaignSpec(t *testing.T) {
 			},
 		},
 	}
-	have := response.CreateCampaignSpec
-
-	want.ID = have.ID
-	want.PreviewURL = want.PreviewURL + want.ID
-	want.CreatedAt = have.CreatedAt
-	want.ExpiresAt = have.ExpiresAt
 
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatalf("unexpected response (-want +got):\n%s", diff)
@@ -170,7 +170,7 @@ mutation($namespace: ID!, $campaignSpec: String!, $changesetSpecs: [ID!]!){
       ... on Org  { ...o }
     }
 
-    previewURL
+    applyURL
 
 	changesetSpecs {
 	  nodes {
@@ -200,8 +200,8 @@ func TestCreateChangesetSpec(t *testing.T) {
 	store := ee.NewStore(dbconn.Global)
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", 1)
-	if err := reposStore.UpsertRepos(ctx, repo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
+	if err := reposStore.InsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -209,7 +209,6 @@ func TestCreateChangesetSpec(t *testing.T) {
 	s, err := graphqlbackend.NewSchema(r, nil, nil)
 	if err != nil {
 		t.Fatal(err)
-
 	}
 
 	input := map[string]interface{}{
@@ -270,15 +269,19 @@ func TestApplyCampaign(t *testing.T) {
 
 	userID := insertTestUser(t, dbconn.Global, "apply-campaign", true)
 
-	store := ee.NewStore(dbconn.Global)
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	clock := func() time.Time {
+		return now.UTC().Truncate(time.Microsecond)
+	}
+	store := ee.NewStoreWithClock(dbconn.Global, clock)
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", 1)
-	if err := reposStore.UpsertRepos(ctx, repo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
+	if err := reposStore.InsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
-	repoApiID := graphqlbackend.MarshalRepositoryID(repo.ID)
+	repoAPIID := graphqlbackend.MarshalRepositoryID(repo.ID)
 
 	campaignSpec := &campaigns.CampaignSpec{
 		RawSpec: ct.TestRawCampaignSpec,
@@ -305,7 +308,7 @@ func TestApplyCampaign(t *testing.T) {
 	changesetSpec := &campaigns.ChangesetSpec{
 		CampaignSpecID: campaignSpec.ID,
 		Spec: &campaigns.ChangesetSpecDescription{
-			BaseRepository: repoApiID,
+			BaseRepository: repoAPIID,
 		},
 		RepoID: repo.ID,
 		UserID: userID,
@@ -320,7 +323,7 @@ func TestApplyCampaign(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	userApiID := string(graphqlbackend.MarshalUserID(userID))
+	userAPIID := string(graphqlbackend.MarshalUserID(userID))
 	input := map[string]interface{}{
 		"campaignSpec": string(marshalCampaignSpecRandID(campaignSpec.RandID)),
 	}
@@ -329,22 +332,25 @@ func TestApplyCampaign(t *testing.T) {
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 	apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyCampaign)
 
+	apiUser := &apitest.User{
+		ID:         userAPIID,
+		DatabaseID: userID,
+		SiteAdmin:  true,
+	}
+
 	have := response.ApplyCampaign
 	want := apitest.Campaign{
 		ID:          have.ID,
 		Name:        campaignSpec.Spec.Name,
 		Description: campaignSpec.Spec.Description,
-		Branch:      campaignSpec.Spec.ChangesetTemplate.Branch,
 		Namespace: apitest.UserOrg{
-			ID:         userApiID,
+			ID:         userAPIID,
 			DatabaseID: userID,
 			SiteAdmin:  true,
 		},
-		Author: apitest.User{
-			ID:         userApiID,
-			DatabaseID: userID,
-			SiteAdmin:  true,
-		},
+		InitialApplier: apiUser,
+		LastApplier:    apiUser,
+		LastAppliedAt:  marshalDateTime(t, now),
 		Changesets: apitest.ChangesetConnection{
 			Nodes: []apitest.Changeset{
 				{Typename: "ExternalChangeset", ReconcilerState: "QUEUED"},
@@ -390,8 +396,10 @@ fragment o on Org  { id, name }
 
 mutation($campaignSpec: ID!, $ensureCampaign: ID){
   applyCampaign(campaignSpec: $campaignSpec, ensureCampaign: $ensureCampaign) {
-    id, name, description, branch
-    author    { ...u }
+    id, name, description
+    initialApplier    { ...u }
+    lastApplier       { ...u }
+    lastAppliedAt
     namespace {
         ... on User { ...u }
         ... on Org  { ...o }
@@ -415,6 +423,68 @@ mutation($campaignSpec: ID!, $ensureCampaign: ID){
 }
 `
 
+func TestCreateCampaign(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	dbtesting.SetupGlobalTestDB(t)
+
+	userID := insertTestUser(t, dbconn.Global, "apply-campaign", true)
+
+	store := ee.NewStore(dbconn.Global)
+
+	campaignSpec := &campaigns.CampaignSpec{
+		RawSpec: ct.TestRawCampaignSpec,
+		Spec: campaigns.CampaignSpecFields{
+			Name:        "my-campaign",
+			Description: "My description",
+		},
+		UserID:          userID,
+		NamespaceUserID: userID,
+	}
+	if err := store.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+		t.Fatal(err)
+	}
+
+	r := &Resolver{store: store}
+	s, err := graphqlbackend.NewSchema(r, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	input := map[string]interface{}{
+		"campaignSpec": string(marshalCampaignSpecRandID(campaignSpec.RandID)),
+	}
+
+	var response struct{ CreateCampaign apitest.Campaign }
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	// First time it should work, because no campaign exists
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateCampaign)
+
+	if response.CreateCampaign.ID == "" {
+		t.Fatalf("expected campaign to be created, but was not")
+	}
+
+	// Second time it should fail
+	errors := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCampaign)
+
+	if len(errors) != 1 {
+		t.Fatalf("expected single errors, but got none")
+	}
+	if have, want := errors[0].Message, ee.ErrMatchingCampaignExists.Error(); have != want {
+		t.Fatalf("wrong error. want=%q, have=%q", want, have)
+	}
+}
+
+const mutationCreateCampaign = `
+mutation($campaignSpec: ID!){
+  createCampaign(campaignSpec: $campaignSpec) { id }
+}
+`
+
 func TestMoveCampaign(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -423,7 +493,8 @@ func TestMoveCampaign(t *testing.T) {
 	ctx := context.Background()
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "move-campaign1", true)
+	username := "move-campaign-username"
+	userID := insertTestUser(t, dbconn.Global, username, true)
 
 	org, err := db.Orgs.Create(ctx, "org", nil)
 	if err != nil {
@@ -442,10 +513,12 @@ func TestMoveCampaign(t *testing.T) {
 	}
 
 	campaign := &campaigns.Campaign{
-		CampaignSpecID:  campaignSpec.ID,
-		Name:            "old-name",
-		AuthorID:        userID,
-		NamespaceUserID: campaignSpec.UserID,
+		CampaignSpecID:   campaignSpec.ID,
+		Name:             "old-name",
+		InitialApplierID: userID,
+		LastApplierID:    userID,
+		LastAppliedAt:    time.Now(),
+		NamespaceUserID:  campaignSpec.UserID,
 	}
 	if err := store.CreateCampaign(ctx, campaign); err != nil {
 		t.Fatal(err)
@@ -458,8 +531,9 @@ func TestMoveCampaign(t *testing.T) {
 	}
 
 	// Move to a new name
+	campaignAPIID := string(campaigns.MarshalCampaignID(campaign.ID))
 	input := map[string]interface{}{
-		"campaign": string(campaigns.MarshalCampaignID(campaign.ID)),
+		"campaign": campaignAPIID,
 		"newName":  "new-name",
 	}
 
@@ -472,18 +546,27 @@ func TestMoveCampaign(t *testing.T) {
 		t.Fatalf("unexpected name (-want +got):\n%s", diff)
 	}
 
+	wantURL := fmt.Sprintf("/users/%s/campaigns/%s", username, campaignAPIID)
+	if diff := cmp.Diff(wantURL, haveCampaign.URL); diff != "" {
+		t.Fatalf("unexpected URL (-want +got):\n%s", diff)
+	}
+
 	// Move to a new namespace
-	orgApiID := graphqlbackend.MarshalOrgID(org.ID)
+	orgAPIID := graphqlbackend.MarshalOrgID(org.ID)
 	input = map[string]interface{}{
 		"campaign":     string(campaigns.MarshalCampaignID(campaign.ID)),
-		"newNamespace": orgApiID,
+		"newNamespace": orgAPIID,
 	}
 
 	apitest.MustExec(actorCtx, t, s, input, &response, mutationMoveCampaign)
 
 	haveCampaign = response.MoveCampaign
-	if diff := cmp.Diff(string(orgApiID), haveCampaign.Namespace.ID); diff != "" {
+	if diff := cmp.Diff(string(orgAPIID), haveCampaign.Namespace.ID); diff != "" {
 		t.Fatalf("unexpected namespace (-want +got):\n%s", diff)
+	}
+	wantURL = fmt.Sprintf("/organizations/%s/campaigns/%s", org.Name, campaignAPIID)
+	if diff := cmp.Diff(wantURL, haveCampaign.URL); diff != "" {
+		t.Fatalf("unexpected URL (-want +got):\n%s", diff)
 	}
 }
 
@@ -493,12 +576,13 @@ fragment o on Org  { id, name }
 
 mutation($campaign: ID!, $newName: String, $newNamespace: ID){
   moveCampaign(campaign: $campaign, newName: $newName, newNamespace: $newNamespace) {
-	id, name, description, branch
-	author    { ...u }
+	id, name, description
+	initialApplier  { ...u }
 	namespace {
 		... on User { ...u }
 		... on Org  { ...o }
 	}
+	url
   }
 }
 `
@@ -517,6 +601,8 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 	wantExternalStates := []campaigns.ChangesetExternalState{"OPEN", "INVALID"}
 	wantReviewStates := []campaigns.ChangesetReviewState{"APPROVED", "INVALID"}
 	wantCheckStates := []campaigns.ChangesetCheckState{"PENDING", "INVALID"}
+	wantOnlyPublishedByThisCampaign := []bool{true}
+	var campaignID int64 = 1
 
 	tcs := []struct {
 		args       *graphqlbackend.ListChangesetsArgs
@@ -617,9 +703,20 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			},
 			wantErr: "changeset check state not valid",
 		},
+		// Setting OnlyPublishedByThisCampaign true.
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				OnlyPublishedByThisCampaign: &wantOnlyPublishedByThisCampaign[0],
+			},
+			wantSafe: true,
+			wantParsed: ee.ListChangesetsOpts{
+				PublicationState:  &wantPublicationStates[0],
+				OwnedByCampaignID: campaignID,
+			},
+		},
 	}
 	for _, tc := range tcs {
-		haveParsed, haveSafe, err := listChangesetOptsFromArgs(tc.args)
+		haveParsed, haveSafe, err := listChangesetOptsFromArgs(tc.args, campaignID)
 		if tc.wantErr == "" && err != nil {
 			t.Fatal(err)
 		}
@@ -639,114 +736,3 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		}
 	}
 }
-
-func TestCampaignsListing(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	ctx := context.Background()
-	dbtesting.SetupGlobalTestDB(t)
-
-	userID := insertTestUser(t, dbconn.Global, "campaigns-lsiting", true)
-	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
-
-	org, err := db.Orgs.Create(ctx, "org", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	store := ee.NewStore(dbconn.Global)
-
-	r := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(r, nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	createCampaign := func(t *testing.T, c *campaigns.Campaign) {
-		t.Helper()
-
-		c.Name = "n"
-		c.AuthorID = userID
-		if err := store.CreateCampaign(ctx, c); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	t.Run("listing a users campaigns", func(t *testing.T) {
-		campaign := &campaigns.Campaign{NamespaceUserID: userID}
-		createCampaign(t, campaign)
-
-		userApiID := string(graphqlbackend.MarshalUserID(userID))
-		input := map[string]interface{}{"node": userApiID}
-
-		var response struct{ Node apitest.User }
-		apitest.MustExec(actorCtx, t, s, input, &response, listNamespacesCampaigns)
-
-		want := apitest.User{
-			ID: userApiID,
-			Campaigns: apitest.CampaignConnection{
-				TotalCount: 1,
-				Nodes: []apitest.Campaign{
-					{ID: string(campaigns.MarshalCampaignID(campaign.ID))},
-				},
-			},
-		}
-
-		if diff := cmp.Diff(want, response.Node); diff != "" {
-			t.Fatalf("wrong campaign response (-want +got):\n%s", diff)
-		}
-	})
-
-	t.Run("listing an orgs campaigns", func(t *testing.T) {
-		campaign := &campaigns.Campaign{NamespaceOrgID: org.ID}
-		createCampaign(t, campaign)
-
-		orgApiID := string(graphqlbackend.MarshalOrgID(org.ID))
-		input := map[string]interface{}{"node": orgApiID}
-
-		var response struct{ Node apitest.Org }
-		apitest.MustExec(actorCtx, t, s, input, &response, listNamespacesCampaigns)
-
-		want := apitest.Org{
-			ID: orgApiID,
-			Campaigns: apitest.CampaignConnection{
-				TotalCount: 1,
-				Nodes: []apitest.Campaign{
-					{ID: string(campaigns.MarshalCampaignID(campaign.ID))},
-				},
-			},
-		}
-
-		if diff := cmp.Diff(want, response.Node); diff != "" {
-			t.Fatalf("wrong campaign response (-want +got):\n%s", diff)
-		}
-	})
-}
-
-const listNamespacesCampaigns = `
-query($node: ID!) {
-  node(id: $node) {
-    ... on User {
-      id
-      campaigns {
-        totalCount
-        nodes {
-          id
-        }
-      }
-    }
-
-    ... on Org {
-      id
-      campaigns {
-        totalCount
-        nodes {
-          id
-        }
-      }
-    }
-  }
-}
-`

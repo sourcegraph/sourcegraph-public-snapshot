@@ -4,12 +4,11 @@ import {
     PatternTypeProps,
     InteractiveSearchProps,
     CaseSensitivityProps,
-    SmartSearchFieldProps,
     CopyQueryButtonProps,
     RepogroupHomepageProps,
+    OnboardingTourProps,
 } from '..'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Settings } from '../../schema/settings.schema'
 import { ThemeProps } from '../../../../shared/src/theme'
@@ -32,6 +31,7 @@ import { repogroupList, homepageLanguageList } from '../../repogroups/HomepageCo
 import { SearchPageInput } from './SearchPageInput'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { PrivateCodeCta } from './PrivateCodeCta'
+import { AuthenticatedUser } from '../../auth'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -45,11 +45,11 @@ interface Props
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         InteractiveSearchProps,
-        SmartSearchFieldProps,
         CopyQueryButtonProps,
         VersionContextProps,
-        RepogroupHomepageProps {
-    authenticatedUser: GQL.IUser | null
+        RepogroupHomepageProps,
+        OnboardingTourProps {
+    authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
@@ -90,7 +90,6 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
             [codeInsightsEnabled, props.extensionsController.services.view]
         )
     )
-
     return (
         <div className="web-content search-page">
             <BrandLogo className="search-page__logo" isLightTheme={props.isLightTheme} />

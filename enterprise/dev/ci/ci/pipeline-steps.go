@@ -21,6 +21,7 @@ var allDockerImages = []string{
 	"precise-code-intel-bundle-manager",
 	"precise-code-intel-worker",
 	"precise-code-intel-indexer",
+	"precise-code-intel-indexer-vm",
 
 	// Images under docker-images/
 	"cadvisor",
@@ -34,6 +35,7 @@ var allDockerImages = []string{
 	"syntax-highlighter",
 	"jaeger-agent",
 	"jaeger-all-in-one",
+	"ignite-ubuntu",
 }
 
 // Verifies the docs formatting and builds the `docsite` command.
@@ -106,6 +108,7 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 		// Client integration tests
 		pipeline.AddStep(":puppeteer::electric_plug:",
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+			bk.Env("ENTERPRISE", "1"),
 			bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-run.sh build-web"),
 			bk.Cmd("yarn run cover-integration"),
 			bk.Cmd("yarn nyc report -r json"),
@@ -140,15 +143,14 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 
 // Adds PostgreSQL backcompat tests.
 func addPostgresBackcompat(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":postgres:",
-		bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
+	// TODO: We do not test Postgres DB backcompat anymore.
 }
 
 // Adds the Go test step.
 func addGoTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go:",
 		bk.Cmd("./dev/ci/go-test.sh"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F go -F unit"))
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F go"))
 }
 
 // Builds the OSS and Enterprise Go commands.
@@ -346,45 +348,28 @@ func addCandidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		baseImage := "sourcegraph/" + strings.ReplaceAll(app, "/", "-")
-
-		cmds := []bk.StepOpt{
-			bk.Cmd(fmt.Sprintf(`echo "Tagging final %s image..."`, app)),
-			bk.Cmd("yes | gcloud auth configure-docker"),
-		}
-
 		gcrImage := fmt.Sprintf("us.gcr.io/sourcegraph-dev/%s", strings.TrimPrefix(baseImage, "sourcegraph/"))
-
-		candidateImage := fmt.Sprintf("%s:%s", gcrImage, candidateImageTag(c))
-		cmds = append(cmds,
-			bk.Cmd(fmt.Sprintf("docker pull %s", candidateImage)),
-			bk.Cmd(fmt.Sprintf("docker tag %s %s:%s", candidateImage, baseImage, c.version)),
-		)
-
 		dockerHubImage := fmt.Sprintf("index.docker.io/%s", baseImage)
+
+		var images []string
 		for _, image := range []string{dockerHubImage, gcrImage} {
 			if app != "server" || c.taggedRelease || c.patch || c.patchNoTest {
-				cmds = append(cmds,
-					bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s", baseImage, c.version, image, c.version)),
-					bk.Cmd(fmt.Sprintf("docker push %s:%s", image, c.version)),
-				)
+				images = append(images, fmt.Sprintf("%s:%s", image, c.version))
 			}
 
 			if app == "server" && c.releaseBranch {
-				cmds = append(cmds,
-					bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s-insiders", baseImage, c.version, image, c.branch)),
-					bk.Cmd(fmt.Sprintf("docker push %s:%s-insiders", image, c.branch)),
-				)
+				images = append(images, fmt.Sprintf("%s:%s-insiders", image, c.branch))
 			}
 
 			if insiders {
-				cmds = append(cmds,
-					bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:insiders", baseImage, c.version, image)),
-					bk.Cmd(fmt.Sprintf("docker push %s:insiders", image)),
-				)
+				images = append(images, fmt.Sprintf("%s:insiders", image))
 			}
 		}
 
-		pipeline.AddStep(":docker: :white_check_mark:", cmds...)
+		candidateImage := fmt.Sprintf("%s:%s", gcrImage, candidateImageTag(c))
+		cmd := fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(images, " "))
+
+		pipeline.AddStep(":docker: :white_check_mark:", bk.Cmd(cmd))
 	}
 }
 

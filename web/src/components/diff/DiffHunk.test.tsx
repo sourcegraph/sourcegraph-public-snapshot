@@ -3,66 +3,56 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import React from 'react'
 import renderer from 'react-test-renderer'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { DiffHunk } from './DiffHunk'
+import { FileDiffHunkFields, DiffHunkLineType } from '../../graphql-operations'
 
 describe('DiffHunk', () => {
     const history = H.createMemoryHistory()
 
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    const hunk = {
+    const hunk: FileDiffHunkFields = {
         oldRange: { startLine: 159, lines: 7 },
         oldNoNewlineAt: false,
         newRange: { startLine: 159, lines: 7 },
         section: 'export async function register({',
         highlight: {
-            __typename: 'HighlightedDiffHunkBody',
             aborted: false,
             lines: [
                 {
-                    __typename: 'HighlightedDiffHunkLine',
-                    kind: GQL.DiffHunkLineType.UNCHANGED,
+                    kind: DiffHunkLineType.UNCHANGED,
                     html: '        const subscriptions = new Subscription()',
                 },
                 {
-                    __typename: 'HighlightedDiffHunkLine',
-                    kind: GQL.DiffHunkLineType.UNCHANGED,
+                    kind: DiffHunkLineType.UNCHANGED,
                     html: '        const decorationType = sourcegraph.app.createDecorationType()',
                 },
                 {
-                    __typename: 'HighlightedDiffHunkLine',
-                    kind: GQL.DiffHunkLineType.UNCHANGED,
+                    kind: DiffHunkLineType.UNCHANGED,
                     html: '        const connection = await createConnection()',
                 },
                 {
-                    __typename: 'HighlightedDiffHunkLine',
-                    kind: GQL.DiffHunkLineType.DELETED,
+                    kind: DiffHunkLineType.DELETED,
                     html: '        logger.log(`WebSocket connection to TypeScript backend opened`)',
                 },
                 {
-                    __typename: 'HighlightedDiffHunkLine',
-                    kind: GQL.DiffHunkLineType.ADDED,
+                    kind: DiffHunkLineType.ADDED,
                     html: '        logger.log(`WebSocket connection to language server opened`)',
                 },
                 {
-                    __typename: 'HighlightedDiffHunkLine',
-                    kind: GQL.DiffHunkLineType.UNCHANGED,
+                    kind: DiffHunkLineType.UNCHANGED,
                     html: '        subscriptions.add(',
                 },
                 {
-                    __typename: 'HighlightedDiffHunkLine',
-                    kind: GQL.DiffHunkLineType.UNCHANGED,
+                    kind: DiffHunkLineType.UNCHANGED,
                     html:
                         '                connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) =\u003E {',
                 },
                 {
-                    __typename: 'HighlightedDiffHunkLine',
-                    kind: GQL.DiffHunkLineType.UNCHANGED,
+                    kind: DiffHunkLineType.UNCHANGED,
                     html: '                    const method = LSP_TO_LOG_LEVEL[type]',
                 },
             ],
         },
-    } as GQL.IFileDiffHunk
+    }
 
     it('renders a unified diff view for the given diff hunk', () => {
         expect(

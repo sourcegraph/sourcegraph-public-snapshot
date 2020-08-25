@@ -1,5 +1,5 @@
 import { describe, test, before, beforeEach, after, afterEach } from 'mocha'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { afterEachRecordCoverage } from '../../../shared/src/testing/coverage'
 import { retry } from '../../../shared/src/testing/utils'
 import { createDriverForTest, Driver, percySnapshot } from '../../../shared/src/testing/driver'
@@ -64,7 +64,7 @@ describe('e2e test suite', () => {
 
     after('Close browser', () => driver?.close())
 
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEachRecordCoverage(() => driver)
 
     beforeEach(async () => {
@@ -356,7 +356,7 @@ describe('e2e test suite', () => {
         })
 
         test('Search visibility:private|public', async () => {
-            const privateRepos = ['github.com/sourcegraph/test-test-private-repository']
+            const privateRepos = ['github.com/sourcegraph/e2e-test-private-repository']
 
             await driver.page.goto(sourcegraphBaseUrl + '/search?q=type:repo+visibility:private')
             await driver.page.waitForFunction(() => document.querySelectorAll('.test-search-result').length >= 1)
@@ -793,7 +793,7 @@ describe('e2e test suite', () => {
                     line: 65,
                 },
                 {
-                    name: 'highlights correct line for Typescript',
+                    name: 'highlights correct line for TypeScript',
                     filePath:
                         '/github.com/sourcegraph/sourcegraph-typescript@a7b7a61e31af76dad3543adec359fa68737a58a1/-/blob/server/src/cancellation.ts',
                     index: 2,

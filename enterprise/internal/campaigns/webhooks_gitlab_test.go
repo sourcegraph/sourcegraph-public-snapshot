@@ -616,13 +616,6 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 					MergeRequest: &gitlab.MergeRequest{IID: gitlab.ID(cid)},
 				}
 
-				t.Logf("event: %+v", event)
-				rs, err := rstore.ListRepos(ctx, repos.StoreListReposArgs{})
-				if err != nil {
-					t.Fatal(err)
-				}
-				t.Logf("all repos: %+v", rs)
-
 				want := errors.New("foo")
 				repoupdater.MockEnqueueChangesetSync = func(ctx context.Context, ids []int64) error {
 					return want
@@ -928,7 +921,7 @@ func createGitLabRepo(t *testing.T, ctx context.Context, rstore repos.Store, es 
 			ServiceID:   "https://gitlab.com/",
 		},
 	}).With(repos.Opt.RepoSources(es.URN()))
-	if err := rstore.UpsertRepos(ctx, repo); err != nil {
+	if err := rstore.InsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 

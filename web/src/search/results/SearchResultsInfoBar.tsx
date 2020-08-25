@@ -20,6 +20,8 @@ import { ServerBanner, ServerBannerNoRepo } from '../../marketing/ServerBanner'
 import { PerformanceWarningAlert } from '../../site/PerformanceWarningAlert'
 import { PatternTypeProps } from '..'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import { AuthenticatedUser } from '../../auth'
+import { SearchPatternType } from '../../graphql-operations'
 
 interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
@@ -27,7 +29,7 @@ interface SearchResultsInfoBarProps
         TelemetryProps,
         PatternTypeProps {
     /** The currently authenticated user or null */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 
     /** The loaded search results and metadata */
     query?: string
@@ -59,7 +61,7 @@ interface SearchResultsInfoBarProps
  * informs them that this may be the case to avoid confusion.
  */
 const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInfoBarProps> = props =>
-    props.patternType === GQL.SearchPatternType.literal && props.query && props.query.includes('"') ? (
+    props.patternType === SearchPatternType.literal && props.query && props.query.includes('"') ? (
         <div
             className={`search-results-info-bar__notice${
                 props.results.results.length === 0 ? ' search-results-info-bar__notice--no-results' : ''

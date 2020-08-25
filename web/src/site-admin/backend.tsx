@@ -7,12 +7,14 @@ import {
     dataOrThrowErrors,
     isErrorGraphQLResult,
     gql,
+    requestGraphQL,
 } from '../../../shared/src/graphql/graphql'
 import { createAggregateError } from '../../../shared/src/util/errors'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { resetAllMemoizationCaches } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { Settings } from '../../../shared/src/settings/settings'
+import { RepositoriesVariables, RepositoriesResult, ExternalServiceKind, UserActivePeriod } from '../graphql-operations'
 
 /**
  * Fetches all users.
@@ -87,30 +89,29 @@ export function fetchAllOrganizations(args: { first?: number; query?: string }):
     )
 }
 
-interface RepositoryArgs {
-    first?: number
-    query?: string
-    cloned?: boolean
-    notCloned?: boolean
-    indexed?: boolean
-    notIndexed?: boolean
-}
+const siteAdminRepositoryFieldsFragment = gql`
+    fragment SiteAdminRepositoryFields on Repository {
+        id
+        name
+        createdAt
+        viewerCanAdminister
+        url
+        mirrorInfo {
+            cloned
+            cloneInProgress
+            updatedAt
+        }
+    }
+`
 
 /**
  * Fetches all repositories.
  *
  * @returns Observable that emits the list of repositories
  */
-function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryConnection> {
-    args = {
-        cloned: true,
-        notCloned: true,
-        indexed: true,
-        notIndexed: true,
-        ...args,
-    } // apply defaults
-    return queryGraphQL(
-        gql`
+function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<RepositoriesResult['repositories']> {
+    return requestGraphQL<RepositoriesResult, RepositoriesVariables>({
+        request: gql`
             query Repositories(
                 $first: Int
                 $query: String
@@ -128,16 +129,7 @@ function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryC
                     notIndexed: $notIndexed
                 ) {
                     nodes {
-                        id
-                        name
-                        createdAt
-                        viewerCanAdminister
-                        url
-                        mirrorInfo {
-                            cloned
-                            cloneInProgress
-                            updatedAt
-                        }
+                        ...SiteAdminRepositoryFields
                     }
                     totalCount(precise: true)
                     pageInfo {
@@ -145,17 +137,26 @@ function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryC
                     }
                 }
             }
+
+            ${siteAdminRepositoryFieldsFragment}
         `,
-        args
-    ).pipe(
+        variables: {
+            cloned: args.cloned ?? true,
+            notCloned: args.notCloned ?? true,
+            indexed: args.indexed ?? true,
+            notIndexed: args.notIndexed ?? true,
+            first: args.first ?? null,
+            query: args.query ?? null,
+        },
+    }).pipe(
         map(dataOrThrowErrors),
         map(data => data.repositories)
     )
 }
 
 export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
-    args: RepositoryArgs
-): Observable<GQL.IRepositoryConnection> {
+    args: Partial<RepositoriesVariables>
+): Observable<RepositoriesResult['repositories']> {
     return fetchAllRepositories(args).pipe(
         // Poll every 5000ms if repositories are being cloned or the list is empty.
         repeatUntil(
@@ -250,7 +251,7 @@ export function scheduleUserPermissionsSync(args: { user: GQL.ID }): Observable<
  * @returns Observable that emits the list of users and their usage data
  */
 export function fetchUserUsageStatistics(args: {
-    activePeriod?: GQL.UserActivePeriod
+    activePeriod?: UserActivePeriod
     query?: string
     first?: number
 }): Observable<GQL.IUserConnection> {
@@ -355,7 +356,7 @@ type SettingsSubject = Pick<GQL.SettingsSubject, 'settingsURL' | '__typename'> &
  */
 interface AllConfig {
     site: GQL.ISiteConfiguration
-    externalServices: Partial<Record<GQL.ExternalServiceKind, ExternalServiceConfig>>
+    externalServices: Partial<Record<ExternalServiceKind, ExternalServiceConfig>>
     settings: {
         subjects: SettingsSubject[]
         final: Settings | null
@@ -417,12 +418,12 @@ export function fetchAllConfigAndSettings(): Observable<AllConfig> {
         map(dataOrThrowErrors),
         map(data => {
             const externalServices: Partial<Record<
-                GQL.ExternalServiceKind,
+                ExternalServiceKind,
                 ExternalServiceConfig[]
             >> = data.externalServices.nodes
                 .filter(svc => svc.config)
                 .map(svc => [svc.kind, parseJSONC(svc.config) as ExternalServiceConfig] as const)
-                .reduce<Partial<{ [k in GQL.ExternalServiceKind]: ExternalServiceConfig[] }>>(
+                .reduce<Partial<{ [k in ExternalServiceKind]: ExternalServiceConfig[] }>>(
                     (externalServicesByKind, [kind, config]) => {
                         let services = externalServicesByKind[kind]
                         if (!services) {

@@ -7,12 +7,10 @@ import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxj
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, filter } from 'rxjs/operators'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
+import { gql, dataOrThrowErrors, requestGraphQL } from '../../../../shared/src/graphql/graphql'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { isErrorLike, asError } from '../../../../shared/src/util/errors'
-import { queryGraphQL } from '../../backend/graphql'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { NamespaceProps } from '../../namespaces'
@@ -21,47 +19,53 @@ import { RouteDescriptor } from '../../util/contributions'
 import { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from '../settings/UserSettingsSidebar'
 import { UserAreaHeader, UserAreaHeaderNavItem } from './UserAreaHeader'
-import { PatternTypeProps } from '../../search'
+import { PatternTypeProps, OnboardingTourProps } from '../../search'
 import { ErrorMessage } from '../../components/alerts'
 import { isDefined } from '../../../../shared/src/util/types'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { AuthenticatedUser } from '../../auth'
+import { UserResult, UserVariables, UserAreaUserFields } from '../../graphql-operations'
 
-const fetchUser = (args: { username: string; siteAdmin: boolean }): Observable<GQL.IUser> =>
-    queryGraphQL(
-        gql`
+const fetchUser = (args: { username: string; siteAdmin: boolean }): Observable<UserAreaUserFields> =>
+    requestGraphQL<UserResult, UserVariables>({
+        request: gql`
             query User($username: String!, $siteAdmin: Boolean!) {
                 user(username: $username) {
-                    __typename
-                    id
-                    username
-                    displayName
-                    url
-                    settingsURL
-                    avatarURL
-                    viewerCanAdminister
-                    siteAdmin
-                    builtinAuth
-                    createdAt
-                    emails {
-                        email
-                        verified
+                    ...UserAreaUserFields
+                }
+            }
+
+            fragment UserAreaUserFields on User {
+                __typename
+                id
+                username
+                displayName
+                url
+                settingsURL
+                avatarURL
+                viewerCanAdminister
+                siteAdmin @include(if: $siteAdmin)
+                builtinAuth
+                createdAt
+                emails @include(if: $siteAdmin) {
+                    email
+                    verified
+                }
+                organizations {
+                    nodes {
+                        id
+                        displayName
+                        name
                     }
-                    organizations {
-                        nodes {
-                            id
-                            displayName
-                            name
-                        }
-                    }
-                    permissionsInfo @include(if: $siteAdmin) {
-                        syncedAt
-                        updatedAt
-                    }
+                }
+                permissionsInfo @include(if: $siteAdmin) {
+                    syncedAt
+                    updatedAt
                 }
             }
         `,
-        args
-    ).pipe(
+        variables: args,
+    }).pipe(
         map(dataOrThrowErrors),
         map(data => {
             if (!data.user) {
@@ -85,6 +89,7 @@ interface UserAreaProps
         ThemeProps,
         TelemetryProps,
         ActivationProps,
+        OnboardingTourProps,
         Omit<PatternTypeProps, 'setPatternType'> {
     userAreaRoutes: readonly UserAreaRoute[]
     userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
@@ -95,7 +100,9 @@ interface UserAreaProps
      * The currently authenticated user, NOT the user whose username is specified in the URL's "username" route
      * parameter.
      */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
+
+    isSourcegraphDotCom: boolean
 }
 
 interface UserAreaState {
@@ -103,7 +110,7 @@ interface UserAreaState {
      * The fetched user (who is the subject of the page), or an error if an error occurred; undefined while
      * loading.
      */
-    userOrError?: GQL.IUser | Error
+    userOrError?: UserAreaUserFields | Error
 }
 
 /**
@@ -117,6 +124,7 @@ export interface UserAreaRouteContext
         TelemetryProps,
         ActivationProps,
         NamespaceProps,
+        OnboardingTourProps,
         Omit<PatternTypeProps, 'setPatternType'> {
     /** The user area main URL. */
     url: string
@@ -124,7 +132,7 @@ export interface UserAreaRouteContext
     /**
      * The user who is the subject of the page.
      */
-    user: GQL.IUser
+    user: UserAreaUserFields
 
     /** Called when the user is updated and must be reloaded. */
     onDidUpdateUser: () => void
@@ -135,9 +143,11 @@ export interface UserAreaRouteContext
      * For example, if Alice is viewing a user area page about Bob, then the authenticatedUser is Alice and the
      * user is Bob.
      */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
     userSettingsSideBarItems: UserSettingsSidebarItems
     userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
+
+    isSourcegraphDotCom: boolean
 }
 
 /**

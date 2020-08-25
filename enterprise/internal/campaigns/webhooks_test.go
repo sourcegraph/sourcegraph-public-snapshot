@@ -76,18 +76,29 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		err = repoStore.UpsertRepos(ctx, githubRepo)
+		err = repoStore.InsertRepos(ctx, githubRepo)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		store := NewStoreWithClock(db, clock)
 
-		campaign := &campaigns.Campaign{
-			Name:            "Test campaign",
-			Description:     "Testing THE WEBHOOKS",
-			AuthorID:        userID,
+		spec := &campaigns.CampaignSpec{
 			NamespaceUserID: userID,
+			UserID:          userID,
+		}
+		if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+			t.Fatal(err)
+		}
+
+		campaign := &campaigns.Campaign{
+			Name:             "Test campaign",
+			Description:      "Testing THE WEBHOOKS",
+			InitialApplierID: userID,
+			NamespaceUserID:  userID,
+			LastApplierID:    userID,
+			LastAppliedAt:    clock(),
+			CampaignSpecID:   spec.ID,
 		}
 
 		err = store.CreateCampaign(ctx, campaign)
@@ -239,18 +250,29 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal("repo not found")
 		}
 
-		err = repoStore.UpsertRepos(ctx, bitbucketRepo)
+		err = repoStore.InsertRepos(ctx, bitbucketRepo)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		store := NewStoreWithClock(db, clock)
 
-		campaign := &campaigns.Campaign{
-			Name:            "Test campaign",
-			Description:     "Testing THE WEBHOOKS",
-			AuthorID:        userID,
+		spec := &campaigns.CampaignSpec{
 			NamespaceUserID: userID,
+			UserID:          userID,
+		}
+		if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+			t.Fatal(err)
+		}
+
+		campaign := &campaigns.Campaign{
+			Name:             "Test campaign",
+			Description:      "Testing THE WEBHOOKS",
+			InitialApplierID: userID,
+			NamespaceUserID:  userID,
+			LastApplierID:    userID,
+			LastAppliedAt:    clock(),
+			CampaignSpecID:   spec.ID,
 		}
 
 		err = store.CreateCampaign(ctx, campaign)

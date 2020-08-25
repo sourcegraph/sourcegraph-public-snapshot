@@ -3,17 +3,16 @@ import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { authRequired } from '../auth'
+import { authRequired, AuthenticatedUser } from '../auth'
 import {
     parseSearchURLQuery,
     PatternTypeProps,
     InteractiveSearchProps,
     CaseSensitivityProps,
-    SmartSearchFieldProps,
     CopyQueryButtonProps,
+    OnboardingTourProps,
 } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { EventLoggerProps } from '../tracking/eventLogger'
@@ -44,12 +43,12 @@ interface Props
         PatternTypeProps,
         CaseSensitivityProps,
         InteractiveSearchProps,
-        SmartSearchFieldProps,
         CopyQueryButtonProps,
-        VersionContextProps {
+        VersionContextProps,
+        OnboardingTourProps {
     history: H.History
     location: H.Location<{ query: string }>
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
     navbarSearchQueryState: QueryState
     onNavbarQueryChange: (queryState: QueryState) => void
     isSourcegraphDotCom: boolean
@@ -250,7 +249,6 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                             {...this.props}
                                             navbarSearchState={this.props.navbarSearchQueryState}
                                             onChange={this.props.onNavbarQueryChange}
-                                            smartSearchField={this.props.smartSearchField}
                                         />
                                     </div>
                                 )}

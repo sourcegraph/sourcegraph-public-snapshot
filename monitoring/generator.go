@@ -107,22 +107,17 @@ func (r Row) validate() error {
 }
 
 // ObservableOwner denotes a team that owns an Observable. The current teams are described in
-// the handbook: https://about.sourcegraph.com/handbook/engineering/2021_org
+// the handbook: https://about.sourcegraph.com/company/team/org_chart#engineering
 type ObservableOwner string
 
 const (
-	// Core products teams
-	ObservableOwnerSearch               ObservableOwner = "search"
-	ObservableOwnerCampaigns            ObservableOwner = "campaigns"
-	ObservableOwnerCodeIntel            ObservableOwner = "code-intel"
-	ObservableOwnerExtensibility        ObservableOwner = "extensibility"
-	ObservableOwnerCodeHostIntegrations ObservableOwner = "code-host-integrations"
-
-	// Core services teams
-	ObservableOwnerBackendInfrastructure ObservableOwner = "backend-infrastructure"
-	ObservableOwnerDistribution          ObservableOwner = "distribution"
-	ObservableOwnerSecurity              ObservableOwner = "security"
-	ObservableOwnerWebInfrastructure     ObservableOwner = "web-infrastructure"
+	ObservableOwnerSearch       ObservableOwner = "search"
+	ObservableOwnerCampaigns    ObservableOwner = "campaigns"
+	ObservableOwnerCodeIntel    ObservableOwner = "code-intel"
+	ObservableOwnerDistribution ObservableOwner = "distribution"
+	ObservableOwnerSecurity     ObservableOwner = "security"
+	ObservableOwnerWeb          ObservableOwner = "web"
+	ObservableOwnerCloud        ObservableOwner = "cloud"
 )
 
 // Observable describes a metric about a container that can be observed. For example, memory usage.
@@ -621,17 +616,27 @@ func (c *Container) alertDescription(o Observable, alert Alert) string {
 	if alert.isEmpty() {
 		panic("never here")
 	}
+	var description string
+
+	// description based on thresholds
 	units := o.PanelOptions.unitType.short()
 	if alert.GreaterOrEqual != 0 && alert.LessOrEqual != 0 {
-		return fmt.Sprintf("%s: %v%s+ or less than %v%s %s", c.Name, alert.GreaterOrEqual, units, alert.LessOrEqual, units, o.Description)
+		description = fmt.Sprintf("%s: %v%s+ or less than %v%s %s", c.Name, alert.GreaterOrEqual, units, alert.LessOrEqual, units, o.Description)
 	} else if alert.GreaterOrEqual != 0 {
 		// e.g. "zoekt-indexserver: 20+ indexed search request errors every 5m by code"
-		return fmt.Sprintf("%s: %v%s+ %s", c.Name, alert.GreaterOrEqual, units, o.Description)
+		description = fmt.Sprintf("%s: %v%s+ %s", c.Name, alert.GreaterOrEqual, units, o.Description)
 	} else if alert.LessOrEqual != 0 {
 		// e.g. "zoekt-indexserver: less than 20 indexed search requests every 5m by code"
-		return fmt.Sprintf("%s: less than %v%s %s", c.Name, alert.LessOrEqual, units, o.Description)
+		description = fmt.Sprintf("%s: less than %v%s %s", c.Name, alert.LessOrEqual, units, o.Description)
+	} else {
+		panic(fmt.Sprintf("unable to generate description for observable %+v", o))
 	}
-	panic("never here")
+
+	// add information about "for"
+	if alert.For > 0 {
+		return fmt.Sprintf("%s for %s", description, alert.For)
+	}
+	return description
 }
 
 // promAlertsFile generates the Prometheus rules file which defines our
@@ -710,6 +715,7 @@ func (c *Container) promAlertsFile() *promRulesFile {
 							fireOnNan = "0"
 						}
 						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
+
 						// Wrap the query in max() so that if there are multiple series (e.g. per-container) they
 						// get flattened into a single one (we only support per-service alerts,
 						// not per-container/replica).
@@ -737,6 +743,7 @@ func (c *Container) promAlertsFile() *promRulesFile {
 							fireOnNan = "0"
 						}
 						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
+
 						// Wrap the query in min() so that if there are multiple series (e.g. per-container) they
 						// get flattened into a single one (we only support per-service alerts,
 						// not per-container/replica).

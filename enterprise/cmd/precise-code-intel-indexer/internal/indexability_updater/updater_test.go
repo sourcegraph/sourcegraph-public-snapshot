@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"golang.org/x/time/rate"
 )
 
 func TestMain(m *testing.M) {
@@ -45,9 +46,10 @@ func TestUpdate(t *testing.T) {
 		store:           mockStore,
 		gitserverClient: mockGitserverClient,
 		metrics:         NewUpdaterMetrics(metrics.TestRegisterer),
+		limiter:         rate.NewLimiter(MaxGitserverRequestsPerSecond, 1),
 	}
 
-	if err := updater.update(context.Background()); err != nil {
+	if err := updater.Handle(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 

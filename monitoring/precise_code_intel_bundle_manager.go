@@ -149,7 +149,7 @@ func PreciseCodeIntelBundleManager() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedFrontendInternalAPIErrorResponses("precise-code-intel-bundle-manager"),
+						sharedFrontendInternalAPIErrorResponses("precise-code-intel-bundle-manager", ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -158,12 +158,12 @@ func PreciseCodeIntelBundleManager() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerCPUUsage("precise-code-intel-bundle-manager"),
-						sharedContainerMemoryUsage("precise-code-intel-bundle-manager"),
+						sharedContainerCPUUsage("precise-code-intel-bundle-manager", ObservableOwnerCodeIntel),
+						sharedContainerMemoryUsage("precise-code-intel-bundle-manager", ObservableOwnerCodeIntel),
 					},
 					{
-						sharedContainerRestarts("precise-code-intel-bundle-manager"),
-						sharedContainerFsInodes("precise-code-intel-bundle-manager"),
+						sharedContainerRestarts("precise-code-intel-bundle-manager", ObservableOwnerCodeIntel),
+						sharedContainerFsInodes("precise-code-intel-bundle-manager", ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -172,12 +172,12 @@ func PreciseCodeIntelBundleManager() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage7d("precise-code-intel-bundle-manager"),
-						sharedProvisioningMemoryUsage7d("precise-code-intel-bundle-manager"),
+						sharedProvisioningCPUUsageLongTerm("precise-code-intel-bundle-manager", ObservableOwnerCodeIntel),
+						sharedProvisioningMemoryUsageLongTerm("precise-code-intel-bundle-manager", ObservableOwnerCodeIntel),
 					},
 					{
-						sharedProvisioningCPUUsage5m("precise-code-intel-bundle-manager"),
-						sharedProvisioningMemoryUsage5m("precise-code-intel-bundle-manager"),
+						sharedProvisioningCPUUsageShortTerm("precise-code-intel-bundle-manager", ObservableOwnerCodeIntel),
+						sharedProvisioningMemoryUsageShortTerm("precise-code-intel-bundle-manager", ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -186,8 +186,8 @@ func PreciseCodeIntelBundleManager() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedGoGoroutines("precise-code-intel-bundle-manager"),
-						sharedGoGcDuration("precise-code-intel-bundle-manager"),
+						sharedGoGoroutines("precise-code-intel-bundle-manager", ObservableOwnerCodeIntel),
+						sharedGoGcDuration("precise-code-intel-bundle-manager", ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -196,7 +196,7 @@ func PreciseCodeIntelBundleManager() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedKubernetesPodsAvailable("precise-code-intel-bundle-manager"),
+						sharedKubernetesPodsAvailable("precise-code-intel-bundle-manager", ObservableOwnerCodeIntel),
 					},
 				},
 			},

@@ -137,7 +137,7 @@ func newRouter() *mux.Router {
 
 	// Repogroup pages. Must mirror web/src/Layout.tsx
 	if envvar.SourcegraphDotComMode() {
-		repogroups := []string{"refactor-python2-to-3", "kubernetes", "golang", "react-hooks", "android"}
+		repogroups := []string{"refactor-python2-to-3", "kubernetes", "golang", "react-hooks", "android", "stanford"}
 		r.Path("/{Path:(?:" + strings.Join(repogroups, "|") + ")}").Methods("GET").Name(routeRepoGroups)
 	}
 

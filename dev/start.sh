@@ -32,9 +32,6 @@ if [ -f .env ]; then
   set +o allexport
 fi
 
-export GO111MODULE=on
-go run ./internal/version/minversion
-
 # Verify postgresql config.
 hash psql 2>/dev/null || {
   # "brew install postgresql@9.6" does not put psql on the $PATH by default;
@@ -116,44 +113,57 @@ export NODE_OPTIONS="--max_old_space_size=4096"
 LIBSQLITE3_PCRE="$(./dev/libsqlite3-pcre/build.sh libpath)"
 export LIBSQLITE3_PCRE
 
-# Ensure ctags image is built
-./cmd/symbols/build-ctags.sh
-
-# Make sure chokidar-cli is installed in the background
-printf >&2 "Concurrently installing Yarn and Go dependencies...\n\n"
-yarn_pid=''
-[ -n "${OFFLINE-}" ] || {
-  yarn --no-progress &
-  yarn_pid="$!"
-}
-
-if ! ./dev/go-install.sh; then
-  # let Yarn finish, otherwise we get Yarn diagnostics AFTER the
-  # actual reason we're failing.
-  wait
-  echo >&2 "WARNING: go-install.sh failed, some builds may have failed."
-  exit 1
-fi
-
-# Wait for yarn if it is still running
-if [[ -n "$yarn_pid" ]]; then
-  wait "$yarn_pid"
-fi
-
 # Increase ulimit (not needed on Windows/WSL)
 # shellcheck disable=SC2015
 type ulimit >/dev/null && ulimit -n 10000 || true
 
+# Check Go version and install Go tooling
+export GO111MODULE=on
+go run ./internal/version/minversion
+
+# Install necessary Go tools
+mkdir -p .bin
+export GOBIN="${PWD}/.bin"
+export GO111MODULE=on
+
+INSTALL_GO_TOOLS=(
+  "github.com/mattn/goreman@v0.3.4"
+)
+
+# Need to go to a temp directory for tools or we update our go.mod. We use
+# GOPROXY=direct to avoid always consulting a proxy for dlv.
+pushd "${TMPDIR:-/tmp}" >/dev/null || exit 1
+if ! GOPROXY=direct go get -v "${INSTALL_GO_TOOLS[@]}" 2>go-install.log; then
+  cat go-install.log
+  echo >&2 "failed to install prerequisite tools, aborting."
+  exit 1
+fi
+popd >/dev/null || exit 1
+
 # Put .bin:node_modules/.bin onto the $PATH
 export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
 
-# Build once in the background to make sure editor codeintel works
+# Now we create a temporary Procfile that includes all our build processes
+tmp_install_procfile=$(mktemp -t procfile_install_XXXXXXX)
+
+cat >"${tmp_install_procfile}" <<EOF
+yarn: cd $(pwd) && yarn --silent --no-progress
+go-install: cd $(pwd) && ./dev/go-install.sh
+ctags-image: cd $(pwd) && ./cmd/symbols/build-ctags.sh
+EOF
+
+# Kick off all build processes in parallel
+goreman --set-ports=false --exit-on-error -f "${tmp_install_procfile}" start
+
+# Once we've built the Go code and the frontend coce, we build the frontend
+# code once in the background to make sure editor codeintel works.
 # This is fast if no changes were made.
 # Don't fail if it errors as this is only for codeintel, not for the build.
 trap 'kill $build_ts_pid; exit' EXIT
-(yarn run build-ts || true) &
+(yarn --silent run build-ts || true) &
 build_ts_pid="$!"
 
+# Now launch the services in $PROCFILE
 export PROCFILE=${PROCFILE:-dev/Procfile}
 
 only=""
@@ -194,11 +204,11 @@ if [ -n "${only}" ] || [ -n "${except}" ]; then
 fi
 
 if [ -n "${only}" ]; then
-  printf >&2 "\nStarting binaries %s...\n\n" "${only}"
+  printf >&2 "\n--- Starting binaries %s...\n\n" "${only}"
 elif [ -n "${except}" ]; then
-  printf >&2 "\nStarting all binaries, except %s...\n\n" "${except}"
+  printf >&2 "\n--- Starting all binaries, except %s...\n\n" "${except}"
 else
-  printf >&2 "\nStarting all binaries...\n\n"
+  printf >&2 "\n--- Starting all binaries...\n\n"
 fi
 
 export GOREMAN="goreman --set-ports=false --exit-on-error -f ${PROCFILE}"

@@ -28,9 +28,6 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 
 	unindexedRepo := &types.Repo{Name: api.RepoName("unindexed/one")}
 
-	mockDecodedViewerFinalSettings = &schema.Settings{}
-	defer func() { mockDecodedViewerFinalSettings = nil }()
-
 	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 		return []*types.Repo{indexedRepo, unindexedRepo}, nil
 	}
@@ -51,9 +48,9 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 		repoName := repo.Name
 		switch repoName {
 		case "indexed/one":
-			return []*FileMatchResolver{{JPath: indexedFileName}}, false, nil
+			return []*FileMatchResolver{mkFileMatch(nil, indexedFileName)}, false, nil
 		case "unindexed/one":
-			return []*FileMatchResolver{{JPath: "unindexed.go"}}, false, nil
+			return []*FileMatchResolver{mkFileMatch(nil, "unindexed.go")}, false, nil
 		default:
 			return nil, false, errors.New("Unexpected repo")
 		}
@@ -97,6 +94,7 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 		patternType:  query.SearchTypeStructural,
 		zoekt:        z,
 		searcherURLs: endpoint.Static("test"),
+		userSettings: &schema.Settings{},
 	}
 	results, err := resolver.Results(ctx)
 	if err != nil {
@@ -104,8 +102,8 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 	}
 
 	fm, _ := results.Results()[0].ToFileMatch()
-	if fm.JPath != indexedFileName {
-		t.Fatalf("wrong indexed filename. want=%s, have=%s\n", indexedFileName, fm.JPath)
+	if got, want := fm.JPath, indexedFileName; got != want {
+		t.Fatalf("wrong indexed filename. want=%s, have=%s\n", want, got)
 	}
 }
 

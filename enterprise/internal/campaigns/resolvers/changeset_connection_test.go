@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -32,17 +33,28 @@ func TestChangesetConnectionResolver(t *testing.T) {
 	store := ee.NewStore(dbconn.Global)
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", 1)
-	inaccessibleRepo := newGitHubTestRepo("github.com/sourcegraph/private", 2)
-	if err := rstore.UpsertRepos(ctx, repo, inaccessibleRepo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, rstore))
+	inaccessibleRepo := newGitHubTestRepo("github.com/sourcegraph/private", newGitHubExternalService(t, rstore))
+	if err := rstore.InsertRepos(ctx, repo, inaccessibleRepo); err != nil {
 		t.Fatal(err)
 	}
 	ct.AuthzFilterRepos(t, inaccessibleRepo.ID)
 
-	campaign := &campaigns.Campaign{
-		Name:            "my-unique-name",
+	spec := &campaigns.CampaignSpec{
 		NamespaceUserID: userID,
-		AuthorID:        userID,
+		UserID:          userID,
+	}
+	if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+		t.Fatal(err)
+	}
+
+	campaign := &campaigns.Campaign{
+		Name:             "my-unique-name",
+		NamespaceUserID:  userID,
+		InitialApplierID: userID,
+		LastApplierID:    userID,
+		LastAppliedAt:    time.Now(),
+		CampaignSpecID:   spec.ID,
 	}
 	if err := store.CreateCampaign(ctx, campaign); err != nil {
 		t.Fatal(err)
@@ -102,7 +114,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	campaignApiID := string(campaigns.MarshalCampaignID(campaign.ID))
+	campaignAPIID := string(campaigns.MarshalCampaignID(campaign.ID))
 	nodes := []apitest.Changeset{
 		{
 			Typename:   "ExternalChangeset",
@@ -129,28 +141,34 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		firstParam      int
 		useUnsafeOpts   bool
 		wantHasNextPage bool
+		wantEndCursor   string
 		wantTotalCount  int
 		wantOpen        int
 		wantNodes       []apitest.Changeset
 	}{
-		{firstParam: 1, wantHasNextPage: true, wantTotalCount: 4, wantOpen: 2, wantNodes: nodes[:1]},
-		{firstParam: 2, wantHasNextPage: true, wantTotalCount: 4, wantOpen: 2, wantNodes: nodes[:2]},
-		{firstParam: 3, wantHasNextPage: true, wantTotalCount: 4, wantOpen: 2, wantNodes: nodes[:3]},
+		{firstParam: 1, wantHasNextPage: true, wantEndCursor: "1", wantTotalCount: 4, wantOpen: 2, wantNodes: nodes[:1]},
+		{firstParam: 2, wantHasNextPage: true, wantEndCursor: "2", wantTotalCount: 4, wantOpen: 2, wantNodes: nodes[:2]},
+		{firstParam: 3, wantHasNextPage: true, wantEndCursor: "3", wantTotalCount: 4, wantOpen: 2, wantNodes: nodes[:3]},
 		{firstParam: 4, wantHasNextPage: false, wantTotalCount: 4, wantOpen: 2, wantNodes: nodes[:4]},
 		// Expect only 3 changesets to be returned when an unsafe filter is applied.
-		{firstParam: 1, useUnsafeOpts: true, wantHasNextPage: true, wantTotalCount: 3, wantOpen: 1, wantNodes: nodes[:1]},
-		{firstParam: 2, useUnsafeOpts: true, wantHasNextPage: true, wantTotalCount: 3, wantOpen: 1, wantNodes: nodes[:2]},
+		{firstParam: 1, useUnsafeOpts: true, wantEndCursor: "1", wantHasNextPage: true, wantTotalCount: 3, wantOpen: 1, wantNodes: nodes[:1]},
+		{firstParam: 2, useUnsafeOpts: true, wantEndCursor: "2", wantHasNextPage: true, wantTotalCount: 3, wantOpen: 1, wantNodes: nodes[:2]},
 		{firstParam: 3, useUnsafeOpts: true, wantHasNextPage: false, wantTotalCount: 3, wantOpen: 1, wantNodes: nodes[:3]},
 	}
 
 	for _, tc := range tests {
 		t.Run(fmt.Sprintf("Unsafe opts %t, first %d", tc.useUnsafeOpts, tc.firstParam), func(t *testing.T) {
-			input := map[string]interface{}{"campaign": campaignApiID, "first": int64(tc.firstParam)}
+			input := map[string]interface{}{"campaign": campaignAPIID, "first": int64(tc.firstParam)}
 			if tc.useUnsafeOpts {
 				input["reviewState"] = campaigns.ChangesetReviewStatePending
 			}
 			var response struct{ Node apitest.Campaign }
 			apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryChangesetConnection)
+
+			var wantEndCursor *string
+			if tc.wantEndCursor != "" {
+				wantEndCursor = &tc.wantEndCursor
+			}
 
 			wantChangesets := apitest.ChangesetConnection{
 				Stats: apitest.ChangesetConnectionStats{
@@ -162,6 +180,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 				},
 				TotalCount: tc.wantTotalCount,
 				PageInfo: apitest.PageInfo{
+					EndCursor:   wantEndCursor,
 					HasNextPage: tc.wantHasNextPage,
 				},
 				Nodes: tc.wantNodes,
@@ -172,13 +191,43 @@ func TestChangesetConnectionResolver(t *testing.T) {
 			}
 		})
 	}
+
+	var endCursor *string
+	for i := range nodes {
+		input := map[string]interface{}{"campaign": campaignAPIID, "first": 1}
+		if endCursor != nil {
+			input["after"] = *endCursor
+		}
+		wantHasNextPage := i != len(nodes)-1
+
+		var response struct{ Node apitest.Campaign }
+		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryChangesetConnection)
+
+		changesets := response.Node.Changesets
+		if diff := cmp.Diff(1, len(changesets.Nodes)); diff != "" {
+			t.Fatalf("unexpected number of nodes (-want +got):\n%s", diff)
+		}
+
+		if diff := cmp.Diff(len(nodes), changesets.TotalCount); diff != "" {
+			t.Fatalf("unexpected total count (-want +got):\n%s", diff)
+		}
+
+		if diff := cmp.Diff(wantHasNextPage, changesets.PageInfo.HasNextPage); diff != "" {
+			t.Fatalf("unexpected hasNextPage (-want +got):\n%s", diff)
+		}
+
+		endCursor = changesets.PageInfo.EndCursor
+		if want, have := wantHasNextPage, endCursor != nil; have != want {
+			t.Fatalf("unexpected endCursor existence. want=%t, have=%t", want, have)
+		}
+	}
 }
 
 const queryChangesetConnection = `
-query($campaign: ID!, $first: Int, $reviewState: ChangesetReviewState){
+query($campaign: ID!, $first: Int, $after: String, $reviewState: ChangesetReviewState){
   node(id: $campaign) {
     ... on Campaign {
-      changesets(first: $first, reviewState: $reviewState) {
+      changesets(first: $first, after: $after, reviewState: $reviewState) {
         totalCount
         stats { unpublished, open, merged, closed, total }
         nodes {
@@ -195,6 +244,7 @@ query($campaign: ID!, $first: Int, $reviewState: ChangesetReviewState){
           }
         }
         pageInfo {
+          endCursor
           hasNextPage
         }
       }

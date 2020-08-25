@@ -43,8 +43,8 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 	repos := make([]*repos.Repo, 0, 3)
 	for i := 0; i < cap(repos); i++ {
 		name := fmt.Sprintf("github.com/sourcegraph/repo-%d", i)
-		r := newGitHubTestRepo(name, i)
-		if err := reposStore.UpsertRepos(ctx, r); err != nil {
+		r := newGitHubTestRepo(name, newGitHubExternalService(t, reposStore))
+		if err := reposStore.InsertRepos(ctx, r); err != nil {
 			t.Fatal(err)
 		}
 		repos = append(repos, r)
@@ -71,7 +71,6 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil)
 	if err != nil {
 		t.Fatal(err)
-
 	}
 
 	apiID := string(marshalCampaignSpecRandID(campaignSpec.RandID))

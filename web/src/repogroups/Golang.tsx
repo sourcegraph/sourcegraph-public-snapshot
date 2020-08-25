@@ -1,9 +1,9 @@
 import { RepogroupMetadata } from './types'
-import { SearchPatternType } from '../../../shared/src/graphql/schema'
 import * as React from 'react'
+import { SearchPatternType } from '../graphql-operations'
 
 export const golang: RepogroupMetadata = {
-    title: 'Golang',
+    title: 'Go',
     name: 'golang',
     url: '/golang',
     description: 'Use these search examples to explore Go repositories on GitHub.',

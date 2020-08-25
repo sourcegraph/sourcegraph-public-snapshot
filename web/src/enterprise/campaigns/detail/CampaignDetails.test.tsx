@@ -26,15 +26,15 @@ describe('CampaignDetails', () => {
             extensionsController={undefined as any}
             platformContext={undefined as any}
             telemetryService={NOOP_TELEMETRY_SERVICE}
-            _fetchCampaignById={() =>
+            fetchCampaignById={() =>
                 of({
                     __typename: 'Campaign',
                     id: 'c',
+                    url: '/users/alice/campaigns/c',
                     name: 'n',
                     description: 'd',
-                    author: { username: 'alice', avatarURL: 'http://test.test/avatar' },
+                    initialApplier: { username: 'alice', url: '/users/alice' },
                     changesets: { totalCount: 0, stats: { total: 10, closed: 0, merged: 0, open: 8, unpublished: 2 } },
-                    changesetCountsOverTime: [],
                     viewerCanAdminister,
                     branch: 'awesome-branch',
                     createdAt: '2020-01-01',
@@ -47,9 +47,12 @@ describe('CampaignDetails', () => {
                     },
                     namespace: {
                         namespaceName: 'alice',
+                        url: '/users/alice',
                     },
                 })
             }
+            deleteCampaign={() => Promise.resolve(undefined)}
+            queryChangesetCountsOverTime={() => of([])}
         />
     )
 

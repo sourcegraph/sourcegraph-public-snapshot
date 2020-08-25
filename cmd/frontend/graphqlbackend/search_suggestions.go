@@ -48,7 +48,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	// If globbing is activated, convert regex patterns of repo, file, and repohasfile
 	// from "field:^foo$" to "field:^foo".
 	globbing := false
-	if settings, err := decodedViewerFinalSettings(ctx); err == nil && getBoolPtr(settings.SearchGlobbing, false) {
+	if getBoolPtr(r.userSettings.SearchGlobbing, false) {
 		globbing = true
 	}
 	if AndOrQuery, isAndOr := r.query.(*query.AndOrQuery); globbing && isAndOr {
@@ -97,10 +97,10 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		effectiveRepoFieldValues = effectiveRepoFieldValues[:i]
 
 		if len(effectiveRepoFieldValues) > 0 {
-			repoRevs, _, _, _, err := r.resolveRepositories(ctx, effectiveRepoFieldValues)
+			resolved, err := r.resolveRepositories(ctx, effectiveRepoFieldValues)
 
-			resolvers := make([]*searchSuggestionResolver, 0, len(repoRevs))
-			for _, rev := range repoRevs {
+			resolvers := make([]*searchSuggestionResolver, 0, len(resolved.repoRevs))
+			for _, rev := range resolved.repoRevs {
 				resolvers = append(resolvers, newSearchSuggestionResolver(
 					&RepositoryResolver{repo: rev.Repo},
 					math.MaxInt32,
@@ -204,7 +204,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			return mockShowSymbolMatches()
 		}
 
-		repoRevs, _, _, _, err := r.resolveRepositories(ctx, nil)
+		resolved, err := r.resolveRepositories(ctx, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -219,7 +219,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 		fileMatches, _, err := searchSymbols(ctx, &search.TextParameters{
 			PatternInfo:  p,
-			Repos:        repoRevs,
+			Repos:        resolved.repoRevs,
 			Query:        r.query,
 			Zoekt:        r.zoekt,
 			SearcherURLs: r.searcherURLs,

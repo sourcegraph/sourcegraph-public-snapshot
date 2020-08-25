@@ -67,10 +67,7 @@ var testDiffGraphQL = apitest.FileDiffs{
 	TotalCount: 2,
 	RawDiff:    testDiff,
 	DiffStat:   apitest.DiffStat{Changed: 2},
-	PageInfo: struct {
-		HasNextPage bool
-		EndCursor   string
-	}{},
+	PageInfo:   apitest.PageInfo{},
 	Nodes: []apitest.FileDiff{
 		{
 			OldPath: "README.md",
@@ -150,17 +147,39 @@ func insertTestUser(t *testing.T, db *sql.DB, name string, isAdmin bool) (userID
 	return userID
 }
 
-func newGitHubTestRepo(name string, externalID int) *repos.Repo {
+func newGitHubExternalService(t *testing.T, store repos.Store) *repos.ExternalService {
+	t.Helper()
+
+	clock := repos.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
+	svc := repos.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "Github - Test",
+		Config:      `{"url": "https://github.com"}`,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	// create a few external services
+	if err := store.UpsertExternalServices(context.Background(), &svc); err != nil {
+		t.Fatalf("failed to insert external services: %v", err)
+	}
+
+	return &svc
+}
+
+func newGitHubTestRepo(name string, externalService *repos.ExternalService) *repos.Repo {
 	return &repos.Repo{
 		Name: name,
 		ExternalRepo: api.ExternalRepoSpec{
-			ID:          fmt.Sprintf("external-id-%d", externalID),
+			ID:          fmt.Sprintf("external-id-%d", externalService.ID),
 			ServiceType: "github",
 			ServiceID:   "https://github.com/",
 		},
 		Sources: map[string]*repos.SourceInfo{
-			"extsvc:github:4": {
-				ID:       "extsvc:github:4",
+			externalService.URN(): {
+				ID:       externalService.URN(),
 				CloneURL: fmt.Sprintf("https://secrettoken@%s", name),
 			},
 		},
@@ -201,7 +220,7 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 		if string(id) != baseRev && string(id) != headRev {
 			t.Fatalf("git.Mocks.GetCommit received unknown commit id: %s", id)
 		}
-		return &git.Commit{ID: api.CommitID(id)}, nil
+		return &git.Commit{ID: id}, nil
 	}
 	t.Cleanup(func() { git.Mocks.GetCommit = nil })
 
@@ -213,7 +232,7 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 		if have, want := args[len(args)-2], spec; have != want {
 			t.Fatalf("gitserver.ExecReader received wrong spec: %q, want %q", have, want)
 		}
-		return ioutil.NopCloser(strings.NewReader(testDiff)), nil
+		return ioutil.NopCloser(strings.NewReader(diff)), nil
 	}
 	t.Cleanup(func() { git.Mocks.ExecReader = nil })
 

@@ -11,7 +11,7 @@ import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { TestResourceManager } from './util/TestResourceManager'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { Key } from 'ts-key-enum'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { editUserSettings } from './util/settings'
 import assert from 'assert'
 
@@ -182,7 +182,7 @@ describe('Search regression test suite', () => {
             )
         })
 
-        saveScreenshotsUponFailures(() => driver.page)
+        afterEachSaveScreenshotIfFailed(() => driver.page)
 
         after(async () => {
             if (!config.noCleanup) {
@@ -616,7 +616,7 @@ describe('Search regression test suite', () => {
             )
         })
 
-        saveScreenshotsUponFailures(() => driver.page)
+        afterEachSaveScreenshotIfFailed(() => driver.page)
 
         after(async () => {
             if (!config.noCleanup) {

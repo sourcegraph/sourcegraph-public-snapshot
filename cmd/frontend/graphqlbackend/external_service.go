@@ -8,6 +8,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -81,6 +82,14 @@ func (r *externalServiceResolver) CreatedAt() DateTime {
 
 func (r *externalServiceResolver) UpdatedAt() DateTime {
 	return DateTime{Time: r.externalService.UpdatedAt}
+}
+
+func (r *externalServiceResolver) Namespace() *graphql.ID {
+	if r.externalService.NamespaceUserID == nil {
+		return nil
+	}
+	userID := MarshalUserID(*r.externalService.NamespaceUserID)
+	return &userID
 }
 
 func (r *externalServiceResolver) WebhookURL() (*string, error) {

@@ -16,16 +16,23 @@ import (
 type reader struct {
 	dumpID     int
 	serializer serialization.Serializer
+	writer     *batchWriter
 }
 
-var _ persistence.Reader = &reader{}
+var _ persistence.Store = &reader{}
 
-func NewReader(dumpID int) persistence.Reader {
+func NewStore(dumpID int) persistence.Store {
 	return &reader{
 		dumpID:     dumpID,
 		serializer: gobserializer.New(),
+		writer:     newBatchWriter(),
 	}
 }
+
+// TODO
+func (r *reader) Transact(ctx context.Context) (persistence.Store, error) { return r, nil }
+func (r *reader) Done(err error) error                                    { return err }
+func (r *reader) CreateTables(ctx context.Context) error                  { return nil }
 
 func (r *reader) ReadMeta(ctx context.Context) (_ types.MetaData, err error) {
 	rows, err := dbconn.Global.Query(
@@ -231,8 +238,4 @@ func (r *reader) readDefinitionReferences(ctx context.Context, tableName, scheme
 	}
 
 	return allLocations, nil
-}
-
-func (r *reader) Close() error {
-	return nil
 }

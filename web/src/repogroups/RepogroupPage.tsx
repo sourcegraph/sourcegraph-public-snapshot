@@ -11,8 +11,8 @@ import {
     PatternTypeProps,
     CaseSensitivityProps,
     InteractiveSearchProps,
-    SmartSearchFieldProps,
     CopyQueryButtonProps,
+    OnboardingTourProps,
 } from '../search'
 import { EventLoggerProps, eventLogger } from '../tracking/eventLogger'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
@@ -20,7 +20,6 @@ import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { VersionContextProps } from '../../../shared/src/search/util'
 import { VersionContext } from '../schema/site.schema'
 import { submitSearch } from '../search/helpers'
-import * as GQL from '../../../shared/src/graphql/schema'
 import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
@@ -29,6 +28,8 @@ import { RepogroupMetadata } from './types'
 import { SearchPageInput } from '../search/input/SearchPageInput'
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { PrivateCodeCta } from '../search/input/PrivateCodeCta'
+import { AuthenticatedUser } from '../auth'
+import { SearchPatternType } from '../graphql-operations'
 
 export interface RepogroupPageProps
     extends SettingsCascadeProps<Settings>,
@@ -42,10 +43,10 @@ export interface RepogroupPageProps
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         InteractiveSearchProps,
-        SmartSearchFieldProps,
         CopyQueryButtonProps,
-        VersionContextProps {
-    authenticatedUser: GQL.IUser | null
+        VersionContextProps,
+        OnboardingTourProps {
+    authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
@@ -81,7 +82,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
     // Find the repositories for this specific repogroup.
     const repogroupRepoList = repogroups?.[props.repogroupMetadata.name]
 
-    const onSubmitExample = (query: string, patternType: GQL.SearchPatternType) => (
+    const onSubmitExample = (query: string, patternType: SearchPatternType) => (
         event?: React.MouseEvent<HTMLButtonElement>
     ): void => {
         eventLogger.log('RepositoryGroupSuggestionClicked')

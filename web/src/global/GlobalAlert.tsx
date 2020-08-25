@@ -7,6 +7,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import * as H from 'history'
+import { AlertType } from '../../../shared/src/graphql-operations'
 
 /**
  * A global alert that is shown at the top of the viewport.
@@ -34,26 +35,26 @@ export const GlobalAlert: React.FunctionComponent<{ alert: GQL.IAlert; className
     return <div className={className}>{content}</div>
 }
 
-function alertIconForType(type: GQL.AlertType): React.ComponentType<{ className?: string }> {
+function alertIconForType(type: AlertType): React.ComponentType<{ className?: string }> {
     switch (type) {
-        case GQL.AlertType.INFO:
+        case AlertType.INFO:
             return InformationIcon
-        case GQL.AlertType.WARNING:
+        case AlertType.WARNING:
             return WarningIcon
-        case GQL.AlertType.ERROR:
+        case AlertType.ERROR:
             return ErrorIcon
         default:
             return WarningIcon
     }
 }
 
-function alertClassForType(type: GQL.AlertType): string {
+function alertClassForType(type: AlertType): string {
     switch (type) {
-        case GQL.AlertType.INFO:
+        case AlertType.INFO:
             return 'info'
-        case GQL.AlertType.WARNING:
+        case AlertType.WARNING:
             return 'warning'
-        case GQL.AlertType.ERROR:
+        case AlertType.ERROR:
             return 'danger'
         default:
             return 'warning'

@@ -1,10 +1,8 @@
 package main
 
 import (
+	"context"
 	"log"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -22,6 +20,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -30,6 +30,7 @@ import (
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
+	logging.Init()
 	tracer.Init()
 
 	var (
@@ -67,7 +68,6 @@ func main() {
 	indexManager := indexmanager.New(store.WorkerutilIndexStore(s), indexmanager.ManagerOptions{
 		MaximumTransactions:   maximumTransactions,
 		RequeueDelay:          requeueDelay,
-		CleanupInterval:       cleanupInterval,
 		UnreportedIndexMaxAge: cleanupInterval * time.Duration(maximumMissedHeartbeats),
 		DeathThreshold:        cleanupInterval * time.Duration(maximumMissedHeartbeats),
 	})
@@ -103,42 +103,29 @@ func main() {
 
 	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
 	janitor := janitor.New(s, janitorInterval, janitorMetrics)
+	managerRoutine := goroutine.NewPeriodicGoroutine(context.Background(), cleanupInterval, indexManager)
 
-	go server.Start()
-	go indexResetter.Start()
-	go indexabilityUpdater.Start()
-	go scheduler.Start()
-	go debugserver.Start()
+	routines := []goroutine.BackgroundRoutine{
+		managerRoutine,
+		server,
+		indexResetter,
+		indexabilityUpdater,
+		scheduler,
+	}
 
 	if !disableIndexer {
-		go indexer.Start()
+		routines = append(routines, indexer)
 	} else {
 		log15.Warn("Indexer process is disabled.")
 	}
-
 	if !disableJanitor {
-		go janitor.Run()
+		routines = append(routines, janitor)
 	} else {
 		log15.Warn("Janitor process is disabled.")
 	}
 
-	// Attempt to clean up after first shutdown signal
-	signals := make(chan os.Signal, 2)
-	signal.Notify(signals, syscall.SIGINT, syscall.SIGHUP)
-	<-signals
-
-	go func() {
-		// Insta-shutdown on a second signal
-		<-signals
-		os.Exit(0)
-	}()
-
-	server.Stop()
-	indexResetter.Stop()
-	indexer.Stop()
-	scheduler.Stop()
-	indexabilityUpdater.Stop()
-	janitor.Stop()
+	go debugserver.Start()
+	goroutine.MonitorBackgroundRoutines(routines...)
 }
 
 func mustInitializeStore() store.Store {

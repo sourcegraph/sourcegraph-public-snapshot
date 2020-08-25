@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/datastructures"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/lsif"
 )
 
 func TestPrune(t *testing.T) {
@@ -25,50 +24,30 @@ func TestPrune(t *testing.T) {
 	}
 
 	state := &State{
-		DocumentData: map[int]lsif.Document{
-			1001: {
-				URI:         "foo.go",
-				Contains:    datastructures.NewIDSet(),
-				Diagnostics: datastructures.NewIDSet(),
-			},
-			1002: {
-				URI:         "bar.go",
-				Contains:    datastructures.NewIDSet(),
-				Diagnostics: datastructures.NewIDSet(),
-			},
-			1003: {
-				URI:         "sub/baz.go",
-				Contains:    datastructures.NewIDSet(),
-				Diagnostics: datastructures.NewIDSet(),
-			},
-			1004: {
-				URI:         "foo.generated.go",
-				Contains:    datastructures.NewIDSet(),
-				Diagnostics: datastructures.NewIDSet(),
-			},
-			1005: {
-				URI:         "foo.generated.go",
-				Contains:    datastructures.NewIDSet(),
-				Diagnostics: datastructures.NewIDSet(),
-			},
+		DocumentData: map[int]string{
+			1001: "foo.go",
+			1002: "bar.go",
+			1003: "sub/baz.go",
+			1004: "foo.generated.go",
+			1005: "foo.generated.go",
 		},
-		DefinitionData: map[int]datastructures.DefaultIDSetMap{
-			2001: {
+		DefinitionData: map[int]*datastructures.DefaultIDSetMap{
+			2001: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 				1001: datastructures.NewIDSet(),
 				1004: datastructures.NewIDSet(),
-			},
-			2002: {
+			}),
+			2002: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 				1002: datastructures.NewIDSet(),
-			},
+			}),
 		},
-		ReferenceData: map[int]datastructures.DefaultIDSetMap{
-			2003: {
+		ReferenceData: map[int]*datastructures.DefaultIDSetMap{
+			2003: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 				1002: datastructures.NewIDSet(),
-			},
-			2004: {
+			}),
+			2004: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 				1002: datastructures.NewIDSet(),
 				1005: datastructures.NewIDSet(),
-			},
+			}),
 		},
 	}
 
@@ -77,41 +56,29 @@ func TestPrune(t *testing.T) {
 	}
 
 	expectedState := &State{
-		DocumentData: map[int]lsif.Document{
-			1001: {
-				URI:         "foo.go",
-				Contains:    datastructures.NewIDSet(),
-				Diagnostics: datastructures.NewIDSet(),
-			},
-			1002: {
-				URI:         "bar.go",
-				Contains:    datastructures.NewIDSet(),
-				Diagnostics: datastructures.NewIDSet(),
-			},
-			1003: {
-				URI:         "sub/baz.go",
-				Contains:    datastructures.NewIDSet(),
-				Diagnostics: datastructures.NewIDSet(),
-			},
+		DocumentData: map[int]string{
+			1001: "foo.go",
+			1002: "bar.go",
+			1003: "sub/baz.go",
 		},
-		DefinitionData: map[int]datastructures.DefaultIDSetMap{
-			2001: {
+		DefinitionData: map[int]*datastructures.DefaultIDSetMap{
+			2001: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 				1001: datastructures.NewIDSet(),
-			},
-			2002: {
+			}),
+			2002: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 				1002: datastructures.NewIDSet(),
-			},
+			}),
 		},
-		ReferenceData: map[int]datastructures.DefaultIDSetMap{
-			2003: {
+		ReferenceData: map[int]*datastructures.DefaultIDSetMap{
+			2003: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 				1002: datastructures.NewIDSet(),
-			},
-			2004: {
+			}),
+			2004: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 				1002: datastructures.NewIDSet(),
-			},
+			}),
 		},
 	}
-	if diff := cmp.Diff(expectedState, state, datastructures.IDSetComparer); diff != "" {
+	if diff := cmp.Diff(expectedState, state, datastructures.Comparers...); diff != "" {
 		t.Errorf("unexpected state (-want +got):\n%s", diff)
 	}
 }
