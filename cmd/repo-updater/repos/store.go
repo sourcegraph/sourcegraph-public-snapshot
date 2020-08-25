@@ -76,6 +76,11 @@ type StoreListExternalServicesArgs struct {
 	// Kinds of external services to list. When zero-valued, this is omitted from the predicate set.
 	Kinds []string
 
+	// NamespaceUserID limits to only fetch external service owned by the given user. When zero-valued
+	// this is omitted from the predicate set.
+	// The special value -1 should be passed to return only service owned by NO user. ie, owned by site admin.
+	NamespaceUserID int32
+
 	// Limit is the total number of items to list. The zero value means no limit.
 	Limit int64
 	// Cursor will limit the query to external services that have an id greater than Cursor.
@@ -298,6 +303,13 @@ func listExternalServicesQuery(args StoreListExternalServicesArgs) paginatedQuer
 		// by RunPhabricatorRepositorySyncWorker.
 		preds = append(preds,
 			sqlf.Sprintf("LOWER(kind) != 'phabricator'"))
+	}
+
+	switch {
+	case args.NamespaceUserID > 0:
+		preds = append(preds, sqlf.Sprintf("namespace_user_id = %d", args.NamespaceUserID))
+	case args.NamespaceUserID == -1:
+		preds = append(preds, sqlf.Sprintf("namespace_user_id IS NULL"))
 	}
 
 	preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
