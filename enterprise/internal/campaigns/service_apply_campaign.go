@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -155,7 +154,6 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	// correctly with the Changesets so that the reconciler can create/update
 	// them.
 	rewirer := &changesetRewirer{
-		cf:       s.cf,
 		ctx:      ctx,
 		tx:       tx,
 		rstore:   rstore,
@@ -181,8 +179,6 @@ type repoExternalID struct {
 }
 
 type changesetRewirer struct {
-	cf *httpcli.Factory
-
 	ctx      context.Context
 	campaign *campaigns.Campaign
 	tx       *Store

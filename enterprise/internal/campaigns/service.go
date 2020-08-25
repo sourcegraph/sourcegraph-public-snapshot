@@ -29,18 +29,23 @@ func NewService(store *Store, cf *httpcli.Factory) *Service {
 // NewServiceWithClock returns a Service the given clock used
 // to generate timestamps.
 func NewServiceWithClock(store *Store, cf *httpcli.Factory, clock func() time.Time) *Service {
-	svc := &Service{store: store, cf: cf, sourcer: repos.NewSourcer(cf), clock: clock}
+	svc := &Service{store: store, sourcer: repos.NewSourcer(cf), clock: clock}
 
 	return svc
 }
 
 type Service struct {
 	store *Store
-	cf    *httpcli.Factory
 
 	sourcer repos.Sourcer
 
 	clock func() time.Time
+}
+
+// WithStore returns a copy of the Service with its store attribute set to the
+// given Store.
+func (s *Service) WithStore(store *Store) *Service {
+	return &Service{store: store, sourcer: s.sourcer, clock: s.clock}
 }
 
 type CreateCampaignSpecOpts struct {
