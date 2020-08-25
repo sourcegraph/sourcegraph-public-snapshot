@@ -2,8 +2,8 @@
 
 exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
 <Fragment>
-  <CampaignHeader
-    actionSection={
+  <PageHeader
+    actions={
       <AnchorLink
         className="btn btn-primary"
         to="//create"
@@ -14,7 +14,28 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
          New campaign
       </AnchorLink>
     }
-    className="mb-3 test-campaign-list-page"
+    icon={
+      Object {
+        "$$typeof": Symbol(react.memo),
+        "compare": null,
+        "type": [Function],
+      }
+    }
+    title={
+      <span
+        className="test-campaign-list-page"
+      >
+        Campaigns
+         
+        <sup>
+          <span
+            className="badge badge-merged text-uppercase"
+          >
+            Beta
+          </span>
+        </sup>
+      </span>
+    }
   />
   <CampaignsListBetaNotice />
   <FilteredConnection
@@ -62,12 +83,14 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
     noun="campaign"
     pluralNoun="campaigns"
     queryConnection={[Function]}
+    setBreadcrumb={[Function]}
     telemetryService={
       Object {
         "log": [Function],
         "logViewEvent": [Function],
       }
     }
+    useBreadcrumb={[Function]}
     useURLQuery={true}
   />
 </Fragment>
@@ -75,8 +98,8 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
 
 exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
 <Fragment>
-  <CampaignHeader
-    actionSection={
+  <PageHeader
+    actions={
       <AnchorLink
         className="btn btn-primary"
         to="//create"
@@ -87,7 +110,28 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
          New campaign
       </AnchorLink>
     }
-    className="mb-3 test-campaign-list-page"
+    icon={
+      Object {
+        "$$typeof": Symbol(react.memo),
+        "compare": null,
+        "type": [Function],
+      }
+    }
+    title={
+      <span
+        className="test-campaign-list-page"
+      >
+        Campaigns
+         
+        <sup>
+          <span
+            className="badge badge-merged text-uppercase"
+          >
+            Beta
+          </span>
+        </sup>
+      </span>
+    }
   />
   <CampaignsListBetaNotice />
   <FilteredConnection
@@ -135,12 +179,14 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
     noun="campaign"
     pluralNoun="campaigns"
     queryConnection={[Function]}
+    setBreadcrumb={[Function]}
     telemetryService={
       Object {
         "log": [Function],
         "logViewEvent": [Function],
       }
     }
+    useBreadcrumb={[Function]}
     useURLQuery={true}
   />
 </Fragment>
@@ -148,8 +194,8 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
 
 exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
 <Fragment>
-  <CampaignHeader
-    actionSection={
+  <PageHeader
+    actions={
       <AnchorLink
         className="btn btn-primary"
         to="//create"
@@ -160,7 +206,28 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
          New campaign
       </AnchorLink>
     }
-    className="mb-3 test-campaign-list-page"
+    icon={
+      Object {
+        "$$typeof": Symbol(react.memo),
+        "compare": null,
+        "type": [Function],
+      }
+    }
+    title={
+      <span
+        className="test-campaign-list-page"
+      >
+        Campaigns
+         
+        <sup>
+          <span
+            className="badge badge-merged text-uppercase"
+          >
+            Beta
+          </span>
+        </sup>
+      </span>
+    }
   />
   <CampaignsListBetaNotice />
   <FilteredConnection
@@ -208,12 +275,14 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
     noun="campaign"
     pluralNoun="campaigns"
     queryConnection={[Function]}
+    setBreadcrumb={[Function]}
     telemetryService={
       Object {
         "log": [Function],
         "logViewEvent": [Function],
       }
     }
+    useBreadcrumb={[Function]}
     useURLQuery={true}
   />
 </Fragment>
@@ -221,8 +290,8 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
 
 exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
 <Fragment>
-  <CampaignHeader
-    actionSection={
+  <PageHeader
+    actions={
       <AnchorLink
         className="btn btn-primary"
         to="//create"
@@ -233,7 +302,28 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
          New campaign
       </AnchorLink>
     }
-    className="mb-3 test-campaign-list-page"
+    icon={
+      Object {
+        "$$typeof": Symbol(react.memo),
+        "compare": null,
+        "type": [Function],
+      }
+    }
+    title={
+      <span
+        className="test-campaign-list-page"
+      >
+        Campaigns
+         
+        <sup>
+          <span
+            className="badge badge-merged text-uppercase"
+          >
+            Beta
+          </span>
+        </sup>
+      </span>
+    }
   />
   <CampaignsListBetaNotice />
   <FilteredConnection
@@ -281,12 +371,14 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
     noun="campaign"
     pluralNoun="campaigns"
     queryConnection={[Function]}
+    setBreadcrumb={[Function]}
     telemetryService={
       Object {
         "log": [Function],
         "logViewEvent": [Function],
       }
     }
+    useBreadcrumb={[Function]}
     useURLQuery={true}
   />
 </Fragment>

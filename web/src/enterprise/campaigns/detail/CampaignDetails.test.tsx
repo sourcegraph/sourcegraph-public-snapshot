@@ -6,6 +6,7 @@ import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/tele
 import { PageTitle } from '../../../components/PageTitle'
 import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
 import { mount } from 'enzyme'
+import { NOOP_BREADCRUMB_SETTERS } from '../../../components/Breadcrumbs'
 
 // This is idempotent, so calling it in multiple tests is not a problem.
 registerHighlightContributions()
@@ -53,6 +54,7 @@ describe('CampaignDetails', () => {
             }
             deleteCampaign={() => Promise.resolve(undefined)}
             queryChangesetCountsOverTime={() => of([])}
+            {...NOOP_BREADCRUMB_SETTERS}
         />
     )
 
