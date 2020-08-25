@@ -312,7 +312,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
       </h3>
       <hr />
       <div
-        className="pl-3 pt-3"
+        className="pl-3 py-3"
       >
         <Markdown
           dangerousInnerHTML="<p>d</p>
@@ -985,7 +985,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
       </h3>
       <hr />
       <div
-        className="pl-3 pt-3"
+        className="pl-3 py-3"
       >
         <Markdown
           dangerousInnerHTML="<p>d</p>
