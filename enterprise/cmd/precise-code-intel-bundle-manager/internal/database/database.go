@@ -16,7 +16,7 @@ import (
 
 // Database wraps access to a single processed bundle.
 type Database interface {
-	// Close closes the underlying reader.
+	// Close closes the underlying store.
 	Close() error
 
 	// Exists determines if the path exists in the database.
@@ -54,8 +54,8 @@ type Database interface {
 
 type databaseImpl struct {
 	filename        string
-	reader          persistence.Reader // database file reader
-	numResultChunks int                // numResultChunks value from meta row
+	store           persistence.Store // bundle store
+	numResultChunks int               // numResultChunks value from meta row
 }
 
 var _ Database = &databaseImpl{}
@@ -80,22 +80,22 @@ type DocumentPathRangeID struct {
 }
 
 // OpenDatabase opens a handle to the bundle file at the given path.
-func OpenDatabase(ctx context.Context, filename string, reader persistence.Reader) (Database, error) {
-	meta, err := reader.ReadMeta(ctx)
+func OpenDatabase(ctx context.Context, filename string, store persistence.Store) (Database, error) {
+	meta, err := store.ReadMeta(ctx)
 	if err != nil {
-		return nil, pkgerrors.Wrap(err, "reader.ReadMeta")
+		return nil, pkgerrors.Wrap(err, "store.ReadMeta")
 	}
 
 	return &databaseImpl{
 		filename:        filename,
-		reader:          reader,
+		store:           store,
 		numResultChunks: meta.NumResultChunks,
 	}, nil
 }
 
-// Close closes the underlying reader.
+// Close closes the underlying store.
 func (db *databaseImpl) Close() error {
-	return db.reader.Close(nil)
+	return db.store.Close(nil)
 }
 
 // Exists determines if the path exists in the database.
@@ -330,12 +330,12 @@ func (db *databaseImpl) MonikerResults(ctx context.Context, tableName, scheme, i
 	var rows []types.Location
 	var totalCount int
 	if tableName == "definitions" {
-		if rows, totalCount, err = db.reader.ReadDefinitions(ctx, scheme, identifier, skip, take); err != nil {
-			err = pkgerrors.Wrap(err, "reader.ReadDefinitions")
+		if rows, totalCount, err = db.store.ReadDefinitions(ctx, scheme, identifier, skip, take); err != nil {
+			err = pkgerrors.Wrap(err, "store.ReadDefinitions")
 		}
 	} else if tableName == "references" {
-		if rows, totalCount, err = db.reader.ReadReferences(ctx, scheme, identifier, skip, take); err != nil {
-			err = pkgerrors.Wrap(err, "reader.ReadReferences")
+		if rows, totalCount, err = db.store.ReadReferences(ctx, scheme, identifier, skip, take); err != nil {
+			err = pkgerrors.Wrap(err, "store.ReadReferences")
 		}
 	}
 
@@ -402,7 +402,7 @@ func (db *databaseImpl) getPathsWithPrefix(ctx context.Context, prefix string) (
 		span.Finish()
 	}()
 
-	return db.reader.PathsWithPrefix(ctx, prefix)
+	return db.store.PathsWithPrefix(ctx, prefix)
 }
 
 // getDocumentData fetches and unmarshals the document data or the given path.
@@ -418,9 +418,9 @@ func (db *databaseImpl) getDocumentData(ctx context.Context, path string) (_ typ
 		span.Finish()
 	}()
 
-	documentData, ok, err := db.reader.ReadDocument(ctx, path)
+	documentData, ok, err := db.store.ReadDocument(ctx, path)
 	if err != nil {
-		return types.DocumentData{}, false, pkgerrors.Wrap(err, "reader.ReadDocument")
+		return types.DocumentData{}, false, pkgerrors.Wrap(err, "store.ReadDocument")
 	}
 	return documentData, ok, nil
 }
@@ -520,9 +520,9 @@ func (db *databaseImpl) getResultChunkByID(ctx context.Context, id int) (_ types
 		span.Finish()
 	}()
 
-	resultChunkData, ok, err := db.reader.ReadResultChunk(ctx, id)
+	resultChunkData, ok, err := db.store.ReadResultChunk(ctx, id)
 	if err != nil {
-		return types.ResultChunkData{}, false, pkgerrors.Wrap(err, "reader.ReadResultChunk")
+		return types.ResultChunkData{}, false, pkgerrors.Wrap(err, "store.ReadResultChunk")
 	}
 	return resultChunkData, ok, nil
 }

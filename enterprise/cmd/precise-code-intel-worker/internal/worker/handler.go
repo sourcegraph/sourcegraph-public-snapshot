@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/cache"
 	sqlitewriter "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/sqlite"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
@@ -195,31 +196,36 @@ func (h *handler) write(ctx context.Context, dirname string, groupedBundleData *
 	ctx, endOperation := h.metrics.WriteOperation.With(ctx, &err, observation.Args{})
 	defer endOperation(1, observation.Args{})
 
-	writer, err := sqlitewriter.NewWriter(ctx, filepath.Join(dirname, "sqlite.db"))
+	dataCache, err := cache.NewDataCache(1)
+	if err != nil {
+		return err
+	}
+
+	store, err := sqlitewriter.NewStore(ctx, filepath.Join(dirname, "sqlite.db"), dataCache)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		err = writer.Close(writer.Done(nil))
+		err = store.Close(store.Done(nil))
 	}()
 
-	if err := writer.CreateTables(ctx); err != nil {
-		return errors.Wrap(err, "writer.CreateTables")
+	if err := store.CreateTables(ctx); err != nil {
+		return errors.Wrap(err, "store.CreateTables")
 	}
-	if err := writer.WriteMeta(ctx, groupedBundleData.Meta); err != nil {
-		return errors.Wrap(err, "writer.WriteMeta")
+	if err := store.WriteMeta(ctx, groupedBundleData.Meta); err != nil {
+		return errors.Wrap(err, "store.WriteMeta")
 	}
-	if err := writer.WriteDocuments(ctx, groupedBundleData.Documents); err != nil {
-		return errors.Wrap(err, "writer.WriteDocuments")
+	if err := store.WriteDocuments(ctx, groupedBundleData.Documents); err != nil {
+		return errors.Wrap(err, "store.WriteDocuments")
 	}
-	if err := writer.WriteResultChunks(ctx, groupedBundleData.ResultChunks); err != nil {
+	if err := store.WriteResultChunks(ctx, groupedBundleData.ResultChunks); err != nil {
 		return errors.Wrap(err, "writer.WriteResultChunks")
 	}
-	if err := writer.WriteDefinitions(ctx, groupedBundleData.Definitions); err != nil {
-		return errors.Wrap(err, "writer.WriteDefinitions")
+	if err := store.WriteDefinitions(ctx, groupedBundleData.Definitions); err != nil {
+		return errors.Wrap(err, "store.WriteDefinitions")
 	}
-	if err := writer.WriteReferences(ctx, groupedBundleData.References); err != nil {
-		return errors.Wrap(err, "writer.WriteReferences")
+	if err := store.WriteReferences(ctx, groupedBundleData.References); err != nil {
+		return errors.Wrap(err, "store.WriteReferences")
 	}
 
 	return err

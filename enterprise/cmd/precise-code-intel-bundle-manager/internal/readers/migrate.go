@@ -18,12 +18,12 @@ import (
 // NumMigrateRoutines is the number of goroutines launched to migrate bundle files.
 var NumMigrateRoutines = 1 // runtime.NumCPU() * 2
 
-// Migrate runs through each SQLite database on disk and opens a reader instance which will perform
+// Migrate runs through each SQLite database on disk and opens a store instance which will perform
 // any necessary migrations to transform it to the newest schema. Because this may have a non-negligible
 // cost cost some intersection of migrations and database size, we try to pay this cost up-front instead
 // of being paid on-demand when the database is opened within the query path. This method does not block
 // the startup of the bundle manager as it does not change the correctness of the service.
-func Migrate(bundleDir string, readerCache cache.ReaderCache) error {
+func Migrate(bundleDir string, storeCache cache.StoreCache) error {
 	version := migrate.CurrentSchemaVersion
 	migrationMarkerFilename := paths.MigrationMarkerFilename(bundleDir, version)
 
@@ -61,7 +61,7 @@ func Migrate(bundleDir string, readerCache cache.ReaderCache) error {
 			for filename := range ch {
 				log15.Debug("Migrating bundle", "filename", filename)
 
-				if err := readerCache.WithReader(context.Background(), filename, noopHandler); err != nil {
+				if err := storeCache.WithStore(context.Background(), filename, noopHandler); err != nil {
 					log15.Error("Failed to migrate bundle", "err", err, "filename", filename)
 				}
 			}
@@ -133,6 +133,6 @@ func touchFile(filename string) {
 	}
 }
 
-func noopHandler(reader persistence.Reader) error {
+func noopHandler(store persistence.Store) error {
 	return nil
 }
