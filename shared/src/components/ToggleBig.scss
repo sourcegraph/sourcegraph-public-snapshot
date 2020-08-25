@@ -7,76 +7,76 @@
     padding: 0;
     position: relative;
     width: 6.625rem;
-}
 
-.toggle-big__container {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-}
-
-.toggle-big__bar {
-    background-color: var(--secondary);
-
-    border-radius: 2rem;
-
-    border-radius: 1rem;
-    cursor: pointer;
-
-    top: 2px;
-    left: 0;
-
-    height: 2rem;
-    width: 100%;
-
-    position: absolute;
-}
-
-.toggle-big__bar--active {
-    background-color: rgba(28, 126, 214, 0.2);
-}
-
-.toggle-big__knob {
-    background-color: var(--text-muted);
-    opacity: 0.8;
-    border-radius: 0.75rem;
-
-    display: block;
-
-    height: 1.5rem;
-    width: 1.5rem;
-    margin-top: 0.375rem;
-    left: 0.25rem;
-
-    position: relative;
-}
-
-.toggle-big__knob--active {
-    background-color: var(--primary);
-    transform: translate3d(4.625rem, 0, 0);
-}
-
-.toggle-big__icon {
-    position: relative;
-    margin-top: 0.375rem;
-    left: 0.4rem;
-    fill: white;
-
-    &--disabled {
-        left: -4.4rem;
-        fill: #e1e6ef;
+    &__container {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
     }
-}
 
-.toggle-big__text {
-    color: var(--primary);
-    position: relative;
-    font-size: 0.875rem;
-    margin-top: 0.375rem;
-    right: 0.4375rem;
+    &__bar {
+        background-color: var(--secondary);
 
-    &--disabled {
-        color: var(--text-muted);
-        right: -0.6875rem;
+        border-radius: 2rem;
+
+        border-radius: 1rem;
+        cursor: pointer;
+
+        top: 2px;
+        left: 0;
+
+        height: 2rem;
+        width: 100%;
+
+        position: absolute;
+
+        &--active {
+            background-color: rgba(28, 126, 214, 0.2);
+        }
+    }
+
+    &__knob {
+        background-color: var(--text-muted);
+        opacity: 0.8;
+        border-radius: 0.75rem;
+
+        display: block;
+
+        height: 1.5rem;
+        width: 1.5rem;
+        margin-top: 0.375rem;
+        left: 0.25rem;
+
+        position: relative;
+
+        &--active {
+            background-color: var(--primary);
+            transform: translate3d(4.625rem, 0, 0);
+        }
+    }
+
+    &__icon {
+        position: relative;
+        margin-top: 0.375rem;
+        left: 0.4rem;
+        fill: white;
+
+        &--disabled {
+            left: -4.4rem;
+            fill: #e1e6ef;
+        }
+    }
+
+    &__text {
+        color: var(--primary);
+        position: relative;
+        font-size: 0.875rem;
+        margin-top: 0.375rem;
+        right: 0.4375rem;
+
+        &--disabled {
+            color: var(--text-muted);
+            right: -0.6875rem;
+        }
     }
 }

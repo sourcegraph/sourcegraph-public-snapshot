@@ -49,7 +49,7 @@ export const ToggleBig: React.FunctionComponent<Props> = ({
     return (
         <button
             type="button"
-            className={`toggle-big ${disabled ? 'toggle-big__disabled' : ''} ${className || ''}`}
+            className={`toggle-big  ${className || ''}`}
             id={id}
             title={title}
             value={value ? 1 : 0}

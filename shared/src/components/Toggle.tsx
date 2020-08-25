@@ -47,7 +47,7 @@ export const Toggle: React.FunctionComponent<Props> = ({
     return (
         <button
             type="button"
-            className={`toggle ${disabled ? 'toggle__disabled' : ''} ${className || ''}`}
+            className={`toggle ${className || ''}`}
             id={id}
             title={title}
             value={value ? 1 : 0}
@@ -61,7 +61,7 @@ export const Toggle: React.FunctionComponent<Props> = ({
             />
             <span
                 className={`toggle__knob ${value ? 'toggle__knob--active' : ''} ${
-                    disabled ? (value ? 'toggle__knob--disabled__active' : 'toggle__knob--disabled') : ''
+                    disabled ? (value ? 'toggle__knob--disabled--active' : 'toggle__knob--disabled') : ''
                 }`}
             />
         </button>
