@@ -19,7 +19,7 @@ type IndexedResultChunkData struct {
 }
 
 type Writer interface {
-	Transact(ctx context.Context) (Writer, error)
+	Transact(ctx context.Context) (Store, error)
 	Done(err error) error
 	CreateTables(ctx context.Context) error
 

@@ -29,9 +29,9 @@ type sqliteReader struct {
 	serializer serialization.Serializer
 }
 
-var _ persistence.Reader = &sqliteReader{}
+var _ persistence.Store = &sqliteReader{}
 
-func NewReader(ctx context.Context, filename string, cache cache.DataCache) (_ persistence.Reader, err error) {
+func NewReader(ctx context.Context, filename string, cache cache.DataCache) (_ persistence.Store, err error) {
 	store, closer, err := store.Open(filename)
 	if err != nil {
 		return nil, err
@@ -180,14 +180,6 @@ func (r *sqliteReader) readMonikerLocations(ctx context.Context, tableName, sche
 
 	_ = r.cache.Set(key, locations, int64(len(data)))
 	return locations, nil
-}
-
-func (r *sqliteReader) Close(err error) error {
-	if closeErr := r.closer(); closeErr != nil {
-		err = multierror.Append(err, closeErr)
-	}
-
-	return err
 }
 
 func (r *sqliteReader) getFromCache(key string) interface{} {

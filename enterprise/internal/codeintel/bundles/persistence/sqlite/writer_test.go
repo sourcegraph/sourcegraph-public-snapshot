@@ -23,16 +23,22 @@ func TestWrite(t *testing.T) {
 	ctx := context.Background()
 	filename := filepath.Join(tempDir, "test.db")
 
-	writer, err := NewWriter(context.Background(), filename)
+	cache, err := cache.NewDataCache(1)
 	if err != nil {
-		t.Fatalf("unexpected error while opening writer: %s", err)
+		t.Fatalf("unexpected error creating cache: %s", err)
 	}
 
-	if err := writer.CreateTables(context.Background()); err != nil {
+	store, err := NewWriter(context.Background(), filename, cache)
+	if err != nil {
+		t.Fatalf("unexpected error while opening store: %s", err)
+	}
+	defer store.Close(nil)
+
+	if err := store.CreateTables(context.Background()); err != nil {
 		t.Fatalf("unexpected error while creating tables: %s", err)
 	}
 
-	if err := writer.WriteMeta(ctx, types.MetaData{NumResultChunks: 7}); err != nil {
+	if err := store.WriteMeta(ctx, types.MetaData{NumResultChunks: 7}); err != nil {
 		t.Fatalf("unexpected error while writing: %s", err)
 	}
 
@@ -62,7 +68,7 @@ func TestWrite(t *testing.T) {
 	}
 	close(documentCh)
 
-	if err := writer.WriteDocuments(ctx, documentCh); err != nil {
+	if err := store.WriteDocuments(ctx, documentCh); err != nil {
 		t.Fatalf("unexpected error while writing documents: %s", err)
 	}
 
@@ -98,7 +104,7 @@ func TestWrite(t *testing.T) {
 	}
 	close(resultChunkCh)
 
-	if err := writer.WriteResultChunks(ctx, resultChunkCh); err != nil {
+	if err := store.WriteResultChunks(ctx, resultChunkCh); err != nil {
 		t.Fatalf("unexpected error while writing result chunks: %s", err)
 	}
 
@@ -116,7 +122,7 @@ func TestWrite(t *testing.T) {
 	}
 	close(definitionsCh)
 
-	if err := writer.WriteDefinitions(ctx, definitionsCh); err != nil {
+	if err := store.WriteDefinitions(ctx, definitionsCh); err != nil {
 		t.Fatalf("unexpected error while writing definitions: %s", err)
 	}
 
@@ -134,29 +140,15 @@ func TestWrite(t *testing.T) {
 	}
 	close(referencesCh)
 
-	if err := writer.WriteReferences(ctx, referencesCh); err != nil {
+	if err := store.WriteReferences(ctx, referencesCh); err != nil {
 		t.Fatalf("unexpected error while writing references: %s", err)
 	}
 
-	if err := writer.Done(nil); err != nil {
+	if err := store.Done(nil); err != nil {
 		t.Fatalf("unexpected error closing transaction: %s", err)
 	}
-	if err := writer.Close(nil); err != nil {
-		t.Fatalf("unexpected error closing writer: %s", err)
-	}
 
-	cache, err := cache.NewDataCache(1)
-	if err != nil {
-		t.Fatalf("unexpected error creating cache: %s", err)
-	}
-
-	reader, err := NewReader(context.Background(), filename, cache)
-	if err != nil {
-		t.Fatalf("unexpected error opening database: %s", err)
-	}
-	defer reader.Close(nil)
-
-	meta, err := reader.ReadMeta(ctx)
+	meta, err := store.ReadMeta(ctx)
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
 	}
@@ -164,7 +156,7 @@ func TestWrite(t *testing.T) {
 		t.Errorf("unexpected num result chunks. want=%d have=%d", 7, meta.NumResultChunks)
 	}
 
-	documentData, _, err := reader.ReadDocument(ctx, "foo.go")
+	documentData, _, err := store.ReadDocument(ctx, "foo.go")
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
 	}
@@ -172,7 +164,7 @@ func TestWrite(t *testing.T) {
 		t.Errorf("unexpected document data (-want +got):\n%s", diff)
 	}
 
-	resultChunkData, _, err := reader.ReadResultChunk(ctx, 7)
+	resultChunkData, _, err := store.ReadResultChunk(ctx, 7)
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
 	}
@@ -180,7 +172,7 @@ func TestWrite(t *testing.T) {
 		t.Errorf("unexpected result chunk data (-want +got):\n%s", diff)
 	}
 
-	definitions, _, err := reader.ReadDefinitions(ctx, "scheme A", "ident A", 0, 100)
+	definitions, _, err := store.ReadDefinitions(ctx, "scheme A", "ident A", 0, 100)
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
 	}
@@ -188,7 +180,7 @@ func TestWrite(t *testing.T) {
 		t.Errorf("unexpected definitions (-want +got):\n%s", diff)
 	}
 
-	references, _, err := reader.ReadReferences(ctx, "scheme C", "ident C", 0, 100)
+	references, _, err := store.ReadReferences(ctx, "scheme C", "ident C", 0, 100)
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
 	}
