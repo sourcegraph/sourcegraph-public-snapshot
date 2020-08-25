@@ -120,7 +120,7 @@
 // 1528395708_add_index_to_external_services_repos_external_service_id.up.sql (205B)
 // 1528395709_create_external_service_sync_jobs_table.down.sql (191B)
 // 1528395709_create_external_service_sync_jobs_table.up.sql (1.3kB)
-// 1528395710_add_unsynced_flag_to_changesets.down.sql (73B)
+// 1528395710_add_unsynced_flag_to_changesets.down.sql (72B)
 // 1528395710_add_unsynced_flag_to_changesets.up.sql (106B)
 
 package migrations
@@ -2590,7 +2590,7 @@ func _1528395709_create_external_service_sync_jobs_tableUpSql() (*asset, error) 
 	return a, nil
 }
 
-var __1528395710_add_unsynced_flag_to_changesetsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x29\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\xcd\x2b\xae\xcc\x4b\x4e\x4d\xb1\xe6\xe2\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x62\x1a\x56\x11\x49\x00\x00\x00")
+var __1528395710_add_unsynced_flag_to_changesetsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x29\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\xcd\x2b\xae\xcc\x4b\x4e\x4d\xb1\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x68\x8c\xe6\xcc\x48\x00\x00\x00")
 
 func _1528395710_add_unsynced_flag_to_changesetsDownSqlBytes() ([]byte, error) {
 	return bindataRead(
@@ -2606,7 +2606,7 @@ func _1528395710_add_unsynced_flag_to_changesetsDownSql() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "1528395710_add_unsynced_flag_to_changesets.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x3a, 0xc2, 0x59, 0xd5, 0x78, 0xbf, 0x9d, 0x64, 0xf2, 0x12, 0x59, 0xb0, 0x2, 0x5a, 0x39, 0x88, 0xd3, 0x33, 0x22, 0x8d, 0xc1, 0xe0, 0xdd, 0x18, 0x89, 0x72, 0xd8, 0x36, 0x85, 0x22, 0x7c, 0x21}}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x95, 0x4a, 0x42, 0xec, 0x62, 0x93, 0x6b, 0x68, 0x5e, 0x6b, 0x5c, 0x92, 0xf, 0x3, 0x17, 0xd3, 0x78, 0xa2, 0x38, 0xad, 0x2e, 0x6b, 0xc2, 0xc5, 0x9d, 0xc0, 0x73, 0x80, 0x88, 0xa, 0x56, 0xe5}}
 	return a, nil
 }
 

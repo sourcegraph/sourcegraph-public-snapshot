@@ -2,5 +2,4 @@ BEGIN;
 
 ALTER TABLE changesets DROP COLUMN IF EXISTS unsynced;
 
-
 COMMIT;

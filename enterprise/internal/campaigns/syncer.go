@@ -663,14 +663,12 @@ func groupChangesetsBySource(
 
 	bySource := make(map[int64]*SourceChangesets, len(es))
 	for _, e := range es {
-		var css repos.ChangesetSource
 		sources, err := sourcer(e)
 		if err != nil {
 			return nil, err
 		}
 
-		var ok bool
-		css, ok = sources[0].(repos.ChangesetSource)
+		css, ok := sources[0].(repos.ChangesetSource)
 		if !ok {
 			return nil, fmt.Errorf("ChangesetSource cannot be created from external service %q", e.Kind)
 		}
