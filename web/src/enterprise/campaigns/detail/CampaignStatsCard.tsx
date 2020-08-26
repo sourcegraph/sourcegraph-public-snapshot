@@ -2,7 +2,7 @@ import React from 'react'
 import ProgressCheckIcon from 'mdi-react/ProgressCheckIcon'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import classNames from 'classnames'
-import { CampaignFields } from '../../../graphql-operations'
+import { CampaignFields, ChangesetStatsFields } from '../../../graphql-operations'
 import { CampaignStateBadge } from './CampaignStateBadge'
 import {
     ChangesetStatusUnpublished,
@@ -12,7 +12,8 @@ import {
 } from './changesets/ChangesetStatusCell'
 import { pluralize } from '../../../../../shared/src/util/strings'
 
-interface CampaignStatsCardProps extends Pick<CampaignFields['changesets'], 'stats'> {
+interface CampaignStatsCardProps {
+    stats: ChangesetStatsFields
     closedAt: CampaignFields['closedAt']
     className?: string
 }

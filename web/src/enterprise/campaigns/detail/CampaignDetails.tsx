@@ -13,8 +13,7 @@ import {
 } from './backend'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import * as H from 'history'
-import { Subject, of, merge } from 'rxjs'
-import { switchMap, distinctUntilChanged } from 'rxjs/operators'
+import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
@@ -67,9 +66,6 @@ export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
     queryChangesetCountsOverTime,
     deleteCampaign,
 }) => {
-    /** Retrigger fetching */
-    const campaignUpdates = useMemo(() => new Subject<void>(), [])
-
     useEffect(() => {
         telemetryService.logViewEvent(campaignID ? 'CampaignDetailsPage' : 'NewCampaignPage')
     }, [campaignID, telemetryService])
@@ -77,11 +73,11 @@ export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
     const campaign: CampaignFields | null | undefined = useObservable(
         useMemo(
             () =>
-                merge(of(undefined), campaignUpdates).pipe(
-                    switchMap(() => fetchCampaignById(campaignID)),
+                fetchCampaignById(campaignID).pipe(
+                    repeatWhen(notifier => notifier.pipe(delay(5000))),
                     distinctUntilChanged((a, b) => isEqual(a, b))
                 ),
-            [campaignID, campaignUpdates, fetchCampaignById]
+            [campaignID, fetchCampaignById]
         )
     )
 
@@ -121,7 +117,6 @@ export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
             <CampaignDescription history={history} description={campaign.description} />
             <CampaignTabs
                 campaign={campaign}
-                campaignUpdates={campaignUpdates}
                 extensionsController={extensionsController}
                 history={history}
                 isLightTheme={isLightTheme}

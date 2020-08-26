@@ -5,7 +5,6 @@ import { ThemeProps } from '../../../../../shared/src/theme'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { CampaignFields } from '../../../graphql-operations'
-import { Subject } from 'rxjs'
 import {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
@@ -21,7 +20,6 @@ type SelectedTab = 'changesets' | 'chart'
 
 export interface CampaignTabsProps extends ExtensionsControllerProps, ThemeProps, PlatformContextProps, TelemetryProps {
     campaign: CampaignFields
-    campaignUpdates: Subject<void>
     history: H.History
     location: H.Location
     /** For testing only. */
@@ -40,7 +38,6 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
     platformContext,
     telemetryService,
     campaign,
-    campaignUpdates,
     queryChangesets,
     queryChangesetCountsOverTime,
     queryExternalChangesetWithFileDiffs,
@@ -93,8 +90,6 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
                 <CampaignChangesets
                     campaignID={campaign.id}
                     viewerCanAdminister={campaign.viewerCanAdminister}
-                    changesetUpdates={campaignUpdates}
-                    campaignUpdates={campaignUpdates}
                     history={history}
                     location={location}
                     isLightTheme={isLightTheme}

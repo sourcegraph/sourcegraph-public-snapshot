@@ -371,7 +371,6 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
         "viewerCanAdminister": false,
       }
     }
-    campaignUpdates="[Subject]"
     history="[History]"
     isLightTheme={true}
     location="[Location path=/]"
@@ -417,8 +416,6 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
     </ul>
     <CampaignChangesets
       campaignID="c"
-      campaignUpdates="[Subject]"
-      changesetUpdates="[Subject]"
       history="[History]"
       isLightTheme={true}
       location="[Location path=/]"
@@ -623,7 +620,6 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
           nodeComponent={[Function]}
           nodeComponentProps={
             Object {
-              "campaignUpdates": "[Subject]",
               "extensionInfo": Object {
                 "extensionsController": undefined,
                 "hoverifier": Object {
@@ -1044,7 +1040,6 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
         "viewerCanAdminister": true,
       }
     }
-    campaignUpdates="[Subject]"
     history="[History]"
     isLightTheme={true}
     location="[Location path=/]"
@@ -1090,8 +1085,6 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
     </ul>
     <CampaignChangesets
       campaignID="c"
-      campaignUpdates="[Subject]"
-      changesetUpdates="[Subject]"
       history="[History]"
       isLightTheme={true}
       location="[Location path=/]"
@@ -1296,7 +1289,6 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
           nodeComponent={[Function]}
           nodeComponentProps={
             Object {
-              "campaignUpdates": "[Subject]",
               "extensionInfo": Object {
                 "extensionsController": undefined,
                 "hoverifier": Object {
