@@ -64,20 +64,18 @@ func TestReconcilerProcess(t *testing.T) {
 
 		wantCreateOnHostCode bool
 		wantUpdateOnCodeHost bool
+		wantLoadFromCodeHost bool
 		wantGitserverCommit  bool
 
 		wantChangeset changesetAssertions
 	}
 
 	tests := map[string]testCase{
-		"published changeset without changesetSpec": {
-			// Published changeset without a changesetSpec should be left
-			// untouched.
-			// But once we move syncing of changesets to the reconciler, we need to assert
-			// that it's been synced.
+		"published unsynced changeset without changesetSpec": {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       "12345",
+				unsynced:         true,
 			},
 			sourcerMetadata: githubPR,
 
@@ -85,9 +83,16 @@ func TestReconcilerProcess(t *testing.T) {
 			wantUpdateOnCodeHost: false,
 			wantGitserverCommit:  false,
 
+			wantLoadFromCodeHost: true,
+
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       "12345",
+				externalBranch:   "head-ref-on-github",
+				unsynced:         false,
+				title:            "Remote title",
+				body:             "Remote body",
+				diffStat:         diffStat,
 			},
 		},
 		"unpublished changeset stay unpublished": {
@@ -441,6 +446,10 @@ func TestReconcilerProcess(t *testing.T) {
 			if have, want := fakeSource.UpdateChangesetCalled, tc.wantUpdateOnCodeHost; have != want {
 				t.Fatalf("wrong UpdateChangeset call. wantCalled=%t, wasCalled=%t", want, have)
 			}
+
+			if have, want := fakeSource.LoadChangesetsCalled, tc.wantLoadFromCodeHost; have != want {
+				t.Fatalf("wrong LoadChangesets call. wantCalled=%t, wasCalled=%t", want, have)
+			}
 		})
 	}
 }
@@ -548,6 +557,8 @@ type testChangesetOpts struct {
 
 	createdByCampaign bool
 	ownedByCampaign   int64
+
+	unsynced bool
 }
 
 func createChangeset(
@@ -575,6 +586,8 @@ func createChangeset(
 
 		CreatedByCampaign: opts.createdByCampaign,
 		OwnedByCampaignID: opts.ownedByCampaign,
+
+		Unsynced: opts.unsynced,
 	}
 
 	if opts.failureMessage != "" {

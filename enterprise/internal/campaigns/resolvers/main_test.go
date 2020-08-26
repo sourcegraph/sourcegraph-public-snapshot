@@ -272,6 +272,7 @@ type testChangesetOpts struct {
 	publicationState campaigns.ChangesetPublicationState
 	reconcilerState  campaigns.ReconcilerState
 	failureMessage   string
+	unsynced         bool
 
 	createdByCampaign bool
 	ownedByCampaign   int64
@@ -304,6 +305,7 @@ func createChangeset(
 
 		PublicationState: opts.publicationState,
 		ReconcilerState:  opts.reconcilerState,
+		Unsynced:         opts.unsynced,
 
 		CreatedByCampaign: opts.createdByCampaign,
 		OwnedByCampaignID: opts.ownedByCampaign,

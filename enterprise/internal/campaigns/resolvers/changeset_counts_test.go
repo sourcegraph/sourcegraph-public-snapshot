@@ -244,7 +244,8 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	})
 	defer mockState.Unmock()
 
-	err = ee.SyncChangesets(ctx, repoStore, store, cf, changesets...)
+	sourcer := repos.NewSourcer(cf)
+	err = ee.SyncChangesets(ctx, repoStore, store, sourcer, changesets...)
 	if err != nil {
 		t.Fatal(err)
 	}
