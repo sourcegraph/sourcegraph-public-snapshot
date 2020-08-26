@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"strings"
@@ -743,14 +744,19 @@ func (s DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes ma
 	}
 
 	marshalSourceList := func(sources map[api.RepoID][]SourceInfo) ([]byte, error) {
-		//TODO (Dax): Find a way to encrypt src objects
 		srcs := make([]source, 0, len(sources))
 		for rid, infoList := range sources {
 			for _, info := range infoList {
+				encryptedSource, err := intSecrets.EncryptBytes([]byte(info.CloneURL))
+				if err != nil {
+					return nil, errors.Wrap(err, "upsertSources: failed to encrypt")
+				}
+				src := base64.StdEncoding.EncodeToString(encryptedSource)
+				//TODO (Dax): Determine if base64 is the best approach here
 				srcs = append(srcs, source{
 					ExternalServiceID: info.ExternalServiceID(),
 					RepoID:            int64(rid),
-					CloneURL:          info.CloneURL,
+					CloneURL:          src, //json.Marshal will base64 a []byte so we explicitly do that above
 				})
 			}
 		}
