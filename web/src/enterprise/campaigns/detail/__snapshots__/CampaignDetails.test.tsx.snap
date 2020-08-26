@@ -204,7 +204,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
               </span>
             </div>
           </CampaignStatsTotalAction>
-          <Memo(ChangesetStatusUnpublished)
+          <ChangesetStatusUnpublished
             className="flex-grow-0 flex-shrink-0 mx-3"
             label={
               <span
@@ -226,8 +226,8 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
                  unpublished
               </span>
             </div>
-          </Memo(ChangesetStatusUnpublished)>
-          <Memo(ChangesetStatusOpen)
+          </ChangesetStatusUnpublished>
+          <ChangesetStatusOpen
             className="flex-grow-0 flex-shrink-0 mx-3"
             label={
               <span
@@ -249,8 +249,8 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
                  open
               </span>
             </div>
-          </Memo(ChangesetStatusOpen)>
-          <Memo(ChangesetStatusClosed)
+          </ChangesetStatusOpen>
+          <ChangesetStatusClosed
             className="flex-grow-0 flex-shrink-0 mx-3"
             label={
               <span
@@ -272,8 +272,8 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
                  closed
               </span>
             </div>
-          </Memo(ChangesetStatusClosed)>
-          <Memo(ChangesetStatusMerged)
+          </ChangesetStatusClosed>
+          <ChangesetStatusMerged
             className="flex-grow-0 flex-shrink-0 ml-3"
             label={
               <span
@@ -295,7 +295,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
                  merged
               </span>
             </div>
-          </Memo(ChangesetStatusMerged)>
+          </ChangesetStatusMerged>
         </div>
       </div>
     </div>
@@ -873,7 +873,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
               </span>
             </div>
           </CampaignStatsTotalAction>
-          <Memo(ChangesetStatusUnpublished)
+          <ChangesetStatusUnpublished
             className="flex-grow-0 flex-shrink-0 mx-3"
             label={
               <span
@@ -895,8 +895,8 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
                  unpublished
               </span>
             </div>
-          </Memo(ChangesetStatusUnpublished)>
-          <Memo(ChangesetStatusOpen)
+          </ChangesetStatusUnpublished>
+          <ChangesetStatusOpen
             className="flex-grow-0 flex-shrink-0 mx-3"
             label={
               <span
@@ -918,8 +918,8 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
                  open
               </span>
             </div>
-          </Memo(ChangesetStatusOpen)>
-          <Memo(ChangesetStatusClosed)
+          </ChangesetStatusOpen>
+          <ChangesetStatusClosed
             className="flex-grow-0 flex-shrink-0 mx-3"
             label={
               <span
@@ -941,8 +941,8 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
                  closed
               </span>
             </div>
-          </Memo(ChangesetStatusClosed)>
-          <Memo(ChangesetStatusMerged)
+          </ChangesetStatusClosed>
+          <ChangesetStatusMerged
             className="flex-grow-0 flex-shrink-0 ml-3"
             label={
               <span
@@ -964,7 +964,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
                  merged
               </span>
             </div>
-          </Memo(ChangesetStatusMerged)>
+          </ChangesetStatusMerged>
         </div>
       </div>
     </div>

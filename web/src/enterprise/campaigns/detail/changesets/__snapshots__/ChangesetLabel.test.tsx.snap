@@ -2,9 +2,13 @@
 
 exports[`ChangesetLabel renders a dark label with white text 1`] = `
 <ChangesetLabel
-  color="330912"
-  description="Something is wrong"
-  text="bug"
+  label={
+    Object {
+      "color": "330912",
+      "description": "Something is wrong",
+      "text": "bug",
+    }
+  }
 >
   <span
     className="badge mr-2 badge-secondary text-white"
@@ -22,9 +26,13 @@ exports[`ChangesetLabel renders a dark label with white text 1`] = `
 
 exports[`ChangesetLabel renders a light label with dark text 1`] = `
 <ChangesetLabel
-  color="acfc99"
-  description="Something is wrong"
-  text="bug"
+  label={
+    Object {
+      "color": "acfc99",
+      "description": "Something is wrong",
+      "text": "bug",
+    }
+  }
 >
   <span
     className="badge mr-2 badge-secondary changeset-label__text--dark"
