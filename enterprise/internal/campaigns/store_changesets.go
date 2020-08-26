@@ -54,6 +54,7 @@ var changesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.process_after"),
 	sqlf.Sprintf("changesets.num_resets"),
 	sqlf.Sprintf("changesets.unsynced"),
+	sqlf.Sprintf("changesets.close"),
 }
 
 // changesetInsertColumns is the list of changeset columns that are modified in
@@ -89,6 +90,7 @@ var changesetInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("process_after"),
 	sqlf.Sprintf("num_resets"),
 	sqlf.Sprintf("unsynced"),
+	sqlf.Sprintf("close"),
 }
 
 func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Changeset) (*sqlf.Query, error) {
@@ -139,6 +141,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Chang
 		nullTimeColumn(c.ProcessAfter),
 		c.NumResets,
 		c.Unsynced,
+		c.Close,
 	}
 
 	if includeID {
@@ -171,7 +174,7 @@ func (s *Store) CreateChangeset(ctx context.Context, c *campaigns.Changeset) err
 var createChangesetQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:CreateChangeset
 INSERT INTO changesets (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 ON CONFLICT ON CONSTRAINT
 changesets_repo_external_id_unique
 DO NOTHING
@@ -501,7 +504,7 @@ func (s *Store) UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) er
 var updateChangesetQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changeset_specs.go:UpdateChangeset
 UPDATE changesets
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   %s
@@ -602,6 +605,7 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		&dbutil.NullTime{Time: &t.ProcessAfter},
 		&t.NumResets,
 		&t.Unsynced,
+		&t.Close,
 	)
 	if err != nil {
 		return errors.Wrap(err, "scanning changeset")
