@@ -81,12 +81,13 @@ func TestCampaignConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Campaigns are returned in reverse order.
 	nodes := []apitest.Campaign{
 		{
-			ID: string(campaigns.MarshalCampaignID(campaign1.ID)),
+			ID: string(campaigns.MarshalCampaignID(campaign2.ID)),
 		},
 		{
-			ID: string(campaigns.MarshalCampaignID(campaign2.ID)),
+			ID: string(campaigns.MarshalCampaignID(campaign1.ID)),
 		},
 	}
 
