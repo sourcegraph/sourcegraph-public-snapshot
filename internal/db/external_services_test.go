@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
@@ -261,21 +262,37 @@ func TestExternalServicesStore_Delete(t *testing.T) {
 		DisplayName: "GITHUB #1",
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
-	err := (&ExternalServicesStore{}).Create(ctx, confGet, es)
+	err := ExternalServices.Create(ctx, confGet, es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create an orphan repository to test trigger of soft-deleting external service.
+	_, err = dbconn.Global.ExecContext(ctx, `
+INSERT INTO repo (id, name, description, language, fork)
+VALUES (1, 'github.com/user/repo', '', '', FALSE)
+`)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Delete this external service
-	err = (&ExternalServicesStore{}).Delete(ctx, es.ID)
+	err = ExternalServices.Delete(ctx, es.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Delete again should get externalServiceNotFoundError
-	err = (&ExternalServicesStore{}).Delete(ctx, es.ID)
+	err = ExternalServices.Delete(ctx, es.ID)
 	gotErr := fmt.Sprintf("%v", err)
 	wantErr := fmt.Sprintf("external service not found: %v", es.ID)
+	if gotErr != wantErr {
+		t.Errorf("error: want %q but got %q", wantErr, gotErr)
+	}
+
+	_, err = Repos.GetByName(ctx, "github.com/user/repo")
+	gotErr = fmt.Sprintf("%v", err)
+	wantErr = `repo not found: name="github.com/user/repo"`
 	if gotErr != wantErr {
 		t.Errorf("error: want %q but got %q", wantErr, gotErr)
 	}
