@@ -1153,6 +1153,9 @@ type Campaign implements Node {
     The diff stat for all the changesets in the campaign.
     """
     diffStat: DiffStat!
+
+    # The current campaign spec this campaign reflects.
+    currentSpec: CampaignSpec!
 }
 
 """

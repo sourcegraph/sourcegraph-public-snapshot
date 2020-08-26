@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import * as H from 'history'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { ThemeProps } from '../../../../../shared/src/theme'
@@ -15,8 +15,10 @@ import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
 import { CampaignBurndownChart } from './BurndownChart'
 import { CampaignChangesets } from './changesets/CampaignChangesets'
+import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
+import { CampaignSpecTab } from './CampaignSpecTab'
 
-type SelectedTab = 'changesets' | 'chart'
+type SelectedTab = 'changesets' | 'chart' | 'spec'
 
 export interface CampaignTabsProps extends ExtensionsControllerProps, ThemeProps, PlatformContextProps, TelemetryProps {
     campaign: CampaignFields
@@ -73,6 +75,13 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
         },
         [history, location]
     )
+    const onSelectSpec = useCallback<React.MouseEventHandler>(
+        event => {
+            event.preventDefault()
+            setSelectedTab('spec')
+        },
+        [setSelectedTab]
+    )
     return (
         <>
             <ul className="nav nav-tabs mb-2">
@@ -92,6 +101,15 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
                         className={classNames('nav-link', selectedTab === 'chart' && 'active')}
                     >
                         <ChartLineVariantIcon className="icon-inline text-muted mr-1" /> Burndown chart
+                    </a>
+                </li>
+                <li className="nav-item">
+                    <a
+                        href=""
+                        onClick={onSelectSpec}
+                        className={classNames('nav-link', selectedTab === 'spec' && 'active')}
+                    >
+                        <FileDocumentIcon className="icon-inline text-muted mr-1" /> Spec file
                     </a>
                 </li>
             </ul>
@@ -116,6 +134,7 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
                     queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                 />
             )}
+            {selectedTab === 'spec' && <CampaignSpecTab originalInput={campaign.currentSpec.originalInput} />}
         </>
     )
 }
