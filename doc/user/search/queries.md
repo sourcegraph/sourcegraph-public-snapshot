@@ -173,9 +173,9 @@ as glob pattern and add the glob-pattern after it like this `repo:<repo>@*<glob-
  - [`@*refs/heads/*`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/docker/machine%24%40*refs/heads/*+middleware&patternType=literal) - search across all branches
  - [`@*refs/tags/*`](https://sourcegraph.com/search?q=repo:github.com/docker/machine%24%40*refs/tags/*+server&patternType=literal) - search across all tags
  
-We automatically add a trailing `/*` if it is missing from the glob-pattern.
+We automatically add a trailing `/*` if it is missing from the glob pattern.
 
-You can negate a glob-pattern by prepending `*!`, for example:
+You can negate a glob pattern by prepending `*!`, for example:
 
 - [`@*refs/heads/*:*!refs/heads/release* type:commit `](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/kubernetes/kubernetes%24%40*refs/heads/*:*%21refs/heads/release*+type:commit+&patternType=literal) - search commits on all branches except on those that start with "release"
 - [`@*refs/tags/v3.*:*!refs/tags/v3.*-* context`](https://sourcegraph.com/search?q=repo:%5Egithub.com/sourcegraph/sourcegraph%24%40*refs/tags/v3.*:*%21refs/tags/v3.*-*+context&patternType=literal) - search all versions starting with `3.` except release candidates, alpha and beta versions.
