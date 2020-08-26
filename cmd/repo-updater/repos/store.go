@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	intSecrets "github.com/sourcegraph/sourcegraph/internal/secrets"
+
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -135,10 +137,18 @@ func newRepoRecord(r *Repo) (*repoRecord, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "newRecord: metadata marshalling failed")
 	}
+	metadata, err = intSecrets.EncryptBytes(metadata)
+	if err != nil {
+		return nil, errors.Wrap(err, "newRecord: metadata encryption failed")
+	}
 
 	sources, err := sourcesColumn(r.ID, r.Sources)
 	if err != nil {
 		return nil, errors.Wrapf(err, "newRecord: sources marshalling failed")
+	}
+	sources, err = intSecrets.EncryptBytes(sources)
+	if err != nil {
+		return nil, errors.Wrap(err, "newRecord: sources encryption failed")
 	}
 
 	return &repoRecord{
@@ -330,7 +340,10 @@ func (s DBStore) UpsertExternalServices(ctx context.Context, svcs ...*ExternalSe
 		return nil
 	}
 
-	q := upsertExternalServicesQuery(svcs)
+	q, err := upsertExternalServicesQuery(svcs)
+	if err != nil {
+		return err
+	}
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return err
@@ -346,15 +359,21 @@ func (s DBStore) UpsertExternalServices(ctx context.Context, svcs ...*ExternalSe
 	return err
 }
 
-func upsertExternalServicesQuery(svcs []*ExternalService) *sqlf.Query {
+func upsertExternalServicesQuery(svcs []*ExternalService) (*sqlf.Query, error) {
 	vals := make([]*sqlf.Query, 0, len(svcs))
 	for _, s := range svcs {
+
+		cfg, err := intSecrets.EncryptBytes([]byte(s.Config))
+		if err != nil {
+			return nil, err
+		}
+
 		vals = append(vals, sqlf.Sprintf(
 			upsertExternalServicesQueryValueFmtstr,
 			s.ID,
 			s.Kind,
 			s.DisplayName,
-			s.Config,
+			string(cfg), // TODO (Dax): Candidate to be a bytea SQL type
 			s.CreatedAt.UTC(),
 			s.UpdatedAt.UTC(),
 			nullTimeColumn(s.DeletedAt.UTC()),
@@ -367,7 +386,7 @@ func upsertExternalServicesQuery(svcs []*ExternalService) *sqlf.Query {
 	return sqlf.Sprintf(
 		upsertExternalServicesQueryFmtstr,
 		sqlf.Join(vals, ",\n"),
-	)
+	), nil
 }
 
 const upsertExternalServicesQueryValueFmtstr = `
@@ -724,6 +743,7 @@ func (s DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes ma
 	}
 
 	marshalSourceList := func(sources map[api.RepoID][]SourceInfo) ([]byte, error) {
+		//TODO (Dax): Find a way to encrypt src objects
 		srcs := make([]source, 0, len(sources))
 		for rid, infoList := range sources {
 			for _, info := range infoList {
@@ -1285,8 +1305,13 @@ func scanRepo(r *Repo, s scanner) error {
 	r.Sources = make(map[string]*SourceInfo)
 
 	if sources.Raw != nil {
+		decryptedSrc, err := intSecrets.DecryptBytes(sources.Raw)
+		if err != nil {
+			return errors.Wrap(err, "scanRepo: decrypt sources failed")
+		}
+
 		var srcs []sourceInfo
-		if err = json.Unmarshal(sources.Raw, &srcs); err != nil {
+		if err = json.Unmarshal(decryptedSrc, &srcs); err != nil {
 			return errors.Wrap(err, "scanRepo: failed to unmarshal sources")
 		}
 		for _, src := range srcs {
@@ -1317,6 +1342,11 @@ func scanRepo(r *Repo, s scanner) error {
 		r.Metadata = new(gitolite.Repo)
 	default:
 		return nil
+	}
+
+	metadata, err = intSecrets.DecryptBytes(metadata)
+	if err != nil {
+		return errors.Wrap(err, "scanRepo: decrypt metadata failed")
 	}
 
 	if err = json.Unmarshal(metadata, r.Metadata); err != nil {
