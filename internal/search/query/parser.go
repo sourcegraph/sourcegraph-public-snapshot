@@ -371,10 +371,11 @@ loop:
 }
 
 // ScanField scans an optional '-' at the beginning of a string, and then scans
-// one or more alphabetic characters until it encounters a ':', in which case it
-// returns the value before the colon and its length. In all other cases it
-// returns the empty string and zero length.
-func ScanField(buf []byte) (string, int) {
+// one or more alphabetic characters until it encounters a ':'. The prefix
+// string is checked against valid fields. If it is valid, the function returns
+// the value before the colon, whether it's negated, and its length. In all
+// other cases it returns zero values.
+func ScanField(buf []byte) (string, bool, int) {
 	var count int
 	var r rune
 	var result []rune
@@ -389,7 +390,7 @@ func ScanField(buf []byte) (string, int) {
 
 	r = next()
 	if r != '-' && !strings.ContainsRune(allowed, r) {
-		return "", 0
+		return "", false, 0
 	}
 	result = append(result, r)
 
@@ -410,9 +411,21 @@ func ScanField(buf []byte) (string, int) {
 		break
 	}
 	if !success {
-		return "", 0
+		return "", false, 0
 	}
-	return string(result), count
+
+	field := string(result)
+	negated := field[0] == '-'
+	if negated {
+		field = field[1:]
+	}
+
+	if _, exists := allFields[strings.ToLower(field)]; !exists {
+		// Not a recognized parameter field.
+		return "", false, 0
+	}
+
+	return field, negated, count
 }
 
 // ScanValue scans for a value (e.g., of a parameter, or a string corresponding
@@ -587,18 +600,8 @@ func (p *parser) ParsePattern() Pattern {
 // be preceded by '-' which means the parameter is negated.
 func (p *parser) ParseParameter() (Parameter, bool, error) {
 	start := p.pos
-	field, advance := ScanField(p.buf[p.pos:])
+	field, negated, advance := ScanField(p.buf[p.pos:])
 	if field == "" {
-		return Parameter{}, false, nil
-	}
-
-	negated := field[0] == '-'
-	if negated {
-		field = field[1:]
-	}
-
-	if _, exists := allFields[strings.ToLower(field)]; !exists {
-		// Not a recognized parameter field.
 		return Parameter{}, false, nil
 	}
 
