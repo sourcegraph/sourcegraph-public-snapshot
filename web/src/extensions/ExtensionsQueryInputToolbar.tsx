@@ -53,19 +53,11 @@ export class ExtensionsQueryInputToolbar extends React.PureComponent<Props, Stat
                         return (
                             <button
                                 type="button"
-                                className={`btn btn-sm mr-2 ${
-                                    this.props.isLightTheme
-                                        ? selected
-                                            ? 'btn-secondary'
-                                            : 'btn-outline-secondary'
-                                        : selected
-                                        ? 'btn-outline-secondary'
-                                        : 'btn-secondary'
-                                }`}
-                                style={{
-                                    backgroundColor: !this.props.isLightTheme ? '#151C28' : undefined,
-                                    color: !this.props.isLightTheme ? 'A2B0CD' : undefined,
-                                }}
+                                className={`btn btn-sm mr-2 ${selected ? 'btn-secondary' : 'btn-outline-secondary'}`}
+                                // style={{
+                                //     backgroundColor: !this.props.isLightTheme ? '#151C28' : undefined,
+                                //     color: !this.props.isLightTheme ? 'A2B0CD' : undefined,
+                                // }}
                                 data-test-extension-category={category}
                                 key={category}
                                 onClick={() =>

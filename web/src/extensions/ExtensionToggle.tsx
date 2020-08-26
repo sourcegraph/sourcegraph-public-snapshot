@@ -13,6 +13,8 @@ interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettin
     extensionID: string
     enabled: boolean
     className?: string
+    /** Additional logic to run on toggle */
+    onToggleChange?: (enabled: boolean) => void
 }
 
 export const ExtensionToggle: React.FunctionComponent<Props> = ({
@@ -21,6 +23,7 @@ export const ExtensionToggle: React.FunctionComponent<Props> = ({
     extensionID,
     enabled,
     className,
+    onToggleChange,
 }) => {
     const [optimisticEnabled, setOptimisticEnabled] = useState(enabled)
     const [nextToggle] = useEventObservable(
@@ -50,6 +53,10 @@ export const ExtensionToggle: React.FunctionComponent<Props> = ({
                         }
 
                         eventLogger.log('ExtensionToggled', { extension_id: extensionID })
+
+                        if (onToggleChange) {
+                            onToggleChange(enabled)
+                        }
                         setOptimisticEnabled(enabled)
                         return from(
                             platformContext.updateSettings(highestPrecedenceSubject.subject.id, {
@@ -59,7 +66,7 @@ export const ExtensionToggle: React.FunctionComponent<Props> = ({
                         )
                     })
                 ),
-            [extensionID, platformContext, settingsCascade]
+            [extensionID, platformContext, settingsCascade, onToggleChange]
         )
     )
 

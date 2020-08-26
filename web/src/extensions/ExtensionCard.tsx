@@ -61,6 +61,49 @@ const defaultIcon = (
         </defs>
     </svg>
 )
+/** Default icon for Sourcegraph extensions displayed when enabled (visual feedback) */
+const defaultIconEnabled = (
+    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+            d="M41.407 23.2093C39.7671 23.6779 37.7256 26.4305 37.6503 25.301C37.6169 24.7405 37.4746 23.4436 37.4663 22.1217C37.4412 18.3483 37.6587 12.6923 37.6587 12.6923C37.6587 12.4999 37.642 12.3158 37.6001 12.1401C37.4997 11.5796 37.232 11.1361 36.8806 10.7847C36.8555 10.7596 36.8304 10.7429 36.8053 10.7178C36.7133 10.6341 36.6129 10.5505 36.5125 10.4752C36.4037 10.3999 36.2782 10.3329 36.1611 10.266C36.1109 10.2409 36.069 10.2158 36.0188 10.1907C35.9937 10.1823 35.9686 10.174 35.9519 10.1656C35.4332 9.93969 34.8558 9.82256 34.3287 9.82256L32.7809 9.85602C32.7809 9.85602 30.8147 9.92296 28.5557 9.97316H22.8914C22.4229 9.94806 22.1133 9.91459 21.9962 9.85602C20.7412 9.27035 23.4771 7.21213 23.887 6.02405C24.958 2.89489 22.1468 0 18.8335 0C15.5119 0 12.7007 2.89489 13.7884 6.04079C14.2067 7.22887 17.0765 9.32055 15.6793 9.87276C15.4952 9.94806 14.4494 9.98152 13.0856 9.98152H11.7971C8.69305 9.97316 4.87781 9.88112 4.87781 9.88112L3.32996 9.84766C1.94108 9.84766 0.326303 10.5003 0.0836674 12.0648C0.033467 12.274 0 12.7007 0 12.7007L0.0251002 24.3472C0.0418337 24.5397 0.0585672 24.6819 0.0836674 24.7321C0.635872 26.1293 3.68137 22.4814 4.86944 22.0631C8.00697 20.9671 9.90622 25.6859 9.90622 29.0159C9.90622 32.3542 7.0197 35.1654 3.88217 34.0777C2.69409 33.6594 0.644239 30.9235 0.0585672 32.1785C0.033467 32.2203 0.0167335 32.304 0 32.4211V45.331C0.0251002 46.8119 1.22154 48 2.69409 48H15.194C15.3613 47.9833 15.4868 47.9665 15.537 47.9498C16.9343 47.3892 15.0183 46.084 14.6418 44.7537C13.7298 41.5492 15.5036 40.9887 18.8335 40.9887C22.1635 40.9887 23.7364 41.8253 23.7364 44.1095C23.7364 45.2808 20.5906 47.3558 21.8456 47.9414C21.8874 47.9582 21.9627 47.9749 22.0631 47.9916H34.9395C36.4372 47.9916 37.642 46.7785 37.642 45.2808C37.642 45.2808 37.3742 33.2243 37.5918 31.71C37.7507 30.6139 40.2942 32.8897 41.407 33.3582C45.5485 35.0817 47.4813 31.6263 47.4813 28.2712C47.4813 24.9162 44.6282 22.289 41.407 23.2093Z"
+            fill="#20612E"
+            fillOpacity="0.2"
+        />
+        <mask id="mask0" mask-type="alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48">
+            <path
+                d="M41.407 23.2093C39.7671 23.6779 37.7256 26.4305 37.6503 25.301C37.6169 24.7405 37.4746 23.4436 37.4663 22.1217C37.4412 18.3483 37.6587 12.6923 37.6587 12.6923C37.6587 12.4999 37.642 12.3158 37.6001 12.1401C37.4997 11.5796 37.232 11.1361 36.8806 10.7847C36.8555 10.7596 36.8304 10.7429 36.8053 10.7178C36.7133 10.6341 36.6129 10.5505 36.5125 10.4752C36.4037 10.3999 36.2782 10.3329 36.1611 10.266C36.1109 10.2409 36.069 10.2158 36.0188 10.1907C35.9937 10.1823 35.9686 10.174 35.9519 10.1656C35.4332 9.93969 34.8558 9.82256 34.3287 9.82256L32.7809 9.85602C32.7809 9.85602 30.8147 9.92296 28.5557 9.97316H22.8914C22.4229 9.94806 22.1133 9.91459 21.9962 9.85602C20.7412 9.27035 23.4771 7.21213 23.887 6.02405C24.958 2.89489 22.1468 0 18.8335 0C15.5119 0 12.7007 2.89489 13.7884 6.04079C14.2067 7.22887 17.0765 9.32055 15.6793 9.87276C15.4952 9.94806 14.4494 9.98152 13.0856 9.98152H11.7971C8.69305 9.97316 4.87781 9.88112 4.87781 9.88112L3.32996 9.84766C1.94108 9.84766 0.326303 10.5003 0.0836674 12.0648C0.033467 12.274 0 12.7007 0 12.7007L0.0251002 24.3472C0.0418337 24.5397 0.0585672 24.6819 0.0836674 24.7321C0.635872 26.1293 3.68137 22.4814 4.86944 22.0631C8.00697 20.9671 9.90622 25.6859 9.90622 29.0159C9.90622 32.3542 7.0197 35.1654 3.88217 34.0777C2.69409 33.6594 0.644239 30.9235 0.0585672 32.1785C0.033467 32.2203 0.0167335 32.304 0 32.4211V45.331C0.0251002 46.8119 1.22154 48 2.69409 48H15.194C15.3613 47.9833 15.4868 47.9665 15.537 47.9498C16.9343 47.3892 15.0183 46.084 14.6418 44.7537C13.7298 41.5492 15.5036 40.9887 18.8335 40.9887C22.1635 40.9887 23.7364 41.8253 23.7364 44.1095C23.7364 45.2808 20.5906 47.3558 21.8456 47.9414C21.8874 47.9582 21.9627 47.9749 22.0631 47.9916H34.9395C36.4372 47.9916 37.642 46.7785 37.642 45.2808C37.642 45.2808 37.3742 33.2243 37.5918 31.71C37.7507 30.6139 40.2942 32.8897 41.407 33.3582C45.5485 35.0817 47.4813 31.6263 47.4813 28.2712C47.4813 24.9162 44.6282 22.289 41.407 23.2093Z"
+                fill="#D5E4F6"
+            />
+        </mask>
+        <g mask="url(#mask0)">
+            <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M8.35882 10.7511L20.1528 53.0684C20.947 55.9116 23.937 57.5863 26.8337 56.8103C29.7304 56.0298 31.4348 53.093 30.6429 50.2498L18.8467 7.93025C18.0525 5.08709 15.0625 3.41242 12.1658 4.19066C9.2713 4.96891 7.56467 7.90572 8.35882 10.7511Z"
+                fill="#20612E"
+                fillOpacity="0.1"
+            />
+            <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M30.1811 10.5904L0.644927 43.3235C-1.34615 45.5311 -1.13907 48.9073 1.10913 50.8629C3.35734 52.8186 6.79336 52.6134 8.78443 50.4058L38.3206 17.6727C40.3117 15.465 40.1046 12.0911 37.8564 10.1355C35.6082 8.17986 32.1744 8.38278 30.1811 10.5904Z"
+                fill="#20612E"
+                fillOpacity="0.1"
+            />
+            <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M-3.26866 28.731L38.8533 42.4049C41.7046 43.3326 44.7788 41.8117 45.7231 39.0132C46.6674 36.2124 45.1178 33.1931 42.2689 32.2699L0.144605 18.5893C-2.70661 17.6661 -5.78083 19.1824 -6.72289 21.9832C-7.66723 24.784 -6.11988 27.8033 -3.26866 28.731Z"
+                fill="#20612E"
+                fillOpacity="0.1"
+            />
+        </g>
+        <path
+            d="M35.4286 14.12L26.2204 23.6517L22 19.283L23.082 18.163L26.2204 21.4038L34.3466 13L35.4286 14.12Z"
+            fill="#20612E"
+        />
+    </svg>
+)
 
 /** Displays an extension as a card. */
 export const ExtensionCard = React.memo<Props>(function ExtensionCard({
@@ -87,21 +130,51 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
         return id.split('/')
     }, [extension])
 
+    /**
+     * When extension enablement state changes, display visual feedback for ~5 seconds.
+     * Clear the timeout when the component unmounts or the extension is toggled again.
+     */
+    const [change, setChange] = React.useState<'enabled' | 'disabled' | null>(null)
+    const timeoutReference = React.useRef<number | undefined>()
+
+    React.useEffect(() => () => clearTimeout(timeoutReference.current), [])
+
+    const onToggleChange = React.useCallback((enabled: boolean): void => {
+        if (timeoutReference.current) {
+            clearTimeout(timeoutReference.current)
+        }
+        setChange(enabled ? 'enabled' : 'disabled')
+        timeoutReference.current = window.setTimeout(() => setChange(null), 5000)
+    }, [])
+
     return (
         <div className="d-flex">
-            <div className="extension-card card">
+            <div className={`extension-card card ${change === 'enabled' ? 'extension-card--added' : ''}`}>
                 <div
-                    className="card-body extension-card__body d-flex flex-column position-relative"
+                    className="card-body extension-card__body d-flex flex-row position-relative"
                     // Prevent toggle clicks from propagating to the stretched-link (and
                     // navigating to the extension detail page).
                     onClick={stopPropagation}
                 >
-                    <div className="d-flex">
+                    {/* Item 1: Icon */}
+                    <div className="flex-shrink-0">
                         {icon ? (
                             <img className="extension-card__icon mr-2" src={icon} />
+                        ) : publisher === 'sourcegraph' && change === 'enabled' ? (
+                            defaultIconEnabled
                         ) : (
-                            publisher === 'sourcegraph' && defaultIcon
+                            defaultIcon
                         )}
+                    </div>
+                    {/* Item 2: Text */}
+                    {change === 'enabled' ? (
+                        <span className="mx-1 align-self-center">
+                            {name} is now enabled in code search results.{' '}
+                            <Link to={`/extensions/${extension.id}`} className="extension-card__link font-weight-bold">
+                                See how it works
+                            </Link>
+                        </span>
+                    ) : (
                         <div className="text-truncate w-100">
                             <div className="d-flex align-items-center">
                                 <h4 className="card-title extension-card__body-title mb-0 mr-1 text-truncate font-weight-normal flex-1">
@@ -117,28 +190,12 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
                                     </Link>
                                     <span className="extension-card__publisher"> by {publisher}</span>
                                 </h4>
+
                                 {extension.registryExtension?.isWorkInProgress && (
                                     <WorkInProgressBadge
                                         viewerCanAdminister={extension.registryExtension.viewerCanAdminister}
                                     />
                                 )}
-                                {subject &&
-                                    (subject.viewerCanAdminister ? (
-                                        <ExtensionToggle
-                                            extensionID={extension.id}
-                                            enabled={enabled}
-                                            settingsCascade={settingsCascade}
-                                            platformContext={platformContext}
-                                            className="extension-card__toggle"
-                                        />
-                                    ) : (
-                                        <ExtensionConfigurationState
-                                            isAdded={isExtensionAdded(settingsCascade.final, extension.id)}
-                                            isEnabled={enabled}
-                                            enabledIconOnly={true}
-                                            className="small"
-                                        />
-                                    ))}
                             </div>
                             <div className="mt-1">
                                 {extension.manifest ? (
@@ -160,7 +217,26 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
                                 )}
                             </div>
                         </div>
-                    </div>
+                    )}
+                    {/* Item 3: Toggle */}
+                    {subject &&
+                        (subject.viewerCanAdminister ? (
+                            <ExtensionToggle
+                                extensionID={extension.id}
+                                enabled={enabled}
+                                settingsCascade={settingsCascade}
+                                platformContext={platformContext}
+                                className="extension-card__toggle flex-shrink-0 align-self-start"
+                                onToggleChange={onToggleChange}
+                            />
+                        ) : (
+                            <ExtensionConfigurationState
+                                isAdded={isExtensionAdded(settingsCascade.final, extension.id)}
+                                isEnabled={enabled}
+                                enabledIconOnly={true}
+                                className="small"
+                            />
+                        ))}
                 </div>
             </div>
         </div>

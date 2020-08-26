@@ -2,6 +2,17 @@
     flex: 1;
     position: relative;
 
+    &--added {
+        background-color: rgba(215, 240, 219, 0.5);
+        border-color: #c7e9cd;
+        color: #20612e;
+        line-height: 157.7%;
+    }
+
+    &__link {
+        color: #20612e;
+    }
+
     &__name {
         font-weight: 600;
         font-size: 14px;
