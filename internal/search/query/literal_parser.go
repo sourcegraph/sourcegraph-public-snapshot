@@ -1,6 +1,7 @@
 package query
 
 import (
+	"strings"
 	"unicode"
 	"unicode/utf8"
 
@@ -33,17 +34,27 @@ func ScanAnyPatternLiteral(buf []byte) (scanned string, count int) {
 	return scanned, count
 }
 
-// isParameter returns whether the token is a parameter.
-func isParameter(token []byte) bool {
-	parser := &parser{buf: token}
-	_, ok, _ := parser.ParseParameter()
-	return ok
+// isField returns whether the prefix of the string matches a recognized field.
+func isField(buf []byte) bool {
+	field, _ := ScanField(buf)
+	if field == "" {
+		return false
+	}
+
+	negated := field[0] == '-'
+	if negated {
+		field = field[1:]
+	}
+
+	_, exists := allFields[strings.ToLower(field)]
+	return exists
 }
 
 // ScanBalancedPatternLiteral attempts to scan parentheses as literal patterns.
 // It returns the scanned string, how much to advance, and whether it succeeded.
 // Basically it scans any literal string, including whitespace, but ensures that
-// a resulting string does not contain 'and' or 'or keywords, and is balanced.
+// a resulting string does not contain 'and' or 'or keywords, nor paramters, and
+// is balanced.
 func ScanBalancedPatternLiteral(buf []byte) (scanned string, count int, ok bool) {
 	var advance, balanced int
 	var r rune
@@ -83,8 +94,8 @@ loop:
 			}
 			result = append(result, r)
 		case unicode.IsSpace(r):
-			if isParameter(token) {
-				// This is not a pattern, one of the tokens is parameter.
+			if isField(token) {
+				// This is not a pattern, one of the tokens match a field.
 				return "", 0, false
 			}
 			token = []byte{}
@@ -110,8 +121,8 @@ loop:
 		}
 	}
 
-	if isParameter(token) {
-		// This is not a pattern, one of the tokens is parameter.
+	if isField(token) {
+		// This is not a pattern, one of the tokens match a field.
 		return "", 0, false
 	}
 

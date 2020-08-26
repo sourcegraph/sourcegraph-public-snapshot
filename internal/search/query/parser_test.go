@@ -761,6 +761,16 @@ func TestParse(t *testing.T) {
 			WantGrammar:   `(and "file:(a)" "file:(b)")`,
 			WantHeuristic: Same,
 		},
+		{
+			Input:         `(repohascommitafter:"7 days")`,
+			WantGrammar:   `"repohascommitafter:7 days"`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `(foo repohascommitafter:"7 days")`,
+			WantGrammar:   `(and "repohascommitafter:7 days" "foo")`,
+			WantHeuristic: Same,
+		},
 		// Fringe tests cases at the boundary of heuristics and invalid syntax.
 		{
 			Input:         `(0(F)(:())(:())(<0)0()`,
