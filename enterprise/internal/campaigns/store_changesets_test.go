@@ -92,6 +92,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				ReconcilerState: cmpgn.ReconcilerStateCompleted,
 				FailureMessage:  &failureMessage,
 				NumResets:       18,
+
+				Unsynced: true,
 			}
 
 			// Only set these fields on a subset to make sure that

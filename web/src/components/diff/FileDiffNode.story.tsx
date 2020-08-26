@@ -10,7 +10,6 @@ import { FileDiffFields } from '../../graphql-operations'
 
 export const FILE_DIFF_NODES: FileDiffFields[] = [
     {
-        __typename: 'FileDiff',
         hunks: DEMO_HUNKS,
         internalID: 'abcdef123',
         stat: { added: 0, changed: 1, deleted: 0 },
@@ -28,7 +27,6 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         oldPath: null,
     },
     {
-        __typename: 'FileDiff',
         hunks: DEMO_HUNKS,
         internalID: 'abcdef123',
         stat: { added: 0, changed: 1, deleted: 0 },
@@ -46,7 +44,6 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         oldPath: 'deleted_file.md',
     },
     {
-        __typename: 'FileDiff',
         hunks: [],
         internalID: 'abcdef123',
         stat: { added: 0, changed: 0, deleted: 0 },
@@ -64,7 +61,6 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         oldPath: null,
     },
     {
-        __typename: 'FileDiff',
         hunks: [],
         internalID: 'abcdef123',
         stat: { added: 0, changed: 0, deleted: 0 },
@@ -82,7 +78,6 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         oldPath: 'deleted_file.md',
     },
     {
-        __typename: 'FileDiff',
         hunks: DEMO_HUNKS,
         internalID: 'abcdef123',
         stat: { added: 0, changed: 1, deleted: 0 },
@@ -104,7 +99,6 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         oldPath: 'existing_file.md',
     },
     {
-        __typename: 'FileDiff',
         hunks: DEMO_HUNKS,
         internalID: 'abcdef123',
         stat: { added: 0, changed: 1, deleted: 0 },
@@ -126,7 +120,6 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         oldPath: 'existing_git_file.md',
     },
     {
-        __typename: 'FileDiff',
         hunks: DEMO_HUNKS,
         internalID: 'abcdef123',
         stat: { added: 0, changed: 1, deleted: 0 },
@@ -148,7 +141,6 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         oldPath: 'from.md',
     },
     {
-        __typename: 'FileDiff',
         hunks: DEMO_HUNKS,
         internalID: 'abcdef123',
         stat: { added: 0, changed: 1, deleted: 0 },
@@ -170,7 +162,6 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         oldPath: 'dir1/from.md',
     },
     {
-        __typename: 'FileDiff',
         hunks: [],
         internalID: 'abcdef123',
         stat: { added: 0, changed: 0, deleted: 0 },

@@ -16,6 +16,7 @@ import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../components/alerts'
 import { Subject } from 'rxjs'
 import * as H from 'history'
+import { LSIFIndexState } from '../../../../shared/src/graphql-operations'
 
 const Header: FunctionComponent<{}> = () => (
     <thead>
@@ -82,11 +83,11 @@ const IndexNode: FunctionComponent<IndexNodeProps> = ({ node, onDelete, history,
             </td>
             <td>
                 <Link to={`./indexes/${node.id}`}>
-                    {node.state === GQL.LSIFIndexState.PROCESSING ? (
+                    {node.state === LSIFIndexState.PROCESSING ? (
                         <span>Processing</span>
-                    ) : node.state === GQL.LSIFIndexState.COMPLETED ? (
+                    ) : node.state === LSIFIndexState.COMPLETED ? (
                         <span className="text-success">Completed</span>
-                    ) : node.state === GQL.LSIFIndexState.ERRORED ? (
+                    ) : node.state === LSIFIndexState.ERRORED ? (
                         <span className="text-danger">Failed to process</span>
                     ) : (
                         <span>Waiting to process (#{node.placeInQueue} in line)</span>
@@ -153,19 +154,19 @@ export const CodeIntelIndexesPage: FunctionComponent<Props> = ({
             label: 'Completed',
             id: 'completed',
             tooltip: 'Show completed indexes only',
-            args: { state: GQL.LSIFIndexState.COMPLETED },
+            args: { state: LSIFIndexState.COMPLETED },
         },
         {
             label: 'Errored',
             id: 'errored',
             tooltip: 'Show errored indexes only',
-            args: { state: GQL.LSIFIndexState.ERRORED },
+            args: { state: LSIFIndexState.ERRORED },
         },
         {
             label: 'Queued',
             id: 'queued',
             tooltip: 'Show queued indexes only',
-            args: { state: GQL.LSIFIndexState.QUEUED },
+            args: { state: LSIFIndexState.QUEUED },
         },
     ]
 

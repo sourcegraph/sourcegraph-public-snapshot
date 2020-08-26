@@ -1,5 +1,4 @@
 import * as H from 'history'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import React, { useState, useCallback, useEffect, useMemo } from 'react'
 import { InteractiveModeInput } from './interactive/InteractiveModeInput'
 import { Form } from 'reactstrap'
@@ -41,6 +40,7 @@ import {
 } from './SearchOnboardingTour'
 import { useLocalStorage } from '../../util/useLocalStorage'
 import Shepherd from 'shepherd.js'
+import { AuthenticatedUser } from '../../auth'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -58,7 +58,7 @@ interface Props
         Pick<SubmitSearchParams, 'source'>,
         VersionContextProps,
         OnboardingTourProps {
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
@@ -188,7 +188,11 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                 },
                 {
                     id: 'final-step',
-                    text: generateStepTooltip(tour, "Use the 'return' key or the search button to run your search", 5),
+                    text: generateStepTooltip(
+                        tour,
+                        'Use <kbd>return</kbd><br/>or the search button to run your search',
+                        5
+                    ),
                     when: {
                         show() {
                             eventLogger.log('ViewedOnboardingTourSubmitSearchStep')

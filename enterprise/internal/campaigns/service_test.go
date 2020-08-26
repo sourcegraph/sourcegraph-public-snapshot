@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -229,13 +228,6 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CloseCampaign", func(t *testing.T) {
-		// After close, the changesets will be synced, so we need to mock that operation.
-		state := ct.MockChangesetSyncState(&protocol.RepoInfo{
-			Name: api.RepoName(rs[0].Name),
-			VCS:  protocol.VCSInfo{URL: rs[0].URI},
-		})
-		defer state.Unmock()
-
 		createCampaign := func(t *testing.T) *campaigns.Campaign {
 			t.Helper()
 
@@ -377,7 +369,12 @@ func TestService(t *testing.T) {
 		// Repo of changeset2 filtered out by authzFilter
 		ct.AuthzFilterRepos(t, changeset2.RepoID)
 
-		fakeSource := &ct.FakeChangesetSource{Err: nil}
+		fakeSource := &ct.FakeChangesetSource{
+			// Metadata returned by code host doesn't matter in this test, so we
+			// return the same for both changesets.
+			FakeMetadata: changeset1.Metadata,
+			Err:          nil,
+		}
 		sourcer := repos.NewFakeSourcer(nil, fakeSource)
 
 		svc := NewService(store, nil)
@@ -610,11 +607,7 @@ func TestService(t *testing.T) {
 				t.Fatalf("wrong spec fields (-want +got):\n%s", diff)
 			}
 
-			wantDiffStat := diff.Stat{
-				Added:   1,
-				Changed: 2,
-				Deleted: 1,
-			}
+			wantDiffStat := *ct.ChangesetSpecDiffStat
 			if diff := cmp.Diff(wantDiffStat, spec.DiffStat()); diff != "" {
 				t.Fatalf("wrong diff stat (-want +got):\n%s", diff)
 			}

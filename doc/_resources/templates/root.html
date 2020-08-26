@@ -1,5 +1,6 @@
 {{define "root"}}
 <html>
+
 <head>
     <title>{{block "title" .}}Home{{end}} - Sourcegraph docs</title>
     <link rel="icon" type="image/png" href="https://about.sourcegraph.com/sourcegraph-mark.png" />
@@ -7,18 +8,36 @@
     <link rel="stylesheet" href="{{asset "layout.css"}}?20" />
     <link rel="stylesheet" href="{{asset "search.css"}}?20" />
     <link rel="stylesheet" href="{{asset "content.css"}}?20" />
+    <script src="https://code.iconify.design/1/1.0.7/iconify.min.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
+    <!-- Google Tag Manager -->
+    <script>(function (w, d, s, l, i) {
+        w[l] = w[l] || []; w[l].push({
+            'gtm.start':
+                new Date().getTime(), event: 'gtm.js'
+        }); var f = d.getElementsByTagName(s)[0],
+            j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
+                'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
+        })(window, document, 'script', 'dataLayer', 'GTM-TB4NLS7');</script>
+    <!-- End Google Tag Manager -->
     {{block "head" .}}{{end}}
 </head>
+
 <body class="theme theme-light">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TB4NLS7" height="0" width="0"
+            style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
     <div class="global-navbar">
         <input type="checkbox" id="nav-state" class="nav-state" />
         <div class="nav-content">
             <div class="nav-container flex-container">
                 <div class="nav-header">
                     <a href="/" class="nav-logo">
-                        <img class="nav-logo-image small-hidden" src="/assets/sourcegraph-logo-docs.svg" alt="Sourcegraph Documentation">
-                        <img class="nav-logo-image-small large-hidden medium-hidden" src="/assets/sourcegraph-logo-docs-small.svg" alt="Sourcegraph Documentation">
+                        <img class="nav-logo-image small-hidden" src="/assets/sourcegraph-logo-docs.svg"
+                            alt="Sourcegraph Documentation">
+                        <img class="nav-logo-image-small large-hidden medium-hidden"
+                            src="/assets/sourcegraph-logo-docs-small.svg" alt="Sourcegraph Documentation">
                     </a>
                     {{block "versionSelector" .}}{{end}}
                 </div>
@@ -30,9 +49,11 @@
                         <li class="nav-link"><a href="https://sourcegraph.com">Sourcegraph.com</a></li>
                     </ul>
                     <form class="search-form form-inline small-hidden" method="get" action="/search">
-                        <input type="text" name="q" class="nav-search form-control" id="search" value="{{block "query" .}}{{end}}" placeholder="Search docs..." spellcheck="false">
+                        <input type="text" name="q" class="nav-search form-control" id="search"
+                            value="{{block "query" .}}{{end}}" placeholder="Search docs..." spellcheck="false">
                         <input type="hidden" name="v" value="{{block "version" .}}{{end}}">
-                        <button class="btn btn-primary nav-search-button ml-2" id="search-button" type="submit">Search</button>
+                        <button class="btn btn-primary nav-search-button ml-2" id="search-button"
+                            type="submit">Search</button>
                     </form>
                 </div>
             </div>
@@ -42,32 +63,44 @@
     {{block "content" .}}{{end}}
     {{/* Keep up-to-date with Sourcegraph.com */}}
     <div class="footer-container column large-12">
-      <div class="footer__container pl-3">
-          <footer class="footer pt-6 pb-2">
-                  <div class="footer__postscript d-flex justify-content-between pt-4 pb-2 small">
-                      <ul class="nav">
-                          <li class="nav-item text-muted mt-2 mr-3">© 2020 Sourcegraph</li>
-                          <li class="nav-item"><a class="nav-link" href="https://about.sourcegraph.com/terms">Terms</a></li>
-                          <li class="nav-item"><a class="nav-link" href="https://about.sourcegraph.com/security">Security</a></li>
-                          <li class="nav-item"><a class="nav-link" href="https://about.sourcegraph.com/privacy">Privacy</a></li>
-                      </ul>
-                  </div>
-          </footer>
+        <div class="footer__container pl-3">
+            <footer class="footer pt-6 pb-2">
+                <div class="footer__postscript d-flex justify-content-between pt-4 pb-2 small">
+                    <ul class="nav">
+                        <li class="nav-item text-muted mt-2 mr-3">© 2020 Sourcegraph</li>
+                        <li class="nav-item"><a class="nav-link" href="https://about.sourcegraph.com/terms">Terms</a>
+                        </li>
+                        <li class="nav-item"><a class="nav-link"
+                                href="https://about.sourcegraph.com/security">Security</a></li>
+                        <li class="nav-item"><a class="nav-link"
+                                href="https://about.sourcegraph.com/privacy">Privacy</a></li>
+                    </ul>
+                </div>
+            </footer>
         </div>
     </div>
 
     {{block "afterBody" .}}{{end}}
 
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-40540747-20"></script>
     <script>
-        window.dataLayer = window.dataLayer || [];
+        function copyText(element) {
+            var range, selection;
 
-        function gtag() {
-            dataLayer.push(arguments);
+            if (document.body.createTextRange) {
+                range = document.body.createTextRange();
+                range.moveToElementText(element);
+                range.select();
+            } else if (window.getSelection) {
+                selection = window.getSelection();
+                range = document.createRange();
+                range.selectNodeContents(element);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+            document.execCommand('copy');
         }
-        gtag('js', new Date());
-        gtag('config', 'UA-40540747-20');
     </script>
-    </body>
+</body>
+
 </html>
 {{end}}

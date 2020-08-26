@@ -511,31 +511,29 @@ func (s *ChangesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	if err != nil {
 		return err
 	}
-	return syncChangesets(ctx, s.ReposStore, s.SyncStore, s.HTTPFactory, cs)
-}
 
-// MockSyncChangesets can be set to mock SyncChangesets.
-//
-// Once Service.ApplyCampaign enqueues changesets to be synced in the
-// background it can be removed.
-var MockSyncChangesets func(ctx context.Context, repoStore RepoStore, syncStore SyncStore, cf *httpcli.Factory, cs ...*campaigns.Changeset) error
+	sourcer := repos.NewSourcer(s.HTTPFactory)
+	return syncChangesets(ctx, s.ReposStore, s.SyncStore, sourcer, cs)
+}
 
 // SyncChangesets refreshes the metadata of the given changesets and
 // updates them in the database.
-func SyncChangesets(ctx context.Context, repoStore RepoStore, syncStore SyncStore, cf *httpcli.Factory, cs ...*campaigns.Changeset) (err error) {
-	if MockSyncChangesets != nil {
-		return MockSyncChangesets(ctx, repoStore, syncStore, cf, cs...)
-	}
-
-	return syncChangesets(ctx, repoStore, syncStore, cf, cs...)
+func SyncChangesets(ctx context.Context, repoStore RepoStore, syncStore SyncStore, sourcer repos.Sourcer, cs ...*campaigns.Changeset) (err error) {
+	return syncChangesets(ctx, repoStore, syncStore, sourcer, cs...)
 }
 
-func syncChangesets(ctx context.Context, repoStore RepoStore, syncStore SyncStore, cf *httpcli.Factory, cs ...*campaigns.Changeset) (err error) {
+func syncChangesets(
+	ctx context.Context,
+	repoStore RepoStore,
+	syncStore SyncStore,
+	sourcer repos.Sourcer,
+	cs ...*campaigns.Changeset,
+) (err error) {
 	if len(cs) == 0 {
 		return nil
 	}
 
-	bySource, err := groupChangesetsBySource(ctx, repoStore, cf, nil, cs...)
+	bySource, err := groupChangesetsBySource(ctx, repoStore, sourcer, cs...)
 	if err != nil {
 		return err
 	}
@@ -601,6 +599,7 @@ func syncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []
 	defer func() { err = tx.Done(err) }()
 
 	for _, c := range cs {
+		c.Unsynced = false
 		if err = tx.UpdateChangeset(ctx, c); err != nil {
 			return err
 		}
@@ -616,7 +615,6 @@ func syncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []
 func groupChangesetsBySource(
 	ctx context.Context,
 	reposStore RepoStore,
-	cf *httpcli.Factory,
 	sourcer repos.Sourcer,
 	cs ...*campaigns.Changeset,
 ) ([]*SourceChangesets, error) {
@@ -665,23 +663,14 @@ func groupChangesetsBySource(
 
 	bySource := make(map[int64]*SourceChangesets, len(es))
 	for _, e := range es {
-		var css repos.ChangesetSource
-		if sourcer != nil {
-			sources, err := sourcer(e)
-			if err != nil {
-				return nil, err
-			}
+		sources, err := sourcer(e)
+		if err != nil {
+			return nil, err
+		}
 
-			var ok bool
-			css, ok = sources[0].(repos.ChangesetSource)
-			if !ok {
-				return nil, fmt.Errorf("ChangesetSource cannot be created from external service %q", e.Kind)
-			}
-		} else {
-			css, err = repos.NewChangesetSource(e, cf)
-			if err != nil {
-				return nil, err
-			}
+		css, ok := sources[0].(repos.ChangesetSource)
+		if !ok {
+			return nil, fmt.Errorf("ChangesetSource cannot be created from external service %q", e.Kind)
 		}
 
 		bySource[e.ID] = &SourceChangesets{ChangesetSource: css}

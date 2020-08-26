@@ -14,7 +14,7 @@ import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { applyEdits, parse } from '@sqs/jsonc-parser'
 import { overwriteSettings } from '../../../shared/src/settings/edit'
 import delay from 'delay'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 
 describe('Core functionality regression test suite', () => {
     const testUsername = 'test-core'
@@ -49,7 +49,7 @@ describe('Core functionality regression test suite', () => {
         screenshots = new ScreenshotVerifier(driver)
     })
 
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
 
     after(async () => {
         if (!config.noCleanup) {

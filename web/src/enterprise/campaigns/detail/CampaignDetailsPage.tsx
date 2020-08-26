@@ -13,8 +13,7 @@ import {
 } from './backend'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import * as H from 'history'
-import { Subject, of, merge } from 'rxjs'
-import { switchMap, distinctUntilChanged } from 'rxjs/operators'
+import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
@@ -25,11 +24,14 @@ import { CampaignStatsCard } from './CampaignStatsCard'
 import { CampaignHeader } from './CampaignHeader'
 import { CampaignTabs } from './CampaignTabs'
 import { CampaignDetailsActionSection } from './CampaignDetailsActionSection'
+import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
+import { CampaignInfoByline } from './CampaignInfoByline'
 
-export interface CampaignDetailsProps
+export interface CampaignDetailsPageProps
     extends ThemeProps,
         ExtensionsControllerProps,
         PlatformContextProps,
+        BreadcrumbSetters,
         TelemetryProps {
     /**
      * The campaign ID.
@@ -53,7 +55,7 @@ export interface CampaignDetailsProps
 /**
  * The area for a single campaign.
  */
-export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
+export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPageProps> = ({
     campaignID,
     history,
     location,
@@ -61,27 +63,38 @@ export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
     extensionsController,
     platformContext,
     telemetryService,
+    useBreadcrumb,
     fetchCampaignById = _fetchCampaignById,
     queryChangesets,
     queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime,
     deleteCampaign,
 }) => {
-    /** Retrigger fetching */
-    const campaignUpdates = useMemo(() => new Subject<void>(), [])
-
     useEffect(() => {
-        telemetryService.logViewEvent(campaignID ? 'CampaignDetailsPage' : 'NewCampaignPage')
-    }, [campaignID, telemetryService])
+        telemetryService.logViewEvent('CampaignDetailsPagePage')
+    }, [telemetryService])
 
     const campaign: CampaignFields | null | undefined = useObservable(
         useMemo(
             () =>
-                merge(of(undefined), campaignUpdates).pipe(
-                    switchMap(() => fetchCampaignById(campaignID)),
+                fetchCampaignById(campaignID).pipe(
+                    repeatWhen(notifier => notifier.pipe(delay(5000))),
                     distinctUntilChanged((a, b) => isEqual(a, b))
                 ),
-            [campaignID, campaignUpdates, fetchCampaignById]
+            [campaignID, fetchCampaignById]
+        )
+    )
+
+    useBreadcrumb(
+        useMemo(
+            () =>
+                campaign
+                    ? {
+                          element: <>{campaign.name}</>,
+                          key: 'CampaignDetailsPage',
+                      }
+                    : null,
+            [campaign]
         )
     )
 
@@ -104,8 +117,6 @@ export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
             <CampaignHeader
                 name={campaign.name}
                 namespace={campaign.namespace}
-                creator={campaign.initialApplier}
-                createdAt={campaign.createdAt}
                 actionSection={
                     <CampaignDetailsActionSection
                         campaignID={campaign.id}
@@ -115,13 +126,19 @@ export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
                         history={history}
                     />
                 }
-                className="mb-3 test-campaign-details-page"
+                className="test-campaign-details-page"
+            />
+            <CampaignInfoByline
+                createdAt={campaign.createdAt}
+                initialApplier={campaign.initialApplier}
+                lastAppliedAt={campaign.lastAppliedAt}
+                lastApplier={campaign.lastApplier}
+                className="mb-3"
             />
             <CampaignStatsCard closedAt={campaign.closedAt} stats={campaign.changesets.stats} className="mb-3" />
             <CampaignDescription history={history} description={campaign.description} />
             <CampaignTabs
                 campaign={campaign}
-                campaignUpdates={campaignUpdates}
                 extensionsController={extensionsController}
                 history={history}
                 isLightTheme={isLightTheme}

@@ -2,142 +2,56 @@
 
 exports[`CampaignsDotComPage renders 1`] = `
 <CampaignsDotComPage>
-  <CampaignsMarketing
-    body={
-      <div
-        className="row"
-      >
-        <section
-          className="my-3 col-md-8 col-xs-12"
-        >
-          <h2>
-            Get started
-          </h2>
-          <p>
-            <strong>
-              Campaigns are not available on Sourcegraph.com
-            </strong>
-            . Instead, use a private Sourcegraph instance to try them on your code.
-          </p>
-          <ol>
-            <li>
-              Install a private Sourcegraph instance using the
-               
-              <a
-                href="https://docs.sourcegraph.com/#quickstart-guide"
-                rel="noopener"
-              >
-                quickstart guide.
-              </a>
-            </li>
-            <li>
-              <a
-                href="https://docs.sourcegraph.com/admin/repo/add"
-              >
-                Add repositories
-              </a>
-               from your code host to Sourcegraph.
-            </li>
-            <li>
-              Follow the
-               
-              <a
-                href="https://docs.sourcegraph.com/user/campaigns/getting_started"
-                rel="noopener"
-              >
-                Getting started with campaigns
-              </a>
-               
-              guide to enable campaigns on your instance and start using them.
-            </li>
-          </ol>
-          <p>
-            Learn more about campaigns
-             
-            <a
-              href="https://docs.sourcegraph.com/user/campaigns"
-              rel="noopener"
-            >
-              in the documentation
-            </a>
-            .
-          </p>
-          <section
-            className="my-3"
-          >
-            <h2>
-              Ask questions and share feedback
-            </h2>
-            <p>
-              Get in touch on Twitter 
-              <a
-                href="https://twitter.com/srcgraph"
-              >
-                @srcgraph
-              </a>
-              , file an issue in our 
-              <a
-                href="https://github.com/sourcegraph/sourcegraph/issues"
-              >
-                public issue tracker
-              </a>
-              , or email 
-              <a
-                href="mailto:feedback@sourcegraph.com"
-              >
-                feedback@sourcegraph.com
-              </a>
-              . We look forward to hearing from you!
-            </p>
-          </section>
-        </section>
-        <div
-          className="offset-md-1 col-md-10 offset-lg-0 col-lg-4"
-        >
-          <PrivateCodeCta />
-        </div>
-      </div>
-    }
-    hideShareFeedbackBlurb={true}
+  <div
+    className="container web-content mt-3"
   >
     <section
       className="mt-3 mb-5"
     >
-      <CampaignHeader>
-        <div
-          className="d-flex w-100 mb-2 justify-content-between align-items-center"
-        >
-          <div>
-            <h1
-              className="d-inline-block mb-0"
-            >
-              <Memo(ImageAutoAdjustIcon)
-                className="icon-inline mr-2 text-muted"
+      <PageHeader
+        icon={
+          Object {
+            "$$typeof": Symbol(react.memo),
+            "compare": null,
+            "type": [Function],
+          }
+        }
+        title={
+          <React.Fragment>
+            Campaigns
+             
+            <sup>
+              <span
+                className="badge badge-merged text-uppercase"
               >
-                <svg
-                  className="mdi-icon icon-inline mr-2 text-muted"
-                  fill="currentColor"
-                  height={24}
-                  viewBox="0 0 24 24"
-                  width={24}
-                >
-                  <path
-                    d="M19 10V19H5V5H14V3H5C3.92 3 3 3.9 3 5V19C3 20.1 3.92 21 5 21H19C20.12 21 21 20.1 21 19V10H19M17 10L17.94 7.94L20 7L17.94 6.06L17 4L16.06 6.06L14 7L16.06 7.94L17 10M13.25 10.75L12 8L10.75 10.75L8 12L10.75 13.25L12 16L13.25 13.25L16 12L13.25 10.75Z"
-                  />
-                </svg>
-              </Memo(ImageAutoAdjustIcon)>
-              Campaigns
-              <sup>
-                <span
-                  className="ml-2 badge badge-merged text-uppercase"
-                >
-                  Beta
-                </span>
-              </sup>
-            </h1>
-          </div>
+                Beta
+              </span>
+            </sup>
+          </React.Fragment>
+        }
+      >
+        <div
+          className="page-header d-flex flex-wrap align-items-center"
+        >
+          <h1
+            className="flex-grow-1"
+          >
+            <Memo(ImageAutoAdjustIcon)
+              className="icon-inline page-header__icon"
+            />
+             
+            Campaigns
+             
+            <sup>
+              <span
+                className="badge badge-merged text-uppercase"
+              >
+                Beta
+              </span>
+            </sup>
+          </h1>
         </div>
-      </CampaignHeader>
+      </PageHeader>
       <h2
         className="mb-5"
       >
@@ -279,6 +193,6 @@ exports[`CampaignsDotComPage renders 1`] = `
         </PrivateCodeCta>
       </div>
     </div>
-  </CampaignsMarketing>
+  </div>
 </CampaignsDotComPage>
 `;

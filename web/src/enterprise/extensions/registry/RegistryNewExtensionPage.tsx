@@ -21,6 +21,7 @@ import { queryViewerRegistryPublishers } from './backend'
 import { RegistryAreaPageProps } from './RegistryArea'
 import { ErrorAlert } from '../../../components/alerts'
 import * as H from 'history'
+import { AuthenticatedUser } from '../../../auth'
 
 function createExtension(publisher: GQL.ID, name: string): Observable<GQL.IExtensionRegistryCreateExtensionResult> {
     return mutateGraphQL(
@@ -54,7 +55,7 @@ function createExtension(publisher: GQL.ID, name: string): Observable<GQL.IExten
 }
 
 interface Props extends RegistryAreaPageProps, RouteComponentProps<{}> {
-    authenticatedUser: GQL.IUser
+    authenticatedUser: AuthenticatedUser
     history: H.History
 }
 

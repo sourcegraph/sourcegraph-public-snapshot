@@ -18,7 +18,7 @@ export const CampaignDescription: React.FunctionComponent<CampaignDescriptionPro
     <div className={classNames(className)}>
         <h3>Campaign description</h3>
         <hr />
-        <div className="pl-3 pt-3">
+        <div className="pl-3 py-3">
             <Markdown dangerousInnerHTML={renderMarkdown(description || '_No description_')} history={history} />
         </div>
     </div>

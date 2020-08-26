@@ -405,7 +405,7 @@ func Benchmark_zoektIndexedRepos(b *testing.B) {
 	repoNames := []string{}
 	zoektRepos := map[string]*zoekt.Repository{}
 
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 200000; i++ {
 		indexedName := fmt.Sprintf("foo/indexed-%d@", i)
 		unindexedName := fmt.Sprintf("foo/unindexed-%d@", i)
 

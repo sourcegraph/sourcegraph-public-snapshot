@@ -1,4 +1,3 @@
-import { Observer } from 'rxjs'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import * as H from 'history'
 import React, { useState, useCallback } from 'react'
@@ -23,7 +22,6 @@ export interface ExternalChangesetCloseNodeProps extends ThemeProps {
     node: ExternalChangesetFields
     willClose: boolean
     viewerCanAdminister: boolean
-    campaignUpdates?: Pick<Observer<void>, 'next'>
     history: H.History
     location: H.Location
     extensionInfo?: {
@@ -37,7 +35,6 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<ExternalChanges
     node,
     willClose,
     viewerCanAdminister,
-    campaignUpdates,
     isLightTheme,
     history,
     location,
@@ -68,11 +65,7 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<ExternalChanges
                 )}
             </button>
             {willClose ? <ChangesetCloseActionClose /> : <ChangesetCloseActionKept />}
-            <ExternalChangesetInfoCell
-                node={node}
-                viewerCanAdminister={viewerCanAdminister}
-                campaignUpdates={campaignUpdates}
-            />
+            <ExternalChangesetInfoCell node={node} viewerCanAdminister={viewerCanAdminister} />
             <span>{node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} />}</span>
             <span>{node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} />}</span>
             <div className="external-changeset-close-node__diffstat">

@@ -1,5 +1,5 @@
 import * as H from 'history'
-import * as React from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SettingsCascadeOrError } from '../../../shared/src/settings/settings'
@@ -7,6 +7,10 @@ import { eventLogger } from '../tracking/eventLogger'
 import { ComponentDescriptor } from '../util/contributions'
 import { PatternTypeProps } from '../search'
 import { ThemeProps } from '../../../shared/src/theme'
+import { PageHeader } from '../components/PageHeader'
+import { Breadcrumbs, BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
+import CompassOutlineIcon from 'mdi-react/CompassOutlineIcon'
+import { AuthenticatedUser } from '../auth'
 
 /**
  * Properties passed to all section components in the explore area.
@@ -14,9 +18,10 @@ import { ThemeProps } from '../../../shared/src/theme'
 export interface ExploreAreaSectionContext
     extends ExtensionsControllerProps,
         ThemeProps,
-        Omit<PatternTypeProps, 'setPatternType'> {
+        Omit<PatternTypeProps, 'setPatternType'>,
+        BreadcrumbSetters {
     /** The currently authenticated user. */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 
     /** The subject whose extensions and settings to display. */
     viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
@@ -31,40 +36,50 @@ export interface ExploreAreaSectionContext
 /** A section shown in the explore area. */
 export interface ExploreSectionDescriptor extends ComponentDescriptor<ExploreAreaSectionContext> {}
 
-interface ExploreAreaProps extends ExploreAreaSectionContext {
+interface ExploreAreaProps extends ExploreAreaSectionContext, BreadcrumbsProps {
     exploreSections: readonly ExploreSectionDescriptor[]
 }
-
-interface ExploreAreaState {}
 
 /**
  * The explore area, which shows cards containing summaries and actions from product features. The purpose of it is
  * to expose information at a glance and make it easy to navigate to features (without requiring them to add a link
  * on the space-constrained global nav).
  */
-export class ExploreArea extends React.Component<ExploreAreaProps, ExploreAreaState> {
-    public state: ExploreAreaState = {}
+export const ExploreArea: React.FunctionComponent<ExploreAreaProps> = ({
+    extensionsController,
+    authenticatedUser,
+    viewerSubject,
+    settingsCascade,
+    isLightTheme,
+    location,
+    history,
+    patternType,
+    exploreSections,
+    breadcrumbs,
+    useBreadcrumb,
+}) => {
+    useEffect(() => eventLogger.logViewEvent('Explore'), [])
 
-    public componentDidMount(): void {
-        eventLogger.logViewEvent('Explore')
+    const childBreadcrumbSetters = useBreadcrumb(useMemo(() => ({ key: 'explore', element: <>Explore</> }), []))
+
+    const context: ExploreAreaSectionContext = {
+        extensionsController,
+        authenticatedUser,
+        viewerSubject,
+        settingsCascade,
+        isLightTheme,
+        location,
+        history,
+        patternType,
+        ...childBreadcrumbSetters,
     }
 
-    public render(): JSX.Element | null {
-        const context: ExploreAreaSectionContext = {
-            extensionsController: this.props.extensionsController,
-            authenticatedUser: this.props.authenticatedUser,
-            viewerSubject: this.props.viewerSubject,
-            settingsCascade: this.props.settingsCascade,
-            isLightTheme: this.props.isLightTheme,
-            location: this.props.location,
-            history: this.props.history,
-            patternType: this.props.patternType,
-        }
-
-        return (
-            <div className="explore-area container my-3">
-                <h1>Explore</h1>
-                {this.props.exploreSections.map(
+    return (
+        <div className="explore-area w-100">
+            <Breadcrumbs breadcrumbs={breadcrumbs} />
+            <div className="container web-content">
+                <PageHeader title="Explore" icon={CompassOutlineIcon} />
+                {exploreSections.map(
                     ({ condition = () => true, render }, index) =>
                         condition(context) && (
                             <div className="mb-5" key={index}>
@@ -73,6 +88,6 @@ export class ExploreArea extends React.Component<ExploreAreaProps, ExploreAreaSt
                         )
                 )}
             </div>
-        )
-    }
+        </div>
+    )
 }

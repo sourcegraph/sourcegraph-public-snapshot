@@ -1,6 +1,6 @@
 import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteID, siteGQLID } from './jscontext'
 import assert from 'assert'
@@ -50,7 +50,7 @@ describe('Search onboarding', () => {
             }),
         })
     })
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
     describe('Onboarding', () => {
@@ -84,9 +84,11 @@ describe('Search onboarding', () => {
 
         it('displays all steps in the repo onboarding flow', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await driver.page.evaluate(() => localStorage.setItem('has-seen-onboarding-tour', 'false'))
-            await driver.page.evaluate(() => localStorage.setItem('has-cancelled-onboarding-tour', 'false'))
-            await driver.page.evaluate(() => location.reload())
+            await driver.page.evaluate(() => {
+                localStorage.setItem('has-seen-onboarding-tour', 'false')
+                localStorage.setItem('has-cancelled-onboarding-tour', 'false')
+                location.reload()
+            })
             await driver.page.waitForSelector('.tour-card')
             await driver.page.waitForSelector('.test-tour-repo-button')
             await driver.page.click('.test-tour-repo-button')
@@ -108,9 +110,11 @@ describe('Search onboarding', () => {
         })
         it('advances filter-lang only after the autocomplete is closed and there is whitespace after the filter', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await driver.page.evaluate(() => localStorage.setItem('has-seen-onboarding-tour', 'false'))
-            await driver.page.evaluate(() => localStorage.setItem('has-cancelled-onboarding-tour', 'false'))
-            await driver.page.evaluate(() => location.reload())
+            await driver.page.evaluate(() => {
+                localStorage.setItem('has-seen-onboarding-tour', 'false')
+                localStorage.setItem('has-cancelled-onboarding-tour', 'false')
+                location.reload()
+            })
             await driver.page.waitForSelector('.tour-card')
             await driver.page.waitForSelector('.test-tour-language-button')
             await driver.page.click('.test-tour-language-button')
@@ -135,9 +139,11 @@ describe('Search onboarding', () => {
         })
         it('advances filter-repository only if there is whitespace after the repo filter', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await driver.page.evaluate(() => localStorage.setItem('has-seen-onboarding-tour', 'false'))
-            await driver.page.evaluate(() => localStorage.setItem('has-cancelled-onboarding-tour', 'false'))
-            await driver.page.evaluate(() => location.reload())
+            await driver.page.evaluate(() => {
+                localStorage.setItem('has-seen-onboarding-tour', 'false')
+                localStorage.setItem('has-cancelled-onboarding-tour', 'false')
+                location.reload()
+            })
             await driver.page.waitForSelector('.tour-card')
             await driver.page.waitForSelector('.test-tour-repo-button')
             await driver.page.click('.test-tour-repo-button')

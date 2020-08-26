@@ -35,7 +35,6 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
     viewerCanAdminister: boolean
     history: H.History
     location: H.Location
-    campaignUpdates: Subject<void>
     willClose: boolean
 
     /** For testing only. */
@@ -53,7 +52,6 @@ export const CampaignCloseChangesetsList: React.FunctionComponent<Props> = ({
     history,
     location,
     isLightTheme,
-    campaignUpdates,
     extensionsController,
     platformContext,
     telemetryService,
@@ -70,6 +68,7 @@ export const CampaignCloseChangesetsList: React.FunctionComponent<Props> = ({
                 checkState: null,
                 reviewState: null,
                 first: args.first ?? null,
+                after: args.after ?? null,
                 campaign: campaignID,
                 onlyPublishedByThisCampaign: true,
             }).pipe(repeatWhen(notifier => notifier.pipe(delay(5000)))),
@@ -140,7 +139,6 @@ export const CampaignCloseChangesetsList: React.FunctionComponent<Props> = ({
                     viewerCanAdminister,
                     history,
                     location,
-                    campaignUpdates,
                     extensionInfo: { extensionsController, hoverifier },
                     queryExternalChangesetWithFileDiffs,
                     willClose,

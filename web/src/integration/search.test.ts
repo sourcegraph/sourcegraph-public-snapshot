@@ -4,7 +4,7 @@ import { commonWebGraphQlResults } from './graphQlResults'
 import { ILanguage, IRepository } from '../../../shared/src/graphql/schema'
 import { SearchResult } from '../graphql-operations'
 import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { test } from 'mocha'
 
@@ -79,7 +79,7 @@ describe('Search', () => {
             directory: __dirname,
         })
     })
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
     describe('Interactive search mode', () => {

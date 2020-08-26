@@ -21,6 +21,16 @@ import {
     DeleteCampaignVariables,
 } from '../../../graphql-operations'
 
+const changesetStatsFragment = gql`
+    fragment ChangesetStatsFields on ChangesetConnectionStats {
+        total
+        closed
+        merged
+        open
+        unpublished
+    }
+`
+
 const campaignFragment = gql`
     fragment CampaignFields on Campaign {
         __typename
@@ -32,21 +42,25 @@ const campaignFragment = gql`
             url
         }
         description
+
+        createdAt
         initialApplier {
             username
             url
         }
-        createdAt
+
+        lastAppliedAt
+        lastApplier {
+            username
+            url
+        }
+
         updatedAt
         closedAt
         viewerCanAdminister
         changesets {
             stats {
-                total
-                closed
-                merged
-                open
-                unpublished
+                ...ChangesetStatsFields
             }
         }
         diffStat {
@@ -55,6 +69,8 @@ const campaignFragment = gql`
     }
 
     ${diffStatFields}
+
+    ${changesetStatsFragment}
 `
 
 const changesetLabelFragment = gql`
@@ -160,6 +176,7 @@ export const changesetFieldsFragment = gql`
 export const queryChangesets = ({
     campaign,
     first,
+    after,
     externalState,
     reviewState,
     checkState,
@@ -174,6 +191,7 @@ export const queryChangesets = ({
             query CampaignChangesets(
                 $campaign: ID!
                 $first: Int
+                $after: String
                 $externalState: ChangesetExternalState
                 $reviewState: ChangesetReviewState
                 $checkState: ChangesetCheckState
@@ -186,6 +204,7 @@ export const queryChangesets = ({
                     ... on Campaign {
                         changesets(
                             first: $first
+                            after: $after
                             externalState: $externalState
                             publicationState: $publicationState
                             reconcilerState: $reconcilerState
@@ -211,6 +230,7 @@ export const queryChangesets = ({
         variables: {
             campaign,
             first,
+            after,
             externalState,
             reviewState,
             checkState,

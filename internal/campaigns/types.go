@@ -293,6 +293,10 @@ type Changeset struct {
 	FinishedAt      time.Time
 	ProcessAfter    time.Time
 	NumResets       int64
+
+	// Unsynced is true if the changeset tracks an external changeset but the
+	// data hasn't been synced yet.
+	Unsynced bool
 }
 
 // RecordID is needed to implement the workerutil.Record interface.
@@ -304,6 +308,20 @@ func (c *Changeset) Clone() *Changeset {
 	tt.CampaignIDs = c.CampaignIDs[:len(c.CampaignIDs):len(c.CampaignIDs)]
 	return &tt
 }
+
+// PublishedAndSynced returns whether the Changeset has been published on the
+// code host and is fully synced.
+// This can be used as a check before accessing the fields based on synced
+// metadata, such as Title or Body, etc.
+func (c *Changeset) PublishedAndSynced() bool {
+	return !c.Unsynced && c.PublicationState.Published()
+}
+
+// Published returns whether the Changeset's PublicationState is Published.
+func (c *Changeset) Published() bool { return c.PublicationState.Published() }
+
+// Unpublished returns whether the Changeset's PublicationState is Unpublished.
+func (c *Changeset) Unpublished() bool { return c.PublicationState.Unpublished() }
 
 // DiffStat returns a *diff.Stat if DiffStatAdded, DiffStatChanged, and
 // DiffStatDeleted are set, or nil if one or more is not.

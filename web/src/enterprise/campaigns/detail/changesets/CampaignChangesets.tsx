@@ -3,12 +3,12 @@ import * as H from 'history'
 import { ChangesetNodeProps, ChangesetNode } from './ChangesetNode'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
-import { Subject, merge, of } from 'rxjs'
+import { Subject } from 'rxjs'
 import {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
 } from '../backend'
-import { repeatWhen, delay, withLatestFrom, map, filter, switchMap } from 'rxjs/operators'
+import { repeatWhen, delay, withLatestFrom, map, filter } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { createHoverifier } from '@sourcegraph/codeintellify'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '../../../../../../shared/src/util/url'
@@ -31,8 +31,6 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
     viewerCanAdminister: boolean
     history: H.History
     location: H.Location
-    campaignUpdates: Subject<void>
-    changesetUpdates: Subject<void>
 
     hideFilters?: boolean
 
@@ -51,8 +49,6 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
     history,
     location,
     isLightTheme,
-    changesetUpdates,
-    campaignUpdates,
     extensionsController,
     platformContext,
     telemetryService,
@@ -69,20 +65,17 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
     })
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArgs) =>
-            merge(of(undefined), changesetUpdates).pipe(
-                switchMap(() =>
-                    queryChangesets({
-                        externalState: changesetFilters.externalState,
-                        reviewState: changesetFilters.reviewState,
-                        checkState: changesetFilters.checkState,
-                        publicationState: changesetFilters.publicationState,
-                        reconcilerState: changesetFilters.reconcilerState,
-                        first: args.first ?? null,
-                        campaign: campaignID,
-                        onlyPublishedByThisCampaign: null,
-                    }).pipe(repeatWhen(notifier => notifier.pipe(delay(5000))))
-                )
-            ),
+            queryChangesets({
+                externalState: changesetFilters.externalState,
+                reviewState: changesetFilters.reviewState,
+                checkState: changesetFilters.checkState,
+                publicationState: changesetFilters.publicationState,
+                reconcilerState: changesetFilters.reconcilerState,
+                first: args.first ?? null,
+                after: args.after ?? null,
+                campaign: campaignID,
+                onlyPublishedByThisCampaign: null,
+            }).pipe(repeatWhen(notifier => notifier.pipe(delay(5000)))),
         [
             campaignID,
             changesetFilters.externalState,
@@ -91,7 +84,6 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
             changesetFilters.reconcilerState,
             changesetFilters.publicationState,
             queryChangesets,
-            changesetUpdates,
         ]
     )
 
@@ -165,7 +157,6 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                         viewerCanAdminister,
                         history,
                         location,
-                        campaignUpdates,
                         extensionInfo: { extensionsController, hoverifier },
                         queryExternalChangesetWithFileDiffs,
                     }}

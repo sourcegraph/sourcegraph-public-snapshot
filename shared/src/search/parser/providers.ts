@@ -6,8 +6,8 @@ import { getMonacoTokens } from './tokens'
 import { getDiagnostics } from './diagnostics'
 import { getCompletionItems } from './completion'
 import { getHoverResult } from './hover'
-import { SearchPatternType } from '../../graphql/schema'
 import { SearchSuggestion } from '../suggestions'
+import { SearchPatternType } from '../../graphql-operations'
 
 interface SearchFieldProviders {
     tokens: Monaco.languages.TokensProvider
