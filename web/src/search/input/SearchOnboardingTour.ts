@@ -2,8 +2,8 @@
  * This file contains utility functions for the search onboarding tour.
  */
 import Shepherd from 'shepherd.js'
-import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { eventLogger } from '../../tracking/eventLogger'
+import { SearchPatternType } from '../../graphql-operations'
 
 export const HAS_CANCELLED_TOUR_KEY = 'has-cancelled-onboarding-tour'
 export const HAS_SEEN_TOUR_KEY = 'has-seen-onboarding-tour'
@@ -12,7 +12,7 @@ export const defaultTourOptions: Shepherd.Tour.TourOptions = {
     useModalOverlay: true,
     defaultStepOptions: {
         arrow: true,
-        classes: 'web-content tour-card card py-4 px-3',
+        classes: 'web-content tour-card card py-4 px-3 shadow-lg',
         popperOptions: {
             // Removes default behavior of autofocusing steps
             modifiers: [
@@ -33,7 +33,7 @@ export const defaultTourOptions: Shepherd.Tour.TourOptions = {
  */
 export function generateStepTooltip(
     tour: Shepherd.Tour,
-    title: string,
+    dangerousTitleHtml: string,
     stepNumber: number,
     description?: string,
     additionalContent?: HTMLElement,
@@ -42,7 +42,7 @@ export function generateStepTooltip(
     const element = document.createElement('div')
     element.className = `d-flex flex-column test-tour-step-${stepNumber}`
     const titleElement = document.createElement('h4')
-    titleElement.textContent = title
+    titleElement.innerHTML = dangerousTitleHtml
     titleElement.className = 'font-weight-bold'
     element.append(titleElement)
     if (description) {

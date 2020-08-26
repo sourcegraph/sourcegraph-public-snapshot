@@ -15,14 +15,14 @@ import gitoliteSchemaJSON from '../../../../schema/gitolite.schema.json'
 import otherExternalServiceSchemaJSON from '../../../../schema/other_external_service.schema.json'
 import phabricatorSchemaJSON from '../../../../schema/phabricator.schema.json'
 import { PhabricatorIcon } from '../../../../shared/src/components/icons'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { EditorAction } from '../../site-admin/configHelpers'
+import { ExternalServiceKind } from '../../graphql-operations'
 
 /**
  * Metadata associated with adding a given external service.
  */
 export interface AddExternalServiceOptions {
-    kind: GQL.ExternalServiceKind
+    kind: ExternalServiceKind
 
     /**
      * Title to show in the external service "button"
@@ -496,7 +496,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
 ]
 
 const GITHUB_DOTCOM: AddExternalServiceOptions = {
-    kind: GQL.ExternalServiceKind.GITHUB,
+    kind: ExternalServiceKind.GITHUB,
     title: 'GitHub.com',
     icon: GithubIcon,
     jsonSchema: githubSchemaJSON,
@@ -521,7 +521,7 @@ const GITHUB_ENTERPRISE: AddExternalServiceOptions = {
     instructions: githubInstructions(true),
 }
 const AWS_CODE_COMMIT: AddExternalServiceOptions = {
-    kind: GQL.ExternalServiceKind.AWSCODECOMMIT,
+    kind: ExternalServiceKind.AWSCODECOMMIT,
     title: 'AWS CodeCommit repositories',
     icon: AmazonIcon,
     jsonSchema: awsCodeCommitSchemaJSON,
@@ -641,7 +641,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
     ],
 }
 const BITBUCKET_CLOUD: AddExternalServiceOptions = {
-    kind: GQL.ExternalServiceKind.BITBUCKETCLOUD,
+    kind: ExternalServiceKind.BITBUCKETCLOUD,
     title: 'Bitbucket.org',
     icon: BitbucketIcon,
     jsonSchema: bitbucketCloudSchemaJSON,
@@ -720,7 +720,7 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
     ),
 }
 const BITBUCKET_SERVER: AddExternalServiceOptions = {
-    kind: GQL.ExternalServiceKind.BITBUCKETSERVER,
+    kind: ExternalServiceKind.BITBUCKETSERVER,
     title: 'Bitbucket Server',
     icon: BitbucketIcon,
     jsonSchema: bitbucketServerSchemaJSON,
@@ -883,7 +883,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
     ],
 }
 const GITLAB_DOTCOM: AddExternalServiceOptions = {
-    kind: GQL.ExternalServiceKind.GITLAB,
+    kind: ExternalServiceKind.GITLAB,
     title: 'GitLab.com',
     icon: GitLabIcon,
     jsonSchema: gitlabSchemaJSON,
@@ -912,7 +912,7 @@ const GITLAB_SELF_MANAGED: AddExternalServiceOptions = {
 }`,
 }
 const SRC_SERVE_GIT: AddExternalServiceOptions = {
-    kind: GQL.ExternalServiceKind.OTHER,
+    kind: ExternalServiceKind.OTHER,
     title: 'Sourcegraph CLI Serve-Git',
     icon: GitIcon,
     jsonSchema: otherExternalServiceSchemaJSON,
@@ -952,7 +952,7 @@ const SRC_SERVE_GIT: AddExternalServiceOptions = {
     ],
 }
 const GITOLITE: AddExternalServiceOptions = {
-    kind: GQL.ExternalServiceKind.GITOLITE,
+    kind: ExternalServiceKind.GITOLITE,
     title: 'Gitolite',
     icon: GitIcon,
     jsonSchema: gitoliteSchemaJSON,
@@ -1008,7 +1008,7 @@ const GITOLITE: AddExternalServiceOptions = {
     ],
 }
 const PHABRICATOR_SERVICE: AddExternalServiceOptions = {
-    kind: GQL.ExternalServiceKind.PHABRICATOR,
+    kind: ExternalServiceKind.PHABRICATOR,
     title: 'Phabricator connection',
     icon: PhabricatorIcon,
     shortDescription:
@@ -1058,7 +1058,7 @@ const PHABRICATOR_SERVICE: AddExternalServiceOptions = {
     ],
 }
 const GENERIC_GIT: AddExternalServiceOptions = {
-    kind: GQL.ExternalServiceKind.OTHER,
+    kind: ExternalServiceKind.OTHER,
     title: 'Generic Git host',
     icon: GitIcon,
     jsonSchema: otherExternalServiceSchemaJSON,
@@ -1135,13 +1135,13 @@ export const allExternalServices = {
     ...nonCodeHostExternalServices,
 }
 
-export const defaultExternalServices: Record<GQL.ExternalServiceKind, AddExternalServiceOptions> = {
-    [GQL.ExternalServiceKind.GITHUB]: GITHUB_DOTCOM,
-    [GQL.ExternalServiceKind.BITBUCKETCLOUD]: BITBUCKET_CLOUD,
-    [GQL.ExternalServiceKind.BITBUCKETSERVER]: BITBUCKET_SERVER,
-    [GQL.ExternalServiceKind.GITLAB]: GITLAB_DOTCOM,
-    [GQL.ExternalServiceKind.GITOLITE]: GITOLITE,
-    [GQL.ExternalServiceKind.PHABRICATOR]: PHABRICATOR_SERVICE,
-    [GQL.ExternalServiceKind.OTHER]: GENERIC_GIT,
-    [GQL.ExternalServiceKind.AWSCODECOMMIT]: AWS_CODE_COMMIT,
+export const defaultExternalServices: Record<ExternalServiceKind, AddExternalServiceOptions> = {
+    [ExternalServiceKind.GITHUB]: GITHUB_DOTCOM,
+    [ExternalServiceKind.BITBUCKETCLOUD]: BITBUCKET_CLOUD,
+    [ExternalServiceKind.BITBUCKETSERVER]: BITBUCKET_SERVER,
+    [ExternalServiceKind.GITLAB]: GITLAB_DOTCOM,
+    [ExternalServiceKind.GITOLITE]: GITOLITE,
+    [ExternalServiceKind.PHABRICATOR]: PHABRICATOR_SERVICE,
+    [ExternalServiceKind.OTHER]: GENERIC_GIT,
+    [ExternalServiceKind.AWSCODECOMMIT]: AWS_CODE_COMMIT,
 }

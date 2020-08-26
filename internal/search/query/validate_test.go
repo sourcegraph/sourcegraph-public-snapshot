@@ -72,6 +72,10 @@ func TestAndOrQuery_Validation(t *testing.T) {
 			input: "repo:foo@a rev:b",
 			want:  "invalid syntax. You specified both @ and rev: for a repo: filter and I don't know how to interpret this. Remove either @ or rev: and try again",
 		},
+		{
+			input: "repo:foo author:rob@saucegraph.com",
+			want:  `your query contains the field 'author', which requires type:commit or type:diff in the query`,
+		},
 	}
 	for _, c := range cases {
 		t.Run("validate and/or query", func(t *testing.T) {

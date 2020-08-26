@@ -216,21 +216,6 @@ func TestServiceApplyCampaign(t *testing.T) {
 	// The applying/re-applying of a campaignSpec to an existing campaign is
 	// covered in the tests above.
 	t.Run("campaignSpec with changesetSpecs", func(t *testing.T) {
-		// We need to mock SyncChangesets because ApplyCampaign syncs
-		// changesets. Once that moves to the background, we can remove this
-		// mock.
-		syncedBranchName := "refs/heads/synced-branch-name"
-		MockSyncChangesets = func(_ context.Context, _ RepoStore, tx SyncStore, _ *httpcli.Factory, cs ...*campaigns.Changeset) error {
-			for _, c := range cs {
-				c.ExternalBranch = syncedBranchName
-				if err := tx.UpdateChangeset(ctx, c); err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-		t.Cleanup(func() { MockSyncChangesets = nil })
-
 		t.Run("new campaign", func(t *testing.T) {
 			campaignSpec := createCampaignSpec(t, ctx, store, "campaign3", admin.ID)
 
@@ -257,9 +242,9 @@ func TestServiceApplyCampaign(t *testing.T) {
 			c1 := cs.Find(campaigns.WithExternalID(spec1.Spec.ExternalID))
 			assertChangeset(t, c1, changesetAssertions{
 				repo:             spec1.RepoID,
-				externalBranch:   syncedBranchName,
 				externalID:       "1234",
-				reconcilerState:  campaigns.ReconcilerStateCompleted,
+				unsynced:         true,
+				reconcilerState:  campaigns.ReconcilerStateQueued,
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 			})
 
@@ -373,9 +358,9 @@ func TestServiceApplyCampaign(t *testing.T) {
 				repo:             repos[0].ID,
 				currentSpec:      0,
 				previousSpec:     0,
-				externalBranch:   syncedBranchName,
 				externalID:       "1234",
-				reconcilerState:  campaigns.ReconcilerStateCompleted,
+				unsynced:         true,
+				reconcilerState:  campaigns.ReconcilerStateQueued,
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 			})
 
@@ -384,9 +369,9 @@ func TestServiceApplyCampaign(t *testing.T) {
 				repo:             repos[0].ID,
 				currentSpec:      0,
 				previousSpec:     0,
-				externalBranch:   syncedBranchName,
 				externalID:       "5678",
-				reconcilerState:  campaigns.ReconcilerStateCompleted,
+				unsynced:         true,
+				reconcilerState:  campaigns.ReconcilerStateQueued,
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 			})
 
@@ -568,6 +553,7 @@ type changesetAssertions struct {
 	externalID       string
 	externalBranch   string
 	diffStat         *diff.Stat
+	unsynced         bool
 
 	title string
 	body  string
@@ -620,6 +606,10 @@ func assertChangeset(t *testing.T, c *campaigns.Changeset, a changesetAssertions
 
 	if diff := cmp.Diff(a.diffStat, c.DiffStat()); diff != "" {
 		t.Fatalf("changeset DiffStat wrong. (-want +got):\n%s", diff)
+	}
+
+	if diff := cmp.Diff(a.unsynced, c.Unsynced); diff != "" {
+		t.Fatalf("changeset Unsynced wrong. (-want +got):\n%s", diff)
 	}
 
 	if want := c.FailureMessage; want != nil {
@@ -726,6 +716,7 @@ func setChangesetPublished(t *testing.T, ctx context.Context, s *Store, c *campa
 	c.ExternalID = externalID
 	c.PublicationState = campaigns.ChangesetPublicationStatePublished
 	c.ReconcilerState = campaigns.ReconcilerStateCompleted
+	c.Unsynced = false
 
 	if err := s.UpdateChangeset(ctx, c); err != nil {
 		t.Fatalf("failed to update changeset: %s", err)

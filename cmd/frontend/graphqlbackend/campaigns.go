@@ -268,8 +268,8 @@ type ExternalChangesetResolver interface {
 	ChangesetResolver
 
 	ExternalID() *string
-	Title(context.Context) (string, error)
-	Body(context.Context) (string, error)
+	Title(context.Context) (*string, error)
+	Body(context.Context) (*string, error)
 	ExternalURL() (*externallink.Resolver, error)
 	ReviewState(context.Context) *campaigns.ChangesetReviewState
 	CheckState() *campaigns.ChangesetCheckState

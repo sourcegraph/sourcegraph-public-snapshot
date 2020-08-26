@@ -11,7 +11,7 @@ import {
 } from './graphQlResponseHelpers'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import * as path from 'path'
-import { DiffHunkLineType } from '../../../shared/src/graphql/schema'
+import { DiffHunkLineType } from '../graphql-operations'
 
 describe('Repository', () => {
     let driver: Driver
