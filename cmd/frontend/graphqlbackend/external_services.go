@@ -327,7 +327,7 @@ func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*grap
 		return graphqlutil.HasNextPage(false), nil
 	}
 
-	// We got less results than limit assures we've had all results
+	// We got less results than limit, means we've had all results
 	if len(externalServices) < r.opt.Limit {
 		return graphqlutil.HasNextPage(false), nil
 	}
