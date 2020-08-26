@@ -8,18 +8,16 @@ AS $$
 BEGIN
     -- When an external service is soft or hard-deleted,
     -- performs a clean up to soft-delete orphan repositories.
-    IF (OLD.deleted_at IS NULL AND (NEW IS NULL OR NEW.deleted_at IS NOT NULL)) THEN
-        UPDATE
-            repo
-        SET
-            name = soft_deleted_repository_name(name),
-            deleted_at = transaction_timestamp()
-        WHERE
-            deleted_at IS NULL
-          AND id NOT IN (
-            SELECT DISTINCT(repo_id) FROM external_service_repos
-        );
-    END IF;
+    UPDATE
+        repo
+    SET
+        name = soft_deleted_repository_name(name),
+        deleted_at = transaction_timestamp()
+    WHERE
+        deleted_at IS NULL
+      AND id NOT IN (
+        SELECT DISTINCT(repo_id) FROM external_service_repos
+    );
 
     RETURN OLD;
 END;
