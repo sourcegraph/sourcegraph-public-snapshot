@@ -23,11 +23,8 @@ import {
 import { isErrorLike } from '../../../shared/src/util/errors'
 import { Settings } from '../schema/settings.schema'
 import { InsightsNavItem } from '../insights/InsightsNavLink'
-<<<<<<< HEAD
 import { ExtensionsNavItem } from '../extensions/ExtensionsNavItem'
-=======
 import { AuthenticatedUser } from '../auth'
->>>>>>> main
 
 interface Props
     extends SettingsCascadeProps<Settings>,

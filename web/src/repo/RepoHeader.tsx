@@ -11,13 +11,10 @@ import { WebActionsNavItems } from '../components/shared'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { ActionButtonDescriptor } from '../util/contributions'
 import { ResolvedRevision } from './backend'
-<<<<<<< HEAD
-import { RepositoriesPopover } from './RepositoriesPopover'
 import { SettingsCascadeOrError } from '../../../shared/src/settings/settings'
 import { onlyDefaultExtensionsAdded } from '../extensions/extensions'
-=======
 import { Breadcrumbs, BreadcrumbsProps } from '../components/Breadcrumbs'
->>>>>>> main
+import { Link } from 'react-router-dom'
 /**
  * Stores the list of RepoHeaderContributions, manages addition/deletion, and ensures they are sorted.
  *
@@ -186,57 +183,11 @@ export const RepoHeader: React.FunctionComponent<Props> = ({ onLifecyclePropsCha
         repoName: repo.name,
         encodedRev: props.revision,
     }
-<<<<<<< HEAD
-
-    constructor(props: Props) {
-        super(props)
-        props.onLifecyclePropsChange(this.repoHeaderContributionStore.props)
-    }
-
-    public render(): JSX.Element | null {
-        const navActions = this.state.repoHeaderContributions.filter(({ position }) => position === 'nav')
-        const leftActions = this.state.repoHeaderContributions.filter(({ position }) => position === 'left')
-        const rightActions = this.state.repoHeaderContributions.filter(({ position }) => position === 'right')
-
-        const [repoDirectory, repoBase] = splitPath(displayRepoName(this.props.repo.name))
-        const context: RepoHeaderContext = {
-            repoName: this.props.repo.name,
-            encodedRev: this.props.revision,
-        }
-
-        const showAddExtensions = determineShowAddExtensions(this.props)
-
-        return (
-            <nav className="repo-header navbar navbar-expand">
-                <div className="d-flex align-items-center">
-                    <Link
-                        to={
-                            this.props.resolvedRev && !isErrorLike(this.props.resolvedRev)
-                                ? this.props.resolvedRev.rootTreeURL
-                                : this.props.repo.url
-                        }
-                        className="repo-header__repo"
-                    >
-                        {repoDirectory ? `${repoDirectory}/` : ''}
-                        <span className="repo-header__repo-basename">{repoBase}</span>
-                    </Link>
-                    <button type="button" id="repo-popover" className="btn btn-link px-0">
-                        <MenuDownIcon className="icon-inline" />
-                    </button>
-                    <UncontrolledPopover placement="bottom-start" target="repo-popover" trigger="legacy">
-                        <RepositoriesPopover
-                            currentRepo={this.props.repo.id}
-                            history={this.props.history}
-                            location={this.props.location}
-                        />
-                    </UncontrolledPopover>
-                </div>
-                {navActions.map((a, index) => (
-                    <div className="navbar-nav" key={a.element.key || index}>
-                        <ChevronRightIcon className="icon-inline repo-header__icon-chevron" />
-=======
     const leftActions = repoHeaderContributions.filter(({ position }) => position === 'left')
     const rightActions = repoHeaderContributions.filter(({ position }) => position === 'right')
+
+    const showAddExtensions = determineShowAddExtensions(props)
+
     return (
         <nav className="repo-header navbar navbar-expand">
             <div className="d-flex align-items-center">
@@ -246,68 +197,18 @@ export const RepoHeader: React.FunctionComponent<Props> = ({ onLifecyclePropsCha
             <ul className="navbar-nav">
                 {leftActions.map((a, index) => (
                     <li className="nav-item" key={a.element.key || index}>
->>>>>>> main
                         {a.element}
                     </li>
                 ))}
-<<<<<<< HEAD
-                <ul className="navbar-nav">
-                    {leftActions.map((a, index) => (
-                        <li className="nav-item" key={a.element.key || index}>
-                            {a.element}
-                        </li>
-                    ))}
-                </ul>
-                <div className="repo-header__spacer" />
-                {showAddExtensions && (
-                    <Link to="/extensions">
-                        <button type="button" id="add-extensions" className="btn btn-link">
-                            Add extensions
-                        </button>
-                    </Link>
-                )}
-                <ul className="navbar-nav">
-                    <WebActionsNavItems
-                        {...this.props}
-                        listItemClass="repo-header__action-list-item"
-                        actionItemPressedClass="repo-header__action-item--pressed"
-                        menu={ContributableMenu.EditorTitle}
-                    />
-                </ul>
-                <ul className="navbar-nav">
-                    {this.props.actionButtons.map(
-                        ({ condition = () => true, label, tooltip, icon: Icon, to }) =>
-                            condition(context) && (
-                                <li className="nav-item repo-header__action-list-item" key={label}>
-                                    <LinkOrButton to={to(context)} data-tooltip={tooltip}>
-                                        {Icon && <Icon className="icon-inline" />}{' '}
-                                        <span className="d-none d-lg-inline">{label}</span>
-                                    </LinkOrButton>
-                                </li>
-                            )
-                    )}
-                    {rightActions.map((a, index) => (
-                        <li className="nav-item repo-header__action-list-item" key={a.element.key || index}>
-                            {a.element}
-                        </li>
-                    ))}
-                    {this.props.repo.viewerCanAdminister && (
-                        <li className="nav-item repo-header__action-list-item">
-                            <LinkOrButton to={`/${this.props.repo.name}/-/settings`} data-tooltip="Repository settings">
-                                <SettingsIcon className="icon-inline" />{' '}
-                                <span className="d-none d-lg-inline">Settings</span>
-                            </LinkOrButton>
-                        </li>
-                    )}
-                </ul>
-            </nav>
-        )
-    }
-
-    private repoHeaderContributionStore = new RepoHeaderContributionStore(stateUpdate => this.setState(stateUpdate))
-=======
             </ul>
             <div className="repo-header__spacer" />
+            {showAddExtensions && (
+                <Link to="/extensions" className="nav-link py-1">
+                    <button type="button" id="add-extensions" className="btn btn-outline-secondary btn-sm">
+                        Add extensions
+                    </button>
+                </Link>
+            )}
             <ul className="navbar-nav">
                 <WebActionsNavItems
                     {...props}
@@ -344,14 +245,16 @@ export const RepoHeader: React.FunctionComponent<Props> = ({ onLifecyclePropsCha
             </ul>
         </nav>
     )
->>>>>>> main
 }
 
 /**
  * Determine whether to show the "add extensions" button. Display to all unautenticated users,
  * and only to authenticated users who have not added extensions.
  */
-function determineShowAddExtensions({ settingsCascade, authenticatedUser }: Props): boolean {
+function determineShowAddExtensions({
+    settingsCascade,
+    authenticatedUser,
+}: Pick<Props, 'settingsCascade' | 'authenticatedUser'>): boolean {
     if (!authenticatedUser) {
         return true
     }
