@@ -341,12 +341,13 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 		// Fast path for only matching file paths (or with a nil pattern, which matches all files,
 		// so is effectively matching only on file paths).
 		for _, f := range files {
-			if len(matches) >= fileMatchLimit {
-				limitHit = true
-				break
-			}
-			if match := rg.matchPath.MatchPath(f.Name) && rg.matchString(f.Name); match && !isPatternNegated || !match && isPatternNegated {
-				matches = append(matches, protocol.FileMatch{Path: f.Name})
+			if match := rg.matchPath.MatchPath(f.Name) && rg.matchString(f.Name); match == !isPatternNegated {
+				if len(matches) < fileMatchLimit {
+					matches = append(matches, protocol.FileMatch{Path: f.Name})
+				} else {
+					limitHit = true
+					break
+				}
 			}
 		}
 		return matches, limitHit, nil
@@ -411,13 +412,13 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 					}
 				}
 
-				if match && !isPatternNegated || !match && isPatternNegated {
+				if match == !isPatternNegated {
 					matchesmu.Lock()
-					if len(matches) >= fileMatchLimit {
+					if len(matches) < fileMatchLimit {
+						matches = append(matches, fm)
+					} else {
 						limitHit = true
 						cancel()
-					} else {
-						matches = append(matches, fm)
 					}
 					matchesmu.Unlock()
 				}
