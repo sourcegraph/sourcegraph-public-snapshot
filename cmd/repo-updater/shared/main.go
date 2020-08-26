@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	intSecrets "github.com/sourcegraph/sourcegraph/internal/secrets"
+
 	"github.com/golang/gddo/httputil"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
@@ -48,6 +50,11 @@ func Main(enterpriseInit EnterpriseInit) {
 	tracer.Init()
 
 	clock := func() time.Time { return time.Now().UTC() }
+
+	err := intSecrets.Init()
+	if err != nil {
+		log.Fatalf("Encryption package failed to initialize")
+	}
 
 	// Syncing relies on access to frontend and git-server, so wait until they started up.
 	if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
