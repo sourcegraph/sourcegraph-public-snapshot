@@ -47,13 +47,6 @@ func TestServiceApplyCampaign(t *testing.T) {
 	store := NewStoreWithClock(dbconn.Global, clock)
 	svc := NewService(store, httpcli.NewExternalHTTPClientFactory())
 
-	// The diff stat that corresponds to what's stored in the spec.
-	diffStat := &diff.Stat{
-		Added:   10,
-		Changed: 5,
-		Deleted: 2,
-	}
-
 	t.Run("campaignSpec without changesetSpecs", func(t *testing.T) {
 		t.Run("new campaign", func(t *testing.T) {
 			campaignSpec := createCampaignSpec(t, ctx, store, "campaign1", admin.ID)
@@ -255,7 +248,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ownedByCampaign:  campaign.ID,
 				reconcilerState:  campaigns.ReconcilerStateQueued,
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
-				diffStat:         diffStat,
+				diffStat:         testChangsetSpecDiffStat,
 			})
 		})
 
@@ -383,7 +376,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ownedByCampaign:  campaign.ID,
 				reconcilerState:  campaigns.ReconcilerStateQueued,
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
-				diffStat:         diffStat,
+				diffStat:         testChangsetSpecDiffStat,
 			})
 
 			c4 := cs.Find(campaigns.WithCurrentSpecID(spec4.ID))
@@ -393,7 +386,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ownedByCampaign:  campaign.ID,
 				reconcilerState:  campaigns.ReconcilerStateQueued,
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
-				diffStat:         diffStat,
+				diffStat:         testChangsetSpecDiffStat,
 			})
 
 			c5 := cs.Find(campaigns.WithCurrentSpecID(spec5.ID))
@@ -403,7 +396,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ownedByCampaign:  campaign.ID,
 				reconcilerState:  campaigns.ReconcilerStateQueued,
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
-				diffStat:         diffStat,
+				diffStat:         testChangsetSpecDiffStat,
 			})
 		})
 
@@ -444,7 +437,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				externalID:       c.ExternalID,
 				reconcilerState:  campaigns.ReconcilerStateCompleted,
 				publicationState: campaigns.ChangesetPublicationStatePublished,
-				diffStat:         diffStat,
+				diffStat:         testChangsetSpecDiffStat,
 			})
 
 			// Now we stop tracking it in the second campaign
@@ -746,6 +739,8 @@ type testSpecOpts struct {
 	commitDiff    string
 }
 
+var testChangsetSpecDiffStat = &diff.Stat{Added: 10, Changed: 5, Deleted: 2}
+
 func createChangesetSpec(
 	t *testing.T,
 	ctx context.Context,
@@ -775,9 +770,9 @@ func createChangesetSpec(
 				},
 			},
 		},
-		DiffStatAdded:   10,
-		DiffStatChanged: 5,
-		DiffStatDeleted: 2,
+		DiffStatAdded:   testChangsetSpecDiffStat.Added,
+		DiffStatChanged: testChangsetSpecDiffStat.Changed,
+		DiffStatDeleted: testChangsetSpecDiffStat.Deleted,
 	}
 
 	if err := store.CreateChangesetSpec(ctx, spec); err != nil {
