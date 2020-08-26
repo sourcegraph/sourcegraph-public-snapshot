@@ -2,14 +2,17 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/inconshreveable/log15"
 	"gopkg.in/yaml.v3"
@@ -57,7 +60,7 @@ func loadResource(rootDir string, filename string) (*Resource, error) {
 
 	var res Resource
 	res.Source = filename
-	// TODO(uwedeportivo): derive it from metadata labels instead once those become available
+	// TODO(uwedeportivo): derive it from metadata labels instead once those labels become available
 	res.Component = filepath.Dir(relPath)
 	if res.Component == "." {
 		res.Component = filepath.Base(rootDir)
@@ -72,7 +75,7 @@ func loadResource(rootDir string, filename string) (*Resource, error) {
 
 	apiVersion, ok := res.Contents["apiVersion"].(string)
 	if !ok {
-		return nil, fmt.Errorf("resource %s is missing a kind field", filename)
+		return nil, fmt.Errorf("resource %s is missing a apiVersion field", filename)
 	}
 	res.ApiVersion = apiVersion
 
@@ -220,12 +223,23 @@ func writeDhallRecord(filename string, dRec map[string]interface{}) error {
 	return enc.Encode(dRec)
 }
 
+func execYamlToDhall(scratchDir string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+
+	// yaml-to-dhall ./schema.dhall --records-loose --file record.yaml --output record.dhall
+	cmd := exec.CommandContext(ctx, "yaml-to-dhall", "--records-loose", "--file", "record.yaml", "--output", "record.dhall")
+	cmd.Dir = scratchDir
+
+	return cmd.Run()
+}
+
 func main() {
 	src := flag.String("src", "", "(required) source manifest directory")
-	dst := flag.String("dst", "", "(required) output dhall directory")
+	dst := flag.String("dst", "", "(required) output dhall file")
 
 	logFilepath := flag.String("logfile", "dhall-migrator.log", "path to a log file")
-	scratchDir := flag.String("scratchDir", "", "scratch dir where to temporarily clone repositories")
+	scratchDir := flag.String("scratchDir", "", "scratch dir used in migration")
 
 	help := flag.Bool("help", false, "Show help")
 
@@ -235,7 +249,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log15.Root().SetHandler(logHandler)
+	log15.Root().SetHandler(log15.MultiHandler(logHandler, log15.StreamHandler(os.Stdout, log15.LogfmtFormat())))
 
 	if *help || len(*src) == 0 || len(*dst) == 0 {
 		flag.PrintDefaults()
@@ -251,19 +265,18 @@ func main() {
 		*scratchDir = d
 	}
 
-	err = os.MkdirAll(*dst, 0777)
-	if err != nil {
-		log15.Error("failed to set up destination directory", "error", err, "dst", *dst)
-		os.Exit(1)
-	}
+	log15.Info("using scratch dir", "scratchDir", *scratchDir)
 
+	log15.Info("loading resources", "src", *src)
 	srcSet, err := loadResourceSet(*src)
 	if err != nil {
 		log15.Error("failed to load source resources", "error", err, "src", *src)
 		os.Exit(1)
 	}
 
-	schemaFilename := filepath.Join(*dst, "schema.dhall")
+	schemaFilename := filepath.Join(*scratchDir, "schema.dhall")
+	log15.Info("building schema file", "schemaFile", schemaFilename)
+
 	err = ioutil.WriteFile(schemaFilename, []byte(composeDhallSchema(srcSet)), 0777)
 	if err != nil {
 		log15.Error("failed to write out schema file", "error", err, "schemaFile", schemaFilename)
@@ -271,10 +284,31 @@ func main() {
 	}
 
 	dRec := buildDhallRecord(srcSet)
-	yamlFilename := filepath.Join(*dst, "record.yaml")
+	yamlFilename := filepath.Join(*scratchDir, "record.yaml")
+
+	log15.Info("building yaml record", "yamlFile", yamlFilename)
+
 	err = writeDhallRecord(yamlFilename, dRec)
 	if err != nil {
 		log15.Error("failed to write out record yaml file", "error", err, "yamlFile", yamlFilename)
 		os.Exit(1)
 	}
+
+	log15.Info("execute yaml-to-dhall", "scratchDir", *scratchDir)
+
+	err = execYamlToDhall(*scratchDir)
+	if err != nil {
+		log15.Error("failed to execute yaml-to-dhall", "error", err, "scratchDir", *scratchDir)
+		os.Exit(1)
+	}
+
+	log15.Info("cp into destination", "dst", *dst)
+	cpCmd := exec.Command("cp", filepath.Join(*scratchDir, "record.dhall"), *dst)
+	err = cpCmd.Run()
+	if err != nil {
+		log15.Error("failed to copy record.dhall", "error", err,
+			"scratchDir", *scratchDir, "destination", *dst)
+		os.Exit(1)
+	}
+	log15.Info("done")
 }
