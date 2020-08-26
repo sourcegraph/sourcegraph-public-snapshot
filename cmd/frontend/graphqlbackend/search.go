@@ -89,13 +89,6 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 		return nil, errors.New("Structural search is disabled in the site configuration.")
 	}
 
-	if envvar.SourcegraphDotComMode() {
-		// Instrumentation to log search inputs for differential testing, see #12477.
-		if !disallowLogQuery.MatchString(args.Query) {
-			log15.Info("search input", "type", searchType, "magic-887c6d4c", args.Query)
-		}
-	}
-
 	var queryInfo query.QueryInfo
 	if (conf.AndOrQueryEnabled() && query.ContainsAndOrKeyword(args.Query)) || useNewParser || searchType == query.SearchTypeStructural {
 		// To process the input as an and/or query, the flag must be
