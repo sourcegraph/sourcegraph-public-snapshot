@@ -569,6 +569,13 @@ func TestExternalServices(t *testing.T) {
 		}
 		return ess, nil
 	}
+	db.Mocks.ExternalServices.Count = func(ctx context.Context, opt db.ExternalServicesListOptions) (int, error) {
+		if opt.NamespaceUserID > 0 || opt.AfterID > 0 {
+			return 1, nil
+		}
+
+		return 2, nil
+	}
 	defer func() {
 		db.Mocks.Users = db.MockUsers{}
 		db.Mocks.ExternalServices = db.MockExternalServices{}
