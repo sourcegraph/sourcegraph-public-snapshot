@@ -122,6 +122,8 @@
 // 1528395709_create_external_service_sync_jobs_table.up.sql (1.3kB)
 // 1528395710_add_unsynced_flag_to_changesets.down.sql (72B)
 // 1528395710_add_unsynced_flag_to_changesets.up.sql (106B)
+// 1528395711_add_soft_deleted_repository_name_func.down.sql (73B)
+// 1528395711_add_soft_deleted_repository_name_func.up.sql (282B)
 
 package migrations
 
@@ -2630,6 +2632,46 @@ func _1528395710_add_unsynced_flag_to_changesetsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395711_add_soft_deleted_repository_name_funcDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x70\x0b\xf5\x73\x0e\xf1\xf4\xf7\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\xce\x4f\x2b\x89\x4f\x49\xcd\x49\x2d\x49\x4d\x89\x2f\x4a\x2d\xc8\x2f\xce\x2c\xc9\x2f\xaa\x8c\xcf\x4b\xcc\x4d\xd5\xd0\xb4\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xcc\x94\xe9\x81\x49\x00\x00\x00")
+
+func _1528395711_add_soft_deleted_repository_name_funcDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395711_add_soft_deleted_repository_name_funcDownSql,
+		"1528395711_add_soft_deleted_repository_name_func.down.sql",
+	)
+}
+
+func _1528395711_add_soft_deleted_repository_name_funcDownSql() (*asset, error) {
+	bytes, err := _1528395711_add_soft_deleted_repository_name_funcDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395711_add_soft_deleted_repository_name_func.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x19, 0x90, 0xb0, 0x3a, 0xe, 0xfc, 0xa3, 0x14, 0xda, 0x4c, 0x73, 0xbc, 0x52, 0x99, 0x46, 0x9, 0x70, 0xed, 0x94, 0xf9, 0xbe, 0xdb, 0x5d, 0x5c, 0xce, 0xda, 0x50, 0xaf, 0x29, 0x21, 0x6c, 0x82}}
+	return a, nil
+}
+
+var __1528395711_add_soft_deleted_repository_name_funcUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\x8f\x41\x6b\x84\x30\x14\x84\xef\xf9\x15\x73\x10\xd4\x43\x7f\x81\x27\xab\x6f\x25\xe0\xc6\xa2\xcf\xb2\x37\x09\x6e\xb6\x15\xd4\xa4\x49\x0e\x2d\xec\x8f\x2f\x6e\x0b\xbd\xf5\xf2\xe0\x31\xf3\x31\x33\xcf\xd4\x48\x55\x08\x51\xf7\xdd\x0b\x4e\xa3\xaa\x58\x76\x0a\xf2\x04\xba\xc8\x81\x07\x04\x7b\x8b\xd3\xd5\xac\x26\x9a\xeb\xe4\x8d\xb3\x61\x89\xd6\x7f\x4d\xbb\xde\x4c\x96\x17\x42\x54\x3d\x95\x4c\x7f\xe8\xbf\xc0\x71\xc0\x74\xe1\x1c\x3d\xf1\xd8\xab\xe1\xf1\xa1\x1c\x90\x24\xe2\xd1\x45\x00\xf8\x15\x91\xd6\xd4\x12\x53\xfd\x94\xe2\x7e\x87\xf9\x8c\x5e\xcf\x31\x33\xce\xce\xef\xb8\x79\xbb\x21\x7a\xbd\x07\x3d\xc7\xc5\xee\x53\x5c\x36\x13\xa2\xde\x5c\x96\xe7\x87\x3d\xfd\xa1\x8e\xc8\x42\x90\xaa\x0b\x91\x24\x68\x4b\xd5\x8c\x65\x43\x70\xab\x7b\x0b\x1f\x2b\x5e\xbb\xb6\x64\xd9\x12\x06\xee\x65\xc5\xc7\xa0\xee\x7c\x96\x5c\x88\xef\x00\x00\x00\xff\xff\x75\x23\x68\xc3\x1a\x01\x00\x00")
+
+func _1528395711_add_soft_deleted_repository_name_funcUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395711_add_soft_deleted_repository_name_funcUpSql,
+		"1528395711_add_soft_deleted_repository_name_func.up.sql",
+	)
+}
+
+func _1528395711_add_soft_deleted_repository_name_funcUpSql() (*asset, error) {
+	bytes, err := _1528395711_add_soft_deleted_repository_name_funcUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395711_add_soft_deleted_repository_name_func.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x72, 0xec, 0x4d, 0x9f, 0x57, 0x20, 0xcd, 0xda, 0x0, 0x7d, 0xb1, 0xe0, 0x33, 0xf1, 0x49, 0x6a, 0x9f, 0xbe, 0xfc, 0xa5, 0xa, 0x6f, 0x73, 0xc1, 0x54, 0xcb, 0x85, 0xba, 0xa3, 0xb5, 0xb4, 0xd1}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2843,6 +2885,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395709_create_external_service_sync_jobs_table.up.sql":                    _1528395709_create_external_service_sync_jobs_tableUpSql,
 	"1528395710_add_unsynced_flag_to_changesets.down.sql":                          _1528395710_add_unsynced_flag_to_changesetsDownSql,
 	"1528395710_add_unsynced_flag_to_changesets.up.sql":                            _1528395710_add_unsynced_flag_to_changesetsUpSql,
+	"1528395711_add_soft_deleted_repository_name_func.down.sql":                    _1528395711_add_soft_deleted_repository_name_funcDownSql,
+	"1528395711_add_soft_deleted_repository_name_func.up.sql":                      _1528395711_add_soft_deleted_repository_name_funcUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3011,6 +3055,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395709_create_external_service_sync_jobs_table.up.sql":                    {_1528395709_create_external_service_sync_jobs_tableUpSql, map[string]*bintree{}},
 	"1528395710_add_unsynced_flag_to_changesets.down.sql":                          {_1528395710_add_unsynced_flag_to_changesetsDownSql, map[string]*bintree{}},
 	"1528395710_add_unsynced_flag_to_changesets.up.sql":                            {_1528395710_add_unsynced_flag_to_changesetsUpSql, map[string]*bintree{}},
+	"1528395711_add_soft_deleted_repository_name_func.down.sql":                    {_1528395711_add_soft_deleted_repository_name_funcDownSql, map[string]*bintree{}},
+	"1528395711_add_soft_deleted_repository_name_func.up.sql":                      {_1528395711_add_soft_deleted_repository_name_funcUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

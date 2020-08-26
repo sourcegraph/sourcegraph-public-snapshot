@@ -573,7 +573,7 @@ WITH repo_ids AS (
 )
 UPDATE repo
 SET
-  name = 'DELETED-' || extract(epoch from transaction_timestamp()) || '-' || name,
+  name = soft_deleted_repository_name(name),
   deleted_at = transaction_timestamp()
 FROM repo_ids
 WHERE deleted_at IS NULL
@@ -1106,7 +1106,7 @@ AND repo.external_id = batch.external_id
 var batchDeleteReposQuery = batchReposQueryFmtstr + `
 UPDATE repo
 SET
-  name = 'DELETED-' || extract(epoch from transaction_timestamp()) || '-' || batch.name,
+  name = soft_deleted_repository_name(batch.name),
   deleted_at = batch.deleted_at
 FROM batch
 WHERE batch.deleted_at IS NOT NULL
