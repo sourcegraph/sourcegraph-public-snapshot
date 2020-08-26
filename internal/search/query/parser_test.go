@@ -174,11 +174,13 @@ func TestParseParameterList(t *testing.T) {
 func TestScanField(t *testing.T) {
 	type value struct {
 		Field   string
+		Negated bool
 		Advance int
 	}
 	cases := []struct {
-		Input string
-		Want  value
+		Input   string
+		Negated bool
+		Want    value
 	}{
 		// Valid field.
 		{
@@ -205,7 +207,8 @@ func TestScanField(t *testing.T) {
 		{
 			Input: "-repo:",
 			Want: value{
-				Field:   "-repo",
+				Field:   "repo",
+				Negated: true,
 				Advance: 6,
 			},
 		},
@@ -276,8 +279,8 @@ func TestScanField(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run("scan field", func(t *testing.T) {
-			gotField, gotAdvance := ScanField([]byte(c.Input))
-			if diff := cmp.Diff(c.Want, value{gotField, gotAdvance}); diff != "" {
+			gotField, gotNegated, gotAdvance := ScanField([]byte(c.Input))
+			if diff := cmp.Diff(c.Want, value{gotField, gotNegated, gotAdvance}); diff != "" {
 				t.Error(diff)
 			}
 		})

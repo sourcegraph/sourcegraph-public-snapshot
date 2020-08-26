@@ -1,7 +1,6 @@
 package query
 
 import (
-	"strings"
 	"unicode"
 	"unicode/utf8"
 
@@ -36,18 +35,8 @@ func ScanAnyPatternLiteral(buf []byte) (scanned string, count int) {
 
 // isField returns whether the prefix of the string matches a recognized field.
 func isField(buf []byte) bool {
-	field, _ := ScanField(buf)
-	if field == "" {
-		return false
-	}
-
-	negated := field[0] == '-'
-	if negated {
-		field = field[1:]
-	}
-
-	_, exists := allFields[strings.ToLower(field)]
-	return exists
+	field, _, _ := ScanField(buf)
+	return field != ""
 }
 
 // ScanBalancedPatternLiteral attempts to scan parentheses as literal patterns.
