@@ -49,7 +49,7 @@ Examples:
 		client := cfg.apiClient(apiFlags, flagSet.Output())
 
 		svc := campaigns.NewService(&campaigns.ServiceOpts{Client: client})
-		spec, err := svc.ParseCampaignSpec(specFile)
+		spec, _, err := svc.ParseCampaignSpec(specFile)
 		if err != nil {
 			return errors.Wrap(err, "parsing campaign spec")
 		}

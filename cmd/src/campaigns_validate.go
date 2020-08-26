@@ -39,7 +39,7 @@ Examples:
 		defer specFile.Close()
 
 		svc := campaigns.NewService(&campaigns.ServiceOpts{})
-		spec, err := svc.ParseCampaignSpec(specFile)
+		spec, _, err := svc.ParseCampaignSpec(specFile)
 		if err != nil {
 			return errors.Wrap(err, "parsing campaign spec")
 		}

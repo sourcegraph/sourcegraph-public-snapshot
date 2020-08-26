@@ -77,12 +77,7 @@ mutation CreateCampaignSpec(
 }
 `
 
-func (svc *Service) CreateCampaignSpec(ctx context.Context, namespace string, spec *CampaignSpec, ids []ChangesetSpecID) (CampaignSpecID, string, error) {
-	raw, err := json.Marshal(spec)
-	if err != nil {
-		return "", "", errors.Wrap(err, "marshalling campaign spec JSON")
-	}
-
+func (svc *Service) CreateCampaignSpec(ctx context.Context, namespace, spec string, ids []ChangesetSpecID) (CampaignSpecID, string, error) {
 	var result struct {
 		CreateCampaignSpec struct {
 			ID       string
@@ -91,7 +86,7 @@ func (svc *Service) CreateCampaignSpec(ctx context.Context, namespace string, sp
 	}
 	if ok, err := svc.client.NewRequest(createCampaignSpecMutation, map[string]interface{}{
 		"namespace":      namespace,
-		"spec":           string(raw),
+		"spec":           spec,
 		"changesetSpecs": ids,
 	}).Do(ctx, &result); err != nil || !ok {
 		return "", "", err
@@ -239,17 +234,17 @@ func (svc *Service) ExecuteCampaignSpec(ctx context.Context, x Executor, spec *C
 	return specs, nil
 }
 
-func (svc *Service) ParseCampaignSpec(in io.Reader) (*CampaignSpec, error) {
+func (svc *Service) ParseCampaignSpec(in io.Reader) (*CampaignSpec, string, error) {
 	data, err := ioutil.ReadAll(in)
 	if err != nil {
-		return nil, errors.Wrap(err, "reading campaign spec")
+		return nil, "", errors.Wrap(err, "reading campaign spec")
 	}
 
 	spec, err := ParseCampaignSpec(data)
 	if err != nil {
-		return nil, errors.Wrap(err, "parsing campaign spec")
+		return nil, "", errors.Wrap(err, "parsing campaign spec")
 	}
-	return spec, nil
+	return spec, string(data), nil
 }
 
 const namespaceQuery = `

@@ -145,7 +145,7 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 	}
 
 	pending := campaignsCreatePending(out, "Parsing campaign spec")
-	campaignSpec, err := svc.ParseCampaignSpec(specFile)
+	campaignSpec, rawSpec, err := svc.ParseCampaignSpec(specFile)
 	if err != nil {
 		return "", "", errors.Wrap(err, "parsing campaign spec")
 	}
@@ -212,7 +212,7 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 	progress.Complete()
 
 	pending = campaignsCreatePending(out, "Creating campaign spec on Sourcegraph")
-	id, url, err := svc.CreateCampaignSpec(ctx, namespace, campaignSpec, ids)
+	id, url, err := svc.CreateCampaignSpec(ctx, namespace, rawSpec, ids)
 	if err != nil {
 		return "", "", err
 	}
