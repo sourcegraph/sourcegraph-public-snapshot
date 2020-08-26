@@ -263,6 +263,18 @@ func TestSubstituteConcat(t *testing.T) {
 	}
 }
 
+func TestEllipsesForHoles(t *testing.T) {
+	input := "if ... { ... }"
+	want := `(concat "if" ":[_]" "{" ":[_]" "}")`
+	t.Run("Ellipses for holes", func(t *testing.T) {
+		query, _ := ParseAndOr(input, SearchTypeStructural)
+		got := prettyPrint(ellipsesForHoles(query))
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Fatal(diff)
+		}
+	})
+}
+
 func TestConvertEmptyGroupsToLiteral(t *testing.T) {
 	cases := []struct {
 		input      string
