@@ -41,12 +41,12 @@ Examples:
 
 		_, url, err := campaignsExecute(ctx, out, svc, flags)
 		if err != nil {
-			func() {
-				out.Write("")
-				block := out.Block(output.Line("❌", output.StyleWarning, "Error"))
-				defer block.Close()
-				block.Write(err.Error())
-			}()
+			out.Write("")
+			block := out.Block(output.Line("❌", output.StyleWarning, "Error"))
+			block.Write(err.Error())
+			block.Close()
+			out.Write("")
+			return &exitCodeError{nil, 1}
 		}
 
 		out.Write("")

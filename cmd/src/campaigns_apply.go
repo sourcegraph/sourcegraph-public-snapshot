@@ -65,9 +65,9 @@ Examples:
 		if err := doApply(ctx, out, svc, flags); err != nil {
 			out.Write("")
 			block := out.Block(output.Line("❌", output.StyleWarning, "Error"))
-			defer block.Close()
-
 			block.Write(err.Error())
+			block.Close()
+			out.Write("")
 		}
 
 		return nil
