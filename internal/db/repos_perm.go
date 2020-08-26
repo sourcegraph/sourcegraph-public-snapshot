@@ -73,7 +73,7 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 		}
 
 		fields := []otlog.Field{
-			otlog.String("permission", string(p)),
+			otlog.String("permission", p.String()),
 			otlog.Int("repos.count", len(repos)),
 			otlog.Int("filtered.count", len(filtered)),
 		}
