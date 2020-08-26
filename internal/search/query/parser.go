@@ -292,7 +292,7 @@ func (p *parser) parseNegatedLeafNode() (Node, error) {
 	}
 	// we don't support NOT -field:value
 	if parameter.Negated {
-		return nil, fmt.Errorf("Unexpected NOT before \"-%s:%s\". Remove NOT and try again.",
+		return nil, fmt.Errorf("unexpected NOT before \"-%s:%s\". Remove NOT and try again",
 			parameter.Field, parameter.Value)
 	}
 	parameter.Negated = true
@@ -348,10 +348,9 @@ loop:
 				default:
 					if strict {
 						return "", count, errors.New("unrecognized escape sequence")
-					} else {
-						// Accept anything else literally.
-						result = append(result, '\\', r)
 					}
+					// Accept anything else literally.
+					result = append(result, '\\', r)
 				}
 				if len(buf) == 0 {
 					return "", count, errors.New("unterminated literal: expected " + string(delimiter))
@@ -918,8 +917,7 @@ func ParseAndOr(in string, searchType SearchType) ([]Node, error) {
 
 	nodes, err := parser.parseOr()
 	if err != nil {
-		switch err.(type) {
-		case *ExpectedOperand:
+		if _, ok := err.(*ExpectedOperand); ok {
 			// The query may be unbalanced or malformed as in "(" or
 			// "x or" and expects an operand. Try harder to parse it.
 			if nodes, err := parser.tryFallbackParser(in); err == nil {
@@ -977,7 +975,7 @@ func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 		query = substituteConcat(query, " ")
 	case SearchTypeStructural:
 		if containsNegatedPattern(query) {
-			return nil, errors.New("The query contains a negated search pattern. Structural search does not support negated search patterns at the moment.")
+			return nil, errors.New("the query contains a negated search pattern. Structural search does not support negated search patterns at the moment")
 		}
 		query = substituteConcat(query, " ")
 	case SearchTypeRegex:
