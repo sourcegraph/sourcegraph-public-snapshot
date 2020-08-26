@@ -1459,29 +1459,30 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 // Surface an alert if a query exceeds limits that we place on search. Currently limits
 // diff and commit searches where more than repoLimit repos need to be searched.
 func alertOnSearchLimit(resultTypes []string, args *search.TextParameters) ([]string, *searchAlert) {
-	var alert *searchAlert
 	repoLimit := 50
-	if len(args.Repos) > repoLimit {
-		if len(resultTypes) == 1 {
-			resultType := resultTypes[0]
-			switch resultType {
-			case "commit", "diff":
-				if _, afterPresent := args.Query.Fields()["after"]; afterPresent {
-					break
-				}
-				if _, beforePresent := args.Query.Fields()["before"]; beforePresent {
-					break
-				}
-				resultTypes = []string{}
-				alert = &searchAlert{
-					prometheusType: "exceeded_diff_commit_search_limit",
-					title:          fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
-					description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), repoLimit),
-				}
+	if len(args.Repos) <= repoLimit {
+		return resultTypes, nil
+	}
+
+	if len(resultTypes) == 1 {
+		resultType := resultTypes[0]
+		switch resultType {
+		case "commit", "diff":
+			if _, afterPresent := args.Query.Fields()["after"]; afterPresent {
+				break
+			}
+			if _, beforePresent := args.Query.Fields()["before"]; beforePresent {
+				break
+			}
+			return []string{}, &searchAlert{
+				prometheusType: "exceeded_diff_commit_search_limit",
+				title:          fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
+				description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), repoLimit),
 			}
 		}
 	}
-	return resultTypes, alert
+
+	return resultTypes, nil
 }
 
 // doResults is one of the highest level search functions that handles finding results.
