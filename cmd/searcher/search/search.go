@@ -254,7 +254,6 @@ func validateParams(p *protocol.Request) error {
 	if p.IsNegated && p.IsStructuralPat {
 		return errors.New("Negated patterns are not supported for structural searches")
 	}
-
 	return nil
 }
 
