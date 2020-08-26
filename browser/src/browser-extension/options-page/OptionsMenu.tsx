@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { OptionsHeader, OptionsHeaderProps } from './OptionsHeader'
 import { ServerUrlForm, ServerUrlFormProps } from './ServerUrlForm'
-import { OptionFlagWithValue } from '../../shared/util/optionFlags'
+import { OptionFlagWithValue, OptionFlagKey } from '../../shared/util/optionFlags'
 
 export interface OptionsMenuProps
     extends OptionsHeaderProps,
@@ -12,7 +12,7 @@ export interface OptionsMenuProps
 
     isOptionsMenuExpanded?: boolean
     isActivated: boolean
-    onChangeOptionFlag: (key: string, value: boolean) => void
+    onChangeOptionFlag: (key: OptionFlagKey, value: boolean) => void
     optionFlags?: OptionFlagWithValue[]
     currentTabStatus?: {
         host: string
