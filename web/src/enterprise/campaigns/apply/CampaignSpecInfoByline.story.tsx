@@ -3,10 +3,10 @@ import { radios } from '@storybook/addon-knobs'
 import React from 'react'
 import webStyles from '../../../enterprise.scss'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
-import { CampaignHeader } from './CampaignHeader'
-import { Link } from '../../../../../shared/src/components/Link'
+import { CampaignSpecInfoByline } from './CampaignSpecInfoByline'
+import { subDays } from 'date-fns'
 
-const { add } = storiesOf('web/campaigns/CampaignHeader', module).addDecorator(story => {
+const { add } = storiesOf('web/campaigns/apply/CampaignSpecInfoByline', module).addDecorator(story => {
     const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
     document.body.classList.toggle('theme-light', theme === 'light')
     document.body.classList.toggle('theme-dark', theme === 'dark')
@@ -19,14 +19,9 @@ const { add } = storiesOf('web/campaigns/CampaignHeader', module).addDecorator(s
     )
 })
 
-add('Full', () => (
-    <CampaignHeader
-        namespace={{ namespaceName: 'alice', url: 'https://test.test/alice' }}
-        name="awesome-campaign"
-        actionSection={
-            <Link to="/" className="btn btn-secondary">
-                Some button
-            </Link>
-        }
+add('Default', () => (
+    <CampaignSpecInfoByline
+        createdAt={subDays(new Date(), 3).toISOString()}
+        creator={{ url: 'http://test.test/alice', username: 'alice' }}
     />
 ))

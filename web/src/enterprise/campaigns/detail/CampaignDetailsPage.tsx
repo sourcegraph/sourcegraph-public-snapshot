@@ -24,11 +24,14 @@ import { CampaignStatsCard } from './CampaignStatsCard'
 import { CampaignHeader } from './CampaignHeader'
 import { CampaignTabs } from './CampaignTabs'
 import { CampaignDetailsActionSection } from './CampaignDetailsActionSection'
+import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
+import { CampaignInfoByline } from './CampaignInfoByline'
 
-export interface CampaignDetailsProps
+export interface CampaignDetailsPageProps
     extends ThemeProps,
         ExtensionsControllerProps,
         PlatformContextProps,
+        BreadcrumbSetters,
         TelemetryProps {
     /**
      * The campaign ID.
@@ -52,7 +55,7 @@ export interface CampaignDetailsProps
 /**
  * The area for a single campaign.
  */
-export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
+export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPageProps> = ({
     campaignID,
     history,
     location,
@@ -60,6 +63,7 @@ export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
     extensionsController,
     platformContext,
     telemetryService,
+    useBreadcrumb,
     fetchCampaignById = _fetchCampaignById,
     queryChangesets,
     queryExternalChangesetWithFileDiffs,
@@ -67,8 +71,8 @@ export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
     deleteCampaign,
 }) => {
     useEffect(() => {
-        telemetryService.logViewEvent(campaignID ? 'CampaignDetailsPage' : 'NewCampaignPage')
-    }, [campaignID, telemetryService])
+        telemetryService.logViewEvent('CampaignDetailsPagePage')
+    }, [telemetryService])
 
     const campaign: CampaignFields | null | undefined = useObservable(
         useMemo(
@@ -78,6 +82,19 @@ export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
                     distinctUntilChanged((a, b) => isEqual(a, b))
                 ),
             [campaignID, fetchCampaignById]
+        )
+    )
+
+    useBreadcrumb(
+        useMemo(
+            () =>
+                campaign
+                    ? {
+                          element: <>{campaign.name}</>,
+                          key: 'CampaignDetailsPage',
+                      }
+                    : null,
+            [campaign]
         )
     )
 
@@ -100,8 +117,6 @@ export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
             <CampaignHeader
                 name={campaign.name}
                 namespace={campaign.namespace}
-                creator={campaign.initialApplier}
-                createdAt={campaign.createdAt}
                 actionSection={
                     <CampaignDetailsActionSection
                         campaignID={campaign.id}
@@ -111,7 +126,14 @@ export const CampaignDetails: React.FunctionComponent<CampaignDetailsProps> = ({
                         history={history}
                     />
                 }
-                className="mb-3 test-campaign-details-page"
+                className="test-campaign-details-page"
+            />
+            <CampaignInfoByline
+                createdAt={campaign.createdAt}
+                initialApplier={campaign.initialApplier}
+                lastAppliedAt={campaign.lastAppliedAt}
+                lastApplier={campaign.lastApplier}
+                className="mb-3"
             />
             <CampaignStatsCard closedAt={campaign.closedAt} stats={campaign.changesets.stats} className="mb-3" />
             <CampaignDescription history={history} description={campaign.description} />
