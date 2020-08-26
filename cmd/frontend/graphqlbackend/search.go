@@ -42,8 +42,6 @@ import (
 // logic that spans out into all the other search_* files.
 var mockResolveRepositories func(effectiveRepoFieldValues []string) (resolved resolvedRepositories, err error)
 
-var disallowLogQuery = lazyregexp.New(`(type:symbol|type:commit|type:diff)`)
-
 func maxReposToSearch() int {
 	switch max := conf.Get().MaxReposToSearch; {
 	case max <= 0:
@@ -87,13 +85,6 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 
 	if searchType == query.SearchTypeStructural && !conf.StructuralSearchEnabled() {
 		return nil, errors.New("Structural search is disabled in the site configuration.")
-	}
-
-	if envvar.SourcegraphDotComMode() {
-		// Instrumentation to log search inputs for differential testing, see #12477.
-		if !disallowLogQuery.MatchString(args.Query) {
-			log15.Info("search input", "type", searchType, "magic-887c6d4c", args.Query)
-		}
 	}
 
 	var queryInfo query.QueryInfo
