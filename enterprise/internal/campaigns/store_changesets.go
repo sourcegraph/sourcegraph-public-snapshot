@@ -54,7 +54,7 @@ var changesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.process_after"),
 	sqlf.Sprintf("changesets.num_resets"),
 	sqlf.Sprintf("changesets.unsynced"),
-	sqlf.Sprintf("changesets.close"),
+	sqlf.Sprintf("changesets.closing"),
 }
 
 // changesetInsertColumns is the list of changeset columns that are modified in
@@ -90,7 +90,7 @@ var changesetInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("process_after"),
 	sqlf.Sprintf("num_resets"),
 	sqlf.Sprintf("unsynced"),
-	sqlf.Sprintf("close"),
+	sqlf.Sprintf("closing"),
 }
 
 func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Changeset) (*sqlf.Query, error) {
@@ -141,7 +141,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Chang
 		nullTimeColumn(c.ProcessAfter),
 		c.NumResets,
 		c.Unsynced,
-		c.Close,
+		c.Closing,
 	}
 
 	if includeID {
@@ -605,7 +605,7 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		&dbutil.NullTime{Time: &t.ProcessAfter},
 		&t.NumResets,
 		&t.Unsynced,
-		&t.Close,
+		&t.Closing,
 	)
 	if err != nil {
 		return errors.Wrap(err, "scanning changeset")

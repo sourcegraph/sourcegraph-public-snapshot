@@ -352,7 +352,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				reconcilerState:  campaigns.ReconcilerStateQueued,
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				diffStat:         testChangsetSpecDiffStat,
-				close:            true,
+				closing:          true,
 			})
 
 			c1 := cs.Find(campaigns.WithExternalID(spec1.Spec.ExternalID))
@@ -458,7 +458,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			// not the owner.
 			applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 0)
 
-			trackedChangesetAssertions.close = false
+			trackedChangesetAssertions.closing = false
 			reloadAndAssertChangeset(t, ctx, store, c2, trackedChangesetAssertions)
 		})
 
@@ -555,7 +555,7 @@ type changesetAssertions struct {
 	externalBranch   string
 	diffStat         *diff.Stat
 	unsynced         bool
-	close            bool
+	closing          bool
 
 	title string
 	body  string
@@ -614,8 +614,8 @@ func assertChangeset(t *testing.T, c *campaigns.Changeset, a changesetAssertions
 		t.Fatalf("changeset Unsynced wrong. (-want +got):\n%s", diff)
 	}
 
-	if diff := cmp.Diff(a.close, c.Close); diff != "" {
-		t.Fatalf("changeset Close wrong. (-want +got):\n%s", diff)
+	if diff := cmp.Diff(a.closing, c.Closing); diff != "" {
+		t.Fatalf("changeset Closing wrong. (-want +got):\n%s", diff)
 	}
 
 	if want := c.FailureMessage; want != nil {

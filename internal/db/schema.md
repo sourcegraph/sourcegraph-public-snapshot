@@ -193,7 +193,7 @@ Referenced by:
  process_after         | timestamp with time zone | 
  num_resets            | integer                  | not null default 0
  unsynced              | boolean                  | not null default false
- close                 | boolean                  | not null default false
+ closing               | boolean                  | not null default false
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)

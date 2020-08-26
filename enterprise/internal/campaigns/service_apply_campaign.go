@@ -317,8 +317,8 @@ func (r *changesetRewirer) Rewire() (err error) {
 			// _this_ campaign that means we should detach and close it.
 
 			// But only if it was created on the code host:
-			if c.PublicationState.Published() {
-				c.Close = true
+			if c.Published() {
+				c.Closing = true
 				c.ReconcilerState = campaigns.ReconcilerStateQueued
 			} else {
 				// otherwise we simply delete it.
