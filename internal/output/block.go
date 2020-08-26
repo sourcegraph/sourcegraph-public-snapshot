@@ -1,45 +1,59 @@
 package output
 
-import "bytes"
+import (
+	"bytes"
+	"sync"
+)
 
 // Block represents a block of output with one status line, and then zero or
 // more lines of output nested under the status line.
 type Block struct {
 	*Output
+
+	indent    []byte
+	unwrapped *Output
+	writer    *indentedWriter
 }
 
 func newBlock(indent int, o *Output) *Block {
+	w := &indentedWriter{}
+
 	// Block uses Output's implementation, but with a wrapped writer that
 	// indents all output lines. (Note, however, that o's lock mutex is still
 	// used.)
 	return &Block{
-		&Output{
-			w: &indentedWriter{
-				o:      o,
-				indent: bytes.Repeat([]byte(" "), indent),
-			},
+		Output: &Output{
+			w:    w,
 			caps: o.caps,
 			opts: o.opts,
 		},
+		indent:    bytes.Repeat([]byte(" "), indent),
+		unwrapped: o,
+		writer:    w,
+	}
+}
+
+func (b *Block) Close() {
+	b.unwrapped.lock.Lock()
+	defer b.unwrapped.lock.Unlock()
+
+	// This is a little tricky: output from Writer methods includes a trailing
+	// newline, so we need to trim that so we don't output extra blank lines.
+	for _, line := range bytes.Split(bytes.TrimRight(b.writer.buffer.Bytes(), "\n"), []byte("\n")) {
+		b.unwrapped.w.Write(b.indent)
+		b.unwrapped.w.Write(line)
+		b.unwrapped.w.Write([]byte("\n"))
 	}
 }
 
 type indentedWriter struct {
-	o      *Output
-	indent []byte
+	buffer bytes.Buffer
+	lock   sync.Mutex
 }
 
 func (w *indentedWriter) Write(p []byte) (int, error) {
-	w.o.lock.Lock()
-	defer w.o.lock.Unlock()
+	w.lock.Lock()
+	defer w.lock.Unlock()
 
-	// This is a little tricky: output from Writer methods includes a trailing
-	// newline, so we need to trim that so we don't output extra blank lines.
-	for _, line := range bytes.Split(bytes.TrimRight(p, "\n"), []byte("\n")) {
-		w.o.w.Write(w.indent)
-		w.o.w.Write(line)
-		w.o.w.Write([]byte("\n"))
-	}
-
-	return len(p), nil
+	return w.buffer.Write(p)
 }

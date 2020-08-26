@@ -1,7 +1,7 @@
 package output
 
 type Progress interface {
-	Writer
+	Context
 
 	// Complete stops the set of progress bars and marks them all as completed.
 	Complete()

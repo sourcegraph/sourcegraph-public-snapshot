@@ -3,7 +3,7 @@ package output
 type Pending interface {
 	// Anything sent to the Writer methods will be displayed as a log message
 	// above the pending line.
-	Writer
+	Context
 
 	// Update and Updatef change the message shown after the spinner.
 	Update(s string)

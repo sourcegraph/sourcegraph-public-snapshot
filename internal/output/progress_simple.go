@@ -17,6 +17,7 @@ func (p *progressSimple) Complete() {
 	writeBars(p.Output, p.bars)
 }
 
+func (p *progressSimple) Close()   { p.Destroy() }
 func (p *progressSimple) Destroy() { p.stop() }
 
 func (p *progressSimple) SetLabel(i int, label string) {
@@ -68,6 +69,8 @@ func writeBar(w Writer, bar *ProgressBar) {
 func writeBars(o *Output, bars []*ProgressBar) {
 	if len(bars) > 1 {
 		block := o.Block(Line("", StyleReset, "Progress:"))
+		defer block.Close()
+
 		for _, bar := range bars {
 			writeBar(block, bar)
 		}

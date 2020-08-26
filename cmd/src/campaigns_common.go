@@ -187,10 +187,14 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 	}
 
 	if logFiles := executor.LogFiles(); len(logFiles) > 0 && flags.keep {
-		block := out.Block(output.Line("", campaignsSuccessColor, "Preserving log files:"))
-		for _, file := range logFiles {
-			block.Write(file)
-		}
+		func() {
+			block := out.Block(output.Line("", campaignsSuccessColor, "Preserving log files:"))
+			defer block.Close()
+
+			for _, file := range logFiles {
+				block.Write(file)
+			}
+		}()
 	}
 
 	progress = out.Progress([]output.ProgressBar{

@@ -41,13 +41,17 @@ Examples:
 
 		_, url, err := campaignsExecute(ctx, out, svc, flags)
 		if err != nil {
-			out.Write("")
-			block := out.Block(output.Line("❌", output.StyleWarning, "Error"))
-			block.Write(err.Error())
+			func() {
+				out.Write("")
+				block := out.Block(output.Line("❌", output.StyleWarning, "Error"))
+				defer block.Close()
+				block.Write(err.Error())
+			}()
 		}
 
 		out.Write("")
 		block := out.Block(output.Line(campaignsSuccessEmoji, campaignsSuccessColor, "To preview or apply the campaign spec, go to:"))
+		defer block.Close()
 		block.Writef("%s%s", cfg.Endpoint, url)
 
 		return nil

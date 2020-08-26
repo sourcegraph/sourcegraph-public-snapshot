@@ -16,6 +16,7 @@ func (p *pendingSimple) Complete(message FancyLine) {
 	p.WriteLine(message)
 }
 
+func (p *pendingSimple) Close()   {}
 func (p *pendingSimple) Destroy() {}
 
 func newPendingSimple(message FancyLine, o *Output) *pendingSimple {

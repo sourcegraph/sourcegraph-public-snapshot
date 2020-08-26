@@ -94,4 +94,5 @@ func main() {
 	out.Write("")
 	block := out.Block(output.Line(output.EmojiSuccess, output.StyleSuccess, "Done!"))
 	block.Write("Here is some additional information.\nIt even line wraps.")
+	block.Close()
 }

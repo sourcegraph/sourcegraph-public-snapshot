@@ -42,6 +42,8 @@ Examples:
 
 		out.Write("")
 		block := out.Block(output.Line(campaignsSuccessEmoji, campaignsSuccessColor, "Campaign applied!"))
+		defer block.Close()
+
 		block.Write("To view the campaign, go to:")
 		block.Writef("%s%s", cfg.Endpoint, campaign.URL)
 
@@ -63,6 +65,8 @@ Examples:
 		if err := doApply(ctx, out, svc, flags); err != nil {
 			out.Write("")
 			block := out.Block(output.Line("❌", output.StyleWarning, "Error"))
+			defer block.Close()
+
 			block.Write(err.Error())
 		}
 

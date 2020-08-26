@@ -27,6 +27,12 @@ type Writer interface {
 	WriteLine(line FancyLine)
 }
 
+type Context interface {
+	Writer
+
+	Close()
+}
+
 // Output encapsulates a standard set of functionality for commands that need
 // to output human-readable data.
 //

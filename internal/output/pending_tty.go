@@ -98,6 +98,8 @@ func (p *pendingTTY) Complete(message FancyLine) {
 	p.write(message)
 }
 
+func (p *pendingTTY) Close() { p.Destroy() }
+
 func (p *pendingTTY) Destroy() {
 	p.spinner.stop()
 

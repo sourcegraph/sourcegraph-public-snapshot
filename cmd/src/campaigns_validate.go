@@ -71,6 +71,7 @@ func campaignsValidateSpec(out *output.Output, spec *campaigns.CampaignSpec) err
 	if err := spec.Validate(); err != nil {
 		if merr, ok := err.(*multierror.Error); ok {
 			block := out.Block(output.Line("\u274c", output.StyleWarning, "Campaign spec failed validation."))
+			defer block.Close()
 
 			for i, err := range merr.Errors {
 				block.Writef("%d. %s", i+1, err)

@@ -32,6 +32,8 @@ func (p *progressTTY) Complete() {
 	p.drawInSitu()
 }
 
+func (p *progressTTY) Close() { p.Destroy() }
+
 func (p *progressTTY) Destroy() {
 	p.spinner.stop()
 
