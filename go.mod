@@ -151,6 +151,7 @@ require (
 	github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d // indirect
 	github.com/sourcegraph/codeintelutils v0.0.0-20200824140252-1db3aed5cf58
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
+	github.com/sourcegraph/docsite v0.0.0-00010101000000-000000000000 // indirect
 	github.com/sourcegraph/go-ctags v0.0.0-20200922223002-071e508aa451
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/go-jsonschema v0.0.0-20200907102109-d14e9f2f3a28
@@ -212,6 +213,8 @@ replace (
 	// the alertmanager project is currently not planning on accepting changes for.
 	github.com/prometheus/alertmanager => github.com/bobheadxi/alertmanager v0.21.1-0.20200727091526-3e856a90b534
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.3.2-0.20200109173551-5cfddeb48b17
+
+	github.com/sourcegraph/docsite => ../docsite
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0
 )
 
@@ -221,6 +224,7 @@ replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-202009290
 replace github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
 
 replace github.com/dghubble/gologin => github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8
+
 replace golang.org/x/oauth2 => github.com/sourcegraph/oauth2 v1.0.0
 
 replace github.com/golang/lint => golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f
