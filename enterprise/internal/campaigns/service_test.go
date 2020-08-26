@@ -228,13 +228,6 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CloseCampaign", func(t *testing.T) {
-		// After close, the changesets will be synced, so we need to mock that operation.
-		state := ct.MockChangesetSyncState(&protocol.RepoInfo{
-			Name: api.RepoName(rs[0].Name),
-			VCS:  protocol.VCSInfo{URL: rs[0].URI},
-		})
-		defer state.Unmock()
-
 		createCampaign := func(t *testing.T) *campaigns.Campaign {
 			t.Helper()
 
