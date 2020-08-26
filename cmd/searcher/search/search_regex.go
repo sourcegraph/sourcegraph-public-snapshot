@@ -411,7 +411,6 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 						fm.Path = f.Name
 					}
 				}
-
 				if match == !isPatternNegated {
 					matchesmu.Lock()
 					if len(matches) < fileMatchLimit {
