@@ -720,8 +720,12 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         if (first !== this.props.defaultFirst) {
             searchParameters.set('first', String(first))
         }
-        if (filter && this.props.filters && filter !== this.props.filters[0]) {
-            searchParameters.set('filter', filter.id)
+        if (filter && this.props.filters) {
+            if (filter !== this.props.filters[0]) {
+                searchParameters.set('filter', filter.id)
+            } else {
+                searchParameters.delete('filter')
+            }
         }
         if (visible !== 0 && visible !== first) {
             searchParameters.set('visible', String(visible))
