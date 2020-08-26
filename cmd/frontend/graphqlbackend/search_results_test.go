@@ -1058,11 +1058,11 @@ func TestCommitAndDiffSearchLimits(t *testing.T) {
 			wantAlertDescription: "",
 		},
 		{
-			name:                 "multiple_result_type_search_is_unaffected",
+			name:                 "multiple_result_type_search_is_affected",
 			resultTypes:          []string{"file", "commit"},
 			numRepoRevs:          200,
-			wantResultTypes:      []string{"file", "commit"},
-			wantAlertDescription: "",
+			wantResultTypes:      []string{},
+			wantAlertDescription: `Commit search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
 		},
 	}
 

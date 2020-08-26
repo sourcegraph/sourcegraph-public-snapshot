@@ -1464,8 +1464,7 @@ func alertOnSearchLimit(resultTypes []string, args *search.TextParameters) ([]st
 		return resultTypes, nil
 	}
 
-	if len(resultTypes) == 1 {
-		resultType := resultTypes[0]
+	for _, resultType := range resultTypes {
 		switch resultType {
 		case "commit", "diff":
 			if _, afterPresent := args.Query.Fields()["after"]; afterPresent {
