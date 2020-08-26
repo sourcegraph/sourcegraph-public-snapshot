@@ -267,11 +267,23 @@ func TestExternalServicesStore_Delete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create an orphan repository to test trigger of soft-deleting external service.
+	// Create a repository to test trigger of soft-deleting external service.
 	_, err = dbconn.Global.ExecContext(ctx, `
 INSERT INTO repo (id, name, description, language, fork)
 VALUES (1, 'github.com/user/repo', '', '', FALSE)
 `)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Insert a row to `external_service_repos` table to test the trigger
+	// `trig_delete_external_service_ref_on_external_service_repos` is executed first.
+	// Otherwise, the repository won't be seen as orphan.
+	q := sqlf.Sprintf(`
+INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
+VALUES (%d, 1, '')
+`, es.ID)
+	_, err = dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		t.Fatal(err)
 	}
