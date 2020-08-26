@@ -247,7 +247,7 @@
     "to-string-loader": "^1.1.6",
     "ts-graphql-plugin": "^1.12.0",
     "ts-morph": "^8.1.0",
-    "ts-node": "^8.10.2",
+    "ts-node": "^9.0.0",
     "typescript": "^4.0.2",
     "utc-version": "^2.0.2",
     "web-ext": "^4.2.0",
