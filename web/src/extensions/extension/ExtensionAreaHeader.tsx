@@ -41,6 +41,8 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
 
     const isWorkInProgress = props.extension.registryExtension?.isWorkInProgress
 
+    const [, name] = props.extension.id.split('/')
+
     return (
         <div className={`extension-area-header ${props.className || ''}`}>
             <div className="container">
@@ -56,7 +58,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                     )}
                                 <div>
                                     <h2 className="d-flex align-items-center mb-0 font-weight-normal">
-                                        <Link to="/extensions" className="extensions-nav-link">
+                                        {/* <Link to="/extensions" className="extensions-nav-link">
                                             Extensions
                                         </Link>
                                         <ChevronRightIcon className="icon-inline extension-area-header__icon-chevron" />{' '}
@@ -66,7 +68,8 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                                     ? props.extension.registryExtension.extensionIDWithoutRegistry
                                                     : props.extension.id
                                             }
-                                        />
+                                        /> */}
+                                        {name}
                                     </h2>
                                     {manifest && (manifest.description || isWorkInProgress) && (
                                         <p className="mt-1 mb-0">

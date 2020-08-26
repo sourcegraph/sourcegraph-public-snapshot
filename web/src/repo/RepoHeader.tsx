@@ -186,8 +186,6 @@ export const RepoHeader: React.FunctionComponent<Props> = ({ onLifecyclePropsCha
     const leftActions = repoHeaderContributions.filter(({ position }) => position === 'left')
     const rightActions = repoHeaderContributions.filter(({ position }) => position === 'right')
 
-    const showAddExtensions = determineShowAddExtensions(props)
-
     return (
         <nav className="repo-header navbar navbar-expand">
             <div className="d-flex align-items-center">
@@ -202,7 +200,7 @@ export const RepoHeader: React.FunctionComponent<Props> = ({ onLifecyclePropsCha
                 ))}
             </ul>
             <div className="repo-header__spacer" />
-            {showAddExtensions && (
+            {determineShowAddExtensions(props) && (
                 <Link to="/extensions" className="nav-link py-1">
                     <button type="button" id="add-extensions" className="btn btn-outline-secondary btn-sm">
                         Add extensions

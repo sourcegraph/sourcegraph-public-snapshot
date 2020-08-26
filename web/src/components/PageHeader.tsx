@@ -10,7 +10,7 @@ interface Props {
 
 export const PageHeader: React.FunctionComponent<Props> = ({ title, icon: Icon, actions, className }) => (
     <div className={classNames('page-header d-flex flex-wrap align-items-center', className)}>
-        <h1 className="flex-grow-1">
+        <h1 className="flex-grow-1 font-weight-normal">
             <Icon className="icon-inline page-header__icon" /> {title}
         </h1>
         {actions}
