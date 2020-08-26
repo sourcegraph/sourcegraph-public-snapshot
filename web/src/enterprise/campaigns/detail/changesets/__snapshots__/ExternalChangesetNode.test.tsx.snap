@@ -107,7 +107,7 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
   <div
     className="external-changeset-node__diffstat"
   >
-    <DiffStat
+    <Memo(DiffStat)
       added={100}
       changed={200}
       deleted={100}
