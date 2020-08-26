@@ -990,7 +990,7 @@ type ExternalChangeset implements Node & Changeset {
     # The labels attached to the changeset on the code host.
     labels: [ChangesetLabel!]!
 
-    # The external URL of the changeset on the code host. Not set when changeset state is UNPUBLISHED or externalState is DELETED or the changeset's data hasn't been synced yet.
+    # The external URL of the changeset on the code host. Not set when changeset state is UNPUBLISHED, externalState is DELETED, or the changeset's data hasn't been synced yet.
     externalURL: ExternalLink
 
     # The review state of this changeset. This is only set once the changeset is published on the code host.
