@@ -2648,22 +2648,22 @@
     sourcegraph "^24.0.0"
     ts-key-enum "^2.0.0"
 
-"@sourcegraph/eslint-config@^0.20.5":
-  version "0.20.5"
-  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.20.5.tgz#7561cfdcd02b24c6455498ec3be8c13601b69949"
-  integrity sha512-qtaXFnchYeAoj6mso/jVy0rk8gQye8VlwrT53fYNgyuT0hpHxO2VkkRpKat6CmSYJPpbSZyvxLb4GvgQmrRJ7A==
+"@sourcegraph/eslint-config@^0.20.7":
+  version "0.20.7"
+  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.20.7.tgz#5b1ea2d276f4b4cd742851d589a85728d49f4687"
+  integrity sha512-gmNOZ4Z1r55zUOEY2N5I2OCLoyjkea2UEoOso30SZ22KwSl9vBuwOMFskTz6OTOml5YjvTF0U1iLIv0QHbGTLg==
   dependencies:
     "@sourcegraph/prettierrc" "^3.0.3"
     "@typescript-eslint/eslint-plugin" "^3.10.0"
     "@typescript-eslint/parser" "^3.10.0"
     eslint-config-prettier "^6.11.0"
     eslint-plugin-ban "^1.4.0"
-    eslint-plugin-etc "^0.0.1-beta.36"
+    eslint-plugin-etc "^0.0.1-beta.44"
     eslint-plugin-import "^2.22.0"
     eslint-plugin-jsdoc "^30.2.1"
     eslint-plugin-react "^7.20.5"
     eslint-plugin-react-hooks "^4.0.8"
-    eslint-plugin-rxjs "^0.0.2-beta.28"
+    eslint-plugin-rxjs "^0.0.2-beta.29"
     eslint-plugin-unicorn "^20.1.0"
 
 "@sourcegraph/event-positions@^1.0.4":
@@ -9662,10 +9662,10 @@ eslint-config-prettier@^6.11.0:
   dependencies:
     get-stdin "^6.0.0"
 
-eslint-etc@^1.0.0, eslint-etc@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.npmjs.org/eslint-etc/-/eslint-etc-1.0.1.tgz#cdd35ad6062bd7fba31b9d9b74f1e17b467f0a13"
-  integrity sha512-fZ3EhcPJcoIfNkAjFKXpsRz1VZ8egnKh70h+tlHw4ltGtQCT2wa+QpeLjci9ViPPQnnahRdiHpvBiNuKqr9oVA==
+eslint-etc@^2.0.0:
+  version "2.2.1"
+  resolved "https://registry.npmjs.org/eslint-etc/-/eslint-etc-2.2.1.tgz#21b86adc6db950532700a62eebc8a9ed9ff7f514"
+  integrity sha512-I3G+KA9HGZ0lrdaBJG7CaLFJ5rtivXtKY8Ac5ATZ/Rp1hncLeShqnANLXITC0z6BugC4Gd7JlFyxeyiuBsNQFQ==
   dependencies:
     "@typescript-eslint/experimental-utils" "^3.2.0"
     tsutils "^3.17.1"
@@ -9704,14 +9704,14 @@ eslint-plugin-ban@^1.4.0:
   dependencies:
     requireindex "~1.2.0"
 
-eslint-plugin-etc@^0.0.1-beta.36:
-  version "0.0.1-beta.36"
-  resolved "https://registry.npmjs.org/eslint-plugin-etc/-/eslint-plugin-etc-0.0.1-beta.36.tgz#88480a2a6904cbdbb5a541947a19c4e10b588753"
-  integrity sha512-nudF0TSMJufZwSD8VUr5i/9iB/XKW2u/OEcn/wfsQNFvhLzae3gH47HYMJd3aFyDLreWJuIi8hcYN6qHP53QTw==
+eslint-plugin-etc@^0.0.1-beta.44:
+  version "0.0.1-beta.44"
+  resolved "https://registry.npmjs.org/eslint-plugin-etc/-/eslint-plugin-etc-0.0.1-beta.44.tgz#da41608ddd39b2774f6a6d6a56c23d24a12bff05"
+  integrity sha512-TFdHeoczdmUQdAEmtYXqK/skFruuuHt+ALzFTCpceA8KSvbLOZAL1WDWEWlzX2B0kRzKM9xOoLzZPRmkrIzJxg==
   dependencies:
     "@phenomnomnominal/tsquery" "^4.0.0"
     "@typescript-eslint/experimental-utils" "^3.2.0"
-    eslint-etc "^1.0.1"
+    eslint-etc "^2.0.0"
     requireindex "~1.2.0"
     tslib "^2.0.0"
     tsutils "^3.0.0"
@@ -9777,15 +9777,15 @@ eslint-plugin-react@^7.20.5:
     resolve "^1.17.0"
     string.prototype.matchall "^4.0.2"
 
-eslint-plugin-rxjs@^0.0.2-beta.28:
-  version "0.0.2-beta.28"
-  resolved "https://registry.npmjs.org/eslint-plugin-rxjs/-/eslint-plugin-rxjs-0.0.2-beta.28.tgz#92039d22ebac00eaaeb0286520a240f56f1cafd5"
-  integrity sha512-8923dmXdsF6JxUGIYmxSL0nAAtWdsa0BXIY6FwJ2yilumQF37jEiNo59Bw5Azvx3nNmAR6oNl/PUfhXBDpwzRg==
+eslint-plugin-rxjs@^0.0.2-beta.29:
+  version "0.0.2-beta.29"
+  resolved "https://registry.npmjs.org/eslint-plugin-rxjs/-/eslint-plugin-rxjs-0.0.2-beta.29.tgz#c28d89acf49c85124ae441b8fc7de1b736050519"
+  integrity sha512-6wCZbqjHBHI2Q1RKSPZivG7rb0K+iFJfyHryCmqcJsVuPGEt9Z0nhALQzGjr7UDGbTXlJzEXjloU0vtV86R4EQ==
   dependencies:
     "@typescript-eslint/experimental-utils" "^3.2.0"
     common-tags "^1.8.0"
     decamelize "^4.0.0"
-    eslint-etc "^1.0.0"
+    eslint-etc "^2.0.0"
     requireindex "~1.2.0"
     rxjs-report-usage "^1.0.4"
     tslib "^2.0.0"
