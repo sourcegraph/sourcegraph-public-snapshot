@@ -172,14 +172,14 @@ export class OrgArea extends React.Component<Props> {
                 .subscribe(
                     stateUpdate => {
                         if (stateUpdate.orgOrError && !isErrorLike(stateUpdate.orgOrError)) {
-                            const subscription = this.props.setBreadcrumb({
+                            const childBreadcrumbSetters = this.props.setBreadcrumb({
                                 key: 'OrgArea',
                                 element: <Link to={stateUpdate.orgOrError.url}>{stateUpdate.orgOrError.name}</Link>,
                             })
-                            this.subscriptions.add(subscription)
+                            this.subscriptions.add(childBreadcrumbSetters)
                             this.setState({
-                                useBreadcrumb: subscription.useBreadcrumb,
-                                setBreadcrumb: subscription.setBreadcrumb,
+                                useBreadcrumb: childBreadcrumbSetters.useBreadcrumb,
+                                setBreadcrumb: childBreadcrumbSetters.setBreadcrumb,
                                 orgOrError: stateUpdate.orgOrError,
                             })
                         } else {

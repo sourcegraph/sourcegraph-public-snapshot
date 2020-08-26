@@ -204,17 +204,17 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                 .subscribe(
                     stateUpdate => {
                         if (stateUpdate.userOrError && !isErrorLike(stateUpdate.userOrError)) {
-                            const subscription = this.props.setBreadcrumb({
+                            const childBreadcrumbSetters = this.props.setBreadcrumb({
                                 key: 'UserArea',
                                 element: (
                                     <Link to={stateUpdate.userOrError.url}>{stateUpdate.userOrError.username}</Link>
                                 ),
                             })
-                            this.subscriptions.add(subscription)
+                            this.subscriptions.add(childBreadcrumbSetters)
                             this.setState({
                                 ...stateUpdate,
-                                setBreadcrumb: subscription.setBreadcrumb,
-                                useBreadcrumb: subscription.useBreadcrumb,
+                                setBreadcrumb: childBreadcrumbSetters.setBreadcrumb,
+                                useBreadcrumb: childBreadcrumbSetters.useBreadcrumb,
                             })
                         } else {
                             this.setState(stateUpdate)
