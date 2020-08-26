@@ -1465,19 +1465,22 @@ func alertOnSearchLimit(resultTypes []string, args *search.TextParameters) ([]st
 	}
 
 	for _, resultType := range resultTypes {
-		switch resultType {
-		case "commit", "diff":
-			if _, afterPresent := args.Query.Fields()["after"]; afterPresent {
-				break
-			}
-			if _, beforePresent := args.Query.Fields()["before"]; beforePresent {
-				break
-			}
-			return []string{}, &searchAlert{
-				prometheusType: "exceeded_diff_commit_search_limit",
-				title:          fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
-				description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), repoLimit),
-			}
+		if resultType != "commit" && resultType != "diff" {
+			continue
+		}
+
+		// Allow commit/diff search if after or before is specified.
+		if _, afterPresent := args.Query.Fields()["after"]; afterPresent {
+			continue
+		}
+		if _, beforePresent := args.Query.Fields()["before"]; beforePresent {
+			continue
+		}
+
+		return []string{}, &searchAlert{
+			prometheusType: "exceeded_diff_commit_search_limit",
+			title:          fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
+			description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), repoLimit),
 		}
 	}
 
