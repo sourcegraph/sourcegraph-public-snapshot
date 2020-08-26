@@ -9,9 +9,6 @@ var Schema = `# Run this before committing changes to this file
 # go generate github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend
 # This will happen automatically if you are running ./dev/start.sh
 #
-# Lines that begin with #! are treated as internal comments. They are stripped
-# from the schema before the documentation for each field is generated.
-#
 # See docs/api.md for guidance on schema evolution.
 #
 schema {
@@ -451,12 +448,11 @@ type Mutation {
     Sets whether the user with the specified user ID is a site admin.
 
     Only site admins may perform this mutation.
-    !
-    ! 🚨 SECURITY: Only trusted users should be given site admin permissions.
-    ! Site admins have full access to the site configuration and other
-    ! sensitive data, and they can perform destructive actions such as
-    ! restarting the site.
     """
+    # 🚨 SECURITY: Only trusted users should be given site admin permissions.
+    # Site admins have full access to the site configuration and other
+    # sensitive data, and they can perform destructive actions such as
+    # restarting the site.
     setUserIsSiteAdmin(userID: ID!, siteAdmin: Boolean!): EmptyResponse
     """
     Reloads the site by restarting the server. This is not supported for all deployment
