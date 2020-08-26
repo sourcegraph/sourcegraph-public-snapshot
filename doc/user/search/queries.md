@@ -167,8 +167,8 @@ Per default, we match revisions to tags, branches, and commits. You can limit th
 the prefix `refs/tags` or `refs/heads`. For example `@refs/tags/3.18` will search the commit tagged 
 with `3.18`, but not a branch called `3.18` and vice versa for `@refs/heads/3.18`.
 
-**Glob-patterns** allow you to search over a range of branches or tags. Prepend `*` to mark a revision
-as glob-pattern and add the glob-pattern after it like this `repo:<repo>@*<glob-pattern>`. For example:
+**Glob patterns** allow you to search over a range of branches or tags. Prepend `*` to mark a revision
+as glob pattern and add the glob-pattern after it like this `repo:<repo>@*<glob-pattern>`. For example:
 
  - [`@*refs/heads/*`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/docker/machine%24%40*refs/heads/*+middleware&patternType=literal) - search across all branches
  - [`@*refs/tags/*`](https://sourcegraph.com/search?q=repo:github.com/docker/machine%24%40*refs/tags/*+server&patternType=literal) - search across all tags
