@@ -42,8 +42,6 @@ import (
 // logic that spans out into all the other search_* files.
 var mockResolveRepositories func(effectiveRepoFieldValues []string) (resolved resolvedRepositories, err error)
 
-var disallowLogQuery = lazyregexp.New(`(type:symbol|type:commit|type:diff)`)
-
 func maxReposToSearch() int {
 	switch max := conf.Get().MaxReposToSearch; {
 	case max <= 0:
