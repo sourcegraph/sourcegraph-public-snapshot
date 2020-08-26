@@ -169,7 +169,13 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 // Adds backend integration tests step.
 func addBackendIntegrationTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":chains:",
-		bk.Cmd("./dev/ci/backend-integration.sh"))
+		bk.Cmd("pushd enterprise"),
+		bk.Cmd("./cmd/server/pre-build.sh"),
+		bk.Cmd("./cmd/server/build.sh"),
+		bk.Cmd("popd"),
+		bk.Cmd("./dev/ci/backend-integration.sh"),
+		bk.Cmd(`docker image rm -f "$IMAGE"`),
+	)
 }
 
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
