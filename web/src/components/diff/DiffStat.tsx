@@ -20,13 +20,13 @@ interface Props {
 }
 
 /** Displays a diff stat (visual representation of added, changed, and deleted lines in a diff). */
-export const DiffStat: React.FunctionComponent<Props> = ({
+export const DiffStat: React.FunctionComponent<Props> = React.memo(function DiffStat({
     added,
     changed,
     deleted,
     expandedCounts = false,
     className = '',
-}) => {
+}) {
     const total = added + changed + deleted
     const numberOfSquares = Math.min(NUM_SQUARES, total)
     let addedSquares = allocateSquares(added, total)
@@ -91,7 +91,7 @@ export const DiffStat: React.FunctionComponent<Props> = ({
             ))}
         </div>
     )
-}
+})
 
 function allocateSquares(number: number, total: number): number {
     if (total === 0) {

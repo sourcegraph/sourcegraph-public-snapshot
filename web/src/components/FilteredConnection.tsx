@@ -613,10 +613,13 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                 .subscribe(
                     ({ connectionOrError, previousPage, ...rest }) => {
                         if (this.props.useURLQuery) {
-                            this.props.history.replace({
-                                search: this.urlQuery({ visible: previousPage.length }),
-                                hash: this.props.location.hash,
-                            })
+                            const searchFragment = this.urlQuery({ visible: previousPage.length })
+                            if (this.props.location.search !== searchFragment) {
+                                this.props.history.replace({
+                                    search: searchFragment,
+                                    hash: this.props.location.hash,
+                                })
+                            }
                         }
                         if (this.props.onUpdate) {
                             this.props.onUpdate(connectionOrError)

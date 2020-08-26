@@ -109,7 +109,7 @@ exports[`CampaignNode campaign without description 1`] = `
       />
     </Markdown>
   </div>
-  <ChangesetStatusOpen
+  <Memo(ChangesetStatusOpen)
     label={
       <span
         className="text-muted"
@@ -130,8 +130,8 @@ exports[`CampaignNode campaign without description 1`] = `
          open
       </span>
     </div>
-  </ChangesetStatusOpen>
-  <ChangesetStatusClosed
+  </Memo(ChangesetStatusOpen)>
+  <Memo(ChangesetStatusClosed)
     label={
       <span
         className="text-muted"
@@ -152,8 +152,8 @@ exports[`CampaignNode campaign without description 1`] = `
          closed
       </span>
     </div>
-  </ChangesetStatusClosed>
-  <ChangesetStatusMerged
+  </Memo(ChangesetStatusClosed)>
+  <Memo(ChangesetStatusMerged)
     label={
       <span
         className="text-muted"
@@ -174,7 +174,7 @@ exports[`CampaignNode campaign without description 1`] = `
          merged
       </span>
     </div>
-  </ChangesetStatusMerged>
+  </Memo(ChangesetStatusMerged)>
 </CampaignNode>
 `;
 
@@ -299,7 +299,7 @@ and renders in markdown
       />
     </Markdown>
   </div>
-  <ChangesetStatusOpen
+  <Memo(ChangesetStatusOpen)
     label={
       <span
         className="text-muted"
@@ -320,8 +320,8 @@ and renders in markdown
          open
       </span>
     </div>
-  </ChangesetStatusOpen>
-  <ChangesetStatusClosed
+  </Memo(ChangesetStatusOpen)>
+  <Memo(ChangesetStatusClosed)
     label={
       <span
         className="text-muted"
@@ -342,8 +342,8 @@ and renders in markdown
          closed
       </span>
     </div>
-  </ChangesetStatusClosed>
-  <ChangesetStatusMerged
+  </Memo(ChangesetStatusClosed)>
+  <Memo(ChangesetStatusMerged)
     label={
       <span
         className="text-muted"
@@ -364,7 +364,7 @@ and renders in markdown
          merged
       </span>
     </div>
-  </ChangesetStatusMerged>
+  </Memo(ChangesetStatusMerged)>
 </CampaignNode>
 `;
 
@@ -489,7 +489,7 @@ and renders in markdown
       />
     </Markdown>
   </div>
-  <ChangesetStatusOpen
+  <Memo(ChangesetStatusOpen)
     label={
       <span
         className="text-muted"
@@ -510,8 +510,8 @@ and renders in markdown
          open
       </span>
     </div>
-  </ChangesetStatusOpen>
-  <ChangesetStatusClosed
+  </Memo(ChangesetStatusOpen)>
+  <Memo(ChangesetStatusClosed)
     label={
       <span
         className="text-muted"
@@ -532,8 +532,8 @@ and renders in markdown
          closed
       </span>
     </div>
-  </ChangesetStatusClosed>
-  <ChangesetStatusMerged
+  </Memo(ChangesetStatusClosed)>
+  <Memo(ChangesetStatusMerged)
     label={
       <span
         className="text-muted"
@@ -554,7 +554,7 @@ and renders in markdown
          merged
       </span>
     </div>
-  </ChangesetStatusMerged>
+  </Memo(ChangesetStatusMerged)>
 </CampaignNode>
 `;
 
@@ -663,7 +663,7 @@ and renders in markdown
       />
     </Markdown>
   </div>
-  <ChangesetStatusOpen
+  <Memo(ChangesetStatusOpen)
     label={
       <span
         className="text-muted"
@@ -684,8 +684,8 @@ and renders in markdown
          open
       </span>
     </div>
-  </ChangesetStatusOpen>
-  <ChangesetStatusClosed
+  </Memo(ChangesetStatusOpen)>
+  <Memo(ChangesetStatusClosed)
     label={
       <span
         className="text-muted"
@@ -706,8 +706,8 @@ and renders in markdown
          closed
       </span>
     </div>
-  </ChangesetStatusClosed>
-  <ChangesetStatusMerged
+  </Memo(ChangesetStatusClosed)>
+  <Memo(ChangesetStatusMerged)
     label={
       <span
         className="text-muted"
@@ -728,6 +728,6 @@ and renders in markdown
          merged
       </span>
     </div>
-  </ChangesetStatusMerged>
+  </Memo(ChangesetStatusMerged)>
 </CampaignNode>
 `;

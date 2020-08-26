@@ -20,33 +20,9 @@ const { add } = storiesOf('web/campaigns/ChangesetLabel', module).addDecorator(s
 
 add('Various labels', () => (
     <>
-        <ChangesetLabel
-            label={{
-                text: 'Feature',
-                description: 'A feature, some descriptive text',
-                color: '93ba13',
-            }}
-        />
-        <ChangesetLabel
-            label={{
-                text: 'Bug',
-                description: 'A bug, some descriptive text',
-                color: 'af1302',
-            }}
-        />
-        <ChangesetLabel
-            label={{
-                text: 'estimate/1d',
-                description: 'An estimation, some descriptive text',
-                color: 'bfdadc',
-            }}
-        />
-        <ChangesetLabel
-            label={{
-                text: 'Debt',
-                description: 'Some debt, and some descriptive text',
-                color: '795548',
-            }}
-        />
+        <ChangesetLabel text="Feature" description="A feature, some descriptive text" color="93ba13" />
+        <ChangesetLabel text="Bug" description="A bug, some descriptive text" color="af1302" />
+        <ChangesetLabel text="estimate/1d" description="An estimation, some descriptive text" color="bfdadc" />
+        <ChangesetLabel text="Debt" description="Some debt, and some descriptive text" color="795548" />
     </>
 ))

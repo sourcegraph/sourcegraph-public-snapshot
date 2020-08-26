@@ -2,8 +2,8 @@ import React from 'react'
 import classNames from 'classnames'
 import { ChangesetLabelFields } from '../../../../graphql-operations'
 
-interface Props {
-    label: ChangesetLabelFields
+interface Props extends ChangesetLabelFields {
+    // Nothing else.
 }
 
 /**
@@ -20,9 +20,9 @@ export function colorBrightness(color: string): number {
     return (red * 299 + green * 587 + blue * 114) / 1000
 }
 
-export const ChangesetLabel: React.FunctionComponent<Props> = ({ label }) => {
+export const ChangesetLabel: React.FunctionComponent<Props> = ({ color, description, text }) => {
     // We use this value to determine the label text color (dark or bright, depending on the colorBrightness of the label)
-    const labelBrightness = colorBrightness(label.color)
+    const labelBrightness = colorBrightness(color)
 
     return (
         <span
@@ -31,10 +31,10 @@ export const ChangesetLabel: React.FunctionComponent<Props> = ({ label }) => {
                 labelBrightness < 127 ? 'text-white' : 'changeset-label__text--dark'
             )}
             // eslint-disable-next-line react/forbid-dom-props
-            style={{ backgroundColor: '#' + label.color }}
-            data-tooltip={label.description}
+            style={{ backgroundColor: '#' + color }}
+            data-tooltip={description}
         >
-            {label.text}
+            {text}
         </span>
     )
 }

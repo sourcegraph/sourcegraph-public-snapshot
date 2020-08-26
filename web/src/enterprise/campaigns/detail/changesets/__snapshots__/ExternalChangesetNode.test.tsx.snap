@@ -13,7 +13,7 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
       className="icon-inline"
     />
   </button>
-  <ChangesetStatusCell
+  <Memo(ChangesetStatusCell)
     changeset={
       Object {
         "__typename": "ExternalChangeset",
@@ -95,19 +95,19 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
     viewerCanAdminister={true}
   />
   <span>
-    <ChangesetCheckStatusCell
+    <Memo(ChangesetCheckStatusCell)
       checkState="FAILED"
     />
   </span>
   <span>
-    <ChangesetReviewStatusCell
+    <Memo(ChangesetReviewStatusCell)
       reviewState="PENDING"
     />
   </span>
   <div
     className="external-changeset-node__diffstat"
   >
-    <DiffStat
+    <Memo(DiffStat)
       added={100}
       changed={200}
       deleted={100}
