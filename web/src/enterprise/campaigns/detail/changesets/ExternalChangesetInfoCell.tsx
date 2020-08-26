@@ -45,7 +45,7 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
             {node.labels.length > 0 && (
                 <span className="ml-2">
                     {node.labels.map(label => (
-                        <ChangesetLabel {...label} key={label.text} />
+                        <ChangesetLabel label={label} key={label.text} />
                     ))}
                 </span>
             )}
