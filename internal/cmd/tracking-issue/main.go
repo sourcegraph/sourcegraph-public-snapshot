@@ -280,7 +280,16 @@ func Assignee(assignees []string) string {
 	if len(assignees) == 0 {
 		return "Unassigned"
 	}
+
 	return assignees[0]
+}
+
+func ListOfAssignees(assignees []string) []string {
+	if len(assignees) == 0 {
+		return []string{"Unassigned"}
+	}
+
+	return assignees
 }
 
 type TrackingIssue struct {
@@ -345,25 +354,36 @@ func (t *TrackingIssue) Workloads() Workloads {
 			continue
 		}
 
-		w := workload(Assignee(issue.Assignees))
-
-		w.AddIssue(issue)
-
-		linked := issue.LinkedPullRequests(t.PRs)
-		for _, pr := range linked {
-			issue.LinkedPRs = append(issue.LinkedPRs, pr)
-			pr.LinkedIssues = append(pr.LinkedIssues, issue)
-		}
-
-		if t.Milestone == "" || issue.Milestone == t.Milestone {
-			estimate := Estimate(issue.Labels)
-			w.Days += Days(estimate)
+		issueAssignees := ListOfAssignees(issue.Assignees)
+		if len(issueAssignees) > 1 {
+			for _, assignee := range issueAssignees {
+				w := workload(assignee)
+				t.AddIssueToWorkload(w, issue)
+			}
 		} else {
-			issue.Deprioritised = true
+			w := workload(Assignee(issue.Assignees))
+			t.AddIssueToWorkload(w, issue)
 		}
 	}
 
 	return workloads
+}
+
+func (t *TrackingIssue) AddIssueToWorkload(workload *Workload, issue *Issue) {
+	workload.AddIssue(issue)
+
+	linked := issue.LinkedPullRequests(t.PRs)
+	for _, pr := range linked {
+		issue.LinkedPRs = append(issue.LinkedPRs, pr)
+		pr.LinkedIssues = append(pr.LinkedIssues, issue)
+	}
+
+	if t.Milestone == "" || issue.Milestone == t.Milestone {
+		estimate := Estimate(issue.Labels)
+		workload.Days += Days(estimate)
+	} else {
+		issue.Deprioritised = true
+	}
 }
 
 type Issue struct {
