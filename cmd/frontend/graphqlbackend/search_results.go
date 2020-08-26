@@ -1583,9 +1583,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return &optionalWg
 	}
 
-	if resolved.excludedRepos != nil {
-		common.excluded = *resolved.excludedRepos
-	}
+	common.excluded = resolved.excludedRepos
 
 	// Apply search limits and generate warnings before firing off workers.
 	// This currently limits diff and commit search to a set number of
