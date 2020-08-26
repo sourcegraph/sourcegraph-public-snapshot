@@ -29,10 +29,13 @@ import { ExtensionCategory, EXTENSION_CATEGORIES } from '../../../shared/src/sch
 import { ShowMoreExtensions } from './ShowMoreExtensions'
 import { createExtensionBanner } from './ExtensionBanner'
 import { ThemeProps } from '../../../shared/src/theme'
+import { Link } from 'react-router-dom'
+import { ExtensionsAreaRouteContext } from './ExtensionsArea'
 
 interface Props
     extends SettingsCascadeProps,
         PlatformContextProps<'settings' | 'updateSettings' | 'requestGraphQL'>,
+        Pick<ExtensionsAreaRouteContext, 'authenticatedUser'>,
         ThemeProps {
     subject: Pick<SettingsSubject, 'id' | 'viewerCanAdminister'>
     location: H.Location
@@ -103,6 +106,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
     settingsCascade,
     platformContext,
     isLightTheme,
+    authenticatedUser,
 }) => {
     const { current: configuredExtensionCache } = useRef(
         new Map<string, ConfiguredRegistryExtension<RegistryExtensionFieldsForList>>()
@@ -229,6 +233,15 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
                         setEnablementFilter={setEnablementFilter}
                         isLightTheme={isLightTheme}
                     />
+
+                    {!authenticatedUser && (
+                        <div className="alert alert-info my-4">
+                            <span>An account is required to create and configure extensions. </span>
+                            <Link to="/sign-in">
+                                <span className="alert-link">Register Now!</span>
+                            </Link>
+                        </div>
+                    )}
 
                     {content}
                 </div>

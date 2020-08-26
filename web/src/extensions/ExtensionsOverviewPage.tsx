@@ -1,6 +1,5 @@
 import * as H from 'history'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { PageTitle } from '../components/PageTitle'
@@ -27,14 +26,6 @@ export class ExtensionsOverviewPage extends React.PureComponent<Props> {
             <div className="container">
                 <PageTitle title="Extensions" />
                 <div className="py-3">
-                    {!this.props.authenticatedUser && (
-                        <div className="alert alert-info">
-                            <Link to="/sign-in" className="btn btn-primary mr-2">
-                                Sign in to add and configure extensions
-                            </Link>
-                            <small>An account is required.</small>
-                        </div>
-                    )}
                     <ExtensionsList
                         {...this.props}
                         subject={this.props.subject}
