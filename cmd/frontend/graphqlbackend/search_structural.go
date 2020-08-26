@@ -159,7 +159,7 @@ func StructuralPatToRegexpQuery(pattern string, shortcircuit bool) string {
 	}
 
 	if len(pieces) == 0 {
-		// match anything
+		// Match anything.
 		return "(.|\\s)*?"
 	}
 
@@ -214,13 +214,16 @@ func HandleFilePathPatterns(query *search.TextPatternInfo) (zoektquery.Q, error)
 	return zoektquery.NewAnd(and...), nil
 }
 
-func buildQuery(args *search.TextParameters, repos *indexedRepoRevs, filePathPatterns zoektquery.Q, shortcircuit bool) zoektquery.Q {
+func buildQuery(args *search.TextParameters, repos *indexedRepoRevs, filePathPatterns zoektquery.Q, shortcircuit bool) (zoektquery.Q, error) {
 	regexString := StructuralPatToRegexpQuery(args.PatternInfo.Pattern, shortcircuit)
 	if len(regexString) == 0 {
-		return &zoektquery.Const{Value: true}
+		return &zoektquery.Const{Value: true}, nil
 	}
-	re, _ := syntax.Parse(regexString, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
-	q := zoektquery.NewAnd(
+	re, err := syntax.Parse(regexString, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+	if err != nil {
+		return nil, err
+	}
+	return zoektquery.NewAnd(
 		&zoektquery.RepoBranches{Set: repos.repoBranches},
 		filePathPatterns,
 		&zoektquery.Regexp{
@@ -228,8 +231,7 @@ func buildQuery(args *search.TextParameters, repos *indexedRepoRevs, filePathPat
 			CaseSensitive: true,
 			Content:       true,
 		},
-	)
-	return q
+	), nil
 }
 
 // zoektSearchHEADOnlyFiles searches repositories using zoekt, returning only the file paths containing
@@ -268,7 +270,10 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 	}
 
 	t0 := time.Now()
-	q := buildQuery(args, repos, filePathPatterns, true)
+	q, err := buildQuery(args, repos, filePathPatterns, true)
+	if err != nil {
+		return nil, false, nil, err
+	}
 	resp, err := args.Zoekt.Client.Search(ctx, q, &searchOpts)
 	if err != nil {
 		return nil, false, nil, err
@@ -282,7 +287,10 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 	// If the previous indexed search did not return a substantial number of matching file candidates or count was
 	// manually specified, run a more complete and expensive search.
 	if resp.FileCount < 10 || args.PatternInfo.FileMatchLimit != defaultMaxSearchResults {
-		q = buildQuery(args, repos, filePathPatterns, false)
+		q, err = buildQuery(args, repos, filePathPatterns, false)
+		if err != nil {
+			return nil, false, nil, err
+		}
 		resp, err = args.Zoekt.Client.Search(ctx, q, &searchOpts)
 		if err != nil {
 			return nil, false, nil, err
