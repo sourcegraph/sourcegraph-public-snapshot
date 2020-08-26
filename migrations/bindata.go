@@ -124,6 +124,8 @@
 // 1528395710_add_unsynced_flag_to_changesets.up.sql (106B)
 // 1528395711_add_soft_deleted_repository_name_func.down.sql (73B)
 // 1528395711_add_soft_deleted_repository_name_func.up.sql (282B)
+// 1528395712_add_trigger_to_delete_orphan_repos.down.sql (165B)
+// 1528395712_add_trigger_to_delete_orphan_repos.up.sql (892B)
 
 package migrations
 
@@ -2672,6 +2674,46 @@ func _1528395711_add_soft_deleted_repository_name_funcUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395712_add_trigger_to_delete_orphan_reposDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\xcd\xb1\x0a\xc2\x30\x10\x80\xe1\xfd\x9e\xe2\x46\x7d\x86\x6c\xd6\x34\xdc\xd0\x44\xd2\x08\x6e\x47\xd1\xab\x16\x4a\x13\x2e\x41\x7c\x7c\x07\x17\x11\x5c\xff\xe1\xfb\x0f\xd6\x91\x37\x00\xc7\x18\x4e\x98\x22\x39\x67\x23\x52\x8f\xf6\x42\x63\x1a\xb1\xe9\x72\xe7\x9a\xe7\xc6\x37\x59\xa5\x09\x67\x2d\x8f\x69\x63\x95\x92\x2b\xcf\x59\x59\x5e\x4d\x74\x9b\x56\xae\xa2\xcf\xe5\x2a\x18\x3c\xfe\xb6\x6a\x3e\x7e\x7f\xf6\x5d\xa2\xe0\xbf\x06\xff\xec\xdd\xde\x00\x74\x61\x18\x28\x19\x78\x07\x00\x00\xff\xff\x13\xa0\xf1\x7b\xa5\x00\x00\x00")
+
+func _1528395712_add_trigger_to_delete_orphan_reposDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395712_add_trigger_to_delete_orphan_reposDownSql,
+		"1528395712_add_trigger_to_delete_orphan_repos.down.sql",
+	)
+}
+
+func _1528395712_add_trigger_to_delete_orphan_reposDownSql() (*asset, error) {
+	bytes, err := _1528395712_add_trigger_to_delete_orphan_reposDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395712_add_trigger_to_delete_orphan_repos.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x57, 0xd4, 0xdc, 0xdf, 0x88, 0x70, 0xb7, 0xf7, 0x4b, 0xe5, 0x91, 0x9, 0xc1, 0x25, 0xe8, 0x11, 0x4f, 0xde, 0x45, 0xcd, 0x53, 0x10, 0x7a, 0x5b, 0x89, 0xce, 0xd1, 0xcf, 0x6b, 0x2e, 0xf8, 0xba}}
+	return a, nil
+}
+
+var __1528395712_add_trigger_to_delete_orphan_reposUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x84\x53\xc1\x8e\x9b\x30\x10\xbd\xf3\x15\xef\x90\x03\x48\xbb\xfb\x03\x68\x0f\x14\x86\xc4\x12\xb1\x23\x63\x94\xbd\x59\x28\x38\x09\x52\x02\xd4\xb8\x55\xfb\xf7\x15\x26\x65\x93\xad\xa2\xfa\x80\xf0\xcc\xbc\x99\xf7\x66\xc6\xdf\x68\xcd\x78\x1c\x04\x99\x14\x3b\xe4\x15\x4f\x15\x13\x1c\x2c\x07\x7d\xb0\x52\x95\x18\xfb\xa3\xd3\x8d\xb9\x18\x67\x74\x6f\x87\x73\xdd\x69\x6b\x86\x7e\x0c\xa3\x38\x08\x52\x49\x89\xa2\x4f\xd8\xf3\x60\x48\x52\x95\xe4\x25\x9c\x6d\x4f\x27\x63\x03\x00\x28\x12\xbe\xae\x92\x35\x61\xb8\x0c\xa7\xf1\xfb\x25\x48\x4a\xac\x56\x81\xa7\xe4\x03\x5e\x5f\xb1\x3f\x9b\x0e\x75\x07\xf3\xcb\x19\xdb\xd5\x17\x8c\xc6\xfe\x6c\x0f\x06\xed\xe8\xcb\xa1\xb7\x38\xd7\xb6\x79\x9d\xcb\x36\x2f\x7f\x81\x83\xb1\xc7\xde\x5e\x47\xd4\x38\x5c\x4c\xdd\xe1\xc7\x00\xd7\x7b\xcc\x2d\x16\x33\x45\x78\x8a\xad\xeb\x6d\x6b\xc6\x37\x0f\x67\x39\x42\x51\x64\x6f\xb7\x9c\xba\x76\x60\x25\x78\x55\x14\x48\x78\x86\x90\xd3\x7e\x31\x08\x09\x4e\xfb\xaf\xa1\x42\x79\x6f\x14\x41\x6d\x68\x16\x33\x9d\x6a\x97\x25\x8a\x96\xeb\x74\xa6\xea\x8b\xa1\x24\xf5\xe0\xec\xea\xab\xc1\xfb\x7d\x5f\x1b\xbd\xd0\xfd\xad\x27\x77\x38\x7d\xa2\x97\x07\xd8\x1d\x99\x77\x38\x5b\x77\x63\x7d\x70\x6d\xdf\x69\xd7\x5e\xcd\xe8\xea\xeb\x10\x46\x0b\x60\xbf\x21\x49\xcf\xe0\x37\x95\x77\xee\xa9\x01\x6d\xe3\x15\x32\x8e\xf0\x01\x58\x52\x41\xa9\x42\xc6\x4a\xc5\x78\xaa\xc2\x89\xaa\x6e\x9b\x08\xb9\x14\xdb\x65\x84\xfa\x36\xc2\x59\xc9\x92\x20\x8a\xfd\x2f\xf1\x0c\x2c\x8f\x03\x7f\x99\xb7\x06\xa2\xc8\xe2\x80\x78\x16\x07\xab\xd5\xe7\xda\x29\xc9\xd6\x6b\x92\x7e\xa5\xf4\xb3\xd5\xd3\xc7\xde\xea\xaf\x95\x7d\xee\x24\x57\x24\x6f\x13\x81\xc8\xef\x55\x0b\x89\x8c\x0a\x9a\xec\xfc\x1f\xda\x33\xe3\x5c\x48\x50\x92\x6e\x20\xc5\x1e\xf4\x41\x69\xa5\x08\x3b\x29\x52\xca\x2a\x49\xff\x79\x36\x62\xbb\x65\x2a\x0e\xfe\x04\x00\x00\xff\xff\xfc\xbf\xa6\x05\x7c\x03\x00\x00")
+
+func _1528395712_add_trigger_to_delete_orphan_reposUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395712_add_trigger_to_delete_orphan_reposUpSql,
+		"1528395712_add_trigger_to_delete_orphan_repos.up.sql",
+	)
+}
+
+func _1528395712_add_trigger_to_delete_orphan_reposUpSql() (*asset, error) {
+	bytes, err := _1528395712_add_trigger_to_delete_orphan_reposUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395712_add_trigger_to_delete_orphan_repos.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x99, 0x48, 0x18, 0x44, 0xb, 0x19, 0x46, 0x4d, 0xec, 0x59, 0x80, 0xed, 0x4d, 0xb5, 0xba, 0xac, 0xa8, 0x1c, 0x41, 0x23, 0xdd, 0x9b, 0xa7, 0x98, 0xf6, 0xdb, 0x3f, 0x97, 0x65, 0x47, 0xf3, 0x15}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2887,6 +2929,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395710_add_unsynced_flag_to_changesets.up.sql":                            _1528395710_add_unsynced_flag_to_changesetsUpSql,
 	"1528395711_add_soft_deleted_repository_name_func.down.sql":                    _1528395711_add_soft_deleted_repository_name_funcDownSql,
 	"1528395711_add_soft_deleted_repository_name_func.up.sql":                      _1528395711_add_soft_deleted_repository_name_funcUpSql,
+	"1528395712_add_trigger_to_delete_orphan_repos.down.sql":                       _1528395712_add_trigger_to_delete_orphan_reposDownSql,
+	"1528395712_add_trigger_to_delete_orphan_repos.up.sql":                         _1528395712_add_trigger_to_delete_orphan_reposUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3057,6 +3101,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395710_add_unsynced_flag_to_changesets.up.sql":                            {_1528395710_add_unsynced_flag_to_changesetsUpSql, map[string]*bintree{}},
 	"1528395711_add_soft_deleted_repository_name_func.down.sql":                    {_1528395711_add_soft_deleted_repository_name_funcDownSql, map[string]*bintree{}},
 	"1528395711_add_soft_deleted_repository_name_func.up.sql":                      {_1528395711_add_soft_deleted_repository_name_funcUpSql, map[string]*bintree{}},
+	"1528395712_add_trigger_to_delete_orphan_repos.down.sql":                       {_1528395712_add_trigger_to_delete_orphan_reposDownSql, map[string]*bintree{}},
+	"1528395712_add_trigger_to_delete_orphan_repos.up.sql":                         {_1528395712_add_trigger_to_delete_orphan_reposUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
