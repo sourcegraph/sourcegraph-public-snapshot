@@ -108,7 +108,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         exact: true,
         condition: props =>
             window.context.externalServicesUserModeEnabled ||
-            props.user.tags?.includes('AllowUserExternalServicePublic'),
+            props.authenticatedUser.tags?.includes('AllowUserExternalServicePublic'),
     },
     {
         path: '/external-services/:id',
