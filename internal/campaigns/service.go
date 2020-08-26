@@ -290,6 +290,7 @@ func (svc *Service) ResolveNamespace(ctx context.Context, namespace string) (str
 func (svc *Service) ResolveRepositories(ctx context.Context, spec *CampaignSpec) ([]*graphql.Repository, error) {
 	final := []*graphql.Repository{}
 	seen := map[string]struct{}{}
+	unsupported := unsupportedRepoSet{}
 
 	// TODO: this could be trivially parallelised in the future.
 	for _, on := range spec.On {
@@ -298,29 +299,23 @@ func (svc *Service) ResolveRepositories(ctx context.Context, spec *CampaignSpec)
 			return nil, errors.Wrapf(err, "resolving %q", on.String())
 		}
 
-		unknownTypes := map[string]struct{}{}
 		for _, repo := range repos {
 			if _, ok := seen[repo.ID]; !ok {
 				switch st := strings.ToLower(repo.ExternalRepository.ServiceType); st {
 				case "github", "gitlab", "bitbucketserver":
 
 				default:
-					unknownTypes[st] = struct{}{}
+					unsupported.appendRepo(repo)
 				}
 
 				seen[repo.ID] = struct{}{}
 				final = append(final, repo)
 			}
 		}
+	}
 
-		if len(unknownTypes) > 0 && !svc.allowUnsupported {
-			types := []string{}
-			for t := range unknownTypes {
-				types = append(types, t)
-			}
-
-			return nil, errors.Errorf("found repositories on unsupported code hosts: %s", strings.Join(types, ", "))
-		}
+	if unsupported.hasUnsupported() && !svc.allowUnsupported {
+		return nil, unsupported
 	}
 
 	return final, nil
