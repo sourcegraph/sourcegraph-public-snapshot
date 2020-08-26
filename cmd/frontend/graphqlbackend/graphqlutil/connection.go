@@ -1,6 +1,10 @@
 package graphqlutil
 
-import "github.com/sourcegraph/sourcegraph/internal/db"
+import (
+	"fmt"
+
+	"github.com/sourcegraph/sourcegraph/internal/db"
+)
 
 // ConnectionArgs is the common set of arguments to GraphQL fields that return connections (lists).
 type ConnectionArgs struct {
@@ -21,4 +25,20 @@ func (a ConnectionArgs) GetFirst() int32 {
 		return 0
 	}
 	return *a.First
+}
+
+func (a ConnectionArgs) GetFirstMin(min int32) (int32, error) {
+	first := a.GetFirst()
+	if first < min {
+		return first, fmt.Errorf("invalid first argument given, min=%d", min)
+	}
+	return first, nil
+}
+
+func (a ConnectionArgs) GetFirstMinMax(min, max int32) (int32, error) {
+	first := a.GetFirst()
+	if first < min || first > max {
+		return first, fmt.Errorf("invalid first argument given, min=%d, max=%d", min, max)
+	}
+	return first, nil
 }

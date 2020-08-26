@@ -175,9 +175,13 @@ func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.
 		return nil, err
 	}
 	opts.State = state
-	if args.First != nil {
-		opts.Limit = int(*args.First)
+
+	first, err := args.GetFirstMin(0)
+	if err != nil {
+		return nil, err
 	}
+	opts.Limit = int(first)
+
 	if args.After != nil {
 		cursor, err := strconv.ParseInt(*args.After, 10, 32)
 		if err != nil {
@@ -355,12 +359,16 @@ func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.Change
 func (r *changesetResolver) Events(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 }) (graphqlbackend.ChangesetEventsConnectionResolver, error) {
+	first, err := args.GetFirstMin(0)
+	if err != nil {
+		return nil, err
+	}
 	// TODO: We already need to fetch all events for ReviewState and Labels
 	// perhaps we can use the cached data here
 	return &changesetEventsConnectionResolver{
 		store:             r.store,
 		changesetResolver: r,
-		first:             int(args.GetFirst()),
+		first:             int(first),
 	}, nil
 }
 

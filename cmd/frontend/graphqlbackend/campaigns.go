@@ -26,7 +26,7 @@ type MoveCampaignArgs struct {
 }
 
 type ListCampaignArgs struct {
-	First               *int32
+	graphqlutil.ConnectionArgs
 	After               *string
 	State               *string
 	ViewerCanAdminister *bool
@@ -59,7 +59,7 @@ type CreateCampaignSpecArgs struct {
 }
 
 type ChangesetSpecsConnectionArgs struct {
-	First *int32
+	graphqlutil.ConnectionArgs
 	After *string
 }
 
@@ -179,7 +179,7 @@ type ChangesetCountsArgs struct {
 }
 
 type ListChangesetsArgs struct {
-	First                       *int32
+	graphqlutil.ConnectionArgs
 	After                       *string
 	PublicationState            *campaigns.ChangesetPublicationState
 	ReconcilerState             *campaigns.ReconcilerState

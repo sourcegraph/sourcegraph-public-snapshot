@@ -12,6 +12,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
@@ -619,7 +620,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		// First argument is set in opts, and considered safe.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				First: &wantFirst,
+				ConnectionArgs: graphqlutil.ConnectionArgs{First: &wantFirst},
 			},
 			wantSafe:   true,
 			wantParsed: ee.ListChangesetsOpts{Limit: 10},
