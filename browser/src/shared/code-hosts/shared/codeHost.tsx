@@ -40,6 +40,8 @@ import {
     distinctUntilChanged,
     retryWhen,
     mapTo,
+    pluck,
+    distinct,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../../shared/src/actions/ActionItem'
 import { DecorationMapByLine } from '../../../../../shared/src/api/client/services/decoration'
@@ -108,6 +110,7 @@ import { asError } from '../../../../../shared/src/util/errors'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
 import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
+import { FeatureFlags } from '../../../browser-extension/web-extension-api/types'
 
 registerHighlightContributions()
 
@@ -1062,16 +1065,25 @@ export function injectCodeIntelligenceToCodeHost(
         isExtension
     )
     const { requestGraphQL } = platformContext
-    const sendTelemetry = featureFlags.isEnabled('sendTelemetry')
 
-    // Debug message:
-    sendTelemetry.then(value => {
-        console.log('Value of feature flag sendTelemetry in injectCodeIntelligenceToCodeHost:', value)
-    })
+    const sendTelemetryOptionFlagObserverable = observeStorageKey('sync', 'featureFlags').pipe(
+        tap(value => console.log('Feature flags changed', value)),
+        distinct(value => !!value?.sendTelemetry),
+        pluck('sendTelemetry'),
+        tap(value => {
+            console.log('sendTelemetry changed', value)
+        })
+    )
 
-    console.log('Creating telemetry service')
+    // Debug message TODO(marek) remove debug message
+    subscriptions.add(
+        sendTelemetryOptionFlagObserverable.subscribe(value => {
+            console.log('Observed a change in sendTelemetry', value)
+        })
+    )
+
     const innerTelemetryService = new EventLogger(isExtension, requestGraphQL)
-    const telemetryService = new ConditionalTelemetryService(innerTelemetryService, sendTelemetry)
+    const telemetryService = new ConditionalTelemetryService(innerTelemetryService, sendTelemetryOptionFlagObserverable)
 
     subscriptions.add(extensionsController)
 
