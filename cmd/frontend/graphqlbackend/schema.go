@@ -1246,6 +1246,13 @@ type Query {
         # Only include campaigns that the viewer can administer.
         viewerCanAdminister: Boolean
     ): CampaignConnection!
+    # Looks up a campaign by namespace and campaign name.
+    campaign(
+        # The namespace where the campaign lives.
+        namespace: ID!
+        # The campaigns name.
+        name: String!
+    ): Campaign
 
     # Looks up a repository by either name or cloneURL.
     repository(

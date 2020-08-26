@@ -5,7 +5,7 @@ import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { isEqual } from 'lodash'
 import {
-    fetchCampaignById as _fetchCampaignById,
+    fetchCampaignByNamespace as _fetchCampaignByNamespace,
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
@@ -34,14 +34,18 @@ export interface CampaignDetailsPageProps
         BreadcrumbSetters,
         TelemetryProps {
     /**
-     * The campaign ID.
+     * The namespace ID.
      */
-    campaignID: Scalars['ID']
+    namespaceID: Scalars['ID']
+    /**
+     * The campaign name.
+     */
+    campaignName: CampaignFields['name']
     history: H.History
     location: H.Location
 
     /** For testing only. */
-    fetchCampaignById?: typeof _fetchCampaignById
+    fetchCampaignByNamespace?: typeof _fetchCampaignByNamespace
     /** For testing only. */
     queryChangesets?: typeof _queryChangesets
     /** For testing only. */
@@ -56,7 +60,8 @@ export interface CampaignDetailsPageProps
  * The area for a single campaign.
  */
 export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPageProps> = ({
-    campaignID,
+    namespaceID,
+    campaignName,
     history,
     location,
     isLightTheme,
@@ -64,7 +69,7 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
     platformContext,
     telemetryService,
     useBreadcrumb,
-    fetchCampaignById = _fetchCampaignById,
+    fetchCampaignByNamespace = _fetchCampaignByNamespace,
     queryChangesets,
     queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime,
@@ -77,11 +82,11 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
     const campaign: CampaignFields | null | undefined = useObservable(
         useMemo(
             () =>
-                fetchCampaignById(campaignID).pipe(
+                fetchCampaignByNamespace(namespaceID, campaignName).pipe(
                     repeatWhen(notifier => notifier.pipe(delay(5000))),
                     distinctUntilChanged((a, b) => isEqual(a, b))
                 ),
-            [campaignID, fetchCampaignById]
+            [namespaceID, campaignName, fetchCampaignByNamespace]
         )
     )
 

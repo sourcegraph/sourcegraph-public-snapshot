@@ -25,7 +25,7 @@ type MoveCampaignArgs struct {
 	NewNamespace *graphql.ID
 }
 
-type ListCampaignArgs struct {
+type ListCampaignsArgs struct {
 	First               *int32
 	After               *string
 	State               *string
@@ -63,6 +63,11 @@ type ChangesetSpecsConnectionArgs struct {
 	After *string
 }
 
+type CampaignArgs struct {
+	Namespace string
+	Name      string
+}
+
 type CampaignsResolver interface {
 	// Mutations
 	CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error)
@@ -75,7 +80,8 @@ type CampaignsResolver interface {
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
 
 	// Queries
-	Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error)
+	Campaigns(ctx context.Context, args *ListCampaignsArgs) (CampaignsConnectionResolver, error)
+	Campaign(ctx context.Context, args *CampaignArgs) (CampaignResolver, error)
 	CampaignByID(ctx context.Context, id graphql.ID) (CampaignResolver, error)
 	ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error)
 
@@ -246,7 +252,7 @@ type ChangesetResolver interface {
 	PublicationState() campaigns.ChangesetPublicationState
 	ReconcilerState() campaigns.ReconcilerState
 	ExternalState() *campaigns.ChangesetExternalState
-	Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error)
+	Campaigns(ctx context.Context, args *ListCampaignsArgs) (CampaignsConnectionResolver, error)
 
 	ToExternalChangeset() (ExternalChangesetResolver, bool)
 	ToHiddenExternalChangeset() (HiddenExternalChangesetResolver, bool)
@@ -350,7 +356,11 @@ func (defaultCampaignsResolver) CampaignByID(ctx context.Context, id graphql.ID)
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error) {
+func (defaultCampaignsResolver) Campaign(ctx context.Context, args *CampaignArgs) (CampaignResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) Campaigns(ctx context.Context, args *ListCampaignsArgs) (CampaignsConnectionResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 

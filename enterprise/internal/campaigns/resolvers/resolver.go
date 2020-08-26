@@ -119,6 +119,38 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
+func (r *Resolver) Campaign(ctx context.Context, args *graphqlbackend.CampaignArgs) (graphqlbackend.CampaignResolver, error) {
+	if err := campaignsEnabled(); err != nil {
+		return nil, err
+	}
+
+	opts := ee.GetCampaignOpts{Name: args.Name}
+
+	namespaceID := graphql.ID(args.Namespace)
+	var err error
+	switch relay.UnmarshalKind(namespaceID) {
+	case "User":
+		err = relay.UnmarshalSpec(namespaceID, &opts.NamespaceUserID)
+	case "Org":
+		err = relay.UnmarshalSpec(namespaceID, &opts.NamespaceOrgID)
+	default:
+		err = errors.Errorf("Invalid namespace %q", namespaceID)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	campaign, err := r.store.GetCampaign(ctx, opts)
+	if err != nil {
+		if err == ee.ErrNoResults {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
+}
+
 func (r *Resolver) CampaignSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignSpecResolver, error) {
 	if err := campaignsEnabled(); err != nil {
 		return nil, err
@@ -420,7 +452,7 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 	return &graphqlbackend.EmptyResponse{}, err
 }
 
-func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
+func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignsArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
 	if err := campaignsEnabled(); err != nil {
 		return nil, err
 	}
