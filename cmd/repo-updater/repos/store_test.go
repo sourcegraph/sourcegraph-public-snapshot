@@ -1133,13 +1133,13 @@ func testStoreUpsertSources(t *testing.T, store repos.Store) func(*testing.T) {
 		}))
 
 		t.Run("delete external service", transact(ctx, store, func(t testing.TB, tx repos.Store) {
-			want := mkRepos(7, repositories...)
+			origRepos := mkRepos(7, repositories...)
 
-			if err := tx.UpsertRepos(ctx, want...); err != nil {
+			if err := tx.UpsertRepos(ctx, origRepos...); err != nil {
 				t.Fatalf("UpsertRepos error: %s", err)
 			}
 
-			sources := want.Sources()
+			sources := origRepos.Sources()
 
 			if err := tx.UpsertSources(ctx, sources, nil, nil); err != nil {
 				t.Fatalf("UpsertSources error: %s", err)
@@ -1158,12 +1158,16 @@ func testStoreUpsertSources(t *testing.T, store repos.Store) func(*testing.T) {
 				t.Fatalf("UpsertExternalServices error: %s", err)
 			}
 
-			// all github sources should be deleted
-			want.Apply(func(r *repos.Repo) {
+			// All GitHub sources should be deleted and all orphan repositories should be excluded
+			want := make([]*repos.Repo, 0, len(origRepos))
+			origRepos.Apply(func(r *repos.Repo) {
 				for urn := range r.Sources {
 					if strings.Contains(urn, "github") {
 						delete(r.Sources, urn)
 					}
+				}
+				if len(r.Sources) > 0 {
+					want = append(want, r)
 				}
 			})
 
@@ -1172,7 +1176,7 @@ func testStoreUpsertSources(t *testing.T, store repos.Store) func(*testing.T) {
 				t.Fatalf("ListRepos error: %s", err)
 			}
 
-			if diff := cmp.Diff([]*repos.Repo(want), got, cmpopts.EquateEmpty()); diff != "" {
+			if diff := cmp.Diff(want, got, cmpopts.EquateEmpty()); diff != "" {
 				t.Fatalf("ListRepos:\n%s", diff)
 			}
 		}))
