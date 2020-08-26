@@ -54,7 +54,6 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
     }
   />
   <ExternalChangesetInfoCell
-    campaignUpdates="[Subject]"
     node={
       Object {
         "__typename": "ExternalChangeset",

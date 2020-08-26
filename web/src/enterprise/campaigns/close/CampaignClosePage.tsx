@@ -4,7 +4,6 @@ import { PageTitle } from '../../../components/PageTitle'
 import { CampaignHeader } from '../detail/CampaignHeader'
 import { CampaignCloseAlert } from './CampaignCloseAlert'
 import { Scalars } from '../../../graphql-operations'
-import { Subject } from 'rxjs'
 import {
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryChangesets as _queryChangesets,
@@ -53,7 +52,6 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
     queryExternalChangesetWithFileDiffs,
     closeCampaign,
 }) => {
-    const campaignUpdates = useMemo(() => new Subject<void>(), [])
     const [closeChangesets, setCloseChangesets] = useState<boolean>(false)
     const campaign = useObservable(useMemo(() => fetchCampaignById(campaignID), [campaignID, fetchCampaignById]))
 
@@ -98,7 +96,6 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
             {!closeChangesets && <h2>The following changesets will remain open:</h2>}
             <CampaignCloseChangesetsList
                 campaignID={campaignID}
-                campaignUpdates={campaignUpdates}
                 history={history}
                 location={location}
                 viewerCanAdminister={campaign.viewerCanAdminister}
