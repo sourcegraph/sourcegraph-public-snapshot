@@ -208,7 +208,11 @@ func (p *progressTTY) writeLine(bar *ProgressBar) {
 
 	// Unicode box drawing gives us eight possible bar widths, so we need to
 	// calculate both the bar width and then the final character, if any.
-	segments := int(math.Round((float64(8*barWidth) * value) / bar.Max))
+	var segments int
+	if bar.Max > 0 {
+		segments = int(math.Round((float64(8*barWidth) * value) / bar.Max))
+	}
+
 	fillWidth := segments / 8
 	remainder := segments % 8
 	if remainder == 0 {
