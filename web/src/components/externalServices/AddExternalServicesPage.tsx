@@ -14,7 +14,16 @@ interface Props extends ThemeProps, TelemetryProps {
     routingPrefix: string
     afterCreateRoute: string
     userID?: Scalars['ID']
+
+    /**
+     * The list of code host external services to be displayed.
+     * Pick items from externalServices.codeHostExternalServices.
+     */
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
+    /**
+     * The list of non-code host external services to be displayed.
+     * Pick items from externalServices.nonCodeHostExternalServices.
+     */
     nonCodeHostExternalServices: Record<string, AddExternalServiceOptions>
 
     /** For testing only. */
