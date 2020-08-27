@@ -134,6 +134,12 @@ func TestParseParameterList(t *testing.T) {
 			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":9}}`,
 			WantLabels: Regexp | HeuristicDanglingParens,
 		},
+		{
+			Input:      `/a regex pattern/`,
+			Want:       `{"value":"a regex pattern","negated":false}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":17}}`,
+			WantLabels: Regexp,
+		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
