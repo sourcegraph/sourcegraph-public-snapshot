@@ -1077,6 +1077,8 @@ type SettingsExperimentalFeatures struct {
 	SearchStats *bool `json:"searchStats,omitempty"`
 	// ShowBadgeAttachments description: Enables the UI indicators for code intelligence precision.
 	ShowBadgeAttachments *bool `json:"showBadgeAttachments,omitempty"`
+	// ShowEnterpriseHomePanels description: Enabled the homepage panels in the Enterprise homepage
+	ShowEnterpriseHomePanels *bool `json:"showEnterpriseHomePanels,omitempty"`
 	// ShowOnboardingTour description: Enables the onboarding tour.
 	ShowOnboardingTour *bool `json:"showOnboardingTour,omitempty"`
 	// ShowRepogroupHomepage description: Enables the repository group homepage
