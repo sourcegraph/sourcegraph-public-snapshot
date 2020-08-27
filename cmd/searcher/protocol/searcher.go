@@ -50,6 +50,10 @@ type PatternInfo struct {
 	// is true, otherwise a fixed string. eg "route variable"
 	Pattern string
 
+	// IsNegated if true will invert the matching logic for regexp searches. IsNegated=true is
+	// not supported for structural searches.
+	IsNegated bool
+
 	// IsRegExp if true will treat the Pattern as a regular expression.
 	IsRegExp bool
 

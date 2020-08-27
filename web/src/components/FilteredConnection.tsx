@@ -613,10 +613,13 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                 .subscribe(
                     ({ connectionOrError, previousPage, ...rest }) => {
                         if (this.props.useURLQuery) {
-                            this.props.history.replace({
-                                search: this.urlQuery({ visible: previousPage.length }),
-                                hash: this.props.location.hash,
-                            })
+                            const searchFragment = this.urlQuery({ visible: previousPage.length })
+                            if (this.props.location.search !== searchFragment) {
+                                this.props.history.replace({
+                                    search: searchFragment,
+                                    hash: this.props.location.hash,
+                                })
+                            }
                         }
                         if (this.props.onUpdate) {
                             this.props.onUpdate(connectionOrError)
@@ -717,8 +720,12 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         if (first !== this.props.defaultFirst) {
             searchParameters.set('first', String(first))
         }
-        if (filter && this.props.filters && filter !== this.props.filters[0]) {
-            searchParameters.set('filter', filter.id)
+        if (filter && this.props.filters) {
+            if (filter !== this.props.filters[0]) {
+                searchParameters.set('filter', filter.id)
+            } else {
+                searchParameters.delete('filter')
+            }
         }
         if (visible !== 0 && visible !== first) {
             searchParameters.set('visible', String(visible))

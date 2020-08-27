@@ -1,7 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
-<CampaignDetails
+exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
+<CampaignDetailsPage
   campaignID="c"
   deleteCampaign={[Function]}
   fetchCampaignById={[Function]}
@@ -9,12 +9,14 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
   isLightTheme={true}
   location="[Location path=/]"
   queryChangesetCountsOverTime={[Function]}
+  setBreadcrumb={[Function]}
   telemetryService={
     Object {
       "log": [Function],
       "logViewEvent": [Function],
     }
   }
+  useBreadcrumb={[Function]}
 >
   <PageTitle
     title="n"
@@ -29,14 +31,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
         history="[History]"
       />
     }
-    className="mb-3 test-campaign-details-page"
-    createdAt="2020-01-01"
-    creator={
-      Object {
-        "url": "/users/alice",
-        "username": "alice",
-      }
-    }
+    className="test-campaign-details-page"
     name="n"
     namespace={
       Object {
@@ -45,16 +40,54 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
       }
     }
   >
-    <div
-      className="d-flex w-100 mb-2 justify-content-between align-items-center mb-3 test-campaign-details-page"
+    <PageHeader
+      actions={
+        <CampaignDetailsActionSection
+          campaignClosed={false}
+          campaignID="c"
+          campaignNamespaceURL="/users/alice"
+          deleteCampaign={[Function]}
+          history="[History]"
+        />
+      }
+      className="test-campaign-details-page"
+      icon={
+        Object {
+          "$$typeof": Symbol(react.memo),
+          "compare": null,
+          "type": [Function],
+        }
+      }
+      title={
+        <React.Fragment>
+          <AnchorLink
+            to="/users/alice/campaigns"
+          >
+            alice
+          </AnchorLink>
+           / 
+          n
+           
+          <sup>
+            <span
+              className="badge badge-merged text-uppercase"
+            >
+              Beta
+            </span>
+          </sup>
+        </React.Fragment>
+      }
     >
-      <div>
+      <div
+        className="page-header d-flex flex-wrap align-items-center test-campaign-details-page"
+      >
         <h1
-          className="d-inline-block mb-0"
+          className="flex-grow-1"
         >
           <Memo(ImageAutoAdjustIcon)
-            className="icon-inline mr-2 text-muted"
+            className="icon-inline page-header__icon"
           />
+           
           <AnchorLink
             to="/users/alice/campaigns"
           >
@@ -64,71 +97,123 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
               alice
             </a>
           </AnchorLink>
-           /
-           
+           / 
           n
+           
           <sup>
             <span
-              className="ml-2 badge badge-merged text-uppercase"
+              className="badge badge-merged text-uppercase"
             >
               Beta
             </span>
           </sup>
         </h1>
-        <span
-          className="text-muted ml-3"
+        <CampaignDetailsActionSection
+          campaignClosed={false}
+          campaignID="c"
+          campaignNamespaceURL="/users/alice"
+          deleteCampaign={[Function]}
+          history="[History]"
         >
-          Created
-           
-          <Timestamp
-            date="2020-01-01"
-          >
-            <span
-              className="timestamp"
-              data-tooltip="2020-01-01"
-            >
-              in almost 14 years
-            </span>
-          </Timestamp>
-           by
-           
           <AnchorLink
-            to="/users/alice"
-          >
-            <a
-              href="/users/alice"
-            >
-              alice
-            </a>
-          </AnchorLink>
-        </span>
-      </div>
-      <CampaignDetailsActionSection
-        campaignClosed={false}
-        campaignID="c"
-        campaignNamespaceURL="/users/alice"
-        deleteCampaign={[Function]}
-        history="[History]"
-      >
-        <AnchorLink
-          className="btn btn-outline-danger test-campaigns-close-btn"
-          data-tooltip="View a preview of all changes that will happen when you close this campaign."
-          to="//close"
-        >
-          <a
             className="btn btn-outline-danger test-campaigns-close-btn"
             data-tooltip="View a preview of all changes that will happen when you close this campaign."
-            href="//close"
+            to="//close"
           >
-            <Memo(DeleteIcon)
-              className="icon-inline"
-            />
-             Close
+            <a
+              className="btn btn-outline-danger test-campaigns-close-btn"
+              data-tooltip="View a preview of all changes that will happen when you close this campaign."
+              href="//close"
+            >
+              <Memo(DeleteIcon)
+                className="icon-inline"
+              />
+               Close
+            </a>
+          </AnchorLink>
+        </CampaignDetailsActionSection>
+      </div>
+    </PageHeader>
+  </CampaignHeader>
+  <CampaignInfoByline
+    className="mb-3"
+    createdAt="2020-01-01"
+    initialApplier={
+      Object {
+        "url": "/users/alice",
+        "username": "alice",
+      }
+    }
+    lastAppliedAt="2020-01-01"
+    lastApplier={
+      Object {
+        "url": "/users/bob",
+        "username": "bob",
+      }
+    }
+  >
+    <div
+      className="mb-3"
+    >
+      <span
+        className="text-muted"
+      >
+        Created 
+        <Timestamp
+          date="2020-01-01"
+        >
+          <span
+            className="timestamp"
+            data-tooltip="2020-01-01"
+          >
+            in almost 14 years
+          </span>
+        </Timestamp>
+         by
+         
+        <AnchorLink
+          to="/users/alice"
+        >
+          <a
+            href="/users/alice"
+          >
+            alice
           </a>
         </AnchorLink>
-      </CampaignDetailsActionSection>
+      </span>
+      <span
+        className="mx-2 text-muted"
+      >
+        |
+      </span>
+      <span
+        className="text-muted"
+      >
+        Updated 
+        <Timestamp
+          date="2020-01-01"
+        >
+          <span
+            className="timestamp"
+            data-tooltip="2020-01-01"
+          >
+            in almost 14 years
+          </span>
+        </Timestamp>
+         by
+         
+        <AnchorLink
+          to="/users/bob"
+        >
+          <a
+            href="/users/bob"
+          >
+            bob
+          </a>
+        </AnchorLink>
+      </span>
     </div>
-  </CampaignHeader>
+  </CampaignInfoByline>
   <CampaignStatsCard
     className="mb-3"
     closedAt={null}
@@ -361,6 +446,11 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
           "url": "/users/alice",
           "username": "alice",
         },
+        "lastAppliedAt": "2020-01-01",
+        "lastApplier": Object {
+          "url": "/users/bob",
+          "username": "bob",
+        },
         "name": "n",
         "namespace": Object {
           "namespaceName": "alice",
@@ -371,7 +461,6 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
         "viewerCanAdminister": false,
       }
     }
-    campaignUpdates="[Subject]"
     history="[History]"
     isLightTheme={true}
     location="[Location path=/]"
@@ -417,8 +506,6 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
     </ul>
     <CampaignChangesets
       campaignID="c"
-      campaignUpdates="[Subject]"
-      changesetUpdates="[Subject]"
       history="[History]"
       isLightTheme={true}
       location="[Location path=/]"
@@ -623,7 +710,6 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
           nodeComponent={[Function]}
           nodeComponentProps={
             Object {
-              "campaignUpdates": "[Subject]",
               "extensionInfo": Object {
                 "extensionsController": undefined,
                 "hoverifier": Object {
@@ -670,11 +756,11 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
       </div>
     </CampaignChangesets>
   </CampaignTabs>
-</CampaignDetails>
+</CampaignDetailsPage>
 `;
 
-exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
-<CampaignDetails
+exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
+<CampaignDetailsPage
   campaignID="c"
   deleteCampaign={[Function]}
   fetchCampaignById={[Function]}
@@ -682,12 +768,14 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
   isLightTheme={true}
   location="[Location path=/]"
   queryChangesetCountsOverTime={[Function]}
+  setBreadcrumb={[Function]}
   telemetryService={
     Object {
       "log": [Function],
       "logViewEvent": [Function],
     }
   }
+  useBreadcrumb={[Function]}
 >
   <PageTitle
     title="n"
@@ -702,14 +790,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
         history="[History]"
       />
     }
-    className="mb-3 test-campaign-details-page"
-    createdAt="2020-01-01"
-    creator={
-      Object {
-        "url": "/users/alice",
-        "username": "alice",
-      }
-    }
+    className="test-campaign-details-page"
     name="n"
     namespace={
       Object {
@@ -718,16 +799,54 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
       }
     }
   >
-    <div
-      className="d-flex w-100 mb-2 justify-content-between align-items-center mb-3 test-campaign-details-page"
+    <PageHeader
+      actions={
+        <CampaignDetailsActionSection
+          campaignClosed={false}
+          campaignID="c"
+          campaignNamespaceURL="/users/alice"
+          deleteCampaign={[Function]}
+          history="[History]"
+        />
+      }
+      className="test-campaign-details-page"
+      icon={
+        Object {
+          "$$typeof": Symbol(react.memo),
+          "compare": null,
+          "type": [Function],
+        }
+      }
+      title={
+        <React.Fragment>
+          <AnchorLink
+            to="/users/alice/campaigns"
+          >
+            alice
+          </AnchorLink>
+           / 
+          n
+           
+          <sup>
+            <span
+              className="badge badge-merged text-uppercase"
+            >
+              Beta
+            </span>
+          </sup>
+        </React.Fragment>
+      }
     >
-      <div>
+      <div
+        className="page-header d-flex flex-wrap align-items-center test-campaign-details-page"
+      >
         <h1
-          className="d-inline-block mb-0"
+          className="flex-grow-1"
         >
           <Memo(ImageAutoAdjustIcon)
-            className="icon-inline mr-2 text-muted"
+            className="icon-inline page-header__icon"
           />
+           
           <AnchorLink
             to="/users/alice/campaigns"
           >
@@ -737,71 +856,123 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
               alice
             </a>
           </AnchorLink>
-           /
-           
+           / 
           n
+           
           <sup>
             <span
-              className="ml-2 badge badge-merged text-uppercase"
+              className="badge badge-merged text-uppercase"
             >
               Beta
             </span>
           </sup>
         </h1>
-        <span
-          className="text-muted ml-3"
+        <CampaignDetailsActionSection
+          campaignClosed={false}
+          campaignID="c"
+          campaignNamespaceURL="/users/alice"
+          deleteCampaign={[Function]}
+          history="[History]"
         >
-          Created
-           
-          <Timestamp
-            date="2020-01-01"
-          >
-            <span
-              className="timestamp"
-              data-tooltip="2020-01-01"
-            >
-              in almost 14 years
-            </span>
-          </Timestamp>
-           by
-           
           <AnchorLink
-            to="/users/alice"
-          >
-            <a
-              href="/users/alice"
-            >
-              alice
-            </a>
-          </AnchorLink>
-        </span>
-      </div>
-      <CampaignDetailsActionSection
-        campaignClosed={false}
-        campaignID="c"
-        campaignNamespaceURL="/users/alice"
-        deleteCampaign={[Function]}
-        history="[History]"
-      >
-        <AnchorLink
-          className="btn btn-outline-danger test-campaigns-close-btn"
-          data-tooltip="View a preview of all changes that will happen when you close this campaign."
-          to="//close"
-        >
-          <a
             className="btn btn-outline-danger test-campaigns-close-btn"
             data-tooltip="View a preview of all changes that will happen when you close this campaign."
-            href="//close"
+            to="//close"
           >
-            <Memo(DeleteIcon)
-              className="icon-inline"
-            />
-             Close
+            <a
+              className="btn btn-outline-danger test-campaigns-close-btn"
+              data-tooltip="View a preview of all changes that will happen when you close this campaign."
+              href="//close"
+            >
+              <Memo(DeleteIcon)
+                className="icon-inline"
+              />
+               Close
+            </a>
+          </AnchorLink>
+        </CampaignDetailsActionSection>
+      </div>
+    </PageHeader>
+  </CampaignHeader>
+  <CampaignInfoByline
+    className="mb-3"
+    createdAt="2020-01-01"
+    initialApplier={
+      Object {
+        "url": "/users/alice",
+        "username": "alice",
+      }
+    }
+    lastAppliedAt="2020-01-01"
+    lastApplier={
+      Object {
+        "url": "/users/bob",
+        "username": "bob",
+      }
+    }
+  >
+    <div
+      className="mb-3"
+    >
+      <span
+        className="text-muted"
+      >
+        Created 
+        <Timestamp
+          date="2020-01-01"
+        >
+          <span
+            className="timestamp"
+            data-tooltip="2020-01-01"
+          >
+            in almost 14 years
+          </span>
+        </Timestamp>
+         by
+         
+        <AnchorLink
+          to="/users/alice"
+        >
+          <a
+            href="/users/alice"
+          >
+            alice
           </a>
         </AnchorLink>
-      </CampaignDetailsActionSection>
+      </span>
+      <span
+        className="mx-2 text-muted"
+      >
+        |
+      </span>
+      <span
+        className="text-muted"
+      >
+        Updated 
+        <Timestamp
+          date="2020-01-01"
+        >
+          <span
+            className="timestamp"
+            data-tooltip="2020-01-01"
+          >
+            in almost 14 years
+          </span>
+        </Timestamp>
+         by
+         
+        <AnchorLink
+          to="/users/bob"
+        >
+          <a
+            href="/users/bob"
+          >
+            bob
+          </a>
+        </AnchorLink>
+      </span>
     </div>
-  </CampaignHeader>
+  </CampaignInfoByline>
   <CampaignStatsCard
     className="mb-3"
     closedAt={null}
@@ -1034,6 +1205,11 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
           "url": "/users/alice",
           "username": "alice",
         },
+        "lastAppliedAt": "2020-01-01",
+        "lastApplier": Object {
+          "url": "/users/bob",
+          "username": "bob",
+        },
         "name": "n",
         "namespace": Object {
           "namespaceName": "alice",
@@ -1044,7 +1220,6 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
         "viewerCanAdminister": true,
       }
     }
-    campaignUpdates="[Subject]"
     history="[History]"
     isLightTheme={true}
     location="[Location path=/]"
@@ -1090,8 +1265,6 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
     </ul>
     <CampaignChangesets
       campaignID="c"
-      campaignUpdates="[Subject]"
-      changesetUpdates="[Subject]"
       history="[History]"
       isLightTheme={true}
       location="[Location path=/]"
@@ -1296,7 +1469,6 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
           nodeComponent={[Function]}
           nodeComponentProps={
             Object {
-              "campaignUpdates": "[Subject]",
               "extensionInfo": Object {
                 "extensionsController": undefined,
                 "hoverifier": Object {
@@ -1343,5 +1515,5 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
       </div>
     </CampaignChangesets>
   </CampaignTabs>
-</CampaignDetails>
+</CampaignDetailsPage>
 `;

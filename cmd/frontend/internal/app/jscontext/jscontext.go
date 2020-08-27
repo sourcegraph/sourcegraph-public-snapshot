@@ -185,9 +185,8 @@ func publicSiteConfiguration() schema.SiteConfiguration {
 		updateChannel = "release"
 	}
 	return schema.SiteConfiguration{
-		AuthPublic:                c.AuthPublic,
-		PermissionsBackgroundSync: c.PermissionsBackgroundSync,
-		UpdateChannel:             updateChannel,
+		AuthPublic:    c.AuthPublic,
+		UpdateChannel: updateChannel,
 	}
 }
 

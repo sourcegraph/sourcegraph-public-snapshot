@@ -1,24 +1,25 @@
 import React from 'react'
-import { CampaignDetails } from './CampaignDetails'
+import { CampaignDetailsPage } from './CampaignDetailsPage'
 import * as H from 'history'
 import { of } from 'rxjs'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 import { PageTitle } from '../../../components/PageTitle'
 import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
 import { mount } from 'enzyme'
+import { NOOP_BREADCRUMB_SETTERS } from '../../../components/Breadcrumbs'
 
 // This is idempotent, so calling it in multiple tests is not a problem.
 registerHighlightContributions()
 
 const history = H.createMemoryHistory()
 
-describe('CampaignDetails', () => {
+describe('CampaignDetailsPage', () => {
     afterEach(() => {
         PageTitle.titleSet = false
     })
 
-    const renderCampaignDetails = ({ viewerCanAdminister }: { viewerCanAdminister: boolean }) => (
-        <CampaignDetails
+    const renderCampaignDetailsPage = ({ viewerCanAdminister }: { viewerCanAdminister: boolean }) => (
+        <CampaignDetailsPage
             campaignID="c"
             history={history}
             location={history.location}
@@ -49,17 +50,23 @@ describe('CampaignDetails', () => {
                         namespaceName: 'alice',
                         url: '/users/alice',
                     },
+                    lastAppliedAt: '2020-01-01',
+                    lastApplier: {
+                        url: '/users/bob',
+                        username: 'bob',
+                    },
                 })
             }
             deleteCampaign={() => Promise.resolve(undefined)}
             queryChangesetCountsOverTime={() => of([])}
+            {...NOOP_BREADCRUMB_SETTERS}
         />
     )
 
     for (const viewerCanAdminister of [true, false]) {
         describe(`viewerCanAdminister: ${String(viewerCanAdminister)}`, () => {
             test('viewing existing', () => {
-                const rendered = mount(renderCampaignDetails({ viewerCanAdminister }))
+                const rendered = mount(renderCampaignDetailsPage({ viewerCanAdminister }))
                 expect(rendered).toMatchSnapshot()
             })
         })

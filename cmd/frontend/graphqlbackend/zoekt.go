@@ -633,6 +633,10 @@ type indexedRepoRevs struct {
 	NotHEADOnlySearch bool
 }
 
+// headBranch is used as a singleton of the indexedRepoRevs.repoBranches to save
+// common-case allocations within indexedRepoRevs.Add.
+var headBranch = []string{"HEAD"}
+
 // Add will add reporev and repo to the list of repository and branches to
 // search if reporev's refs are a subset of repo's branches. It will return
 // the revision specifiers it can't add.
@@ -651,6 +655,12 @@ func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.
 		// TODO we could only process the explicit revs and return the non
 		// explicit ones as unindexed.
 		return reporev.Revs
+	}
+
+	if len(reporev.Revs) == 1 && repo.Branches[0].Name == "HEAD" && (reporev.Revs[0].RevSpec == "" || reporev.Revs[0].RevSpec == "HEAD") {
+		rb.repoRevs[string(reporev.Repo.Name)] = reporev
+		rb.repoBranches[string(reporev.Repo.Name)] = headBranch
+		return nil
 	}
 
 	// notHEADOnlySearch is set to true if we search any branch other than

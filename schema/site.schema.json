@@ -413,23 +413,6 @@
       "examples": [{ "bindID": "email" }, { "bindID": "username" }],
       "group": "Security"
     },
-    "permissions.backgroundSync": {
-      "description": "DEPRECATED: Sync code host repository and user permissions in the background.",
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "enabled": {
-          "description": "Whether syncing permissions in the background is enabled.",
-          "type": "boolean",
-          "default": true
-        }
-      },
-      "default": {
-        "enabled": true
-      },
-      "examples": [{ "enabled": true }],
-      "group": "Security"
-    },
     "branding": {
       "description": "Customize Sourcegraph homepage logo and search icon.\n\nOnly available in Sourcegraph Enterprise.",
       "type": "object",

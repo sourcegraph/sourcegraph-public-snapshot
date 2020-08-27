@@ -5,7 +5,6 @@ import { ThemeProps } from '../../../../../shared/src/theme'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { CampaignFields } from '../../../graphql-operations'
-import { Subject } from 'rxjs'
 import {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
@@ -21,7 +20,6 @@ type SelectedTab = 'changesets' | 'chart'
 
 export interface CampaignTabsProps extends ExtensionsControllerProps, ThemeProps, PlatformContextProps, TelemetryProps {
     campaign: CampaignFields
-    campaignUpdates: Subject<void>
     history: H.History
     location: H.Location
     /** For testing only. */
@@ -40,25 +38,40 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
     platformContext,
     telemetryService,
     campaign,
-    campaignUpdates,
     queryChangesets,
     queryChangesetCountsOverTime,
     queryExternalChangesetWithFileDiffs,
 }) => {
-    const [selectedTab, setSelectedTab] = useState<SelectedTab>('changesets')
+    const [selectedTab, setSelectedTab] = useState<SelectedTab>(() => {
+        const urlParameters = new URLSearchParams(location.search)
+        if (urlParameters.get('tab') === 'chart') {
+            return 'chart'
+        }
+        return 'changesets'
+    })
     const onSelectChangesets = useCallback<React.MouseEventHandler>(
         event => {
             event.preventDefault()
             setSelectedTab('changesets')
+            const urlParameters = new URLSearchParams(location.search)
+            urlParameters.delete('tab')
+            if (location.search !== urlParameters.toString()) {
+                history.replace({ ...location, search: urlParameters.toString() })
+            }
         },
-        [setSelectedTab]
+        [history, location]
     )
     const onSelectChart = useCallback<React.MouseEventHandler>(
         event => {
             event.preventDefault()
             setSelectedTab('chart')
+            const urlParameters = new URLSearchParams(location.search)
+            urlParameters.set('tab', 'chart')
+            if (location.search !== urlParameters.toString()) {
+                history.replace({ ...location, search: urlParameters.toString() })
+            }
         },
-        [setSelectedTab]
+        [history, location]
     )
     return (
         <>
@@ -93,8 +106,6 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
                 <CampaignChangesets
                     campaignID={campaign.id}
                     viewerCanAdminister={campaign.viewerCanAdminister}
-                    changesetUpdates={campaignUpdates}
-                    campaignUpdates={campaignUpdates}
                     history={history}
                     location={location}
                     isLightTheme={isLightTheme}

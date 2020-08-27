@@ -502,10 +502,6 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 	return nil
 }
 
-// ErrCampaignNameBlank is returned by CreateCampaign or UpdateCampaign if the
-// specified Campaign name is blank.
-var ErrCampaignNameBlank = errors.New("Campaign title cannot be blank")
-
 // checkNamespaceAccess checks whether the current user in the ctx has access
 // to either the user ID or the org ID as a namespace.
 // If the userID is non-zero that will be checked. Otherwise the org ID will be

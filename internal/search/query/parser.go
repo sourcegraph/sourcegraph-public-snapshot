@@ -292,7 +292,7 @@ func (p *parser) parseNegatedLeafNode() (Node, error) {
 	}
 	// we don't support NOT -field:value
 	if parameter.Negated {
-		return nil, fmt.Errorf("Unexpected NOT before \"-%s:%s\". Remove NOT and try again.",
+		return nil, fmt.Errorf("unexpected NOT before \"-%s:%s\". Remove NOT and try again",
 			parameter.Field, parameter.Value)
 	}
 	parameter.Negated = true
@@ -348,10 +348,9 @@ loop:
 				default:
 					if strict {
 						return "", count, errors.New("unrecognized escape sequence")
-					} else {
-						// Accept anything else literally.
-						result = append(result, '\\', r)
 					}
+					// Accept anything else literally.
+					result = append(result, '\\', r)
 				}
 				if len(buf) == 0 {
 					return "", count, errors.New("unterminated literal: expected " + string(delimiter))
@@ -371,10 +370,11 @@ loop:
 }
 
 // ScanField scans an optional '-' at the beginning of a string, and then scans
-// one or more alphabetic characters until it encounters a ':', in which case it
-// returns the value before the colon and its length. In all other cases it
-// returns the empty string and zero length.
-func ScanField(buf []byte) (string, int) {
+// one or more alphabetic characters until it encounters a ':'. The prefix
+// string is checked against valid fields. If it is valid, the function returns
+// the value before the colon, whether it's negated, and its length. In all
+// other cases it returns zero values.
+func ScanField(buf []byte) (string, bool, int) {
 	var count int
 	var r rune
 	var result []rune
@@ -389,7 +389,7 @@ func ScanField(buf []byte) (string, int) {
 
 	r = next()
 	if r != '-' && !strings.ContainsRune(allowed, r) {
-		return "", 0
+		return "", false, 0
 	}
 	result = append(result, r)
 
@@ -410,9 +410,21 @@ func ScanField(buf []byte) (string, int) {
 		break
 	}
 	if !success {
-		return "", 0
+		return "", false, 0
 	}
-	return string(result), count
+
+	field := string(result)
+	negated := field[0] == '-'
+	if negated {
+		field = field[1:]
+	}
+
+	if _, exists := allFields[strings.ToLower(field)]; !exists {
+		// Not a recognized parameter field.
+		return "", false, 0
+	}
+
+	return field, negated, count
 }
 
 // ScanValue scans for a value (e.g., of a parameter, or a string corresponding
@@ -587,18 +599,8 @@ func (p *parser) ParsePattern() Pattern {
 // be preceded by '-' which means the parameter is negated.
 func (p *parser) ParseParameter() (Parameter, bool, error) {
 	start := p.pos
-	field, advance := ScanField(p.buf[p.pos:])
+	field, negated, advance := ScanField(p.buf[p.pos:])
 	if field == "" {
-		return Parameter{}, false, nil
-	}
-
-	negated := field[0] == '-'
-	if negated {
-		field = field[1:]
-	}
-
-	if _, exists := allFields[strings.ToLower(field)]; !exists {
-		// Not a recognized parameter field.
 		return Parameter{}, false, nil
 	}
 
@@ -915,8 +917,7 @@ func ParseAndOr(in string, searchType SearchType) ([]Node, error) {
 
 	nodes, err := parser.parseOr()
 	if err != nil {
-		switch err.(type) {
-		case *ExpectedOperand:
+		if _, ok := err.(*ExpectedOperand); ok {
 			// The query may be unbalanced or malformed as in "(" or
 			// "x or" and expects an operand. Try harder to parse it.
 			if nodes, err := parser.tryFallbackParser(in); err == nil {
@@ -974,9 +975,10 @@ func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 		query = substituteConcat(query, " ")
 	case SearchTypeStructural:
 		if containsNegatedPattern(query) {
-			return nil, errors.New("The query contains a negated search pattern. Structural search does not support negated search patterns at the moment.")
+			return nil, errors.New("the query contains a negated search pattern. Structural search does not support negated search patterns at the moment")
 		}
 		query = substituteConcat(query, " ")
+		query = ellipsesForHoles(query)
 	case SearchTypeRegex:
 		query = Map(query, EmptyGroupsToLiteral, TrailingParensToLiteral)
 	}

@@ -142,7 +142,7 @@ The following keywords are only used for **commit diff** and **commit message** 
 
 | Keyword  | Description | Examples |
 | --- | --- | --- |
-| **repo:regexp-pattern@refs** | Specifies which Git refs (`:`-separated) to search for commits. Use `*refs/heads/` to include all Git branches (and `*refs/tags/` to include all Git tags). You can also prefix a Git ref name or pattern with `^` to exclude. For example, `*refs/heads/:^refs/heads/master` will match all commits that are not merged into master. | [`repo:vscode@*refs/heads/:^refs/heads/master type:diff task`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/Microsoft/vscode%24%40*refs/heads/:%5Erefs/heads/master+type:diff+after:%221+month+ago%22+task#1) (unmerged commit diffs containing `task`) |
+| **repo:regexp-pattern@rev** | Specifies which Git revisions to search for commits. See our [repository revisions](#repository-revisions) documentation to learn more about the revision syntax. | [`repo:vscode@*refs/heads/:^refs/heads/master type:diff task`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/Microsoft/vscode%24%40*refs/heads/:%5Erefs/heads/master+type:diff+after:%221+month+ago%22+task#1) (unmerged commit diffs containing `task`) |
 | **type:diff** <br> **type:commit**  | Specifies the type of search. By default, searches are executed on all code at a given point in time (a branch or a commit). Specify the `type:` if you want to search over changes to code or commit messages instead (diffs or commits).  | [`type:diff func`](https://sourcegraph.com/search?q=type:diff+func+repo:sourcegraph/sourcegraph$) <br> [`type:commit test`](https://sourcegraph.com/search?q=type:commit+test+repo:sourcegraph/sourcegraph$) |
 | **author:name** | Only include results from diffs or commits authored by the user. Regexps are supported. Note that they match the whole author string of the form `Full Name <user@example.com>`, so to include only authors from a specific domain, use `author:example.com>$`.<br><br> You can also search by `committer:git-email`. _Note: there is a committer only when they are a different user than the author._ | [`type:diff author:nick`](https://sourcegraph.com/search?q=repo:sourcegraph/sourcegraph$+type:diff+author:nick) |
 | **before:"string specifying time frame"** | Only include results from diffs or commits which have a commit date before the specified time frame | [`before:"last thursday"`](https://sourcegraph.com/search?q=repo:sourcegraph/sourcegraph$+type:diff+author:nick+before:%22last+thursday%22) <br> [`before:"november 1 2019"`](https://sourcegraph.com/search?q=repo:sourcegraph/sourcegraph$+type:diff+author:nick+before:%22november+1+2019%22) |
@@ -153,12 +153,41 @@ The following keywords are only used for **commit diff** and **commit message** 
 
 ### Repository revisions
 
-The `repo:` filter accepts a repository pattern followed by `@revs`, like `github.com/myteam/abc@revs`. The `@revs` part refers to repository revisions (e.g., branches or commit hashes), and may take on the following example forms:
+The `repo:` filter accepts a repository pattern followed by `@revs`, like `github.com/myteam/abc@revs`. 
+The `@revs` part refers to repository revisions (branches, commit hashes, and tags), and may take on the
+following forms:
 
-- `@feature-branch` - a branch name
+- `@branch` - a branch name
 - `@1735d48` - a commit hash
 - `@3.15` - a tag
-- `@feature-branch:1735d48:3.15` - multiple colon-separated revisions of the above forms
+
+You can separate revisions by a colon to search multiple revisions at the same time, `@branch:1735d48:3.15`.
+
+Per default, we match revisions to tags, branches, and commits. You can limit the search to branches or tags by adding
+the prefix `refs/tags` or `refs/heads`. For example `@refs/tags/3.18` will search the commit tagged 
+with `3.18`, but not a branch called `3.18` and vice versa for `@refs/heads/3.18`.
+
+**Glob patterns** allow you to search over a range of branches or tags. Prepend `*` to mark a revision
+as glob pattern and add the glob-pattern after it like this `repo:<repo>@*<glob-pattern>`. For example:
+
+ - [`@*refs/heads/*`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/docker/machine%24%40*refs/heads/*+middleware&patternType=literal) - search across all branches
+ - [`@*refs/tags/*`](https://sourcegraph.com/search?q=repo:github.com/docker/machine%24%40*refs/tags/*+server&patternType=literal) - search across all tags
+ 
+We automatically add a trailing `/*` if it is missing from the glob pattern.
+
+You can negate a glob pattern by prepending `*!`, for example:
+
+- [`@*refs/heads/*:*!refs/heads/release* type:commit `](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/kubernetes/kubernetes%24%40*refs/heads/*:*%21refs/heads/release*+type:commit+&patternType=literal) - search commits on all branches except on those that start with "release"
+- [`@*refs/tags/v3.*:*!refs/tags/v3.*-* context`](https://sourcegraph.com/search?q=repo:%5Egithub.com/sourcegraph/sourcegraph%24%40*refs/tags/v3.*:*%21refs/tags/v3.*-*+context&patternType=literal) - search all versions starting with `3.` except release candidates, alpha and beta versions.
+
+#### Commit and Diff searches
+Commit and diff searches act on sets of commits. A set is defined by a revision (branch, commit hash, or tag), and it
+contains all commits reachable from the specified revision. A commit is reachable from another commit if it can be
+reached by following the pointers to parent commits. 
+
+For commit and diff searches it is possible to exclude a set of commits by prepending a caret `^`. The caret acts as a set
+difference. For example, `repo:github.com/myteam/abc@main:^3.15 type:commit` will show all commits in `main`
+minus the commits reachable from the commit tagged with `3.15`.
 
 ### Repository names
 
