@@ -26,7 +26,7 @@ import {
     RevisionSpec,
 } from '../../../../shared/src/util/url'
 import { getHover, getDocumentHighlights } from '../../backend/features'
-import { queryGraphQL } from '../../backend/graphql'
+import { requestGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import { WebHoverOverlay } from '../../components/shared'
 import { GitCommitNode } from '../commits/GitCommitNode'
@@ -38,16 +38,24 @@ import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorAlert } from '../../components/alerts'
 import { FilteredConnectionQueryArgs } from '../../components/FilteredConnection'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import {
+    ExternalLinkFields,
+    GitCommitFields,
+    RepositoryCommitResult,
+    RepositoryCommitVariables,
+    Scalars,
+} from '../../graphql-operations'
 
 const queryCommit = memoizeObservable(
-    (args: { repo: GQL.ID; revspec: string }): Observable<GQL.IGitCommit> =>
-        queryGraphQL(
+    (args: { repo: Scalars['ID']; revspec: string }): Observable<GitCommitFields> =>
+        requestGraphQL<RepositoryCommitResult, RepositoryCommitVariables>(
             gql`
                 query RepositoryCommit($repo: ID!, $revspec: String!) {
                     node(id: $repo) {
+                        __typename
                         ... on Repository {
                             commit(rev: $revspec) {
-                                __typename # necessary so that isErrorLike(x) is false when x: GQL.IGitCommit
+                                __typename # necessary so that isErrorLike(x) is false when x: GitCommitFields
                                 ...GitCommitFields
                             }
                         }
@@ -61,11 +69,13 @@ const queryCommit = memoizeObservable(
                 if (!data || !data.node) {
                     throw createAggregateError(errors)
                 }
-                const repo = data.node as GQL.IRepository
-                if (!repo.commit) {
+                if (data.node.__typename !== 'Repository') {
+                    throw new Error(`Node is a ${data.node.__typename}, not a Repository`)
+                }
+                if (!data.node.commit) {
                     throw createAggregateError(errors || [new Error('Commit not found')])
                 }
-                return repo.commit
+                return data.node.commit
             })
         ),
     args => `${args.repo}:${args.revspec}`
@@ -79,12 +89,12 @@ interface Props
         ThemeProps {
     repo: GQL.IRepository
 
-    onDidUpdateExternalLinks: (externalLinks: GQL.IExternalLink[] | undefined) => void
+    onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 }
 
 interface State extends HoverState<HoverContext, HoverMerged, ActionItemAction> {
     /** The commit, undefined while loading, or an error. */
-    commitOrError?: GQL.IGitCommit | ErrorLike
+    commitOrError?: GitCommitFields | ErrorLike
 }
 
 /** Displays a commit. */
@@ -173,7 +183,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                             queryCommit({ repo: repo.id, revspec: match.params.revspec }).pipe(
                                 catchError(error => [asError(error)]),
                                 map(commitOrError => ({ commitOrError })),
-                                tap(({ commitOrError }: { commitOrError: GQL.IGitCommit | ErrorLike }) => {
+                                tap(({ commitOrError }) => {
                                     if (isErrorLike(commitOrError)) {
                                         this.props.onDidUpdateExternalLinks(undefined)
                                     } else {
@@ -286,13 +296,13 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
         queryRepositoryComparisonFileDiffs({
             ...args,
             repo: this.props.repo.id,
-            base: commitParentOrEmpty(this.state.commitOrError as GQL.IGitCommit),
-            head: (this.state.commitOrError as GQL.IGitCommit).oid,
+            base: commitParentOrEmpty(this.state.commitOrError as GitCommitFields),
+            head: (this.state.commitOrError as GitCommitFields).oid,
             isLightTheme: this.props.isLightTheme,
         })
 }
 
-function commitParentOrEmpty(commit: GQL.IGitCommit): string {
+function commitParentOrEmpty(commit: GitCommitFields): string {
     // 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is `git hash-object -t tree /dev/null`, which is used as the base
     // when computing the `git diff` of the root commit.
     return commit.parents.length > 0 ? commit.parents[0].oid : '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
