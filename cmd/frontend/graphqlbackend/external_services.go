@@ -308,10 +308,9 @@ func (r *externalServiceConnectionResolver) Nodes(ctx context.Context) ([]*exter
 }
 
 func (r *externalServiceConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	// Reset pagination parameters to get correct total count
+	// Reset pagination cursor to get correct total count
 	opt := r.opt
 	opt.AfterID = 0
-	opt.LimitOffset = nil
 	count, err := db.ExternalServices.Count(ctx, opt)
 	return int32(count), err
 }
@@ -335,9 +334,7 @@ func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*grap
 	// In case the number of results happens to be the same as the limit,
 	// we need another query to get accurate total count with same cursor
 	// to determine if there are more results than the limit we set.
-	opt := r.opt
-	opt.LimitOffset = nil
-	count, err := db.ExternalServices.Count(ctx, opt)
+	count, err := db.ExternalServices.Count(ctx, r.opt)
 	if err != nil {
 		return nil, err
 	}
