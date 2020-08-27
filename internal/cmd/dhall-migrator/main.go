@@ -120,7 +120,7 @@ func loadResourceSet(dirname string) (*ResourceSet, error) {
 			return nil
 		}
 
-		if strings.HasSuffix(path, ".yaml") || strings.HasSuffix(path, ".yml") {
+		if filepath.Ext(path) == ".yaml" || filepath.Ext(path) == ".yml" {
 			res, err := loadResource(rs.Root, path)
 			if err != nil {
 				return err
@@ -141,7 +141,7 @@ func composeDhallSchema(rs *ResourceSet) string {
 
 	for component, crs := range rs.Components {
 		for _, res := range crs {
-			s := fmt.Sprintf("{%s: { %s: { %s: %s } } }", component, res.Kind, res.Name, res.DhallType)
+			s := fmt.Sprintf("{%s: { %s: { %s: %s } } }", strings.Title(component), res.Kind, res.Name, res.DhallType)
 			schemas = append(schemas, s)
 		}
 	}
@@ -180,7 +180,7 @@ func writeRecordYaml(filename string, rec map[string]interface{}) error {
 }
 
 func execYamlToDhall(scratchDir string, dst string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*300)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "yaml-to-dhall", "./schema.dhall", "--records-loose", "--file",
