@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -71,6 +72,9 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 
 	case actionUpdate:
 		return r.updateChangeset(ctx, tx, ch, action.spec, action.delta)
+
+	case actionClose:
+		return r.closeChangeset(ctx, tx, ch)
 
 	case actionNone:
 		return nil
@@ -240,6 +244,34 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 	return tx.UpdateChangeset(ctx, ch)
 }
 
+// closeChangeset closes the given changeset on its code host if its ExternalState is OPEN.
+func (r *reconciler) closeChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset) (err error) {
+	repo, extSvc, err := loadAssociations(ctx, tx, ch)
+	if err != nil {
+		return errors.Wrap(err, "failed to load associations")
+	}
+
+	// Set up a source with which we can close the changeset
+	ccs, err := r.buildChangesetSource(repo, extSvc)
+	if err != nil {
+		return err
+	}
+
+	cs := &repos.Changeset{Changeset: ch}
+
+	if err := ccs.CloseChangeset(ctx, cs); err != nil {
+		return errors.Wrap(err, "creating changeset")
+	}
+
+	fmt.Printf("we just closed the changeset! cs.State=%s\n", cs.Changeset.Metadata.(*github.PullRequest).State)
+
+	ch.Closing = false
+	ch.FailureMessage = nil
+
+	// syncChangeset updates the changeset in the same transaction
+	return r.syncChangeset(ctx, tx, ch)
+}
+
 func (r *reconciler) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) (string, error) {
 	ref, err := r.gitserverClient.CreateCommitFromPatch(ctx, opts)
 	if err != nil {
@@ -328,6 +360,7 @@ const (
 	actionUpdate  actionType = "update"
 	actionPublish actionType = "publish"
 	actionSync    actionType = "sync"
+	actionClose   actionType = "close"
 )
 
 // reconcilerAction represents the possible actions the reconciler can take for
@@ -358,6 +391,12 @@ func determineAction(ctx context.Context, tx *Store, ch *campaigns.Changeset) (r
 		if ch.Unsynced {
 			action.actionType = actionSync
 		}
+		return action, nil
+	}
+
+	// If it's marked as closing, we don't need to look at the specs.
+	if ch.Closing {
+		action.actionType = actionClose
 		return action, nil
 	}
 

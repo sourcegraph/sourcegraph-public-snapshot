@@ -551,6 +551,7 @@ type changesetAssertions struct {
 	ownedByCampaign  int64
 	reconcilerState  campaigns.ReconcilerState
 	publicationState campaigns.ChangesetPublicationState
+	externalState    campaigns.ChangesetExternalState
 	externalID       string
 	externalBranch   string
 	diffStat         *diff.Stat
@@ -592,6 +593,10 @@ func assertChangeset(t *testing.T, c *campaigns.Changeset, a changesetAssertions
 
 	if have, want := c.PublicationState, a.publicationState; have != want {
 		t.Fatalf("changeset PublicationState wrong. want=%s, have=%s", want, have)
+	}
+
+	if have, want := c.ExternalState, a.externalState; have != want {
+		t.Fatalf("changeset ExternalState wrong. want=%s, have=%s", want, have)
 	}
 
 	if have, want := c.ExternalID, a.externalID; have != want {
