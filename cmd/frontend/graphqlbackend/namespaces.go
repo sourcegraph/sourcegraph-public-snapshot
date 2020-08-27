@@ -2,7 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
+
+	"github.com/pkg/errors"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -33,6 +34,18 @@ func NamespaceByID(ctx context.Context, id graphql.ID) (Namespace, error) {
 	default:
 		return nil, errors.New("invalid ID for namespace")
 	}
+}
+
+func UnmarshalNamespaceID(id graphql.ID, userID *int32, orgID *int32) (err error) {
+	switch relay.UnmarshalKind(id) {
+	case "User":
+		err = relay.UnmarshalSpec(id, userID)
+	case "Org":
+		err = relay.UnmarshalSpec(id, orgID)
+	default:
+		err = errors.Errorf("Invalid namespace %q", id)
+	}
+	return err
 }
 
 // NamespaceResolver resolves the GraphQL Namespace interface to a type.
