@@ -11,7 +11,7 @@ import {
     OBSERVABLE_SEARCH_REQUEST,
 } from '../../../../shared/src/util/searchTestHelpers'
 import { SearchResults, SearchResultsProps } from './SearchResults'
-import { SearchPatternType } from '../../../../shared/src/graphql/schema'
+import { SearchPatternType } from '../../graphql-operations'
 
 describe('SearchResults', () => {
     afterAll(cleanup)

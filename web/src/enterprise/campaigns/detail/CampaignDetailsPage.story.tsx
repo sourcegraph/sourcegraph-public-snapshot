@@ -4,7 +4,7 @@ import { radios, boolean } from '@storybook/addon-knobs'
 import React from 'react'
 import webStyles from '../../../enterprise.scss'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
-import { CampaignDetails } from './CampaignDetails'
+import { CampaignDetailsPage } from './CampaignDetailsPage'
 import { of } from 'rxjs'
 import {
     CampaignFields,
@@ -23,9 +23,10 @@ import {
 import { subDays } from 'date-fns'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 import { useMemo, useCallback } from '@storybook/addons'
+import { useBreadcrumbs } from '../../../components/Breadcrumbs'
 
 let isLightTheme = true
-const { add } = storiesOf('web/campaigns/details/CampaignDetails', module).addDecorator(story => {
+const { add } = storiesOf('web/campaigns/details/CampaignDetailsPage', module).addDecorator(story => {
     const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
     document.body.classList.toggle('theme-light', theme === 'light')
     document.body.classList.toggle('theme-dark', theme === 'dark')
@@ -259,14 +260,21 @@ add('Overview', () => {
             description: '## What this campaign does\n\nTruly awesome things for example.',
             name: 'awesome-campaign',
             updatedAt: subDays(new Date(), 5).toISOString(),
+            lastAppliedAt: subDays(new Date(), 5).toISOString(),
+            lastApplier: {
+                url: '/users/bob',
+                username: 'bob',
+            },
         }),
         [viewerCanAdminister, isClosed]
     )
 
     const fetchCampaign: typeof fetchCampaignById = useCallback(() => of(campaign), [campaign])
     const history = H.createMemoryHistory({ initialEntries: [window.location.href] })
+    const breadcrumbsProps = useBreadcrumbs()
     return (
-        <CampaignDetails
+        <CampaignDetailsPage
+            {...breadcrumbsProps}
             campaignID="123123"
             fetchCampaignById={fetchCampaign}
             queryChangesets={queryChangesets}

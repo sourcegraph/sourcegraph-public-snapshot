@@ -1,7 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
-<CampaignDetails
+exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
+<CampaignDetailsPage
   campaignID="c"
   deleteCampaign={[Function]}
   fetchCampaignById={[Function]}
@@ -9,12 +9,14 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
   isLightTheme={true}
   location="[Location path=/]"
   queryChangesetCountsOverTime={[Function]}
+  setBreadcrumb={[Function]}
   telemetryService={
     Object {
       "log": [Function],
       "logViewEvent": [Function],
     }
   }
+  useBreadcrumb={[Function]}
 >
   <PageTitle
     title="n"
@@ -29,14 +31,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
         history="[History]"
       />
     }
-    className="mb-3 test-campaign-details-page"
-    createdAt="2020-01-01"
-    creator={
-      Object {
-        "url": "/users/alice",
-        "username": "alice",
-      }
-    }
+    className="test-campaign-details-page"
     name="n"
     namespace={
       Object {
@@ -45,28 +40,54 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
       }
     }
   >
-    <div
-      className="d-flex w-100 mb-2 justify-content-between align-items-center mb-3 test-campaign-details-page"
+    <PageHeader
+      actions={
+        <CampaignDetailsActionSection
+          campaignClosed={false}
+          campaignID="c"
+          campaignNamespaceURL="/users/alice"
+          deleteCampaign={[Function]}
+          history="[History]"
+        />
+      }
+      className="test-campaign-details-page"
+      icon={
+        Object {
+          "$$typeof": Symbol(react.memo),
+          "compare": null,
+          "type": [Function],
+        }
+      }
+      title={
+        <React.Fragment>
+          <AnchorLink
+            to="/users/alice/campaigns"
+          >
+            alice
+          </AnchorLink>
+           / 
+          n
+           
+          <sup>
+            <span
+              className="badge badge-merged text-uppercase"
+            >
+              Beta
+            </span>
+          </sup>
+        </React.Fragment>
+      }
     >
-      <div>
+      <div
+        className="page-header d-flex flex-wrap align-items-center test-campaign-details-page"
+      >
         <h1
-          className="d-inline-block mb-0"
+          className="flex-grow-1"
         >
           <Memo(ImageAutoAdjustIcon)
-            className="icon-inline mr-2 text-muted"
-          >
-            <svg
-              className="mdi-icon icon-inline mr-2 text-muted"
-              fill="currentColor"
-              height={24}
-              viewBox="0 0 24 24"
-              width={24}
-            >
-              <path
-                d="M19 10V19H5V5H14V3H5C3.92 3 3 3.9 3 5V19C3 20.1 3.92 21 5 21H19C20.12 21 21 20.1 21 19V10H19M17 10L17.94 7.94L20 7L17.94 6.06L17 4L16.06 6.06L14 7L16.06 7.94L17 10M13.25 10.75L12 8L10.75 10.75L8 12L10.75 13.25L12 16L13.25 13.25L16 12L13.25 10.75Z"
-              />
-            </svg>
-          </Memo(ImageAutoAdjustIcon)>
+            className="icon-inline page-header__icon"
+          />
+           
           <AnchorLink
             to="/users/alice/campaigns"
           >
@@ -76,83 +97,123 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
               alice
             </a>
           </AnchorLink>
-           /
-           
+           / 
           n
+           
           <sup>
             <span
-              className="ml-2 badge badge-merged text-uppercase"
+              className="badge badge-merged text-uppercase"
             >
               Beta
             </span>
           </sup>
         </h1>
-        <span
-          className="text-muted ml-3"
+        <CampaignDetailsActionSection
+          campaignClosed={false}
+          campaignID="c"
+          campaignNamespaceURL="/users/alice"
+          deleteCampaign={[Function]}
+          history="[History]"
         >
-          Created
-           
-          <Timestamp
-            date="2020-01-01"
-          >
-            <span
-              className="timestamp"
-              data-tooltip="2020-01-01"
-            >
-              in almost 14 years
-            </span>
-          </Timestamp>
-           by
-           
           <AnchorLink
-            to="/users/alice"
-          >
-            <a
-              href="/users/alice"
-            >
-              alice
-            </a>
-          </AnchorLink>
-        </span>
-      </div>
-      <CampaignDetailsActionSection
-        campaignClosed={false}
-        campaignID="c"
-        campaignNamespaceURL="/users/alice"
-        deleteCampaign={[Function]}
-        history="[History]"
-      >
-        <AnchorLink
-          className="btn btn-outline-danger test-campaigns-close-btn"
-          data-tooltip="View a preview of all changes that will happen when you close this campaign."
-          to="//close"
-        >
-          <a
             className="btn btn-outline-danger test-campaigns-close-btn"
             data-tooltip="View a preview of all changes that will happen when you close this campaign."
-            href="//close"
+            to="//close"
           >
-            <Memo(DeleteIcon)
-              className="icon-inline"
+            <a
+              className="btn btn-outline-danger test-campaigns-close-btn"
+              data-tooltip="View a preview of all changes that will happen when you close this campaign."
+              href="//close"
             >
-              <svg
-                className="mdi-icon icon-inline"
-                fill="currentColor"
-                height={24}
-                viewBox="0 0 24 24"
-                width={24}
-              >
-                <path
-                  d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"
-                />
-              </svg>
-            </Memo(DeleteIcon)>
-             Close
+              <Memo(DeleteIcon)
+                className="icon-inline"
+              />
+               Close
+            </a>
+          </AnchorLink>
+        </CampaignDetailsActionSection>
+      </div>
+    </PageHeader>
+  </CampaignHeader>
+  <CampaignInfoByline
+    className="mb-3"
+    createdAt="2020-01-01"
+    initialApplier={
+      Object {
+        "url": "/users/alice",
+        "username": "alice",
+      }
+    }
+    lastAppliedAt="2020-01-01"
+    lastApplier={
+      Object {
+        "url": "/users/bob",
+        "username": "bob",
+      }
+    }
+  >
+    <div
+      className="mb-3"
+    >
+      <span
+        className="text-muted"
+      >
+        Created 
+        <Timestamp
+          date="2020-01-01"
+        >
+          <span
+            className="timestamp"
+            data-tooltip="2020-01-01"
+          >
+            in almost 14 years
+          </span>
+        </Timestamp>
+         by
+         
+        <AnchorLink
+          to="/users/alice"
+        >
+          <a
+            href="/users/alice"
+          >
+            alice
           </a>
         </AnchorLink>
-      </CampaignDetailsActionSection>
+      </span>
+      <span
+        className="mx-2 text-muted"
+      >
+        |
+      </span>
+      <span
+        className="text-muted"
+      >
+        Updated 
+        <Timestamp
+          date="2020-01-01"
+        >
+          <span
+            className="timestamp"
+            data-tooltip="2020-01-01"
+          >
+            in almost 14 years
+          </span>
+        </Timestamp>
+         by
+         
+        <AnchorLink
+          to="/users/bob"
+        >
+          <a
+            href="/users/bob"
+          >
+            bob
+          </a>
+        </AnchorLink>
+      </span>
     </div>
-  </CampaignHeader>
+  </CampaignInfoByline>
   <CampaignStatsCard
     className="mb-3"
     closedAt={null}
@@ -196,19 +257,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
             >
               <Memo(ProgressCheckIcon)
                 className="icon-inline mr-2 text-muted"
-              >
-                <svg
-                  className="mdi-icon icon-inline mr-2 text-muted"
-                  fill="currentColor"
-                  height={24}
-                  viewBox="0 0 24 24"
-                  width={24}
-                >
-                  <path
-                    d="M13,2.03V2.05L13,4.05C17.39,4.59 20.5,8.58 19.96,12.97C19.5,16.61 16.64,19.5 13,19.93V21.93C18.5,21.38 22.5,16.5 21.95,11C21.5,6.25 17.73,2.5 13,2.03M11,2.06C9.05,2.25 7.19,3 5.67,4.26L7.1,5.74C8.22,4.84 9.57,4.26 11,4.06V2.06M4.26,5.67C3,7.19 2.25,9.04 2.05,11H4.05C4.24,9.58 4.8,8.23 5.69,7.1L4.26,5.67M15.5,8.5L10.62,13.38L8.5,11.26L7.44,12.32L10.62,15.5L16.56,9.56L15.5,8.5M2.06,13C2.26,14.96 3.03,16.81 4.27,18.33L5.69,16.9C4.81,15.77 4.24,14.42 4.06,13H2.06M7.1,18.37L5.67,19.74C7.18,21 9.04,21.79 11,22V20C9.58,19.82 8.23,19.25 7.1,18.37Z"
-                  />
-                </svg>
-              </Memo(ProgressCheckIcon)>
+              />
             </h1>
              
             <span
@@ -254,19 +303,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
             <div
               className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center text-muted flex-grow-0 flex-shrink-0 mx-3"
             >
-              <Memo(SourceBranchIcon)>
-                <svg
-                  className="mdi-icon "
-                  fill="currentColor"
-                  height={24}
-                  viewBox="0 0 24 24"
-                  width={24}
-                >
-                  <path
-                    d="M13,14C9.64,14 8.54,15.35 8.18,16.24C9.25,16.7 10,17.76 10,19A3,3 0 0,1 7,22A3,3 0 0,1 4,19C4,17.69 4.83,16.58 6,16.17V7.83C4.83,7.42 4,6.31 4,5A3,3 0 0,1 7,2A3,3 0 0,1 10,5C10,6.31 9.17,7.42 8,7.83V13.12C8.88,12.47 10.16,12 12,12C14.67,12 15.56,10.66 15.85,9.77C14.77,9.32 14,8.25 14,7A3,3 0 0,1 17,4A3,3 0 0,1 20,7C20,8.34 19.12,9.5 17.91,9.86C17.65,11.29 16.68,14 13,14M7,18A1,1 0 0,0 6,19A1,1 0 0,0 7,20A1,1 0 0,0 8,19A1,1 0 0,0 7,18M7,4A1,1 0 0,0 6,5A1,1 0 0,0 7,6A1,1 0 0,0 8,5A1,1 0 0,0 7,4M17,6A1,1 0 0,0 16,7A1,1 0 0,0 17,8A1,1 0 0,0 18,7A1,1 0 0,0 17,6Z"
-                  />
-                </svg>
-              </Memo(SourceBranchIcon)>
+              <Memo(SourceBranchIcon) />
               <span
                 className="text-muted"
               >
@@ -289,19 +326,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
             <div
               className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center text-success flex-grow-0 flex-shrink-0 mx-3"
             >
-              <Memo(SourcePullIcon)>
-                <svg
-                  className="mdi-icon "
-                  fill="currentColor"
-                  height={24}
-                  viewBox="0 0 24 24"
-                  width={24}
-                >
-                  <path
-                    d="M6,3A3,3 0 0,1 9,6C9,7.31 8.17,8.42 7,8.83V15.17C8.17,15.58 9,16.69 9,18A3,3 0 0,1 6,21A3,3 0 0,1 3,18C3,16.69 3.83,15.58 5,15.17V8.83C3.83,8.42 3,7.31 3,6A3,3 0 0,1 6,3M6,5A1,1 0 0,0 5,6A1,1 0 0,0 6,7A1,1 0 0,0 7,6A1,1 0 0,0 6,5M6,17A1,1 0 0,0 5,18A1,1 0 0,0 6,19A1,1 0 0,0 7,18A1,1 0 0,0 6,17M21,18A3,3 0 0,1 18,21A3,3 0 0,1 15,18C15,16.69 15.83,15.58 17,15.17V7H15V10.25L10.75,6L15,1.75V5H17A2,2 0 0,1 19,7V15.17C20.17,15.58 21,16.69 21,18M18,17A1,1 0 0,0 17,18A1,1 0 0,0 18,19A1,1 0 0,0 19,18A1,1 0 0,0 18,17Z"
-                  />
-                </svg>
-              </Memo(SourcePullIcon)>
+              <Memo(SourcePullIcon) />
               <span
                 className="text-muted"
               >
@@ -324,19 +349,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
             <div
               className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center text-danger flex-grow-0 flex-shrink-0 mx-3"
             >
-              <Memo(SourcePullIcon)>
-                <svg
-                  className="mdi-icon "
-                  fill="currentColor"
-                  height={24}
-                  viewBox="0 0 24 24"
-                  width={24}
-                >
-                  <path
-                    d="M6,3A3,3 0 0,1 9,6C9,7.31 8.17,8.42 7,8.83V15.17C8.17,15.58 9,16.69 9,18A3,3 0 0,1 6,21A3,3 0 0,1 3,18C3,16.69 3.83,15.58 5,15.17V8.83C3.83,8.42 3,7.31 3,6A3,3 0 0,1 6,3M6,5A1,1 0 0,0 5,6A1,1 0 0,0 6,7A1,1 0 0,0 7,6A1,1 0 0,0 6,5M6,17A1,1 0 0,0 5,18A1,1 0 0,0 6,19A1,1 0 0,0 7,18A1,1 0 0,0 6,17M21,18A3,3 0 0,1 18,21A3,3 0 0,1 15,18C15,16.69 15.83,15.58 17,15.17V7H15V10.25L10.75,6L15,1.75V5H17A2,2 0 0,1 19,7V15.17C20.17,15.58 21,16.69 21,18M18,17A1,1 0 0,0 17,18A1,1 0 0,0 18,19A1,1 0 0,0 19,18A1,1 0 0,0 18,17Z"
-                  />
-                </svg>
-              </Memo(SourcePullIcon)>
+              <Memo(SourcePullIcon) />
               <span
                 className="text-muted"
               >
@@ -359,19 +372,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
             <div
               className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center text-merged flex-grow-0 flex-shrink-0 ml-3"
             >
-              <Memo(SourceMergeIcon)>
-                <svg
-                  className="mdi-icon "
-                  fill="currentColor"
-                  height={24}
-                  viewBox="0 0 24 24"
-                  width={24}
-                >
-                  <path
-                    d="M7,3A3,3 0 0,1 10,6C10,7.29 9.19,8.39 8.04,8.81C8.58,13.81 13.08,14.77 15.19,14.96C15.61,13.81 16.71,13 18,13A3,3 0 0,1 21,16A3,3 0 0,1 18,19C16.69,19 15.57,18.16 15.16,17C10.91,16.8 9.44,15.19 8,13.39V15.17C9.17,15.58 10,16.69 10,18A3,3 0 0,1 7,21A3,3 0 0,1 4,18C4,16.69 4.83,15.58 6,15.17V8.83C4.83,8.42 4,7.31 4,6A3,3 0 0,1 7,3M7,5A1,1 0 0,0 6,6A1,1 0 0,0 7,7A1,1 0 0,0 8,6A1,1 0 0,0 7,5M7,17A1,1 0 0,0 6,18A1,1 0 0,0 7,19A1,1 0 0,0 8,18A1,1 0 0,0 7,17M18,15A1,1 0 0,0 17,16A1,1 0 0,0 18,17A1,1 0 0,0 19,16A1,1 0 0,0 18,15Z"
-                  />
-                </svg>
-              </Memo(SourceMergeIcon)>
+              <Memo(SourceMergeIcon) />
               <span
                 className="text-muted"
               >
@@ -396,7 +397,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
       </h3>
       <hr />
       <div
-        className="pl-3 pt-3"
+        className="pl-3 py-3"
       >
         <Markdown
           dangerousInnerHTML="<p>d</p>
@@ -445,6 +446,11 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
           "url": "/users/alice",
           "username": "alice",
         },
+        "lastAppliedAt": "2020-01-01",
+        "lastApplier": Object {
+          "url": "/users/bob",
+          "username": "bob",
+        },
         "name": "n",
         "namespace": Object {
           "namespaceName": "alice",
@@ -455,7 +461,6 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
         "viewerCanAdminister": false,
       }
     }
-    campaignUpdates="[Subject]"
     history="[History]"
     isLightTheme={true}
     location="[Location path=/]"
@@ -480,19 +485,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
         >
           <Memo(SourceBranchIcon)
             className="icon-inline text-muted mr-1"
-          >
-            <svg
-              className="mdi-icon icon-inline text-muted mr-1"
-              fill="currentColor"
-              height={24}
-              viewBox="0 0 24 24"
-              width={24}
-            >
-              <path
-                d="M13,14C9.64,14 8.54,15.35 8.18,16.24C9.25,16.7 10,17.76 10,19A3,3 0 0,1 7,22A3,3 0 0,1 4,19C4,17.69 4.83,16.58 6,16.17V7.83C4.83,7.42 4,6.31 4,5A3,3 0 0,1 7,2A3,3 0 0,1 10,5C10,6.31 9.17,7.42 8,7.83V13.12C8.88,12.47 10.16,12 12,12C14.67,12 15.56,10.66 15.85,9.77C14.77,9.32 14,8.25 14,7A3,3 0 0,1 17,4A3,3 0 0,1 20,7C20,8.34 19.12,9.5 17.91,9.86C17.65,11.29 16.68,14 13,14M7,18A1,1 0 0,0 6,19A1,1 0 0,0 7,20A1,1 0 0,0 8,19A1,1 0 0,0 7,18M7,4A1,1 0 0,0 6,5A1,1 0 0,0 7,6A1,1 0 0,0 8,5A1,1 0 0,0 7,4M17,6A1,1 0 0,0 16,7A1,1 0 0,0 17,8A1,1 0 0,0 18,7A1,1 0 0,0 17,6Z"
-              />
-            </svg>
-          </Memo(SourceBranchIcon)>
+          />
            Changesets
         </a>
       </li>
@@ -506,27 +499,13 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
         >
           <Memo(ChartLineVariantIcon)
             className="icon-inline text-muted mr-1"
-          >
-            <svg
-              className="mdi-icon icon-inline text-muted mr-1"
-              fill="currentColor"
-              height={24}
-              viewBox="0 0 24 24"
-              width={24}
-            >
-              <path
-                d="M3.5,18.5L9.5,12.5L13.5,16.5L22,6.92L20.59,5.5L13.5,13.5L9.5,9.5L2,17L3.5,18.5Z"
-              />
-            </svg>
-          </Memo(ChartLineVariantIcon)>
+          />
            Burndown chart
         </a>
       </li>
     </ul>
     <CampaignChangesets
       campaignID="c"
-      campaignUpdates="[Subject]"
-      changesetUpdates="[Subject]"
       history="[History]"
       isLightTheme={true}
       location="[Location path=/]"
@@ -731,7 +710,6 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
           nodeComponent={[Function]}
           nodeComponentProps={
             Object {
-              "campaignUpdates": "[Subject]",
               "extensionInfo": Object {
                 "extensionsController": undefined,
                 "hoverifier": Object {
@@ -778,11 +756,11 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
       </div>
     </CampaignChangesets>
   </CampaignTabs>
-</CampaignDetails>
+</CampaignDetailsPage>
 `;
 
-exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
-<CampaignDetails
+exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
+<CampaignDetailsPage
   campaignID="c"
   deleteCampaign={[Function]}
   fetchCampaignById={[Function]}
@@ -790,12 +768,14 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
   isLightTheme={true}
   location="[Location path=/]"
   queryChangesetCountsOverTime={[Function]}
+  setBreadcrumb={[Function]}
   telemetryService={
     Object {
       "log": [Function],
       "logViewEvent": [Function],
     }
   }
+  useBreadcrumb={[Function]}
 >
   <PageTitle
     title="n"
@@ -810,14 +790,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
         history="[History]"
       />
     }
-    className="mb-3 test-campaign-details-page"
-    createdAt="2020-01-01"
-    creator={
-      Object {
-        "url": "/users/alice",
-        "username": "alice",
-      }
-    }
+    className="test-campaign-details-page"
     name="n"
     namespace={
       Object {
@@ -826,28 +799,54 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
       }
     }
   >
-    <div
-      className="d-flex w-100 mb-2 justify-content-between align-items-center mb-3 test-campaign-details-page"
+    <PageHeader
+      actions={
+        <CampaignDetailsActionSection
+          campaignClosed={false}
+          campaignID="c"
+          campaignNamespaceURL="/users/alice"
+          deleteCampaign={[Function]}
+          history="[History]"
+        />
+      }
+      className="test-campaign-details-page"
+      icon={
+        Object {
+          "$$typeof": Symbol(react.memo),
+          "compare": null,
+          "type": [Function],
+        }
+      }
+      title={
+        <React.Fragment>
+          <AnchorLink
+            to="/users/alice/campaigns"
+          >
+            alice
+          </AnchorLink>
+           / 
+          n
+           
+          <sup>
+            <span
+              className="badge badge-merged text-uppercase"
+            >
+              Beta
+            </span>
+          </sup>
+        </React.Fragment>
+      }
     >
-      <div>
+      <div
+        className="page-header d-flex flex-wrap align-items-center test-campaign-details-page"
+      >
         <h1
-          className="d-inline-block mb-0"
+          className="flex-grow-1"
         >
           <Memo(ImageAutoAdjustIcon)
-            className="icon-inline mr-2 text-muted"
-          >
-            <svg
-              className="mdi-icon icon-inline mr-2 text-muted"
-              fill="currentColor"
-              height={24}
-              viewBox="0 0 24 24"
-              width={24}
-            >
-              <path
-                d="M19 10V19H5V5H14V3H5C3.92 3 3 3.9 3 5V19C3 20.1 3.92 21 5 21H19C20.12 21 21 20.1 21 19V10H19M17 10L17.94 7.94L20 7L17.94 6.06L17 4L16.06 6.06L14 7L16.06 7.94L17 10M13.25 10.75L12 8L10.75 10.75L8 12L10.75 13.25L12 16L13.25 13.25L16 12L13.25 10.75Z"
-              />
-            </svg>
-          </Memo(ImageAutoAdjustIcon)>
+            className="icon-inline page-header__icon"
+          />
+           
           <AnchorLink
             to="/users/alice/campaigns"
           >
@@ -857,83 +856,123 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
               alice
             </a>
           </AnchorLink>
-           /
-           
+           / 
           n
+           
           <sup>
             <span
-              className="ml-2 badge badge-merged text-uppercase"
+              className="badge badge-merged text-uppercase"
             >
               Beta
             </span>
           </sup>
         </h1>
-        <span
-          className="text-muted ml-3"
+        <CampaignDetailsActionSection
+          campaignClosed={false}
+          campaignID="c"
+          campaignNamespaceURL="/users/alice"
+          deleteCampaign={[Function]}
+          history="[History]"
         >
-          Created
-           
-          <Timestamp
-            date="2020-01-01"
-          >
-            <span
-              className="timestamp"
-              data-tooltip="2020-01-01"
-            >
-              in almost 14 years
-            </span>
-          </Timestamp>
-           by
-           
           <AnchorLink
-            to="/users/alice"
-          >
-            <a
-              href="/users/alice"
-            >
-              alice
-            </a>
-          </AnchorLink>
-        </span>
-      </div>
-      <CampaignDetailsActionSection
-        campaignClosed={false}
-        campaignID="c"
-        campaignNamespaceURL="/users/alice"
-        deleteCampaign={[Function]}
-        history="[History]"
-      >
-        <AnchorLink
-          className="btn btn-outline-danger test-campaigns-close-btn"
-          data-tooltip="View a preview of all changes that will happen when you close this campaign."
-          to="//close"
-        >
-          <a
             className="btn btn-outline-danger test-campaigns-close-btn"
             data-tooltip="View a preview of all changes that will happen when you close this campaign."
-            href="//close"
+            to="//close"
           >
-            <Memo(DeleteIcon)
-              className="icon-inline"
+            <a
+              className="btn btn-outline-danger test-campaigns-close-btn"
+              data-tooltip="View a preview of all changes that will happen when you close this campaign."
+              href="//close"
             >
-              <svg
-                className="mdi-icon icon-inline"
-                fill="currentColor"
-                height={24}
-                viewBox="0 0 24 24"
-                width={24}
-              >
-                <path
-                  d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"
-                />
-              </svg>
-            </Memo(DeleteIcon)>
-             Close
+              <Memo(DeleteIcon)
+                className="icon-inline"
+              />
+               Close
+            </a>
+          </AnchorLink>
+        </CampaignDetailsActionSection>
+      </div>
+    </PageHeader>
+  </CampaignHeader>
+  <CampaignInfoByline
+    className="mb-3"
+    createdAt="2020-01-01"
+    initialApplier={
+      Object {
+        "url": "/users/alice",
+        "username": "alice",
+      }
+    }
+    lastAppliedAt="2020-01-01"
+    lastApplier={
+      Object {
+        "url": "/users/bob",
+        "username": "bob",
+      }
+    }
+  >
+    <div
+      className="mb-3"
+    >
+      <span
+        className="text-muted"
+      >
+        Created 
+        <Timestamp
+          date="2020-01-01"
+        >
+          <span
+            className="timestamp"
+            data-tooltip="2020-01-01"
+          >
+            in almost 14 years
+          </span>
+        </Timestamp>
+         by
+         
+        <AnchorLink
+          to="/users/alice"
+        >
+          <a
+            href="/users/alice"
+          >
+            alice
           </a>
         </AnchorLink>
-      </CampaignDetailsActionSection>
+      </span>
+      <span
+        className="mx-2 text-muted"
+      >
+        |
+      </span>
+      <span
+        className="text-muted"
+      >
+        Updated 
+        <Timestamp
+          date="2020-01-01"
+        >
+          <span
+            className="timestamp"
+            data-tooltip="2020-01-01"
+          >
+            in almost 14 years
+          </span>
+        </Timestamp>
+         by
+         
+        <AnchorLink
+          to="/users/bob"
+        >
+          <a
+            href="/users/bob"
+          >
+            bob
+          </a>
+        </AnchorLink>
+      </span>
     </div>
-  </CampaignHeader>
+  </CampaignInfoByline>
   <CampaignStatsCard
     className="mb-3"
     closedAt={null}
@@ -977,19 +1016,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
             >
               <Memo(ProgressCheckIcon)
                 className="icon-inline mr-2 text-muted"
-              >
-                <svg
-                  className="mdi-icon icon-inline mr-2 text-muted"
-                  fill="currentColor"
-                  height={24}
-                  viewBox="0 0 24 24"
-                  width={24}
-                >
-                  <path
-                    d="M13,2.03V2.05L13,4.05C17.39,4.59 20.5,8.58 19.96,12.97C19.5,16.61 16.64,19.5 13,19.93V21.93C18.5,21.38 22.5,16.5 21.95,11C21.5,6.25 17.73,2.5 13,2.03M11,2.06C9.05,2.25 7.19,3 5.67,4.26L7.1,5.74C8.22,4.84 9.57,4.26 11,4.06V2.06M4.26,5.67C3,7.19 2.25,9.04 2.05,11H4.05C4.24,9.58 4.8,8.23 5.69,7.1L4.26,5.67M15.5,8.5L10.62,13.38L8.5,11.26L7.44,12.32L10.62,15.5L16.56,9.56L15.5,8.5M2.06,13C2.26,14.96 3.03,16.81 4.27,18.33L5.69,16.9C4.81,15.77 4.24,14.42 4.06,13H2.06M7.1,18.37L5.67,19.74C7.18,21 9.04,21.79 11,22V20C9.58,19.82 8.23,19.25 7.1,18.37Z"
-                  />
-                </svg>
-              </Memo(ProgressCheckIcon)>
+              />
             </h1>
              
             <span
@@ -1035,19 +1062,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
             <div
               className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center text-muted flex-grow-0 flex-shrink-0 mx-3"
             >
-              <Memo(SourceBranchIcon)>
-                <svg
-                  className="mdi-icon "
-                  fill="currentColor"
-                  height={24}
-                  viewBox="0 0 24 24"
-                  width={24}
-                >
-                  <path
-                    d="M13,14C9.64,14 8.54,15.35 8.18,16.24C9.25,16.7 10,17.76 10,19A3,3 0 0,1 7,22A3,3 0 0,1 4,19C4,17.69 4.83,16.58 6,16.17V7.83C4.83,7.42 4,6.31 4,5A3,3 0 0,1 7,2A3,3 0 0,1 10,5C10,6.31 9.17,7.42 8,7.83V13.12C8.88,12.47 10.16,12 12,12C14.67,12 15.56,10.66 15.85,9.77C14.77,9.32 14,8.25 14,7A3,3 0 0,1 17,4A3,3 0 0,1 20,7C20,8.34 19.12,9.5 17.91,9.86C17.65,11.29 16.68,14 13,14M7,18A1,1 0 0,0 6,19A1,1 0 0,0 7,20A1,1 0 0,0 8,19A1,1 0 0,0 7,18M7,4A1,1 0 0,0 6,5A1,1 0 0,0 7,6A1,1 0 0,0 8,5A1,1 0 0,0 7,4M17,6A1,1 0 0,0 16,7A1,1 0 0,0 17,8A1,1 0 0,0 18,7A1,1 0 0,0 17,6Z"
-                  />
-                </svg>
-              </Memo(SourceBranchIcon)>
+              <Memo(SourceBranchIcon) />
               <span
                 className="text-muted"
               >
@@ -1070,19 +1085,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
             <div
               className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center text-success flex-grow-0 flex-shrink-0 mx-3"
             >
-              <Memo(SourcePullIcon)>
-                <svg
-                  className="mdi-icon "
-                  fill="currentColor"
-                  height={24}
-                  viewBox="0 0 24 24"
-                  width={24}
-                >
-                  <path
-                    d="M6,3A3,3 0 0,1 9,6C9,7.31 8.17,8.42 7,8.83V15.17C8.17,15.58 9,16.69 9,18A3,3 0 0,1 6,21A3,3 0 0,1 3,18C3,16.69 3.83,15.58 5,15.17V8.83C3.83,8.42 3,7.31 3,6A3,3 0 0,1 6,3M6,5A1,1 0 0,0 5,6A1,1 0 0,0 6,7A1,1 0 0,0 7,6A1,1 0 0,0 6,5M6,17A1,1 0 0,0 5,18A1,1 0 0,0 6,19A1,1 0 0,0 7,18A1,1 0 0,0 6,17M21,18A3,3 0 0,1 18,21A3,3 0 0,1 15,18C15,16.69 15.83,15.58 17,15.17V7H15V10.25L10.75,6L15,1.75V5H17A2,2 0 0,1 19,7V15.17C20.17,15.58 21,16.69 21,18M18,17A1,1 0 0,0 17,18A1,1 0 0,0 18,19A1,1 0 0,0 19,18A1,1 0 0,0 18,17Z"
-                  />
-                </svg>
-              </Memo(SourcePullIcon)>
+              <Memo(SourcePullIcon) />
               <span
                 className="text-muted"
               >
@@ -1105,19 +1108,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
             <div
               className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center text-danger flex-grow-0 flex-shrink-0 mx-3"
             >
-              <Memo(SourcePullIcon)>
-                <svg
-                  className="mdi-icon "
-                  fill="currentColor"
-                  height={24}
-                  viewBox="0 0 24 24"
-                  width={24}
-                >
-                  <path
-                    d="M6,3A3,3 0 0,1 9,6C9,7.31 8.17,8.42 7,8.83V15.17C8.17,15.58 9,16.69 9,18A3,3 0 0,1 6,21A3,3 0 0,1 3,18C3,16.69 3.83,15.58 5,15.17V8.83C3.83,8.42 3,7.31 3,6A3,3 0 0,1 6,3M6,5A1,1 0 0,0 5,6A1,1 0 0,0 6,7A1,1 0 0,0 7,6A1,1 0 0,0 6,5M6,17A1,1 0 0,0 5,18A1,1 0 0,0 6,19A1,1 0 0,0 7,18A1,1 0 0,0 6,17M21,18A3,3 0 0,1 18,21A3,3 0 0,1 15,18C15,16.69 15.83,15.58 17,15.17V7H15V10.25L10.75,6L15,1.75V5H17A2,2 0 0,1 19,7V15.17C20.17,15.58 21,16.69 21,18M18,17A1,1 0 0,0 17,18A1,1 0 0,0 18,19A1,1 0 0,0 19,18A1,1 0 0,0 18,17Z"
-                  />
-                </svg>
-              </Memo(SourcePullIcon)>
+              <Memo(SourcePullIcon) />
               <span
                 className="text-muted"
               >
@@ -1140,19 +1131,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
             <div
               className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center text-merged flex-grow-0 flex-shrink-0 ml-3"
             >
-              <Memo(SourceMergeIcon)>
-                <svg
-                  className="mdi-icon "
-                  fill="currentColor"
-                  height={24}
-                  viewBox="0 0 24 24"
-                  width={24}
-                >
-                  <path
-                    d="M7,3A3,3 0 0,1 10,6C10,7.29 9.19,8.39 8.04,8.81C8.58,13.81 13.08,14.77 15.19,14.96C15.61,13.81 16.71,13 18,13A3,3 0 0,1 21,16A3,3 0 0,1 18,19C16.69,19 15.57,18.16 15.16,17C10.91,16.8 9.44,15.19 8,13.39V15.17C9.17,15.58 10,16.69 10,18A3,3 0 0,1 7,21A3,3 0 0,1 4,18C4,16.69 4.83,15.58 6,15.17V8.83C4.83,8.42 4,7.31 4,6A3,3 0 0,1 7,3M7,5A1,1 0 0,0 6,6A1,1 0 0,0 7,7A1,1 0 0,0 8,6A1,1 0 0,0 7,5M7,17A1,1 0 0,0 6,18A1,1 0 0,0 7,19A1,1 0 0,0 8,18A1,1 0 0,0 7,17M18,15A1,1 0 0,0 17,16A1,1 0 0,0 18,17A1,1 0 0,0 19,16A1,1 0 0,0 18,15Z"
-                  />
-                </svg>
-              </Memo(SourceMergeIcon)>
+              <Memo(SourceMergeIcon) />
               <span
                 className="text-muted"
               >
@@ -1177,7 +1156,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
       </h3>
       <hr />
       <div
-        className="pl-3 pt-3"
+        className="pl-3 py-3"
       >
         <Markdown
           dangerousInnerHTML="<p>d</p>
@@ -1226,6 +1205,11 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
           "url": "/users/alice",
           "username": "alice",
         },
+        "lastAppliedAt": "2020-01-01",
+        "lastApplier": Object {
+          "url": "/users/bob",
+          "username": "bob",
+        },
         "name": "n",
         "namespace": Object {
           "namespaceName": "alice",
@@ -1236,7 +1220,6 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
         "viewerCanAdminister": true,
       }
     }
-    campaignUpdates="[Subject]"
     history="[History]"
     isLightTheme={true}
     location="[Location path=/]"
@@ -1261,19 +1244,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
         >
           <Memo(SourceBranchIcon)
             className="icon-inline text-muted mr-1"
-          >
-            <svg
-              className="mdi-icon icon-inline text-muted mr-1"
-              fill="currentColor"
-              height={24}
-              viewBox="0 0 24 24"
-              width={24}
-            >
-              <path
-                d="M13,14C9.64,14 8.54,15.35 8.18,16.24C9.25,16.7 10,17.76 10,19A3,3 0 0,1 7,22A3,3 0 0,1 4,19C4,17.69 4.83,16.58 6,16.17V7.83C4.83,7.42 4,6.31 4,5A3,3 0 0,1 7,2A3,3 0 0,1 10,5C10,6.31 9.17,7.42 8,7.83V13.12C8.88,12.47 10.16,12 12,12C14.67,12 15.56,10.66 15.85,9.77C14.77,9.32 14,8.25 14,7A3,3 0 0,1 17,4A3,3 0 0,1 20,7C20,8.34 19.12,9.5 17.91,9.86C17.65,11.29 16.68,14 13,14M7,18A1,1 0 0,0 6,19A1,1 0 0,0 7,20A1,1 0 0,0 8,19A1,1 0 0,0 7,18M7,4A1,1 0 0,0 6,5A1,1 0 0,0 7,6A1,1 0 0,0 8,5A1,1 0 0,0 7,4M17,6A1,1 0 0,0 16,7A1,1 0 0,0 17,8A1,1 0 0,0 18,7A1,1 0 0,0 17,6Z"
-              />
-            </svg>
-          </Memo(SourceBranchIcon)>
+          />
            Changesets
         </a>
       </li>
@@ -1287,27 +1258,13 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
         >
           <Memo(ChartLineVariantIcon)
             className="icon-inline text-muted mr-1"
-          >
-            <svg
-              className="mdi-icon icon-inline text-muted mr-1"
-              fill="currentColor"
-              height={24}
-              viewBox="0 0 24 24"
-              width={24}
-            >
-              <path
-                d="M3.5,18.5L9.5,12.5L13.5,16.5L22,6.92L20.59,5.5L13.5,13.5L9.5,9.5L2,17L3.5,18.5Z"
-              />
-            </svg>
-          </Memo(ChartLineVariantIcon)>
+          />
            Burndown chart
         </a>
       </li>
     </ul>
     <CampaignChangesets
       campaignID="c"
-      campaignUpdates="[Subject]"
-      changesetUpdates="[Subject]"
       history="[History]"
       isLightTheme={true}
       location="[Location path=/]"
@@ -1512,7 +1469,6 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
           nodeComponent={[Function]}
           nodeComponentProps={
             Object {
-              "campaignUpdates": "[Subject]",
               "extensionInfo": Object {
                 "extensionsController": undefined,
                 "hoverifier": Object {
@@ -1559,5 +1515,5 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
       </div>
     </CampaignChangesets>
   </CampaignTabs>
-</CampaignDetails>
+</CampaignDetailsPage>
 `;

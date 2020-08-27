@@ -146,6 +146,15 @@ func TestChangesetResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	unsyncedChangeset := createChangeset(t, ctx, store, testChangesetOpts{
+		repo:                repo.ID,
+		externalServiceType: "github",
+		externalID:          "9876",
+		unsynced:            true,
+		publicationState:    campaigns.ChangesetPublicationStatePublished,
+		reconcilerState:     campaigns.ReconcilerStateQueued,
+	})
+
 	spec := &campaigns.CampaignSpec{
 		UserID:          userID,
 		NamespaceUserID: userID,
@@ -174,10 +183,12 @@ func TestChangesetResolver(t *testing.T) {
 	}
 
 	tests := []struct {
+		name      string
 		changeset *campaigns.Changeset
 		want      apitest.Changeset
 	}{
 		{
+			name:      "unpublished changeset",
 			changeset: unpublishedChangeset,
 			want: apitest.Changeset{
 				Typename:   "ExternalChangeset",
@@ -196,6 +207,7 @@ func TestChangesetResolver(t *testing.T) {
 			},
 		},
 		{
+			name:      "errored changeset",
 			changeset: erroredChangeset,
 			want: apitest.Changeset{
 				Typename:   "ExternalChangeset",
@@ -215,6 +227,7 @@ func TestChangesetResolver(t *testing.T) {
 			},
 		},
 		{
+			name:      "synced github changeset",
 			changeset: syncedGitHubChangeset,
 			want: apitest.Changeset{
 				Typename:      "ExternalChangeset",
@@ -245,19 +258,33 @@ func TestChangesetResolver(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:      "unsynced changeset",
+			changeset: unsyncedChangeset,
+			want: apitest.Changeset{
+				Typename:         "ExternalChangeset",
+				ExternalID:       "9876",
+				Repository:       apitest.Repository{Name: repo.Name},
+				Labels:           []apitest.Label{},
+				PublicationState: string(campaigns.ChangesetPublicationStatePublished),
+				ReconcilerState:  string(campaigns.ReconcilerStateQueued),
+			},
+		},
 	}
 
 	for _, tc := range tests {
-		apiID := marshalChangesetID(tc.changeset.ID)
-		input := map[string]interface{}{"changeset": apiID}
+		t.Run(tc.name, func(t *testing.T) {
+			apiID := marshalChangesetID(tc.changeset.ID)
+			input := map[string]interface{}{"changeset": apiID}
 
-		var response struct{ Node apitest.Changeset }
-		apitest.MustExec(ctx, t, s, input, &response, queryChangeset)
+			var response struct{ Node apitest.Changeset }
+			apitest.MustExec(ctx, t, s, input, &response, queryChangeset)
 
-		tc.want.ID = string(apiID)
-		if diff := cmp.Diff(tc.want, response.Node); diff != "" {
-			t.Fatalf("wrong campaign response (-want +got):\n%s", diff)
-		}
+			tc.want.ID = string(apiID)
+			if diff := cmp.Diff(tc.want, response.Node); diff != "" {
+				t.Fatalf("wrong campaign response (-want +got):\n%s", diff)
+			}
+		})
 	}
 }
 

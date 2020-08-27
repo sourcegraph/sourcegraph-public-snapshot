@@ -962,14 +962,14 @@ type ExternalChangeset implements Node & Changeset {
     # The date and time when the changeset was updated.
     updatedAt: DateTime!
 
-    # The date and time when the next changeset sync is scheduled, or null if none is scheduled.
+    # The date and time when the next changeset sync is scheduled, or null if none is scheduled or when the initial sync hasn't happened.
     nextSyncAt: DateTime
 
-    # The title of the changeset.
-    title: String!
+    # The title of the changeset, or null if the data hasn't been synced from the code host yet.
+    title: String
 
-    # The body of the changeset.
-    body: String!
+    # The body of the changeset, or null if the data hasn't been synced from the code host yet.
+    body: String
 
     # The publication state of the changeset.
     publicationState: ChangesetPublicationState!
@@ -977,13 +977,13 @@ type ExternalChangeset implements Node & Changeset {
     # The reconciler state of the changeset.
     reconcilerState: ChangesetReconcilerState!
 
-    # The external state of the changeset, or null when not yet published to the code host.
+    # The external state of the changeset, or null when not yet published to the code host or when the changeset data hasn't been sycned from the code host yet.
     externalState: ChangesetExternalState
 
     # The labels attached to the changeset on the code host.
     labels: [ChangesetLabel!]!
 
-    # The external URL of the changeset on the code host. Not set when changeset state is UNPUBLISHED, PUBLISHING or externalState is DELETED.
+    # The external URL of the changeset on the code host. Not set when changeset state is UNPUBLISHED, externalState is DELETED, or the changeset's data hasn't been synced yet.
     externalURL: ExternalLink
 
     # The review state of this changeset. This is only set once the changeset is published on the code host.

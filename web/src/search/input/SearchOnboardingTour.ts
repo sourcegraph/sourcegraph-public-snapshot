@@ -2,8 +2,8 @@
  * This file contains utility functions for the search onboarding tour.
  */
 import Shepherd from 'shepherd.js'
-import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { eventLogger } from '../../tracking/eventLogger'
+import { SearchPatternType } from '../../graphql-operations'
 
 export const HAS_CANCELLED_TOUR_KEY = 'has-cancelled-onboarding-tour'
 export const HAS_SEEN_TOUR_KEY = 'has-seen-onboarding-tour'
@@ -12,7 +12,7 @@ export const defaultTourOptions: Shepherd.Tour.TourOptions = {
     useModalOverlay: true,
     defaultStepOptions: {
         arrow: true,
-        classes: 'web-content tour-card card py-4 px-3',
+        classes: 'web-content tour-card card py-4 px-3 shadow-lg',
         popperOptions: {
             // Removes default behavior of autofocusing steps
             modifiers: [
@@ -33,7 +33,7 @@ export const defaultTourOptions: Shepherd.Tour.TourOptions = {
  */
 export function generateStepTooltip(
     tour: Shepherd.Tour,
-    title: string,
+    dangerousTitleHtml: string,
     stepNumber: number,
     description?: string,
     additionalContent?: HTMLElement,
@@ -42,7 +42,7 @@ export function generateStepTooltip(
     const element = document.createElement('div')
     element.className = `d-flex flex-column test-tour-step-${stepNumber}`
     const titleElement = document.createElement('h4')
-    titleElement.textContent = title
+    titleElement.innerHTML = dangerousTitleHtml
     titleElement.className = 'font-weight-bold'
     element.append(titleElement)
     if (description) {
@@ -103,9 +103,9 @@ export function createStep1Tooltip(
     repositoryButtonHandler: () => void
 ): HTMLElement {
     const list = document.createElement('ul')
-    list.className = 'my-4 list-group dash-list'
+    list.className = 'my-4 dash-list'
     const languageListItem = document.createElement('li')
-    languageListItem.className = 'list-group-item p-0 border-0 mb-2'
+    languageListItem.className = 'p-0 mb-2'
 
     const languageButton = document.createElement('button')
     languageButton.className = 'btn btn-link p-0 pl-1 test-tour-language-button'
@@ -116,7 +116,7 @@ export function createStep1Tooltip(
         eventLogger.log('OnboardingTourLanguageOptionClicked')
     })
     const repositoryListItem = document.createElement('li')
-    repositoryListItem.className = 'list-group-item p-0 border-0 mb-2 test-tour-repo-button'
+    repositoryListItem.className = 'p-0 mb-2 test-tour-repo-button'
     const repositoryButton = document.createElement('button')
     repositoryButton.className = 'btn btn-link p-0 pl-1'
     repositoryButton.textContent = 'Search a repository'
@@ -186,10 +186,10 @@ export function createAddCodeStepWithLanguageExampleTooltip(
     exampleCallback: (query: string, patternType: SearchPatternType) => void
 ): HTMLElement {
     const list = document.createElement('ul')
-    list.className = 'my-4 list-group caret-list'
+    list.className = 'my-4 caret-list'
 
     const listItem = document.createElement('li')
-    listItem.className = 'list-group-item p-0 border-0'
+    listItem.className = 'p-0'
 
     const exampleButton = document.createElement('button')
     exampleButton.className = 'btn btn-link test-tour-language-example'

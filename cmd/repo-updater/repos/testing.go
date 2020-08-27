@@ -166,6 +166,17 @@ func (s FakeStore) ListExternalServices(ctx context.Context, args StoreListExter
 	for _, svc := range s.svcByID {
 		k := strings.ToLower(svc.Kind)
 
+		switch {
+		case args.NamespaceUserID == -1:
+			if svc.NamespaceUserID != 0 {
+				continue
+			}
+		case args.NamespaceUserID > 0:
+			if svc.NamespaceUserID != args.NamespaceUserID {
+				continue
+			}
+		}
+
 		if !set[svc] &&
 			((len(kinds) == 0 && k != extsvc.TypePhabricator) || kinds[k]) &&
 			(len(ids) == 0 || ids[svc.ID]) &&
@@ -173,7 +184,6 @@ func (s FakeStore) ListExternalServices(ctx context.Context, args StoreListExter
 
 			svcs = append(svcs, svc)
 			set[svc] = true
-
 		}
 	}
 

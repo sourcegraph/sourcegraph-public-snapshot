@@ -6,7 +6,7 @@ import webStyles from '../../../../enterprise.scss'
 import { Tooltip } from '../../../../components/tooltip/Tooltip'
 import { CampaignChangesets } from './CampaignChangesets'
 import { addHours } from 'date-fns'
-import { of, Subject } from 'rxjs'
+import { of } from 'rxjs'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../../shared/src/telemetry/telemetryService'
 import {
     ChangesetFields,
@@ -83,7 +83,6 @@ const nodes: ChangesetFields[] = [
     ),
 ]
 const queryChangesets = () => of({ totalCount: nodes.length, nodes, pageInfo: { endCursor: null, hasNextPage: false } })
-const updates = new Subject<void>()
 
 const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWithFileDiffs = () =>
     of({
@@ -108,8 +107,6 @@ add('List of changesets', () => (
         platformContext={undefined as any}
         campaignID="campaignid"
         viewerCanAdminister={boolean('viewerCanAdminister', true)}
-        campaignUpdates={updates}
-        changesetUpdates={updates}
         telemetryService={NOOP_TELEMETRY_SERVICE}
         history={history}
         location={history.location}

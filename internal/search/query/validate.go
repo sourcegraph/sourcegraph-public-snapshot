@@ -349,6 +349,25 @@ func validateRepoRevPair(nodes []Node) error {
 	return nil
 }
 
+// Queries containing commit parameters without type:diff or type:commit are not
+// valid. cf. https://docs.sourcegraph.com/user/search/language#commit-parameter
+func validateCommitParameters(nodes []Node) error {
+	var seenCommitParam string
+	var typeCommitExists bool
+	VisitParameter(nodes, func(field, value string, _ bool, _ Annotation) {
+		if field == FieldAuthor || field == FieldBefore || field == FieldAfter || field == FieldMessage {
+			seenCommitParam = field
+		}
+		if field == FieldType && (value == "commit" || value == "diff") {
+			typeCommitExists = true
+		}
+	})
+	if seenCommitParam != "" && !typeCommitExists {
+		return fmt.Errorf(`your query contains the field '%s', which requires type:commit or type:diff in the query`, seenCommitParam)
+	}
+	return nil
+}
+
 func validate(nodes []Node) error {
 	var err error
 	seen := map[string]struct{}{}
@@ -371,5 +390,9 @@ func validate(nodes []Node) error {
 		return err
 	}
 	err = validateRepoRevPair(nodes)
+	if err != nil {
+		return err
+	}
+	err = validateCommitParameters(nodes)
 	return err
 }

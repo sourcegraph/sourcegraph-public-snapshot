@@ -319,7 +319,7 @@ var listCampaignsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:ListCampaigns
 SELECT %s FROM campaigns
 WHERE %s
-ORDER BY id ASC
+ORDER BY id DESC
 LIMIT %s
 `
 
@@ -329,8 +329,10 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 	}
 	opts.Limit++
 
-	preds := []*sqlf.Query{
-		sqlf.Sprintf("id >= %s", opts.Cursor),
+	preds := []*sqlf.Query{}
+
+	if opts.Cursor != 0 {
+		preds = append(preds, sqlf.Sprintf("id <= %s", opts.Cursor))
 	}
 
 	if opts.ChangesetID != 0 {
@@ -354,6 +356,10 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 
 	if opts.NamespaceOrgID != 0 {
 		preds = append(preds, sqlf.Sprintf("campaigns.namespace_org_id = %s", opts.NamespaceOrgID))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
 	return sqlf.Sprintf(

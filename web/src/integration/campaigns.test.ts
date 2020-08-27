@@ -4,7 +4,6 @@ import { commonWebGraphQlResults } from './graphQlResults'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { subDays, addDays } from 'date-fns'
-import { createJsContext } from './jscontext'
 import {
     ChangesetCheckState,
     ChangesetExternalState,
@@ -267,6 +266,11 @@ function mockCommonGraphQLResponses(
                     deleted: 817,
                 },
                 viewerCanAdminister: true,
+                lastAppliedAt: subDays(new Date(), 5).toISOString(),
+                lastApplier: {
+                    url: '/users/bob',
+                    username: 'bob',
+                },
                 ...campaignOverrides,
             },
         }),
@@ -285,12 +289,6 @@ describe('Campaigns', () => {
             driver,
             currentTest: this.currentTest!,
             directory: __dirname,
-        })
-        testContext.overrideJsContext({
-            ...createJsContext({
-                sourcegraphBaseUrl: testContext.driver.sourcegraphBaseUrl,
-            }),
-            experimentalFeatures: { automation: 'enabled' },
         })
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)

@@ -188,7 +188,11 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                 },
                 {
                     id: 'final-step',
-                    text: generateStepTooltip(tour, "Use the 'return' key or the search button to run your search", 5),
+                    text: generateStepTooltip(
+                        tour,
+                        'Use <kbd>return</kbd><br/>or the search button to run your search',
+                        5
+                    ),
                     when: {
                         show() {
                             eventLogger.log('ViewedOnboardingTourSubmitSearchStep')

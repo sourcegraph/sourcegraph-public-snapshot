@@ -363,13 +363,13 @@ func openTestDatabase(t *testing.T) Database {
 		t.Fatalf("unexpected error creating cache: %s", err)
 	}
 
-	// TODO(efritz) - rewrite test not to require actual reader
-	reader, err := sqlitereader.NewReader(context.Background(), filename, cache)
+	// TODO(efritz) - rewrite test not to require actual store
+	store, err := sqlitereader.OpenStore(context.Background(), filename, cache)
 	if err != nil {
-		t.Fatalf("unexpected error creating reader: %s", err)
+		t.Fatalf("unexpected error creating store: %s", err)
 	}
 
-	db, err := OpenDatabase(context.Background(), filename, reader)
+	db, err := OpenDatabase(context.Background(), filename, store)
 	if err != nil {
 		t.Fatalf("unexpected error opening database: %s", err)
 	}

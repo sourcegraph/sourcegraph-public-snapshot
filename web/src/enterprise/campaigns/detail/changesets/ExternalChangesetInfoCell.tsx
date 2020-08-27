@@ -4,7 +4,6 @@ import {
     ChangesetExternalState,
     ChangesetPublicationState,
 } from '../../../../graphql-operations'
-import { Observer } from 'rxjs'
 import { LinkOrSpan } from '../../../../../../shared/src/components/LinkOrSpan'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import { ChangesetLabel } from './ChangesetLabel'
@@ -14,13 +13,11 @@ import { ChangesetLastSynced } from './ChangesetLastSynced'
 export interface ExternalChangesetInfoCellProps {
     node: ExternalChangesetFields
     viewerCanAdminister: boolean
-    campaignUpdates?: Pick<Observer<void>, 'next'>
 }
 
 export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangesetInfoCellProps> = ({
     node,
     viewerCanAdminister,
-    campaignUpdates,
 }) => (
     <div className="d-flex flex-column">
         <div className="m-0 mb-2">
@@ -60,11 +57,7 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
                 </Link>
             </strong>
             {node.publicationState === ChangesetPublicationState.PUBLISHED && (
-                <ChangesetLastSynced
-                    changeset={node}
-                    viewerCanAdminister={viewerCanAdminister}
-                    campaignUpdates={campaignUpdates}
-                />
+                <ChangesetLastSynced changeset={node} viewerCanAdminister={viewerCanAdminister} />
             )}
         </div>
     </div>

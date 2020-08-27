@@ -592,3 +592,14 @@ func concatRevFilters(nodes []Node) []Node {
 		return Parameter{Value: value, Field: FieldRepo, Negated: negated}
 	})
 }
+
+// ellipsesForHoles substitutes ellipses ... for :[_] holes in structural search queries.
+func ellipsesForHoles(nodes []Node) []Node {
+	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
+		return Pattern{
+			Value:      strings.ReplaceAll(value, "...", ":[_]"),
+			Negated:    negated,
+			Annotation: annotation,
+		}
+	})
+}

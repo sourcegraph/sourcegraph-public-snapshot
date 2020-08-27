@@ -21,6 +21,16 @@ import {
     DeleteCampaignVariables,
 } from '../../../graphql-operations'
 
+const changesetStatsFragment = gql`
+    fragment ChangesetStatsFields on ChangesetConnectionStats {
+        total
+        closed
+        merged
+        open
+        unpublished
+    }
+`
+
 const campaignFragment = gql`
     fragment CampaignFields on Campaign {
         __typename
@@ -32,21 +42,25 @@ const campaignFragment = gql`
             url
         }
         description
+
+        createdAt
         initialApplier {
             username
             url
         }
-        createdAt
+
+        lastAppliedAt
+        lastApplier {
+            username
+            url
+        }
+
         updatedAt
         closedAt
         viewerCanAdminister
         changesets {
             stats {
-                total
-                closed
-                merged
-                open
-                unpublished
+                ...ChangesetStatsFields
             }
         }
         diffStat {
@@ -55,6 +69,8 @@ const campaignFragment = gql`
     }
 
     ${diffStatFields}
+
+    ${changesetStatsFragment}
 `
 
 const changesetLabelFragment = gql`

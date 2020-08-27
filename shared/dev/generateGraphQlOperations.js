@@ -69,7 +69,7 @@ async function generateGraphQlOperations({ watch } = {}) {
           config: {
             onlyOperationTypes: true,
             noExport: false,
-            enumValues: '../../shared/src/graphql/schema',
+            enumValues: '../../shared/src/graphql-operations',
             interfaceNameForOperations: 'BrowserGraphQlOperations',
           },
           plugins,
@@ -80,7 +80,7 @@ async function generateGraphQlOperations({ watch } = {}) {
           config: {
             onlyOperationTypes: true,
             noExport: false,
-            enumValues: '../../shared/src/graphql/schema',
+            enumValues: '../../shared/src/graphql-operations',
             interfaceNameForOperations: 'WebGraphQlOperations',
           },
           plugins,
@@ -91,7 +91,6 @@ async function generateGraphQlOperations({ watch } = {}) {
           config: {
             onlyOperationTypes: true,
             noExport: false,
-            enumValues: './graphql/schema',
             interfaceNameForOperations: 'SharedGraphQlOperations',
           },
           plugins,

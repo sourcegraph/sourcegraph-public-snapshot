@@ -16,10 +16,12 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - Introduced the new `external_service_repos` join table. Please note that the migration required to make this change could take a couple of minutes.
+- Campaigns are enabled by default for all users, with site admins having read/write access and users only read access. The new site configuration property `campaigns.enabled` can be used to disable campaigns for all users. The properties `campaigns.readAccess`, `automation.readAccess.enabled`, and `"experimentalFeatures": { "automation": "enabled" }}` are deprecated and no longer have any effect.
 
 ### Fixed
 
 - User satisfaction/NPS surveys will now correctly provide a range from 0–10, rather than 0–9. [#13163](https://github.com/sourcegraph/sourcegraph/pull/13163)
+- Fixed a bug where we returned repositories with invalid revisions in the search results. Now, if a user specifies an invalid revision, we show an alert. [#13271](https://github.com/sourcegraph/sourcegraph/pull/13271)
 
 ### Removed
 
@@ -51,6 +53,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - Repository permissions are now always checked and updated asynchronously ([background permissions syncing](https://docs.sourcegraph.com/admin/repo/permissions#background-permissions-syncing)) instead of blocking each operation. The site config option `permissions.backgroundSync` (which enabled this behavior in previous versions) is now a no-op and is deprecated.
+- [Background permissions syncing](https://docs.sourcegraph.com/admin/repo/permissions#background-permissions-syncing) (`permissions.backgroundSync`) has become the only option for mirroring repository permissions from code hosts. All relevant site configurations are deprecated.
 
 ### Fixed
 
@@ -100,7 +103,6 @@ All notable changes to Sourcegraph are documented in this file.
 - Configuration for `observability.alerts` has changed and notifications are now provided by Prometheus Alertmanager. [#11832](https://github.com/sourcegraph/sourcegraph/pull/11832)
   - Removed: `observability.alerts.id`.
   - Removed: Slack notifiers no longer accept `mentionUsers`, `mentionGroups`, `mentionChannel`, and `token` options.
--
 
 ### Fixed
 

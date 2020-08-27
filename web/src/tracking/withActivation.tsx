@@ -9,10 +9,10 @@ import {
     ActivationStep,
 } from '../../../shared/src/components/activation/Activation'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { queryGraphQL } from '../backend/graphql'
 import { logUserEvent, logEvent } from '../user/settings/backend'
 import { AuthenticatedUser } from '../auth'
+import { UserEvent } from '../../../shared/src/graphql-operations'
 
 /**
  * Fetches activation status from server.
@@ -174,7 +174,7 @@ const getActivationSteps = (authenticatedUser: AuthenticatedUser): ActivationSte
  */
 const recordUpdate = (update: Partial<ActivationCompletionStatus>): void => {
     if (update.FoundReferences) {
-        logUserEvent(GQL.UserEvent.CODEINTELREFS)
+        logUserEvent(UserEvent.CODEINTELREFS)
         logEvent('CodeIntelRefs')
     }
 }

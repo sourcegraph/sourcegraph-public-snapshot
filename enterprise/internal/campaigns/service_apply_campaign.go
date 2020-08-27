@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -155,7 +154,6 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	// correctly with the Changesets so that the reconciler can create/update
 	// them.
 	rewirer := &changesetRewirer{
-		cf:       s.cf,
 		ctx:      ctx,
 		tx:       tx,
 		rstore:   rstore,
@@ -181,8 +179,6 @@ type repoExternalID struct {
 }
 
 type changesetRewirer struct {
-	cf *httpcli.Factory
-
 	ctx      context.Context
 	campaign *campaigns.Campaign
 	tx       *Store
@@ -520,20 +516,11 @@ func (r *changesetRewirer) updateOrCreateTrackingChangeset(repo *types.Repo, ext
 		// Note: no CurrentSpecID, because we merely track this one
 
 		PublicationState: campaigns.ChangesetPublicationStatePublished,
-		ReconcilerState:  campaigns.ReconcilerStateCompleted,
+
+		// Enqueue it so the reconciler syncs it.
+		ReconcilerState: campaigns.ReconcilerStateQueued,
+		Unsynced:        true,
 	}
 
-	if err = r.tx.CreateChangeset(r.ctx, newChangeset); err != nil {
-		return nil, err
-	}
-
-	// TODO: Now we're syncing in the request path to ensure
-	// that the remote changeset exists and also to remove the possibility
-	// of an unsynced changeset entering our database
-	// IMPORTANT: We need to move that to the reconciler/syncer/background.
-	if err = SyncChangesets(r.ctx, r.rstore, r.tx, r.cf, newChangeset); err != nil {
-		return nil, errors.Wrapf(err, "syncing changeset failed. repo=%q, externalID=%q", repo.Name, externalID)
-	}
-
-	return newChangeset, nil
+	return newChangeset, r.tx.CreateChangeset(r.ctx, newChangeset)
 }

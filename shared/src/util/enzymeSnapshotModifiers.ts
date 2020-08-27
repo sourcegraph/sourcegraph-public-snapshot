@@ -41,7 +41,11 @@ function maskProps(props: Json['props'], key = '', seenProperties: ReadonlySet<u
     return props
 }
 
-export function replaceVerboseObjects(json: Json): Json {
+export function replaceVerboseObjects(json: Json): Json | string {
+    if (/Memo\(\w+Icon\)/.test(json.type)) {
+        json.children = []
+        return json
+    }
     if (json.props) {
         return {
             ...json,

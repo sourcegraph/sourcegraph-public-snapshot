@@ -4,6 +4,7 @@ import React from 'react'
 import webStyles from '../../../enterprise.scss'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { CreateCampaignPage } from './CreateCampaignPage'
+import { useBreadcrumbs } from '../../../components/Breadcrumbs'
 
 const { add } = storiesOf('web/campaigns/CreateCampaignPage', module).addDecorator(story => {
     const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
@@ -18,4 +19,7 @@ const { add } = storiesOf('web/campaigns/CreateCampaignPage', module).addDecorat
     )
 })
 
-add('Page', () => <CreateCampaignPage />)
+add('Page', () => {
+    const breadcrumbsProps = useBreadcrumbs()
+    return <CreateCampaignPage {...breadcrumbsProps} />
+})

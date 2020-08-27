@@ -16,6 +16,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     externalURL: sourcegraphBaseUrl,
     accessTokensAllow: 'all-users-create',
     allowSignup: false,
+    campaignsEnabled: true,
     csrfToken: 'test-csrf-token',
     assetsRoot: new URL('/.assets', sourcegraphBaseUrl).href,
     deployType: 'dev',
