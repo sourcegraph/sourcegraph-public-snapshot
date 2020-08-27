@@ -1,11 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react'
 import * as H from 'history'
-import {
-    ExternalChangesetFileDiffsFields,
-    GitRefSpecFields,
-    Scalars,
-    GitCommitFields,
-} from '../../../../graphql-operations'
+import { ExternalChangesetFileDiffsFields, GitRefSpecFields, Scalars } from '../../../../graphql-operations'
 import { FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
 import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../backend'
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
@@ -27,7 +22,6 @@ export interface ChangesetFileDiffProps extends ThemeProps {
     extensionInfo?: {
         hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
     } & ExtensionsControllerProps
-    setCommits: (commits: GitCommitFields[]) => void
     /** For testing only. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
 }
@@ -40,7 +34,6 @@ export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> 
     extensionInfo,
     repositoryID,
     repositoryName,
-    setCommits,
     queryExternalChangesetWithFileDiffs = _queryExternalChangesetWithFileDiffs,
 }) => {
     const [range, setRange] = useState<
@@ -65,12 +58,11 @@ export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> 
                 tap(diff => {
                     if (diff.__typename === 'RepositoryComparison') {
                         setRange(diff.range)
-                        setCommits(diff.commits.nodes)
                     }
                 }),
                 map(diff => diff.fileDiffs)
             ),
-        [changesetID, isLightTheme, queryExternalChangesetWithFileDiffs, setCommits]
+        [changesetID, isLightTheme, queryExternalChangesetWithFileDiffs]
     )
 
     const hydratedExtensionInfo = useMemo(() => {
