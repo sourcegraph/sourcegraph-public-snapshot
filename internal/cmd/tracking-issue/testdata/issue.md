@@ -5,6 +5,12 @@
 - [x] Alert admins if LSIF uploads are too large for DBS_DIR_MAXIMUM_SIZE_BYTES [#9989](https://github.com/sourcegraph/sourcegraph/issues/9989) `lsif-reliability` 
 <!-- END ASSIGNEE -->
 
+<!-- BEGIN ASSIGNEE: attfarhan -->
+@attfarhan
+
+- [ ] Add Cobol support (lang filters, codeintel, and syntax highlighting) [#10154](https://github.com/sourcegraph/sourcegraph/issues/10154) 
+<!-- END ASSIGNEE -->
+
 <!-- BEGIN ASSIGNEE: efritz -->
 @efritz
 
@@ -53,4 +59,10 @@
 @keegancsmith
 
 - [x] GraphQL code intel doesn't work [#9756](https://github.com/sourcegraph/sourcegraph/issues/9756) 🐛
+<!-- END ASSIGNEE -->
+
+<!-- BEGIN ASSIGNEE: slimsag -->
+@slimsag
+
+- [ ] Add Cobol support (lang filters, codeintel, and syntax highlighting) [#10154](https://github.com/sourcegraph/sourcegraph/issues/10154) 
 <!-- END ASSIGNEE -->
