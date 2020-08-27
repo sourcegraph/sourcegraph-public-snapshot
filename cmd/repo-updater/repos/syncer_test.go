@@ -26,16 +26,13 @@ import (
 func testSyncerSyncWithErrors(t *testing.T, store repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
-		github := repos.ExternalService{
+
+		githubService := repos.ExternalService{
 			Kind:   extsvc.KindGitHub,
 			Config: `{}`,
 		}
-		gitlab := repos.ExternalService{
-			Kind:   extsvc.KindGitLab,
-			Config: `{}`,
-		}
 
-		if err := store.UpsertExternalServices(ctx, &github, &gitlab); err != nil {
+		if err := store.UpsertExternalServices(ctx, &githubService); err != nil {
 			t.Fatal(err)
 		}
 
@@ -43,6 +40,7 @@ func testSyncerSyncWithErrors(t *testing.T, store repos.Store) func(t *testing.T
 			name    string
 			sourcer repos.Sourcer
 			store   repos.Store
+			svc     repos.ExternalService
 			err     string
 		}{
 			{
@@ -52,17 +50,8 @@ func testSyncerSyncWithErrors(t *testing.T, store repos.Store) func(t *testing.T
 				err:     "syncer.sync.sourced: 2 errors occurred:\n\t* boom\n\t* boom\n\n",
 			},
 			{
-				name: "sources partial errors aborts sync",
-				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource(&github, nil),
-					repos.NewFakeSource(&gitlab, errors.New("boom")),
-				),
-				store: store,
-				err:   "syncer.sync.sourced: 1 error occurred:\n\t* boom\n\n",
-			},
-			{
 				name:    "store list error aborts sync",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(&github, nil)),
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(&githubService, nil)),
 				store: &storeWithErrors{
 					Store:        store,
 					ListReposErr: errors.New("boom"),
@@ -71,7 +60,7 @@ func testSyncerSyncWithErrors(t *testing.T, store repos.Store) func(t *testing.T
 			},
 			{
 				name:    "store upsert error aborts sync",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(&github, nil)),
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(&githubService, nil)),
 				store: &storeWithErrors{
 					Store:          store,
 					UpsertReposErr: errors.New("booya"),
@@ -86,18 +75,17 @@ func testSyncerSyncWithErrors(t *testing.T, store repos.Store) func(t *testing.T
 				ctx := context.Background()
 
 				syncer := &repos.Syncer{
-					Store:   tc.store,
 					Sourcer: tc.sourcer,
 					Now:     now,
 				}
-				err := syncer.Sync(ctx)
+				err := syncer.SyncExternalService(ctx, tc.store, tc.svc.ID)
 
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("have error %q, want %q", have, want)
 				}
 
-				if have, want := fmt.Sprint(syncer.LastSyncError()), tc.err; have != want {
-					t.Errorf("have LastSyncError %q, want %q", have, want)
+				if have, want := fmt.Sprint(syncer.SyncErrors()), tc.err; have != want {
+					t.Errorf("have SyncErrors %q, want %q", have, want)
 				}
 			})
 		}
