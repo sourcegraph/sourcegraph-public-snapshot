@@ -973,12 +973,12 @@ func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 	switch options.SearchType {
 	case SearchTypeLiteral:
 		query = substituteConcat(query, " ")
-		query = ellipsesForHoles(query)
 	case SearchTypeStructural:
 		if containsNegatedPattern(query) {
 			return nil, errors.New("the query contains a negated search pattern. Structural search does not support negated search patterns at the moment")
 		}
 		query = substituteConcat(query, " ")
+		query = ellipsesForHoles(query)
 	case SearchTypeRegex:
 		query = Map(query, EmptyGroupsToLiteral, TrailingParensToLiteral)
 	}
