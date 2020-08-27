@@ -52,7 +52,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	err := secrets.Init()
 	if err != nil {
-		log.Fatalf("Encryption package failed to initialize")
+		log.Fatalf("encryption package failed to initialize: %s", err)
 	}
 
 	// Syncing relies on access to frontend and git-server, so wait until they started up.

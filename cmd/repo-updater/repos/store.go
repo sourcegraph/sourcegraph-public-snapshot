@@ -3,7 +3,6 @@ package repos
 import (
 	"context"
 	"database/sql"
-	"encoding/base64"
 	"encoding/json"
 	"io"
 	"strings"
@@ -746,12 +745,11 @@ func (s DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes ma
 				if err != nil {
 					return nil, errors.Wrap(err, "upsertSources: failed to encrypt")
 				}
-				encryptedb64URL := base64.StdEncoding.EncodeToString(encryptedURL)
 				srcs = append(srcs, source{
 					ExternalServiceID: info.ExternalServiceID(),
 					RepoID:            int64(rid),
 					// TODO (Dax): After 3.20, change to []byte here and bytea in postgres
-					CloneURL: encryptedb64URL,
+					CloneURL: string(encryptedURL),
 				})
 			}
 		}
