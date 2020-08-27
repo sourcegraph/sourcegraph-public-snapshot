@@ -42,20 +42,36 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
     queryChangesetCountsOverTime,
     queryExternalChangesetWithFileDiffs,
 }) => {
-    const [selectedTab, setSelectedTab] = useState<SelectedTab>('changesets')
+    const [selectedTab, setSelectedTab] = useState<SelectedTab>(() => {
+        const urlParameters = new URLSearchParams(location.search)
+        if (urlParameters.get('tab') === 'chart') {
+            return 'chart'
+        }
+        return 'changesets'
+    })
     const onSelectChangesets = useCallback<React.MouseEventHandler>(
         event => {
             event.preventDefault()
             setSelectedTab('changesets')
+            const urlParameters = new URLSearchParams(location.search)
+            urlParameters.delete('tab')
+            if (location.search !== urlParameters.toString()) {
+                history.replace({ ...location, search: urlParameters.toString() })
+            }
         },
-        [setSelectedTab]
+        [history, location]
     )
     const onSelectChart = useCallback<React.MouseEventHandler>(
         event => {
             event.preventDefault()
             setSelectedTab('chart')
+            const urlParameters = new URLSearchParams(location.search)
+            urlParameters.set('tab', 'chart')
+            if (location.search !== urlParameters.toString()) {
+                history.replace({ ...location, search: urlParameters.toString() })
+            }
         },
-        [setSelectedTab]
+        [history, location]
     )
     return (
         <>
