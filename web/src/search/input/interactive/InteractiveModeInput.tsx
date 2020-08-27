@@ -34,6 +34,7 @@ import { VersionContextProps } from '../../../../../shared/src/search/util'
 import { VersionContext } from '../../../schema/site.schema'
 import { globbingEnabledFromSettings } from '../../../util/globbing'
 import { AuthenticatedUser } from '../../../auth'
+import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 
 interface InteractiveModeProps
     extends SettingsCascadeProps,
@@ -42,7 +43,7 @@ interface InteractiveModeProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         ThemeProps,
         ThemePreferenceProps,
-        EventLoggerProps,
+        TelemetryProps,
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,

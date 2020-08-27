@@ -10,7 +10,6 @@ import sinon from 'sinon'
 import { ThemePreference } from '../theme'
 import { NOOP_TELEMETRY_SERVICE } from '../../../shared/src/telemetry/telemetryService'
 import { ActionItemComponentProps } from '../../../shared/src/actions/ActionItem'
-import { EventLogger } from '../tracking/eventLogger'
 import { Services } from '../../../shared/src/api/client/services'
 import { MemoryRouter } from 'react-router'
 import webStyles from '../SourcegraphWebApp.scss'
@@ -97,13 +96,7 @@ const commonProps: RepogroupPageProps = {
     onFiltersInQueryChange: sinon.spy(() => {}),
     setCaseSensitivity: sinon.spy(() => {}),
     splitSearchModes: true,
-    telemetryService: ({
-        ...NOOP_TELEMETRY_SERVICE,
-        logViewEvent: () => {},
-        logToConsole: () => {},
-        getAnonUserID: sinon.spy(() => 'test'),
-        hasStrippedQueryParameters: false,
-    } as unknown) as EventLogger,
+    telemetryService: NOOP_TELEMETRY_SERVICE,
     toggleSearchMode: sinon.spy(() => {}),
     versionContext: undefined,
     activation: undefined,
