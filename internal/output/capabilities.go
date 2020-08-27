@@ -23,11 +23,11 @@ func detectCapabilities() capabilities {
 	// Pulling in termbox is probably overkill, but finding a pure Go library
 	// that could just provide terminfo was surprisingly hard. At least termbox
 	// is widely used.
-	if err := termbox.Init(); err != nil {
-		panic(err)
+	w, h := 80, 25
+	if err := termbox.Init(); err == nil {
+		w, h = termbox.Size()
+		termbox.Close()
 	}
-	w, h := termbox.Size()
-	termbox.Close()
 
 	atty := isatty.IsTerminal(os.Stdout.Fd())
 
