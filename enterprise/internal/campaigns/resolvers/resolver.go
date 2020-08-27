@@ -437,6 +437,9 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 		return nil, err
 	}
 	opts.State = state
+	if err := validateFirstParam(args.First, 0, 100); err != nil {
+		return nil, err
+	}
 	opts.Limit = int(args.First)
 	if args.After != nil {
 		cursor, err := strconv.ParseInt(*args.After, 10, 32)
@@ -484,6 +487,9 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, campaign
 
 	safe := true
 
+	if err := validateFirstParam(args.First, 0, 100); err != nil {
+		return opts, false, err
+	}
 	opts.Limit = int(args.First)
 
 	if args.After != nil {
@@ -630,4 +636,20 @@ func checkSiteAdminOrSameUser(ctx context.Context, userID int32) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+type ErrInvalidFirstParameter struct {
+	Min int
+	Max int
+}
+
+func (e ErrInvalidFirstParameter) Error() string {
+	return fmt.Sprintf("invalid first param given: min=%d, max=%d", e.Min, e.Max)
+}
+
+func validateFirstParam(first int32, min, max int) error {
+	if first < int32(min) || first > int32(max) {
+		return ErrInvalidFirstParameter{Min: min}
+	}
+	return nil
 }
