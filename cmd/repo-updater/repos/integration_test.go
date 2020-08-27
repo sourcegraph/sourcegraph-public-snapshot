@@ -63,11 +63,11 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/ListRepos/Pagination", testStoreListReposPagination},
 		{"DBStore/SetClonedRepos", testStoreSetClonedRepos},
 		{"DBStore/CountNotClonedRepos", testStoreCountNotClonedRepos},
-		// {"DBStore/Syncer/Sync", testSyncerSync},
+		{"DBStore/Syncer/Sync", testSyncerSync},
 		{"DBStore/Syncer/SyncWithErrors", testSyncerSyncWithErrors},
-		// {"DBStore/Syncer/SyncSubset", testSyncSubset},
+		{"DBStore/Syncer/SyncSubset", testSyncSubset},
 		{"DBStore/Syncer/SyncWorker", testSyncWorkerPlumbing(db)},
-		// {"DBStore/Syncer/Run", testSyncRun},
+		{"DBStore/Syncer/Run", testSyncRun(db)},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Cleanup(func() {

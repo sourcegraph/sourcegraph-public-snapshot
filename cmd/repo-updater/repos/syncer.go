@@ -51,11 +51,12 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, interval fun
 	s.initialUnmodifiedDiffFromStore(pctx, store)
 
 	log15.Info("Running Syncer.Run")
-	// TODO: Make numhandlers configurable
-	worker := NewSyncWorker(pctx, db, &syncHandler{
+	// TODO: Make numHandlers configurable
+	worker, cleanup := NewSyncWorker(pctx, db, &syncHandler{
 		syncer: s,
 		store:  store,
 	}, 1)
+	defer cleanup()
 
 	go worker.Start()
 	defer worker.Stop()

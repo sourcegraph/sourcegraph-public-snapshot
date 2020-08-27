@@ -21,7 +21,7 @@ import (
 )
 
 // NewSyncWorker creates a new external service sync worker.
-func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, numHandlers int) *workerutil.Worker {
+func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, numHandlers int) (*workerutil.Worker, func()) {
 	dbHandle := basestore.NewHandleWithDB(db)
 
 	syncJobColumns := append(store.DefaultColumnExpressions(), []*sqlf.Query{
@@ -39,18 +39,20 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, 
 		MaxNumResets:      5,
 	})
 
-	return dbworker.NewWorker(ctx, store, dbworker.WorkerOptions{
+	operation, cleanup := newObservationOperation()
+	worker := dbworker.NewWorker(ctx, store, dbworker.WorkerOptions{
 		Name:        "repo_sync_worker",
 		Handler:     handler,
 		NumHandlers: numHandlers,
 		Interval:    10 * time.Second,
 		Metrics: workerutil.WorkerMetrics{
-			HandleOperation: newObservationOperation(),
+			HandleOperation: operation,
 		},
 	})
+	return worker, cleanup
 }
 
-func newObservationOperation() *observation.Operation {
+func newObservationOperation() (*observation.Operation, func()) {
 	observationContext := &observation.Context{
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
@@ -68,7 +70,7 @@ func newObservationOperation() *observation.Operation {
 		Name:         "Syncer.Process",
 		MetricLabels: []string{"process"},
 		Metrics:      m,
-	})
+	}), m.Unregister
 }
 
 func scanSingleJob(rows *sql.Rows, err error) (workerutil.Record, bool, error) {

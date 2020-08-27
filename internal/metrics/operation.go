@@ -27,6 +27,13 @@ func (m *OperationMetrics) Observe(secs, count float64, err *error, lvals ...str
 	}
 }
 
+// Unregister unregisters metrics
+func (m *OperationMetrics) Unregister() {
+	prometheus.Unregister(m.Count)
+	prometheus.Unregister(m.Duration)
+	prometheus.Unregister(m.Errors)
+}
+
 type operationMetricOptions struct {
 	subsystem    string
 	durationHelp string
