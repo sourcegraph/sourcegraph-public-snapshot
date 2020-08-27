@@ -363,7 +363,6 @@ func (s DBStore) UpsertExternalServices(ctx context.Context, svcs ...*ExternalSe
 func upsertExternalServicesQuery(svcs []*ExternalService) (*sqlf.Query, error) {
 	vals := make([]*sqlf.Query, 0, len(svcs))
 	for _, s := range svcs {
-
 		cfg, err := intSecrets.EncryptBytes([]byte(s.Config))
 		if err != nil {
 			return nil, err
