@@ -168,8 +168,7 @@ const GitHubSchemaJSON = `{
       "title": "GitHubAuthorization",
       "description": "If non-null, enforces GitHub repository permissions. This requires that there is an item in the ` + "`" + `auth.providers` + "`" + ` field of type \"github\" with the same ` + "`" + `url` + "`" + ` field as specified in this ` + "`" + `GitHubConnection` + "`" + `.",
       "type": "object",
-      "properties": {
-      }
+      "properties": {}
     }
   }
 }
