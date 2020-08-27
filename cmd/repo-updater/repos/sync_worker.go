@@ -32,7 +32,7 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, 
 	store := store.NewStore(dbHandle, store.StoreOptions{
 		TableName:         "external_service_sync_jobs",
 		ViewName:          "external_service_sync_jobs_with_next_sync_at",
-		Scan:              scanSyncJob,
+		Scan:              scanSingleJob,
 		OrderByExpression: sqlf.Sprintf("next_sync_at"),
 		ColumnExpressions: syncJobColumns,
 		StalledMaxAge:     30 * time.Second,
@@ -71,27 +71,20 @@ func newObservationOperation() *observation.Operation {
 	})
 }
 
-func scanSyncJob(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
+func scanSingleJob(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
+	if err != nil {
+		return nil, false, err
+	}
+
+	jobs, err := scanJobs(rows)
 	if err != nil {
 		return nil, false, err
 	}
 
 	var job SyncJob
 
-	for rows.Next() {
-		if err := rows.Scan(
-			&job.ID,
-			&job.State,
-			&job.FailureMessage,
-			&job.StartedAt,
-			&job.FinishedAt,
-			&job.ProcessAfter,
-			&job.NumResets,
-			&job.ExternalServiceID,
-			&job.NextSyncAt,
-		); err != nil {
-			return nil, false, err
-		}
+	if len(jobs) > 0 {
+		job = jobs[0]
 	}
 
 	return &job, true, nil

@@ -908,6 +908,15 @@ func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
 // convenience methods for operating on lists of ExternalServices.
 type ExternalServices []*ExternalService
 
+// IDs returns the list of ids from all ExternalServices.
+func (es ExternalServices) IDs() []int64 {
+	ids := make([]int64, len(es))
+	for i := range es {
+		ids[i] = es[i].ID
+	}
+	return ids
+}
+
 // DisplayNames returns the list of display names from all ExternalServices.
 func (es ExternalServices) DisplayNames() []string {
 	names := make([]string, len(es))

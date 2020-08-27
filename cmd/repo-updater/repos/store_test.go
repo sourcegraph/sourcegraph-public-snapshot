@@ -2,6 +2,7 @@ package repos_test
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -227,7 +228,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 			},
 			testCase{
 				name:   "results are in ascending order by id",
-				stored: mkExternalServices(7, svcs...),
+				stored: generateExternalServices(7, svcs...),
 				assert: repos.Assert.ExternalServicesOrderedBy(
 					func(a, b *repos.ExternalService) bool {
 						return a.ID < b.ID
@@ -425,7 +426,7 @@ func testStoreUpsertExternalServices(t *testing.T, store repos.Store) func(*test
 		})
 
 		t.Run("many external services", transact(ctx, store, func(t testing.TB, tx repos.Store) {
-			want := mkExternalServices(7, svcs...)
+			want := generateExternalServices(7, svcs...)
 
 			if err := tx.UpsertExternalServices(ctx, want...); err != nil {
 				t.Fatalf("UpsertExternalServices error: %s", err)
@@ -1869,6 +1870,114 @@ func testSyncRateLimiters(t *testing.T, store repos.Store) func(*testing.T) {
 	}
 }
 
+func testStoreEnqueueSyncJobs(db *sql.DB, store *repos.DBStore) func(t *testing.T, store repos.Store) func(*testing.T) {
+	return func(t *testing.T, _ repos.Store) func(*testing.T) {
+		t.Helper()
+
+		clock := repos.NewFakeClock(time.Now(), 0)
+		now := clock.Now()
+
+		services := generateExternalServices(10, mkExternalServices(now)...)
+
+		type testCase struct {
+			name            string
+			stored          repos.ExternalServices
+			queued          func(repos.ExternalServices) []int64
+			ignoreSiteAdmin bool
+			err             error
+		}
+
+		var testCases []testCase
+		testCases = append(testCases, testCase{
+			name: "enqueue everything",
+			stored: services.With(func(s *repos.ExternalService) {
+				s.NextSyncAt = now.Add(-10 * time.Second)
+			}),
+			queued: func(svcs repos.ExternalServices) []int64 { return svcs.IDs() },
+		})
+
+		testCases = append(testCases, testCase{
+			name: "nothing to enqueue",
+			stored: services.With(func(s *repos.ExternalService) {
+				s.NextSyncAt = now.Add(10 * time.Second)
+			}),
+			queued: func(svcs repos.ExternalServices) []int64 { return []int64{} },
+		})
+
+		{
+			i := 0
+			testCases = append(testCases, testCase{
+				name: "some to enqueue",
+				stored: services.With(func(s *repos.ExternalService) {
+					if i%2 == 0 {
+						s.NextSyncAt = now.Add(10 * time.Second)
+					} else {
+						s.NextSyncAt = now.Add(-10 * time.Second)
+					}
+					i++
+				}),
+				queued: func(svcs repos.ExternalServices) []int64 {
+					var ids []int64
+					for i := range svcs {
+						if i%2 != 0 {
+							ids = append(ids, svcs[i].ID)
+						}
+					}
+					return ids
+				},
+			})
+		}
+
+		return func(t *testing.T) {
+			ctx := context.Background()
+
+			for _, tc := range testCases {
+				tc := tc
+
+				t.Run(tc.name, func(t *testing.T) {
+					t.Cleanup(func() {
+						if _, err := db.ExecContext(ctx, "DELETE FROM external_service_sync_jobs;DELETE FROM external_services"); err != nil {
+							t.Fatal(err)
+						}
+					})
+					stored := tc.stored.Clone()
+
+					if err := store.UpsertExternalServices(ctx, stored...); err != nil {
+						t.Fatalf("failed to setup store: %v", err)
+					}
+
+					err := store.EnqueueSyncJobs(ctx, tc.ignoreSiteAdmin)
+					if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); have != want {
+						t.Errorf("error:\nhave: %v\nwant: %v", have, want)
+					}
+
+					jobs, err := store.ListSyncJobs(ctx)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					gotIDs := make([]int64, 0, len(jobs))
+					for _, job := range jobs {
+						gotIDs = append(gotIDs, job.ExternalServiceID)
+					}
+
+					want := tc.queued(stored)
+					sort.Slice(gotIDs, func(i, j int) bool {
+						return gotIDs[i] < gotIDs[j]
+					})
+					sort.Slice(want, func(i, j int) bool {
+						return want[i] < want[j]
+					})
+
+					if diff := cmp.Diff(want, gotIDs); diff != "" {
+						t.Fatal(diff)
+					}
+				})
+			}
+		}
+	}
+}
+
 func testDBStoreTransact(store *repos.DBStore) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
@@ -1904,7 +2013,7 @@ func mkRepos(n int, base ...*repos.Repo) repos.Repos {
 	return rs
 }
 
-func mkExternalServices(n int, base ...*repos.ExternalService) repos.ExternalServices {
+func generateExternalServices(n int, base ...*repos.ExternalService) repos.ExternalServices {
 	if len(base) == 0 {
 		return nil
 	}
@@ -1968,6 +2077,27 @@ func createExternalServices(t *testing.T, store repos.Store) map[string]*repos.E
 	clock := repos.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
+	svcs := mkExternalServices(now)
+
+	// create a few external services
+	if err := store.UpsertExternalServices(context.Background(), svcs...); err != nil {
+		t.Fatalf("failed to insert external services: %v", err)
+	}
+
+	services, err := store.ListExternalServices(context.Background(), repos.StoreListExternalServicesArgs{})
+	if err != nil {
+		t.Fatal("failed to list external services")
+	}
+
+	servicesPerKind := make(map[string]*repos.ExternalService)
+	for _, svc := range services {
+		servicesPerKind[svc.Kind] = svc
+	}
+
+	return servicesPerKind
+}
+
+func mkExternalServices(now time.Time) repos.ExternalServices {
 	githubSvc := repos.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
@@ -2024,7 +2154,7 @@ func createExternalServices(t *testing.T, store repos.Store) map[string]*repos.E
 		UpdatedAt:   now,
 	}
 
-	svcs := []*repos.ExternalService{
+	return []*repos.ExternalService{
 		&githubSvc,
 		&gitlabSvc,
 		&bitbucketServerSvc,
@@ -2033,21 +2163,4 @@ func createExternalServices(t *testing.T, store repos.Store) map[string]*repos.E
 		&otherSvc,
 		&gitoliteSvc,
 	}
-
-	// create a few external services
-	if err := store.UpsertExternalServices(context.Background(), svcs...); err != nil {
-		t.Fatalf("failed to insert external services: %v", err)
-	}
-
-	services, err := store.ListExternalServices(context.Background(), repos.StoreListExternalServicesArgs{})
-	if err != nil {
-		t.Fatal("failed to list external services")
-	}
-
-	servicesPerKind := make(map[string]*repos.ExternalService)
-	for _, svc := range services {
-		servicesPerKind[svc.Kind] = svc
-	}
-
-	return servicesPerKind
 }

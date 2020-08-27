@@ -1065,6 +1065,41 @@ INSERT INTO external_service_sync_jobs (external_service_id)
 SELECT id from due EXCEPT SELECT id from busy
 `
 
+// ListSyncJobs returns all sync jobs.
+func (s *DBStore) ListSyncJobs(ctx context.Context) ([]SyncJob, error) {
+	rows, err := s.db.QueryContext(ctx, "SELECT * FROM external_service_sync_jobs_with_next_sync_at")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanJobs(rows)
+}
+
+func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
+	var jobs []SyncJob
+
+	for rows.Next() {
+		var job SyncJob
+		if err := rows.Scan(
+			&job.ID,
+			&job.State,
+			&job.FailureMessage,
+			&job.StartedAt,
+			&job.FinishedAt,
+			&job.ProcessAfter,
+			&job.NumResets,
+			&job.ExternalServiceID,
+			&job.NextSyncAt,
+		); err != nil {
+			return nil, err
+		}
+
+		jobs = append(jobs, job)
+	}
+
+	return jobs, nil
+}
+
 func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 	records := make([]*repoRecord, 0, len(repos))
 	for _, r := range repos {
