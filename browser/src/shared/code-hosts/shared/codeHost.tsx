@@ -1066,24 +1066,17 @@ export function injectCodeIntelligenceToCodeHost(
     )
     const { requestGraphQL } = platformContext
 
-    const sendTelemetryOptionFlagObserverable = observeStorageKey('sync', 'featureFlags').pipe(
+    const sendTelemetryOptionFlagObservable = observeStorageKey('sync', 'featureFlags').pipe(
         tap(value => console.log('Feature flags changed', value)),
-        distinct(value => !!value?.sendTelemetry),
-        pluck('sendTelemetry'),
+        map(value => !!value?.sendTelemetry),
+        distinctUntilChanged(),
         tap(value => {
             console.log('sendTelemetry changed', value)
         })
     )
 
-    // Debug message TODO(marek) remove debug message
-    subscriptions.add(
-        sendTelemetryOptionFlagObserverable.subscribe(value => {
-            console.log('Observed a change in sendTelemetry', value)
-        })
-    )
-
     const innerTelemetryService = new EventLogger(isExtension, requestGraphQL)
-    const telemetryService = new ConditionalTelemetryService(innerTelemetryService, sendTelemetryOptionFlagObserverable)
+    const telemetryService = new ConditionalTelemetryService(innerTelemetryService, sendTelemetryOptionFlagObservable)
 
     subscriptions.add(extensionsController)
 

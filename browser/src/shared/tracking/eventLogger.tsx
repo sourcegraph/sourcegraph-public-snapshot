@@ -16,6 +16,9 @@ const uidKey = 'sourcegraphAnonymousUid'
  * Telemetry Service which only logs when the enable flag is set. Accepts an
  * observable that emits the enabled value.
  *
+ * This was implemented as a wrapper around TelemetryService in order to avoid
+ * modifying EventLogger, but the enabled flag could be rolled into EventLogger.
+ *
  * TODO: Potential to be improved by buffering log events until the first emit
  * of the enabled value.
  */
@@ -30,7 +33,11 @@ export class ConditionalTelemetryService implements TelemetryService {
     private isEnabled = false
 
     constructor(innerTelemetryService: TelemetryService, isEnabled: Observable<boolean>) {
-        this.subscription.add(isEnabled.subscribe(value => (this.isEnabled = value)))
+        this.subscription.add(
+            isEnabled.subscribe(value => {
+                this.isEnabled = value
+            })
+        )
         this.innerTelemetryService = innerTelemetryService
     }
 
