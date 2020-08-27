@@ -979,3 +979,62 @@ func repoRevsSliceToMap(rs []*search.RepositoryRevisions) map[string]*search.Rep
 	}
 	return m
 }
+
+func TestContainsRefGlobs(t *testing.T) {
+	tests := []struct {
+		query    string
+		want     bool
+		globbing bool
+	}{
+		{
+			query: "repo:foo",
+			want:  false,
+		},
+		{
+			query: "repo:foo@bar",
+			want:  false,
+		},
+		{
+			query: "repo:foo@*ref/tags",
+			want:  true,
+		},
+		{
+			query: "repo:foo@*!refs/tags",
+			want:  true,
+		},
+		{
+			query: "repo:foo@bar:*refs/heads",
+			want:  true,
+		},
+		{
+			query: "repo:foo@refs/tags/v3.14.3",
+			want:  false,
+		},
+		{
+			query: "repo:foo@*refs/tags/v3.14.?",
+			want:  true,
+		},
+		{
+			query:    "repo:*foo*@v3.14.3",
+			globbing: true,
+			want:     false,
+		},
+		{
+			query: "repo:foo@v3.14.3 repo:foo@*refs/tags/v3.14.* bar",
+			want:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.query, func(t *testing.T) {
+			qInfo, err := query.ProcessAndOr(tt.query, query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: true})
+			if err != nil {
+				t.Error(err)
+			}
+			got := containsRefGlobs(qInfo)
+			if got != tt.want {
+				t.Errorf("got %t, expected %t", got, tt.want)
+			}
+		})
+	}
+}

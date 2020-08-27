@@ -84,7 +84,15 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 			common.limitHit = true
 			break
 		}
-		for _, rev := range r.RevSpecs() {
+
+		err = r.ExpandedRevSpecs(ctx)
+		if err != nil { // fall back to just return revspecs
+			for _, rev := range r.RevSpecs() {
+				results = append(results, &RepositoryResolver{repo: r.Repo, icon: repoIcon, rev: rev})
+			}
+			continue
+		}
+		for _, rev := range r.ResolvedRevs() {
 			results = append(results, &RepositoryResolver{repo: r.Repo, icon: repoIcon, rev: rev})
 		}
 	}
