@@ -1078,6 +1078,14 @@ func TestCommitAndDiffSearchLimits(t *testing.T) {
 			wantAlertDescription: `Commit search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
 		},
 		{
+			name:                 "commit_search_warns_on_repos_greater_than_search_limit_with_time_filter",
+			fields:               map[string][]*searchquerytypes.Value{"after": nil},
+			resultTypes:          []string{"commit"},
+			numRepoRevs:          20000,
+			wantResultTypes:      []string{},
+			wantAlertDescription: `Commit search can currently only handle searching over 10000 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
+		},
+		{
 			name:                 "no_warning_when_commit_search_within_search_limit",
 			resultTypes:          []string{"commit"},
 			numRepoRevs:          50,
@@ -1108,11 +1116,11 @@ func TestCommitAndDiffSearchLimits(t *testing.T) {
 			wantAlertDescription: "",
 		},
 		{
-			name:                 "multiple_result_type_search_is_unaffected",
+			name:                 "multiple_result_type_search_is_affected",
 			resultTypes:          []string{"file", "commit"},
 			numRepoRevs:          200,
-			wantResultTypes:      []string{"file", "commit"},
-			wantAlertDescription: "",
+			wantResultTypes:      []string{},
+			wantAlertDescription: `Commit search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
 		},
 	}
 
@@ -1134,8 +1142,8 @@ func TestCommitAndDiffSearchLimits(t *testing.T) {
 			haveAlertDescription = *alert.Description()
 		}
 
-		if haveAlertDescription != test.wantAlertDescription {
-			t.Fatalf("test %s, have alert %q, want: %q", test.name, haveAlertDescription, test.wantAlertDescription)
+		if diff := cmp.Diff(test.wantAlertDescription, haveAlertDescription); diff != "" {
+			t.Fatalf("test %s, mismatched alert (-want, +got):\n%s", test.name, diff)
 		}
 		if !reflect.DeepEqual(haveResultTypes, test.wantResultTypes) {
 			haveResultType := "is empty"
