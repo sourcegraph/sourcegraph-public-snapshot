@@ -14,7 +14,6 @@ import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../..
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { ThemePreferenceProps } from '../../../theme'
-import { EventLoggerProps } from '../../../tracking/eventLogger'
 import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
 import { FiltersToTypeAndValue, FilterType } from '../../../../../shared/src/search/interactive/util'
 import { QueryInput } from '../QueryInput'
