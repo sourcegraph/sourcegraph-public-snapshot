@@ -1,6 +1,5 @@
 import * as GQL from '../../../../shared/src/graphql/schema'
 import React, { FunctionComponent, useCallback, useEffect, useState, useMemo } from 'react'
-import { eventLogger } from '../../tracking/eventLogger'
 import {
     FilteredConnection,
     FilteredConnectionQueryArgs,
@@ -17,6 +16,7 @@ import { ErrorAlert } from '../../components/alerts'
 import { Subject } from 'rxjs'
 import * as H from 'history'
 import { LSIFIndexState } from '../../../../shared/src/graphql-operations'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
 const Header: FunctionComponent<{}> = () => (
     <thead>
@@ -124,7 +124,7 @@ const IndexNode: FunctionComponent<IndexNodeProps> = ({ node, onDelete, history,
     )
 }
 
-export interface CodeIntelIndexesPageProps extends RouteComponentProps<{}> {
+export interface CodeIntelIndexesPageProps extends RouteComponentProps<{}>, TelemetryProps {
     repo?: GQL.IRepository
     fetchLsifIndexes?: typeof defaultFetchLsifIndexes
 
@@ -139,9 +139,10 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
     repo,
     fetchLsifIndexes = defaultFetchLsifIndexes,
     now,
+    telemetryService,
     ...props
 }) => {
-    useEffect(() => eventLogger.logViewEvent('CodeIntelIndexes'), [])
+    useEffect(() => telemetryService.logViewEvent('CodeIntelIndexes'), [telemetryService])
 
     const filters: FilteredConnectionFilter[] = [
         {

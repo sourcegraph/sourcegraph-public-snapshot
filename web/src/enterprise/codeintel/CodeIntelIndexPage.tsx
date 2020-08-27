@@ -6,7 +6,6 @@ import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { catchError, takeWhile, concatMap, repeatWhen, delay } from 'rxjs/operators'
 import { ErrorAlert } from '../../components/alerts'
-import { eventLogger } from '../../tracking/eventLogger'
 import { fetchLsifIndex as defaultFetchLsifIndex, deleteLsifIndex, Index } from './backend'
 import { Link } from '../../../../shared/src/components/Link'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -18,10 +17,11 @@ import DeleteIcon from 'mdi-react/DeleteIcon'
 import { SchedulerLike, timer } from 'rxjs'
 import * as H from 'history'
 import { LSIFIndexState } from '../../../../shared/src/graphql-operations'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
 const REFRESH_INTERVAL_MS = 5000
 
-export interface CodeIntelIndexPageProps extends RouteComponentProps<{ id: string }> {
+export interface CodeIntelIndexPageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {
     repo?: GQL.IRepository
     fetchLsifIndex?: typeof defaultFetchLsifIndex
 
@@ -49,10 +49,11 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
         params: { id },
     },
     history,
+    telemetryService,
     fetchLsifIndex = defaultFetchLsifIndex,
     now,
 }) => {
-    useEffect(() => eventLogger.logViewEvent('CodeIntelIndex'))
+    useEffect(() => telemetryService.logViewEvent('CodeIntelIndex'), [telemetryService])
 
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
 
