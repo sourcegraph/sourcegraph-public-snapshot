@@ -257,8 +257,8 @@ func getChangesetSpecQuery(opts *GetChangesetSpecOpts) *sqlf.Query {
 // ListChangesetSpecsOpts captures the query options needed for
 // listing code mods.
 type ListChangesetSpecsOpts struct {
+	LimitOpts
 	Cursor int64
-	Limit  int
 
 	CampaignSpecID int64
 	RandIDs        []string
@@ -268,7 +268,7 @@ type ListChangesetSpecsOpts struct {
 func (s *Store) ListChangesetSpecs(ctx context.Context, opts ListChangesetSpecsOpts) (cs campaigns.ChangesetSpecs, next int64, err error) {
 	q := listChangesetSpecsQuery(&opts)
 
-	cs = make(campaigns.ChangesetSpecs, 0, opts.Limit)
+	cs = make(campaigns.ChangesetSpecs, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) error {
 		var c campaigns.ChangesetSpec
 		if err := scanChangesetSpec(&c, sc); err != nil {
@@ -278,7 +278,7 @@ func (s *Store) ListChangesetSpecs(ctx context.Context, opts ListChangesetSpecsO
 		return nil
 	})
 
-	if opts.Limit != 0 && len(cs) == opts.Limit {
+	if opts.Limit != 0 && len(cs) == opts.DBLimit() {
 		next = cs[len(cs)-1].ID
 		cs = cs[:len(cs)-1]
 	}
@@ -295,14 +295,9 @@ ORDER BY changeset_specs.id ASC
 `
 
 func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
-	if opts.Limit == 0 {
-		opts.Limit = defaultListLimit
-	}
-	opts.Limit++
-
 	var limitClause string
 	if opts.Limit > 0 {
-		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
+		limitClause = fmt.Sprintf("LIMIT %d", opts.DBLimit())
 	}
 
 	preds := []*sqlf.Query{

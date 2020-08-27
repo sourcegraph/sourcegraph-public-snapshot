@@ -162,3 +162,14 @@ func nullStringColumn(s string) *string {
 	}
 	return &s
 }
+
+type LimitOpts struct {
+	Limit int
+}
+
+func (o LimitOpts) DBLimit() int {
+	if o.Limit == 0 {
+		return o.Limit
+	}
+	return o.Limit + 1
+}

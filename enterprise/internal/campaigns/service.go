@@ -81,7 +81,7 @@ func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpe
 		return spec, s.store.CreateCampaignSpec(ctx, spec)
 	}
 
-	listOpts := ListChangesetSpecsOpts{Limit: -1, RandIDs: opts.ChangesetSpecRandIDs}
+	listOpts := ListChangesetSpecsOpts{RandIDs: opts.ChangesetSpecRandIDs}
 	cs, _, err := s.store.ListChangesetSpecs(ctx, listOpts)
 	if err != nil {
 		return nil, err
@@ -330,7 +330,6 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 			OwnedByCampaignID: campaign.ID,
 			ExternalState:     &open,
 			PublicationState:  &published,
-			Limit:             -1,
 		})
 		if err != nil {
 			return err

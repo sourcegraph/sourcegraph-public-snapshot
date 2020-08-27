@@ -26,7 +26,7 @@ type MoveCampaignArgs struct {
 }
 
 type ListCampaignsArgs struct {
-	First               *int32
+	First               int32
 	After               *string
 	State               *string
 	ViewerCanAdminister *bool
@@ -59,13 +59,17 @@ type CreateCampaignSpecArgs struct {
 }
 
 type ChangesetSpecsConnectionArgs struct {
-	First *int32
+	First int32
 	After *string
 }
 
 type CampaignArgs struct {
 	Namespace string
 	Name      string
+}
+
+type ChangesetEventsConnectionArgs struct {
+	First int32
 }
 
 type CampaignsResolver interface {
@@ -185,7 +189,7 @@ type ChangesetCountsArgs struct {
 }
 
 type ListChangesetsArgs struct {
-	First                       *int32
+	First                       int32
 	After                       *string
 	PublicationState            *campaigns.ChangesetPublicationState
 	ReconcilerState             *campaigns.ReconcilerState
@@ -281,7 +285,7 @@ type ExternalChangesetResolver interface {
 	CheckState() *campaigns.ChangesetCheckState
 	Repository(ctx context.Context) *RepositoryResolver
 
-	Events(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (ChangesetEventsConnectionResolver, error)
+	Events(ctx context.Context, args *ChangesetEventsConnectionArgs) (ChangesetEventsConnectionResolver, error)
 	Diff(ctx context.Context) (RepositoryComparisonInterface, error)
 	DiffStat(ctx context.Context) (*DiffStat, error)
 	Labels(ctx context.Context) ([]ChangesetLabelResolver, error)
