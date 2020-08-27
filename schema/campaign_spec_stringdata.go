@@ -37,6 +37,9 @@ const CampaignSpecSchemaJSON = `{
                 "type": "string",
                 "description": "A Sourcegraph search query that matches a set of repositories (and branches). If the query matches files, symbols, or some other object inside a repository, the object's repository is included.",
                 "examples": ["file:README.md"]
+              },
+              "changesetTemplate": {
+                "$ref": "#/definitions/changesetTemplate"
               }
             }
           },
@@ -55,6 +58,9 @@ const CampaignSpecSchemaJSON = `{
               "branch": {
                 "type": "string",
                 "description": "The branch on the repository to propose changes to. If unset, the repository's default branch is used."
+              },
+              "changesetTemplate": {
+                "$ref": "#/definitions/changesetTemplate"
               }
             }
           }
@@ -115,13 +121,24 @@ const CampaignSpecSchemaJSON = `{
       }
     },
     "changesetTemplate": {
+      "$ref": "#/definitions/changesetTemplate"
+    }
+  },
+  "definitions": {
+    "changesetTemplate": {
       "type": "object",
       "description": "A template describing how to create (and update) changesets with the file changes produced by the command steps.",
       "additionalProperties": false,
       "required": ["title", "branch", "commit", "published"],
       "properties": {
-        "title": { "type": "string", "description": "The title of the changeset." },
-        "body": { "type": "string", "description": "The body (description) of the changeset." },
+        "title": {
+          "type": "string",
+          "description": "The title of the changeset."
+        },
+        "body": {
+          "type": "string",
+          "description": "The body (description) of the changeset."
+        },
         "branch": {
           "type": "string",
           "description": "The name of the Git branch to create or update on each repository with the changes."

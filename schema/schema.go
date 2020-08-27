@@ -313,7 +313,6 @@ type BuiltinAuthProvider struct {
 
 // CampaignSpec description: A campaign specification, which describes the campaign and what kinds of changes to make (or what existing changesets to track).
 type CampaignSpec struct {
-	// ChangesetTemplate description: A template describing how to create (and update) changesets with the file changes produced by the command steps.
 	ChangesetTemplate *ChangesetTemplate `json:"changesetTemplate,omitempty"`
 	// Description description: The description of the campaign.
 	Description string `json:"description,omitempty"`
@@ -872,6 +871,7 @@ type ObservabilityTracing struct {
 
 // OnQuery description: A Sourcegraph search query that matches a set of repositories (and branches). Each matched repository branch is added to the list of repositories that the campaign will be run on.
 type OnQuery struct {
+	ChangesetTemplate *ChangesetTemplate `json:"changesetTemplate,omitempty"`
 	// RepositoriesMatchingQuery description: A Sourcegraph search query that matches a set of repositories (and branches). If the query matches files, symbols, or some other object inside a repository, the object's repository is included.
 	RepositoriesMatchingQuery string `json:"repositoriesMatchingQuery"`
 }
@@ -879,7 +879,8 @@ type OnQuery struct {
 // OnRepository description: A specific repository (and branch) that is added to the list of repositories that the campaign will be run on.
 type OnRepository struct {
 	// Branch description: The branch on the repository to propose changes to. If unset, the repository's default branch is used.
-	Branch string `json:"branch,omitempty"`
+	Branch            string             `json:"branch,omitempty"`
+	ChangesetTemplate *ChangesetTemplate `json:"changesetTemplate,omitempty"`
 	// Repository description: The name of the repository (as it is known to Sourcegraph).
 	Repository string `json:"repository"`
 }
