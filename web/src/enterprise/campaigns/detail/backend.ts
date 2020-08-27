@@ -4,10 +4,8 @@ import { Observable } from 'rxjs'
 import { diffStatFields, fileDiffFields } from '../../../backend/diff'
 import {
     CampaignFields,
-    CampaignByIDResult,
     CampaignChangesetsVariables,
     CampaignChangesetsResult,
-    CampaignByIDVariables,
     ExternalChangesetFileDiffsResult,
     ExternalChangesetFileDiffsVariables,
     ExternalChangesetFileDiffsFields,
@@ -19,6 +17,8 @@ import {
     ChangesetCountsOverTimeResult,
     DeleteCampaignResult,
     DeleteCampaignVariables,
+    CampaignByNamespaceResult,
+    CampaignByNamespaceVariables,
 } from '../../../graphql-operations'
 
 const changesetStatsFragment = gql`
@@ -81,30 +81,27 @@ const changesetLabelFragment = gql`
     }
 `
 
-export const fetchCampaignById = (campaign: Scalars['ID']): Observable<CampaignFields | null> =>
-    requestGraphQL<CampaignByIDResult, CampaignByIDVariables>({
+export const fetchCampaignByNamespace = (
+    namespaceID: Scalars['ID'],
+    campaign: CampaignFields['name']
+): Observable<CampaignFields | null> =>
+    requestGraphQL<CampaignByNamespaceResult, CampaignByNamespaceVariables>({
         request: gql`
-            query CampaignByID($campaign: ID!) {
-                node(id: $campaign) {
-                    __typename
-                    ... on Campaign {
-                        ...CampaignFields
-                    }
+            query CampaignByNamespace($namespaceID: ID!, $campaign: String!) {
+                campaign(namespace: $namespaceID, name: $campaign) {
+                    ...CampaignFields
                 }
             }
             ${campaignFragment}
         `,
-        variables: { campaign },
+        variables: { namespaceID, campaign },
     }).pipe(
         map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
+        map(({ campaign }) => {
+            if (!campaign) {
                 return null
             }
-            if (node.__typename !== 'Campaign') {
-                throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
-            }
-            return node
+            return campaign
         })
     )
 

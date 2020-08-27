@@ -2,12 +2,13 @@
 
 exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
 <CampaignDetailsPage
-  campaignID="c"
+  campaignName="c"
   deleteCampaign={[Function]}
-  fetchCampaignById={[Function]}
+  fetchCampaignByNamespace={[Function]}
   history="[History]"
   isLightTheme={true}
   location="[Location path=/]"
+  namespaceID="namespace123"
   queryChangesetCountsOverTime={[Function]}
   setBreadcrumb={[Function]}
   telemetryService={
@@ -761,12 +762,13 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
 
 exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
 <CampaignDetailsPage
-  campaignID="c"
+  campaignName="c"
   deleteCampaign={[Function]}
-  fetchCampaignById={[Function]}
+  fetchCampaignByNamespace={[Function]}
   history="[History]"
   isLightTheme={true}
   location="[Location path=/]"
+  namespaceID="namespace123"
   queryChangesetCountsOverTime={[Function]}
   setBreadcrumb={[Function]}
   telemetryService={

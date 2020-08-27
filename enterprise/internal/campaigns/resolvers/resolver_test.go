@@ -532,9 +532,10 @@ func TestMoveCampaign(t *testing.T) {
 
 	// Move to a new name
 	campaignAPIID := string(campaigns.MarshalCampaignID(campaign.ID))
+	newCampaignName := "new-name"
 	input := map[string]interface{}{
 		"campaign": campaignAPIID,
-		"newName":  "new-name",
+		"newName":  newCampaignName,
 	}
 
 	var response struct{ MoveCampaign apitest.Campaign }
@@ -546,7 +547,7 @@ func TestMoveCampaign(t *testing.T) {
 		t.Fatalf("unexpected name (-want +got):\n%s", diff)
 	}
 
-	wantURL := fmt.Sprintf("/users/%s/campaigns/%s", username, campaignAPIID)
+	wantURL := fmt.Sprintf("/users/%s/campaigns/%s", username, newCampaignName)
 	if diff := cmp.Diff(wantURL, haveCampaign.URL); diff != "" {
 		t.Fatalf("unexpected URL (-want +got):\n%s", diff)
 	}
@@ -564,7 +565,7 @@ func TestMoveCampaign(t *testing.T) {
 	if diff := cmp.Diff(string(orgAPIID), haveCampaign.Namespace.ID); diff != "" {
 		t.Fatalf("unexpected namespace (-want +got):\n%s", diff)
 	}
-	wantURL = fmt.Sprintf("/organizations/%s/campaigns/%s", org.Name, campaignAPIID)
+	wantURL = fmt.Sprintf("/organizations/%s/campaigns/%s", org.Name, newCampaignName)
 	if diff := cmp.Diff(wantURL, haveCampaign.URL); diff != "" {
 		t.Fatalf("unexpected URL (-want +got):\n%s", diff)
 	}

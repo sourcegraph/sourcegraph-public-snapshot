@@ -165,7 +165,7 @@ func (r *changesetResolver) Repository(ctx context.Context) *graphqlbackend.Repo
 	return r.repoResolver
 }
 
-func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
+func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignsArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
 	opts := ee.ListCampaignsOpts{
 		ChangesetID: r.changeset.ID,
 	}

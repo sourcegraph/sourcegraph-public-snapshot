@@ -20,14 +20,15 @@ describe('CampaignDetailsPage', () => {
 
     const renderCampaignDetailsPage = ({ viewerCanAdminister }: { viewerCanAdminister: boolean }) => (
         <CampaignDetailsPage
-            campaignID="c"
+            namespaceID="namespace123"
+            campaignName="c"
             history={history}
             location={history.location}
             isLightTheme={true}
             extensionsController={undefined as any}
             platformContext={undefined as any}
             telemetryService={NOOP_TELEMETRY_SERVICE}
-            fetchCampaignById={() =>
+            fetchCampaignByNamespace={() =>
                 of({
                     __typename: 'Campaign',
                     id: 'c',
