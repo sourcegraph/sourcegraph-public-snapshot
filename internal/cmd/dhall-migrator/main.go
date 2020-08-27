@@ -6,11 +6,9 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
@@ -18,29 +16,19 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const (
-	dhallTypesURLPrefix = "https://raw.githubusercontent.com/dhall-lang/dhall-kubernetes/f4bf4b9ddf669f7149ec32150863a93d6c4b3ef1/1.18/types/"
-)
-
 type Resource struct {
-	Source              string
-	Component           string
-	Kind                string
-	ApiVersion          string
-	Name                string
-	DhallTypesURLSuffix string
-	Labels              map[string]string
-	Contents            map[string]interface{}
-}
-
-func (res *Resource) Key() string {
-	return res.Kind + "-" + res.Name
+	Source     string
+	Component  string
+	Kind       string
+	ApiVersion string
+	Name       string
+	DhallType  string
+	Labels     map[string]string
+	Contents   map[string]interface{}
 }
 
 type ResourceSet struct {
 	Root       string
-	SortedKeys []string
-	Resources  map[string]*Resource
 	Components map[string][]*Resource
 }
 
@@ -79,22 +67,7 @@ func loadResource(rootDir string, filename string) (*Resource, error) {
 	}
 	res.ApiVersion = apiVersion
 
-	switch res.ApiVersion {
-	case "v1":
-		res.DhallTypesURLSuffix = fmt.Sprintf("io.k8s.api.core.v1.%s.dhall", res.Kind)
-	case "rbac.authorization.k8s.io/v1":
-		res.DhallTypesURLSuffix = fmt.Sprintf("io.k8s.api.rbac.v1.%s.dhall", res.Kind)
-	case "apps/v1":
-		res.DhallTypesURLSuffix = fmt.Sprintf("io.k8s.api.apps.v1.%s.dhall", res.Kind)
-	case "networking.k8s.io/v1beta1":
-		res.DhallTypesURLSuffix = fmt.Sprintf("io.k8s.api.networking.v1beta1.%s.dhall", res.Kind)
-	case "policy/v1beta1":
-		res.DhallTypesURLSuffix = fmt.Sprintf("io.k8s.api.policy.v1beta1.%s.dhall", res.Kind)
-	case "storage.k8s.io/v1":
-		res.DhallTypesURLSuffix = fmt.Sprintf("io.k8s.api.storage.v1.%s.dhall\n", res.Kind)
-	default:
-		return nil, fmt.Errorf("resource %s has unknown api version %s and kind %s combination", filename, res.ApiVersion, res.Kind)
-	}
+	res.DhallType = fmt.Sprintf("(https://raw.githubusercontent.com/dhall-lang/dhall-kubernetes/f4bf4b9ddf669f7149ec32150863a93d6c4b3ef1/1.18/schemas.dhall).%s.Type", res.Kind)
 
 	metadata, ok := res.Contents["metadata"].(map[string]interface{})
 	if !ok {
@@ -136,7 +109,6 @@ func loadResourceSet(dirname string) (*ResourceSet, error) {
 		return nil, err
 	}
 	var rs ResourceSet
-	rs.Resources = make(map[string]*Resource)
 	rs.Components = make(map[string][]*Resource)
 	rs.Root = dir
 
@@ -153,9 +125,6 @@ func loadResourceSet(dirname string) (*ResourceSet, error) {
 			if err != nil {
 				return err
 			}
-			key := res.Key()
-			rs.Resources[key] = res
-			rs.SortedKeys = append(rs.SortedKeys, key)
 			rs.Components[res.Component] = append(rs.Components[res.Component], res)
 		}
 		return nil
@@ -164,52 +133,39 @@ func loadResourceSet(dirname string) (*ResourceSet, error) {
 		return nil, err
 	}
 
-	sort.Strings(rs.SortedKeys)
 	return &rs, nil
 }
 
 func composeDhallSchema(rs *ResourceSet) string {
-	var sb strings.Builder
+	var schemas []string
 
-	sb.WriteString("{\n")
-
-	first := true
 	for component, crs := range rs.Components {
-		if first {
-			first = false
-			sb.WriteString("\t  ")
-		} else {
-			sb.WriteString("\t, ")
-		}
-		sb.WriteString(fmt.Sprintf("%s : {\n", strings.Title(component)))
-		for i, res := range crs {
-			if i > 0 {
-				sb.WriteString("\t\t, ")
-			} else {
-				sb.WriteString("\t\t  ")
-			}
-			sb.WriteString(fmt.Sprintf("%s_%s : %s\n", res.Kind, res.Name,
-				dhallTypesURLPrefix+res.DhallTypesURLSuffix))
-		}
-		sb.WriteString("\t}\n")
-	}
-	sb.WriteString("}\n")
-	return sb.String()
-}
-
-func buildDhallRecord(rs *ResourceSet) map[string]interface{} {
-	drec := make(map[string]interface{})
-	for component, crs := range rs.Components {
-		compDRec := make(map[string]interface{})
-		drec[strings.Title(component)] = compDRec
 		for _, res := range crs {
-			compDRec[fmt.Sprintf("%s_%s", res.Kind, res.Name)] = res.Contents
+			s := fmt.Sprintf("{%s: { %s: { %s: %s } } }", component, res.Kind, res.Name, res.DhallType)
+			schemas = append(schemas, s)
 		}
 	}
-	return drec
+	return strings.Join(schemas, " //\\\\ ")
 }
 
-func writeDhallRecord(filename string, dRec map[string]interface{}) error {
+func buildRecord(rs *ResourceSet) map[string]interface{} {
+	rec := make(map[string]interface{})
+	for component, crs := range rs.Components {
+		compRec := make(map[string]map[string]interface{})
+		rec[strings.Title(component)] = compRec
+		for _, res := range crs {
+			kindRec := compRec[res.Kind]
+			if kindRec == nil {
+				kindRec = make(map[string]interface{})
+				compRec[res.Kind] = kindRec
+			}
+			kindRec[res.Name] = res.Contents
+		}
+	}
+	return rec
+}
+
+func writeRecordYaml(filename string, rec map[string]interface{}) error {
 	f, err := os.Create(filename)
 	if err != nil {
 		return err
@@ -220,16 +176,17 @@ func writeDhallRecord(filename string, dRec map[string]interface{}) error {
 	defer bw.Flush()
 
 	enc := yaml.NewEncoder(bw)
-	return enc.Encode(dRec)
+	return enc.Encode(rec)
 }
 
-func execYamlToDhall(scratchDir string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+func execYamlToDhall(scratchDir string, dst string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*300)
 	defer cancel()
 
-	// yaml-to-dhall ./schema.dhall --records-loose --file record.yaml --output record.dhall
-	cmd := exec.CommandContext(ctx, "yaml-to-dhall", "--records-loose", "--file", "record.yaml", "--output", "record.dhall")
+	cmd := exec.CommandContext(ctx, "yaml-to-dhall", "./schema.dhall", "--records-loose", "--file",
+		"record.yaml", "--output", dst)
 	cmd.Dir = scratchDir
+	cmd.Stderr = os.Stderr
 
 	return cmd.Run()
 }
@@ -238,18 +195,13 @@ func main() {
 	src := flag.String("src", "", "(required) source manifest directory")
 	dst := flag.String("dst", "", "(required) output dhall file")
 
-	logFilepath := flag.String("logfile", "dhall-migrator.log", "path to a log file")
 	scratchDir := flag.String("scratchDir", "", "scratch dir used in migration")
 
 	help := flag.Bool("help", false, "Show help")
 
 	flag.Parse()
 
-	logHandler, err := log15.FileHandler(*logFilepath, log15.LogfmtFormat())
-	if err != nil {
-		log.Fatal(err)
-	}
-	log15.Root().SetHandler(log15.MultiHandler(logHandler, log15.StreamHandler(os.Stdout, log15.LogfmtFormat())))
+	log15.Root().SetHandler(log15.StreamHandler(os.Stdout, log15.LogfmtFormat()))
 
 	if *help || len(*src) == 0 || len(*dst) == 0 {
 		flag.PrintDefaults()
@@ -283,32 +235,24 @@ func main() {
 		os.Exit(1)
 	}
 
-	dRec := buildDhallRecord(srcSet)
+	dRec := buildRecord(srcSet)
 	yamlFilename := filepath.Join(*scratchDir, "record.yaml")
 
 	log15.Info("building yaml record", "yamlFile", yamlFilename)
 
-	err = writeDhallRecord(yamlFilename, dRec)
+	err = writeRecordYaml(yamlFilename, dRec)
 	if err != nil {
 		log15.Error("failed to write out record yaml file", "error", err, "yamlFile", yamlFilename)
 		os.Exit(1)
 	}
 
-	log15.Info("execute yaml-to-dhall", "scratchDir", *scratchDir)
+	log15.Info("execute yaml-to-dhall", "scratchDir", *scratchDir, "dst", *dst)
 
-	err = execYamlToDhall(*scratchDir)
+	err = execYamlToDhall(*scratchDir, *dst)
 	if err != nil {
-		log15.Error("failed to execute yaml-to-dhall", "error", err, "scratchDir", *scratchDir)
+		log15.Error("failed to execute yaml-to-dhall", "error", err, "scratchDir", *scratchDir, "dst", *dst)
 		os.Exit(1)
 	}
 
-	log15.Info("cp into destination", "dst", *dst)
-	cpCmd := exec.Command("cp", filepath.Join(*scratchDir, "record.dhall"), *dst)
-	err = cpCmd.Run()
-	if err != nil {
-		log15.Error("failed to copy record.dhall", "error", err,
-			"scratchDir", *scratchDir, "destination", *dst)
-		os.Exit(1)
-	}
 	log15.Info("done")
 }
