@@ -11,8 +11,6 @@ import (
 	"strings"
 	"time"
 
-	intSecrets "github.com/sourcegraph/sourcegraph/internal/secrets"
-
 	"github.com/golang/gddo/httputil"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
@@ -31,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -51,7 +50,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	clock := func() time.Time { return time.Now().UTC() }
 
-	err := intSecrets.Init()
+	err := secrets.Init()
 	if err != nil {
 		log.Fatalf("Encryption package failed to initialize")
 	}

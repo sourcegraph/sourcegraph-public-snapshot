@@ -9,10 +9,9 @@ import (
 	"strings"
 	"time"
 
-	intSecrets "github.com/sourcegraph/sourcegraph/internal/secrets"
-
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -22,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/secrets"
 )
 
 // A Store exposes methods to read and write repos and external services.
@@ -138,7 +138,7 @@ func newRepoRecord(r *Repo) (*repoRecord, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "newRecord: metadata marshalling failed")
 	}
-	metadata, err = intSecrets.EncryptBytes(metadata)
+	metadata, err = secrets.EncryptBytes(metadata)
 	if err != nil {
 		return nil, errors.Wrap(err, "newRecord: metadata encryption failed")
 	}
@@ -146,10 +146,6 @@ func newRepoRecord(r *Repo) (*repoRecord, error) {
 	sources, err := sourcesColumn(r.ID, r.Sources)
 	if err != nil {
 		return nil, errors.Wrapf(err, "newRecord: sources marshalling failed")
-	}
-	sources, err = intSecrets.EncryptBytes(sources)
-	if err != nil {
-		return nil, errors.Wrap(err, "newRecord: sources encryption failed")
 	}
 
 	return &repoRecord{
@@ -363,7 +359,7 @@ func (s DBStore) UpsertExternalServices(ctx context.Context, svcs ...*ExternalSe
 func upsertExternalServicesQuery(svcs []*ExternalService) (*sqlf.Query, error) {
 	vals := make([]*sqlf.Query, 0, len(svcs))
 	for _, s := range svcs {
-		cfg, err := intSecrets.EncryptBytes([]byte(s.Config))
+		cfg, err := secrets.EncryptBytes([]byte(s.Config))
 		if err != nil {
 			return nil, err
 		}
@@ -746,16 +742,16 @@ func (s DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes ma
 		srcs := make([]source, 0, len(sources))
 		for rid, infoList := range sources {
 			for _, info := range infoList {
-				encryptedSource, err := intSecrets.EncryptBytes([]byte(info.CloneURL))
+				encryptedURL, err := secrets.EncryptBytes([]byte(info.CloneURL))
 				if err != nil {
 					return nil, errors.Wrap(err, "upsertSources: failed to encrypt")
 				}
-				src := base64.StdEncoding.EncodeToString(encryptedSource)
-				//TODO (Dax): Determine if base64 is the best approach here
+				encryptedb64URL := base64.StdEncoding.EncodeToString(encryptedURL)
 				srcs = append(srcs, source{
 					ExternalServiceID: info.ExternalServiceID(),
 					RepoID:            int64(rid),
-					CloneURL:          src, //json.Marshal will base64 a []byte so we explicitly do that above
+					// TODO (Dax): After 3.20, change to []byte here and bytea in postgres
+					CloneURL: encryptedb64URL,
 				})
 			}
 		}
@@ -1310,20 +1306,20 @@ func scanRepo(r *Repo, s scanner) error {
 	r.Sources = make(map[string]*SourceInfo)
 
 	if sources.Raw != nil {
-		decryptedSrc, err := intSecrets.DecryptBytes(sources.Raw)
-		if err != nil {
-			return errors.Wrap(err, "scanRepo: decrypt sources failed")
-		}
-
 		var srcs []sourceInfo
-		if err = json.Unmarshal(decryptedSrc, &srcs); err != nil {
+		if err = json.Unmarshal(sources.Raw, &srcs); err != nil {
 			return errors.Wrap(err, "scanRepo: failed to unmarshal sources")
 		}
 		for _, src := range srcs {
 			urn := extsvc.URN(src.Kind, src.ID)
+			decryptedURL, err := secrets.DecryptBytes([]byte(src.CloneURL))
+			if err != nil {
+				return errors.Wrap(err, "scanRepo: decrypt cloneURL failed")
+			}
+
 			r.Sources[urn] = &SourceInfo{
 				ID:       urn,
-				CloneURL: src.CloneURL,
+				CloneURL: string(decryptedURL),
 			}
 		}
 	}
@@ -1349,7 +1345,7 @@ func scanRepo(r *Repo, s scanner) error {
 		return nil
 	}
 
-	metadata, err = intSecrets.DecryptBytes(metadata)
+	metadata, err = secrets.DecryptBytes(metadata)
 	if err != nil {
 		return errors.Wrap(err, "scanRepo: decrypt metadata failed")
 	}
