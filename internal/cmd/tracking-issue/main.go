@@ -355,35 +355,26 @@ func (t *TrackingIssue) Workloads() Workloads {
 		}
 
 		issueAssignees := ListOfAssignees(issue.Assignees)
-		if len(issueAssignees) > 1 {
-			for _, assignee := range issueAssignees {
-				w := workload(assignee)
-				t.AddIssueToWorkload(w, issue)
+		for _, assignee := range issueAssignees {
+			w := workload(assignee)
+			w.AddIssue(issue)
+
+			linked := issue.LinkedPullRequests(t.PRs)
+			for _, pr := range linked {
+				issue.LinkedPRs = append(issue.LinkedPRs, pr)
+				pr.LinkedIssues = append(pr.LinkedIssues, issue)
 			}
-		} else {
-			w := workload(Assignee(issue.Assignees))
-			t.AddIssueToWorkload(w, issue)
+
+			if t.Milestone == "" || issue.Milestone == t.Milestone {
+				estimate := Estimate(issue.Labels)
+				w.Days += Days(estimate)
+			} else {
+				issue.Deprioritised = true
+			}
 		}
 	}
 
 	return workloads
-}
-
-func (t *TrackingIssue) AddIssueToWorkload(workload *Workload, issue *Issue) {
-	workload.AddIssue(issue)
-
-	linked := issue.LinkedPullRequests(t.PRs)
-	for _, pr := range linked {
-		issue.LinkedPRs = append(issue.LinkedPRs, pr)
-		pr.LinkedIssues = append(pr.LinkedIssues, issue)
-	}
-
-	if t.Milestone == "" || issue.Milestone == t.Milestone {
-		estimate := Estimate(issue.Labels)
-		workload.Days += Days(estimate)
-	} else {
-		issue.Deprioritised = true
-	}
 }
 
 type Issue struct {
