@@ -20,6 +20,14 @@ import {
     ResolvedRevisionSpec,
 } from '../../../shared/src/util/url'
 import { queryGraphQL } from '../backend/graphql'
+import { ExternalLinkFields } from '../graphql-operations'
+
+export const externalLinkFieldsFragment = gql`
+    fragment ExternalLinkFields on ExternalLink {
+        url
+        serviceType
+    }
+`
 
 /**
  * Fetch the repository.
@@ -215,7 +223,7 @@ export const fetchHighlightedFileLines = memoizeObservable(
 )
 
 export const fetchFileExternalLinks = memoizeObservable(
-    (context: RepoRev & { filePath: string }): Observable<GQL.IExternalLink[]> =>
+    (context: RepoRev & { filePath: string }): Observable<ExternalLinkFields[]> =>
         queryGraphQL(
             gql`
                 query FileExternalLinks($repoName: String!, $revision: String!, $filePath: String!) {
@@ -223,13 +231,14 @@ export const fetchFileExternalLinks = memoizeObservable(
                         commit(rev: $revision) {
                             file(path: $filePath) {
                                 externalURLs {
-                                    url
-                                    serviceType
+                                    ...ExternalLinkFields
                                 }
                             }
                         }
                     }
                 }
+
+                ${externalLinkFieldsFragment}
             `,
             context
         ).pipe(

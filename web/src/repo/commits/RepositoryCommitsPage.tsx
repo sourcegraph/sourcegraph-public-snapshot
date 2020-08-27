@@ -14,6 +14,7 @@ import { GitCommitNode, GitCommitNodeProps } from './GitCommitNode'
 import { RevisionSpec, ResolvedRevisionSpec } from '../../../../shared/src/util/url'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { GitCommitFields } from '../../graphql-operations'
+import { externalLinkFieldsFragment } from '../backend'
 
 export const gitCommitFragment = gql`
     fragment GitCommitFields on GitCommit {
@@ -37,8 +38,7 @@ export const gitCommitFragment = gql`
         url
         canonicalURL
         externalURLs {
-            url
-            serviceType
+            ...ExternalLinkFields
         }
         tree(path: "") {
             canonicalURL
@@ -60,6 +60,8 @@ export const gitCommitFragment = gql`
         }
         date
     }
+
+    ${externalLinkFieldsFragment}
 `
 
 const fetchGitCommits = (args: {
