@@ -984,6 +984,16 @@ type SMTPServerConfig struct {
 	// Username description: The username to use when communicating with the SMTP server.
 	Username string `json:"username,omitempty"`
 }
+
+// SearchLimits description: Limits that search applies for number of repositories searched.
+type SearchLimits struct {
+	// CommitDiffMaxRepos description: The maximum number of repositories to search across when doing a "type:diff" or "type:commit". The user is prompted to narrow their query if exceeded. There is a seperate limit (commitDiffWithTimeFilterMaxRepos) when "after:" or "before:" is specified since those queries are faster. Value must be positive. Defaults to 50.
+	CommitDiffMaxRepos int `json:"commitDiffMaxRepos,omitempty"`
+	// CommitDiffWithTimeFilterMaxRepos description: The maximum number of repositories to search across when doing a "type:diff" or "type:commit" with a "after:" or "before:" filter. The user is prompted to narrow their query if exceeded. There is a seperate limit (commitDiffMaxRepos) when "after:" or "before:" is not specified since those queries are slower. Value must be positive. Defaults to 10000.
+	CommitDiffWithTimeFilterMaxRepos int `json:"commitDiffWithTimeFilterMaxRepos,omitempty"`
+	// MaxRepos description: The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.
+	MaxRepos int `json:"maxRepos,omitempty"`
+}
 type SearchSavedQueries struct {
 	// Description description: Description of this saved query
 	Description string `json:"description"`
@@ -1175,7 +1185,7 @@ type SiteConfiguration struct {
 	Log *Log `json:"log,omitempty"`
 	// LsifEnforceAuth description: Whether or not LSIF uploads will be blocked unless a valid LSIF upload token is provided.
 	LsifEnforceAuth bool `json:"lsifEnforceAuth,omitempty"`
-	// MaxReposToSearch description: The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.
+	// MaxReposToSearch description: DEPRECATED: Configure maxRepos in search.limits. The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.
 	MaxReposToSearch int `json:"maxReposToSearch,omitempty"`
 	// ObservabilityAlerts description: Configure notifications for Sourcegraph's built-in alerts.
 	ObservabilityAlerts []*ObservabilityAlerts `json:"observability.alerts,omitempty"`
@@ -1199,6 +1209,8 @@ type SiteConfiguration struct {
 	SearchIndexSymbolsEnabled *bool `json:"search.index.symbols.enabled,omitempty"`
 	// SearchLargeFiles description: A list of file glob patterns where matching files will be indexed and searched regardless of their size. The glob pattern syntax can be found here: https://golang.org/pkg/path/filepath/#Match.
 	SearchLargeFiles []string `json:"search.largeFiles,omitempty"`
+	// SearchLimits description: Limits that search applies for number of repositories searched.
+	SearchLimits *SearchLimits `json:"search.limits,omitempty"`
 	// UpdateChannel description: The channel on which to automatically check for Sourcegraph updates.
 	UpdateChannel string `json:"update.channel,omitempty"`
 	// UseJaeger description: DEPRECATED. Use `"observability.tracing": { "sampling": "all" }`, instead. Enables Jaeger tracing.
