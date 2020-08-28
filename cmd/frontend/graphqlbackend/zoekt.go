@@ -106,8 +106,18 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		}, nil
 	}
 
-	// Fallback to Unindexed if index:no or if the query contains ref-globs anywhere
-	if indexParam == No || containsRefGlobs(args.Query) {
+	// Fallback to Unindexed if the query contains ref-globs
+	if containsRefGlobs(args.Query) {
+		if indexParam == Only {
+			return nil, fmt.Errorf("invalid index:%q (revsions with glob pattern cannot be resolved for indexed searches)", indexParam)
+		}
+		return &indexedSearchRequest{
+			Unindexed: args.Repos,
+		}, nil
+	}
+
+	// Fallback to Unindexed if index:no
+	if indexParam == No {
 		return &indexedSearchRequest{
 			Unindexed: args.Repos,
 		}, nil
