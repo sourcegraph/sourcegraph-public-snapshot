@@ -252,6 +252,7 @@
     "utc-version": "^2.0.2",
     "web-ext": "^4.2.0",
     "webpack": "^4.44.1",
+    "webpack-bundle-analyzer": "^3.8.0",
     "webpack-dev-server": "^3.11.0",
     "worker-loader": "^2.0.0",
     "yarn-deduplicate": "^2.1.1"
