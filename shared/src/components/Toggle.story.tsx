@@ -1,6 +1,6 @@
 import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
-import React from 'react'
+import React, { useState } from 'react'
 import { Toggle } from './Toggle'
 import webStyles from '../../../web/src/main.scss'
 
@@ -14,23 +14,18 @@ const { add } = storiesOf('shared/Toggle', module).addDecorator(story => (
 ))
 
 add('Interactive', () => {
-    interface State {
-        value?: boolean
+    const ToggleInteractive: React.FC = () => {
+        const [value, setValue] = useState(false)
+
+        const onToggle = (value: boolean) => setValue(value)
+
+        return (
+            <div className="d-flex align-items-center">
+                <Toggle value={value} onToggle={onToggle} title="Hello" className="mr-2" /> Value is {String(value)}
+            </div>
+        )
     }
-    class ToggleInteractive extends React.Component<{}, State> {
-        public state: State = {
-            value: false,
-        }
-        public render(): JSX.Element | null {
-            return (
-                <div className="d-flex align-items-center">
-                    <Toggle value={this.state.value} onToggle={this.onToggle} title="Hello" className="mr-2" /> Value is{' '}
-                    {String(this.state.value)}
-                </div>
-            )
-        }
-        private onToggle = (value: boolean): void => this.setState({ value }, (): void => onToggle(value))
-    }
+
     return <ToggleInteractive />
 })
 
