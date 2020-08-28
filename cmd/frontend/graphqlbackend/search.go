@@ -744,6 +744,7 @@ func searchLimits() schema.SearchLimits {
 	withDefault(&limits.MaxRepos, math.MaxInt32>>1)
 	withDefault(&limits.CommitDiffMaxRepos, 50)
 	withDefault(&limits.CommitDiffWithTimeFilterMaxRepos, 10000)
+	withDefault(&limits.MaxTimeoutSeconds, 60)
 
 	return limits
 }
