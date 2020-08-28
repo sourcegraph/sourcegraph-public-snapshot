@@ -1,0 +1,20 @@
+name: Renovate downstream
+on:
+  check_run:
+    types: [ completed ]
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    # Run on buildkite success on branch main
+    if: github.ref == 'refs/heads/main' && github.event.name == 'buildkite/sourcegraph' && github.event.conclusion == 'success'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.0.0
+      - name: Renovate
+        uses: renovatebot/github-action@23.0.2
+        with:
+          configurationFile: .github/workflows/renovate-downstream.js
+          # token must be a personal access token for cross-repo access - currently @sourcegraph-bot cross-repo-github-actions in 1password
+          # configure in https://github.com/sourcegraph/sourcegraph/settings/secrets/RENOVATE_TOKEN
+          token: ${{ secrets.RENOVATE_TOKEN }}
