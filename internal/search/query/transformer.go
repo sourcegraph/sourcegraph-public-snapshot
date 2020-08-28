@@ -546,6 +546,7 @@ func TrailingParensToLiteral(nodes []Node) []Node {
 func EmptyGroupsToLiteral(nodes []Node) []Node {
 	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
 		if ok, _ := regexp.MatchString(`\(\)`, value); ok {
+			annotation.Labels.set(HeuristicParensAsPatterns)
 			annotation.Labels.set(Literal)
 			annotation.Labels.unset(Regexp)
 		}
