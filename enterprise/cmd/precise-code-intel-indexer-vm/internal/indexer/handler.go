@@ -75,13 +75,22 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 			return errors.Wrap(err, "failed to start firecracker vm")
 		}
 		defer func() {
-			args := []string{
+			stopArgs := []string{
 				"ignite", "stop",
 				"--runtime", "docker",
 				name.String(),
 			}
-			if stopErr := h.commander.Run(ctx, args[0], args[1:]...); stopErr != nil {
+			if stopErr := h.commander.Run(ctx, stopArgs[0], stopArgs[1:]...); stopErr != nil {
 				err = multierror.Append(err, errors.Wrap(stopErr, "failed to stop firecracker vm"))
+			}
+
+			removeArgs := []string{
+				"ignite", "rm", "-f",
+				"--runtime", "docker",
+				name.String(),
+			}
+			if rmErr := h.commander.Run(ctx, removeArgs[0], removeArgs[1:]...); rmErr != nil {
+				err = multierror.Append(err, errors.Wrap(rmErr, "failed to remove firecracker vm"))
 			}
 		}()
 	}
@@ -94,7 +103,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		"lsif-go",
 	}
 	if h.options.UseFirecracker {
-		indexArgs = append([]string{"ignite", "exec", name.String()}, indexArgs...)
+		indexArgs = append([]string{"ignite", "exec", name.String(), "--"}, indexArgs...)
 	}
 	if err := h.commander.Run(ctx, indexArgs[0], indexArgs[1:]...); err != nil {
 		return errors.Wrap(err, "failed to index repository")
@@ -112,7 +121,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		"-upload-route", "/.internal-code-intel/lsif/upload",
 	}
 	if h.options.UseFirecracker {
-		uploadArgs = append([]string{"ignite", "exec", name.String()}, uploadArgs...)
+		uploadArgs = append([]string{"ignite", "exec", name.String(), "--"}, uploadArgs...)
 	}
 	if err := h.commander.Run(ctx, uploadArgs[0], uploadArgs[1:]...); err != nil {
 		return errors.Wrap(err, "failed to upload index")

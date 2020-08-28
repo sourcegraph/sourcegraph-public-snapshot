@@ -96,17 +96,18 @@ func TestHandleWithFirecracker(t *testing.T) {
 		t.Fatalf("unexpected error handling index: %s", err)
 	}
 
-	if callCount := len(commander.RunFunc.History()); callCount != 7 {
-		t.Errorf("unexpected run call count. want=%d have=%d", 7, callCount)
+	if callCount := len(commander.RunFunc.History()); callCount != 8 {
+		t.Errorf("unexpected run call count. want=%d have=%d", 8, callCount)
 	} else {
 		expectedCalls := []string{
 			"git -C /tmp/testing init",
 			"git -C /tmp/testing -c protocol.version=2 fetch https://indexer:hunter2@sourcegraph.test:1234/.internal-code-intel/git/github.com/sourcegraph/sourcegraph e2249f2173e8ca0c8c2541644847e7bf01aaef4a",
 			"git -C /tmp/testing checkout e2249f2173e8ca0c8c2541644847e7bf01aaef4a",
 			"ignite run --runtime docker --copy-files /tmp/testing:/tmp/testing --ssh --name 97b45daf-53d1-48ad-b992-547469d8e438 sourcegraph/ignite-ubuntu:latest",
-			"ignite exec 97b45daf-53d1-48ad-b992-547469d8e438 docker run --rm -v /tmp/testing:/data -w /data sourcegraph/lsif-go:latest lsif-go",
-			"ignite exec 97b45daf-53d1-48ad-b992-547469d8e438 docker run --rm -v /tmp/testing:/data -w /data -e SRC_ENDPOINT=https://indexer:hunter2@sourcegraph.test:5432 sourcegraph/src-cli:latest lsif upload -repo github.com/sourcegraph/sourcegraph -commit e2249f2173e8ca0c8c2541644847e7bf01aaef4a -upload-route /.internal-code-intel/lsif/upload",
+			"ignite exec 97b45daf-53d1-48ad-b992-547469d8e438 -- docker run --rm -v /tmp/testing:/data -w /data sourcegraph/lsif-go:latest lsif-go",
+			"ignite exec 97b45daf-53d1-48ad-b992-547469d8e438 -- docker run --rm -v /tmp/testing:/data -w /data -e SRC_ENDPOINT=https://indexer:hunter2@sourcegraph.test:5432 sourcegraph/src-cli:latest lsif upload -repo github.com/sourcegraph/sourcegraph -commit e2249f2173e8ca0c8c2541644847e7bf01aaef4a -upload-route /.internal-code-intel/lsif/upload",
 			"ignite stop --runtime docker 97b45daf-53d1-48ad-b992-547469d8e438",
+			"ignite rm -f --runtime docker 97b45daf-53d1-48ad-b992-547469d8e438",
 		}
 
 		calls := commander.RunFunc.History()

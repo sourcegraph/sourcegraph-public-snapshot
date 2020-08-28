@@ -15,7 +15,7 @@ var (
 	rawIndexerPollInterval      = env.Get("PRECISE_CODE_INTEL_INDEXER_POLL_INTERVAL", "1s", "Interval between queries to the precise-code-intel-index-manager.")
 	rawIndexerHeartbeatInterval = env.Get("PRECISE_CODE_INTEL_INDEXER_HEARTBEAT_INTERVAL", "1s", "Interval between heartbeat requests.")
 	rawMaxContainers            = env.Get("PRECISE_CODE_INTEL_MAXIMUM_CONTAINERS", "1", "Number of index containers that can be running at once.")
-	rawFirecrackerImage         = env.Get("PRECISE_CODE_INTEL_FIRECRACKER_IMAGE", "sourcegraph/ignite-ubuntu", "The base image to use for firecracker VMs.")
+	rawFirecrackerImage         = env.Get("PRECISE_CODE_INTEL_FIRECRACKER_IMAGE", "sourcegraph/ignite-ubuntu:insiders", "The base image to use for firecracker VMs.")
 	rawUseFirecracker           = env.Get("PRECISE_CODE_INTEL_USE_FIRECRACKER", "true", "Whether to isolate index containers in firecracker VMs.")
 )
 
