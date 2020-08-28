@@ -7,6 +7,7 @@ exports[`Toggle className 1`] = `
   <button
     className="toggle c"
     onClick={[Function]}
+    onMouseOver={[Function]}
     type="button"
     value={0}
   >
@@ -28,6 +29,7 @@ exports[`Toggle disabled 1`] = `
   <button
     className="toggle "
     onClick={[Function]}
+    onMouseOver={[Function]}
     type="button"
     value={0}
   >
@@ -48,6 +50,7 @@ exports[`Toggle value is false 1`] = `
   <button
     className="toggle "
     onClick={[Function]}
+    onMouseOver={[Function]}
     type="button"
     value={0}
   >
@@ -68,6 +71,7 @@ exports[`Toggle value is true 1`] = `
   <button
     className="toggle "
     onClick={[Function]}
+    onMouseOver={[Function]}
     type="button"
     value={1}
   >

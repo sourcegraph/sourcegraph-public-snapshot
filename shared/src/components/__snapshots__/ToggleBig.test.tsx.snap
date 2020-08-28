@@ -5,8 +5,10 @@ exports[`ToggleBig className 1`] = `
   className="c"
 >
   <button
-    className="toggle-big  c"
+    className="toggle-big c"
+    disabled={false}
     onClick={[Function]}
+    onMouseOver={[Function]}
     type="button"
     value={0}
   >
@@ -18,28 +20,29 @@ exports[`ToggleBig className 1`] = `
       />
       <span
         className="toggle-big__knob "
-      />
+      >
+        <Memo(CloseIcon)
+          className="toggle-big__icon--disabled"
+          size={16}
+        >
+          <svg
+            className="mdi-icon toggle-big__icon--disabled"
+            fill="currentColor"
+            height={16}
+            viewBox="0 0 24 24"
+            width={16}
+          >
+            <path
+              d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+            />
+          </svg>
+        </Memo(CloseIcon)>
+      </span>
       <span
         className="toggle-big__text toggle-big__text--disabled"
       >
         Disabled
       </span>
-      <Memo(CloseIcon)
-        className="toggle-big__icon toggle-big__icon--disabled"
-        size={16}
-      >
-        <svg
-          className="mdi-icon toggle-big__icon toggle-big__icon--disabled"
-          fill="currentColor"
-          height={16}
-          viewBox="0 0 24 24"
-          width={16}
-        >
-          <path
-            d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-          />
-        </svg>
-      </Memo(CloseIcon)>
     </span>
   </button>
 </ToggleBig>
@@ -51,8 +54,10 @@ exports[`ToggleBig disabled 1`] = `
   onToggle={[Function]}
 >
   <button
-    className="toggle-big  "
+    className="toggle-big toggle-big--disabled"
+    disabled={true}
     onClick={[Function]}
+    onMouseOver={[Function]}
     type="button"
     value={0}
   >
@@ -64,28 +69,29 @@ exports[`ToggleBig disabled 1`] = `
       />
       <span
         className="toggle-big__knob "
-      />
+      >
+        <Memo(CloseIcon)
+          className="toggle-big__icon--disabled"
+          size={16}
+        >
+          <svg
+            className="mdi-icon toggle-big__icon--disabled"
+            fill="currentColor"
+            height={16}
+            viewBox="0 0 24 24"
+            width={16}
+          >
+            <path
+              d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+            />
+          </svg>
+        </Memo(CloseIcon)>
+      </span>
       <span
         className="toggle-big__text toggle-big__text--disabled"
       >
         Disabled
       </span>
-      <Memo(CloseIcon)
-        className="toggle-big__icon toggle-big__icon--disabled"
-        size={16}
-      >
-        <svg
-          className="mdi-icon toggle-big__icon toggle-big__icon--disabled"
-          fill="currentColor"
-          height={16}
-          viewBox="0 0 24 24"
-          width={16}
-        >
-          <path
-            d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-          />
-        </svg>
-      </Memo(CloseIcon)>
     </span>
   </button>
 </ToggleBig>
@@ -96,8 +102,10 @@ exports[`ToggleBig value is false 1`] = `
   value={false}
 >
   <button
-    className="toggle-big  "
+    className="toggle-big"
+    disabled={false}
     onClick={[Function]}
+    onMouseOver={[Function]}
     type="button"
     value={0}
   >
@@ -109,28 +117,29 @@ exports[`ToggleBig value is false 1`] = `
       />
       <span
         className="toggle-big__knob "
-      />
+      >
+        <Memo(CloseIcon)
+          className="toggle-big__icon--disabled"
+          size={16}
+        >
+          <svg
+            className="mdi-icon toggle-big__icon--disabled"
+            fill="currentColor"
+            height={16}
+            viewBox="0 0 24 24"
+            width={16}
+          >
+            <path
+              d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+            />
+          </svg>
+        </Memo(CloseIcon)>
+      </span>
       <span
         className="toggle-big__text toggle-big__text--disabled"
       >
         Disabled
       </span>
-      <Memo(CloseIcon)
-        className="toggle-big__icon toggle-big__icon--disabled"
-        size={16}
-      >
-        <svg
-          className="mdi-icon toggle-big__icon toggle-big__icon--disabled"
-          fill="currentColor"
-          height={16}
-          viewBox="0 0 24 24"
-          width={16}
-        >
-          <path
-            d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-          />
-        </svg>
-      </Memo(CloseIcon)>
     </span>
   </button>
 </ToggleBig>
@@ -141,8 +150,10 @@ exports[`ToggleBig value is true 1`] = `
   value={true}
 >
   <button
-    className="toggle-big  "
+    className="toggle-big"
+    disabled={false}
     onClick={[Function]}
+    onMouseOver={[Function]}
     type="button"
     value={1}
   >
@@ -154,28 +165,29 @@ exports[`ToggleBig value is true 1`] = `
       />
       <span
         className="toggle-big__knob toggle-big__knob--active"
-      />
+      >
+        <Memo(CheckIcon)
+          className="toggle-big__icon"
+          size={16}
+        >
+          <svg
+            className="mdi-icon toggle-big__icon"
+            fill="currentColor"
+            height={16}
+            viewBox="0 0 24 24"
+            width={16}
+          >
+            <path
+              d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"
+            />
+          </svg>
+        </Memo(CheckIcon)>
+      </span>
       <span
         className="toggle-big__text "
       >
         Enabled
       </span>
-      <Memo(CheckIcon)
-        className="toggle-big__icon"
-        size={16}
-      >
-        <svg
-          className="mdi-icon toggle-big__icon"
-          fill="currentColor"
-          height={16}
-          viewBox="0 0 24 24"
-          width={16}
-        >
-          <path
-            d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"
-          />
-        </svg>
-      </Memo(CheckIcon)>
     </span>
   </button>
 </ToggleBig>
