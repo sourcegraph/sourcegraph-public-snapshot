@@ -4,7 +4,7 @@ This document describes the exact changes needed to update a [pure-Docker Source
 
 Each section comprehensively describes the changes needed in Docker images, environment variables, and added/removed services.
 
-## 3.18.0 -> 3.19.1 changes
+## (not yet released) 3.18.0 -> 3.19.1 changes
 
 ### Confirm file permissions
 
