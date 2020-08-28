@@ -573,6 +573,9 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 	ctx, save := s.observe(ctx, "SetRepoPendingPermissions", "")
 	defer func() { save(&err, append(p.TracingFields(), accounts.TracingFields()...)...) }()
 
+	fmt.Println("---")
+	fmt.Println("accounts:", accounts)
+
 	var txs *PermsStore
 	if s.inTx() {
 		txs = s
@@ -604,6 +607,7 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 		if err != nil {
 			return errors.Wrap(err, "load user pending permissions IDs")
 		}
+		fmt.Println("ids:", ids)
 
 		// Make up p.UserIDs from the result set.
 		p.UserIDs.AddMany(ids)
@@ -630,6 +634,7 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 	if len(changedIDs) == 0 {
 		return nil
 	}
+	fmt.Println("changedIDs:", changedIDs)
 
 	q = loadUserPendingPermissionsByIDBatchQuery(changedIDs, p.Perm, authz.PermRepos, "FOR UPDATE")
 	idToSpecs, loadedIDs, err := txs.batchLoadUserPendingPermissions(ctx, q)
