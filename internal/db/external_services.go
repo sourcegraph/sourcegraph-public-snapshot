@@ -109,6 +109,19 @@ type ValidateExternalServiceConfigOptions struct {
 func (e *ExternalServicesStore) ValidateConfig(ctx context.Context, opt ValidateExternalServiceConfigOptions) error {
 	// For user-added external services, we need to prevent them from using disallowed fields.
 	if opt.HasNamespace {
+		// We do not allow users to add external service other than GitHub.com, GitLab.com and Bitbucket.org
+		result := gjson.Get(opt.Config, "url")
+		baseURL, err := url.Parse(result.String())
+		if err != nil {
+			return errors.Wrap(err, "parse base URL")
+		}
+		normalizedURL := extsvc.NormalizeBaseURL(baseURL).String()
+		if normalizedURL != "https://github.com/" &&
+			normalizedURL != "https://gitlab.com/" &&
+			normalizedURL != "https://bitbucket.org/" {
+			return errors.New("users are only allowed to add external service for https://github.com/, https://gitlab.com/ and https://bitbucket.org/")
+		}
+
 		disallowedFields := []string{"repositoryPathPattern"}
 		results := gjson.GetMany(opt.Config, disallowedFields...)
 		for i, r := range results {
