@@ -44,16 +44,6 @@ var mockResolveRepositories func(effectiveRepoFieldValues []string) (repoRevs, m
 
 var disallowLogQuery = lazyregexp.New(`(type:symbol|type:commit|type:diff)`)
 
-func maxReposToSearch() int {
-	switch max := conf.Get().MaxReposToSearch; {
-	case max <= 0:
-		// Default to a very large number that will not overflow if incremented.
-		return math.MaxInt32 >> 1
-	default:
-		return max
-	}
-}
-
 type SearchArgs struct {
 	Version        string
 	PatternType    *string
@@ -730,6 +720,34 @@ func (op *resolveRepoOp) String() string {
 	return b.String()
 }
 
+func searchLimits() schema.SearchLimits {
+	// Our configuration reader does not set defaults from schema. So we rely
+	// on Go default values to mean defaults.
+	withDefault := func(x *int, def int) {
+		if *x <= 0 {
+			*x = def
+		}
+	}
+
+	c := conf.Get()
+
+	var limits schema.SearchLimits
+	if c.SearchLimits != nil {
+		limits = *c.SearchLimits
+	}
+
+	// If MaxRepos unset use deprecated value
+	if limits.MaxRepos == 0 {
+		limits.MaxRepos = c.MaxReposToSearch
+	}
+
+	withDefault(&limits.MaxRepos, math.MaxInt32>>1)
+	withDefault(&limits.CommitDiffMaxRepos, 50)
+	withDefault(&limits.CommitDiffWithTimeFilterMaxRepos, 10000)
+
+	return limits
+}
+
 func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, overLimit bool, excluded *excludedRepos, err error) {
 	tr, ctx := trace.New(ctx, "resolveRepositories", op.String())
 	defer func() {
@@ -745,7 +763,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 
 	excludePatterns := op.minusRepoFilters
 
-	maxRepoListSize := maxReposToSearch()
+	maxRepoListSize := searchLimits().MaxRepos
 
 	// If any repo groups are specified, take the intersection of the repo
 	// groups and the set of repos specified with repo:. (If none are specified
