@@ -74,20 +74,20 @@ expression patterns.
 
 ## Syntax reference
 
-The syntax `...` above is an alias for a more canonical syntax of the form
-`:[hole]`, where `hole` is a descriptive identifier for the matched content.
-Identifiers are useful when expressing that matched content should be equal (see
-the [`return :[v], :[v]`](#match-equivalent-expressions) example below). See
-additional syntax below
+The syntax `...` above is an alias for a canonical syntax `:[hole]`, where
+`hole` is a descriptive identifier for the matched content. Identifiers are
+useful when expressing that matched content should be equal (see the [`return
+:[v], :[v]`](#match-equivalent-expressions) example below). See additional
+syntax below
 
 | Syntax                  | Alias                            | Description                                                                                                                                                                                                                                                                                             |
 |-------------------------|----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `...`                   | `:[hole]`<br>`:[_]`              | match zero or more characters in a lazy fashion. When `:[hole]` is inside delimiters, as in `{:[h1], :[h2]}` or `(:[h])`, holes match within that group or code block, including newlines. Holes outside of delimiters stop matching at a newline, or the start of a code block, whichever comes first. |
-| `:[~regexp]`            | `:[hole~regexp]`                 | match an arbitrary [regular expression](https://golang.org/s/re2syntax) `regexp`. A descriptive identifier like `hole` is optional. Avoid regular expressions that match special syntax like `)`, otherwise your pattern may fail to match balanced blocks.                                             |
+| `:[~regexp]`            | `:[hole~regexp]`                 | match an arbitrary [regular expression](https://golang.org/s/re2syntax) `regexp`. A descriptive identifier like `hole` is optional. Avoid regular expressions that match special syntax like `)` or `.*`, otherwise your pattern may fail to match balanced blocks.                                     |
 | `:[[_]]`<br>`:[[hole]]` | `:[~\w+]`<br>`:[hole~\w+]`       | match one or more alphanumeric characters and underscore.                                                                                                                                                                                                                                               |
-| `:[hole\n]`             | `:[~.*\n]`<br>`:[hole~.*\n]`     | match one or more characters up to a newline, including the newline. Shorthand for `:[x~.*\n]`.                                                                                                                                                                                                         |
+| `:[hole\n]`             | `:[~.*\n]`<br>`:[hole~.*\n]`     | match zero or more characters up to a newline, including the newline.                                                                                                                                                                                                                                   |
 | `:[ ]`<br>`:[ hole]`    | `:[~[ \t]+]`<br>`:[hole~[ \t]+]` | match only whitespace characters, excluding newlines.                                                                                                                                                                                                                                                   |
-| `:[hole.]`              | None                             | (with a period at the end) match one or more alphanumeric characters and punctuation like `.`, `;`, and `-` that do not affect balanced syntax. Language dependent.                                                                                                                                     |
+| `:[hole.]`              | `[_.]`                           | match one or more alphanumeric characters and punctuation like `.`, `;`, and `-` that do not affect balanced syntax. Language dependent.                                                                                                                                                                |
 
 **Rules.** [Comby supports rules](https://comby.dev/docs/advanced-usage) to
 express equality constraints or pattern-based matching. Comby rules are not
