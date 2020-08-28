@@ -5,10 +5,14 @@ import { RepositoriesPanel } from './RepositoriesPanel'
 import { SavedSearchesPanel } from './SavedSearchesPanel'
 
 export const EnterpriseHomePanels: React.FunctionComponent<{}> = () => (
-    <>
-        <RepositoriesPanel />
-        <RecentSearchesPanel />
-        <RecentFilesPanel />
-        <SavedSearchesPanel />
-    </>
+    <div className="enterprise-home-panels">
+        <div className="enterprise-home-panels__row">
+            <RepositoriesPanel />
+            <RecentSearchesPanel />
+        </div>
+        <div className="enterprise-home-panels__row">
+            <RecentFilesPanel />
+            <SavedSearchesPanel />
+        </div>
+    </div>
 )

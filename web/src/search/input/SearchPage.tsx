@@ -107,7 +107,8 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
             {props.isSourcegraphDotCom && <div className="search-page__cloud-tag-line">Search public code</div>}
             <div
                 className={classNames('search-page__search-container', {
-                    'search-page__search-container--with-repogroups': props.isSourcegraphDotCom,
+                    'search-page__search-container--with-content-below':
+                        props.isSourcegraphDotCom || props.showEnterpriseHomePanels,
                 })}
             >
                 <SearchPageInput {...props} source="home" />

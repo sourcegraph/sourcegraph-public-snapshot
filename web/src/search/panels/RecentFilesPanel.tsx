@@ -1,4 +1,19 @@
 import * as React from 'react'
 import { PanelContainer } from './PanelContainer'
 
-export const RecentFilesPanel: React.FunctionComponent<{}> = () => <PanelContainer title="Recent Files" />
+export const RecentFilesPanel: React.FunctionComponent<{}> = () => {
+    const loadingDisplay = <div>Loading</div>
+    const contentDisplay = <div>Content</div>
+    const emptyDisplay = <div>Empty</div>
+
+    return (
+        <PanelContainer
+            className="recent-files-panel"
+            title="Recent Files"
+            state="content"
+            loadingDisplay={loadingDisplay}
+            contentDisplay={contentDisplay}
+            emptyDisplay={emptyDisplay}
+        />
+    )
+}
