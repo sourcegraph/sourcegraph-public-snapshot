@@ -35,9 +35,9 @@ export function generateStepTooltip(
     tour: Shepherd.Tour,
     dangerousTitleHtml: string,
     stepNumber: number,
+    totalStepCount: number,
     description?: string,
-    additionalContent?: HTMLElement,
-    dontShowStepCount?: boolean
+    additionalContent?: HTMLElement
 ): HTMLElement {
     const element = document.createElement('div')
     element.className = `d-flex flex-column test-tour-step-${stepNumber}`
@@ -56,7 +56,7 @@ export function generateStepTooltip(
         additionalContentContainer.append(additionalContent)
         element.append(additionalContent)
     }
-    const bottomRow = generateBottomRow(tour, stepNumber, dontShowStepCount)
+    const bottomRow = generateBottomRow(tour, stepNumber, totalStepCount)
     element.append(bottomRow)
     return element
 }
@@ -67,7 +67,7 @@ export function generateStepTooltip(
  * @param tour the tour instance.
  * @param stepNumber the step number.
  */
-export function generateBottomRow(tour: Shepherd.Tour, stepNumber: number, dontShowStepCount?: boolean): HTMLElement {
+export function generateBottomRow(tour: Shepherd.Tour, stepNumber: number, totalStepCount: number): HTMLElement {
     const closeTourButton = document.createElement('button')
     closeTourButton.className = 'btn btn-link p-0'
     closeTourButton.textContent = 'Close tour'
@@ -78,14 +78,12 @@ export function generateBottomRow(tour: Shepherd.Tour, stepNumber: number, dontS
     })
 
     const bottomRow = document.createElement('div')
-    bottomRow.className = 'd-flex justify-content-between'
+    bottomRow.className = 'd-flex justify-content-between mt-2'
 
-    if (!dontShowStepCount) {
-        const stepNumberLabel = document.createElement('span')
-        stepNumberLabel.className = 'font-weight-light font-italic'
-        stepNumberLabel.textContent = `${stepNumber} of 5`
-        bottomRow.append(stepNumberLabel)
-    }
+    const stepNumberLabel = document.createElement('span')
+    stepNumberLabel.className = 'font-weight-light font-italic'
+    stepNumberLabel.textContent = `${stepNumber} of ${totalStepCount}`
+    bottomRow.append(stepNumberLabel)
 
     bottomRow.append(closeTourButton)
     return bottomRow
@@ -127,7 +125,7 @@ export function createStep1Tooltip(
     repositoryListItem.append(repositoryButton)
     list.append(languageListItem)
     list.append(repositoryListItem)
-    return generateStepTooltip(tour, 'Code search tour', 1, 'How would you like to begin?', list)
+    return generateStepTooltip(tour, 'Code search tour', 1, 5, 'How would you like to begin?', list)
 }
 
 /**
@@ -140,6 +138,7 @@ export function createAddCodeStepTooltip(tour: Shepherd.Tour): HTMLElement {
         tour,
         'Add code to your search',
         3,
+        5,
         'Type the name of a function, variable or other code.'
     )
 }
@@ -215,6 +214,7 @@ export function createAddCodeStepWithLanguageExampleTooltip(
         tour,
         'Add code to your search',
         3,
+        5,
         'Type the name of a function, variable or other code. Or try an example:',
         list
     )
@@ -299,7 +299,7 @@ export const stepCallbacks: CallbackToAdvanceTourStep[] = [
         stepToAdvance: 'add-query-term',
         handler: (tour: Shepherd.Tour): void => {
             if (tour.getById('add-query-term').isOpen()) {
-                tour.show('view-search-reference')
+                tour.show('final-step')
             }
         },
         queryConditions: (query: string): boolean => query !== 'repo:' && query !== 'lang:',
