@@ -23,7 +23,7 @@ type Executor interface {
 type Task struct {
 	Repository *graphql.Repository
 	Steps      []Step
-	Template   *ChangesetTemplate
+	Template   *ChangesetTemplate `json:"-"`
 }
 
 func (t *Task) cacheKey() ExecutionCacheKey {
@@ -144,15 +144,22 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 		if result, err = x.cache.Get(ctx, cacheKey); err != nil {
 			err = errors.Wrapf(err, "checking cache for %q", task.Repository.Name)
 			return
-		} else if result != nil {
+		} else if result != nil && len(result.Commits) == 1 {
+			// Build a new changeset spec. We don't want to use `result` as is,
+			// because the changesetTemplate may have changed. In that case
+			// the diff would still be valid, so we take it from the cache,
+			// but we still build a new ChangesetSpec from the task.
+			diff := result.Commits[0].Diff
+			spec := createChangesetSpec(task, diff)
+
 			status.Cached = true
-			status.ChangesetSpec = result
+			status.ChangesetSpec = spec
 			status.FinishedAt = time.Now()
 			x.updateTaskStatus(task, status)
 
 			// Add the spec to the executor's list of completed specs.
 			x.specsMu.Lock()
-			x.specs = append(x.specs, result)
+			x.specs = append(x.specs, spec)
 			x.specsMu.Unlock()
 
 			return
@@ -188,24 +195,8 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 	}
 
 	// Build the changeset spec.
-	spec := &ChangesetSpec{
-		BaseRepository: task.Repository.ID,
-		CreatedChangeset: &CreatedChangeset{
-			BaseRef:        task.Repository.BaseRef(),
-			BaseRev:        task.Repository.Rev(),
-			HeadRepository: task.Repository.ID,
-			HeadRef:        "refs/heads/" + task.Template.Branch,
-			Title:          task.Template.Title,
-			Body:           task.Template.Body,
-			Commits: []GitCommitDescription{
-				{
-					Message: task.Template.Commit.Message,
-					Diff:    string(diff),
-				},
-			},
-			Published: task.Template.Published,
-		},
-	}
+	spec := createChangesetSpec(task, string(diff))
+
 	status.ChangesetSpec = spec
 	x.updateTaskStatus(task, status)
 
@@ -244,4 +235,25 @@ func reachedTimeout(cmdCtx context.Context, err error) bool {
 	}
 
 	return errors.Is(err, context.DeadlineExceeded)
+}
+
+func createChangesetSpec(task *Task, diff string) *ChangesetSpec {
+	return &ChangesetSpec{
+		BaseRepository: task.Repository.ID,
+		CreatedChangeset: &CreatedChangeset{
+			BaseRef:        task.Repository.BaseRef(),
+			BaseRev:        task.Repository.Rev(),
+			HeadRepository: task.Repository.ID,
+			HeadRef:        "refs/heads/" + task.Template.Branch,
+			Title:          task.Template.Title,
+			Body:           task.Template.Body,
+			Commits: []GitCommitDescription{
+				{
+					Message: task.Template.Commit.Message,
+					Diff:    string(diff),
+				},
+			},
+			Published: task.Template.Published,
+		},
+	}
 }
