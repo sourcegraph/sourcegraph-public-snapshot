@@ -67,8 +67,9 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOpti
 	log15.Info("Running Syncer.Run")
 	// TODO: Make numHandlers configurable
 	worker, cleanup := NewSyncWorker(pctx, db, &syncHandler{
-		syncer: s,
-		store:  store,
+		syncer:          s,
+		store:           store,
+		minSyncInterval: opts.MinSyncInterval,
 	}, 1)
 	defer cleanup()
 
@@ -94,7 +95,6 @@ type syncHandler struct {
 	syncer          *Syncer
 	store           Store
 	minSyncInterval time.Duration
-	maxSyncInterval time.Duration
 }
 
 func (s *syncHandler) Handle(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) error {
