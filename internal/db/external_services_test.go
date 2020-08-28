@@ -88,9 +88,21 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 		wantErr      string
 	}{
 		{
-			name:    "0 errors",
+			name:    "0 errors - GitHub.com",
 			kind:    extsvc.KindGitHub,
 			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+			wantErr: "<nil>",
+		},
+		{
+			name:    "0 errors - GitLab.com",
+			kind:    extsvc.KindGitLab,
+			config:  `{"url": "https://github.com", "projectQuery": ["none"], "token": "abc"}`,
+			wantErr: "<nil>",
+		},
+		{
+			name:    "0 errors - Bitbucket.org",
+			kind:    extsvc.KindBitbucketCloud,
+			config:  `{"url": "https://bitbucket.org", "username": "ceo", "appPassword": "abc"}`,
 			wantErr: "<nil>",
 		},
 		{
@@ -139,6 +151,13 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 				}
 			},
 			wantErr: "1 error occurred:\n\t* existing external service, \"GITHUB 1\", already has a rate limit set\n\n",
+		},
+		{
+			name:         "prevent code hosts that are not allowed",
+			kind:         extsvc.KindGitHub,
+			config:       `{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`,
+			hasNamespace: true,
+			wantErr:      `users are only allowed to add external service for https://github.com/, https://gitlab.com/ and https://bitbucket.org/`,
 		},
 		{
 			name:         "prevent disallowed fields",
