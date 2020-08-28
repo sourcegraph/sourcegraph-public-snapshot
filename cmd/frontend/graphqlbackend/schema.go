@@ -1945,11 +1945,17 @@ type Query {
         """
         viewerCanAdminister: Boolean
     ): CampaignConnection!
-    # Looks up a campaign by namespace and campaign name.
+    """
+    Looks up a campaign by namespace and campaign name.
+    """
     campaign(
-        # The namespace where the campaign lives.
+        """
+        The namespace where the campaign lives.
+        """
         namespace: ID!
-        # The campaigns name.
+        """
+        The campaigns name.
+        """
         name: String!
     ): Campaign
 
