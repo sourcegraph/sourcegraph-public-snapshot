@@ -1,4 +1,4 @@
-package authz
+package usagestats
 
 import (
 	"flag"
@@ -6,10 +6,14 @@ import (
 	"os"
 	"testing"
 
-	secretsPkg "github.com/sourcegraph/sourcegraph/internal/secrets"
-
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	secretsPkg "github.com/sourcegraph/sourcegraph/internal/secrets"
 )
+
+func init() {
+	dbtesting.DBNameSuffix = "usagestats"
+}
 
 func TestMain(m *testing.M) {
 	flag.Parse()

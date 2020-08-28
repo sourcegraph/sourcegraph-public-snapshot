@@ -28,7 +28,7 @@ func TestMain(m *testing.M) {
 	}
 	err := secretsPkg.Init()
 	if err != nil {
-		fmt.Println("Failed to init secrests package:", err)
+		fmt.Println("Failed to init secrets package:", err)
 		os.Exit(1)
 	}
 	os.Exit(m.Run())
