@@ -65,7 +65,7 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 		return nil, err
 	}
 
-	useNewParser := getBoolPtr(settings.SearchMigrateParser, false)
+	useNewParser := getBoolPtr(settings.SearchMigrateParser, true)
 
 	searchType, err := detectSearchType(args.Version, args.PatternType)
 	if err != nil {
@@ -78,11 +78,7 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 	}
 
 	var queryInfo query.QueryInfo
-	if (conf.AndOrQueryEnabled() && query.ContainsAndOrKeyword(args.Query)) || useNewParser || searchType == query.SearchTypeStructural {
-		// To process the input as an and/or query, the flag must be
-		// enabled (default is on) and must contain either an 'and' or
-		// 'or' expression or set in settings. Else, fallback to the
-		// older existing parser.
+	if useNewParser {
 		globbing := getBoolPtr(settings.SearchGlobbing, false)
 		queryInfo, err = query.ProcessAndOr(args.Query, query.ParserOptions{SearchType: searchType, Globbing: globbing})
 		if err != nil {

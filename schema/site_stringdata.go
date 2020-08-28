@@ -85,7 +85,7 @@ const SiteSchemaJSON = `{
           "default": "enabled"
         },
         "andOrQuery": {
-          "description": "Interpret a search input query as an and/or query.",
+          "description": "DEPRECATED: Interpret a search input query as an and/or query.",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
