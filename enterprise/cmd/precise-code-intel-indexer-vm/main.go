@@ -35,6 +35,8 @@ func main() {
 		numContainers            = mustParseInt(rawMaxContainers, "PRECISE_CODE_INTEL_MAXIMUM_CONTAINERS")
 		firecrackerImage         = mustGet(rawFirecrackerImage, "PRECISE_CODE_INTEL_FIRECRACKER_IMAGE")
 		useFirecracker           = mustParseBool(rawUseFirecracker, "PRECISE_CODE_INTEL_USE_FIRECRACKER")
+		firecrackerNumCPUs       = mustParseInt(rawFirecrackerNumCPUs, "PRECISE_CODE_INTEL_FIRECRACKER_NUM_CPUS")
+		firecrackerMemory        = mustGet(rawFirecrackerMemory, "PRECISE_CODE_INTEL_FIRECRACKER_MEMORY")
 	)
 
 	if frontendURLFromDocker == "" {
@@ -70,6 +72,8 @@ func main() {
 			AuthToken:             internalProxyAuthToken,
 			FirecrackerImage:      firecrackerImage,
 			UseFirecracker:        useFirecracker,
+			FirecrackerNumCPUs:    firecrackerNumCPUs,
+			FirecrackerMemory:     firecrackerMemory,
 		},
 	})
 
