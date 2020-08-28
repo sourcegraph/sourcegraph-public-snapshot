@@ -1378,8 +1378,6 @@ func langIncludeExcludePatterns(values, negatedValues []string) (includePatterns
 var (
 	// The default timeout to use for queries.
 	defaultTimeout = 20 * time.Second
-	// The max timeout to use for queries.
-	maxTimeout = time.Minute
 )
 
 func (r *searchResolver) searchTimeoutFieldSet() bool {
@@ -1389,6 +1387,7 @@ func (r *searchResolver) searchTimeoutFieldSet() bool {
 
 func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, context.CancelFunc, error) {
 	d := defaultTimeout
+	maxTimeout := time.Duration(searchLimits().MaxTimeoutSeconds) * time.Second
 	timeout, _ := r.query.StringValue(query.FieldTimeout)
 	if timeout != "" {
 		var err error
@@ -1400,8 +1399,7 @@ func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, cont
 		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
 		d = maxTimeout
 	}
-	// don't run queries longer than 1 minute.
-	if d.Minutes() > 1 {
+	if d > maxTimeout {
 		d = maxTimeout
 	}
 	ctx, cancel := context.WithTimeout(ctx, d)

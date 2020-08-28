@@ -985,7 +985,7 @@ type SMTPServerConfig struct {
 	Username string `json:"username,omitempty"`
 }
 
-// SearchLimits description: Limits that search applies for number of repositories searched.
+// SearchLimits description: Limits that search applies for number of repositories searched and timeouts.
 type SearchLimits struct {
 	// CommitDiffMaxRepos description: The maximum number of repositories to search across when doing a "type:diff" or "type:commit". The user is prompted to narrow their query if exceeded. There is a seperate limit (commitDiffWithTimeFilterMaxRepos) when "after:" or "before:" is specified since those queries are faster. Value must be positive. Defaults to 50.
 	CommitDiffMaxRepos int `json:"commitDiffMaxRepos,omitempty"`
@@ -993,6 +993,8 @@ type SearchLimits struct {
 	CommitDiffWithTimeFilterMaxRepos int `json:"commitDiffWithTimeFilterMaxRepos,omitempty"`
 	// MaxRepos description: The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.
 	MaxRepos int `json:"maxRepos,omitempty"`
+	// MaxTimeoutSeconds description: The maximum value for "timeout:" that search will respect. "timeout:" values larger than maxTimeoutSeconds are capped at maxTimeoutSeconds. Note: You need to ensure your load balancer / reverse proxy in front of Sourcegraph won't timeout the request for larger values.
+	MaxTimeoutSeconds int `json:"maxTimeoutSeconds,omitempty"`
 }
 type SearchSavedQueries struct {
 	// Description description: Description of this saved query
@@ -1209,7 +1211,7 @@ type SiteConfiguration struct {
 	SearchIndexSymbolsEnabled *bool `json:"search.index.symbols.enabled,omitempty"`
 	// SearchLargeFiles description: A list of file glob patterns where matching files will be indexed and searched regardless of their size. The glob pattern syntax can be found here: https://golang.org/pkg/path/filepath/#Match.
 	SearchLargeFiles []string `json:"search.largeFiles,omitempty"`
-	// SearchLimits description: Limits that search applies for number of repositories searched.
+	// SearchLimits description: Limits that search applies for number of repositories searched and timeouts.
 	SearchLimits *SearchLimits `json:"search.limits,omitempty"`
 	// UpdateChannel description: The channel on which to automatically check for Sourcegraph updates.
 	UpdateChannel string `json:"update.channel,omitempty"`
