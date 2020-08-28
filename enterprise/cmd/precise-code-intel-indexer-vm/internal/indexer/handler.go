@@ -62,11 +62,14 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		return err
 	}
 
+	mountPoint := repoDir
 	if h.options.UseFirecracker {
+		mountPoint = "/repo-dir"
+
 		args := []string{
 			"ignite", "run",
 			"--runtime", "docker",
-			"--copy-files", fmt.Sprintf("%s:%s", repoDir, repoDir),
+			"--copy-files", fmt.Sprintf("%s:%s", repoDir, mountPoint),
 			"--ssh",
 			"--name", name.String(),
 			h.options.FirecrackerImage,
@@ -97,7 +100,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 
 	indexArgs := []string{
 		"docker", "run", "--rm",
-		"-v", fmt.Sprintf("%s:/data", repoDir),
+		"-v", fmt.Sprintf("%s:/data", mountPoint),
 		"-w", "/data",
 		"sourcegraph/lsif-go:latest",
 		"lsif-go",
@@ -111,7 +114,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 
 	uploadArgs := []string{
 		"docker", "run", "--rm",
-		"-v", fmt.Sprintf("%s:/data", repoDir),
+		"-v", fmt.Sprintf("%s:/data", mountPoint),
 		"-w", "/data",
 		"-e", fmt.Sprintf("SRC_ENDPOINT=%s", uploadURL.String()),
 		"sourcegraph/src-cli:latest",
