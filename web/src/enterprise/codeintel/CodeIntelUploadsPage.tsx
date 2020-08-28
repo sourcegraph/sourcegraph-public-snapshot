@@ -138,7 +138,7 @@ const UploadNode: FunctionComponent<UploadNodeProps> = ({ node, onDelete, histor
     )
 }
 
-interface Props extends RouteComponentProps<{}> {
+export interface CodeIntelUploadsPageProps extends RouteComponentProps<{}> {
     repo?: GQL.IRepository
     fetchLsifUploads?: typeof defaultFetchLsifUploads
 
@@ -149,7 +149,7 @@ interface Props extends RouteComponentProps<{}> {
 /**
  * The repository settings code intel uploads page.
  */
-export const CodeIntelUploadsPage: FunctionComponent<Props> = ({
+export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> = ({
     repo,
     fetchLsifUploads = defaultFetchLsifUploads,
     now,

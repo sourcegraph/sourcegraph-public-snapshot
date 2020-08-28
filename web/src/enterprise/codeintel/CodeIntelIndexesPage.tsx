@@ -124,7 +124,7 @@ const IndexNode: FunctionComponent<IndexNodeProps> = ({ node, onDelete, history,
     )
 }
 
-interface Props extends RouteComponentProps<{}> {
+export interface CodeIntelIndexesPageProps extends RouteComponentProps<{}> {
     repo?: GQL.IRepository
     fetchLsifIndexes?: typeof defaultFetchLsifIndexes
 
@@ -135,7 +135,7 @@ interface Props extends RouteComponentProps<{}> {
 /**
  * The repository settings code intelligence page.
  */
-export const CodeIntelIndexesPage: FunctionComponent<Props> = ({
+export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> = ({
     repo,
     fetchLsifIndexes = defaultFetchLsifIndexes,
     now,

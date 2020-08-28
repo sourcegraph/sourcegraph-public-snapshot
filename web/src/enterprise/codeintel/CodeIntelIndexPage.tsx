@@ -21,7 +21,7 @@ import { LSIFIndexState } from '../../../../shared/src/graphql-operations'
 
 const REFRESH_INTERVAL_MS = 5000
 
-interface Props extends RouteComponentProps<{ id: string }> {
+export interface CodeIntelIndexPageProps extends RouteComponentProps<{ id: string }> {
     repo?: GQL.IRepository
     fetchLsifIndex?: typeof defaultFetchLsifIndex
 
@@ -42,7 +42,7 @@ function shouldReload(index: Index | ErrorLike | null | undefined): boolean {
 /**
  * A page displaying metadata about an LSIF index.
  */
-export const CodeIntelIndexPage: FunctionComponent<Props> = ({
+export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
     repo,
     scheduler,
     match: {
