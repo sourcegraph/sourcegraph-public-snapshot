@@ -59,7 +59,7 @@ func (r *changesetEventsConnectionResolver) compute(ctx context.Context) ([]*cam
 	r.once.Do(func() {
 		opts := ee.ListChangesetEventsOpts{
 			ChangesetIDs: []int64{r.changesetResolver.changeset.ID},
-			Limit:        r.first,
+			LimitOpts:    ee.LimitOpts{Limit: r.first},
 		}
 		r.changesetEvents, r.next, r.err = r.store.ListChangesetEvents(ctx, opts)
 	})
