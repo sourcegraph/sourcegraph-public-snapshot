@@ -19,8 +19,15 @@ describe('NavLinks', () => {
     const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined, settings: NEVER }
     const KEYBOARD_SHORTCUTS: KeyboardShortcutsProps['keyboardShortcuts'] = []
     const SETTINGS_CASCADE: SettingsCascadeProps['settingsCascade'] = { final: null, subjects: null }
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    const USER = { username: 'u' } as GQL.IUser
+    const ORG_CONNECTION = {
+        __typename: 'OrgConnection',
+        nodes: [
+            { id: '1', displayName: 'd', settingsURL: 'u' },
+            { id: '2', name: 'n', settingsURL: 'u' },
+        ] as unknown,
+        totalCount: 2,
+    } as GQL.IOrgConnection
+    const USER = { username: 'u', url: '/u', settingsURL: '/u/settings', organizations: ORG_CONNECTION } as GQL.IUser
     const history = H.createMemoryHistory({ keyLength: 0 })
     const NOOP_TOGGLE_MODE = (): void => {
         /* noop */
