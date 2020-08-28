@@ -98,7 +98,7 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 		return nil, err
 	}
 
-	campaignID, err := campaigns.UnmarshalCampaignID(id)
+	campaignID, err := unmarshalCampaignID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -257,7 +257,7 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 	}
 
 	if args.EnsureCampaign != nil {
-		opts.EnsureCampaignID, err = campaigns.UnmarshalCampaignID(*args.EnsureCampaign)
+		opts.EnsureCampaignID, err = unmarshalCampaignID(*args.EnsureCampaign)
 		if err != nil {
 			return nil, err
 		}
@@ -368,7 +368,7 @@ func (r *Resolver) MoveCampaign(ctx context.Context, args *graphqlbackend.MoveCa
 		return nil, err
 	}
 
-	campaignID, err := campaigns.UnmarshalCampaignID(args.Campaign)
+	campaignID, err := unmarshalCampaignID(args.Campaign)
 	if err != nil {
 		return nil, err
 	}
@@ -410,7 +410,7 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 		return nil, err
 	}
 
-	campaignID, err := campaigns.UnmarshalCampaignID(args.Campaign)
+	campaignID, err := unmarshalCampaignID(args.Campaign)
 	if err != nil {
 		return nil, err
 	}
@@ -558,7 +558,7 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 		return nil, err
 	}
 
-	campaignID, err := campaigns.UnmarshalCampaignID(args.Campaign)
+	campaignID, err := unmarshalCampaignID(args.Campaign)
 	if err != nil {
 		return nil, errors.Wrap(err, "unmarshaling campaign id")
 	}
