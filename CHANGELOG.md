@@ -13,6 +13,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- The site configuration `search.limits`. This allows configuring the maximum timeout (defaults to 1 minute). Also allows configuring the maximum repositories to search in different scenarios. [#13448](https://github.com/sourcegraph/sourcegraph/pull/13448)
+
 ### Changed
 
 - Introduced the new `external_service_repos` join table. Please note that the migration required to make this change could take a couple of minutes.
