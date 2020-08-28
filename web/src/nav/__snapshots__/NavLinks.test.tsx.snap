@@ -1,93 +1,1581 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
-Array [
-  "Search /search",
-  "WebActionsNavItems",
-  "[object Object], Explore /explore",
-  "CampaignsNavItem",
-  "WebCommandListPopoverButton",
-  "UserNavItem",
-]
+<ul
+  className="nav-links nav align-items-center pl-2 pr-1"
+>
+  <li
+    className="nav-item d-sm-none"
+  >
+    <AnchorLink
+      className="nav-link"
+      to="/search"
+    >
+      Search
+    </AnchorLink>
+  </li>
+  <WebActionsNavItems
+    authenticatedUser={
+      Object {
+        "username": "u",
+      }
+    }
+    extensionsController={
+      Object {
+        "executeCommand": [Function],
+        "services": Object {},
+      }
+    }
+    history="[History]"
+    interactiveSearchMode={false}
+    isLightTheme={true}
+    isSourcegraphDotCom={false}
+    keyboardShortcuts={Array []}
+    location="[Location path=/foo]"
+    menu="global/nav"
+    onThemePreferenceChange={[Function]}
+    platformContext={
+      Object {
+        "forceUpdateTooltip": [Function],
+        "settings": "[Observable]",
+      }
+    }
+    settingsCascade={
+      Object {
+        "final": null,
+        "subjects": null,
+      }
+    }
+    showCampaigns={true}
+    showDotComMarketing={true}
+    splitSearchModes={false}
+    telemetryService={
+      EventLogger {
+        "anonUid": undefined,
+        "hasStrippedQueryParameters": false,
+      }
+    }
+    themePreference="light"
+    toggleSearchMode={[Function]}
+  />
+  <li
+    className="nav-item"
+  >
+    <AnchorLink
+      className="nav-link"
+      to="/explore"
+    >
+      <Memo(CompassOutlineIcon)
+        className="icon-inline"
+      />
+       Explore
+    </AnchorLink>
+  </li>
+  <li
+    className="nav-item"
+  >
+    <CampaignsNavItem />
+  </li>
+  <li
+    className="nav-item"
+  >
+    <WebCommandListPopoverButton
+      authenticatedUser={
+        Object {
+          "username": "u",
+        }
+      }
+      buttonClassName="nav-link btn btn-link"
+      extensionsController={
+        Object {
+          "executeCommand": [Function],
+          "services": Object {},
+        }
+      }
+      history="[History]"
+      interactiveSearchMode={false}
+      isLightTheme={true}
+      isSourcegraphDotCom={false}
+      keyboardShortcutForShow={
+        Object {
+          "id": "commandPalette",
+          "keybindings": Array [
+            Object {
+              "held": Array [
+                "Control",
+              ],
+              "ordered": Array [
+                "p",
+              ],
+            },
+            Object {
+              "ordered": Array [
+                "F1",
+              ],
+            },
+            Object {
+              "held": Array [
+                "Alt",
+              ],
+              "ordered": Array [
+                "x",
+              ],
+            },
+          ],
+          "title": "Show command palette",
+        }
+      }
+      keyboardShortcuts={Array []}
+      location="[Location path=/foo]"
+      menu="commandPalette"
+      onThemePreferenceChange={[Function]}
+      platformContext={
+        Object {
+          "forceUpdateTooltip": [Function],
+          "settings": "[Observable]",
+        }
+      }
+      settingsCascade={
+        Object {
+          "final": null,
+          "subjects": null,
+        }
+      }
+      showCampaigns={true}
+      showDotComMarketing={true}
+      splitSearchModes={false}
+      telemetryService={
+        EventLogger {
+          "anonUid": undefined,
+          "hasStrippedQueryParameters": false,
+        }
+      }
+      themePreference="light"
+      toggleSearchMode={[Function]}
+    />
+  </li>
+  <li
+    className="nav-item"
+  >
+    <UserNavItem
+      authenticatedUser={
+        Object {
+          "username": "u",
+        }
+      }
+      extensionsController={
+        Object {
+          "executeCommand": [Function],
+          "services": Object {},
+        }
+      }
+      history="[History]"
+      interactiveSearchMode={false}
+      isLightTheme={true}
+      isSourcegraphDotCom={false}
+      keyboardShortcutForSwitchTheme={
+        Object {
+          "id": "switchTheme",
+          "keybindings": Array [
+            Object {
+              "held": Array [
+                "Alt",
+              ],
+              "ordered": Array [
+                "t",
+              ],
+            },
+          ],
+          "title": "Switch color theme",
+        }
+      }
+      keyboardShortcuts={Array []}
+      location="[Location path=/foo]"
+      onThemePreferenceChange={[Function]}
+      platformContext={
+        Object {
+          "forceUpdateTooltip": [Function],
+          "settings": "[Observable]",
+        }
+      }
+      settingsCascade={
+        Object {
+          "final": null,
+          "subjects": null,
+        }
+      }
+      showCampaigns={true}
+      showDotComMarketing={true}
+      splitSearchModes={false}
+      telemetryService={
+        EventLogger {
+          "anonUid": undefined,
+          "hasStrippedQueryParameters": false,
+        }
+      }
+      themePreference="light"
+      toggleSearchMode={[Function]}
+    />
+  </li>
+</ul>
 `;
 
 exports[`NavLinks authed Sourcegraph.com /search 1`] = `
-Array [
-  "WebActionsNavItems",
-  "[object Object], Explore /explore",
-  "CampaignsNavItem",
-  "WebCommandListPopoverButton",
-  "UserNavItem",
-]
+<ul
+  className="nav-links nav align-items-center pl-2 pr-1"
+>
+  <WebActionsNavItems
+    authenticatedUser={
+      Object {
+        "username": "u",
+      }
+    }
+    extensionsController={
+      Object {
+        "executeCommand": [Function],
+        "services": Object {},
+      }
+    }
+    history="[History]"
+    interactiveSearchMode={false}
+    isLightTheme={true}
+    isSourcegraphDotCom={false}
+    keyboardShortcuts={Array []}
+    location="[Location path=/search]"
+    menu="global/nav"
+    onThemePreferenceChange={[Function]}
+    platformContext={
+      Object {
+        "forceUpdateTooltip": [Function],
+        "settings": "[Observable]",
+      }
+    }
+    settingsCascade={
+      Object {
+        "final": null,
+        "subjects": null,
+      }
+    }
+    showCampaigns={true}
+    showDotComMarketing={true}
+    splitSearchModes={false}
+    telemetryService={
+      EventLogger {
+        "anonUid": undefined,
+        "hasStrippedQueryParameters": false,
+      }
+    }
+    themePreference="light"
+    toggleSearchMode={[Function]}
+  />
+  <li
+    className="nav-item"
+  >
+    <AnchorLink
+      className="nav-link"
+      to="/explore"
+    >
+      <Memo(CompassOutlineIcon)
+        className="icon-inline"
+      />
+       Explore
+    </AnchorLink>
+  </li>
+  <li
+    className="nav-item"
+  >
+    <CampaignsNavItem />
+  </li>
+  <li
+    className="nav-item"
+  >
+    <WebCommandListPopoverButton
+      authenticatedUser={
+        Object {
+          "username": "u",
+        }
+      }
+      buttonClassName="nav-link btn btn-link"
+      extensionsController={
+        Object {
+          "executeCommand": [Function],
+          "services": Object {},
+        }
+      }
+      history="[History]"
+      interactiveSearchMode={false}
+      isLightTheme={true}
+      isSourcegraphDotCom={false}
+      keyboardShortcutForShow={
+        Object {
+          "id": "commandPalette",
+          "keybindings": Array [
+            Object {
+              "held": Array [
+                "Control",
+              ],
+              "ordered": Array [
+                "p",
+              ],
+            },
+            Object {
+              "ordered": Array [
+                "F1",
+              ],
+            },
+            Object {
+              "held": Array [
+                "Alt",
+              ],
+              "ordered": Array [
+                "x",
+              ],
+            },
+          ],
+          "title": "Show command palette",
+        }
+      }
+      keyboardShortcuts={Array []}
+      location="[Location path=/search]"
+      menu="commandPalette"
+      onThemePreferenceChange={[Function]}
+      platformContext={
+        Object {
+          "forceUpdateTooltip": [Function],
+          "settings": "[Observable]",
+        }
+      }
+      settingsCascade={
+        Object {
+          "final": null,
+          "subjects": null,
+        }
+      }
+      showCampaigns={true}
+      showDotComMarketing={true}
+      splitSearchModes={false}
+      telemetryService={
+        EventLogger {
+          "anonUid": undefined,
+          "hasStrippedQueryParameters": false,
+        }
+      }
+      themePreference="light"
+      toggleSearchMode={[Function]}
+    />
+  </li>
+  <li
+    className="nav-item"
+  >
+    <UserNavItem
+      authenticatedUser={
+        Object {
+          "username": "u",
+        }
+      }
+      extensionsController={
+        Object {
+          "executeCommand": [Function],
+          "services": Object {},
+        }
+      }
+      history="[History]"
+      interactiveSearchMode={false}
+      isLightTheme={true}
+      isSourcegraphDotCom={false}
+      keyboardShortcutForSwitchTheme={
+        Object {
+          "id": "switchTheme",
+          "keybindings": Array [
+            Object {
+              "held": Array [
+                "Alt",
+              ],
+              "ordered": Array [
+                "t",
+              ],
+            },
+          ],
+          "title": "Switch color theme",
+        }
+      }
+      keyboardShortcuts={Array []}
+      location="[Location path=/search]"
+      onThemePreferenceChange={[Function]}
+      platformContext={
+        Object {
+          "forceUpdateTooltip": [Function],
+          "settings": "[Observable]",
+        }
+      }
+      settingsCascade={
+        Object {
+          "final": null,
+          "subjects": null,
+        }
+      }
+      showCampaigns={true}
+      showDotComMarketing={true}
+      splitSearchModes={false}
+      telemetryService={
+        EventLogger {
+          "anonUid": undefined,
+          "hasStrippedQueryParameters": false,
+        }
+      }
+      themePreference="light"
+      toggleSearchMode={[Function]}
+    />
+  </li>
+</ul>
 `;
 
 exports[`NavLinks authed self-hosted /foo 1`] = `
-Array [
-  "Search /search",
-  "WebActionsNavItems",
-  "[object Object], Explore /explore",
-  "CampaignsNavItem",
-  "WebCommandListPopoverButton",
-  "UserNavItem",
-]
+<ul
+  className="nav-links nav align-items-center pl-2 pr-1"
+>
+  <li
+    className="nav-item d-sm-none"
+  >
+    <AnchorLink
+      className="nav-link"
+      to="/search"
+    >
+      Search
+    </AnchorLink>
+  </li>
+  <WebActionsNavItems
+    authenticatedUser={
+      Object {
+        "username": "u",
+      }
+    }
+    extensionsController={
+      Object {
+        "executeCommand": [Function],
+        "services": Object {},
+      }
+    }
+    history="[History]"
+    interactiveSearchMode={false}
+    isLightTheme={true}
+    isSourcegraphDotCom={false}
+    keyboardShortcuts={Array []}
+    location="[Location path=/foo]"
+    menu="global/nav"
+    onThemePreferenceChange={[Function]}
+    platformContext={
+      Object {
+        "forceUpdateTooltip": [Function],
+        "settings": "[Observable]",
+      }
+    }
+    settingsCascade={
+      Object {
+        "final": null,
+        "subjects": null,
+      }
+    }
+    showCampaigns={true}
+    showDotComMarketing={false}
+    splitSearchModes={false}
+    telemetryService={
+      EventLogger {
+        "anonUid": undefined,
+        "hasStrippedQueryParameters": false,
+      }
+    }
+    themePreference="light"
+    toggleSearchMode={[Function]}
+  />
+  <li
+    className="nav-item"
+  >
+    <AnchorLink
+      className="nav-link"
+      to="/explore"
+    >
+      <Memo(CompassOutlineIcon)
+        className="icon-inline"
+      />
+       Explore
+    </AnchorLink>
+  </li>
+  <li
+    className="nav-item"
+  >
+    <CampaignsNavItem />
+  </li>
+  <li
+    className="nav-item"
+  >
+    <WebCommandListPopoverButton
+      authenticatedUser={
+        Object {
+          "username": "u",
+        }
+      }
+      buttonClassName="nav-link btn btn-link"
+      extensionsController={
+        Object {
+          "executeCommand": [Function],
+          "services": Object {},
+        }
+      }
+      history="[History]"
+      interactiveSearchMode={false}
+      isLightTheme={true}
+      isSourcegraphDotCom={false}
+      keyboardShortcutForShow={
+        Object {
+          "id": "commandPalette",
+          "keybindings": Array [
+            Object {
+              "held": Array [
+                "Control",
+              ],
+              "ordered": Array [
+                "p",
+              ],
+            },
+            Object {
+              "ordered": Array [
+                "F1",
+              ],
+            },
+            Object {
+              "held": Array [
+                "Alt",
+              ],
+              "ordered": Array [
+                "x",
+              ],
+            },
+          ],
+          "title": "Show command palette",
+        }
+      }
+      keyboardShortcuts={Array []}
+      location="[Location path=/foo]"
+      menu="commandPalette"
+      onThemePreferenceChange={[Function]}
+      platformContext={
+        Object {
+          "forceUpdateTooltip": [Function],
+          "settings": "[Observable]",
+        }
+      }
+      settingsCascade={
+        Object {
+          "final": null,
+          "subjects": null,
+        }
+      }
+      showCampaigns={true}
+      showDotComMarketing={false}
+      splitSearchModes={false}
+      telemetryService={
+        EventLogger {
+          "anonUid": undefined,
+          "hasStrippedQueryParameters": false,
+        }
+      }
+      themePreference="light"
+      toggleSearchMode={[Function]}
+    />
+  </li>
+  <li
+    className="nav-item"
+  >
+    <UserNavItem
+      authenticatedUser={
+        Object {
+          "username": "u",
+        }
+      }
+      extensionsController={
+        Object {
+          "executeCommand": [Function],
+          "services": Object {},
+        }
+      }
+      history="[History]"
+      interactiveSearchMode={false}
+      isLightTheme={true}
+      isSourcegraphDotCom={false}
+      keyboardShortcutForSwitchTheme={
+        Object {
+          "id": "switchTheme",
+          "keybindings": Array [
+            Object {
+              "held": Array [
+                "Alt",
+              ],
+              "ordered": Array [
+                "t",
+              ],
+            },
+          ],
+          "title": "Switch color theme",
+        }
+      }
+      keyboardShortcuts={Array []}
+      location="[Location path=/foo]"
+      onThemePreferenceChange={[Function]}
+      platformContext={
+        Object {
+          "forceUpdateTooltip": [Function],
+          "settings": "[Observable]",
+        }
+      }
+      settingsCascade={
+        Object {
+          "final": null,
+          "subjects": null,
+        }
+      }
+      showCampaigns={true}
+      showDotComMarketing={false}
+      splitSearchModes={false}
+      telemetryService={
+        EventLogger {
+          "anonUid": undefined,
+          "hasStrippedQueryParameters": false,
+        }
+      }
+      themePreference="light"
+      toggleSearchMode={[Function]}
+    />
+  </li>
+</ul>
 `;
 
 exports[`NavLinks authed self-hosted /search 1`] = `
-Array [
-  "WebActionsNavItems",
-  "[object Object], Explore /explore",
-  "CampaignsNavItem",
-  "WebCommandListPopoverButton",
-  "UserNavItem",
-]
+<ul
+  className="nav-links nav align-items-center pl-2 pr-1"
+>
+  <WebActionsNavItems
+    authenticatedUser={
+      Object {
+        "username": "u",
+      }
+    }
+    extensionsController={
+      Object {
+        "executeCommand": [Function],
+        "services": Object {},
+      }
+    }
+    history="[History]"
+    interactiveSearchMode={false}
+    isLightTheme={true}
+    isSourcegraphDotCom={false}
+    keyboardShortcuts={Array []}
+    location="[Location path=/search]"
+    menu="global/nav"
+    onThemePreferenceChange={[Function]}
+    platformContext={
+      Object {
+        "forceUpdateTooltip": [Function],
+        "settings": "[Observable]",
+      }
+    }
+    settingsCascade={
+      Object {
+        "final": null,
+        "subjects": null,
+      }
+    }
+    showCampaigns={true}
+    showDotComMarketing={false}
+    splitSearchModes={false}
+    telemetryService={
+      EventLogger {
+        "anonUid": undefined,
+        "hasStrippedQueryParameters": false,
+      }
+    }
+    themePreference="light"
+    toggleSearchMode={[Function]}
+  />
+  <li
+    className="nav-item"
+  >
+    <AnchorLink
+      className="nav-link"
+      to="/explore"
+    >
+      <Memo(CompassOutlineIcon)
+        className="icon-inline"
+      />
+       Explore
+    </AnchorLink>
+  </li>
+  <li
+    className="nav-item"
+  >
+    <CampaignsNavItem />
+  </li>
+  <li
+    className="nav-item"
+  >
+    <WebCommandListPopoverButton
+      authenticatedUser={
+        Object {
+          "username": "u",
+        }
+      }
+      buttonClassName="nav-link btn btn-link"
+      extensionsController={
+        Object {
+          "executeCommand": [Function],
+          "services": Object {},
+        }
+      }
+      history="[History]"
+      interactiveSearchMode={false}
+      isLightTheme={true}
+      isSourcegraphDotCom={false}
+      keyboardShortcutForShow={
+        Object {
+          "id": "commandPalette",
+          "keybindings": Array [
+            Object {
+              "held": Array [
+                "Control",
+              ],
+              "ordered": Array [
+                "p",
+              ],
+            },
+            Object {
+              "ordered": Array [
+                "F1",
+              ],
+            },
+            Object {
+              "held": Array [
+                "Alt",
+              ],
+              "ordered": Array [
+                "x",
+              ],
+            },
+          ],
+          "title": "Show command palette",
+        }
+      }
+      keyboardShortcuts={Array []}
+      location="[Location path=/search]"
+      menu="commandPalette"
+      onThemePreferenceChange={[Function]}
+      platformContext={
+        Object {
+          "forceUpdateTooltip": [Function],
+          "settings": "[Observable]",
+        }
+      }
+      settingsCascade={
+        Object {
+          "final": null,
+          "subjects": null,
+        }
+      }
+      showCampaigns={true}
+      showDotComMarketing={false}
+      splitSearchModes={false}
+      telemetryService={
+        EventLogger {
+          "anonUid": undefined,
+          "hasStrippedQueryParameters": false,
+        }
+      }
+      themePreference="light"
+      toggleSearchMode={[Function]}
+    />
+  </li>
+  <li
+    className="nav-item"
+  >
+    <UserNavItem
+      authenticatedUser={
+        Object {
+          "username": "u",
+        }
+      }
+      extensionsController={
+        Object {
+          "executeCommand": [Function],
+          "services": Object {},
+        }
+      }
+      history="[History]"
+      interactiveSearchMode={false}
+      isLightTheme={true}
+      isSourcegraphDotCom={false}
+      keyboardShortcutForSwitchTheme={
+        Object {
+          "id": "switchTheme",
+          "keybindings": Array [
+            Object {
+              "held": Array [
+                "Alt",
+              ],
+              "ordered": Array [
+                "t",
+              ],
+            },
+          ],
+          "title": "Switch color theme",
+        }
+      }
+      keyboardShortcuts={Array []}
+      location="[Location path=/search]"
+      onThemePreferenceChange={[Function]}
+      platformContext={
+        Object {
+          "forceUpdateTooltip": [Function],
+          "settings": "[Observable]",
+        }
+      }
+      settingsCascade={
+        Object {
+          "final": null,
+          "subjects": null,
+        }
+      }
+      showCampaigns={true}
+      showDotComMarketing={false}
+      splitSearchModes={false}
+      telemetryService={
+        EventLogger {
+          "anonUid": undefined,
+          "hasStrippedQueryParameters": false,
+        }
+      }
+      themePreference="light"
+      toggleSearchMode={[Function]}
+    />
+  </li>
+</ul>
 `;
 
 exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
-Array [
-  "Search /search",
-  "WebActionsNavItems",
-  "CampaignsNavItem",
-  "Extensions /extensions",
-  "Sign in /sign-in",
-  "About https://about.sourcegraph.com",
-  "Help /help",
-  "WebCommandListPopoverButton",
-]
+<ul
+  className="nav-links nav align-items-center pl-2 pr-1"
+>
+  <li
+    className="nav-item d-sm-none"
+  >
+    <AnchorLink
+      className="nav-link"
+      to="/search"
+    >
+      Search
+    </AnchorLink>
+  </li>
+  <WebActionsNavItems
+    authenticatedUser={null}
+    extensionsController={
+      Object {
+        "executeCommand": [Function],
+        "services": Object {},
+      }
+    }
+    history="[History]"
+    interactiveSearchMode={false}
+    isLightTheme={true}
+    isSourcegraphDotCom={false}
+    keyboardShortcuts={Array []}
+    location="[Location path=/foo]"
+    menu="global/nav"
+    onThemePreferenceChange={[Function]}
+    platformContext={
+      Object {
+        "forceUpdateTooltip": [Function],
+        "settings": "[Observable]",
+      }
+    }
+    settingsCascade={
+      Object {
+        "final": null,
+        "subjects": null,
+      }
+    }
+    showCampaigns={true}
+    showDotComMarketing={true}
+    splitSearchModes={false}
+    telemetryService={
+      EventLogger {
+        "anonUid": undefined,
+        "hasStrippedQueryParameters": false,
+      }
+    }
+    themePreference="light"
+    toggleSearchMode={[Function]}
+  />
+  <li
+    className="nav-item"
+  >
+    <CampaignsNavItem />
+  </li>
+  <li
+    className="nav-item"
+  >
+    <AnchorLink
+      className="nav-link"
+      to="/extensions"
+    >
+      Extensions
+    </AnchorLink>
+  </li>
+  <li
+    className="nav-item mx-1"
+  >
+    <AnchorLink
+      className="nav-link btn btn-primary"
+      to="/sign-in"
+    >
+      Sign in
+    </AnchorLink>
+  </li>
+  <li
+    className="nav-item"
+  >
+    <a
+      className="nav-link"
+      href="https://about.sourcegraph.com"
+      rel="noopener"
+      target="_blank"
+    >
+      About 
+      <Memo(OpenInNewIcon)
+        className="icon-inline"
+      />
+    </a>
+  </li>
+  <li
+    className="nav-item"
+  >
+    <AnchorLink
+      className="nav-link"
+      rel="noopener"
+      target="_blank"
+      to="/help"
+    >
+      Help 
+      <Memo(OpenInNewIcon)
+        className="icon-inline"
+      />
+    </AnchorLink>
+  </li>
+  <li
+    className="nav-item"
+  >
+    <WebCommandListPopoverButton
+      authenticatedUser={null}
+      buttonClassName="nav-link btn btn-link"
+      extensionsController={
+        Object {
+          "executeCommand": [Function],
+          "services": Object {},
+        }
+      }
+      history="[History]"
+      interactiveSearchMode={false}
+      isLightTheme={true}
+      isSourcegraphDotCom={false}
+      keyboardShortcutForShow={
+        Object {
+          "id": "commandPalette",
+          "keybindings": Array [
+            Object {
+              "held": Array [
+                "Control",
+              ],
+              "ordered": Array [
+                "p",
+              ],
+            },
+            Object {
+              "ordered": Array [
+                "F1",
+              ],
+            },
+            Object {
+              "held": Array [
+                "Alt",
+              ],
+              "ordered": Array [
+                "x",
+              ],
+            },
+          ],
+          "title": "Show command palette",
+        }
+      }
+      keyboardShortcuts={Array []}
+      location="[Location path=/foo]"
+      menu="commandPalette"
+      onThemePreferenceChange={[Function]}
+      platformContext={
+        Object {
+          "forceUpdateTooltip": [Function],
+          "settings": "[Observable]",
+        }
+      }
+      settingsCascade={
+        Object {
+          "final": null,
+          "subjects": null,
+        }
+      }
+      showCampaigns={true}
+      showDotComMarketing={true}
+      splitSearchModes={false}
+      telemetryService={
+        EventLogger {
+          "anonUid": undefined,
+          "hasStrippedQueryParameters": false,
+        }
+      }
+      themePreference="light"
+      toggleSearchMode={[Function]}
+    />
+  </li>
+</ul>
 `;
 
 exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
-Array [
-  "WebActionsNavItems",
-  "CampaignsNavItem",
-  "Extensions /extensions",
-  "Sign in /sign-in",
-  "About https://about.sourcegraph.com",
-  "Help /help",
-  "WebCommandListPopoverButton",
-]
+<ul
+  className="nav-links nav align-items-center pl-2 pr-1"
+>
+  <WebActionsNavItems
+    authenticatedUser={null}
+    extensionsController={
+      Object {
+        "executeCommand": [Function],
+        "services": Object {},
+      }
+    }
+    history="[History]"
+    interactiveSearchMode={false}
+    isLightTheme={true}
+    isSourcegraphDotCom={false}
+    keyboardShortcuts={Array []}
+    location="[Location path=/search]"
+    menu="global/nav"
+    onThemePreferenceChange={[Function]}
+    platformContext={
+      Object {
+        "forceUpdateTooltip": [Function],
+        "settings": "[Observable]",
+      }
+    }
+    settingsCascade={
+      Object {
+        "final": null,
+        "subjects": null,
+      }
+    }
+    showCampaigns={true}
+    showDotComMarketing={true}
+    splitSearchModes={false}
+    telemetryService={
+      EventLogger {
+        "anonUid": undefined,
+        "hasStrippedQueryParameters": false,
+      }
+    }
+    themePreference="light"
+    toggleSearchMode={[Function]}
+  />
+  <li
+    className="nav-item"
+  >
+    <CampaignsNavItem />
+  </li>
+  <li
+    className="nav-item"
+  >
+    <AnchorLink
+      className="nav-link"
+      to="/extensions"
+    >
+      Extensions
+    </AnchorLink>
+  </li>
+  <li
+    className="nav-item mx-1"
+  >
+    <AnchorLink
+      className="nav-link btn btn-primary"
+      to="/sign-in"
+    >
+      Sign in
+    </AnchorLink>
+  </li>
+  <li
+    className="nav-item"
+  >
+    <a
+      className="nav-link"
+      href="https://about.sourcegraph.com"
+      rel="noopener"
+      target="_blank"
+    >
+      About 
+      <Memo(OpenInNewIcon)
+        className="icon-inline"
+      />
+    </a>
+  </li>
+  <li
+    className="nav-item"
+  >
+    <AnchorLink
+      className="nav-link"
+      rel="noopener"
+      target="_blank"
+      to="/help"
+    >
+      Help 
+      <Memo(OpenInNewIcon)
+        className="icon-inline"
+      />
+    </AnchorLink>
+  </li>
+  <li
+    className="nav-item"
+  >
+    <WebCommandListPopoverButton
+      authenticatedUser={null}
+      buttonClassName="nav-link btn btn-link"
+      extensionsController={
+        Object {
+          "executeCommand": [Function],
+          "services": Object {},
+        }
+      }
+      history="[History]"
+      interactiveSearchMode={false}
+      isLightTheme={true}
+      isSourcegraphDotCom={false}
+      keyboardShortcutForShow={
+        Object {
+          "id": "commandPalette",
+          "keybindings": Array [
+            Object {
+              "held": Array [
+                "Control",
+              ],
+              "ordered": Array [
+                "p",
+              ],
+            },
+            Object {
+              "ordered": Array [
+                "F1",
+              ],
+            },
+            Object {
+              "held": Array [
+                "Alt",
+              ],
+              "ordered": Array [
+                "x",
+              ],
+            },
+          ],
+          "title": "Show command palette",
+        }
+      }
+      keyboardShortcuts={Array []}
+      location="[Location path=/search]"
+      menu="commandPalette"
+      onThemePreferenceChange={[Function]}
+      platformContext={
+        Object {
+          "forceUpdateTooltip": [Function],
+          "settings": "[Observable]",
+        }
+      }
+      settingsCascade={
+        Object {
+          "final": null,
+          "subjects": null,
+        }
+      }
+      showCampaigns={true}
+      showDotComMarketing={true}
+      splitSearchModes={false}
+      telemetryService={
+        EventLogger {
+          "anonUid": undefined,
+          "hasStrippedQueryParameters": false,
+        }
+      }
+      themePreference="light"
+      toggleSearchMode={[Function]}
+    />
+  </li>
+</ul>
 `;
 
 exports[`NavLinks unauthed self-hosted /foo 1`] = `
-Array [
-  "Search /search",
-  "WebActionsNavItems",
-  "[object Object], Explore /explore",
-  "CampaignsNavItem",
-  "Extensions /extensions",
-  "Sign in /sign-in",
-  "Help /help",
-  "WebCommandListPopoverButton",
-]
+<ul
+  className="nav-links nav align-items-center pl-2 pr-1"
+>
+  <li
+    className="nav-item d-sm-none"
+  >
+    <AnchorLink
+      className="nav-link"
+      to="/search"
+    >
+      Search
+    </AnchorLink>
+  </li>
+  <WebActionsNavItems
+    authenticatedUser={null}
+    extensionsController={
+      Object {
+        "executeCommand": [Function],
+        "services": Object {},
+      }
+    }
+    history="[History]"
+    interactiveSearchMode={false}
+    isLightTheme={true}
+    isSourcegraphDotCom={false}
+    keyboardShortcuts={Array []}
+    location="[Location path=/foo]"
+    menu="global/nav"
+    onThemePreferenceChange={[Function]}
+    platformContext={
+      Object {
+        "forceUpdateTooltip": [Function],
+        "settings": "[Observable]",
+      }
+    }
+    settingsCascade={
+      Object {
+        "final": null,
+        "subjects": null,
+      }
+    }
+    showCampaigns={true}
+    showDotComMarketing={false}
+    splitSearchModes={false}
+    telemetryService={
+      EventLogger {
+        "anonUid": undefined,
+        "hasStrippedQueryParameters": false,
+      }
+    }
+    themePreference="light"
+    toggleSearchMode={[Function]}
+  />
+  <li
+    className="nav-item"
+  >
+    <AnchorLink
+      className="nav-link"
+      to="/explore"
+    >
+      <Memo(CompassOutlineIcon)
+        className="icon-inline"
+      />
+       Explore
+    </AnchorLink>
+  </li>
+  <li
+    className="nav-item"
+  >
+    <CampaignsNavItem />
+  </li>
+  <li
+    className="nav-item"
+  >
+    <AnchorLink
+      className="nav-link"
+      to="/extensions"
+    >
+      Extensions
+    </AnchorLink>
+  </li>
+  <li
+    className="nav-item mx-1"
+  >
+    <AnchorLink
+      className="nav-link btn btn-primary"
+      to="/sign-in"
+    >
+      Sign in
+    </AnchorLink>
+  </li>
+  <li
+    className="nav-item"
+  >
+    <AnchorLink
+      className="nav-link"
+      rel="noopener"
+      target="_blank"
+      to="/help"
+    >
+      Help 
+      <Memo(OpenInNewIcon)
+        className="icon-inline"
+      />
+    </AnchorLink>
+  </li>
+  <li
+    className="nav-item"
+  >
+    <WebCommandListPopoverButton
+      authenticatedUser={null}
+      buttonClassName="nav-link btn btn-link"
+      extensionsController={
+        Object {
+          "executeCommand": [Function],
+          "services": Object {},
+        }
+      }
+      history="[History]"
+      interactiveSearchMode={false}
+      isLightTheme={true}
+      isSourcegraphDotCom={false}
+      keyboardShortcutForShow={
+        Object {
+          "id": "commandPalette",
+          "keybindings": Array [
+            Object {
+              "held": Array [
+                "Control",
+              ],
+              "ordered": Array [
+                "p",
+              ],
+            },
+            Object {
+              "ordered": Array [
+                "F1",
+              ],
+            },
+            Object {
+              "held": Array [
+                "Alt",
+              ],
+              "ordered": Array [
+                "x",
+              ],
+            },
+          ],
+          "title": "Show command palette",
+        }
+      }
+      keyboardShortcuts={Array []}
+      location="[Location path=/foo]"
+      menu="commandPalette"
+      onThemePreferenceChange={[Function]}
+      platformContext={
+        Object {
+          "forceUpdateTooltip": [Function],
+          "settings": "[Observable]",
+        }
+      }
+      settingsCascade={
+        Object {
+          "final": null,
+          "subjects": null,
+        }
+      }
+      showCampaigns={true}
+      showDotComMarketing={false}
+      splitSearchModes={false}
+      telemetryService={
+        EventLogger {
+          "anonUid": undefined,
+          "hasStrippedQueryParameters": false,
+        }
+      }
+      themePreference="light"
+      toggleSearchMode={[Function]}
+    />
+  </li>
+</ul>
 `;
 
 exports[`NavLinks unauthed self-hosted /search 1`] = `
-Array [
-  "WebActionsNavItems",
-  "[object Object], Explore /explore",
-  "CampaignsNavItem",
-  "Extensions /extensions",
-  "Sign in /sign-in",
-  "Help /help",
-  "WebCommandListPopoverButton",
-]
+<ul
+  className="nav-links nav align-items-center pl-2 pr-1"
+>
+  <WebActionsNavItems
+    authenticatedUser={null}
+    extensionsController={
+      Object {
+        "executeCommand": [Function],
+        "services": Object {},
+      }
+    }
+    history="[History]"
+    interactiveSearchMode={false}
+    isLightTheme={true}
+    isSourcegraphDotCom={false}
+    keyboardShortcuts={Array []}
+    location="[Location path=/search]"
+    menu="global/nav"
+    onThemePreferenceChange={[Function]}
+    platformContext={
+      Object {
+        "forceUpdateTooltip": [Function],
+        "settings": "[Observable]",
+      }
+    }
+    settingsCascade={
+      Object {
+        "final": null,
+        "subjects": null,
+      }
+    }
+    showCampaigns={true}
+    showDotComMarketing={false}
+    splitSearchModes={false}
+    telemetryService={
+      EventLogger {
+        "anonUid": undefined,
+        "hasStrippedQueryParameters": false,
+      }
+    }
+    themePreference="light"
+    toggleSearchMode={[Function]}
+  />
+  <li
+    className="nav-item"
+  >
+    <AnchorLink
+      className="nav-link"
+      to="/explore"
+    >
+      <Memo(CompassOutlineIcon)
+        className="icon-inline"
+      />
+       Explore
+    </AnchorLink>
+  </li>
+  <li
+    className="nav-item"
+  >
+    <CampaignsNavItem />
+  </li>
+  <li
+    className="nav-item"
+  >
+    <AnchorLink
+      className="nav-link"
+      to="/extensions"
+    >
+      Extensions
+    </AnchorLink>
+  </li>
+  <li
+    className="nav-item mx-1"
+  >
+    <AnchorLink
+      className="nav-link btn btn-primary"
+      to="/sign-in"
+    >
+      Sign in
+    </AnchorLink>
+  </li>
+  <li
+    className="nav-item"
+  >
+    <AnchorLink
+      className="nav-link"
+      rel="noopener"
+      target="_blank"
+      to="/help"
+    >
+      Help 
+      <Memo(OpenInNewIcon)
+        className="icon-inline"
+      />
+    </AnchorLink>
+  </li>
+  <li
+    className="nav-item"
+  >
+    <WebCommandListPopoverButton
+      authenticatedUser={null}
+      buttonClassName="nav-link btn btn-link"
+      extensionsController={
+        Object {
+          "executeCommand": [Function],
+          "services": Object {},
+        }
+      }
+      history="[History]"
+      interactiveSearchMode={false}
+      isLightTheme={true}
+      isSourcegraphDotCom={false}
+      keyboardShortcutForShow={
+        Object {
+          "id": "commandPalette",
+          "keybindings": Array [
+            Object {
+              "held": Array [
+                "Control",
+              ],
+              "ordered": Array [
+                "p",
+              ],
+            },
+            Object {
+              "ordered": Array [
+                "F1",
+              ],
+            },
+            Object {
+              "held": Array [
+                "Alt",
+              ],
+              "ordered": Array [
+                "x",
+              ],
+            },
+          ],
+          "title": "Show command palette",
+        }
+      }
+      keyboardShortcuts={Array []}
+      location="[Location path=/search]"
+      menu="commandPalette"
+      onThemePreferenceChange={[Function]}
+      platformContext={
+        Object {
+          "forceUpdateTooltip": [Function],
+          "settings": "[Observable]",
+        }
+      }
+      settingsCascade={
+        Object {
+          "final": null,
+          "subjects": null,
+        }
+      }
+      showCampaigns={true}
+      showDotComMarketing={false}
+      splitSearchModes={false}
+      telemetryService={
+        EventLogger {
+          "anonUid": undefined,
+          "hasStrippedQueryParameters": false,
+        }
+      }
+      themePreference="light"
+      toggleSearchMode={[Function]}
+    />
+  </li>
+</ul>
 `;

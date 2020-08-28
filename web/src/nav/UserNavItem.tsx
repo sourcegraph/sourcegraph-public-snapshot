@@ -8,6 +8,7 @@ import { ThemeProps } from '../../../shared/src/theme'
 import { UserAvatar } from '../user/UserAvatar'
 import { ThemePreferenceProps, ThemePreference } from '../theme'
 import { AuthenticatedUser } from '../auth'
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
 interface Props extends ThemeProps, ThemePreferenceProps {
     location: H.Location
@@ -119,16 +120,9 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                             Site admin
                         </Link>
                     )}
-                    {this.props.showDotComMarketing ? (
-                        // eslint-disable-next-line react/jsx-no-target-blank
-                        <a href="https://docs.sourcegraph.com" target="_blank" className="dropdown-item">
-                            Help
-                        </a>
-                    ) : (
-                        <Link to="/help" className="dropdown-item">
-                            Help
-                        </Link>
-                    )}
+                    <Link to="/help" className="dropdown-item" target="_blank" rel="noopener">
+                        Help <OpenInNewIcon className="icon-inline" />
+                    </Link>
                     {this.props.authenticatedUser.session?.canSignOut && (
                         <a href="/-/sign-out" className="dropdown-item">
                             Sign out
@@ -137,9 +131,13 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                     {this.props.showDotComMarketing && (
                         <>
                             <DropdownItem divider={true} />
-                            {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                            <a href="https://about.sourcegraph.com" target="_blank" className="dropdown-item">
-                                About Sourcegraph
+                            <a
+                                href="https://about.sourcegraph.com"
+                                target="_blank"
+                                rel="noopener"
+                                className="dropdown-item"
+                            >
+                                About Sourcegraph <OpenInNewIcon className="icon-inline" />
                             </a>
                         </>
                     )}

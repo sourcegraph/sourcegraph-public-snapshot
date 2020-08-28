@@ -296,13 +296,33 @@ exports[`UserNavItem simple 1`] = `
                       tabIndex="-1"
                     />
                   </DropdownItem>
-                  <a
+                  <Link
                     className="dropdown-item"
-                    href="https://docs.sourcegraph.com"
+                    rel="noopener"
                     target="_blank"
+                    to="/help"
                   >
-                    Help
-                  </a>
+                    <LinkAnchor
+                      className="dropdown-item"
+                      href="/help"
+                      navigate={[Function]}
+                      rel="noopener"
+                      target="_blank"
+                    >
+                      <a
+                        className="dropdown-item"
+                        href="/help"
+                        onClick={[Function]}
+                        rel="noopener"
+                        target="_blank"
+                      >
+                        Help 
+                        <Memo(OpenInNewIcon)
+                          className="icon-inline"
+                        />
+                      </a>
+                    </LinkAnchor>
+                  </Link>
                   <DropdownItem
                     divider={true}
                     tag="button"
@@ -317,9 +337,13 @@ exports[`UserNavItem simple 1`] = `
                   <a
                     className="dropdown-item"
                     href="https://about.sourcegraph.com"
+                    rel="noopener"
                     target="_blank"
                   >
-                    About Sourcegraph
+                    About Sourcegraph 
+                    <Memo(OpenInNewIcon)
+                      className="icon-inline"
+                    />
                   </a>
                 </div>
               </DropdownMenu>

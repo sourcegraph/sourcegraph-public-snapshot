@@ -25,6 +25,7 @@ import { Settings } from '../schema/settings.schema'
 import CompassOutlineIcon from 'mdi-react/CompassOutlineIcon'
 import { InsightsNavItem } from '../insights/InsightsNavLink'
 import { AuthenticatedUser } from '../auth'
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -101,14 +102,19 @@ export class NavLinks extends React.PureComponent<Props> {
                         )}
                         {this.props.showDotComMarketing && (
                             <li className="nav-item">
-                                <a href="https://about.sourcegraph.com" className="nav-link">
-                                    About
+                                <a
+                                    href="https://about.sourcegraph.com"
+                                    className="nav-link"
+                                    target="_blank"
+                                    rel="noopener"
+                                >
+                                    About <OpenInNewIcon className="icon-inline" />
                                 </a>
                             </li>
                         )}
                         <li className="nav-item">
-                            <Link to="/help" className="nav-link">
-                                Help
+                            <Link to="/help" className="nav-link" target="_blank" rel="noopener">
+                                Help <OpenInNewIcon className="icon-inline" />
                             </Link>
                         </li>
                     </>
