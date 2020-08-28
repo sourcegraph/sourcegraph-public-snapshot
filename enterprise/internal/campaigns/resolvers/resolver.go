@@ -487,7 +487,9 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, campaign
 
 	safe := true
 
-	if err := validateFirstParam(args.First, 0, 100); err != nil {
+	// TODO: Reduce this number, once we use cursor based pagination in the frontend for ChangesetConnections.
+	// Currently we cannot, because we want to re-fetch the whole list periodically to check to change in changeset states.
+	if err := validateFirstParam(args.First, 0, 100000); err != nil {
 		return opts, false, err
 	}
 	opts.Limit = int(args.First)
