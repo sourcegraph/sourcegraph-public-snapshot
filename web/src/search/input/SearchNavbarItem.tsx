@@ -16,7 +16,7 @@ import { ThemeProps } from '../../../../shared/src/theme'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import Shepherd from 'shepherd.js'
-import { defaultTourOptions, generateStepTooltip } from './SearchOnboardingTour'
+import { defaultTourOptions, generateStepTooltip, createStructuralSearchTourTooltip } from './SearchOnboardingTour'
 import { SearchPatternType } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
@@ -34,21 +34,6 @@ interface Props
     navbarSearchState: QueryState
     onChange: (newValue: QueryState) => void
     globbing: boolean
-}
-
-function createStructuralSearchTourTooltip(): HTMLElement {
-    const list = document.createElement('ul')
-    list.className = 'caret-list mb-0'
-    const listItem = document.createElement('li')
-    listItem.className = 'p-0 my-4'
-    list.append(listItem)
-    const exampleButton = document.createElement('a')
-    exampleButton.href = 'https://docs.sourcegraph.com/user/search/structural'
-    exampleButton.target = '_blank'
-    exampleButton.className = 'btn btn-link test-tour-language-example'
-    exampleButton.textContent = 'Structural search documentation'
-    listItem.append(exampleButton)
-    return list
 }
 
 /**
@@ -79,7 +64,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 but simple with structural search. Tip: 'my_match' is a name for the\n
                 code we matched between code boundries. This is similar to a named capture\n
                 group in regex.`,
-                    createStructuralSearchTourTooltip()
+                    createStructuralSearchTourTooltip(tour)
                 ),
                 when: {
                     show() {
@@ -90,17 +75,6 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                     element: '.test-structural-search-toggle',
                     on: 'bottom',
                 },
-                buttons: [
-                    {
-                        text: 'Next',
-                        action: () => {
-                            tour.getById('view-search-reference').updateStepOptions({
-                                text: generateStepTooltip(tour, 'Review the search reference', 6, 6),
-                            })
-                            tour.show('view-search-reference')
-                        },
-                    },
-                ],
             },
             {
                 id: 'view-search-reference',

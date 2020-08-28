@@ -220,6 +220,39 @@ export function createAddCodeStepWithLanguageExampleTooltip(
     )
 }
 
+/** Creates the tooltip for the structural search informational step. */
+export function createStructuralSearchTourTooltip(tour: Shepherd.Tour): HTMLElement {
+    const container = document.createElement('div')
+    const list = document.createElement('ul')
+    list.className = 'caret-list mb-0'
+    const listItem = document.createElement('li')
+    listItem.className = 'p-0 my-4'
+    list.append(listItem)
+    const exampleButton = document.createElement('a')
+    exampleButton.href = 'https://docs.sourcegraph.com/user/search/structural'
+    exampleButton.target = '_blank'
+    exampleButton.className = 'btn btn-link test-tour-language-example'
+    exampleButton.textContent = 'Structural search documentation'
+    listItem.append(exampleButton)
+    container.append(list)
+
+    const nextButtonRow = document.createElement('div')
+    nextButtonRow.className = 'd-flex justify-content-end'
+    const nextButton = document.createElement('button')
+    nextButton.className = 'btn btn-link tour-structural-next-button p-0 font-weight-bold'
+    nextButton.textContent = 'Next'
+    nextButton.addEventListener('click', () => {
+        tour.getById('view-search-reference').updateStepOptions({
+            text: generateStepTooltip(tour, 'Review the search reference', 6, 6),
+        })
+        tour.show('view-search-reference')
+    })
+    nextButtonRow.append(nextButton)
+    container.append(nextButtonRow)
+
+    return container
+}
+
 export const isValidLangQuery = (query: string): boolean => Object.keys(languageFilterToSearchExamples).includes(query)
 
 /** *
