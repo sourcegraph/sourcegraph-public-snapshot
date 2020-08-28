@@ -200,10 +200,8 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 	status.ChangesetSpec = spec
 	x.updateTaskStatus(task, status)
 
-	// Add the spec to the executor's list of completed specs.
-	x.specsMu.Lock()
-	x.specs = append(x.specs, spec)
-	x.specsMu.Unlock()
+	// Add it to the status
+	status.ChangesetSpec = spec
 
 	// Add to the cache. We don't use runCtx here because we want to write to
 	// the cache even if we've now reached the timeout.
@@ -211,6 +209,16 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 		err = errors.Wrapf(err, "caching result for %q", task.Repository.Name)
 	}
 
+	// If the steps didn't result in any diff, we don't need to add it to the
+	// list of specs that are displayed to the user and send to the server.
+	if len(diff) == 0 {
+		return
+	}
+
+	// Add the spec to the executor's list of completed specs.
+	x.specsMu.Lock()
+	x.specs = append(x.specs, spec)
+	x.specsMu.Unlock()
 	return
 }
 
