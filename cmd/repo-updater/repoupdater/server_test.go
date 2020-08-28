@@ -819,7 +819,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 					sourcer := repos.NewFakeSourcer(tc.sourcerErr, repos.NewFakeSource(githubService, nil))
 					// Run Sync so that possibly `LastSyncErrors` is set
 					syncer.Sourcer = sourcer
-					_ = syncer.SyncExternalService(ctx, store, githubService.ID)
+					_ = syncer.SyncExternalService(ctx, store, githubService.ID, time.Millisecond)
 				}
 
 				s := &Server{

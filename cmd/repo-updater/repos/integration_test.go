@@ -71,6 +71,9 @@ func TestIntegration(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Cleanup(func() {
+				if t.Failed() {
+					return
+				}
 				if _, err := db.Exec(`DELETE FROM external_service_sync_jobs; DELETE FROM external_service_repos; DELETE FROM external_services`); err != nil {
 					t.Fatalf("cleaning up external services failed: %v", err)
 				}

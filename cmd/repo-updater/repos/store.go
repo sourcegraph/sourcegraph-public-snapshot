@@ -26,9 +26,7 @@ type Store interface {
 	ListExternalServices(context.Context, StoreListExternalServicesArgs) ([]*ExternalService, error)
 	UpsertExternalServices(ctx context.Context, svcs ...*ExternalService) error
 
-	InsertRepos(context.Context, ...*Repo) error
 	ListRepos(context.Context, StoreListReposArgs) ([]*Repo, error)
-	DeleteRepos(ctx context.Context, ids ...api.RepoID) error
 	UpsertRepos(ctx context.Context, repos ...*Repo) error
 	UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]SourceInfo) error
 	SetClonedRepos(ctx context.Context, repoNames ...string) error
@@ -38,6 +36,11 @@ type Store interface {
 	// is in the past.
 	// If ignoreSiteAdmin is true then we only sync user added external services.
 	EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) error
+
+	// TODO: These two methods should not be used in production, move them to
+	// an extension interface that's explicitely for testing.
+	InsertRepos(context.Context, ...*Repo) error
+	DeleteRepos(ctx context.Context, ids ...api.RepoID) error
 }
 
 // StoreListReposArgs is a query arguments type used by
@@ -1053,7 +1056,7 @@ const enqueueSyncJobsQueryFmtstr = `
 WITH due AS (
     SELECT id
     FROM external_services
-    WHERE (next_sync_at < clock_timestamp() OR next_sync_at IS NULL)
+    WHERE (next_sync_at <= clock_timestamp() OR next_sync_at IS NULL)
     AND %s
 ),
 busy AS (

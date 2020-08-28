@@ -46,8 +46,22 @@ type Syncer struct {
 	syncSignal signal
 }
 
+// RunOptions contains options customizing Run behaviour.
+type RunOptions struct {
+	Interval        func() time.Duration // Defaults to 1 minute
+	IsCloud         bool                 // Defaults to false
+	MinSyncInterval time.Duration        // Defaults to 1 minute
+}
+
 // Run runs the Sync at the specified interval.
-func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, interval func() time.Duration, isCloud bool) error {
+func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOptions) error {
+	if opts.Interval == nil {
+		opts.Interval = func() time.Duration { return time.Minute }
+	}
+	if opts.MinSyncInterval == 0 {
+		opts.MinSyncInterval = time.Minute
+	}
+
 	s.initialUnmodifiedDiffFromStore(pctx, store)
 
 	log15.Info("Running Syncer.Run")
@@ -64,11 +78,11 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, interval fun
 	for pctx.Err() == nil {
 		ctx, cancel := contextWithSignalCancel(pctx, s.syncSignal.Watch())
 
-		if err := store.EnqueueSyncJobs(ctx, isCloud); err != nil {
+		if err := store.EnqueueSyncJobs(ctx, opts.IsCloud); err != nil {
 			s.Logger.Error("Syncer", "error", err)
 		}
 
-		sleep(ctx, interval())
+		sleep(ctx, opts.Interval())
 
 		cancel()
 	}
@@ -77,8 +91,10 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, interval fun
 }
 
 type syncHandler struct {
-	syncer *Syncer
-	store  Store
+	syncer          *Syncer
+	store           Store
+	minSyncInterval time.Duration
+	maxSyncInterval time.Duration
 }
 
 func (s *syncHandler) Handle(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) error {
@@ -92,7 +108,7 @@ func (s *syncHandler) Handle(ctx context.Context, tx dbworkerstore.Store, record
 		store = ws.With(tx.Handle().DB())
 	}
 
-	return s.syncer.SyncExternalService(ctx, store, sj.ExternalServiceID)
+	return s.syncer.SyncExternalService(ctx, store, sj.ExternalServiceID, s.minSyncInterval)
 }
 
 // contextWithSignalCancel will return a context which will be cancelled if
@@ -126,7 +142,7 @@ func (s *Syncer) TriggerSync() {
 }
 
 // SyncExternalService syncs repos using all of the supplied external services
-func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalServiceID int64) (err error) {
+func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalServiceID int64, minSyncInterval time.Duration) (err error) {
 	var diff Diff
 
 	log15.Info("Syncing external service", "serviceID", externalServiceID)
@@ -183,7 +199,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	}
 
 	now := s.Now()
-	interval := calcSyncInterval(now, svc.LastSyncAt, diff)
+	interval := calcSyncInterval(now, svc.LastSyncAt, minSyncInterval, diff)
 	log15.Info("Synced external service", "id", externalServiceID, "backoff duration", interval)
 	svc.NextSyncAt = now.Add(interval)
 	svc.LastSyncAt = now
@@ -203,8 +219,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	return nil
 }
 
-func calcSyncInterval(now time.Time, lastSync time.Time, diff Diff) time.Duration {
-	const minSyncInterval = 1 * time.Minute
+func calcSyncInterval(now time.Time, lastSync time.Time, minSyncInterval time.Duration, diff Diff) time.Duration {
 	const maxSyncInterval = 8 * time.Hour
 
 	// Special case, we've never synced

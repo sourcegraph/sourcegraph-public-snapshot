@@ -5,11 +5,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"sort"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/gitchander/permutation"
 	"github.com/google/go-cmp/cmp"
@@ -42,14 +43,13 @@ func testSyncerSyncWithErrors(t *testing.T, store repos.Store) func(t *testing.T
 			name    string
 			sourcer repos.Sourcer
 			store   repos.Store
-			svc     repos.ExternalService
 			err     string
 		}{
 			{
 				name:    "sourcer error aborts sync",
 				sourcer: repos.NewFakeSourcer(errors.New("boom")),
 				store:   store,
-				err:     "syncer.sync.sourced: 2 errors occurred:\n\t* boom\n\t* boom\n\n",
+				err:     "syncer.sync.sourced: 1 error occurred:\n\t* boom\n\n",
 			},
 			{
 				name:    "store list error aborts sync",
@@ -80,13 +80,17 @@ func testSyncerSyncWithErrors(t *testing.T, store repos.Store) func(t *testing.T
 					Sourcer: tc.sourcer,
 					Now:     now,
 				}
-				err := syncer.SyncExternalService(ctx, tc.store, tc.svc.ID)
+				err := syncer.SyncExternalService(ctx, tc.store, githubService.ID, time.Millisecond)
 
-				if have, want := fmt.Sprint(err), tc.err; have != want {
+				if have, want := err.Error(), tc.err; have != want {
 					t.Errorf("have error %q, want %q", have, want)
 				}
 
-				if have, want := fmt.Sprint(syncer.SyncErrors()), tc.err; have != want {
+				if len(syncer.SyncErrors()) != 1 {
+					t.Fatal("expected 1 error")
+				}
+
+				if have, want := syncer.SyncErrors(), tc.err; have[0].Error() != want {
 					t.Errorf("have SyncErrors %q, want %q", have, want)
 				}
 			})
@@ -240,6 +244,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 		sourcer repos.Sourcer
 		store   repos.Store
 		stored  repos.Repos
+		svc     *repos.ExternalService
 		ctx     context.Context
 		now     func() time.Time
 		diff    repos.Diff
@@ -272,6 +277,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 					repos.Opt.RepoCreatedAt(clock.Time(1)),
 					repos.Opt.RepoSources(tc.svc.Clone().URN()),
 				)}},
+				svc: tc.svc,
 				err: "<nil>",
 			},
 			testCase{
@@ -287,6 +293,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 					repos.Opt.RepoModifiedAt(clock.Time(1)),
 					repos.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
 				)}},
+				svc: tc.svc,
 				err: "<nil>",
 			},
 			testCase{
@@ -302,6 +309,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				diff: repos.Diff{Modified: repos.Repos{tc.repo.With(
 					repos.Opt.RepoModifiedAt(clock.Time(1)),
 				)}},
+				svc: tc.svc,
 				err: "<nil>",
 			},
 			testCase{
@@ -315,6 +323,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				diff: repos.Diff{Deleted: repos.Repos{tc.repo.With(
 					repos.Opt.RepoDeletedAt(clock.Time(1)),
 				)}},
+				svc: tc.svc,
 				err: "<nil>",
 			},
 			testCase{
@@ -329,6 +338,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 					tc.repo.With(
 						repos.Opt.RepoModifiedAt(clock.Time(1))),
 				}},
+				svc: tc.svc,
 				err: "<nil>",
 			},
 			testCase{
@@ -362,6 +372,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 						),
 					},
 				},
+				svc: tc.svc,
 				err: "<nil>",
 			},
 			testCase{
@@ -392,6 +403,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 						}),
 					},
 				},
+				svc: tc.svc,
 				err: "<nil>",
 			},
 			testCase{
@@ -424,6 +436,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 						}),
 					},
 				},
+				svc: tc.svc,
 				err: "<nil>",
 			},
 			testCase{
@@ -440,6 +453,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 					tc.repo.With(
 						repos.Opt.RepoCreatedAt(clock.Time(1))),
 				}},
+				svc: tc.svc,
 				err: "<nil>",
 			},
 			testCase{
@@ -480,6 +494,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 						}),
 					},
 				},
+				svc: tc.svc,
 				err: "<nil>",
 			},
 			testCase{
@@ -492,6 +507,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				stored: repos.Repos{tc.repo.With(repos.Opt.RepoName(strings.ToUpper(tc.repo.Name)))},
 				now:    clock.Now,
 				diff:   repos.Diff{Modified: repos.Repos{tc.repo.With(repos.Opt.RepoModifiedAt(clock.Time(0)))}},
+				svc:    tc.svc,
 				err:    "<nil>",
 			},
 			func() testCase {
@@ -530,6 +546,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 						repos.Opt.RepoModifiedAt(clock.Time(1)),
 						repos.Opt.RepoMetadata(update),
 					)}},
+					svc: tc.svc,
 					err: "<nil>",
 				}
 			}(),
@@ -577,8 +594,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 					Now:     now,
 				}
 
-				// TODO: Use a proper id
-				err := syncer.SyncExternalService(ctx, st, 1)
+				err := syncer.SyncExternalService(ctx, st, tc.svc.ID, time.Millisecond)
 
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("have error %q, want %q", have, want)
@@ -1004,9 +1020,10 @@ func testSyncRun(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testi
 	return func(t *testing.T, store repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
 
 			svc := &repos.ExternalService{
-				Config: `{}`,
+				Config: `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 				Kind:   extsvc.KindGitHub,
 			}
 
@@ -1045,7 +1062,14 @@ func testSyncRun(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testi
 			done := make(chan struct{})
 			go func() {
 				defer close(done)
-				syncer.Run(ctx, db, store, func() time.Duration { return 0 }, false)
+				err := syncer.Run(ctx, db, store, repos.RunOptions{
+					Interval:        func() time.Duration { return time.Second },
+					IsCloud:         false,
+					MinSyncInterval: time.Millisecond,
+				})
+				if err != nil && err != context.Canceled {
+					t.Fatal(err)
+				}
 			}()
 
 			// Ignore fields store adds
