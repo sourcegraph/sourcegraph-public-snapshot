@@ -168,8 +168,8 @@ func (r *RepositoryRevisions) RevSpecs() []string {
 	return revspecs
 }
 
-// ExpandedRevSpecs evaluates all of r's ref glob expressions and returns
-// the full, current list of refs matched or resolved by them, plus the explicitly listed Git revspecs. See
+// ExpandedRevSpecs evaluates all of r's ref glob expressions and returns the full, current list of
+// refs matched or resolved by them, plus the explicitly listed Git revspecs. See
 // git.CompileRefGlobs for information on how ref include/exclude globs are handled.
 //
 // Note that not all callers need to expand these. If a caller is passing the ref globs as
