@@ -103,6 +103,11 @@ func (s *syncHandler) Handle(ctx context.Context, tx dbworkerstore.Store, record
 		return fmt.Errorf("expected repos.SyncJob, got %T", record)
 	}
 
+	_, err := tx.Handle().DB().ExecContext(ctx, "SET CONSTRAINTS ALL DEFERRED")
+	if err != nil {
+		return err
+	}
+
 	store := s.store
 	if ws, ok := s.store.(WithStore); ok {
 		store = ws.With(tx.Handle().DB())
@@ -198,7 +203,22 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 		return errors.Wrap(err, "syncer.sync.store.upsert-sources")
 	}
 
+	var orphanedRepos Repos
 	now := s.Now()
+	for _, deleted := range diff.Deleted {
+		d := deleted
+		if len(sdiff.Deleted[deleted.ID]) == 0 {
+			d.UpdatedAt, d.DeletedAt = now, now
+			orphanedRepos = append(orphanedRepos, d)
+		}
+	}
+
+	if len(orphanedRepos) > 0 {
+		if err = store.UpsertRepos(ctx, orphanedRepos...); err != nil {
+			return errors.Wrap(err, "syncer.sync.store.upsert-repos")
+		}
+	}
+
 	interval := calcSyncInterval(now, svc.LastSyncAt, minSyncInterval, diff)
 	log15.Info("Synced external service", "id", externalServiceID, "backoff duration", interval)
 	svc.NextSyncAt = now.Add(interval)
@@ -330,11 +350,11 @@ func (s *Syncer) upserts(diff Diff) []*Repo {
 	now := s.Now()
 	upserts := make([]*Repo, 0, len(diff.Added)+len(diff.Deleted)+len(diff.Modified))
 
-	for _, repo := range diff.Deleted {
-		repo.UpdatedAt, repo.DeletedAt = now, now
-		repo.Sources = map[string]*SourceInfo{}
-		upserts = append(upserts, repo)
-	}
+	// for _, repo := range diff.Deleted {
+	// 	repo.UpdatedAt, repo.DeletedAt = now, now
+	// 	repo.Sources = map[string]*SourceInfo{}
+	// 	upserts = append(upserts, repo)
+	// }
 
 	for _, repo := range diff.Modified {
 		repo.UpdatedAt, repo.DeletedAt = now, time.Time{}

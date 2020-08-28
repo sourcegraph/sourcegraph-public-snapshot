@@ -225,6 +225,11 @@ func (s *DBStore) With(db dbutil.DB) Store {
 	}
 }
 
+// TODO: remove this hack
+func (s *DBStore) DB() dbutil.DB {
+	return s.db
+}
+
 // Done terminates the underlying Tx in a DBStore either by committing or rolling
 // back based on the value pointed to by the first given error pointer.
 // It's a no-op if the `DBStore` is not operating within a transaction,
