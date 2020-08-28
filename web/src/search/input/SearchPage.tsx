@@ -32,13 +32,10 @@ import { SearchPageInput } from './SearchPageInput'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { PrivateCodeCta } from './PrivateCodeCta'
 import { AuthenticatedUser } from '../../auth'
-<<<<<<< HEAD
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-=======
 import { EnterpriseHomePanels } from '../panels/EnterpriseHomePanels'
->>>>>>> 078db4c9a3... Initial stubs for panels
 
-interface Props
+export interface SearchPageProps
     extends SettingsCascadeProps<Settings>,
         ThemeProps,
         ThemePreferenceProps,
@@ -73,6 +70,7 @@ interface Props
 /**
  * The search page
  */
+<<<<<<< HEAD
 export const SearchPage: React.FunctionComponent<Props> = props => {
     const SearchExampleClicked = useCallback(
         (url: string) => (): void => props.telemetryService.log('ExampleSearchClicked', { url }),
@@ -84,6 +82,10 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
     )
 
     useEffect(() => props.telemetryService.logViewEvent('Home'), [props.telemetryService])
+=======
+export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
+    useEffect(() => eventLogger.logViewEvent('Home'))
+>>>>>>> 4e5376637d... Tests for search page
 
     const codeInsightsEnabled =
         !isErrorLike(props.settingsCascade.final) && !!props.settingsCascade.final?.experimentalFeatures?.codeInsights
