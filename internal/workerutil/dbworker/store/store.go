@@ -131,6 +131,14 @@ type StoreOptions struct {
 	// be moved into the errored state rather than queued on its next reset to prevent an infinite retry
 	// cycle of the same input.
 	MaxNumResets int
+
+	// RetryAfter determines whether the store dequeues jobs that have errored
+	// more than RetryAfter ago.
+	// If RetryAfter is a non-zero duration, the store dequeues records where
+	// - the state is 'errored'
+	// - the failed attempts counter hasn't reached MaxNumResets
+	// - the finished_at timestamp was more than RetryAfter ago
+	RetryAfter time.Duration
 }
 
 // RecordScanFn is a function that interprets row values as a particular record. This function should
@@ -229,13 +237,26 @@ func (s *store) dequeue(ctx context.Context, conditions []*sqlf.Query, independe
 		txCtx = context.Background()
 	}
 
-	query := s.formatQuery(
-		selectCandidateQuery,
-		quote(s.options.ViewName),
-		makeConditionSuffix(conditions),
-		s.options.OrderByExpression,
-		quote(s.options.TableName),
-	)
+	var query *sqlf.Query
+	if s.options.RetryAfter != 0 {
+		query = s.formatQuery(
+			selectCandidateRetryQuery,
+			quote(s.options.ViewName),
+			int(s.options.RetryAfter/time.Second),
+			s.options.MaxNumResets,
+			makeConditionSuffix(conditions),
+			s.options.OrderByExpression,
+			quote(s.options.TableName),
+		)
+	} else {
+		query = s.formatQuery(
+			selectCandidateQuery,
+			quote(s.options.ViewName),
+			makeConditionSuffix(conditions),
+			s.options.OrderByExpression,
+			quote(s.options.TableName),
+		)
+	}
 
 	for {
 		// First, we try to select an eligible record outside of a transaction. This will skip
@@ -320,6 +341,34 @@ UPDATE %s
 SET
 	{state} = 'processing',
 	{started_at} = NOW()
+WHERE {id} IN (SELECT {id} FROM candidate)
+RETURNING {id}
+`
+
+const selectCandidateRetryQuery = `
+-- source: internal/workerutil/store.go:Dequeue
+WITH candidate AS (
+	SELECT {id} FROM %s
+	WHERE
+		(
+		  ({state} = 'queued' AND
+		  ({process_after} IS NULL OR {process_after} <= NOW()))
+		  OR
+		  ({state} = 'errored' AND
+		  NOW() - {finished_at} > (%s * '1 second'::interval) AND
+		  {num_resets} < %s)
+		)
+		%s
+	ORDER BY %s
+	FOR UPDATE SKIP LOCKED
+	LIMIT 1
+)
+UPDATE %s
+SET
+	{state} = 'processing',
+	{started_at} = NOW(),
+	{finished_at} = NULL,
+	{num_resets} = (CASE WHEN ({state} = 'errored') THEN ({num_resets} + 1) ELSE {num_resets} END)
 WHERE {id} IN (SELECT {id} FROM candidate)
 RETURNING {id}
 `
