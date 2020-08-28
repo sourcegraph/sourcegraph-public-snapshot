@@ -54,7 +54,7 @@ func (r *campaignSpecResolver) ParsedInput() (graphqlbackend.JSONValue, error) {
 
 func (r *campaignSpecResolver) ChangesetSpecs(ctx context.Context, args *graphqlbackend.ChangesetSpecsConnectionArgs) (graphqlbackend.ChangesetSpecConnectionResolver, error) {
 	opts := ee.ListChangesetSpecsOpts{CampaignSpecID: r.campaignSpec.ID}
-	if err := validateFirstParam(args.First, 0, 100); err != nil {
+	if err := validateFirstParam(args.First, 0, 1000); err != nil {
 		return nil, err
 	}
 	opts.Limit = int(args.First)

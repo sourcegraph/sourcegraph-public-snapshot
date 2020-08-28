@@ -173,7 +173,7 @@ func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.
 		return nil, err
 	}
 	opts.State = state
-	if err := validateFirstParam(args.First, 0, 100); err != nil {
+	if err := validateFirstParam(args.First, 0, 1000); err != nil {
 		return nil, err
 	}
 	opts.Limit = int(args.First)
@@ -352,7 +352,7 @@ func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.Change
 }
 
 func (r *changesetResolver) Events(ctx context.Context, args *graphqlbackend.ChangesetEventsConnectionArgs) (graphqlbackend.ChangesetEventsConnectionResolver, error) {
-	if err := validateFirstParam(args.First, 0, 100); err != nil {
+	if err := validateFirstParam(args.First, 0, 1000); err != nil {
 		return nil, err
 	}
 	// TODO: We already need to fetch all events for ReviewState and Labels

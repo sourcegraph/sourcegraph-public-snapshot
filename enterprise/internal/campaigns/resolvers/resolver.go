@@ -437,7 +437,7 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 		return nil, err
 	}
 	opts.State = state
-	if err := validateFirstParam(args.First, 0, 100); err != nil {
+	if err := validateFirstParam(args.First, 0, 1000); err != nil {
 		return nil, err
 	}
 	opts.Limit = int(args.First)
