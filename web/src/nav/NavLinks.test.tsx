@@ -1,7 +1,7 @@
 import * as H from 'history'
 import { noop } from 'lodash'
 import React from 'react'
-import { shallow } from 'enzyme'
+import { render } from 'enzyme'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
@@ -54,13 +54,15 @@ describe('NavLinks', () => {
                 ].join(' ')
                 test(name, () => {
                     expect(
-                        shallow(
-                            <NavLinks
-                                {...commonProps}
-                                authenticatedUser={authenticatedUser}
-                                showDotComMarketing={showDotComMarketing}
-                                location={H.createLocation(path, history.location)}
-                            />
+                        render(
+                            <MemoryRouter>
+                                <NavLinks
+                                    {...commonProps}
+                                    authenticatedUser={authenticatedUser}
+                                    showDotComMarketing={showDotComMarketing}
+                                    location={H.createLocation(path, history.location)}
+                                />
+                            </MemoryRouter>
                         )
                     ).toMatchSnapshot()
                 })
