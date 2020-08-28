@@ -52,16 +52,20 @@ func (s *userExternalAccounts) LookupUserAndSave(ctx context.Context, spec extsv
 		return Mocks.ExternalAccounts.LookupUserAndSave(spec, data)
 	}
 
-	encAuthData, err := intSecrets.EncryptBytes(*data.AuthData)
-	if err != nil {
-		return -1, err
+	if data.AuthData != nil {
+		encAuthData, err := intSecrets.EncryptBytes(*data.AuthData)
+		if err != nil {
+			return -1, err
+		}
+		e := json.RawMessage(encAuthData)
+		data.AuthData = &e
 	}
 
 	err = dbconn.Global.QueryRowContext(ctx, `
 UPDATE user_external_accounts SET auth_data=$5, account_data=$6, updated_at=now()
 WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND deleted_at IS NULL
 RETURNING user_id
-`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, encAuthData, data.Data).Scan(&userID)
+`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.Data).Scan(&userID)
 	if err == sql.ErrNoRows {
 		err = userExternalAccountNotFoundError{[]interface{}{spec}}
 	}
@@ -181,14 +185,19 @@ func (s *userExternalAccounts) CreateUserAndSave(ctx context.Context, newUser Ne
 
 func (s *userExternalAccounts) insert(ctx context.Context, tx *sql.Tx, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error {
 
-	encAuthData, err := intSecrets.EncryptBytes(*data.AuthData)
-	if err != nil {
-		return err
+	if data.AuthData != nil {
+		encAuthData, err := intSecrets.EncryptBytes(*data.AuthData)
+		if err != nil {
+			return err
+		}
+		enc := json.RawMessage(encAuthData)
+		data.AuthData = &enc
 	}
-	_, err = tx.ExecContext(ctx, `
+
+	_, err := tx.ExecContext(ctx, `
 INSERT INTO user_external_accounts(user_id, service_type, service_id, client_id, account_id, auth_data, account_data)
 VALUES($1, $2, $3, $4, $5, $6, $7)
-`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, encAuthData, data.Data)
+`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.Data)
 	return err
 }
 
@@ -320,12 +329,14 @@ func (*userExternalAccounts) listBySQL(ctx context.Context, querySuffix *sqlf.Qu
 		if err != nil {
 			return nil, err
 		}
-		plain, err := intSecrets.DecryptBytes(*o.AuthData)
-		if err != nil {
-			return nil, err
+		if o.AuthData != nil {
+			plain, err := intSecrets.DecryptBytes(*o.AuthData)
+			if err != nil {
+				return nil, err
+			}
+			b := json.RawMessage(plain)
+			o.AuthData = &b
 		}
-		b := json.RawMessage(plain)
-		o.AuthData = &b
 
 		results = append(results, &o)
 	}
