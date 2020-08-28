@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -262,8 +261,6 @@ func (r *reconciler) closeChangeset(ctx context.Context, tx *Store, ch *campaign
 	if err := ccs.CloseChangeset(ctx, cs); err != nil {
 		return errors.Wrap(err, "creating changeset")
 	}
-
-	fmt.Printf("we just closed the changeset! cs.State=%s\n", cs.Changeset.Metadata.(*github.PullRequest).State)
 
 	ch.Closing = false
 	ch.FailureMessage = nil
