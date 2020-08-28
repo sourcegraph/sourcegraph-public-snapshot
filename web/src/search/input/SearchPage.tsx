@@ -32,7 +32,11 @@ import { SearchPageInput } from './SearchPageInput'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { PrivateCodeCta } from './PrivateCodeCta'
 import { AuthenticatedUser } from '../../auth'
+<<<<<<< HEAD
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+=======
+import { EnterpriseHomePanels } from '../panels/EnterpriseHomePanels'
+>>>>>>> 078db4c9a3... Initial stubs for panels
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -320,11 +324,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                 </>
             )}
 
-            {!props.isSourcegraphDotCom && props.showEnterpriseHomePanels && (
-                <>
-                    <div>Hello from Enterprise Home with panels enabled</div>
-                </>
-            )}
+            {!props.isSourcegraphDotCom && props.showEnterpriseHomePanels && <EnterpriseHomePanels />}
         </div>
     )
 }
