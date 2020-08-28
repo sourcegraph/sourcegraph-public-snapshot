@@ -125,16 +125,7 @@ func (r *Resolver) Campaign(ctx context.Context, args *graphqlbackend.CampaignAr
 
 	opts := ee.GetCampaignOpts{Name: args.Name}
 
-	namespaceID := graphql.ID(args.Namespace)
-	var err error
-	switch relay.UnmarshalKind(namespaceID) {
-	case "User":
-		err = relay.UnmarshalSpec(namespaceID, &opts.NamespaceUserID)
-	case "Org":
-		err = relay.UnmarshalSpec(namespaceID, &opts.NamespaceOrgID)
-	default:
-		err = errors.Errorf("Invalid namespace %q", namespaceID)
-	}
+	err := graphqlbackend.UnmarshalNamespaceID(graphql.ID(args.Namespace), &opts.NamespaceUserID, &opts.NamespaceOrgID)
 	if err != nil {
 		return nil, err
 	}

@@ -2,8 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
-
-	"github.com/pkg/errors"
+	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -24,6 +23,14 @@ func (r *schemaResolver) Namespace(ctx context.Context, args *struct{ ID graphql
 	return &NamespaceResolver{n}, nil
 }
 
+type InvalidNamespaceIDErr struct {
+	id graphql.ID
+}
+
+func (e InvalidNamespaceIDErr) Error() string {
+	return fmt.Sprintf("invalid ID %q for namespace", e.id)
+}
+
 // NamespaceByID looks up a GraphQL value of type Namespace by ID.
 func NamespaceByID(ctx context.Context, id graphql.ID) (Namespace, error) {
 	switch relay.UnmarshalKind(id) {
@@ -32,7 +39,7 @@ func NamespaceByID(ctx context.Context, id graphql.ID) (Namespace, error) {
 	case "Org":
 		return OrgByID(ctx, id)
 	default:
-		return nil, errors.New("invalid ID for namespace")
+		return nil, InvalidNamespaceIDErr{id: id}
 	}
 }
 
@@ -43,7 +50,7 @@ func UnmarshalNamespaceID(id graphql.ID, userID *int32, orgID *int32) (err error
 	case "Org":
 		err = relay.UnmarshalSpec(id, orgID)
 	default:
-		err = errors.Errorf("Invalid namespace %q", id)
+		err = InvalidNamespaceIDErr{id: id}
 	}
 	return err
 }
