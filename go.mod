@@ -1,6 +1,6 @@
 module github.com/sourcegraph/sourcegraph
 
-go 1.15
+go 1.14
 
 require (
 	cloud.google.com/go/bigquery v1.6.0 // indirect
