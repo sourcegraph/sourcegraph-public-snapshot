@@ -2,12 +2,12 @@ package query
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/pkg/errors"
 )
 
 func TestParseParameterList(t *testing.T) {
@@ -138,6 +138,18 @@ func TestParseParameterList(t *testing.T) {
 			Input:      `/a regex pattern/`,
 			Want:       `{"value":"a regex pattern","negated":false}`,
 			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":17}}`,
+			WantLabels: Regexp,
+		},
+		{
+			Input:      `Search()\(`,
+			Want:       `{"value":"Search()\\(","negated":false}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":10}}`,
+			WantLabels: Regexp,
+		},
+		{
+			Input:      `Search(xxx)\(`,
+			Want:       `{"value":"Search(xxx)\\(","negated":false}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":13}}`,
 			WantLabels: Regexp,
 		},
 	}
@@ -752,7 +764,7 @@ func TestParse(t *testing.T) {
 		},
 		{
 			Input:         `\t\r\n`,
-			WantGrammar:   `"\t\r\n"`,
+			WantGrammar:   `"\\t\\r\\n"`,
 			WantHeuristic: Same,
 		},
 		{
@@ -784,13 +796,13 @@ func TestParse(t *testing.T) {
 		{
 			Input:         `(0(F)(:())(:())(<0)0()`,
 			WantGrammar:   Spec(`unbalanced expression`),
-			WantHeuristic: `invalid query syntax`,
+			WantHeuristic: `"(0(F)(:())(:())(<0)0()"`,
 		},
 		// The space-looking character below is U+00A0.
 		{
 			Input:         `00 (000)`,
 			WantGrammar:   `(concat "00" "000")`,
-			WantHeuristic: `invalid query syntax`,
+			WantHeuristic: `(concat "00" "(000)")`,
 		},
 	}
 	for _, tt := range cases {
