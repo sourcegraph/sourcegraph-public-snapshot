@@ -11,19 +11,26 @@ import { of } from 'rxjs'
 import { ExternalServiceKind } from '../../graphql-operations'
 
 let isLightTheme = true
-const { add } = storiesOf('web/External services/ExternalServicePage', module).addDecorator(story => {
-    const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
-    document.body.classList.toggle('theme-light', theme === 'light')
-    document.body.classList.toggle('theme-dark', theme === 'dark')
-    isLightTheme = theme === 'light'
-    return (
-        <>
-            <Tooltip />
-            <style>{webStyles}</style>
-            <div className="p-3 container">{story()}</div>
-        </>
-    )
-})
+const { add } = storiesOf('web/External services/ExternalServicePage', module)
+    .addDecorator(story => {
+        const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
+        document.body.classList.toggle('theme-light', theme === 'light')
+        document.body.classList.toggle('theme-dark', theme === 'dark')
+        isLightTheme = theme === 'light'
+        return (
+            <>
+                <Tooltip />
+                <style>{webStyles}</style>
+                <div className="p-3 container">{story()}</div>
+            </>
+        )
+    })
+    .addParameters({
+        chromatic: {
+            // Delay screenshot taking, so Monaco has some time to get syntax highlighting prepared.
+            delay: 2000,
+        },
+    })
 
 const fetchExternalService: typeof _fetchExternalService = () =>
     of({
