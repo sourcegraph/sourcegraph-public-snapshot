@@ -1,6 +1,6 @@
 .empty-command-list {
     position: relative;
-    color: #39496a;
+    color: $gray-17;
     font-size: 1rem;
     padding: 1rem;
 
@@ -23,6 +23,6 @@
 
 .theme-dark {
     .empty-command-list {
-        color: #afbcd4;
+        color: $gray-06;
     }
 }

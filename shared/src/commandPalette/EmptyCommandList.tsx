@@ -33,14 +33,9 @@ const puzzleIllustration = (
 )
 
 export const EmptyCommandList: React.FunctionComponent<Props> = ({ settingsCascade, sourcegraphURL }) => {
-    // if no settings cascade (yet), default to 'no active extensions'
+    // if no settings cascade, default to 'no active extensions'
     const onlyDefault = settingsCascade ? onlyDefaultExtensionsAdded(settingsCascade) : false
-    /**
-     * Three questions:
-     * - no extensions enabled at all? or added on top of default?
-     * - how to deal with styling?
-     * - On the web app, should I use a react router link?
-     */
+
     return (
         <div className="empty-command-list">
             <p className="empty-command-list__title">
