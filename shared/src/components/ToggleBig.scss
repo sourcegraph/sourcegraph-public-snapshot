@@ -1,12 +1,16 @@
 .toggle-big {
     background: none;
     border: none;
-    cursor: pointer;
+
     display: inline-block;
     outline: none !important;
     padding: 0;
     position: relative;
     width: 6.625rem;
+
+    &--disabled {
+        cursor: not-allowed;
+    }
 
     &__container {
         display: flex;
@@ -17,10 +21,7 @@
     &__bar {
         background-color: var(--secondary);
 
-        border-radius: 2rem;
-
         border-radius: 1rem;
-        cursor: pointer;
 
         top: 2px;
         left: 0;

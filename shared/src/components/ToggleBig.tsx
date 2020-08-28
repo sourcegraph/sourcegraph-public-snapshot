@@ -1,6 +1,7 @@
 import * as React from 'react'
 import Close from 'mdi-react/CloseIcon'
 import Check from 'mdi-react/CheckIcon'
+import classnames from 'classnames'
 
 interface Props {
     /** The initial value. */
@@ -15,9 +16,9 @@ interface Props {
     onToggle?: (value: boolean) => void
 
     /**
-     * Called when the user clicks the toggle when it is disabled.
+     * Called when the user hovers over the toggle.
      */
-    onToggleDisabled?: (value: boolean) => void
+    onHover?: (value: boolean) => void
 
     /** The title attribute (tooltip). */
     title?: string
@@ -36,25 +37,33 @@ export const ToggleBig: React.FunctionComponent<Props> = ({
     value,
     tabIndex,
     onToggle,
-    onToggleDisabled,
+    onHover,
 }) => {
     function onClick(): void {
         if (!disabled && onToggle) {
             onToggle(!value)
-        } else if (disabled && onToggleDisabled) {
-            onToggleDisabled(!!value)
+        }
+    }
+
+    function onMouseOver(): void {
+        if (onHover) {
+            onHover(!value)
         }
     }
 
     return (
         <button
             type="button"
-            className={`toggle-big  ${className || ''}`}
+            className={classnames('toggle-big', className, {
+                'toggle-big--disabled': !!disabled,
+            })}
             id={id}
             title={title}
             value={value ? 1 : 0}
             onClick={onClick}
             tabIndex={tabIndex}
+            onMouseOver={onMouseOver}
+            disabled={!!disabled}
         >
             <span className="toggle-big__container">
                 <span

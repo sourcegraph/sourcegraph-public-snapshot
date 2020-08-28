@@ -13,9 +13,9 @@ interface Props {
     onToggle?: (value: boolean) => void
 
     /**
-     * Called when the user clicks the toggle when it is disabled.
+     * Called when the user hovers over the toggle.
      */
-    onToggleDisabled?: (value: boolean) => void
+    onHover?: (value: boolean) => void
 
     /** The title attribute (tooltip). */
     title?: string
@@ -34,13 +34,17 @@ export const Toggle: React.FunctionComponent<Props> = ({
     value,
     tabIndex,
     onToggle,
-    onToggleDisabled,
+    onHover,
 }) => {
     function onClick(): void {
         if (!disabled && onToggle) {
             onToggle(!value)
-        } else if (disabled && onToggleDisabled) {
-            onToggleDisabled(!!value)
+        }
+    }
+
+    function onMouseOver(): void {
+        if (onHover) {
+            onHover(!value)
         }
     }
 
@@ -53,6 +57,7 @@ export const Toggle: React.FunctionComponent<Props> = ({
             value={value ? 1 : 0}
             onClick={onClick}
             tabIndex={tabIndex}
+            onMouseOver={onMouseOver}
         >
             <span
                 className={`toggle__bar ${value ? 'toggle__bar--active' : ''} ${
