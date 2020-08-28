@@ -3,7 +3,6 @@ package campaigns
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strconv"
 
 	"github.com/dineshappavoo/basex"
@@ -295,11 +294,6 @@ ORDER BY changeset_specs.id ASC
 `
 
 func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
-	var limitClause string
-	if opts.Limit > 0 {
-		limitClause = fmt.Sprintf("LIMIT %d", opts.DBLimit())
-	}
-
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("changeset_specs.id >= %s", opts.Cursor),
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
@@ -320,7 +314,7 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		listChangesetSpecsQueryFmtstr+limitClause,
+		listChangesetSpecsQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(changesetSpecColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)

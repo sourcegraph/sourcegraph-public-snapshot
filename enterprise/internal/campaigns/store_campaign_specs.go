@@ -3,7 +3,6 @@ package campaigns
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strconv"
 
 	"github.com/dineshappavoo/basex"
@@ -246,17 +245,12 @@ ORDER BY id ASC
 `
 
 func listCampaignSpecsQuery(opts *ListCampaignSpecsOpts) *sqlf.Query {
-	var limitClause string
-	if opts.Limit > 0 {
-		limitClause = fmt.Sprintf("LIMIT %d", opts.DBLimit())
-	}
-
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("id >= %s", opts.Cursor),
 	}
 
 	return sqlf.Sprintf(
-		listCampaignSpecsQueryFmtstr+limitClause,
+		listCampaignSpecsQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(campaignSpecColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)

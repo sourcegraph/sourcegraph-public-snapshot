@@ -3,7 +3,6 @@ package campaigns
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -120,11 +119,6 @@ ORDER BY id ASC
 `
 
 func listChangesetEventsQuery(opts *ListChangesetEventsOpts) *sqlf.Query {
-	var limitClause string
-	if opts.Limit > 0 {
-		limitClause = fmt.Sprintf("LIMIT %d", opts.DBLimit())
-	}
-
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("id >= %s", opts.Cursor),
 	}
@@ -141,7 +135,7 @@ func listChangesetEventsQuery(opts *ListChangesetEventsOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		listChangesetEventsQueryFmtstr+limitClause,
+		listChangesetEventsQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(preds, "\n AND "),
 	)
 }

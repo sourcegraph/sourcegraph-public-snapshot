@@ -2,7 +2,6 @@ package campaigns
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -324,11 +323,6 @@ ORDER BY id DESC
 `
 
 func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
-	var limitClause string
-	if opts.Limit > 0 {
-		limitClause = fmt.Sprintf("LIMIT %d", opts.DBLimit())
-	}
-
 	preds := []*sqlf.Query{}
 
 	if opts.Cursor != 0 {
@@ -363,7 +357,7 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		listCampaignsQueryFmtstr+limitClause,
+		listCampaignsQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(campaignColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
