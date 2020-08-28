@@ -27,6 +27,8 @@ All notable changes to Sourcegraph are documented in this file.
 - `NOT` is available as an alternative syntax of `-` on supported keywords `repo`, `file`, `content`, `lang`, and `repohasfile`. [#12412](https://github.com/sourcegraph/sourcegraph/pull/12412)
 - Negated content search is now also supported for unindexed repositories. Previously it was only supported for indexed repositories [#13359](https://github.com/sourcegraph/sourcegraph/pull/13359).
 - The experimental feature flag `andOrQuery` is deprecated. [#13435](https://github.com/sourcegraph/sourcegraph/pull/13435)
+- Negated content search is now also supported for unindexed repositories. Previously it was only supported for indexed repositories. Negated content search requires setting `"search.migrateParser": true` in settings and is only supported for literal and regexp queries.
+- Sourcegraph is now built with Go 1.15.0.
 
 ### Fixed
 
