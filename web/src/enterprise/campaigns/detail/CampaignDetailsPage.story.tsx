@@ -224,70 +224,81 @@ const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
 
 const deleteCampaign = () => Promise.resolve(undefined)
 
-add('Overview', () => {
-    const viewerCanAdminister = boolean('viewerCanAdminister', true)
-    const isClosed = boolean('isClosed', false)
-    const campaign: CampaignFields = useMemo(
-        () => ({
-            __typename: 'Campaign',
-            changesets: {
-                stats: {
-                    closed: 1,
-                    merged: 2,
-                    open: 3,
-                    total: 10,
-                    unpublished: 5,
-                },
-            },
-            createdAt: subDays(new Date(), 5).toISOString(),
-            initialApplier: {
-                url: '/users/alice',
-                username: 'alice',
-            },
-            diffStat: {
-                added: 10,
-                changed: 8,
-                deleted: 10,
-            },
-            id: 'specid',
-            url: '/users/alice/campaigns/specid',
-            namespace: {
-                namespaceName: 'alice',
-                url: '/users/alice',
-            },
-            viewerCanAdminister,
-            closedAt: isClosed ? subDays(new Date(), 1).toISOString() : null,
-            description: '## What this campaign does\n\nTruly awesome things for example.',
-            name: 'awesome-campaign',
-            updatedAt: subDays(new Date(), 5).toISOString(),
-            lastAppliedAt: subDays(new Date(), 5).toISOString(),
-            lastApplier: {
-                url: '/users/bob',
-                username: 'bob',
-            },
-        }),
-        [viewerCanAdminister, isClosed]
-    )
+const stories: Record<string, string> = {
+    Overview: '/users/alice/campaigns/awesome-campaign',
+    'Burndown chart': '/users/alice/campaigns/awesome-campaign?tab=chart',
+    'Spec file': '/users/alice/campaigns/awesome-campaign?tab=spec',
+}
 
-    const fetchCampaign: typeof fetchCampaignByNamespace = useCallback(() => of(campaign), [campaign])
-    const history = H.createMemoryHistory({ initialEntries: [window.location.href] })
-    const breadcrumbsProps = useBreadcrumbs()
-    return (
-        <CampaignDetailsPage
-            {...breadcrumbsProps}
-            namespaceID="namespace123"
-            campaignName="awesome-campaign"
-            fetchCampaignByNamespace={fetchCampaign}
-            queryChangesets={queryChangesets}
-            queryChangesetCountsOverTime={queryChangesetCountsOverTime}
-            queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
-            deleteCampaign={deleteCampaign}
-            history={history}
-            location={history.location}
-            isLightTheme={isLightTheme}
-            telemetryService={NOOP_TELEMETRY_SERVICE}
-            platformContext={{} as any}
-            extensionsController={{} as any}
-        />
-    )
-})
+for (const [name, url] of Object.entries(stories)) {
+    add(name, () => {
+        const viewerCanAdminister = boolean('viewerCanAdminister', true)
+        const isClosed = boolean('isClosed', false)
+        const campaign: CampaignFields = useMemo(
+            () => ({
+                __typename: 'Campaign',
+                changesets: {
+                    stats: {
+                        closed: 1,
+                        merged: 2,
+                        open: 3,
+                        total: 10,
+                        unpublished: 5,
+                    },
+                },
+                createdAt: subDays(new Date(), 5).toISOString(),
+                initialApplier: {
+                    url: '/users/alice',
+                    username: 'alice',
+                },
+                diffStat: {
+                    added: 10,
+                    changed: 8,
+                    deleted: 10,
+                },
+                id: 'specid',
+                url: '/users/alice/campaigns/awesome-campaign',
+                namespace: {
+                    namespaceName: 'alice',
+                    url: '/users/alice',
+                },
+                viewerCanAdminister,
+                closedAt: isClosed ? subDays(new Date(), 1).toISOString() : null,
+                description: '## What this campaign does\n\nTruly awesome things for example.',
+                name: 'awesome-campaign',
+                updatedAt: subDays(new Date(), 5).toISOString(),
+                lastAppliedAt: subDays(new Date(), 5).toISOString(),
+                lastApplier: {
+                    url: '/users/bob',
+                    username: 'bob',
+                },
+                currentSpec: {
+                    originalInput: 'name: awesome-campaign\ndescription: somestring',
+                },
+            }),
+            [viewerCanAdminister, isClosed]
+        )
+
+        const fetchCampaign: typeof fetchCampaignByNamespace = useCallback(() => of(campaign), [campaign])
+        const history = H.createMemoryHistory({ initialEntries: [url] })
+        const breadcrumbsProps = useBreadcrumbs()
+        return (
+            <CampaignDetailsPage
+                {...breadcrumbsProps}
+                namespaceID="namespace123"
+                campaignName="awesome-campaign"
+                fetchCampaignByNamespace={fetchCampaign}
+                queryChangesets={queryChangesets}
+                queryChangesetCountsOverTime={queryChangesetCountsOverTime}
+                queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
+                deleteCampaign={deleteCampaign}
+                history={history}
+                location={history.location}
+                isLightTheme={isLightTheme}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+                platformContext={{} as any}
+                extensionsController={{} as any}
+            />
+        )
+    })
+}

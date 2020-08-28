@@ -1154,7 +1154,9 @@ type Campaign implements Node {
     """
     diffStat: DiffStat!
 
-    # The current campaign spec this campaign reflects.
+    """
+    The current campaign spec this campaign reflects.
+    """
     currentSpec: CampaignSpec!
 }
 

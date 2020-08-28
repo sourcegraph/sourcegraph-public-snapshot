@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback } from 'react'
 import * as H from 'history'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { ThemeProps } from '../../../../../shared/src/theme'
@@ -49,6 +49,9 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
         if (urlParameters.get('tab') === 'chart') {
             return 'chart'
         }
+        if (urlParameters.get('tab') === 'spec') {
+            return 'spec'
+        }
         return 'changesets'
     })
     const onSelectChangesets = useCallback<React.MouseEventHandler>(
@@ -79,8 +82,13 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
         event => {
             event.preventDefault()
             setSelectedTab('spec')
+            const urlParameters = new URLSearchParams(location.search)
+            urlParameters.set('tab', 'spec')
+            if (location.search !== urlParameters.toString()) {
+                history.replace({ ...location, search: urlParameters.toString() })
+            }
         },
-        [setSelectedTab]
+        [history, location]
     )
     return (
         <>
@@ -103,7 +111,7 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
                         <ChartLineVariantIcon className="icon-inline text-muted mr-1" /> Burndown chart
                     </a>
                 </li>
-                <li className="nav-item">
+                <li className="nav-item test-campaigns-spec-tab">
                     <a
                         href=""
                         onClick={onSelectSpec}
