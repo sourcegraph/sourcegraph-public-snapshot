@@ -1,21 +1,49 @@
 import * as H from 'history'
 import React from 'react'
-import { PageTitle } from '../components/PageTitle'
-import { ThemeProps } from '../../../shared/src/theme'
-import { ExternalServiceCard } from '../components/ExternalServiceCard'
-import { codeHostExternalServices, nonCodeHostExternalServices, allExternalServices } from './externalServices'
-import { SiteAdminAddExternalServicePage } from './SiteAdminAddExternalServicePage'
-import { useLocalStorage } from '../util/useLocalStorage'
-import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { PageTitle } from '../PageTitle'
+import { ThemeProps } from '../../../../shared/src/theme'
+import { ExternalServiceCard } from './ExternalServiceCard'
+import { allExternalServices, AddExternalServiceOptions } from './externalServices'
+import { AddExternalServicePage } from './AddExternalServicePage'
+import { useLocalStorage } from '../../util/useLocalStorage'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { Scalars } from '../../graphql-operations'
 
 interface Props extends ThemeProps, TelemetryProps {
     history: H.History
+    routingPrefix: string
+    afterCreateRoute: string
+    userID?: Scalars['ID']
+
+    /**
+     * The list of code host external services to be displayed.
+     * Pick items from externalServices.codeHostExternalServices.
+     */
+    codeHostExternalServices: Record<string, AddExternalServiceOptions>
+    /**
+     * The list of non-code host external services to be displayed.
+     * Pick items from externalServices.nonCodeHostExternalServices.
+     */
+    nonCodeHostExternalServices: Record<string, AddExternalServiceOptions>
+
+    /** For testing only. */
+    autoFocusForm?: boolean
 }
 
 /**
  * Page for choosing a service kind and variant to add, among the available options.
  */
-export const SiteAdminAddExternalServicesPage: React.FunctionComponent<Props> = props => {
+export const AddExternalServicesPage: React.FunctionComponent<Props> = ({
+    afterCreateRoute,
+    codeHostExternalServices,
+    history,
+    isLightTheme,
+    nonCodeHostExternalServices,
+    routingPrefix,
+    telemetryService,
+    userID,
+    autoFocusForm,
+}) => {
     const [hasDismissedPrivacyWarning, setHasDismissedPrivacyWarning] = useLocalStorage(
         'hasDismissedCodeHostPrivacyWarning',
         false
@@ -23,11 +51,22 @@ export const SiteAdminAddExternalServicesPage: React.FunctionComponent<Props> = 
     const dismissPrivacyWarning = (): void => {
         setHasDismissedPrivacyWarning(true)
     }
-    const id = new URLSearchParams(props.history.location.search).get('id')
+    const id = new URLSearchParams(history.location.search).get('id')
     if (id) {
         const externalService = allExternalServices[id]
         if (externalService) {
-            return <SiteAdminAddExternalServicePage {...props} externalService={externalService} />
+            return (
+                <AddExternalServicePage
+                    afterCreateRoute={afterCreateRoute}
+                    history={history}
+                    isLightTheme={isLightTheme}
+                    routingPrefix={routingPrefix}
+                    telemetryService={telemetryService}
+                    userID={userID}
+                    externalService={externalService}
+                    autoFocusForm={autoFocusForm}
+                />
+            )
         }
     }
 
@@ -40,11 +79,13 @@ export const SiteAdminAddExternalServicesPage: React.FunctionComponent<Props> = 
             <p className="mt-2">Add repositories from one of these code hosts.</p>
             {!hasDismissedPrivacyWarning && (
                 <div className="alert alert-info">
-                    <p>
-                        This Sourcegraph installation will never send your code, repository names, file names, or any
-                        other specific code data to Sourcegraph.com or any other destination. Your code is kept private
-                        on this installation.
-                    </p>
+                    {!userID && (
+                        <p>
+                            This Sourcegraph installation will never send your code, repository names, file names, or
+                            any other specific code data to Sourcegraph.com or any other destination. Your code is kept
+                            private on this installation.
+                        </p>
+                    )}
                     <h3>This Sourcegraph installation will access your code host by:</h3>
                     <ul>
                         <li>
@@ -88,14 +129,18 @@ export const SiteAdminAddExternalServicesPage: React.FunctionComponent<Props> = 
                     <ExternalServiceCard to={getAddURL(id)} {...externalService} />
                 </div>
             ))}
-            <br />
-            <h2>Other connections</h2>
-            <p className="mt-2">Add connections to non-code-host services.</p>
-            {Object.entries(nonCodeHostExternalServices).map(([id, externalService]) => (
-                <div className="add-external-services-page__card" key={id}>
-                    <ExternalServiceCard to={getAddURL(id)} {...externalService} />
-                </div>
-            ))}
+            {Object.entries(nonCodeHostExternalServices).length > 0 && (
+                <>
+                    <br />
+                    <h2>Other connections</h2>
+                    <p className="mt-2">Add connections to non-code-host services.</p>
+                    {Object.entries(nonCodeHostExternalServices).map(([id, externalService]) => (
+                        <div className="add-external-services-page__card" key={id}>
+                            <ExternalServiceCard to={getAddURL(id)} {...externalService} />
+                        </div>
+                    ))}
+                </>
+            )}
         </div>
     )
 }

@@ -1,7 +1,22 @@
 import React from 'react'
-import { Redirect } from 'react-router'
+import { Redirect, RouteComponentProps } from 'react-router'
 import { lazyComponent } from '../util/lazyComponent'
-import { SiteAdminAreaRoute } from './SiteAdminArea'
+import { SiteAdminAreaRoute, SiteAdminAreaRouteContext } from './SiteAdminArea'
+import { codeHostExternalServices, nonCodeHostExternalServices } from '../components/externalServices/externalServices'
+import { Scalars } from '../graphql-operations'
+
+const ExternalServicesPage = lazyComponent(
+    () => import('../components/externalServices/ExternalServicesPage'),
+    'ExternalServicesPage'
+)
+const AddExternalServicesPage = lazyComponent(
+    () => import('../components/externalServices/AddExternalServicesPage'),
+    'AddExternalServicesPage'
+)
+const ExternalServicePage = lazyComponent(
+    () => import('../components/externalServices/ExternalServicePage'),
+    'ExternalServicePage'
+)
 
 export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
@@ -22,7 +37,13 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/external-services',
-        render: lazyComponent(() => import('./SiteAdminExternalServicesPage'), 'SiteAdminExternalServicesPage'),
+        render: props => (
+            <ExternalServicesPage
+                {...props}
+                routingPrefix="/site-admin"
+                afterDeleteRoute="/site-admin/repositories?repositoriesUpdated"
+            />
+        ),
         exact: true,
     },
     {
@@ -32,12 +53,26 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/external-services/new',
-        render: lazyComponent(() => import('./SiteAdminAddExternalServicesPage'), 'SiteAdminAddExternalServicesPage'),
+        render: props => (
+            <AddExternalServicesPage
+                {...props}
+                routingPrefix="/site-admin"
+                afterCreateRoute="/site-admin/repositories?repositoriesUpdated"
+                codeHostExternalServices={codeHostExternalServices}
+                nonCodeHostExternalServices={nonCodeHostExternalServices}
+            />
+        ),
         exact: true,
     },
     {
         path: '/external-services/:id',
-        render: lazyComponent(() => import('./SiteAdminExternalServicePage'), 'SiteAdminExternalServicePage'),
+        render: ({ match, ...props }: RouteComponentProps<{ id: Scalars['ID'] }> & SiteAdminAreaRouteContext) => (
+            <ExternalServicePage
+                {...props}
+                externalServiceID={match.params.id}
+                afterUpdateRoute="/site-admin/repositories?repositoriesUpdated"
+            />
+        ),
         exact: true,
     },
     {

@@ -557,6 +557,10 @@ func (*ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, lim
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (*ExternalServicesStore) Count(ctx context.Context, opt ExternalServicesListOptions) (int, error) {
+	if Mocks.ExternalServices.Count != nil {
+		return Mocks.ExternalServices.Count(ctx, opt)
+	}
+
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM external_services WHERE (%s)", sqlf.Join(opt.sqlConditions(), ") AND ("))
 	var count int
 	if err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
@@ -572,4 +576,5 @@ type MockExternalServices struct {
 	GetByID func(id int64) (*types.ExternalService, error)
 	List    func(opt ExternalServicesListOptions) ([]*types.ExternalService, error)
 	Update  func(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) error
+	Count   func(ctx context.Context, opt ExternalServicesListOptions) (int, error)
 }
