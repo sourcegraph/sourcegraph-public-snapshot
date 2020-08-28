@@ -1,25 +1,21 @@
 @import './PanelContainer.scss';
-@import './RepositoriesPanel.scss';
-@import './RecentSearchesPanel.scss';
-@import './RecentFilesPanel.scss';
-@import './SavedSearchesPanel.scss';
 
 .enterprise-home-panels {
-    margin: 55px 17px 0 17px;
+    margin: 4rem 1.5rem 0 1.5rem;
     max-width: 1286px;
     display: flex;
     flex-direction: column;
-    width: calc(100% - 17px - 17px);
+    width: calc(100% - 1.5rem - 1.5rem);
 
     &__row {
         display: flex;
         flex-direction: row;
 
         .panel-container {
-            height: 250px;
+            height: 15rem;
 
             &:first-child {
-                margin-right: 20px;
+                margin-right: 1.5rem;
             }
         }
 
