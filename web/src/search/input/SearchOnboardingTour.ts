@@ -332,7 +332,7 @@ export const stepCallbacks: CallbackToAdvanceTourStep[] = [
         stepToAdvance: 'add-query-term',
         handler: (tour: Shepherd.Tour): void => {
             if (tour.getById('add-query-term').isOpen()) {
-                tour.show('final-step')
+                tour.show('submit-search')
             }
         },
         queryConditions: (query: string): boolean => query !== 'repo:' && query !== 'lang:',

@@ -174,7 +174,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                     },
                 },
                 {
-                    id: 'final-step',
+                    id: 'submit-search',
                     text: generateStepTooltip(
                         tour,
                         'Use <kbd>return</kbd> or the search button to run your search',
