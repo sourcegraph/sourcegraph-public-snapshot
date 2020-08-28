@@ -34,6 +34,8 @@ type HandlerOptions struct {
 	AuthToken             string
 	FirecrackerImage      string
 	UseFirecracker        bool
+	FirecrackerNumCPUs    int
+	FirecrackerMemory     string
 }
 
 // Handle clones the target code into a temporary directory, invokes the target indexer in a fresh
@@ -69,6 +71,8 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		args := []string{
 			"ignite", "run",
 			"--runtime", "docker",
+			"--cpus", fmt.Sprintf("%d", h.options.FirecrackerNumCPUs),
+			"--memory", h.options.FirecrackerMemory,
 			"--copy-files", fmt.Sprintf("%s:%s", repoDir, mountPoint),
 			"--ssh",
 			"--name", name.String(),
