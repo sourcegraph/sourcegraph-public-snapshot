@@ -71,10 +71,6 @@ type RepositoryRevisions struct {
 	ListRefs func(context.Context, gitserver.Repo) ([]git.Ref, error)
 }
 
-func (r *RepositoryRevisions) ResolvedRevs() []string {
-	return r.resolvedRevs
-}
-
 func (r *RepositoryRevisions) Equal(other *RepositoryRevisions) bool {
 	return reflect.DeepEqual(r.Repo, other.Repo) && reflect.DeepEqual(r.Revs, other.Revs)
 }
@@ -172,14 +168,14 @@ func (r *RepositoryRevisions) RevSpecs() []string {
 	return revspecs
 }
 
-// ExpandedRevSpecs evaluates all of r's ref glob expressions and sets r's resolvedRevs to
+// ExpandedRevSpecs evaluates all of r's ref glob expressions and returns
 // the full, current list of refs matched or resolved by them, plus the explicitly listed Git revspecs. See
 // git.CompileRefGlobs for information on how ref include/exclude globs are handled.
 //
 // Note that not all callers need to expand these. If a caller is passing the ref globs as
 // command-line args to `git` directly (e.g., to `git log --glob ... --exclude ...`), it does not
 // need to use this function.
-func (r *RepositoryRevisions) ExpandedRevSpecs(ctx context.Context) error {
+func (r *RepositoryRevisions) ExpandedRevSpecs(ctx context.Context) ([]string, error) {
 	var err error
 	r.resolveOnce.Do(func() {
 		listRefs := r.ListRefs
@@ -226,5 +222,5 @@ func (r *RepositoryRevisions) ExpandedRevSpecs(ctx context.Context) error {
 		}
 		r.resolvedRevs = revSpecsList
 	})
-	return err
+	return r.resolvedRevs, err
 }
