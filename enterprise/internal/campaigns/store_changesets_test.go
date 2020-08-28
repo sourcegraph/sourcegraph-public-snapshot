@@ -94,6 +94,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				NumResets:       18,
 
 				Unsynced: true,
+				Closing:  true,
 			}
 
 			// Only set these fields on a subset to make sure that
