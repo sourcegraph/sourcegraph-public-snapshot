@@ -9,6 +9,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/google/uuid"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	indexmanager "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer-vm/internal/index_manager"
 	queue "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/queue/client"
@@ -17,10 +19,11 @@ import (
 )
 
 type Handler struct {
-	queueClient  queue.Client
-	indexManager *indexmanager.Manager
-	commander    Commander
-	options      HandlerOptions
+	queueClient   queue.Client
+	indexManager  *indexmanager.Manager
+	commander     Commander
+	options       HandlerOptions
+	uuidGenerator func() (uuid.UUID, error)
 }
 
 var _ workerutil.Handler = &Handler{}
@@ -29,11 +32,13 @@ type HandlerOptions struct {
 	FrontendURL           string
 	FrontendURLFromDocker string
 	AuthToken             string
+	FirecrackerImage      string
+	UseFirecracker        bool
 }
 
 // Handle clones the target code into a temporary directory, invokes the target indexer in a fresh
 // docker container, and uploads the results to the external frontend API.
-func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workerutil.Record) error {
+func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workerutil.Record) (err error) {
 	index := record.(store.Index)
 
 	h.indexManager.AddID(index.ID)
@@ -52,25 +57,65 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		return err
 	}
 
-	indexAndUploadCommand := []string{
-		"lsif-go",
-		"&&",
-		fmt.Sprintf("SRC_ENDPOINT=%s", uploadURL.String()),
-		"src", "lsif", "upload",
-		"-repo", index.RepositoryName,
-		"-commit", index.Commit,
-		"-upload-route", "/.internal-code-intel/lsif/upload",
+	name, err := h.uuidGenerator()
+	if err != nil {
+		return err
 	}
 
-	if err := h.commander.Run(
-		ctx,
+	if h.options.UseFirecracker {
+		args := []string{
+			"ignite", "run",
+			"--runtime", "docker",
+			"--copy-files", fmt.Sprintf("%s:%s", repoDir, repoDir),
+			"--ssh",
+			"--name", name.String(),
+			h.options.FirecrackerImage,
+		}
+		if err := h.commander.Run(ctx, args[0], args[1:]...); err != nil {
+			return errors.Wrap(err, "failed to start firecracker vm")
+		}
+		defer func() {
+			args := []string{
+				"ignite", "stop",
+				"--runtime", "docker",
+				name.String(),
+			}
+			if stopErr := h.commander.Run(ctx, args[0], args[1:]...); stopErr != nil {
+				err = multierror.Append(err, errors.Wrap(stopErr, "failed to stop firecracker vm"))
+			}
+		}()
+	}
+
+	indexArgs := []string{
 		"docker", "run", "--rm",
 		"-v", fmt.Sprintf("%s:/data", repoDir),
 		"-w", "/data",
 		"sourcegraph/lsif-go:latest",
-		"bash", "-c", strings.Join(indexAndUploadCommand, " "),
-	); err != nil {
+		"lsif-go",
+	}
+	if h.options.UseFirecracker {
+		indexArgs = append([]string{"ignite", "exec", name.String()}, indexArgs...)
+	}
+	if err := h.commander.Run(ctx, indexArgs[0], indexArgs[1:]...); err != nil {
 		return errors.Wrap(err, "failed to index repository")
+	}
+
+	uploadArgs := []string{
+		"docker", "run", "--rm",
+		"-v", fmt.Sprintf("%s:/data", repoDir),
+		"-w", "/data",
+		"-e", fmt.Sprintf("SRC_ENDPOINT=%s", uploadURL.String()),
+		"sourcegraph/src-cli:latest",
+		"lsif", "upload",
+		"-repo", index.RepositoryName,
+		"-commit", index.Commit,
+		"-upload-route", "/.internal-code-intel/lsif/upload",
+	}
+	if h.options.UseFirecracker {
+		uploadArgs = append([]string{"ignite", "exec", name.String()}, uploadArgs...)
+	}
+	if err := h.commander.Run(ctx, uploadArgs[0], uploadArgs[1:]...); err != nil {
+		return errors.Wrap(err, "failed to upload index")
 	}
 
 	return nil
