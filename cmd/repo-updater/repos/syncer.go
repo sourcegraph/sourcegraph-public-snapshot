@@ -103,11 +103,6 @@ func (s *syncHandler) Handle(ctx context.Context, tx dbworkerstore.Store, record
 		return fmt.Errorf("expected repos.SyncJob, got %T", record)
 	}
 
-	_, err := tx.Handle().DB().ExecContext(ctx, "SET CONSTRAINTS ALL DEFERRED")
-	if err != nil {
-		return err
-	}
-
 	store := s.store
 	if ws, ok := s.store.(WithStore); ok {
 		store = ws.With(tx.Handle().DB())
@@ -194,15 +189,15 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	diff = NewDiff(sourced, stored)
 	upserts := s.upserts(diff)
 
-	if err = store.UpsertRepos(ctx, upserts...); err != nil {
-		return errors.Wrap(err, "syncer.sync.store.upsert-repos")
-	}
-
+	// Delete from external_service_repos only. Deletes need to happen first so that we don't end up with
+	// constraint violations later
 	sdiff := s.sourcesUpserts(&diff, storedCopy)
-	if err = store.UpsertSources(ctx, sdiff.Added, sdiff.Modified, sdiff.Deleted); err != nil {
-		return errors.Wrap(err, "syncer.sync.store.upsert-sources")
+	empty := make(map[api.RepoID][]SourceInfo)
+	if err = store.UpsertSources(ctx, empty, empty, sdiff.Deleted); err != nil {
+		return errors.Wrap(err, "syncer.sync.store.delete-sources")
 	}
 
+	// Delete repos that no longer belong to any external services
 	var orphanedRepos Repos
 	now := s.Now()
 	for _, deleted := range diff.Deleted {
@@ -213,10 +208,21 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 		}
 	}
 
-	if len(orphanedRepos) > 0 {
-		if err = store.UpsertRepos(ctx, orphanedRepos...); err != nil {
-			return errors.Wrap(err, "syncer.sync.store.upsert-repos")
-		}
+	// Add only orphaned repos to upserts
+	upserts = append(upserts, orphanedRepos...)
+
+	// Next, insert or modify existing repos. This is needed so that the next call
+	// to UpsertSources has valid repo ids
+	if err = store.UpsertRepos(ctx, upserts...); err != nil {
+		return errors.Wrap(err, "syncer.sync.store.upsert-repos")
+	}
+
+	// Only modify added and modified relationships in external_service_repos, deleted was
+	// handled above
+	// Recalculate sdiff so that we have foreign keys
+	sdiff = s.sourcesUpserts(&diff, storedCopy)
+	if err = store.UpsertSources(ctx, sdiff.Added, sdiff.Modified, empty); err != nil {
+		return errors.Wrap(err, "syncer.sync.store.upsert-sources")
 	}
 
 	interval := calcSyncInterval(now, svc.LastSyncAt, minSyncInterval, diff)
@@ -327,12 +333,39 @@ func (s *Syncer) syncSubset(ctx context.Context, store Store, insertOnly bool, s
 	diff = NewDiff(sourcedSubset, storedSubset)
 	upserts := s.upserts(diff)
 
+	// Delete from external_service_repos only. Deletes need to happen first so that we don't end up with
+	// constraint violations later
+	sdiff := s.sourcesUpserts(&diff, storedCopy)
+	empty := make(map[api.RepoID][]SourceInfo)
+	if err = store.UpsertSources(ctx, empty, empty, sdiff.Deleted); err != nil {
+		return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.delete-sources")
+	}
+
+	// Delete repos that no longer belong to any external services
+	var orphanedRepos Repos
+	now := s.Now()
+	for _, deleted := range diff.Deleted {
+		d := deleted
+		if len(sdiff.Deleted[deleted.ID]) == 0 {
+			d.UpdatedAt, d.DeletedAt = now, now
+			orphanedRepos = append(orphanedRepos, d)
+		}
+	}
+
+	// Add only orphaned repos to upserts
+	upserts = append(upserts, orphanedRepos...)
+
+	// Next, insert or modify existing repos. This is needed so that the next call
+	// to UpsertSources has valid repo ids
 	if err = store.UpsertRepos(ctx, upserts...); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.upsert-repos")
 	}
 
-	sdiff := s.sourcesUpserts(&diff, storedCopy)
-	if err = store.UpsertSources(ctx, sdiff.Added, sdiff.Modified, sdiff.Deleted); err != nil {
+	// Only modify added and modified relationships in external_service_repos, deleted was
+	// handled above
+	// Recalculate sdiff so that we have foreign keys
+	sdiff = s.sourcesUpserts(&diff, storedCopy)
+	if err = store.UpsertSources(ctx, sdiff.Added, sdiff.Modified, empty); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.upsert-sources")
 	}
 
@@ -348,13 +381,7 @@ func (s *Syncer) syncSubset(ctx context.Context, store Store, insertOnly bool, s
 
 func (s *Syncer) upserts(diff Diff) []*Repo {
 	now := s.Now()
-	upserts := make([]*Repo, 0, len(diff.Added)+len(diff.Deleted)+len(diff.Modified))
-
-	// for _, repo := range diff.Deleted {
-	// 	repo.UpdatedAt, repo.DeletedAt = now, now
-	// 	repo.Sources = map[string]*SourceInfo{}
-	// 	upserts = append(upserts, repo)
-	// }
+	upserts := make([]*Repo, 0, len(diff.Added)+len(diff.Modified))
 
 	for _, repo := range diff.Modified {
 		repo.UpdatedAt, repo.DeletedAt = now, time.Time{}

@@ -126,11 +126,6 @@ type ObservedStore struct {
 	txctx   context.Context
 }
 
-// TODO: remove this hack
-func (s *ObservedStore) DB() dbutil.DB {
-	return s.store.(interface{ DB() dbutil.DB }).DB()
-}
-
 // StoreMetrics encapsulates the Prometheus metrics of a Store.
 type StoreMetrics struct {
 	Transact               *metrics.OperationMetrics

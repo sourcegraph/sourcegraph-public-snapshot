@@ -10,14 +10,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp/cmpopts"
-
 	"github.com/gitchander/permutation"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -572,12 +570,6 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 					}
 				}()
 
-				db := st.(*noopTxStore).Store.(interface{ DB() dbutil.DB }).DB()
-				_, err := db.ExecContext(context.TODO(), "SET CONSTRAINTS ALL DEFERRED")
-				if err != nil {
-					panic(err)
-				}
-
 				now := tc.now
 				if now == nil {
 					clock := repos.NewFakeClock(time.Now(), time.Second)
@@ -601,7 +593,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 					Now:     now,
 				}
 
-				err = syncer.SyncExternalService(ctx, st, tc.svc.ID, time.Millisecond)
+				err := syncer.SyncExternalService(ctx, st, tc.svc.ID, time.Millisecond)
 
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("have error %q, want %q", have, want)
