@@ -429,10 +429,12 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 			if len(repoAllRevs.Revs) == 0 {
 				continue
 			}
+
 			revSpecs, err := repoAllRevs.ExpandedRevSpecs(ctx)
 			if err != nil {
 				return err
 			}
+
 			for _, rev := range revSpecs {
 				// Only reason acquire can fail is if ctx is cancelled. So we can stop
 				// looping through searcherRepos.
