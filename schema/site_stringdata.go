@@ -360,7 +360,7 @@ const SiteSchemaJSON = `{
       "additionalProperties": false,
       "properties": {
         "maxTimeoutSeconds": {
-          "description": "The maximum value for \"timeout:\" that search will respect. \"timeout:\" values larger than maxTimeoutSeconds are capped at maxTimeoutSeconds. Note: You need to ensure your load balancer / reverse proxy in front of Sourcegraph won't timeout the request for larger values.",
+          "description": "The maximum value for \"timeout:\" that search will respect. \"timeout:\" values larger than maxTimeoutSeconds are capped at maxTimeoutSeconds. Note: You need to ensure your load balancer / reverse proxy in front of Sourcegraph won't timeout the request for larger values. Note: Too many large rearch requests may harm Soucregraph for other users. Defaults to 1 minute.",
           "type": "integer",
           "default": "60",
           "minimum": 1
