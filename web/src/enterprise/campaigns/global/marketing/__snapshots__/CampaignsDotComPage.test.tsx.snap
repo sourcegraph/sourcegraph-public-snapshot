@@ -183,7 +183,7 @@ exports[`CampaignsDotComPage renders 1`] = `
               <a
                 className="btn btn-primary ga-cta-install-now"
                 href="https://docs.sourcegraph.com/"
-                rel="noreferrer"
+                rel="noopener"
                 target="_blank"
               >
                 Install now

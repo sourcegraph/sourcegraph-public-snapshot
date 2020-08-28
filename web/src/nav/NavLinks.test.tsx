@@ -10,6 +10,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { NavLinks } from './NavLinks'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
 import { NEVER } from 'rxjs'
+import { MemoryRouter } from 'react-router'
 
 describe('NavLinks', () => {
     const NOOP_EXTENSIONS_CONTROLLER: ExtensionsControllerProps<
