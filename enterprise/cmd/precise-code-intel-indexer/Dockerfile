@@ -1,4 +1,4 @@
-FROM golang:1.15.0-alpine@sha256:4f5c7d8d4d9e7f65ec97da643aa588d04851091a622bb8aa6dc58f408b134c8a
+FROM golang:1.15.0-alpine@sha256:4f5c7d8d4d9e7f65ec97da643aa588d04851091a622bb8aa6dc58f408b134c8a AS go
 FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d AS lsif-go
 
 ENV LSIF_GO_VERSION=0.8.0
