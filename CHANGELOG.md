@@ -288,6 +288,8 @@ All notable changes to Sourcegraph are documented in this file.
 - `rev:` is available as alternative syntax of `@` for searching revisions instead of the default branch [#13133](https://github.com/sourcegraph/sourcegraph/pull/13133)
 - Campaign URLs have changed to use the campaign name instead of an opaque ID. The old URLs no longer work. [#13368](https://github.com/sourcegraph/sourcegraph/pull/13368)
 - A new `external_service_repos` join table was added. The migration required to make this change may take a few minutes.
+- Negated content search is now also supported for unindexed repositories. Previously it was only supported for indexed repositories. Negated content search requires setting `"search.migrateParser": true` in settings and is only supported for literal and regexp queries.
+- Sourcegraph is now built with Go 1.15.0.
 
 ### Fixed
 
