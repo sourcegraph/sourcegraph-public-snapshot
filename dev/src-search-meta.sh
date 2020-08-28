@@ -38,15 +38,15 @@ endpoint=${SRC_ENDPOINT:-https://sourcegraph.com}
 headers="$(mktemp -d)" || exit 1
 trap 'rm -rf "$headers"' EXIT
 
-echo 'X-Sourcegraph-Should-Trace: 1' >> "$headers/request"
+echo 'X-Sourcegraph-Should-Trace: 1' >>"$headers/request"
 if [ -n "$SRC_ACCESS_TOKEN" ]; then
-    echo "Authorization: token $SRC_ACCESS_TOKEN" >> "$headers/request"
+  echo "Authorization: token $SRC_ACCESS_TOKEN" >>"$headers/request"
 fi
 
 curl --silent \
-     -H "@$headers/request" \
-     -d "$body" \
-     -D "$headers/response" \
-     "$endpoint/.api/graphql?SearchMeta" | jq .
+  -H "@$headers/request" \
+  -d "$body" \
+  -D "$headers/response" \
+  "$endpoint/.api/graphql?SearchMeta" | jq .
 
 grep x-trace "$headers/response"
