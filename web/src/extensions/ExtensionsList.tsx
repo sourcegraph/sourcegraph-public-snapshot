@@ -27,7 +27,7 @@ import {
 import { categorizeExtensionRegistry, CategorizedExtensionRegistry, applyExtensionsEnablement } from './extensions'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '../../../shared/src/schema/extensionSchema'
 import { ShowMoreExtensions } from './ShowMoreExtensions'
-import { createExtensionBanner } from './ExtensionBanner'
+import { ExtensionBanner } from './ExtensionBanner'
 import { ThemeProps } from '../../../shared/src/theme'
 import { Link } from 'react-router-dom'
 import { ExtensionsAreaRouteContext } from './ExtensionsArea'
@@ -249,7 +249,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
                 {showShowMore && <ShowMoreExtensions setShowMoreExtensions={setShowMoreExtensions} />}
 
                 {/* don't show banner when loading */}
-                {data && data !== LOADING && createExtensionBanner}
+                {data && data !== LOADING && <ExtensionBanner />}
             </>
         )
     }

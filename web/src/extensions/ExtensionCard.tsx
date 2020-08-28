@@ -168,7 +168,7 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
                     </div>
                     {/* Item 2: Text */}
                     {change === 'enabled' ? (
-                        <span className="mx-1 align-self-center">
+                        <span className="">
                             {name} is now enabled in code search results.{' '}
                             <Link to={`/extensions/${extension.id}`} className="extension-card__link font-weight-bold">
                                 See how it works
