@@ -1,0 +1,82 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`PanelContainer content state 1`] = `
+<div
+  className=" panel-container"
+>
+  <div
+    className="panel-container__header"
+  >
+    <h3
+      className="panel-container__header-text"
+    >
+      Test Panel
+    </h3>
+  </div>
+  <div>
+    Content
+  </div>
+</div>
+`;
+
+exports[`PanelContainer empty state 1`] = `
+<div
+  className=" panel-container"
+>
+  <div
+    className="panel-container__header"
+  >
+    <h3
+      className="panel-container__header-text"
+    >
+      Test Panel
+    </h3>
+  </div>
+  <div>
+    Empty
+  </div>
+</div>
+`;
+
+exports[`PanelContainer loading state 1`] = `
+<div
+  className=" panel-container"
+>
+  <div
+    className="panel-container__header"
+  >
+    <h3
+      className="panel-container__header-text"
+    >
+      Test Panel
+    </h3>
+  </div>
+  <div>
+    Loading
+  </div>
+</div>
+`;
+
+exports[`PanelContainer with action buttons 1`] = `
+<div
+  className=" panel-container"
+>
+  <div
+    className="panel-container__header"
+  >
+    <h3
+      className="panel-container__header-text"
+    >
+      Test Panel
+    </h3>
+    <button
+      type="button"
+    >
+      Button
+    </button>
+  </div>
+  <div>
+    Content
+  </div>
+</div>
+`;
