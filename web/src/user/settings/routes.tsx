@@ -2,18 +2,18 @@ import React from 'react'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { lazyComponent } from '../../util/lazyComponent'
 import { UserSettingsAreaRoute, UserSettingsAreaRouteContext } from './UserSettingsArea'
-import { codeHostExternalServices } from '../../components/externalServices/externalServices'
 import { Scalars } from '../../graphql-operations'
 import { RouteComponentProps } from 'react-router'
+import type { UserAddExternalServicesPageProps } from './UserAddExternalServicesPage'
 
 const SettingsArea = lazyComponent(() => import('../../settings/SettingsArea'), 'SettingsArea')
 const ExternalServicesPage = lazyComponent(
     () => import('../../components/externalServices/ExternalServicesPage'),
     'ExternalServicesPage'
 )
-const AddExternalServicesPage = lazyComponent(
-    () => import('../../components/externalServices/AddExternalServicesPage'),
-    'AddExternalServicesPage'
+const UserAddExternalServicesPage = lazyComponent<UserAddExternalServicesPageProps, 'UserAddExternalServicesPage'>(
+    () => import('./UserAddExternalServicesPage'),
+    'UserAddExternalServicesPage'
 )
 const ExternalServicePage = lazyComponent(
     () => import('../../components/externalServices/ExternalServicePage'),
@@ -92,17 +92,11 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
         path: '/external-services/new',
         render: props => (
-            <AddExternalServicesPage
+            <UserAddExternalServicesPage
                 {...props}
                 routingPrefix={props.user.url + '/settings'}
                 afterCreateRoute={props.user.url + '/settings/external-services'}
                 userID={props.user.id}
-                codeHostExternalServices={{
-                    github: codeHostExternalServices.github,
-                    gitlabcom: codeHostExternalServices.gitlabcom,
-                    bitbucket: codeHostExternalServices.bitbucket,
-                }}
-                nonCodeHostExternalServices={{}}
             />
         ),
         exact: true,
