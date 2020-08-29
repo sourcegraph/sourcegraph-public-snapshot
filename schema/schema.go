@@ -111,6 +111,14 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab"})
 }
 
+// Author description: The author to use when creating campaign commits.
+type Author struct {
+	// Email description: The e-mail address to use when creating commits within campaigns.
+	Email *string `json:"email,omitempty"`
+	// Name description: The real name to use when creating commits within campaigns.
+	Name *string `json:"name,omitempty"`
+}
+
 // BitbucketCloudConnection description: Configuration for a connection to Bitbucket Cloud.
 type BitbucketCloudConnection struct {
 	// ApiURL description: The API URL of Bitbucket Cloud, such as https://api.bitbucket.org. Generally, admin should not modify the value of this option because Bitbucket Cloud is a public hosting platform.
@@ -317,6 +325,12 @@ type CampaignSpec struct {
 	On []interface{} `json:"on,omitempty"`
 	// Steps description: The sequence of commands to run (for each repository branch matched in the `on` property) to produce the campaign's changes.
 	Steps []*Step `json:"steps,omitempty"`
+}
+
+// Campaigns description: Settings related to campaigns
+type Campaigns struct {
+	// Author description: The author to use when creating campaign commits.
+	Author *Author `json:"author,omitempty"`
 }
 
 // ChangesetTemplate description: A template describing how to create (and update) changesets with the file changes produced by the command steps.
@@ -1023,6 +1037,8 @@ type Settings struct {
 	AlertsHideObservabilitySiteAlerts *bool `json:"alerts.hideObservabilitySiteAlerts,omitempty"`
 	// AlertsShowPatchUpdates description: Whether to show alerts for patch version updates. Alerts for major and minor version updates will always be shown.
 	AlertsShowPatchUpdates bool `json:"alerts.showPatchUpdates,omitempty"`
+	// Campaigns description: Settings related to campaigns
+	Campaigns *Campaigns `json:"campaigns,omitempty"`
 	// CodeHostUseNativeTooltips description: Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).
 	CodeHostUseNativeTooltips bool `json:"codeHost.useNativeTooltips,omitempty"`
 	// ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.

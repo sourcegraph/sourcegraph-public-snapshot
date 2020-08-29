@@ -3,6 +3,7 @@ package campaigns
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -124,7 +126,7 @@ func (r *reconciler) publishChangeset(ctx context.Context, tx *Store, ch *campai
 	}
 
 	// Create a commit and push it
-	opts, err := buildCommitOpts(repo, spec)
+	opts, err := buildCommitOpts(ctx, repo, spec)
 	if err != nil {
 		return err
 	}
@@ -198,7 +200,7 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 	}
 
 	if delta.NeedCommitUpdate() {
-		opts, err := buildCommitOpts(repo, spec)
+		opts, err := buildCommitOpts(ctx, repo, spec)
 		if err != nil {
 			return err
 		}
@@ -304,7 +306,7 @@ func (r *reconciler) buildChangesetSource(repo *repos.Repo, extSvc *repos.Extern
 	return ccs, nil
 }
 
-func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec) (protocol.CreateCommitFromPatchRequest, error) {
+func buildCommitOpts(ctx context.Context, repo *repos.Repo, spec *campaigns.ChangesetSpec) (protocol.CreateCommitFromPatchRequest, error) {
 	var opts protocol.CreateCommitFromPatchRequest
 
 	desc := spec.Spec
@@ -317,6 +319,13 @@ func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec) (protocol.
 	commitMessage, err := desc.CommitMessage()
 	if err != nil {
 		return opts, err
+	}
+
+	name, email, err := buildAuthor(ctx, spec)
+	if err != nil {
+		// We should always get a valid name and e-mail back, so let's log and
+		// continue, rather than bailing.
+		log15.Warn("error building author details for commit", "err", err)
 	}
 
 	opts = protocol.CreateCommitFromPatchRequest{
@@ -335,8 +344,8 @@ func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec) (protocol.
 
 		CommitInfo: protocol.PatchCommitInfo{
 			Message:     commitMessage,
-			AuthorName:  "Sourcegraph",
-			AuthorEmail: "campaigns@sourcegraph.com",
+			AuthorName:  name,
+			AuthorEmail: email,
 			Date:        spec.CreatedAt,
 		},
 		// We use unified diffs, not git diffs, which means they're missing the
@@ -347,6 +356,41 @@ func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec) (protocol.
 	}
 
 	return opts, nil
+}
+
+func buildAuthor(ctx context.Context, spec *campaigns.ChangesetSpec) (name, email string, err error) {
+	// Set up our defaults.
+	name = "Sourcegraph"
+	email = "campaigns@sourcegraph.com"
+
+	// Let's go see if the user who created the campaign spec has preferred
+	// author settings.
+	as, err := db.Settings.GetLatest(ctx, api.SettingsSubject{
+		User: &spec.UserID,
+	})
+	if err != nil {
+		err = errors.Wrap(err, "fetching user settings")
+		return
+	}
+
+	var settings schema.Settings
+	if err = json.Unmarshal([]byte(as.Contents), &settings); err != nil {
+		err = errors.Wrap(err, "unmarshalling user settings")
+		return
+	}
+
+	if campaigns := settings.Campaigns; campaigns != nil {
+		if author := campaigns.Author; author != nil {
+			if author.Name != nil {
+				name = *author.Name
+			}
+			if author.Email != nil {
+				email = *author.Email
+			}
+		}
+	}
+
+	return
 }
 
 // actionType is an enum to distinguish between different reconcilerActions.

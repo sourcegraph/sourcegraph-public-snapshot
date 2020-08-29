@@ -224,6 +224,31 @@ const SettingsSchemaJSON = `{
       "type": "boolean",
       "default": false,
       "!go": { "pointer": true }
+    },
+    "campaigns": {
+      "type": "object",
+      "description": "Settings related to campaigns",
+      "additionalProperties": false,
+      "properties": {
+        "author": {
+          "type": "object",
+          "description": "The author to use when creating campaign commits.",
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The real name to use when creating commits within campaigns.",
+              "!go": { "pointer": true }
+            },
+            "email": {
+              "type": "string",
+              "description": "The e-mail address to use when creating commits within campaigns.",
+              "format": "email",
+              "!go": { "pointer": true }
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
