@@ -57,7 +57,7 @@ Otherwise, follow the steps above for mounting SSH configuration to mount a host
 ## For Kubernetes cluster deployments
 
 See "[Configure repository cloning via SSH
-](../install/kubernetes/configure#configure-repository-cloning-via-ssh)" in the Kubernetes cluster administrator guide.
+](../install/kubernetes/configure.md#configure-repository-cloning-via-ssh)" in the Kubernetes cluster administrator guide.
 
 ## For pure-Docker cluster deployments
 
