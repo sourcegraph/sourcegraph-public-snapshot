@@ -1051,6 +1051,8 @@ type Settings struct {
 	SearchDefaultPatternType string `json:"search.defaultPatternType,omitempty"`
 	// SearchGlobbing description: Enables globbing for supported field values
 	SearchGlobbing *bool `json:"search.globbing,omitempty"`
+	// SearchHideSuggestions description: Disable search suggestions below the search bar when constructing queries. Defaults to false.
+	SearchHideSuggestions *bool `json:"search.hideSuggestions,omitempty"`
 	// SearchIncludeArchived description: Whether searches should include searching archived repositories.
 	SearchIncludeArchived *bool `json:"search.includeArchived,omitempty"`
 	// SearchIncludeForks description: Whether searches should include searching forked repositories.
