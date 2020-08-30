@@ -120,8 +120,48 @@ const CampaignSpecSchemaJSON = `{
       "additionalProperties": false,
       "required": ["title", "branch", "commit", "published"],
       "properties": {
-        "title": { "type": "string", "description": "The title of the changeset." },
-        "body": { "type": "string", "description": "The body (description) of the changeset." },
+        "title": {
+          "description": "The title of the changeset.",
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "The title to use for the entire campaign."
+            },
+            {
+              "type": "object",
+              "required": ["default", "only"],
+              "additionalProperties": false,
+              "properties": {
+                "default": {
+                  "type": "string",
+                  "description": "The title to use for all changesets that do not match any of the rules in the only array."
+                },
+                "only": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["match", "value"],
+                    "additionalProperties": false,
+                    "properties": {
+                      "match": {
+                        "type": "string",
+                        "description": "The repository name to match. Glob wildcards are supported."
+                      },
+                      "value": {
+                        "type": "string",
+                        "description": "The title to use for changesets that match this rule."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "body": {
+          "type": "string",
+          "description": "The body (description) of the changeset."
+        },
         "branch": {
           "type": "string",
           "description": "The name of the Git branch to create or update on each repository with the changes."
@@ -158,9 +198,43 @@ const CampaignSpecSchemaJSON = `{
           }
         },
         "published": {
-          "type": "boolean",
           "description": "Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the campaign, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host.",
-          "$comment": "TODO(sqs): Come up with a way to specify that only a subset of changesets should be published. For example, making ` + "`" + `published` + "`" + ` an array with some include/exclude syntax items."
+          "oneOf": [
+            {
+              "type": "boolean",
+              "description": "A single flag to control the publishing state for the entire campaign."
+            },
+            {
+              "type": "object",
+              "title": "PublishedOnly",
+              "description": "Only repositories that match patterns in this array will be published.",
+              "additionalProperties": false,
+              "required": ["only"],
+              "properties": {
+                "only": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            {
+              "type": "object",
+              "title": "PublishedExcept",
+              "description": "Only repositories that do NOT match patterns in this array will be published.",
+              "additionalProperties": false,
+              "required": ["except"],
+              "properties": {
+                "except": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          ]
         }
       }
     }

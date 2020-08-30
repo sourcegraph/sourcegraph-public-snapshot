@@ -1746,12 +1746,14 @@ type CampaignSpecStep struct {
 	Env       map[string]string `json:"env"`
 }
 
+// FIXME: the Title and Published fields should be unmarshalled properly to
+// handle the new oneOf types in the campaign spec schema.
 type ChangesetTemplate struct {
-	Title     string         `json:"title"`
+	Title     interface{}    `json:"title"`
 	Body      string         `json:"body"`
 	Branch    string         `json:"branch"`
 	Commit    CommitTemplate `json:"commit"`
-	Published bool           `json:"published"`
+	Published interface{}    `json:"published"`
 }
 
 type CommitTemplate struct {

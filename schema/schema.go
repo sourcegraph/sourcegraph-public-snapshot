@@ -328,9 +328,9 @@ type ChangesetTemplate struct {
 	// Commit description: The Git commit to create with the changes.
 	Commit ExpandedGitCommitDescription `json:"commit"`
 	// Published description: Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the campaign, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host.
-	Published bool `json:"published"`
+	Published interface{} `json:"published"`
 	// Title description: The title of the changeset.
-	Title string `json:"title"`
+	Title interface{} `json:"title"`
 }
 
 // CloneURLToRepositoryName description: Describes a mapping from clone URL to repository name. The `from` field contains a regular expression with named capturing groups. The `to` field contains a template string that references capturing group names. For instance, if `from` is "^../(?P<name>\w+)$" and `to` is "github.com/user/{name}", the clone URL "../myRepository" would be mapped to the repository name "github.com/user/myRepository".
@@ -869,6 +869,12 @@ type OnRepository struct {
 	// Repository description: The name of the repository (as it is known to Sourcegraph).
 	Repository string `json:"repository"`
 }
+type Only struct {
+	// Match description: The repository name to match. Glob wildcards are supported.
+	Match string `json:"match"`
+	// Value description: The title to use for changesets that match this rule.
+	Value string `json:"value"`
+}
 
 // OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.
 type OpenIDConnectAuthProvider struct {
@@ -933,6 +939,16 @@ type PhabricatorConnection struct {
 	Token string `json:"token,omitempty"`
 	// Url description: URL of a Phabricator instance, such as https://phabricator.example.com
 	Url string `json:"url,omitempty"`
+}
+
+// PublishedExcept description: Only repositories that do NOT match patterns in this array will be published.
+type PublishedExcept struct {
+	Except []string `json:"except"`
+}
+
+// PublishedOnly description: Only repositories that match patterns in this array will be published.
+type PublishedOnly struct {
+	Only []string `json:"only"`
 }
 type QuickLink struct {
 	// Description description: A description for this quick link
@@ -1239,6 +1255,11 @@ type Step struct {
 	Env map[string]string `json:"env,omitempty"`
 	// Run description: The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.
 	Run string `json:"run"`
+}
+type Title struct {
+	// Default description: The title to use for all changesets that do not match any of the rules in the only array.
+	Default string  `json:"default"`
+	Only    []*Only `json:"only"`
 }
 
 // TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
