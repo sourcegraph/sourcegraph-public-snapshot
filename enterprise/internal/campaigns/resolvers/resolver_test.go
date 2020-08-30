@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/campaignutils/override"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -296,7 +297,7 @@ func TestApplyCampaign(t *testing.T) {
 				Commit: campaigns.CommitTemplate{
 					Message: "Add hello world",
 				},
-				Published: false,
+				Published: override.FromBool(false),
 			},
 		},
 		UserID:          userID,
