@@ -1272,3 +1272,125 @@ func testSyncer(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testin
 		}
 	}
 }
+
+func testOrphanedRepo(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store repos.Store) func(t *testing.T) {
+		return func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			now := time.Now()
+
+			svc1 := &repos.ExternalService{
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "Github - Test1",
+				Config:      `{"url": "https://github.com"}`,
+				CreatedAt:   now,
+				UpdatedAt:   now,
+			}
+			svc2 := &repos.ExternalService{
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "Github - Test2",
+				Config:      `{"url": "https://github.com"}`,
+				CreatedAt:   now,
+				UpdatedAt:   now,
+			}
+
+			// setup services
+			if err := store.UpsertExternalServices(ctx, svc1, svc2); err != nil {
+				t.Fatal(err)
+			}
+
+			githubRepo := &repos.Repo{
+				Name:     "github.com/org/foo",
+				Metadata: &github.Repository{},
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "foo-external-12345",
+					ServiceID:   "https://github.com/",
+					ServiceType: extsvc.TypeGitHub,
+				},
+			}
+
+			// Add two services, both pointing at the same repo
+
+			// Sync first service
+			syncer := &repos.Syncer{
+				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+					s := repos.NewFakeSource(svc1, nil, githubRepo)
+					return repos.Sources{s}, nil
+				},
+				Now: time.Now,
+			}
+			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
+				t.Fatal(err)
+			}
+
+			// Sync second service
+			syncer = &repos.Syncer{
+				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+					s := repos.NewFakeSource(svc2, nil, githubRepo)
+					return repos.Sources{s}, nil
+				},
+				Now: time.Now,
+			}
+			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
+				t.Fatal(err)
+			}
+
+			// Confirm that there are two relationships
+			var rowCount int
+			if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM external_service_repos").Scan(&rowCount); err != nil {
+				t.Fatal(err)
+			}
+			if rowCount != 2 {
+				t.Fatalf("Expected 2 rows, got %d", rowCount)
+			}
+
+			// We should have no deleted repos
+			if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM repo where deleted_at is not null").Scan(&rowCount); err != nil {
+				t.Fatal(err)
+			}
+			if rowCount != 0 {
+				t.Fatalf("Expected 0 rows, got %d", rowCount)
+			}
+
+			rs, err := store.ListRepos(ctx, repos.StoreListReposArgs{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(rs) != 1 {
+				t.Fatalf("Expected 1 repo, got %d", len(rs))
+			}
+
+			t.Log(rs[0].Sources)
+
+			// Remove the repo from one service and sync again
+			syncer = &repos.Syncer{
+				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+					s := repos.NewFakeSource(svc1, nil)
+					return repos.Sources{s}, nil
+				},
+				Now: time.Now,
+			}
+			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
+				t.Fatal(err)
+			}
+
+			// Confirm that there is one relationship
+			if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM external_service_repos").Scan(&rowCount); err != nil {
+				t.Fatal(err)
+			}
+			if rowCount != 1 {
+				t.Fatalf("Expected 1 rows, got %d", rowCount)
+			}
+
+			// We should no deleted repos
+			if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM repo where deleted_at is not null").Scan(&rowCount); err != nil {
+				t.Fatal(err)
+			}
+			if rowCount != 0 {
+				t.Fatalf("Expected 0 rows, got %d", rowCount)
+			}
+		}
+	}
+}
