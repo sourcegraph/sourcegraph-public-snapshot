@@ -1,23 +1,13 @@
 import { storiesOf } from '@storybook/react'
-import { radios, boolean } from '@storybook/addon-knobs'
+import { boolean } from '@storybook/addon-knobs'
 import React from 'react'
-import webStyles from '../../SourcegraphWebApp.scss'
-import { Tooltip } from '../../components/tooltip/Tooltip'
 import { GitCommitNode } from './GitCommitNode'
 import { subDays } from 'date-fns'
 import { GitCommitFields } from '../../graphql-operations'
+import { WebStory } from '../../components/WebStory'
 
 const { add } = storiesOf('web/GitCommitNode', module).addDecorator(story => {
-    const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
-    document.body.classList.toggle('theme-light', theme === 'light')
-    document.body.classList.toggle('theme-dark', theme === 'dark')
-    return (
-        <>
-            <Tooltip />
-            <style>{webStyles}</style>
-            <div className="p-3 container web-content">{story()}</div>
-        </>
-    )
+    return <div className="p-3 container web-content">{story()}</div>
 })
 
 const gitCommitNode: GitCommitFields = {
@@ -72,57 +62,77 @@ const gitCommitNode: GitCommitFields = {
 }
 
 add('Full customizable', () => (
-    <div className="card">
-        <GitCommitNode
-            node={gitCommitNode}
-            compact={boolean('compact', false)}
-            expandCommitMessageBody={boolean('expandCommitMessageBody', false)}
-            showSHAAndParentsRow={boolean('showSHAAndParentsRow', false)}
-            hideExpandCommitMessageBody={boolean('hideExpandCommitMessageBody', false)}
-        />
-    </div>
+    <WebStory>
+        {() => (
+            <div className="card">
+                <GitCommitNode
+                    node={gitCommitNode}
+                    compact={boolean('compact', false)}
+                    expandCommitMessageBody={boolean('expandCommitMessageBody', false)}
+                    showSHAAndParentsRow={boolean('showSHAAndParentsRow', false)}
+                    hideExpandCommitMessageBody={boolean('hideExpandCommitMessageBody', false)}
+                />
+            </div>
+        )}
+    </WebStory>
 ))
 add('Compact', () => (
-    <div className="card">
-        <GitCommitNode
-            node={gitCommitNode}
-            compact={true}
-            expandCommitMessageBody={false}
-            showSHAAndParentsRow={false}
-            hideExpandCommitMessageBody={false}
-        />
-    </div>
+    <WebStory>
+        {() => (
+            <div className="card">
+                <GitCommitNode
+                    node={gitCommitNode}
+                    compact={true}
+                    expandCommitMessageBody={false}
+                    showSHAAndParentsRow={false}
+                    hideExpandCommitMessageBody={false}
+                />
+            </div>
+        )}
+    </WebStory>
 ))
 add('Commit message expanded', () => (
-    <div className="card">
-        <GitCommitNode
-            node={gitCommitNode}
-            compact={false}
-            expandCommitMessageBody={true}
-            showSHAAndParentsRow={false}
-            hideExpandCommitMessageBody={false}
-        />
-    </div>
+    <WebStory>
+        {() => (
+            <div className="card">
+                <GitCommitNode
+                    node={gitCommitNode}
+                    compact={false}
+                    expandCommitMessageBody={true}
+                    showSHAAndParentsRow={false}
+                    hideExpandCommitMessageBody={false}
+                />
+            </div>
+        )}
+    </WebStory>
 ))
 add('SHA and parent shown', () => (
-    <div className="card">
-        <GitCommitNode
-            node={gitCommitNode}
-            compact={false}
-            expandCommitMessageBody={false}
-            showSHAAndParentsRow={true}
-            hideExpandCommitMessageBody={false}
-        />
-    </div>
+    <WebStory>
+        {() => (
+            <div className="card">
+                <GitCommitNode
+                    node={gitCommitNode}
+                    compact={false}
+                    expandCommitMessageBody={false}
+                    showSHAAndParentsRow={true}
+                    hideExpandCommitMessageBody={false}
+                />
+            </div>
+        )}
+    </WebStory>
 ))
 add('Expand commit message btn hidden', () => (
-    <div className="card">
-        <GitCommitNode
-            node={gitCommitNode}
-            compact={false}
-            expandCommitMessageBody={false}
-            showSHAAndParentsRow={false}
-            hideExpandCommitMessageBody={true}
-        />
-    </div>
+    <WebStory>
+        {() => (
+            <div className="card">
+                <GitCommitNode
+                    node={gitCommitNode}
+                    compact={false}
+                    expandCommitMessageBody={false}
+                    showSHAAndParentsRow={false}
+                    hideExpandCommitMessageBody={true}
+                />
+            </div>
+        )}
+    </WebStory>
 ))
