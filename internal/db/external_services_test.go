@@ -287,7 +287,7 @@ func TestExternalServicesStore_Delete(t *testing.T) {
 	}
 
 	// Create two repositories to test trigger of soft-deleting external service:
-	//  - ID=1 is expected to be delete along with deletion of the external service.
+	//  - ID=1 is expected to be deleted along with deletion of the external service.
 	//  - ID=2 remains untouched because it is not associated with the external service.
 	_, err = dbconn.Global.ExecContext(ctx, `
 INSERT INTO repo (id, name, description, language, fork)
@@ -299,9 +299,7 @@ VALUES (2, 'github.com/user/repo2', '', '', FALSE);
 		t.Fatal(err)
 	}
 
-	// Insert a row to `external_service_repos` table to test the trigger
-	// `trig_delete_external_service_ref_on_external_service_repos` is executed first.
-	// Otherwise, the repository won't be seen as orphan.
+	// Insert a row to `external_service_repos` table to test the trigger.
 	q := sqlf.Sprintf(`
 INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
 VALUES (%d, 1, '')
@@ -321,14 +319,6 @@ VALUES (%d, 1, '')
 	err = ExternalServices.Delete(ctx, es.ID)
 	gotErr := fmt.Sprintf("%v", err)
 	wantErr := fmt.Sprintf("external service not found: %v", es.ID)
-	if gotErr != wantErr {
-		t.Errorf("error: want %q but got %q", wantErr, gotErr)
-	}
-
-	// Try to get the repo with ID=1 should fail
-	_, err = Repos.GetByName(ctx, "github.com/user/repo")
-	gotErr = fmt.Sprintf("%v", err)
-	wantErr = `repo not found: name="github.com/user/repo"`
 	if gotErr != wantErr {
 		t.Errorf("error: want %q but got %q", wantErr, gotErr)
 	}
