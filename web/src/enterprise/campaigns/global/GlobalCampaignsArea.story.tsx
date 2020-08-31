@@ -4,7 +4,7 @@ import React from 'react'
 import { GlobalCampaignsArea } from './GlobalCampaignsArea'
 import { AuthenticatedUser } from '../../../auth'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { EnterpriseWebStory } from '../../../components/WebStory'
+import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 const { add } = storiesOf('web/campaigns/GlobalCampaignsArea', module).addDecorator(story => (
     <React.Suspense fallback={<LoadingSpinner />}>

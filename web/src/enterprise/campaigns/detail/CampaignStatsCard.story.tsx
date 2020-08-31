@@ -1,6 +1,6 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { EnterpriseWebStory } from '../../../components/WebStory'
+import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { CampaignStatsCard } from './CampaignStatsCard'
 
 const { add } = storiesOf('web/campaigns/CampaignStatsCard', module).addDecorator(story => (

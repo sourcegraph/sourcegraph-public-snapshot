@@ -4,11 +4,10 @@ import { MemoryRouter, MemoryRouterProps, RouteComponentProps, withRouter } from
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { ThemeProps } from '../../../shared/src/theme'
 import _webStyles from '../SourcegraphWebApp.scss'
-import enterpriseWebStyles from '../enterprise.scss'
 import { BreadcrumbSetters, BreadcrumbsProps, useBreadcrumbs } from './Breadcrumbs'
 import { Tooltip } from './tooltip/Tooltip'
 
-interface WebStoryProps extends MemoryRouterProps {
+export interface WebStoryProps extends MemoryRouterProps {
     children: React.FunctionComponent<
         ThemeProps & BreadcrumbSetters & BreadcrumbsProps & TelemetryProps & RouteComponentProps<any>
     >
@@ -40,11 +39,3 @@ export const WebStory: React.FunctionComponent<
         </MemoryRouter>
     )
 }
-
-/**
- * Wrapper component for enterprise webapp Storybook stories that provides light theme and react-router props.
- * Takes a render function as children that gets called with the props.
- */
-export const EnterpriseWebStory: React.FunctionComponent<WebStoryProps> = props => (
-    <WebStory {...props} webStyles={enterpriseWebStyles} />
-)
