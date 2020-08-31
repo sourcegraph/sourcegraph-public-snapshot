@@ -515,7 +515,7 @@ description: somestring",
           <Memo(FileDocumentIcon)
             className="icon-inline text-muted mr-1"
           />
-           Spec file
+           Campaign spec
         </a>
       </li>
     </ul>
@@ -1289,7 +1289,7 @@ description: somestring",
           <Memo(FileDocumentIcon)
             className="icon-inline text-muted mr-1"
           />
-           Spec file
+           Campaign spec
         </a>
       </li>
     </ul>
