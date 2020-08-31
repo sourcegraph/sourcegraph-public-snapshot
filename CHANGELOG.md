@@ -31,7 +31,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Sourcegraph is now built with Go 1.15.0.
   - Go `1.15.0` introduced changes to SSL/TLS connection validation which requires certificates to include a `SAN`. This field was not included in older certificates and clients relied on the `CN` field. You might see an error like `x509: certificate relies on legacy Common Name field`. We recommend that customers using Sourcegraph with an external database and and connecting to it using SSL/TLS check whether the certificate is up to date. 
   - RDS Customers please reference [AWS' documentation on updating the SSL/TLS certificate](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL-certificate-rotation.html). 
-  - For additional information check [#13433](https://github.com/sourcegraph/sourcegraph/pull/13433)
+  - For additional information check [#13433](https://github.com/sourcegraph/sourcegraph/pull/13433).
 
 ### Fixed
 
