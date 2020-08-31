@@ -6,9 +6,9 @@ import { subDays } from 'date-fns'
 import { GitCommitFields } from '../../graphql-operations'
 import { WebStory } from '../../components/WebStory'
 
-const { add } = storiesOf('web/GitCommitNode', module).addDecorator(story => {
-    return <div className="p-3 container web-content">{story()}</div>
-})
+const { add } = storiesOf('web/GitCommitNode', module).addDecorator(story => (
+    <div className="p-3 container web-content">{story()}</div>
+))
 
 const gitCommitNode: GitCommitFields = {
     id: 'commit123',
