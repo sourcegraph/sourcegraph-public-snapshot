@@ -66,6 +66,10 @@ type RepositoryRevisions struct {
 	// resolveOnce protects resolvedRevs
 	resolveOnce sync.Once
 
+	// resolveErr stores the error returned by the first call to ExpandedRevSpecs. It
+	// gives the caller the chance to distinguish between an error and an empty resolvedRevs.
+	resolveErr error
+
 	// ListRefs is called to list all Git refs for a repository. It is intended to be mocked by
 	// tests. If nil, git.ListRefs is used.
 	ListRefs func(context.Context, gitserver.Repo) ([]git.Ref, error)
@@ -176,8 +180,10 @@ func (r *RepositoryRevisions) RevSpecs() []string {
 // command-line args to `git` directly (e.g., to `git log --glob ... --exclude ...`), it does not
 // need to use this function.
 func (r *RepositoryRevisions) ExpandedRevSpecs(ctx context.Context) ([]string, error) {
-	var err error
 	r.resolveOnce.Do(func() {
+		var err error
+		defer func() { r.resolveErr = err }()
+
 		listRefs := r.ListRefs
 		if listRefs == nil {
 			listRefs = git.ListRefs
@@ -222,5 +228,5 @@ func (r *RepositoryRevisions) ExpandedRevSpecs(ctx context.Context) ([]string, e
 		}
 		r.resolvedRevs = revSpecsList
 	})
-	return r.resolvedRevs, err
+	return r.resolvedRevs, r.resolveErr
 }
