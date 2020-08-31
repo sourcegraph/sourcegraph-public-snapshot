@@ -68,6 +68,8 @@ func newCampaignsApplyFlags(flagSet *flag.FlagSet, cacheDir string) *campaignsAp
 		&caf.namespace, "namespace", "",
 		"The user of organization namespace to place the campaign within.",
 	)
+	flagSet.StringVar(&caf.namespace, "n", "", "Alias for -namespace.")
+
 	flagSet.IntVar(
 		&caf.parallelism, "j", 0,
 		"The maximum number of parallel jobs. (Default: GOMAXPROCS.)",
