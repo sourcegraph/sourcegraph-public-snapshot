@@ -117,7 +117,7 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
                         onClick={onSelectSpec}
                         className={classNames('nav-link', selectedTab === 'spec' && 'active')}
                     >
-                        <FileDocumentIcon className="icon-inline text-muted mr-1" /> Spec file
+                        <FileDocumentIcon className="icon-inline text-muted mr-1" /> Campaign spec
                     </a>
                 </li>
             </ul>
