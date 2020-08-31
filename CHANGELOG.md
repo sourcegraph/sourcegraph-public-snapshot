@@ -290,8 +290,8 @@ All notable changes to Sourcegraph are documented in this file.
 - A new `external_service_repos` join table was added. The migration required to make this change may take a few minutes.
 - Negated content search is now also supported for unindexed repositories. Previously it was only supported for indexed repositories. Negated content search requires setting `"search.migrateParser": true` in settings and is only supported for literal and regexp queries.
 - Sourcegraph is now built with Go 1.15.0.
-  - Go `1.15.0` introduced changes to SSL/TLS connection validation which requires certificates to include a `SAN`. This field was not included in older certificates and clients relied on the `CN` field. You might see an error like `x509: certificate relies on legacy Common Name field`. We recommend that customers using Sourcegraph with an external database and and connecting to it using SSL/TLS check whether the certificate is up to date. 
-  - RDS Customers please reference [AWS' documentation on updating the SSL/TLS certificate](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL-certificate-rotation.html). 
+  - Go `1.15.0` introduced changes to SSL/TLS connection validation which requires certificates to include a `SAN`. This field was not included in older certificates and clients relied on the `CN` field. You might see an error like `x509: certificate relies on legacy Common Name field`. We recommend that customers using Sourcegraph with an external database and and connecting to it using SSL/TLS check whether the certificate is up to date.
+  - RDS Customers please reference [AWS' documentation on updating the SSL/TLS certificate](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL-certificate-rotation.html).
   - For additional information check [#13433](https://github.com/sourcegraph/sourcegraph/pull/13433).
 
 ### Fixed
