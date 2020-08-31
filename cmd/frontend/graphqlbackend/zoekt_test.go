@@ -1027,7 +1027,7 @@ func TestContainsRefGlobs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.query, func(t *testing.T) {
-			qInfo, err := query.ProcessAndOr(tt.query, query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: true})
+			qInfo, err := query.ProcessAndOr(tt.query, query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: tt.globbing})
 			if err != nil {
 				t.Error(err)
 			}
