@@ -21,7 +21,6 @@ import {
 import { queryGraphQL } from '../../backend/graphql'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
-import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
@@ -39,6 +38,7 @@ import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { useEventObservable } from '../../../../shared/src/util/useObservable'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { AuthenticatedUser } from '../../auth'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
 function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
     return makeRepoURI(parsed) + String(parsed.isLightTheme) + String(parsed.disableTimeout)
@@ -94,7 +94,7 @@ interface Props
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         PlatformContextProps,
-        EventLoggerProps,
+        TelemetryProps,
         ExtensionsControllerProps,
         ThemeProps,
         BreadcrumbSetters {
@@ -111,8 +111,8 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
 
     // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
     useEffect(() => {
-        eventLogger.logViewEvent('Blob')
-    }, [repoName, commitID, filePath, isLightTheme, renderMode])
+        props.telemetryService.logViewEvent('Blob')
+    }, [repoName, commitID, filePath, isLightTheme, renderMode, props.telemetryService])
 
     useBreadcrumb(
         useMemo(() => {

@@ -16,6 +16,7 @@ import * as H from 'history'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { AuthenticatedUser } from '../../auth'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -25,14 +26,14 @@ const NotFoundPage: React.FunctionComponent = () => (
     />
 )
 
-export interface RepoSettingsAreaRouteContext {
+export interface RepoSettingsAreaRouteContext extends TelemetryProps {
     repo: GQL.IRepository
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
 }
 
 export interface RepoSettingsAreaRoute extends RouteDescriptor<RepoSettingsAreaRouteContext> {}
 
-interface Props extends RouteComponentProps<{}>, BreadcrumbSetters {
+interface Props extends RouteComponentProps<{}>, BreadcrumbSetters, TelemetryProps {
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: RepoSettingsSideBarGroups
     repo: GQL.IRepository
@@ -88,6 +89,7 @@ export const RepoSettingsArea: React.FunctionComponent<Props> = ({
     const context: RepoSettingsAreaRouteContext = {
         repo: repoOrError,
         onDidUpdateRepository: props.onDidUpdateRepository,
+        telemetryService: props.telemetryService,
     }
 
     return (

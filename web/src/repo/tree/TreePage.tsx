@@ -28,7 +28,6 @@ import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps } from '../../search'
-import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
@@ -45,6 +44,7 @@ import { ViewGrid } from './ViewGrid'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean
@@ -150,7 +150,7 @@ interface Props
         ExtensionsControllerProps,
         PlatformContextProps,
         ThemeProps,
-        EventLoggerProps,
+        TelemetryProps,
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
@@ -184,11 +184,11 @@ export const TreePage: React.FunctionComponent<Props> = ({
 }) => {
     useEffect(() => {
         if (filePath === '') {
-            eventLogger.logViewEvent('Repository')
+            props.telemetryService.logViewEvent('Repository')
         } else {
-            eventLogger.logViewEvent('Tree')
+            props.telemetryService.logViewEvent('Tree')
         }
-    }, [filePath])
+    }, [filePath, props.telemetryService])
 
     useBreadcrumb(
         useMemo(() => {

@@ -24,7 +24,7 @@ import {
     OnboardingTourProps,
     parseSearchURLQuery,
 } from '..'
-import { EventLoggerProps, eventLogger } from '../../tracking/eventLogger'
+import { eventLogger } from '../../tracking/eventLogger'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { VersionContextProps } from '../../../../shared/src/search/util'
@@ -41,6 +41,7 @@ import {
 import { useLocalStorage } from '../../util/useLocalStorage'
 import Shepherd from 'shepherd.js'
 import { AuthenticatedUser } from '../../auth'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -50,7 +51,7 @@ interface Props
         PatternTypeProps,
         CaseSensitivityProps,
         KeyboardShortcutsProps,
-        EventLoggerProps,
+        TelemetryProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         InteractiveSearchProps,
@@ -241,8 +242,6 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
 
     const onSubmit = useCallback(
         (event?: React.FormEvent<HTMLFormElement>): void => {
-            // False positive
-            // eslint-disable-next-line no-unused-expressions
             event?.preventDefault()
             submitSearch({
                 ...props,
