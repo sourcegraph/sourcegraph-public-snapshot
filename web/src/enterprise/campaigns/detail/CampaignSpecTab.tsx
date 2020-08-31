@@ -13,7 +13,7 @@ export const CampaignSpecTab: React.FunctionComponent<CampaignSpecTabProps> = ({
     return (
         <>
             <div className="d-flex justify-content-between align-items-center mb-2 test-campaigns-spec">
-                <p className="m-0">This campaign was created from the folowing spec:</p>
+                <p className="m-0">This campaign was created by applying the following campaign spec:</p>
                 <a
                     download="campaign-spec.yaml"
                     href={downloadUrl}
