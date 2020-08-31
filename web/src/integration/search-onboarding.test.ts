@@ -78,8 +78,8 @@ describe('Search onboarding', () => {
                 '/search?q=lang:typescript+try%7B:%5Bmy_match%5D%7D&patternType=structural&onboardingTour=true'
             )
             await driver.page.waitForSelector('.test-tour-step-5')
-            await driver.page.waitForSelector('.tour-structural-next-button')
-            await driver.page.click('.tour-structural-next-button')
+            await driver.page.waitForSelector('.test-tour-structural-next-button')
+            await driver.page.click('.test-tour-structural-next-button')
             await driver.page.waitForSelector('.test-tour-step-6')
             await driver.page.click('.test-search-help-dropdown-button-icon')
         })

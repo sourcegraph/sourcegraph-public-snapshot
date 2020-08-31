@@ -239,7 +239,7 @@ export function createStructuralSearchTourTooltip(tour: Shepherd.Tour): HTMLElem
     const nextButtonRow = document.createElement('div')
     nextButtonRow.className = 'd-flex justify-content-end'
     const nextButton = document.createElement('button')
-    nextButton.className = 'btn btn-link tour-structural-next-button p-0 font-weight-bold'
+    nextButton.className = 'btn btn-link test-tour-structural-next-button p-0 font-weight-bold'
     nextButton.textContent = 'Next'
     nextButton.addEventListener('click', () => {
         tour.getById('view-search-reference').updateStepOptions({
