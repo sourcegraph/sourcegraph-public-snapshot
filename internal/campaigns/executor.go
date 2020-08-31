@@ -144,12 +144,21 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 		if result, err = x.cache.Get(ctx, cacheKey); err != nil {
 			err = errors.Wrapf(err, "checking cache for %q", task.Repository.Name)
 			return
-		} else if result != nil && len(result.Commits) == 1 {
+		}
+		if result != nil {
 			// Build a new changeset spec. We don't want to use `result` as is,
 			// because the changesetTemplate may have changed. In that case
 			// the diff would still be valid, so we take it from the cache,
 			// but we still build a new ChangesetSpec from the task.
-			diff := result.Commits[0].Diff
+			var diff string
+
+			if len(result.Commits) > 1 {
+				panic("campaigns currently lack support for multiple commits per changeset")
+			}
+			if len(result.Commits) == 1 {
+				diff = result.Commits[0].Diff
+			}
+
 			spec := createChangesetSpec(task, diff)
 
 			status.Cached = true
