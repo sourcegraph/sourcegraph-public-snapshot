@@ -58,6 +58,12 @@ const SettingsSchemaJSON = `{
           "type": "boolean",
           "default": false,
           "!go": { "pointer": true }
+        },
+        "showEnterpriseHomePanels": {
+          "description": "Enabled the homepage panels in the Enterprise homepage",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
         }
       },
       "group": "Experimental"
@@ -214,9 +220,9 @@ const SettingsSchemaJSON = `{
       "!go": { "pointer": true }
     },
     "search.migrateParser": {
-      "description": "If true, uses the new and/or-compatible parser for all search queries. It is a flag to aid transition to the new parser.",
+      "description": "If false, disables the new and/or-compatible parser for all search queries. It is a flag to aid transition to the new parser.",
       "type": "boolean",
-      "default": false,
+      "default": true,
       "!go": { "pointer": true }
     }
   },

@@ -239,6 +239,7 @@ function mockCommonGraphQLResponses(
                 emails: [{ email: 'alice@example.com', verified: true }],
                 organizations: { nodes: [] },
                 permissionsInfo: null,
+                tags: [],
             },
         }),
         CampaignByNamespace: () => ({

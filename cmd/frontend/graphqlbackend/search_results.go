@@ -1378,8 +1378,6 @@ func langIncludeExcludePatterns(values, negatedValues []string) (includePatterns
 var (
 	// The default timeout to use for queries.
 	defaultTimeout = 20 * time.Second
-	// The max timeout to use for queries.
-	maxTimeout = time.Minute
 )
 
 func (r *searchResolver) searchTimeoutFieldSet() bool {
@@ -1389,6 +1387,7 @@ func (r *searchResolver) searchTimeoutFieldSet() bool {
 
 func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, context.CancelFunc, error) {
 	d := defaultTimeout
+	maxTimeout := time.Duration(searchLimits().MaxTimeoutSeconds) * time.Second
 	timeout, _ := r.query.StringValue(query.FieldTimeout)
 	if timeout != "" {
 		var err error
@@ -1400,8 +1399,7 @@ func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, cont
 		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
 		d = maxTimeout
 	}
-	// don't run queries longer than 1 minute.
-	if d.Minutes() > 1 {
+	if d > maxTimeout {
 		d = maxTimeout
 	}
 	ctx, cancel := context.WithTimeout(ctx, d)
@@ -1459,8 +1457,7 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 // Surface an alert if a query exceeds limits that we place on search. Currently limits
 // diff and commit searches where more than repoLimit repos need to be searched.
 func alertOnSearchLimit(resultTypes []string, args *search.TextParameters) ([]string, *searchAlert) {
-	repoLimit := 50
-	repoLimitWithTimeFilter := 10000
+	limits := searchLimits()
 
 	for _, resultType := range resultTypes {
 		if resultType != "commit" && resultType != "diff" {
@@ -1475,18 +1472,18 @@ func alertOnSearchLimit(resultTypes []string, args *search.TextParameters) ([]st
 			hasTimeFilter = true
 		}
 
-		if !hasTimeFilter && len(args.Repos) > repoLimit {
+		if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(args.Repos) > max {
 			return []string{}, &searchAlert{
 				prometheusType: "exceeded_diff_commit_search_limit",
 				title:          fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
-				description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), repoLimit),
+				description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), max),
 			}
 		}
-		if hasTimeFilter && len(args.Repos) > repoLimitWithTimeFilter {
+		if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(args.Repos) > max {
 			return []string{}, &searchAlert{
 				prometheusType: "exceeded_diff_commit_with_time_search_limit",
 				title:          fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
-				description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), repoLimitWithTimeFilter),
+				description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), max),
 			}
 		}
 	}

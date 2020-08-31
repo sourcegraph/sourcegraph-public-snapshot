@@ -297,6 +297,10 @@ type Changeset struct {
 	// Unsynced is true if the changeset tracks an external changeset but the
 	// data hasn't been synced yet.
 	Unsynced bool
+
+	// Closing is set to true (along with the ReocncilerState) when the
+	// reconciler should close the changeset.
+	Closing bool
 }
 
 // RecordID is needed to implement the workerutil.Record interface.

@@ -101,7 +101,7 @@ export function createStep1Tooltip(
     repositoryButtonHandler: () => void
 ): HTMLElement {
     const list = document.createElement('ul')
-    list.className = 'my-4 dash-list'
+    list.className = 'my-4 list-dashed'
     const languageListItem = document.createElement('li')
     languageListItem.className = 'p-0 mb-2'
 
@@ -185,7 +185,7 @@ export function createAddCodeStepWithLanguageExampleTooltip(
     exampleCallback: (query: string, patternType: SearchPatternType) => void
 ): HTMLElement {
     const list = document.createElement('ul')
-    list.className = 'my-4 caret-list'
+    list.className = 'my-4 list-dashed'
 
     const listItem = document.createElement('li')
     listItem.className = 'p-0'
@@ -224,7 +224,7 @@ export function createAddCodeStepWithLanguageExampleTooltip(
 export function createStructuralSearchTourTooltip(tour: Shepherd.Tour): HTMLElement {
     const container = document.createElement('div')
     const list = document.createElement('ul')
-    list.className = 'caret-list mb-0'
+    list.className = 'list-dashed mb-0'
     const listItem = document.createElement('li')
     listItem.className = 'p-0 my-4'
     list.append(listItem)

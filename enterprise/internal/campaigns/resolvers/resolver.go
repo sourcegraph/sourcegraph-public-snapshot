@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -126,16 +125,7 @@ func (r *Resolver) Campaign(ctx context.Context, args *graphqlbackend.CampaignAr
 
 	opts := ee.GetCampaignOpts{Name: args.Name}
 
-	namespaceID := graphql.ID(args.Namespace)
-	var err error
-	switch relay.UnmarshalKind(namespaceID) {
-	case "User":
-		err = relay.UnmarshalSpec(namespaceID, &opts.NamespaceUserID)
-	case "Org":
-		err = relay.UnmarshalSpec(namespaceID, &opts.NamespaceOrgID)
-	default:
-		err = errors.Errorf("Invalid namespace %q", namespaceID)
-	}
+	err := graphqlbackend.UnmarshalNamespaceID(graphql.ID(args.Namespace), &opts.NamespaceUserID, &opts.NamespaceOrgID)
 	if err != nil {
 		return nil, err
 	}
@@ -302,15 +292,7 @@ func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.
 
 	opts := ee.CreateCampaignSpecOpts{RawSpec: args.CampaignSpec}
 
-	switch relay.UnmarshalKind(args.Namespace) {
-	case "User":
-		err = relay.UnmarshalSpec(args.Namespace, &opts.NamespaceUserID)
-	case "Org":
-		err = relay.UnmarshalSpec(args.Namespace, &opts.NamespaceOrgID)
-	default:
-		err = errors.Errorf("Invalid namespace %q", args.Namespace)
-	}
-
+	err = graphqlbackend.UnmarshalNamespaceID(args.Namespace, &opts.NamespaceUserID, &opts.NamespaceOrgID)
 	if err != nil {
 		return nil, err
 	}
@@ -402,16 +384,7 @@ func (r *Resolver) MoveCampaign(ctx context.Context, args *graphqlbackend.MoveCa
 	}
 
 	if args.NewNamespace != nil {
-		newNamespace := *args.NewNamespace
-		switch relay.UnmarshalKind(newNamespace) {
-		case "User":
-			err = relay.UnmarshalSpec(newNamespace, &opts.NewNamespaceUserID)
-		case "Org":
-			err = relay.UnmarshalSpec(newNamespace, &opts.NewNamespaceOrgID)
-		default:
-			err = errors.Errorf("Invalid namespace %q", newNamespace)
-		}
-
+		err := graphqlbackend.UnmarshalNamespaceID(*args.NewNamespace, &opts.NewNamespaceUserID, &opts.NewNamespaceOrgID)
 		if err != nil {
 			return nil, err
 		}
@@ -464,9 +437,7 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 		return nil, err
 	}
 	opts.State = state
-	if args.First != nil {
-		opts.Limit = int(*args.First)
-	}
+	opts.Limit = int(args.First)
 	if args.After != nil {
 		cursor, err := strconv.ParseInt(*args.After, 10, 32)
 		if err != nil {
@@ -488,14 +459,7 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 	}
 
 	if args.Namespace != nil {
-		switch relay.UnmarshalKind(*args.Namespace) {
-		case "User":
-			err = relay.UnmarshalSpec(*args.Namespace, &opts.NamespaceUserID)
-		case "Org":
-			err = relay.UnmarshalSpec(*args.Namespace, &opts.NamespaceOrgID)
-		default:
-			err = errors.Errorf("Invalid namespace %q", *args.Namespace)
-		}
+		err := graphqlbackend.UnmarshalNamespaceID(*args.Namespace, &opts.NamespaceUserID, &opts.NamespaceOrgID)
 		if err != nil {
 			return nil, err
 		}
@@ -520,9 +484,7 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, campaign
 
 	safe := true
 
-	if args.First != nil {
-		opts.Limit = int(*args.First)
-	}
+	opts.Limit = int(args.First)
 
 	if args.After != nil {
 		cursor, err := strconv.ParseInt(*args.After, 10, 32)
@@ -607,7 +569,7 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 
 	svc := ee.NewService(r.store, r.httpFactory)
 	// 🚨 SECURITY: CloseCampaign checks whether current user is authorized.
-	campaign, err := svc.CloseCampaign(ctx, campaignID, args.CloseChangesets, true)
+	campaign, err := svc.CloseCampaign(ctx, campaignID, args.CloseChangesets)
 	if err != nil {
 		return nil, errors.Wrap(err, "closing campaign")
 	}

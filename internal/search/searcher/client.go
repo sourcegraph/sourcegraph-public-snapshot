@@ -91,6 +91,9 @@ func Search(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.Repo
 	if p.PathPatternsAreCaseSensitive {
 		q.Set("PathPatternsAreCaseSensitive", "true")
 	}
+	if p.IsNegated {
+		q.Set("IsNegated", "true")
+	}
 	// TEMP BACKCOMPAT: always set even if false so that searcher can distinguish new frontends that send
 	// these fields from old frontends that do not (and provide a default in the latter case).
 	q.Set("PatternMatchesContent", strconv.FormatBool(p.PatternMatchesContent))

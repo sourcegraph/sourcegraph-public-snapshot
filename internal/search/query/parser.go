@@ -438,7 +438,7 @@ func ScanValue(buf []byte, allowDanglingParens bool) (string, int, bool) {
 	var result []rune
 
 	next := func() rune {
-		r, advance := utf8.DecodeRune(buf)
+		r, advance = utf8.DecodeRune(buf)
 		count += advance
 		buf = buf[advance:]
 		return r
@@ -467,22 +467,9 @@ func ScanValue(buf []byte, allowDanglingParens bool) (string, int, bool) {
 		}
 		if r == '\\' {
 			// Handle escape sequence.
-			if len(buf[advance:]) > 0 {
+			if len(buf) > 0 {
 				r = next()
-				// Interpret escape sequences for whitespace escape
-				// sequences \n\r\t. Other escape sequences fall
-				// through to a regexp interpretation.
-				switch r {
-				case 'n':
-					result = append(result, '\n')
-				case 'r':
-					result = append(result, '\r')
-				case 't':
-					result = append(result, '\t')
-				default:
-					// Accept anything else literally.
-					result = append(result, '\\', r)
-				}
+				result = append(result, '\\', r)
 				continue
 			}
 		}
@@ -580,6 +567,21 @@ func (p *parser) ParsePattern() Pattern {
 				Labels: labels,
 				Range:  newRange(start, p.pos),
 			},
+		}
+	}
+
+	if isSet(p.heuristics, parensAsPatterns) {
+		if value, advance, ok := ScanBalancedPatternLiteral(p.buf[p.pos:]); ok {
+			pattern := Pattern{
+				Value:   value,
+				Negated: false,
+				Annotation: Annotation{
+					Labels: Regexp,
+					Range:  newRange(p.pos, p.pos+advance),
+				},
+			}
+			p.pos += advance
+			return pattern
 		}
 	}
 
@@ -698,25 +700,6 @@ loop:
 							Labels: Regexp,
 							Range:  newRange(p.pos, p.pos+advance),
 						},
-					}
-
-					// Concat when a pattern like foo()bar is parsed as (concat "foo" "()bar")
-					// if these are not space-separated.
-					if p.pos > 0 {
-						if r, _ := utf8.DecodeRune([]byte{p.buf[p.pos-1]}); !unicode.IsSpace(r) {
-							if len(nodes) > 0 {
-								if previous, ok := nodes[len(nodes)-1].(Pattern); ok {
-									previous.Annotation.Labels = Regexp | HeuristicParensAsPatterns
-									result, err := concatPatterns(previous, pattern)
-									if err != nil {
-										return nil, err
-									}
-									nodes[len(nodes)-1] = result
-									p.pos += advance
-									continue
-								}
-							}
-						}
 					}
 
 					p.pos += advance

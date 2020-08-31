@@ -21,7 +21,7 @@ import { LSIFUploadState } from '../../../../shared/src/graphql-operations'
 
 const REFRESH_INTERVAL_MS = 5000
 
-interface Props extends RouteComponentProps<{ id: string }> {
+export interface CodeIntelUploadPageProps extends RouteComponentProps<{ id: string }> {
     repo?: GQL.IRepository
     fetchLsifUpload?: typeof defaultFetchUpload
 
@@ -42,7 +42,7 @@ function shouldReload(upload: Upload | ErrorLike | null | undefined): boolean {
 /**
  * A page displaying metadata about an LSIF upload.
  */
-export const CodeIntelUploadPage: FunctionComponent<Props> = ({
+export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = ({
     repo,
     scheduler,
     match: {

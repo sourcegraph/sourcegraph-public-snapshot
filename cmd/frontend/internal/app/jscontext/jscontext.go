@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/csrf"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -74,6 +75,8 @@ type JSContext struct {
 	AllowSignup bool `json:"allowSignup"`
 
 	ResetPasswordEnabled bool `json:"resetPasswordEnabled"`
+
+	ExternalServicesUserModeEnabled bool `json:"externalServicesUserModeEnabled"`
 
 	AuthProviders []authProviderInfo `json:"authProviders"`
 
@@ -163,6 +166,8 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		AccessTokensAllow: conf.AccessTokensAllow(),
 
 		ResetPasswordEnabled: userpasswd.ResetPasswordEnabled(),
+
+		ExternalServicesUserModeEnabled: conf.ExternalServiceUserMode(),
 
 		AllowSignup: conf.AuthAllowSignup(),
 
