@@ -76,7 +76,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 			"--copy-files", fmt.Sprintf("%s:%s", repoDir, mountPoint),
 			"--ssh",
 			"--name", name.String(),
-			h.options.FirecrackerImage,
+			sanitizeImage(h.options.FirecrackerImage),
 		}
 		if err := h.commander.Run(ctx, args[0], args[1:]...); err != nil {
 			return errors.Wrap(err, "failed to start firecracker vm")
