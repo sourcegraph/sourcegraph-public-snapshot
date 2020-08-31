@@ -108,6 +108,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		"-w", "/data",
 		"sourcegraph/lsif-go:latest",
 		"lsif-go",
+		"--noProgress",
 	}
 	if h.options.UseFirecracker {
 		indexArgs = append([]string{"ignite", "exec", name.String(), "--"}, indexArgs...)
@@ -123,6 +124,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		"-e", fmt.Sprintf("SRC_ENDPOINT=%s", uploadURL.String()),
 		"sourcegraph/src-cli:latest",
 		"lsif", "upload",
+		"-no-progress",
 		"-repo", index.RepositoryName,
 		"-commit", index.Commit,
 		"-upload-route", "/.internal-code-intel/lsif/upload",
