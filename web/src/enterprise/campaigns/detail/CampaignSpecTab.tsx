@@ -3,10 +3,11 @@ import React, { useMemo } from 'react'
 import { CampaignFields } from '../../../graphql-operations'
 
 export interface CampaignSpecTabProps {
+    campaignName: CampaignFields['name']
     originalInput: CampaignFields['currentSpec']['originalInput']
 }
 
-export const CampaignSpecTab: React.FunctionComponent<CampaignSpecTabProps> = ({ originalInput }) => {
+export const CampaignSpecTab: React.FunctionComponent<CampaignSpecTabProps> = ({ originalInput, campaignName }) => {
     const downloadUrl = useMemo(() => 'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput), [
         originalInput,
     ])
@@ -15,7 +16,7 @@ export const CampaignSpecTab: React.FunctionComponent<CampaignSpecTabProps> = ({
             <div className="d-flex justify-content-between align-items-center mb-2 test-campaigns-spec">
                 <p className="m-0">This campaign was created by applying the following campaign spec:</p>
                 <a
-                    download="campaign-spec.yaml"
+                    download={`${campaignName}.spec.yaml`}
                     href={downloadUrl}
                     className="text-right btn btn-secondary text-nowrap"
                     data-tooltip="Download campaign-spec.yaml"

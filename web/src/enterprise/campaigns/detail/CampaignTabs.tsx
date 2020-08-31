@@ -142,7 +142,9 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
                     queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                 />
             )}
-            {selectedTab === 'spec' && <CampaignSpecTab originalInput={campaign.currentSpec.originalInput} />}
+            {selectedTab === 'spec' && (
+                <CampaignSpecTab campaignName={campaign.name} originalInput={campaign.currentSpec.originalInput} />
+            )}
         </>
     )
 }
