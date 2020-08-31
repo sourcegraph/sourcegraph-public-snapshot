@@ -645,8 +645,8 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 		// (i.e. moved from `user_pending_permissions` to `user_permissions` table), therefore the record
 		// in `user_pending_permissions` table no longer exists. The reason we still have references to
 		// these missing records is because we do not clean up `repo_pending_permissions` table after
-		// granting a user's pending permissions to avoid database deadlock, given the fact once the record
-		// is removed from `user_pending_permissions` table, the user ID become invalid automatically.
+		// granting a user's pending permissions to avoid database deadlock, given the fact that once the
+		// record is removed from `user_pending_permissions` table, the user ID becomes invalid automatically.
 		spec, ok := idToSpecs[userID]
 		if !ok {
 			continue
