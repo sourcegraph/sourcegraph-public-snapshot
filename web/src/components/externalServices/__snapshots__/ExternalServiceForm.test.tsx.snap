@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`<SiteAdminExternalServiceForm /> create GitHub 1`] = `
+exports[`ExternalServiceForm create GitHub 1`] = `
 <form
   className="external-service-form "
   onInvalid={[Function]}
@@ -51,7 +51,7 @@ exports[`<SiteAdminExternalServiceForm /> create GitHub 1`] = `
 </form>
 `;
 
-exports[`<SiteAdminExternalServiceForm /> edit GitHub 1`] = `
+exports[`ExternalServiceForm edit GitHub 1`] = `
 <form
   className="external-service-form "
   onInvalid={[Function]}
@@ -102,7 +102,7 @@ exports[`<SiteAdminExternalServiceForm /> edit GitHub 1`] = `
 </form>
 `;
 
-exports[`<SiteAdminExternalServiceForm /> edit GitHub, loading 1`] = `
+exports[`ExternalServiceForm edit GitHub, loading 1`] = `
 <form
   className="external-service-form "
   onInvalid={[Function]}

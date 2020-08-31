@@ -33,32 +33,27 @@ Literal search interprets search patterns literally to simplify searching for wo
 
 | Search pattern syntax | Description |
 | --- | --- |
-| [`foo bar`](https://sourcegraph.com/search?q=foo+bar&patternType=literal) | Match the string `foo bar`. Matching is ordered: match `foo` followed by `bar`. Matching is case-_insensitive_ (toggle the <img src=../img/case.png> button to change). | |
+| [`foo bar`](https://sourcegraph.com/search?q=foo+bar&patternType=literal) | Match the string `foo bar`. Matching is ordered: match `foo` followed by `bar`. Matching is case-_insensitive_ (toggle the <img src=../img/case.png alt="case"> button to change). | |
 | [`"foo bar"`](https://sourcegraph.com/search?q=%22foo+bar%22&patternType=literal) | Match the string `"foo bar"`. The quotes are matched literally. |
-
-As of version 3.9.0, by default, searches are interpreted literally instead of as regexp. To change the default search, site admins and users can change their instance and personal default by setting `search.defaultPatternType` to `"literal"` or `"regexp"`.
 
 ### Regular expression search
 
-Click the <img src=../img/regex.png> toggle to interpret search patterns as regexps. [RE2 syntax](https://golang.org/s/re2syntax) is supported. In general, special characters may be escaped with `\`. Here is a list of valid syntax and behavior:
+Click the <img src=../img/regex.png alt="regular expression"> toggle to interpret search patterns as regexps. [RE2 syntax](https://golang.org/s/re2syntax) is supported. In general, special characters may be escaped with `\`. Here is a list of valid syntax and behavior:
 
 | Search pattern syntax | Description |
 | --- | --- |
-| [`foo bar`](https://sourcegraph.com/search?q=foo+bar&patternType=regexp) | Search for the regexp `foo(.*?)bar`. Spaces between non-whitespace strings is converted to `.*?` to create a fuzzy search. Matching is case _insensitive_ (toggle the <img src=../img/case.png> button to change). |
+| [`foo bar`](https://sourcegraph.com/search?q=foo+bar&patternType=regexp) | Search for the regexp `foo(.*?)bar`. Spaces between non-whitespace strings is converted to `.*?` to create a fuzzy search. Matching is case _insensitive_ (toggle the <img src=../img/case.png alt="case"> button to change). |
 | [`foo\ bar`](https://sourcegraph.com/search?q=foo%5C+bar&patternType=regexp) or<br/>[`/foo bar/`](https://sourcegraph.com/search?q=/foo+bar/&patternType=regexp) | Search for the regexp `foo bar`. The `\` escapes the space and treats the space as part of the pattern. Using the delimiter syntax `/ ... /` avoids the need for escaping spaces. |
 | [`foo\nbar`](https://sourcegraph.com/search?q=foo%5Cnbar&patternType=regexp) | Perform a multiline regexp search. `\n` is interpreted as a newline. |
 | [`"foo bar"`](https://sourcegraph.com/search?q=%27foo+bar%27&patternType=regexp) | Match the _string literal_ `foo bar`. Quoting strings when regexp is active means patterns are interpreted [literally](#literal-search-default), except that special characters like `"` and `\` may be escaped, and whitespace escape sequences like `\n` are interpreted normally. |
 
 ### Structural search
 
-Click the <img src=../img/brackets.png> toggle to activate structural search. Structural search is a way to match richer syntactic structures in code, and thus only applies to matching file contents. See the dedicated [usage documentation](structural.md) for more details. Here is a  brief overview of valid syntax:
+Click the <img src=../img/brackets.png alt="square brackets"> toggle to activate structural search. Structural search is a way to match richer syntactic structures like multiline code blocks. See the dedicated [usage documentation](structural.md) for more details. Here is a  brief overview of valid syntax:
 
 | Search pattern syntax | Description |
 | --- | --- |
-| [`New(:[args])`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph++New%28:%5Bargs%5D%29+lang:go&patternType=structural) | Match the string `New` followed by _balanced parentheses_ containing zero or more characters, including newlines. Matching is _case-sensitive_. Make the search [language-aware](structural.md#current-functionality-and-restrictions) by adding a `lang:` [keyword](#keywords-all-searches). |
-| [`"New(:[args])"`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph+%22New%28:%5Bargs%5D%29%22+lang:go&patternType=structural) or<br/> [`'New(:[args])'`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph+%27New%28:%5Bargs%5D%29%27+lang:go&patternType=structural) | Search for the pattern including quoted strings (version 3.17 onwards). Prior to version 3.17, quoting the search pattern is the same as `New(:[args])` and allowed to avoid syntax errors that may conflict with [keyword syntax](#keywords-all-searches). As of version 3.17, the `content:` field should be used to avoid syntax conflicts. |
-
-Note: It is not possible to perform case-insensitive matching with structural search.
+| [`New(ctx, ...)`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph++New%28ctx%2C+...%29+lang:go&patternType=structural) | Match call-like syntax with an identifier `New` having two or more arguments, and the first argument matches `ctx`. Make the search language-aware by adding a `lang:` [keyword](#keywords-all-searches). |
 
 ## Keywords (all searches)
 
@@ -93,8 +88,6 @@ Multiple or combined **repo:** and **file:** keywords are intersected. For examp
 ## Operators
 
 Use operators to create more expressive searches.
-
-> NOTE: As of 3.17, Operators are enabled by default for searching file contents. This feature may be disabled with `{"experimentalFeatures": {"andOrQuery": "disabled"}}` in the site configuration.
 
 | Operator | Example |
 | --- | --- |
@@ -204,4 +197,4 @@ Example: [`type:path repo:/docker/ registry`](https://sourcegraph.com/search?q=t
 
 ## Negated content search
 
-To exclude code or text matches with `not pattern` or `-content:pattern`, set the `"search.migrateParser": true` option in global settings. Negated content search is currently supported for literal and regexp queries on indexed repositories. Negated content search on unindexed repositories is not yet supported.
+To exclude code or text matches with `not pattern` or `-content:pattern`, set the `"search.migrateParser": true` option in global settings. Negated content search is currently supported for literal and regexp queries.

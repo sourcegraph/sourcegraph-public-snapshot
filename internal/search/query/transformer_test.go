@@ -286,7 +286,7 @@ func TestConvertEmptyGroupsToLiteral(t *testing.T) {
 		},
 		{
 			input:      "func(.*)",
-			wantLabels: HeuristicParensAsPatterns | Regexp,
+			wantLabels: Regexp,
 		},
 	}
 	for _, c := range cases {

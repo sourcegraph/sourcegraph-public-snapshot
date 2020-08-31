@@ -15,7 +15,7 @@ import {
     ChangesetReviewState,
 } from '../../../graphql-operations'
 import {
-    fetchCampaignById,
+    fetchCampaignByNamespace,
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
@@ -269,14 +269,15 @@ add('Overview', () => {
         [viewerCanAdminister, isClosed]
     )
 
-    const fetchCampaign: typeof fetchCampaignById = useCallback(() => of(campaign), [campaign])
+    const fetchCampaign: typeof fetchCampaignByNamespace = useCallback(() => of(campaign), [campaign])
     const history = H.createMemoryHistory({ initialEntries: [window.location.href] })
     const breadcrumbsProps = useBreadcrumbs()
     return (
         <CampaignDetailsPage
             {...breadcrumbsProps}
-            campaignID="123123"
-            fetchCampaignById={fetchCampaign}
+            namespaceID="namespace123"
+            campaignName="awesome-campaign"
+            fetchCampaignByNamespace={fetchCampaign}
             queryChangesets={queryChangesets}
             queryChangesetCountsOverTime={queryChangesetCountsOverTime}
             queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}

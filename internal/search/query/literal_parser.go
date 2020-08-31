@@ -94,7 +94,7 @@ loop:
 			result = append(result, r)
 		case r == '\\':
 			// Handle escape sequence.
-			if len(buf) > advance {
+			if len(buf) > 0 {
 				r = next()
 				// Accept anything anything escaped. The point
 				// is to consume escaped spaces like "\ " so

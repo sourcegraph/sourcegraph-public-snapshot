@@ -105,7 +105,7 @@ func TestPermissionLevels(t *testing.T) {
 	cleanUpCampaigns := func(t *testing.T, s *ee.Store) {
 		t.Helper()
 
-		campaigns, next, err := s.ListCampaigns(ctx, ee.ListCampaignsOpts{Limit: 1000})
+		campaigns, next, err := s.ListCampaigns(ctx, ee.ListCampaignsOpts{LimitOpts: ee.LimitOpts{Limit: 1000}})
 		if err != nil {
 			t.Fatal(err)
 		}

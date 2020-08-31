@@ -38,7 +38,7 @@ interface Props
 
 function createStructuralSearchTourTooltip(): HTMLElement {
     const list = document.createElement('ul')
-    list.className = 'caret-list mb-0'
+    list.className = 'list-dashed mb-0'
     const listItem = document.createElement('li')
     listItem.className = 'p-0 my-4'
     list.append(listItem)

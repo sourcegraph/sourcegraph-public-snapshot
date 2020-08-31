@@ -8,7 +8,7 @@ import { CampaignClosePage } from './CampaignClosePage'
 import {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs,
-    fetchCampaignById,
+    fetchCampaignByNamespace,
 } from '../detail/backend'
 import { of } from 'rxjs'
 import { subDays } from 'date-fns'
@@ -208,7 +208,7 @@ add('Overview', () => {
         }),
         [viewerCanAdminister]
     )
-    const fetchCampaign: typeof fetchCampaignById = useCallback(() => of(campaign), [campaign])
+    const fetchCampaign: typeof fetchCampaignByNamespace = useCallback(() => of(campaign), [campaign])
     return (
         <CampaignClosePage
             {...breadcrumbsProps}
@@ -216,8 +216,9 @@ add('Overview', () => {
             location={history.location}
             queryChangesets={queryChangesets}
             queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
-            campaignID="123"
-            fetchCampaignById={fetchCampaign}
+            namespaceID="n123"
+            campaignName="c123"
+            fetchCampaignByNamespace={fetchCampaign}
             extensionsController={{} as any}
             platformContext={{} as any}
             telemetryService={NOOP_TELEMETRY_SERVICE}
