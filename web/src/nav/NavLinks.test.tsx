@@ -3,7 +3,6 @@ import { noop } from 'lodash'
 import React from 'react'
 import { render } from 'enzyme'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ThemePreference } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
@@ -11,6 +10,7 @@ import { NavLinks } from './NavLinks'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
 import { NEVER } from 'rxjs'
 import { MemoryRouter } from 'react-router'
+import { AuthenticatedUser } from '../auth'
 
 describe('NavLinks', () => {
     const NOOP_EXTENSIONS_CONTROLLER: ExtensionsControllerProps<
@@ -19,15 +19,39 @@ describe('NavLinks', () => {
     const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined, settings: NEVER }
     const KEYBOARD_SHORTCUTS: KeyboardShortcutsProps['keyboardShortcuts'] = []
     const SETTINGS_CASCADE: SettingsCascadeProps['settingsCascade'] = { final: null, subjects: null }
-    const ORG_CONNECTION = {
-        __typename: 'OrgConnection',
-        nodes: [
-            { id: '1', displayName: 'd', settingsURL: 'u' },
-            { id: '2', name: 'n', settingsURL: 'u' },
-        ] as unknown,
-        totalCount: 2,
-    } as GQL.IOrgConnection
-    const USER = { username: 'u', url: '/u', settingsURL: '/u/settings', organizations: ORG_CONNECTION } as GQL.IUser
+    const USER: AuthenticatedUser = {
+        __typename: 'User',
+        id: 'TestUserAlice',
+        databaseID: 123,
+        url: '/users/alice',
+        displayName: 'Alice',
+        email: 'alice@acme.com',
+        username: 'alice',
+        avatarURL: null,
+        session: { canSignOut: true },
+        settingsURL: '#',
+        siteAdmin: true,
+        tags: [],
+        viewerCanAdminister: true,
+        organizations: {
+            nodes: [
+                {
+                    id: '0',
+                    name: 'acme',
+                    displayName: 'Acme Corp',
+                    url: '/organizations/acme',
+                    settingsURL: '/organizations/acme/settings',
+                },
+                {
+                    id: '1',
+                    name: 'beta',
+                    displayName: 'Beta Inc',
+                    url: '/organizations/beta',
+                    settingsURL: '/organizations/beta/settings',
+                },
+            ],
+        },
+    }
     const history = H.createMemoryHistory({ keyLength: 0 })
     const NOOP_TOGGLE_MODE = (): void => {
         /* noop */

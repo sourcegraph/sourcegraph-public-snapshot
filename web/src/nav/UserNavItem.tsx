@@ -10,7 +10,7 @@ import { ThemePreferenceProps, ThemePreference } from '../theme'
 import { AuthenticatedUser } from '../auth'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
-interface Props extends ThemeProps, ThemePreferenceProps {
+export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps {
     location: H.Location
     authenticatedUser: Pick<
         AuthenticatedUser,
@@ -28,14 +28,14 @@ interface State {
  * Displays the user's avatar and/or username in the navbar and exposes a dropdown menu with more options for
  * authenticated viewers.
  */
-export class UserNavItem extends React.PureComponent<Props, State> {
+export class UserNavItem extends React.PureComponent<UserNavItemProps, State> {
     private supportsSystemTheme = Boolean(
         window.matchMedia?.('not all and (prefers-color-scheme), (prefers-color-scheme)').matches
     )
 
     public state: State = { isOpen: false }
 
-    public componentDidUpdate(previousProps: Props): void {
+    public componentDidUpdate(previousProps: UserNavItemProps): void {
         // Close dropdown after clicking on a dropdown item.
         if (this.state.isOpen && this.props.location !== previousProps.location) {
             /* eslint react/no-did-update-set-state: warn */

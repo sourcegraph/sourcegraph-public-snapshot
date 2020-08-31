@@ -8,25 +8,31 @@ exports[`UserNavItem simple 1`] = `
     <UserNavItem
       authenticatedUser={
         Object {
+          "avatarURL": null,
           "organizations": Object {
-            "__typename": "OrgConnection",
             "nodes": Array [
               Object {
-                "displayName": "d",
-                "id": "1",
-                "settingsURL": "u",
+                "displayName": "Acme Corp",
+                "id": "0",
+                "name": "acme",
+                "settingsURL": "/organizations/acme/settings",
+                "url": "/organizations/acme",
               },
               Object {
-                "id": "2",
-                "name": "n",
-                "settingsURL": "u",
+                "displayName": "Beta Inc",
+                "id": "1",
+                "name": "beta",
+                "settingsURL": "/organizations/beta/settings",
+                "url": "/organizations/beta",
               },
             ],
-            "totalCount": 2,
           },
-          "settingsURL": "/u/settings",
-          "url": "/u",
-          "username": "u",
+          "session": Object {
+            "canSignOut": true,
+          },
+          "settingsURL": "#",
+          "siteAdmin": true,
+          "username": "alice",
         }
       }
       isLightTheme={true}
@@ -77,7 +83,7 @@ exports[`UserNavItem simple 1`] = `
                       onClick={[Function]}
                     >
                       <strong>
-                        u
+                        alice
                       </strong>
                     </a>
                   </InnerReference>
@@ -109,7 +115,7 @@ exports[`UserNavItem simple 1`] = `
                       Signed in as 
                       <strong>
                         @
-                        u
+                        alice
                       </strong>
                     </h6>
                   </DropdownItem>
@@ -126,16 +132,16 @@ exports[`UserNavItem simple 1`] = `
                   </DropdownItem>
                   <Link
                     className="dropdown-item"
-                    to="/u/settings"
+                    to="#"
                   >
                     <LinkAnchor
                       className="dropdown-item"
-                      href="/u/settings"
+                      href="/"
                       navigate={[Function]}
                     >
                       <a
                         className="dropdown-item"
-                        href="/u/settings"
+                        href="/"
                         onClick={[Function]}
                       >
                         Settings
@@ -162,16 +168,16 @@ exports[`UserNavItem simple 1`] = `
                   </Link>
                   <Link
                     className="dropdown-item"
-                    to="/users/u/searches"
+                    to="/users/alice/searches"
                   >
                     <LinkAnchor
                       className="dropdown-item"
-                      href="/users/u/searches"
+                      href="/users/alice/searches"
                       navigate={[Function]}
                     >
                       <a
                         className="dropdown-item"
-                        href="/users/u/searches"
+                        href="/users/alice/searches"
                         onClick={[Function]}
                       >
                         Saved searches
@@ -249,39 +255,39 @@ exports[`UserNavItem simple 1`] = `
                   </DropdownItem>
                   <Link
                     className="dropdown-item"
-                    key="1"
-                    to="u"
+                    key="0"
+                    to="/organizations/acme/settings"
                   >
                     <LinkAnchor
                       className="dropdown-item"
-                      href="/u"
+                      href="/organizations/acme/settings"
                       navigate={[Function]}
                     >
                       <a
                         className="dropdown-item"
-                        href="/u"
+                        href="/organizations/acme/settings"
                         onClick={[Function]}
                       >
-                        d
+                        Acme Corp
                       </a>
                     </LinkAnchor>
                   </Link>
                   <Link
                     className="dropdown-item"
-                    key="2"
-                    to="u"
+                    key="1"
+                    to="/organizations/beta/settings"
                   >
                     <LinkAnchor
                       className="dropdown-item"
-                      href="/u"
+                      href="/organizations/beta/settings"
                       navigate={[Function]}
                     >
                       <a
                         className="dropdown-item"
-                        href="/u"
+                        href="/organizations/beta/settings"
                         onClick={[Function]}
                       >
-                        n
+                        Beta Inc
                       </a>
                     </LinkAnchor>
                   </Link>
@@ -296,6 +302,24 @@ exports[`UserNavItem simple 1`] = `
                       tabIndex="-1"
                     />
                   </DropdownItem>
+                  <Link
+                    className="dropdown-item"
+                    to="/site-admin"
+                  >
+                    <LinkAnchor
+                      className="dropdown-item"
+                      href="/site-admin"
+                      navigate={[Function]}
+                    >
+                      <a
+                        className="dropdown-item"
+                        href="/site-admin"
+                        onClick={[Function]}
+                      >
+                        Site admin
+                      </a>
+                    </LinkAnchor>
+                  </Link>
                   <Link
                     className="dropdown-item"
                     rel="noopener"
@@ -323,6 +347,12 @@ exports[`UserNavItem simple 1`] = `
                       </a>
                     </LinkAnchor>
                   </Link>
+                  <a
+                    className="dropdown-item"
+                    href="/-/sign-out"
+                  >
+                    Sign out
+                  </a>
                   <DropdownItem
                     divider={true}
                     tag="button"

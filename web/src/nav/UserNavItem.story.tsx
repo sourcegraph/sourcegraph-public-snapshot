@@ -2,7 +2,6 @@ import { action } from '@storybook/addon-actions'
 import { boolean } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import React, { useCallback } from 'react'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { ThemePreference } from '../theme'
 import { UserNavItem } from './UserNavItem'
 import { WebStory } from '../components/WebStory'
@@ -35,9 +34,21 @@ add(
                         siteAdmin: true,
                         organizations: {
                             nodes: [
-                                { id: '0', settingsURL: '#', displayName: 'Acme Corp' },
-                                { id: '1', settingsURL: '#', displayName: 'Beta Inc' },
-                            ] as GQL.IOrg[],
+                                {
+                                    id: '0',
+                                    name: 'acme',
+                                    displayName: 'Acme Corp',
+                                    url: '/organizations/acme',
+                                    settingsURL: '/organizations/acme/settings',
+                                },
+                                {
+                                    id: '1',
+                                    name: 'beta',
+                                    displayName: 'Beta Inc',
+                                    url: '/organizations/beta',
+                                    settingsURL: '/organizations/beta/settings',
+                                },
+                            ],
                         },
                     }}
                     themePreference={webProps.isLightTheme ? ThemePreference.Light : ThemePreference.Dark}
