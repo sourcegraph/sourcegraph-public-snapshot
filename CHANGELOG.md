@@ -289,7 +289,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Campaign URLs have changed to use the campaign name instead of an opaque ID. The old URLs no longer work. [#13368](https://github.com/sourcegraph/sourcegraph/pull/13368)
 - A new `external_service_repos` join table was added. The migration required to make this change may take a few minutes.
 - Negated content search is now also supported for unindexed repositories. Previously it was only supported for indexed repositories. Negated content search requires setting `"search.migrateParser": true` in settings and is only supported for literal and regexp queries.
-- Sourcegraph is now built with Go 1.15.0.
+- Sourcegraph is now built with Go 1.15.0. We recommend that customers using Sourcegraph with an external database and and connecting to it using SSL/TLS check whether the certificate is up to date. See these comments for more information: https://github.com/golang/go/issues/39568#issuecomment-665863345 and https://github.com/golang/go/issues/39568#issuecomment-671424481. And [AWS' updated documentation on updating the SSL/TLS certificate](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL-certificate-rotation.html). [#13433](https://github.com/sourcegraph/sourcegraph/pull/13433)
 
 ### Fixed
 
