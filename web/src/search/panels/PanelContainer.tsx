@@ -2,10 +2,13 @@ import * as React from 'react'
 
 interface Props {
     title: string
-    state: 'loading' | 'content' | 'empty'
-    loadingDisplay: JSX.Element
-    contentDisplay: JSX.Element
-    emptyDisplay: JSX.Element
+    state: 'loading' | 'populated' | 'empty'
+    // the content displayed when state is 'loading'
+    loadingContent: JSX.Element
+    // the content displayed when state is 'populated'
+    populatedContent: JSX.Element
+    // the content displayed when state is 'empty'
+    emptyContent: JSX.Element
     actionButtons?: JSX.Element
     className?: string
 }
@@ -13,9 +16,9 @@ interface Props {
 export const PanelContainer: React.FunctionComponent<Props> = ({
     title,
     state,
-    loadingDisplay,
-    contentDisplay,
-    emptyDisplay,
+    loadingContent: loadingDisplay,
+    populatedContent: contentDisplay,
+    emptyContent: emptyDisplay,
     actionButtons,
     className,
 }) => (
@@ -26,7 +29,7 @@ export const PanelContainer: React.FunctionComponent<Props> = ({
         </div>
 
         {state === 'loading' && loadingDisplay}
-        {state === 'content' && contentDisplay}
+        {state === 'populated' && contentDisplay}
         {state === 'empty' && emptyDisplay}
     </div>
 )

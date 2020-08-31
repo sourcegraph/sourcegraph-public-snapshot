@@ -1,10 +1,7 @@
 import React from 'react'
 import { cleanup, render } from '@testing-library/react'
 import { SearchPage, SearchPageProps } from './SearchPage'
-
-jest.mock('../../tracking/eventLogger', () => ({
-    eventLogger: { logViewEvent: () => undefined },
-}))
+import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
 
 jest.mock('./SearchPageInput', () => ({
     SearchPageInput: () => null,
@@ -27,6 +24,7 @@ describe('SearchPage', () => {
         location: {
             pathname: '',
         },
+        telemetryService: NOOP_TELEMETRY_SERVICE,
     } as SearchPageProps
 
     it('should have `with-content-below` class if on Sourcegraph.com', () => {

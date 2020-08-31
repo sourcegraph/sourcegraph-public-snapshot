@@ -10,10 +10,10 @@ export const RecentFilesPanel: React.FunctionComponent<{}> = () => {
         <PanelContainer
             className="recent-files-panel"
             title="Recent Files"
-            state="content"
-            loadingDisplay={loadingDisplay}
-            contentDisplay={contentDisplay}
-            emptyDisplay={emptyDisplay}
+            state="populated"
+            loadingContent={loadingDisplay}
+            populatedContent={contentDisplay}
+            emptyContent={emptyDisplay}
         />
     )
 }

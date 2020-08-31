@@ -70,8 +70,7 @@ export interface SearchPageProps
 /**
  * The search page
  */
-<<<<<<< HEAD
-export const SearchPage: React.FunctionComponent<Props> = props => {
+export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
     const SearchExampleClicked = useCallback(
         (url: string) => (): void => props.telemetryService.log('ExampleSearchClicked', { url }),
         [props.telemetryService]
@@ -82,10 +81,6 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
     )
 
     useEffect(() => props.telemetryService.logViewEvent('Home'), [props.telemetryService])
-=======
-export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
-    useEffect(() => eventLogger.logViewEvent('Home'))
->>>>>>> 4e5376637d... Tests for search page
 
     const codeInsightsEnabled =
         !isErrorLike(props.settingsCascade.final) && !!props.settingsCascade.final?.experimentalFeatures?.codeInsights

@@ -6,9 +6,9 @@ describe('PanelContainer', () => {
     const defaultProps = {
         title: 'Test Panel',
         state: 'loading',
-        loadingDisplay: <div>Loading</div>,
-        contentDisplay: <div>Content</div>,
-        emptyDisplay: <div>Empty</div>,
+        loadingContent: <div>Loading</div>,
+        populatedContent: <div>Content</div>,
+        emptyContent: <div>Empty</div>,
     }
 
     test('loading state', () => {
@@ -20,7 +20,7 @@ describe('PanelContainer', () => {
     })
 
     test('content state', () => {
-        expect(renderer.create(<PanelContainer {...defaultProps} state="content" />)).toMatchSnapshot()
+        expect(renderer.create(<PanelContainer {...defaultProps} state="populated" />)).toMatchSnapshot()
     })
 
     test('with action buttons', () => {

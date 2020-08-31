@@ -12,10 +12,10 @@ export const SavedSearchesPanel: React.FunctionComponent<{}> = () => {
         <PanelContainer
             className="saved-searches-panel"
             title="Recent Searches"
-            state="content"
-            loadingDisplay={loadingDisplay}
-            contentDisplay={contentDisplay}
-            emptyDisplay={emptyDisplay}
+            state="populated"
+            loadingContent={loadingDisplay}
+            populatedContent={contentDisplay}
+            emptyContent={emptyDisplay}
             actionButtons={actionButtons}
         />
     )
