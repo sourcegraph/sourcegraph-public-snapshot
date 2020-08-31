@@ -1,28 +1,14 @@
-import * as H from 'history'
 import { storiesOf } from '@storybook/react'
-import { radios } from '@storybook/addon-knobs'
 import React from 'react'
-import webStyles from '../../../enterprise.scss'
-import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { VisibleChangesetSpecNode } from './VisibleChangesetSpecNode'
 import { addDays } from 'date-fns'
 import { VisibleChangesetSpecFields, ChangesetSpecType } from '../../../graphql-operations'
 import { of } from 'rxjs'
+import { EnterpriseWebStory } from '../../../components/WebStory'
 
-let isLightTheme = true
-const { add } = storiesOf('web/campaigns/apply/VisibleChangesetSpecNode', module).addDecorator(story => {
-    const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
-    document.body.classList.toggle('theme-light', theme === 'light')
-    document.body.classList.toggle('theme-dark', theme === 'dark')
-    isLightTheme = theme === 'light'
-    return (
-        <>
-            <Tooltip />
-            <style>{webStyles}</style>
-            <div className="p-3 container web-content changeset-spec-list__grid">{story()}</div>
-        </>
-    )
-})
+const { add } = storiesOf('web/campaigns/apply/VisibleChangesetSpecNode', module).addDecorator(story => (
+    <div className="p-3 container web-content changeset-spec-list__grid">{story()}</div>
+))
 
 export const visibleChangesetSpecStories: Record<string, VisibleChangesetSpecFields> = {
     'Import changeset': {
@@ -84,16 +70,15 @@ const queryEmptyFileDiffs = () =>
     of({ fileDiffs: { totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] } })
 
 for (const storyName of Object.keys(visibleChangesetSpecStories)) {
-    add(storyName, () => {
-        const history = H.createMemoryHistory()
-        return (
-            <VisibleChangesetSpecNode
-                node={visibleChangesetSpecStories[storyName]}
-                history={history}
-                location={history.location}
-                isLightTheme={isLightTheme}
-                queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-            />
-        )
-    })
+    add(storyName, () => (
+        <EnterpriseWebStory>
+            {props => (
+                <VisibleChangesetSpecNode
+                    {...props}
+                    node={visibleChangesetSpecStories[storyName]}
+                    queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                />
+            )}
+        </EnterpriseWebStory>
+    ))
 }

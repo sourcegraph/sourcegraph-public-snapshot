@@ -1,9 +1,6 @@
 import React from 'react'
-import * as H from 'history'
 import { storiesOf } from '@storybook/react'
-import { radios, boolean } from '@storybook/addon-knobs'
-import webStyles from '../../../enterprise.scss'
-import { Tooltip } from '../../../components/tooltip/Tooltip'
+import { boolean } from '@storybook/addon-knobs'
 import { CampaignClosePage } from './CampaignClosePage'
 import {
     queryChangesets as _queryChangesets,
@@ -20,24 +17,12 @@ import {
     ChangesetReviewState,
     CampaignFields,
 } from '../../../graphql-operations'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 import { useMemo, useCallback } from '@storybook/addons'
-import { useBreadcrumbs } from '../../../components/Breadcrumbs'
+import { EnterpriseWebStory } from '../../../components/WebStory'
 
-let isLightTheme = true
-const { add } = storiesOf('web/campaigns/close/CampaignClosePage', module).addDecorator(story => {
-    const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
-    document.body.classList.toggle('theme-light', theme === 'light')
-    document.body.classList.toggle('theme-dark', theme === 'dark')
-    isLightTheme = theme === 'light'
-    return (
-        <>
-            <Tooltip />
-            <style>{webStyles}</style>
-            <div className="p-3 container web-content">{story()}</div>
-        </>
-    )
-})
+const { add } = storiesOf('web/campaigns/close/CampaignClosePage', module).addDecorator(story => (
+    <div className="p-3 container web-content">{story()}</div>
+))
 
 const queryChangesets: typeof _queryChangesets = () =>
     of({
@@ -164,9 +149,7 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
     })
 
 add('Overview', () => {
-    const history = H.createMemoryHistory()
     const viewerCanAdminister = boolean('viewerCanAdminister', true)
-    const breadcrumbsProps = useBreadcrumbs()
     const campaign: CampaignFields = useMemo(
         () => ({
             __typename: 'Campaign',
@@ -213,19 +196,19 @@ add('Overview', () => {
     )
     const fetchCampaign: typeof fetchCampaignByNamespace = useCallback(() => of(campaign), [campaign])
     return (
-        <CampaignClosePage
-            {...breadcrumbsProps}
-            history={history}
-            location={history.location}
-            queryChangesets={queryChangesets}
-            queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
-            namespaceID="n123"
-            campaignName="c123"
-            fetchCampaignByNamespace={fetchCampaign}
-            extensionsController={{} as any}
-            platformContext={{} as any}
-            telemetryService={NOOP_TELEMETRY_SERVICE}
-            isLightTheme={isLightTheme}
-        />
+        <EnterpriseWebStory>
+            {props => (
+                <CampaignClosePage
+                    {...props}
+                    queryChangesets={queryChangesets}
+                    queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
+                    namespaceID="n123"
+                    campaignName="c123"
+                    fetchCampaignByNamespace={fetchCampaign}
+                    extensionsController={{} as any}
+                    platformContext={{} as any}
+                />
+            )}
+        </EnterpriseWebStory>
     )
 })

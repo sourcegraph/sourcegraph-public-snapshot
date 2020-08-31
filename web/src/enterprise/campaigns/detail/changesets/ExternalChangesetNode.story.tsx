@@ -1,9 +1,6 @@
-import * as H from 'history'
 import { storiesOf } from '@storybook/react'
-import { radios, boolean } from '@storybook/addon-knobs'
+import { boolean } from '@storybook/addon-knobs'
 import React from 'react'
-import webStyles from '../../../../enterprise.scss'
-import { Tooltip } from '../../../../components/tooltip/Tooltip'
 import { ExternalChangesetNode } from './ExternalChangesetNode'
 import { addHours } from 'date-fns'
 import {
@@ -14,48 +11,98 @@ import {
     ChangesetReviewState,
 } from '../../../../graphql-operations'
 import { of } from 'rxjs'
+import { EnterpriseWebStory } from '../../../../components/WebStory'
 
-let isLightTheme = true
-
-const { add } = storiesOf('web/campaigns/ExternalChangesetNode', module).addDecorator(story => {
-    const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
-    document.body.classList.toggle('theme-light', theme === 'light')
-    document.body.classList.toggle('theme-dark', theme === 'dark')
-    isLightTheme = theme === 'light'
-    return (
-        <>
-            <Tooltip />
-            <style>{webStyles}</style>
-            <div className="p-3 container web-content campaign-changesets__grid">{story()}</div>
-        </>
-    )
-})
+const { add } = storiesOf('web/campaigns/ExternalChangesetNode', module).addDecorator(story => (
+    <div className="p-3 container web-content campaign-changesets__grid">{story()}</div>
+))
 
 add('All external states', () => {
     const now = new Date()
-    const history = H.createMemoryHistory()
     return (
-        <>
-            {Object.values(ChangesetExternalState).map((externalState, index) => (
+        <EnterpriseWebStory>
+            {props => (
+                <>
+                    {Object.values(ChangesetExternalState).map((externalState, index) => (
+                        <ExternalChangesetNode
+                            key={index}
+                            {...props}
+                            node={{
+                                id: 'somechangeset',
+                                updatedAt: now.toISOString(),
+                                nextSyncAt: addHours(now, 1).toISOString(),
+                                externalState,
+                                __typename: 'ExternalChangeset',
+                                title: 'Changeset title on code host',
+                                reconcilerState: ChangesetReconcilerState.COMPLETED,
+                                publicationState: ChangesetPublicationState.PUBLISHED,
+                                error: null,
+                                body: 'This changeset does the following things:\nIs awesome\nIs useful',
+                                checkState: ChangesetCheckState.PENDING,
+                                createdAt: now.toISOString(),
+                                externalID: '123',
+                                externalURL: {
+                                    url: 'http://test.test/pr/123',
+                                },
+                                diffStat: {
+                                    added: 10,
+                                    changed: 20,
+                                    deleted: 8,
+                                },
+                                labels: [],
+                                repository: {
+                                    id: 'repoid',
+                                    name: 'github.com/sourcegraph/sourcegraph',
+                                    url: 'http://test.test/sourcegraph/sourcegraph',
+                                },
+                                reviewState: ChangesetReviewState.COMMENTED,
+                            }}
+                            viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                            queryExternalChangesetWithFileDiffs={() =>
+                                of({
+                                    diff: {
+                                        __typename: 'PreviewRepositoryComparison',
+                                        fileDiffs: {
+                                            nodes: [],
+                                            totalCount: 0,
+                                            pageInfo: {
+                                                endCursor: null,
+                                                hasNextPage: false,
+                                            },
+                                        },
+                                    },
+                                })
+                            }
+                        />
+                    ))}
+                </>
+            )}
+        </EnterpriseWebStory>
+    )
+})
+
+add('Unpublished', () => {
+    const now = new Date()
+    return (
+        <EnterpriseWebStory>
+            {props => (
                 <ExternalChangesetNode
-                    key={index}
+                    {...props}
                     node={{
+                        __typename: 'ExternalChangeset',
                         id: 'somechangeset',
                         updatedAt: now.toISOString(),
-                        nextSyncAt: addHours(now, 1).toISOString(),
-                        externalState,
-                        __typename: 'ExternalChangeset',
+                        nextSyncAt: null,
+                        externalState: null,
                         title: 'Changeset title on code host',
-                        reconcilerState: ChangesetReconcilerState.COMPLETED,
-                        publicationState: ChangesetPublicationState.PUBLISHED,
+                        reconcilerState: ChangesetReconcilerState.QUEUED,
+                        publicationState: ChangesetPublicationState.UNPUBLISHED,
                         error: null,
                         body: 'This changeset does the following things:\nIs awesome\nIs useful',
-                        checkState: ChangesetCheckState.PENDING,
+                        checkState: null,
                         createdAt: now.toISOString(),
-                        externalID: '123',
-                        externalURL: {
-                            url: 'http://test.test/pr/123',
-                        },
+                        externalID: null,
+                        externalURL: null,
                         diffStat: {
                             added: 10,
                             changed: 20,
@@ -67,11 +114,8 @@ add('All external states', () => {
                             name: 'github.com/sourcegraph/sourcegraph',
                             url: 'http://test.test/sourcegraph/sourcegraph',
                         },
-                        reviewState: ChangesetReviewState.COMMENTED,
+                        reviewState: null,
                     }}
-                    history={history}
-                    location={history.location}
-                    isLightTheme={isLightTheme}
                     viewerCanAdminister={boolean('viewerCanAdminister', true)}
                     queryExternalChangesetWithFileDiffs={() =>
                         of({
@@ -89,120 +133,65 @@ add('All external states', () => {
                         })
                     }
                 />
-            ))}
-        </>
-    )
-})
-
-add('Unpublished', () => {
-    const now = new Date()
-    const history = H.createMemoryHistory()
-    return (
-        <ExternalChangesetNode
-            node={{
-                __typename: 'ExternalChangeset',
-                id: 'somechangeset',
-                updatedAt: now.toISOString(),
-                nextSyncAt: null,
-                externalState: null,
-                title: 'Changeset title on code host',
-                reconcilerState: ChangesetReconcilerState.QUEUED,
-                publicationState: ChangesetPublicationState.UNPUBLISHED,
-                error: null,
-                body: 'This changeset does the following things:\nIs awesome\nIs useful',
-                checkState: null,
-                createdAt: now.toISOString(),
-                externalID: null,
-                externalURL: null,
-                diffStat: {
-                    added: 10,
-                    changed: 20,
-                    deleted: 8,
-                },
-                labels: [],
-                repository: {
-                    id: 'repoid',
-                    name: 'github.com/sourcegraph/sourcegraph',
-                    url: 'http://test.test/sourcegraph/sourcegraph',
-                },
-                reviewState: null,
-            }}
-            history={history}
-            location={history.location}
-            isLightTheme={isLightTheme}
-            viewerCanAdminister={boolean('viewerCanAdminister', true)}
-            queryExternalChangesetWithFileDiffs={() =>
-                of({
-                    diff: {
-                        __typename: 'PreviewRepositoryComparison',
-                        fileDiffs: {
-                            nodes: [],
-                            totalCount: 0,
-                            pageInfo: {
-                                endCursor: null,
-                                hasNextPage: false,
-                            },
-                        },
-                    },
-                })
-            }
-        />
+            )}
+        </EnterpriseWebStory>
     )
 })
 
 add('Importing', () => {
     const now = new Date()
-    const history = H.createMemoryHistory()
     return (
-        <ExternalChangesetNode
-            node={{
-                __typename: 'ExternalChangeset',
-                id: 'somechangeset',
-                updatedAt: now.toISOString(),
-                nextSyncAt: null,
-                externalState: null,
-                // No title yet, still importing.
-                title: null,
-                reconcilerState: ChangesetReconcilerState.QUEUED,
-                publicationState: ChangesetPublicationState.PUBLISHED,
-                error: null,
-                body: null,
-                checkState: null,
-                createdAt: now.toISOString(),
-                externalID: '12345',
-                externalURL: null,
-                diffStat: {
-                    added: 10,
-                    changed: 20,
-                    deleted: 8,
-                },
-                labels: [],
-                repository: {
-                    id: 'repoid',
-                    name: 'github.com/sourcegraph/sourcegraph',
-                    url: 'http://test.test/sourcegraph/sourcegraph',
-                },
-                reviewState: null,
-            }}
-            history={history}
-            location={history.location}
-            isLightTheme={isLightTheme}
-            viewerCanAdminister={boolean('viewerCanAdminister', true)}
-            queryExternalChangesetWithFileDiffs={() =>
-                of({
-                    diff: {
-                        __typename: 'PreviewRepositoryComparison',
-                        fileDiffs: {
-                            nodes: [],
-                            totalCount: 0,
-                            pageInfo: {
-                                endCursor: null,
-                                hasNextPage: false,
-                            },
+        <EnterpriseWebStory>
+            {props => (
+                <ExternalChangesetNode
+                    {...props}
+                    node={{
+                        __typename: 'ExternalChangeset',
+                        id: 'somechangeset',
+                        updatedAt: now.toISOString(),
+                        nextSyncAt: null,
+                        externalState: null,
+                        // No title yet, still importing.
+                        title: null,
+                        reconcilerState: ChangesetReconcilerState.QUEUED,
+                        publicationState: ChangesetPublicationState.PUBLISHED,
+                        error: null,
+                        body: null,
+                        checkState: null,
+                        createdAt: now.toISOString(),
+                        externalID: '12345',
+                        externalURL: null,
+                        diffStat: {
+                            added: 10,
+                            changed: 20,
+                            deleted: 8,
                         },
-                    },
-                })
-            }
-        />
+                        labels: [],
+                        repository: {
+                            id: 'repoid',
+                            name: 'github.com/sourcegraph/sourcegraph',
+                            url: 'http://test.test/sourcegraph/sourcegraph',
+                        },
+                        reviewState: null,
+                    }}
+                    viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                    queryExternalChangesetWithFileDiffs={() =>
+                        of({
+                            diff: {
+                                __typename: 'PreviewRepositoryComparison',
+                                fileDiffs: {
+                                    nodes: [],
+                                    totalCount: 0,
+                                    pageInfo: {
+                                        endCursor: null,
+                                        hasNextPage: false,
+                                    },
+                                },
+                            },
+                        })
+                    }
+                />
+            )}
+        </EnterpriseWebStory>
     )
 })

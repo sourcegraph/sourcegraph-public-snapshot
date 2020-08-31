@@ -1,9 +1,6 @@
-import * as H from 'history'
 import { storiesOf } from '@storybook/react'
-import { radios, boolean } from '@storybook/addon-knobs'
+import { boolean } from '@storybook/addon-knobs'
 import React from 'react'
-import webStyles from '../../../enterprise.scss'
-import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { CampaignDetailsPage } from './CampaignDetailsPage'
 import { of } from 'rxjs'
 import {
@@ -21,24 +18,12 @@ import {
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
 } from './backend'
 import { subDays } from 'date-fns'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 import { useMemo, useCallback } from '@storybook/addons'
-import { useBreadcrumbs } from '../../../components/Breadcrumbs'
+import { EnterpriseWebStory } from '../../../components/WebStory'
 
-let isLightTheme = true
-const { add } = storiesOf('web/campaigns/details/CampaignDetailsPage', module).addDecorator(story => {
-    const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
-    document.body.classList.toggle('theme-light', theme === 'light')
-    document.body.classList.toggle('theme-dark', theme === 'dark')
-    isLightTheme = theme === 'light'
-    return (
-        <>
-            <Tooltip />
-            <style>{webStyles}</style>
-            <div className="p-3 container web-content">{story()}</div>
-        </>
-    )
-})
+const { add } = storiesOf('web/campaigns/details/CampaignDetailsPage', module).addDecorator(story => (
+    <div className="p-3 container web-content">{story()}</div>
+))
 
 const queryChangesets: typeof _queryChangesets = () =>
     of({
@@ -280,25 +265,23 @@ for (const [name, url] of Object.entries(stories)) {
         )
 
         const fetchCampaign: typeof fetchCampaignByNamespace = useCallback(() => of(campaign), [campaign])
-        const history = H.createMemoryHistory({ initialEntries: [url] })
-        const breadcrumbsProps = useBreadcrumbs()
         return (
-            <CampaignDetailsPage
-                {...breadcrumbsProps}
-                namespaceID="namespace123"
-                campaignName="awesome-campaign"
-                fetchCampaignByNamespace={fetchCampaign}
-                queryChangesets={queryChangesets}
-                queryChangesetCountsOverTime={queryChangesetCountsOverTime}
-                queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
-                deleteCampaign={deleteCampaign}
-                history={history}
-                location={history.location}
-                isLightTheme={isLightTheme}
-                telemetryService={NOOP_TELEMETRY_SERVICE}
-                platformContext={{} as any}
-                extensionsController={{} as any}
-            />
+            <EnterpriseWebStory initialEntries={[url]}>
+                {props => (
+                    <CampaignDetailsPage
+                        {...props}
+                        namespaceID="namespace123"
+                        campaignName="awesome-campaign"
+                        fetchCampaignByNamespace={fetchCampaign}
+                        queryChangesets={queryChangesets}
+                        queryChangesetCountsOverTime={queryChangesetCountsOverTime}
+                        queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
+                        deleteCampaign={deleteCampaign}
+                        extensionsController={{} as any}
+                        platformContext={{} as any}
+                    />
+                )}
+            </EnterpriseWebStory>
         )
     })
 }
