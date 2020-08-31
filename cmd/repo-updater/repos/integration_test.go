@@ -68,13 +68,14 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/Syncer/SyncSubset", testSyncSubset},
 		{"DBStore/Syncer/SyncWorker", testSyncWorkerPlumbing(db)},
 		{"DBStore/Syncer/Run", testSyncRun(db)},
+		{"DBStore/Syncer", testSyncer(db)},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Cleanup(func() {
 				if t.Failed() {
 					return
 				}
-				if _, err := db.Exec(`DELETE FROM external_service_sync_jobs; DELETE FROM external_service_repos; DELETE FROM external_services`); err != nil {
+				if _, err := db.Exec(`DELETE FROM external_service_sync_jobs; DELETE FROM external_service_repos; DELETE FROM external_services; DELETE FROM repo;`); err != nil {
 					t.Fatalf("cleaning up external services failed: %v", err)
 				}
 			})

@@ -1106,3 +1106,134 @@ func testSyncRun(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testi
 		}
 	}
 }
+
+func testSyncer(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store repos.Store) func(t *testing.T) {
+		return func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			services := mkExternalServices(time.Now())
+
+			githubService := services[0]
+			gitlabService := services[1]
+			bitbucketCloudService := services[3]
+
+			services = repos.ExternalServices{
+				githubService,
+				gitlabService,
+				bitbucketCloudService,
+			}
+
+			// setup services
+			if err := store.UpsertExternalServices(ctx, services...); err != nil {
+				t.Fatal(err)
+			}
+
+			githubRepo := (&repos.Repo{
+				Name:     "github.com/org/foo",
+				Metadata: &github.Repository{},
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "foo-external-12345",
+					ServiceID:   "https://github.com/",
+					ServiceType: extsvc.TypeGitHub,
+				},
+			}).With(
+				repos.Opt.RepoSources(githubService.URN()),
+			)
+
+			gitlabRepo := (&repos.Repo{
+				Name:     "gitlab.com/org/foo",
+				Metadata: &gitlab.Project{},
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "12345",
+					ServiceID:   "https://gitlab.com/",
+					ServiceType: extsvc.TypeGitLab,
+				},
+			}).With(
+				repos.Opt.RepoSources(gitlabService.URN()),
+			)
+
+			bitbucketCloudRepo := (&repos.Repo{
+				Name:     "bitbucket.org/team/foo",
+				Metadata: &bitbucketcloud.Repo{},
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "{e164a64c-bd73-4a40-b447-d71b43f328a8}",
+					ServiceID:   "https://bitbucket.org/",
+					ServiceType: extsvc.TypeBitbucketCloud,
+				},
+			}).With(
+				repos.Opt.RepoSources(bitbucketCloudService.URN()),
+			)
+
+			removeSources := func(r *repos.Repo) {
+				r.Sources = nil
+			}
+
+			baseGithubRepos := mkRepos(10, githubRepo)
+			githubSourced := baseGithubRepos.Clone().With(removeSources)
+			baseGitlabRepos := mkRepos(10, gitlabRepo)
+			gitlabSourced := baseGitlabRepos.Clone().With(removeSources)
+			baseBitbucketCloudRepos := mkRepos(10, bitbucketCloudRepo)
+			bitbucketCloudSourced := baseBitbucketCloudRepos.Clone().With(removeSources)
+
+			sourcers := []repos.Source{
+				repos.NewFakeSource(githubService, nil, githubSourced...),
+				repos.NewFakeSource(gitlabService, nil, gitlabSourced...),
+				repos.NewFakeSource(bitbucketCloudService, nil, bitbucketCloudSourced...),
+			}
+
+			syncer := &repos.Syncer{
+				Sourcer:      repos.NewFakeSourcer(nil, sourcers...),
+				Synced:       make(chan repos.Diff),
+				SubsetSynced: make(chan repos.Diff),
+				Now:          time.Now,
+			}
+
+			done := make(chan struct{})
+			go func() {
+				defer close(done)
+				err := syncer.Run(ctx, db, store, repos.RunOptions{
+					Interval:        func() time.Duration { return time.Second },
+					IsCloud:         false,
+					MinSyncInterval: time.Millisecond,
+				})
+				if err != nil && err != context.Canceled {
+					t.Fatal(err)
+				}
+			}()
+
+			// Ignore fields store adds
+			ignore := cmpopts.IgnoreFields(repos.Repo{}, "ID", "CreatedAt", "UpdatedAt", "Sources")
+
+			// The first thing sent down Synced is an empty list of repos in store.
+			diff := <-syncer.Synced
+			if d := cmp.Diff(repos.Diff{}, diff, ignore); d != "" {
+				t.Fatalf("initial Synced mismatch (-want +got):\n%s", d)
+			}
+
+			// it should add a job for all external services
+			var jobsSynced int
+			if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM external_service_sync_jobs").Scan(&jobsSynced); err != nil {
+				t.Fatal(err)
+			}
+			if jobsSynced != len(services) {
+				t.Fatalf("expected %d jobs synced, got %d", len(services), jobsSynced)
+			}
+
+			// Next up it should all the new repos and send them down SubsetSynced
+			added := append(baseGithubRepos, append(baseGitlabRepos, baseBitbucketCloudRepos...)...)
+			sort.Sort(added)
+			for i := range added {
+				diff = <-syncer.SubsetSynced
+				if d := cmp.Diff(repos.Diff{Added: repos.Repos{added[i]}}, diff, ignore); d != "" {
+					t.Fatalf("SubsetSynced mismatch (-want +got):\n%s", d)
+				}
+			}
+
+			// Cancel context and the run loop should stop
+			cancel()
+			<-done
+		}
+	}
+}

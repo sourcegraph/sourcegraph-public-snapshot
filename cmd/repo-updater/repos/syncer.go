@@ -192,8 +192,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	// Delete from external_service_repos only. Deletes need to happen first so that we don't end up with
 	// constraint violations later
 	sdiff := s.sourcesUpserts(&diff, storedCopy)
-	empty := make(map[api.RepoID][]SourceInfo)
-	if err = store.UpsertSources(ctx, empty, empty, sdiff.Deleted); err != nil {
+	if err = store.UpsertSources(ctx, nil, nil, sdiff.Deleted); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.delete-sources")
 	}
 
@@ -221,7 +220,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	// handled above
 	// Recalculate sdiff so that we have foreign keys
 	sdiff = s.sourcesUpserts(&diff, storedCopy)
-	if err = store.UpsertSources(ctx, sdiff.Added, sdiff.Modified, empty); err != nil {
+	if err = store.UpsertSources(ctx, sdiff.Added, sdiff.Modified, nil); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.upsert-sources")
 	}
 
@@ -336,8 +335,7 @@ func (s *Syncer) syncSubset(ctx context.Context, store Store, insertOnly bool, s
 	// Delete from external_service_repos only. Deletes need to happen first so that we don't end up with
 	// constraint violations later
 	sdiff := s.sourcesUpserts(&diff, storedCopy)
-	empty := make(map[api.RepoID][]SourceInfo)
-	if err = store.UpsertSources(ctx, empty, empty, sdiff.Deleted); err != nil {
+	if err = store.UpsertSources(ctx, nil, nil, sdiff.Deleted); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.delete-sources")
 	}
 
@@ -365,7 +363,7 @@ func (s *Syncer) syncSubset(ctx context.Context, store Store, insertOnly bool, s
 	// handled above
 	// Recalculate sdiff so that we have foreign keys
 	sdiff = s.sourcesUpserts(&diff, storedCopy)
-	if err = store.UpsertSources(ctx, sdiff.Added, sdiff.Modified, empty); err != nil {
+	if err = store.UpsertSources(ctx, sdiff.Added, sdiff.Modified, nil); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.upsert-sources")
 	}
 
