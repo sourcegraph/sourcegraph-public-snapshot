@@ -15,7 +15,6 @@ import {
     OnboardingTourProps,
 } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
-import { EventLoggerProps } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
 import { NavLinks } from './NavLinks'
 import { ThemeProps } from '../../../shared/src/theme'
@@ -30,13 +29,14 @@ import { convertPlainTextToInteractiveQuery } from '../search/input/helpers'
 import { VersionContextDropdown } from './VersionContextDropdown'
 import { VersionContextProps } from '../../../shared/src/search/util'
 import { VersionContext } from '../schema/site.schema'
+import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
 interface Props
     extends SettingsCascadeProps,
         PlatformContextProps,
         ExtensionsControllerProps,
         KeyboardShortcutsProps,
-        EventLoggerProps,
+        TelemetryProps,
         ThemeProps,
         ThemePreferenceProps,
         ActivationProps,

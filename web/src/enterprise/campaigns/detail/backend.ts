@@ -58,13 +58,19 @@ const campaignFragment = gql`
         updatedAt
         closedAt
         viewerCanAdminister
+
         changesets {
             stats {
                 ...ChangesetStatsFields
             }
         }
+
         diffStat {
             ...DiffStatFields
+        }
+
+        currentSpec {
+            originalInput
         }
     }
 

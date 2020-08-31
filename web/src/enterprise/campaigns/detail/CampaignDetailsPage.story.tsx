@@ -1,9 +1,6 @@
-import * as H from 'history'
 import { storiesOf } from '@storybook/react'
-import { radios, boolean } from '@storybook/addon-knobs'
+import { boolean } from '@storybook/addon-knobs'
 import React from 'react'
-import webStyles from '../../../enterprise.scss'
-import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { CampaignDetailsPage } from './CampaignDetailsPage'
 import { of } from 'rxjs'
 import {
@@ -21,24 +18,12 @@ import {
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
 } from './backend'
 import { subDays } from 'date-fns'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 import { useMemo, useCallback } from '@storybook/addons'
-import { useBreadcrumbs } from '../../../components/Breadcrumbs'
+import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
-let isLightTheme = true
-const { add } = storiesOf('web/campaigns/details/CampaignDetailsPage', module).addDecorator(story => {
-    const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
-    document.body.classList.toggle('theme-light', theme === 'light')
-    document.body.classList.toggle('theme-dark', theme === 'dark')
-    isLightTheme = theme === 'light'
-    return (
-        <>
-            <Tooltip />
-            <style>{webStyles}</style>
-            <div className="p-3 container web-content">{story()}</div>
-        </>
-    )
-})
+const { add } = storiesOf('web/campaigns/details/CampaignDetailsPage', module).addDecorator(story => (
+    <div className="p-3 container web-content">{story()}</div>
+))
 
 const queryChangesets: typeof _queryChangesets = () =>
     of({
@@ -224,70 +209,79 @@ const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
 
 const deleteCampaign = () => Promise.resolve(undefined)
 
-add('Overview', () => {
-    const viewerCanAdminister = boolean('viewerCanAdminister', true)
-    const isClosed = boolean('isClosed', false)
-    const campaign: CampaignFields = useMemo(
-        () => ({
-            __typename: 'Campaign',
-            changesets: {
-                stats: {
-                    closed: 1,
-                    merged: 2,
-                    open: 3,
-                    total: 10,
-                    unpublished: 5,
-                },
-            },
-            createdAt: subDays(new Date(), 5).toISOString(),
-            initialApplier: {
-                url: '/users/alice',
-                username: 'alice',
-            },
-            diffStat: {
-                added: 10,
-                changed: 8,
-                deleted: 10,
-            },
-            id: 'specid',
-            url: '/users/alice/campaigns/specid',
-            namespace: {
-                namespaceName: 'alice',
-                url: '/users/alice',
-            },
-            viewerCanAdminister,
-            closedAt: isClosed ? subDays(new Date(), 1).toISOString() : null,
-            description: '## What this campaign does\n\nTruly awesome things for example.',
-            name: 'awesome-campaign',
-            updatedAt: subDays(new Date(), 5).toISOString(),
-            lastAppliedAt: subDays(new Date(), 5).toISOString(),
-            lastApplier: {
-                url: '/users/bob',
-                username: 'bob',
-            },
-        }),
-        [viewerCanAdminister, isClosed]
-    )
+const stories: Record<string, string> = {
+    Overview: '/users/alice/campaigns/awesome-campaign',
+    'Burndown chart': '/users/alice/campaigns/awesome-campaign?tab=chart',
+    'Spec file': '/users/alice/campaigns/awesome-campaign?tab=spec',
+}
 
-    const fetchCampaign: typeof fetchCampaignByNamespace = useCallback(() => of(campaign), [campaign])
-    const history = H.createMemoryHistory({ initialEntries: [window.location.href] })
-    const breadcrumbsProps = useBreadcrumbs()
-    return (
-        <CampaignDetailsPage
-            {...breadcrumbsProps}
-            namespaceID="namespace123"
-            campaignName="awesome-campaign"
-            fetchCampaignByNamespace={fetchCampaign}
-            queryChangesets={queryChangesets}
-            queryChangesetCountsOverTime={queryChangesetCountsOverTime}
-            queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
-            deleteCampaign={deleteCampaign}
-            history={history}
-            location={history.location}
-            isLightTheme={isLightTheme}
-            telemetryService={NOOP_TELEMETRY_SERVICE}
-            platformContext={{} as any}
-            extensionsController={{} as any}
-        />
-    )
-})
+for (const [name, url] of Object.entries(stories)) {
+    add(name, () => {
+        const viewerCanAdminister = boolean('viewerCanAdminister', true)
+        const isClosed = boolean('isClosed', false)
+        const campaign: CampaignFields = useMemo(
+            () => ({
+                __typename: 'Campaign',
+                changesets: {
+                    stats: {
+                        closed: 1,
+                        merged: 2,
+                        open: 3,
+                        total: 10,
+                        unpublished: 5,
+                    },
+                },
+                createdAt: subDays(new Date(), 5).toISOString(),
+                initialApplier: {
+                    url: '/users/alice',
+                    username: 'alice',
+                },
+                diffStat: {
+                    added: 10,
+                    changed: 8,
+                    deleted: 10,
+                },
+                id: 'specid',
+                url: '/users/alice/campaigns/awesome-campaign',
+                namespace: {
+                    namespaceName: 'alice',
+                    url: '/users/alice',
+                },
+                viewerCanAdminister,
+                closedAt: isClosed ? subDays(new Date(), 1).toISOString() : null,
+                description: '## What this campaign does\n\nTruly awesome things for example.',
+                name: 'awesome-campaign',
+                updatedAt: subDays(new Date(), 5).toISOString(),
+                lastAppliedAt: subDays(new Date(), 5).toISOString(),
+                lastApplier: {
+                    url: '/users/bob',
+                    username: 'bob',
+                },
+                currentSpec: {
+                    originalInput: 'name: awesome-campaign\ndescription: somestring',
+                },
+            }),
+            [viewerCanAdminister, isClosed]
+        )
+
+        const fetchCampaign: typeof fetchCampaignByNamespace = useCallback(() => of(campaign), [campaign])
+        return (
+            <EnterpriseWebStory initialEntries={[url]}>
+                {props => (
+                    <CampaignDetailsPage
+                        {...props}
+                        namespaceID="namespace123"
+                        campaignName="awesome-campaign"
+                        fetchCampaignByNamespace={fetchCampaign}
+                        queryChangesets={queryChangesets}
+                        queryChangesetCountsOverTime={queryChangesetCountsOverTime}
+                        queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
+                        deleteCampaign={deleteCampaign}
+                        extensionsController={{} as any}
+                        platformContext={{} as any}
+                    />
+                )}
+            </EnterpriseWebStory>
+        )
+    })
+}
