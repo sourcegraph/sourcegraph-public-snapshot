@@ -24,6 +24,7 @@ import {
     CampaignByNamespaceResult,
 } from '../graphql-operations'
 import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
+import { gitCommitNodeStubData } from '../repo/commits/GitCommitNode.story'
 
 const campaignListNode: ListCampaign = {
     id: 'campaign123',
@@ -114,6 +115,10 @@ const mockDiff: NonNullable<ExternalChangesetFileDiffsFields['diff']> = {
                 oid: 'abc123head',
             },
         },
+    },
+    commits: {
+        totalCount: 1,
+        nodes: [gitCommitNodeStubData],
     },
 }
 

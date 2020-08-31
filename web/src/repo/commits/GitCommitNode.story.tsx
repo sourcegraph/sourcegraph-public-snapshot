@@ -10,7 +10,7 @@ const { add } = storiesOf('web/GitCommitNode', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>
 ))
 
-const gitCommitNode: GitCommitFields = {
+export const gitCommitNodeStubData: GitCommitFields = {
     id: 'commit123',
     abbreviatedOID: 'abcdefg',
     oid: 'abcdefghijklmnopqrstuvwxyz12345678904321',
@@ -66,7 +66,7 @@ add('Full customizable', () => (
         {() => (
             <div className="card">
                 <GitCommitNode
-                    node={gitCommitNode}
+                    node={gitCommitNodeStubData}
                     compact={boolean('compact', false)}
                     expandCommitMessageBody={boolean('expandCommitMessageBody', false)}
                     showSHAAndParentsRow={boolean('showSHAAndParentsRow', false)}
@@ -81,7 +81,7 @@ add('Compact', () => (
         {() => (
             <div className="card">
                 <GitCommitNode
-                    node={gitCommitNode}
+                    node={gitCommitNodeStubData}
                     compact={true}
                     expandCommitMessageBody={false}
                     showSHAAndParentsRow={false}
@@ -96,7 +96,7 @@ add('Commit message expanded', () => (
         {() => (
             <div className="card">
                 <GitCommitNode
-                    node={gitCommitNode}
+                    node={gitCommitNodeStubData}
                     compact={false}
                     expandCommitMessageBody={true}
                     showSHAAndParentsRow={false}
@@ -111,7 +111,7 @@ add('SHA and parent shown', () => (
         {() => (
             <div className="card">
                 <GitCommitNode
-                    node={gitCommitNode}
+                    node={gitCommitNodeStubData}
                     compact={false}
                     expandCommitMessageBody={false}
                     showSHAAndParentsRow={true}
@@ -126,7 +126,7 @@ add('Expand commit message btn hidden', () => (
         {() => (
             <div className="card">
                 <GitCommitNode
-                    node={gitCommitNode}
+                    node={gitCommitNodeStubData}
                     compact={false}
                     expandCommitMessageBody={false}
                     showSHAAndParentsRow={false}

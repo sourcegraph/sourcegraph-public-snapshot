@@ -17,6 +17,7 @@ import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '../../..
 import { HoverMerged } from '../../../../../../shared/src/api/client/types/hover'
 import { ActionItemAction } from '../../../../../../shared/src/actions/ActionItem'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
+import { GitCommitNode } from '../../../../repo/commits/GitCommitNode'
 
 export interface ChangesetFileDiffProps extends ThemeProps {
     changesetID: Scalars['ID']
@@ -27,7 +28,6 @@ export interface ChangesetFileDiffProps extends ThemeProps {
     extensionInfo?: {
         hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
     } & ExtensionsControllerProps
-    setCommits: (commits: GitCommitFields[]) => void
     /** For testing only. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
 }
@@ -40,12 +40,12 @@ export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> 
     extensionInfo,
     repositoryID,
     repositoryName,
-    setCommits,
     queryExternalChangesetWithFileDiffs = _queryExternalChangesetWithFileDiffs,
 }) => {
     const [range, setRange] = useState<
         (NonNullable<ExternalChangesetFileDiffsFields['diff']> & { __typename: 'RepositoryComparison' })['range']
     >()
+    const [commits, setCommits] = useState<GitCommitFields[]>()
 
     /** Fetches the file diffs for the changeset */
     const queryFileDiffs = useCallback(
@@ -97,29 +97,38 @@ export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> 
     }, [extensionInfo, range, repositoryID, repositoryName])
 
     return (
-        <FileDiffConnection
-            listClassName="list-group list-group-flush"
-            noun="changed file"
-            pluralNoun="changed files"
-            queryConnection={queryFileDiffs}
-            nodeComponent={FileDiffNode}
-            nodeComponentProps={{
-                history,
-                location,
-                isLightTheme,
-                persistLines: true,
-                extensionInfo: hydratedExtensionInfo,
-                lineNumbers: true,
-            }}
-            updateOnChange={repositoryID}
-            defaultFirst={15}
-            hideSearch={true}
-            noSummaryIfAllNodesVisible={true}
-            history={history}
-            location={location}
-            useURLQuery={false}
-            cursorPaging={true}
-        />
+        <>
+            <ul className="list-group px-5 mb-3">
+                {commits?.map(commit => (
+                    <li className="list-group-item bg-white" key={commit.oid}>
+                        <GitCommitNode node={commit} compact={true} />
+                    </li>
+                ))}
+            </ul>
+            <FileDiffConnection
+                listClassName="list-group list-group-flush"
+                noun="changed file"
+                pluralNoun="changed files"
+                queryConnection={queryFileDiffs}
+                nodeComponent={FileDiffNode}
+                nodeComponentProps={{
+                    history,
+                    location,
+                    isLightTheme,
+                    persistLines: true,
+                    extensionInfo: hydratedExtensionInfo,
+                    lineNumbers: true,
+                }}
+                updateOnChange={repositoryID}
+                defaultFirst={15}
+                hideSearch={true}
+                noSummaryIfAllNodesVisible={true}
+                history={history}
+                location={location}
+                useURLQuery={false}
+                cursorPaging={true}
+            />
+        </>
     )
 }
 
