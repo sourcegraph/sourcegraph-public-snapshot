@@ -3,7 +3,7 @@ import { select } from '@storybook/addon-knobs'
 import React from 'react'
 import { CampaignBurndownChart } from './BurndownChart'
 import { of } from 'rxjs'
-import { EnterpriseWebStory } from '../../../components/WebStory'
+import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 const { add } = storiesOf('web/campaigns/BurndownChart', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>

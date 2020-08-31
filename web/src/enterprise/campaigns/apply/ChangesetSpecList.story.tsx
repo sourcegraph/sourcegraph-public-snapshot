@@ -5,7 +5,7 @@ import { of, Observable } from 'rxjs'
 import { CampaignSpecChangesetSpecsResult, ChangesetSpecFields } from '../../../graphql-operations'
 import { visibleChangesetSpecStories } from './VisibleChangesetSpecNode.story'
 import { hiddenChangesetSpecStories } from './HiddenChangesetSpecNode.story'
-import { EnterpriseWebStory } from '../../../components/WebStory'
+import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 const { add } = storiesOf('web/campaigns/apply/ChangesetSpecList', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>

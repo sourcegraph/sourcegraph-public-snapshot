@@ -3,7 +3,7 @@ import React from 'react'
 import { HiddenChangesetSpecNode } from './HiddenChangesetSpecNode'
 import { addDays } from 'date-fns'
 import { HiddenChangesetSpecFields, ChangesetSpecType } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../../components/WebStory'
+import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 const { add } = storiesOf('web/campaigns/apply/HiddenChangesetSpecNode', module).addDecorator(story => (
     <div className="p-3 container web-content changeset-spec-list__grid">{story()}</div>

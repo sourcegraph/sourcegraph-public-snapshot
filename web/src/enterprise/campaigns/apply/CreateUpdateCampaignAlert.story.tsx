@@ -2,7 +2,7 @@ import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
 import React from 'react'
 import { CreateUpdateCampaignAlert } from './CreateUpdateCampaignAlert'
-import { EnterpriseWebStory } from '../../../components/WebStory'
+import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 const { add } = storiesOf('web/campaigns/apply/CreateUpdateCampaignAlert', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>

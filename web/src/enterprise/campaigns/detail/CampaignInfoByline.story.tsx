@@ -2,7 +2,7 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { CampaignInfoByline } from './CampaignInfoByline'
 import { subDays } from 'date-fns'
-import { EnterpriseWebStory } from '../../../components/WebStory'
+import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 const { add } = storiesOf('web/campaigns/CampaignInfoByline', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>

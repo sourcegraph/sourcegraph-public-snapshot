@@ -3,7 +3,7 @@ import React from 'react'
 import { ChangesetCheckStatusCell } from './ChangesetCheckStatusCell'
 import { ChangesetCheckState } from '../../../../graphql-operations'
 import { capitalize } from 'lodash'
-import { EnterpriseWebStory } from '../../../../components/WebStory'
+import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
 const { add } = storiesOf('web/campaigns/ChangesetCheckStatusCell', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>

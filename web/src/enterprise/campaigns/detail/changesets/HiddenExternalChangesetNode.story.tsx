@@ -7,7 +7,7 @@ import {
     ChangesetReconcilerState,
     ChangesetPublicationState,
 } from '../../../../graphql-operations'
-import { EnterpriseWebStory } from '../../../../components/WebStory'
+import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
 const { add } = storiesOf('web/campaigns/HiddenExternalChangesetNode', module).addDecorator(story => (
     <div className="p-3 container web-content campaign-changesets__grid">{story()}</div>

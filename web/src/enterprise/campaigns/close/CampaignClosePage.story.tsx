@@ -18,7 +18,7 @@ import {
     CampaignFields,
 } from '../../../graphql-operations'
 import { useMemo, useCallback } from '@storybook/addons'
-import { EnterpriseWebStory } from '../../../components/WebStory'
+import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 const { add } = storiesOf('web/campaigns/close/CampaignClosePage', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>

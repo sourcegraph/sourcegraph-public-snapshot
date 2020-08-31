@@ -5,7 +5,7 @@ import { CampaignNode } from './CampaignNode'
 import isChromatic from 'chromatic/isChromatic'
 import { ListCampaign } from '../../../graphql-operations'
 import { subDays } from 'date-fns'
-import { EnterpriseWebStory } from '../../../components/WebStory'
+import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 export const nodes: Record<string, ListCampaign> = {
     'Open campaign': {

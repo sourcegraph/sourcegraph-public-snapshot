@@ -19,7 +19,7 @@ import {
 } from './backend'
 import { subDays } from 'date-fns'
 import { useMemo, useCallback } from '@storybook/addons'
-import { EnterpriseWebStory } from '../../../components/WebStory'
+import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 const { add } = storiesOf('web/campaigns/details/CampaignDetailsPage', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>
