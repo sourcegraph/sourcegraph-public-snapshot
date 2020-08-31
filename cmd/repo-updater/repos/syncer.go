@@ -48,29 +48,32 @@ type Syncer struct {
 
 // RunOptions contains options customizing Run behaviour.
 type RunOptions struct {
-	Interval        func() time.Duration // Defaults to 1 minute
+	EnqueueInterval func() time.Duration // Defaults to 1 minute
 	IsCloud         bool                 // Defaults to false
 	MinSyncInterval time.Duration        // Defaults to 1 minute
+	DequeueInterval time.Duration        // Default to 10 seconds
 }
 
 // Run runs the Sync at the specified interval.
 func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOptions) error {
-	if opts.Interval == nil {
-		opts.Interval = func() time.Duration { return time.Minute }
+	if opts.EnqueueInterval == nil {
+		opts.EnqueueInterval = func() time.Duration { return time.Minute }
 	}
 	if opts.MinSyncInterval == 0 {
 		opts.MinSyncInterval = time.Minute
 	}
+	if opts.DequeueInterval == 0 {
+		opts.DequeueInterval = 10 * time.Second
+	}
 
 	s.initialUnmodifiedDiffFromStore(pctx, store)
 
-	log15.Info("Running Syncer.Run")
 	// TODO: Make numHandlers configurable
 	worker, cleanup := NewSyncWorker(pctx, db, &syncHandler{
 		syncer:          s,
 		store:           store,
 		minSyncInterval: opts.MinSyncInterval,
-	}, 1)
+	}, opts.DequeueInterval, 3)
 	defer cleanup()
 
 	go worker.Start()
@@ -83,7 +86,7 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOpti
 			s.Logger.Error("Syncer", "error", err)
 		}
 
-		sleep(ctx, opts.Interval())
+		sleep(ctx, opts.EnqueueInterval())
 
 		cancel()
 	}

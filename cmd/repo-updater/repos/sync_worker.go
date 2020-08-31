@@ -21,7 +21,7 @@ import (
 )
 
 // NewSyncWorker creates a new external service sync worker.
-func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, numHandlers int) (*workerutil.Worker, func()) {
+func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, workerInterval time.Duration, numHandlers int) (*workerutil.Worker, func()) {
 	dbHandle := basestore.NewHandleWithDB(db)
 
 	syncJobColumns := append(store.DefaultColumnExpressions(), []*sqlf.Query{
@@ -44,7 +44,7 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, 
 		Name:        "repo_sync_worker",
 		Handler:     handler,
 		NumHandlers: numHandlers,
-		Interval:    10 * time.Second,
+		Interval:    workerInterval,
 		Metrics: workerutil.WorkerMetrics{
 			HandleOperation: operation,
 		},

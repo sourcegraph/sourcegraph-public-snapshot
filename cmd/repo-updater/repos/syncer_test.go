@@ -1062,9 +1062,10 @@ func testSyncRun(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testi
 			go func() {
 				defer close(done)
 				err := syncer.Run(ctx, db, store, repos.RunOptions{
-					Interval:        func() time.Duration { return time.Second },
+					EnqueueInterval: func() time.Duration { return time.Second },
 					IsCloud:         false,
-					MinSyncInterval: time.Millisecond,
+					MinSyncInterval: 1 * time.Millisecond,
+					DequeueInterval: 1 * time.Millisecond,
 				})
 				if err != nil && err != context.Canceled {
 					t.Fatal(err)
@@ -1177,26 +1178,35 @@ func testSyncer(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testin
 			baseBitbucketCloudRepos := mkRepos(10, bitbucketCloudRepo)
 			bitbucketCloudSourced := baseBitbucketCloudRepos.Clone().With(removeSources)
 
-			sourcers := []repos.Source{
-				repos.NewFakeSource(githubService, nil, githubSourced...),
-				repos.NewFakeSource(gitlabService, nil, gitlabSourced...),
-				repos.NewFakeSource(bitbucketCloudService, nil, bitbucketCloudSourced...),
+			sourcers := map[int64]repos.Source{
+				githubService.ID:         repos.NewFakeSource(githubService, nil, githubSourced...),
+				gitlabService.ID:         repos.NewFakeSource(gitlabService, nil, gitlabSourced...),
+				bitbucketCloudService.ID: repos.NewFakeSource(bitbucketCloudService, nil, bitbucketCloudSourced...),
 			}
 
 			syncer := &repos.Syncer{
-				Sourcer:      repos.NewFakeSourcer(nil, sourcers...),
-				Synced:       make(chan repos.Diff),
-				SubsetSynced: make(chan repos.Diff),
-				Now:          time.Now,
+				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+					if len(services) > 1 {
+						t.Fatalf("Expected 1 service, got %d", len(services))
+					}
+					s, ok := sourcers[services[0].ID]
+					if !ok {
+						t.Fatalf("sourcer not found: %d", services[0].ID)
+					}
+					return repos.Sources{s}, nil
+				},
+				Synced: make(chan repos.Diff),
+				Now:    time.Now,
 			}
 
 			done := make(chan struct{})
 			go func() {
 				defer close(done)
 				err := syncer.Run(ctx, db, store, repos.RunOptions{
-					Interval:        func() time.Duration { return time.Second },
+					EnqueueInterval: func() time.Duration { return time.Second },
 					IsCloud:         false,
-					MinSyncInterval: time.Millisecond,
+					MinSyncInterval: 1 * time.Minute,
+					DequeueInterval: 1 * time.Millisecond,
 				})
 				if err != nil && err != context.Canceled {
 					t.Fatal(err)
@@ -1213,22 +1223,47 @@ func testSyncer(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testin
 			}
 
 			// it should add a job for all external services
-			var jobsSynced int
-			if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM external_service_sync_jobs").Scan(&jobsSynced); err != nil {
-				t.Fatal(err)
+			var jobCount int
+			for i := 0; i < 10; i++ {
+				if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM external_service_sync_jobs").Scan(&jobCount); err != nil {
+					t.Fatal(err)
+				}
+				if jobCount == len(services) {
+					break
+				}
+				// We need to give the worker package time to create the jobs
+				time.Sleep(10 * time.Millisecond)
 			}
-			if jobsSynced != len(services) {
-				t.Fatalf("expected %d jobs synced, got %d", len(services), jobsSynced)
+			if jobCount != len(services) {
+				t.Fatalf("expected %d sync jobs, got %d", len(services), jobCount)
 			}
 
-			// Next up it should all the new repos and send them down SubsetSynced
-			added := append(baseGithubRepos, append(baseGitlabRepos, baseBitbucketCloudRepos...)...)
-			sort.Sort(added)
-			for i := range added {
-				diff = <-syncer.SubsetSynced
-				if d := cmp.Diff(repos.Diff{Added: repos.Repos{added[i]}}, diff, ignore); d != "" {
-					t.Fatalf("SubsetSynced mismatch (-want +got):\n%s", d)
+			for i := 0; i < len(services); i++ {
+				diff = <-syncer.Synced
+				if len(diff.Added) != 10 {
+					t.Fatalf("Expected 10 Added repos. got %d", len(diff.Added))
 				}
+				if len(diff.Deleted) != 0 {
+					t.Fatalf("Expected 0 Deleted repos. got %d", len(diff.Added))
+				}
+				if len(diff.Modified) != 0 {
+					t.Fatalf("Expected 0 Modified repos. got %d", len(diff.Added))
+				}
+				if len(diff.Unmodified) != 0 {
+					t.Fatalf("Expected 0 Unmodified repos. got %d", len(diff.Added))
+				}
+			}
+
+			var jobsCompleted int
+			for i := 0; i < 10; i++ {
+				if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM external_service_sync_jobs where state = 'completed'").Scan(&jobsCompleted); err != nil {
+					t.Fatal(err)
+				}
+				if jobsCompleted == len(services) {
+					break
+				}
+				// We need to give the worker package time to create the jobs
+				time.Sleep(10 * time.Millisecond)
 			}
 
 			// Cancel context and the run loop should stop

@@ -68,7 +68,7 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/Syncer/SyncSubset", testSyncSubset},
 		{"DBStore/Syncer/SyncWorker", testSyncWorkerPlumbing(db)},
 		{"DBStore/Syncer/Run", testSyncRun(db)},
-		{"DBStore/Syncer", testSyncer(db)},
+		{"DBStore/Syncer/MultipleServices", testSyncer(db)},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Cleanup(func() {
