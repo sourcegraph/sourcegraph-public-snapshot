@@ -437,7 +437,7 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 		return nil, err
 	}
 	opts.State = state
-	if err := validateFirstParam(args.First, 0, 1000); err != nil {
+	if err := validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
 	}
 	opts.Limit = int(args.First)
@@ -487,9 +487,11 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, campaign
 
 	safe := true
 
-	// TODO: Reduce this number, once we use cursor based pagination in the frontend for ChangesetConnections.
-	// Currently we cannot, because we want to re-fetch the whole list periodically to check to change in changeset states.
-	if err := validateFirstParam(args.First, 0, 100000); err != nil {
+	// TODO: This _could_ become problematic if a user has a campaign with > 10000 changesets, once
+	// we use cursor based pagination in the frontend for ChangesetConnections this problem will disappear.
+	// Currently we cannot enable it, though, because we want to re-fetch the whole list periodically to
+	// check for a change in the changeset states.
+	if err := validateFirstParamDefaults(args.First); err != nil {
 		return opts, false, err
 	}
 	opts.Limit = int(args.First)
@@ -641,17 +643,22 @@ func checkSiteAdminOrSameUser(ctx context.Context, userID int32) (bool, error) {
 }
 
 type ErrInvalidFirstParameter struct {
-	Min int
-	Max int
+	Min, Max, First int
 }
 
 func (e ErrInvalidFirstParameter) Error() string {
-	return fmt.Sprintf("invalid first param given: min=%d, max=%d", e.Min, e.Max)
+	return fmt.Sprintf("first param %d is out of range (min=%d, max=%d)", e.First, e.Min, e.Max)
 }
 
-func validateFirstParam(first int32, min, max int) error {
-	if first < int32(min) || first > int32(max) {
-		return ErrInvalidFirstParameter{Min: min}
+func validateFirstParam(first int32, max int) error {
+	if first < 0 || first > int32(max) {
+		return ErrInvalidFirstParameter{Min: 0, Max: max, First: int(first)}
 	}
 	return nil
+}
+
+const defaultMaxFirstParam = 10000
+
+func validateFirstParamDefaults(first int32) error {
+	return validateFirstParam(first, defaultMaxFirstParam)
 }
