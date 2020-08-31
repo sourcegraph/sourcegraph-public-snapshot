@@ -438,7 +438,7 @@ func ScanValue(buf []byte, allowDanglingParens bool) (string, int, bool) {
 	var result []rune
 
 	next := func() rune {
-		r, advance := utf8.DecodeRune(buf)
+		r, advance = utf8.DecodeRune(buf)
 		count += advance
 		buf = buf[advance:]
 		return r
@@ -467,22 +467,9 @@ func ScanValue(buf []byte, allowDanglingParens bool) (string, int, bool) {
 		}
 		if r == '\\' {
 			// Handle escape sequence.
-			if len(buf[advance:]) > 0 {
+			if len(buf) > 0 {
 				r = next()
-				// Interpret escape sequences for whitespace escape
-				// sequences \n\r\t. Other escape sequences fall
-				// through to a regexp interpretation.
-				switch r {
-				case 'n':
-					result = append(result, '\n')
-				case 'r':
-					result = append(result, '\r')
-				case 't':
-					result = append(result, '\t')
-				default:
-					// Accept anything else literally.
-					result = append(result, '\\', r)
-				}
+				result = append(result, '\\', r)
 				continue
 			}
 		}
@@ -491,40 +478,43 @@ func ScanValue(buf []byte, allowDanglingParens bool) (string, int, bool) {
 	return string(result), count, balanced != 0
 }
 
-// TryParseDelimiter tries to parse a delimited string, returning whether it
-// succeeded, and the interpreted (i.e., unquoted) value if it succeeds.
-func (p *parser) TryParseDelimiter() (string, bool) {
-	delimited := func(delimiter rune) (string, error) {
+// TryParseDelimiter tries to parse a delimited string, returning the
+// interpreted (i.e., unquoted) value if it succeeds, the delimiter that
+// suceeded parsing, and whether it succeeded.
+func (p *parser) TryParseDelimiter() (string, rune, bool) {
+	delimited := func(delimiter rune) (string, bool) {
 		start := p.pos
 		value, advance, err := ScanDelimited(p.buf[p.pos:], false, delimiter)
 		if err != nil {
-			return "", err
+			return "", false
 		}
 		p.pos += advance
 		if !p.done() {
 			if r, _ := utf8.DecodeRune([]byte{p.buf[p.pos]}); !unicode.IsSpace(r) {
 				p.pos = start // backtrack
-				return "", errors.New("delimited value should be followed by whitespace")
+				// delimited value should be followed by whitespace
+				return "", false
 			}
 		}
-		return value, nil
-	}
-	tryScanDelimiter := func() (string, error) {
-		if p.match(SQUOTE) {
-			return delimited('\'')
-		}
-		if p.match(DQUOTE) {
-			return delimited('"')
-		}
-		if p.match("/") {
-			return delimited('/')
-		}
-		return "", errors.New("failed to scan delimiter")
-	}
-	if value, err := tryScanDelimiter(); err == nil {
 		return value, true
 	}
-	return "", false
+
+	if p.match(SQUOTE) {
+		if v, ok := delimited('\''); ok {
+			return v, '\'', true
+		}
+	}
+	if p.match(DQUOTE) {
+		if v, ok := delimited('"'); ok {
+			return v, '"', true
+		}
+	}
+	if p.match(SLASH) {
+		if v, ok := delimited('/'); ok {
+			return v, '/', true
+		}
+	}
+	return "", 0, false
 }
 
 // ParseFieldValue parses a value after a field like "repo:". If the value
@@ -561,16 +551,37 @@ func (p *parser) ParseFieldValue() (string, error) {
 // multiple Patterns concatenated together).
 func (p *parser) ParsePattern() Pattern {
 	start := p.pos
-	// If we can parse a well-delimited value, that takes precedence, and we
-	// denote it with Quoted set to true.
-	if value, ok := p.TryParseDelimiter(); ok {
+	// If we can parse a well-delimited value, that takes precedence.
+	if value, delimiter, ok := p.TryParseDelimiter(); ok {
+		var labels labels
+		if delimiter == '/' {
+			// This is a regex-delimited pattern
+			labels = Regexp
+		} else {
+			labels = Literal | Quoted
+		}
 		return Pattern{
 			Value:   value,
 			Negated: false,
 			Annotation: Annotation{
-				Labels: Literal | Quoted,
+				Labels: labels,
 				Range:  newRange(start, p.pos),
 			},
+		}
+	}
+
+	if isSet(p.heuristics, parensAsPatterns) {
+		if value, advance, ok := ScanBalancedPatternLiteral(p.buf[p.pos:]); ok {
+			pattern := Pattern{
+				Value:   value,
+				Negated: false,
+				Annotation: Annotation{
+					Labels: Regexp,
+					Range:  newRange(p.pos, p.pos+advance),
+				},
+			}
+			p.pos += advance
+			return pattern
 		}
 	}
 
@@ -689,25 +700,6 @@ loop:
 							Labels: Regexp,
 							Range:  newRange(p.pos, p.pos+advance),
 						},
-					}
-
-					// Concat when a pattern like foo()bar is parsed as (concat "foo" "()bar")
-					// if these are not space-separated.
-					if p.pos > 0 {
-						if r, _ := utf8.DecodeRune([]byte{p.buf[p.pos-1]}); !unicode.IsSpace(r) {
-							if len(nodes) > 0 {
-								if previous, ok := nodes[len(nodes)-1].(Pattern); ok {
-									previous.Annotation.Labels = Regexp | HeuristicParensAsPatterns
-									result, err := concatPatterns(previous, pattern)
-									if err != nil {
-										return nil, err
-									}
-									nodes[len(nodes)-1] = result
-									p.pos += advance
-									continue
-								}
-							}
-						}
 					}
 
 					p.pos += advance

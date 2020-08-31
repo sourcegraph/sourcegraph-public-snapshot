@@ -7,6 +7,7 @@ import {
     CopyQueryButtonProps,
     RepogroupHomepageProps,
     OnboardingTourProps,
+    EnterpriseHomePanelsProps,
 } from '..'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
@@ -48,7 +49,8 @@ interface Props
         CopyQueryButtonProps,
         VersionContextProps,
         RepogroupHomepageProps,
-        OnboardingTourProps {
+        OnboardingTourProps,
+        EnterpriseHomePanelsProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -310,6 +312,12 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                             </div>
                         </div>
                     </div>
+                </>
+            )}
+
+            {!props.isSourcegraphDotCom && props.showEnterpriseHomePanels && (
+                <>
+                    <div>Hello from Enterprise Home with panels enabled</div>
                 </>
             )}
         </div>

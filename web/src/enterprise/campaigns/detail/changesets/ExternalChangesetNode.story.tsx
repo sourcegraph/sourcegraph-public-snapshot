@@ -149,3 +149,60 @@ add('Unpublished', () => {
         />
     )
 })
+
+add('Importing', () => {
+    const now = new Date()
+    const history = H.createMemoryHistory()
+    return (
+        <ExternalChangesetNode
+            node={{
+                __typename: 'ExternalChangeset',
+                id: 'somechangeset',
+                updatedAt: now.toISOString(),
+                nextSyncAt: null,
+                externalState: null,
+                // No title yet, still importing.
+                title: null,
+                reconcilerState: ChangesetReconcilerState.QUEUED,
+                publicationState: ChangesetPublicationState.PUBLISHED,
+                error: null,
+                body: null,
+                checkState: null,
+                createdAt: now.toISOString(),
+                externalID: '12345',
+                externalURL: null,
+                diffStat: {
+                    added: 10,
+                    changed: 20,
+                    deleted: 8,
+                },
+                labels: [],
+                repository: {
+                    id: 'repoid',
+                    name: 'github.com/sourcegraph/sourcegraph',
+                    url: 'http://test.test/sourcegraph/sourcegraph',
+                },
+                reviewState: null,
+            }}
+            history={history}
+            location={history.location}
+            isLightTheme={isLightTheme}
+            viewerCanAdminister={boolean('viewerCanAdminister', true)}
+            queryExternalChangesetWithFileDiffs={() =>
+                of({
+                    diff: {
+                        __typename: 'PreviewRepositoryComparison',
+                        fileDiffs: {
+                            nodes: [],
+                            totalCount: 0,
+                            pageInfo: {
+                                endCursor: null,
+                                hasNextPage: false,
+                            },
+                        },
+                    },
+                })
+            }
+        />
+    )
+})

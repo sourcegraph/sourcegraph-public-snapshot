@@ -6,17 +6,17 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import GitIcon from 'mdi-react/GitIcon'
 import GitLabIcon from 'mdi-react/GitlabIcon'
 import React from 'react'
-import awsCodeCommitSchemaJSON from '../../../schema/aws_codecommit.schema.json'
-import bitbucketCloudSchemaJSON from '../../../schema/bitbucket_cloud.schema.json'
-import bitbucketServerSchemaJSON from '../../../schema/bitbucket_server.schema.json'
-import githubSchemaJSON from '../../../schema/github.schema.json'
-import gitlabSchemaJSON from '../../../schema/gitlab.schema.json'
-import gitoliteSchemaJSON from '../../../schema/gitolite.schema.json'
-import otherExternalServiceSchemaJSON from '../../../schema/other_external_service.schema.json'
-import phabricatorSchemaJSON from '../../../schema/phabricator.schema.json'
-import { PhabricatorIcon } from '../../../shared/src/components/icons'
-import { EditorAction } from './configHelpers'
-import { ExternalServiceKind } from '../../../shared/src/graphql-operations'
+import awsCodeCommitSchemaJSON from '../../../../schema/aws_codecommit.schema.json'
+import bitbucketCloudSchemaJSON from '../../../../schema/bitbucket_cloud.schema.json'
+import bitbucketServerSchemaJSON from '../../../../schema/bitbucket_server.schema.json'
+import githubSchemaJSON from '../../../../schema/github.schema.json'
+import gitlabSchemaJSON from '../../../../schema/gitlab.schema.json'
+import gitoliteSchemaJSON from '../../../../schema/gitolite.schema.json'
+import otherExternalServiceSchemaJSON from '../../../../schema/other_external_service.schema.json'
+import phabricatorSchemaJSON from '../../../../schema/phabricator.schema.json'
+import { PhabricatorIcon } from '../../../../shared/src/components/icons'
+import { EditorAction } from '../../site-admin/configHelpers'
+import { ExternalServiceKind } from '../../graphql-operations'
 
 /**
  * Metadata associated with adding a given external service.
@@ -285,7 +285,7 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
     {
         id: 'addRepo',
         label: 'Add a single repository',
-        run: config => {
+        run: (config: string) => {
             const value = '<owner>/<repository>'
             const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
             return { edits, selectText: '<owner>/<repository>' }
@@ -294,7 +294,7 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
     {
         id: 'excludeRepo',
         label: 'Exclude a repository',
-        run: config => {
+        run: (config: string) => {
             const value = { name: '<owner>/<repository>' }
             const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
             return { edits, selectText: '<owner>/<repository>' }
@@ -303,7 +303,7 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
     {
         id: 'enablePermissions',
         label: 'Enforce permissions',
-        run: config => {
+        run: (config: string) => {
             const value = {
                 COMMENT_SENTINEL: true,
             }
@@ -315,7 +315,7 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
     {
         id: 'addWebhooks',
         label: 'Add webhook',
-        run: config => {
+        run: (config: string) => {
             const value = { org: '<your_org_on_GitHub>', secret: '<any_secret_string>' }
             const edits = setProperty(config, ['webhooks', -1], value, defaultFormattingOptions)
             return { edits, selectText: '<your_org_on_GitHub>' }
@@ -367,7 +367,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
     {
         id: 'addProjectsMatchingSearch',
         label: 'Add projects matching search',
-        run: config => ({
+        run: (config: string) => ({
             edits: setProperty(config, ['projectQuery', -1], '?search=<search query>', defaultFormattingOptions),
             selectText: '<search query>',
         }),
@@ -415,7 +415,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
     {
         id: 'excludeProject',
         label: 'Exclude a project',
-        run: config => {
+        run: (config: string) => {
             const value = { name: '<group>/<project>' }
             const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
             return { edits, selectText: '"<group>/<project>"' }
@@ -487,7 +487,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
     {
         id: 'addWebhooks',
         label: 'Add webhook',
-        run: config => {
+        run: (config: string) => {
             const value = { secret: '<any_secret_string>' }
             const edits = setProperty(config, ['webhooks', -1], value, defaultFormattingOptions)
             return { edits, selectText: '<any_secret_string>' }
@@ -593,7 +593,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
         {
             id: 'setAccessKeyID',
             label: 'Set access key ID',
-            run: config => {
+            run: (config: string) => {
                 const value = '<access key id>'
                 const edits = setProperty(config, ['accessKeyID'], value, defaultFormattingOptions)
                 return { edits, selectText: value }
@@ -602,7 +602,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
         {
             id: 'setSecretAccessKey',
             label: 'Set secret access key',
-            run: config => {
+            run: (config: string) => {
                 const value = '<secret access key>'
                 const edits = setProperty(config, ['secretAccessKey'], value, defaultFormattingOptions)
                 return { edits, selectText: value }
@@ -611,7 +611,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
         {
             id: 'setRegion',
             label: 'Set region',
-            run: config => {
+            run: (config: string) => {
                 const value = '<region>'
                 const edits = setProperty(config, ['region'], value, defaultFormattingOptions)
                 return { edits, selectText: value }
@@ -620,7 +620,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
         {
             id: 'setGitCredentials',
             label: 'Set Git credentials',
-            run: config => {
+            run: (config: string) => {
                 const value = {
                     username: '<username>',
                     password: '<password>',
@@ -632,7 +632,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
         {
             id: 'excludeRepo',
             label: 'Exclude a repository',
-            run: config => {
+            run: (config: string) => {
                 const value = { name: '<owner>/<repository>' }
                 const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
                 return { edits, selectText: '<owner>/<repository>' }
@@ -656,7 +656,7 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
         {
             id: 'setAppPassword',
             label: 'Set app password',
-            run: config => {
+            run: (config: string) => {
                 const value = '<app password>'
                 const edits = setProperty(config, ['appPassword'], value, defaultFormattingOptions)
                 return { edits, selectText: value }
@@ -665,7 +665,7 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
         {
             id: 'setUsername',
             label: 'Set username',
-            run: config => {
+            run: (config: string) => {
                 const value = '<username to which the app password belongs>'
                 const edits = setProperty(config, ['username'], value, defaultFormattingOptions)
                 return { edits, selectText: value }
@@ -674,7 +674,7 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
         {
             id: 'addTeamRepositories',
             label: 'Add repositories belonging to team',
-            run: config => {
+            run: (config: string) => {
                 const value = '<team>'
                 const edits = setProperty(config, ['teams', -1], value, defaultFormattingOptions)
                 return { edits, selectText: value }
@@ -811,7 +811,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
         {
             id: 'setURL',
             label: 'Set URL',
-            run: config => {
+            run: (config: string) => {
                 const value = 'https://bitbucket.example.com'
                 const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
                 return { edits, selectText: value }
@@ -820,7 +820,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
         {
             id: 'setPersonalAccessToken',
             label: 'Set access token',
-            run: config => {
+            run: (config: string) => {
                 const value = '<access token>'
                 const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
                 return { edits, selectText: value }
@@ -829,7 +829,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
         {
             id: 'setUsername',
             label: 'Set username',
-            run: config => {
+            run: (config: string) => {
                 const value = '<username that created access token>'
                 const edits = setProperty(config, ['username'], value, defaultFormattingOptions)
                 return { edits, selectText: value }
@@ -838,7 +838,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
         {
             id: 'addProjectRepos',
             label: 'Add repositories in a project',
-            run: config => {
+            run: (config: string) => {
                 const value = '?projectname=<project>'
                 const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
                 return { edits, selectText: '<project>' }
@@ -847,7 +847,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
         {
             id: 'addRepo',
             label: 'Add individual repository',
-            run: config => {
+            run: (config: string) => {
                 const value = '<project/<repository>'
                 const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
                 return { edits, selectText: '<project/<repository>' }
@@ -856,7 +856,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
         {
             id: 'excludeRepo',
             label: 'Exclude a repository',
-            run: config => {
+            run: (config: string) => {
                 const value = { name: '<project/<repository>' }
                 const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
                 return { edits, selectText: '{"name": "<project/<repository>"}' }
@@ -865,7 +865,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
         {
             id: 'setSelfSignedCert',
             label: 'Set internal or self-signed certificate',
-            run: config => {
+            run: (config: string) => {
                 const value = '<certificate>'
                 const edits = setProperty(config, ['certificate'], value, defaultFormattingOptions)
                 return { edits, selectText: value }
@@ -874,7 +874,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
         {
             id: 'enableWebhooks',
             label: 'Enable webhooks',
-            run: config => {
+            run: (config: string) => {
                 const value = { webhooks: { secret: '<any_secret_string>' } }
                 const edits = setProperty(config, ['plugin'], value, defaultFormattingOptions)
                 return { edits, selectText: '<any_secret_string>' }
@@ -943,7 +943,7 @@ const SRC_SERVE_GIT: AddExternalServiceOptions = {
         {
             id: 'setURL',
             label: 'Sourcegraph in Docker and src serve-git running on host',
-            run: config => {
+            run: (config: string) => {
                 const value = 'http://host.docker.internal:3434'
                 const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
                 return { edits, selectText: value }
@@ -990,7 +990,7 @@ const GITOLITE: AddExternalServiceOptions = {
         {
             id: 'setHost',
             label: 'Set host',
-            run: config => {
+            run: (config: string) => {
                 const value = 'git@gitolite.example.com'
                 const edits = setProperty(config, ['host'], value, defaultFormattingOptions)
                 return { edits, selectText: value }
@@ -999,7 +999,7 @@ const GITOLITE: AddExternalServiceOptions = {
         {
             id: 'setPrefix',
             label: 'Set prefix',
-            run: config => {
+            run: (config: string) => {
                 const value = 'gitolite.example.com/'
                 const edits = setProperty(config, ['prefix'], value, defaultFormattingOptions)
                 return { edits, selectText: value }
@@ -1028,7 +1028,7 @@ const PHABRICATOR_SERVICE: AddExternalServiceOptions = {
         {
             id: 'setPhabricatorURL',
             label: 'Set Phabricator URL',
-            run: config => {
+            run: (config: string) => {
                 const value = 'https://phabricator.example.com'
                 const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
                 return { edits, selectText: value }
@@ -1037,7 +1037,7 @@ const PHABRICATOR_SERVICE: AddExternalServiceOptions = {
         {
             id: 'setAccessToken',
             label: 'Set Phabricator access token',
-            run: config => {
+            run: (config: string) => {
                 const value = '<Phabricator access token>'
                 const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
                 return { edits, selectText: value }
@@ -1046,7 +1046,7 @@ const PHABRICATOR_SERVICE: AddExternalServiceOptions = {
         {
             id: 'addRepository',
             label: 'Add a repository',
-            run: config => {
+            run: (config: string) => {
                 const value = {
                     callsign: '<Phabricator repository callsign>',
                     path: '<Sourcegraph repository full name>',
@@ -1095,7 +1095,7 @@ const GENERIC_GIT: AddExternalServiceOptions = {
         {
             id: 'setURL',
             label: 'Set Git host URL',
-            run: config => {
+            run: (config: string) => {
                 const value = 'https://git.example.com'
                 const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
                 return { edits, selectText: value }
@@ -1104,7 +1104,7 @@ const GENERIC_GIT: AddExternalServiceOptions = {
         {
             id: 'addRepo',
             label: 'Add a repository',
-            run: config => {
+            run: (config: string) => {
                 const value = 'path/to/repository'
                 const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
                 return { edits, selectText: value }

@@ -31,7 +31,7 @@ func assertEqual(t *testing.T, got, want interface{}) {
 }
 
 func TestSearchResults(t *testing.T) {
-	limitOffset := &db.LimitOffset{Limit: maxReposToSearch() + 1}
+	limitOffset := &db.LimitOffset{Limit: searchLimits().MaxRepos + 1}
 
 	getResults := func(t *testing.T, query, version string) []string {
 		r, err := (&schemaResolver{}).Search(context.Background(), &SearchArgs{Query: query, Version: version})

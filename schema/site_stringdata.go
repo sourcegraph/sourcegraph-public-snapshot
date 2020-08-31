@@ -85,7 +85,7 @@ const SiteSchemaJSON = `{
           "default": "enabled"
         },
         "andOrQuery": {
-          "description": "Interpret a search input query as an and/or query.",
+          "description": "DEPRECATED: Interpret a search input query as an and/or query.",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
@@ -348,10 +348,41 @@ const SiteSchemaJSON = `{
       "group": "External services"
     },
     "maxReposToSearch": {
-      "description": "The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.",
+      "description": "DEPRECATED: Configure maxRepos in search.limits. The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.",
       "type": "integer",
       "default": -1,
       "group": "Search"
+    },
+    "search.limits": {
+      "description": "Limits that search applies for number of repositories searched and timeouts.",
+      "type": "object",
+      "group": "Search",
+      "additionalProperties": false,
+      "properties": {
+        "maxTimeoutSeconds": {
+          "description": "The maximum value for \"timeout:\" that search will respect. \"timeout:\" values larger than maxTimeoutSeconds are capped at maxTimeoutSeconds. Note: You need to ensure your load balancer / reverse proxy in front of Sourcegraph won't timeout the request for larger values. Note: Too many large rearch requests may harm Soucregraph for other users. Defaults to 1 minute.",
+          "type": "integer",
+          "default": "60",
+          "minimum": 1
+        },
+        "maxRepos": {
+          "description": "The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.",
+          "type": "integer",
+          "default": -1
+        },
+        "commitDiffMaxRepos": {
+          "description": "The maximum number of repositories to search across when doing a \"type:diff\" or \"type:commit\". The user is prompted to narrow their query if exceeded. There is a seperate limit (commitDiffWithTimeFilterMaxRepos) when \"after:\" or \"before:\" is specified since those queries are faster. Value must be positive. Defaults to 50.",
+          "type": "integer",
+          "default": 50,
+          "minimum": 1
+        },
+        "commitDiffWithTimeFilterMaxRepos": {
+          "description": "The maximum number of repositories to search across when doing a \"type:diff\" or \"type:commit\" with a \"after:\" or \"before:\" filter. The user is prompted to narrow their query if exceeded. There is a seperate limit (commitDiffMaxRepos) when \"after:\" or \"before:\" is not specified since those queries are slower. Value must be positive. Defaults to 10000.",
+          "type": "integer",
+          "default": 10000,
+          "minimum": 1
+        }
+      }
     },
     "parentSourcegraph": {
       "description": "URL to fetch unreachable repository details from. Defaults to \"https://sourcegraph.com\"",

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
@@ -54,6 +53,7 @@ var changesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.process_after"),
 	sqlf.Sprintf("changesets.num_resets"),
 	sqlf.Sprintf("changesets.unsynced"),
+	sqlf.Sprintf("changesets.closing"),
 }
 
 // changesetInsertColumns is the list of changeset columns that are modified in
@@ -89,6 +89,7 @@ var changesetInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("process_after"),
 	sqlf.Sprintf("num_resets"),
 	sqlf.Sprintf("unsynced"),
+	sqlf.Sprintf("closing"),
 }
 
 func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Changeset) (*sqlf.Query, error) {
@@ -139,6 +140,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Chang
 		nullTimeColumn(c.ProcessAfter),
 		c.NumResets,
 		c.Unsynced,
+		c.Closing,
 	}
 
 	if includeID {
@@ -171,7 +173,7 @@ func (s *Store) CreateChangeset(ctx context.Context, c *campaigns.Changeset) err
 var createChangesetQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:CreateChangeset
 INSERT INTO changesets (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 ON CONFLICT ON CONSTRAINT
 changesets_repo_external_id_unique
 DO NOTHING
@@ -374,8 +376,8 @@ func listChangesetSyncData(opts ListChangesetSyncDataOpts) *sqlf.Query {
 // ListChangesetsOpts captures the query options needed for
 // listing changesets.
 type ListChangesetsOpts struct {
+	LimitOpts
 	Cursor               int64
-	Limit                int
 	CampaignID           int64
 	IDs                  []int64
 	WithoutDeleted       bool
@@ -392,7 +394,7 @@ type ListChangesetsOpts struct {
 func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs campaigns.Changesets, next int64, err error) {
 	q := listChangesetsQuery(&opts)
 
-	cs = make([]*campaigns.Changeset, 0, opts.Limit)
+	cs = make([]*campaigns.Changeset, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) (err error) {
 		var c campaigns.Changeset
 		if err = scanChangeset(&c, sc); err != nil {
@@ -402,7 +404,7 @@ func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs
 		return nil
 	})
 
-	if opts.Limit != 0 && len(cs) == opts.Limit {
+	if opts.Limit != 0 && len(cs) == opts.DBLimit() {
 		next = cs[len(cs)-1].ID
 		cs = cs[:len(cs)-1]
 	}
@@ -418,19 +420,7 @@ WHERE %s
 ORDER BY id ASC
 `
 
-const defaultListLimit = 50
-
 func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
-	if opts.Limit == 0 {
-		opts.Limit = defaultListLimit
-	}
-	opts.Limit++
-
-	var limitClause string
-	if opts.Limit > 0 {
-		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
-	}
-
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("changesets.id >= %s", opts.Cursor),
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
@@ -478,7 +468,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		listChangesetsQueryFmtstr+limitClause,
+		listChangesetsQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(changesetColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
@@ -501,7 +491,7 @@ func (s *Store) UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) er
 var updateChangesetQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changeset_specs.go:UpdateChangeset
 UPDATE changesets
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   %s
@@ -602,6 +592,7 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		&dbutil.NullTime{Time: &t.ProcessAfter},
 		&t.NumResets,
 		&t.Unsynced,
+		&t.Closing,
 	)
 	if err != nil {
 		return errors.Wrap(err, "scanning changeset")

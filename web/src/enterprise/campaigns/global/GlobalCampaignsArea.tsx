@@ -150,24 +150,26 @@ export const UserCampaignsArea = withAuthenticatedUser<
                         render={props => <CreateCampaignPage {...outerProps} {...props} {...breadcrumbSetters} />}
                     />
                     <Route
-                        path={`${match.url}/:campaignID/close`}
-                        render={({ match, ...props }: RouteComponentProps<{ campaignID: string }>) => (
+                        path={`${match.url}/:campaignName/close`}
+                        render={({ match, ...props }: RouteComponentProps<{ campaignName: string }>) => (
                             <CampaignClosePage
                                 {...outerProps}
                                 {...props}
                                 {...breadcrumbSetters}
-                                campaignID={match.params.campaignID}
+                                namespaceID={userID}
+                                campaignName={match.params.campaignName}
                             />
                         )}
                     />
                     <Route
-                        path={`${match.url}/:campaignID`}
-                        render={({ match, ...props }: RouteComponentProps<{ campaignID: string }>) => (
+                        path={`${match.url}/:campaignName`}
+                        render={({ match, ...props }: RouteComponentProps<{ campaignName: string }>) => (
                             <CampaignDetailsPage
                                 {...outerProps}
                                 {...props}
                                 {...breadcrumbSetters}
-                                campaignID={match.params.campaignID}
+                                namespaceID={userID}
+                                campaignName={match.params.campaignName}
                             />
                         )}
                     />
@@ -224,24 +226,26 @@ export const OrgCampaignsArea = withAuthenticatedUser<OrgCampaignsAreaProps & { 
                             render={props => <CreateCampaignPage {...props} {...outerProps} {...breadcrumbSetters} />}
                         />
                         <Route
-                            path={`${match.url}/:campaignID/close`}
-                            render={({ match, ...props }: RouteComponentProps<{ campaignID: string }>) => (
+                            path={`${match.url}/:campaignName/close`}
+                            render={({ match, ...props }: RouteComponentProps<{ campaignName: string }>) => (
                                 <CampaignClosePage
                                     {...props}
                                     {...outerProps}
                                     {...breadcrumbSetters}
-                                    campaignID={match.params.campaignID}
+                                    namespaceID={orgID}
+                                    campaignName={match.params.campaignName}
                                 />
                             )}
                         />
                         <Route
-                            path={`${match.url}/:campaignID`}
-                            render={({ match, ...props }: RouteComponentProps<{ campaignID: string }>) => (
+                            path={`${match.url}/:campaignName`}
+                            render={({ match, ...props }: RouteComponentProps<{ campaignName: string }>) => (
                                 <CampaignDetailsPage
                                     {...props}
                                     {...outerProps}
                                     {...breadcrumbSetters}
-                                    campaignID={match.params.campaignID}
+                                    namespaceID={orgID}
+                                    campaignName={match.params.campaignName}
                                 />
                             )}
                         />

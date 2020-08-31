@@ -156,7 +156,7 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 	resolvers := []graphqlbackend.ChangesetCountsResolver{}
 
 	publishedState := campaigns.ChangesetPublicationStatePublished
-	opts := ee.ListChangesetsOpts{CampaignID: r.Campaign.ID, Limit: -1, PublicationState: &publishedState}
+	opts := ee.ListChangesetsOpts{CampaignID: r.Campaign.ID, PublicationState: &publishedState}
 	cs, _, err := r.store.ListChangesets(ctx, opts)
 	if err != nil {
 		return resolvers, err
@@ -178,7 +178,7 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 		end = args.To.Time.UTC()
 	}
 
-	eventsOpts := ee.ListChangesetEventsOpts{ChangesetIDs: cs.IDs(), Limit: -1}
+	eventsOpts := ee.ListChangesetEventsOpts{ChangesetIDs: cs.IDs()}
 	es, _, err := r.store.ListChangesetEvents(ctx, eventsOpts)
 	if err != nil {
 		return resolvers, err
@@ -201,7 +201,6 @@ func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffSt
 		store: r.store,
 		opts: ee.ListChangesetsOpts{
 			CampaignID: r.Campaign.ID,
-			Limit:      -1, // Get all changesets
 		},
 		optsSafe: true,
 	}

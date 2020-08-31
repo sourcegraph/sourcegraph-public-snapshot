@@ -166,6 +166,24 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 		bk.Cmd("./dev/ci/docker-lint.sh"))
 }
 
+// Adds backend integration tests step.
+func addBackendIntegrationTests(c Config) func(*bk.Pipeline) {
+	return func(pipeline *bk.Pipeline) {
+		if !c.isMasterDryRun && c.branch != "master" && c.branch != "main" {
+			return
+		}
+
+		pipeline.AddStep(":chains:",
+			bk.Cmd("pushd enterprise"),
+			bk.Cmd("./cmd/server/pre-build.sh"),
+			bk.Cmd("./cmd/server/build.sh"),
+			bk.Cmd("popd"),
+			bk.Cmd("./dev/ci/backend-integration.sh"),
+			bk.Cmd(`docker image rm -f "$IMAGE"`),
+		)
+	}
+}
+
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 	for _, browser := range []string{"chrome", "firefox"} {
 		// Run e2e tests
