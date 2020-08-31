@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import FolderIcon from 'mdi-react/FolderIcon'
@@ -45,57 +44,7 @@ import { VersionContextProps } from '../../../../shared/src/search/util'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-
-const TreeEntry: React.FunctionComponent<{
-    isDir: boolean
-    name: string
-    parentPath: string
-    url: string
-}> = ({ isDir, name, parentPath, url }) => {
-    const filePath = parentPath ? parentPath + '/' + name : name
-    return (
-        <Link
-            to={url}
-            className={classNames(
-                'tree-entry',
-                isDir && 'font-weight-bold',
-                `test-tree-entry-${isDir ? 'directory' : 'file'}`
-            )}
-            title={filePath}
-        >
-            {name}
-            {isDir && '/'}
-        </Link>
-    )
-}
-
-/**
- * Use a multi-column layout for tree entries when there are at least this many. See TreePage.scss
- * for more information.
- */
-const MIN_ENTRIES_FOR_COLUMN_LAYOUT = 6
-
-const TreeEntriesSection: React.FunctionComponent<{
-    title: string
-    parentPath: string
-    entries: Pick<GQL.ITreeEntry, 'name' | 'isDirectory' | 'url'>[]
-}> = ({ title, parentPath, entries }) =>
-    entries.length > 0 ? (
-        <section className="tree-page__section test-tree-entries">
-            <h3 className="tree-page__section-header">{title}</h3>
-            <div className={entries.length > MIN_ENTRIES_FOR_COLUMN_LAYOUT ? 'tree-page__entries--columns' : undefined}>
-                {entries.map((entry, index) => (
-                    <TreeEntry
-                        key={entry.name + String(index)}
-                        isDir={entry.isDirectory}
-                        name={entry.name}
-                        parentPath={parentPath}
-                        url={entry.url}
-                    />
-                ))}
-            </div>
-        </section>
-    ) : null
+import { TreeEntriesSection } from './TreeEntriesSection'
 
 const fetchTreeCommits = memoizeObservable(
     (args: {
