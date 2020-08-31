@@ -11,9 +11,9 @@ export const RepositoriesPanel: React.FunctionComponent<{}> = () => {
             className="repositories-panel"
             title="Repositories"
             state="empty"
-            loadingDisplay={loadingDisplay}
-            contentDisplay={contentDisplay}
-            emptyDisplay={emptyDisplay}
+            loadingContent={loadingDisplay}
+            populatedContent={contentDisplay}
+            emptyContent={emptyDisplay}
         />
     )
 }

@@ -1,5 +1,5 @@
-import renderer from 'react-test-renderer'
 import React from 'react'
+import { mount } from 'enzyme'
 import { PanelContainer } from './PanelContainer'
 
 describe('PanelContainer', () => {
@@ -12,21 +12,21 @@ describe('PanelContainer', () => {
     }
 
     test('loading state', () => {
-        expect(renderer.create(<PanelContainer {...defaultProps} state="loading" />)).toMatchSnapshot()
+        expect(mount(<PanelContainer {...defaultProps} state="loading" />)).toMatchSnapshot()
     })
 
     test('empty state', () => {
-        expect(renderer.create(<PanelContainer {...defaultProps} state="empty" />)).toMatchSnapshot()
+        expect(mount(<PanelContainer {...defaultProps} state="empty" />)).toMatchSnapshot()
     })
 
     test('content state', () => {
-        expect(renderer.create(<PanelContainer {...defaultProps} state="populated" />)).toMatchSnapshot()
+        expect(mount(<PanelContainer {...defaultProps} state="populated" />)).toMatchSnapshot()
     })
 
     test('with action buttons', () => {
         const actionButtons = <button type="button">Button</button>
         expect(
-            renderer.create(<PanelContainer {...defaultProps} state="content" actionButtons={actionButtons} />)
+            mount(<PanelContainer {...defaultProps} state="populated" actionButtons={actionButtons} />)
         ).toMatchSnapshot()
     })
 })

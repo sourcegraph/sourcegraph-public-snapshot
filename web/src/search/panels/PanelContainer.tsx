@@ -23,7 +23,7 @@ export const PanelContainer: React.FunctionComponent<Props> = ({
     className,
 }) => (
     <div className={`${className || ''} panel-container`}>
-        <div className="panel-container__header">
+        <div className="panel-container__header d-flex">
             <h3 className="panel-container__header-text">{title}</h3>
             {actionButtons}
         </div>

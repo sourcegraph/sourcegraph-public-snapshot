@@ -11,7 +11,7 @@ export const SavedSearchesPanel: React.FunctionComponent<{}> = () => {
     return (
         <PanelContainer
             className="saved-searches-panel"
-            title="Recent Searches"
+            title="Recent searches"
             state="populated"
             loadingContent={loadingDisplay}
             populatedContent={contentDisplay}

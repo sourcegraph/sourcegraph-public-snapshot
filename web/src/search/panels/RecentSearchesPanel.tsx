@@ -9,11 +9,11 @@ export const RecentSearchesPanel: React.FunctionComponent<{}> = () => {
     return (
         <PanelContainer
             className="recent-searches-panel"
-            title="Recent Searches"
+            title="Recent searches"
             state="loading"
-            loadingDisplay={loadingDisplay}
-            contentDisplay={contentDisplay}
-            emptyDisplay={emptyDisplay}
+            loadingContent={loadingDisplay}
+            populatedContent={contentDisplay}
+            emptyContent={emptyDisplay}
         />
     )
 }

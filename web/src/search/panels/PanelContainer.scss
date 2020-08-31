@@ -1,7 +1,5 @@
 .panel-container {
     &__header {
-        display: flex;
-        flex-direction: row;
         border-bottom: 1px solid $color-border;
 
         .theme-light & {
@@ -10,7 +8,6 @@
 
         &-text {
             font-weight: 600 !important;
-            font-size: 16px;
             line-height: 24px;
             letter-spacing: 0.05em;
             margin-bottom: 0.25rem;

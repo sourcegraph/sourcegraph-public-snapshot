@@ -1,7 +1,10 @@
 import React from 'react'
 import { cleanup, render } from '@testing-library/react'
-import { SearchPage, SearchPageProps } from './SearchPage'
+import { Controller } from '../../../../shared/src/extensions/controller'
+import { createMemoryHistory } from 'history'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import { SearchPage, SearchPageProps } from './SearchPage'
+import { Services } from '../../../../shared/src/api/client/services'
 
 jest.mock('./SearchPageInput', () => ({
     SearchPageInput: () => null,
@@ -12,18 +15,20 @@ describe('SearchPage', () => {
 
     let container: HTMLElement
 
+    const extensionsController = {
+        services: {} as Services,
+        executeCommand: () => Promise.resolve(undefined),
+    } as Pick<Controller, 'executeCommand' | 'services'>
+
+    const history = createMemoryHistory()
     const defaultProps = {
         isSourcegraphDotCom: false,
         settingsCascade: {
             final: null,
             subjects: null,
         },
-        extensionsController: {
-            services: {},
-        },
-        location: {
-            pathname: '',
-        },
+        location: history.location,
+        extensionsController,
         telemetryService: NOOP_TELEMETRY_SERVICE,
     } as SearchPageProps
 
