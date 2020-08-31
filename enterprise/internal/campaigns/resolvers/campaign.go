@@ -239,3 +239,13 @@ func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffSt
 
 	return totalStat, nil
 }
+
+func (r *campaignResolver) CurrentSpec(ctx context.Context) (graphqlbackend.CampaignSpecResolver, error) {
+	campaignSpec, err := r.store.GetCampaignSpec(ctx, ee.GetCampaignSpecOpts{ID: r.Campaign.CampaignSpecID})
+	if err != nil {
+		// This spec should always exist, so fail hard on not found errors as well.
+		return nil, err
+	}
+
+	return &campaignSpecResolver{store: r.store, httpFactory: r.httpFactory, campaignSpec: campaignSpec}, nil
+}

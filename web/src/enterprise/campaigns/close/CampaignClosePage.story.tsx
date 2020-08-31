@@ -205,6 +205,9 @@ add('Overview', () => {
                 url: '/users/bob',
                 username: 'bob',
             },
+            currentSpec: {
+                originalInput: 'name: awesome-campaign\ndescription: somestring',
+            },
         }),
         [viewerCanAdminister]
     )

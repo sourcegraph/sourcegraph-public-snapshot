@@ -216,6 +216,7 @@ type CampaignResolver interface {
 	ChangesetCountsOverTime(ctx context.Context, args *ChangesetCountsArgs) ([]ChangesetCountsResolver, error)
 	ClosedAt() *DateTime
 	DiffStat(ctx context.Context) (*DiffStat, error)
+	CurrentSpec(ctx context.Context) (CampaignSpecResolver, error)
 }
 
 type CampaignsConnectionResolver interface {
