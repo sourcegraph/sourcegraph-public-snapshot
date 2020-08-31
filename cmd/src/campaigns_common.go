@@ -164,6 +164,18 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 	}
 	campaignsCompletePending(pending, "Resolving namespace")
 
+	imageProgress := out.Progress([]output.ProgressBar{{
+		Label: "Preparing container images",
+		Max:   float64(len(campaignSpec.Steps)),
+	}}, nil)
+	err = svc.SetDockerImages(ctx, campaignSpec, func(step int) {
+		imageProgress.SetValue(0, float64(step))
+	})
+	if err != nil {
+		return "", "", err
+	}
+	imageProgress.Complete()
+
 	var progress output.Progress
 	specs, err := svc.ExecuteCampaignSpec(ctx, executor, campaignSpec, func(statuses []*campaigns.TaskStatus) {
 		if progress == nil {

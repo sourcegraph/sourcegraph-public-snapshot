@@ -151,19 +151,23 @@ func (svc *Service) NewExecutor(opts ExecutorOpts, update ExecutorUpdateCallback
 	return newExecutor(opts, svc.client, update)
 }
 
+func (svc *Service) SetDockerImages(ctx context.Context, spec *CampaignSpec, progress func(i int)) error {
+	for i, step := range spec.Steps {
+		image, err := getDockerImageContentDigest(ctx, step.Container)
+		if err != nil {
+			return err
+		}
+		spec.Steps[i].image = image
+		progress(i + 1)
+	}
+
+	return nil
+}
+
 func (svc *Service) ExecuteCampaignSpec(ctx context.Context, x Executor, spec *CampaignSpec, progress func([]*TaskStatus)) ([]*ChangesetSpec, error) {
 	repos, err := svc.ResolveRepositories(ctx, spec)
 	if err != nil {
 		return nil, errors.Wrap(err, "resolving repositories")
-	}
-
-	// TODO: status logging
-	for i, step := range spec.Steps {
-		image, err := getDockerImageContentDigest(ctx, step.Container)
-		if err != nil {
-			return nil, errors.Wrapf(err, "step %d", i+1)
-		}
-		spec.Steps[i].image = image
 	}
 
 	statuses := make([]*TaskStatus, 0, len(repos))
