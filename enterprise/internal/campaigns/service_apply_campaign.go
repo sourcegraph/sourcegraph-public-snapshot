@@ -379,7 +379,6 @@ func (r *changesetRewirer) updateChangesetToNewSpec(c *campaigns.Changeset, spec
 func (r *changesetRewirer) loadAssociations() (err error) {
 	// Load all of the new ChangesetSpecs
 	r.newChangesetSpecs, _, err = r.tx.ListChangesetSpecs(r.ctx, ListChangesetSpecsOpts{
-		Limit:          -1,
 		CampaignSpecID: r.campaign.CampaignSpecID,
 	})
 	if err != nil {
@@ -388,7 +387,6 @@ func (r *changesetRewirer) loadAssociations() (err error) {
 
 	// Load all Changesets attached to this Campaign.
 	r.changesets, _, err = r.tx.ListChangesets(r.ctx, ListChangesetsOpts{
-		Limit:      -1,
 		CampaignID: r.campaign.ID,
 	})
 	if err != nil {

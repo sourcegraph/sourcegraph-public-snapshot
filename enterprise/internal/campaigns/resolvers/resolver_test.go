@@ -620,10 +620,10 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		// First argument is set in opts, and considered safe.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				First: &wantFirst,
+				First: wantFirst,
 			},
 			wantSafe:   true,
-			wantParsed: ee.ListChangesetsOpts{Limit: 10},
+			wantParsed: ee.ListChangesetsOpts{LimitOpts: ee.LimitOpts{Limit: 10}},
 		},
 		// Setting publication state is safe and transferred to opts.
 		{

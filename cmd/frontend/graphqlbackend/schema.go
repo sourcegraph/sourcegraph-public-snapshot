@@ -965,7 +965,7 @@ type CampaignSpec implements Node {
     """
     The specs for changesets associated with this campaign.
     """
-    changesetSpecs(first: Int, after: String): ChangesetSpecConnection!
+    changesetSpecs(first: Int = 50, after: String): ChangesetSpecConnection!
 
     """
     The user who created this campaign spec (or null if the user no longer exists).
@@ -1102,7 +1102,7 @@ type Campaign implements Node {
     The changesets in this campaign that already exist on the code host.
     """
     changesets(
-        first: Int
+        first: Int = 50
         """
         Opaque pagination cursor.
         """
@@ -1319,7 +1319,7 @@ interface Changeset {
         """
         Returns the first n campaigns from the list.
         """
-        first: Int
+        first: Int = 50
         """
         Opaque pagination cursor.
         """
@@ -1381,7 +1381,7 @@ type HiddenExternalChangeset implements Node & Changeset {
         """
         Returns the first n campaigns from the list.
         """
-        first: Int
+        first: Int = 50
         """
         Opaque pagination cursor.
         """
@@ -1454,7 +1454,7 @@ type ExternalChangeset implements Node & Changeset {
         """
         Returns the first n campaigns from the list.
         """
-        first: Int
+        first: Int = 50
         """
         Opaque pagination cursor.
         """
@@ -1472,7 +1472,7 @@ type ExternalChangeset implements Node & Changeset {
     """
     The events belonging to this changeset.
     """
-    events(first: Int): ChangesetEventConnection!
+    events(first: Int = 50): ChangesetEventConnection!
 
     """
     The date and time when the changeset was created.
@@ -1931,7 +1931,7 @@ type Query {
         """
         Returns the first n campaigns from the list.
         """
-        first: Int
+        first: Int = 50
         """
         Opaque pagination cursor.
         """
@@ -5455,7 +5455,7 @@ type User implements Node & SettingsSubject & Namespace {
         """
         Returns the first n campaigns from the list.
         """
-        first: Int
+        first: Int = 50
         """
         Opaque pagination cursor.
         """
@@ -5812,7 +5812,7 @@ type Org implements Node & SettingsSubject & Namespace {
         """
         Returns the first n campaigns from the list.
         """
-        first: Int
+        first: Int = 50
         """
         Opaque pagination cursor.
         """

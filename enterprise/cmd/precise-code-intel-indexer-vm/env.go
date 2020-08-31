@@ -15,6 +15,10 @@ var (
 	rawIndexerPollInterval      = env.Get("PRECISE_CODE_INTEL_INDEXER_POLL_INTERVAL", "1s", "Interval between queries to the precise-code-intel-index-manager.")
 	rawIndexerHeartbeatInterval = env.Get("PRECISE_CODE_INTEL_INDEXER_HEARTBEAT_INTERVAL", "1s", "Interval between heartbeat requests.")
 	rawMaxContainers            = env.Get("PRECISE_CODE_INTEL_MAXIMUM_CONTAINERS", "1", "Number of index containers that can be running at once.")
+	rawFirecrackerImage         = env.Get("PRECISE_CODE_INTEL_FIRECRACKER_IMAGE", "sourcegraph/ignite-ubuntu:insiders", "The base image to use for firecracker VMs.")
+	rawUseFirecracker           = env.Get("PRECISE_CODE_INTEL_USE_FIRECRACKER", "true", "Whether to isolate index containers in firecracker VMs.")
+	rawFirecrackerNumCPUs       = env.Get("PRECISE_CODE_INTEL_FIRECRACKER_NUM_CPUS", "4", "How many CPUs to allocate to each Firecracker VM.")
+	rawFirecrackerMemory        = env.Get("PRECISE_CODE_INTEL_FIRECRACKER_MEMORY", "15G", "How much memory to allocate to each Firecracker VM.")
 )
 
 // mustGet returns the non-empty version of the given raw value fatally logs on failure.
@@ -44,4 +48,14 @@ func mustParseInterval(rawValue, name string) time.Duration {
 	}
 
 	return d
+}
+
+// mustParseBool returns the boolean version of the given raw value fatally logs on failure.
+func mustParseBool(rawValue, name string) bool {
+	v, err := strconv.ParseBool(rawValue)
+	if err != nil {
+		log.Fatalf("invalid bool %q for %s: %s", rawValue, name, err)
+	}
+
+	return v
 }

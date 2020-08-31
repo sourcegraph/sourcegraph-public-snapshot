@@ -437,9 +437,7 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 		return nil, err
 	}
 	opts.State = state
-	if args.First != nil {
-		opts.Limit = int(*args.First)
-	}
+	opts.Limit = int(args.First)
 	if args.After != nil {
 		cursor, err := strconv.ParseInt(*args.After, 10, 32)
 		if err != nil {
@@ -486,9 +484,7 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, campaign
 
 	safe := true
 
-	if args.First != nil {
-		opts.Limit = int(*args.First)
-	}
+	opts.Limit = int(args.First)
 
 	if args.After != nil {
 		cursor, err := strconv.ParseInt(*args.After, 10, 32)

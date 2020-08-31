@@ -102,7 +102,7 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) (allChangese
 		}
 
 		opts := r.opts
-		opts.Limit = -1
+		opts.Limit = 0
 		opts.Cursor = 0
 
 		cs, _, err := r.store.ListChangesets(ctx, opts)

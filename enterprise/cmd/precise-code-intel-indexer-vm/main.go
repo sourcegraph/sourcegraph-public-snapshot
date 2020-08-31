@@ -33,6 +33,10 @@ func main() {
 		indexerPollInterval      = mustParseInterval(rawIndexerPollInterval, "PRECISE_CODE_INTEL_INDEXER_POLL_INTERVAL")
 		indexerHeartbeatInterval = mustParseInterval(rawIndexerHeartbeatInterval, "PRECISE_CODE_INTEL_INDEXER_HEARTBEAT_INTERVAL")
 		numContainers            = mustParseInt(rawMaxContainers, "PRECISE_CODE_INTEL_MAXIMUM_CONTAINERS")
+		firecrackerImage         = mustGet(rawFirecrackerImage, "PRECISE_CODE_INTEL_FIRECRACKER_IMAGE")
+		useFirecracker           = mustParseBool(rawUseFirecracker, "PRECISE_CODE_INTEL_USE_FIRECRACKER")
+		firecrackerNumCPUs       = mustParseInt(rawFirecrackerNumCPUs, "PRECISE_CODE_INTEL_FIRECRACKER_NUM_CPUS")
+		firecrackerMemory        = mustGet(rawFirecrackerMemory, "PRECISE_CODE_INTEL_FIRECRACKER_MEMORY")
 	)
 
 	if frontendURLFromDocker == "" {
@@ -66,6 +70,10 @@ func main() {
 			FrontendURL:           frontendURL,
 			FrontendURLFromDocker: frontendURLFromDocker,
 			AuthToken:             internalProxyAuthToken,
+			FirecrackerImage:      firecrackerImage,
+			UseFirecracker:        useFirecracker,
+			FirecrackerNumCPUs:    firecrackerNumCPUs,
+			FirecrackerMemory:     firecrackerMemory,
 		},
 	})
 
