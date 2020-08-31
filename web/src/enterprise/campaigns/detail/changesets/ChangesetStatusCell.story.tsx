@@ -1,8 +1,7 @@
 import { storiesOf } from '@storybook/react'
-import { radios } from '@storybook/addon-knobs'
 import React from 'react'
+import { WebStory } from '../../../../components/WebStory'
 import webStyles from '../../../../enterprise.scss'
-import { Tooltip } from '../../../../components/tooltip/Tooltip'
 import {
     ChangesetStatusUnpublished,
     ChangesetStatusProcessing,
@@ -13,23 +12,14 @@ import {
     ChangesetStatusError,
 } from './ChangesetStatusCell'
 
-const { add } = storiesOf('web/campaigns/ChangesetStatusCell', module).addDecorator(story => {
-    const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
-    document.body.classList.toggle('theme-light', theme === 'light')
-    document.body.classList.toggle('theme-dark', theme === 'dark')
-    return (
-        <>
-            <Tooltip />
-            <style>{webStyles}</style>
-            <div className="p-3 container web-content">{story()}</div>
-        </>
-    )
-})
+const { add } = storiesOf('web/campaigns/ChangesetStatusCell', module).addDecorator(story => (
+    <div className="p-3 container web-content">{story()}</div>
+))
 
-add('Unpublished', () => <ChangesetStatusUnpublished />)
-add('Closed', () => <ChangesetStatusClosed />)
-add('Merged', () => <ChangesetStatusMerged />)
-add('Open', () => <ChangesetStatusOpen />)
-add('Deleted', () => <ChangesetStatusDeleted />)
-add('Error', () => <ChangesetStatusError />)
-add('Processing', () => <ChangesetStatusProcessing />)
+add('Unpublished', () => <WebStory webStyles={webStyles}>{() => <ChangesetStatusUnpublished />}</WebStory>)
+add('Closed', () => <WebStory webStyles={webStyles}>{() => <ChangesetStatusClosed />}</WebStory>)
+add('Merged', () => <WebStory webStyles={webStyles}>{() => <ChangesetStatusMerged />}</WebStory>)
+add('Open', () => <WebStory webStyles={webStyles}>{() => <ChangesetStatusOpen />}</WebStory>)
+add('Deleted', () => <WebStory webStyles={webStyles}>{() => <ChangesetStatusDeleted />}</WebStory>)
+add('Error', () => <WebStory webStyles={webStyles}>{() => <ChangesetStatusError />}</WebStory>)
+add('Processing', () => <WebStory webStyles={webStyles}>{() => <ChangesetStatusProcessing />}</WebStory>)
