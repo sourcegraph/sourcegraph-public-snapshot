@@ -640,6 +640,18 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 	updatedPerms := make([]*authz.UserPendingPermissions, 0, len(idToSpecs))
 	for _, id := range changedIDs {
 		userID := int32(id)
+
+		// NOTE: We could have missing records because the permissions of pending user has been granted
+		// (i.e. moved from `user_pending_permissions` to `user_permissions` table), therefore the record
+		// in `user_pending_permissions` table no longer exists. The reason we still have references to
+		// these missing records is because we do not clean up `repo_pending_permissions` table after
+		// granting a user's pending permissions to avoid database deadlock, given the fact once the record
+		// is removed from `user_pending_permissions` table, the user ID become invalid automatically.
+		spec, ok := idToSpecs[userID]
+		if !ok {
+			continue
+		}
+
 		repoIDs := loadedIDs[userID]
 		if repoIDs == nil {
 			repoIDs = roaring.NewBitmap()
@@ -652,7 +664,6 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 			repoIDs.Remove(uint32(p.RepoID))
 		}
 
-		spec := idToSpecs[userID]
 		updatedPerms = append(updatedPerms, &authz.UserPendingPermissions{
 			ServiceType: spec.ServiceType,
 			ServiceID:   spec.ServiceID,
