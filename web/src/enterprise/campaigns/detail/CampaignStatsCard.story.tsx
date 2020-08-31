@@ -1,7 +1,6 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { WebStory } from '../../../components/WebStory'
-import webStyles from '../../../enterprise.scss'
+import { EnterpriseWebStory } from '../../../components/WebStory'
 import { CampaignStatsCard } from './CampaignStatsCard'
 
 const { add } = storiesOf('web/campaigns/CampaignStatsCard', module).addDecorator(story => (
@@ -9,7 +8,7 @@ const { add } = storiesOf('web/campaigns/CampaignStatsCard', module).addDecorato
 ))
 
 add('All states', () => (
-    <WebStory webStyles={webStyles}>
+    <EnterpriseWebStory>
         {props => (
             <CampaignStatsCard
                 {...props}
@@ -23,10 +22,10 @@ add('All states', () => (
                 closedAt={null}
             />
         )}
-    </WebStory>
+    </EnterpriseWebStory>
 ))
 add('Campaign closed', () => (
-    <WebStory webStyles={webStyles}>
+    <EnterpriseWebStory>
         {props => (
             <CampaignStatsCard
                 {...props}
@@ -40,10 +39,10 @@ add('Campaign closed', () => (
                 closedAt={new Date().toISOString()}
             />
         )}
-    </WebStory>
+    </EnterpriseWebStory>
 ))
 add('Campaign done', () => (
-    <WebStory webStyles={webStyles}>
+    <EnterpriseWebStory>
         {props => (
             <CampaignStatsCard
                 {...props}
@@ -57,5 +56,5 @@ add('Campaign done', () => (
                 closedAt={null}
             />
         )}
-    </WebStory>
+    </EnterpriseWebStory>
 ))

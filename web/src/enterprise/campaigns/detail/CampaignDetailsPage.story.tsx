@@ -1,7 +1,6 @@
 import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
 import React from 'react'
-import webStyles from '../../../enterprise.scss'
 import { CampaignDetailsPage } from './CampaignDetailsPage'
 import { of } from 'rxjs'
 import {
@@ -20,7 +19,7 @@ import {
 } from './backend'
 import { subDays } from 'date-fns'
 import { useMemo, useCallback } from '@storybook/addons'
-import { WebStory } from '../../../components/WebStory'
+import { EnterpriseWebStory } from '../../../components/WebStory'
 
 const { add } = storiesOf('web/campaigns/details/CampaignDetailsPage', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>
@@ -267,7 +266,7 @@ for (const [name, url] of Object.entries(stories)) {
 
         const fetchCampaign: typeof fetchCampaignByNamespace = useCallback(() => of(campaign), [campaign])
         return (
-            <WebStory webStyles={webStyles} initialEntries={[url]}>
+            <EnterpriseWebStory initialEntries={[url]}>
                 {props => (
                     <CampaignDetailsPage
                         {...props}
@@ -282,7 +281,7 @@ for (const [name, url] of Object.entries(stories)) {
                         platformContext={{} as any}
                     />
                 )}
-            </WebStory>
+            </EnterpriseWebStory>
         )
     })
 }

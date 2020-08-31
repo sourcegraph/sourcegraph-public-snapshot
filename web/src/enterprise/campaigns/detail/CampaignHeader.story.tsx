@@ -1,16 +1,15 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import webStyles from '../../../enterprise.scss'
 import { CampaignHeader } from './CampaignHeader'
 import { Link } from '../../../../../shared/src/components/Link'
-import { WebStory } from '../../../components/WebStory'
+import { EnterpriseWebStory } from '../../../components/WebStory'
 
 const { add } = storiesOf('web/campaigns/CampaignHeader', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>
 ))
 
 add('Full', () => (
-    <WebStory webStyles={webStyles}>
+    <EnterpriseWebStory>
         {props => (
             <CampaignHeader
                 {...props}
@@ -23,5 +22,5 @@ add('Full', () => (
                 }
             />
         )}
-    </WebStory>
+    </EnterpriseWebStory>
 ))

@@ -1,7 +1,6 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { WebStory } from '../../../../components/WebStory'
-import webStyles from '../../../../enterprise.scss'
+import { EnterpriseWebStory } from '../../../../components/WebStory'
 import {
     ChangesetStatusUnpublished,
     ChangesetStatusProcessing,
@@ -16,10 +15,10 @@ const { add } = storiesOf('web/campaigns/ChangesetStatusCell', module).addDecora
     <div className="p-3 container web-content">{story()}</div>
 ))
 
-add('Unpublished', () => <WebStory webStyles={webStyles}>{() => <ChangesetStatusUnpublished />}</WebStory>)
-add('Closed', () => <WebStory webStyles={webStyles}>{() => <ChangesetStatusClosed />}</WebStory>)
-add('Merged', () => <WebStory webStyles={webStyles}>{() => <ChangesetStatusMerged />}</WebStory>)
-add('Open', () => <WebStory webStyles={webStyles}>{() => <ChangesetStatusOpen />}</WebStory>)
-add('Deleted', () => <WebStory webStyles={webStyles}>{() => <ChangesetStatusDeleted />}</WebStory>)
-add('Error', () => <WebStory webStyles={webStyles}>{() => <ChangesetStatusError />}</WebStory>)
-add('Processing', () => <WebStory webStyles={webStyles}>{() => <ChangesetStatusProcessing />}</WebStory>)
+add('Unpublished', () => <EnterpriseWebStory>{() => <ChangesetStatusUnpublished />}</EnterpriseWebStory>)
+add('Closed', () => <EnterpriseWebStory>{() => <ChangesetStatusClosed />}</EnterpriseWebStory>)
+add('Merged', () => <EnterpriseWebStory>{() => <ChangesetStatusMerged />}</EnterpriseWebStory>)
+add('Open', () => <EnterpriseWebStory>{() => <ChangesetStatusOpen />}</EnterpriseWebStory>)
+add('Deleted', () => <EnterpriseWebStory>{() => <ChangesetStatusDeleted />}</EnterpriseWebStory>)
+add('Error', () => <EnterpriseWebStory>{() => <ChangesetStatusError />}</EnterpriseWebStory>)
+add('Processing', () => <EnterpriseWebStory>{() => <ChangesetStatusProcessing />}</EnterpriseWebStory>)

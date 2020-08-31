@@ -1,6 +1,5 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import webStyles from '../../../../enterprise.scss'
 import { HiddenExternalChangesetNode } from './HiddenExternalChangesetNode'
 import { addHours } from 'date-fns'
 import {
@@ -8,7 +7,7 @@ import {
     ChangesetReconcilerState,
     ChangesetPublicationState,
 } from '../../../../graphql-operations'
-import { WebStory } from '../../../../components/WebStory'
+import { EnterpriseWebStory } from '../../../../components/WebStory'
 
 const { add } = storiesOf('web/campaigns/HiddenExternalChangesetNode', module).addDecorator(story => (
     <div className="p-3 container web-content campaign-changesets__grid">{story()}</div>
@@ -17,7 +16,7 @@ const { add } = storiesOf('web/campaigns/HiddenExternalChangesetNode', module).a
 add('All external states', () => {
     const now = new Date()
     return (
-        <WebStory webStyles={webStyles}>
+        <EnterpriseWebStory>
             {props => (
                 <>
                     {Object.values(ChangesetExternalState).map((externalState, index) => (
@@ -36,6 +35,6 @@ add('All external states', () => {
                     ))}
                 </>
             )}
-        </WebStory>
+        </EnterpriseWebStory>
     )
 })

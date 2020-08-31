@@ -1,11 +1,10 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import webStyles from '../../../enterprise.scss'
 import { VisibleChangesetSpecNode } from './VisibleChangesetSpecNode'
 import { addDays } from 'date-fns'
 import { VisibleChangesetSpecFields, ChangesetSpecType } from '../../../graphql-operations'
 import { of } from 'rxjs'
-import { WebStory } from '../../../components/WebStory'
+import { EnterpriseWebStory } from '../../../components/WebStory'
 
 const { add } = storiesOf('web/campaigns/apply/VisibleChangesetSpecNode', module).addDecorator(story => (
     <div className="p-3 container web-content changeset-spec-list__grid">{story()}</div>
@@ -72,7 +71,7 @@ const queryEmptyFileDiffs = () =>
 
 for (const storyName of Object.keys(visibleChangesetSpecStories)) {
     add(storyName, () => (
-        <WebStory webStyles={webStyles}>
+        <EnterpriseWebStory>
             {props => (
                 <VisibleChangesetSpecNode
                     {...props}
@@ -80,6 +79,6 @@ for (const storyName of Object.keys(visibleChangesetSpecStories)) {
                     queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                 />
             )}
-        </WebStory>
+        </EnterpriseWebStory>
     ))
 }

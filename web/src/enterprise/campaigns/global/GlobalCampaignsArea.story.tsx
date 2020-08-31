@@ -1,11 +1,10 @@
 import { storiesOf } from '@storybook/react'
-import webStyles from '../../../enterprise.scss'
 import { boolean } from '@storybook/addon-knobs'
 import React from 'react'
 import { GlobalCampaignsArea } from './GlobalCampaignsArea'
 import { AuthenticatedUser } from '../../../auth'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { WebStory } from '../../../components/WebStory'
+import { EnterpriseWebStory } from '../../../components/WebStory'
 
 const { add } = storiesOf('web/campaigns/GlobalCampaignsArea', module).addDecorator(story => (
     <React.Suspense fallback={<LoadingSpinner />}>
@@ -14,7 +13,7 @@ const { add } = storiesOf('web/campaigns/GlobalCampaignsArea', module).addDecora
 ))
 
 add('Dotcom', () => (
-    <WebStory webStyles={webStyles}>
+    <EnterpriseWebStory>
         {props => (
             <GlobalCampaignsArea
                 {...props}
@@ -27,5 +26,5 @@ add('Dotcom', () => (
                 match={{ isExact: true, path: '/campaigns', url: 'http://test.test/campaigns', params: {} }}
             />
         )}
-    </WebStory>
+    </EnterpriseWebStory>
 ))

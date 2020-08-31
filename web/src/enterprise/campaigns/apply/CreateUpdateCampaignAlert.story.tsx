@@ -1,16 +1,15 @@
 import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
 import React from 'react'
-import webStyles from '../../../enterprise.scss'
 import { CreateUpdateCampaignAlert } from './CreateUpdateCampaignAlert'
-import { WebStory } from '../../../components/WebStory'
+import { EnterpriseWebStory } from '../../../components/WebStory'
 
 const { add } = storiesOf('web/campaigns/apply/CreateUpdateCampaignAlert', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>
 ))
 
 add('Create', () => (
-    <WebStory webStyles={webStyles}>
+    <EnterpriseWebStory>
         {props => (
             <CreateUpdateCampaignAlert
                 {...props}
@@ -19,10 +18,10 @@ add('Create', () => (
                 viewerCanAdminister={boolean('viewerCanAdminister', true)}
             />
         )}
-    </WebStory>
+    </EnterpriseWebStory>
 ))
 add('Update', () => (
-    <WebStory webStyles={webStyles}>
+    <EnterpriseWebStory>
         {props => (
             <CreateUpdateCampaignAlert
                 {...props}
@@ -31,5 +30,5 @@ add('Update', () => (
                 viewerCanAdminister={boolean('viewerCanAdminister', true)}
             />
         )}
-    </WebStory>
+    </EnterpriseWebStory>
 ))

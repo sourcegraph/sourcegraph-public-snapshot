@@ -4,18 +4,22 @@ import { MemoryRouter, MemoryRouterProps, RouteComponentProps, withRouter } from
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { ThemeProps } from '../../../shared/src/theme'
 import _webStyles from '../SourcegraphWebApp.scss'
+import enterpriseWebStyles from '../enterprise.scss'
 import { BreadcrumbSetters, BreadcrumbsProps, useBreadcrumbs } from './Breadcrumbs'
 import { Tooltip } from './tooltip/Tooltip'
+
+interface WebStoryProps extends MemoryRouterProps {
+    children: React.FunctionComponent<
+        ThemeProps & BreadcrumbSetters & BreadcrumbsProps & TelemetryProps & RouteComponentProps<any>
+    >
+}
 
 /**
  * Wrapper component for webapp Storybook stories that provides light theme and react-router props.
  * Takes a render function as children that gets called with the props.
  */
 export const WebStory: React.FunctionComponent<
-    MemoryRouterProps & {
-        children: React.FunctionComponent<
-            ThemeProps & BreadcrumbSetters & BreadcrumbsProps & TelemetryProps & RouteComponentProps<any>
-        >
+    WebStoryProps & {
         webStyles?: string
     }
 > = ({ children, webStyles = _webStyles, ...memoryRouterProps }) => {
@@ -26,13 +30,21 @@ export const WebStory: React.FunctionComponent<
     const Children = useMemo(() => withRouter(children), [children])
     return (
         <MemoryRouter {...memoryRouterProps}>
-            <style title="Webapp CSS">{webStyles}</style>
             <Tooltip />
             <Children
                 {...breadcrumbSetters}
                 isLightTheme={theme === 'light'}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
             />
+            <style title="Webapp CSS">{webStyles}</style>
         </MemoryRouter>
     )
 }
+
+/**
+ * Wrapper component for enterprise webapp Storybook stories that provides light theme and react-router props.
+ * Takes a render function as children that gets called with the props.
+ */
+export const EnterpriseWebStory: React.FunctionComponent<WebStoryProps> = props => (
+    <WebStory {...props} webStyles={enterpriseWebStyles} />
+)

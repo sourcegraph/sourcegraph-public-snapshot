@@ -1,7 +1,6 @@
 import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
 import React from 'react'
-import webStyles from '../../../../enterprise.scss'
 import { ExternalChangesetNode } from './ExternalChangesetNode'
 import { addHours } from 'date-fns'
 import {
@@ -12,7 +11,7 @@ import {
     ChangesetReviewState,
 } from '../../../../graphql-operations'
 import { of } from 'rxjs'
-import { WebStory } from '../../../../components/WebStory'
+import { EnterpriseWebStory } from '../../../../components/WebStory'
 
 const { add } = storiesOf('web/campaigns/ExternalChangesetNode', module).addDecorator(story => (
     <div className="p-3 container web-content campaign-changesets__grid">{story()}</div>
@@ -21,7 +20,7 @@ const { add } = storiesOf('web/campaigns/ExternalChangesetNode', module).addDeco
 add('All external states', () => {
     const now = new Date()
     return (
-        <WebStory webStyles={webStyles}>
+        <EnterpriseWebStory>
             {props => (
                 <>
                     {Object.values(ChangesetExternalState).map((externalState, index) => (
@@ -78,14 +77,14 @@ add('All external states', () => {
                     ))}
                 </>
             )}
-        </WebStory>
+        </EnterpriseWebStory>
     )
 })
 
 add('Unpublished', () => {
     const now = new Date()
     return (
-        <WebStory webStyles={webStyles}>
+        <EnterpriseWebStory>
             {props => (
                 <ExternalChangesetNode
                     {...props}
@@ -135,14 +134,14 @@ add('Unpublished', () => {
                     }
                 />
             )}
-        </WebStory>
+        </EnterpriseWebStory>
     )
 })
 
 add('Importing', () => {
     const now = new Date()
     return (
-        <WebStory webStyles={webStyles}>
+        <EnterpriseWebStory>
             {props => (
                 <ExternalChangesetNode
                     {...props}
@@ -193,6 +192,6 @@ add('Importing', () => {
                     }
                 />
             )}
-        </WebStory>
+        </EnterpriseWebStory>
     )
 })

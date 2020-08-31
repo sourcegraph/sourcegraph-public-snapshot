@@ -1,7 +1,6 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { WebStory } from '../../../../components/WebStory'
-import webStyles from '../../../../enterprise.scss'
+import { EnterpriseWebStory } from '../../../../components/WebStory'
 import { ChangesetLabel } from './ChangesetLabel'
 
 const { add } = storiesOf('web/campaigns/ChangesetLabel', module).addDecorator(story => (
@@ -9,7 +8,7 @@ const { add } = storiesOf('web/campaigns/ChangesetLabel', module).addDecorator(s
 ))
 
 add('Various labels', () => (
-    <WebStory webStyles={webStyles}>
+    <EnterpriseWebStory>
         {() => (
             <>
                 <ChangesetLabel
@@ -42,5 +41,5 @@ add('Various labels', () => (
                 />
             </>
         )}
-    </WebStory>
+    </EnterpriseWebStory>
 ))

@@ -1,7 +1,6 @@
 import React from 'react'
 import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
-import webStyles from '../../../enterprise.scss'
 import { CampaignClosePage } from './CampaignClosePage'
 import {
     queryChangesets as _queryChangesets,
@@ -19,7 +18,7 @@ import {
     CampaignFields,
 } from '../../../graphql-operations'
 import { useMemo, useCallback } from '@storybook/addons'
-import { WebStory } from '../../../components/WebStory'
+import { EnterpriseWebStory } from '../../../components/WebStory'
 
 const { add } = storiesOf('web/campaigns/close/CampaignClosePage', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>
@@ -197,7 +196,7 @@ add('Overview', () => {
     )
     const fetchCampaign: typeof fetchCampaignByNamespace = useCallback(() => of(campaign), [campaign])
     return (
-        <WebStory webStyles={webStyles}>
+        <EnterpriseWebStory>
             {props => (
                 <CampaignClosePage
                     {...props}
@@ -210,6 +209,6 @@ add('Overview', () => {
                     platformContext={{} as any}
                 />
             )}
-        </WebStory>
+        </EnterpriseWebStory>
     )
 })

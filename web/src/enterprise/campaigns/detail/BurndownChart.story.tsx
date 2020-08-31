@@ -2,16 +2,15 @@ import { storiesOf } from '@storybook/react'
 import { select } from '@storybook/addon-knobs'
 import React from 'react'
 import { CampaignBurndownChart } from './BurndownChart'
-import webStyles from '../../../enterprise.scss'
 import { of } from 'rxjs'
-import { WebStory } from '../../../components/WebStory'
+import { EnterpriseWebStory } from '../../../components/WebStory'
 
 const { add } = storiesOf('web/campaigns/BurndownChart', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>
 ))
 
 add('All states', () => (
-    <WebStory webStyles={webStyles}>
+    <EnterpriseWebStory>
         {props => (
             <CampaignBurndownChart
                 {...props}
@@ -134,5 +133,5 @@ add('All states', () => (
                 }
             />
         )}
-    </WebStory>
+    </EnterpriseWebStory>
 ))

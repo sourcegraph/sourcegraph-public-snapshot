@@ -2,14 +2,13 @@ import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
 import React from 'react'
 import { CampaignApplyPage } from './CampaignApplyPage'
-import webStyles from '../../../enterprise.scss'
 import { of, Observable } from 'rxjs'
 import { CampaignSpecChangesetSpecsResult, ChangesetSpecFields, CampaignSpecFields } from '../../../graphql-operations'
 import { visibleChangesetSpecStories } from './VisibleChangesetSpecNode.story'
 import { hiddenChangesetSpecStories } from './HiddenChangesetSpecNode.story'
 import { fetchCampaignSpecById } from './backend'
 import { addDays, subDays } from 'date-fns'
-import { WebStory } from '../../../components/WebStory'
+import { EnterpriseWebStory } from '../../../components/WebStory'
 
 const { add } = storiesOf('web/campaigns/apply/CampaignApplyPage', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>
@@ -73,7 +72,7 @@ const queryEmptyFileDiffs = () =>
     of({ fileDiffs: { totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] } })
 
 add('Create', () => (
-    <WebStory webStyles={webStyles}>
+    <EnterpriseWebStory>
         {props => (
             <CampaignApplyPage
                 {...props}
@@ -83,11 +82,11 @@ add('Create', () => (
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
             />
         )}
-    </WebStory>
+    </EnterpriseWebStory>
 ))
 
 add('Update', () => (
-    <WebStory webStyles={webStyles}>
+    <EnterpriseWebStory>
         {props => (
             <CampaignApplyPage
                 {...props}
@@ -97,5 +96,5 @@ add('Update', () => (
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
             />
         )}
-    </WebStory>
+    </EnterpriseWebStory>
 ))

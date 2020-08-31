@@ -1,7 +1,6 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { WebStory } from '../../../components/WebStory'
-import webStyles from '../../../enterprise.scss'
+import { EnterpriseWebStory } from '../../../components/WebStory'
 import { CampaignDescription } from './CampaignDescription'
 
 const { add } = storiesOf('web/campaigns/CampaignDescription', module).addDecorator(story => (
@@ -9,12 +8,12 @@ const { add } = storiesOf('web/campaigns/CampaignDescription', module).addDecora
 ))
 
 add('Overview', () => (
-    <WebStory webStyles={webStyles}>
+    <EnterpriseWebStory>
         {props => (
             <CampaignDescription
                 {...props}
                 description="This is an awesome campaign. It will do great things to your codebase."
             />
         )}
-    </WebStory>
+    </EnterpriseWebStory>
 ))

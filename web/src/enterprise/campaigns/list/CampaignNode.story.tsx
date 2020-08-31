@@ -2,11 +2,10 @@ import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
 import React from 'react'
 import { CampaignNode } from './CampaignNode'
-import webStyles from '../../../enterprise.scss'
 import isChromatic from 'chromatic/isChromatic'
 import { ListCampaign } from '../../../graphql-operations'
 import { subDays } from 'date-fns'
-import { WebStory } from '../../../components/WebStory'
+import { EnterpriseWebStory } from '../../../components/WebStory'
 
 export const nodes: Record<string, ListCampaign> = {
     'Open campaign': {
@@ -78,7 +77,7 @@ const { add } = storiesOf('web/campaigns/CampaignNode', module).addDecorator(sto
 
 for (const key of Object.keys(nodes)) {
     add(key, () => (
-        <WebStory webStyles={webStyles}>
+        <EnterpriseWebStory>
             {props => (
                 <CampaignNode
                     {...props}
@@ -87,6 +86,6 @@ for (const key of Object.keys(nodes)) {
                     now={isChromatic() ? subDays(new Date(), 5) : undefined}
                 />
             )}
-        </WebStory>
+        </EnterpriseWebStory>
     ))
 }

@@ -1,7 +1,6 @@
 import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
 import React from 'react'
-import webStyles from '../../../../enterprise.scss'
 import { CampaignChangesets } from './CampaignChangesets'
 import { addHours } from 'date-fns'
 import { of } from 'rxjs'
@@ -14,7 +13,7 @@ import {
     ChangesetReviewState,
 } from '../../../../graphql-operations'
 import { queryExternalChangesetWithFileDiffs } from '../backend'
-import { WebStory } from '../../../../components/WebStory'
+import { EnterpriseWebStory } from '../../../../components/WebStory'
 
 const { add } = storiesOf('web/campaigns/CampaignChangesets', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>
@@ -85,7 +84,7 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
     })
 
 add('List of changesets', () => (
-    <WebStory webStyles={webStyles}>
+    <EnterpriseWebStory>
         {props => (
             <CampaignChangesets
                 {...props}
@@ -97,5 +96,5 @@ add('List of changesets', () => (
                 viewerCanAdminister={boolean('viewerCanAdminister', true)}
             />
         )}
-    </WebStory>
+    </EnterpriseWebStory>
 ))
