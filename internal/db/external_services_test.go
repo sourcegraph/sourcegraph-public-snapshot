@@ -286,10 +286,14 @@ func TestExternalServicesStore_Delete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create a repository to test trigger of soft-deleting external service.
+	// Create two repositories to test trigger of soft-deleting external service:
+	//  - ID=1 is expected to be delete along with deletion of the external service.
+	//  - ID=2 remains untouched because it is not associated with the external service.
 	_, err = dbconn.Global.ExecContext(ctx, `
 INSERT INTO repo (id, name, description, language, fork)
-VALUES (1, 'github.com/user/repo', '', '', FALSE)
+VALUES (1, 'github.com/user/repo', '', '', FALSE);
+INSERT INTO repo (id, name, description, language, fork)
+VALUES (2, 'github.com/user/repo2', '', '', FALSE);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -321,11 +325,25 @@ VALUES (%d, 1, '')
 		t.Errorf("error: want %q but got %q", wantErr, gotErr)
 	}
 
+	// Try to get the repo with ID=1 should fail
 	_, err = Repos.GetByName(ctx, "github.com/user/repo")
 	gotErr = fmt.Sprintf("%v", err)
 	wantErr = `repo not found: name="github.com/user/repo"`
 	if gotErr != wantErr {
 		t.Errorf("error: want %q but got %q", wantErr, gotErr)
+	}
+
+	// Should only get back the repo with ID=2
+	repos, err := Repos.GetByIDs(ctx, 1, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []*types.Repo{
+		{ID: 2, Name: "github.com/user/repo2"},
+	}
+	if diff := cmp.Diff(want, repos); diff != "" {
+		t.Fatalf("Repos mismatch (-want +got):\n%s", diff)
 	}
 }
 

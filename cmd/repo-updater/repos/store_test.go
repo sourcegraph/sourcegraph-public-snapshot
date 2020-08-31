@@ -1181,7 +1181,10 @@ func testStoreUpsertSources(t *testing.T, store repos.Store) func(*testing.T) {
 				CloneURL: "something-else",
 				ID:       servicesPerKind[extsvc.KindGitHub].URN(),
 			}
-			want[1].Sources = nil
+
+			// Remove the second element from want because it should be deleted automatically
+			// by the time it become orphaned.
+			want = append(want[:1], want[2:]...)
 
 			have, err = tx.ListRepos(ctx, repos.StoreListReposArgs{})
 			if err != nil {

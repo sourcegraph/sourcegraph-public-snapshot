@@ -1,8 +1,8 @@
 BEGIN;
 
-DROP FUNCTION IF EXISTS soft_delete_orphan_repos();
+DROP FUNCTION IF EXISTS soft_delete_orphan_repo_by_external_service_repos();
 
-CREATE FUNCTION soft_delete_orphan_repos() RETURNS trigger
+CREATE FUNCTION soft_delete_orphan_repo_by_external_service_repos() RETURNS trigger
     LANGUAGE plpgsql
 AS $$
 BEGIN
@@ -15,16 +15,17 @@ BEGIN
         deleted_at = transaction_timestamp()
     WHERE
         deleted_at IS NULL
-      AND id NOT IN (
-        SELECT DISTINCT(repo_id) FROM external_service_repos
-    );
+        AND id = OLD.repo_id
+        AND id NOT IN (
+            SELECT DISTINCT(repo_id) FROM external_service_repos
+        );
 
     RETURN OLD;
 END;
 $$;
 
-CREATE TRIGGER trig_soft_delete_orphan_repos_for_external_service
-    AFTER UPDATE OF deleted_at OR DELETE ON external_services
-    FOR EACH ROW EXECUTE PROCEDURE soft_delete_orphan_repos();
+CREATE TRIGGER trig_soft_delete_orphan_repo_by_external_service_repo
+    AFTER DELETE ON external_service_repos
+    FOR EACH ROW EXECUTE PROCEDURE soft_delete_orphan_repo_by_external_service_repos();
 
 COMMIT;
