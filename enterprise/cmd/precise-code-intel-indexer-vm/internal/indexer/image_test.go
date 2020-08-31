@@ -26,14 +26,14 @@ func TestSanitizeImage(t *testing.T) {
 			expected: "sourcegraph/ignite-ubuntu:insiders",
 		},
 		{
-			// hash only
+			// remove hash without tag
 			input:    "sourcegraph/ignite-ubuntu@sha256:e54a802a8bec44492deee944acc560e4e0a98f6ffa9a5038f0abac1af677e134",
-			expected: "sourcegraph/ignite-ubuntu@sha256:e54a802a8bec44492deee944acc560e4e0a98f6ffa9a5038f0abac1af677e134",
+			expected: "sourcegraph/ignite-ubuntu",
 		},
 		{
-			// tag and hash - keep only hash
+			// tag and hash - keep only tag
 			input:    "sourcegraph/ignite-ubuntu:insiders@sha256:e54a802a8bec44492deee944acc560e4e0a98f6ffa9a5038f0abac1af677e134",
-			expected: "sourcegraph/ignite-ubuntu@sha256:e54a802a8bec44492deee944acc560e4e0a98f6ffa9a5038f0abac1af677e134",
+			expected: "sourcegraph/ignite-ubuntu:insiders",
 		},
 	}
 
