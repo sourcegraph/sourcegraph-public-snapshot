@@ -45,7 +45,8 @@ func RunWorkers(
 		Scan:                 scanFirstChangesetRecord,
 		OrderByExpression:    sqlf.Sprintf("changesets.updated_at"),
 		StalledMaxAge:        60 * time.Second,
-		MaxNumResets:         5,
+		MaxNumResets:         60,
+		RetryAfter:           5 * time.Second,
 	})
 
 	worker := dbworker.NewWorker(ctx, workerStore, options)
