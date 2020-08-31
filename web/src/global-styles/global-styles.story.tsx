@@ -6,15 +6,14 @@
 import React, { useState } from 'react'
 import { storiesOf } from '@storybook/react'
 import classNames from 'classnames'
-import webStyles from '../SourcegraphWebApp.scss'
 import { action } from '@storybook/addon-actions'
-import { radios } from '@storybook/addon-knobs'
 import { flow, startCase } from 'lodash'
 import { highlightCodeSafe } from '../../../shared/src/util/markdown'
 import { Form } from '../components/Form'
 import openColor from 'open-color'
 import { Menu, MenuButton, MenuList, MenuLink } from '@reach/menu-button'
 import 'storybook-addon-designs'
+import { WebStory } from '../components/WebStory'
 
 const semanticColors = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'merged'] as const
 
@@ -23,18 +22,9 @@ const preventDefault = <E extends React.SyntheticEvent>(event: E): E => {
     return event
 }
 
-const { add } = storiesOf('web/Global styles', module).addDecorator(story => {
-    // TODO find a way to do this globally for all stories and storybook itself.
-    const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
-    document.body.classList.toggle('theme-light', theme === 'light')
-    document.body.classList.toggle('theme-dark', theme === 'dark')
-    return (
-        <>
-            <div className="p-3 container">{story()}</div>
-            <style>{webStyles}</style>
-        </>
-    )
-})
+const { add } = storiesOf('web/Global styles', module).addDecorator(story => (
+    <WebStory>{() => <div className="p-3 container">{story()}</div>}</WebStory>
+))
 
 add('Text', () => (
     <>
