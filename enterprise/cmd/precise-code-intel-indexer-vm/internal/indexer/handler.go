@@ -104,6 +104,8 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 
 	indexArgs := []string{
 		"docker", "run", "--rm",
+		"--cpus", fmt.Sprintf("%d", h.options.FirecrackerNumCPUs),
+		"--memory", h.options.FirecrackerMemory,
 		"-v", fmt.Sprintf("%s:/data", mountPoint),
 		"-w", "/data",
 		"sourcegraph/lsif-go:latest",
@@ -118,6 +120,8 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 
 	uploadArgs := []string{
 		"docker", "run", "--rm",
+		"--cpus", fmt.Sprintf("%d", h.options.FirecrackerNumCPUs),
+		"--memory", h.options.FirecrackerMemory,
 		"-v", fmt.Sprintf("%s:/data", mountPoint),
 		"-w", "/data",
 		"-e", fmt.Sprintf("SRC_ENDPOINT=%s", uploadURL.String()),
