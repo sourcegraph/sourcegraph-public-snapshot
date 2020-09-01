@@ -139,7 +139,7 @@ func sleep(ctx context.Context, d time.Duration) {
 }
 
 // TriggerSync will run Sync now. If a sync is currently running it is
-// cancelled.
+// canceled.
 func (s *Syncer) TriggerSync() {
 	s.syncSignal.Trigger()
 }
@@ -189,7 +189,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	// NewDiff modifies the stored slice so we clone it before passing it
 	storedCopy := stored.Clone()
 
-	diff = NewDiff(sourced, stored)
+	diff = newDiff(svc, sourced, stored)
 	upserts := s.upserts(diff)
 
 	// Delete from external_service_repos only. Deletes need to happen first so that we don't end up with
@@ -204,7 +204,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	now := s.Now()
 	for _, deleted := range diff.Deleted {
 		d := deleted
-		if len(sdiff.Deleted[deleted.ID]) == 0 {
+		if len(d.Sources) == 0 {
 			d.UpdatedAt, d.DeletedAt = now, now
 			orphanedRepos = append(orphanedRepos, d)
 		}
@@ -432,10 +432,17 @@ func (s *Syncer) sourcesUpserts(diff *Diff, stored []*Repo) *sourceDiff {
 		}
 	}
 
-	// When a repository is deleted, a Postgres function is
-	// triggered to automatically to delete the source,
-	// we don't need to do anything here.
-	// See the trigger `trig_soft_delete_repo_reference_on_external_service_repos` defined in `external_services` table.
+	// When a repository is deleted, check if its source map
+	// has been modified, and if so compute the diff.
+	for _, repo := range diff.Deleted {
+		for _, storedRepo := range stored {
+			if storedRepo.ID == repo.ID {
+				s.sourceDiff(repo.ID, &sdiff, storedRepo.Sources, repo.Sources)
+				break
+			}
+		}
+	}
+
 	return &sdiff
 }
 
@@ -531,6 +538,10 @@ func (d Diff) Repos() Repos {
 
 // NewDiff returns a diff from the given sourced and stored repos.
 func NewDiff(sourced, stored []*Repo) (diff Diff) {
+	return newDiff(nil, sourced, stored)
+}
+
+func newDiff(svc *ExternalService, sourced, stored []*Repo) (diff Diff) {
 	// Sort sourced so we merge determinstically
 	sort.Sort(Repos(sourced))
 
@@ -560,12 +571,21 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 	}
 
 	seenID := make(map[api.ExternalRepoSpec]bool, len(stored))
-	seenName := make(map[string]bool, len(stored))
 
 	for _, old := range stored {
 		src := byID[old.ExternalRepo]
 
+		// if the repo hasn't been found in the sourced repo list
+		// we add it to the Deleted slice and, if the service is provided
+		// we remove the service from its source map.
 		if src == nil {
+			if svc != nil {
+				if _, ok := old.Sources[svc.URN()]; ok {
+					old = old.Clone()
+					delete(old.Sources, svc.URN())
+				}
+			}
+
 			diff.Deleted = append(diff.Deleted, old)
 		} else if old.Update(src) {
 			diff.Modified = append(diff.Modified, old)
@@ -574,7 +594,6 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 		}
 
 		seenID[old.ExternalRepo] = true
-		seenName[old.Name] = true
 	}
 
 	for _, r := range byID {

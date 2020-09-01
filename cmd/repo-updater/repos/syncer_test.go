@@ -243,7 +243,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 		sourcer repos.Sourcer
 		store   repos.Store
 		stored  repos.Repos
-		svc     *repos.ExternalService
+		svcs    []*repos.ExternalService
 		ctx     context.Context
 		now     func() time.Time
 		diff    repos.Diff
@@ -276,8 +276,8 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 					repos.Opt.RepoCreatedAt(clock.Time(1)),
 					repos.Opt.RepoSources(tc.svc.Clone().URN()),
 				)}},
-				svc: tc.svc,
-				err: "<nil>",
+				svcs: []*repos.ExternalService{tc.svc},
+				err:  "<nil>",
 			},
 			testCase{
 				name: tc.repo.Name + "/new repo sources",
@@ -292,8 +292,8 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 					repos.Opt.RepoModifiedAt(clock.Time(1)),
 					repos.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
 				)}},
-				svc: tc.svc,
-				err: "<nil>",
+				svcs: []*repos.ExternalService{tc.svc},
+				err:  "<nil>",
 			},
 			testCase{
 				name: tc.repo.Name + "/deleted repo source",
@@ -308,8 +308,8 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				diff: repos.Diff{Modified: repos.Repos{tc.repo.With(
 					repos.Opt.RepoModifiedAt(clock.Time(1)),
 				)}},
-				svc: tc.svc,
-				err: "<nil>",
+				svcs: []*repos.ExternalService{tc.svc},
+				err:  "<nil>",
 			},
 			testCase{
 				name:    tc.repo.Name + "/deleted ALL repo sources",
@@ -322,8 +322,8 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				diff: repos.Diff{Deleted: repos.Repos{tc.repo.With(
 					repos.Opt.RepoDeletedAt(clock.Time(1)),
 				)}},
-				svc: tc.svc,
-				err: "<nil>",
+				svcs: []*repos.ExternalService{tc.svc, &svcdup},
+				err:  "<nil>",
 			},
 			testCase{
 				name:    tc.repo.Name + "/renamed repo is detected via external_id",
@@ -337,8 +337,8 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 					tc.repo.With(
 						repos.Opt.RepoModifiedAt(clock.Time(1))),
 				}},
-				svc: tc.svc,
-				err: "<nil>",
+				svcs: []*repos.ExternalService{tc.svc},
+				err:  "<nil>",
 			},
 			testCase{
 				name: tc.repo.Name + "/repo got renamed to another repo that gets deleted",
@@ -371,8 +371,8 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 						),
 					},
 				},
-				svc: tc.svc,
-				err: "<nil>",
+				svcs: []*repos.ExternalService{tc.svc},
+				err:  "<nil>",
 			},
 			testCase{
 				name: tc.repo.Name + "/repo inserted with same name as another repo that gets deleted",
@@ -402,8 +402,8 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 						}),
 					},
 				},
-				svc: tc.svc,
-				err: "<nil>",
+				svcs: []*repos.ExternalService{tc.svc},
+				err:  "<nil>",
 			},
 			testCase{
 				name: tc.repo.Name + "/repo inserted with same name as repo without id",
@@ -435,8 +435,8 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 						}),
 					},
 				},
-				svc: tc.svc,
-				err: "<nil>",
+				svcs: []*repos.ExternalService{tc.svc},
+				err:  "<nil>",
 			},
 			testCase{
 				name:    tc.repo.Name + "/renamed repo which was deleted is detected and added",
@@ -452,8 +452,8 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 					tc.repo.With(
 						repos.Opt.RepoCreatedAt(clock.Time(1))),
 				}},
-				svc: tc.svc,
-				err: "<nil>",
+				svcs: []*repos.ExternalService{tc.svc},
+				err:  "<nil>",
 			},
 			testCase{
 				name: tc.repo.Name + "/repos have their names swapped",
@@ -493,8 +493,8 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 						}),
 					},
 				},
-				svc: tc.svc,
-				err: "<nil>",
+				svcs: []*repos.ExternalService{tc.svc},
+				err:  "<nil>",
 			},
 			testCase{
 				name: tc.repo.Name + "/case insensitive name",
@@ -506,7 +506,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				stored: repos.Repos{tc.repo.With(repos.Opt.RepoName(strings.ToUpper(tc.repo.Name)))},
 				now:    clock.Now,
 				diff:   repos.Diff{Modified: repos.Repos{tc.repo.With(repos.Opt.RepoModifiedAt(clock.Time(0)))}},
-				svc:    tc.svc,
+				svcs:   []*repos.ExternalService{tc.svc},
 				err:    "<nil>",
 			},
 			func() testCase {
@@ -545,8 +545,8 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 						repos.Opt.RepoModifiedAt(clock.Time(1)),
 						repos.Opt.RepoMetadata(update),
 					)}},
-					svc: tc.svc,
-					err: "<nil>",
+					svcs: []*repos.ExternalService{tc.svc},
+					err:  "<nil>",
 				}
 			}(),
 		)
@@ -593,14 +593,16 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 					Now:     now,
 				}
 
-				err := syncer.SyncExternalService(ctx, st, tc.svc.ID, time.Millisecond)
+				for _, svc := range tc.svcs {
+					err := syncer.SyncExternalService(ctx, st, svc.ID, time.Millisecond)
 
-				if have, want := fmt.Sprint(err), tc.err; have != want {
-					t.Errorf("have error %q, want %q", have, want)
-				}
+					if have, want := fmt.Sprint(err), tc.err; have != want {
+						t.Errorf("have error %q, want %q", have, want)
+					}
 
-				if err != nil {
-					return
+					if err != nil {
+						return
+					}
 				}
 
 				if st != nil {
@@ -1374,6 +1376,15 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store repos.Store) func(t *
 			}
 			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
+			}
+
+			// Confirm that the repository hasn't been deleted
+			rs, err = store.ListRepos(ctx, repos.StoreListReposArgs{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(rs) != 1 {
+				t.Fatalf("Expected 1 repo, got %d", len(rs))
 			}
 
 			// Confirm that there is one relationship
