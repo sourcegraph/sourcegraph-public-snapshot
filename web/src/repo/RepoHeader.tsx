@@ -15,6 +15,7 @@ import { SettingsCascadeOrError } from '../../../shared/src/settings/settings'
 import { onlyDefaultExtensionsAdded } from '../extensions/extensions'
 import { Breadcrumbs, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { Link } from 'react-router-dom'
+import { AuthenticatedUser } from '../auth'
 /**
  * Stores the list of RepoHeaderContributions, manages addition/deletion, and ensures they are sorted.
  *
@@ -158,7 +159,7 @@ interface Props extends PlatformContextProps, ExtensionsControllerProps, EventLo
 
     settingsCascade: SettingsCascadeOrError
 
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 
     location: H.Location
     history: H.History
