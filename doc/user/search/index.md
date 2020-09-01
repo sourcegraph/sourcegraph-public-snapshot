@@ -92,15 +92,15 @@ Examples:
 
 Tip: On the statistics page, you can enter an empty query to see statistics across all repositories.
 
-### Version contexts <span class="badge badge-primary">experimental</span>
+### Search scopes <span class="badge badge-primary">experimental</span>
 
 > NOTE: This feature is still in active development and must be enabled by a Sourcegraph site admin in site configuration.
 
 Many organizations have old versions of code running in production and need to search across all the code for a specific release.
 
-Version contexts allow creating sets of many repositories at specific revisions. When set, a version context limits your searches and code navigation actions (with basic code intelligence) to the repositories and revisions in the context.
+Search scopes allow creating sets of many repositories at specific revisions. When set, a search scope limits your searches and code navigation actions (with basic code intelligence) to the repositories and revisions in the context.
 
-Your site admin can add version contexts in site configuration under the `experimentalFeatures.versionContexts` setting. For example:
+Your site admin can add search scopes in site configuration under the `experimentalFeatures.versionContexts` setting. For example:
 
 ```json
 "experimentalFeatures": {
@@ -124,10 +124,10 @@ Your site admin can add version contexts in site configuration under the `experi
 
 To specify the default branch, you can set `"rev"` to `"HEAD"` or `""`.
 
-After setting some version contexts, users can select version contexts in the dropdown to the left of the search bar.
+After setting some search scopes, users can select search scopes in the dropdown to the left of the search bar.
 
 
-> NOTE: All revisions specified in version contexts [will be indexed](#multi-branch-indexing-experimental).
+> NOTE: All revisions specified in search scopes [will be indexed](#multi-branch-indexing-experimental).
 
 ### Multi-branch indexing <span class="badge badge-primary">experimental</span>
 
@@ -150,7 +150,7 @@ Indexing multiple branches will add additional resource requirements to Sourcegr
 
 > NOTE: The default branch (`HEAD`) is always indexed.
 
-> NOTE: All revisions specified in version contexts are also indexed.
+> NOTE: All revisions specified in search scopes are also indexed.
 
 ---
 
