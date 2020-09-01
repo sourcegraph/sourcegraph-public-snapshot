@@ -77,6 +77,10 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
     return (
         <div className="d-flex">
             <div className={`extension-card card ${change === 'enabled' ? 'extension-card--added' : ''}`}>
+                {/* Visual feedback: alert when extension is disabled */}
+                {change === 'disabled' && (
+                    <div className="alert alert-secondary  extension-card__disabled-feedback">{name} is off</div>
+                )}
                 <div
                     className="card-body extension-card__body d-flex flex-row position-relative"
                     // Prevent toggle clicks from propagating to the stretched-link (and

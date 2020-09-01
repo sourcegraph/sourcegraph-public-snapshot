@@ -22,6 +22,11 @@
     &__footer {
         background: unset;
     }
+
+    &__disabled-feedback {
+        position: absolute;
+        top: -1rem;
+    }
 }
 
 .theme-light {
