@@ -2,6 +2,8 @@ package db
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -113,6 +115,46 @@ func TestExternalAccounts_CreateUserAndSave(t *testing.T) {
 	if want := (extsvc.Account{UserID: userID, AccountSpec: spec}); !reflect.DeepEqual(account, want) {
 		t.Errorf("got %+v, want %+v", account, want)
 	}
+}
+
+func TestExternalAccounts_CreateUserAndLookupSecretData(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	spec := extsvc.AccountSpec{
+		ServiceType: "xa",
+		ServiceID:   "xb",
+		ClientID:    "xc",
+		AccountID:   "xd",
+	}
+	authData := json.RawMessage(`{"config": "myVal"}`)
+	data := extsvc.AccountData{
+		AuthData: &authData,
+		Data:     nil,
+	}
+	userID, err := ExternalAccounts.CreateUserAndSave(ctx, NewUser{Username: "u2"}, spec, data)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	user, err := Users.GetByID(ctx, userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "u2"; user.Username != want {
+		t.Errorf("got %q, want %q", user.Username, want)
+	}
+	accounts, err := ExternalAccounts.List(ctx, ExternalAccountsListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	account := *accounts[0]
+	simplifyExternalAccount(&account)
+	account.ID = 0
+	fmt.Println("Account Auth Data: ", account.AuthData)
 }
 
 func simplifyExternalAccount(account *extsvc.Account) {

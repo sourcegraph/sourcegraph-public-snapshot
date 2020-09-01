@@ -53,9 +53,9 @@ func (s *userExternalAccounts) LookupUserAndSave(ctx context.Context, spec extsv
 	}
 
 	if data.AuthData != nil {
-		encAuthData, err := intSecrets.EncryptBytes(*data.AuthData)
+		encAuthData, err := secretsPkg.EncryptBytes(*data.AuthData)
 		if err != nil {
-			return -1, err
+			return 0, err
 		}
 		e := json.RawMessage(encAuthData)
 		data.AuthData = &e
@@ -126,7 +126,7 @@ WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND d
 	}
 
 	// Update the external account (it exists).
-	encAuthData, err := intSecrets.EncryptBytes(*data.AuthData)
+	encAuthData, err := secretsPkg.EncryptBytes(*data.AuthData)
 	if err != nil {
 		return err
 	}
@@ -186,7 +186,7 @@ func (s *userExternalAccounts) CreateUserAndSave(ctx context.Context, newUser Ne
 func (s *userExternalAccounts) insert(ctx context.Context, tx *sql.Tx, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error {
 
 	if data.AuthData != nil {
-		encAuthData, err := intSecrets.EncryptBytes(*data.AuthData)
+		encAuthData, err := secretsPkg.EncryptBytes(*data.AuthData)
 		if err != nil {
 			return err
 		}
@@ -330,7 +330,7 @@ func (*userExternalAccounts) listBySQL(ctx context.Context, querySuffix *sqlf.Qu
 			return nil, err
 		}
 		if o.AuthData != nil {
-			plain, err := intSecrets.DecryptBytes(*o.AuthData)
+			plain, err := secretsPkg.DecryptBytes(*o.AuthData)
 			if err != nil {
 				return nil, err
 			}

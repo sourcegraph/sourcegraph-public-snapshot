@@ -41,7 +41,7 @@ func (*eventLogs) Insert(ctx context.Context, e *Event) error {
 		argument = json.RawMessage(`{}`)
 	}
 
-	arg, err := intSecrets.EncryptBytes(argument)
+	arg, err := secretsPkg.EncryptBytes(argument)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func (*eventLogs) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*typ
 			return nil, err
 		}
 
-		arg, secErr := intSecrets.DecryptBytes([]byte(r.Argument))
+		arg, secErr := secretsPkg.DecryptBytes([]byte(r.Argument))
 		if secErr != nil {
 			return nil, secErr
 		}
