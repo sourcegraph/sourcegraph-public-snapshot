@@ -233,7 +233,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
                     {!authenticatedUser && (
                         <div className="alert alert-info my-4">
                             <span>An account is required to create and configure extensions. </span>
-                            <Link to="/sign-in">
+                            <Link to="/sign-in?returnTo=/extensions">
                                 <span className="alert-link">Register Now!</span>
                             </Link>
                         </div>

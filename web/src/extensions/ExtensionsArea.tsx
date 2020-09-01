@@ -12,7 +12,7 @@ import { ExtensionsAreaHeader, ExtensionsAreaHeaderActionButton } from './Extens
 import { ThemeProps } from '../../../shared/src/theme'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../auth'
-import { useBreadcrumbs, Breadcrumbs } from '../components/Breadcrumbs'
+import { useBreadcrumbs, Breadcrumbs, BreadcrumbSetters } from '../components/Breadcrumbs'
 import { Link } from 'react-router-dom'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
@@ -26,7 +26,8 @@ export interface ExtensionsAreaRouteContext
     extends SettingsCascadeProps,
         PlatformContextProps,
         ThemeProps,
-        TelemetryProps {
+        TelemetryProps,
+        BreadcrumbSetters {
     /** The currently authenticated user. */
     authenticatedUser: AuthenticatedUser | null
 
@@ -59,6 +60,12 @@ interface ExtensionsAreaProps
  * The extensions area.
  */
 export const ExtensionsArea: React.FunctionComponent<ExtensionsAreaProps> = props => {
+    const { breadcrumbs, ...rootBreadcrumbSetters } = useBreadcrumbs()
+
+    const childBreadcrumbSetters = rootBreadcrumbSetters.useBreadcrumb(
+        React.useMemo(() => ({ element: <Link to="/extensions">Extensions</Link>, key: 'Extensions' }), [])
+    )
+
     const context: ExtensionsAreaRouteContext = {
         authenticatedUser: props.authenticatedUser,
         settingsCascade: props.settingsCascade,
@@ -68,13 +75,8 @@ export const ExtensionsArea: React.FunctionComponent<ExtensionsAreaProps> = prop
         extensionAreaHeaderNavItems: props.extensionAreaHeaderNavItems,
         isLightTheme: props.isLightTheme,
         telemetryService: props.telemetryService,
+        ...childBreadcrumbSetters,
     }
-
-    const { breadcrumbs, ...rootBreadcrumbSetters } = useBreadcrumbs()
-
-    const childBreadcrumbSetters = rootBreadcrumbSetters.useBreadcrumb(
-        React.useMemo(() => ({ element: <Link to="/extensions">Extensions</Link>, key: 'Extensions' }), [])
-    )
 
     return (
         <div className="extensions-area">
@@ -94,9 +96,7 @@ export const ExtensionsArea: React.FunctionComponent<ExtensionsAreaProps> = prop
                                 key="hardcoded-key"
                                 path={props.match.url + path}
                                 exact={exact}
-                                render={routeComponentProps =>
-                                    render({ ...context, ...childBreadcrumbSetters, ...routeComponentProps })
-                                }
+                                render={routeComponentProps => render({ ...context, ...routeComponentProps })}
                             />
                         )
                     /* eslint-enable react/jsx-no-bind */
