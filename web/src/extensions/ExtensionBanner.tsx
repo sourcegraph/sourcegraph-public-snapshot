@@ -3,7 +3,7 @@ import { BannerPuzzleIcon } from './icons'
 
 export const ExtensionBanner: React.FunctionComponent = React.memo(() => (
     <>
-        <hr className="extension-banner__divider" />
+        <hr className="mt-2" />
 
         <div className="extension-banner">
             <div className="extension-banner__card">

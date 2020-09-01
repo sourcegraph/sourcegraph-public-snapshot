@@ -243,9 +243,6 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
                 </div>
 
                 {showShowMore && <ShowMoreExtensions setShowMoreExtensions={setShowMoreExtensions} />}
-
-                {/* don't show banner when loading */}
-                {data && data !== LOADING && <ExtensionBanner />}
             </>
         )
     }
