@@ -109,8 +109,9 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":puppeteer::electric_plug:",
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
 			bk.Env("ENTERPRISE", "1"),
+			bk.Env("PERCY_ON", "true"),
 			bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-run.sh build-web"),
-			bk.Cmd("yarn run cover-integration"),
+			bk.Cmd("yarn percy exec -- yarn run cover-integration"),
 			bk.Cmd("yarn nyc report -r json"),
 			bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F integration"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
