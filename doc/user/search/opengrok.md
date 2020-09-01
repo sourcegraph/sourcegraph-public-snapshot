@@ -29,7 +29,7 @@ Sourcegraph provides a search keyword (`repo:`) that supports regexp and partial
 - To search in a distinct list of repositories, you can use a `|` character as a regexp OR operator: `pattern repo:github.com/org/repository1|github.com/org/repository2`.
   - Note this query could be simplified further using more advanced regexp matching if the two repos share part of their names, such as: `pattern repo:github.com/org/repository(1|2)`.
 
-Sourcegraph also allows site admins to create pre-defined repository groupings, using [version contexts](index.md#version-contexts-experimental).
+Sourcegraph also allows site admins to create pre-defined repository groupings, using [search scopes](index.md#search-scopes-experimental).
 
 ### Searching in non-master (unindexed) branches, tags, and commits
 
