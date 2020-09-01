@@ -1,20 +1,8 @@
 .registry-new-extension-page {
     margin-top: 2rem;
 
-    &__docs-link {
-        color: #329af0;
-    }
-
     &__extension-id {
         white-space: pre-wrap;
         word-break: break-all;
-    }
-}
-
-.theme-light {
-    .registry-new-extension-page {
-        &__docs-link {
-            color: #1c7cd6;
-        }
     }
 }

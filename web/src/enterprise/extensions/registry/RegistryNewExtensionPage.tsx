@@ -154,15 +154,14 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                             <PuzzleIcon className="icon-inline" /> New extension
                         </h2>
                         <div className="mb-3">
-                            <span>
-                                <a
-                                    href="https://docs.sourcegraph.com/extensions/authoring"
-                                    className="registry-new-extension-page__docs-link"
-                                >
-                                    Learn more
-                                </a>{' '}
-                                about authoring Sourcegraph extensions <HelpCircleOutline size={18} />
-                            </span>
+                            <a
+                                href="https://docs.sourcegraph.com/extensions/authoring"
+                                className="registry-new-extension-page__docs-link"
+                            >
+                                Learn more
+                            </a>{' '}
+                            about authoring Sourcegraph extensions{' '}
+                            <HelpCircleOutline size={18} className="icon-inline" />
                         </div>
                         <Form onSubmit={this.onSubmit}>
                             <RegistryPublisherFormGroup

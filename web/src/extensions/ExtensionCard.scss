@@ -6,31 +6,12 @@
         background-color: rgba(215, 240, 219, 0.5);
         border-color: #c7e9cd;
         color: #20612e;
-        line-height: 157.7%;
-    }
-
-    &__link {
-        color: #20612e;
     }
 
     &__name {
-        font-weight: 600;
-        font-size: 14px;
-
         /* $web-styles/link-secondary/dark */
-        color: #7a8fb8;
+        color: $gray-10;
     }
-
-    &__publisher {
-        font-size: 14px;
-
-        /* $text-muted */
-        color: #6d727c;
-    }
-
-    // &__body-title {
-    //     color: var(--body-color) !important;
-    // }
 
     &__icon {
         width: 3rem;
@@ -45,19 +26,6 @@
     &__footer {
         background: unset;
     }
-
-    // &__body:hover {
-    //     text-decoration: none;
-    // }
-    // &__body:hover &__body-title,
-    // &__body:focus &__body-title {
-    //     text-decoration: underline;
-    //     color: var(--link-hover-color);
-    // }
-
-    // .btn-link {
-    //     text-decoration: none !important;
-    // }
 }
 
 .theme-light {
