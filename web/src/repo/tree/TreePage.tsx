@@ -346,11 +346,10 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             caseSensitive={caseSensitive}
                         />
                     )}
-                    <TreeEntriesSection
-                        title="Files and directories"
-                        parentPath={filePath}
-                        entries={treeOrError.entries}
-                    />
+                    <section className="tree-page__section test-tree-entries">
+                        <h3 className="tree-page__section-header">Files and directories</h3>
+                        <TreeEntriesSection parentPath={filePath} entries={treeOrError.entries} />
+                    </section>
                     {/* eslint-disable react/jsx-no-bind */}
                     <ActionsContainer
                         {...props}

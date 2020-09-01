@@ -7,7 +7,6 @@ describe('TreeEntriesSection', () => {
         expect(
             render(
                 <TreeEntriesSection
-                    title="Files and directories"
                     parentPath=""
                     entries={[
                         {
@@ -43,7 +42,6 @@ describe('TreeEntriesSection', () => {
         expect(
             render(
                 <TreeEntriesSection
-                    title="Files and directories"
                     parentPath="src"
                     entries={[
                         {
@@ -79,7 +77,6 @@ describe('TreeEntriesSection', () => {
         expect(
             render(
                 <TreeEntriesSection
-                    title="Files and directories"
                     parentPath="x"
                     entries={[
                         {

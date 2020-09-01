@@ -32,32 +32,28 @@ const TreeEntry: React.FunctionComponent<{
     )
 }
 export const TreeEntriesSection: React.FunctionComponent<{
-    title: string
     parentPath: string
     entries: Pick<GQL.ITreeEntry, 'name' | 'isDirectory' | 'url' | 'path'>[]
-}> = ({ title, parentPath, entries }) => {
+}> = ({ parentPath, entries }) => {
     const directChildren = entries.filter(entry => entry.path === [parentPath, entry.name].filter(Boolean).join('/'))
     if (directChildren.length === 0) {
         return null
     }
     return (
-        <section className="tree-page__section test-tree-entries">
-            <h3 className="tree-page__section-header">{title}</h3>
-            <div
-                className={
-                    directChildren.length > MIN_ENTRIES_FOR_COLUMN_LAYOUT ? 'tree-page__entries--columns' : undefined
-                }
-            >
-                {directChildren.map((entry, index) => (
-                    <TreeEntry
-                        key={entry.name + String(index)}
-                        isDir={entry.isDirectory}
-                        name={entry.name}
-                        parentPath={parentPath}
-                        url={entry.url}
-                    />
-                ))}
-            </div>
-        </section>
+        <div
+            className={
+                directChildren.length > MIN_ENTRIES_FOR_COLUMN_LAYOUT ? 'tree-entries-section--columns' : undefined
+            }
+        >
+            {directChildren.map((entry, index) => (
+                <TreeEntry
+                    key={entry.name + String(index)}
+                    isDir={entry.isDirectory}
+                    name={entry.name}
+                    parentPath={parentPath}
+                    url={entry.url}
+                />
+            ))}
+        </div>
     )
 }
