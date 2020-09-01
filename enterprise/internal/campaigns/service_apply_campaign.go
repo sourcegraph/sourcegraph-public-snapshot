@@ -50,6 +50,18 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		tr.Finish()
 	}()
 
+
+	// 🚨 SECURITY: Only site-admins or the creator of campaignSpec can apply
+	// campaignSpec.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, campaignSpec.UserID); err != nil {
+		return nil, err
+	}
+
+	// TODO(thorsten) make this not bad
+	with foo AS (SELECT id FROM changesets WHERE campaign_id = %s FOR UPDATE SKIP LOCKED)
+	UPDATE changesets SET state='errored' AND failure_message='canceled' WHERE id in foo
+	RETURNING id
+
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
 		return nil, err
@@ -65,18 +77,13 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only site-admins or the creator of campaignSpec can apply
-	// campaignSpec.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, campaignSpec.UserID); err != nil {
-		return nil, err
-	}
 
 	campaign, err = s.GetCampaignMatchingCampaignSpec(ctx, tx, campaignSpec)
 	if err != nil {
 		return nil, err
 	}
 	if campaign == nil {
-		campaign = &campaigns.Campaign{}
+		campaign = &campaigns.Campain{}
 	} else if opts.FailIfCampaignExists {
 		return nil, ErrMatchingCampaignExists
 	}

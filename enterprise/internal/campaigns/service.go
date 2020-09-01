@@ -310,38 +310,40 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 			return nil
 		}
 
-		processingState := campaigns.ReconcilerStateProcessing
-		countOpts := CountChangesetsOpts{
-			CampaignID:      campaign.ID,
-			ReconcilerState: &processingState,
-		}
-		processingCount, err := tx.CountChangesets(ctx, countOpts)
-		if err != nil {
-			return errors.Wrap(err, "checking for processing changesets")
-		}
-		if processingCount != 0 {
-			err = ErrCloseProcessingCampaign
-			return err
-		}
+		// processingState := campaigns.ReconcilerStateProcessing
+		// countOpts := CountChangesetsOpts{
+		// 	CampaignID:      campaign.ID,
+		// 	ReconcilerState: &processingState,
+		// }
+		// processingCount, err := tx.CountChangesets(ctx, countOpts)
+		// if err != nil {
+		// 	return errors.Wrap(err, "checking for processing changesets")
+		// }
+		// if processingCount != 0 {
+		// 	err = ErrCloseProcessingCampaign
+		// 	return err
+		// }
 
 		open := campaigns.ChangesetExternalStateOpen
 		published := campaigns.ChangesetPublicationStatePublished
 		cs, _, err := s.store.ListChangesets(ctx, ListChangesetsOpts{
 			OwnedByCampaignID: campaign.ID,
-			ExternalState:     &open,
-			PublicationState:  &published,
+			// ExternalState:     &open,
+			// PublicationState:  &published,
 		})
 		if err != nil {
 			return err
 		}
 
 		for _, c := range cs {
-			c.Closing = true
-			c.ReconcilerState = campaigns.ReconcilerStateQueued
+			go func() {
+				c.Closing = true
+				c.ReconcilerState = campaigns.ReconcilerStateQueued
 
-			if err := tx.UpdateChangeset(ctx, c); err != nil {
-				return err
-			}
+				if err := tx.UpdateChangeset(ctx, c); err != nil {
+					return err
+				}
+			}()
 		}
 
 		return nil
