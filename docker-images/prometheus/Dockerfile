@@ -17,7 +17,7 @@ FROM prom/prometheus:v2.20.1@sha256:dad37e9735c6a3a8b7cf7fd560ffb287cb5eefdfb297
 
 # Similarly to above, this Dockerfile also extends https://github.com/prometheus/alertmanager/blob/v0.21.0/Dockerfile
 # When upgrading alertmanager, make sure to make similar checks to the one above.
-FROM prom/alertmanager:v0.21.0@sha256:24a5204b418e8fa0214cfb628486749003b039c279c56b5bddb5b10cd100d926 AS am_upstream
+FROM prom/alertmanager:v0.21.0@sha256:913293083cb14085bfc01018bb30d1dcbbc9ed197ae21ef2ca917b0d29265198 AS am_upstream
 
 # hadolint ignore=DL3007
 FROM quay.io/prometheus/busybox-linux-amd64:latest@sha256:248b7ec76e03e6b4fbb796fc3cdd2f91dad45546a6d7dee61c322475e0e8a08f
