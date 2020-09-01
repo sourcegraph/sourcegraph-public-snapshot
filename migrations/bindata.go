@@ -126,6 +126,8 @@
 // 1528395711_add_soft_deleted_repository_name_func.up.sql (286B)
 // 1528395712_add_closing_flag_to_changesets.down.sql (71B)
 // 1528395712_add_closing_flag_to_changesets.up.sql (105B)
+// 1528395713_add_git_commit_author.down.sql (62B)
+// 1528395713_add_git_commit_author.up.sql (248B)
 // 1528395713_add_trigger_to_delete_orphan_repos.down.sql (102B)
 // 1528395713_add_trigger_to_delete_orphan_repos.up.sql (861B)
 // 1528395714_worker_num_failures.down.sql (1.573kB)
@@ -2720,6 +2722,46 @@ func _1528395712_add_closing_flag_to_changesetsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395713_add_git_commit_authorDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\xd2\xd5\x55\xf0\xcb\x2f\xc9\xc8\xcc\x4b\x57\xc8\x4b\x4d\x4d\x49\x4d\xd1\x51\xc8\xcb\xcf\xd3\x4d\x49\x2d\x2e\x29\x2a\x4d\x2e\xc9\x2c\x4b\x55\xc8\x2f\x48\x2d\x4a\x2c\xc9\xcc\xcf\xe3\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x58\x72\x8a\x01\x3e\x00\x00\x00")
+
+func _1528395713_add_git_commit_authorDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395713_add_git_commit_authorDownSql,
+		"1528395713_add_git_commit_author.down.sql",
+	)
+}
+
+func _1528395713_add_git_commit_authorDownSql() (*asset, error) {
+	bytes, err := _1528395713_add_git_commit_authorDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395713_add_git_commit_author.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x50, 0x99, 0xc6, 0x3c, 0x73, 0x61, 0xb5, 0x22, 0xbf, 0x89, 0x69, 0x28, 0x29, 0x6c, 0xc6, 0x1b, 0x96, 0xa0, 0xee, 0x16, 0xd3, 0x9d, 0x28, 0x4, 0x41, 0x9a, 0xa4, 0xae, 0x88, 0x1c, 0xda, 0x6b}}
+	return a, nil
+}
+
+var __1528395713_add_git_commit_authorUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x44\x8d\xd1\x4a\xc3\x30\x14\x86\xef\xf3\x14\x3f\xb9\xa9\x82\xf5\x01\x56\x14\xa7\x06\x2d\x6c\x55\x6c\x87\x17\x22\x72\x48\xce\xda\x42\x93\x94\x24\x15\x61\xdb\xbb\x4b\xad\xb0\xab\x73\xe0\xfb\xf9\xbe\x7b\xf5\x54\x56\x85\x10\x79\x8e\xb5\x31\x30\xbc\xa7\x69\x48\xf8\xa6\x61\xe2\x88\xbd\x0f\x68\xfb\x04\xed\xad\xed\x13\x68\x4a\x9d\x0f\xb8\x70\x64\x19\xe4\x0c\xd8\x52\x3f\x5c\x0a\xb1\x7b\x7d\x5c\x37\x0a\xba\x23\xd7\x72\xe4\xf4\x15\x47\xd6\x11\xb5\x6a\x30\x7f\xb8\x59\xce\xf1\x88\xec\x00\xb9\xd8\xa2\x5c\xe1\xe3\x20\x17\x67\x45\x96\xe5\x0a\xb2\xf6\x53\xd0\xdc\x06\x1a\x3b\x79\x85\x7f\xa8\xe6\xca\x4c\x35\xd9\x91\xfa\xd6\xc5\xbb\x78\xde\x5d\x6b\x6f\xe5\xe9\x13\xa7\x0c\xef\xcf\xea\x4d\xfd\xa5\xf2\xdb\x8c\x7f\x12\x07\x47\x43\x69\x32\x94\x35\xaa\xdd\x66\x53\x08\xf1\xf0\xb2\xdd\x96\x4d\x21\x7e\x03\x00\x00\xff\xff\x4f\x11\x02\x86\xf8\x00\x00\x00")
+
+func _1528395713_add_git_commit_authorUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395713_add_git_commit_authorUpSql,
+		"1528395713_add_git_commit_author.up.sql",
+	)
+}
+
+func _1528395713_add_git_commit_authorUpSql() (*asset, error) {
+	bytes, err := _1528395713_add_git_commit_authorUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395713_add_git_commit_author.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc8, 0x82, 0x89, 0xe3, 0x7d, 0xec, 0xc9, 0x27, 0xcf, 0x21, 0xa4, 0xc4, 0xf7, 0x9b, 0x47, 0x81, 0x3b, 0xd1, 0x21, 0x8f, 0x22, 0xc0, 0xb4, 0x52, 0x33, 0x2, 0xf3, 0xaf, 0xe2, 0x70, 0x19, 0xb4}}
+	return a, nil
+}
+
 var __1528395713_add_trigger_to_delete_orphan_reposDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x70\x0b\xf5\x73\x0e\xf1\xf4\xf7\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\xce\x4f\x2b\x89\x4f\x49\xcd\x49\x2d\x49\x8d\xcf\x2f\x2a\xc8\x48\xcc\x8b\x2f\x4a\x2d\xc8\x8f\x4f\xaa\x8c\x4f\xad\x28\x49\x2d\xca\x4b\xcc\x89\x2f\x4e\x2d\x2a\xcb\x4c\x4e\x05\x4b\x14\x6b\x68\x2a\x38\x3b\x06\x3b\x3b\xba\xb8\x5a\x73\x71\x39\xfb\xfb\xfa\x7a\x86\x58\x73\x01\x02\x00\x00\xff\xff\x5d\x64\x99\x19\x66\x00\x00\x00")
 
 func _1528395713_add_trigger_to_delete_orphan_reposDownSqlBytes() ([]byte, error) {
@@ -3057,6 +3099,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395711_add_soft_deleted_repository_name_func.up.sql":                      _1528395711_add_soft_deleted_repository_name_funcUpSql,
 	"1528395712_add_closing_flag_to_changesets.down.sql":                           _1528395712_add_closing_flag_to_changesetsDownSql,
 	"1528395712_add_closing_flag_to_changesets.up.sql":                             _1528395712_add_closing_flag_to_changesetsUpSql,
+	"1528395713_add_git_commit_author.down.sql":                                    _1528395713_add_git_commit_authorDownSql,
+	"1528395713_add_git_commit_author.up.sql":                                      _1528395713_add_git_commit_authorUpSql,
 	"1528395713_add_trigger_to_delete_orphan_repos.down.sql":                       _1528395713_add_trigger_to_delete_orphan_reposDownSql,
 	"1528395713_add_trigger_to_delete_orphan_repos.up.sql":                         _1528395713_add_trigger_to_delete_orphan_reposUpSql,
 	"1528395714_worker_num_failures.down.sql":                                      _1528395714_worker_num_failuresDownSql,
@@ -3235,6 +3279,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395711_add_soft_deleted_repository_name_func.up.sql":                      {_1528395711_add_soft_deleted_repository_name_funcUpSql, map[string]*bintree{}},
 	"1528395712_add_closing_flag_to_changesets.down.sql":                           {_1528395712_add_closing_flag_to_changesetsDownSql, map[string]*bintree{}},
 	"1528395712_add_closing_flag_to_changesets.up.sql":                             {_1528395712_add_closing_flag_to_changesetsUpSql, map[string]*bintree{}},
+	"1528395713_add_git_commit_author.down.sql":                                    {_1528395713_add_git_commit_authorDownSql, map[string]*bintree{}},
+	"1528395713_add_git_commit_author.up.sql":                                      {_1528395713_add_git_commit_authorUpSql, map[string]*bintree{}},
 	"1528395713_add_trigger_to_delete_orphan_repos.down.sql":                       {_1528395713_add_trigger_to_delete_orphan_reposDownSql, map[string]*bintree{}},
 	"1528395713_add_trigger_to_delete_orphan_repos.up.sql":                         {_1528395713_add_trigger_to_delete_orphan_reposUpSql, map[string]*bintree{}},
 	"1528395714_worker_num_failures.down.sql":                                      {_1528395714_worker_num_failuresDownSql, map[string]*bintree{}},
