@@ -8,6 +8,8 @@ Each section comprehensively describes the steps needed to upgrade, and any manu
 
 No manual migration required.
 
+Please upgrade to the [`v3.19.2` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.19.2/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
+
 ## 3.18.0-1 -> 3.19.1
 
 No manual migration required.
