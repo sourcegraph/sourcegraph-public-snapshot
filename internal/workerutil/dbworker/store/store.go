@@ -33,7 +33,7 @@ type Store interface {
 
 	// DequeueWithIndependentTransactionContext is like Dequeue, but will use a context.Background() for the underlying
 	// transaction context. This method allows the transaction to lexically outlive the code in which it was created. This
-	// is useful if a longer-running transaction is managed explicitly bewteen multiple goroutines.
+	// is useful if a longer-running transaction is managed explicitly between multiple goroutines.
 	DequeueWithIndependentTransactionContext(ctx context.Context, conditions []*sqlf.Query) (workerutil.Record, Store, bool, error)
 
 	// Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
@@ -222,7 +222,7 @@ func (s *store) Dequeue(ctx context.Context, conditions []*sqlf.Query) (record w
 
 // DequeueWithIndependentTransactionContext is like Dequeue, but will use a context.Background() for the underlying
 // transaction context. This method allows the transaction to lexically outlive the code in which it was created. This
-// is useful if a longer-running transaction is managed explicitly bewteen multiple goroutines.
+// is useful if a longer-running transaction is managed explicitly between multiple goroutines.
 func (s *store) DequeueWithIndependentTransactionContext(ctx context.Context, conditions []*sqlf.Query) (workerutil.Record, Store, bool, error) {
 	return s.dequeue(ctx, conditions, true)
 }
