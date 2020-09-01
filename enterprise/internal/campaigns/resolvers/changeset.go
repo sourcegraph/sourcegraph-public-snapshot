@@ -355,12 +355,21 @@ func (r *changesetResolver) Events(ctx context.Context, args *graphqlbackend.Cha
 	if err := validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
 	}
+	var cursor int64
+	if args.After != nil {
+		var err error
+		cursor, err = strconv.ParseInt(*args.After, 10, 32)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse after cursor")
+		}
+	}
 	// TODO: We already need to fetch all events for ReviewState and Labels
 	// perhaps we can use the cached data here
 	return &changesetEventsConnectionResolver{
 		store:             r.store,
 		changesetResolver: r,
 		first:             int(args.First),
+		cursor:            cursor,
 	}, nil
 }
 
