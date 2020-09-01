@@ -12,11 +12,11 @@ import (
 )
 
 func TestSearchFilterSuggestions(t *testing.T) {
-	mockResolveRepoGroups = func() (map[string][]*types.Repo, error) {
+	mockResolveRepoGroups = func() (map[string][]*types.Repo, error, []string) {
 		return map[string][]*types.Repo{
 			"repogroup1": {},
 			"repogroup2": {},
-		}, nil
+		}, nil, nil
 	}
 	defer func() { mockResolveRepoGroups = nil }()
 

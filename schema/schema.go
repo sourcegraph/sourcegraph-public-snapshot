@@ -1086,7 +1086,7 @@ type Settings struct {
 	// SearchMigrateParser description: If false, disables the new and/or-compatible parser for all search queries. It is a flag to aid transition to the new parser.
 	SearchMigrateParser *bool `json:"search.migrateParser,omitempty"`
 	// SearchRepositoryGroups description: Named groups of repositories that can be referenced in a search query using the repogroup: operator.
-	SearchRepositoryGroups map[string][]string `json:"search.repositoryGroups,omitempty"`
+	SearchRepositoryGroups map[string][]interface{} `json:"search.repositoryGroups,omitempty"`
 	// SearchSavedQueries description: DEPRECATED: Saved search queries
 	SearchSavedQueries []*SearchSavedQueries `json:"search.savedQueries,omitempty"`
 	// SearchScopes description: Predefined search scopes
