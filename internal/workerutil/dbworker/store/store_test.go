@@ -215,6 +215,43 @@ func TestStoreDequeueRetryAfter(t *testing.T) {
 	assertDequeueRecordRetryResult(t, 4, 0, record2, tx, ok, err)
 }
 
+func TestStoreDequeueEnqueuedColumn(t *testing.T) {
+	setupStoreTest(t)
+
+	if _, err := dbconn.Global.Exec(`
+		INSERT INTO workerutil_test (id, state, enqueued, uploaded_at)
+		VALUES
+			(1, 'queued', FALSE, NOW() - '1 minute'::interval),
+			(2, 'queued', TRUE,  NOW() - '2 minute'::interval),
+			(3, 'ignore', TRUE,  NOW() - '3 minute'::interval),
+			(4, 'queued', FALSE, NOW() - '4 minute'::interval),
+			(5, 'ignore', FALSE, NOW() - '5 minute'::interval)
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	options := StoreOptions{
+		TableName:         defaultTestStoreOptions.TableName,
+		ViewName:          defaultTestStoreOptions.ViewName,
+		Scan:              defaultTestStoreOptions.Scan,
+		OrderByExpression: defaultTestStoreOptions.OrderByExpression,
+		ColumnExpressions: defaultTestStoreOptions.ColumnExpressions,
+		StalledMaxAge:     defaultTestStoreOptions.StalledMaxAge,
+		MaxNumResets:      defaultTestStoreOptions.MaxNumResets,
+
+		EnqueuedColumn: "enqueued",
+	}
+
+	record1, tx, ok, err := testStore(options).Dequeue(context.Background(), nil)
+	assertDequeueRecordResult(t, 3, record1, tx, ok, err)
+	assertEnqueuedColumn(t, 3, false)
+	assertEnqueuedColumn(t, 2, true)
+
+	record2, tx, ok, err := testStore(options).Dequeue(context.Background(), nil)
+	assertDequeueRecordResult(t, 2, record2, tx, ok, err)
+	assertEnqueuedColumn(t, 2, false)
+}
+
 func TestStoreRequeue(t *testing.T) {
 	setupStoreTest(t)
 

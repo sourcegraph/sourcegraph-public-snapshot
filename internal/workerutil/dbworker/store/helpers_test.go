@@ -122,7 +122,8 @@ func setupStoreTest(t *testing.T) {
 			finished_at     timestamp with time zone,
 			process_after   timestamp with time zone,
 			num_resets      integer NOT NULL default 0,
-			uploaded_at     timestamp with time zone NOT NULL default NOW()
+			uploaded_at     timestamp with time zone NOT NULL default NOW(),
+			enqueued        boolean NOT NULL default false
 		)
 	`); err != nil {
 		t.Fatalf("unexpected error creating test table: %s", err)
@@ -150,6 +151,7 @@ var defaultTestStoreOptions = StoreOptions{
 }
 
 func assertDequeueRecordResult(t *testing.T, expectedID int, record interface{}, tx Store, ok bool, err error) {
+	t.Helper()
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -203,6 +205,23 @@ func assertDequeueRecordRetryResult(t *testing.T, expectedID, expectedNumResets 
 	}
 	if val := record.(TestRecordRetry).NumResets; val != expectedNumResets {
 		t.Errorf("unexpected num resets. want=%d have=%d", expectedNumResets, val)
+	}
+}
+
+func assertEnqueuedColumn(t *testing.T, id int, want bool) {
+	t.Helper()
+	q := sqlf.Sprintf(`SELECT enqueued FROM workerutil_test WHERE id = %s;`, id)
+
+	rows, err := dbconn.Global.Query(q.Query(sqlf.PostgresBindVar), q.Args()...)
+	enqueued, ok, err := basestore.ScanFirstBool(rows, err)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	if !ok {
+		t.Fatalf("failed to query enqueued column")
+	}
+	if enqueued != want {
+		t.Errorf("unexpected enqueued value. want=%t have=%t", want, enqueued)
 	}
 }
 

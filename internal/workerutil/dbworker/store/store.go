@@ -87,6 +87,17 @@ type StoreOptions struct {
 	// dequeue operations.
 	TableName string
 
+	// If this is set the store doesn't use the 'state' column to check which
+	// records are enqueued, but queries this column instead.
+	//
+	// The column has to be a boolean column.
+	//
+	// It acts like a "dirty bit": when set, the record is dequeued and the bit
+	// is unset.
+	// That allows records to be marked as enqueued while they're being
+	// processed.
+	EnqueuedColumn string
+
 	// AlternateColumnNames is a map from expected column names to actual column names in the target
 	// table. This allows existing tables to be more easily retrofitted into the expected record
 	// shape.
@@ -172,6 +183,10 @@ func newStore(handle *basestore.TransactableHandle, options StoreOptions) *store
 		replacements = append(replacements, fmt.Sprintf("{%s}", k), v)
 	}
 
+	if options.EnqueuedColumn != "" {
+		replacements = append(replacements, "{enqueued}", options.EnqueuedColumn)
+	}
+
 	return &store{
 		Store:          basestore.NewWithHandle(handle),
 		options:        options,
@@ -237,26 +252,7 @@ func (s *store) dequeue(ctx context.Context, conditions []*sqlf.Query, independe
 		txCtx = context.Background()
 	}
 
-	var query *sqlf.Query
-	if s.options.RetryAfter != 0 {
-		query = s.formatQuery(
-			selectCandidateRetryQuery,
-			quote(s.options.ViewName),
-			int(s.options.RetryAfter/time.Second),
-			s.options.MaxNumResets,
-			makeConditionSuffix(conditions),
-			s.options.OrderByExpression,
-			quote(s.options.TableName),
-		)
-	} else {
-		query = s.formatQuery(
-			selectCandidateQuery,
-			quote(s.options.ViewName),
-			makeConditionSuffix(conditions),
-			s.options.OrderByExpression,
-			quote(s.options.TableName),
-		)
-	}
+	query := s.buildDequeueQuery(conditions)
 
 	for {
 		// First, we try to select an eligible record outside of a transaction. This will skip
@@ -325,6 +321,36 @@ func (s *store) dequeue(ctx context.Context, conditions []*sqlf.Query, independe
 	}
 }
 
+func (s *store) buildDequeueQuery(conditions []*sqlf.Query) *sqlf.Query {
+	if s.options.RetryAfter != 0 {
+		// FIXME(mrnugget): we need to be able to use RetryAfter WITH EnqueuedColumn
+		return s.formatQuery(
+			selectCandidateRetryQuery,
+			quote(s.options.ViewName),
+			int(s.options.RetryAfter/time.Second),
+			s.options.MaxNumResets,
+			makeConditionSuffix(conditions),
+			s.options.OrderByExpression,
+			quote(s.options.TableName),
+		)
+	}
+
+	var query string
+	if s.options.EnqueuedColumn == "" {
+		query = selectCandidateQuery
+	} else {
+		query = selectCandidateQueryEnqueuedColumn
+	}
+
+	return s.formatQuery(
+		query,
+		quote(s.options.ViewName),
+		makeConditionSuffix(conditions),
+		s.options.OrderByExpression,
+		quote(s.options.TableName),
+	)
+}
+
 const selectCandidateQuery = `
 -- source: internal/workerutil/store.go:Dequeue
 WITH candidate AS (
@@ -369,6 +395,27 @@ SET
 	{started_at} = NOW(),
 	{finished_at} = NULL,
 	{num_resets} = (CASE WHEN ({state} = 'errored') THEN ({num_resets} + 1) ELSE {num_resets} END)
+WHERE {id} IN (SELECT {id} FROM candidate)
+RETURNING {id}
+`
+
+const selectCandidateQueryEnqueuedColumn = `
+-- source: internal/workerutil/store.go:Dequeue
+WITH candidate AS (
+	SELECT {id} FROM %s
+	WHERE
+		{enqueued} = TRUE AND
+		({process_after} IS NULL OR {process_after} <= NOW())
+		%s
+	ORDER BY %s
+	FOR UPDATE SKIP LOCKED
+	LIMIT 1
+)
+UPDATE %s
+SET
+    {enqueued} = FALSE,
+	{state} = 'processing',
+	{started_at} = NOW()
 WHERE {id} IN (SELECT {id} FROM candidate)
 RETURNING {id}
 `
