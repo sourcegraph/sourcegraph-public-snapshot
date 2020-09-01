@@ -38,6 +38,14 @@ All notable changes to Sourcegraph are documented in this file.
 
 - The smartSearchField feature is now always enabled. The `experimentalFeatures.smartSearchField` settings option has been removed.
 
+## 3.19.2
+
+### Fixed
+
+- search: always limit commit and diff to less than 10,000 repos [a97f81b0f7](https://github.com/sourcegraph/sourcegraph/commit/a97f81b0f79535253bd7eae6c30d5c91d48da5ca)
+- search: configurable limits on commit/diff search [1c22d8ce1](https://github.com/sourcegraph/sourcegraph/commit/1c22d8ce13c149b3fa3a7a26f8cb96adc89fc556)
+- search: add site configuration for maxTimeout [d8d61b43c0f](https://github.com/sourcegraph/sourcegraph/commit/d8d61b43c0f0d229d46236f2f128ca0f93455172)
+
 ## 3.19.1
 
 ### Fixed
