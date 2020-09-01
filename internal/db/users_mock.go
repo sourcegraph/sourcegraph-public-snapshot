@@ -21,6 +21,7 @@ type MockUsers struct {
 	GetByVerifiedEmail           func(ctx context.Context, email string) (*types.User, error)
 	Count                        func(ctx context.Context, opt *UsersListOptions) (int, error)
 	List                         func(ctx context.Context, opt *UsersListOptions) ([]*types.User, error)
+	InvalidateSessionsById       func(ctx context.Context, id int32) error
 }
 
 func (s *MockUsers) MockGetByID_Return(t *testing.T, returns *types.User, returnsErr error) (called *bool) {

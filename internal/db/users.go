@@ -613,6 +613,50 @@ func (u *users) GetByCurrentAuthUser(ctx context.Context) (*types.User, error) {
 	return u.getOneBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL LIMIT 1", actor.UID)
 }
 
+func (u *users) InvalidateSessionsById(ctx context.Context, id int32) error {
+	if Mocks.Users.InvalidateSessionsById != nil {
+		return Mocks.Users.InvalidateSessionsById(ctx, id)
+	}
+
+	tx, err := dbconn.Global.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			rollErr := tx.Rollback()
+			if rollErr != nil {
+				err = multierror.Append(err, rollErr)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+
+	fieldUpdates := []*sqlf.Query{
+		sqlf.Sprintf("updated_at=now()"), // always update updated_at timestamp
+	}
+	fieldUpdates = append(fieldUpdates, sqlf.Sprintf("invalidated_sessions_at=now()"))
+
+	query := sqlf.Sprintf("UPDATE users SET %s WHERE id=%d", sqlf.Join(fieldUpdates, ", "), id)
+	res, err := tx.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Constraint == "users_username" {
+			return errCannotCreateUser{errorCodeUsernameExists}
+		}
+		return err
+	}
+	nrows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if nrows == 0 {
+		return userNotFoundErr{args: []interface{}{id}}
+	}
+	return nil
+
+}
+
 func (u *users) Count(ctx context.Context, opt *UsersListOptions) (int, error) {
 	if Mocks.Users.Count != nil {
 		return Mocks.Users.Count(ctx, opt)

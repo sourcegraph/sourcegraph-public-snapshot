@@ -267,19 +267,7 @@ func deleteSession(w http.ResponseWriter, r *http.Request) error {
 // If an error occurs, it returns the error
 func InvalidateSessions(w http.ResponseWriter, r *http.Request, id int32) error {
 	// Get the user from the body
-	user, err := db.Users.GetByID(r.Context(), id)
-	if err != nil {
-		return err
-	}
-
-	// Update the user's last invalidated time to now
-	user.InvalidatedSessionsAt = time.Now()
-
-	// Save to the database
-
-	// If the user is the current user, invalidate the current session
-
-	return nil
+	return db.Users.InvalidateSessionsById(r.Context(), id)
 }
 
 // CookieMiddleware is an http.Handler middleware that authenticates
@@ -363,7 +351,8 @@ func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Contex
 		}
 
 		// Check that user still exists.
-		if _, err := db.Users.GetByID(r.Context(), info.Actor.UID); err != nil {
+		usr, err := db.Users.GetByID(r.Context(), info.Actor.UID)
+		if err != nil {
 			if errcode.IsNotFound(err) {
 				_ = deleteSession(w, r) // clear the bad value
 			} else {
@@ -372,6 +361,12 @@ func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Contex
 				log15.Error("Error looking up user for session.", "uid", info.Actor.UID, "error", err)
 			}
 			return r.Context() // not authenticated
+		}
+
+		// Check that the session is still valid
+		if info.LastActive.Before(usr.InvalidatedSessionsAt) {
+			_ = deleteSession(w, r) // clear the bad value
+			return actor.WithActor(r.Context(), &actor.Actor{})
 		}
 
 		// Renew session
