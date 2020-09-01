@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
-	intSecrets "github.com/sourcegraph/sourcegraph/internal/secrets"
+	secretsPkg "github.com/sourcegraph/sourcegraph/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
