@@ -191,7 +191,7 @@ The following are two recommendations for installing these dependencies:
     sudo cp lib/* /usr/local/lib
     sudo chmod 755 /usr/local/bin/watchman
     sudo chmod 2777 /usr/local/var/run/watchman
-    # On Linux, you'll need to run the following in addition:
+    # On Linux, you may need to run the following in addition:
     watchman watch <path to sourcegraph repository>
 
     # nvm (to manage Node.js)
