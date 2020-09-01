@@ -1395,7 +1395,7 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store repos.Store) func(t *
 				t.Fatalf("Expected 1 rows, got %d", rowCount)
 			}
 
-			// We should no deleted repos
+			// We should have no deleted repos
 			if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM repo where deleted_at is not null").Scan(&rowCount); err != nil {
 				t.Fatal(err)
 			}
