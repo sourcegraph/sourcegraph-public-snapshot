@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/inconshreveable/log15"
+
 	secretsPkg "github.com/sourcegraph/sourcegraph/internal/secrets"
 )
 
