@@ -152,7 +152,7 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
 const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
     of([
         {
-            date: subDays(new Date(), 5).toISOString(),
+            date: subDays(new Date('2020-08-10'), 5).toISOString(),
             closed: 0,
             merged: 0,
             openPending: 10,
@@ -161,7 +161,7 @@ const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
             openApproved: 0,
         },
         {
-            date: subDays(new Date(), 4).toISOString(),
+            date: subDays(new Date('2020-08-10'), 4).toISOString(),
             closed: 0,
             merged: 0,
             openPending: 7,
@@ -170,7 +170,7 @@ const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
             openApproved: 3,
         },
         {
-            date: subDays(new Date(), 3).toISOString(),
+            date: subDays(new Date('2020-08-10'), 3).toISOString(),
             closed: 0,
             merged: 2,
             openPending: 5,
@@ -179,7 +179,7 @@ const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
             openApproved: 3,
         },
         {
-            date: subDays(new Date(), 2).toISOString(),
+            date: subDays(new Date('2020-08-10'), 2).toISOString(),
             closed: 0,
             merged: 3,
             openPending: 3,
@@ -188,7 +188,7 @@ const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
             openApproved: 3,
         },
         {
-            date: subDays(new Date(), 1).toISOString(),
+            date: subDays(new Date('2020-08-10'), 1).toISOString(),
             closed: 1,
             merged: 5,
             openPending: 2,
@@ -197,7 +197,7 @@ const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
             openApproved: 2,
         },
         {
-            date: new Date().toISOString(),
+            date: new Date('2020-08-10').toISOString(),
             closed: 1,
             merged: 5,
             openPending: 0,
