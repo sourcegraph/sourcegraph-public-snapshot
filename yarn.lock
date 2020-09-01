@@ -22371,10 +22371,10 @@ ts-dedent@^1.1.0, ts-dedent@^1.1.1:
   resolved "https://registry.npmjs.org/ts-dedent/-/ts-dedent-1.1.1.tgz#68fad040d7dbd53a90f545b450702340e17d18f3"
   integrity sha512-UGTRZu1evMw4uTPyYF66/KFd22XiU+jMaIuHrkIHQ2GivAXVlLV0v/vHrpOuTRf9BmpNHi/SO7Vd0rLu0y57jg==
 
-ts-graphql-plugin@^1.12.0:
-  version "1.12.0"
-  resolved "https://registry.npmjs.org/ts-graphql-plugin/-/ts-graphql-plugin-1.12.0.tgz#ef325ba23180ef1649bf576c6dad74d31141e095"
-  integrity sha512-kHITinqMYGyZZaKIa9fUzWnDcs5U0IR4uJHNtIpebojGge6+7s2KhTejOs4uhKXc6QHMdu1UsvfQttZgEui9bg==
+ts-graphql-plugin@^1.12.1:
+  version "1.12.1"
+  resolved "https://registry.npmjs.org/ts-graphql-plugin/-/ts-graphql-plugin-1.12.1.tgz#84e779405f289b2d834aedfb8cc8039dcddaa395"
+  integrity sha512-GK3u50pSHKZATE8uuo71ElTlk2HGQxd5EMFvEOrOyYz+Ph0TT/f7QrR8xTs+0ju0ETfzcoY5kok1YlPRzEL48Q==
   dependencies:
     graphql-language-service-interface "^2.0.0"
     graphql-language-service-types "^1.5.2"
