@@ -2,7 +2,6 @@ import React from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { EXTENSION_CATEGORIES, ExtensionCategory } from '../../../shared/src/schema/extensionSchema'
 import { ExtensionsEnablement } from './ExtensionsList'
-import { SettingsCascadeOrError } from '../../../shared/src/settings/settings'
 
 interface Props {
     /** The current extensions registry list query. */
@@ -11,18 +10,13 @@ interface Props {
     /** Called when the query changes as a result of user interaction with this component. */
     onQueryChange: (query: string) => void
 
-    /**  */
     selectedCategories: ExtensionCategory[]
 
-    /**  */
     setSelectedCategories: React.Dispatch<React.SetStateAction<ExtensionCategory[]>>
 
     enablementFilter: ExtensionsEnablement
 
     setEnablementFilter: React.Dispatch<React.SetStateAction<ExtensionsEnablement>>
-
-    /** used to programmatically change reactstrap colors */
-    isLightTheme: boolean
 }
 
 type DropdownMenuID = 'categories' | 'options'
@@ -54,10 +48,6 @@ export class ExtensionsQueryInputToolbar extends React.PureComponent<Props, Stat
                             <button
                                 type="button"
                                 className={`btn btn-sm mr-2 ${selected ? 'btn-secondary' : 'btn-outline-secondary'}`}
-                                // style={{
-                                //     backgroundColor: !this.props.isLightTheme ? '#151C28' : undefined,
-                                //     color: !this.props.isLightTheme ? 'A2B0CD' : undefined,
-                                // }}
                                 data-test-extension-category={category}
                                 key={category}
                                 onClick={() =>
@@ -77,15 +67,7 @@ export class ExtensionsQueryInputToolbar extends React.PureComponent<Props, Stat
                 </div>
 
                 <ButtonDropdown isOpen={this.state.open === 'options'} toggle={this.toggleOptions}>
-                    <DropdownToggle
-                        className="btn-sm"
-                        caret={true}
-                        color={this.props.isLightTheme ? 'outline-secondary' : 'secondary'}
-                        style={{
-                            backgroundColor: !this.props.isLightTheme ? '#151C28' : undefined,
-                            color: !this.props.isLightTheme ? 'A2B0CD' : undefined,
-                        }}
-                    >
+                    <DropdownToggle className="btn-sm" caret={true} color="outline-secondary">
                         Options
                     </DropdownToggle>
                     <DropdownMenu right={true}>
