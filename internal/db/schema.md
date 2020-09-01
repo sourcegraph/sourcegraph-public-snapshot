@@ -1083,24 +1083,25 @@ Indexes:
 
 # Table "public.users"
 ```
-       Column        |           Type           |                     Modifiers                      
----------------------+--------------------------+----------------------------------------------------
- id                  | integer                  | not null default nextval('users_id_seq'::regclass)
- username            | citext                   | not null
- display_name        | text                     | 
- avatar_url          | text                     | 
- created_at          | timestamp with time zone | not null default now()
- updated_at          | timestamp with time zone | not null default now()
- deleted_at          | timestamp with time zone | 
- invite_quota        | integer                  | not null default 15
- passwd              | text                     | 
- passwd_reset_code   | text                     | 
- passwd_reset_time   | timestamp with time zone | 
- site_admin          | boolean                  | not null default false
- page_views          | integer                  | not null default 0
- search_queries      | integer                  | not null default 0
- tags                | text[]                   | default '{}'::text[]
- billing_customer_id | text                     | 
+         Column          |           Type           |                     Modifiers                      
+-------------------------+--------------------------+----------------------------------------------------
+ id                      | integer                  | not null default nextval('users_id_seq'::regclass)
+ username                | citext                   | not null
+ display_name            | text                     | 
+ avatar_url              | text                     | 
+ created_at              | timestamp with time zone | not null default now()
+ updated_at              | timestamp with time zone | not null default now()
+ deleted_at              | timestamp with time zone | 
+ invite_quota            | integer                  | not null default 15
+ passwd                  | text                     | 
+ passwd_reset_code       | text                     | 
+ passwd_reset_time       | timestamp with time zone | 
+ site_admin              | boolean                  | not null default false
+ page_views              | integer                  | not null default 0
+ search_queries          | integer                  | not null default 0
+ tags                    | text[]                   | default '{}'::text[]
+ billing_customer_id     | text                     | 
+ invalidated_sessions_at | timestamp with time zone | not null default now()
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_billing_customer_id" UNIQUE, btree (billing_customer_id) WHERE deleted_at IS NULL

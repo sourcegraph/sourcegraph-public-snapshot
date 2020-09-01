@@ -118,6 +118,8 @@
 // 1528395707_add_index_to_external_services_repos_repo_id.up.sql (182B)
 // 1528395708_add_index_to_external_services_repos_external_service_id.down.sql (151B)
 // 1528395708_add_index_to_external_services_repos_external_service_id.up.sql (205B)
+// 1528395709_user_invalidate_session.down.sql (486B)
+// 1528395709_user_invalidate_session.up.sql (222B)
 
 package migrations
 
@@ -2546,6 +2548,46 @@ func _1528395708_add_index_to_external_services_repos_external_service_idUpSql()
 	return a, nil
 }
 
+var __1528395709_user_invalidate_sessionDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x64\x90\xc1\x6e\xdb\x30\x10\x44\xef\xfa\x8a\xe9\xb5\xa8\x95\x7b\x7c\x72\x12\xb5\x16\x60\xc7\x85\xed\x02\xbd\x19\x2b\x71\x23\x2e\x4a\x91\x02\x77\x25\xc1\x7f\x5f\xc8\x0e\x9a\x00\xbd\x11\x98\xe1\x9b\xd9\x79\xaa\x7e\xd4\xaf\xeb\xa2\x58\xad\x50\x47\xe5\x6c\xe8\xa5\xcb\x64\x92\x22\x3c\x67\x2e\x71\x62\xc6\xb1\xda\xbc\xec\xab\xb2\x77\x25\xb6\xd2\xf9\x20\x9d\x37\x7d\x5c\x3e\xe1\x2b\x36\x61\xa6\xab\x62\x54\x46\xfd\x1d\xd5\xef\xfa\x74\x3e\x95\xe0\xee\x11\x2f\xc7\xc3\x4f\x9c\x37\x4f\xbb\xea\x43\x41\x17\x52\x43\xe1\xe2\x78\xb8\x0c\x59\x26\x32\x5e\xff\x03\x85\x8f\x74\x45\x3f\xaa\xa1\x61\x34\xd4\xfe\x99\x29\xbb\x55\x9b\xfa\x81\x4c\x9a\xc0\x25\x0e\xc1\x61\xe2\xac\x37\x67\x7a\xc3\x29\x8d\xb9\xe5\x2e\xd3\xe0\x6f\x34\x20\x32\x3b\x58\x5a\x08\xd4\x04\x5e\x9e\x99\xc9\x3d\xcc\x59\x8c\x31\x24\xfd\x74\x6a\xf9\xde\x60\x2b\x6a\x29\x4b\x4b\x21\x5c\x31\x33\xc8\x4d\xa2\xec\x40\x1d\x49\x54\x83\x65\x8a\x4a\xed\xbd\x9f\x4a\x6c\x79\x71\x99\x4f\x63\xe7\x0d\xe6\xf9\x3d\xfb\x0e\x66\x04\x69\x32\xe5\x2b\x3c\x45\x17\xd8\x41\xac\xc4\x36\xcd\x3c\x71\xfe\x06\x31\xb8\xc4\x8a\x98\xec\x0b\x1e\xde\xa8\xe5\x81\x42\x5f\x6c\x76\xe7\xea\xf8\xdf\x6a\xa3\x72\xd6\xfb\xa0\xcf\x87\xdd\xaf\xfd\xeb\x27\x4d\xe2\x44\x41\x1c\x19\xbb\x8b\xb2\xde\x36\xb9\x90\xad\x8b\xe2\xf9\xb0\xdf\xd7\xe7\x75\xf1\x37\x00\x00\xff\xff\x4d\xc5\xf8\xd5\xe6\x01\x00\x00")
+
+func _1528395709_user_invalidate_sessionDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395709_user_invalidate_sessionDownSql,
+		"1528395709_user_invalidate_session.down.sql",
+	)
+}
+
+func _1528395709_user_invalidate_sessionDownSql() (*asset, error) {
+	bytes, err := _1528395709_user_invalidate_sessionDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395709_user_invalidate_session.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x83, 0x20, 0xd8, 0x20, 0xef, 0x1, 0x8e, 0x36, 0x99, 0x85, 0x1c, 0xb3, 0x10, 0x2a, 0xbb, 0x82, 0xa2, 0x43, 0x8a, 0xa7, 0x9, 0x3b, 0x5b, 0x32, 0x19, 0xca, 0x9c, 0xd5, 0xe1, 0x6c, 0x3, 0xf6}}
+	return a, nil
+}
+
+var __1528395709_user_invalidate_sessionUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x4c\xcc\x4d\x6a\xc3\x30\x10\xc5\xf1\xbd\x4e\xf1\x76\xdd\x34\x27\xf0\xca\x71\xd4\x22\xf0\x07\x34\x2a\x74\x17\x44\x3c\xa0\x01\x47\x0a\x9a\xb1\x5d\x7a\xfa\x62\x53\x43\x97\x8f\xff\xe3\x77\xb6\xef\xae\xaf\x8c\x39\x9d\xd0\x14\x0a\x4a\xd0\xc8\x82\x20\x48\xf3\x34\xbd\x42\x38\xdd\x09\x2b\x61\xcc\xe9\x45\x41\xdf\x4f\xba\x2b\x34\x12\x66\xa1\x02\xcd\xa0\x85\x0a\x62\x58\x08\x9c\x96\x30\xf1\x18\x94\xc6\xed\xc1\x05\x42\x22\x9c\x93\xfc\x15\x53\xb7\xde\x7e\xc0\xd7\xe7\xd6\xc2\xbd\xc1\x7e\xb9\xab\xbf\xee\x92\xa0\xbe\x5c\xd0\x0c\xed\x67\xd7\x6f\xa9\x1f\xfc\x91\xff\xb1\xb7\x03\xbc\x05\x85\xf2\x83\x44\xc3\xe3\x89\x95\x35\xee\x13\x3f\x39\x51\x65\x4c\x33\x74\x9d\xf3\x95\xf9\x0d\x00\x00\xff\xff\x07\x70\x2f\xab\xde\x00\x00\x00")
+
+func _1528395709_user_invalidate_sessionUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395709_user_invalidate_sessionUpSql,
+		"1528395709_user_invalidate_session.up.sql",
+	)
+}
+
+func _1528395709_user_invalidate_sessionUpSql() (*asset, error) {
+	bytes, err := _1528395709_user_invalidate_sessionUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395709_user_invalidate_session.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x41, 0x37, 0x1f, 0x1f, 0xde, 0xde, 0xb9, 0x3a, 0x9, 0x53, 0x4a, 0x85, 0xf, 0xe5, 0xc, 0x6d, 0x94, 0xb7, 0xe9, 0xca, 0xa9, 0xe8, 0x42, 0xb8, 0x18, 0x6, 0xee, 0x9c, 0x5f, 0x19, 0xac, 0xeb}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2755,6 +2797,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395707_add_index_to_external_services_repos_repo_id.up.sql":               _1528395707_add_index_to_external_services_repos_repo_idUpSql,
 	"1528395708_add_index_to_external_services_repos_external_service_id.down.sql": _1528395708_add_index_to_external_services_repos_external_service_idDownSql,
 	"1528395708_add_index_to_external_services_repos_external_service_id.up.sql":   _1528395708_add_index_to_external_services_repos_external_service_idUpSql,
+	"1528395709_user_invalidate_session.down.sql":                                  _1528395709_user_invalidate_sessionDownSql,
+	"1528395709_user_invalidate_session.up.sql":                                    _1528395709_user_invalidate_sessionUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2919,6 +2963,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395707_add_index_to_external_services_repos_repo_id.up.sql":               {_1528395707_add_index_to_external_services_repos_repo_idUpSql, map[string]*bintree{}},
 	"1528395708_add_index_to_external_services_repos_external_service_id.down.sql": {_1528395708_add_index_to_external_services_repos_external_service_idDownSql, map[string]*bintree{}},
 	"1528395708_add_index_to_external_services_repos_external_service_id.up.sql":   {_1528395708_add_index_to_external_services_repos_external_service_idUpSql, map[string]*bintree{}},
+	"1528395709_user_invalidate_session.down.sql":                                  {_1528395709_user_invalidate_sessionDownSql, map[string]*bintree{}},
+	"1528395709_user_invalidate_session.up.sql":                                    {_1528395709_user_invalidate_sessionUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

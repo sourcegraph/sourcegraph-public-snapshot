@@ -273,6 +273,7 @@ func InvalidateSessions(w http.ResponseWriter, r *http.Request, id int32) error 
 	}
 
 	// Update the user's last invalidated time to now
+	user.InvalidatedSessionsAt = time.Now()
 
 	// Save to the database
 

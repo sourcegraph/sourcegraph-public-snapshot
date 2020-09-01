@@ -9,4 +9,5 @@ var (
 	SetActor              = session.SetActor
 	SetData               = session.SetData
 	GetData               = session.GetData
+	InvalidateSessions    = session.InvalidateSessions
 )
