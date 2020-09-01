@@ -40,8 +40,6 @@ import {
     distinctUntilChanged,
     retryWhen,
     mapTo,
-    pluck,
-    distinct,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../../shared/src/actions/ActionItem'
 import { DecorationMapByLine } from '../../../../../shared/src/api/client/services/decoration'
@@ -110,7 +108,8 @@ import { asError } from '../../../../../shared/src/util/errors'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
 import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
-import { FeatureFlags } from '../../../browser-extension/web-extension-api/types'
+import { isFirefox, observeSourcegraphURL } from '../../util/context'
+import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
 
 registerHighlightContributions()
 
@@ -1065,20 +1064,24 @@ export function injectCodeIntelligenceToCodeHost(
         isExtension
     )
     const { requestGraphQL } = platformContext
+    subscriptions.add(extensionsController)
 
-    const sendTelemetryOptionFlagObservable = observeStorageKey('sync', 'featureFlags').pipe(
-        tap(value => console.log('Feature flags changed', value)),
-        map(value => !!value?.sendTelemetry),
-        distinctUntilChanged(),
-        tap(value => {
-            console.log('sendTelemetry changed', value)
+    const overrideSendTelemetry = observeSourcegraphURL(isExtension).pipe(
+        map(sourcegraphUrl => shouldOverrideSendTelemetry(isFirefox(), isExtension, sourcegraphUrl))
+    )
+
+    const observeSendTelemetry = combineLatest([overrideSendTelemetry, observeOptionFlag('sendTelemetry')]).pipe(
+        map(([override, sendTelemetry]) => {
+            if (override) {
+                return true
+            }
+            return sendTelemetry
         })
     )
 
     const innerTelemetryService = new EventLogger(isExtension, requestGraphQL)
-    const telemetryService = new ConditionalTelemetryService(innerTelemetryService, sendTelemetryOptionFlagObservable)
-
-    subscriptions.add(extensionsController)
+    const telemetryService = new ConditionalTelemetryService(innerTelemetryService, observeSendTelemetry)
+    subscriptions.add(telemetryService)
 
     let codeHostSubscription: Subscription
     // In the browser extension, observe whether the `disableExtension` storage flag is set.

@@ -3,7 +3,7 @@ import '../../shared/polyfills'
 
 import * as React from 'react'
 import { render } from 'react-dom'
-import { from, noop, Observable, Subscription } from 'rxjs'
+import { from, noop, Observable, Subscription, combineLatest } from 'rxjs'
 import { GraphQLResult } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { background } from '../web-extension-api/runtime'
@@ -14,9 +14,17 @@ import { OptionsMenuProps } from '../options-page/OptionsMenu'
 import { initSentry } from '../../shared/sentry'
 import { fetchSite } from '../../shared/backend/server'
 import { featureFlags } from '../../shared/util/featureFlags'
-import { OptionFlagKey } from '../../shared/util/optionFlags'
+import {
+    OptionFlagKey,
+    OptionFlagWithValue,
+    assignOptionFlagValues,
+    observeOptionFlags,
+    shouldOverrideSendTelemetry,
+} from '../../shared/util/optionFlags'
 import { assertEnvironment } from '../environmentAssertion'
-import { observeSourcegraphURL } from '../../shared/util/context'
+import { observeSourcegraphURL, isFirefox } from '../../shared/util/context'
+import { map } from 'rxjs/operators'
+import { isExtension } from '../../shared/context'
 
 assertEnvironment('OPTIONS')
 
@@ -24,10 +32,11 @@ initSentry('options')
 
 const IS_EXTENSION = true
 
-type State = Pick<
-    FeatureFlags,
-    'allowErrorReporting' | 'experimentalLinkPreviews' | 'experimentalTextFieldCompletion' | 'sendTelemetry'
-> & { sourcegraphURL: string | null; isActivated: boolean }
+interface State {
+    sourcegraphURL: string | null
+    isActivated: boolean
+    optionFlags: OptionFlagWithValue[]
+}
 
 const keyIsFeatureFlag = (key: string): key is keyof FeatureFlags =>
     !!Object.keys(featureFlagDefaults).find(featureFlag => key === featureFlag)
@@ -53,8 +62,21 @@ function requestGraphQL<T, V = object>(options: { request: string; variables: V 
     return from(background.requestGraphQL<T, V>(options))
 }
 
-const observeOptionFlags = (): Observable<Partial<FeatureFlags> | undefined> =>
-    observeStorageKey('sync', 'featureFlags')
+const observeOptionFlagsWithValues = (): Observable<OptionFlagWithValue[]> => {
+    const overrideSendTelemetry: Observable<boolean> = observeSourcegraphURL(IS_EXTENSION).pipe(
+        map(sourcegraphUrl => shouldOverrideSendTelemetry(isFirefox(), isExtension, sourcegraphUrl))
+    )
+
+    return combineLatest([observeOptionFlags(), overrideSendTelemetry]).pipe(
+        map(([flags, override]) => {
+            const definitions = assignOptionFlagValues(flags)
+            if (override) {
+                return definitions.filter(flag => flag.key !== 'sendTelemetry')
+            }
+            return definitions
+        })
+    )
+}
 
 const ensureValidSite = (): Observable<GQL.ISite> => fetchSite(requestGraphQL)
 
@@ -62,34 +84,15 @@ class Options extends React.Component<{}, State> {
     public state: State = {
         sourcegraphURL: null,
         isActivated: true,
-
-        // Feature flags
-        allowErrorReporting: false,
-        sendTelemetry: false,
-        experimentalLinkPreviews: false,
-        experimentalTextFieldCompletion: false,
+        optionFlags: [],
     }
 
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            observeOptionFlags().subscribe(optionFlags => {
-                const {
-                    allowErrorReporting,
-                    experimentalLinkPreviews,
-                    experimentalTextFieldCompletion,
-                    sendTelemetry,
-                } = {
-                    ...featureFlagDefaults,
-                    ...optionFlags,
-                }
-                this.setState({
-                    allowErrorReporting,
-                    experimentalLinkPreviews,
-                    experimentalTextFieldCompletion,
-                    sendTelemetry,
-                })
+            observeOptionFlagsWithValues().subscribe(optionFlags => {
+                this.setState({ optionFlags })
             })
         )
 
@@ -139,28 +142,7 @@ class Options extends React.Component<{}, State> {
                     featureFlags.set(key, value).then(noop, noop)
                 }
             },
-            optionFlags: [
-                {
-                    key: 'sendTelemetry',
-                    label: 'Send telemetry',
-                    value: this.state.sendTelemetry,
-                },
-                {
-                    key: 'allowErrorReporting',
-                    label: 'Allow error reporting',
-                    value: this.state.allowErrorReporting,
-                },
-                {
-                    key: 'experimentalLinkPreviews',
-                    label: 'Experimental link previews',
-                    value: this.state.experimentalLinkPreviews,
-                },
-                {
-                    key: 'experimentalTextFieldCompletion',
-                    label: 'Experimental text field completion',
-                    value: this.state.experimentalTextFieldCompletion,
-                },
-            ],
+            optionFlags: this.state.optionFlags,
         }
 
         return <OptionsContainer {...props} />
