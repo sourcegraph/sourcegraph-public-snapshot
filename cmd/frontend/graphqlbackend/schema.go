@@ -6996,7 +6996,7 @@ type RegistryExtensionConnection {
 }
 
 """
-Aggregate local code intelligence for all ranges that fall bewteen a window of lines in a document.
+Aggregate local code intelligence for all ranges that fall between a window of lines in a document.
 """
 type CodeIntelligenceRangeConnection {
     """
