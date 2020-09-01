@@ -4,6 +4,10 @@ This document describes the exact changes needed to update a Docker Compose Sour
 
 Each section comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
+## 3.19.1 -> 3.19.2
+
+No manual migration required.
+
 ## 3.18.0-1 -> 3.19.1
 
 No manual migration required.
