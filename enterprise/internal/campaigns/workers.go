@@ -41,6 +41,7 @@ func RunWorkers(
 	workerStore := dbworkerstore.NewStore(s.Handle(), dbworkerstore.StoreOptions{
 		TableName:            "changesets",
 		AlternateColumnNames: map[string]string{"state": "reconciler_state"},
+		EnqueuedColumn:       "enqueued",
 		ColumnExpressions:    changesetColumns,
 		Scan:                 scanFirstChangesetRecord,
 
