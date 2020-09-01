@@ -9,7 +9,7 @@ export const HAS_CANCELLED_TOUR_KEY = 'has-cancelled-onboarding-tour'
 export const HAS_SEEN_TOUR_KEY = 'has-seen-onboarding-tour'
 
 export const defaultTourOptions: Shepherd.Tour.TourOptions = {
-    useModalOverlay: true,
+    useModalOverlay: false,
     defaultStepOptions: {
         arrow: true,
         classes: 'web-content tour-card card py-4 px-3 shadow-lg',
