@@ -92,7 +92,7 @@ Examples:
 
 Tip: On the statistics page, you can enter an empty query to see statistics across all repositories.
 
-### Search Scope <span class="badge badge-primary">experimental</span>
+### Search Scopes <span class="badge badge-primary">experimental</span>
 
 > NOTE: This feature is still in active development and must be enabled by a Sourcegraph site admin in site configuration.
 
@@ -100,7 +100,7 @@ Many organizations have old versions of code running in production and need to s
 
 Search scopes allow creating sets of many repositories at specific revisions. When set, a search context limits your searches and code navigation actions (with basic code intelligence) to the repositories and revisions in the context.
 
-Your site admin can add version contexts in site configuration under the `experimentalFeatures.versionContexts` setting. For example:
+Your site admin can add search scopes in site configuration under the `experimentalFeatures.versionContexts` setting. For example:
 
 ```json
 "experimentalFeatures": {
