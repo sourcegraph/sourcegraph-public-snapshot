@@ -6,9 +6,9 @@ import (
 	"os"
 	"testing"
 
-	secretsPkg "github.com/sourcegraph/sourcegraph/internal/secrets"
-
 	"github.com/inconshreveable/log15"
+
+	secretsPkg "github.com/sourcegraph/sourcegraph/internal/secrets"
 )
 
 func TestMain(m *testing.M) {
