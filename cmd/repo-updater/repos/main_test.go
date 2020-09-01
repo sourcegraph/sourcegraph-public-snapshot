@@ -7,9 +7,9 @@ import (
 	"regexp"
 	"testing"
 
-	secretsPkg "github.com/sourcegraph/sourcegraph/internal/secrets"
-
 	"github.com/inconshreveable/log15"
+
+	secretsPkg "github.com/sourcegraph/sourcegraph/internal/secrets"
 )
 
 var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
