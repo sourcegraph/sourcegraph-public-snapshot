@@ -191,7 +191,7 @@ export function createAddCodeStepWithLanguageExampleTooltip(
     listItem.className = 'p-0'
 
     const exampleButton = document.createElement('button')
-    exampleButton.className = 'btn btn-link test-tour-language-example'
+    exampleButton.className = 'btn btn-link test-tour-language-example p-0'
 
     const langsList = languageFilterToSearchExamples
     let example = { query: '', patternType: SearchPatternType.literal }
@@ -232,7 +232,7 @@ export function createStructuralSearchTourTooltip(tour: Shepherd.Tour): HTMLElem
     exampleButton.href = 'https://docs.sourcegraph.com/user/search/structural'
     exampleButton.target = '_blank'
     exampleButton.rel = 'noopener'
-    exampleButton.className = 'btn btn-link test-tour-language-example'
+    exampleButton.className = 'btn btn-link test-tour-language-example p-0'
     exampleButton.textContent = 'Structural search documentation'
     listItem.append(exampleButton)
     container.append(list)
