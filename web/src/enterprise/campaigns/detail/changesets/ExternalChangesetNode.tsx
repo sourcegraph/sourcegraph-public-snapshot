@@ -67,7 +67,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
             <span>{node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} />}</span>
             <span>{node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} />}</span>
             <div className="external-changeset-node__diffstat">
-                {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} />}
+                {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} separateLines={true} />}
             </div>
             {isExpanded && (
                 <div className="external-changeset-node__expanded-section">

@@ -1,9 +1,9 @@
-$added: #1fa01b;
-$changed: #c07a0a;
-$deleted: #c91111;
+$added: $success;
+$changed: $warning;
+$deleted: $danger;
 
 .diff-stat {
-    display: flex;
+    display: inline-flex;
     align-items: center;
 
     &__total {
@@ -13,7 +13,7 @@ $deleted: #c91111;
     }
 
     &__square {
-        display: block;
+        display: inline-block;
         width: 0.5rem;
         height: 0.5rem;
         margin-left: 0.125rem;
@@ -35,7 +35,7 @@ $deleted: #c91111;
         background-color: $deleted;
     }
     &__text-deleted {
-        color: lighten($deleted, 10%);
+        color: $deleted;
     }
     &__empty {
         background-color: var(--text-muted);
