@@ -270,8 +270,12 @@ func TestService(t *testing.T) {
 					t.Errorf("changeset should be Closing, but is not")
 				}
 
-				if have, want := c.ReconcilerState, campaigns.ReconcilerStateQueued; have != want {
-					t.Errorf("changeset ReconcilerState wrong. want=%s, have=%s", want, have)
+				enqueued, err := store.GetEnqueued(ctx, c)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !enqueued {
+					t.Errorf("changeset not enqueued")
 				}
 			}
 		}

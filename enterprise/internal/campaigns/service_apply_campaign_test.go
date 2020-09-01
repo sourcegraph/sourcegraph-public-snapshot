@@ -233,20 +233,20 @@ func TestServiceApplyCampaign(t *testing.T) {
 			}
 
 			c1 := cs.Find(campaigns.WithExternalID(spec1.Spec.ExternalID))
-			assertChangeset(t, c1, changesetAssertions{
+			assertChangeset(t, ctx, store, c1, changesetAssertions{
 				repo:             spec1.RepoID,
 				externalID:       "1234",
 				unsynced:         true,
-				reconcilerState:  campaigns.ReconcilerStateQueued,
+				enqueued:         true,
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 			})
 
 			c2 := cs.Find(campaigns.WithCurrentSpecID(spec2.ID))
-			assertChangeset(t, c2, changesetAssertions{
+			assertChangeset(t, ctx, store, c2, changesetAssertions{
 				repo:             spec2.RepoID,
 				currentSpec:      spec2.ID,
 				ownedByCampaign:  campaign.ID,
-				reconcilerState:  campaigns.ReconcilerStateQueued,
+				enqueued:         true,
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				diffStat:         testChangsetSpecDiffStat,
 			})
@@ -349,61 +349,61 @@ func TestServiceApplyCampaign(t *testing.T) {
 				externalID:       wantClosed.ExternalID,
 				externalBranch:   wantClosed.ExternalBranch,
 				ownedByCampaign:  campaign.ID,
-				reconcilerState:  campaigns.ReconcilerStateQueued,
+				enqueued:         true,
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				diffStat:         testChangsetSpecDiffStat,
 				closing:          true,
 			})
 
 			c1 := cs.Find(campaigns.WithExternalID(spec1.Spec.ExternalID))
-			assertChangeset(t, c1, changesetAssertions{
+			assertChangeset(t, ctx, store, c1, changesetAssertions{
 				repo:             repos[0].ID,
 				currentSpec:      0,
 				previousSpec:     0,
 				externalID:       "1234",
 				unsynced:         true,
-				reconcilerState:  campaigns.ReconcilerStateQueued,
+				enqueued:         true,
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 			})
 
 			c2 := cs.Find(campaigns.WithExternalID(spec2.Spec.ExternalID))
-			assertChangeset(t, c2, changesetAssertions{
+			assertChangeset(t, ctx, store, c2, changesetAssertions{
 				repo:             repos[0].ID,
 				currentSpec:      0,
 				previousSpec:     0,
 				externalID:       "5678",
 				unsynced:         true,
-				reconcilerState:  campaigns.ReconcilerStateQueued,
+				enqueued:         true,
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 			})
 
 			c3 := cs.Find(campaigns.WithCurrentSpecID(spec3.ID))
-			assertChangeset(t, c3, changesetAssertions{
+			assertChangeset(t, ctx, store, c3, changesetAssertions{
 				repo:             repos[1].ID,
 				currentSpec:      spec3.ID,
 				previousSpec:     oldSpec3.ID,
 				ownedByCampaign:  campaign.ID,
-				reconcilerState:  campaigns.ReconcilerStateQueued,
+				enqueued:         true,
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				diffStat:         testChangsetSpecDiffStat,
 			})
 
 			c4 := cs.Find(campaigns.WithCurrentSpecID(spec4.ID))
-			assertChangeset(t, c4, changesetAssertions{
+			assertChangeset(t, ctx, store, c4, changesetAssertions{
 				repo:             repos[2].ID,
 				currentSpec:      spec4.ID,
 				ownedByCampaign:  campaign.ID,
-				reconcilerState:  campaigns.ReconcilerStateQueued,
+				enqueued:         true,
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				diffStat:         testChangsetSpecDiffStat,
 			})
 
 			c5 := cs.Find(campaigns.WithCurrentSpecID(spec5.ID))
-			assertChangeset(t, c5, changesetAssertions{
+			assertChangeset(t, ctx, store, c5, changesetAssertions{
 				repo:             repos[3].ID,
 				currentSpec:      spec5.ID,
 				ownedByCampaign:  campaign.ID,
-				reconcilerState:  campaigns.ReconcilerStateQueued,
+				enqueued:         true,
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				diffStat:         testChangsetSpecDiffStat,
 			})
@@ -448,7 +448,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				diffStat:         testChangsetSpecDiffStat,
 			}
-			assertChangeset(t, c2, trackedChangesetAssertions)
+			assertChangeset(t, ctx, store, c2, trackedChangesetAssertions)
 
 			// Now we stop tracking it in the second campaign
 			campaignSpec3 := createCampaignSpec(t, ctx, store, "tracking-campaign", admin.ID)
@@ -558,13 +558,15 @@ type changesetAssertions struct {
 	unsynced         bool
 	closing          bool
 
+	enqueued bool
+
 	title string
 	body  string
 
 	failureMessage *string
 }
 
-func assertChangeset(t *testing.T, c *campaigns.Changeset, a changesetAssertions) {
+func assertChangeset(t *testing.T, ctx context.Context, s *Store, c *campaigns.Changeset, a changesetAssertions) {
 	t.Helper()
 
 	if c == nil {
@@ -587,8 +589,14 @@ func assertChangeset(t *testing.T, c *campaigns.Changeset, a changesetAssertions
 		t.Fatalf("changeset OwnedByCampaignID wrong. want=%d, have=%d", want, have)
 	}
 
-	if have, want := c.ReconcilerState, a.reconcilerState; have != want {
-		t.Fatalf("changeset ReconcilerState wrong. want=%s, have=%s", want, have)
+	if len(a.reconcilerState) != 0 {
+		if have, want := c.ReconcilerState, a.reconcilerState; have != want {
+			t.Fatalf("changeset ReconcilerState wrong. want=%s, have=%s", want, have)
+		}
+	}
+
+	if have, want := c.Enqueued, a.enqueued; have != want {
+		t.Fatalf("changeset Enqueued wrong. want=%t, have=%t", want, have)
 	}
 
 	if have, want := c.PublicationState, a.publicationState; have != want {
@@ -667,7 +675,7 @@ func reloadAndAssertChangeset(t *testing.T, ctx context.Context, s *Store, c *ca
 		t.Fatalf("reloading changeset %d failed: %s", c.ID, err)
 	}
 
-	assertChangeset(t, reloaded, a)
+	assertChangeset(t, ctx, s, reloaded, a)
 }
 
 func applyAndListChangesets(ctx context.Context, t *testing.T, svc *Service, campaignSpecRandID string, wantChangesets int) (*campaigns.Campaign, campaigns.Changesets) {
@@ -705,6 +713,10 @@ func setChangesetPublished(t *testing.T, ctx context.Context, s *Store, c *campa
 
 	if err := s.UpdateChangeset(ctx, c); err != nil {
 		t.Fatalf("failed to update changeset: %s", err)
+	}
+
+	if err := s.MarkDequeued(ctx, c); err != nil {
+		t.Fatalf("failed to mark changeset as dequeued: %s", err)
 	}
 }
 

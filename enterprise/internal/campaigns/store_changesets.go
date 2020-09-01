@@ -54,11 +54,52 @@ var changesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.num_resets"),
 	sqlf.Sprintf("changesets.unsynced"),
 	sqlf.Sprintf("changesets.closing"),
+	sqlf.Sprintf("changesets.enqueued"),
 }
 
-// changesetInsertColumns is the list of changeset columns that are modified in
-// CreateChangeset and UpdateChangeset.
-var changesetInsertColumns = []*sqlf.Query{
+// changesetCreateColumns is the list of changeset columns that are modified in
+// CreateChangeset.
+var changesetCreateColumns = []*sqlf.Query{
+	sqlf.Sprintf("repo_id"),
+	sqlf.Sprintf("created_at"),
+	sqlf.Sprintf("updated_at"),
+	sqlf.Sprintf("metadata"),
+	sqlf.Sprintf("campaign_ids"),
+	sqlf.Sprintf("external_id"),
+	sqlf.Sprintf("external_service_type"),
+	sqlf.Sprintf("external_branch"),
+	sqlf.Sprintf("external_deleted_at"),
+	sqlf.Sprintf("external_updated_at"),
+	sqlf.Sprintf("external_state"),
+	sqlf.Sprintf("external_review_state"),
+	sqlf.Sprintf("external_check_state"),
+	sqlf.Sprintf("created_by_campaign"),
+	sqlf.Sprintf("added_to_campaign"),
+	sqlf.Sprintf("diff_stat_added"),
+	sqlf.Sprintf("diff_stat_changed"),
+	sqlf.Sprintf("diff_stat_deleted"),
+	sqlf.Sprintf("sync_state"),
+	sqlf.Sprintf("owned_by_campaign_id"),
+	sqlf.Sprintf("current_spec_id"),
+	sqlf.Sprintf("previous_spec_id"),
+	sqlf.Sprintf("publication_state"),
+	sqlf.Sprintf("reconciler_state"),
+	sqlf.Sprintf("failure_message"),
+	sqlf.Sprintf("started_at"),
+	sqlf.Sprintf("finished_at"),
+	sqlf.Sprintf("process_after"),
+	sqlf.Sprintf("num_resets"),
+	sqlf.Sprintf("unsynced"),
+	sqlf.Sprintf("closing"),
+	// This has to be last, check changesetWriteQuery:
+	sqlf.Sprintf("enqueued"),
+}
+
+// changesetUpdateColumns is the list of changeset columns that are modified in
+// UpdateChangeset.
+// Notably missing is the 'enqueued' which must not be overwritten by
+// UpdateChangeset.
+var changesetUpdateColumns = []*sqlf.Query{
 	sqlf.Sprintf("repo_id"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
@@ -92,7 +133,7 @@ var changesetInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("closing"),
 }
 
-func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Changeset) (*sqlf.Query, error) {
+func (s *Store) changesetWriteQuery(q string, columns []*sqlf.Query, includeEnqueued, includeID bool, c *campaigns.Changeset) (*sqlf.Query, error) {
 	metadata, err := jsonbColumn(c.Metadata)
 	if err != nil {
 		return nil, err
@@ -109,7 +150,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Chang
 	}
 
 	vars := []interface{}{
-		sqlf.Join(changesetInsertColumns, ", "),
+		sqlf.Join(columns, ", "),
 		c.RepoID,
 		c.CreatedAt,
 		c.UpdatedAt,
@@ -143,6 +184,10 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Chang
 		c.Closing,
 	}
 
+	if includeEnqueued {
+		vars = append(vars, c.Enqueued)
+	}
+
 	if includeID {
 		vars = append(vars, c.ID)
 	}
@@ -162,7 +207,7 @@ func (s *Store) CreateChangeset(ctx context.Context, c *campaigns.Changeset) err
 		c.UpdatedAt = c.CreatedAt
 	}
 
-	q, err := s.changesetWriteQuery(createChangesetQueryFmtstr, false, c)
+	q, err := s.changesetWriteQuery(createChangesetQueryFmtstr, changesetCreateColumns, true, false, c)
 	if err != nil {
 		return err
 	}
@@ -173,12 +218,27 @@ func (s *Store) CreateChangeset(ctx context.Context, c *campaigns.Changeset) err
 var createChangesetQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:CreateChangeset
 INSERT INTO changesets (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 ON CONFLICT ON CONSTRAINT
 changesets_repo_external_id_unique
 DO NOTHING
 RETURNING %s
 `
+
+// CreateAndEnqueueChangeset updates the given Changeset and marks it as queued
+// by calling CreateChangeset and MarkQueued.
+// This method needs to be called in a transaction, otherwise it returns ErrNoTransaction.
+func (s *Store) CreateAndEnqueueChangeset(ctx context.Context, cs *campaigns.Changeset) error {
+	if !s.Store.InTransaction() {
+		return ErrNoTransaction
+	}
+
+	if err := s.CreateChangeset(ctx, cs); err != nil {
+		return err
+	}
+
+	return s.MarkQueued(ctx, cs)
+}
 
 // DeleteChangeset deletes the Changeset with the given ID.
 func (s *Store) DeleteChangeset(ctx context.Context, id int64) error {
@@ -383,6 +443,7 @@ type ListChangesetsOpts struct {
 	WithoutDeleted       bool
 	PublicationState     *campaigns.ChangesetPublicationState
 	ReconcilerState      *campaigns.ReconcilerState
+	Enqueued             *bool
 	ExternalState        *campaigns.ChangesetExternalState
 	ExternalReviewState  *campaigns.ChangesetReviewState
 	ExternalCheckState   *campaigns.ChangesetCheckState
@@ -450,6 +511,9 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	if opts.ReconcilerState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.reconciler_state = %s", (*opts.ReconcilerState).ToDB()))
 	}
+	if opts.Enqueued != nil {
+		preds = append(preds, sqlf.Sprintf("changesets.enqueued = %t", *opts.Enqueued))
+	}
 	if opts.ExternalState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.external_state = %s", *opts.ExternalState))
 	}
@@ -478,7 +542,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 func (s *Store) UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) error {
 	cs.UpdatedAt = s.now()
 
-	q, err := s.changesetWriteQuery(updateChangesetQueryFmtstr, true, cs)
+	q, err := s.changesetWriteQuery(updateChangesetQueryFmtstr, changesetUpdateColumns, false, true, cs)
 	if err != nil {
 		return err
 	}
@@ -496,6 +560,50 @@ WHERE id = %s
 RETURNING
   %s
 `
+
+// MarkQueued sets the enqueued flag of the given Changeset to true.
+func (s *Store) MarkQueued(ctx context.Context, cs *campaigns.Changeset) error {
+	q := sqlf.Sprintf(`UPDATE changesets SET enqueued = TRUE WHERE id = %s;`, cs.ID)
+	return s.exec(ctx, q)
+}
+
+// MarkDequeued sets the enqueued flag of the given Changeset to false.
+// It's only used for testing, since it doesn't do a proper dequeuing.
+func (s *Store) MarkDequeued(ctx context.Context, cs *campaigns.Changeset) error {
+	q := sqlf.Sprintf(`UPDATE changesets SET enqueued = FALSE WHERE id = %s;`, cs.ID)
+	return s.exec(ctx, q)
+}
+
+// GetEnqueued returns whether the changeset is enqueued or not.
+func (s *Store) GetEnqueued(ctx context.Context, cs *campaigns.Changeset) (bool, error) {
+	q := sqlf.Sprintf(`SELECT enqueued FROM changesets WHERE id = %s;`, cs.ID)
+	enqueued, ok, err := basestore.ScanFirstBool(s.Store.Query(ctx, q))
+	if err != nil {
+		return enqueued, err
+	}
+	if !ok {
+		return enqueued, ErrNoResults
+	}
+	return enqueued, nil
+}
+
+// ErrNoTransaction occurs when UpdateAndEnqueue is called outside a transaction.
+var ErrNoTransaction = errors.New("called outside transaction")
+
+// UpdateAndEnqueueChangeset updates the given Changeset and marks it as queued
+// by calling UpdateChangeset and MarkQueued.
+// This method needs to be called in a transaction, otherwise it returns ErrNoTransaction.
+func (s *Store) UpdateAndEnqueueChangeset(ctx context.Context, cs *campaigns.Changeset) error {
+	if !s.Store.InTransaction() {
+		return ErrNoTransaction
+	}
+
+	if err := s.UpdateChangeset(ctx, cs); err != nil {
+		return err
+	}
+
+	return s.MarkQueued(ctx, cs)
+}
 
 // GetChangesetExternalIDs allows us to find the external ids for pull requests based on
 // a slice of head refs. We need this in order to match incoming webhooks to pull requests as
@@ -593,6 +701,7 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		&t.NumResets,
 		&t.Unsynced,
 		&t.Closing,
+		&t.Enqueued,
 	)
 	if err != nil {
 		return errors.Wrap(err, "scanning changeset")

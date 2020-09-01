@@ -151,8 +151,8 @@ func TestChangesetResolver(t *testing.T) {
 		externalServiceType: "github",
 		externalID:          "9876",
 		unsynced:            true,
+		enqueued:            true,
 		publicationState:    campaigns.ChangesetPublicationStatePublished,
-		reconcilerState:     campaigns.ReconcilerStateQueued,
 	})
 
 	spec := &campaigns.CampaignSpec{

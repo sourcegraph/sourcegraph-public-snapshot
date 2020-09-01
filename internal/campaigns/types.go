@@ -277,12 +277,19 @@ type Changeset struct {
 	PublicationState ChangesetPublicationState // "unpublished", "published"
 
 	// All of the following fields are used by workerutil.Worker.
-	ReconcilerState ReconcilerState
+	ReconcilerState ReconcilerState // No 'queued', use Enqueued instead
 	FailureMessage  *string
 	StartedAt       time.Time
 	FinishedAt      time.Time
 	ProcessAfter    time.Time
 	NumResets       int64
+	// Enqueued is set to true to enqueue a changeset to be picked up by the
+	// workerutil.Worker/reconciler.
+	// It acts as a "dirty bit" and is cleared when the changeset is dequeued.
+	// It is not overwritten by the reconciler that processes it.
+	// That allows us to enqueue a changeset to be reconciled *again*, while
+	// it's currently being reconciled.
+	Enqueued bool
 
 	// Unsynced is true if the changeset tracks an external changeset but the
 	// data hasn't been synced yet.
@@ -291,6 +298,15 @@ type Changeset struct {
 	// Closing is set to true (along with the ReocncilerState) when the
 	// reconciler should close the changeset.
 	Closing bool
+}
+
+// GetReconcilerState returns a ReconcilerState computed out of the
+// ReconcilerState and Enqueued fields.
+func (c *Changeset) GetReconcilerState() ReconcilerState {
+	if c.Enqueued {
+		return ReconcilerStateQueued
+	}
+	return c.ReconcilerState
 }
 
 // RecordID is needed to implement the workerutil.Record interface.

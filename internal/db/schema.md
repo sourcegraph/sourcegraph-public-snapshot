@@ -194,6 +194,7 @@ Referenced by:
  num_resets            | integer                  | not null default 0
  unsynced              | boolean                  | not null default false
  closing               | boolean                  | not null default false
+ enqueued              | boolean                  | not null default false
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)

@@ -319,7 +319,9 @@ func (r *changesetRewirer) Rewire() (err error) {
 			// But only if it was created on the code host:
 			if c.Published() {
 				c.Closing = true
-				c.ReconcilerState = campaigns.ReconcilerStateQueued
+				if err = r.tx.MarkQueued(r.ctx, c); err != nil {
+					return err
+				}
 			} else {
 				// otherwise we simply delete it.
 				if err = r.tx.DeleteChangeset(r.ctx, c.ID); err != nil {
@@ -348,30 +350,27 @@ func (r *changesetRewirer) createChangesetForSpec(repo *types.Repo, spec *campai
 		CurrentSpecID:     spec.ID,
 
 		PublicationState: campaigns.ChangesetPublicationStateUnpublished,
-		ReconcilerState:  campaigns.ReconcilerStateQueued,
 	}
 
 	// Copy over diff stat from the spec.
 	diffStat := spec.DiffStat()
 	newChangeset.SetDiffStat(&diffStat)
 
-	return newChangeset, r.tx.CreateChangeset(r.ctx, newChangeset)
+	return newChangeset, r.tx.CreateAndEnqueueChangeset(r.ctx, newChangeset)
 }
 
 func (r *changesetRewirer) updateChangesetToNewSpec(c *campaigns.Changeset, spec *campaigns.ChangesetSpec) error {
 	c.PreviousSpecID = c.CurrentSpecID
 	c.CurrentSpecID = spec.ID
 
-	// We need to enqueue it for the changeset reconciler, so the
-	// reconciler wakes up, compares old and new spec and, if
-	// necessary, updates the changesets accordingly.
-	c.ReconcilerState = campaigns.ReconcilerStateQueued
-
 	// Copy over diff stat from the new spec.
 	diffStat := spec.DiffStat()
 	c.SetDiffStat(&diffStat)
 
-	return r.tx.UpdateChangeset(r.ctx, c)
+	// We need to enqueue it for the changeset reconciler, so the
+	// reconciler wakes up, compares old and new spec and, if
+	// necessary, updates the changesets accordingly.
+	return r.tx.UpdateAndEnqueueChangeset(r.ctx, c)
 }
 
 // loadAssociations populates the chagnesets, newChangesetSpecs and
@@ -475,11 +474,9 @@ func (r *changesetRewirer) updateOrCreateTrackingChangeset(repo *types.Repo, ext
 		// Note: no CurrentSpecID, because we merely track this one
 
 		PublicationState: campaigns.ChangesetPublicationStatePublished,
-
-		// Enqueue it so the reconciler syncs it.
-		ReconcilerState: campaigns.ReconcilerStateQueued,
-		Unsynced:        true,
+		Unsynced:         true,
 	}
 
-	return newChangeset, r.tx.CreateChangeset(r.ctx, newChangeset)
+	// Enqueue it so the reconciler syncs it.
+	return newChangeset, r.tx.CreateAndEnqueueChangeset(r.ctx, newChangeset)
 }

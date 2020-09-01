@@ -83,6 +83,10 @@ func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
 	return scanAll(rows, sc)
 }
 
+func (s *Store) exec(ctx context.Context, q *sqlf.Query) error {
+	return s.Store.Exec(ctx, q)
+}
+
 func (s *Store) queryCount(ctx context.Context, q *sqlf.Query) (int, error) {
 	count, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
 	if err != nil || !ok {

@@ -446,7 +446,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 		statePublished := cmpgn.ChangesetPublicationStatePublished
 		stateUnpublished := cmpgn.ChangesetPublicationStateUnpublished
-		stateQueued := cmpgn.ReconcilerStateQueued
 		stateCompleted := cmpgn.ReconcilerStateCompleted
 		stateOpen := cmpgn.ChangesetExternalStateOpen
 		stateClosed := cmpgn.ChangesetExternalStateClosed
@@ -454,6 +453,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		stateChangesRequested := cmpgn.ChangesetReviewStateChangesRequested
 		statePassed := cmpgn.ChangesetCheckStatePassed
 		stateFailed := cmpgn.ChangesetCheckStateFailed
+		enqueued := true
 
 		filterCases := []struct {
 			opts      ListChangesetsOpts
@@ -473,7 +473,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			},
 			{
 				opts: ListChangesetsOpts{
-					ReconcilerState: &stateQueued,
+					Enqueued: &enqueued,
 				},
 				wantCount: 0,
 			},
@@ -790,6 +790,41 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 		if diff := cmp.Diff(have, want); diff != "" {
 			t.Fatal(diff)
+		}
+	})
+
+	t.Run("Enqueuing", func(t *testing.T) {
+		ch := changesets[0]
+
+		if err := s.MarkQueued(ctx, ch); err != nil {
+			t.Fatal(err)
+		}
+
+		enqueued, err := s.GetEnqueued(ctx, ch)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !enqueued {
+			t.Fatalf("changeset not marked as enqueued")
+		}
+
+		reloaded, err := s.GetChangeset(ctx, GetChangesetOpts{ID: ch.ID})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !reloaded.Enqueued {
+			t.Fatalf("GetChangeset returned changeset not marked as enqueued")
+		}
+
+		list, _, err := s.ListChangesets(ctx, ListChangesetsOpts{Enqueued: &enqueued})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(list) != 1 {
+			t.Fatalf("wrong ListChangeset result. want length=%d, have length=%d", 1, len(list))
+		}
+		if !list[0].Enqueued {
+			t.Fatalf("ListChangeset returned changeset that's not enqueued")
 		}
 	})
 }

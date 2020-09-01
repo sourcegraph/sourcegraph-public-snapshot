@@ -337,9 +337,7 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 
 		for _, c := range cs {
 			c.Closing = true
-			c.ReconcilerState = campaigns.ReconcilerStateQueued
-
-			if err := tx.UpdateChangeset(ctx, c); err != nil {
+			if err := tx.UpdateAndEnqueueChangeset(ctx, c); err != nil {
 				return err
 			}
 		}

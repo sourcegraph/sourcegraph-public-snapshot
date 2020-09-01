@@ -126,6 +126,8 @@
 // 1528395711_add_soft_deleted_repository_name_func.up.sql (282B)
 // 1528395712_add_closing_flag_to_changesets.down.sql (71B)
 // 1528395712_add_closing_flag_to_changesets.up.sql (105B)
+// 1528395713_add_enqueued_flag_to_changesets.down.sql (72B)
+// 1528395713_add_enqueued_flag_to_changesets.up.sql (180B)
 
 package migrations
 
@@ -2714,6 +2716,46 @@ func _1528395712_add_closing_flag_to_changesetsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395713_add_enqueued_flag_to_changesetsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x04\xc0\xcd\x0a\x80\x20\x0c\x00\xe0\xfb\x9e\x62\xef\xe1\x49\x6d\xc5\xc0\x9f\xd0\x05\x5d\xa3\x46\x9d\x84\x30\xdf\xbf\xcf\xd1\xc2\xc9\x00\xd8\x20\x54\x50\xac\x0b\x84\xe7\x73\xb4\x5b\xbb\x7e\x1d\xa7\x92\x57\xf4\x39\x6c\x31\x21\xcf\x48\x3b\x57\xa9\xa8\xed\x1d\x3a\xf4\x32\x00\x3e\xc7\xc8\x62\xe0\x0f\x00\x00\xff\xff\x49\x25\x3e\xec\x48\x00\x00\x00")
+
+func _1528395713_add_enqueued_flag_to_changesetsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395713_add_enqueued_flag_to_changesetsDownSql,
+		"1528395713_add_enqueued_flag_to_changesets.down.sql",
+	)
+}
+
+func _1528395713_add_enqueued_flag_to_changesetsDownSql() (*asset, error) {
+	bytes, err := _1528395713_add_enqueued_flag_to_changesetsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395713_add_enqueued_flag_to_changesets.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xb0, 0xde, 0x4d, 0x73, 0xa0, 0x60, 0xe9, 0x7a, 0x64, 0x7f, 0x86, 0x4e, 0x63, 0x44, 0x5c, 0xe2, 0x64, 0x5b, 0x8b, 0xda, 0x4, 0x31, 0x42, 0xe9, 0xe5, 0xde, 0xd5, 0x9, 0x4d, 0x95, 0x0, 0x34}}
+	return a, nil
+}
+
+var __1528395713_add_enqueued_flag_to_changesetsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x54\x8c\x3b\x8a\xc3\x30\x10\x86\x7b\x9d\xe2\xef\x7c\x08\xe1\x42\xb6\xc6\x8b\x60\x2c\x2d\xd6\x08\xb6\x5b\x8c\x33\xc4\x81\xe0\x10\x3f\xc8\xf5\x03\x49\x11\x52\x7f\x8f\x86\x7e\x42\xb4\xc6\x38\x16\x1a\x20\xae\x61\xc2\x34\x8f\xcb\x59\x37\xdd\x37\x38\xef\xd1\x26\x2e\x7d\x44\xe8\x10\x93\x80\xfe\x42\x96\x0c\x5d\xee\x87\x1e\x7a\x42\x93\x12\x93\x8b\x2f\x16\x0b\x33\x3c\x75\xae\xb0\xa0\x73\x9c\xc9\x1a\x53\x7e\xbd\x93\xaf\x69\x26\xf9\xf4\x35\x64\x28\x84\xc7\xac\xab\x62\xd5\xe9\xb6\x4c\x97\xab\xae\xff\xdb\x3e\xee\x8a\x1a\xd5\xdb\xab\xac\x31\x6d\xea\xfb\x20\xd6\x3c\x03\x00\x00\xff\xff\x81\x30\x97\x49\xb4\x00\x00\x00")
+
+func _1528395713_add_enqueued_flag_to_changesetsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395713_add_enqueued_flag_to_changesetsUpSql,
+		"1528395713_add_enqueued_flag_to_changesets.up.sql",
+	)
+}
+
+func _1528395713_add_enqueued_flag_to_changesetsUpSql() (*asset, error) {
+	bytes, err := _1528395713_add_enqueued_flag_to_changesetsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395713_add_enqueued_flag_to_changesets.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x62, 0xf0, 0xc, 0x13, 0x69, 0x14, 0xa, 0x9e, 0xf3, 0xa8, 0xf9, 0x73, 0x6f, 0x4b, 0xc6, 0xd4, 0x32, 0x93, 0xf1, 0x19, 0x81, 0x42, 0xc4, 0xaf, 0xf8, 0x99, 0x8c, 0x27, 0x55, 0x4c, 0x92, 0x0}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2931,6 +2973,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395711_add_soft_deleted_repository_name_func.up.sql":                      _1528395711_add_soft_deleted_repository_name_funcUpSql,
 	"1528395712_add_closing_flag_to_changesets.down.sql":                           _1528395712_add_closing_flag_to_changesetsDownSql,
 	"1528395712_add_closing_flag_to_changesets.up.sql":                             _1528395712_add_closing_flag_to_changesetsUpSql,
+	"1528395713_add_enqueued_flag_to_changesets.down.sql":                          _1528395713_add_enqueued_flag_to_changesetsDownSql,
+	"1528395713_add_enqueued_flag_to_changesets.up.sql":                            _1528395713_add_enqueued_flag_to_changesetsUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3103,6 +3147,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395711_add_soft_deleted_repository_name_func.up.sql":                      {_1528395711_add_soft_deleted_repository_name_funcUpSql, map[string]*bintree{}},
 	"1528395712_add_closing_flag_to_changesets.down.sql":                           {_1528395712_add_closing_flag_to_changesetsDownSql, map[string]*bintree{}},
 	"1528395712_add_closing_flag_to_changesets.up.sql":                             {_1528395712_add_closing_flag_to_changesetsUpSql, map[string]*bintree{}},
+	"1528395713_add_enqueued_flag_to_changesets.down.sql":                          {_1528395713_add_enqueued_flag_to_changesetsDownSql, map[string]*bintree{}},
+	"1528395713_add_enqueued_flag_to_changesets.up.sql":                            {_1528395713_add_enqueued_flag_to_changesetsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
