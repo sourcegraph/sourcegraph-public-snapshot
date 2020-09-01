@@ -237,26 +237,16 @@ func (s *store) dequeue(ctx context.Context, conditions []*sqlf.Query, independe
 		txCtx = context.Background()
 	}
 
-	var query *sqlf.Query
-	if s.options.RetryAfter != 0 {
-		query = s.formatQuery(
-			selectCandidateRetryQuery,
-			quote(s.options.ViewName),
-			int(s.options.RetryAfter/time.Second),
-			s.options.MaxNumResets,
-			makeConditionSuffix(conditions),
-			s.options.OrderByExpression,
-			quote(s.options.TableName),
-		)
-	} else {
-		query = s.formatQuery(
-			selectCandidateQuery,
-			quote(s.options.ViewName),
-			makeConditionSuffix(conditions),
-			s.options.OrderByExpression,
-			quote(s.options.TableName),
-		)
-	}
+	query := s.formatQuery(
+		selectCandidateQuery,
+		quote(s.options.ViewName),
+		int(s.options.RetryAfter/time.Second),
+		int(s.options.RetryAfter/time.Second),
+		s.options.MaxNumResets,
+		makeConditionSuffix(conditions),
+		s.options.OrderByExpression,
+		quote(s.options.TableName),
+	)
 
 	for {
 		// First, we try to select an eligible record outside of a transaction. This will skip
@@ -301,7 +291,6 @@ func (s *store) dequeue(ctx context.Context, conditions []*sqlf.Query, independe
 			// by selecting another identifier - this one will be skipped on a second attempt as
 			// it is now locked.
 			continue
-
 		}
 
 		// The record is now locked in this transaction. As `TableName` and `ViewName` may have distinct
@@ -330,33 +319,16 @@ const selectCandidateQuery = `
 WITH candidate AS (
 	SELECT {id} FROM %s
 	WHERE
-		{state} = 'queued' AND
-		({process_after} IS NULL OR {process_after} <= NOW())
-		%s
-	ORDER BY %s
-	FOR UPDATE SKIP LOCKED
-	LIMIT 1
-)
-UPDATE %s
-SET
-	{state} = 'processing',
-	{started_at} = NOW()
-WHERE {id} IN (SELECT {id} FROM candidate)
-RETURNING {id}
-`
-
-const selectCandidateRetryQuery = `
--- source: internal/workerutil/store.go:Dequeue
-WITH candidate AS (
-	SELECT {id} FROM %s
-	WHERE
 		(
-		  ({state} = 'queued' AND
-		  ({process_after} IS NULL OR {process_after} <= NOW()))
-		  OR
-		  ({state} = 'errored' AND
-		  NOW() - {finished_at} > (%s * '1 second'::interval) AND
-		  {num_resets} < %s)
+			(
+				{state} = 'queued' AND
+				({process_after} IS NULL OR {process_after} <= NOW())
+			) OR (
+				%s > 0 AND
+				{state} = 'errored' AND
+				NOW() - {finished_at} > (%s * '1 second'::interval) AND
+				{num_resets} < %s
+			)
 		)
 		%s
 	ORDER BY %s
