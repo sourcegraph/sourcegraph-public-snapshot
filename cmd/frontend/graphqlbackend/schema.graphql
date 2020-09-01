@@ -5375,6 +5375,10 @@ type User implements Node & SettingsSubject & Namespace {
         Returns the first n event logs from the list.
         """
         first: Int
+        """
+        Only return events matching this event name
+        """
+        eventName: String
     ): EventLogsConnection!
     """
     The user's email addresses.

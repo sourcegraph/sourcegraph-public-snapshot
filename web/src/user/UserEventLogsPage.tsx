@@ -4,7 +4,7 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { Link } from '../../../shared/src/components/Link'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
-import { queryGraphQL } from '../backend/graphql'
+import { requestGraphQL } from '../backend/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -73,7 +73,7 @@ export class UserEventLogsPage extends React.PureComponent<UserEventLogsPageProp
     }
 
     private queryUserEventLogs = (args: { first?: number }): Observable<GQL.IEventLogsConnection> =>
-        queryGraphQL(
+        requestGraphQL<GQL.IUser>(
             gql`
                 query UserEventLogs($user: ID!, $first: Int) {
                     node(id: $user) {
@@ -97,6 +97,6 @@ export class UserEventLogsPage extends React.PureComponent<UserEventLogsPageProp
             { ...args, user: this.props.user.id }
         ).pipe(
             map(dataOrThrowErrors),
-            map(data => (data.node as GQL.IUser).eventLogs)
+            map(data => data.eventLogs)
         )
 }
