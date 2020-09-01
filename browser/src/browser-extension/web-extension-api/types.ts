@@ -1,4 +1,5 @@
 import { GraphQLResult } from '../../../../shared/src/graphql/graphql'
+import { OptionFlagValues } from '../../shared/util/optionFlags'
 
 export interface PhabricatorMapping {
     callsign: string
@@ -52,7 +53,7 @@ export interface SyncStorageItems extends SourcegraphURL {
     /**
      * Storage for feature flags.
      */
-    featureFlags: Partial<FeatureFlags>
+    featureFlags: Partial<OptionFlagValues>
     /**
      * Overrides settings from Sourcegraph.
      */
