@@ -328,20 +328,6 @@ func (s *Syncer) syncSubset(ctx context.Context, store Store, insertOnly bool, s
 		return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.delete-sources")
 	}
 
-	// Delete repos that no longer belong to any external services
-	var orphanedRepos Repos
-	now := s.Now()
-	for _, deleted := range diff.Deleted {
-		d := deleted
-		if len(sdiff.Deleted[deleted.ID]) == 0 {
-			d.UpdatedAt, d.DeletedAt = now, now
-			orphanedRepos = append(orphanedRepos, d)
-		}
-	}
-
-	// Add only orphaned repos to upserts
-	upserts = append(upserts, orphanedRepos...)
-
 	// Next, insert or modify existing repos. This is needed so that the next call
 	// to UpsertSources has valid repo ids
 	if err = store.UpsertRepos(ctx, upserts...); err != nil {
