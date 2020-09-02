@@ -113,13 +113,7 @@ const commonProps: RepogroupPageProps = {
     showOnboardingTour: false,
 }
 
-add('Repogroup page with smart search field', () => (
-    <MemoryRouter>
-        <RepogroupPage {...commonProps} />
-    </MemoryRouter>
-))
-
-add('Repogroup page without smart search field', () => (
+add('Repogroup page', () => (
     <MemoryRouter>
         <RepogroupPage {...commonProps} />
     </MemoryRouter>
