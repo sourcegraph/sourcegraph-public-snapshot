@@ -10,7 +10,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	indexmanager "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/index_manager"
 	indexabilityupdater "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/indexability_updater"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/indexer"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/resetter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/scheduler"
@@ -34,9 +33,7 @@ func main() {
 	tracer.Init()
 
 	var (
-		frontendURL                      = mustGet(rawFrontendURL, "SRC_FRONTEND_INTERNAL")
 		resetInterval                    = mustParseInterval(rawResetInterval, "PRECISE_CODE_INTEL_RESET_INTERVAL")
-		indexerPollInterval              = mustParseInterval(rawIndexerPollInterval, "PRECISE_CODE_INTEL_INDEXER_POLL_INTERVAL")
 		schedulerInterval                = mustParseInterval(rawSchedulerInterval, "PRECISE_CODE_INTEL_SCHEDULER_INTERVAL")
 		indexabilityUpdaterInterval      = mustParseInterval(rawIndexabilityUpdaterInterval, "PRECISE_CODE_INTEL_INDEXABILITY_UPDATER_INTERVAL")
 		janitorInterval                  = mustParseInterval(rawJanitorInterval, "PRECISE_CODE_INTEL_JANITOR_INTERVAL")
@@ -45,7 +42,6 @@ func main() {
 		indexMinimumSearchCount          = mustParseInt(rawIndexMinimumSearchCount, "PRECISE_CODE_INTEL_INDEX_MINIMUM_SEARCH_COUNT")
 		indexMinimumSearchRatio          = mustParsePercent(rawIndexMinimumSearchRatio, "PRECISE_CODE_INTEL_INDEX_MINIMUM_SEARCH_RATIO")
 		indexMinimumPreciseCount         = mustParseInt(rawIndexMinimumPreciseCount, "PRECISE_CODE_INTEL_INDEX_MINIMUM_PRECISE_COUNT")
-		disableIndexer                   = mustParseBool(rawDisableIndexer, "PRECISE_CODE_INTEL_DISABLE_INDEXER")
 		disableJanitor                   = mustParseBool(rawDisableJanitor, "PRECISE_CODE_INTEL_DISABLE_JANITOR")
 		maximumTransactions              = mustParseInt(rawMaxTransactions, "PRECISE_CODE_INTEL_MAXIMUM_TRANSACTIONS")
 		requeueDelay                     = mustParseInterval(rawRequeueDelay, "PRECISE_CODE_INTEL_REQUEUE_DELAY")
@@ -64,7 +60,6 @@ func main() {
 	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
 	indexabilityUpdaterMetrics := indexabilityupdater.NewUpdaterMetrics(prometheus.DefaultRegisterer)
 	schedulerMetrics := scheduler.NewSchedulerMetrics(prometheus.DefaultRegisterer)
-	indexerMetrics := indexer.NewIndexerMetrics(observationContext)
 	indexManager := indexmanager.New(store.WorkerutilIndexStore(s), indexmanager.ManagerOptions{
 		MaximumTransactions:   maximumTransactions,
 		RequeueDelay:          requeueDelay,
@@ -93,14 +88,6 @@ func main() {
 		schedulerMetrics,
 	)
 
-	indexer := indexer.NewIndexer(
-		s,
-		gitserver.DefaultClient,
-		frontendURL,
-		indexerPollInterval,
-		indexerMetrics,
-	)
-
 	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
 	janitor := janitor.New(s, janitorInterval, janitorMetrics)
 	managerRoutine := goroutine.NewPeriodicGoroutine(context.Background(), cleanupInterval, indexManager)
@@ -113,11 +100,6 @@ func main() {
 		scheduler,
 	}
 
-	if !disableIndexer {
-		routines = append(routines, indexer)
-	} else {
-		log15.Warn("Indexer process is disabled.")
-	}
 	if !disableJanitor {
 		routines = append(routines, janitor)
 	} else {
