@@ -36,12 +36,8 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
                                 provider.isBuiltin ? (
                                     <UsernamePasswordSignInForm key={provider.displayName} {...props} />
                                 ) : (
-                                    <div className="mb-2">
-                                        <a
-                                            key={provider.displayName}
-                                            href={provider.authenticationURL}
-                                            className="btn btn-secondary"
-                                        >
+                                    <div className="mb-2" key={provider.displayName}>
+                                        <a href={provider.authenticationURL} className="btn btn-secondary">
                                             Continue with {provider.displayName}
                                         </a>
                                     </div>
