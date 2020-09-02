@@ -8,6 +8,10 @@
     position: relative;
     width: 2rem;
 
+    &:focus &__bar {
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
     &__bar {
         background-color: var(--secondary);
 
