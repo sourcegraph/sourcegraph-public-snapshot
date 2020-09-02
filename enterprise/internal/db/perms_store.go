@@ -633,7 +633,7 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 	}
 
 	q = loadUserPendingPermissionsByIDBatchQuery(changedIDs, p.Perm, authz.PermRepos, "FOR UPDATE")
-	loadedIDs, err := txs.batchLoadUserPendingPermissions(ctx, q)
+	loadedIDs, err := txs.batchLoadIDs(ctx, q)
 	if err != nil {
 		return errors.Wrap(err, "batch load user pending permissions")
 	}
@@ -669,9 +669,7 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 
 	if q, err = updateUserPendingPermissionsBatchQuery(updatedPerms...); err != nil {
 		return err
-	}
-
-	if err = txs.execute(ctx, q); err != nil {
+	} else if err = txs.execute(ctx, q); err != nil {
 		return errors.Wrap(err, "execute update user pending permissions batch query")
 	}
 
@@ -712,47 +710,6 @@ func (s *PermsStore) loadUserPendingPermissionsIDs(ctx context.Context, q *sqlf.
 	}
 
 	return ids, nil
-}
-
-func (s *PermsStore) batchLoadUserPendingPermissions(ctx context.Context, q *sqlf.Query) (
-	loaded map[int32]*roaring.Bitmap,
-	err error,
-) {
-	ctx, save := s.observe(ctx, "batchLoadUserPendingPermissions", "")
-	defer func() {
-		save(&err,
-			otlog.String("Query.Query", q.Query(sqlf.PostgresBindVar)),
-			otlog.Object("Query.Args", q.Args()),
-		)
-	}()
-
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	loaded = make(map[int32]*roaring.Bitmap)
-	for rows.Next() {
-		var id int32
-		var ids []byte
-		if err = rows.Scan(&id, &ids); err != nil {
-			return nil, err
-		}
-
-		bm := roaring.NewBitmap()
-		if len(ids) > 0 {
-			if err = bm.UnmarshalBinary(ids); err != nil {
-				return nil, err
-			}
-		}
-		loaded[id] = bm
-	}
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return loaded, nil
 }
 
 func insertUserPendingPermissionsBatchQuery(
@@ -1311,21 +1268,19 @@ func (s *PermsStore) batchLoadIDs(ctx context.Context, q *sqlf.Query) (map[int32
 
 	loaded := make(map[int32]*roaring.Bitmap)
 	for rows.Next() {
-		var objID int32
+		var id int32
 		var ids []byte
-		if err = rows.Scan(&objID, &ids); err != nil {
+		if err = rows.Scan(&id, &ids); err != nil {
 			return nil, err
-		}
-
-		if len(ids) == 0 {
-			continue
 		}
 
 		bm := roaring.NewBitmap()
-		if err = bm.UnmarshalBinary(ids); err != nil {
-			return nil, err
+		if len(ids) > 0 {
+			if err = bm.UnmarshalBinary(ids); err != nil {
+				return nil, err
+			}
 		}
-		loaded[objID] = bm
+		loaded[id] = bm
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
