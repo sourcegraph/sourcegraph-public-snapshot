@@ -227,7 +227,7 @@ describe('Repository', () => {
                                         },
                                     },
                                 ],
-                                pageInfo: { hasNextPage: true },
+                                pageInfo: { hasNextPage: false },
                             },
                         },
                     },
