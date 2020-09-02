@@ -1,11 +1,11 @@
 import React from 'react'
 import renderer from 'react-test-renderer'
 import { setLinkComponent } from '../../../shared/src/components/Link'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { ThemePreference } from '../theme'
 import { GlobalNavbar } from './GlobalNavbar'
 import { createLocation, createMemoryHistory } from 'history'
 import { NOOP_SETTINGS_CASCADE } from '../../../shared/src/util/searchTestHelpers'
+import { SearchPatternType } from '../graphql-operations'
 
 const PROPS: GlobalNavbar['props'] = {
     authenticatedUser: null,
@@ -19,7 +19,7 @@ const PROPS: GlobalNavbar['props'] = {
     onThemePreferenceChange: () => undefined,
     isLightTheme: true,
     themePreference: ThemePreference.Light,
-    patternType: GQL.SearchPatternType.literal,
+    patternType: SearchPatternType.literal,
     setPatternType: () => undefined,
     caseSensitive: false,
     setCaseSensitivity: () => undefined,

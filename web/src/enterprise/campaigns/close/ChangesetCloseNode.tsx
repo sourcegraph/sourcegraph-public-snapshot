@@ -1,6 +1,5 @@
 import * as H from 'history'
 import React from 'react'
-import { Observer } from 'rxjs'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { ChangesetFields } from '../../../graphql-operations'
@@ -15,7 +14,6 @@ import { HiddenExternalChangesetCloseNode } from './HiddenExternalChangesetClose
 export interface ChangesetCloseNodeProps extends ThemeProps {
     node: ChangesetFields
     viewerCanAdminister: boolean
-    campaignUpdates?: Pick<Observer<void>, 'next'>
     history: H.History
     location: H.Location
     extensionInfo?: {

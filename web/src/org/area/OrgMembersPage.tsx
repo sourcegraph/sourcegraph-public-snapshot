@@ -16,16 +16,18 @@ import { InviteForm } from '../invite/InviteForm'
 import { OrgAreaPageProps } from './OrgArea'
 import { ErrorAlert } from '../../components/alerts'
 import * as H from 'history'
+import { AuthenticatedUser } from '../../auth'
+import { OrgAreaOrganizationFields } from '../../graphql-operations'
 
 interface UserNodeProps {
     /** The user to display in this list item. */
     node: GQL.IUser
 
     /** The organization being displayed. */
-    org: GQL.IOrg
+    org: OrgAreaOrganizationFields
 
     /** The currently authenticated user. */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 
     /** Called when the user is updated by an action in this list item. */
     onDidUpdate?: () => void

@@ -33,7 +33,6 @@ export const campaignSpecFragment = gql`
         createdAt
         creator {
             username
-            avatarURL
             url
         }
         expiresAt

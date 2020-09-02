@@ -3,14 +3,14 @@ import renderer from 'react-test-renderer'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
 import { SearchScopes } from './SearchScopes'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { Settings } from '../../schema/settings.schema'
+import { SearchPatternType } from '../../graphql-operations'
 
 const BASE_PROPS = {
     authenticatedUser: {},
     history: createMemoryHistory(),
     query: 'abc',
-    patternType: GQL.SearchPatternType.literal,
+    patternType: SearchPatternType.literal,
     versionContext: undefined,
 }
 

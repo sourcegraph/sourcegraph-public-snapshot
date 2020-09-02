@@ -92,6 +92,9 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				ReconcilerState: cmpgn.ReconcilerStateCompleted,
 				FailureMessage:  &failureMessage,
 				NumResets:       18,
+
+				Unsynced: true,
+				Closing:  true,
 			}
 
 			// Only set these fields on a subset to make sure that
@@ -326,7 +329,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		}
 
 		for i := 1; i <= len(changesets); i++ {
-			ts, next, err := s.ListChangesets(ctx, ListChangesetsOpts{Limit: i})
+			ts, next, err := s.ListChangesets(ctx, ListChangesetsOpts{LimitOpts: LimitOpts{Limit: i}})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -369,7 +372,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		{
 			var cursor int64
 			for i := 1; i <= len(changesets); i++ {
-				opts := ListChangesetsOpts{Cursor: cursor, Limit: 1}
+				opts := ListChangesetsOpts{Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
 				have, next, err := s.ListChangesets(ctx, opts)
 				if err != nil {
 					t.Fatal(err)
@@ -429,9 +432,9 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			}
 		}
 
-		// Limit of -1 should return all Changesets
+		// No Limit should return all Changesets
 		{
-			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{Limit: -1})
+			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{})
 			if err != nil {
 				t.Fatal(err)
 			}

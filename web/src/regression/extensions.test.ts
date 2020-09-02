@@ -10,7 +10,7 @@ import { editUserSettings } from './util/settings'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { ensureTestExternalService } from './util/api'
 import { retry } from '../../../shared/src/testing/utils'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 
 /**
  * Activates the extension with the given ID in user settings.
@@ -85,7 +85,7 @@ describe('Sourcegraph extensions regression test suite', () => {
         )
     })
 
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
 
     after(async () => {
         if (!config.noCleanup) {

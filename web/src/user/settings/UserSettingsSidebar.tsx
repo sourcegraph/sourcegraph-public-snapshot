@@ -5,7 +5,6 @@ import ServerIcon from 'mdi-react/ServerIcon'
 import MapSearchOutlineIcon from 'mdi-react/MapSearchOutlineIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import {
     SIDEBAR_BUTTON_CLASS,
     SidebarGroup,
@@ -20,10 +19,12 @@ import { NavItemDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
 import { HAS_SEEN_TOUR_KEY, HAS_CANCELLED_TOUR_KEY } from '../../search/input/SearchOnboardingTour'
 import { OnboardingTourProps } from '../../search'
+import { AuthenticatedUser } from '../../auth'
+import { UserAreaUserFields } from '../../graphql-operations'
 
 export interface UserSettingsSidebarItemConditionContext {
-    user: Pick<GQL.IUser, 'id' | 'viewerCanAdminister' | 'builtinAuth'>
-    authenticatedUser: Pick<GQL.IUser, 'id' | 'siteAdmin'>
+    user: UserAreaUserFields
+    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'siteAdmin' | 'tags'>
 }
 
 export type UserSettingsSidebarItems = Record<

@@ -32,7 +32,6 @@ export const CreateUpdateCampaignAlert: React.FunctionComponent<CreateUpdateCamp
                 ? await applyCampaign({ campaignSpec: specID, campaign: campaignID })
                 : await createCampaign({ campaignSpec: specID })
             history.push(campaign.url)
-            setIsLoading(false)
         } catch (error) {
             setIsLoading(error)
         }

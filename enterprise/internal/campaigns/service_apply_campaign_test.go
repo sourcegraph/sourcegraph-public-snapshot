@@ -47,13 +47,6 @@ func TestServiceApplyCampaign(t *testing.T) {
 	store := NewStoreWithClock(dbconn.Global, clock)
 	svc := NewService(store, httpcli.NewExternalHTTPClientFactory())
 
-	// The diff stat that corresponds to what's stored in the spec.
-	diffStat := &diff.Stat{
-		Added:   10,
-		Changed: 5,
-		Deleted: 2,
-	}
-
 	t.Run("campaignSpec without changesetSpecs", func(t *testing.T) {
 		t.Run("new campaign", func(t *testing.T) {
 			campaignSpec := createCampaignSpec(t, ctx, store, "campaign1", admin.ID)
@@ -216,21 +209,6 @@ func TestServiceApplyCampaign(t *testing.T) {
 	// The applying/re-applying of a campaignSpec to an existing campaign is
 	// covered in the tests above.
 	t.Run("campaignSpec with changesetSpecs", func(t *testing.T) {
-		// We need to mock SyncChangesets because ApplyCampaign syncs
-		// changesets. Once that moves to the background, we can remove this
-		// mock.
-		syncedBranchName := "refs/heads/synced-branch-name"
-		MockSyncChangesets = func(_ context.Context, _ RepoStore, tx SyncStore, _ *httpcli.Factory, cs ...*campaigns.Changeset) error {
-			for _, c := range cs {
-				c.ExternalBranch = syncedBranchName
-				if err := tx.UpdateChangeset(ctx, c); err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-		t.Cleanup(func() { MockSyncChangesets = nil })
-
 		t.Run("new campaign", func(t *testing.T) {
 			campaignSpec := createCampaignSpec(t, ctx, store, "campaign3", admin.ID)
 
@@ -257,9 +235,9 @@ func TestServiceApplyCampaign(t *testing.T) {
 			c1 := cs.Find(campaigns.WithExternalID(spec1.Spec.ExternalID))
 			assertChangeset(t, c1, changesetAssertions{
 				repo:             spec1.RepoID,
-				externalBranch:   syncedBranchName,
 				externalID:       "1234",
-				reconcilerState:  campaigns.ReconcilerStateCompleted,
+				unsynced:         true,
+				reconcilerState:  campaigns.ReconcilerStateQueued,
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 			})
 
@@ -270,7 +248,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ownedByCampaign:  campaign.ID,
 				reconcilerState:  campaigns.ReconcilerStateQueued,
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
-				diffStat:         diffStat,
+				diffStat:         testChangsetSpecDiffStat,
 			})
 		})
 
@@ -355,27 +333,36 @@ func TestServiceApplyCampaign(t *testing.T) {
 				headRef:      "refs/heads/repo-3-branch-1",
 			})
 
-			// Before we apply the new campaign spec, we set up the assertion
-			// for changesets to be closed.
+			// Before we apply the new campaign spec, we make the changeset we
+			// expect to be closed to look "published", otherwise it won't be
+			// closed.
 			wantClosed := oldChangesets.Find(campaigns.WithCurrentSpecID(oldSpec4.ID))
-			// We need to make it look "published", otherwise it won't be closed.
-			setChangesetPublished(t, ctx, store, wantClosed, oldSpec4.Spec.HeadRef, "98765")
-
-			verifyClosed := assertChangesetsClose(t, admin.ID, wantClosed)
+			setChangesetPublished(t, ctx, store, wantClosed, "98765", oldSpec4.Spec.HeadRef)
 
 			// Apply and expect 5 changesets
 			campaign, cs := applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 5)
 
-			verifyClosed()
+			// This changeset we want marked as "to be closed"
+			reloadAndAssertChangeset(t, ctx, store, wantClosed, changesetAssertions{
+				repo:             repos[2].ID,
+				currentSpec:      oldSpec4.ID,
+				externalID:       wantClosed.ExternalID,
+				externalBranch:   wantClosed.ExternalBranch,
+				ownedByCampaign:  campaign.ID,
+				reconcilerState:  campaigns.ReconcilerStateQueued,
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				diffStat:         testChangsetSpecDiffStat,
+				closing:          true,
+			})
 
 			c1 := cs.Find(campaigns.WithExternalID(spec1.Spec.ExternalID))
 			assertChangeset(t, c1, changesetAssertions{
 				repo:             repos[0].ID,
 				currentSpec:      0,
 				previousSpec:     0,
-				externalBranch:   syncedBranchName,
 				externalID:       "1234",
-				reconcilerState:  campaigns.ReconcilerStateCompleted,
+				unsynced:         true,
+				reconcilerState:  campaigns.ReconcilerStateQueued,
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 			})
 
@@ -384,9 +371,9 @@ func TestServiceApplyCampaign(t *testing.T) {
 				repo:             repos[0].ID,
 				currentSpec:      0,
 				previousSpec:     0,
-				externalBranch:   syncedBranchName,
 				externalID:       "5678",
-				reconcilerState:  campaigns.ReconcilerStateCompleted,
+				unsynced:         true,
+				reconcilerState:  campaigns.ReconcilerStateQueued,
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 			})
 
@@ -398,7 +385,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ownedByCampaign:  campaign.ID,
 				reconcilerState:  campaigns.ReconcilerStateQueued,
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
-				diffStat:         diffStat,
+				diffStat:         testChangsetSpecDiffStat,
 			})
 
 			c4 := cs.Find(campaigns.WithCurrentSpecID(spec4.ID))
@@ -408,7 +395,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ownedByCampaign:  campaign.ID,
 				reconcilerState:  campaigns.ReconcilerStateQueued,
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
-				diffStat:         diffStat,
+				diffStat:         testChangsetSpecDiffStat,
 			})
 
 			c5 := cs.Find(campaigns.WithCurrentSpecID(spec5.ID))
@@ -418,7 +405,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ownedByCampaign:  campaign.ID,
 				reconcilerState:  campaigns.ReconcilerStateQueued,
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
-				diffStat:         diffStat,
+				diffStat:         testChangsetSpecDiffStat,
 			})
 		})
 
@@ -451,7 +438,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			_, trackedChangesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 1)
 			// This should still point to the owner campaign
 			c2 := trackedChangesets[0]
-			assertChangeset(t, c2, changesetAssertions{
+			trackedChangesetAssertions := changesetAssertions{
 				repo:             c.RepoID,
 				currentSpec:      oldSpec1.ID,
 				ownedByCampaign:  ownerCampaign.ID,
@@ -459,8 +446,9 @@ func TestServiceApplyCampaign(t *testing.T) {
 				externalID:       c.ExternalID,
 				reconcilerState:  campaigns.ReconcilerStateCompleted,
 				publicationState: campaigns.ChangesetPublicationStatePublished,
-				diffStat:         diffStat,
-			})
+				diffStat:         testChangsetSpecDiffStat,
+			}
+			assertChangeset(t, c2, trackedChangesetAssertions)
 
 			// Now we stop tracking it in the second campaign
 			campaignSpec3 := createCampaignSpec(t, ctx, store, "tracking-campaign", admin.ID)
@@ -468,10 +456,10 @@ func TestServiceApplyCampaign(t *testing.T) {
 			// Campaign should have 0 changesets after applying, but the
 			// tracked changeset should not be closed, since the campaign is
 			// not the owner.
-			//
-			verifyClosed := assertChangesetsClose(t, admin.ID)
 			applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 0)
-			verifyClosed()
+
+			trackedChangesetAssertions.closing = false
+			reloadAndAssertChangeset(t, ctx, store, c2, trackedChangesetAssertions)
 		})
 
 		t.Run("campaign with changeset that is unpublished", func(t *testing.T) {
@@ -492,9 +480,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			campaignSpec2 := createCampaignSpec(t, ctx, store, "unpublished-changesets", admin.ID)
 
 			// That should close no changesets, but leave the campaign with 0 changesets
-			verifyClosed := assertChangesetsClose(t, admin.ID)
 			applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 0)
-			verifyClosed()
 
 			// And the unpublished changesets should be deleted
 			toBeDeleted := changesets[0]
@@ -565,9 +551,12 @@ type changesetAssertions struct {
 	ownedByCampaign  int64
 	reconcilerState  campaigns.ReconcilerState
 	publicationState campaigns.ChangesetPublicationState
+	externalState    campaigns.ChangesetExternalState
 	externalID       string
 	externalBranch   string
 	diffStat         *diff.Stat
+	unsynced         bool
+	closing          bool
 
 	title string
 	body  string
@@ -606,6 +595,10 @@ func assertChangeset(t *testing.T, c *campaigns.Changeset, a changesetAssertions
 		t.Fatalf("changeset PublicationState wrong. want=%s, have=%s", want, have)
 	}
 
+	if have, want := c.ExternalState, a.externalState; have != want {
+		t.Fatalf("changeset ExternalState wrong. want=%s, have=%s", want, have)
+	}
+
 	if have, want := c.ExternalID, a.externalID; have != want {
 		t.Fatalf("changeset ExternalID wrong. want=%s, have=%s", want, have)
 	}
@@ -620,6 +613,14 @@ func assertChangeset(t *testing.T, c *campaigns.Changeset, a changesetAssertions
 
 	if diff := cmp.Diff(a.diffStat, c.DiffStat()); diff != "" {
 		t.Fatalf("changeset DiffStat wrong. (-want +got):\n%s", diff)
+	}
+
+	if diff := cmp.Diff(a.unsynced, c.Unsynced); diff != "" {
+		t.Fatalf("changeset Unsynced wrong. (-want +got):\n%s", diff)
+	}
+
+	if diff := cmp.Diff(a.closing, c.Closing); diff != "" {
+		t.Fatalf("changeset Closing wrong. (-want +got):\n%s", diff)
 	}
 
 	if want := c.FailureMessage; want != nil {
@@ -658,6 +659,17 @@ func assertChangeset(t *testing.T, c *campaigns.Changeset, a changesetAssertions
 	}
 }
 
+func reloadAndAssertChangeset(t *testing.T, ctx context.Context, s *Store, c *campaigns.Changeset, a changesetAssertions) {
+	t.Helper()
+
+	reloaded, err := s.GetChangeset(ctx, GetChangesetOpts{ID: c.ID})
+	if err != nil {
+		t.Fatalf("reloading changeset %d failed: %s", c.ID, err)
+	}
+
+	assertChangeset(t, reloaded, a)
+}
+
 func applyAndListChangesets(ctx context.Context, t *testing.T, svc *Service, campaignSpecRandID string, wantChangesets int) (*campaigns.Campaign, campaigns.Changesets) {
 	campaign, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
 		CampaignSpecRandID: campaignSpecRandID,
@@ -682,43 +694,6 @@ func applyAndListChangesets(ctx context.Context, t *testing.T, svc *Service, cam
 	return campaign, changesets
 }
 
-func assertChangesetsClose(t *testing.T, wantActor int32, want ...*campaigns.Changeset) (verify func()) {
-	t.Helper()
-
-	closedCalled := false
-
-	mockApplyCampaignCloseChangesets = func(ctx context.Context, toClose campaigns.Changesets) {
-		closedCalled = true
-
-		if a := actor.FromContext(ctx); a.UID != wantActor {
-			t.Fatalf("wrong actor in context. want=%d, have=%d", wantActor, a.UID)
-		}
-
-		if have, want := len(toClose), len(want); have != want {
-			t.Fatalf("closing wrong number of changesets. want=%d, have=%d", want, have)
-		}
-		closedByID := map[int64]bool{}
-		for _, c := range toClose {
-			closedByID[c.ID] = true
-		}
-		for _, c := range want {
-			if _, ok := closedByID[c.ID]; !ok {
-				t.Fatalf("expected changeset %d to be closed but was not", c.ID)
-			}
-		}
-	}
-
-	t.Cleanup(func() { mockApplyCampaignCloseChangesets = nil })
-
-	verify = func() {
-		if !closedCalled {
-			t.Fatalf("expected CloseOpenChangesets to be called but was not")
-		}
-	}
-
-	return verify
-}
-
 func setChangesetPublished(t *testing.T, ctx context.Context, s *Store, c *campaigns.Changeset, externalID, externalBranch string) {
 	t.Helper()
 
@@ -726,6 +701,7 @@ func setChangesetPublished(t *testing.T, ctx context.Context, s *Store, c *campa
 	c.ExternalID = externalID
 	c.PublicationState = campaigns.ChangesetPublicationStatePublished
 	c.ReconcilerState = campaigns.ReconcilerStateCompleted
+	c.Unsynced = false
 
 	if err := s.UpdateChangeset(ctx, c); err != nil {
 		t.Fatalf("failed to update changeset: %s", err)
@@ -754,6 +730,8 @@ type testSpecOpts struct {
 	commitMessage string
 	commitDiff    string
 }
+
+var testChangsetSpecDiffStat = &diff.Stat{Added: 10, Changed: 5, Deleted: 2}
 
 func createChangesetSpec(
 	t *testing.T,
@@ -784,9 +762,9 @@ func createChangesetSpec(
 				},
 			},
 		},
-		DiffStatAdded:   10,
-		DiffStatChanged: 5,
-		DiffStatDeleted: 2,
+		DiffStatAdded:   testChangsetSpecDiffStat.Added,
+		DiffStatChanged: testChangsetSpecDiffStat.Changed,
+		DiffStatDeleted: testChangsetSpecDiffStat.Deleted,
 	}
 
 	if err := store.CreateChangesetSpec(ctx, spec); err != nil {

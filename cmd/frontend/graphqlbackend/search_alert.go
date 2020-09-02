@@ -132,8 +132,8 @@ func alertForQuotesInQueryInLiteralMode(p syntax.ParseTree) *searchAlert {
 // query does not contain any repos to search.
 func (r *searchResolver) reposExist(ctx context.Context, options resolveRepoOp) bool {
 	options.userSettings = r.userSettings
-	repos, _, _, _, err := resolveRepositories(ctx, options)
-	return err == nil && len(repos) > 0
+	resolved, err := resolveRepositories(ctx, options)
+	return err == nil && len(resolved.repoRevs) > 0
 }
 
 func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAlert {
@@ -392,6 +392,14 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 	}
 }
 
+func (r *searchResolver) alertForInvalidRevision(revision string) *searchAlert {
+	revision = strings.TrimSuffix(revision, "^0")
+	return &searchAlert{
+		title:       "Invalid revision syntax",
+		description: fmt.Sprintf("We don't know how to interpret the revision (%s) you specified. Learn more about the revision syntax in our documentation: https://docs.sourcegraph.com/user/search/queries#repository-revisions.", revision),
+	}
+}
+
 func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert {
 	// Try to suggest the most helpful repo: filters to narrow the query.
 	//
@@ -430,10 +438,10 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 		return buildAlert(proposedQueries, description)
 	}
 
-	repos, _, _, _, _ := r.resolveRepositories(ctx, nil)
-	if len(repos) > 0 {
-		paths := make([]string, len(repos))
-		for i, repo := range repos {
+	resolved, _ := r.resolveRepositories(ctx, nil)
+	if len(resolved.repoRevs) > 0 {
+		paths := make([]string, len(resolved.repoRevs))
+		for i, repo := range resolved.repoRevs {
 			paths[i] = string(repo.Repo.Name)
 		}
 
@@ -459,7 +467,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 			repoFieldValues = append(repoFieldValues, repoParentPattern)
 			ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 			defer cancel()
-			_, _, _, overLimit, err := r.resolveRepositories(ctx, repoFieldValues)
+			resolved, err := r.resolveRepositories(ctx, repoFieldValues)
 			if ctx.Err() != nil {
 				continue
 			} else if err != nil {
@@ -467,7 +475,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 			}
 
 			var more string
-			if overLimit {
+			if resolved.overLimit {
 				more = "(further filtering required)"
 			}
 			// We found a more specific repo: filter that may be narrow enough. Now

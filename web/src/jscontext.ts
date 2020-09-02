@@ -53,10 +53,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /**
      * A subset of the site configuration. Not all fields are set.
      */
-    site: Pick<
-        SiteConfiguration,
-        'auth.public' | 'update.channel' | 'campaigns.readAccess.enabled' | 'disableNonCriticalTelemetry'
-    >
+    site: Pick<SiteConfiguration, 'auth.public' | 'update.channel' | 'disableNonCriticalTelemetry'>
 
     /** Whether access tokens are enabled. */
     accessTokensAllow: 'all-users-create' | 'site-admin-create' | 'none'
@@ -82,6 +79,12 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Whether signup is allowed on the site. */
     allowSignup: boolean
+
+    /** Whether the campaigns feature is enabled on the site. */
+    campaignsEnabled: boolean
+
+    /** Whether user is allowed to add external services. */
+    externalServicesUserModeEnabled: boolean
 
     /** Authentication provider instances in site config. */
     authProviders?: {

@@ -1,10 +1,10 @@
 import expect from 'expect'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
 import { retry } from '../../../shared/src/testing/utils'
-import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { testSingleFilePage } from './shared'
 import { getConfig } from '../../../shared/src/testing/config'
+import { ExternalServiceKind } from '../../../shared/src/graphql-operations'
 
 // By default, these tests run against a local Bitbucket instance and a local Sourcegraph instance.
 // You can run them against other instances by setting the below env vars in addition to SOURCEGRAPH_BASE_URL.
@@ -176,7 +176,7 @@ describe('Sourcegraph browser extension on Bitbucket Server', () => {
     })
 
     // Take a screenshot when a test fails.
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
 
     testSingleFilePage({
         getDriver: () => driver,

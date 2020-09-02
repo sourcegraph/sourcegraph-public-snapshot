@@ -20,6 +20,7 @@ import { RegistryExtensionDeleteButton } from './RegistryExtensionDeleteButton'
 import { RegistryExtensionNameFormGroup, RegistryPublisherFormGroup } from './RegistryExtensionForm'
 import { ErrorAlert } from '../../../components/alerts'
 import * as H from 'history'
+import { AuthenticatedUser } from '../../../auth'
 
 function updateExtension(
     args: Pick<
@@ -56,7 +57,7 @@ function updateExtension(
 }
 
 interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
-    authenticatedUser: GQL.IUser
+    authenticatedUser: AuthenticatedUser
     history: H.History
 }
 

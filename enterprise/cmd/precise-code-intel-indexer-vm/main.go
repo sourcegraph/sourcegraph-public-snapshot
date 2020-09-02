@@ -2,9 +2,6 @@ package main
 
 import (
 	"context"
-	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/google/uuid"
 	"github.com/inconshreveable/log15"
@@ -17,6 +14,7 @@ import (
 	queue "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/queue/client"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -35,6 +33,10 @@ func main() {
 		indexerPollInterval      = mustParseInterval(rawIndexerPollInterval, "PRECISE_CODE_INTEL_INDEXER_POLL_INTERVAL")
 		indexerHeartbeatInterval = mustParseInterval(rawIndexerHeartbeatInterval, "PRECISE_CODE_INTEL_INDEXER_HEARTBEAT_INTERVAL")
 		numContainers            = mustParseInt(rawMaxContainers, "PRECISE_CODE_INTEL_MAXIMUM_CONTAINERS")
+		firecrackerImage         = mustGet(rawFirecrackerImage, "PRECISE_CODE_INTEL_FIRECRACKER_IMAGE")
+		useFirecracker           = mustParseBool(rawUseFirecracker, "PRECISE_CODE_INTEL_USE_FIRECRACKER")
+		firecrackerNumCPUs       = mustParseInt(rawFirecrackerNumCPUs, "PRECISE_CODE_INTEL_FIRECRACKER_NUM_CPUS")
+		firecrackerMemory        = mustGet(rawFirecrackerMemory, "PRECISE_CODE_INTEL_FIRECRACKER_MEMORY")
 	)
 
 	if frontendURLFromDocker == "" {
@@ -68,25 +70,13 @@ func main() {
 			FrontendURL:           frontendURL,
 			FrontendURLFromDocker: frontendURLFromDocker,
 			AuthToken:             internalProxyAuthToken,
+			FirecrackerImage:      firecrackerImage,
+			UseFirecracker:        useFirecracker,
+			FirecrackerNumCPUs:    firecrackerNumCPUs,
+			FirecrackerMemory:     firecrackerMemory,
 		},
 	})
 
-	go server.Start()
-	go indexer.Start()
 	go debugserver.Start()
-	go heartbeater.Start()
-
-	signals := make(chan os.Signal, 2)
-	signal.Notify(signals, syscall.SIGINT, syscall.SIGHUP)
-	<-signals
-
-	go func() {
-		// Insta-shutdown on a second signal
-		<-signals
-		os.Exit(0)
-	}()
-
-	server.Stop()
-	indexer.Stop()
-	heartbeater.Stop()
+	goroutine.MonitorBackgroundRoutines(server, indexer, heartbeater)
 }

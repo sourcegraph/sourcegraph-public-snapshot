@@ -263,6 +263,18 @@ func TestSubstituteConcat(t *testing.T) {
 	}
 }
 
+func TestEllipsesForHoles(t *testing.T) {
+	input := "if ... { ... }"
+	want := `"if :[_] { :[_] }"`
+	t.Run("Ellipses for holes", func(t *testing.T) {
+		query, _ := ProcessAndOr(input, ParserOptions{SearchType: SearchTypeStructural})
+		got := prettyPrint(query.(*AndOrQuery).Query)
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Fatal(diff)
+		}
+	})
+}
+
 func TestConvertEmptyGroupsToLiteral(t *testing.T) {
 	cases := []struct {
 		input      string
@@ -274,7 +286,7 @@ func TestConvertEmptyGroupsToLiteral(t *testing.T) {
 		},
 		{
 			input:      "func(.*)",
-			wantLabels: HeuristicParensAsPatterns | Regexp,
+			wantLabels: Regexp,
 		},
 	}
 	for _, c := range cases {
@@ -807,10 +819,7 @@ func TestConcatRevFilters(t *testing.T) {
 
 			var queriesStr []string
 			for _, q := range queries {
-				qConcat, err := concatRevFilters(q)
-				if err != nil {
-					t.Fatal(err)
-				}
+				qConcat := concatRevFilters(q)
 				queriesStr = append(queriesStr, prettyPrint(qConcat))
 			}
 			got := "(" + strings.Join(queriesStr, ") OR (") + ")"
@@ -842,31 +851,9 @@ func TestConcatRevFiltersTopLevelAnd(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
 			query, _ := ParseAndOr(c.input, SearchTypeRegex)
-			qConcat, err := concatRevFilters(query)
-			if err != nil {
-				t.Fatal(err)
-			}
+			qConcat := concatRevFilters(query)
 			if diff := cmp.Diff(c.want, prettyPrint(qConcat)); diff != "" {
 				t.Error(diff)
-			}
-		})
-	}
-}
-
-func TestConcatRevFiltersForInvalidSyntax(t *testing.T) {
-	cases := []string{
-		"repo:foo rev:a rev:b",
-		"repo:foo@a rev:b",
-	}
-	for _, c := range cases {
-		t.Run(c, func(t *testing.T) {
-			query, _ := ParseAndOr(c, SearchTypeRegex)
-			queries := dnf(query)
-			for _, q := range queries {
-				_, err := concatRevFilters(q)
-				if err == nil {
-					t.Fatal("Expected err, but got nil")
-				}
 			}
 		})
 	}

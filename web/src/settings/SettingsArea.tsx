@@ -20,6 +20,7 @@ import { SettingsPage } from './SettingsPage'
 import { ErrorMessage } from '../components/alerts'
 import * as H from 'history'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { AuthenticatedUser } from '../auth'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -31,7 +32,7 @@ interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCasc
     /**
      * The currently authenticated user, NOT (necessarily) the user who is the subject of the page.
      */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 }
 
 interface SettingsData {

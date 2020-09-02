@@ -219,17 +219,11 @@ func SearchIndexEnabled() bool {
 	return DeployType() != DeploySingleDocker
 }
 
-func CampaignsReadAccessEnabled() bool {
-	if v := Get().CampaignsReadAccessEnabled; v != nil {
-		return *v
+func CampaignsEnabled() bool {
+	if enabled := Get().CampaignsEnabled; enabled != nil {
+		return *enabled
 	}
-
-	// DEPRECATED property name.
-	if v := Get().AutomationReadAccessEnabled; v != nil {
-		return *v
-	}
-
-	return false
+	return true
 }
 
 func ExternalURL() string {
@@ -281,14 +275,6 @@ func SearchSymbolsParallelism() int {
 		return 20
 	}
 	return val
-}
-
-func PermissionsBackgroundSyncEnabled() bool {
-	val := Get().PermissionsBackgroundSync
-	if val == nil {
-		return false
-	}
-	return val.Enabled
 }
 
 func BitbucketServerPluginPerm() bool {

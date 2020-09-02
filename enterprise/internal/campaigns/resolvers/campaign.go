@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
@@ -27,8 +28,19 @@ type campaignResolver struct {
 	namespaceErr  error
 }
 
+const campaignIDKind = "Campaign"
+
+func marshalCampaignID(id int64) graphql.ID {
+	return relay.MarshalID(campaignIDKind, id)
+}
+
+func unmarshalCampaignID(id graphql.ID) (campaignID int64, err error) {
+	err = relay.UnmarshalSpec(id, &campaignID)
+	return
+}
+
 func (r *campaignResolver) ID() graphql.ID {
-	return campaigns.MarshalCampaignID(r.Campaign.ID)
+	return marshalCampaignID(r.Campaign.ID)
 }
 
 func (r *campaignResolver) Name() string {
@@ -149,15 +161,14 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 	ctx context.Context,
 	args *graphqlbackend.ChangesetCountsArgs,
 ) ([]graphqlbackend.ChangesetCountsResolver, error) {
-	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access changesets.
-	if err := allowReadAccess(ctx); err != nil {
+	if err := campaignsEnabled(); err != nil {
 		return nil, err
 	}
 
 	resolvers := []graphqlbackend.ChangesetCountsResolver{}
 
 	publishedState := campaigns.ChangesetPublicationStatePublished
-	opts := ee.ListChangesetsOpts{CampaignID: r.Campaign.ID, Limit: -1, PublicationState: &publishedState}
+	opts := ee.ListChangesetsOpts{CampaignID: r.Campaign.ID, PublicationState: &publishedState}
 	cs, _, err := r.store.ListChangesets(ctx, opts)
 	if err != nil {
 		return resolvers, err
@@ -179,7 +190,7 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 		end = args.To.Time.UTC()
 	}
 
-	eventsOpts := ee.ListChangesetEventsOpts{ChangesetIDs: cs.IDs(), Limit: -1}
+	eventsOpts := ee.ListChangesetEventsOpts{ChangesetIDs: cs.IDs()}
 	es, _, err := r.store.ListChangesetEvents(ctx, eventsOpts)
 	if err != nil {
 		return resolvers, err
@@ -202,7 +213,6 @@ func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffSt
 		store: r.store,
 		opts: ee.ListChangesetsOpts{
 			CampaignID: r.Campaign.ID,
-			Limit:      -1, // Get all changesets
 		},
 		optsSafe: true,
 	}
@@ -228,4 +238,14 @@ func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffSt
 	}
 
 	return totalStat, nil
+}
+
+func (r *campaignResolver) CurrentSpec(ctx context.Context) (graphqlbackend.CampaignSpecResolver, error) {
+	campaignSpec, err := r.store.GetCampaignSpec(ctx, ee.GetCampaignSpecOpts{ID: r.Campaign.CampaignSpecID})
+	if err != nil {
+		// This spec should always exist, so fail hard on not found errors as well.
+		return nil, err
+	}
+
+	return &campaignSpecResolver{store: r.store, httpFactory: r.httpFactory, campaignSpec: campaignSpec}, nil
 }

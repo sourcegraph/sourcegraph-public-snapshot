@@ -6,7 +6,6 @@ exports[`ChangesetNode renders ExternalChangeset 1`] = `
     className="changeset-node__separator"
   />
   <ExternalChangesetNode
-    campaignUpdates="[Subject]"
     history="[History]"
     isLightTheme={true}
     location="[Location path=/campaigns]"
@@ -26,7 +25,6 @@ exports[`ChangesetNode renders HiddenExternalChangeset 1`] = `
     className="changeset-node__separator"
   />
   <HiddenExternalChangesetNode
-    campaignUpdates="[Subject]"
     history="[History]"
     isLightTheme={true}
     location="[Location path=/campaigns]"

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
@@ -53,6 +52,8 @@ var changesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.finished_at"),
 	sqlf.Sprintf("changesets.process_after"),
 	sqlf.Sprintf("changesets.num_resets"),
+	sqlf.Sprintf("changesets.unsynced"),
+	sqlf.Sprintf("changesets.closing"),
 }
 
 // changesetInsertColumns is the list of changeset columns that are modified in
@@ -87,29 +88,11 @@ var changesetInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("finished_at"),
 	sqlf.Sprintf("process_after"),
 	sqlf.Sprintf("num_resets"),
+	sqlf.Sprintf("unsynced"),
+	sqlf.Sprintf("closing"),
 }
 
-// CreateChangeset creates the given Changeset.
-func (s *Store) CreateChangeset(ctx context.Context, c *campaigns.Changeset) error {
-	q, err := s.createChangesetQuery(c)
-	if err != nil {
-		return err
-	}
-
-	return s.query(ctx, q, func(sc scanner) error { return scanChangeset(c, sc) })
-}
-
-var createChangesetQueryFmtstr = `
--- source: enterprise/internal/campaigns/store.go:CreateChangeset
-INSERT INTO changesets (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-ON CONFLICT ON CONSTRAINT
-changesets_repo_external_id_unique
-DO NOTHING
-RETURNING %s
-`
-
-func (s *Store) createChangesetQuery(c *campaigns.Changeset) (*sqlf.Query, error) {
+func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Changeset) (*sqlf.Query, error) {
 	metadata, err := jsonbColumn(c.Metadata)
 	if err != nil {
 		return nil, err
@@ -125,16 +108,7 @@ func (s *Store) createChangesetQuery(c *campaigns.Changeset) (*sqlf.Query, error
 		return nil, err
 	}
 
-	if c.CreatedAt.IsZero() {
-		c.CreatedAt = s.now()
-	}
-
-	if c.UpdatedAt.IsZero() {
-		c.UpdatedAt = c.CreatedAt
-	}
-
-	return sqlf.Sprintf(
-		createChangesetQueryFmtstr,
+	vars := []interface{}{
 		sqlf.Join(changesetInsertColumns, ", "),
 		c.RepoID,
 		c.CreatedAt,
@@ -165,9 +139,43 @@ func (s *Store) createChangesetQuery(c *campaigns.Changeset) (*sqlf.Query, error
 		nullTimeColumn(c.FinishedAt),
 		nullTimeColumn(c.ProcessAfter),
 		c.NumResets,
-		sqlf.Join(changesetColumns, ", "),
-	), nil
+		c.Unsynced,
+		c.Closing,
+	}
+
+	if includeID {
+		vars = append(vars, c.ID)
+	}
+
+	vars = append(vars, sqlf.Join(changesetColumns, ", "))
+
+	return sqlf.Sprintf(q, vars...), nil
 }
+
+// CreateChangeset creates the given Changeset.
+func (s *Store) CreateChangeset(ctx context.Context, c *campaigns.Changeset) error {
+	if c.CreatedAt.IsZero() {
+		c.CreatedAt = s.now()
+	}
+
+	if c.UpdatedAt.IsZero() {
+		c.UpdatedAt = c.CreatedAt
+	}
+
+	q, err := s.changesetWriteQuery(createChangesetQueryFmtstr, false, c)
+	if err != nil {
+		return err
+	}
+
+	return s.query(ctx, q, func(sc scanner) error { return scanChangeset(c, sc) })
+}
+
+var createChangesetQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:CreateChangeset
+INSERT INTO changesets (%s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+RETURNING %s
+`
 
 // DeleteChangeset deletes the Changeset with the given ID.
 func (s *Store) DeleteChangeset(ctx context.Context, id int64) error {
@@ -365,8 +373,8 @@ func listChangesetSyncData(opts ListChangesetSyncDataOpts) *sqlf.Query {
 // ListChangesetsOpts captures the query options needed for
 // listing changesets.
 type ListChangesetsOpts struct {
+	LimitOpts
 	Cursor               int64
-	Limit                int
 	CampaignID           int64
 	IDs                  []int64
 	WithoutDeleted       bool
@@ -383,7 +391,7 @@ type ListChangesetsOpts struct {
 func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs campaigns.Changesets, next int64, err error) {
 	q := listChangesetsQuery(&opts)
 
-	cs = make([]*campaigns.Changeset, 0, opts.Limit)
+	cs = make([]*campaigns.Changeset, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) (err error) {
 		var c campaigns.Changeset
 		if err = scanChangeset(&c, sc); err != nil {
@@ -393,7 +401,7 @@ func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs
 		return nil
 	})
 
-	if opts.Limit != 0 && len(cs) == opts.Limit {
+	if opts.Limit != 0 && len(cs) == opts.DBLimit() {
 		next = cs[len(cs)-1].ID
 		cs = cs[:len(cs)-1]
 	}
@@ -409,19 +417,7 @@ WHERE %s
 ORDER BY id ASC
 `
 
-const defaultListLimit = 50
-
 func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
-	if opts.Limit == 0 {
-		opts.Limit = defaultListLimit
-	}
-	opts.Limit++
-
-	var limitClause string
-	if opts.Limit > 0 {
-		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
-	}
-
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("changesets.id >= %s", opts.Cursor),
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
@@ -469,7 +465,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		listChangesetsQueryFmtstr+limitClause,
+		listChangesetsQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(changesetColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
@@ -477,7 +473,9 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 
 // UpdateChangeset updates the given Changeset.
 func (s *Store) UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) error {
-	q, err := s.updateChangesetQuery(cs)
+	cs.UpdatedAt = s.now()
+
+	q, err := s.changesetWriteQuery(updateChangesetQueryFmtstr, true, cs)
 	if err != nil {
 		return err
 	}
@@ -490,67 +488,11 @@ func (s *Store) UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) er
 var updateChangesetQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changeset_specs.go:UpdateChangeset
 UPDATE changesets
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   %s
 `
-
-func (s *Store) updateChangesetQuery(c *campaigns.Changeset) (*sqlf.Query, error) {
-	metadata, err := jsonbColumn(c.Metadata)
-	if err != nil {
-		return nil, err
-	}
-
-	campaignIDs, err := jsonSetColumn(c.CampaignIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	syncState, err := json.Marshal(c.SyncState)
-	if err != nil {
-		return nil, err
-	}
-
-	c.UpdatedAt = s.now()
-
-	return sqlf.Sprintf(
-		updateChangesetQueryFmtstr,
-		sqlf.Join(changesetInsertColumns, ", "),
-		c.RepoID,
-		c.CreatedAt,
-		c.UpdatedAt,
-		metadata,
-		campaignIDs,
-		nullStringColumn(c.ExternalID),
-		c.ExternalServiceType,
-		nullStringColumn(c.ExternalBranch),
-		nullTimeColumn(c.ExternalDeletedAt),
-		nullTimeColumn(c.ExternalUpdatedAt),
-		nullStringColumn(string(c.ExternalState)),
-		nullStringColumn(string(c.ExternalReviewState)),
-		nullStringColumn(string(c.ExternalCheckState)),
-		c.CreatedByCampaign,
-		c.AddedToCampaign,
-		c.DiffStatAdded,
-		c.DiffStatChanged,
-		c.DiffStatDeleted,
-		syncState,
-		nullInt64Column(c.OwnedByCampaignID),
-		nullInt64Column(c.CurrentSpecID),
-		nullInt64Column(c.PreviousSpecID),
-		c.PublicationState,
-		c.ReconcilerState.ToDB(),
-		c.FailureMessage,
-		nullTimeColumn(c.StartedAt),
-		nullTimeColumn(c.FinishedAt),
-		nullTimeColumn(c.ProcessAfter),
-		c.NumResets,
-		// ID
-		c.ID,
-		sqlf.Join(changesetColumns, ", "),
-	), nil
-}
 
 // GetChangesetExternalIDs allows us to find the external ids for pull requests based on
 // a slice of head refs. We need this in order to match incoming webhooks to pull requests as
@@ -646,6 +588,8 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		&dbutil.NullTime{Time: &t.FinishedAt},
 		&dbutil.NullTime{Time: &t.ProcessAfter},
 		&t.NumResets,
+		&t.Unsynced,
+		&t.Closing,
 	)
 	if err != nil {
 		return errors.Wrap(err, "scanning changeset")

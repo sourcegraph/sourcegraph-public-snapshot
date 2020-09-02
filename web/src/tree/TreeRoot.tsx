@@ -13,7 +13,6 @@ import {
     switchMap,
     takeUntil,
 } from 'rxjs/operators'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { AbsoluteRepo } from '../../../shared/src/util/url'
 import { fetchTreeEntries } from '../repo/backend'
@@ -21,6 +20,7 @@ import { ChildTreeLayer } from './ChildTreeLayer'
 import { TreeNode } from './Tree'
 import { hasSingleChild, singleChildEntriesToGitTree, SingleChildGitTree } from './util'
 import { ErrorAlert } from '../components/alerts'
+import { TreeFields } from '../graphql-operations'
 
 const maxEntries = 2500
 
@@ -50,7 +50,7 @@ export interface TreeRootProps extends AbsoluteRepo {
 
 const LOADING = 'loading' as const
 interface TreeRootState {
-    treeOrError?: typeof LOADING | GQL.IGitTree | ErrorLike
+    treeOrError?: typeof LOADING | TreeFields | ErrorLike
 }
 
 export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {

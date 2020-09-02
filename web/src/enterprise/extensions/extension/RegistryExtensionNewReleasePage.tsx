@@ -23,6 +23,7 @@ import { ErrorAlert } from '../../../components/alerts'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { ThemeProps } from '../../../../../shared/src/theme'
+import { AuthenticatedUser } from '../../../auth'
 
 const publishExtension = (
     args: Pick<GQL.IPublishExtensionOnExtensionRegistryMutationArguments, 'extensionID' | 'manifest' | 'bundle'>
@@ -51,7 +52,7 @@ interface Props extends ThemeProps, TelemetryProps {
     /** The extension that is the subject of the page. */
     extension: ConfiguredRegistryExtension<GQL.IRegistryExtension>
 
-    authenticatedUser: GQL.IUser
+    authenticatedUser: AuthenticatedUser
     history: H.History
 }
 

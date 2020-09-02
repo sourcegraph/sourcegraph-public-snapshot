@@ -192,6 +192,8 @@ Referenced by:
  finished_at           | timestamp with time zone | 
  process_after         | timestamp with time zone | 
  num_resets            | integer                  | not null default 0
+ unsynced              | boolean                  | not null default false
+ closing               | boolean                  | not null default false
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -411,6 +413,25 @@ Indexes:
 Foreign-key constraints:
     "external_service_repos_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE
     "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+Triggers:
+    trig_soft_delete_orphan_repo_by_external_service_repo AFTER DELETE ON external_service_repos FOR EACH ROW EXECUTE PROCEDURE soft_delete_orphan_repo_by_external_service_repos()
+
+```
+
+# Table "public.external_service_sync_jobs"
+```
+       Column        |           Type           |                                Modifiers                                
+---------------------+--------------------------+-------------------------------------------------------------------------
+ id                  | integer                  | not null default nextval('external_service_sync_jobs_id_seq'::regclass)
+ state               | text                     | not null default 'queued'::text
+ failure_message     | text                     | 
+ started_at          | timestamp with time zone | 
+ finished_at         | timestamp with time zone | 
+ process_after       | timestamp with time zone | 
+ num_resets          | integer                  | not null default 0
+ external_service_id | bigint                   | 
+Foreign-key constraints:
+    "external_services_id_fk" FOREIGN KEY (external_service_id) REFERENCES external_services(id)
 
 ```
 
@@ -436,6 +457,7 @@ Foreign-key constraints:
     "external_services_namepspace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "external_service_sync_jobs" CONSTRAINT "external_services_id_fk" FOREIGN KEY (external_service_id) REFERENCES external_services(id)
 Triggers:
     trig_delete_external_service_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON external_services FOR EACH ROW EXECUTE PROCEDURE delete_external_service_ref_on_external_service_repos()
 

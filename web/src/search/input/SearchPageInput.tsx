@@ -1,5 +1,4 @@
 import * as H from 'history'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import React, { useState, useCallback, useEffect, useMemo } from 'react'
 import { InteractiveModeInput } from './interactive/InteractiveModeInput'
 import { Form } from 'reactstrap'
@@ -25,7 +24,7 @@ import {
     OnboardingTourProps,
     parseSearchURLQuery,
 } from '..'
-import { EventLoggerProps, eventLogger } from '../../tracking/eventLogger'
+import { eventLogger } from '../../tracking/eventLogger'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { VersionContextProps } from '../../../../shared/src/search/util'
@@ -41,6 +40,8 @@ import {
 } from './SearchOnboardingTour'
 import { useLocalStorage } from '../../util/useLocalStorage'
 import Shepherd from 'shepherd.js'
+import { AuthenticatedUser } from '../../auth'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -50,7 +51,7 @@ interface Props
         PatternTypeProps,
         CaseSensitivityProps,
         KeyboardShortcutsProps,
-        EventLoggerProps,
+        TelemetryProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         InteractiveSearchProps,
@@ -58,7 +59,7 @@ interface Props
         Pick<SubmitSearchParams, 'source'>,
         VersionContextProps,
         OnboardingTourProps {
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
@@ -130,7 +131,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                 },
                 {
                     id: 'filter-lang',
-                    text: generateStepTooltip(tour, 'Type to filter the language autocomplete', 2),
+                    text: generateStepTooltip(tour, 'Type to filter the language autocomplete', 2, 5),
                     when: {
                         show() {
                             eventLogger.log('ViewedOnboardingTourFilterLangStep')
@@ -146,7 +147,8 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                     text: generateStepTooltip(
                         tour,
                         "Type the name of a repository you've used recently to filter the autocomplete list",
-                        2
+                        2,
+                        5
                     ),
                     when: {
                         show() {
@@ -173,22 +175,13 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                     },
                 },
                 {
-                    id: 'view-search-reference',
-                    text: generateStepTooltip(tour, 'Review the search reference', 4),
-                    attachTo: {
-                        element: '.search-help-dropdown-button',
-                        on: 'bottom',
-                    },
-                    when: {
-                        show() {
-                            eventLogger.log('ViewedOnboardingTourSearchReferenceStep')
-                        },
-                    },
-                    advanceOn: { selector: '.search-help-dropdown-button', event: 'click' },
-                },
-                {
-                    id: 'final-step',
-                    text: generateStepTooltip(tour, "Use the 'return' key or the search button to run your search", 5),
+                    id: 'submit-search',
+                    text: generateStepTooltip(
+                        tour,
+                        'Use <kbd>return</kbd> or the search button to run your search',
+                        4,
+                        5
+                    ),
                     when: {
                         show() {
                             eventLogger.log('ViewedOnboardingTourSubmitSearchStep')
@@ -237,8 +230,6 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
 
     const onSubmit = useCallback(
         (event?: React.FormEvent<HTMLFormElement>): void => {
-            // False positive
-            // eslint-disable-next-line no-unused-expressions
             event?.preventDefault()
             submitSearch({
                 ...props,

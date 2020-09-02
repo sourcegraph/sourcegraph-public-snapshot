@@ -3,10 +3,9 @@ import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { authRequired } from '../auth'
+import { authRequired, AuthenticatedUser } from '../auth'
 import {
     parseSearchURLQuery,
     PatternTypeProps,
@@ -16,7 +15,6 @@ import {
     OnboardingTourProps,
 } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
-import { EventLoggerProps } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
 import { NavLinks } from './NavLinks'
 import { ThemeProps } from '../../../shared/src/theme'
@@ -31,13 +29,14 @@ import { convertPlainTextToInteractiveQuery } from '../search/input/helpers'
 import { VersionContextDropdown } from './VersionContextDropdown'
 import { VersionContextProps } from '../../../shared/src/search/util'
 import { VersionContext } from '../schema/site.schema'
+import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
 interface Props
     extends SettingsCascadeProps,
         PlatformContextProps,
         ExtensionsControllerProps,
         KeyboardShortcutsProps,
-        EventLoggerProps,
+        TelemetryProps,
         ThemeProps,
         ThemePreferenceProps,
         ActivationProps,
@@ -49,7 +48,7 @@ interface Props
         OnboardingTourProps {
     history: H.History
     location: H.Location<{ query: string }>
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
     navbarSearchQueryState: QueryState
     onNavbarQueryChange: (queryState: QueryState) => void
     isSourcegraphDotCom: boolean

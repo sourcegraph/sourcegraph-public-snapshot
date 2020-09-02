@@ -2,9 +2,6 @@ package main
 
 import (
 	"log"
-	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
@@ -18,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -45,7 +43,7 @@ func main() {
 		disableJanitor      = mustParseBool(rawDisableJanitor, "PRECISE_CODE_INTEL_DISABLE_JANITOR")
 	)
 
-	readerCache, err := sqlitereader.NewReaderCache(readerDataCacheSize)
+	storeCache, err := sqlitereader.NewStoreCache(readerDataCacheSize)
 	if err != nil {
 		log.Fatalf("failed to initialize reader cache: %s", err)
 	}
@@ -58,7 +56,7 @@ func main() {
 		log.Fatalf("failed to migrate paths: %s", err)
 	}
 
-	if err := readers.Migrate(bundleDir, readerCache); err != nil {
+	if err := readers.Migrate(bundleDir, storeCache); err != nil {
 		log.Fatalf("failed to migrate readers: %s", err)
 	}
 
@@ -71,32 +69,22 @@ func main() {
 	store := store.NewObserved(mustInitializeStore(), observationContext)
 	metrics.MustRegisterDiskMonitor(bundleDir)
 
-	server := server.New(bundleDir, readerCache, observationContext)
+	server := server.New(bundleDir, storeCache, observationContext)
 	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
 	janitor := janitor.New(store, bundleDir, desiredPercentFree, janitorInterval, maxUploadAge, maxUploadPartAge, maxDatabasePartAge, janitorMetrics)
 
-	go server.Start()
-	go debugserver.Start()
+	routines := []goroutine.BackgroundRoutine{
+		server,
+	}
 
 	if !disableJanitor {
-		go janitor.Run()
+		routines = append(routines, janitor)
 	} else {
 		log15.Warn("Janitor process is disabled.")
 	}
 
-	// Attempt to clean up after first shutdown signal
-	signals := make(chan os.Signal, 2)
-	signal.Notify(signals, syscall.SIGINT, syscall.SIGHUP)
-	<-signals
-
-	go func() {
-		// Insta-shutdown on a second signal
-		<-signals
-		os.Exit(0)
-	}()
-
-	server.Stop()
-	janitor.Stop()
+	go debugserver.Start()
+	goroutine.MonitorBackgroundRoutines(routines...)
 }
 
 func mustInitializeStore() store.Store {

@@ -55,44 +55,39 @@ func (r *reconciler) HandlerFunc() dbworker.HandlerFunc {
 // (through the HandlerFunc) will set the changeset's ReconcilerState to
 // errored and set its FailureMessage to the error.
 func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Changeset) error {
-	log15.Info("Processing changeset", "changeset", ch.ID)
-
 	action, err := determineAction(ctx, tx, ch)
 	if err != nil {
 		return err
 	}
 
-	switch action.actionType {
-	case actionPublish:
-		log15.Info("Publishing", "changeset", ch.ID)
-		if err := r.publishChangeset(ctx, tx, ch, action.spec); err != nil {
-			return err
-		}
+	log15.Info("Reconciler processing changeset", "changeset", ch.ID, "action", action.actionType)
 
-		u, err := ch.URL()
-		if err != nil {
-			return err
-		}
-		log15.Info("Published changeset", "url", u)
+	switch action.actionType {
+	case actionSync:
+		return r.syncChangeset(ctx, tx, ch)
+
+	case actionPublish:
+		return r.publishChangeset(ctx, tx, ch, action.spec)
 
 	case actionUpdate:
-		log15.Info("Updating", "changeset", ch.ID, "delta", action.delta.String())
+		return r.updateChangeset(ctx, tx, ch, action.spec, action.delta)
 
-		if err := r.updateChangeset(ctx, tx, ch, action.spec, action.delta); err != nil {
-			return err
-		}
-		u, err := ch.URL()
-		if err != nil {
-			return err
-		}
-
-		log15.Info("Updated changeset", "url", u)
+	case actionClose:
+		return r.closeChangeset(ctx, tx, ch)
 
 	case actionNone:
-		log15.Info("No action", "changeset", ch.ID)
+		return nil
 
 	default:
 		return fmt.Errorf("Reconciler action %q not implemented", action.actionType)
+	}
+}
+
+func (r *reconciler) syncChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset) error {
+	rstore := repos.NewDBStore(tx.Handle().DB(), sql.TxOptions{})
+
+	if err := SyncChangesets(ctx, rstore, tx, r.sourcer, ch); err != nil {
+		return errors.Wrapf(err, "syncing changeset with external ID %q failed", ch.ExternalID)
 	}
 
 	return nil
@@ -248,6 +243,32 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 	return tx.UpdateChangeset(ctx, ch)
 }
 
+// closeChangeset closes the given changeset on its code host if its ExternalState is OPEN.
+func (r *reconciler) closeChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset) (err error) {
+	repo, extSvc, err := loadAssociations(ctx, tx, ch)
+	if err != nil {
+		return errors.Wrap(err, "failed to load associations")
+	}
+
+	// Set up a source with which we can close the changeset
+	ccs, err := r.buildChangesetSource(repo, extSvc)
+	if err != nil {
+		return err
+	}
+
+	cs := &repos.Changeset{Changeset: ch}
+
+	if err := ccs.CloseChangeset(ctx, cs); err != nil {
+		return errors.Wrap(err, "creating changeset")
+	}
+
+	ch.Closing = false
+	ch.FailureMessage = nil
+
+	// syncChangeset updates the changeset in the same transaction
+	return r.syncChangeset(ctx, tx, ch)
+}
+
 func (r *reconciler) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) (string, error) {
 	ref, err := r.gitserverClient.CreateCommitFromPatch(ctx, opts)
 	if err != nil {
@@ -335,6 +356,8 @@ const (
 	actionNone    actionType = "none"
 	actionUpdate  actionType = "update"
 	actionPublish actionType = "publish"
+	actionSync    actionType = "sync"
+	actionClose   actionType = "close"
 )
 
 // reconcilerAction represents the possible actions the reconciler can take for
@@ -362,8 +385,15 @@ func determineAction(ctx context.Context, tx *Store, ch *campaigns.Changeset) (r
 	// If it doesn't have a spec, it's an imported changeset and we can't do
 	// anything.
 	if ch.CurrentSpecID == 0 {
-		// TODO: This would be the place where we check whether it's fully
-		// synced, and if not, we sync it here.
+		if ch.Unsynced {
+			action.actionType = actionSync
+		}
+		return action, nil
+	}
+
+	// If it's marked as closing, we don't need to look at the specs.
+	if ch.Closing {
+		action.actionType = actionClose
 		return action, nil
 	}
 

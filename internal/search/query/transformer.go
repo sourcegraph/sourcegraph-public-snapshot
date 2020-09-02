@@ -22,6 +22,7 @@ func SubstituteAliases(nodes []Node) []Node {
 		"until":    FieldBefore,
 		"m":        FieldMessage,
 		"msg":      FieldMessage,
+		"revision": FieldRev,
 	}
 	return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
 		if field == "content" {
@@ -545,6 +546,7 @@ func TrailingParensToLiteral(nodes []Node) []Node {
 func EmptyGroupsToLiteral(nodes []Node) []Node {
 	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
 		if ok, _ := regexp.MatchString(`\(\)`, value); ok {
+			annotation.Labels.set(HeuristicParensAsPatterns)
 			annotation.Labels.set(Literal)
 			annotation.Labels.unset(Regexp)
 		}
@@ -574,64 +576,31 @@ func FuzzifyRegexPatterns(nodes []Node) []Node {
 }
 
 // concatRevFilters removes rev: filters from []Node and attaches their value as @rev to the repo: filters.
-// Invariant: we assume that all rev: filters are at the top-level of []Node, or in one of it's direct children.
-// This invariant is ensured when the query is normalized to DNF.
-func concatRevFilters(nodes []Node) ([]Node, error) {
-	if len(nodes) == 0 {
-		return nodes, nil
+// Invariant: Guaranteed to succeed on a validated and DNF query.
+func concatRevFilters(nodes []Node) []Node {
+	var revision string
+	nodes = MapField(nodes, FieldRev, func(value string, _ bool) Node {
+		revision = value
+		return nil // remove this node
+	})
+	if revision == "" {
+		return nodes
 	}
-	// top-level And
-	if op, isOperator := nodes[0].(Operator); len(nodes) == 1 && isOperator && op.Kind == And {
-		nodes, err := concatRevFiltersFlat(op.Operands)
-		if err != nil {
-			return nil, err
+	return MapField(nodes, FieldRepo, func(value string, negated bool) Node {
+		if !negated {
+			return Parameter{Value: value + "@" + revision, Field: FieldRepo, Negated: negated}
 		}
-		return newOperator(nodes, And), nil
-	}
-	return concatRevFiltersFlat(nodes)
+		return Parameter{Value: value, Field: FieldRepo, Negated: negated}
+	})
 }
 
-func concatRevFiltersFlat(nodes []Node) ([]Node, error) {
-	var revs []string
-	for _, n := range nodes {
-		if param, ok := n.(Parameter); !ok || param.Field != FieldRev {
-			continue
-		} else {
-			revs = append(revs, param.Value)
+// ellipsesForHoles substitutes ellipses ... for :[_] holes in structural search queries.
+func ellipsesForHoles(nodes []Node) []Node {
+	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
+		return Pattern{
+			Value:      strings.ReplaceAll(value, "...", ":[_]"),
+			Negated:    negated,
+			Annotation: annotation,
 		}
-	}
-	if len(revs) == 0 {
-		return nodes, nil
-	}
-	if len(revs) > 1 {
-		return nil, fmt.Errorf("invalid syntax. You have specified multiple revisions (%s) and"+
-			" I don't know how to interpret this. Remove all but one rev: keywords"+
-			" and try again", strings.Join(revs, ", "))
-	}
-	operands := make([]Node, len(nodes))
-	i := 0
-	for _, n := range nodes {
-		switch p := n.(type) {
-		case Parameter:
-			switch p.Field {
-			case FieldRepo:
-				if strings.ContainsRune(p.Value, '@') {
-					return nil, fmt.Errorf("invalid syntax. You have specified @ and rev: for the same" +
-						" repo: filter and I don't know how to interpret this. Remove either @ or rev: and try again")
-				}
-				p.Value += "@" + revs[0]
-				operands[i] = p
-				i++
-			case FieldRev:
-				continue
-			default:
-				operands[i] = n
-				i++
-			}
-		default:
-			operands[i] = n
-			i++
-		}
-	}
-	return operands[:i], nil
+	})
 }

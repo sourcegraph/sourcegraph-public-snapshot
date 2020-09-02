@@ -135,7 +135,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 		},
 
 		AppliesToCampaign: apitest.Campaign{
-			ID: string(campaigns.MarshalCampaignID(matchingCampaign.ID)),
+			ID: string(marshalCampaignID(matchingCampaign.ID)),
 		},
 	}
 
