@@ -63,7 +63,7 @@ The following keywords can be used on all searches (using [RE2 syntax](https://g
 | --- | --- | --- |
 | **repo:regexp-pattern** <br> **repo:regexp-pattern@rev** <br> **repo:regexp-pattern rev:rev**<br>_alias: r_  | Only include results from repositories whose path matches the regexp-pattern. A repository's path is a string such as _github.com/myteam/abc_ or _code.example.com/xyz_ that depends on your organization's repository host. If the regexp ends in [`@rev`](#repository-revisions), that revision is searched instead of the default branch (usually `master`).  `repo:regexp-pattern@rev` is equivalent to `repo:regexp-pattern rev:rev`.| [`repo:gorilla/mux testroute`](https://sourcegraph.com/search?q=repo:gorilla/mux+testroute) <br/> [`repo:^github\.com/sourcegraph/sourcegraph$@v3.14.0 mux`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40v3.14.0+mux&patternType=literal) |
 | **-repo:regexp-pattern** <br> _alias: -r_ | Exclude results from repositories whose path matches the regexp. | `repo:alice/ -repo:old-repo` |
-|**rev:revision-pattern**| Search a revision instead of the default branch. `rev:` can only be used in conjunction with `repo:` and may not be used more than once. See our [revision syntax](#repository-revisions) documentation to learn more.| [`repo:sourcegraph/sourcegraph rev:v3.14.0 mux`](https://sourcegraph.com/search?q=repo:sourcegraph/sourcegraph+rev:v3.14.0+mux&patternType=literal) |
+|**rev:revision-pattern** <br> _alias: revision_| Search a revision instead of the default branch. `rev:` can only be used in conjunction with `repo:` and may not be used more than once. See our [revision syntax](#repository-revisions) documentation to learn more.| [`repo:sourcegraph/sourcegraph rev:v3.14.0 mux`](https://sourcegraph.com/search?q=repo:sourcegraph/sourcegraph+rev:v3.14.0+mux&patternType=literal) |
 | **repogroup:group-name** <br> _alias: g_ | Only include results from the named group of repositories (defined by the server admin). Same as using a repo: keyword that matches all of the group's repositories. Use repo: unless you know that the group exists. | |
 | **file:regexp-pattern** <br> _alias: f_ | Only include results in files whose full path matches the regexp. | [`file:\.js$ httptest`](https://sourcegraph.com/search?q=file:%5C.js%24+httptest) <br> [`file:internal/ httptest`](https://sourcegraph.com/search?q=file:internal/+httptest) |
 | **-file:regexp-pattern** <br> _alias: -f_ | Exclude results from files whose full path matches the regexp. | [`file:\.js$ -file:test http`](https://sourcegraph.com/search?q=file:%5C.js%24+-file:test+http) |
@@ -147,10 +147,12 @@ The following keywords are only used for **commit diff** and **commit message** 
 
 ### Repository revisions
 
-To search revisions other than the default branch, specify the revisions by either appending `@revs` to the `repo:` filter (`repo:github.com/myteam/abc@revs`)
-or by listing them separately with the `revision:` or `rev:` filter (`repo:github.com/myteam/abc revision:revs`).  The `revs` part refers to repository revisions (branches, commit hashed, and tags) and may take on the following forms: 
+To search revisions other than the default branch, specify the revisions by either appending `@<revisions>` to the 
+`repo:` filter (`repo:github.com/myteam/abc@<revisions>`) or by listing them separately with the `revision:` or
+`rev:` filter (`repo:github.com/myteam/abc revision:<revisions>`).  The `<revisions>` part refers to repository
+ revisions (branches, commit hashes, and tags) and may take on the following forms: 
 
-(All examples apply to `@` as well as `revsion:`/`rev:`)
+(All examples apply to `@` as well as `revision:`/`rev:`)
 
 - `@branch` - a branch name
 - `@1735d48` - a commit hash
@@ -177,7 +179,7 @@ You can negate a glob pattern by prepending `*!`, for example:
 
 #### Commit and Diff searches
 Commit and diff searches act on sets of commits. A set is defined by a revision (branch, commit hash, or tag), and it
-contains all commits reachable from the specified revision. A commit is reachable from another commit if it can be
+contains all commits reachable from that revision. A commit is reachable from another commit if it can be
 reached by following the pointers to parent commits. 
 
 For commit and diff searches it is possible to exclude a set of commits by prepending a caret `^`. The caret acts as a set
