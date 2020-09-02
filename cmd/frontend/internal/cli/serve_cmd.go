@@ -206,7 +206,7 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 		return errors.New("dbconn.Global is nil when trying to parse GraphQL schema")
 	}
 
-	err := secrets.Init()
+	err := secrets.Initialize()
 	if err != nil {
 		return err
 	}

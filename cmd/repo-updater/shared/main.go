@@ -50,7 +50,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	clock := func() time.Time { return time.Now().UTC() }
 
-	err := secrets.Init()
+	err := secrets.Initialize()
 	if err != nil {
 		log.Fatalf("encryption package failed to initialize: %s", err)
 	}

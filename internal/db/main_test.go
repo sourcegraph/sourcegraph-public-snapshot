@@ -17,7 +17,7 @@ func TestMain(m *testing.M) {
 		log15.Root().SetHandler(log15.DiscardHandler())
 	}
 
-	err := secretsPkg.Init()
+	err := secretsPkg.Initialize()
 	if err != nil {
 		fmt.Println("Failed to init secrets package:", err)
 		os.Exit(1)
