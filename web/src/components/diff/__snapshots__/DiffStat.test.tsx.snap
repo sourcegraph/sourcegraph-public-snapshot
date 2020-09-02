@@ -29,19 +29,19 @@ exports[`DiffStat expandedCounts 1`] = `
   </span>
   <div>
     <div
-      className="diff-stat__square diff-stat__added"
+      className="diff-stat__square bg-success"
     />
     <div
-      className="diff-stat__square diff-stat__changed"
+      className="diff-stat__square bg-warning"
     />
     <div
-      className="diff-stat__square diff-stat__deleted"
+      className="diff-stat__square bg-danger"
     />
     <div
-      className="diff-stat__square diff-stat__deleted"
+      className="diff-stat__square bg-danger"
     />
     <div
-      className="diff-stat__square diff-stat__deleted"
+      className="diff-stat__square bg-danger"
     />
   </div>
 </div>
@@ -59,19 +59,19 @@ exports[`DiffStat standard 1`] = `
   </small>
   <div>
     <div
-      className="diff-stat__square diff-stat__added"
+      className="diff-stat__square bg-success"
     />
     <div
-      className="diff-stat__square diff-stat__changed"
+      className="diff-stat__square bg-warning"
     />
     <div
-      className="diff-stat__square diff-stat__deleted"
+      className="diff-stat__square bg-danger"
     />
     <div
-      className="diff-stat__square diff-stat__deleted"
+      className="diff-stat__square bg-danger"
     />
     <div
-      className="diff-stat__square diff-stat__deleted"
+      className="diff-stat__square bg-danger"
     />
   </div>
 </div>
