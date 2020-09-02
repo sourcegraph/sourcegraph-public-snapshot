@@ -76,7 +76,11 @@ func TestIntegration(t *testing.T) {
 				if t.Failed() {
 					return
 				}
-				if _, err := db.Exec(`DELETE FROM external_service_sync_jobs; DELETE FROM external_service_repos; DELETE FROM external_services; DELETE FROM repo;`); err != nil {
+				if _, err := db.Exec(`
+DELETE FROM external_service_sync_jobs;
+DELETE FROM external_service_repos;
+DELETE FROM external_services;
+DELETE FROM repo;`); err != nil {
 					t.Fatalf("cleaning up external services failed: %v", err)
 				}
 			})

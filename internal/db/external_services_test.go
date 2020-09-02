@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
@@ -280,23 +281,59 @@ func TestExternalServicesStore_Delete(t *testing.T) {
 		DisplayName: "GITHUB #1",
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
-	err := (&ExternalServicesStore{}).Create(ctx, confGet, es)
+	err := ExternalServices.Create(ctx, confGet, es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create two repositories to test trigger of soft-deleting external service:
+	//  - ID=1 is expected to be deleted along with deletion of the external service.
+	//  - ID=2 remains untouched because it is not associated with the external service.
+	_, err = dbconn.Global.ExecContext(ctx, `
+INSERT INTO repo (id, name, description, language, fork)
+VALUES (1, 'github.com/user/repo', '', '', FALSE);
+INSERT INTO repo (id, name, description, language, fork)
+VALUES (2, 'github.com/user/repo2', '', '', FALSE);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Insert a row to `external_service_repos` table to test the trigger.
+	q := sqlf.Sprintf(`
+INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
+VALUES (%d, 1, '')
+`, es.ID)
+	_, err = dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Delete this external service
-	err = (&ExternalServicesStore{}).Delete(ctx, es.ID)
+	err = ExternalServices.Delete(ctx, es.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Delete again should get externalServiceNotFoundError
-	err = (&ExternalServicesStore{}).Delete(ctx, es.ID)
+	err = ExternalServices.Delete(ctx, es.ID)
 	gotErr := fmt.Sprintf("%v", err)
 	wantErr := fmt.Sprintf("external service not found: %v", es.ID)
 	if gotErr != wantErr {
 		t.Errorf("error: want %q but got %q", wantErr, gotErr)
+	}
+
+	// Should only get back the repo with ID=2
+	repos, err := Repos.GetByIDs(ctx, 1, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []*types.Repo{
+		{ID: 2, Name: "github.com/user/repo2"},
+	}
+	if diff := cmp.Diff(want, repos); diff != "" {
+		t.Fatalf("Repos mismatch (-want +got):\n%s", diff)
 	}
 }
 
