@@ -7,7 +7,7 @@ import assert from 'assert'
 import expect from 'expect'
 import { SearchResult } from '../graphql-operations'
 
-const searchResults = (): SearchResult => ({
+const emptySearchResults = (): SearchResult => ({
     search: {
         results: {
             __typename: 'SearchResults',
@@ -19,45 +19,8 @@ const searchResults = (): SearchResult => ({
             repositoriesCount: 372,
             timedout: [],
             indexUnavailable: false,
-            dynamicFilters: [
-                {
-                    value: 'archived:yes',
-                    label: 'archived:yes',
-                    count: 5,
-                    limitHit: true,
-                    kind: 'repo',
-                },
-                {
-                    value: 'fork:yes',
-                    label: 'fork:yes',
-                    count: 46,
-                    limitHit: true,
-                    kind: 'repo',
-                },
-                {
-                    value: 'repo:^github\\.com/Algorilla/manta-ray$',
-                    label: 'github.com/Algorilla/manta-ray',
-                    count: 1,
-                    limitHit: false,
-                    kind: 'repo',
-                },
-            ],
-            results: [
-                {
-                    __typename: 'Repository',
-                    id: 'UmVwb3NpdG9yeTozODcxOTM4Nw==',
-                    name: 'github.com/Algorilla/manta-ray',
-                    label: {
-                        html:
-                            '\u003Cp\u003E\u003Ca href="/github.com/Algorilla/manta-ray" rel="nofollow"\u003Egithub.com/Algorilla/manta-ray\u003C/a\u003E\u003C/p\u003E\n',
-                    },
-                    url: '/github.com/Algorilla/manta-ray',
-                    icon:
-                        'data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4PSIwcHgiIHk9IjBweCIKCSB2aWV3Qm94PSIwIDAgNjQgNjQiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDY0IDY0OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+Cjx0aXRsZT5JY29ucyA0MDA8L3RpdGxlPgo8Zz4KCTxwYXRoIGQ9Ik0yMywyMi40YzEuMywwLDIuNC0xLjEsMi40LTIuNHMtMS4xLTIuNC0yLjQtMi40Yy0xLjMsMC0yLjQsMS4xLTIuNCwyLjRTMjEuNywyMi40LDIzLDIyLjR6Ii8+Cgk8cGF0aCBkPSJNMzUsMjYuNGMxLjMsMCwyLjQtMS4xLDIuNC0yLjRzLTEuMS0yLjQtMi40LTIuNHMtMi40LDEuMS0yLjQsMi40UzMzLjcsMjYuNCwzNSwyNi40eiIvPgoJPHBhdGggZD0iTTIzLDQyLjRjMS4zLDAsMi40LTEuMSwyLjQtMi40cy0xLjEtMi40LTIuNC0yLjRzLTIuNCwxLjEtMi40LDIuNFMyMS43LDQyLjQsMjMsNDIuNHoiLz4KCTxwYXRoIGQ9Ik01MCwxNmgtMS41Yy0wLjMsMC0wLjUsMC4yLTAuNSwwLjV2MzVjMCwwLjMtMC4yLDAuNS0wLjUsMC41aC0yN2MtMC41LDAtMS0wLjItMS40LTAuNmwtMC42LTAuNmMtMC4xLTAuMS0wLjEtMC4yLTAuMS0wLjQKCQljMC0wLjMsMC4yLTAuNSwwLjUtMC41SDQ0YzEuMSwwLDItMC45LDItMlYxMmMwLTEuMS0wLjktMi0yLTJIMTRjLTEuMSwwLTIsMC45LTIsMnYzNi4zYzAsMS4xLDAuNCwyLjEsMS4yLDIuOGwzLjEsMy4xCgkJYzEuMSwxLjEsMi43LDEuOCw0LjIsMS44SDUwYzEuMSwwLDItMC45LDItMlYxOEM1MiwxNi45LDUxLjEsMTYsNTAsMTZ6IE0xOSwyMGMwLTIuMiwxLjgtNCw0LTRjMS40LDAsMi44LDAuOCwzLjUsMgoJCWMxLjEsMS45LDAuNCw0LjMtMS41LDUuNFYzM2MxLTAuNiwyLjMtMC45LDQtMC45YzEsMCwyLTAuNSwyLjgtMS4zQzMyLjUsMzAsMzMsMjkuMSwzMywyOHYtMC42Yy0xLjItMC43LTItMi0yLTMuNQoJCWMwLTIuMiwxLjgtNCw0LTRjMi4yLDAsNCwxLjgsNCw0YzAsMS41LTAuOCwyLjctMiwzLjVoMGMtMC4xLDIuMS0wLjksNC40LTIuNSw2Yy0xLjYsMS42LTMuNCwyLjQtNS41LDIuNWMtMC44LDAtMS40LDAuMS0xLjksMC4zCgkJYy0wLjIsMC4xLTEsMC44LTEuMiwwLjlDMjYuNiwzOCwyNywzOC45LDI3LDQwYzAsMi4yLTEuOCw0LTQsNHMtNC0xLjgtNC00YzAtMS41LDAuOC0yLjcsMi0zLjRWMjMuNEMxOS44LDIyLjcsMTksMjEuNCwxOSwyMHoiLz4KPC9nPgo8L3N2Zz4K',
-                    detail: { html: '\u003Cp\u003ERepository name match\u003C/p\u003E\n' },
-                    matches: [],
-                },
-            ],
+            dynamicFilters: [],
+            results: [],
             alert: null,
             elapsedMilliseconds: 103,
         },
@@ -84,7 +47,7 @@ describe('Search onboarding', () => {
                     suggestions: [],
                 },
             }),
-            Search: searchResults,
+            Search: emptySearchResults,
             RepoGroups: () => ({
                 repoGroups: [],
             }),
