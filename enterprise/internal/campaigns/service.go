@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -267,11 +268,6 @@ func (s *Service) MoveCampaign(ctx context.Context, opts MoveCampaignOpts) (camp
 // in the given namespace but has a different ID.
 var ErrEnsureCampaignFailed = errors.New("a campaign in the given namespace and with the given name exists but does not match the given ID")
 
-// ErrCloseProcessingCampaign is returned by CloseCampaign if the Campaign has
-// been published at the time of closing but its Changesets are still being
-// processed by the reconciler.
-var ErrCloseProcessingCampaign = errors.New("cannot close a campaign while changesets are being processed")
-
 // CloseCampaign closes the Campaign with the given ID if it has not been closed yet.
 func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets bool) (campaign *campaigns.Campaign, err error) {
 	traceTitle := fmt.Sprintf("campaign: %d, closeChangesets: %t", id, closeChangesets)
@@ -281,76 +277,70 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 		tr.Finish()
 	}()
 
-	transaction := func() (err error) {
-		tx, err := s.store.Transact(ctx)
-		if err != nil {
-			return err
-		}
-		defer func() { err = tx.Done(err) }()
-
-		campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: id})
-		if err != nil {
-			return errors.Wrap(err, "getting campaign")
-		}
-
-		if campaign.Closed() {
-			return nil
-		}
-
-		if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.InitialApplierID); err != nil {
-			return err
-		}
-
-		campaign.ClosedAt = time.Now().UTC()
-		if err := tx.UpdateCampaign(ctx, campaign); err != nil {
-			return err
-		}
-
-		if !closeChangesets {
-			return nil
-		}
-
-		processingState := campaigns.ReconcilerStateProcessing
-		countOpts := CountChangesetsOpts{
-			CampaignID:      campaign.ID,
-			ReconcilerState: &processingState,
-		}
-		processingCount, err := tx.CountChangesets(ctx, countOpts)
-		if err != nil {
-			return errors.Wrap(err, "checking for processing changesets")
-		}
-		if processingCount != 0 {
-			err = ErrCloseProcessingCampaign
-			return err
-		}
-
-		open := campaigns.ChangesetExternalStateOpen
-		published := campaigns.ChangesetPublicationStatePublished
-		cs, _, err := s.store.ListChangesets(ctx, ListChangesetsOpts{
-			OwnedByCampaignID: campaign.ID,
-			ExternalState:     &open,
-			PublicationState:  &published,
-		})
-		if err != nil {
-			return err
-		}
-
-		for _, c := range cs {
-			c.Closing = true
-			c.ReconcilerState = campaigns.ReconcilerStateQueued
-
-			if err := tx.UpdateChangeset(ctx, c); err != nil {
-				return err
-			}
-		}
-
-		return nil
+	campaign, err = s.store.GetCampaign(ctx, GetCampaignOpts{ID: id})
+	if err != nil {
+		return nil, errors.Wrap(err, "getting campaign")
 	}
-	if err := transaction(); err != nil {
+
+	if campaign.Closed() {
+		return campaign, nil
+	}
+
+	if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.InitialApplierID); err != nil {
 		return nil, err
 	}
 
-	return campaign, nil
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	campaign.ClosedAt = time.Now().UTC()
+	if err := tx.UpdateCampaign(ctx, campaign); err != nil {
+		return nil, err
+	}
+
+	if !closeChangesets {
+		return campaign, nil
+	}
+
+	// At this point we don't know which changesets have ExternalStateOpen,
+	// since they might still be being processed in the background by the
+	// reconciler.
+	// So we load all and enqueue them all for closing, which, if they're
+	// not open, results in a noop in the reconciler.
+	cs, _, err := tx.ListChangesets(ctx, ListChangesetsOpts{OwnedByCampaignID: campaign.ID})
+	if err != nil {
+		return nil, err
+	}
+
+	enqueueClose := func(tx *Store, c *campaigns.Changeset, ch chan error) {
+		c.Closing = true
+		c.ReconcilerState = campaigns.ReconcilerStateQueued
+
+		err := tx.UpdateChangeset(ctx, c)
+		ch <- err
+	}
+
+	// Since the UpdateChangeset call might block if a changeset is
+	// currently being processes, we update them concurrently to avoid
+	// being slowed down by one of the first changesets in the slice being
+	// processed.
+	results := make(chan error)
+	for _, c := range cs {
+		go enqueueClose(tx, c, results)
+	}
+
+	var errs *multierror.Error
+	for range cs {
+		err := <-results
+		if err != nil {
+			errs = multierror.Append(errs, err)
+		}
+	}
+
+	return campaign, errs.ErrorOrNil()
 }
 
 // DeleteCampaign deletes the Campaign with the given ID if it hasn't been
