@@ -70,6 +70,7 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/Syncer/Run", testSyncRun(db)},
 		{"DBStore/Syncer/MultipleServices", testSyncer(db)},
 		{"DBStore/Syncer/OrphanedRepos", testOrphanedRepo(db)},
+		{"DBStore/Syncer/DeleteExternalService", testDeleteExternalService(db)},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Cleanup(func() {
