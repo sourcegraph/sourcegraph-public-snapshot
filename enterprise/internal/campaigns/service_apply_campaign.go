@@ -244,7 +244,14 @@ func (r *changesetRewirer) Rewire() (err error) {
 			k := repoExternalID{repo: spec.RepoID, externalID: spec.Spec.ExternalID}
 
 			c, ok := r.changesetsByRepoExternalID[k]
-			if !ok {
+			if ok {
+				// If it's already attached to the campaign and errored, we re-enqueue it.
+				if c.ReconcilerState == campaigns.ReconcilerStateErrored {
+					if err := r.updateAndReenqueue(c); err != nil {
+						return err
+					}
+				}
+			} else {
 				// If we don't have a changeset attached to the campaign, we need to find or create one with the externalID in that repository.
 				c, err = r.updateOrCreateTrackingChangeset(repo, k.externalID)
 				if err != nil {
@@ -366,6 +373,8 @@ func (r *changesetRewirer) updateChangesetToNewSpec(c *campaigns.Changeset, spec
 	// reconciler wakes up, compares old and new spec and, if
 	// necessary, updates the changesets accordingly.
 	c.ReconcilerState = campaigns.ReconcilerStateQueued
+	c.FailureMessage = nil
+	c.NumResets = 0
 
 	// Copy over diff stat from the new spec.
 	diffStat := spec.DiffStat()
@@ -462,6 +471,11 @@ func (r *changesetRewirer) updateOrCreateTrackingChangeset(repo *types.Repo, ext
 		existing.AddedToCampaign = true
 		existing.CampaignIDs = append(existing.CampaignIDs, r.campaign.ID)
 
+		// If it errored, we re-enqueue it.
+		if existing.ReconcilerState == campaigns.ReconcilerStateErrored {
+			return existing, r.updateAndReenqueue(existing)
+		}
+
 		return existing, r.tx.UpdateChangeset(r.ctx, existing)
 	}
 
@@ -482,4 +496,12 @@ func (r *changesetRewirer) updateOrCreateTrackingChangeset(repo *types.Repo, ext
 	}
 
 	return newChangeset, r.tx.CreateChangeset(r.ctx, newChangeset)
+}
+
+func (r *changesetRewirer) updateAndReenqueue(ch *campaigns.Changeset) error {
+	ch.ReconcilerState = campaigns.ReconcilerStateQueued
+	ch.NumResets = 0
+	ch.FailureMessage = nil
+
+	return r.tx.UpdateChangeset(r.ctx, ch)
 }
