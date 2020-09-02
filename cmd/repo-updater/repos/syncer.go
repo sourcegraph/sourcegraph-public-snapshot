@@ -198,20 +198,6 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 		return errors.Wrap(err, "syncer.sync.store.delete-sources")
 	}
 
-	// Delete repos that no longer belong to any external services
-	var orphanedRepos Repos
-	now := s.Now()
-	for _, deleted := range diff.Deleted {
-		d := deleted
-		if len(d.Sources) == 0 {
-			d.UpdatedAt, d.DeletedAt = now, now
-			orphanedRepos = append(orphanedRepos, d)
-		}
-	}
-
-	// Add only orphaned repos to upserts
-	upserts = append(upserts, orphanedRepos...)
-
 	// Next, insert or modify existing repos. This is needed so that the next call
 	// to UpsertSources has valid repo ids
 	if err = store.UpsertRepos(ctx, upserts...); err != nil {
@@ -226,6 +212,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 		return errors.Wrap(err, "syncer.sync.store.upsert-sources")
 	}
 
+	now := s.Now()
 	interval := calcSyncInterval(now, svc.LastSyncAt, minSyncInterval, diff)
 	log15.Info("Synced external service", "id", externalServiceID, "backoff duration", interval)
 	svc.NextSyncAt = now.Add(interval)
