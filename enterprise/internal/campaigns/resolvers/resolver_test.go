@@ -34,7 +34,7 @@ func TestNullIDResilience(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 
 	ids := []graphql.ID{
-		campaigns.MarshalCampaignID(0),
+		marshalCampaignID(0),
 		marshalChangesetID(0),
 		marshalCampaignSpecRandID(""),
 		marshalChangesetSpecRandID(""),
@@ -52,12 +52,12 @@ func TestNullIDResilience(t *testing.T) {
 	}
 
 	mutations := []string{
-		fmt.Sprintf(`mutation { closeCampaign(campaign: %q) { id } }`, campaigns.MarshalCampaignID(0)),
-		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, campaigns.MarshalCampaignID(0)),
+		fmt.Sprintf(`mutation { closeCampaign(campaign: %q) { id } }`, marshalCampaignID(0)),
+		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, marshalCampaignID(0)),
 		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, marshalChangesetID(0)),
 		fmt.Sprintf(`mutation { applyCampaign(campaignSpec: %q) { id } }`, marshalCampaignSpecRandID("")),
 		fmt.Sprintf(`mutation { createCampaign(campaignSpec: %q) { id } }`, marshalCampaignSpecRandID("")),
-		fmt.Sprintf(`mutation { moveCampaign(campaign: %q, newName: "foobar") { id } }`, campaigns.MarshalCampaignID(0)),
+		fmt.Sprintf(`mutation { moveCampaign(campaign: %q, newName: "foobar") { id } }`, marshalCampaignID(0)),
 	}
 
 	for _, m := range mutations {
@@ -379,11 +379,11 @@ func TestApplyCampaign(t *testing.T) {
 	}
 
 	// Execute it again but ensureCampaign set to wrong campaign ID
-	campaignID, err := campaigns.UnmarshalCampaignID(graphql.ID(have3.ID))
+	campaignID, err := unmarshalCampaignID(graphql.ID(have3.ID))
 	if err != nil {
 		t.Fatal(err)
 	}
-	input["ensureCampaign"] = campaigns.MarshalCampaignID(campaignID + 999)
+	input["ensureCampaign"] = marshalCampaignID(campaignID + 999)
 	errs := apitest.Exec(actorCtx, t, s, input, &response, mutationApplyCampaign)
 	if len(errs) == 0 {
 		t.Fatalf("expected errors, got none")
@@ -531,7 +531,7 @@ func TestMoveCampaign(t *testing.T) {
 	}
 
 	// Move to a new name
-	campaignAPIID := string(campaigns.MarshalCampaignID(campaign.ID))
+	campaignAPIID := string(marshalCampaignID(campaign.ID))
 	newCampaignName := "new-name"
 	input := map[string]interface{}{
 		"campaign": campaignAPIID,
@@ -555,7 +555,7 @@ func TestMoveCampaign(t *testing.T) {
 	// Move to a new namespace
 	orgAPIID := graphqlbackend.MarshalOrgID(org.ID)
 	input = map[string]interface{}{
-		"campaign":     string(campaigns.MarshalCampaignID(campaign.ID)),
+		"campaign":     string(marshalCampaignID(campaign.ID)),
 		"newNamespace": orgAPIID,
 	}
 

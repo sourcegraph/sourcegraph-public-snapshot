@@ -6,7 +6,6 @@ import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { catchError, takeWhile, concatMap, repeatWhen, delay } from 'rxjs/operators'
 import { ErrorAlert } from '../../components/alerts'
-import { eventLogger } from '../../tracking/eventLogger'
 import { fetchLsifUpload as defaultFetchUpload, deleteLsifUpload, Upload } from './backend'
 import { Link } from '../../../../shared/src/components/Link'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -18,10 +17,11 @@ import DeleteIcon from 'mdi-react/DeleteIcon'
 import { SchedulerLike, timer } from 'rxjs'
 import * as H from 'history'
 import { LSIFUploadState } from '../../../../shared/src/graphql-operations'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
 const REFRESH_INTERVAL_MS = 5000
 
-export interface CodeIntelUploadPageProps extends RouteComponentProps<{ id: string }> {
+export interface CodeIntelUploadPageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {
     repo?: GQL.IRepository
     fetchLsifUpload?: typeof defaultFetchUpload
 
@@ -50,9 +50,10 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
     },
     history,
     fetchLsifUpload = defaultFetchUpload,
+    telemetryService,
     now,
 }) => {
-    useEffect(() => eventLogger.logViewEvent('CodeIntelUpload'))
+    useEffect(() => telemetryService.logViewEvent('CodeIntelUpload'), [telemetryService])
 
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
 

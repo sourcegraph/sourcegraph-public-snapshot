@@ -1153,6 +1153,11 @@ type Campaign implements Node {
     The diff stat for all the changesets in the campaign.
     """
     diffStat: DiffStat!
+
+    """
+    The current campaign spec this campaign reflects.
+    """
+    currentSpec: CampaignSpec!
 }
 
 """
@@ -5377,6 +5382,10 @@ type User implements Node & SettingsSubject & Namespace {
         Returns the first n event logs from the list.
         """
         first: Int
+        """
+        Only return events matching this event name
+        """
+        eventName: String
     ): EventLogsConnection!
     """
     The user's email addresses.
@@ -6991,7 +7000,7 @@ type RegistryExtensionConnection {
 }
 
 """
-Aggregate local code intelligence for all ranges that fall bewteen a window of lines in a document.
+Aggregate local code intelligence for all ranges that fall between a window of lines in a document.
 """
 type CodeIntelligenceRangeConnection {
     """

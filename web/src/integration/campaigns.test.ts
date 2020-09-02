@@ -272,7 +272,45 @@ function mockCommonGraphQLResponses(
                     url: '/users/bob',
                     username: 'bob',
                 },
+                currentSpec: {
+                    originalInput: 'name: awesome-campaign\ndescription: somesttring',
+                },
                 ...campaignOverrides,
+            },
+        }),
+        CampaignsByUser: () => ({
+            node: {
+                __typename: 'User',
+                campaigns: {
+                    nodes: [campaignListNode],
+                    pageInfo: {
+                        endCursor: null,
+                        hasNextPage: false,
+                    },
+                    totalCount: 1,
+                },
+            },
+        }),
+        CampaignsByOrg: () => ({
+            node: {
+                __typename: 'Org',
+                campaigns: {
+                    nodes: [
+                        {
+                            ...campaignListNode,
+                            url: '/organizations/test-org/campaigns/test-campaign',
+                            namespace: {
+                                namespaceName: 'test-org',
+                                url: '/organizations/test-org',
+                            },
+                        },
+                    ],
+                    pageInfo: {
+                        endCursor: null,
+                        hasNextPage: false,
+                    },
+                    totalCount: 1,
+                },
             },
         }),
     }
@@ -332,19 +370,6 @@ describe('Campaigns', () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 ...mockCommonGraphQLResponses('user'),
-                CampaignsByUser: () => ({
-                    node: {
-                        __typename: 'User',
-                        campaigns: {
-                            nodes: [campaignListNode],
-                            pageInfo: {
-                                endCursor: null,
-                                hasNextPage: false,
-                            },
-                            totalCount: 1,
-                        },
-                    },
-                }),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/users/alice/campaigns')
 
@@ -363,28 +388,6 @@ describe('Campaigns', () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 ...mockCommonGraphQLResponses('org'),
-                CampaignsByOrg: () => ({
-                    node: {
-                        __typename: 'Org',
-                        campaigns: {
-                            nodes: [
-                                {
-                                    ...campaignListNode,
-                                    url: '/organizations/test-org/campaigns/test-campaign',
-                                    namespace: {
-                                        namespaceName: 'test-org',
-                                        url: '/organizations/test-org',
-                                    },
-                                },
-                            ],
-                            pageInfo: {
-                                endCursor: null,
-                                hasNextPage: false,
-                            },
-                            totalCount: 1,
-                        },
-                    },
-                }),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/campaigns')
 
@@ -425,6 +428,10 @@ describe('Campaigns', () => {
                 // Switch to view burndown chart.
                 await driver.page.click('.test-campaigns-chart-tab')
                 await driver.page.waitForSelector('.test-campaigns-chart')
+
+                // Switch to view spec file.
+                await driver.page.click('.test-campaigns-spec-tab')
+                await driver.page.waitForSelector('.test-campaigns-spec')
 
                 // Go to close page via button.
                 await Promise.all([driver.page.waitForNavigation(), driver.page.click('.test-campaigns-close-btn')])
@@ -468,6 +475,12 @@ describe('Campaigns', () => {
                     await driver.page.evaluate(() => window.location.href),
                     testContext.driver.sourcegraphBaseUrl + namespaceURL + '/campaigns'
                 )
+
+                // Test read tab from location.
+                await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/campaigns/test-campaign?tab=chart')
+                await driver.page.waitForSelector('.test-campaigns-chart')
+                await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/campaigns/test-campaign?tab=spec')
+                await driver.page.waitForSelector('.test-campaigns-spec')
             })
         }
     })

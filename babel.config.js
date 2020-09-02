@@ -47,6 +47,8 @@ module.exports = api => {
     ],
     plugins: [
       'babel-plugin-lodash',
+      // Webpack v4 chokes on optional chaining syntax, fix will be released with webpack v5.
+      ['@babel/plugin-proposal-optional-chaining', { loose: true }],
       // Node 12 (released 2019 Apr 23) supports these natively, but there seem to be issues when used with TypeScript.
       ['@babel/plugin-proposal-class-properties', { loose: true }],
     ],

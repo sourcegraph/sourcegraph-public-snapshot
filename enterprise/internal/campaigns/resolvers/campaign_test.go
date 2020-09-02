@@ -66,7 +66,7 @@ func TestCampaignResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	campaignAPIID := string(campaigns.MarshalCampaignID(campaign.ID))
+	campaignAPIID := string(marshalCampaignID(campaign.ID))
 	namespaceAPIID := string(graphqlbackend.MarshalOrgID(org.ID))
 	apiUser := &apitest.User{DatabaseID: userID, SiteAdmin: true}
 	wantCampaign := apitest.Campaign{
