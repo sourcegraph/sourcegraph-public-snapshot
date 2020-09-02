@@ -163,7 +163,7 @@ export class PuppeteerAdapter extends PollyAdapter {
         }: { requestArguments: { request: Protocol.Network.Request }; response: PollyResponse },
         error?: unknown
     ): void {
-        console.log('passthrough request', pollyRequest.url)
+        console.log('respondToRequest', request.url)
         if (error) {
             // TODO figure out if we can pass a more precise reason
             this.controlCallbacks.get(request)?.abort('Failed')
@@ -191,6 +191,7 @@ export class PuppeteerAdapter extends PollyAdapter {
             resolve: (response: PollyResponse) => void
         }
     }): void {
+        console.log('onRequest', request.url)
         const respond = (response: PollyResponse): void => {
             promise.resolve(response)
         }
