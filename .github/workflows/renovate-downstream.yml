@@ -11,7 +11,7 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event.name == 'buildkite/sourcegraph' && github.event.conclusion == 'success'
     steps:
       - name: Checkout
-        uses: actions/checkout@v2.0.
+        uses: actions/checkout@v2
 
       # retrieve first pull request attached to this commit
       - name: Get pull request
