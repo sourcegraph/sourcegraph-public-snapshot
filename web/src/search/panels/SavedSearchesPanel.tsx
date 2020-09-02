@@ -1,7 +1,8 @@
 import * as React from 'react'
+import classNames from 'classnames'
 import { PanelContainer } from './PanelContainer'
 
-export const SavedSearchesPanel: React.FunctionComponent<{}> = () => {
+export const SavedSearchesPanel: React.FunctionComponent<{ className?: string }> = ({ className }) => {
     const loadingDisplay = <div>Loading</div>
     const contentDisplay = <div>Content</div>
     const emptyDisplay = <div>Empty</div>
@@ -10,7 +11,7 @@ export const SavedSearchesPanel: React.FunctionComponent<{}> = () => {
 
     return (
         <PanelContainer
-            className="saved-searches-panel"
+            className={classNames(className, 'saved-searches-panel')}
             title="Recent searches"
             state="populated"
             loadingContent={loadingDisplay}

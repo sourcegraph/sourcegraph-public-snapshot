@@ -1,46 +1,9 @@
 @import './PanelContainer.scss';
 
 .enterprise-home-panels {
-    margin: 4rem 1.5rem 0 1.5rem;
-    max-width: 1286px;
-    display: flex;
-    flex-direction: column;
-    width: calc(100% - 1.5rem - 1.5rem);
+    margin-top: 4rem;
 
-    &__row {
-        display: flex;
-        flex-direction: row;
-
-        .panel-container {
-            height: 15rem;
-
-            &:first-child {
-                margin-right: 1.5rem;
-            }
-        }
-
-        .repositories-panel {
-            width: 33%;
-        }
-
-        .recent-searches-panel {
-            width: 67%;
-        }
-
-        .recent-files-panel {
-            width: 58%;
-        }
-
-        .saved-searches-panel {
-            width: 42%;
-        }
-
-        @media (max-width: $media-md) {
-            flex-direction: column;
-
-            .panel-container {
-                width: 100%;
-            }
-        }
+    &__panel {
+        height: 15rem;
     }
 }

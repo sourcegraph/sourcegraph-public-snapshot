@@ -1,13 +1,6 @@
 .panel-container {
     &__header {
-        border-bottom: 1px solid $color-border;
-
-        .theme-light & {
-            border-bottom-color: $color-light-border;
-        }
-
         &-text {
-            letter-spacing: 0.05em;
             margin-bottom: 0.25rem;
             flex-grow: 1;
         }

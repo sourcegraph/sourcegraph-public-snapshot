@@ -1,4 +1,5 @@
 import * as React from 'react'
+import classNames from 'classnames'
 
 interface Props {
     title: string
@@ -22,8 +23,8 @@ export const PanelContainer: React.FunctionComponent<Props> = ({
     actionButtons,
     className,
 }) => (
-    <div className={`${className || ''} panel-container`}>
-        <div className="panel-container__header d-flex">
+    <div className={classNames(className, 'panel-container')}>
+        <div className="panel-container__header d-flex border-bottom">
             <h3 className="panel-container__header-text">{title}</h3>
             {actionButtons}
         </div>
