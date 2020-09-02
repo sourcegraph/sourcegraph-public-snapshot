@@ -5,6 +5,7 @@ import { commonWebGraphQlResults } from './graphQlResults'
 import { siteID, siteGQLID } from './jscontext'
 import assert from 'assert'
 import expect from 'expect'
+import { SearchResult } from '../graphql-operations'
 
 describe('Search onboarding', () => {
     let driver: Driver
@@ -21,6 +22,33 @@ describe('Search onboarding', () => {
         })
         testContext.overrideGraphQL({
             ...commonWebGraphQlResults,
+            SearchSuggestions: () => ({
+                search: {
+                    suggestions: [],
+                },
+            }),
+            Search: (): SearchResult => ({
+                search: {
+                    results: {
+                        __typename: 'SearchResults',
+                        limitHit: true,
+                        matchCount: 30,
+                        approximateResultCount: '30+',
+                        missing: [],
+                        cloning: [],
+                        repositoriesCount: 372,
+                        timedout: [],
+                        indexUnavailable: false,
+                        dynamicFilters: [],
+                        results: [],
+                        alert: null,
+                        elapsedMilliseconds: 103,
+                    },
+                },
+            }),
+            RepoGroups: () => ({
+                repoGroups: [],
+            }),
             ViewerSettings: () => ({
                 viewerSettings: {
                     subjects: [
