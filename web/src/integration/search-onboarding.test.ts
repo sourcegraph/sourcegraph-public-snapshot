@@ -7,26 +7,6 @@ import assert from 'assert'
 import expect from 'expect'
 import { SearchResult } from '../graphql-operations'
 
-const emptySearchResults = (): SearchResult => ({
-    search: {
-        results: {
-            __typename: 'SearchResults',
-            limitHit: true,
-            matchCount: 30,
-            approximateResultCount: '30+',
-            missing: [],
-            cloning: [],
-            repositoriesCount: 372,
-            timedout: [],
-            indexUnavailable: false,
-            dynamicFilters: [],
-            results: [],
-            alert: null,
-            elapsedMilliseconds: 103,
-        },
-    },
-})
-
 describe('Search onboarding', () => {
     let driver: Driver
     before(async () => {
@@ -47,7 +27,25 @@ describe('Search onboarding', () => {
                     suggestions: [],
                 },
             }),
-            Search: emptySearchResults,
+            Search: {
+                search: {
+                    results: {
+                        __typename: 'SearchResults',
+                        limitHit: true,
+                        matchCount: 30,
+                        approximateResultCount: '30+',
+                        missing: [],
+                        cloning: [],
+                        repositoriesCount: 372,
+                        timedout: [],
+                        indexUnavailable: false,
+                        dynamicFilters: [],
+                        results: [],
+                        alert: null,
+                        elapsedMilliseconds: 103,
+                    },
+                },
+            },
             RepoGroups: () => ({
                 repoGroups: [],
             }),
