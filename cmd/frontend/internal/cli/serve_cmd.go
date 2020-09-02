@@ -83,7 +83,7 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 	return &url.URL{Scheme: "http", Host: hostPort}
 }
 
-// InitDB initializes the global database connection and sets the
+// ecnitDB initializes the global database connection and sets the
 // version of the frontend in our versions table.
 func InitDB() error {
 	if err := dbconn.ConnectToDB(""); err != nil {
@@ -275,7 +275,7 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 	fmt.Printf("✱ Sourcegraph is ready at: %s\n", globals.ExternalURL())
 
 	// now that sourcegraph is ready, let's look to rotating our keys
-	if encrypt.ConfiguredToEncrypt() {
+	if secrets.ConfiguredToEncrypt() {
 
 	}
 

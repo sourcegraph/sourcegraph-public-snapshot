@@ -22,6 +22,7 @@ type EncryptionError struct {
 type Encryptor interface {
 	EncryptBytes(b []byte) ([]byte, error)
 	DecryptBytes(b []byte) ([]byte, error)
+	ConfiguredToEncrypt() bool
 }
 
 // encryptor performs encryption and decryption.
@@ -38,6 +39,12 @@ func newEncryptor(primaryKey, secondaryKey []byte) Encryptor {
 		primaryKey:   primaryKey,
 		secondaryKey: secondaryKey,
 	}
+}
+
+// ConfiguredToEncrypt returns the statue of our encryptor, whether or not
+// it has a key specified, and can thus encrypt.
+func (e encryptor) ConfiguredToEncrypt() bool {
+	return len(e.primaryKey) == validKeyLength
 }
 
 // EncryptBytes encrypts data using 256-bit AES-GCM. This both hides the content of
@@ -117,6 +124,17 @@ func (noOpEncryptor) EncryptBytes(b []byte) ([]byte, error) {
 
 func (noOpEncryptor) DecryptBytes(b []byte) ([]byte, error) {
 	return b, nil
+}
+
+func (noOpEncryptor) ConfiguredToEncrypt() bool {
+	return false
+}
+
+// ConfiguredToEncrypt returns a boolean indicating whether this type of
+// encryption was configured to encrypt. This is effectively the status of
+// a struct having an encryption key specified.
+func ConfiguredToEncrypt() bool {
+	return defaultEncryptor.ConfiguredToEncrypt()
 }
 
 // EncryptBytes encrypts the plaintext and returns the encrypted value.
