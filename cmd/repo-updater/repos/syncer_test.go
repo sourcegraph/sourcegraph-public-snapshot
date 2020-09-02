@@ -1402,6 +1402,34 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store repos.Store) func(t *
 			if rowCount != 0 {
 				t.Fatalf("Expected 0 rows, got %d", rowCount)
 			}
+
+			// Remove the repo from the second service and sync again
+			syncer = &repos.Syncer{
+				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+					s := repos.NewFakeSource(svc2, nil)
+					return repos.Sources{s}, nil
+				},
+				Now: time.Now,
+			}
+			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
+				t.Fatal(err)
+			}
+
+			// Confirm that there no relationships
+			if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM external_service_repos").Scan(&rowCount); err != nil {
+				t.Fatal(err)
+			}
+			if rowCount != 0 {
+				t.Fatalf("Expected 0 rows, got %d", rowCount)
+			}
+
+			// We should have one deleted repo
+			if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM repo where deleted_at is not null").Scan(&rowCount); err != nil {
+				t.Fatal(err)
+			}
+			if rowCount != 1 {
+				t.Fatalf("Expected 1 rows, got %d", rowCount)
+			}
 		}
 	}
 }
