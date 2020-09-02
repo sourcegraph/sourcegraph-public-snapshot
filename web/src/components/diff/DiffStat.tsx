@@ -59,12 +59,12 @@ export const DiffStat: React.FunctionComponent<Props> = React.memo(function Diff
         }
     }
 
-    const squares: ('added' | 'changed' | 'deleted')[] = new Array(addedSquares)
-        .fill('added')
+    const squares = new Array<'bg-success' | 'bg-warning' | 'bg-danger' | 'diff-stat__empty'>(addedSquares)
+        .fill('bg-success')
         .concat(
-            new Array(changedSquares).fill('changed'),
-            new Array(deletedSquares).fill('deleted'),
-            new Array(NUM_SQUARES - numberOfSquares).fill('empty')
+            new Array<'bg-warning'>(changedSquares).fill('bg-warning'),
+            new Array<'bg-danger'>(deletedSquares).fill('bg-danger'),
+            new Array<'diff-stat__empty'>(NUM_SQUARES - numberOfSquares).fill('diff-stat__empty')
         )
 
     const labels: string[] = []
@@ -94,8 +94,8 @@ export const DiffStat: React.FunctionComponent<Props> = React.memo(function Diff
                 <small className="diff-stat__total">{numberWithCommas(total + changed)}</small>
             )}
             <div>
-                {squares.map((verb, index) => (
-                    <div key={index} className={`diff-stat__square diff-stat__${verb}`} />
+                {squares.map((className, index) => (
+                    <div key={index} className={`diff-stat__square ${className}`} />
                 ))}
             </div>
         </div>

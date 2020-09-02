@@ -15,15 +15,6 @@
         margin-left: 0.125rem;
     }
 
-    &__added {
-        background-color: var(--text-success);
-    }
-    &__changed {
-        background-color: var(--text-warning);
-    }
-    &__deleted {
-        background-color: var(--text-danger);
-    }
     &__empty {
         background-color: var(--text-muted);
     }
