@@ -166,6 +166,20 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 3.17.0
 
+### Migration steps
+
+In addition to updating the images as its regularly done, **pure-docker** deployments will require the following changes as displayed in this [commit](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2895236661de3ff633ee56fe0b87e9a0f530cc60).
+
+- Update `cadvisor` docker images to Sourcegraph's `sourcegraph/cadvisor`.
+- Set the `DEPLOY_TYPE` environment to `pure-docker` in the frontend services.
+- The `precise-code-intel-api-server` service was removed and its functionality moved to `precise-code-intel-bundle-manager`
+  - Rename `PRECISE_CODE_INTEL_API_SERVER_URL` environment variable to `PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL`.
+  - Set `PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL` environment variable to use `precise-code-intel-bundle-manager`
+  - Remove `deploy-precise-code-intel-api-server`
+- Update the `grafana` service to set the `SRC_FRONTEND_INTERNAL` environment variable to `sourcegraph-frontend-internal:3090`
+- Add **Jaeger** target in `grafana` data sources.
+- Remove `precise-code-intel-api-server` from `prometheus` targets
+
 ### Added
 
 - The search results page now shows a small UI notification if either repository forks or archives are excluded, when `fork` or `archived` options are not explicitly set. [#10624](https://github.com/sourcegraph/sourcegraph/pull/10624)
@@ -182,6 +196,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Background permissions syncing becomes the default method to sync permissions from code hosts. Please [read our documentation for things to keep in mind before upgrading](https://docs.sourcegraph.com/admin/repo/permissions#background-permissions-syncing). [#10972](https://github.com/sourcegraph/sourcegraph/pull/10972)
 - The styling of the hover overlay was overhauled to never have badges or the close button overlap content while also always indicating whether the overlay is currently pinned. The styling on code hosts was also improved. [#10956](https://github.com/sourcegraph/sourcegraph/pull/10956)
 - Previously, it was required to quote most patterns in structural search. This is no longer a restriction and single and double quotes in structural search patterns are interpreted literally. Note: you may still use `content:"structural-pattern"` if the pattern without quotes conflicts with other syntax. [#11481](https://github.com/sourcegraph/sourcegraph/pull/11481)
+- Migrated `cadvisor` docker images from `google/cadvisor` to `sourcegraph/cadvisor`.
+- Frontend environment variable for **precise-code-intel** has changed from `PRECISE_CODE_INTEL_API_SERVER_URL` to `PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL`
 
 ### Fixed
 
