@@ -192,7 +192,10 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	upserts := s.upserts(diff)
 
 	// Delete from external_service_repos only. Deletes need to happen first so that we don't end up with
-	// constraint violations later
+	// constraint violations later.
+	// The trigger 'trig_soft_delete_orphan_repo_by_external_service_repo' will run
+	// and remove any repos that no longer have any rows in the external_service_repos
+	// table.
 	sdiff := s.sourcesUpserts(&diff, storedCopy)
 	if err = store.UpsertSources(ctx, nil, nil, sdiff.Deleted); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.delete-sources")
@@ -319,10 +322,19 @@ func (s *Syncer) syncSubset(ctx context.Context, store Store, insertOnly bool, s
 	storedCopy := storedSubset.Clone()
 
 	diff = NewDiff(sourcedSubset, storedSubset)
-	upserts := s.upserts(diff)
+
+	// We trust that if we determine that a repo needs to be deleted it should be deleted
+	// from all external services. By setting sources to nil this is forced when we call
+	// UpsertSources below.
+	for i := range diff.Deleted {
+		diff.Deleted[i].Sources = nil
+	}
 
 	// Delete from external_service_repos only. Deletes need to happen first so that we don't end up with
-	// constraint violations later
+	// constraint violations later.
+	// The trigger 'trig_soft_delete_orphan_repo_by_external_service_repo' will run
+	// and remove any repos that no longer have any rows in the external_service_repos
+	// table.
 	sdiff := s.sourcesUpserts(&diff, storedCopy)
 	if err = store.UpsertSources(ctx, nil, nil, sdiff.Deleted); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.delete-sources")
@@ -330,6 +342,7 @@ func (s *Syncer) syncSubset(ctx context.Context, store Store, insertOnly bool, s
 
 	// Next, insert or modify existing repos. This is needed so that the next call
 	// to UpsertSources has valid repo ids
+	upserts := s.upserts(diff)
 	if err = store.UpsertRepos(ctx, upserts...); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.upsert-repos")
 	}

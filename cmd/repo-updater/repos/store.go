@@ -38,7 +38,7 @@ type Store interface {
 	EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) error
 
 	// TODO: These two methods should not be used in production, move them to
-	// an extension interface that's explicitely for testing.
+	// an extension interface that's explicitly for testing.
 	InsertRepos(context.Context, ...*Repo) error
 	DeleteRepos(ctx context.Context, ids ...api.RepoID) error
 }
