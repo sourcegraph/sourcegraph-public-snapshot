@@ -1,0 +1,5 @@
+package secrets
+
+func EncryptAllTables() {
+
+}

@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	secretPkg "github.com/sourcegraph/sourcegraph/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
@@ -585,6 +586,49 @@ GROUP BY current_month, current_week, current_day
 // AggregatedEvents calculates AggregatedEvent for each every unique event type.
 func (l *eventLogs) AggregatedEvents(ctx context.Context) ([]types.AggregatedEvent, error) {
 	return l.aggregatedEvents(ctx, time.Now().UTC())
+}
+
+// EncryptTable implements the TableEncryption Interface to provide key rotation the event_logs table
+func EncryptTable(ctx context.Context) error {
+	var (
+		e             Event
+		id            int
+		secretColumns = []string{"argument"}
+	)
+	resultMap := make(map[int][]byte)
+
+	query := sqlf.Sprintf("SELECT id,%s FROM event_logs", secretColumns)
+
+	rows, err := dbconn.Global.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args())
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	// TODO: Wrap in TX
+	for rows.Next() {
+
+		err := rows.Scan(&id, &e.Argument)
+		if err != nil {
+			return err
+		}
+		// do key rotation
+		plaintext, err := secretPkg.DecryptBytes(e.Argument)
+		if err != nil {
+			return err
+		}
+		ciphertext, err := secretPkg.EncryptBytes(plaintext)
+		if err != nil {
+			return err
+		}
+		resultMap[id] = ciphertext
+	}
+	err = rows.Err()
+	if err != nil {
+		return err
+	}
+	// TODO: Update all values with resultMap
+
+	return nil
 }
 
 func (l *eventLogs) aggregatedEvents(ctx context.Context, now time.Time) (events []types.AggregatedEvent, err error) {
