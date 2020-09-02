@@ -35,7 +35,7 @@ storiesOf('browser/Options/OptionsMenu', module)
             sourcegraphURL="https://sourcegraph.com"
             onURLChange={action('Sourcegraph URL changed')}
             onURLSubmit={action('New Sourcegraph URL submitted')}
-            onSettingsClick={action('Settings clicked')}
+            onClickExpandOptionsMenu={action('Settings clicked')}
             onToggleActivationClick={action('Toggle activation clicked')}
             isOptionsMenuExpanded={true}
             isActivated={true}

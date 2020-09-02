@@ -8,7 +8,7 @@ import { getExtensionVersion } from '../../shared/util/context'
 import { OptionsMenu, OptionsMenuProps } from './OptionsMenu'
 import { ConnectionErrors } from './ServerUrlForm'
 import { isHTTPAuthError } from '../../../../shared/src/backend/fetch'
-import { OptionFlagWithValue, OptionFlagKey } from '../../shared/util/optionFlags'
+import { OptionFlagWithValue } from '../../shared/util/optionFlags'
 
 export interface OptionsContainerProps {
     sourcegraphURL: string
@@ -19,7 +19,7 @@ export interface OptionsContainerProps {
     requestPermissions: (url: string) => void
     setSourcegraphURL: (url: string) => Promise<void>
     toggleExtensionDisabled: (isActivated: boolean) => Promise<void>
-    onChangeOptionFlag: (key: OptionFlagKey, value: boolean) => void
+    onChangeOptionFlag: (key: string, value: boolean) => void
     optionFlags: OptionFlagWithValue[]
 }
 

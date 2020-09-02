@@ -95,8 +95,8 @@ describe('OptionsMenu', () => {
                     {...stubs}
                     isOptionsMenuExpanded={true}
                     optionFlags={[
-                        { key: 'foo', value: true },
-                        { key: 'bar', value: false },
+                        { label: 'Foo', key: 'foo', value: true },
+                        { label: 'Bar', key: 'bar', value: false },
                     ]}
                 />
             )
@@ -110,8 +110,8 @@ describe('OptionsMenu', () => {
                 {...stubs}
                 isOptionsMenuExpanded={true}
                 optionFlags={[
-                    { key: 'foo', value: true },
-                    { key: 'bar', value: false },
+                    { label: 'Foo', key: 'foo', value: true },
+                    { label: 'Bar', key: 'bar', value: false },
                 ]}
                 onChangeOptionFlag={toggleFeatureFlag}
             />

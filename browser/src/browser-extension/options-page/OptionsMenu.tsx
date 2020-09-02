@@ -1,7 +1,6 @@
 import * as React from 'react'
 import { OptionsHeader, OptionsHeaderProps } from './OptionsHeader'
 import { ServerUrlForm, ServerUrlFormProps } from './ServerUrlForm'
-import { OptionFlagWithValue, OptionFlagKey } from '../../shared/util/optionFlags'
 
 export interface OptionsMenuProps
     extends OptionsHeaderProps,
@@ -12,8 +11,8 @@ export interface OptionsMenuProps
 
     isOptionsMenuExpanded?: boolean
     isActivated: boolean
-    onChangeOptionFlag: (key: OptionFlagKey, value: boolean) => void
-    optionFlags?: OptionFlagWithValue[]
+    onChangeOptionFlag: (key: string, value: boolean) => void
+    optionFlags?: { key: string; label: string; value: boolean }[]
     currentTabStatus?: {
         host: string
         protocol: string
@@ -109,23 +108,20 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
             <div className="options-menu__section">
                 <label>Configuration</label>
                 <div>
-                    {options.map(
-                        ({ label, key, value, hidden }) =>
-                            !hidden && (
-                                <div className="form-check" key={key}>
-                                    <label className="form-check-label">
-                                        <input
-                                            id={key}
-                                            onChange={event => onChangeOptionFlag(key, event.target.checked)}
-                                            className="form-check-input"
-                                            type="checkbox"
-                                            checked={value}
-                                        />{' '}
-                                        {label}
-                                    </label>
-                                </div>
-                            )
-                    )}
+                    {options.map(({ label, key, value }) => (
+                        <div className="form-check" key={key}>
+                            <label className="form-check-label">
+                                <input
+                                    id={key}
+                                    onChange={event => onChangeOptionFlag(key, event.target.checked)}
+                                    className="form-check-input"
+                                    type="checkbox"
+                                    checked={value}
+                                />{' '}
+                                {label}
+                            </label>
+                        </div>
+                    ))}
                 </div>
             </div>
         )}

@@ -1,5 +1,5 @@
 import { noop } from 'lodash'
-import { Observable, ReplaySubject, Subscribable, Subscription } from 'rxjs'
+import { Observable, ReplaySubject, Subscription } from 'rxjs'
 import { take } from 'rxjs/operators'
 import * as uuid from 'uuid'
 import * as GQL from '../../../../shared/src/graphql/schema'
@@ -43,13 +43,11 @@ export class ConditionalTelemetryService implements TelemetryService {
 
     public log(eventName: string, eventProperties?: any): void {
         if (this.isEnabled) {
-            console.log(`ConditionalTelemetryService log ${eventName}`)
             this.innerTelemetryService.log(eventName, eventProperties)
         }
     }
     public logViewEvent(eventName: string): void {
         if (this.isEnabled) {
-            console.log(`ConditionalTelemetryService log ${eventName}`)
             this.innerTelemetryService.logViewEvent(eventName)
         }
     }

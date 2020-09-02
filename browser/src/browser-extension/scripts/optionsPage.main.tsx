@@ -8,7 +8,6 @@ import { GraphQLResult } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { background } from '../web-extension-api/runtime'
 import { observeStorageKey, storage } from '../web-extension-api/storage'
-import { featureFlagDefaults, FeatureFlags } from '../web-extension-api/types'
 import { OptionsContainer, OptionsContainerProps } from '../options-page/OptionsContainer'
 import { OptionsMenuProps } from '../options-page/OptionsMenu'
 import { initSentry } from '../../shared/sentry'
@@ -20,6 +19,7 @@ import {
     assignOptionFlagValues,
     observeOptionFlags,
     shouldOverrideSendTelemetry,
+    optionFlagDefinitions,
 } from '../../shared/util/optionFlags'
 import { assertEnvironment } from '../environmentAssertion'
 import { observeSourcegraphURL, isFirefox } from '../../shared/util/context'
@@ -38,8 +38,8 @@ interface State {
     optionFlags: OptionFlagWithValue[]
 }
 
-const keyIsFeatureFlag = (key: string): key is keyof FeatureFlags =>
-    !!Object.keys(featureFlagDefaults).find(featureFlag => key === featureFlag)
+const isOptionFlagKey = (key: string): key is OptionFlagKey =>
+    !!optionFlagDefinitions.find(definition => definition.key === key)
 
 const fetchCurrentTabStatus = async (): Promise<OptionsMenuProps['currentTabStatus']> => {
     const tabs = await browser.tabs.query({ active: true, currentWindow: true })
@@ -137,8 +137,8 @@ class Options extends React.Component<{}, State> {
 
             setSourcegraphURL: (sourcegraphURL: string) => storage.sync.set({ sourcegraphURL }),
             toggleExtensionDisabled: (isActivated: boolean) => storage.sync.set({ disableExtension: !isActivated }),
-            onChangeOptionFlag: (key: OptionFlagKey, value: boolean) => {
-                if (keyIsFeatureFlag(key)) {
+            onChangeOptionFlag: (key: string, value: boolean) => {
+                if (isOptionFlagKey(key)) {
                     featureFlags.set(key, value).then(noop, noop)
                 }
             },
