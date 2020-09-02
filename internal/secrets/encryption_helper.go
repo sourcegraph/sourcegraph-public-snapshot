@@ -1,5 +1,0 @@
-package secrets
-
-func EncryptAllTables() {
-
-}

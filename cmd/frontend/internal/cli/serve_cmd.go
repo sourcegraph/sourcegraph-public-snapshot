@@ -276,7 +276,8 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 
 	// now that sourcegraph is ready, let's look to rotating our keys
 	if secrets.ConfiguredToEncrypt() {
-
+		// TODO when we're ready to turn this on, uncomment and go.
+		// goroutine.Go(func() { bg.EncryptAllTables(context.Background()) })
 	}
 
 	srv.Wait()
