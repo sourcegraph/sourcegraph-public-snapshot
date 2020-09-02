@@ -64,7 +64,7 @@ const searchResults = (): SearchResult => ({
     },
 })
 
-describe.only('Search onboarding', () => {
+describe('Search onboarding', () => {
     let driver: Driver
     before(async () => {
         driver = await createDriverForTest()
