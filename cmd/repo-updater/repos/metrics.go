@@ -1,12 +1,13 @@
 package repos
 
 import (
+	"context"
+
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 var (
@@ -66,13 +67,9 @@ var (
 	})
 )
 
-func init() {
+func MustRegisterMetrics(db dbutil.DB) {
 	scanCount := func(sql string) (float64, error) {
-		if dbconn.Global == nil {
-			return 0, errors.New("database connection is not available")
-		}
-
-		row := dbconn.Global.QueryRow(sql)
+		row := db.QueryRowContext(context.Background(), sql)
 		var count int64
 		err := row.Scan(&count)
 		if err != nil {
