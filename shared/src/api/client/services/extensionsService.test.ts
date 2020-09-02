@@ -96,7 +96,7 @@ describe('activeExtensions', () => {
             } as Record<string, ExecutableExtension[]>)
         ))
 
-    test('fetches a sideloaded extension and adds it to the set of registry extensions', () => {
+    test('fetches a sideloaded extension and disables registry extensions', () => {
         scheduler().run(({ cold, expectObservable }) => {
             expectObservable(
                 from(
@@ -132,10 +132,7 @@ describe('activeExtensions', () => {
                     ).activeExtensions
                 )
             ).toBe('a-|', {
-                a: [
-                    { id: 'foo', manifest, scriptURL: 'u' },
-                    { id: 'bar', manifest: { url: 'bar.js', activationEvents: [] }, scriptURL: 'bar.js' },
-                ],
+                a: [{ id: 'bar', manifest: { url: 'bar.js', activationEvents: [] }, scriptURL: 'bar.js' }],
             })
         })
     })

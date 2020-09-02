@@ -93,13 +93,11 @@ export class ExtensionsService implements IExtensionsService {
             this.sideloadedExtension,
         ]).pipe(
             map(([settings, configuredExtensions, sideloadedExtension]) => {
-                const enabled = [
-                    ...configuredExtensions.filter(extension => isExtensionEnabled(settings.final, extension.id)),
-                ]
                 if (sideloadedExtension) {
-                    enabled.push(sideloadedExtension)
+                    return [sideloadedExtension]
                 }
-                return enabled
+
+                return configuredExtensions.filter(extension => isExtensionEnabled(settings.final, extension.id))
             })
         )
     }
