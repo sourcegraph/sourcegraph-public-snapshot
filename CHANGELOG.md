@@ -28,7 +28,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Negated content search is now also supported for unindexed repositories. Previously it was only supported for indexed repositories [#13359](https://github.com/sourcegraph/sourcegraph/pull/13359).
 - The experimental feature flag `andOrQuery` is deprecated. [#13435](https://github.com/sourcegraph/sourcegraph/pull/13435)
 - `rev:` is available as alternative syntax of `@` for searching revisions instead of the default branch [#13133](https://github.com/sourcegraph/sourcegraph/pull/13133)
- 
+
 ### Fixed
 
 - User satisfaction/NPS surveys will now correctly provide a range from 0–10, rather than 0–9. [#13163](https://github.com/sourcegraph/sourcegraph/pull/13163)
