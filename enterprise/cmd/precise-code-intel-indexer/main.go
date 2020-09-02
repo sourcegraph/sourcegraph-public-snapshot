@@ -31,6 +31,7 @@ func main() {
 	env.HandleHelpFlag()
 	logging.Init()
 	tracer.Init()
+	trace.Init(true)
 
 	var (
 		resetInterval                    = mustParseInterval(rawResetInterval, "PRECISE_CODE_INTEL_RESET_INTERVAL")
