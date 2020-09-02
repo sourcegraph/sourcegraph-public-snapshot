@@ -9,7 +9,7 @@ import { useLocalStorage } from '../../util/useLocalStorage'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { Scalars } from '../../graphql-operations'
 
-interface Props extends ThemeProps, TelemetryProps {
+export interface AddExternalServicesPageProps extends ThemeProps, TelemetryProps {
     history: H.History
     routingPrefix: string
     afterCreateRoute: string
@@ -33,7 +33,7 @@ interface Props extends ThemeProps, TelemetryProps {
 /**
  * Page for choosing a service kind and variant to add, among the available options.
  */
-export const AddExternalServicesPage: React.FunctionComponent<Props> = ({
+export const AddExternalServicesPage: React.FunctionComponent<AddExternalServicesPageProps> = ({
     afterCreateRoute,
     codeHostExternalServices,
     history,

@@ -7,10 +7,15 @@ import * as H from 'history'
 import { scheduleRepositoryPermissionsSync } from '../../../site-admin/backend'
 import { ActionContainer } from '../../../repo/settings/components/ActionContainer'
 
+export interface RepoSettingsPermissionsPageProps {
+    repo: GQL.IRepository
+    history: H.History
+}
+
 /**
  * The repository settings permissions page.
  */
-export const RepoSettingsPermissionsPage: React.FunctionComponent<{ repo: GQL.IRepository; history: H.History }> = ({
+export const RepoSettingsPermissionsPage: React.FunctionComponent<RepoSettingsPermissionsPageProps> = ({
     repo,
     history,
 }) => {

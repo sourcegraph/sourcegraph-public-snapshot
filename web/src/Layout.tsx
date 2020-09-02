@@ -39,10 +39,10 @@ import {
     CopyQueryButtonProps,
     RepogroupHomepageProps,
     OnboardingTourProps,
+    EnterpriseHomePanelsProps,
 } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { EventLogger, EventLoggerProps } from './tracking/eventLogger'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
@@ -63,6 +63,7 @@ import { FlatExtHostAPI } from '../../shared/src/api/contract'
 import { useBreadcrumbs } from './components/Breadcrumbs'
 import { AuthenticatedUser } from './auth'
 import { SearchPatternType } from './graphql-operations'
+import { TelemetryProps } from '../../shared/src/telemetry/telemetryService'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -71,7 +72,7 @@ export interface LayoutProps
         ExtensionsControllerProps,
         KeyboardShortcutsProps,
         ThemeProps,
-        EventLoggerProps,
+        TelemetryProps,
         ThemePreferenceProps,
         ActivationProps,
         PatternTypeProps,
@@ -80,7 +81,8 @@ export interface LayoutProps
         CopyQueryButtonProps,
         VersionContextProps,
         RepogroupHomepageProps,
-        OnboardingTourProps {
+        OnboardingTourProps,
+        EnterpriseHomePanelsProps {
     exploreSections: readonly ExploreSectionDescriptor[]
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -109,8 +111,6 @@ export interface LayoutProps
      * the site's GraphQL node ID (for anonymous users) or the authenticated user's GraphQL node ID.
      */
     viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
-
-    telemetryService: EventLogger
 
     // Search
     navbarSearchQueryState: QueryState

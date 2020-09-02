@@ -261,7 +261,6 @@ func TestService(t *testing.T) {
 
 			cs, _, err := store.ListChangesets(ctx, ListChangesetsOpts{
 				OwnedByCampaignID: c.ID,
-				Limit:             -1,
 			})
 			if err != nil {
 				t.Fatalf("listing changesets failed: %s", err)

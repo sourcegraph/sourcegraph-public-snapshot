@@ -393,12 +393,8 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
     <div
       className=""
     >
-      <h3>
-        Campaign description
-      </h3>
-      <hr />
       <div
-        className="pl-3 py-3"
+        className="pb-3"
       >
         <Markdown
           dangerousInnerHTML="<p>d</p>
@@ -436,6 +432,10 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
         },
         "closedAt": null,
         "createdAt": "2020-01-01",
+        "currentSpec": Object {
+          "originalInput": "name: awesome-campaign
+description: somestring",
+        },
         "description": "d",
         "diffStat": Object {
           "added": 5,
@@ -502,6 +502,20 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
             className="icon-inline text-muted mr-1"
           />
            Burndown chart
+        </a>
+      </li>
+      <li
+        className="nav-item test-campaigns-spec-tab"
+      >
+        <a
+          className="nav-link"
+          href=""
+          onClick={[Function]}
+        >
+          <Memo(FileDocumentIcon)
+            className="icon-inline text-muted mr-1"
+          />
+           Campaign spec
         </a>
       </li>
     </ul>
@@ -1153,12 +1167,8 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
     <div
       className=""
     >
-      <h3>
-        Campaign description
-      </h3>
-      <hr />
       <div
-        className="pl-3 py-3"
+        className="pb-3"
       >
         <Markdown
           dangerousInnerHTML="<p>d</p>
@@ -1196,6 +1206,10 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
         },
         "closedAt": null,
         "createdAt": "2020-01-01",
+        "currentSpec": Object {
+          "originalInput": "name: awesome-campaign
+description: somestring",
+        },
         "description": "d",
         "diffStat": Object {
           "added": 5,
@@ -1262,6 +1276,20 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
             className="icon-inline text-muted mr-1"
           />
            Burndown chart
+        </a>
+      </li>
+      <li
+        className="nav-item test-campaigns-spec-tab"
+      >
+        <a
+          className="nav-link"
+          href=""
+          onClick={[Function]}
+        >
+          <Memo(FileDocumentIcon)
+            className="icon-inline text-muted mr-1"
+          />
+           Campaign spec
         </a>
       </li>
     </ul>

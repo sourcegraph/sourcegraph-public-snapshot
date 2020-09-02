@@ -348,6 +348,7 @@ func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz A
 		Schema,
 		resolver,
 		graphql.Tracer(prometheusTracer{}),
+		graphql.UseStringDescriptions(),
 	)
 }
 

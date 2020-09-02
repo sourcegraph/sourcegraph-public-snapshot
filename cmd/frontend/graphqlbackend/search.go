@@ -42,16 +42,6 @@ import (
 // logic that spans out into all the other search_* files.
 var mockResolveRepositories func(effectiveRepoFieldValues []string) (resolved resolvedRepositories, err error)
 
-func maxReposToSearch() int {
-	switch max := conf.Get().MaxReposToSearch; {
-	case max <= 0:
-		// Default to a very large number that will not overflow if incremented.
-		return math.MaxInt32 >> 1
-	default:
-		return max
-	}
-}
-
 type SearchArgs struct {
 	Version        string
 	PatternType    *string
@@ -75,7 +65,7 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 		return nil, err
 	}
 
-	useNewParser := getBoolPtr(settings.SearchMigrateParser, false)
+	useNewParser := getBoolPtr(settings.SearchMigrateParser, true)
 
 	searchType, err := detectSearchType(args.Version, args.PatternType)
 	if err != nil {
@@ -88,11 +78,7 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 	}
 
 	var queryInfo query.QueryInfo
-	if (conf.AndOrQueryEnabled() && query.ContainsAndOrKeyword(args.Query)) || useNewParser || searchType == query.SearchTypeStructural {
-		// To process the input as an and/or query, the flag must be
-		// enabled (default is on) and must contain either an 'and' or
-		// 'or' expression or set in settings. Else, fallback to the
-		// older existing parser.
+	if useNewParser {
 		globbing := getBoolPtr(settings.SearchGlobbing, false)
 		queryInfo, err = query.ProcessAndOr(args.Query, query.ParserOptions{SearchType: searchType, Globbing: globbing})
 		if err != nil {
@@ -721,6 +707,35 @@ func (op *resolveRepoOp) String() string {
 	return b.String()
 }
 
+func searchLimits() schema.SearchLimits {
+	// Our configuration reader does not set defaults from schema. So we rely
+	// on Go default values to mean defaults.
+	withDefault := func(x *int, def int) {
+		if *x <= 0 {
+			*x = def
+		}
+	}
+
+	c := conf.Get()
+
+	var limits schema.SearchLimits
+	if c.SearchLimits != nil {
+		limits = *c.SearchLimits
+	}
+
+	// If MaxRepos unset use deprecated value
+	if limits.MaxRepos == 0 {
+		limits.MaxRepos = c.MaxReposToSearch
+	}
+
+	withDefault(&limits.MaxRepos, math.MaxInt32>>1)
+	withDefault(&limits.CommitDiffMaxRepos, 50)
+	withDefault(&limits.CommitDiffWithTimeFilterMaxRepos, 10000)
+	withDefault(&limits.MaxTimeoutSeconds, 60)
+
+	return limits
+}
+
 func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedRepositories, error) {
 	var err error
 	tr, ctx := trace.New(ctx, "resolveRepositories", op.String())
@@ -737,7 +752,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedReposit
 
 	excludePatterns := op.minusRepoFilters
 
-	maxRepoListSize := maxReposToSearch()
+	maxRepoListSize := searchLimits().MaxRepos
 
 	// If any repo groups are specified, take the intersection of the repo
 	// groups and the set of repos specified with repo:. (If none are specified

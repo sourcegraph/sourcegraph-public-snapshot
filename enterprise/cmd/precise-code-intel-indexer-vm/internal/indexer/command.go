@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"strings"
 	"sync"
 
 	"github.com/inconshreveable/log15"
@@ -17,6 +18,8 @@ func runCommand(ctx context.Context, command string, args ...string) error {
 	if err != nil {
 		return err
 	}
+
+	log15.Debug("Running command: %s %s\n", command, strings.Join(args, " "))
 
 	wg := parallel(
 		func() { processStream("stdout", stdout) },

@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { useEffect, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 import {
     PatternTypeProps,
     InteractiveSearchProps,
@@ -7,12 +7,12 @@ import {
     CopyQueryButtonProps,
     RepogroupHomepageProps,
     OnboardingTourProps,
+    EnterpriseHomePanelsProps,
 } from '..'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Settings } from '../../schema/settings.schema'
 import { ThemeProps } from '../../../../shared/src/theme'
-import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
 import { ThemePreferenceProps } from '../../theme'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
@@ -32,6 +32,7 @@ import { SearchPageInput } from './SearchPageInput'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { PrivateCodeCta } from './PrivateCodeCta'
 import { AuthenticatedUser } from '../../auth'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -41,14 +42,15 @@ interface Props
         PatternTypeProps,
         CaseSensitivityProps,
         KeyboardShortcutsProps,
-        EventLoggerProps,
+        TelemetryProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         InteractiveSearchProps,
         CopyQueryButtonProps,
         VersionContextProps,
         RepogroupHomepageProps,
-        OnboardingTourProps {
+        OnboardingTourProps,
+        EnterpriseHomePanelsProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -64,15 +66,20 @@ interface Props
     globbing: boolean
 }
 
-const SearchExampleClicked = (url: string) => (): void => eventLogger.log('ExampleSearchClicked', { url })
-const LanguageExampleClicked = (language: string) => (): void =>
-    eventLogger.log('ExampleLanguageSearchClicked', { language })
-
 /**
  * The search page
  */
 export const SearchPage: React.FunctionComponent<Props> = props => {
-    useEffect(() => eventLogger.logViewEvent('Home'))
+    const SearchExampleClicked = useCallback(
+        (url: string) => (): void => props.telemetryService.log('ExampleSearchClicked', { url }),
+        [props.telemetryService]
+    )
+    const LanguageExampleClicked = useCallback(
+        (language: string) => (): void => props.telemetryService.log('ExampleLanguageSearchClicked', { language }),
+        [props.telemetryService]
+    )
+
+    useEffect(() => props.telemetryService.logViewEvent('Home'), [props.telemetryService])
 
     const codeInsightsEnabled =
         !isErrorLike(props.settingsCascade.final) && !!props.settingsCascade.final?.experimentalFeatures?.codeInsights
@@ -310,6 +317,12 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                             </div>
                         </div>
                     </div>
+                </>
+            )}
+
+            {!props.isSourcegraphDotCom && props.showEnterpriseHomePanels && (
+                <>
+                    <div>Hello from Enterprise Home with panels enabled</div>
                 </>
             )}
         </div>

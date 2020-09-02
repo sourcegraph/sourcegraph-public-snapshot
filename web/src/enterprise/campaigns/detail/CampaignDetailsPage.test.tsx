@@ -56,6 +56,9 @@ describe('CampaignDetailsPage', () => {
                         url: '/users/bob',
                         username: 'bob',
                     },
+                    currentSpec: {
+                        originalInput: 'name: awesome-campaign\ndescription: somestring',
+                    },
                 })
             }
             deleteCampaign={() => Promise.resolve(undefined)}

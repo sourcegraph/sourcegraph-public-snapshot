@@ -230,7 +230,8 @@ Line 6
 Another Line 7
 Foobar Line 8
 Line 9
-Line 10`
+Line 10
+`
 
 		haveContent, err := newFile.Content(ctx)
 		if err != nil {
@@ -244,12 +245,13 @@ Line 10`
 
 func TestApplyPatch(t *testing.T) {
 	tests := []struct {
-		file          string
-		patch         string
-		origStartLine int32
-		wantFile      string
+		name     string
+		file     string
+		patch    string
+		wantFile string
 	}{
 		{
+			name: "replace in middle",
 			file: `1 some
 2
 3
@@ -267,8 +269,14 @@ func TestApplyPatch(t *testing.T) {
 15
 16
 17
-18 oh yes`,
-			patch: ` 4
+18 oh yes
+`,
+			patch: `diff --git a/test b/test
+index 38dea4a..d81676e 100644
+--- a/test
++++ b/test
+@@ -4,7 +4,7 @@
+ 4
  5
  6
 -7 super awesome
@@ -277,7 +285,6 @@ func TestApplyPatch(t *testing.T) {
  9
  10
 `,
-			origStartLine: 4,
 			wantFile: `1 some
 2
 3
@@ -295,15 +302,70 @@ func TestApplyPatch(t *testing.T) {
 15
 16
 17
-18 oh yes`,
+18 oh yes
+`,
+		},
+		{
+			name: "delete file",
+			file: `1 some
+2
+3
+`,
+			patch: `diff --git a/test b/test
+deleted file mode 100644
+index 2e0cf96..0000000
+--- a/test
++++ /dev/null
+@@ -1,3 +0,0 @@
+-1 some
+-2
+-3
+`,
+			wantFile: "",
+		},
+		{
+			name: "New file, additional newline at end",
+			file: "",
+			patch: `diff --git a/file2.txt b/file2.txt
+new file mode 100644
+index 0000000..122f5d9
+--- /dev/null
++++ b/file2.txt
+@@ -0,0 +1 @@
++filecontent
++
+`,
+			wantFile: `filecontent
+
+`,
+		},
+		{
+			name: "New file",
+			file: "",
+			patch: `diff --git a/file2.txt b/file2.txt
+new file mode 100644
+index 0000000..122f5d9
+--- /dev/null
++++ b/file2.txt
+@@ -0,0 +1 @@
++filecontent
+`,
+			wantFile: `filecontent
+`,
 		},
 	}
 
 	for _, tc := range tests {
-		have := applyPatch(tc.file, &diff.FileDiff{Hunks: []*diff.Hunk{{OrigStartLine: tc.origStartLine, Body: []byte(tc.patch)}}})
-		if have != tc.wantFile {
-			t.Fatalf("wrong patched file content %q, want=%q", have, tc.wantFile)
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			fileDiff, err := diff.ParseFileDiff([]byte(tc.patch))
+			if err != nil {
+				t.Fatal(err)
+			}
+			have := applyPatch(tc.file, fileDiff)
+			if have != tc.wantFile {
+				t.Fatalf("wrong patched file content %q, want=%q", have, tc.wantFile)
+			}
+		})
 	}
 }
 
