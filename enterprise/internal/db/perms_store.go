@@ -10,6 +10,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -632,12 +633,12 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 	}
 
 	q = loadUserPendingPermissionsByIDBatchQuery(changedIDs, p.Perm, authz.PermRepos, "FOR UPDATE")
-	idToSpecs, loadedIDs, err := txs.batchLoadUserPendingPermissions(ctx, q)
+	loadedIDs, err := txs.batchLoadUserPendingPermissions(ctx, q)
 	if err != nil {
 		return errors.Wrap(err, "batch load user pending permissions")
 	}
 
-	updatedPerms := make([]*authz.UserPendingPermissions, 0, len(idToSpecs))
+	updatedPerms := make([]*authz.UserPendingPermissions, 0, len(loadedIDs))
 	for _, id := range changedIDs {
 		userID := int32(id)
 
@@ -647,14 +648,9 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 		// these missing records is because we do not clean up `repo_pending_permissions` table after
 		// granting a user's pending permissions to avoid database deadlock, given the fact that once the
 		// record is removed from `user_pending_permissions` table, the user ID becomes invalid automatically.
-		spec, ok := idToSpecs[userID]
+		repoIDs, ok := loadedIDs[userID]
 		if !ok {
 			continue
-		}
-
-		repoIDs := loadedIDs[userID]
-		if repoIDs == nil {
-			repoIDs = roaring.NewBitmap()
 		}
 
 		switch {
@@ -665,20 +661,18 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 		}
 
 		updatedPerms = append(updatedPerms, &authz.UserPendingPermissions{
-			ServiceType: spec.ServiceType,
-			ServiceID:   spec.ServiceID,
-			BindID:      spec.AccountID,
-			Perm:        p.Perm,
-			Type:        authz.PermRepos,
-			IDs:         repoIDs,
-			UpdatedAt:   updatedAt,
+			ID:        userID,
+			IDs:       repoIDs,
+			UpdatedAt: updatedAt,
 		})
 	}
 
-	if q, err = upsertUserPendingPermissionsBatchQuery(updatedPerms...); err != nil {
+	if q, err = updateUserPendingPermissionsBatchQuery(updatedPerms...); err != nil {
 		return err
-	} else if err = txs.execute(ctx, q); err != nil {
-		return errors.Wrap(err, "execute upsert user pending permissions batch query")
+	}
+
+	if err = txs.execute(ctx, q); err != nil {
+		return errors.Wrap(err, "execute update user pending permissions batch query")
 	}
 
 	if q, err = upsertRepoPendingPermissionsBatchQuery(p); err != nil {
@@ -721,7 +715,6 @@ func (s *PermsStore) loadUserPendingPermissionsIDs(ctx context.Context, q *sqlf.
 }
 
 func (s *PermsStore) batchLoadUserPendingPermissions(ctx context.Context, q *sqlf.Query) (
-	idToSpecs map[int32]extsvc.AccountSpec,
 	loaded map[int32]*roaring.Bitmap,
 	err error,
 ) {
@@ -735,37 +728,31 @@ func (s *PermsStore) batchLoadUserPendingPermissions(ctx context.Context, q *sql
 
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	defer rows.Close()
 
-	idToSpecs = make(map[int32]extsvc.AccountSpec)
 	loaded = make(map[int32]*roaring.Bitmap)
 	for rows.Next() {
 		var id int32
-		var spec extsvc.AccountSpec
 		var ids []byte
-		if err = rows.Scan(&id, &spec.ServiceType, &spec.ServiceID, &spec.AccountID, &ids); err != nil {
-			return nil, nil, err
-		}
-
-		idToSpecs[id] = spec
-
-		if len(ids) == 0 {
-			continue
+		if err = rows.Scan(&id, &ids); err != nil {
+			return nil, err
 		}
 
 		bm := roaring.NewBitmap()
-		if err = bm.UnmarshalBinary(ids); err != nil {
-			return nil, nil, err
+		if len(ids) > 0 {
+			if err = bm.UnmarshalBinary(ids); err != nil {
+				return nil, err
+			}
 		}
 		loaded[id] = bm
 	}
 	if err = rows.Err(); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return idToSpecs, loaded, nil
+	return loaded, nil
 }
 
 func insertUserPendingPermissionsBatchQuery(
@@ -826,7 +813,7 @@ AND permission = %s
 func loadUserPendingPermissionsByIDBatchQuery(ids []uint32, perm authz.Perms, typ authz.PermType, lock string) *sqlf.Query {
 	const format = `
 -- source: enterprise/internal/db/perms_store.go:loadUserPendingPermissionsByIDBatchQuery
-SELECT id, service_type, service_id, bind_id, object_ids
+SELECT id, object_ids
 FROM user_pending_permissions
 WHERE id IN (%s)
 AND permission = %s
@@ -845,18 +832,15 @@ AND object_type = %s
 	)
 }
 
-func upsertUserPendingPermissionsBatchQuery(ps ...*authz.UserPendingPermissions) (*sqlf.Query, error) {
+func updateUserPendingPermissionsBatchQuery(ps ...*authz.UserPendingPermissions) (*sqlf.Query, error) {
 	const format = `
--- source: enterprise/internal/db/perms_store.go:upsertUserPendingPermissionsBatchQuery
-INSERT INTO user_pending_permissions
-  (service_type, service_id, bind_id, permission, object_type, object_ids, updated_at)
-VALUES
-  %s
-ON CONFLICT ON CONSTRAINT
-  user_pending_permissions_service_perm_object_unique
-DO UPDATE SET
-  object_ids = excluded.object_ids,
-  updated_at = excluded.updated_at
+-- source: enterprise/internal/db/perms_store.go:updateUserPendingPermissionsBatchQuery
+UPDATE user_pending_permissions
+SET
+	object_ids = update.object_ids,
+	updated_at = update.updated_at
+FROM (VALUES %s) AS update (id, object_ids, updated_at)
+WHERE user_pending_permissions.id = update.id
 `
 
 	items := make([]*sqlf.Query, len(ps))
@@ -871,12 +855,8 @@ DO UPDATE SET
 			return nil, ErrPermsUpdatedAtNotSet
 		}
 
-		items[i] = sqlf.Sprintf("(%s, %s, %s, %s, %s, %s, %s)",
-			ps[i].ServiceType,
-			ps[i].ServiceID,
-			ps[i].BindID,
-			ps[i].Perm.String(),
-			ps[i].Type,
+		items[i] = sqlf.Sprintf("(%s::INT, %s::BYTEA, %s::TIMESTAMP WITH TIME ZONE)",
+			ps[i].ID,
 			ids,
 			ps[i].UpdatedAt.UTC(),
 		)
