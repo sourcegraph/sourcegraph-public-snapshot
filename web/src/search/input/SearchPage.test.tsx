@@ -1,11 +1,13 @@
 import React from 'react'
 import { cleanup, render } from '@testing-library/react'
-import { Controller } from '../../../../shared/src/extensions/controller'
 import { createMemoryHistory } from 'history'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
 import { SearchPage, SearchPageProps } from './SearchPage'
+import { SearchPatternType } from '../../graphql-operations'
 import { Services } from '../../../../shared/src/api/client/services'
+import { ThemePreference } from '../../theme'
 
+// Mock the Monaco input box to make this a shallow test
 jest.mock('./SearchPageInput', () => ({
     SearchPageInput: () => null,
 }))
@@ -16,18 +18,43 @@ describe('SearchPage', () => {
     let container: HTMLElement
 
     const history = createMemoryHistory()
-    const defaultProps = {
+    const defaultProps: SearchPageProps = {
         isSourcegraphDotCom: false,
         settingsCascade: {
             final: null,
             subjects: null,
         },
         location: history.location,
+        history,
         extensionsController: {
             services: {} as Services,
-        } as Pick<Controller, 'executeCommand' | 'services'>,
+        } as any,
         telemetryService: NOOP_TELEMETRY_SERVICE,
-    } as SearchPageProps
+        themePreference: ThemePreference.Light,
+        onThemePreferenceChange: () => undefined,
+        authenticatedUser: null,
+        showCampaigns: false,
+        setVersionContext: () => undefined,
+        availableVersionContexts: [],
+        globbing: false,
+        patternType: SearchPatternType.literal,
+        setPatternType: () => undefined,
+        caseSensitive: false,
+        setCaseSensitivity: () => undefined,
+        platformContext: {} as any,
+        keyboardShortcuts: [],
+        filtersInQuery: {} as any,
+        onFiltersInQueryChange: () => undefined,
+        splitSearchModes: false,
+        interactiveSearchMode: false,
+        toggleSearchMode: () => undefined,
+        copyQueryButton: false,
+        versionContext: undefined,
+        showRepogroupHomepage: false,
+        showEnterpriseHomePanels: false,
+        showOnboardingTour: false,
+        isLightTheme: true,
+    }
 
     it('should not show enterprise home panels if on Sourcegraph.com', () => {
         container = render(<SearchPage {...defaultProps} isSourcegraphDotCom={true} />).container
