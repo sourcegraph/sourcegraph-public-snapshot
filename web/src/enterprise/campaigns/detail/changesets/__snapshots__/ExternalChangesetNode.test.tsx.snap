@@ -112,6 +112,7 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
       changed={200}
       deleted={100}
       expandedCounts={true}
+      separateLines={true}
     />
   </div>
 </Fragment>
