@@ -27,7 +27,7 @@ describe('Search onboarding', () => {
                     suggestions: [],
                 },
             }),
-            Search: {
+            Search: (): SearchResult => ({
                 search: {
                     results: {
                         __typename: 'SearchResults',
@@ -45,7 +45,7 @@ describe('Search onboarding', () => {
                         elapsedMilliseconds: 103,
                     },
                 },
-            },
+            }),
             RepoGroups: () => ({
                 repoGroups: [],
             }),
