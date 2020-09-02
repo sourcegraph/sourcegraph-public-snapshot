@@ -96,7 +96,7 @@ export const createSharedIntegrationTestContext = async <
     directory,
 }: IntegrationTestOptions): Promise<IntegrationTestContext<TGraphQlOperations, TGraphQlOperationNames>> => {
     await driver.newPage()
-    await driver.page.setRequestInterception(true)
+    // await driver.page.setRequestInterception(true)
     const recordingsDirectory = path.join(directory, '__fixtures__', snakeCase(currentTest.fullTitle()))
     if (record) {
         await mkdir(recordingsDirectory, { recursive: true })

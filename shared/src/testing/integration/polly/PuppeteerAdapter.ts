@@ -1,17 +1,34 @@
 import { Polly, Request as PollyRequest } from '@pollyjs/core'
 import type * as Puppeteer from 'puppeteer'
+import { intercept, patterns, Interceptor } from 'puppeteer-interceptor'
+import Protocol from 'devtools-protocol'
 import PollyAdapter from '@pollyjs/adapter'
-import { Subscription, fromEvent } from 'rxjs'
 
-interface Response {
+interface PollyResponse {
     statusCode: number
     headers: Record<string, string>
     body: string
 }
 
 interface PollyRequestArguments {
-    requestArguments: { request: Puppeteer.Request }
+    requestArguments: { request: Protocol.Network.Request }
 }
+
+// const puppeteerToCDPPatterns: Record<Puppeteer.ResourceType, keyof typeof patterns> = {
+//     document: 'Document',
+//     eventsource: 'EventSource',
+//     fetch: 'Fetch',
+//     font: 'Font',
+//     image: 'Image',
+//     manifest: 'Manifest',
+//     media: 'Media',
+//     other: 'Other',
+//     script: 'Script',
+//     stylesheet: 'Stylesheet',
+//     texttrack: 'TextTrack',
+//     websocket: 'WebSocket',
+//     xhr: 'XHR',
+// }
 
 /**
  * A Puppeteer adapter for Polly that supports all request resource types.
@@ -26,8 +43,6 @@ interface PollyRequestArguments {
  *
  */
 export class PuppeteerAdapter extends PollyAdapter {
-    private subscriptions = new Subscription()
-
     /**
      * The puppeteer Page this adapter is attached to, obtained from
      * options passed to the Polly constructor.
@@ -35,25 +50,28 @@ export class PuppeteerAdapter extends PollyAdapter {
     private page: Puppeteer.Page
 
     /**
-     * The request resource types tis adapter should intercept.
+     * The request resource types this adapter should intercept.
      */
-    private requestResourceTypes: Puppeteer.ResourceType[]
+    // private requestResourceTypes: Puppeteer.ResourceType[]
 
     /**
      * A map of all intercepted requests to their respond function, which will be called by the
      * 'response' event listener, causing Polly to record the response content.
      */
-    private pendingRequests = new Map<Puppeteer.Request, { respond: (response: Puppeteer.Response) => void }>()
+    private pendingRequests = new Map<Protocol.Network.Request, { respond: (response: PollyResponse) => void }>()
 
     /**
-     * Maps passthrough requests to an object containing:
-     * - The response promise, which will be awaited in this.onPassthrough
-     * - A respond function, called by 'response' event listener, which resolves the response promise.
+     * A map of all intercepted requests to their control callbacks, which will be called in the respondToRequest() method.
      */
-    private passThroughRequests = new Map<
-        Puppeteer.Request,
-        { responsePromise: Promise<Puppeteer.Response>; respond: (response: Puppeteer.Response) => void }
-    >()
+    private controlCallbacks = new Map<Protocol.Network.Request, Interceptor.ControlCallbacks>()
+
+    /**
+     * A map of all intercepted requests to their passthrough callbacks function, which will be called by the
+     * onResponseReceived event listener, causing Polly to record the response content.
+     */
+    private passthroughCallbacks = new Map<Protocol.Network.Request, (response: PollyResponse) => void>()
+
+    private controlPromises = new Map<Protocol.Network.Request, () => void>()
 
     /**
      * The adapter's ID, used to reference it in the Polly constructor.
@@ -67,51 +85,47 @@ export class PuppeteerAdapter extends PollyAdapter {
         // @ts-ignore
         super(polly)
         this.page = this.options.page
-        this.requestResourceTypes = this.options.requestResourceTypes
+        // this.requestResourceTypes = this.options.requestResourceTypes
     }
 
     /**
      * Called when connecting to a Puppeteer page. Sets up request and response interceptors.
      */
     public onConnect(): void {
-        this.subscriptions.add(
-            fromEvent<Puppeteer.Request>(this.page, 'request').subscribe(request => {
-                const url = request.url()
-                const method = request.method()
-                const headers = request.headers()
-                const isPreflight =
-                    method === 'OPTIONS' && !!headers.origin && !!headers['access-control-request-method']
-                if (isPreflight || !this.requestResourceTypes.includes(request.resourceType())) {
-                    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                    request.continue()
-                } else {
+        console.log('onConnect')
+        // Fulfill requests without sending them to the server
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        intercept(
+            this.page as any,
+            patterns.All('*'),
+            // this.requestResourceTypes.map(type => patterns[puppeteerToCDPPatterns[type]]('*')).flat(),
+            {
+                onInterception: ({ request }, controls) => {
+                    console.log('onInterception', request.url)
+                    this.controlCallbacks.set(request, controls)
                     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                     // @ts-ignore
-                    this.handleRequest({
-                        headers,
-                        url,
-                        method,
-                        body: request.postData() ?? '',
-                        requestArguments: {
-                            request,
-                        },
+                    this.handleRequest(request)
+                    const controlPromise = new Promise<void>(resolve => {
+                        this.controlPromises.set(request, resolve)
                     })
-                }
-            })
-        )
-        this.subscriptions.add(
-            fromEvent<Puppeteer.Response>(this.page, 'response').subscribe(response => {
-                const request = response.request()
-                if (this.pendingRequests.has(request)) {
-                    // eslint-disable-next-line no-unused-expressions
-                    this.pendingRequests.get(request)?.respond(response)
-                    this.pendingRequests.delete(request)
-                }
-                if (this.passThroughRequests.has(request)) {
-                    // eslint-disable-next-line no-unused-expressions
-                    this.passThroughRequests.get(request)?.respond(response)
-                }
-            })
+                    // Resolves when respondToRequest is called
+                    // or when passthroughRequest is called
+                    return controlPromise
+                },
+                onResponseReceived: ({ request, response }) => {
+                    console.log('onResponseReceived', request.url)
+                    const pollyResponse = {
+                        statusCode: response.statusCode,
+                        headers: Object.fromEntries(
+                            (response.headers || []).map(({ name, value }) => [name, value] as const)
+                        ),
+                        body: response.body,
+                    }
+                    this.pendingRequests.get(request)?.respond(pollyResponse)
+                    this.passthroughCallbacks.get(request)?.(pollyResponse)
+                },
+            }
         )
     }
 
@@ -119,7 +133,7 @@ export class PuppeteerAdapter extends PollyAdapter {
      * Called when disconnecting from a Puppeteer.page.
      */
     public onDisconnect(): void {
-        this.subscriptions.unsubscribe()
+        // noop
     }
 
     /**
@@ -127,20 +141,15 @@ export class PuppeteerAdapter extends PollyAdapter {
      * return a Promise of the Response for that request, which will be passed to
      * request.respond().
      */
-    public async passthroughRequest(pollyRequest: PollyRequest): Promise<Response> {
+    public async passthroughRequest(pollyRequest: PollyRequest): Promise<PollyResponse> {
+        console.log('passthrough request', pollyRequest.url)
         const {
             requestArguments: { request },
         } = (pollyRequest as unknown) as PollyRequestArguments
-        let respond: (response: Puppeteer.Response) => void
-        const responsePromise = new Promise<Puppeteer.Response>(resolve => (respond = resolve))
-        this.passThroughRequests.set(request, { respond: response => respond(response), responsePromise })
-        await request.continue()
-        const response = await responsePromise
-        return {
-            statusCode: response.status(),
-            headers: response.headers(),
-            body: await response.text().catch(() => ''),
-        }
+        this.controlPromises.get(request)?.()
+        return new Promise<PollyResponse>(resolve => {
+            this.passthroughCallbacks.set(request, resolve)
+        })
     }
 
     /**
@@ -148,27 +157,24 @@ export class PuppeteerAdapter extends PollyAdapter {
      *
      * If an error happened when retreiving the response, abort the request.
      */
-    public async respondToRequest(
+    public respondToRequest(
         {
             requestArguments: { request },
             response: { statusCode: status, headers, body },
-        }: { requestArguments: { request: Puppeteer.Request }; response: Response },
+        }: { requestArguments: { request: Protocol.Network.Request }; response: PollyResponse },
         error?: unknown
-    ): Promise<void> {
-        // Do nothing for passthrough requests: Polly calls request.respond() internally.
-        if (this.passThroughRequests.has(request)) {
-            this.passThroughRequests.delete(request)
-            return
-        }
+    ): void {
+        console.log('respondToRequest', request.url)
         if (error) {
-            await request.abort()
+            // TODO figure out if we can pass a more precise reason
+            this.controlCallbacks.get(request)?.abort('Failed')
         } else {
-            await request.respond({
-                status,
-                headers,
+            this.controlCallbacks.get(request)?.fulfill(status, {
+                responseHeaders: Object.entries(headers).map(([name, value]) => ({ name, value })),
                 body,
             })
         }
+        this.controlPromises.get(request)?.()
     }
 
     /**
@@ -181,20 +187,14 @@ export class PuppeteerAdapter extends PollyAdapter {
         requestArguments: { request },
         promise,
     }: {
-        requestArguments: { request: Puppeteer.Request }
+        requestArguments: { request: Protocol.Network.Request }
         promise: {
-            resolve: (response: Response) => void
+            resolve: (response: PollyResponse) => void
         }
     }): void {
-        if (this.passThroughRequests.has(request)) {
-            return
-        }
-        const respond = async (response: Puppeteer.Response): Promise<void> => {
-            promise.resolve({
-                statusCode: response.status(),
-                headers: response.headers(),
-                body: await response.text(),
-            })
+        console.log('onRequest', request.url)
+        const respond = (response: PollyResponse): void => {
+            promise.resolve(response)
         }
         this.pendingRequests.set(request, {
             respond,
