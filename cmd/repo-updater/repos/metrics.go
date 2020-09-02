@@ -1,8 +1,12 @@
 package repos
 
 import (
+	"github.com/inconshreveable/log15"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
 var (
@@ -61,3 +65,84 @@ var (
 		Help: "The number of repositories that are managed by the scheduler.",
 	})
 )
+
+func init() {
+	scanCount := func(sql string) (float64, error) {
+		if dbconn.Global == nil {
+			return 0, errors.New("database connection is not available")
+		}
+
+		row := dbconn.Global.QueryRow(sql)
+		var count int64
+		err := row.Scan(&count)
+		if err != nil {
+			return 0, err
+		}
+
+		return float64(count), nil
+	}
+
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_repoupdater_user_external_services_total",
+		Help: "The total number of external services added by users",
+	}, func() float64 {
+		count, err := scanCount(`
+-- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_user_external_services_total
+SELECT COUNT(*) FROM external_services
+WHERE namespace_user_id IS NOT NULL
+`)
+		if err != nil {
+			log15.Error("Failed to get total user external services", "err", err)
+			return 0
+		}
+		return count
+	})
+
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_repoupdater_user_repos_total",
+		Help: "The total number of repositories added by users",
+	}, func() float64 {
+		count, err := scanCount(`
+-- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_user_repos_total
+SELECT COUNT(*) FROM external_service_repos
+WHERE external_service_id IN (
+		SELECT DISTINCT(id) FROM external_services
+		WHERE namespace_user_id IS NOT NULL
+	)
+`)
+		if err != nil {
+			log15.Error("Failed to get total user repositories", "err", err)
+			return 0
+		}
+		return count
+	})
+
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_repoupdater_user_repos_average",
+		Help: "The average number of repositories added by users",
+	}, func() float64 {
+		count, err := scanCount(`
+-- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_user_repos_average
+WITH users AS (
+	SELECT DISTINCT(namespace_user_id) AS total FROM external_services
+	WHERE namespace_user_id IS NOT NULL
+)
+
+SELECT
+	CASE MAX(users.total)
+		WHEN 0 THEN 0
+		ELSE COUNT(*) / MAX(users.total)
+	END AS average
+FROM external_service_repos, users
+WHERE external_service_id IN (
+		SELECT DISTINCT(id) FROM external_services
+		WHERE namespace_user_id IS NOT NULL
+	)
+`)
+		if err != nil {
+			log15.Error("Failed to get average user repositories", "err", err)
+			return 0
+		}
+		return count
+	})
+}
