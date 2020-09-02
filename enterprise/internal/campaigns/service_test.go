@@ -197,7 +197,10 @@ func TestService(t *testing.T) {
 		t.Fatal("user is admin, want non-admin")
 	}
 
-	store := NewStore(dbconn.Global)
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	clock := func() time.Time { return now }
+
+	store := NewStoreWithClock(dbconn.Global, clock)
 	rs, _ := createTestRepos(t, ctx, dbconn.Global, 4)
 
 	fakeSource := &ct.FakeChangesetSource{}
@@ -251,7 +254,7 @@ func TestService(t *testing.T) {
 			if err != nil {
 				t.Fatalf("campaign not closed: %s", err)
 			}
-			if closedCampaign.ClosedAt.IsZero() {
+			if !closedCampaign.ClosedAt.Equal(now) {
 				t.Fatalf("campaign ClosedAt is zero")
 			}
 

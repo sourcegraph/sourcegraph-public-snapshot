@@ -296,7 +296,7 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 	}
 	defer func() { err = tx.Done(err) }()
 
-	campaign.ClosedAt = time.Now().UTC()
+	campaign.ClosedAt = s.clock()
 	if err := tx.UpdateCampaign(ctx, campaign); err != nil {
 		return nil, err
 	}
