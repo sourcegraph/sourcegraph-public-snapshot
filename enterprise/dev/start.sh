@@ -44,7 +44,6 @@ export PRECISE_CODE_INTEL_EXTERNAL_URL=http://localhost:3080
 export PRECISE_CODE_INTEL_EXTERNAL_URL_FROM_DOCKER=http://host.docker.internal:3080
 export PRECISE_CODE_INTEL_INDEX_MANAGER_URL=http://localhost:3189
 export PRECISE_CODE_INTEL_INTERNAL_PROXY_AUTH_TOKEN=hunter2
-export PRECISE_CODE_INTEL_DISABLE_INDEXER=true
 export PRECISE_CODE_INTEL_USE_FIRECRACKER=false
 
 export WATCH_ADDITIONAL_GO_DIRS="enterprise/cmd enterprise/dev enterprise/internal"
