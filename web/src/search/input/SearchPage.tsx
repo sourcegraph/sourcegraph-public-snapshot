@@ -58,6 +58,7 @@ export interface SearchPageProps
     isSourcegraphDotCom: boolean
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
+    autoFocus?: boolean
 
     // For NavLinks
     authRequired?: boolean
