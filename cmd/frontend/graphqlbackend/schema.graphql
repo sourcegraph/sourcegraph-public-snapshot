@@ -1470,7 +1470,7 @@ type ExternalChangeset implements Node & Changeset {
     """
     The events belonging to this changeset.
     """
-    events(first: Int = 50): ChangesetEventConnection!
+    events(first: Int = 50, after: String): ChangesetEventConnection!
 
     """
     The date and time when the changeset was created.

@@ -70,6 +70,7 @@ type CampaignArgs struct {
 
 type ChangesetEventsConnectionArgs struct {
 	First int32
+	After *string
 }
 
 type CampaignsResolver interface {
