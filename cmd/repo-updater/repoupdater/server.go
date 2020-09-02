@@ -325,7 +325,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	s.Syncer.TriggerSync()
+	s.Syncer.TriggerEnqueueSyncJobs()
 
 	err := externalServiceValidate(ctx, &req)
 	if err == github.ErrIncompleteResults {

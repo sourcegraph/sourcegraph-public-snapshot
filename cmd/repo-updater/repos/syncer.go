@@ -43,7 +43,7 @@ type Syncer struct {
 	syncErrors   map[int64]error
 	syncErrorsMu sync.Mutex
 
-	syncSignal signal
+	enqueueSignal signal
 }
 
 // RunOptions contains options customizing Run behaviour.
@@ -80,7 +80,7 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOpti
 	defer worker.Stop()
 
 	for pctx.Err() == nil {
-		ctx, cancel := contextWithSignalCancel(pctx, s.syncSignal.Watch())
+		ctx, cancel := contextWithSignalCancel(pctx, s.enqueueSignal.Watch())
 
 		if err := store.EnqueueSyncJobs(ctx, opts.IsCloud); err != nil {
 			s.Logger.Error("Syncer", "error", err)
@@ -138,10 +138,9 @@ func sleep(ctx context.Context, d time.Duration) {
 	}
 }
 
-// TriggerSync will run Sync now. If a sync is currently running it is
-// canceled.
-func (s *Syncer) TriggerSync() {
-	s.syncSignal.Trigger()
+// TriggerEnqueueSyncJobs will enqueue any pending sync jobs now.
+func (s *Syncer) TriggerEnqueueSyncJobs() {
+	s.enqueueSignal.Trigger()
 }
 
 // SyncExternalService syncs repos using all of the supplied external services
