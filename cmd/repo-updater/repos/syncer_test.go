@@ -1356,16 +1356,6 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store repos.Store) func(t *
 				t.Fatalf("Expected 0 rows, got %d", rowCount)
 			}
 
-			rs, err := store.ListRepos(ctx, repos.StoreListReposArgs{})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if len(rs) != 1 {
-				t.Fatalf("Expected 1 repo, got %d", len(rs))
-			}
-
-			t.Log(rs[0].Sources)
-
 			// Remove the repo from one service and sync again
 			syncer = &repos.Syncer{
 				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
@@ -1379,7 +1369,7 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store repos.Store) func(t *
 			}
 
 			// Confirm that the repository hasn't been deleted
-			rs, err = store.ListRepos(ctx, repos.StoreListReposArgs{})
+			rs, err := store.ListRepos(ctx, repos.StoreListReposArgs{})
 			if err != nil {
 				t.Fatal(err)
 			}
