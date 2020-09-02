@@ -7,11 +7,6 @@ import { SearchPage, SearchPageProps } from './SearchPage'
 import { Services } from '../../../../shared/src/api/client/services'
 import { storiesOf } from '@storybook/react'
 
-const extensionsController = {
-    services: {} as Services,
-    executeCommand: () => Promise.resolve(undefined),
-} as Pick<Controller, 'executeCommand' | 'services'>
-
 const history = createMemoryHistory()
 const defaultProps = {
     isSourcegraphDotCom: false,
@@ -20,7 +15,9 @@ const defaultProps = {
         subjects: null,
     },
     location: history.location,
-    extensionsController,
+    extensionsController: {
+        services: {} as Services,
+    } as Pick<Controller, 'executeCommand' | 'services'>,
     telemetryService: NOOP_TELEMETRY_SERVICE,
 } as SearchPageProps
 

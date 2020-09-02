@@ -15,11 +15,6 @@ describe('SearchPage', () => {
 
     let container: HTMLElement
 
-    const extensionsController = {
-        services: {} as Services,
-        executeCommand: () => Promise.resolve(undefined),
-    } as Pick<Controller, 'executeCommand' | 'services'>
-
     const history = createMemoryHistory()
     const defaultProps = {
         isSourcegraphDotCom: false,
@@ -28,7 +23,9 @@ describe('SearchPage', () => {
             subjects: null,
         },
         location: history.location,
-        extensionsController,
+        extensionsController: {
+            services: {} as Services,
+        } as Pick<Controller, 'executeCommand' | 'services'>,
         telemetryService: NOOP_TELEMETRY_SERVICE,
     } as SearchPageProps
 
