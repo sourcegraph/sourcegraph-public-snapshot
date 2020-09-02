@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	indexmanager "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer-vm/internal/index_manager"
 	queue "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/queue/client"
@@ -40,7 +40,7 @@ type HandlerOptions struct {
 
 // Handle clones the target code into a temporary directory, invokes the target indexer in a fresh
 // docker container, and uploads the results to the external frontend API.
-func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workerutil.Record) (err error) {
+func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workerutil.Record) error {
 	index := record.(store.Index)
 
 	h.indexManager.AddID(index.ID)
@@ -87,8 +87,8 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 				"--runtime", "docker",
 				name.String(),
 			}
-			if stopErr := h.commander.Run(ctx, stopArgs[0], stopArgs[1:]...); stopErr != nil {
-				err = multierror.Append(err, errors.Wrap(stopErr, "failed to stop firecracker vm"))
+			if err := h.commander.Run(ctx, stopArgs[0], stopArgs[1:]...); err != nil {
+				log15.Warn("failed to stop firecracker vm", "name", name.String(), "err", err)
 			}
 
 			removeArgs := []string{
@@ -96,8 +96,8 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 				"--runtime", "docker",
 				name.String(),
 			}
-			if rmErr := h.commander.Run(ctx, removeArgs[0], removeArgs[1:]...); rmErr != nil {
-				err = multierror.Append(err, errors.Wrap(rmErr, "failed to remove firecracker vm"))
+			if err := h.commander.Run(ctx, removeArgs[0], removeArgs[1:]...); err != nil {
+				log15.Warn("failed to remove firecracker vm", "name", name.String(), "err", err)
 			}
 		}()
 	}
