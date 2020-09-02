@@ -369,18 +369,14 @@ func (r *changesetRewirer) updateChangesetToNewSpec(c *campaigns.Changeset, spec
 	c.PreviousSpecID = c.CurrentSpecID
 	c.CurrentSpecID = spec.ID
 
-	// We need to enqueue it for the changeset reconciler, so the
-	// reconciler wakes up, compares old and new spec and, if
-	// necessary, updates the changesets accordingly.
-	c.ReconcilerState = campaigns.ReconcilerStateQueued
-	c.FailureMessage = nil
-	c.NumResets = 0
-
 	// Copy over diff stat from the new spec.
 	diffStat := spec.DiffStat()
 	c.SetDiffStat(&diffStat)
 
-	return r.tx.UpdateChangeset(r.ctx, c)
+	// We need to enqueue it for the changeset reconciler, so the
+	// reconciler wakes up, compares old and new spec and, if
+	// necessary, updates the changesets accordingly.
+	return r.updateAndReenqueue(c)
 }
 
 // loadAssociations populates the chagnesets, newChangesetSpecs and
@@ -499,9 +495,6 @@ func (r *changesetRewirer) updateOrCreateTrackingChangeset(repo *types.Repo, ext
 }
 
 func (r *changesetRewirer) updateAndReenqueue(ch *campaigns.Changeset) error {
-	ch.ReconcilerState = campaigns.ReconcilerStateQueued
-	ch.NumResets = 0
-	ch.FailureMessage = nil
-
+	ch.ResetQueued()
 	return r.tx.UpdateChangeset(r.ctx, ch)
 }
