@@ -84,11 +84,9 @@ export const DiffStat: React.FunctionComponent<Props> = React.memo(function Diff
         >
             {expandedCounts ? (
                 <span className="diff-stat__total font-weight-bold">
-                    <span className="diff-stat__text-added mr-1">+{numberWithCommas(added)}</span>
-                    {changed > 0 && (
-                        <span className="diff-stat__text-changed mr-1">&bull;{numberWithCommas(changed)}</span>
-                    )}
-                    <span className={classNames('diff-stat__text-deleted', !separateLines && 'mr-1')}>
+                    <span className="text-success mr-1">+{numberWithCommas(added)}</span>
+                    {changed > 0 && <span className="text-warning mr-1">&bull;{numberWithCommas(changed)}</span>}
+                    <span className={classNames('text-danger', !separateLines && 'mr-1')}>
                         &minus;{numberWithCommas(deleted)}
                     </span>
                 </span>

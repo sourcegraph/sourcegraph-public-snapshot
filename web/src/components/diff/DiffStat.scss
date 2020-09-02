@@ -1,7 +1,3 @@
-$added: $success;
-$changed: $warning;
-$deleted: $danger;
-
 .diff-stat {
     display: inline-flex;
     align-items: center;
@@ -20,22 +16,13 @@ $deleted: $danger;
     }
 
     &__added {
-        background-color: $added;
-    }
-    &__text-added {
-        color: $added;
+        background-color: var(--text-success);
     }
     &__changed {
-        background-color: $changed;
-    }
-    &__text-changed {
-        color: $changed;
+        background-color: var(--text-warning);
     }
     &__deleted {
-        background-color: $deleted;
-    }
-    &__text-deleted {
-        color: $deleted;
+        background-color: var(--text-danger);
     }
     &__empty {
         background-color: var(--text-muted);
