@@ -14,21 +14,21 @@ interface PollyRequestArguments {
     requestArguments: { request: Protocol.Network.Request }
 }
 
-// const puppeteerToCDPPatterns: Record<Puppeteer.ResourceType, keyof typeof patterns> = {
-//     document: 'Document',
-//     eventsource: 'EventSource',
-//     fetch: 'Fetch',
-//     font: 'Font',
-//     image: 'Image',
-//     manifest: 'Manifest',
-//     media: 'Media',
-//     other: 'Other',
-//     script: 'Script',
-//     stylesheet: 'Stylesheet',
-//     texttrack: 'TextTrack',
-//     websocket: 'WebSocket',
-//     xhr: 'XHR',
-// }
+const puppeteerToCDPPatterns: Record<Puppeteer.ResourceType, keyof typeof patterns> = {
+    document: 'Document',
+    eventsource: 'EventSource',
+    fetch: 'Fetch',
+    font: 'Font',
+    image: 'Image',
+    manifest: 'Manifest',
+    media: 'Media',
+    other: 'Other',
+    script: 'Script',
+    stylesheet: 'Stylesheet',
+    texttrack: 'TextTrack',
+    websocket: 'WebSocket',
+    xhr: 'XHR',
+}
 
 /**
  * A Puppeteer adapter for Polly that supports all request resource types.
@@ -52,7 +52,7 @@ export class PuppeteerAdapter extends PollyAdapter {
     /**
      * The request resource types this adapter should intercept.
      */
-    // private requestResourceTypes: Puppeteer.ResourceType[]
+    private requestResourceTypes: Puppeteer.ResourceType[]
 
     /**
      * A map of all intercepted requests to their respond function, which will be called by the
@@ -85,7 +85,7 @@ export class PuppeteerAdapter extends PollyAdapter {
         // @ts-ignore
         super(polly)
         this.page = this.options.page
-        // this.requestResourceTypes = this.options.requestResourceTypes
+        this.requestResourceTypes = this.options.requestResourceTypes
     }
 
     /**
@@ -97,8 +97,7 @@ export class PuppeteerAdapter extends PollyAdapter {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         intercept(
             this.page as any,
-            patterns.All('*'),
-            // this.requestResourceTypes.map(type => patterns[puppeteerToCDPPatterns[type]]('*')).flat(),
+            this.requestResourceTypes.map(type => patterns[puppeteerToCDPPatterns[type]]('*')).flat(),
             {
                 onInterception: ({ request }, controls) => {
                     console.log('onInterception', request.url)
@@ -164,7 +163,7 @@ export class PuppeteerAdapter extends PollyAdapter {
         }: { requestArguments: { request: Protocol.Network.Request }; response: PollyResponse },
         error?: unknown
     ): void {
-        console.log('respondToRequest', request.url)
+        console.log('passthrough request', pollyRequest.url)
         if (error) {
             // TODO figure out if we can pass a more precise reason
             this.controlCallbacks.get(request)?.abort('Failed')
@@ -192,7 +191,6 @@ export class PuppeteerAdapter extends PollyAdapter {
             resolve: (response: PollyResponse) => void
         }
     }): void {
-        console.log('onRequest', request.url)
         const respond = (response: PollyResponse): void => {
             promise.resolve(response)
         }
