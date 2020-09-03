@@ -32,8 +32,7 @@ type Store interface {
 	SetClonedRepos(ctx context.Context, repoNames ...string) error
 	CountNotClonedRepos(ctx context.Context) (uint64, error)
 
-	// EnqueueSyncJobs enqueues sync jobs per external service where their next_sync_at time
-	// is in the past.
+	// EnqueueSyncJobs enqueues sync jobs per external service where their next_sync_at is due.
 	// If ignoreSiteAdmin is true then we only sync user added external services.
 	EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) error
 
