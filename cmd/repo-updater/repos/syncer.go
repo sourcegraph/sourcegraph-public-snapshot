@@ -147,7 +147,7 @@ func (s *Syncer) TriggerEnqueueSyncJobs() {
 func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalServiceID int64, minSyncInterval time.Duration) (err error) {
 	var diff Diff
 
-	log15.Info("Syncing external service", "serviceID", externalServiceID)
+	log15.Debug("Syncing external service", "serviceID", externalServiceID)
 	ctx, save := s.observe(ctx, "Syncer.SyncExternalService", "")
 	defer save(&diff, &err)
 	defer s.setOrResetLastSyncErr(externalServiceID, &err)
