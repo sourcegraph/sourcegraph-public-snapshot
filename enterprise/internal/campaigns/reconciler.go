@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
@@ -206,13 +207,24 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 		if _, err = r.pushCommit(ctx, opts); err != nil {
 			return err
 		}
+		log15.Warn("commit pushed!")
 	}
 
 	// If we only need to update the diff, we're done, because we already
 	// pushed the commit. We don't need to update anything on the codehost.
 	if !delta.NeedCodeHostUpdate() {
 		ch.FailureMessage = nil
-		return tx.UpdateChangeset(ctx, ch)
+		// But we need to sync the changeset so that it has the new commit.
+		//
+		// The problem: the code host might not have updated the changeset to
+		// have the new commit SHA as its head ref oid (and the check states,
+		// ...).
+		//
+		// That's why we give them 3 seconds to update the changesets.
+		//
+		// Why 3 seconds? Well... 1 or 2 seem to be too short and 4 too long?
+		time.Sleep(3 * time.Second)
+		return r.syncChangeset(ctx, tx, ch)
 	}
 
 	// Otherwise, we need to update the pull request on the code host.

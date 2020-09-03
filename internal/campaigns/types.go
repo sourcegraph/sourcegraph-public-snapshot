@@ -351,6 +351,7 @@ func (c *Changeset) SetDiffStat(stat *diff.Stat) {
 func (c *Changeset) SetMetadata(meta interface{}) error {
 	switch pr := meta.(type) {
 	case *github.PullRequest:
+		log15.Warn("SetMetadata", "changeset", c.ID, "headRef", pr.HeadRefOid)
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(pr.Number, 10)
 		c.ExternalServiceType = extsvc.TypeGitHub
