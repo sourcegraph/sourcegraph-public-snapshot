@@ -200,7 +200,7 @@ func TestStoreDequeueRetryAfter(t *testing.T) {
 			sqlf.Sprintf("w.num_resets"),
 		},
 		OrderByExpression: sqlf.Sprintf("w.uploaded_at"),
-		MaxNumFailures:    5,
+		MaxNumRetries:     5,
 		RetryAfter:        5 * time.Minute,
 	}
 
@@ -245,7 +245,7 @@ func TestStoreDequeueRetryAfterDisabled(t *testing.T) {
 			sqlf.Sprintf("w.num_resets"),
 		},
 		OrderByExpression: sqlf.Sprintf("w.uploaded_at"),
-		MaxNumFailures:    5,
+		MaxNumRetries:     5,
 		RetryAfter:        0,
 	}
 

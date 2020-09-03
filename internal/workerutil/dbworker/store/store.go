@@ -133,17 +133,19 @@ type StoreOptions struct {
 	// cycle of the same input.
 	MaxNumResets int
 
-	// MaxNumFailures is the maximum number of times a record can be retried after an explicit failure.
-	MaxNumFailures int
-
-	// RetryAfter determines whether the store dequeues jobs that have errored
-	// more than RetryAfter ago.
+	// RetryAfter determines whether the store dequeues jobs that have errored more than RetryAfter ago.
+	// Setting this value to zero will disable retries entirely.
 	//
-	// If RetryAfter is a non-zero duration, the store dequeues records where
+	// If RetryAfter is a non-zero duration, the store dequeues records where:
+	//
 	//   - the state is 'errored'
-	//   - the failed attempts counter hasn't reached MaxNumFailures
+	//   - the failed attempts counter hasn't reached MaxNumRetries
 	//   - the finished_at timestamp was more than RetryAfter ago
 	RetryAfter time.Duration
+
+	// MaxNumRetries is the maximum number of times a record can be retried after an explicit failure.
+	// Setting this value to zero will disable retries entirely.
+	MaxNumRetries int
 }
 
 // RecordScanFn is a function that interprets row values as a particular record. This function should
@@ -248,7 +250,7 @@ func (s *store) dequeue(ctx context.Context, conditions []*sqlf.Query, independe
 		quote(s.options.ViewName),
 		int(s.options.RetryAfter/time.Second),
 		int(s.options.RetryAfter/time.Second),
-		s.options.MaxNumFailures,
+		s.options.MaxNumRetries,
 		makeConditionSuffix(conditions),
 		s.options.OrderByExpression,
 		quote(s.options.TableName),
