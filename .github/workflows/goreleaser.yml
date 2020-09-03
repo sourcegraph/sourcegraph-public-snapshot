@@ -2,8 +2,8 @@ name: Goreleaser
 
 on:
   push:
-    tags:
-      - '!latest'
+    tags-ignore:
+      - latest
 
 jobs:
   goreleaser:
