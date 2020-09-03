@@ -343,6 +343,8 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		CampaignsUsage:       pr.CampaignsUsage, // no change in schema
 		CodeIntelUsage:       codeIntelUsage,
 		SearchUsage:          searchUsage,
+		GrowthStatistics:     pr.GrowthStatistics,
+		SavedSearches:        pr.SavedSearches,
 		InstallerEmail:       pr.InitialAdminEmail,
 		AuthProviders:        strings.Join(pr.AuthProviders, ","),
 		ExtServices:          strings.Join(pr.ExternalServices, ","),
