@@ -32,9 +32,11 @@ exports[`OptionsMenu doesn't render the permissions alert on about://addons 1`] 
         />
       </button>
       <button
+        aria-checked={true}
         className="toggle"
         onClick={[Function]}
         onMouseOver={[Function]}
+        role="switch"
         title="Toggle to disable extension"
         type="button"
         value={1}
@@ -155,9 +157,11 @@ exports[`OptionsMenu doesn't render the permissions alert on chrome://extensions
         />
       </button>
       <button
+        aria-checked={true}
         className="toggle"
         onClick={[Function]}
         onMouseOver={[Function]}
+        role="switch"
         title="Toggle to disable extension"
         type="button"
         value={1}
@@ -278,9 +282,11 @@ exports[`OptionsMenu doesn't render the permissions alert on chrome://newtab 1`]
         />
       </button>
       <button
+        aria-checked={true}
         className="toggle"
         onClick={[Function]}
         onMouseOver={[Function]}
+        role="switch"
         title="Toggle to disable extension"
         type="button"
         value={1}
@@ -401,9 +407,11 @@ exports[`OptionsMenu renders a default state 1`] = `
         />
       </button>
       <button
+        aria-checked={true}
         className="toggle"
         onClick={[Function]}
         onMouseOver={[Function]}
+        role="switch"
         title="Toggle to disable extension"
         type="button"
         value={1}
@@ -524,9 +532,11 @@ exports[`OptionsMenu renders the current tab permissions alert 1`] = `
         />
       </button>
       <button
+        aria-checked={true}
         className="toggle"
         onClick={[Function]}
         onMouseOver={[Function]}
+        role="switch"
         title="Toggle to disable extension"
         type="button"
         value={1}
@@ -672,9 +682,11 @@ exports[`OptionsMenu renders the feature flags 1`] = `
         />
       </button>
       <button
+        aria-checked={true}
         className="toggle"
         onClick={[Function]}
         onMouseOver={[Function]}
+        role="switch"
         title="Toggle to disable extension"
         type="button"
         value={1}

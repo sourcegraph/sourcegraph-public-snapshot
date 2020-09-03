@@ -8,6 +8,7 @@ exports[`Toggle className 1`] = `
     className="toggle c"
     onClick={[Function]}
     onMouseOver={[Function]}
+    role="switch"
     type="button"
     value={0}
   >
@@ -34,6 +35,7 @@ exports[`Toggle disabled 1`] = `
     disabled={true}
     onClick={[Function]}
     onMouseOver={[Function]}
+    role="switch"
     type="button"
     value={0}
   >
@@ -55,9 +57,11 @@ exports[`Toggle value is false 1`] = `
   value={false}
 >
   <button
+    aria-checked={false}
     className="toggle"
     onClick={[Function]}
     onMouseOver={[Function]}
+    role="switch"
     type="button"
     value={0}
   >
@@ -79,9 +83,11 @@ exports[`Toggle value is true 1`] = `
   value={true}
 >
   <button
+    aria-checked={true}
     className="toggle"
     onClick={[Function]}
     onMouseOver={[Function]}
+    role="switch"
     type="button"
     value={1}
   >

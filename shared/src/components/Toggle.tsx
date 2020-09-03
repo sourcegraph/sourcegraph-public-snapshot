@@ -60,6 +60,8 @@ export const Toggle: React.FunctionComponent<Props> = ({
             tabIndex={tabIndex}
             onMouseOver={onMouseOver}
             disabled={disabled}
+            role="switch"
+            aria-checked={value}
         >
             <span
                 className={classnames('toggle__bar', {

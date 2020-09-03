@@ -54,7 +54,7 @@ export const ToggleBig: React.FunctionComponent<Props> = ({
     return (
         <button
             type="button"
-            className={classnames('toggle-big', className)}
+            className={classnames('toggle-big d-flex align-items-center', className)}
             id={id}
             title={title}
             value={value ? 1 : 0}
@@ -62,36 +62,33 @@ export const ToggleBig: React.FunctionComponent<Props> = ({
             tabIndex={tabIndex}
             onMouseOver={onMouseOver}
             disabled={!!disabled}
+            role="switch"
+            aria-checked={value}
         >
-            <span className="toggle-big__container">
-                <span
-                    className={classnames('toggle-big__bar', {
-                        'toggle-big__bar--on': value,
-                        'toggle-big__bar--disabled': disabled,
-                    })}
-                />
-                <span
-                    className={classnames('toggle-big__bar-shadow', {
-                        'toggle-big__bar-shadow--on': value,
-                    })}
-                />
-                <span
-                    className={classnames(
-                        'toggle-big__knob d-flex flex-column justify-content-center align-items-center',
-                        {
-                            'toggle-big__knob--on': value,
-                        }
-                    )}
-                >
-                    {value ? (
-                        <Check size={16} className="toggle-big__icon--on" />
-                    ) : (
-                        <Close size={16} className="toggle-big__icon" />
-                    )}
-                </span>
-                <span className={classnames('toggle-big__text', { 'toggle-big__text--on': value })}>
-                    {value ? 'Enabled' : 'Disabled'}
-                </span>
+            <span
+                className={classnames('toggle-big__bar', {
+                    'toggle-big__bar--on': value,
+                    'toggle-big__bar--disabled': disabled,
+                })}
+            />
+            <span
+                className={classnames('toggle-big__bar-shadow', {
+                    'toggle-big__bar-shadow--on': value,
+                })}
+            />
+            <span
+                className={classnames('toggle-big__knob d-flex flex-column justify-content-center align-items-center', {
+                    'toggle-big__knob--on': value,
+                })}
+            >
+                {value ? (
+                    <Check size={16} className="toggle-big__icon--on" />
+                ) : (
+                    <Close size={16} className="toggle-big__icon" />
+                )}
+            </span>
+            <span className={classnames('toggle-big__text', { 'toggle-big__text--on': value })}>
+                {value ? 'Enabled' : 'Disabled'}
             </span>
         </button>
     )

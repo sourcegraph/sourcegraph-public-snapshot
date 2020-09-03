@@ -5,47 +5,44 @@ exports[`ToggleBig className 1`] = `
   className="c"
 >
   <button
-    className="toggle-big c"
+    className="toggle-big d-flex align-items-center c"
     disabled={false}
     onClick={[Function]}
     onMouseOver={[Function]}
+    role="switch"
     type="button"
     value={0}
   >
     <span
-      className="toggle-big__container"
+      className="toggle-big__bar"
+    />
+    <span
+      className="toggle-big__bar-shadow"
+    />
+    <span
+      className="toggle-big__knob d-flex flex-column justify-content-center align-items-center"
     >
-      <span
-        className="toggle-big__bar"
-      />
-      <span
-        className="toggle-big__bar-shadow"
-      />
-      <span
-        className="toggle-big__knob d-flex flex-column justify-content-center align-items-center"
+      <Memo(CloseIcon)
+        className="toggle-big__icon"
+        size={16}
       >
-        <Memo(CloseIcon)
-          className="toggle-big__icon"
-          size={16}
+        <svg
+          className="mdi-icon toggle-big__icon"
+          fill="currentColor"
+          height={16}
+          viewBox="0 0 24 24"
+          width={16}
         >
-          <svg
-            className="mdi-icon toggle-big__icon"
-            fill="currentColor"
-            height={16}
-            viewBox="0 0 24 24"
-            width={16}
-          >
-            <path
-              d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-            />
-          </svg>
-        </Memo(CloseIcon)>
-      </span>
-      <span
-        className="toggle-big__text"
-      >
-        Disabled
-      </span>
+          <path
+            d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+          />
+        </svg>
+      </Memo(CloseIcon)>
+    </span>
+    <span
+      className="toggle-big__text"
+    >
+      Disabled
     </span>
   </button>
 </ToggleBig>
@@ -57,47 +54,44 @@ exports[`ToggleBig disabled 1`] = `
   onToggle={[Function]}
 >
   <button
-    className="toggle-big"
+    className="toggle-big d-flex align-items-center"
     disabled={true}
     onClick={[Function]}
     onMouseOver={[Function]}
+    role="switch"
     type="button"
     value={0}
   >
     <span
-      className="toggle-big__container"
+      className="toggle-big__bar toggle-big__bar--disabled"
+    />
+    <span
+      className="toggle-big__bar-shadow"
+    />
+    <span
+      className="toggle-big__knob d-flex flex-column justify-content-center align-items-center"
     >
-      <span
-        className="toggle-big__bar toggle-big__bar--disabled"
-      />
-      <span
-        className="toggle-big__bar-shadow"
-      />
-      <span
-        className="toggle-big__knob d-flex flex-column justify-content-center align-items-center"
+      <Memo(CloseIcon)
+        className="toggle-big__icon"
+        size={16}
       >
-        <Memo(CloseIcon)
-          className="toggle-big__icon"
-          size={16}
+        <svg
+          className="mdi-icon toggle-big__icon"
+          fill="currentColor"
+          height={16}
+          viewBox="0 0 24 24"
+          width={16}
         >
-          <svg
-            className="mdi-icon toggle-big__icon"
-            fill="currentColor"
-            height={16}
-            viewBox="0 0 24 24"
-            width={16}
-          >
-            <path
-              d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-            />
-          </svg>
-        </Memo(CloseIcon)>
-      </span>
-      <span
-        className="toggle-big__text"
-      >
-        Disabled
-      </span>
+          <path
+            d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+          />
+        </svg>
+      </Memo(CloseIcon)>
+    </span>
+    <span
+      className="toggle-big__text"
+    >
+      Disabled
     </span>
   </button>
 </ToggleBig>
@@ -108,47 +102,45 @@ exports[`ToggleBig value is false 1`] = `
   value={false}
 >
   <button
-    className="toggle-big"
+    aria-checked={false}
+    className="toggle-big d-flex align-items-center"
     disabled={false}
     onClick={[Function]}
     onMouseOver={[Function]}
+    role="switch"
     type="button"
     value={0}
   >
     <span
-      className="toggle-big__container"
+      className="toggle-big__bar"
+    />
+    <span
+      className="toggle-big__bar-shadow"
+    />
+    <span
+      className="toggle-big__knob d-flex flex-column justify-content-center align-items-center"
     >
-      <span
-        className="toggle-big__bar"
-      />
-      <span
-        className="toggle-big__bar-shadow"
-      />
-      <span
-        className="toggle-big__knob d-flex flex-column justify-content-center align-items-center"
+      <Memo(CloseIcon)
+        className="toggle-big__icon"
+        size={16}
       >
-        <Memo(CloseIcon)
-          className="toggle-big__icon"
-          size={16}
+        <svg
+          className="mdi-icon toggle-big__icon"
+          fill="currentColor"
+          height={16}
+          viewBox="0 0 24 24"
+          width={16}
         >
-          <svg
-            className="mdi-icon toggle-big__icon"
-            fill="currentColor"
-            height={16}
-            viewBox="0 0 24 24"
-            width={16}
-          >
-            <path
-              d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-            />
-          </svg>
-        </Memo(CloseIcon)>
-      </span>
-      <span
-        className="toggle-big__text"
-      >
-        Disabled
-      </span>
+          <path
+            d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+          />
+        </svg>
+      </Memo(CloseIcon)>
+    </span>
+    <span
+      className="toggle-big__text"
+    >
+      Disabled
     </span>
   </button>
 </ToggleBig>
@@ -159,47 +151,45 @@ exports[`ToggleBig value is true 1`] = `
   value={true}
 >
   <button
-    className="toggle-big"
+    aria-checked={true}
+    className="toggle-big d-flex align-items-center"
     disabled={false}
     onClick={[Function]}
     onMouseOver={[Function]}
+    role="switch"
     type="button"
     value={1}
   >
     <span
-      className="toggle-big__container"
+      className="toggle-big__bar toggle-big__bar--on"
+    />
+    <span
+      className="toggle-big__bar-shadow toggle-big__bar-shadow--on"
+    />
+    <span
+      className="toggle-big__knob d-flex flex-column justify-content-center align-items-center toggle-big__knob--on"
     >
-      <span
-        className="toggle-big__bar toggle-big__bar--on"
-      />
-      <span
-        className="toggle-big__bar-shadow toggle-big__bar-shadow--on"
-      />
-      <span
-        className="toggle-big__knob d-flex flex-column justify-content-center align-items-center toggle-big__knob--on"
+      <Memo(CheckIcon)
+        className="toggle-big__icon--on"
+        size={16}
       >
-        <Memo(CheckIcon)
-          className="toggle-big__icon--on"
-          size={16}
+        <svg
+          className="mdi-icon toggle-big__icon--on"
+          fill="currentColor"
+          height={16}
+          viewBox="0 0 24 24"
+          width={16}
         >
-          <svg
-            className="mdi-icon toggle-big__icon--on"
-            fill="currentColor"
-            height={16}
-            viewBox="0 0 24 24"
-            width={16}
-          >
-            <path
-              d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"
-            />
-          </svg>
-        </Memo(CheckIcon)>
-      </span>
-      <span
-        className="toggle-big__text toggle-big__text--on"
-      >
-        Enabled
-      </span>
+          <path
+            d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"
+          />
+        </svg>
+      </Memo(CheckIcon)>
+    </span>
+    <span
+      className="toggle-big__text toggle-big__text--on"
+    >
+      Enabled
     </span>
   </button>
 </ToggleBig>
