@@ -13,7 +13,9 @@ import (
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -48,10 +50,11 @@ type Syncer struct {
 
 // RunOptions contains options customizing Run behaviour.
 type RunOptions struct {
-	EnqueueInterval func() time.Duration // Defaults to 1 minute
-	IsCloud         bool                 // Defaults to false
-	MinSyncInterval time.Duration        // Defaults to 1 minute
-	DequeueInterval time.Duration        // Default to 10 seconds
+	EnqueueInterval      func() time.Duration  // Defaults to 1 minute
+	IsCloud              bool                  // Defaults to false
+	MinSyncInterval      time.Duration         // Defaults to 1 minute
+	DequeueInterval      time.Duration         // Default to 10 seconds
+	PrometheusRegisterer prometheus.Registerer // if non-nil, metrics will be collected
 }
 
 // Run runs the Sync at the specified interval.
@@ -69,12 +72,15 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOpti
 	s.initialUnmodifiedDiffFromStore(pctx, store)
 
 	// TODO: Make numHandlers configurable
-	worker, resetter, cleanup := NewSyncWorker(pctx, db, &syncHandler{
+	worker, resetter := NewSyncWorker(pctx, db, &syncHandler{
 		syncer:          s,
 		store:           store,
 		minSyncInterval: opts.MinSyncInterval,
-	}, opts.DequeueInterval, 3)
-	defer cleanup()
+	}, SyncWorkerOptions{
+		WorkerInterval:       opts.DequeueInterval,
+		NumHandlers:          3,
+		PrometheusRegisterer: opts.PrometheusRegisterer,
+	})
 
 	go worker.Start()
 	defer worker.Stop()
@@ -98,9 +104,10 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOpti
 }
 
 type syncHandler struct {
-	syncer          *Syncer
-	store           Store
-	minSyncInterval time.Duration
+	syncer             *Syncer
+	store              Store
+	minSyncInterval    time.Duration
+	observationContext *observation.Context
 }
 
 func (s *syncHandler) Handle(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) error {

@@ -20,8 +20,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
+type SyncWorkerOptions struct {
+	NumHandlers          int                   // defaults to 3
+	WorkerInterval       time.Duration         // defaults to 10s
+	PrometheusRegisterer prometheus.Registerer // if non-nil, metrics will be collected
+}
+
 // NewSyncWorker creates a new external service sync worker.
-func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, workerInterval time.Duration, numHandlers int) (*workerutil.Worker, *dbworker.Resetter, func()) {
+func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, opts SyncWorkerOptions) (*workerutil.Worker, *dbworker.Resetter) {
+	if opts.NumHandlers == 0 {
+		opts.NumHandlers = 3
+	}
+	if opts.WorkerInterval == 0 {
+		opts.WorkerInterval = 10 * time.Second
+	}
+
 	dbHandle := basestore.NewHandleWithDB(db)
 
 	syncJobColumns := append(store.DefaultColumnExpressions(), []*sqlf.Query{
@@ -39,35 +52,36 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, 
 		MaxNumResets:      5,
 	})
 
-	operation, cleanupWorkerMetrics := newObservationOperation()
 	worker := dbworker.NewWorker(ctx, store, dbworker.WorkerOptions{
 		Name:        "repo_sync_worker",
 		Handler:     handler,
-		NumHandlers: numHandlers,
-		Interval:    workerInterval,
+		NumHandlers: opts.NumHandlers,
+		Interval:    opts.WorkerInterval,
 		Metrics: workerutil.WorkerMetrics{
-			HandleOperation: operation,
+			HandleOperation: newObservationOperation(opts.PrometheusRegisterer),
 		},
 	})
 
-	resetterMetrics, cleanupResetterMetrics := newResetterMetrics(prometheus.DefaultRegisterer)
 	resetter := dbworker.NewResetter(store, dbworker.ResetterOptions{
 		Name:     "sync-worker",
 		Interval: 5 * time.Minute,
-		Metrics:  resetterMetrics,
+		Metrics:  newResetterMetrics(opts.PrometheusRegisterer),
 	})
 
-	return worker, resetter, func() {
-		cleanupWorkerMetrics()
-		cleanupResetterMetrics()
-	}
+	return worker, resetter
 }
 
-func newObservationOperation() (*observation.Operation, func()) {
-	observationContext := &observation.Context{
-		Logger:     log15.Root(),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.DefaultRegisterer,
+func newObservationOperation(r prometheus.Registerer) *observation.Operation {
+	var observationContext *observation.Context
+
+	if r == nil {
+		observationContext = &observation.TestContext
+	} else {
+		observationContext = &observation.Context{
+			Logger:     log15.Root(),
+			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Registerer: r,
+		}
 	}
 
 	m := metrics.NewOperationMetrics(
@@ -81,7 +95,35 @@ func newObservationOperation() (*observation.Operation, func()) {
 		Name:         "Syncer.Process",
 		MetricLabels: []string{"process"},
 		Metrics:      m,
-	}), m.Unregister
+	})
+}
+
+func newResetterMetrics(r prometheus.Registerer) dbworker.ResetterMetrics {
+	externalServiceResets := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "src_external_service_queue_resets_total",
+		Help: "Total number of external services put back into queued state",
+	})
+
+	externalServiceResetFailures := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "src_external_service_queue_max_resets_total",
+		Help: "Total number of external services that exceed the max number of resets",
+	})
+
+	errors := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "src_external_service_queue_reset_errors_total",
+		Help: "Total number of errors when running the external service resetter",
+	})
+	if r != nil {
+		r.MustRegister(externalServiceResets)
+		r.MustRegister(externalServiceResetFailures)
+		r.MustRegister(errors)
+	}
+
+	return dbworker.ResetterMetrics{
+		RecordResets:        externalServiceResets,
+		RecordResetFailures: externalServiceResetFailures,
+		Errors:              errors,
+	}
 }
 
 func scanSingleJob(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
@@ -119,35 +161,4 @@ type SyncJob struct {
 // RecordID implements workerutil.Record and indicates the queued item id
 func (s *SyncJob) RecordID() int {
 	return s.ID
-}
-
-func newResetterMetrics(r prometheus.Registerer) (dbworker.ResetterMetrics, func()) {
-	externalServiceResets := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_external_service_queue_resets_total",
-		Help: "Total number of external services put back into queued state",
-	})
-	r.MustRegister(externalServiceResets)
-
-	externalServiceResetFailures := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_external_service_queue_max_resets_total",
-		Help: "Total number of external services that exceed the max number of resets",
-	})
-	r.MustRegister(externalServiceResetFailures)
-
-	errors := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_external_service_queue_reset_errors_total",
-		Help: "Total number of errors when running the external service resetter",
-	})
-	r.MustRegister(errors)
-
-	return dbworker.ResetterMetrics{
-			RecordResets:        externalServiceResets,
-			RecordResetFailures: externalServiceResetFailures,
-			Errors:              errors,
-		}, // Unregister unregisters metrics
-		func() {
-			prometheus.Unregister(externalServiceResets)
-			prometheus.Unregister(externalServiceResetFailures)
-			prometheus.Unregister(errors)
-		}
 }

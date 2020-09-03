@@ -184,8 +184,9 @@ func Main(enterpriseInit EnterpriseInit) {
 	go watchSyncer(ctx, syncer, scheduler, gps)
 	go func() {
 		log.Fatal(syncer.Run(ctx, db, store, repos.RunOptions{
-			EnqueueInterval: repos.GetUpdateInterval,
-			IsCloud:         envvar.SourcegraphDotComMode(),
+			EnqueueInterval:      repos.GetUpdateInterval,
+			IsCloud:              envvar.SourcegraphDotComMode(),
+			PrometheusRegisterer: prometheus.DefaultRegisterer,
 		}))
 	}()
 	server.Syncer = syncer
