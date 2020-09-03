@@ -198,6 +198,11 @@ func (r *RepositoryRevisions) ExpandedRevSpecs(ctx context.Context) ([]string, e
 // refs matched or resolved by them, plus the explicitly listed Git revspecs. See
 // git.CompileRefGlobs for information on how ref include/exclude globs are handled.
 func expandedRevSpec(ctx context.Context, r *RepositoryRevisions) ([]string, error) {
+	listRefs := r.ListRefs
+	if listRefs == nil {
+		listRefs = git.ListRefs
+	}
+
 	var (
 		revSpecs = map[string]struct{}{}
 		globs    []git.RefGlob
@@ -213,10 +218,6 @@ func expandedRevSpec(ctx context.Context, r *RepositoryRevisions) ([]string, err
 		}
 	}
 
-	listRefs := r.ListRefs
-	if listRefs == nil {
-		listRefs = git.ListRefs
-	}
 	if len(globs) > 0 {
 		allRefs, err := listRefs(ctx, r.GitserverRepo())
 		if err != nil {
