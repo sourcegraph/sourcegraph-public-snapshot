@@ -33,8 +33,9 @@ import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcut
 import { PrivateCodeCta } from './PrivateCodeCta'
 import { AuthenticatedUser } from '../../auth'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { EnterpriseHomePanels } from '../panels/EnterpriseHomePanels'
 
-interface Props
+export interface SearchPageProps
     extends SettingsCascadeProps<Settings>,
         ThemeProps,
         ThemePreferenceProps,
@@ -57,6 +58,7 @@ interface Props
     isSourcegraphDotCom: boolean
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
+    autoFocus?: boolean
 
     // For NavLinks
     authRequired?: boolean
@@ -69,7 +71,7 @@ interface Props
 /**
  * The search page
  */
-export const SearchPage: React.FunctionComponent<Props> = props => {
+export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
     const SearchExampleClicked = useCallback(
         (url: string) => (): void => props.telemetryService.log('ExampleSearchClicked', { url }),
         [props.telemetryService]
@@ -103,7 +105,8 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
             {props.isSourcegraphDotCom && <div className="search-page__cloud-tag-line">Search public code</div>}
             <div
                 className={classNames('search-page__search-container', {
-                    'search-page__search-container--with-repogroups': props.isSourcegraphDotCom,
+                    'search-page__search-container--with-content-below':
+                        props.isSourcegraphDotCom || props.showEnterpriseHomePanels,
                 })}
             >
                 <SearchPageInput {...props} source="home" />
@@ -320,11 +323,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                 </>
             )}
 
-            {!props.isSourcegraphDotCom && props.showEnterpriseHomePanels && (
-                <>
-                    <div>Hello from Enterprise Home with panels enabled</div>
-                </>
-            )}
+            {!props.isSourcegraphDotCom && props.showEnterpriseHomePanels && <EnterpriseHomePanels />}
         </div>
     )
 }
