@@ -59,12 +59,12 @@ type RepositoryRevisions struct {
 	Repo *types.Repo
 	Revs []RevisionSpecifier
 
+	// resolveOnce protects resolvedRevs
+	resolveOnce sync.Once
+
 	// resolvedRevs is set by ExpandedRevSpecs and contains all revisions
 	// including resolved ref-globs.
 	resolvedRevs []string
-
-	// resolveOnce protects resolvedRevs
-	resolveOnce sync.Once
 
 	// resolveErr stores the error returned by the first call to ExpandedRevSpecs. It
 	// gives the caller the chance to distinguish between an error and an empty resolvedRevs.
