@@ -32,6 +32,4 @@ jobs:
         env:
           # Use separate access token, because we need a scope:repo token to publish the brew formula.
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
-      # And tag latest, once the release is done.
-      - run: git tag latest -f -a -m "release v${GITHUB_REF##*/}"
-      - run: git push -f --tags
+ 
