@@ -1,3 +1,5 @@
+import 'focus-visible'
+
 import { configureActions } from '@storybook/addon-actions'
 import { withConsole } from '@storybook/addon-console'
 import { withInfo } from '@storybook/addon-info'
