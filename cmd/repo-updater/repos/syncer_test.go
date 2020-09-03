@@ -1341,33 +1341,11 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store repos.Store) func(t *
 				t.Fatal(err)
 			}
 
-			assertSourceCount := func(t *testing.T, want int) {
-				t.Helper()
-				var rowCount int
-				if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM external_service_repos").Scan(&rowCount); err != nil {
-					t.Fatal(err)
-				}
-				if rowCount != want {
-					t.Fatalf("Expected %d rows, got %d", want, rowCount)
-				}
-			}
-
-			assertDeletedRepoCount := func(t *testing.T, want int) {
-				t.Helper()
-				var rowCount int
-				if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM repo where deleted_at is not null").Scan(&rowCount); err != nil {
-					t.Fatal(err)
-				}
-				if rowCount != want {
-					t.Fatalf("Expected %d rows, got %d", want, rowCount)
-				}
-			}
-
 			// Confirm that there are two relationships
-			assertSourceCount(t, 2)
+			assertSourceCount(ctx, t, db, 2)
 
 			// We should have no deleted repos
-			assertDeletedRepoCount(t, 0)
+			assertDeletedRepoCount(ctx, t, db, 0)
 
 			// Remove the repo from one service and sync again
 			syncer = &repos.Syncer{
@@ -1391,10 +1369,10 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store repos.Store) func(t *
 			}
 
 			// Confirm that there is one relationship
-			assertSourceCount(t, 1)
+			assertSourceCount(ctx, t, db, 1)
 
 			// We should have no deleted repos
-			assertDeletedRepoCount(t, 0)
+			assertDeletedRepoCount(ctx, t, db, 0)
 
 			// Remove the repo from the second service and sync again
 			syncer = &repos.Syncer{
@@ -1409,10 +1387,10 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store repos.Store) func(t *
 			}
 
 			// Confirm that there no relationships
-			assertSourceCount(t, 0)
+			assertSourceCount(ctx, t, db, 0)
 
 			// We should have one deleted repo
-			assertDeletedRepoCount(t, 1)
+			assertDeletedRepoCount(ctx, t, db, 1)
 		}
 	}
 }
@@ -1468,17 +1446,6 @@ func testUserCannotAddPrivateCode(db *sql.DB, userID int32) func(t *testing.T, s
 				Private: true,
 			}
 
-			assertSourceCount := func(t *testing.T, want int) {
-				t.Helper()
-				var rowCount int
-				if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM external_service_repos").Scan(&rowCount); err != nil {
-					t.Fatal(err)
-				}
-				if rowCount != want {
-					t.Fatalf("Expected %d rows, got %d", want, rowCount)
-				}
-			}
-
 			// Admin service will sync both repos
 			syncer := &repos.Syncer{
 				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
@@ -1492,7 +1459,7 @@ func testUserCannotAddPrivateCode(db *sql.DB, userID int32) func(t *testing.T, s
 			}
 
 			// Confirm that there are two relationships
-			assertSourceCount(t, 2)
+			assertSourceCount(ctx, t, db, 2)
 
 			// Unsync the repo to clean things up
 			syncer = &repos.Syncer{
@@ -1507,7 +1474,7 @@ func testUserCannotAddPrivateCode(db *sql.DB, userID int32) func(t *testing.T, s
 			}
 
 			// Confirm that there are two relationships
-			assertSourceCount(t, 0)
+			assertSourceCount(ctx, t, db, 0)
 
 			// User service can only sync public code, even if they have access to private code
 			syncer = &repos.Syncer{
@@ -1522,7 +1489,7 @@ func testUserCannotAddPrivateCode(db *sql.DB, userID int32) func(t *testing.T, s
 			}
 
 			// Confirm that there are two relationships
-			assertSourceCount(t, 1)
+			assertSourceCount(ctx, t, db, 1)
 		}
 	}
 }
@@ -1906,21 +1873,10 @@ func testDeleteExternalService(db *sql.DB) func(t *testing.T, store repos.Store)
 			}
 
 			// Confirm that there is one relationship
-			var rowCount int
-			if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM external_service_repos").Scan(&rowCount); err != nil {
-				t.Fatal(err)
-			}
-			if rowCount != 1 {
-				t.Fatalf("Expected 1 row, got %d", rowCount)
-			}
+			assertSourceCount(ctx, t, db, 1)
 
 			// We should have no deleted repos
-			if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM repo where deleted_at is not null").Scan(&rowCount); err != nil {
-				t.Fatal(err)
-			}
-			if rowCount != 0 {
-				t.Fatalf("Expected 0 rows, got %d", rowCount)
-			}
+			assertDeletedRepoCount(ctx, t, db, 0)
 
 			// Delete the second service
 			svc2.DeletedAt = now
@@ -1929,20 +1885,32 @@ func testDeleteExternalService(db *sql.DB) func(t *testing.T, store repos.Store)
 			}
 
 			// Confirm that there no relationships
-			if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM external_service_repos").Scan(&rowCount); err != nil {
-				t.Fatal(err)
-			}
-			if rowCount != 0 {
-				t.Fatalf("Expected 0 rows, got %d", rowCount)
-			}
+			assertSourceCount(ctx, t, db, 0)
 
 			// We should have one deleted repo
-			if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM repo where deleted_at is not null").Scan(&rowCount); err != nil {
-				t.Fatal(err)
-			}
-			if rowCount != 1 {
-				t.Fatalf("Expected 1 rows, got %d", rowCount)
-			}
+			assertDeletedRepoCount(ctx, t, db, 1)
 		}
+	}
+}
+
+func assertSourceCount(ctx context.Context, t *testing.T, db *sql.DB, want int) {
+	t.Helper()
+	var rowCount int
+	if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM external_service_repos").Scan(&rowCount); err != nil {
+		t.Fatal(err)
+	}
+	if rowCount != want {
+		t.Fatalf("Expected %d rows, got %d", want, rowCount)
+	}
+}
+
+func assertDeletedRepoCount(ctx context.Context, t *testing.T, db *sql.DB, want int) {
+	t.Helper()
+	var rowCount int
+	if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM repo where deleted_at is not null").Scan(&rowCount); err != nil {
+		t.Fatal(err)
+	}
+	if rowCount != want {
+		t.Fatalf("Expected %d rows, got %d", want, rowCount)
 	}
 }
