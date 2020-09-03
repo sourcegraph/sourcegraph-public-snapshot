@@ -1098,6 +1098,9 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 
 		jobs = append(jobs, job)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 
 	return jobs, nil
 }
