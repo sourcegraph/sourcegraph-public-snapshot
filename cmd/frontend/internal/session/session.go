@@ -365,8 +365,9 @@ func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Contex
 
 		// Check that the session is still valid
 		if info.LastActive.Before(usr.InvalidatedSessionsAt) {
-			_ = deleteSession(w, r) // clear the bad value
-			return actor.WithActor(r.Context(), &actor.Actor{})
+			_ = deleteSession(w, r) // Delete the now invalid sess
+			log15.Warn("Sessions were invalidted after this session was last valid.")
+			return r.Context()
 		}
 
 		// Renew session

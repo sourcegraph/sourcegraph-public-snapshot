@@ -1158,7 +1158,7 @@ Referenced by:
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 Triggers:
-    trig_invalidate_session_on_password_change_or_reset AFTER UPDATE ON users FOR EACH ROW EXECUTE PROCEDURE invalidate_session_for_userid_on_password_change_or_reset()
+    trig_invalidate_session_on_password_change_or_reset BEFORE UPDATE ON users FOR EACH ROW EXECUTE PROCEDURE invalidate_session_for_userid_on_password_change_or_reset()
     trig_soft_delete_user_reference_on_external_service AFTER UPDATE OF deleted_at ON users FOR EACH ROW EXECUTE PROCEDURE soft_delete_user_reference_on_external_service()
 
 ```

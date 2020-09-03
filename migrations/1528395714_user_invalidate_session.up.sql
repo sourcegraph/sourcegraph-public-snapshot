@@ -11,26 +11,17 @@ CREATE OR REPLACE FUNCTION invalidate_session_for_userid_on_password_change_or_r
 LANGUAGE plpgsql
     AS $$
     BEGIN
-        IF (OLD.passwd != NEW.passwd
-            OR OLD.passwd_reset_code != NEW.passwd_reset_code
-            OR OLD.passwd_reset_time != NEW.passwd_reset_time) THEN
-        UPDATE
-            users
-        SET
-            users.invalidated_sessions_at = now()
-        WHERE
-            users.id = OLD.id;
-        RETURN NEW;
+        IF (OLD.passwd != NEW.passwd OR OLD.passwd_reset_code != NEW.passwd_reset_code OR OLD.passwd_reset_time != NEW.passwd_reset_time) THEN
+            NEW.invalidated_sessions_at = now();
+            RETURN NEW;
         END IF;
+    RETURN NEW;
     END;
 $$;
 
 -- Need to drop and create, since we can't create if not exstis
 DROP TRIGGER IF EXISTS trig_invalidate_session_on_password_change_or_reset ON users;
 -- Create a trigger to to invalidate sessions if the user's password is ever changed
-CREATE TRIGGER trig_invalidate_session_on_password_change_or_reset 
-    AFTER UPDATE ON users 
-    FOR EACH ROW
-    EXECUTE PROCEDURE invalidate_session_for_userid_on_password_change_or_reset();
+CREATE TRIGGER trig_invalidate_session_on_password_change_or_reset BEFORE UPDATE ON users FOR EACH ROW EXECUTE PROCEDURE invalidate_session_for_userid_on_password_change_or_reset();
 
 COMMIT;
