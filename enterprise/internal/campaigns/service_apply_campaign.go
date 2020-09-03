@@ -50,15 +50,7 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		tr.Finish()
 	}()
 
-	tx, err := s.store.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	rstore := repos.NewDBStore(tx.DB(), sql.TxOptions{})
-
-	campaignSpec, err := tx.GetCampaignSpec(ctx, GetCampaignSpecOpts{
+	campaignSpec, err := s.store.GetCampaignSpec(ctx, GetCampaignSpecOpts{
 		RandID: opts.CampaignSpecRandID,
 	})
 	if err != nil {
@@ -71,7 +63,7 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		return nil, err
 	}
 
-	campaign, err = s.GetCampaignMatchingCampaignSpec(ctx, tx, campaignSpec)
+	campaign, err = s.GetCampaignMatchingCampaignSpec(ctx, s.store, campaignSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -92,6 +84,23 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	if campaign.CampaignSpecID == campaignSpec.ID {
 		return campaign, nil
 	}
+
+	// Before we write to the database in a transaction, we cancel all
+	// currently enqueued/errored-and-retryable changesets the campaign might
+	// have.
+	// We do this so we don't continue to possibly create changesets on the
+	// codehost while we're applying a new campaign spec.
+	if err := s.store.CancelQueuedCampaignChangesets(ctx, campaign.ID); err != nil {
+		return campaign, nil
+	}
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	rstore := repos.NewDBStore(tx.DB(), sql.TxOptions{})
 
 	campaign.CampaignSpecID = campaignSpec.ID
 	campaign.NamespaceOrgID = campaignSpec.NamespaceOrgID

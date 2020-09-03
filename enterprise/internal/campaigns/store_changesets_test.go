@@ -792,6 +792,87 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			t.Fatal(diff)
 		}
 	})
+
+	t.Run("CancelQueuedCampaignChangesets", func(t *testing.T) {
+		var campaignID int64 = 99999
+
+		c1 := createChangeset(t, ctx, s, testChangesetOpts{
+			repo:            repo.ID,
+			campaign:        campaignID,
+			ownedByCampaign: campaignID,
+			reconcilerState: cmpgn.ReconcilerStateQueued,
+		})
+
+		c2 := createChangeset(t, ctx, s, testChangesetOpts{
+			repo:            repo.ID,
+			campaign:        campaignID,
+			ownedByCampaign: campaignID,
+			reconcilerState: cmpgn.ReconcilerStateErrored,
+			numResets:       reconcilerMaxNumResets - 1,
+		})
+
+		c3 := createChangeset(t, ctx, s, testChangesetOpts{
+			repo:            repo.ID,
+			campaign:        campaignID,
+			ownedByCampaign: campaignID,
+			reconcilerState: cmpgn.ReconcilerStateCompleted,
+		})
+
+		c4 := createChangeset(t, ctx, s, testChangesetOpts{
+			repo:            repo.ID,
+			campaign:        campaignID,
+			ownedByCampaign: 0,
+			unsynced:        true,
+			reconcilerState: cmpgn.ReconcilerStateQueued,
+		})
+
+		c5 := createChangeset(t, ctx, s, testChangesetOpts{
+			repo:            repo.ID,
+			campaign:        campaignID,
+			ownedByCampaign: campaignID,
+			reconcilerState: cmpgn.ReconcilerStateProcessing,
+		})
+
+		if err := s.CancelQueuedCampaignChangesets(ctx, campaignID); err != nil {
+			t.Fatal(err)
+		}
+
+		reloadAndAssertChangeset(t, ctx, s, c1, changesetAssertions{
+			repo:            repo.ID,
+			reconcilerState: cmpgn.ReconcilerStateErrored,
+			ownedByCampaign: campaignID,
+			failureMessage:  &canceledChangesetFailureMessage,
+			numResets:       reconcilerMaxNumResets,
+		})
+
+		reloadAndAssertChangeset(t, ctx, s, c2, changesetAssertions{
+			repo:            repo.ID,
+			reconcilerState: cmpgn.ReconcilerStateErrored,
+			ownedByCampaign: campaignID,
+			failureMessage:  &canceledChangesetFailureMessage,
+			numResets:       reconcilerMaxNumResets,
+		})
+
+		reloadAndAssertChangeset(t, ctx, s, c3, changesetAssertions{
+			repo:            repo.ID,
+			reconcilerState: cmpgn.ReconcilerStateCompleted,
+			ownedByCampaign: campaignID,
+		})
+
+		reloadAndAssertChangeset(t, ctx, s, c4, changesetAssertions{
+			repo:            repo.ID,
+			reconcilerState: cmpgn.ReconcilerStateQueued,
+			unsynced:        true,
+		})
+
+		reloadAndAssertChangeset(t, ctx, s, c5, changesetAssertions{
+			repo:            repo.ID,
+			reconcilerState: cmpgn.ReconcilerStateErrored,
+			failureMessage:  &canceledChangesetFailureMessage,
+			ownedByCampaign: campaignID,
+			numResets:       reconcilerMaxNumResets,
+		})
+	})
 }
 
 func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {

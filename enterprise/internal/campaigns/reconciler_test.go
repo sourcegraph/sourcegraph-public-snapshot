@@ -583,7 +583,10 @@ type testChangesetOpts struct {
 	externalState       campaigns.ChangesetExternalState
 
 	publicationState campaigns.ChangesetPublicationState
-	failureMessage   string
+
+	reconcilerState campaigns.ReconcilerState
+	failureMessage  string
+	numResets       int64
 
 	createdByCampaign bool
 	ownedByCampaign   int64
@@ -621,6 +624,9 @@ func createChangeset(
 
 		Unsynced: opts.unsynced,
 		Closing:  opts.closing,
+
+		ReconcilerState: opts.reconcilerState,
+		NumResets:       opts.numResets,
 	}
 
 	if opts.failureMessage != "" {

@@ -50,13 +50,17 @@ func RunWorkers(
 		OrderByExpression: sqlf.Sprintf("reconciler_state = 'errored', changesets.updated_at DESC"),
 
 		StalledMaxAge: 60 * time.Second,
-		MaxNumResets:  60,
+		MaxNumResets:  reconcilerMaxNumResets,
 		RetryAfter:    5 * time.Second,
 	})
 
 	worker := dbworker.NewWorker(ctx, workerStore, options)
 	worker.Start()
 }
+
+// reconcilerMaxNumResets is the maximum number of attempts the reconciler
+// makes to process a changeset.
+const reconcilerMaxNumResets = 60
 
 func scanFirstChangesetRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	return scanFirstChangeset(rows, err)

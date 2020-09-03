@@ -696,8 +696,8 @@ func assertChangeset(t *testing.T, c *campaigns.Changeset, a changesetAssertions
 		}
 	}
 
-	if diff := cmp.Diff(a.numResets, c.NumResets); diff != "" {
-		t.Fatalf("changeset NumResets wrong. (-want +got):\n%s", diff)
+	if have, want := c.NumResets, a.numResets; have != want {
+		t.Fatalf("changeset NumResets wrong. want=%d, have=%d", want, have)
 	}
 
 	if have, want := c.ExternalBranch, a.externalBranch; have != want {
@@ -782,8 +782,7 @@ func setChangesetFailed(t *testing.T, ctx context.Context, s *Store, c *campaign
 	t.Helper()
 
 	c.ReconcilerState = campaigns.ReconcilerStateErrored
-	message := "failure message"
-	c.FailureMessage = &message
+	c.FailureMessage = &canceledChangesetFailureMessage
 	c.NumResets = 5
 
 	if err := s.UpdateChangeset(ctx, c); err != nil {
