@@ -153,6 +153,9 @@ export const externalChangesetFieldsFragment = gql`
         createdAt
         updatedAt
         nextSyncAt
+        currentSpec {
+            id
+        }
     }
 
     ${diffStatFields}

@@ -324,6 +324,25 @@ func (r *changesetResolver) CheckState() *campaigns.ChangesetCheckState {
 
 func (r *changesetResolver) Error() *string { return r.changeset.FailureMessage }
 
+func (r *changesetResolver) CurrentSpec(ctx context.Context) (graphqlbackend.VisibleChangesetSpecResolver, error) {
+	if r.changeset.CurrentSpecID == 0 {
+		return nil, nil
+	}
+
+	spec, err := r.computeSpec(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &changesetSpecResolver{
+		store:                r.store,
+		httpFactory:          r.httpFactory,
+		changesetSpec:        spec,
+		preloadedRepo:        r.repo,
+		attemptedPreloadRepo: true,
+	}, nil
+}
+
 func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.ChangesetLabelResolver, error) {
 	if !r.changeset.PublishedAndSynced() {
 		return []graphqlbackend.ChangesetLabelResolver{}, nil

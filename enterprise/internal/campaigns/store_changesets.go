@@ -486,7 +486,7 @@ func (s *Store) UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) er
 }
 
 var updateChangesetQueryFmtstr = `
--- source: enterprise/internal/campaigns/store_changeset_specs.go:UpdateChangeset
+-- source: enterprise/internal/campaigns/store_changesets.go:UpdateChangeset
 UPDATE changesets
 SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
@@ -521,6 +521,86 @@ func (s *Store) GetChangesetExternalIDs(ctx context.Context, spec api.ExternalRe
 	q := sqlf.Sprintf(queryFmtString, spec.ServiceType, sqlf.Join(inClause, ","), spec.ID, spec.ServiceType, spec.ServiceID)
 	return basestore.ScanStrings(s.Store.Query(ctx, q))
 }
+
+// canceledChangesetFailureMessage is set on changesets as the FailureMessage
+// by CancelQueuedCampaignChangesets which is called at the beginning of
+// ApplyCampaign to stop enqueued changesets being processed while we're
+// applying the new campaign spec.
+var canceledChangesetFailureMessage = "Canceled"
+
+func (s *Store) CancelQueuedCampaignChangesets(ctx context.Context, campaignID int64) error {
+	// Note that we don't cancel queued "syncing" changesets, since their
+	// owned_by_campaign_id is not set. That's on purpose. It's okay if they're
+	// being processed after this, since they only pull data and not create
+	// changesets on the code hosts.
+	q := sqlf.Sprintf(
+		cancelQueuedCampaignChangesetsFmtstr,
+		campaignID,
+		reconcilerMaxNumResets,
+		canceledChangesetFailureMessage,
+		reconcilerMaxNumResets,
+	)
+	return s.Store.Exec(ctx, q)
+}
+
+const cancelQueuedCampaignChangesetsFmtstr = `
+-- source: enterprise/internal/campaigns/store_changesets.go:CancelQueuedCampaignChangesets
+WITH changeset_ids AS (
+  SELECT id FROM changesets
+  WHERE
+    owned_by_campaign_id = %s
+  AND
+    (reconciler_state = 'queued' OR
+	 reconciler_state = 'processing' OR
+	 (reconciler_state = 'errored' AND num_resets < %d))
+  FOR UPDATE
+)
+UPDATE
+  changesets
+SET
+  reconciler_state = 'errored',
+  failure_message = %s,
+  num_resets = %d
+WHERE id IN (SELECT id FROM changeset_ids);
+`
+
+// EnqueueChangesetsToClose updates all changesets that are owned by the given
+// campaign to set their reconciler status to 'queued' and the Closing boolean
+// to true.
+//
+// It does not update the changesets that are fully processed and already
+// closed/merged.
+//
+// This method will *block* if some of the changesets are currently being processed.
+func (s *Store) EnqueueChangesetsToClose(ctx context.Context, campaignID int64) error {
+	q := sqlf.Sprintf(
+		enqueueChangesetsToCloseFmtstr,
+		campaignID,
+		campaigns.ChangesetExternalStateClosed,
+		campaigns.ChangesetExternalStateMerged,
+	)
+	return s.Store.Exec(ctx, q)
+}
+
+const enqueueChangesetsToCloseFmtstr = `
+-- source: enterprise/internal/campaigns/store_changesets.go:EnqueueChangesetsToClose
+UPDATE
+  changesets
+SET
+  reconciler_state = 'queued',
+  failure_message = NULL,
+  num_resets = 0,
+  closing = TRUE
+WHERE
+  owned_by_campaign_id = %d
+AND
+  NOT (
+    reconciler_state = 'completed'
+	AND
+	(external_state = %s OR external_state = %s)
+  )
+;
+`
 
 func scanFirstChangeset(rows *sql.Rows, err error) (*campaigns.Changeset, bool, error) {
 	changesets, err := scanChangesets(rows, err)
