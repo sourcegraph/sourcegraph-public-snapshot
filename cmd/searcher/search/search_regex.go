@@ -330,6 +330,8 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 	}
 	defer cancel()
 
+	ig := newIgnoreMatcher(zf)
+
 	var (
 		filesmu   sync.Mutex // protects files
 		files     = zf.Files
@@ -341,6 +343,9 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 		// Fast path for only matching file paths (or with a nil pattern, which matches all files,
 		// so is effectively matching only on file paths).
 		for _, f := range files {
+			if ig.match(&f) {
+				continue
+			}
 			if match := rg.matchPath.MatchPath(f.Name) && rg.matchString(f.Name); match == !isPatternNegated {
 				if len(matches) < fileMatchLimit {
 					matches = append(matches, protocol.FileMatch{Path: f.Name})
@@ -385,6 +390,10 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 				f := &files[0]
 				files = files[1:]
 				filesmu.Unlock()
+
+				if ig.match(f) {
+					continue
+				}
 
 				// decide whether to process, record that decision
 				if !rg.matchPath.MatchPath(f.Name) {
