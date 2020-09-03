@@ -147,12 +147,20 @@ The following keywords are only used for **commit diff** and **commit message** 
 
 ### Repository revisions
 
-To search revisions other than the default branch, specify the revisions by either appending `@<revisions>` to the 
-`repo:` filter (`repo:github.com/myteam/abc@<revisions>`) or by listing them separately with the `revision:` or
-`rev:` filter (`repo:github.com/myteam/abc revision:<revisions>`).  The `<revisions>` part refers to repository
+To search revisions other than the default branch, specify the revisions by either appending them to the 
+`repo:` filter  or by listing them separately with the `rev:` filter. This means:
+
+
+`repo:github.com/myteam/abc@<revisions>`
+
+is equivalent to
+
+`repo:github.com/myteam/abc rev:<revisions>`.
+ 
+ The `<revisions>` part refers to repository
  revisions (branches, commit hashes, and tags) and may take on the following forms: 
 
-(All examples apply to `@` as well as `revision:`/`rev:`)
+(All examples apply to `@` as well as `rev:`)
 
 - `@branch` - a branch name
 - `@1735d48` - a commit hash
