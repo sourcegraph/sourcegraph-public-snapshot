@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	secretsPkg "github.com/sourcegraph/sourcegraph/internal/secrets"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -357,10 +359,15 @@ func (e *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf
 	es.CreatedAt = time.Now().UTC().Truncate(time.Microsecond)
 	es.UpdatedAt = es.CreatedAt
 
+	svcConfig, err := secretsPkg.EncryptBytes([]byte(es.Config))
+	if err != nil {
+		return errors.Wrap(err, "external service create: failed to encrypt")
+	}
+
 	return dbconn.Global.QueryRowContext(
 		ctx,
 		"INSERT INTO external_services(kind, display_name, config, created_at, updated_at, namespace_user_id) VALUES($1, $2, $3, $4, $5, $6) RETURNING id",
-		es.Kind, es.DisplayName, es.Config, es.CreatedAt, es.UpdatedAt, es.NamespaceUserID,
+		es.Kind, es.DisplayName, string(svcConfig), es.CreatedAt, es.UpdatedAt, es.NamespaceUserID,
 	).Scan(&es.ID)
 }
 
@@ -395,6 +402,13 @@ func (e *ExternalServicesStore) Update(ctx context.Context, ps []schema.AuthProv
 		}); err != nil {
 			return err
 		}
+
+		svcConfig, err := secretsPkg.EncryptBytes([]byte(*update.Config))
+		if err != nil {
+			return err
+		}
+		cfg := string(svcConfig)
+		update.Config = &cfg
 	}
 
 	execUpdate := func(ctx context.Context, tx *sql.Tx, update *sqlf.Query) error {
@@ -545,6 +559,12 @@ func (*ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, lim
 		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namepaceUserID); err != nil {
 			return nil, err
 		}
+		cfg, err := secretsPkg.DecryptBytes([]byte(h.Config))
+		if err != nil {
+			return nil, err
+		}
+		h.Config = string(cfg)
+
 		if deletedAt.Valid {
 			h.DeletedAt = &deletedAt.Time
 		}
