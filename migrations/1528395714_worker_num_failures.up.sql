@@ -1,0 +1,8 @@
+BEGIN;
+
+ALTER TABLE lsif_uploads ADD COLUMN num_failures INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE lsif_indexes ADD COLUMN num_failures INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE changesets ADD COLUMN num_failures INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE external_service_sync_jobs ADD COLUMN num_failures INTEGER NOT NULL DEFAULT 0;
+
+COMMIT;

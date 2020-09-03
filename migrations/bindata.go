@@ -128,6 +128,8 @@
 // 1528395712_add_closing_flag_to_changesets.up.sql (105B)
 // 1528395713_add_trigger_to_delete_orphan_repos.down.sql (165B)
 // 1528395713_add_trigger_to_delete_orphan_repos.up.sql (853B)
+// 1528395714_worker_num_failures.down.sql (233B)
+// 1528395714_worker_num_failures.up.sql (337B)
 
 package migrations
 
@@ -2756,6 +2758,46 @@ func _1528395713_add_trigger_to_delete_orphan_reposUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395714_worker_num_failuresDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\xcc\xd1\x0d\xc2\x20\x10\x00\xd0\x7f\xa6\x60\x0f\xbe\xda\x4a\x4c\x13\x28\xa6\xc1\xef\x0b\xd2\xab\x62\xf0\x6a\xb8\x62\xea\xf6\x0e\x60\xd2\x74\x80\xf7\x5a\x7d\xee\x07\x25\x44\x63\xbc\x1e\xa5\x6f\x5a\xa3\x65\xe6\x34\x43\x7d\xe7\x25\x4c\x2c\x4f\xa3\xbb\xc8\xce\x99\xab\x1d\x24\xd5\x17\xcc\x21\xe5\x5a\x90\xd5\x3f\x49\x34\xe1\x86\x47\x49\x7c\x04\xba\x23\xe3\x7a\x14\xe0\xb6\x62\xa1\x90\x81\xb1\x7c\x52\x44\xe0\x2f\x45\x78\x2e\xb7\xbd\x40\x74\xce\xda\xde\x2b\xf1\x0b\x00\x00\xff\xff\xb4\x39\xfa\xea\xe9\x00\x00\x00")
+
+func _1528395714_worker_num_failuresDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395714_worker_num_failuresDownSql,
+		"1528395714_worker_num_failures.down.sql",
+	)
+}
+
+func _1528395714_worker_num_failuresDownSql() (*asset, error) {
+	bytes, err := _1528395714_worker_num_failuresDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395714_worker_num_failures.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xa4, 0xc1, 0x3d, 0x34, 0x2f, 0x4b, 0x76, 0x73, 0xee, 0x5a, 0x28, 0x33, 0xd6, 0xbd, 0xd2, 0xde, 0xdc, 0x65, 0x5c, 0x66, 0x15, 0xd9, 0x5b, 0x13, 0x62, 0xb0, 0x23, 0x25, 0xfb, 0x2c, 0x83, 0xf5}}
+	return a, nil
+}
+
+var __1528395714_worker_num_failuresUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\xcc\x41\xae\x82\x30\x10\x00\xd0\x7d\x4f\x31\x47\xf8\x7b\x56\x05\xfa\x09\xc9\x50\x12\x32\xac\x9b\x0a\x83\xd6\xd4\x62\x18\x6a\xf0\xf6\x1e\xc0\x9d\x5c\xe0\x95\xa6\x69\x6d\xa1\x94\x46\x32\x03\x90\x2e\xd1\x40\x94\xb0\xb8\xfc\x8c\xab\x9f\x05\x74\x5d\x43\xd5\xe3\xd8\x59\x48\xf9\xe1\x16\x1f\x62\xde\x58\xa0\xb5\x64\x1a\x33\x80\xed\x09\xec\x88\x08\xb5\xf9\xd7\x23\x12\xfc\x15\xdf\x58\x48\x33\x1f\x7c\x1e\x9b\x6e\x3e\x5d\x59\x78\x3f\x4f\xf1\xb1\xf3\x96\x7c\x74\xc2\xdb\x2b\x4c\xec\xe4\x9d\x26\x77\x5f\x2f\xbf\xd1\xaa\xea\xbb\xae\xa5\x42\x7d\x02\x00\x00\xff\xff\x2a\x29\x0b\x04\x51\x01\x00\x00")
+
+func _1528395714_worker_num_failuresUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395714_worker_num_failuresUpSql,
+		"1528395714_worker_num_failures.up.sql",
+	)
+}
+
+func _1528395714_worker_num_failuresUpSql() (*asset, error) {
+	bytes, err := _1528395714_worker_num_failuresUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395714_worker_num_failures.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x9d, 0xd5, 0x2f, 0x77, 0xa3, 0x94, 0xdd, 0x47, 0xa3, 0x30, 0x7, 0x3d, 0xb8, 0x63, 0xdc, 0x92, 0x61, 0xc2, 0x5d, 0x7d, 0x3, 0x47, 0x0, 0x88, 0xf7, 0x18, 0x3c, 0x64, 0xe3, 0x69, 0xa2, 0xfe}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2975,6 +3017,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395712_add_closing_flag_to_changesets.up.sql":                             _1528395712_add_closing_flag_to_changesetsUpSql,
 	"1528395713_add_trigger_to_delete_orphan_repos.down.sql":                       _1528395713_add_trigger_to_delete_orphan_reposDownSql,
 	"1528395713_add_trigger_to_delete_orphan_repos.up.sql":                         _1528395713_add_trigger_to_delete_orphan_reposUpSql,
+	"1528395714_worker_num_failures.down.sql":                                      _1528395714_worker_num_failuresDownSql,
+	"1528395714_worker_num_failures.up.sql":                                        _1528395714_worker_num_failuresUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3149,6 +3193,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395712_add_closing_flag_to_changesets.up.sql":                             {_1528395712_add_closing_flag_to_changesetsUpSql, map[string]*bintree{}},
 	"1528395713_add_trigger_to_delete_orphan_repos.down.sql":                       {_1528395713_add_trigger_to_delete_orphan_reposDownSql, map[string]*bintree{}},
 	"1528395713_add_trigger_to_delete_orphan_repos.up.sql":                         {_1528395713_add_trigger_to_delete_orphan_reposUpSql, map[string]*bintree{}},
+	"1528395714_worker_num_failures.down.sql":                                      {_1528395714_worker_num_failuresDownSql, map[string]*bintree{}},
+	"1528395714_worker_num_failures.up.sql":                                        {_1528395714_worker_num_failuresUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
