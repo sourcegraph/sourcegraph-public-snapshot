@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -306,41 +305,15 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 	}
 
 	// At this point we don't know which changesets have ExternalStateOpen,
-	// since they might still be being processed in the background by the
+	// since some might still be being processed in the background by the
 	// reconciler.
-	// So we load all and enqueue them all for closing, which, if they're
-	// not open, results in a noop in the reconciler.
-	cs, _, err := tx.ListChangesets(ctx, ListChangesetsOpts{OwnedByCampaignID: campaign.ID})
-	if err != nil {
+	// So enqueue all, except the ones that are completed and closed/merged,
+	// for closing. If after being processed they're not open, it'll be a noop.
+	if err := tx.EnqueueChangesetsToClose(ctx, campaign.ID); err != nil {
 		return nil, err
 	}
 
-	enqueueClose := func(tx *Store, c *campaigns.Changeset, ch chan error) {
-		c.Closing = true
-		c.ReconcilerState = campaigns.ReconcilerStateQueued
-
-		err := tx.UpdateChangeset(ctx, c)
-		ch <- err
-	}
-
-	// Since the UpdateChangeset call might block if a changeset is
-	// currently being processes, we update them concurrently to avoid
-	// being slowed down by one of the first changesets in the slice being
-	// processed.
-	results := make(chan error)
-	for _, c := range cs {
-		go enqueueClose(tx, c, results)
-	}
-
-	var errs *multierror.Error
-	for range cs {
-		err := <-results
-		if err != nil {
-			errs = multierror.Append(errs, err)
-		}
-	}
-
-	return campaign, errs.ErrorOrNil()
+	return campaign, nil
 }
 
 // DeleteCampaign deletes the Campaign with the given ID if it hasn't been
