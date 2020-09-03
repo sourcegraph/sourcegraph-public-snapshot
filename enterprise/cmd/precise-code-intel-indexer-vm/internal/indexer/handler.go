@@ -71,6 +71,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		args := []string{
 			"ignite", "run",
 			"--runtime", "docker",
+			"--network-plugin", "docker-bridge",
 			"--cpus", fmt.Sprintf("%d", h.options.FirecrackerNumCPUs),
 			"--memory", h.options.FirecrackerMemory,
 			"--copy-files", fmt.Sprintf("%s:%s", repoDir, mountPoint),
@@ -85,6 +86,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 			stopArgs := []string{
 				"ignite", "stop",
 				"--runtime", "docker",
+				"--network-plugin", "docker-bridge",
 				name.String(),
 			}
 			if err := h.commander.Run(ctx, stopArgs[0], stopArgs[1:]...); err != nil {
@@ -94,6 +96,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 			removeArgs := []string{
 				"ignite", "rm", "-f",
 				"--runtime", "docker",
+				"--network-plugin", "docker-bridge",
 				name.String(),
 			}
 			if err := h.commander.Run(ctx, removeArgs[0], removeArgs[1:]...); err != nil {
