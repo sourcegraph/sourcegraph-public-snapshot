@@ -293,6 +293,8 @@ type ExternalChangesetResolver interface {
 	Labels(ctx context.Context) ([]ChangesetLabelResolver, error)
 
 	Error() *string
+
+	CurrentSpec(ctx context.Context) (VisibleChangesetSpecResolver, error)
 }
 
 type ChangesetEventsConnectionResolver interface {

@@ -81,6 +81,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                         repositoryName={node.repository.name}
                         extensionInfo={extensionInfo}
                         queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
+                        updateOnChange={node.updatedAt}
                     />
                 </div>
             )}

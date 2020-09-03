@@ -260,11 +260,15 @@ func TestReconcilerProcess(t *testing.T) {
 
 			// We don't want an update on the code host, only a new commit pushed.
 			wantGitserverCommit: true,
+			// And we want the changeset to be synced after pushing the commit.
+			wantLoadFromCodeHost: true,
+
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				externalID:       githubPR.ID,
 				externalBranch:   githubPR.HeadRefName,
+				diffStat:         state.DiffStat,
 			},
 		},
 		"retry update published changeset commit": {
@@ -293,13 +297,15 @@ func TestReconcilerProcess(t *testing.T) {
 			},
 			sourcerMetadata: githubPR,
 
-			wantGitserverCommit: true,
+			wantGitserverCommit:  true,
+			wantLoadFromCodeHost: true,
 
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				externalID:       githubPR.ID,
 				externalBranch:   githubPR.HeadRefName,
+				diffStat:         state.DiffStat,
 				// failureMessage should be nil
 			},
 		},
@@ -461,7 +467,12 @@ func TestReconcilerProcess(t *testing.T) {
 			sourcer := repos.NewFakeSourcer(nil, fakeSource)
 
 			// Run the reconciler
-			rec := reconciler{gitserverClient: gitClient, sourcer: sourcer, store: store}
+			rec := reconciler{
+				noSleepBeforeSync: true,
+				gitserverClient:   gitClient,
+				sourcer:           sourcer,
+				store:             store,
+			}
 			if err := rec.process(ctx, store, changeset); err != nil {
 				t.Fatalf("reconciler process failed: %s", err)
 			}
