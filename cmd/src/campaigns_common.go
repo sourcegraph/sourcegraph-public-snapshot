@@ -66,7 +66,7 @@ func newCampaignsApplyFlags(flagSet *flag.FlagSet, cacheDir string) *campaignsAp
 	)
 	flagSet.StringVar(
 		&caf.namespace, "namespace", "",
-		"The user of organization namespace to place the campaign within.",
+		"The user or organization namespace to place the campaign within.",
 	)
 	flagSet.StringVar(&caf.namespace, "n", "", "Alias for -namespace.")
 
