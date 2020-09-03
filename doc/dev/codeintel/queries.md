@@ -9,8 +9,8 @@ Precise code intelligence results are obtained by making [GraphQL requests](http
 
 A definitions request returns the set of locations that define the symbol at a particular location (defined uniquely by a repository, commit, path, line offset, and character offset). The sequence of actions required to resolve a definitions query is shown below (click to enlarge).
 
-<a href="/diagrams/definitions.svg" target="_blank">
-  <img src="/diagrams/definitions.svg">
+<a href="diagrams/definitions.svg" target="_blank">
+  <img src="diagrams/definitions.svg">
 </a>
 
 First, the repository, commit, and path inputs are used to determine the set of LSIF uploads that can answer queries for that data. Such an upload may have been indexed on another commit. In this case, the output of `git diff` between the two commits is used to adjust the input path and line number.
