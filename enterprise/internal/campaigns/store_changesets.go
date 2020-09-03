@@ -536,9 +536,9 @@ func (s *Store) CancelQueuedCampaignChangesets(ctx context.Context, campaignID i
 	q := sqlf.Sprintf(
 		cancelQueuedCampaignChangesetsFmtstr,
 		campaignID,
-		reconcilerMaxNumResets,
+		reconcilerMaxNumRetries,
 		canceledChangesetFailureMessage,
-		reconcilerMaxNumResets,
+		reconcilerMaxNumRetries,
 	)
 	return s.Store.Exec(ctx, q)
 }
