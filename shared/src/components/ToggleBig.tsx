@@ -54,9 +54,7 @@ export const ToggleBig: React.FunctionComponent<Props> = ({
     return (
         <button
             type="button"
-            className={classnames('toggle-big', className, {
-                'toggle-big--disabled': !!disabled,
-            })}
+            className={classnames('toggle-big', className)}
             id={id}
             title={title}
             value={value ? 1 : 0}
@@ -67,18 +65,31 @@ export const ToggleBig: React.FunctionComponent<Props> = ({
         >
             <span className="toggle-big__container">
                 <span
-                    className={`toggle-big__bar ${value ? 'toggle-big__bar--active' : ''} ${
-                        disabled ? 'toggle-big__bar--disabled' : ''
-                    }`}
+                    className={classnames('toggle-big__bar', {
+                        'toggle-big__bar--on': value,
+                        'toggle-big__bar--disabled': disabled,
+                    })}
                 />
-                <span className={`toggle-big__knob ${value ? 'toggle-big__knob--active' : ''}`}>
+                <span
+                    className={classnames('toggle-big__bar-shadow', {
+                        'toggle-big__bar-shadow--on': value,
+                    })}
+                />
+                <span
+                    className={classnames(
+                        'toggle-big__knob d-flex flex-column justify-content-center align-items-center',
+                        {
+                            'toggle-big__knob--on': value,
+                        }
+                    )}
+                >
                     {value ? (
-                        <Check size={16} className="toggle-big__icon" />
+                        <Check size={16} className="toggle-big__icon--on" />
                     ) : (
-                        <Close size={16} className="toggle-big__icon--disabled" />
+                        <Close size={16} className="toggle-big__icon" />
                     )}
                 </span>
-                <span className={`toggle-big__text ${!value ? 'toggle-big__text--disabled' : ''}`}>
+                <span className={classnames('toggle-big__text', { 'toggle-big__text--on': value })}>
                     {value ? 'Enabled' : 'Disabled'}
                 </span>
             </span>

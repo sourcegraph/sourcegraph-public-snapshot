@@ -9,20 +9,19 @@
 
     &__bar,
     &__bar-shadow {
-        opacity: 0.2;
         border-radius: 1rem;
-
         top: 2px;
         left: 0;
-
         height: 1rem;
         width: 100%;
-
         position: absolute;
     }
 
     &__bar {
+        opacity: 0.2;
         background-color: var(--text-muted);
+        transition: all 0.3s;
+        transition-property: background-color opacity;
 
         &--on {
             background-color: var(--primary);

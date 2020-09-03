@@ -1,19 +1,14 @@
 .toggle-big {
     background: none;
     border: none;
-
     display: inline-block;
     outline: none !important;
     padding: 0;
     position: relative;
     width: 6.625rem;
 
-    &--disabled {
+    &:disabled {
         cursor: not-allowed;
-    }
-
-    &:focus &__bar {
-        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
     }
 
     &__container {
@@ -22,65 +17,86 @@
         align-items: center;
     }
 
-    &__bar {
-        background-color: var(--secondary);
-
+    &__bar,
+    &__bar-shadow {
         border-radius: 1rem;
-
-        top: 2px;
-        left: 0;
-
         height: 2rem;
         width: 100%;
-
+        top: 2px;
+        left: 0;
         position: absolute;
+    }
 
-        &--active {
-            background-color: rgba(28, 126, 214, 0.2);
+    &__bar {
+        opacity: 0.2;
+        background-color: var(--text-muted);
+        transition: all 0.3s;
+        transition-property: background-color opacity;
+
+        &--on {
+            background-color: var(--primary);
+        }
+    }
+
+    &:hover &__bar {
+        opacity: 0.5;
+    }
+
+    &:focus &__bar {
+        opacity: 0.5;
+        background-color: var(--text-muted);
+
+        &--on {
+            background-color: var(--primary);
+        }
+    }
+
+    &__bar-shadow {
+        background-color: transparent;
+    }
+
+    &:focus &__bar-shadow {
+        opacity: 0.2;
+        box-shadow: 0 0 0 0.1875rem var(--text-muted);
+
+        &--on {
+            box-shadow: 0 0 0 0.1875rem var(--primary);
         }
     }
 
     &__knob {
         background-color: var(--text-muted);
-        opacity: 0.8;
         border-radius: 0.75rem;
-
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-
         height: 1.5rem;
         width: 1.5rem;
         margin-top: 0.375rem;
         left: 0.25rem;
-
         position: relative;
 
-        &--active {
+        &--on {
             background-color: var(--primary);
             transform: translate3d(4.625rem, 0, 0);
         }
     }
 
     &__icon {
-        fill: white;
+        fill: $secondary-light;
 
-        &--disabled {
-            fill: #e1e6ef;
+        &--on {
+            fill: $white;
         }
     }
 
     &__text {
-        color: var(--primary);
+        color: var(--text-muted);
         position: relative;
         font-size: 0.875rem;
         margin-top: 0.375rem;
-        right: 0.4375rem;
+        right: -0.6875rem;
 
-        &--disabled {
-            color: var(--text-muted);
-            right: -0.6875rem;
+        &--on {
+            color: var(--link-color);
+            right: 0.4375rem;
         }
     }
 }
