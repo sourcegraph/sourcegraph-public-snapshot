@@ -5,7 +5,7 @@ exports[`ToggleBig className 1`] = `
   className="c"
 >
   <button
-    className="toggle-big d-flex align-items-center c"
+    className="toggle-big toggle-big__container c"
     disabled={false}
     onClick={[Function]}
     onMouseOver={[Function]}
@@ -54,7 +54,7 @@ exports[`ToggleBig disabled 1`] = `
   onToggle={[Function]}
 >
   <button
-    className="toggle-big d-flex align-items-center"
+    className="toggle-big toggle-big__container"
     disabled={true}
     onClick={[Function]}
     onMouseOver={[Function]}
@@ -103,7 +103,7 @@ exports[`ToggleBig value is false 1`] = `
 >
   <button
     aria-checked={false}
-    className="toggle-big d-flex align-items-center"
+    className="toggle-big toggle-big__container"
     disabled={false}
     onClick={[Function]}
     onMouseOver={[Function]}
@@ -152,7 +152,7 @@ exports[`ToggleBig value is true 1`] = `
 >
   <button
     aria-checked={true}
-    className="toggle-big d-flex align-items-center"
+    className="toggle-big toggle-big__container"
     disabled={false}
     onClick={[Function]}
     onMouseOver={[Function]}
