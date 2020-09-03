@@ -5,9 +5,10 @@ package session
 import "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 
 var (
-	ResetMockSessionStore = session.ResetMockSessionStore
-	SetActor              = session.SetActor
-	SetData               = session.SetData
-	GetData               = session.GetData
-	InvalidateSessions    = session.InvalidateSessions
+	ResetMockSessionStore        = session.ResetMockSessionStore
+	SetActor                     = session.SetActor
+	SetData                      = session.SetData
+	GetData                      = session.GetData
+	InvalidateSessionsById       = session.InvalidateSessionsById
+	InvalidateSessionCurrentUser = session.InvalidateSessionCurrentUser
 )
