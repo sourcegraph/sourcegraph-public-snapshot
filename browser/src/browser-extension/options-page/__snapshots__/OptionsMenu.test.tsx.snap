@@ -32,7 +32,7 @@ exports[`OptionsMenu doesn't render the permissions alert on about://addons 1`] 
         />
       </button>
       <button
-        className="toggle "
+        className="toggle"
         onClick={[Function]}
         onMouseOver={[Function]}
         title="Toggle to disable extension"
@@ -40,10 +40,13 @@ exports[`OptionsMenu doesn't render the permissions alert on about://addons 1`] 
         value={1}
       >
         <span
-          className="toggle__bar toggle__bar--active "
+          className="toggle__bar toggle__bar--on"
         />
         <span
-          className="toggle__knob toggle__knob--active "
+          className="toggle__bar-shadow toggle__bar-shadow--on"
+        />
+        <span
+          className="toggle__knob toggle__knob--on"
         />
       </button>
     </div>
@@ -152,7 +155,7 @@ exports[`OptionsMenu doesn't render the permissions alert on chrome://extensions
         />
       </button>
       <button
-        className="toggle "
+        className="toggle"
         onClick={[Function]}
         onMouseOver={[Function]}
         title="Toggle to disable extension"
@@ -160,10 +163,13 @@ exports[`OptionsMenu doesn't render the permissions alert on chrome://extensions
         value={1}
       >
         <span
-          className="toggle__bar toggle__bar--active "
+          className="toggle__bar toggle__bar--on"
         />
         <span
-          className="toggle__knob toggle__knob--active "
+          className="toggle__bar-shadow toggle__bar-shadow--on"
+        />
+        <span
+          className="toggle__knob toggle__knob--on"
         />
       </button>
     </div>
@@ -272,7 +278,7 @@ exports[`OptionsMenu doesn't render the permissions alert on chrome://newtab 1`]
         />
       </button>
       <button
-        className="toggle "
+        className="toggle"
         onClick={[Function]}
         onMouseOver={[Function]}
         title="Toggle to disable extension"
@@ -280,10 +286,13 @@ exports[`OptionsMenu doesn't render the permissions alert on chrome://newtab 1`]
         value={1}
       >
         <span
-          className="toggle__bar toggle__bar--active "
+          className="toggle__bar toggle__bar--on"
         />
         <span
-          className="toggle__knob toggle__knob--active "
+          className="toggle__bar-shadow toggle__bar-shadow--on"
+        />
+        <span
+          className="toggle__knob toggle__knob--on"
         />
       </button>
     </div>
@@ -392,7 +401,7 @@ exports[`OptionsMenu renders a default state 1`] = `
         />
       </button>
       <button
-        className="toggle "
+        className="toggle"
         onClick={[Function]}
         onMouseOver={[Function]}
         title="Toggle to disable extension"
@@ -400,10 +409,13 @@ exports[`OptionsMenu renders a default state 1`] = `
         value={1}
       >
         <span
-          className="toggle__bar toggle__bar--active "
+          className="toggle__bar toggle__bar--on"
         />
         <span
-          className="toggle__knob toggle__knob--active "
+          className="toggle__bar-shadow toggle__bar-shadow--on"
+        />
+        <span
+          className="toggle__knob toggle__knob--on"
         />
       </button>
     </div>
@@ -512,7 +524,7 @@ exports[`OptionsMenu renders the current tab permissions alert 1`] = `
         />
       </button>
       <button
-        className="toggle "
+        className="toggle"
         onClick={[Function]}
         onMouseOver={[Function]}
         title="Toggle to disable extension"
@@ -520,10 +532,13 @@ exports[`OptionsMenu renders the current tab permissions alert 1`] = `
         value={1}
       >
         <span
-          className="toggle__bar toggle__bar--active "
+          className="toggle__bar toggle__bar--on"
         />
         <span
-          className="toggle__knob toggle__knob--active "
+          className="toggle__bar-shadow toggle__bar-shadow--on"
+        />
+        <span
+          className="toggle__knob toggle__knob--on"
         />
       </button>
     </div>
@@ -657,7 +672,7 @@ exports[`OptionsMenu renders the feature flags 1`] = `
         />
       </button>
       <button
-        className="toggle "
+        className="toggle"
         onClick={[Function]}
         onMouseOver={[Function]}
         title="Toggle to disable extension"
@@ -665,10 +680,13 @@ exports[`OptionsMenu renders the feature flags 1`] = `
         value={1}
       >
         <span
-          className="toggle__bar toggle__bar--active "
+          className="toggle__bar toggle__bar--on"
         />
         <span
-          className="toggle__knob toggle__knob--active "
+          className="toggle__bar-shadow toggle__bar-shadow--on"
+        />
+        <span
+          className="toggle__knob toggle__knob--on"
         />
       </button>
     </div>

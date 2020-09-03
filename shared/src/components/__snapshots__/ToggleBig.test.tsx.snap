@@ -16,17 +16,20 @@ exports[`ToggleBig className 1`] = `
       className="toggle-big__container"
     >
       <span
-        className="toggle-big__bar  "
+        className="toggle-big__bar"
       />
       <span
-        className="toggle-big__knob "
+        className="toggle-big__bar-shadow"
+      />
+      <span
+        className="toggle-big__knob d-flex flex-column justify-content-center align-items-center"
       >
         <Memo(CloseIcon)
-          className="toggle-big__icon--disabled"
+          className="toggle-big__icon"
           size={16}
         >
           <svg
-            className="mdi-icon toggle-big__icon--disabled"
+            className="mdi-icon toggle-big__icon"
             fill="currentColor"
             height={16}
             viewBox="0 0 24 24"
@@ -39,7 +42,7 @@ exports[`ToggleBig className 1`] = `
         </Memo(CloseIcon)>
       </span>
       <span
-        className="toggle-big__text toggle-big__text--disabled"
+        className="toggle-big__text"
       >
         Disabled
       </span>
@@ -54,7 +57,7 @@ exports[`ToggleBig disabled 1`] = `
   onToggle={[Function]}
 >
   <button
-    className="toggle-big toggle-big--disabled"
+    className="toggle-big"
     disabled={true}
     onClick={[Function]}
     onMouseOver={[Function]}
@@ -65,17 +68,20 @@ exports[`ToggleBig disabled 1`] = `
       className="toggle-big__container"
     >
       <span
-        className="toggle-big__bar  toggle-big__bar--disabled"
+        className="toggle-big__bar toggle-big__bar--disabled"
       />
       <span
-        className="toggle-big__knob "
+        className="toggle-big__bar-shadow"
+      />
+      <span
+        className="toggle-big__knob d-flex flex-column justify-content-center align-items-center"
       >
         <Memo(CloseIcon)
-          className="toggle-big__icon--disabled"
+          className="toggle-big__icon"
           size={16}
         >
           <svg
-            className="mdi-icon toggle-big__icon--disabled"
+            className="mdi-icon toggle-big__icon"
             fill="currentColor"
             height={16}
             viewBox="0 0 24 24"
@@ -88,7 +94,7 @@ exports[`ToggleBig disabled 1`] = `
         </Memo(CloseIcon)>
       </span>
       <span
-        className="toggle-big__text toggle-big__text--disabled"
+        className="toggle-big__text"
       >
         Disabled
       </span>
@@ -113,17 +119,20 @@ exports[`ToggleBig value is false 1`] = `
       className="toggle-big__container"
     >
       <span
-        className="toggle-big__bar  "
+        className="toggle-big__bar"
       />
       <span
-        className="toggle-big__knob "
+        className="toggle-big__bar-shadow"
+      />
+      <span
+        className="toggle-big__knob d-flex flex-column justify-content-center align-items-center"
       >
         <Memo(CloseIcon)
-          className="toggle-big__icon--disabled"
+          className="toggle-big__icon"
           size={16}
         >
           <svg
-            className="mdi-icon toggle-big__icon--disabled"
+            className="mdi-icon toggle-big__icon"
             fill="currentColor"
             height={16}
             viewBox="0 0 24 24"
@@ -136,7 +145,7 @@ exports[`ToggleBig value is false 1`] = `
         </Memo(CloseIcon)>
       </span>
       <span
-        className="toggle-big__text toggle-big__text--disabled"
+        className="toggle-big__text"
       >
         Disabled
       </span>
@@ -161,17 +170,20 @@ exports[`ToggleBig value is true 1`] = `
       className="toggle-big__container"
     >
       <span
-        className="toggle-big__bar toggle-big__bar--active "
+        className="toggle-big__bar toggle-big__bar--on"
       />
       <span
-        className="toggle-big__knob toggle-big__knob--active"
+        className="toggle-big__bar-shadow toggle-big__bar-shadow--on"
+      />
+      <span
+        className="toggle-big__knob d-flex flex-column justify-content-center align-items-center toggle-big__knob--on"
       >
         <Memo(CheckIcon)
-          className="toggle-big__icon"
+          className="toggle-big__icon--on"
           size={16}
         >
           <svg
-            className="mdi-icon toggle-big__icon"
+            className="mdi-icon toggle-big__icon--on"
             fill="currentColor"
             height={16}
             viewBox="0 0 24 24"
@@ -184,7 +196,7 @@ exports[`ToggleBig value is true 1`] = `
         </Memo(CheckIcon)>
       </span>
       <span
-        className="toggle-big__text "
+        className="toggle-big__text toggle-big__text--on"
       >
         Enabled
       </span>

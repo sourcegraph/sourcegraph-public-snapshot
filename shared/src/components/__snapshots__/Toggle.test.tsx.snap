@@ -12,10 +12,13 @@ exports[`Toggle className 1`] = `
     value={0}
   >
     <span
-      className="toggle__bar  "
+      className="toggle__bar"
     />
     <span
-      className="toggle__knob  "
+      className="toggle__bar-shadow"
+    />
+    <span
+      className="toggle__knob"
     />
   </button>
 </Toggle>
@@ -27,17 +30,21 @@ exports[`Toggle disabled 1`] = `
   onToggle={[Function]}
 >
   <button
-    className="toggle "
+    className="toggle"
+    disabled={true}
     onClick={[Function]}
     onMouseOver={[Function]}
     type="button"
     value={0}
   >
     <span
-      className="toggle__bar  toggle__bar--disabled"
+      className="toggle__bar toggle__bar--disabled"
     />
     <span
-      className="toggle__knob  toggle__knob--disabled"
+      className="toggle__bar-shadow"
+    />
+    <span
+      className="toggle__knob toggle__knob--disabled"
     />
   </button>
 </Toggle>
@@ -48,17 +55,20 @@ exports[`Toggle value is false 1`] = `
   value={false}
 >
   <button
-    className="toggle "
+    className="toggle"
     onClick={[Function]}
     onMouseOver={[Function]}
     type="button"
     value={0}
   >
     <span
-      className="toggle__bar  "
+      className="toggle__bar"
     />
     <span
-      className="toggle__knob  "
+      className="toggle__bar-shadow"
+    />
+    <span
+      className="toggle__knob"
     />
   </button>
 </Toggle>
@@ -69,17 +79,20 @@ exports[`Toggle value is true 1`] = `
   value={true}
 >
   <button
-    className="toggle "
+    className="toggle"
     onClick={[Function]}
     onMouseOver={[Function]}
     type="button"
     value={1}
   >
     <span
-      className="toggle__bar toggle__bar--active "
+      className="toggle__bar toggle__bar--on"
     />
     <span
-      className="toggle__knob toggle__knob--active "
+      className="toggle__bar-shadow toggle__bar-shadow--on"
+    />
+    <span
+      className="toggle__knob toggle__knob--on"
     />
   </button>
 </Toggle>
