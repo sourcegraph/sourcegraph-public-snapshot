@@ -20,7 +20,7 @@ Usage:
 
 Examples:
 
-    $ src campagins apply -f campaign.spec.yaml -namespace myorg
+    $ src campaigns apply -f campaign.spec.yaml -namespace myorg
 
 `
 
