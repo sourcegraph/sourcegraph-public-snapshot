@@ -67,10 +67,8 @@ func handleConfigOverrides() error {
 				return errors.Wrap(err, "reading SITE_CONFIG_FILE")
 			}
 			raw.Site = string(site)
-		}
 
-		if overrideSiteConfig != "" {
-			err := (&configurationSource{}).Write(ctx, raw)
+			err = (&configurationSource{}).Write(ctx, raw)
 			if err != nil {
 				return errors.Wrap(err, "writing site config overrides to database")
 			}
