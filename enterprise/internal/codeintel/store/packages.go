@@ -22,6 +22,7 @@ func (s *store) GetPackage(ctx context.Context, scheme, name, version string) (D
 			d.finished_at,
 			d.process_after,
 			d.num_resets,
+			d.num_failures,
 			d.repository_id,
 			d.repository_name,
 			d.indexer

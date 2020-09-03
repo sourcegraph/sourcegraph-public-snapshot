@@ -22,6 +22,7 @@ type Index struct {
 	FinishedAt     *time.Time `json:"finishedAt"`
 	ProcessAfter   *time.Time `json:"processAfter"`
 	NumResets      int        `json:"numResets"`
+	NumFailures    int        `json:"numFailures"`
 	RepositoryID   int        `json:"repositoryId"`
 	RepositoryName string     `json:"repositoryName"`
 	Rank           *int       `json:"placeInQueue"`
@@ -51,6 +52,7 @@ func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
 			&index.FinishedAt,
 			&index.ProcessAfter,
 			&index.NumResets,
+			&index.NumFailures,
 			&index.RepositoryID,
 			&index.RepositoryName,
 			&index.Rank,
@@ -96,6 +98,7 @@ func (s *store) GetIndexByID(ctx context.Context, id int) (Index, bool, error) {
 			u.finished_at,
 			u.process_after,
 			u.num_resets,
+			u.num_failures,
 			u.repository_id,
 			u.repository_name,
 			s.rank
@@ -163,6 +166,7 @@ func (s *store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 				u.finished_at,
 				u.process_after,
 				u.num_resets,
+				u.num_failures,
 				u.repository_id,
 				u.repository_name,
 				s.rank
@@ -268,6 +272,7 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.finished_at"),
 	sqlf.Sprintf("u.process_after"),
 	sqlf.Sprintf("u.num_resets"),
+	sqlf.Sprintf("u.num_failures"),
 	sqlf.Sprintf("u.repository_id"),
 	sqlf.Sprintf(`u.repository_name`),
 	sqlf.Sprintf("NULL"),

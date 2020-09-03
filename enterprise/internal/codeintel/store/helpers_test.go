@@ -71,12 +71,13 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 				finished_at,
 				process_after,
 				num_resets,
+				num_failures,
 				repository_id,
 				indexer,
 				num_parts,
 				uploaded_parts,
 				upload_size
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			upload.ID,
 			upload.Commit,
@@ -88,6 +89,7 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 			upload.FinishedAt,
 			upload.ProcessAfter,
 			upload.NumResets,
+			upload.NumFailures,
 			upload.RepositoryID,
 			upload.Indexer,
 			upload.NumParts,
@@ -128,8 +130,9 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 				finished_at,
 				process_after,
 				num_resets,
+				num_failures,
 				repository_id
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			index.ID,
 			index.Commit,
@@ -140,6 +143,7 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 			index.FinishedAt,
 			index.ProcessAfter,
 			index.NumResets,
+			index.NumFailures,
 			index.RepositoryID,
 		)
 
