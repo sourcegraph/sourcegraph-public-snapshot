@@ -244,7 +244,6 @@ func calcSyncInterval(now time.Time, lastSync time.Time, minSyncInterval time.Du
 		return minSyncInterval
 	}
 
-	log15.Info("Diffs", "added", len(diff.Added), "deleted", len(diff.Deleted), "modified", len(diff.Modified))
 	// If there is any change, sync again shortly
 	if len(diff.Added) > 0 || len(diff.Deleted) > 0 || len(diff.Modified) > 0 {
 		return minSyncInterval
