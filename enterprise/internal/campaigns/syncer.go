@@ -573,7 +573,6 @@ func syncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []
 			}
 
 			csEvents := c.Events()
-			log15.Warn("SetDerivedState", "changeset", c.Changeset.ID)
 			SetDerivedState(ctx, c.Changeset, csEvents)
 
 			// Deduplicate events per changeset based on their Kind+Key to avoid

@@ -207,7 +207,6 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 		if _, err = r.pushCommit(ctx, opts); err != nil {
 			return err
 		}
-		log15.Warn("commit pushed!")
 	}
 
 	// If we only need to update the diff, we're done, because we already
