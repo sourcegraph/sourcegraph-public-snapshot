@@ -46,6 +46,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	env.HandleHelpFlag()
 	logging.Init()
 	tracer.Init()
+	trace.Init(true)
 
 	clock := func() time.Time { return time.Now().UTC() }
 
