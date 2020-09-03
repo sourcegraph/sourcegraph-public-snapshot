@@ -113,11 +113,12 @@ func runSteps(ctx context.Context, client api.Client, repo *graphql.Repository, 
 			"--workdir", workDir,
 			"--mount", fmt.Sprintf("type=bind,source=%s,target=%s", volumeDir, workDir),
 			"--mount", fmt.Sprintf("type=bind,source=%s,target=%s,ro", hostTemp, containerTemp),
+			"--entrypoint", shell,
 		)
 		for k, v := range step.Env {
 			cmd.Args = append(cmd.Args, "-e", k+"="+v)
 		}
-		cmd.Args = append(cmd.Args, "--", step.image, shell, containerTemp)
+		cmd.Args = append(cmd.Args, "--", step.image, containerTemp)
 		cmd.Dir = volumeDir
 		cmd.Stdout = logger.PrefixWriter("stdout")
 		cmd.Stderr = logger.PrefixWriter("stderr")
@@ -273,9 +274,6 @@ func probeImageForShell(ctx context.Context, image string) (shell, tempfile stri
 	// same time by trying to run /bin/bash -c mktemp,
 	// followed by /bin/sh -c mktemp.
 
-	// First, let's set up the base command we'll be using.
-	args := []string{"run", "--rm", image}
-
 	// We'll also set up our error.
 	err = new(multierror.Error)
 
@@ -285,7 +283,9 @@ func probeImageForShell(ctx context.Context, image string) (shell, tempfile stri
 		stdout := new(bytes.Buffer)
 		stderr := new(bytes.Buffer)
 
-		cmd := exec.CommandContext(ctx, "docker", append(args, shell, "-c", "mktemp")...)
+		args := []string{"run", "--rm", "--entrypoint", shell, image, "-c", "mktemp"}
+
+		cmd := exec.CommandContext(ctx, "docker", args...)
 		cmd.Stdout = stdout
 		cmd.Stderr = stderr
 
