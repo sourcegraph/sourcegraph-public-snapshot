@@ -39,7 +39,7 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, 
 		StalledMaxAge:     30 * time.Second,
 		// Zero for now as we expect errors to be transient
 		// TODO: Confirm whether this means 0 or infinite retries
-		MaxNumResets: 0,
+		MaxNumRetries: 0,
 	})
 
 	return dbworker.NewWorker(ctx, store, dbworker.WorkerOptions{
