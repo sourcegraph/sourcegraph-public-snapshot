@@ -245,6 +245,13 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 
 // closeChangeset closes the given changeset on its code host if its ExternalState is OPEN.
 func (r *reconciler) closeChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset) (err error) {
+	ch.Closing = false
+	ch.FailureMessage = nil
+
+	if ch.ExternalState != campaigns.ChangesetExternalStateOpen {
+		return tx.UpdateChangeset(ctx, ch)
+	}
+
 	repo, extSvc, err := loadAssociations(ctx, tx, ch)
 	if err != nil {
 		return errors.Wrap(err, "failed to load associations")
@@ -261,9 +268,6 @@ func (r *reconciler) closeChangeset(ctx context.Context, tx *Store, ch *campaign
 	if err := ccs.CloseChangeset(ctx, cs); err != nil {
 		return errors.Wrap(err, "creating changeset")
 	}
-
-	ch.Closing = false
-	ch.FailureMessage = nil
 
 	// syncChangeset updates the changeset in the same transaction
 	return r.syncChangeset(ctx, tx, ch)

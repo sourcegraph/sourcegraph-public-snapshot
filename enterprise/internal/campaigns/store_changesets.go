@@ -564,6 +564,44 @@ SET
 WHERE id IN (SELECT id FROM changeset_ids);
 `
 
+// EnqueueChangesetsToClose updates all changesets that are owned by the given
+// campaign to set their reconciler status to 'queued' and the Closing boolean
+// to true.
+//
+// It does not update the changesets that are fully processed and already
+// closed/merged.
+//
+// This method will *block* if some of the changesets are currently being processed.
+func (s *Store) EnqueueChangesetsToClose(ctx context.Context, campaignID int64) error {
+	q := sqlf.Sprintf(
+		enqueueChangesetsToCloseFmtstr,
+		campaignID,
+		campaigns.ChangesetExternalStateClosed,
+		campaigns.ChangesetExternalStateMerged,
+	)
+	return s.Store.Exec(ctx, q)
+}
+
+const enqueueChangesetsToCloseFmtstr = `
+-- source: enterprise/internal/campaigns/store_changesets.go:EnqueueChangesetsToClose
+UPDATE
+  changesets
+SET
+  reconciler_state = 'queued',
+  failure_message = NULL,
+  num_resets = 0,
+  closing = TRUE
+WHERE
+  owned_by_campaign_id = %d
+AND
+  NOT (
+    reconciler_state = 'completed'
+	AND
+	(external_state = %s OR external_state = %s)
+  )
+;
+`
+
 func scanFirstChangeset(rows *sql.Rows, err error) (*campaigns.Changeset, bool, error) {
 	changesets, err := scanChangesets(rows, err)
 	if err != nil || len(changesets) == 0 {

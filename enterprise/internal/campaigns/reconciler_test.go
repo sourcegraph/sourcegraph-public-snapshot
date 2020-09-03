@@ -364,6 +364,37 @@ func TestReconcilerProcess(t *testing.T) {
 				diffStat: state.DiffStat,
 			},
 		},
+		"closing non-open changeset": {
+			currentSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+
+				title: "title",
+				body:  "body",
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       githubPR.ID,
+				externalBranch:   githubPR.HeadRefName,
+				externalState:    campaigns.ChangesetExternalStateClosed,
+				closing:          true,
+			},
+			// We return a closed GitHub PR here, but since it's a noop, we
+			// don't sync and thus don't set its attributes on the changeset.
+			sourcerMetadata: closedGitHubPR,
+
+			// Should be a noop
+			wantCloseOnCodeHost: false,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				closing:          false,
+
+				externalID:     closedGitHubPR.ID,
+				externalBranch: closedGitHubPR.HeadRefName,
+				externalState:  campaigns.ChangesetExternalStateClosed,
+			},
+		},
 	}
 
 	for name, tc := range tests {
