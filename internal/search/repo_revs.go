@@ -199,8 +199,8 @@ func (r *RepositoryRevisions) ExpandedRevSpecs(ctx context.Context) ([]string, e
 // git.CompileRefGlobs for information on how ref include/exclude globs are handled.
 func expandedRevSpec(ctx context.Context, r *RepositoryRevisions) ([]string, error) {
 	var (
-		globs    []git.RefGlob
 		revSpecs = map[string]struct{}{}
+		globs    []git.RefGlob
 	)
 	for _, rev := range r.Revs {
 		switch {
@@ -213,22 +213,17 @@ func expandedRevSpec(ctx context.Context, r *RepositoryRevisions) ([]string, err
 		}
 	}
 
-	var (
-		allRefs []git.Ref
-		err     error
-		rg      git.RefGlobs
-	)
 	listRefs := r.ListRefs
 	if listRefs == nil {
 		listRefs = git.ListRefs
 	}
 	if len(globs) > 0 {
-		allRefs, err = listRefs(ctx, r.GitserverRepo())
+		allRefs, err := listRefs(ctx, r.GitserverRepo())
 		if err != nil {
 			return nil, err
 		}
 
-		rg, err = git.CompileRefGlobs(globs)
+		rg, err := git.CompileRefGlobs(globs)
 		if err != nil {
 			return nil, err
 		}
@@ -244,6 +239,5 @@ func expandedRevSpec(ctx context.Context, r *RepositoryRevisions) ([]string, err
 	for revSpec := range revSpecs {
 		revSpecsList = append(revSpecsList, revSpec)
 	}
-
 	return revSpecsList, nil
 }
