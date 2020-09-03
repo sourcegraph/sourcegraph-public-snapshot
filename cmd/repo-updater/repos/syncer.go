@@ -69,7 +69,7 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOpti
 	s.initialUnmodifiedDiffFromStore(pctx, store)
 
 	// TODO: Make numHandlers configurable
-	worker, cleanup := NewSyncWorker(pctx, db, &syncHandler{
+	worker, resetter, cleanup := NewSyncWorker(pctx, db, &syncHandler{
 		syncer:          s,
 		store:           store,
 		minSyncInterval: opts.MinSyncInterval,
@@ -78,6 +78,9 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOpti
 
 	go worker.Start()
 	defer worker.Stop()
+
+	go resetter.Start()
+	defer resetter.Stop()
 
 	for pctx.Err() == nil {
 		ctx, cancel := contextWithSignalCancel(pctx, s.enqueueSignal.Watch())
