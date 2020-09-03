@@ -187,6 +187,11 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 		return errors.Wrap(err, "syncer.sync.sourced")
 	}
 
+	// User added external services should only sync public code
+	if svc.NamespaceUserID > 0 {
+		sourced = sourced.Filter(func(r *Repo) bool { return !r.Private })
+	}
+
 	var storedServiceRepos Repos
 	// Fetch repos from our DB related to externalServiceID
 	if storedServiceRepos, err = store.ListRepos(ctx, StoreListReposArgs{ExternalServiceID: externalServiceID}); err != nil {
