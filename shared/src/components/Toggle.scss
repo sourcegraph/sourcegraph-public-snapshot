@@ -1,22 +1,16 @@
 .toggle {
     background: none;
     border: none;
-    cursor: pointer;
     display: inline-block;
     outline: none !important;
     padding: 0;
     position: relative;
     width: 2rem;
 
-    &:focus &__bar {
-        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-    }
-
-    &__bar {
-        background-color: var(--secondary);
-
+    &__bar,
+    &__bar-shadow {
+        opacity: 0.2;
         border-radius: 1rem;
-        cursor: pointer;
 
         top: 2px;
         left: 0;
@@ -25,15 +19,45 @@
         width: 100%;
 
         position: absolute;
+    }
 
-        &--active {
-            background-color: rgba(28, 126, 214, 0.2);
+    &__bar {
+        background-color: var(--text-muted);
+
+        &--on {
+            background-color: var(--primary);
+        }
+    }
+
+    &:hover:enabled &__bar {
+        opacity: 0.5;
+    }
+
+    &:focus &__bar {
+        opacity: 0.5;
+        background-color: var(--text-muted);
+
+        &--on {
+            background-color: var(--primary);
+        }
+    }
+
+    &__bar-shadow {
+        background-color: transparent;
+    }
+
+    &:focus &__bar-shadow {
+        opacity: 0.2;
+        box-shadow: 0 0 0 0.1875rem var(--text-muted);
+
+        &--on {
+            box-shadow: 0 0 0 0.1875rem var(--primary);
         }
     }
 
     &__knob {
         background-color: var(--text-muted);
-        opacity: 0.8;
+
         border-radius: 0.375rem;
         display: block;
 
@@ -44,17 +68,13 @@
 
         position: relative;
 
-        &--active {
+        &--on {
             background-color: var(--primary);
             transform: translate3d(1rem, 0, 0);
         }
 
         &--disabled {
-            background-color: rgba(43, 55, 80, 0.2);
-
-            &--active {
-                background-color: rgba(28, 126, 214, 0.2);
-            }
+            opacity: 0.2;
         }
     }
 }

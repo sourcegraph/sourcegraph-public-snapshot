@@ -1,4 +1,5 @@
 import * as React from 'react'
+import classnames from 'classnames'
 
 interface Props {
     /** The initial value. */
@@ -51,23 +52,31 @@ export const Toggle: React.FunctionComponent<Props> = ({
     return (
         <button
             type="button"
-            className={`toggle ${className || ''}`}
+            className={classnames('toggle', className, {})}
             id={id}
             title={title}
             value={value ? 1 : 0}
             onClick={onClick}
             tabIndex={tabIndex}
             onMouseOver={onMouseOver}
+            disabled={disabled}
         >
             <span
-                className={`toggle__bar ${value ? 'toggle__bar--active' : ''} ${
-                    disabled ? 'toggle__bar--disabled' : ''
-                }`}
+                className={classnames('toggle__bar', {
+                    'toggle__bar--on': value,
+                    'toggle__bar--disabled': disabled,
+                })}
             />
             <span
-                className={`toggle__knob ${value ? 'toggle__knob--active' : ''} ${
-                    disabled ? (value ? 'toggle__knob--disabled--active' : 'toggle__knob--disabled') : ''
-                }`}
+                className={classnames('toggle__bar-shadow', {
+                    'toggle__bar-shadow--on': value,
+                })}
+            />
+            <span
+                className={classnames('toggle__knob', {
+                    'toggle__knob--on': value,
+                    'toggle__knob--disabled': disabled,
+                })}
             />
         </button>
     )
