@@ -115,29 +115,17 @@ WHERE external_service_id IN (
 	})
 
 	promauto.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_repoupdater_user_repos_average",
-		Help: "The average number of repositories added by users",
+		Name: "src_repoupdater_user_with_external_services_total",
+		Help: "The total number of users who have added external services",
 	}, func() float64 {
 		count, err := scanCount(`
--- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_user_repos_average
-WITH users AS (
-	SELECT DISTINCT(namespace_user_id) AS total FROM external_services
-	WHERE namespace_user_id IS NOT NULL
-)
-
-SELECT
-	CASE MAX(users.total)
-		WHEN 0 THEN 0
-		ELSE COUNT(*) / MAX(users.total)
-	END AS average
-FROM external_service_repos, users
-WHERE external_service_id IN (
-		SELECT DISTINCT(id) FROM external_services
-		WHERE namespace_user_id IS NOT NULL
-	)
+-- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_user_with_external_services_total
+SELECT DISTINCT(namespace_user_id) AS total
+FROM external_services
+WHERE namespace_user_id IS NOT NULL
 `)
 		if err != nil {
-			log15.Error("Failed to get average user repositories", "err", err)
+			log15.Error("Failed to get total users with external services", "err", err)
 			return 0
 		}
 		return count
