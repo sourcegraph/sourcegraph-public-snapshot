@@ -41,9 +41,9 @@ func printConfigValidation() {
 	}
 }
 
-// handleConfigOverrides handles allowing dev environments to forcibly override
-// the configuration in the database upon startup. This is used to e.g. ensure
-// dev environments have a consistent configuration and to load secrets from a
+// handleConfigOverrides allows environments to forcibly override the
+// configuration in the database upon startup. This is used to e.g. ensure dev
+// environments have a consistent configuration and to load secrets from a
 // separate private repository.
 //
 // As this method writes to the configuration DB, it should be invoked before
@@ -55,7 +55,7 @@ func handleConfigOverrides() error {
 	overrideExtSvcConfig := os.Getenv("EXTSVC_CONFIG_FILE")
 	overrideGlobalSettings := os.Getenv("GLOBAL_SETTINGS_FILE")
 	overrideAny := overrideSiteConfig != "" || overrideExtSvcConfig != "" || overrideGlobalSettings != ""
-	if overrideAny || conf.IsDev(conf.DeployType()) {
+	if overrideAny {
 		raw, err := (&configurationSource{}).Read(ctx)
 		if err != nil {
 			return errors.Wrap(err, "reading existing config for applying overrides")
