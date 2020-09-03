@@ -182,7 +182,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
     },
 ]
 
-const { add } = storiesOf('web/FileDiffNode', module).addDecorator(story => (
+const { add } = storiesOf('web/diffs/FileDiffNode', module).addDecorator(story => (
     <div className="p-3 container">{story()}</div>
 ))
 
