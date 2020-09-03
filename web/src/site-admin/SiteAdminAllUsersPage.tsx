@@ -16,7 +16,7 @@ import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
 import { setUserEmailVerified } from '../user/settings/backend'
-import { deleteUser, fetchAllUsers, randomizeUserPassword, setUserIsSiteAdmin } from './backend'
+import { deleteUser, fetchAllUsers, randomizeUserPassword, setUserIsSiteAdmin, invalidateSessionsById } from './backend'
 import { ErrorAlert } from '../components/alerts'
 import * as H from 'history'
 import { AuthenticatedUser } from '../auth'
@@ -113,6 +113,17 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                         <Link className="btn btn-sm btn-secondary" to={`${userURL(this.props.node.username)}/settings`}>
                             <SettingsIcon className="icon-inline" /> Settings
                         </Link>{' '}
+                        {this.props.node.id !== this.props.authenticatedUser.id && (
+                            <button
+                                type="button"
+                                className="btn btn-sm btn-secondary"
+                                onClick={this.invalidateSessions}
+                                disabled={this.state.loading}
+                                data-tooltip="Log out user"
+                            >
+                                Log out
+                            </button>
+                        )}{' '}
                         {window.context.resetPasswordEnabled && (
                             <button
                                 type="button"
@@ -238,6 +249,24 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                     this.setState({
                         loading: false,
                         resetPasswordURL,
+                    })
+                },
+                error => this.setState({ loading: false, errorDescription: asError(error).message })
+            )
+    }
+
+    private invalidateSessions = (): void => {
+        if (!window.confirm(`Log ${this.props.node.username} out of Sourcegraph?`)) {
+            return
+        }
+
+        this.setState({ loading: true })
+        invalidateSessionsById(this.props.node.id)
+            .toPromise()
+            .then(
+                () => {
+                    this.setState({
+                        loading: false,
                     })
                 },
                 error => this.setState({ loading: false, errorDescription: asError(error).message })

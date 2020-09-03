@@ -455,6 +455,12 @@ type Mutation {
     # restarting the site.
     setUserIsSiteAdmin(userID: ID!, siteAdmin: Boolean!): EmptyResponse
     """
+    Invalidates all sessions belonging to a user.
+
+    Only site admins may perform this mutation.
+    """
+    invalidateSessionsById(userID: ID!): EmptyResponse
+    """
     Reloads the site by restarting the server. This is not supported for all deployment
     types. This may cause downtime.
 

@@ -513,6 +513,22 @@ export function setUserIsSiteAdmin(userID: GQL.ID, siteAdmin: boolean): Observab
     )
 }
 
+export function invalidateSessionsById(userID: GQL.ID): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation InvalidateSessionsById($userID: ID!) {
+                invalidateSessionsById(userID: $userID) {
+                    alwaysNil
+                }
+            }
+        `,
+        { userID }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(() => undefined)
+    )
+}
+
 export function randomizeUserPassword(user: GQL.ID): Observable<GQL.IRandomizeUserPasswordResult> {
     return mutateGraphQL(
         gql`
