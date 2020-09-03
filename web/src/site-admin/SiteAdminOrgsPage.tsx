@@ -151,7 +151,7 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
                 <PageTitle title="Organizations - Admin" />
                 <div className="d-flex justify-content-between align-items-center mb-3">
                     <h2 className="mb-0">Organizations</h2>
-                    <Link to="/organizations/new" className="btn btn-primary">
+                    <Link to="/organizations/new" className="btn btn-primary test-create-org-button">
                         <AddIcon className="icon-inline" /> Create organization
                     </Link>
                 </div>
