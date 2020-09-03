@@ -23,19 +23,15 @@ const { add } = storiesOf('shared/Toggle', module).addDecorator(story => {
 add(
     'Interactive',
     () => {
-        const ToggleInteractive: React.FC = () => {
-            const [value, setValue] = useState(false)
+        const [value, setValue] = useState(false)
 
-            const onToggle = (value: boolean) => setValue(value)
+        const onToggle = (value: boolean) => setValue(value)
 
-            return (
-                <div className="d-flex align-items-center">
-                    <Toggle value={value} onToggle={onToggle} title="Hello" className="mr-2" /> Value is {String(value)}
-                </div>
-            )
-        }
-
-        return <ToggleInteractive />
+        return (
+            <div className="d-flex align-items-center">
+                <Toggle value={value} onToggle={onToggle} title="Hello" className="mr-2" /> Value is {String(value)}
+            </div>
+        )
     },
     {
         chromatic: {
