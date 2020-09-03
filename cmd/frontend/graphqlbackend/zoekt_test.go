@@ -70,7 +70,8 @@ func TestIndexedSearch(t *testing.T) {
 	defer cancel()
 	type args struct {
 		ctx             context.Context
-		query           *search.TextPatternInfo
+		query           string
+		patternInfo     *search.TextPatternInfo
 		repos           []*search.RepositoryRevisions
 		useFullDeadline bool
 		results         []zoekt.FileMatch
@@ -105,7 +106,7 @@ func TestIndexedSearch(t *testing.T) {
 			name: "no matches",
 			args: args{
 				ctx:             context.Background(),
-				query:           &search.TextPatternInfo{},
+				patternInfo:     &search.TextPatternInfo{},
 				repos:           reposHEAD,
 				useFullDeadline: false,
 				since:           func(time.Time) time.Duration { return time.Second - time.Millisecond },
@@ -118,7 +119,7 @@ func TestIndexedSearch(t *testing.T) {
 			name: "no matches timeout",
 			args: args{
 				ctx:             context.Background(),
-				query:           &search.TextPatternInfo{},
+				patternInfo:     &search.TextPatternInfo{},
 				repos:           reposHEAD,
 				useFullDeadline: false,
 				since:           func(time.Time) time.Duration { return time.Minute },
@@ -131,7 +132,7 @@ func TestIndexedSearch(t *testing.T) {
 			name: "context timeout",
 			args: args{
 				ctx:             zeroTimeoutCtx,
-				query:           &search.TextPatternInfo{},
+				patternInfo:     &search.TextPatternInfo{},
 				repos:           reposHEAD,
 				useFullDeadline: true,
 				since:           func(time.Time) time.Duration { return 0 },
@@ -144,7 +145,7 @@ func TestIndexedSearch(t *testing.T) {
 			name: "results",
 			args: args{
 				ctx:             context.Background(),
-				query:           &search.TextPatternInfo{FileMatchLimit: 100},
+				patternInfo:     &search.TextPatternInfo{FileMatchLimit: 100},
 				repos:           makeRepositoryRevisions("foo/bar", "foo/foobar"),
 				useFullDeadline: false,
 				results: []zoekt.FileMatch{
@@ -202,7 +203,7 @@ func TestIndexedSearch(t *testing.T) {
 			name: "results multi-branch",
 			args: args{
 				ctx:             context.Background(),
-				query:           &search.TextPatternInfo{FileMatchLimit: 100},
+				patternInfo:     &search.TextPatternInfo{FileMatchLimit: 100},
 				repos:           makeRepositoryRevisions("foo/bar@HEAD:dev:main"),
 				useFullDeadline: false,
 				results: []zoekt.FileMatch{
@@ -241,7 +242,7 @@ func TestIndexedSearch(t *testing.T) {
 			name: "split branch",
 			args: args{
 				ctx:             context.Background(),
-				query:           &search.TextPatternInfo{FileMatchLimit: 100},
+				patternInfo:     &search.TextPatternInfo{FileMatchLimit: 100},
 				repos:           makeRepositoryRevisions("foo/bar@HEAD:unindexed"),
 				useFullDeadline: false,
 				results: []zoekt.FileMatch{
@@ -258,17 +259,48 @@ func TestIndexedSearch(t *testing.T) {
 			},
 			wantMatchInputRevs: []string{"HEAD"},
 		},
+		{
+			// Fallback to unindexed search if the query contains ref-globs.
+			name: "ref-glob with explicit /*",
+			args: args{
+				ctx:             context.Background(),
+				query:           "repo:foo/bar@*refs/heads/*",
+				patternInfo:     &search.TextPatternInfo{FileMatchLimit: 100},
+				repos:           makeRepositoryRevisions("foo/bar@HEAD"),
+				useFullDeadline: false,
+				results:         []zoekt.FileMatch{},
+			},
+			wantUnindexed:      makeRepositoryRevisions("foo/bar@HEAD"),
+			wantMatchURLs:      nil,
+			wantMatchInputRevs: nil,
+			wantLimitHit:       false,
+		},
+		{
+			name: "ref-glob with implicit /*",
+			args: args{
+				ctx:             context.Background(),
+				query:           "repo:foo/bar@*refs/tags",
+				patternInfo:     &search.TextPatternInfo{FileMatchLimit: 100},
+				repos:           makeRepositoryRevisions("foo/bar@HEAD"),
+				useFullDeadline: false,
+				results:         []zoekt.FileMatch{},
+			},
+			wantUnindexed:      makeRepositoryRevisions("foo/bar@HEAD"),
+			wantMatchURLs:      nil,
+			wantMatchInputRevs: nil,
+			wantLimitHit:       false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q, err := query.ParseAndCheck("")
+			q, err := query.ParseAndCheck(tt.args.query)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			args := &search.TextParameters{
 				Query:           q,
-				PatternInfo:     tt.args.query,
+				PatternInfo:     tt.args.patternInfo,
 				Repos:           tt.args.repos,
 				UseFullDeadline: tt.args.useFullDeadline,
 				Zoekt: &searchbackend.Zoekt{
