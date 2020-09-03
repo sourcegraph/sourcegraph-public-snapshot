@@ -217,7 +217,6 @@ func expandedRevSpec(ctx context.Context, r *RepositoryRevisions) ([]string, err
 			revSpecs[rev.RevSpec] = struct{}{}
 		}
 	}
-
 	if len(globs) > 0 {
 		allRefs, err := listRefs(ctx, r.GitserverRepo())
 		if err != nil {
