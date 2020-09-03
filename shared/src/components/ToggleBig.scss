@@ -31,7 +31,7 @@
         opacity: 0.2;
         background-color: var(--text-muted);
         transition: all 0.3s;
-        transition-property: background-color opacity;
+        transition-property: opacity;
 
         &--on {
             background-color: var(--primary);
