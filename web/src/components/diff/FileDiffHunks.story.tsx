@@ -51,7 +51,7 @@ export const DEMO_HUNKS: FileDiffHunkFields[] = [
     },
 ]
 
-const { add } = storiesOf('web/FileDiffHunks', module).addDecorator(story => (
+const { add } = storiesOf('web/diffs/FileDiffHunks', module).addDecorator(story => (
     <div className="p-3 container">{story()}</div>
 ))
 
