@@ -31,6 +31,10 @@ type reconciler struct {
 	gitserverClient GitserverClient
 	sourcer         repos.Sourcer
 	store           *Store
+
+	// This is used to disable a time.Sleep in updateChangeset so that the
+	// tests don't run slower.
+	noSleepBeforeSync bool
 }
 
 // HandlerFunc returns a dbworker.HandlerFunc that can be passed to a
@@ -222,7 +226,9 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 		// That's why we give them 3 seconds to update the changesets.
 		//
 		// Why 3 seconds? Well... 1 or 2 seem to be too short and 4 too long?
-		time.Sleep(3 * time.Second)
+		if !r.noSleepBeforeSync {
+			time.Sleep(3 * time.Second)
+		}
 		return r.syncChangeset(ctx, tx, ch)
 	}
 
