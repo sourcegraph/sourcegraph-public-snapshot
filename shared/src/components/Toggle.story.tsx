@@ -34,6 +34,10 @@ add('Interactive', () => {
     }
 
     return <ToggleInteractive />
+}, {
+    chromatic: {
+        disable: true,
+    },
 })
 
 add('On', () => <Toggle value={true} onToggle={onToggle} />)
