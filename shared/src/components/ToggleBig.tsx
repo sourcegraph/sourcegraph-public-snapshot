@@ -54,7 +54,7 @@ export const ToggleBig: React.FunctionComponent<Props> = ({
     return (
         <button
             type="button"
-            className={classnames('toggle-big d-flex align-items-center', className)}
+            className={classnames('toggle-big toggle-big__container', className)}
             id={id}
             title={title}
             value={value ? 1 : 0}

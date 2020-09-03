@@ -11,6 +11,12 @@
         cursor: not-allowed;
     }
 
+    &__container {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+    }
+
     &__bar,
     &__bar-shadow {
         border-radius: 1rem;
