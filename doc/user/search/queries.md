@@ -150,7 +150,6 @@ The following keywords are only used for **commit diff** and **commit message** 
 To search revisions other than the default branch, specify the revisions by either appending them to the 
 `repo:` filter  or by listing them separately with the `rev:` filter. This means:
 
-
 `repo:github.com/myteam/abc@<revisions>`
 
 is equivalent to
