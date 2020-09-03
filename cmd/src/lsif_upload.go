@@ -238,7 +238,7 @@ Examples:
 			fmt.Println(string(serialized))
 		} else {
 			fmt.Printf("LSIF dump successfully uploaded for processing.\n")
-			fmt.Printf("View processing status at %s.\n", uploadURL)
+			fmt.Printf("View processing status at %s\n", uploadURL)
 		}
 
 		if *flags.open {
