@@ -3,7 +3,7 @@ name: Goreleaser
 on:
   push:
     tags:
-      - '*'
+      - '!latest'
 
 jobs:
   goreleaser:
