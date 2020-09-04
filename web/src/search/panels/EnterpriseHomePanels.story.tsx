@@ -10,7 +10,7 @@ const { add } = storiesOf('web/search/panels/EnterpriseHomePanels', module).addP
         type: 'figma',
         url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
     },
-    chromatic: { viewports: [480, 769, 993, 1200] },
+    chromatic: { viewports: [480, 1200] },
 })
 
 const props = {
