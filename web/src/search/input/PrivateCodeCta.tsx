@@ -14,6 +14,7 @@ export const PrivateCodeCta: React.FunctionComponent<Props> = ({ className }) =>
                     Bitbucket and local installations of Git, Perforce, Subversion and other code repositories."
         linkText="Install now"
         href="https://docs.sourcegraph.com/"
+        googleAnalytics={true}
     />
 )
 

@@ -164,6 +164,7 @@ exports[`CampaignsDotComPage renders 1`] = `
         <PrivateCodeCta>
           <Memo(CtaBanner)
             bodyText="Set up a self-hosted Sourcegraph instance to search your private repositories on GitHub, GitLab, Bitbucket and local installations of Git, Perforce, Subversion and other code repositories."
+            googleAnalytics={true}
             href="https://docs.sourcegraph.com/"
             icon={<Memo />}
             linkText="Install now"
