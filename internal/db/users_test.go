@@ -623,6 +623,47 @@ func TestUsers_Delete(t *testing.T) {
 	}
 }
 
+func TestUsers_InvalidateSessions(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	newUsers := []NewUser{
+		{
+			Email:           "alice@example.com",
+			Username:        "alice",
+			EmailIsVerified: true,
+		},
+		{
+			Email:           "bob@example.com",
+			Username:        "bob",
+			EmailIsVerified: true,
+		},
+	}
+
+	for _, newUser := range newUsers {
+		_, err := Users.Create(ctx, newUser)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	users, err := Users.GetByUsernames(ctx, "alice", "bob")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(users) != 2 {
+		t.Fatalf("got %d users, but want 2", len(users))
+	}
+	for i := range users {
+		if err := Users.InvalidateSessionsByID(ctx, users[i].ID); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
 func normalizeUsers(users []*types.User) []*types.User {
 	for _, u := range users {
 		u.CreatedAt = u.CreatedAt.Local().Round(time.Second)
