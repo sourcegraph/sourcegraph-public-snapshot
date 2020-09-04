@@ -159,7 +159,10 @@ If you lack read access to a repository, you can only see [limited information a
 
 ## Updating a campaign
 
-You can edit a campaign's name, description, and any other part of its campaign spec at any time.
+Campaigns are identified by their name. It must be unique within a single namespace (your user account on Sourcegraph, or an organization you are a member of).
+Updating a campaign works by targetting an **existing** campaign in the namespace by specifying the name in the spec. If the name matches an existing campaign, it will update the campaign.
+
+You can edit a the campaign's description, and any other part of its campaign spec at any time.
 
 To update a campaign, you need [admin access to the campaign](managing_access.md#campaign-access-for-each-permission-level), and [write access to all affected repositories](managing_access.md#repository-permissions-for-campaigns) with published changesets.
 
