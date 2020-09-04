@@ -5,60 +5,60 @@ exports[`ExtensionCard renders 1`] = `
   className="d-flex"
 >
   <div
-    className="extension-card card"
+    className="extension-card card "
   >
     <div
-      className="card-body extension-card__body d-flex flex-column position-relative"
+      className="card-body extension-card__body d-flex flex-row position-relative"
       onClick={[Function]}
     >
       <div
-        className="d-flex"
+        className="flex-shrink-0"
       >
         <img
           className="extension-card__icon mr-2"
           src="data:image/png,abcd"
         />
+      </div>
+      <div
+        className="text-truncate w-100"
+      >
         <div
-          className="text-truncate w-100"
+          className="d-flex align-items-center"
+        >
+          <h4
+            className="card-title extension-card__body-title mb-0 mr-1 text-truncate  flex-1"
+          >
+            <a
+              className="extension-card__name"
+              href="/extensions/x/y"
+              onClick={[Function]}
+            >
+              y
+            </a>
+            <span
+              className="extension-card__publisher font-weight-normal text-muted"
+            >
+               
+              by 
+              x
+            </span>
+          </h4>
+        </div>
+        <div
+          className="mt-1"
         >
           <div
-            className="d-flex align-items-center"
+            className="text-muted text-truncate"
           >
-            <h4
-              className="card-title extension-card__body-title mb-0 mr-1 text-truncate font-weight-normal flex-1"
-            >
-              <a
-                className="stretched-link"
-                href="extensions/x/y"
-              >
-                <span
-                  className="text-muted"
-                >
-                  x
-                  /
-                </span>
-                <strong>
-                  y
-                </strong>
-              </a>
-            </h4>
-            <span
-              className="text-muted small"
-            >
-              Disabled
-            </span>
-          </div>
-          <div
-            className="mt-1"
-          >
-            <div
-              className="text-muted text-truncate"
-            >
-              d
-            </div>
+            d
           </div>
         </div>
       </div>
+      <span
+        className="text-muted small"
+      >
+        Disabled
+      </span>
     </div>
   </div>
 </div>

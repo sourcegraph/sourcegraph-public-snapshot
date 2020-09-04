@@ -1,4 +1,4 @@
-import { applyExtensionsQuery } from './ExtensionsList'
+import { applyExtensionsQuery } from './ExtensionRegistry'
 
 describe('applyExtensionsQuery', () => {
     test('#installed', () =>
