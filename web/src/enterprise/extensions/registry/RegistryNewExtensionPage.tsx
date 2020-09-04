@@ -165,8 +165,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                             >
                                 Learn more
                             </a>{' '}
-                            about authoring Sourcegraph extensions{' '}
-                            <HelpCircleOutline size={18} className="icon-inline" />
+                            about authoring Sourcegraph extensions <HelpCircleOutline className="icon-inline" />
                         </div>
                         <Form onSubmit={this.onSubmit}>
                             <RegistryPublisherFormGroup

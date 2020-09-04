@@ -81,28 +81,30 @@ export const ExtensionsArea: React.FunctionComponent<ExtensionsAreaProps> = prop
     return (
         <div className="extensions-area">
             <Breadcrumbs breadcrumbs={breadcrumbs} />
-            <ExtensionsAreaHeader
-                {...props}
-                {...context}
-                actionButtons={props.extensionsAreaHeaderActionButtons}
-                isPrimaryHeader={props.location.pathname === props.match.path}
-            />
-            <Switch>
-                {props.routes.map(
-                    /* eslint-disable react/jsx-no-bind */
-                    ({ path, exact, condition = () => true, render }) =>
-                        condition(context) && (
-                            <Route
-                                key="hardcoded-key"
-                                path={props.match.url + path}
-                                exact={exact}
-                                render={routeComponentProps => render({ ...context, ...routeComponentProps })}
-                            />
-                        )
-                    /* eslint-enable react/jsx-no-bind */
-                )}
-                <Route key="hardcoded-key" component={NotFoundPage} />
-            </Switch>
+            <div className="web-content">
+                <ExtensionsAreaHeader
+                    {...props}
+                    {...context}
+                    actionButtons={props.extensionsAreaHeaderActionButtons}
+                    isPrimaryHeader={props.location.pathname === props.match.path}
+                />
+                <Switch>
+                    {props.routes.map(
+                        /* eslint-disable react/jsx-no-bind */
+                        ({ path, exact, condition = () => true, render }) =>
+                            condition(context) && (
+                                <Route
+                                    key="hardcoded-key"
+                                    path={props.match.url + path}
+                                    exact={exact}
+                                    render={routeComponentProps => render({ ...context, ...routeComponentProps })}
+                                />
+                            )
+                        /* eslint-enable react/jsx-no-bind */
+                    )}
+                    <Route key="hardcoded-key" component={NotFoundPage} />
+                </Switch>
+            </div>
         </div>
     )
 }

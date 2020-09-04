@@ -95,7 +95,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
         if (filteredCategories[category].length > 0) {
             categorySections.push(
                 <div key={category} className="mt-1">
-                    <h3 className="extensions-list__category">{category}</h3>
+                    <h3 className="extensions-list__category font-weight-bold">{category}</h3>
                     <div className="extensions-list__cards mt-1">
                         {filteredCategories[category].map(extensionId => (
                             <ExtensionCard
