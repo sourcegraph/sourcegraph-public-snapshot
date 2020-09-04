@@ -116,7 +116,6 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
                                                 ? extension.registryExtension.extensionIDWithoutRegistry
                                                 : extension.id
                                         }`}
-                                        className=""
                                     >
                                         <strong>{name}</strong>
                                     </Link>

@@ -151,7 +151,7 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
 
                         const { data, errors } = resultOrErrorOrLoading
 
-                        if (!data || !data.extensionRegistry || !data.extensionRegistry.extensions) {
+                        if (!data?.extensionRegistry?.extensions) {
                             return createAggregateError(errors)
                         }
 
