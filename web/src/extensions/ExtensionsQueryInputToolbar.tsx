@@ -13,7 +13,7 @@ interface Props {
     selectedCategories: ExtensionCategory[]
 
     onSelectCategories: (
-        categories: ExtensionCategory[] | ((categories: ExtensionCategory[]) => ExtensionCategory[])
+        categoriesOrCallback: ExtensionCategory[] | ((categories: ExtensionCategory[]) => ExtensionCategory[])
     ) => void
 
     enablementFilter: ExtensionsEnablement
