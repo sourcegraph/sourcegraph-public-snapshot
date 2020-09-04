@@ -31,13 +31,14 @@ description: This campaign changes all `fmt.Sprintf` calls to `strconv.Iota`.
 ```
 
 ```yaml
-description: "This campaign changes all imports from
-
-`gopkg.in/sourcegraph/sourcegraph-in-x86-asm`
-
-to
-
-`github.com/sourcegraph/sourcegraph-in-x86-asm`"
+description: |
+  This campaign changes all imports from
+  
+  `gopkg.in/sourcegraph/sourcegraph-in-x86-asm`
+  
+  to
+  
+  `github.com/sourcegraph/sourcegraph-in-x86-asm`
 ```
 
 ## [`on`](#on)
