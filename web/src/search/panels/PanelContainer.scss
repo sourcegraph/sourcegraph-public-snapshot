@@ -1,4 +1,6 @@
 .panel-container {
+    margin-bottom: 1rem;
+
     &__header {
         &-text {
             margin-bottom: 0.25rem;
@@ -27,5 +29,9 @@
         .theme-light & {
             background: $color-light-bg-2;
         }
+    }
+
+    &__content {
+        overflow-y: auto;
     }
 }

@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react'
 import classNames from 'classnames'
+import React, { useEffect, useState } from 'react'
 import { AuthenticatedUser } from '../../auth'
 import { dataOrThrowErrors, gql, requestGraphQL } from '../../../../shared/src/graphql/graphql'
+import { Link } from '../../../../shared/src/components/Link'
 import { map } from 'rxjs/operators'
+import { Maybe } from '../../../../shared/src/graphql-operations'
 import { PanelContainer } from './PanelContainer'
 import { RecentSearchesPanelDataResult, RecentSearchesPanelDataVariables } from '../../graphql-operations'
-import { Maybe } from '../../../../shared/src/graphql-operations'
+import { Timestamp } from '../../components/time/Timestamp'
 
 interface EventLogResult {
     totalCount: number
@@ -16,7 +18,7 @@ interface EventLogResult {
 interface RecentSearch {
     count: number
     searchText: string
-    dateSearched: string
+    timestamp: string
     url: string
 }
 
@@ -71,11 +73,12 @@ const processRecentSearches = (eventLogResult: EventLogResult): RecentSearch[] =
             if (recentSearches.length > 0 && recentSearches[recentSearches.length - 1].searchText === searchText) {
                 recentSearches[recentSearches.length - 1].count += 1
             } else {
+                const parsedUrl = new URL(node.url)
                 recentSearches.push({
                     count: 1,
-                    url: node.url,
+                    url: parsedUrl.pathname + parsedUrl.search, // Strip domain from URL so clicking on it doesn't reload page
                     searchText,
-                    dateSearched: node.timestamp,
+                    timestamp: node.timestamp,
                 })
             }
         }
@@ -110,7 +113,32 @@ export const RecentSearchesPanel: React.FunctionComponent<{
     }, [authenticatedUser])
 
     const loadingDisplay = <div>Loading</div>
-    const contentDisplay = <div>{JSON.stringify(recentSearches)}</div>
+    const contentDisplay = (
+        <table className="recent-searches-panel__results-table">
+            <thead className="recent-searches-panel__results-table-head">
+                <tr>
+                    <th>Count</th>
+                    <th>Search</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody className="recent-searches-panel__results-table-body">
+                {recentSearches.map(recentSearch => (
+                    <tr key={recentSearch.timestamp}>
+                        <td className="recent-searches-panel__results-count-cell">
+                            <span className="recent-searches-panel__results-count">{recentSearch.count}</span>
+                        </td>
+                        <td>
+                            <Link to={recentSearch.url}>{recentSearch.searchText}</Link>
+                        </td>
+                        <td>
+                            <Timestamp noAbout={true} date={recentSearch.timestamp} />
+                        </td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+    )
     const emptyDisplay = <div>Empty</div>
 
     return (
