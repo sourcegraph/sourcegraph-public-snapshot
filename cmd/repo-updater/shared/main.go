@@ -15,6 +15,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
@@ -76,6 +77,8 @@ func Main(enterpriseInit EnterpriseInit) {
 	if err != nil {
 		log.Fatalf("failed to initialize db store: %v", err)
 	}
+
+	repos.MustRegisterMetrics(db)
 
 	var store repos.Store
 	{
