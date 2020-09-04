@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -588,8 +590,13 @@ func (l *eventLogs) AggregatedEvents(ctx context.Context) ([]types.AggregatedEve
 	return l.aggregatedEvents(ctx, time.Now().UTC())
 }
 
+// stolen from repo-updater/store.go
+// a paginatedQuery returns a query with the given pagination
+// parameters
+type paginatedQuery func(cursor, limit int64) *sqlf.Query
+
 // EncryptTable implements the TableEncryption Interface to provide key rotation the event_logs table
-func EncryptTable(ctx context.Context) error {
+func (l *eventLogs) EncryptTable(ctx context.Context) error {
 	var (
 		e             Event
 		id            int
@@ -599,12 +606,27 @@ func EncryptTable(ctx context.Context) error {
 
 	query := sqlf.Sprintf("SELECT id,%s FROM event_logs", secretColumns)
 
-	rows, err := dbconn.Global.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args())
+	tx, err := dbconn.Global.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			rollErr := tx.Rollback()
+			if rollErr != nil {
+				err = multierror.Append(err, rollErr)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+
+	rows, err := tx.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args())
 	if err != nil {
 		return err
 	}
 	defer rows.Close()
-	// TODO: Wrap in TX
+
 	for rows.Next() {
 
 		err := rows.Scan(&id, &e.Argument)
@@ -626,10 +648,31 @@ func EncryptTable(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	// TODO: Update all values with resultMap
+	// prepare update query
+	result, err := json.Marshal(resultMap)
+	//DEBUG
+	fmt.Println(result)
+	query = sqlf.Sprintf(jsonRecordSetFunc, result)
+
+	resp, err := tx.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args())
+	if err != nil {
+		return err
+	}
+	fmt.Println(resp)
 
 	return nil
 }
+
+const jsonRecordSetFunc = `
+SELECT id, arg
+FROM jsonb_to_recordset(
+'[{
+"id": "35",
+"arg": "asdfeeeeedfasdzcxvzsd"
+ }]')
+AS x( id int,
+	  arg text
+);`
 
 func (l *eventLogs) aggregatedEvents(ctx context.Context, now time.Time) (events []types.AggregatedEvent, err error) {
 	query := sqlf.Sprintf(aggregatedEventsQuery, now, now, now, now)
