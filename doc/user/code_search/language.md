@@ -1,15 +1,13 @@
+# Sourcegraph Search Query Language
 <style>
-
 ul.r {
     list-style-position: outside !important;
     padding-left: 20px !important;
 }
-
 li.r {
     margin-top:10px !important;
     list-style:none !important;
 }
-
 .r {
     border: 0px !important;
     padding: 0px !important;
@@ -17,14 +15,12 @@ li.r {
     border-collapse: collapse !important;
     vertical-align: top !important;
 }
-
 th.r {
     text-align: left !important;
     background-color: #ece9d8 !important;
     border: 1px solid #aca899 !important;
     padding: 3px !important;
 }
-
 td.r {
     background-color: #ffffff !important;
     text-align: left !important;
@@ -32,12 +28,10 @@ td.r {
     border: 1px solid #aca899 !important;
     padding: 3px !important;
 }
-
 .markdown-body code {
     background-color: #ece9d8;
     color: black;
 }
-
 img.r {
   border: 1px solid !important;
   border-radius: 3px !important;
@@ -45,7 +39,6 @@ img.r {
   margin-right: 8px !important;
   vertical-align:bottom !important;
 }
-
 .ts {
     background-color: #ffffff !important;
     border: 0px !important;
@@ -58,7 +51,6 @@ img.r {
     background-image: url(../img/div-ts.png);
     background-size: 16px 512px !important;
 }
-
 .te {
     background-color: #ffffff !important;
     border: 0px !important;
@@ -71,7 +63,6 @@ img.r {
     background-image: url(../img/div-te.png);
     background-size: 16px 512px !important;
 }
-
 .le {
     background-color: #ffffff !important;
     border: 0px !important;
@@ -84,7 +75,6 @@ img.r {
     background-image: url(../img/div-le.png);
     background-size: 16px 512px !important;
 }
-
 .ke {
     background-color: #ffffff !important;
     border: 0px !important;
@@ -97,8 +87,6 @@ img.r {
     background-image: url(../img/div-ke.png);
     background-size: 16px 512px !important;
 }
-
-
 .ls {
     background-color: #ffffff !important;
     border: 0px !important;
@@ -111,7 +99,6 @@ img.r {
     background-image: url(../img/div-ls.png);
     background-size: 16px 512px !important;
 }
-
 .ks {
     background-color: #ffffff !important;
     border: 0px !important;
@@ -124,8 +111,6 @@ img.r {
     background-image: url(../img/div-ks.png);
     background-size: 16px 512px !important;
 }
-
-
 .d {
     background-color: #ffffff !important;
     border: 0px !important;
@@ -138,7 +123,6 @@ img.r {
     background-image: url(../img/div-d.png);
     background-size: 1024px 512px !important;
 }
-
 .e {
     background-color: #ffffff !important;
     border: 0px !important;
@@ -151,7 +135,6 @@ img.r {
     background-image: url(../img/div-e.png);
     background-size: 1024px 512px !important;
 }
-
 .c {
     background-color: #ffffff !important;
     padding: 1px 3px !important;
@@ -164,10 +147,7 @@ img.r {
     background-color: #fff !important;
     color: black;
 }
-
 </style>
-
-# Sourcegraph Search Query Language
 
 This page provides a visual breakdown of our Search Query Language and a handful
 of examples to get you started. It is complementary to our [syntax
