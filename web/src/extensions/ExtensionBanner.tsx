@@ -1,24 +1,19 @@
 import React from 'react'
 import { BannerPuzzleIcon } from './icons'
+import { CtaBanner } from '../components/CtaBanner'
 
-export const ExtensionBanner: React.FunctionComponent = React.memo(() => (
-    <>
-        <hr className="mt-2" />
+interface Props {
+    className?: string
+}
 
-        <div className="extension-banner">
-            <div className="extension-banner__card">
-                <BannerPuzzleIcon />
-                <div className="extension-banner__text-container">
-                    <h3>Create your own extension</h3>
-                    <p>
-                        You can improve your workflow by creating custom extensions. Read the Sourcegraph Docs for
-                        details about writing and publishing.
-                    </p>
-                    <a className="btn btn-primary mt-2" href="https://docs.sourcegraph.com/extensions/authoring">
-                        Learn more
-                    </a>
-                </div>
-            </div>
-        </div>
-    </>
+export const ExtensionBanner = React.memo<Props>(({ className }) => (
+    <CtaBanner
+        className={className}
+        icon={<BannerPuzzleIcon />}
+        title="Create your own extension"
+        bodyText="You can improve your workflow by creating custom extensions. Read the Sourcegraph Docs for
+                        details about writing and publishing."
+        linkText="Open Sourcegraph Docs"
+        href="https://docs.sourcegraph.com/extensions/authoring"
+    />
 ))

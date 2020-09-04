@@ -242,7 +242,16 @@ export const ExtensionRegistry = React.memo<Props>(props => {
                 </div>
             </div>
             {/* Only show the banner when there are no selected categories and it is not loading */}
-            {selectedCategories.length === 0 && !isLoading && <ExtensionBanner />}
+            {selectedCategories.length === 0 && !isLoading && (
+                <>
+                    <hr className="mt-5" />
+                    <div className="my-5 row justify-content-center">
+                        <div className="mx-auto col-sm-12 col-md-8 col-lg-8 col-xl-6">
+                            <ExtensionBanner />
+                        </div>
+                    </div>
+                </>
+            )}
         </>
     )
 })
