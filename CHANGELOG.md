@@ -15,7 +15,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - The site configuration `search.limits`. This allows configuring the maximum timeout (defaults to 1 minute). Also allows configuring the maximum repositories to search in different scenarios. [#13448](https://github.com/sourcegraph/sourcegraph/pull/13448)
 - Site admins now have a button to log out users from the all users view. Note that this currently does not apply to OAuth authentication, which will be addressed in a future PR. [#13647](https://github.com/sourcegraph/sourcegraph/pull/13647)
-- After changing their password, a user will be signed out, and will be required to sign in with the new password.
+- After changing their password, a user will be signed out from all devices, and will be required to sign in with the new password.
 
 ### Changed
 
