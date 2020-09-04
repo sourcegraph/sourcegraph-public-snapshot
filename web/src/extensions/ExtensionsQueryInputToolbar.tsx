@@ -12,7 +12,9 @@ interface Props {
 
     selectedCategories: ExtensionCategory[]
 
-    onSelectCategories: (categories: ExtensionCategory[]) => void
+    onSelectCategories: (
+        categories: ExtensionCategory[] | ((categories: ExtensionCategory[]) => ExtensionCategory[])
+    ) => void
 
     enablementFilter: ExtensionsEnablement
 
@@ -57,7 +59,7 @@ export class ExtensionsQueryInputToolbar extends React.PureComponent<Props, Stat
                                 data-test-extension-category={category}
                                 key={category}
                                 onClick={() =>
-                                    this.props.setSelectedCategories(selectedCategories =>
+                                    this.props.onSelectCategories(selectedCategories =>
                                         selected
                                             ? selectedCategories.filter(
                                                   selectedCategory => selectedCategory !== category

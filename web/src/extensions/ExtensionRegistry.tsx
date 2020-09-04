@@ -214,7 +214,7 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                             query={query}
                             onQueryChange={onQueryChangeImmediate}
                             selectedCategories={selectedCategories}
-                            setSelectedCategories={setSelectedCategories}
+                            onSelectCategories={setSelectedCategories}
                             enablementFilter={enablementFilter}
                             setEnablementFilter={setEnablementFilter}
                         />
