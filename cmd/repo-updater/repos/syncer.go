@@ -15,7 +15,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -104,10 +103,9 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOpti
 }
 
 type syncHandler struct {
-	syncer             *Syncer
-	store              Store
-	minSyncInterval    time.Duration
-	observationContext *observation.Context
+	syncer          *Syncer
+	store           Store
+	minSyncInterval time.Duration
 }
 
 func (s *syncHandler) Handle(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) error {
