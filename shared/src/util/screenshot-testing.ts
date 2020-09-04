@@ -1,4 +1,4 @@
-import isChromatic from '../types/chromatic/isChromatic'
+import isChromatic from 'chromatic/isChromatic'
 
 /**
  * Returns `true` if the code is running inside Chromatic or Percy,
