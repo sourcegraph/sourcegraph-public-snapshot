@@ -190,14 +190,14 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
             <div className="container">
                 <PageTitle title="Extensions" />
 
-                <div className="py-3">
+                <div className="pt-3">
                     <div className="mb-5">
                         <p>
                             Improve your workflow with code intelligence, test coverage, and other useful information.
                         </p>
                         <Form onSubmit={preventDefault} className="form-inline">
                             <input
-                                className="form-control flex-grow-1 mr-1 mb-2 test-extension-registry-input shadow"
+                                className="form-control flex-grow-1 mb-2 test-extension-registry-input shadow"
                                 type="search"
                                 placeholder="Search extensions..."
                                 name="query"

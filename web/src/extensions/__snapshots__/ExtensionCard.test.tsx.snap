@@ -12,10 +12,10 @@ exports[`ExtensionCard renders 1`] = `
       onClick={[Function]}
     >
       <div
-        className="flex-shrink-0"
+        className="flex-shrink-0 mr-2"
       >
         <img
-          className="extension-card__icon mr-2"
+          className="extension-card__icon"
           src="data:image/png,abcd"
         />
       </div>

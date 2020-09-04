@@ -87,19 +87,21 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
                     onClick={stopPropagation}
                 >
                     {/* Item 1: Icon */}
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 mr-2">
                         {icon ? (
-                            <img className="extension-card__icon mr-2" src={icon} />
-                        ) : publisher === 'sourcegraph' && change === 'enabled' ? (
-                            <DefaultIconEnabled />
-                        ) : (
-                            <DefaultIcon />
-                        )}
+                            <img className="extension-card__icon" src={icon} />
+                        ) : publisher === 'sourcegraph' ? (
+                            change === 'enabled' ? (
+                                <DefaultIconEnabled />
+                            ) : (
+                                <DefaultIcon />
+                            )
+                        ) : null}
                     </div>
                     {/* Item 2: Text */}
                     {change === 'enabled' ? (
-                        <span className="">
-                            {name} is now enabled in code search results.{' '}
+                        <span className="extension-card__enabled-feedback">
+                            <strong>{name}</strong> is now enabled in code search results.{' '}
                             <Link to={`/extensions/${extension.id}`} className="extension-card__link alert-link">
                                 See how it works
                             </Link>
@@ -171,7 +173,7 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
                 {/* Visual feedback: alert when extension is disabled */}
                 {change === 'disabled' && (
                     <div className="alert alert-secondary px-2 py-1 extension-card__disabled-feedback">
-                        {name} is off
+                        <strong>{name}</strong> is off
                     </div>
                 )}
             </div>

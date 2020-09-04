@@ -26,6 +26,12 @@ interface State {
     open?: DropdownMenuID
 }
 
+const enablementFilterToLabel: Record<ExtensionsEnablement, string> = {
+    all: 'Show all',
+    enabled: 'Show enabled extensions',
+    disabled: 'Show disabled extensions',
+}
+
 export const NewExtensionsQueryInputToolbar: React.FunctionComponent<Props> = () => <div />
 
 /**
@@ -68,7 +74,7 @@ export class ExtensionsQueryInputToolbar extends React.PureComponent<Props, Stat
 
                 <ButtonDropdown isOpen={this.state.open === 'options'} toggle={this.toggleOptions}>
                     <DropdownToggle className="btn-sm" caret={true} color="outline-secondary">
-                        Options
+                        {enablementFilterToLabel[this.props.enablementFilter]}
                     </DropdownToggle>
                     <DropdownMenu right={true}>
                         <DropdownItem

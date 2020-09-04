@@ -11,9 +11,9 @@ export const ExtensionBanner = React.memo<Props>(({ className }) => (
         className={className}
         icon={<BannerPuzzleIcon />}
         title="Create your own extension"
-        bodyText="You can improve your workflow by creating custom extensions. Read the Sourcegraph Docs for
+        bodyText="You can improve your workflow by creating custom extensions. See the Sourcegraph Docs for
                         details about writing and publishing."
-        linkText="Open Sourcegraph Docs"
+        linkText="Explore extension API"
         href="https://docs.sourcegraph.com/extensions/authoring"
     />
 ))

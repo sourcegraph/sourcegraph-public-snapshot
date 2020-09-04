@@ -66,7 +66,7 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
       onClick={[Function]}
       type="button"
     >
-      Options
+      Show all
     </button>
     <div
       aria-hidden={true}
@@ -174,7 +174,7 @@ exports[`ExtensionsQueryInputToolbar shows category in query as selected 1`] = `
       onClick={[Function]}
       type="button"
     >
-      Options
+      Show all
     </button>
     <div
       aria-hidden={true}
