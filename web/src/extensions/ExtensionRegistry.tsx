@@ -184,6 +184,8 @@ export const ExtensionRegistry = React.memo<Props>(props => {
         onQueryChangeImmediate(getQueryFromProps(location))
     }, [location, onQueryChangeImmediate])
 
+    const isLoading = !data || data === LOADING
+
     return (
         <>
             <div className="container">
@@ -234,13 +236,13 @@ export const ExtensionRegistry = React.memo<Props>(props => {
                             showMoreExtensions={showMoreExtensions}
                         />
                     </div>
-                    {!showMoreExtensions && selectedCategories.length === 0 && (
+                    {!isLoading && !showMoreExtensions && selectedCategories.length === 0 && (
                         <ShowMoreExtensions setShowMoreExtensions={setShowMoreExtensions} />
                     )}
                 </div>
             </div>
             {/* Only show the banner when there are no selected categories and it is not loading */}
-            {selectedCategories.length === 0 && !(!data || data === LOADING) && <ExtensionBanner />}
+            {selectedCategories.length === 0 && !isLoading && <ExtensionBanner />}
         </>
     )
 })
