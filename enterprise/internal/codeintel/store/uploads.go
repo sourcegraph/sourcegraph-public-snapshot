@@ -25,6 +25,7 @@ type Upload struct {
 	FinishedAt     *time.Time `json:"finishedAt"`
 	ProcessAfter   *time.Time `json:"processAfter"`
 	NumResets      int        `json:"numResets"`
+	NumFailures    int        `json:"numFailures"`
 	RepositoryID   int        `json:"repositoryId"`
 	RepositoryName string     `json:"repositoryName"`
 	Indexer        string     `json:"indexer"`
@@ -61,6 +62,7 @@ func scanUploads(rows *sql.Rows, queryErr error) (_ []Upload, err error) {
 			&upload.FinishedAt,
 			&upload.ProcessAfter,
 			&upload.NumResets,
+			&upload.NumFailures,
 			&upload.RepositoryID,
 			&upload.RepositoryName,
 			&upload.Indexer,
@@ -160,6 +162,7 @@ func (s *store) GetUploadByID(ctx context.Context, id int) (Upload, bool, error)
 			u.finished_at,
 			u.process_after,
 			u.num_resets,
+			u.num_failures,
 			u.repository_id,
 			u.repository_name,
 			u.indexer,
@@ -241,6 +244,7 @@ func (s *store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 				u.finished_at,
 				u.process_after,
 				u.num_resets,
+				u.num_failures,
 				u.repository_id,
 				u.repository_name,
 				u.indexer,
@@ -370,6 +374,7 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.finished_at"),
 	sqlf.Sprintf("u.process_after"),
 	sqlf.Sprintf("u.num_resets"),
+	sqlf.Sprintf("u.num_failures"),
 	sqlf.Sprintf("u.repository_id"),
 	sqlf.Sprintf(`u.repository_name`),
 	sqlf.Sprintf("u.indexer"),
