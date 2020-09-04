@@ -617,7 +617,7 @@ func (s *Syncer) makeNewRepoInserter(ctx context.Context, store Store) (func(*Re
 	// syncSubset requires querying the store for related repositories, and
 	// will do nothing if `insertOnly` is set and there are any related repositories. Most
 	// repositories will already have related repos, so to avoid that cost we
-	// ask the store for all repositories and only do syncsubset if it might
+	// ask the store for all repositories and only do syncSubset if it might
 	// be an insert.
 	ids, err := s.storedExternalIDs(ctx, store)
 	if err != nil {
