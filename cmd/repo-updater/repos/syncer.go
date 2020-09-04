@@ -355,7 +355,7 @@ func (s *Syncer) syncSubset(ctx context.Context, store Store, insertOnly bool, s
 	}
 
 	// Only modify added and modified relationships in external_service_repos, deleted was
-	// handled above
+	// handled above.
 	// Recalculate sdiff so that we have foreign keys
 	sdiff = s.sourcesUpserts(&diff, storedCopy)
 	if err = store.UpsertSources(ctx, sdiff.Added, sdiff.Modified, nil); err != nil {
