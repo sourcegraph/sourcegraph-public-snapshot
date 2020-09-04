@@ -93,7 +93,6 @@ const commonProps = subtypeOf<Partial<RepogroupPageProps>>()({
     showCampaigns: false,
     authenticatedUser: authUser,
     repogroupMetadata: python2To3Metadata,
-    autoFocus: false,
     globbing: false,
     showOnboardingTour: false,
 })
