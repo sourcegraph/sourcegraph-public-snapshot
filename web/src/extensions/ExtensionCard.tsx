@@ -32,6 +32,9 @@ const stopPropagation: React.MouseEventHandler<HTMLElement> = event => {
     event.stopPropagation()
 }
 
+/** ms after which to remove visual feedback */
+const FEEDBACK_DELAY = 5000
+
 /** Displays an extension as a card. */
 export const ExtensionCard = React.memo<Props>(function ExtensionCard({
     extension,
@@ -58,7 +61,7 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
     }, [extension])
 
     /**
-     * When extension enablement state changes, display visual feedback for ~5 seconds.
+     * When extension enablement state changes, display visual feedback for $delay seconds.
      * Clear the timeout when the component unmounts or the extension is toggled again.
      */
     const [change, setChange] = React.useState<'enabled' | 'disabled' | null>(null)
@@ -71,18 +74,14 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
             clearTimeout(timeoutReference.current)
         }
         setChange(enabled ? 'enabled' : 'disabled')
-        timeoutReference.current = window.setTimeout(() => setChange(null), 5000)
+        timeoutReference.current = window.setTimeout(() => setChange(null), FEEDBACK_DELAY)
     }, [])
 
     return (
         <div className="d-flex">
-            <div className={`extension-card card ${change === 'enabled' ? 'extension-card--added' : ''}`}>
-                {/* Visual feedback: alert when extension is disabled */}
-                {change === 'disabled' && (
-                    <div className="alert alert-secondary  extension-card__disabled-feedback">{name} is off</div>
-                )}
+            <div className={`extension-card card ${change === 'enabled' ? 'alert alert-success p-0 m-0' : ''}`}>
                 <div
-                    className="card-body extension-card__body d-flex flex-row position-relative"
+                    className="card-body extension-card__body d-flex position-relative"
                     // Prevent toggle clicks from propagating to the stretched-link (and
                     // navigating to the extension detail page).
                     onClick={stopPropagation}
@@ -101,29 +100,26 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
                     {change === 'enabled' ? (
                         <span className="">
                             {name} is now enabled in code search results.{' '}
-                            <Link to={`/extensions/${extension.id}`} className="extension-card__link font-weight-bold">
+                            <Link to={`/extensions/${extension.id}`} className="extension-card__link alert-link">
                                 See how it works
                             </Link>
                         </span>
                     ) : (
                         <div className="text-truncate w-100">
                             <div className="d-flex align-items-center">
-                                <h4 className="card-title extension-card__body-title mb-0 mr-1 text-truncate  flex-1">
+                                <span className="mb-0 mr-1 text-truncate flex-1">
                                     <Link
                                         to={`/extensions/${
                                             extension.registryExtension
                                                 ? extension.registryExtension.extensionIDWithoutRegistry
                                                 : extension.id
                                         }`}
-                                        className="extension-card__name"
+                                        className=""
                                     >
-                                        {name}
+                                        <strong>{name}</strong>
                                     </Link>
-                                    <span className="extension-card__publisher font-weight-normal text-muted">
-                                        {' '}
-                                        by {publisher}
-                                    </span>
-                                </h4>
+                                    <span className="text-muted"> by {publisher}</span>
+                                </span>
 
                                 {extension.registryExtension?.isWorkInProgress && (
                                     <WorkInProgressBadge
@@ -172,6 +168,12 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
                             />
                         ))}
                 </div>
+                {/* Visual feedback: alert when extension is disabled */}
+                {change === 'disabled' && (
+                    <div className="alert alert-secondary px-2 py-1 extension-card__disabled-feedback">
+                        {name} is off
+                    </div>
+                )}
             </div>
         </div>
     )

@@ -2,17 +2,6 @@
     flex: 1;
     position: relative;
 
-    &--added {
-        background-color: rgba(215, 240, 219, 0.5);
-        border-color: #c7e9cd;
-        color: #20612e;
-    }
-
-    &__name {
-        /* $web-styles/link-secondary/dark */
-        color: $gray-10;
-    }
-
     &__icon {
         width: 3rem;
         height: 3rem;
@@ -25,14 +14,10 @@
 
     &__disabled-feedback {
         position: absolute;
-        top: -1rem;
-    }
-}
-
-.theme-light {
-    .extension-card {
-        &__name {
-            color: #6078a9;
-        }
+        top: -1.625rem;
+        // feedback is centered on top of toggle, so right is pr (0.5rem) + 50% of toggle width (1.0625rem)
+        right: 1.5625rem;
+        transform: translateX(50%);
+        z-index: 1;
     }
 }
