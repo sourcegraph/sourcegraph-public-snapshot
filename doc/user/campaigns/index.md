@@ -39,7 +39,7 @@ Use the filters to switch between showing all campaigns, open campaigns, or clos
 
 If you lack read access to a repository in a campaign, you can only see [limited information about the changes to that repository](managing_access.md#repository-permissions-for-campaigns).
 
-### Campaign specs
+## Campaign specs
 
 You can create or update a campaign from a campaign spec, which is a YAML file that defines a campaign. You then use the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) to apply the campaign spec.
 
@@ -50,8 +50,7 @@ For more information, see:
 - [Creating a campaign](#creating-a-campaign)
 - [Updating a campaign](#creating-a-campaign)
 - [Example campaign specs](examples.md)
-
-<!-- - TODO(sqs) <u>Campaign spec YAML reference</u> -->
+- [Campaign spec YAML reference](campaign_spec_yaml_reference.md)
 
 ## Creating a campaign
 
