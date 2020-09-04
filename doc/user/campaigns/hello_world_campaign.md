@@ -64,7 +64,7 @@ Let's see the changes that will be made. Don't worry---no commits, branches, or 
 
     <pre><code>src campaign preview -f hello-world.campaign.yaml -namespace <em>USERNAME_OR_ORG</em></code></pre>
 
-    > The `namespace` can be your Sourcegraph user name or the name of an organisation on Sourcegraph under which you want to create the campaign.
+    > The `namespace` can be your Sourcegraph username or the name of a Sourcegraph organisation under which you want to create the campaign.
 1. Wait for it to run and compute the changes for each repository.
 1. When it's done, click the displayed link to see all of the changes that will be made.
 1. Make sure the changes look right.

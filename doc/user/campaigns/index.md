@@ -89,7 +89,7 @@ changesetTemplate:
 
     > **Don't worry!** Before any branches are pushed or changesets (e.g., GitHub pull requests) are created, you will see a preview of all changes and can confirm each one before proceeding.
 
-    The `namespace` can be your Sourcegraph user name or the name of an organisation on Sourcegraph under which you want to create the camapign.
+    The `namespace` can be your Sourcegraph username or the name of a Sourcegraph organisation under which you want to create the camapign.
 
 1. Wait for it to run and compute the changes for each repository (using the repositories and commands in the campaign spec).
 1. Open the preview URL that the command printed out.

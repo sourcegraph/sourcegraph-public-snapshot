@@ -29,7 +29,7 @@ changesetTemplate:
 const helloWorldDownloadUrl = 'data:text/plain;charset=utf-8,' + encodeURIComponent(campaignSpec)
 
 const sourcePreviewCommand =
-    'src campaign preview -f hello-world.campaign.yaml -namespace <sourcegraph-user-name-or-organisation>'
+    'src campaign preview -f hello-world.campaign.yaml -namespace sourcegraph-username-or-organisation'
 
 export interface CreateCampaignPageProps extends BreadcrumbSetters {
     // Nothing for now, but using it so once this changes we get type errors in the routing files.
