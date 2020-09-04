@@ -2,7 +2,7 @@
 
 exports[`ExtensionsQueryInputToolbar renders 1`] = `
 <div
-  className="extensions-list__toolbar mb-2"
+  className="d-flex flex-wrap justify-content-between mb-2"
 >
   <div>
     <button
@@ -110,7 +110,7 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
 
 exports[`ExtensionsQueryInputToolbar shows category in query as selected 1`] = `
 <div
-  className="extensions-list__toolbar mb-2"
+  className="d-flex flex-wrap justify-content-between mb-2"
 >
   <div>
     <button

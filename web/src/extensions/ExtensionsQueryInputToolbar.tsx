@@ -40,7 +40,7 @@ export class ExtensionsQueryInputToolbar extends React.PureComponent<Props, Stat
 
     public render(): JSX.Element | null {
         return (
-            <div className="extensions-list__toolbar mb-2">
+            <div className="d-flex flex-wrap justify-content-between mb-2">
                 <div>
                     {EXTENSION_CATEGORIES.map(category => {
                         const selected = this.props.selectedCategories.includes(category)

@@ -10,36 +10,12 @@
         color: $gray-08;
         margin-top: 2rem;
     }
-
-    &__toolbar {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        flex-wrap: wrap;
-    }
-
-    &__input {
-        background: #0f121a;
-        border: 1px solid #2b3750;
-        box-sizing: border-box;
-        border-radius: 2px;
-    }
-
-    margin-bottom: 3rem;
 }
 
 .theme-light {
     .extensions-list {
         &__category {
             color: $gray-15;
-        }
-
-        &__input {
-            background: #ffffff;
-            border: 1px solid #d7ddea;
-            box-sizing: border-box;
-            box-shadow: 0px 0px 10px rgba(96, 120, 169, 0.1);
-            border-radius: 2px;
         }
     }
 }
