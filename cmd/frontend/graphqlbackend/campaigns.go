@@ -70,6 +70,7 @@ type CampaignArgs struct {
 
 type ChangesetEventsConnectionArgs struct {
 	First int32
+	After *string
 }
 
 type CampaignsResolver interface {
@@ -292,6 +293,8 @@ type ExternalChangesetResolver interface {
 	Labels(ctx context.Context) ([]ChangesetLabelResolver, error)
 
 	Error() *string
+
+	CurrentSpec(ctx context.Context) (VisibleChangesetSpecResolver, error)
 }
 
 type ChangesetEventsConnectionResolver interface {

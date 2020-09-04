@@ -1477,7 +1477,7 @@ type ExternalChangeset implements Node & Changeset {
     """
     The events belonging to this changeset.
     """
-    events(first: Int = 50): ChangesetEventConnection!
+    events(first: Int = 50, after: String): ChangesetEventConnection!
 
     """
     The date and time when the changeset was created.
@@ -1515,7 +1515,7 @@ type ExternalChangeset implements Node & Changeset {
     reconcilerState: ChangesetReconcilerState!
 
     """
-    The external state of the changeset, or null when not yet published to the code host or when the changeset data hasn't been sycned from the code host yet.
+    The external state of the changeset, or null when not yet published to the code host or when the changeset data hasn't been synced from the code host yet.
     """
     externalState: ChangesetExternalState
 
@@ -1557,6 +1557,13 @@ type ExternalChangeset implements Node & Changeset {
     An error that has occurred when publishing or updating the changeset. This is only set when the changeset state is ERRORED and the viewer can administer this changeset.
     """
     error: String
+
+    """
+    The current changeset spec for this changeset.
+
+    Null if the changeset was only imported.
+    """
+    currentSpec: VisibleChangesetSpec
 }
 
 """

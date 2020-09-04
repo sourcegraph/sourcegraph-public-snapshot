@@ -1,0 +1,8 @@
+.panel-container {
+    &__header {
+        &-text {
+            margin-bottom: 0.25rem;
+            flex-grow: 1;
+        }
+    }
+}
