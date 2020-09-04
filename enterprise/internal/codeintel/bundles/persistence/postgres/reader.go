@@ -10,22 +10,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/serialization"
 	gobserializer "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/serialization/gob"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
 type reader struct {
+	*basestore.Store
 	dumpID     int
 	serializer serialization.Serializer
-	writer     *batchWriter
 }
 
 var _ persistence.Store = &reader{}
 
 func NewStore(dumpID int) persistence.Store {
 	return &reader{
+		Store:      basestore.NewWithHandle(basestore.NewHandleWithDB(dbconn.Global)),
 		dumpID:     dumpID,
 		serializer: gobserializer.New(),
-		writer:     newBatchWriter(),
 	}
 }
 
@@ -35,29 +36,8 @@ func (r *reader) Done(err error) error                                    { retu
 func (r *reader) CreateTables(ctx context.Context) error                  { return nil }
 
 func (r *reader) ReadMeta(ctx context.Context) (_ types.MetaData, err error) {
-	rows, err := dbconn.Global.Query(
-		`SELECT num_result_chunks FROM lsif_data_metadata WHERE dump_id = $1 LIMIT 1`,
-		r.dumpID,
-	)
-	if err != nil {
-		return types.MetaData{}, err
-	}
-	defer func() {
-		if closeErr := rows.Close(); closeErr != nil {
-			err = multierror.Append(err, closeErr)
-		}
-	}()
-
-	if !rows.Next() {
-		return types.MetaData{}, fmt.Errorf("missing metadata")
-	}
-
 	var numResultChunks int
-	if rows.Scan(&numResultChunks); err != nil {
-		return types.MetaData{}, err
-	}
-
-	if err := rows.Err(); err != nil {
+	if err := dbconn.Global.QueryRowContext(ctx, `SELECT num_result_chunks FROM lsif_data_metadata WHERE dump_id = $1`, r.dumpID).Scan(&numResultChunks); err != nil {
 		return types.MetaData{}, err
 	}
 
@@ -65,7 +45,8 @@ func (r *reader) ReadMeta(ctx context.Context) (_ types.MetaData, err error) {
 }
 
 func (r *reader) PathsWithPrefix(ctx context.Context, prefix string) (px []string, err error) {
-	rows, err := dbconn.Global.Query(
+	rows, err := dbconn.Global.QueryContext(
+		ctx,
 		`SELECT path FROM lsif_data_documents WHERE dump_id = $1`,
 		r.dumpID,
 	)
@@ -97,30 +78,8 @@ func (r *reader) PathsWithPrefix(ctx context.Context, prefix string) (px []strin
 }
 
 func (r *reader) ReadDocument(ctx context.Context, path string) (types.DocumentData, bool, error) {
-	rows, err := dbconn.Global.Query(
-		`SELECT data FROM lsif_data_documents WHERE dump_id = $1 AND path = $2 LIMIT 1`,
-		r.dumpID,
-		path,
-	)
-	if err != nil {
-		return types.DocumentData{}, false, err
-	}
-	defer func() {
-		if closeErr := rows.Close(); closeErr != nil {
-			err = multierror.Append(err, closeErr)
-		}
-	}()
-
-	if !rows.Next() {
-		return types.DocumentData{}, false, nil
-	}
-
 	var data string
-	if err := rows.Scan(&data); err != nil {
-		return types.DocumentData{}, false, err
-	}
-
-	if err := rows.Err(); err != nil {
+	if err := dbconn.Global.QueryRowContext(ctx, `SELECT data FROM lsif_data_documents WHERE dump_id = $1 AND path = $2 LIMIT 1`, r.dumpID, path).Scan(&data); err != nil {
 		return types.DocumentData{}, false, err
 	}
 
@@ -133,30 +92,8 @@ func (r *reader) ReadDocument(ctx context.Context, path string) (types.DocumentD
 }
 
 func (r *reader) ReadResultChunk(ctx context.Context, id int) (types.ResultChunkData, bool, error) {
-	rows, err := dbconn.Global.Query(
-		`SELECT data FROM lsif_data_result_chunks WHERE dump_id = $1 AND idx = $2 LIMIT 1`,
-		r.dumpID,
-		id,
-	)
-	if err != nil {
-		return types.ResultChunkData{}, false, err
-	}
-	defer func() {
-		if closeErr := rows.Close(); closeErr != nil {
-			err = multierror.Append(err, closeErr)
-		}
-	}()
-
-	if !rows.Next() {
-		return types.ResultChunkData{}, false, nil
-	}
-
 	var data string
-	if err := rows.Scan(&data); err != nil {
-		return types.ResultChunkData{}, false, err
-	}
-
-	if err := rows.Err(); err != nil {
+	if err := dbconn.Global.QueryRowContext(ctx, `SELECT data FROM lsif_data_result_chunks WHERE dump_id = $1 AND idx = $2`, r.dumpID, id).Scan(&data); err != nil {
 		return types.ResultChunkData{}, false, err
 	}
 
@@ -202,40 +139,15 @@ func (r *reader) defref(ctx context.Context, tableName, scheme, identifier strin
 }
 
 func (r *reader) readDefinitionReferences(ctx context.Context, tableName, scheme, identifier string) (_ []types.Location, err error) {
-	rows, err := dbconn.Global.Query(
-		fmt.Sprintf(`SELECT data FROM %s WHERE dump_id = $1 AND scheme = $2 AND identifier = $3`, tableName),
-		r.dumpID,
-		scheme,
-		identifier,
-	)
+	var data string
+	if err := dbconn.Global.QueryRowContext(ctx, fmt.Sprintf(`SELECT data FROM %s WHERE dump_id = $1 AND scheme = $2 AND identifier = $3`, tableName), r.dumpID, scheme, identifier).Scan(&data); err != nil {
+		return nil, err
+	}
+
+	locations, err := r.serializer.UnmarshalLocations([]byte(data))
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if closeErr := rows.Close(); closeErr != nil {
-			err = multierror.Append(err, closeErr)
-		}
-	}()
 
-	var allLocations []types.Location
-
-	for rows.Next() {
-		var data string
-		if err := rows.Scan(&data); err != nil {
-			return nil, err
-		}
-
-		locations, err := r.serializer.UnmarshalLocations([]byte(data))
-		if err != nil {
-			return nil, err
-		}
-
-		allLocations = append(allLocations, locations...)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return allLocations, nil
+	return locations, nil
 }

@@ -202,9 +202,6 @@ func (h *handler) write(ctx context.Context, id int, dirname string, groupedBund
 	f.Close()
 
 	store := postgres.NewStore(id)
-	defer func() {
-		err = store.Close(err)
-	}()
 
 	store, err = store.Transact(ctx)
 	if err != nil {
