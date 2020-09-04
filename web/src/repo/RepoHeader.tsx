@@ -201,13 +201,13 @@ export const RepoHeader: React.FunctionComponent<Props> = ({ onLifecyclePropsCha
                 ))}
             </ul>
             <div className="repo-header__spacer" />
-            {determineShowAddExtensions(props) && (
-                <Link to="/extensions" className="nav-link py-1">
-                    <button type="button" id="add-extensions" className="btn btn-outline-secondary btn-sm">
+            <div className="d-flex align-items-center">
+                {determineShowAddExtensions(props) && (
+                    <LinkOrButton to="/extensions" className="btn btn-outline-secondary btn-sm mx-2">
                         Add extensions
-                    </button>
-                </Link>
-            )}
+                    </LinkOrButton>
+                )}
+            </div>
             <ul className="navbar-nav">
                 <WebActionsNavItems
                     {...props}
