@@ -144,7 +144,7 @@ func (*schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
-func (r *schemaResolver) InvalidateSessionsById(ctx context.Context, args *struct {
+func (r *schemaResolver) InvalidateSessionsByID(ctx context.Context, args *struct {
 	UserID graphql.ID
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only the site admin can invalidate the sessions of a user
@@ -155,7 +155,7 @@ func (r *schemaResolver) InvalidateSessionsById(ctx context.Context, args *struc
 	if err != nil {
 		return nil, err
 	}
-	if err := session.InvalidateSessionsById(ctx, userID); err != nil {
+	if err := session.InvalidateSessionsByID(ctx, userID); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil

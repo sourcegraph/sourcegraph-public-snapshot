@@ -16,7 +16,7 @@ import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
 import { setUserEmailVerified } from '../user/settings/backend'
-import { deleteUser, fetchAllUsers, randomizeUserPassword, setUserIsSiteAdmin, invalidateSessionsById } from './backend'
+import { deleteUser, fetchAllUsers, randomizeUserPassword, setUserIsSiteAdmin, invalidateSessionsByID } from './backend'
 import { ErrorAlert } from '../components/alerts'
 import * as H from 'history'
 import { AuthenticatedUser } from '../auth'
@@ -261,7 +261,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
         }
 
         this.setState({ loading: true })
-        invalidateSessionsById(this.props.node.id)
+        invalidateSessionsByID(this.props.node.id)
             .toPromise()
             .then(
                 () => {

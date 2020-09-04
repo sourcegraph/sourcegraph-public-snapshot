@@ -9,6 +9,6 @@ var (
 	SetActor                     = session.SetActor
 	SetData                      = session.SetData
 	GetData                      = session.GetData
-	InvalidateSessionsById       = session.InvalidateSessionsById
+	InvalidateSessionsByID       = session.InvalidateSessionsByID
 	InvalidateSessionCurrentUser = session.InvalidateSessionCurrentUser
 )

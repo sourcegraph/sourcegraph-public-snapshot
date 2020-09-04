@@ -613,9 +613,9 @@ func (u *users) GetByCurrentAuthUser(ctx context.Context) (*types.User, error) {
 	return u.getOneBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL LIMIT 1", actor.UID)
 }
 
-func (u *users) InvalidateSessionsById(ctx context.Context, id int32) error {
-	if Mocks.Users.InvalidateSessionsById != nil {
-		return Mocks.Users.InvalidateSessionsById(ctx, id)
+func (u *users) InvalidateSessionsByID(ctx context.Context, id int32) error {
+	if Mocks.Users.InvalidateSessionsByID != nil {
+		return Mocks.Users.InvalidateSessionsByID(ctx, id)
 	}
 
 	tx, err := dbconn.Global.BeginTx(ctx, nil)

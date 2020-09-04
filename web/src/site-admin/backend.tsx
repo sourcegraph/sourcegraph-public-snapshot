@@ -512,11 +512,11 @@ export function setUserIsSiteAdmin(userID: GQL.ID, siteAdmin: boolean): Observab
     )
 }
 
-export function invalidateSessionsById(userID: GQL.ID): Observable<void> {
+export function invalidateSessionsByID(userID: GQL.ID): Observable<void> {
     return mutateGraphQL(
         gql`
-            mutation InvalidateSessionsById($userID: ID!) {
-                invalidateSessionsById(userID: $userID) {
+            mutation invalidateSessionsByID($userID: ID!) {
+                invalidateSessionsByID(userID: $userID) {
                     alwaysNil
                 }
             }
