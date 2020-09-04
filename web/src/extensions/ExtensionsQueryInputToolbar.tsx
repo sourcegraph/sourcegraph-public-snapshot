@@ -12,7 +12,7 @@ interface Props {
 
     selectedCategories: ExtensionCategory[]
 
-    setSelectedCategories: React.Dispatch<React.SetStateAction<ExtensionCategory[]>>
+    onSelectCategories: (categories: ExtensionCategory[]) => void
 
     enablementFilter: ExtensionsEnablement
 
