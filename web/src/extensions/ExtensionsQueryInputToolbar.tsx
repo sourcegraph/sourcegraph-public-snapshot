@@ -1,7 +1,7 @@
 import React from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { EXTENSION_CATEGORIES, ExtensionCategory } from '../../../shared/src/schema/extensionSchema'
-import { ExtensionsEnablement } from './ExtensionsList'
+import { ExtensionsEnablement } from './ExtensionRegistry'
 
 interface Props {
     /** The current extensions registry list query. */

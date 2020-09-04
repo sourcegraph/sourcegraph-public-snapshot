@@ -1,7 +1,5 @@
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
-import { Path } from '../../../../shared/src/components/Path'
 import { isExtensionEnabled } from '../../../../shared/src/extensions/extension'
 import { ExtensionManifest } from '../../../../shared/src/schema/extensionSchema'
 import { isErrorLike } from '../../../../shared/src/util/errors'
