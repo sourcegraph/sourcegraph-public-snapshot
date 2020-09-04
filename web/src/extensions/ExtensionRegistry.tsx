@@ -211,8 +211,6 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                             />
                         </Form>
                         <ExtensionsQueryInputToolbar
-                            query={query}
-                            onQueryChange={onQueryChangeImmediate}
                             selectedCategories={selectedCategories}
                             onSelectCategories={setSelectedCategories}
                             enablementFilter={enablementFilter}
