@@ -536,7 +536,7 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 }
 
 func newDiff(svc *ExternalService, sourced, stored []*Repo) (diff Diff) {
-	// Sort sourced so we merge determinstically
+	// Sort sourced so we merge deterministically
 	sort.Sort(Repos(sourced))
 
 	byID := make(map[api.ExternalRepoSpec]*Repo, len(sourced))

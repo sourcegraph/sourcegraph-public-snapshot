@@ -39,8 +39,9 @@ mutation AddExternalService($input: AddExternalServiceInput!) {
 		return "", errors.Wrap(err, "request GraphQL")
 	}
 
+	// Return the ID along with the warning so we can still clean up properly.
 	if resp.Data.AddExternalService.Warning != "" {
-		return "", errors.New(resp.Data.AddExternalService.Warning)
+		return resp.Data.AddExternalService.ID, errors.New(resp.Data.AddExternalService.Warning)
 	}
 	return resp.Data.AddExternalService.ID, nil
 }

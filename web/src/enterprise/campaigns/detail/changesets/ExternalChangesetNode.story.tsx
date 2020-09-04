@@ -56,6 +56,7 @@ add('All external states', () => {
                                     url: 'http://test.test/sourcegraph/sourcegraph',
                                 },
                                 reviewState: ChangesetReviewState.COMMENTED,
+                                currentSpec: { id: 'spec-rand-id-1' },
                             }}
                             viewerCanAdminister={boolean('viewerCanAdminister', true)}
                             queryExternalChangesetWithFileDiffs={() =>
@@ -115,6 +116,7 @@ add('Unpublished', () => {
                             url: 'http://test.test/sourcegraph/sourcegraph',
                         },
                         reviewState: null,
+                        currentSpec: { id: 'spec-rand-id-1' },
                     }}
                     viewerCanAdminister={boolean('viewerCanAdminister', true)}
                     queryExternalChangesetWithFileDiffs={() =>
@@ -173,6 +175,7 @@ add('Importing', () => {
                             url: 'http://test.test/sourcegraph/sourcegraph',
                         },
                         reviewState: null,
+                        currentSpec: { id: 'spec-rand-id-1' },
                     }}
                     viewerCanAdminister={boolean('viewerCanAdminister', true)}
                     queryExternalChangesetWithFileDiffs={() =>

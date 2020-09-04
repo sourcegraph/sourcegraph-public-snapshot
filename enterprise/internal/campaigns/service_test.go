@@ -197,7 +197,10 @@ func TestService(t *testing.T) {
 		t.Fatal("user is admin, want non-admin")
 	}
 
-	store := NewStore(dbconn.Global)
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	clock := func() time.Time { return now }
+
+	store := NewStoreWithClock(dbconn.Global, clock)
 	rs, _ := createTestRepos(t, ctx, dbconn.Global, 4)
 
 	fakeSource := &ct.FakeChangesetSource{}
@@ -251,7 +254,7 @@ func TestService(t *testing.T) {
 			if err != nil {
 				t.Fatalf("campaign not closed: %s", err)
 			}
-			if closedCampaign.ClosedAt.IsZero() {
+			if !closedCampaign.ClosedAt.Equal(now) {
 				t.Fatalf("campaign ClosedAt is zero")
 			}
 
@@ -281,31 +284,18 @@ func TestService(t *testing.T) {
 			closeConfirm(t, campaign, false)
 		})
 
-		t.Run("processing changesets", func(t *testing.T) {
+		t.Run("changesets", func(t *testing.T) {
 			campaign := createCampaign(t)
 
-			changeset := testChangeset(rs[0].ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
-			changeset.ReconcilerState = campaigns.ReconcilerStateProcessing
-			if err := store.CreateChangeset(ctx, changeset); err != nil {
+			changeset1 := testChangeset(rs[0].ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
+			changeset1.ReconcilerState = campaigns.ReconcilerStateCompleted
+			if err := store.CreateChangeset(ctx, changeset1); err != nil {
 				t.Fatal(err)
 			}
 
-			// should fail
-			_, err := svc.CloseCampaign(adminCtx, campaign.ID, true)
-			if err != ErrCloseProcessingCampaign {
-				t.Fatalf("CloseCampaign returned unexpected error: %s", err)
-			}
-
-			// without trying to close changesets, it should succeed:
-			closeConfirm(t, campaign, false)
-		})
-
-		t.Run("non-processing changesets", func(t *testing.T) {
-			campaign := createCampaign(t)
-
-			changeset := testChangeset(rs[0].ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
-			changeset.ReconcilerState = campaigns.ReconcilerStateCompleted
-			if err := store.CreateChangeset(ctx, changeset); err != nil {
+			changeset2 := testChangeset(rs[1].ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
+			changeset2.ReconcilerState = campaigns.ReconcilerStateCompleted
+			if err := store.CreateChangeset(ctx, changeset2); err != nil {
 				t.Fatal(err)
 			}
 
