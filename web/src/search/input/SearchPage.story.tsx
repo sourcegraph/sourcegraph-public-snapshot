@@ -48,16 +48,13 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     isLightTheme: props.isLightTheme,
 })
 
-const { add } = storiesOf('web/search/input/SearchPage', module)
-    .addParameters({
-        percy: { widths: [993] },
-        design: {
-            type: 'figma',
-            url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
-        },
-        chromatic: { viewports: [769, 993, 1200] },
-    })
-    .addDecorator(story => <>{story()}</>)
+const { add } = storiesOf('web/search/input/SearchPage', module).addParameters({
+    design: {
+        type: 'figma',
+        url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
+    },
+    chromatic: { viewports: [769, 993, 1200] },
+})
 
 add('Cloud without repogroups', () => (
     <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />}</WebStory>
