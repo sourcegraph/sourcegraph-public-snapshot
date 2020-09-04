@@ -55,20 +55,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                         <img className="extension-area-header__icon mr-2" src={manifest.icon} />
                                     )}
                                 <div>
-                                    <h2 className="d-flex align-items-center mb-0 font-weight-normal">
-                                        {/* <Link to="/extensions" className="extensions-nav-link">
-                                            Extensions
-                                        </Link>
-                                        <ChevronRightIcon className="icon-inline extension-area-header__icon-chevron" />{' '}
-                                        <Path
-                                            path={
-                                                props.extension.registryExtension
-                                                    ? props.extension.registryExtension.extensionIDWithoutRegistry
-                                                    : props.extension.id
-                                            }
-                                        /> */}
-                                        {name}
-                                    </h2>
+                                    <h2 className="d-flex align-items-center mb-0 font-weight-normal">{name}</h2>
                                     {manifest && (manifest.description || isWorkInProgress) && (
                                         <p className="mt-1 mb-0">
                                             {isWorkInProgress && (
