@@ -20,7 +20,6 @@ import {
 } from '../graphql-operations'
 import { categorizeExtensionRegistry, CategorizedExtensionRegistry } from './extensions'
 import { ExtensionCategory } from '../../../shared/src/schema/extensionSchema'
-import { ShowMoreExtensions } from './ShowMoreExtensions'
 import { extensionsQuery, isExtensionAdded } from './extension/extension'
 import { Link } from 'react-router-dom'
 import { Form } from '../components/Form'
@@ -237,7 +236,15 @@ export const ExtensionRegistry = React.memo<Props>(props => {
                         />
                     </div>
                     {!isLoading && !showMoreExtensions && selectedCategories.length === 0 && (
-                        <ShowMoreExtensions setShowMoreExtensions={setShowMoreExtensions} />
+                        <div className="d-flex justify-content-center">
+                            <button
+                                type="button"
+                                className="btn btn-outline-secondary"
+                                onClick={() => setShowMoreExtensions(true)}
+                            >
+                                Show more extensions
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>
