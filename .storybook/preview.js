@@ -17,17 +17,13 @@ addDecorator((storyFn, context) => withConsole()(storyFn)(context))
 addDecorator(withDesign)
 
 if (isChromatic()) {
-    const chromaticCss = `
+    const style = document.createElement('style')
+    style.innerHTML = `
       .monaco-editor .cursor {
         visibility: hidden !important;
       }
     `
-    addDecorator(story => (
-        <>
-            {story()}
-            <style>{chromaticCss}</style>
-        </>
-    ))
+    document.head.append(style)
 }
 
 configureActions({ depth: 100, limit: 20 })
