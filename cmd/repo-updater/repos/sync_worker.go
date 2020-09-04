@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"database/sql"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -99,30 +100,19 @@ func newObservationOperation(r prometheus.Registerer) *observation.Operation {
 }
 
 func newResetterMetrics(r prometheus.Registerer) dbworker.ResetterMetrics {
-	externalServiceResets := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_external_service_queue_resets_total",
-		Help: "Total number of external services put back into queued state",
-	})
-
-	externalServiceResetFailures := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_external_service_queue_max_resets_total",
-		Help: "Total number of external services that exceed the max number of resets",
-	})
-
-	errors := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_external_service_queue_reset_errors_total",
-		Help: "Total number of errors when running the external service resetter",
-	})
-	if r != nil {
-		r.MustRegister(externalServiceResets)
-		r.MustRegister(externalServiceResetFailures)
-		r.MustRegister(errors)
-	}
-
 	return dbworker.ResetterMetrics{
-		RecordResets:        externalServiceResets,
-		RecordResetFailures: externalServiceResetFailures,
-		Errors:              errors,
+		RecordResets: promauto.With(r).NewCounter(prometheus.CounterOpts{
+			Name: "src_external_service_queue_resets_total",
+			Help: "Total number of external services put back into queued state",
+		}),
+		RecordResetFailures: promauto.With(r).NewCounter(prometheus.CounterOpts{
+			Name: "src_external_service_queue_max_resets_total",
+			Help: "Total number of external services that exceed the max number of resets",
+		}),
+		Errors: promauto.With(r).NewCounter(prometheus.CounterOpts{
+			Name: "src_external_service_queue_reset_errors_total",
+			Help: "Total number of errors when running the external service resetter",
+		}),
 	}
 }
 
