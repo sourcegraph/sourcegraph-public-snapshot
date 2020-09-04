@@ -88,7 +88,7 @@ const extensionRegistryQuery = gql`
 `
 
 /** A page that displays overview information about the available extensions. */
-export const ExtensionRegistry = React.memo<Props>(props => {
+export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
     useEffect(() => eventLogger.logViewEvent('ExtensionsOverview'), [])
 
     const { history, location, settingsCascade, platformContext, authenticatedUser } = props
@@ -261,7 +261,7 @@ export const ExtensionRegistry = React.memo<Props>(props => {
             )}
         </>
     )
-})
+}
 
 function getQueryFromProps(location: H.Location): string {
     const parameters = new URLSearchParams(location.search)
