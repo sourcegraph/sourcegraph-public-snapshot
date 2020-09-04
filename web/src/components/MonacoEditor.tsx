@@ -5,6 +5,7 @@ import { ThemeProps } from '../../../shared/src/theme'
 import { Subscription, Subject } from 'rxjs'
 import { map, distinctUntilChanged } from 'rxjs/operators'
 import { KeyboardShortcut } from '../../../shared/src/keyboardShortcuts'
+import { isScreenshotTestEnvironment } from '../../../shared/src/util/screenshot-testing'
 import { Shortcut } from '@slimsag/react-shortcuts'
 
 const SOURCEGRAPH_LIGHT = 'sourcegraph-light'
@@ -19,7 +20,7 @@ monaco.editor.defineTheme(SOURCEGRAPH_DARK, {
         'textLink.activeBackground': '#2a3a51',
         'editor.background': '#0E121B',
         'editor.foreground': '#f2f4f8',
-        'editorCursor.foreground': '#ffffff',
+        'editorCursor.foreground': isScreenshotTestEnvironment() ? 'transparent' : '#ffffff',
         'editorSuggestWidget.background': '#1c2736',
         'editorSuggestWidget.foreground': '#F2F4F8',
         'editorSuggestWidget.highlightForeground': '#569cd6',
@@ -44,7 +45,7 @@ monaco.editor.defineTheme(SOURCEGRAPH_LIGHT, {
         background: '#ffffff',
         'editor.background': '#ffffff',
         'editor.foreground': '#2b3750',
-        'editorCursor.foreground': '#2b3750',
+        'editorCursor.foreground': isScreenshotTestEnvironment() ? 'transparent' : '#2b3750',
         'editorSuggestWidget.background': '#ffffff',
         'editorSuggestWidget.foreground': '#2b3750',
         'editorSuggestWidget.border': '#cad2e2',
