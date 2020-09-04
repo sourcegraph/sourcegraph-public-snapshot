@@ -102,7 +102,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 				{
 					Authorization: &schema.GitLabAuthorization{
 						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
-						Ttl:              "48h",
 					},
 					Url:   "https://gitlab.mine",
 					Token: "asdf",
@@ -138,7 +137,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 				{
 					Authorization: &schema.GitLabAuthorization{
 						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
-						Ttl:              "48h",
 					},
 					Url:   "https://gitlab.mine",
 					Token: "asdf",
@@ -160,7 +158,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 				{
 					Authorization: &schema.GitLabAuthorization{
 						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
-						Ttl:              "48h",
 					},
 					Url:   "https://gitlab.mine",
 					Token: "asdf",
@@ -352,7 +349,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 							ConsumerKey: "sourcegraph",
 							SigningKey:  "Invalid Key",
 						},
-						Ttl: "15m",
 					},
 					Url:      "https://bitbucketserver.mycorp.org",
 					Username: "admin",
@@ -377,7 +373,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 							ConsumerKey: "sourcegraph",
 							SigningKey:  bogusKey,
 						},
-						Ttl: "15m",
 					},
 					Url:      "https://bitbucketserver.mycorp.org",
 					Username: "admin",
@@ -420,7 +415,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 				{
 					Authorization: &schema.GitLabAuthorization{
 						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
-						Ttl:              "48h",
 					},
 					Url:   "https://gitlab.mine",
 					Token: "asdf",
@@ -451,7 +445,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 							ConsumerKey: "sourcegraph",
 							SigningKey:  bogusKey,
 						},
-						Ttl: "15m",
 					},
 					Url:      "https://bitbucketserver.mycorp.org",
 					Username: "admin",

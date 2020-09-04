@@ -4,7 +4,6 @@ import { formatDistance, parseISO } from 'date-fns'
 import { syncChangeset } from '../backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import SyncIcon from 'mdi-react/SyncIcon'
-import { Observer } from 'rxjs'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import { isErrorLike } from '../../../../../../shared/src/util/errors'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
@@ -13,29 +12,20 @@ import { ChangesetFields } from '../../../../graphql-operations'
 interface Props {
     changeset: Pick<ChangesetFields, 'id' | 'nextSyncAt' | 'updatedAt'>
     viewerCanAdminister: boolean
-    campaignUpdates?: Pick<Observer<void>, 'next'>
     /** For testing purposes only */
     _now?: Date
 }
 
-export const ChangesetLastSynced: React.FunctionComponent<Props> = ({
-    changeset,
-    viewerCanAdminister,
-    campaignUpdates,
-    _now,
-}) => {
+export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset, viewerCanAdminister, _now }) => {
     // initially, the changeset was never last updated
     const [lastUpdatedAt, setLastUpdatedAt] = useState<string | Error | null>(null)
     // .. if it was, and the changesets current updatedAt doesn't match the previous updated at, we know that it has been synced
     const lastUpdatedAtChanged = lastUpdatedAt && !isErrorLike(lastUpdatedAt) && changeset.updatedAt !== lastUpdatedAt
     useEffect(() => {
         if (lastUpdatedAtChanged) {
-            if (campaignUpdates) {
-                campaignUpdates.next()
-            }
             setLastUpdatedAt(null)
         }
-    }, [campaignUpdates, lastUpdatedAtChanged, changeset.updatedAt])
+    }, [lastUpdatedAtChanged, changeset.updatedAt])
     const enqueueChangeset = useCallback<React.MouseEventHandler>(async () => {
         if (!viewerCanAdminister) {
             return

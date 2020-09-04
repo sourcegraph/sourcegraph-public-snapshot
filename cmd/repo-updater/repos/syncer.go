@@ -402,7 +402,7 @@ func (d Diff) Repos() Repos {
 
 // NewDiff returns a diff from the given sourced and stored repos.
 func NewDiff(sourced, stored []*Repo) (diff Diff) {
-	// Sort sourced so we merge determinstically
+	// Sort sourced so we merge deterministically
 	sort.Sort(Repos(sourced))
 
 	byID := make(map[api.ExternalRepoSpec]*Repo, len(sourced))

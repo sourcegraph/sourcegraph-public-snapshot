@@ -146,6 +146,15 @@ func TestChangesetResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	unsyncedChangeset := createChangeset(t, ctx, store, testChangesetOpts{
+		repo:                repo.ID,
+		externalServiceType: "github",
+		externalID:          "9876",
+		unsynced:            true,
+		publicationState:    campaigns.ChangesetPublicationStatePublished,
+		reconcilerState:     campaigns.ReconcilerStateQueued,
+	})
+
 	spec := &campaigns.CampaignSpec{
 		UserID:          userID,
 		NamespaceUserID: userID,
@@ -174,10 +183,12 @@ func TestChangesetResolver(t *testing.T) {
 	}
 
 	tests := []struct {
+		name      string
 		changeset *campaigns.Changeset
 		want      apitest.Changeset
 	}{
 		{
+			name:      "unpublished changeset",
 			changeset: unpublishedChangeset,
 			want: apitest.Changeset{
 				Typename:   "ExternalChangeset",
@@ -193,14 +204,16 @@ func TestChangesetResolver(t *testing.T) {
 				},
 				PublicationState: string(campaigns.ChangesetPublicationStateUnpublished),
 				ReconcilerState:  string(campaigns.ReconcilerStateCompleted),
+				CurrentSpec:      apitest.ChangesetSpec{ID: string(marshalChangesetSpecRandID(unpublishedSpec.RandID))},
 			},
 		},
 		{
+			name:      "errored changeset",
 			changeset: erroredChangeset,
 			want: apitest.Changeset{
 				Typename:   "ExternalChangeset",
-				Title:      unpublishedSpec.Spec.Title,
-				Body:       unpublishedSpec.Spec.Body,
+				Title:      erroredSpec.Spec.Title,
+				Body:       erroredSpec.Spec.Body,
 				Repository: apitest.Repository{Name: repo.Name},
 				// Not scheduled for sync, because it's not published.
 				NextSyncAt: "",
@@ -212,9 +225,11 @@ func TestChangesetResolver(t *testing.T) {
 				PublicationState: string(campaigns.ChangesetPublicationStateUnpublished),
 				ReconcilerState:  string(campaigns.ReconcilerStateErrored),
 				Error:            "very bad error",
+				CurrentSpec:      apitest.ChangesetSpec{ID: string(marshalChangesetSpecRandID(erroredSpec.RandID))},
 			},
 		},
 		{
+			name:      "synced github changeset",
 			changeset: syncedGitHubChangeset,
 			want: apitest.Changeset{
 				Typename:      "ExternalChangeset",
@@ -245,19 +260,33 @@ func TestChangesetResolver(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:      "unsynced changeset",
+			changeset: unsyncedChangeset,
+			want: apitest.Changeset{
+				Typename:         "ExternalChangeset",
+				ExternalID:       "9876",
+				Repository:       apitest.Repository{Name: repo.Name},
+				Labels:           []apitest.Label{},
+				PublicationState: string(campaigns.ChangesetPublicationStatePublished),
+				ReconcilerState:  string(campaigns.ReconcilerStateQueued),
+			},
+		},
 	}
 
 	for _, tc := range tests {
-		apiID := marshalChangesetID(tc.changeset.ID)
-		input := map[string]interface{}{"changeset": apiID}
+		t.Run(tc.name, func(t *testing.T) {
+			apiID := marshalChangesetID(tc.changeset.ID)
+			input := map[string]interface{}{"changeset": apiID}
 
-		var response struct{ Node apitest.Changeset }
-		apitest.MustExec(ctx, t, s, input, &response, queryChangeset)
+			var response struct{ Node apitest.Changeset }
+			apitest.MustExec(ctx, t, s, input, &response, queryChangeset)
 
-		tc.want.ID = string(apiID)
-		if diff := cmp.Diff(tc.want, response.Node); diff != "" {
-			t.Fatalf("wrong campaign response (-want +got):\n%s", diff)
-		}
+			tc.want.ID = string(apiID)
+			if diff := cmp.Diff(tc.want, response.Node); diff != "" {
+				t.Fatalf("wrong campaign response (-want +got):\n%s", diff)
+			}
+		})
 	}
 }
 
@@ -298,6 +327,8 @@ query($changeset: ID!) {
 
       events(first: 100) { totalCount }
       labels { text, color, description }
+
+      currentSpec { id }
 
       diff {
         __typename

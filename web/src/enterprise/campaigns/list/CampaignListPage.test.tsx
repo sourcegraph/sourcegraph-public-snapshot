@@ -5,6 +5,7 @@ import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/tele
 import { of } from 'rxjs'
 import { shallow } from 'enzyme'
 import { nodes } from './CampaignNode.story'
+import { NOOP_BREADCRUMB_SETTERS } from '../../../components/Breadcrumbs'
 
 const history = H.createMemoryHistory()
 
@@ -14,6 +15,7 @@ describe('CampaignListPage', () => {
             expect(
                 shallow(
                     <CampaignListPage
+                        {...NOOP_BREADCRUMB_SETTERS}
                         history={history}
                         location={history.location}
                         queryCampaigns={() =>
@@ -32,6 +34,7 @@ describe('CampaignListPage', () => {
             expect(
                 shallow(
                     <CampaignListPage
+                        {...NOOP_BREADCRUMB_SETTERS}
                         history={history}
                         location={history.location}
                         queryCampaigns={() =>

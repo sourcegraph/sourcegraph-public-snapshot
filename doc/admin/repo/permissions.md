@@ -18,9 +18,7 @@ Then, [add or edit a GitHub connection](../external_service/github.md#repository
 {
    "url": "https://github.com",
    "token": "$PERSONAL_ACCESS_TOKEN",
-   "authorization": {
-     "ttl": "3h"
-   }
+   "authorization": {}
 }
 ```
 
@@ -49,8 +47,7 @@ Then, [add or edit a GitLab connection](../external_service/gitlab.md#repository
   "authorization": {
     "identityProvider": {
       "type": "oauth"
-    },
-    "ttl": "3h"
+    }
   }
 }
 ```
@@ -72,8 +69,7 @@ Then, [add or edit a GitLab connection](../external_service/gitlab.md#repository
       "authProviderID": "$AUTH_PROVIDER_ID",
       "authProviderType": "$AUTH_PROVIDER_TYPE",
       "gitlabProvider": "$AUTH_PROVIDER_GITLAB_ID"
-    },
-    "ttl": "3h"
+    }
   }
 }
 ```
@@ -98,8 +94,7 @@ because Sourcegraph usernames are mutable.
   "authorization": {
     "identityProvider": {
       "type": "username"
-    },
-    "ttl": "3h"
+    }
   }
 }
 ```
@@ -167,14 +162,6 @@ Scroll to the bottom and check the *Allow 2-Legged OAuth* checkbox, then write y
 Go to your Sourcegraph's *Manage repositories* page (i.e. `https://sourcegraph.example.com/site-admin/external-services`) and either edit or create a new *Bitbucket Server* connection. Click on the *Enforce permissions* quick action on top of the configuration editor. Copy the *Consumer Key* you generated before to the `oauth.consumerKey` field and the output of the command `base64 sourcegraph.pem | tr -d '\n'` to the `oauth.signingKey` field.
 
 <img src="https://imgur.com/ucetesA.png" width="800">
-
----
-
-### Caching
-
-Permissions for each user are cached for the configured `ttl` duration (**3h** by default). When the `ttl` expires for a given user, during request that needs to be authorized, permissions will be refetched from Bitbucket Server again in the background, during which time the previously cached permissions will be used to authorize the user's actions. A lower `ttl` makes Sourcegraph refresh permissions for each user more often which increases load on Bitbucket Server, so have that in consideration when changing this value.
-
-The default `hardTTL` is **3 days**, after which a user's cached permissions must be updated before any user action can be authorized. While the update is happening an error is returned to the user. The default `hardTTL` value was chosen so that it reduces the chances of users being forced to wait for their permissions to be updated after a weekend of inactivity.
 
 ### Fast permission sync with Bitbucket Server plugin
 

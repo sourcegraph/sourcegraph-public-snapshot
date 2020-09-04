@@ -2,7 +2,7 @@
 
 const { generateNamespace } = require('@gql2ts/from-schema')
 const { DEFAULT_OPTIONS, DEFAULT_TYPE_MAP } = require('@gql2ts/language-typescript')
-const { buildSchema, graphql, introspectionQuery } = require('graphql')
+const { buildSchema, introspectionFromSchema } = require('graphql')
 const gulp = require('gulp')
 const { compile: compileJSONSchema } = require('json-schema-to-typescript')
 const { readFile, writeFile, mkdir } = require('mz/fs')
@@ -23,10 +23,7 @@ async function graphQlSchema() {
   const schemaString = await readFile(GRAPHQL_SCHEMA_PATH, 'utf8')
   const schema = buildSchema(schemaString)
 
-  const result = /** @type {{ data: import('graphql').IntrospectionQuery }} */ (await graphql(
-    schema,
-    introspectionQuery
-  ))
+  const result = introspectionFromSchema(schema)
 
   const formatOptions = await resolveConfig(__dirname, { config: __dirname + '/../prettier.config.js' })
   const typings =

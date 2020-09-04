@@ -1,21 +1,15 @@
-FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d
+FROM scratch
 
-ARG COMMIT_SHA="unknown"
-ARG DATE="unknown"
-ARG VERSION="unknown"
-
-LABEL org.opencontainers.image.revision=${COMMIT_SHA}
-LABEL org.opencontainers.image.created=${DATE}
-LABEL org.opencontainers.image.version=${VERSION}
-LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
-
-# hadolint ignore=DL3018
-RUN apk update && apk add --no-cache \
-    git \
-    tini \
-    docker
-
-USER sourcegraph
-EXPOSE 3190
-ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/precise-code-intel-indexer-vm"]
+# NOTE: We use this container only for distribution of this binary, not for a containerized
+# way to _run_ the application. This binary is extracted from the container during the init
+# process of the compute node that runs the indexer, as it need direct access to the host's
+# ignite binary and firecracker state.
+#
+# See https://github.com/sourcegraph/infrastructure/blob/master/code-intel/startup-script.sh.
 COPY precise-code-intel-indexer-vm /usr/local/bin/
+
+# Required for docker create to work correctly. Without this docker create responds with
+# the folowing error:
+#
+# Error response from daemon: No command specified
+CMD ["/usr/local/bin/precise-code-intel-indexer-vm"]

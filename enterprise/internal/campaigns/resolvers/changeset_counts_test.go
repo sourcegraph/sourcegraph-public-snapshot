@@ -103,7 +103,7 @@ func TestChangesetCountsOverTimeResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	campaignAPIID := string(campaigns.MarshalCampaignID(campaign.ID))
+	campaignAPIID := string(marshalCampaignID(campaign.ID))
 	input := map[string]interface{}{"campaign": campaignAPIID}
 	var response struct{ Node apitest.Campaign }
 	apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryChangesetCountsConnection)
@@ -244,7 +244,8 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	})
 	defer mockState.Unmock()
 
-	err = ee.SyncChangesets(ctx, repoStore, store, cf, changesets...)
+	sourcer := repos.NewSourcer(cf)
+	err = ee.SyncChangesets(ctx, repoStore, store, sourcer, changesets...)
 	if err != nil {
 		t.Fatal(err)
 	}

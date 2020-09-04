@@ -175,6 +175,92 @@ func TestStoreDequeueConcurrent(t *testing.T) {
 	}
 }
 
+func TestStoreDequeueRetryAfter(t *testing.T) {
+	setupStoreTest(t)
+
+	if _, err := dbconn.Global.Exec(`
+		INSERT INTO workerutil_test (id, state, finished_at, failure_message, num_resets, uploaded_at)
+		VALUES
+			(1, 'errored', NOW() - '6 minute'::interval, 'error', 3, NOW() - '2 minutes'::interval),
+			(2, 'errored', NOW() - '4 minute'::interval, 'error', 0, NOW() - '3 minutes'::interval),
+			(3, 'errored', NOW() - '6 minute'::interval, 'error', 5, NOW() - '4 minutes'::interval),
+			(4, 'queued',                          NULL,    NULL, 0, NOW() - '1 minutes'::interval)
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	options := StoreOptions{
+		TableName:     defaultTestStoreOptions.TableName,
+		StalledMaxAge: defaultTestStoreOptions.StalledMaxAge,
+
+		Scan: testScanFirstRecordRetry,
+		ColumnExpressions: []*sqlf.Query{
+			sqlf.Sprintf("w.id"),
+			sqlf.Sprintf("w.state"),
+			sqlf.Sprintf("w.num_resets"),
+		},
+		OrderByExpression: sqlf.Sprintf("w.uploaded_at"),
+		MaxNumResets:      5,
+		RetryAfter:        5 * time.Minute,
+	}
+
+	store := testStore(options)
+
+	// Dequeue errored record
+	record1, tx, ok, err := store.Dequeue(context.Background(), nil)
+	assertDequeueRecordRetryResult(t, 1, 4, record1, tx, ok, err)
+
+	// Dequeue non-errored record
+	record2, tx, ok, err := store.Dequeue(context.Background(), nil)
+	assertDequeueRecordRetryResult(t, 4, 0, record2, tx, ok, err)
+
+	// Does not dequeue old or max retried errored
+	if _, _, ok, _ := store.Dequeue(context.Background(), nil); ok {
+		t.Fatalf("did not expect a third dequeueable record")
+	}
+}
+
+func TestStoreDequeueRetryAfterDisabled(t *testing.T) {
+	setupStoreTest(t)
+
+	if _, err := dbconn.Global.Exec(`
+		INSERT INTO workerutil_test (id, state, finished_at, failure_message, num_resets, uploaded_at)
+		VALUES
+			(1, 'errored', NOW() - '6 minute'::interval, 'error', 3, NOW() - '2 minutes'::interval),
+			(2, 'errored', NOW() - '4 minute'::interval, 'error', 0, NOW() - '3 minutes'::interval),
+			(3, 'errored', NOW() - '6 minute'::interval, 'error', 5, NOW() - '4 minutes'::interval),
+			(4, 'queued',                          NULL,    NULL, 0, NOW() - '1 minutes'::interval)
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	options := StoreOptions{
+		TableName:     defaultTestStoreOptions.TableName,
+		StalledMaxAge: defaultTestStoreOptions.StalledMaxAge,
+
+		Scan: testScanFirstRecordRetry,
+		ColumnExpressions: []*sqlf.Query{
+			sqlf.Sprintf("w.id"),
+			sqlf.Sprintf("w.state"),
+			sqlf.Sprintf("w.num_resets"),
+		},
+		OrderByExpression: sqlf.Sprintf("w.uploaded_at"),
+		MaxNumResets:      5,
+		RetryAfter:        0,
+	}
+
+	store := testStore(options)
+
+	// Dequeue non-errored record only
+	record2, tx, ok, err := store.Dequeue(context.Background(), nil)
+	assertDequeueRecordRetryResult(t, 4, 0, record2, tx, ok, err)
+
+	// Does not dequeue errored
+	if _, _, ok, _ := store.Dequeue(context.Background(), nil); ok {
+		t.Fatalf("did not expect a second dequeueable record")
+	}
+}
+
 func TestStoreRequeue(t *testing.T) {
 	setupStoreTest(t)
 

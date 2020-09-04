@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -99,7 +98,7 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 		return nil, err
 	}
 
-	campaignID, err := campaigns.UnmarshalCampaignID(id)
+	campaignID, err := unmarshalCampaignID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -109,6 +108,29 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 	}
 
 	campaign, err := r.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
+	if err != nil {
+		if err == ee.ErrNoResults {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
+}
+
+func (r *Resolver) Campaign(ctx context.Context, args *graphqlbackend.CampaignArgs) (graphqlbackend.CampaignResolver, error) {
+	if err := campaignsEnabled(); err != nil {
+		return nil, err
+	}
+
+	opts := ee.GetCampaignOpts{Name: args.Name}
+
+	err := graphqlbackend.UnmarshalNamespaceID(graphql.ID(args.Namespace), &opts.NamespaceUserID, &opts.NamespaceOrgID)
+	if err != nil {
+		return nil, err
+	}
+
+	campaign, err := r.store.GetCampaign(ctx, opts)
 	if err != nil {
 		if err == ee.ErrNoResults {
 			return nil, nil
@@ -235,7 +257,7 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 	}
 
 	if args.EnsureCampaign != nil {
-		opts.EnsureCampaignID, err = campaigns.UnmarshalCampaignID(*args.EnsureCampaign)
+		opts.EnsureCampaignID, err = unmarshalCampaignID(*args.EnsureCampaign)
 		if err != nil {
 			return nil, err
 		}
@@ -270,15 +292,7 @@ func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.
 
 	opts := ee.CreateCampaignSpecOpts{RawSpec: args.CampaignSpec}
 
-	switch relay.UnmarshalKind(args.Namespace) {
-	case "User":
-		err = relay.UnmarshalSpec(args.Namespace, &opts.NamespaceUserID)
-	case "Org":
-		err = relay.UnmarshalSpec(args.Namespace, &opts.NamespaceOrgID)
-	default:
-		err = errors.Errorf("Invalid namespace %q", args.Namespace)
-	}
-
+	err = graphqlbackend.UnmarshalNamespaceID(args.Namespace, &opts.NamespaceUserID, &opts.NamespaceOrgID)
 	if err != nil {
 		return nil, err
 	}
@@ -354,7 +368,7 @@ func (r *Resolver) MoveCampaign(ctx context.Context, args *graphqlbackend.MoveCa
 		return nil, err
 	}
 
-	campaignID, err := campaigns.UnmarshalCampaignID(args.Campaign)
+	campaignID, err := unmarshalCampaignID(args.Campaign)
 	if err != nil {
 		return nil, err
 	}
@@ -370,16 +384,7 @@ func (r *Resolver) MoveCampaign(ctx context.Context, args *graphqlbackend.MoveCa
 	}
 
 	if args.NewNamespace != nil {
-		newNamespace := *args.NewNamespace
-		switch relay.UnmarshalKind(newNamespace) {
-		case "User":
-			err = relay.UnmarshalSpec(newNamespace, &opts.NewNamespaceUserID)
-		case "Org":
-			err = relay.UnmarshalSpec(newNamespace, &opts.NewNamespaceOrgID)
-		default:
-			err = errors.Errorf("Invalid namespace %q", newNamespace)
-		}
-
+		err := graphqlbackend.UnmarshalNamespaceID(*args.NewNamespace, &opts.NewNamespaceUserID, &opts.NewNamespaceOrgID)
 		if err != nil {
 			return nil, err
 		}
@@ -405,7 +410,7 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 		return nil, err
 	}
 
-	campaignID, err := campaigns.UnmarshalCampaignID(args.Campaign)
+	campaignID, err := unmarshalCampaignID(args.Campaign)
 	if err != nil {
 		return nil, err
 	}
@@ -420,7 +425,7 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 	return &graphqlbackend.EmptyResponse{}, err
 }
 
-func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
+func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignsArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
 	if err := campaignsEnabled(); err != nil {
 		return nil, err
 	}
@@ -432,9 +437,10 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 		return nil, err
 	}
 	opts.State = state
-	if args.First != nil {
-		opts.Limit = int(*args.First)
+	if err := validateFirstParamDefaults(args.First); err != nil {
+		return nil, err
 	}
+	opts.Limit = int(args.First)
 	if args.After != nil {
 		cursor, err := strconv.ParseInt(*args.After, 10, 32)
 		if err != nil {
@@ -456,14 +462,7 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 	}
 
 	if args.Namespace != nil {
-		switch relay.UnmarshalKind(*args.Namespace) {
-		case "User":
-			err = relay.UnmarshalSpec(*args.Namespace, &opts.NamespaceUserID)
-		case "Org":
-			err = relay.UnmarshalSpec(*args.Namespace, &opts.NamespaceOrgID)
-		default:
-			err = errors.Errorf("Invalid namespace %q", *args.Namespace)
-		}
+		err := graphqlbackend.UnmarshalNamespaceID(*args.Namespace, &opts.NamespaceUserID, &opts.NamespaceOrgID)
 		if err != nil {
 			return nil, err
 		}
@@ -488,9 +487,14 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, campaign
 
 	safe := true
 
-	if args.First != nil {
-		opts.Limit = int(*args.First)
+	// TODO: This _could_ become problematic if a user has a campaign with > 10000 changesets, once
+	// we use cursor based pagination in the frontend for ChangesetConnections this problem will disappear.
+	// Currently we cannot enable it, though, because we want to re-fetch the whole list periodically to
+	// check for a change in the changeset states.
+	if err := validateFirstParamDefaults(args.First); err != nil {
+		return opts, false, err
 	}
+	opts.Limit = int(args.First)
 
 	if args.After != nil {
 		cursor, err := strconv.ParseInt(*args.After, 10, 32)
@@ -564,7 +568,7 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 		return nil, err
 	}
 
-	campaignID, err := campaigns.UnmarshalCampaignID(args.Campaign)
+	campaignID, err := unmarshalCampaignID(args.Campaign)
 	if err != nil {
 		return nil, errors.Wrap(err, "unmarshaling campaign id")
 	}
@@ -575,7 +579,7 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 
 	svc := ee.NewService(r.store, r.httpFactory)
 	// 🚨 SECURITY: CloseCampaign checks whether current user is authorized.
-	campaign, err := svc.CloseCampaign(ctx, campaignID, args.CloseChangesets, true)
+	campaign, err := svc.CloseCampaign(ctx, campaignID, args.CloseChangesets)
 	if err != nil {
 		return nil, errors.Wrap(err, "closing campaign")
 	}
@@ -636,4 +640,25 @@ func checkSiteAdminOrSameUser(ctx context.Context, userID int32) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+type ErrInvalidFirstParameter struct {
+	Min, Max, First int
+}
+
+func (e ErrInvalidFirstParameter) Error() string {
+	return fmt.Sprintf("first param %d is out of range (min=%d, max=%d)", e.First, e.Min, e.Max)
+}
+
+func validateFirstParam(first int32, max int) error {
+	if first < 0 || first > int32(max) {
+		return ErrInvalidFirstParameter{Min: 0, Max: max, First: int(first)}
+	}
+	return nil
+}
+
+const defaultMaxFirstParam = 10000
+
+func validateFirstParamDefaults(first int32) error {
+	return validateFirstParam(first, defaultMaxFirstParam)
 }

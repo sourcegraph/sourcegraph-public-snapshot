@@ -292,7 +292,7 @@ func (p *parser) parseNegatedLeafNode() (Node, error) {
 	}
 	// we don't support NOT -field:value
 	if parameter.Negated {
-		return nil, fmt.Errorf("Unexpected NOT before \"-%s:%s\". Remove NOT and try again.",
+		return nil, fmt.Errorf("unexpected NOT before \"-%s:%s\". Remove NOT and try again",
 			parameter.Field, parameter.Value)
 	}
 	parameter.Negated = true
@@ -348,10 +348,9 @@ loop:
 				default:
 					if strict {
 						return "", count, errors.New("unrecognized escape sequence")
-					} else {
-						// Accept anything else literally.
-						result = append(result, '\\', r)
 					}
+					// Accept anything else literally.
+					result = append(result, '\\', r)
 				}
 				if len(buf) == 0 {
 					return "", count, errors.New("unterminated literal: expected " + string(delimiter))
@@ -371,10 +370,11 @@ loop:
 }
 
 // ScanField scans an optional '-' at the beginning of a string, and then scans
-// one or more alphabetic characters until it encounters a ':', in which case it
-// returns the value before the colon and its length. In all other cases it
-// returns the empty string and zero length.
-func ScanField(buf []byte) (string, int) {
+// one or more alphabetic characters until it encounters a ':'. The prefix
+// string is checked against valid fields. If it is valid, the function returns
+// the value before the colon, whether it's negated, and its length. In all
+// other cases it returns zero values.
+func ScanField(buf []byte) (string, bool, int) {
 	var count int
 	var r rune
 	var result []rune
@@ -389,7 +389,7 @@ func ScanField(buf []byte) (string, int) {
 
 	r = next()
 	if r != '-' && !strings.ContainsRune(allowed, r) {
-		return "", 0
+		return "", false, 0
 	}
 	result = append(result, r)
 
@@ -410,9 +410,21 @@ func ScanField(buf []byte) (string, int) {
 		break
 	}
 	if !success {
-		return "", 0
+		return "", false, 0
 	}
-	return string(result), count
+
+	field := string(result)
+	negated := field[0] == '-'
+	if negated {
+		field = field[1:]
+	}
+
+	if _, exists := allFields[strings.ToLower(field)]; !exists {
+		// Not a recognized parameter field.
+		return "", false, 0
+	}
+
+	return field, negated, count
 }
 
 // ScanValue scans for a value (e.g., of a parameter, or a string corresponding
@@ -426,7 +438,7 @@ func ScanValue(buf []byte, allowDanglingParens bool) (string, int, bool) {
 	var result []rune
 
 	next := func() rune {
-		r, advance := utf8.DecodeRune(buf)
+		r, advance = utf8.DecodeRune(buf)
 		count += advance
 		buf = buf[advance:]
 		return r
@@ -455,22 +467,9 @@ func ScanValue(buf []byte, allowDanglingParens bool) (string, int, bool) {
 		}
 		if r == '\\' {
 			// Handle escape sequence.
-			if len(buf[advance:]) > 0 {
+			if len(buf) > 0 {
 				r = next()
-				// Interpret escape sequences for whitespace escape
-				// sequences \n\r\t. Other escape sequences fall
-				// through to a regexp interpretation.
-				switch r {
-				case 'n':
-					result = append(result, '\n')
-				case 'r':
-					result = append(result, '\r')
-				case 't':
-					result = append(result, '\t')
-				default:
-					// Accept anything else literally.
-					result = append(result, '\\', r)
-				}
+				result = append(result, '\\', r)
 				continue
 			}
 		}
@@ -479,40 +478,43 @@ func ScanValue(buf []byte, allowDanglingParens bool) (string, int, bool) {
 	return string(result), count, balanced != 0
 }
 
-// TryParseDelimiter tries to parse a delimited string, returning whether it
-// succeeded, and the interpreted (i.e., unquoted) value if it succeeds.
-func (p *parser) TryParseDelimiter() (string, bool) {
-	delimited := func(delimiter rune) (string, error) {
+// TryParseDelimiter tries to parse a delimited string, returning the
+// interpreted (i.e., unquoted) value if it succeeds, the delimiter that
+// suceeded parsing, and whether it succeeded.
+func (p *parser) TryParseDelimiter() (string, rune, bool) {
+	delimited := func(delimiter rune) (string, bool) {
 		start := p.pos
 		value, advance, err := ScanDelimited(p.buf[p.pos:], false, delimiter)
 		if err != nil {
-			return "", err
+			return "", false
 		}
 		p.pos += advance
 		if !p.done() {
 			if r, _ := utf8.DecodeRune([]byte{p.buf[p.pos]}); !unicode.IsSpace(r) {
 				p.pos = start // backtrack
-				return "", errors.New("delimited value should be followed by whitespace")
+				// delimited value should be followed by whitespace
+				return "", false
 			}
 		}
-		return value, nil
-	}
-	tryScanDelimiter := func() (string, error) {
-		if p.match(SQUOTE) {
-			return delimited('\'')
-		}
-		if p.match(DQUOTE) {
-			return delimited('"')
-		}
-		if p.match("/") {
-			return delimited('/')
-		}
-		return "", errors.New("failed to scan delimiter")
-	}
-	if value, err := tryScanDelimiter(); err == nil {
 		return value, true
 	}
-	return "", false
+
+	if p.match(SQUOTE) {
+		if v, ok := delimited('\''); ok {
+			return v, '\'', true
+		}
+	}
+	if p.match(DQUOTE) {
+		if v, ok := delimited('"'); ok {
+			return v, '"', true
+		}
+	}
+	if p.match(SLASH) {
+		if v, ok := delimited('/'); ok {
+			return v, '/', true
+		}
+	}
+	return "", 0, false
 }
 
 // ParseFieldValue parses a value after a field like "repo:". If the value
@@ -549,16 +551,37 @@ func (p *parser) ParseFieldValue() (string, error) {
 // multiple Patterns concatenated together).
 func (p *parser) ParsePattern() Pattern {
 	start := p.pos
-	// If we can parse a well-delimited value, that takes precedence, and we
-	// denote it with Quoted set to true.
-	if value, ok := p.TryParseDelimiter(); ok {
+	// If we can parse a well-delimited value, that takes precedence.
+	if value, delimiter, ok := p.TryParseDelimiter(); ok {
+		var labels labels
+		if delimiter == '/' {
+			// This is a regex-delimited pattern
+			labels = Regexp
+		} else {
+			labels = Literal | Quoted
+		}
 		return Pattern{
 			Value:   value,
 			Negated: false,
 			Annotation: Annotation{
-				Labels: Literal | Quoted,
+				Labels: labels,
 				Range:  newRange(start, p.pos),
 			},
+		}
+	}
+
+	if isSet(p.heuristics, parensAsPatterns) {
+		if value, advance, ok := ScanBalancedPatternLiteral(p.buf[p.pos:]); ok {
+			pattern := Pattern{
+				Value:   value,
+				Negated: false,
+				Annotation: Annotation{
+					Labels: Regexp,
+					Range:  newRange(p.pos, p.pos+advance),
+				},
+			}
+			p.pos += advance
+			return pattern
 		}
 	}
 
@@ -587,18 +610,8 @@ func (p *parser) ParsePattern() Pattern {
 // be preceded by '-' which means the parameter is negated.
 func (p *parser) ParseParameter() (Parameter, bool, error) {
 	start := p.pos
-	field, advance := ScanField(p.buf[p.pos:])
+	field, negated, advance := ScanField(p.buf[p.pos:])
 	if field == "" {
-		return Parameter{}, false, nil
-	}
-
-	negated := field[0] == '-'
-	if negated {
-		field = field[1:]
-	}
-
-	if _, exists := allFields[strings.ToLower(field)]; !exists {
-		// Not a recognized parameter field.
 		return Parameter{}, false, nil
 	}
 
@@ -687,25 +700,6 @@ loop:
 							Labels: Regexp,
 							Range:  newRange(p.pos, p.pos+advance),
 						},
-					}
-
-					// Concat when a pattern like foo()bar is parsed as (concat "foo" "()bar")
-					// if these are not space-separated.
-					if p.pos > 0 {
-						if r, _ := utf8.DecodeRune([]byte{p.buf[p.pos-1]}); !unicode.IsSpace(r) {
-							if len(nodes) > 0 {
-								if previous, ok := nodes[len(nodes)-1].(Pattern); ok {
-									previous.Annotation.Labels = Regexp | HeuristicParensAsPatterns
-									result, err := concatPatterns(previous, pattern)
-									if err != nil {
-										return nil, err
-									}
-									nodes[len(nodes)-1] = result
-									p.pos += advance
-									continue
-								}
-							}
-						}
 					}
 
 					p.pos += advance
@@ -915,8 +909,7 @@ func ParseAndOr(in string, searchType SearchType) ([]Node, error) {
 
 	nodes, err := parser.parseOr()
 	if err != nil {
-		switch err.(type) {
-		case *ExpectedOperand:
+		if _, ok := err.(*ExpectedOperand); ok {
 			// The query may be unbalanced or malformed as in "(" or
 			// "x or" and expects an operand. Try harder to parse it.
 			if nodes, err := parser.tryFallbackParser(in); err == nil {
@@ -974,9 +967,10 @@ func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 		query = substituteConcat(query, " ")
 	case SearchTypeStructural:
 		if containsNegatedPattern(query) {
-			return nil, errors.New("The query contains a negated search pattern. Structural search does not support negated search patterns at the moment.")
+			return nil, errors.New("the query contains a negated search pattern. Structural search does not support negated search patterns at the moment")
 		}
 		query = substituteConcat(query, " ")
+		query = ellipsesForHoles(query)
 	case SearchTypeRegex:
 		query = Map(query, EmptyGroupsToLiteral, TrailingParensToLiteral)
 	}

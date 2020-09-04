@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"strings"
 	"sync"
 
 	"github.com/inconshreveable/log15"
@@ -17,6 +18,8 @@ func runCommand(ctx context.Context, command string, args ...string) error {
 	if err != nil {
 		return err
 	}
+
+	log15.Debug(fmt.Sprintf("Running command: %s %s", command, strings.Join(args, " ")))
 
 	wg := parallel(
 		func() { processStream("stdout", stdout) },
@@ -75,6 +78,6 @@ func processStream(prefix string, r io.Reader) {
 	scanner := bufio.NewScanner(r)
 
 	for scanner.Scan() {
-		log15.Info(fmt.Sprintf("%s: %s\n", prefix, scanner.Text()))
+		log15.Info(fmt.Sprintf("%s: %s", prefix, scanner.Text()))
 	}
 }

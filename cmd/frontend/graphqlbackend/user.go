@@ -317,7 +317,7 @@ func (r *UserResolver) ViewerCanChangeUsername(ctx context.Context) bool {
 	return viewerCanChangeUsername(ctx, r.user.ID)
 }
 
-func (r *UserResolver) Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error) {
+func (r *UserResolver) Campaigns(ctx context.Context, args *ListCampaignsArgs) (CampaignsConnectionResolver, error) {
 	id := r.ID()
 	args.Namespace = &id
 	return EnterpriseResolvers.campaignsResolver.Campaigns(ctx, args)

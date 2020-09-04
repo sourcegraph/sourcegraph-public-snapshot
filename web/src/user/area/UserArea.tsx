@@ -7,7 +7,7 @@ import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxj
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, filter } from 'rxjs/operators'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import { gql, dataOrThrowErrors, requestGraphQL } from '../../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { isErrorLike, asError } from '../../../../shared/src/util/errors'
@@ -24,11 +24,14 @@ import { ErrorMessage } from '../../components/alerts'
 import { isDefined } from '../../../../shared/src/util/types'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../../auth'
-import { UserResult, UserVariables, UserAreaUserFields } from '../../graphql-operations'
+import { UserAreaUserFields } from '../../graphql-operations'
+import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
+import { Link } from '../../../../shared/src/components/Link'
+import { queryGraphQL } from '../../backend/graphql'
 
 const fetchUser = (args: { username: string; siteAdmin: boolean }): Observable<UserAreaUserFields> =>
-    requestGraphQL<UserResult, UserVariables>({
-        request: gql`
+    queryGraphQL(
+        gql`
             query User($username: String!, $siteAdmin: Boolean!) {
                 user(username: $username) {
                     ...UserAreaUserFields
@@ -62,16 +65,17 @@ const fetchUser = (args: { username: string; siteAdmin: boolean }): Observable<U
                     syncedAt
                     updatedAt
                 }
+                tags @include(if: $siteAdmin)
             }
         `,
-        variables: args,
-    }).pipe(
+        args
+    ).pipe(
         map(dataOrThrowErrors),
         map(data => {
             if (!data.user) {
                 throw new Error(`User not found: ${JSON.stringify(args.username)}`)
             }
-            return data.user
+            return data.user as UserAreaUserFields
         })
     )
 
@@ -90,6 +94,8 @@ interface UserAreaProps
         TelemetryProps,
         ActivationProps,
         OnboardingTourProps,
+        BreadcrumbsProps,
+        BreadcrumbSetters,
         Omit<PatternTypeProps, 'setPatternType'> {
     userAreaRoutes: readonly UserAreaRoute[]
     userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
@@ -105,7 +111,7 @@ interface UserAreaProps
     isSourcegraphDotCom: boolean
 }
 
-interface UserAreaState {
+interface UserAreaState extends BreadcrumbSetters {
     /**
      * The fetched user (who is the subject of the page), or an error if an error occurred; undefined while
      * loading.
@@ -125,6 +131,8 @@ export interface UserAreaRouteContext
         ActivationProps,
         NamespaceProps,
         OnboardingTourProps,
+        BreadcrumbsProps,
+        BreadcrumbSetters,
         Omit<PatternTypeProps, 'setPatternType'> {
     /** The user area main URL. */
     url: string
@@ -154,11 +162,19 @@ export interface UserAreaRouteContext
  * A user's public profile area.
  */
 export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
-    public state: UserAreaState = {}
+    public state: UserAreaState
 
     private componentUpdates = new Subject<UserAreaProps>()
     private refreshRequests = new Subject<void>()
     private subscriptions = new Subscription()
+
+    constructor(props: UserAreaProps) {
+        super(props)
+        this.state = {
+            setBreadcrumb: props.setBreadcrumb,
+            useBreadcrumb: props.useBreadcrumb,
+        }
+    }
 
     public componentDidMount(): void {
         // Changes to the route-matched username.
@@ -188,7 +204,24 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                     })
                 )
                 .subscribe(
-                    stateUpdate => this.setState(stateUpdate),
+                    stateUpdate => {
+                        if (stateUpdate.userOrError && !isErrorLike(stateUpdate.userOrError)) {
+                            const childBreadcrumbSetters = this.props.setBreadcrumb({
+                                key: 'UserArea',
+                                element: (
+                                    <Link to={stateUpdate.userOrError.url}>{stateUpdate.userOrError.username}</Link>
+                                ),
+                            })
+                            this.subscriptions.add(childBreadcrumbSetters)
+                            this.setState({
+                                ...stateUpdate,
+                                setBreadcrumb: childBreadcrumbSetters.setBreadcrumb,
+                                useBreadcrumb: childBreadcrumbSetters.useBreadcrumb,
+                            })
+                        } else {
+                            this.setState(stateUpdate)
+                        }
+                    },
                     error => console.error(error)
                 )
         )
@@ -219,11 +252,25 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
         }
 
         const context: UserAreaRouteContext = {
-            ...this.props,
+            authenticatedUser: this.props.authenticatedUser,
+            extensionsController: this.props.extensionsController,
+            isLightTheme: this.props.isLightTheme,
+            isSourcegraphDotCom: this.props.isSourcegraphDotCom,
+            patternType: this.props.patternType,
+            platformContext: this.props.platformContext,
+            settingsCascade: this.props.settingsCascade,
+            showOnboardingTour: this.props.showOnboardingTour,
+            telemetryService: this.props.telemetryService,
+            userSettingsAreaRoutes: this.props.userSettingsAreaRoutes,
+            userSettingsSideBarItems: this.props.userSettingsSideBarItems,
+            activation: this.props.activation,
             url: this.props.match.url,
             user: this.state.userOrError,
             onDidUpdateUser: this.onDidUpdateUser,
             namespace: this.state.userOrError,
+            breadcrumbs: this.props.breadcrumbs,
+            useBreadcrumb: this.state.useBreadcrumb,
+            setBreadcrumb: this.state.setBreadcrumb,
         }
         return (
             <div className="user-area w-100">

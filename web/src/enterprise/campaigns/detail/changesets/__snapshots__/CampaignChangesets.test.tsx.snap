@@ -3,8 +3,6 @@
 exports[`CampaignChangesets renders 1`] = `
 <CampaignChangesets
   campaignID="123"
-  campaignUpdates="[Subject]"
-  changesetUpdates="[Subject]"
   history="[History]"
   isLightTheme={true}
   location="[Location path=/]"
@@ -210,7 +208,6 @@ exports[`CampaignChangesets renders 1`] = `
       nodeComponent={[Function]}
       nodeComponentProps={
         Object {
-          "campaignUpdates": "[Subject]",
           "extensionInfo": Object {
             "extensionsController": undefined,
             "hoverifier": Object {
@@ -273,7 +270,6 @@ exports[`CampaignChangesets renders 1`] = `
           nodeComponent={[Function]}
           nodeComponentProps={
             Object {
-              "campaignUpdates": "[Subject]",
               "extensionInfo": Object {
                 "extensionsController": undefined,
                 "hoverifier": Object {
@@ -360,7 +356,6 @@ exports[`CampaignChangesets renders 1`] = `
               </h5>
             </CampaignChangesetsHeader>
             <ChangesetNode
-              campaignUpdates="[Subject]"
               extensionInfo={
                 Object {
                   "extensionsController": undefined,
@@ -400,7 +395,6 @@ exports[`CampaignChangesets renders 1`] = `
                 className="changeset-node__separator"
               />
               <HiddenExternalChangesetNode
-                campaignUpdates="[Subject]"
                 extensionInfo={
                   Object {
                     "extensionsController": undefined,

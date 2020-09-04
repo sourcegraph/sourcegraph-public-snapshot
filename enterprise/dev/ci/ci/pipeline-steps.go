@@ -109,8 +109,9 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":puppeteer::electric_plug:",
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
 			bk.Env("ENTERPRISE", "1"),
+			bk.Env("PERCY_ON", "true"),
 			bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-run.sh build-web"),
-			bk.Cmd("yarn run cover-integration"),
+			bk.Cmd("yarn percy exec -- yarn run cover-integration"),
 			bk.Cmd("yarn nyc report -r json"),
 			bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F integration"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
@@ -164,6 +165,24 @@ func addGoBuild(pipeline *bk.Pipeline) {
 func addDockerfileLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":docker:",
 		bk.Cmd("./dev/ci/docker-lint.sh"))
+}
+
+// Adds backend integration tests step.
+func addBackendIntegrationTests(c Config) func(*bk.Pipeline) {
+	return func(pipeline *bk.Pipeline) {
+		if !c.isMasterDryRun && c.branch != "master" && c.branch != "main" {
+			return
+		}
+
+		pipeline.AddStep(":chains:",
+			bk.Cmd("pushd enterprise"),
+			bk.Cmd("./cmd/server/pre-build.sh"),
+			bk.Cmd("./cmd/server/build.sh"),
+			bk.Cmd("popd"),
+			bk.Cmd("./dev/ci/backend-integration.sh"),
+			bk.Cmd(`docker image rm -f "$IMAGE"`),
+		)
+	}
 }
 
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {

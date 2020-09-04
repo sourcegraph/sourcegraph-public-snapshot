@@ -3,6 +3,7 @@
 package main
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -35,7 +36,9 @@ func TestExternalService(t *testing.T) {
 				RepositoryPathPattern: "foobar/{host}/{nameWithOwner}",
 			}),
 		})
-		if err != nil {
+		// The repo-updater might not be up yet but it will eventually catch up for the external
+		// service we just added, thus it is OK to ignore this transient error.
+		if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
 			t.Fatal(err)
 		}
 		defer func() {
@@ -92,7 +95,9 @@ func TestExternalService_AWSCodeCommit(t *testing.T) {
 			},
 		}),
 	})
-	if err != nil {
+	// The repo-updater might not be up yet but it will eventually catch up for the external
+	// service we just added, thus it is OK to ignore this transient error.
+	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
 		t.Fatal(err)
 	}
 	defer func() {
@@ -142,7 +147,9 @@ func TestExternalService_BitbucketServer(t *testing.T) {
 			RepositoryPathPattern: "bbs/{projectKey}/{repositorySlug}",
 		}),
 	})
-	if err != nil {
+	// The repo-updater might not be up yet but it will eventually catch up for the external
+	// service we just added, thus it is OK to ignore this transient error.
+	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
 		t.Fatal(err)
 	}
 	defer func() {
