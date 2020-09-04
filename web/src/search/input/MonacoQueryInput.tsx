@@ -19,6 +19,7 @@ import { observeResize } from '../../util/dom'
 import Shepherd from 'shepherd.js'
 import { CallbackToAdvanceTourStep } from './SearchOnboardingTour'
 import { SearchPatternType } from '../../graphql-operations'
+import { isScreenshotTestEnvironment } from '../../../../shared/src/util/screenshot-testing'
 
 export interface MonacoQueryInputProps
     extends Omit<TogglesProps, 'navbarSearchQuery' | 'filtersInQuery'>,
@@ -230,7 +231,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
             links: false,
             // Display the cursor as a 1px line.
             cursorStyle: 'line',
-            cursorWidth: 1,
+            cursorWidth: isScreenshotTestEnvironment() ? 0 : 1,
         }
         return (
             <>
