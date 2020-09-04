@@ -21,20 +21,24 @@ export interface CategorizedExtensionRegistry {
 const NO_VALID_CATEGORIES: 'Other'[] = ['Other']
 
 /**
- * Categorizes extensions
- * TODO DOCUMENT
- * TODO remove reduce
+ * Groups registry extensions by category.
+ *
+ * `categories`: Object mapping category name to array of extension ids in that category
+ * `extensions`: Object mapping extension id to the configured extension with that id
+ *
+ * `categorizeExtensionRegistry` is passed a cache of configured extensions to avoid
+ * parsing manifests multiple times during the lifecycle of the extension registry.
  *
  */
 export function categorizeExtensionRegistry(
     nodes: RegistryExtensionFieldsForList[],
     configuredExtensionsCache: Map<string, ConfiguredRegistryExtension<RegistryExtensionFieldsForList>>
 ): CategorizedExtensionRegistry {
-    const categoriesById = EXTENSION_CATEGORIES.reduce((categories, category) => {
-        categories[category] = []
-        return categories
-        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    }, {} as Record<ExtensionCategory, string[]>)
+    const categoriesById: Record<string, string[]> = {}
+
+    for (const category of EXTENSION_CATEGORIES) {
+        categoriesById[category] = []
+    }
 
     const categorizedExtensionRegistry: CategorizedExtensionRegistry = {
         categories: categoriesById,
@@ -64,14 +68,11 @@ export function categorizeExtensionRegistry(
 }
 
 /**
- * TODO DOCUMENT
- *
- * @param categories
- * @param enablement
+ * Filters categorized registry extensions by enablement (enabled | disabled | all)
  */
 export function applyExtensionsEnablement(
     categories: CategorizedExtensionRegistry['categories'],
-    filteredCategories: ExtensionCategory[],
+    filteredCategoryIDs: ExtensionCategory[],
     enablement: ExtensionsEnablement,
     settings: Settings | ErrorLike | null
 ): CategorizedExtensionRegistry['categories'] {
@@ -81,11 +82,13 @@ export function applyExtensionsEnablement(
 
     const enabled = enablement === 'enabled'
 
-    return filteredCategories.reduce((toRender, category) => {
-        toRender[category] = categories[category].filter(
+    const filteredCategories: Record<string, string[]> = {}
+
+    for (const category of filteredCategoryIDs) {
+        filteredCategories[category] = categories[category].filter(
             extensionID => enabled === isExtensionEnabled(settings, extensionID)
         )
-        return toRender
-        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    }, {} as Record<ExtensionCategory, string[]>)
+    }
+
+    return filteredCategories
 }
