@@ -208,6 +208,8 @@ importChangesets:
 
 You'll see the existing changeset in the list. The campaign will track the changeset's status and include it in the overall campaign progress (in the same way as if it had been created by the campaign). For more information, see [Tracking campaign progress and changeset statuses](#tracking-campaign-progress-and-changeset-statuses).
 
+> NOTE: You can combine the tracking of existing changesets and creating new ones by adding `importChangesets:` to your campaign specs that have `on:`, `steps:` and `changesetTemplate:` properties.
+
 ## Closing or deleting a campaign
 
 You can close a campaign when you don't need it anymore, when all changes have been merged, or when you decide not to proceed with making changes. A closed campaign still appears in the [campaigns list](#viewing-campaigns). To completely remove it, you can delete the campaign.
