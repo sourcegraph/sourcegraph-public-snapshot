@@ -48,7 +48,7 @@ See the [Creating a campaign](#creating-a-campaign) section for an example campa
 For more information, see:
 
 - [Creating a campaign](#creating-a-campaign)
-- [Updating a campaign](#creating-a-campaign)
+- [Updating a campaign](#updating-a-campaign)
 - [Example campaign specs](examples.md)
 - [Campaign spec YAML reference](campaign_spec_yaml_reference.md)
 
@@ -85,9 +85,11 @@ changesetTemplate:
 
 1. Get started by running the following [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) command:
 
-    <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em></code></pre>
+    <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em> -namespace <em>USERNAME_OR_ORG</em></code></pre>
 
     > **Don't worry!** Before any branches are pushed or changesets (e.g., GitHub pull requests) are created, you will see a preview of all changes and can confirm each one before proceeding.
+
+    The `namespace` can be your Sourcegraph user name or the name of an organisation on Sourcegraph under which you want to create the camapign.
 
 1. Wait for it to run and compute the changes for each repository (using the repositories and commands in the campaign spec).
 1. Open the preview URL that the command printed out.
@@ -164,7 +166,7 @@ To update a campaign, you need [admin access to the campaign](managing_access.md
 1. Update the [campaign spec](#campaign-specs) to include the changes you want to make to the campaign. For example, change the `description` of the campaign or change the commit message in the `changesetTemplate`.
 1. In your terminal, run the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) command shown. The command will execute your campaign spec to generate changes and then upload them to the campaign for you to preview and accept.
 
-    <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em></code></pre>
+    <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em> -namespace USERNAME_OR_ORG</code></pre>
 
     > **Don't worry!** Before any branches or changesets are modified, you will see a preview of all changes and can confirm before proceeding.
 
@@ -173,6 +175,9 @@ To update a campaign, you need [admin access to the campaign](managing_access.md
 1. Click the **Update campaign** button.
 
 All of the changesets on your code host will be updated to the desired state that was shown in the preview.
+
+> NOTE: If you are sure about the changes you want to make and don't need to preview them, you can run `src campaign apply` to apply the campaign spec directly:
+> <pre><code>src campaign apply -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em> -namespace USERNAME_OR_ORG</code></pre>
 
 ## Tracking existing changesets
 
@@ -195,7 +200,7 @@ importChangesets:
 
 1. Create a campaign from the campaign spec by running the following [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) command:
 
-    <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em></code></pre>
+    <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em> -namespace USERNAME_OR_ORG</code></pre>
 
 1. Open the preview URL that the command printed out.
 1. Examine the preview. Confirm that the changesets are the ones you intended to track. If not, edit the campaign spec and then rerun the command above.
