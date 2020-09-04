@@ -8,7 +8,7 @@ exports[`ExtensionCard renders 1`] = `
     className="extension-card card "
   >
     <div
-      className="card-body extension-card__body d-flex flex-row position-relative"
+      className="card-body extension-card__body d-flex position-relative"
       onClick={[Function]}
     >
       <div
@@ -25,24 +25,25 @@ exports[`ExtensionCard renders 1`] = `
         <div
           className="d-flex align-items-center"
         >
-          <h4
-            className="card-title extension-card__body-title mb-0 mr-1 text-truncate  flex-1"
+          <span
+            className="mb-0 mr-1 text-truncate flex-1"
           >
             <a
-              className="extension-card__name"
+              className=""
               href="/extensions/x/y"
               onClick={[Function]}
             >
-              y
+              <strong>
+                y
+              </strong>
             </a>
             <span
-              className="extension-card__publisher font-weight-normal text-muted"
+              className="text-muted"
             >
-               
-              by 
+               by 
               x
             </span>
-          </h4>
+          </span>
         </div>
         <div
           className="mt-1"
