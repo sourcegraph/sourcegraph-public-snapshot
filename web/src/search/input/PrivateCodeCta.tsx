@@ -10,8 +10,7 @@ export const PrivateCodeCta: React.FunctionComponent<Props> = ({ className }) =>
         className={className}
         icon={<DownloadIllustration />}
         title="Search your private code"
-        bodyText="Set up a self-hosted Sourcegraph instance to search your private repositories on GitHub, GitLab,
-                    Bitbucket and local installations of Git, Perforce, Subversion and other code repositories."
+        bodyText="Set up a self-hosted Sourcegraph instance to search your private repositories on GitHub, GitLab, Bitbucket and local installations of Git, Perforce, Subversion and other code repositories."
         linkText="Install now"
         href="https://docs.sourcegraph.com/"
         googleAnalytics={true}
