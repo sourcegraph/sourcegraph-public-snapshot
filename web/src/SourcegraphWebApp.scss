@@ -248,7 +248,7 @@ body,
 .percy-hide,
 .monaco-editor .cursor {
     @media only percy {
-        visibility: hidden;
+        visibility: hidden !important;
     }
 }
 
