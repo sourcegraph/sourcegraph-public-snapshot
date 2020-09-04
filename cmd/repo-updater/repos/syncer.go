@@ -151,7 +151,7 @@ func (s *Syncer) TriggerEnqueueSyncJobs() {
 	s.enqueueSignal.Trigger()
 }
 
-// SyncExternalService syncs repos using all of the supplied external services
+// SyncExternalService syncs repos using the supplied external service.
 func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalServiceID int64, minSyncInterval time.Duration) (err error) {
 	var diff Diff
 
