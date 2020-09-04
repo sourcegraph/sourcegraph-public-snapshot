@@ -88,30 +88,25 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
         settingsCascade.final
     )
 
-    const categorySections: JSX.Element[] = []
-
-    for (const category of filteredCategoryIDs) {
-        // Don't render the section (including header) if no extensions belong to the category
-        if (filteredCategories[category].length > 0) {
-            categorySections.push(
-                <div key={category} className="mt-1">
-                    <h3 className="extensions-list__category font-weight-bold">{category}</h3>
-                    <div className="extensions-list__cards mt-1">
-                        {filteredCategories[category].map(extensionId => (
-                            <ExtensionCard
-                                key={extensionId}
-                                subject={subject}
-                                extension={extensions[extensionId]}
-                                settingsCascade={settingsCascade}
-                                platformContext={platformContext}
-                                enabled={isExtensionEnabled(settingsCascade.final, extensionId)}
-                            />
-                        ))}
-                    </div>
+    const categorySections = filteredCategoryIDs
+        .filter(category => filteredCategories[category].length > 0)
+        .map(category => (
+            <div key={category} className="mt-1">
+                <h3 className="extensions-list__category font-weight-bold">{category}</h3>
+                <div className="extensions-list__cards mt-1">
+                    {filteredCategories[category].map(extensionId => (
+                        <ExtensionCard
+                            key={extensionId}
+                            subject={subject}
+                            extension={extensions[extensionId]}
+                            settingsCascade={settingsCascade}
+                            platformContext={platformContext}
+                            enabled={isExtensionEnabled(settingsCascade.final, extensionId)}
+                        />
+                    ))}
                 </div>
-            )
-        }
-    }
+            </div>
+        ))
 
     return (
         <>
