@@ -160,7 +160,7 @@ If you lack read access to a repository, you can only see [limited information a
 ## Updating a campaign
 
 Campaigns are identified by their name. It must be unique within a single namespace (your user account on Sourcegraph, or an organization you are a member of).
-Updating a campaign works by targetting an **existing** campaign in the namespace by specifying the name in the spec. If the name matches an existing campaign, it will update the campaign.
+Updating a campaign works by targetting an **existing** campaign in the namespace by specifying the name in the spec. If the name matches an existing campaign, it will update the campaign. (Otherwise, a new campaign will be created.)
 
 You can edit a the campaign's description, and any other part of its campaign spec at any time.
 
