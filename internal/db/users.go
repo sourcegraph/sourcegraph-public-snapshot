@@ -183,6 +183,7 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 
 	createdAt := time.Now()
 	updatedAt := createdAt
+	invalidatedSessionsAt := createdAt
 	var id int32
 
 	var passwd sql.NullString
@@ -227,8 +228,8 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 	var siteAdmin bool
 	err = tx.QueryRowContext(
 		ctx,
-		"INSERT INTO users(username, display_name, avatar_url, created_at, updated_at, passwd, site_admin) VALUES($1, $2, $3, $4, $5, $6, $7 AND NOT EXISTS(SELECT * FROM users)) RETURNING id, site_admin",
-		info.Username, info.DisplayName, avatarURL, createdAt, updatedAt, passwd, !alreadyInitialized).Scan(&id, &siteAdmin)
+		"INSERT INTO users(username, display_name, avatar_url, created_at, updated_at, passwd, invalidated_sessions_at, site_admin) VALUES($1, $2, $3, $4, $5, $6, $7, $8 AND NOT EXISTS(SELECT * FROM users)) RETURNING id, site_admin",
+		info.Username, info.DisplayName, avatarURL, createdAt, updatedAt, passwd, invalidatedSessionsAt, !alreadyInitialized).Scan(&id, &siteAdmin)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Constraint {
@@ -285,14 +286,15 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 	}
 
 	return &types.User{
-		ID:          id,
-		Username:    info.Username,
-		DisplayName: info.DisplayName,
-		AvatarURL:   info.AvatarURL,
-		CreatedAt:   createdAt,
-		UpdatedAt:   updatedAt,
-		SiteAdmin:   siteAdmin,
-		BuiltinAuth: info.Password != "",
+		ID:                    id,
+		Username:              info.Username,
+		DisplayName:           info.DisplayName,
+		AvatarURL:             info.AvatarURL,
+		CreatedAt:             createdAt,
+		UpdatedAt:             updatedAt,
+		SiteAdmin:             siteAdmin,
+		BuiltinAuth:           info.Password != "",
+		InvalidatedSessionsAt: invalidatedSessionsAt,
 	}, nil
 }
 

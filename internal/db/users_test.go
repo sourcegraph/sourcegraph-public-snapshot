@@ -346,7 +346,7 @@ func TestUsers_ListCount(t *testing.T) {
 	if users, err := Users.List(ctx, &UsersListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if users, want := normalizeUsers(users), normalizeUsers([]*types.User{user}); !reflect.DeepEqual(users, want) {
-		t.Errorf("got %+v, want %+v", users, want)
+		t.Errorf("got %+v, want %+v", users[0], user)
 	}
 
 	if err := Users.Delete(ctx, user.ID); err != nil {
@@ -627,6 +627,7 @@ func normalizeUsers(users []*types.User) []*types.User {
 	for _, u := range users {
 		u.CreatedAt = u.CreatedAt.Local().Round(time.Second)
 		u.UpdatedAt = u.UpdatedAt.Local().Round(time.Second)
+		u.InvalidatedSessionsAt = u.InvalidatedSessionsAt.Local().Round(time.Second)
 	}
 	return users
 }
