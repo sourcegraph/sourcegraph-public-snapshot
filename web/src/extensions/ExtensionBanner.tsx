@@ -6,7 +6,7 @@ interface Props {
     className?: string
 }
 
-export const ExtensionBanner = React.memo<Props>(({ className }) => (
+export const ExtensionBanner: React.FunctionComponent<Props> = ({ className }) => (
     <CtaBanner
         className={className}
         icon={<BannerPuzzleIcon />}
@@ -16,4 +16,4 @@ export const ExtensionBanner = React.memo<Props>(({ className }) => (
         linkText="Explore extension API"
         href="https://docs.sourcegraph.com/extensions/authoring"
     />
-))
+)

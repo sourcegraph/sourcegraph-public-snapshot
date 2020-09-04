@@ -10,15 +10,17 @@ interface Props {
     linkText: string
 }
 
-export const CtaBanner = React.memo<Props>(({ icon, className, title, bodyText, href, linkText }) => (
-    <div className={classNames('web-content cta-banner shadow d-flex flex-row card', className)}>
-        <div className="cta-banner__icon-column d-flex flex-column align-items-center">{icon}</div>
-        <div>
-            <h3>{title}</h3>
-            <p>{bodyText}</p>
-            <a href={href} target="_blank" rel="noreferrer" className="btn btn-primary ga-cta-install-now">
-                {linkText}
-            </a>
+export const CtaBanner = React.memo<Props>(function CtaBanner({ icon, className, title, bodyText, href, linkText }) {
+    return (
+        <div className={classNames('web-content cta-banner shadow d-flex flex-row card', className)}>
+            <div className="cta-banner__icon-column d-flex flex-column align-items-center">{icon}</div>
+            <div>
+                <h3>{title}</h3>
+                <p>{bodyText}</p>
+                <a href={href} target="_blank" rel="noreferrer" className="btn btn-primary ga-cta-install-now">
+                    {linkText}
+                </a>
+            </div>
         </div>
-    </div>
-))
+    )
+})

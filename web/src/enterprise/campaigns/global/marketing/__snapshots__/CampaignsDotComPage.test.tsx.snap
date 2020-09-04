@@ -162,7 +162,7 @@ exports[`CampaignsDotComPage renders 1`] = `
         className="offset-md-1 col-md-10 offset-lg-0 col-lg-4"
       >
         <PrivateCodeCta>
-          <Memo()
+          <Memo(CtaBanner)
             bodyText="Set up a self-hosted Sourcegraph instance to search your private repositories on GitHub, GitLab, Bitbucket and local installations of Git, Perforce, Subversion and other code repositories."
             href="https://docs.sourcegraph.com/"
             icon={<Memo />}
@@ -254,7 +254,7 @@ exports[`CampaignsDotComPage renders 1`] = `
                 </a>
               </div>
             </div>
-          </Memo()>
+          </Memo(CtaBanner)>
         </PrivateCodeCta>
       </div>
     </div>
