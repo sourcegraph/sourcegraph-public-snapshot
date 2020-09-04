@@ -120,7 +120,7 @@ WHERE external_service_id IN (
 	}, func() float64 {
 		count, err := scanCount(`
 -- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_user_with_external_services_total
-SELECT DISTINCT(namespace_user_id) AS total
+SELECT COUNT(DISTINCT(namespace_user_id)) AS total
 FROM external_services
 WHERE namespace_user_id IS NOT NULL
 `)
