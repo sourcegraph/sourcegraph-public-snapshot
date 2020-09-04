@@ -7,4 +7,4 @@ RUN set -ex && \
     ca-certificates \
     docker.io
 
-RUN mkdir -p /etc/docker/ && echo '{"registry-mirrors": ["http://registry:5000" ]}' >/etc/docker/daemon.json
+RUN mkdir -p /etc/docker/ && echo '{"registry-mirrors": ["http://localhost:5000"] }' >/etc/docker/daemon.json
