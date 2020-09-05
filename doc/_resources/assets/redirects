@@ -81,6 +81,7 @@
 /user/search /user/code_search 308
 /user/search/examples /user/code_search/examples 308
 /user/search/language /user/code_search/language 308
+/user/search/opengrok /user/code_search/opengrok 308
 /user/search/saved_searches /user/code_search/saved_searches 308
 /user/search/scopes /user/code_search/scopes 308
 /user/search/structural /user/code_search/structural 308

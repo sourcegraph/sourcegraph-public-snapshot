@@ -1,6 +1,6 @@
 # Migrating from Oracle OpenGrok to Sourcegraph for code search
 
-> NOTE: This guide helps Sourcegraph admins migrate from deploying Oracle OpenGrok to Sourcegraph. See our [Oracle OpenGrok end user migration guide](../../../user/search/opengrok.md) to learn how to switch from OpenGrok's search syntax to Sourcegraph's.
+> NOTE: This guide helps Sourcegraph admins migrate from deploying Oracle OpenGrok to Sourcegraph. See our [Oracle OpenGrok end user migration guide](../../../user/code_search/opengrok.md) to learn how to switch from OpenGrok's search syntax to Sourcegraph's.
 
 You can migrate from Oracle's [OpenGrok](https://oracle.github.io/opengrok/) to [Sourcegraph](https://about.sourcegraph.com) for code search by following the steps in this document.
 
@@ -15,8 +15,8 @@ You can migrate from Oracle's [OpenGrok](https://oracle.github.io/opengrok/) to 
 
 Sourcegraph is a self-hosted code search and intelligence tool that helps developers find, review, understand, and debug code. Organizations that switch from OpenGrok to Sourcegraph typically cite the following reasons:
 
-- Sourcegraph supports [searching any revision](../../user/search/index.md) (not just specific branches) and does not require waiting for periodic reindexing.
-- Sourcegraph's [query syntax](../../user/search/queries.md), user interface, and [integrations](../../integration/index.md) are superior and easier to use.
+- Sourcegraph supports [searching any revision](../../user/code_search/index.md) (not just specific branches) and does not require waiting for periodic reindexing.
+- Sourcegraph's [query syntax](../../user/code_search/queries.md), user interface, and [integrations](../../integration/index.md) are superior and easier to use.
 - Sourcegraph's [code intelligence](../../user/code_intelligence/index.md), has better language support (hover tooltips, definitions, references, implementations, etc.) and is based on the Language Server Protocol standard.
 - The [Sourcegraph API](../../api/graphql/index.md) is more powerful, better documented, and easier to use than OpenGrok's API.
 - Sourcegraph scales to more repositories/users and supports Kubernetes-based clustered/high-availability deployments better (with the [cluster deployment option](../install/cluster.md)).
@@ -32,7 +32,7 @@ Every organization's needs are different. [Install and use Sourcegraph for free]
 For more information about Sourcegraph, see:
 
 - "[What is Sourcegraph?](../../user/index.md#what-is-sourcegraph)"
-- "[Code search overview](../../user/search/index.md)"
+- "[Code search overview](../../user/code_search/index.md)"
 - Live examples on public code: [Sourcegraph tour](../../user/tour.md)
 
 ## Migration guide
@@ -108,7 +108,7 @@ After you've set Sourcegraph up, it's time to share it with your organization. S
 - Create an internal document based on the [Sourcegraph tour](../../user/tour.md), substituting links to and names of your organization's code. This explains how Sourcegraph helps developers perform common tasks better.
 - Encourage installation of the [browser extension](../../integration/browser_extension.md) to get Sourcegraph code intelligence and search in your organization's existing code host.
 - Roll out the Chrome extension using [G Suite automatic installation](../../integration/google_gsuite.md) to everyone in your organization.
-- Check the access logs for OpenGrok to see what users search for. Try searching for the same things on Sourcegraph, and ensure that you get the expected results. (Note: Sourcegraph's [search query syntax](../../user/search/queries.md) differs from OpenGrok's.)
+- Check the access logs for OpenGrok to see what users search for. Try searching for the same things on Sourcegraph, and ensure that you get the expected results. (Note: Sourcegraph's [search query syntax](../../user/code_search/queries.md) differs from OpenGrok's.)
 - Monitor your Sourcegraph instance's site admin "Analytics" page to see who's using it. Ask them for specific feedback. Also seek feedback from the most frequent users of OpenGrok.
 
 If there are any blockers preventing your organization from switching to Sourcegraph, we'd love to hear from you so we can address them.
