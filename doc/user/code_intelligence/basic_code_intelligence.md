@@ -8,9 +8,9 @@ If you are interested in enabling precise code intelligence for your repository,
 
 [Basic code intelligence](https://github.com/sourcegraph/sourcegraph-basic-code-intel) is able to provide 3 core code intelligence features:
 
-- Jump to definition: it performs a [symbol search](../search/index.md#symbol-search)
+- Jump to definition: it performs a [symbol search](../code_search/index.md#symbol-search)
 - Hover documentation: it first finds the definition then extracts documentation from comments near the definition
-- Find references: it performs a case-sensitive word-boundary cross-repository [plain text search](../search/index.md#powerful-flexible-queries) for the given symbol
+- Find references: it performs a case-sensitive word-boundary cross-repository [plain text search](../code_search/index.md#powerful-flexible-queries) for the given symbol
 
 Basic code intelligence also filters results by file extension and by imports at the top of the file for some languages.
 

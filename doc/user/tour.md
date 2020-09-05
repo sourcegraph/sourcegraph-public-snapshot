@@ -41,7 +41,7 @@ Requirements:
 Workflow:
 
 1.  Search on Sourcegraph for the name of the function you're trying to call. If you've installed any integrations, use those to initiate the search; otherwise use the search box on the homepage of your organization's internal Sourcegraph instance.
-1.  Find and click on a search result that refers to the function you're looking for. (If needed, narrow your search using the suggested search filters below the search box, or by [adding your own filters](search/queries.md).)
+1.  Find and click on a search result that refers to the function you're looking for. (If needed, narrow your search using the suggested search filters below the search box, or by [adding your own filters](code_search/queries.md).)
 1.  Click on the name of the function in the code file (if it's not already highlighted).
 1.  Click **Find references** to see how the function is called.
 1.  Click through to various function call sites and use the after-line blame's authorship and recency information to gauge the quality of the call site as an example.
@@ -64,7 +64,7 @@ Requirements:
 Workflow:
 
 1.  Search on Sourcegraph to locate the part of the code you're interested in. If you've installed any integrations, use those to initiate the search; otherwise use the search box on the homepage of your organization's internal Sourcegraph instance.
-1.  Find and click on a relevant search result or search suggestion. (If needed, narrow your search using the suggested search filters below the search box, or by [adding your own filters](search/queries.md).)
+1.  Find and click on a relevant search result or search suggestion. (If needed, narrow your search using the suggested search filters below the search box, or by [adding your own filters](code_search/queries.md).)
 1.  Read through the code, clicking on a token and then **Go to definition** to navigate to its definition as needed.
 1.  If you have unanswered questions, use the blame information to determine who wrote the code, and send them a Sourcegraph link to the relevant code along with your specific questions.
 
@@ -86,7 +86,7 @@ Requirements:
 Workflow:
 
 1.  Perform a diff search on Sourcegraph with the name of the function that the stack trace originates from, such as `type:diff myCrashingFunctionName`. If you've installed any integrations, use those to initiate the search; otherwise use the search box on the homepage of your organization's internal Sourcegraph instance.
-1.  Scroll through the search results, which show you all commits (and diffs) that match the function name, newest first. (If needed, narrow the diff search by [adding search filters](search/queries.md).)
+1.  Scroll through the search results, which show you all commits (and diffs) that match the function name, newest first. (If needed, narrow the diff search by [adding search filters](code_search/queries.md).)
 1.  Find and click on a relevant search result. On the search results page, clicking on the commit message brings you to the diff (with code intelligence), and clicking on the code in the commit diff brings you to the full file at the revision before or after the commit.
 1.  Use **Go to definition** and **Find references** to understand the implementation changes and callers
 

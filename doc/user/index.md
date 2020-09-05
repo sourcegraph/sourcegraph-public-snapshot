@@ -87,7 +87,7 @@ Sourcegraph code search is fast, works across all your repositories at any commi
 - Custom search scopes
 - Saved search monitoring
 
-Read the [code search documentation](search/index.md) to learn more and discover the full feature set.
+Read the [code search documentation](code_search/index.md) to learn more and discover the full feature set.
 
 ---
 

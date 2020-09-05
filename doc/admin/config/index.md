@@ -8,7 +8,7 @@
 
 - [Add Git repositories from your code host](../repo/add.md)
 - [Add user authentication providers (SSO)](../auth/index.md)
-- [Configure search scopes](../../user/search/scopes.md)
+- [Configure search scopes](../../user/code_search/scopes.md)
 - [Integrate with Phabricator](../../integration/phabricator.md)
 - [Add organizations](../../user/organizations/index.md)
 - [Set up HTTPS](../http_https_configuration.md)

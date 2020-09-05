@@ -78,7 +78,7 @@ Sourcegraph by default clones repositories from your Bitbucket Server via HTTP(S
 
 ## Repository labels
 
-Sourcegraph will mark repositories as archived if they have the `archived` label on Bitbucket Server. You can exclude these repositories in search with `archived:no` [search syntax](../../user/search/queries.md).
+Sourcegraph will mark repositories as archived if they have the `archived` label on Bitbucket Server. You can exclude these repositories in search with `archived:no` [search syntax](../../user/code_search/queries.md).
 
 ## Internal rate limits
 
