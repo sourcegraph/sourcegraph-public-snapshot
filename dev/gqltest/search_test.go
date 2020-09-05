@@ -512,4 +512,184 @@ func TestSearch(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("And/Or queries", func(t *testing.T) {
+		tests := []struct {
+			name       string
+			query      string
+			zeroResult bool
+			wantAlert  *gqltestutil.SearchAlert
+		}{
+			{
+				name:  `And operator, basic`,
+				query: `repo:^github\.com/sgtest/go-diff$ func and main count:1 stable:yes type:file`,
+			},
+			{
+				name:  `Or operator, single and double quoted`,
+				query: `repo:^github\.com/sgtest/go-diff$ "func PrintMultiFileDiff" or 'func readLine(' stable:yes type:file count:1 patterntype:regexp`,
+			},
+			{
+				name:  `Literals, grouped parens with parens-as-patterns heuristic`,
+				query: `repo:^github\.com/sgtest/go-diff$ (() or ()) stable:yes type:file count:1 patterntype:regexp`,
+			},
+			{
+				name:  `Literals, no grouped parens`,
+				query: `repo:^github\.com/sgtest/go-diff$ () or () stable:yes type:file count:1 patterntype:regexp`,
+			},
+			{
+				name:  `Literals, escaped parens`,
+				query: `repo:^github\.com/sgtest/go-diff$ \(\) or \(\) stable:yes type:file count:1 patterntype:regexp`,
+			},
+			{
+				name:  `Literals, escaped and unescaped parens, no group`,
+				query: `repo:^github\.com/sgtest/go-diff$ () or \(\) stable:yes type:file count:1 patterntype:regexp`,
+			},
+			{
+				name:  `Literals, escaped and unescaped parens, grouped`,
+				query: `repo:^github\.com/sgtest/go-diff$ (() or \(\)) stable:yes type:file count:1 patterntype:regexp`,
+			},
+			{
+				name:       `Literals, double paren`,
+				query:      `repo:^github\.com/sgtest/go-diff$ ()() or ()()`,
+				zeroResult: true,
+			},
+			{
+				name:       `Literals, double paren, dangling paren right side`,
+				query:      `repo:^github\.com/sgtest/go-diff$ ()() or main()(`,
+				zeroResult: true,
+			},
+			{
+				name:       `Literals, double paren, dangling paren left side`,
+				query:      `repo:^github\.com/sgtest/go-diff$ ()( or ()()`,
+				zeroResult: true,
+			},
+			{
+				name:  `Mixed regexp and literal`,
+				query: `repo:^github\.com/sgtest/go-diff$ func(.*) or does_not_exist_3744 count:1 stable:yes type:file`,
+			},
+			{
+				name:  `Mixed regexp and literal heuristic`,
+				query: `repo:^github\.com/sgtest/go-diff$ func( or func(.*) count:1 stable:yes type:file`,
+			},
+			{
+				name:       `Mixed regexp and quoted literal`,
+				query:      `repo:^github\.com/sgtest/go-diff$ "*" and cert.*Load count:1 stable:yes type:file`,
+				zeroResult: true,
+				wantAlert: &gqltestutil.SearchAlert{
+					Title:       "Too many files to search for and-expression",
+					Description: "One and-expression in the query requires a lot of work! Try using the 'repo:' or 'file:' filters to narrow your search. We're working on improving this experience in https://github.com/sourcegraph/sourcegraph/issues/9824",
+				},
+			},
+			{
+				name:  `Escape sequences`,
+				query: `repo:^github\.com/sgtest/go-diff$ \' and \" and \\ and /`,
+			},
+			{
+				name:  `Escaped whitespace sequences with 'and'`,
+				query: `repo:^github\.com/sgtest/go-diff$ \ and /`,
+			},
+			{
+				name:  `Concat converted to spaces for literal search`,
+				query: `repo:^github\.com/sgtest/go-diff$ file:^diff/print\.go t := or ts Time patterntype:literal`,
+			},
+			{
+				name:  `Literal parentheses match pattern`,
+				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go Bytes() and Time() patterntype:literal`,
+			},
+			{
+				name:  `Dangling right parens, heuristic for literal search`,
+				query: `repo:^github\.com/sgtest/go-diff$ diffPath) and main patterntype:literal`,
+			},
+			{
+				name:  `Dangling right parens, heuristic for literal search, double parens`,
+				query: `repo:^github\.com/sgtest/go-diff$ MarshalTo and OrigName)) patterntype:literal`,
+			},
+			{
+				name:  `Dangling right parens, heuristic for literal search, simple group before right paren`,
+				query: `repo:^github\.com/sgtest/go-diff$ MarshalTo and (m.OrigName)) patterntype:literal`,
+			},
+			{
+				name:       `Dangling right parens, heuristic for literal search, cannot succeed, too confusing`,
+				query:      `repo:^github\.com/sgtest/go-diff$ (respObj.Size and (data))) patterntype:literal`,
+				zeroResult: true,
+				wantAlert: &gqltestutil.SearchAlert{
+					Title:       "Unable To Process Query",
+					Description: "Error parsing regexp: missing closing ): `(respObj.Size`",
+				},
+			},
+			{
+				// TODO: No alert even for the original query
+				// 	repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^README\.md (bar and (foo or x\) ()) patterntype:literal
+				name:       `Confusing grouping raises alert`,
+				query:      `repo:^github\.com/sgtest/go-diff file:^README\.md (bar and (foo or x\) ()) patterntype:literal`,
+				zeroResult: true,
+			},
+			// {
+			// 	name:  `Successful grouping removes alert`,
+			// 	query: `repo:^github\.com/sgtest/go-diff file:^README\.md (bar and (foo or (x\) ())) patterntype:literal`,
+			// },
+			// {
+			// 	name:  `No dangling right paren with complex group for literal search`,
+			// 	query: `repo:^github\.com/sgtest/go-diff$ (respObj.Size and (data)) patterntype:literal`,
+			// },
+			// {
+			// 	name:  `Concat converted to .* for regexp search`,
+			// 	query: `repo:^github\.com/sgtest/go-diff$ file:^client\.go ca Pool or x509 Pool patterntype:regexp stable:yes type:file`,
+			// },
+			// {
+			// 	name:  `Structural search uses literal search parser`,
+			// 	query: `repo:^github\.com/sgtest/go-diff$ file:^client\.go :[[v]] := x509 and AppendCertsFromPEM(:[_]) patterntype:structural`,
+			// },
+			// {
+			// 	name:  `Union file matches per file and accurate counts`,
+			// 	query: `repo:^github\.com/sgtest/go-diff file:^cmd/adapter/adapter\.go func or main`,
+			// },
+			// {
+			// 	name:  `Intersect file matches per file and accurate counts`,
+			// 	query: `repo:^github\.com/sgtest/go-diff file:^cmd/adapter/adapter\.go func and main`,
+			// },
+			// {
+			// 	name:  `Simple combined union and intersect file matches per file and accurate counts`,
+			// 	query: `repo:^github\.com/sgtest/go-diff file:^cmd/adapter/adapter\.go ((func main and package main) or return prom.NewClient)`,
+			// },
+			// {
+			// 	name:  `Complex union of intersect file matches per file and accurate counts`,
+			// 	query: `repo:^github\.com/sgtest/go-diff file:^cmd/adapter/adapter\.go ((main and NamersFromConfig) or (genericPromClient and stopCh <-))`,
+			// },
+			// {
+			// 	name:  `Complex intersect of union file matches per file and accurate counts`,
+			// 	query: `repo:^github\.com/sgtest/go-diff file:^cmd/adapter/adapter\.go ((func main or package main) and (baseURL or mprom))`,
+			// },
+			// {
+			// 	name:  `Intersect file matches per file against an empty result set`,
+			// 	query: `repo:^github\.com/sgtest/go-diff file:^cmd/adapter/adapter\.go func and doesnotexist838338`,
+			// },
+			// {
+			// 	name:  `Dedupe union operation`,
+			// 	query: `file:cors_filter.go|ginkgo_dsl.go|funcs.go repo:rvantonderp/DirectXMan12-k8s-prometheus-adapter  :[[i]], :[[x]] := range :[src.] { :[[dst]][:[i]] = :[[x]] } or if strings.ToLower(:[s1]) == strings.ToLower(:[s2]) patterntype:structural`,
+			// },
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				results, err := client.SearchFiles(test.query)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(test.wantAlert, results.Alert); diff != "" {
+					t.Fatalf("Alert mismatch (-want +got):\n%s", diff)
+				}
+
+				if test.zeroResult {
+					if len(results.Results) > 0 {
+						t.Fatalf("Want zero result but got %d", len(results.Results))
+					}
+				} else {
+					if len(results.Results) == 0 {
+						t.Fatal("Want non-zero results but got 0")
+					}
+				}
+			})
+		}
+	})
 }
