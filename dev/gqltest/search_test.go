@@ -457,4 +457,59 @@ func TestSearch(t *testing.T) {
 			t.Fatal("Want search alert but got nil")
 		}
 	})
+
+	t.Run("structural search", func(t *testing.T) {
+		tests := []struct {
+			name       string
+			query      string
+			zeroResult bool
+			wantAlert  *gqltestutil.SearchAlert
+		}{
+			{
+				name:  "Global search, structural, index only, nonzero result",
+				query: `repo:^github\.com/sgtest/go-diff$ make(:[1]) index:only patterntype:structural count:3`,
+			},
+			{
+				name:  `Structural search quotes are interpreted literally`,
+				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ file:^README\.md "basic :[_] access :[_]" patterntype:structural`,
+			},
+			{
+				name:       `Alert to activate structural search mode`,
+				query:      `repo:^github\.com/sgtest/go-diff$ patterntype:literal i can't :[believe] it's not butter`,
+				zeroResult: true,
+				wantAlert: &gqltestutil.SearchAlert{
+					Title:       "No results",
+					Description: "It looks like you may have meant to run a structural search, but it is not toggled.",
+					ProposedQueries: []gqltestutil.ProposedQuery{
+						{
+							Description: "Activate structural search",
+							Query:       `repo:^github\.com/sgtest/go-diff$ patterntype:literal i can't :[believe] it's not butter patternType:structural`,
+						},
+					},
+				},
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				results, err := client.SearchFiles(test.query)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(test.wantAlert, results.Alert); diff != "" {
+					t.Fatalf("Alert mismatch (-want +got):\n%s", diff)
+				}
+
+				if test.zeroResult {
+					if len(results.Results) > 0 {
+						t.Fatalf("Want zero result but got %d", len(results.Results))
+					}
+				} else {
+					if len(results.Results) == 0 {
+						t.Fatal("Want non-zero results but got 0")
+					}
+				}
+			})
+		}
+	})
 }
