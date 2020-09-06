@@ -148,7 +148,9 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSignInOrUp = props.location.pathname === '/sign-in' || props.location.pathname === '/sign-up'
 
     const hideGlobalSearchInput: boolean =
-        props.location.pathname === '/stats' || props.location.pathname === '/search/query-builder'
+        props.location.pathname === '/stats' ||
+        props.location.pathname === '/search/query-builder' ||
+        props.location.pathname === '/search2'
 
     const breadcrumbProps = useBreadcrumbs()
 

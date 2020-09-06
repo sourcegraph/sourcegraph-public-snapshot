@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"log"
 	"strings"
 
 	"github.com/inconshreveable/log15"
@@ -56,14 +57,17 @@ func (api *codeIntelAPI) definitionsRaw(ctx context.Context, dump store.Dump, bu
 
 	for _, monikers := range rangeMonikers {
 		for _, moniker := range monikers {
+			log.Printf("Moniker: %+v", moniker)
 			if moniker.Kind == "import" {
 				locations, _, err := lookupMoniker(api.store, api.bundleManagerClient, dump.ID, pathInBundle, "definition", moniker, 0, DefintionMonikersLimit)
 				if err != nil {
 					return nil, err
 				}
 				if len(locations) > 0 {
+					log.Printf(" --> Location: %+v", locations[0])
 					return locations, nil
 				}
+				log.Printf(" --> No locations")
 			} else {
 				// This symbol was not imported from another bundle. We search the definitions
 				// of our own bundle in case there was a definition that wasn't properly attached

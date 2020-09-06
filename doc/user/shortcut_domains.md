@@ -32,3 +32,9 @@ Natural-language examples
 examples of react-router route with path
 examples of golang parse certificate
 
+
+---
+
+Moniker examples:
+
+- Moniker: {Kind:import Scheme:gomod Identifier:github.com/pkg/errors:WithMessage PackageInformationID:3912}

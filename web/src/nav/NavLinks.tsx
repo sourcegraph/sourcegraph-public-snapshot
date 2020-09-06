@@ -68,7 +68,7 @@ export class NavLinks extends React.PureComponent<Props> {
                         <ActivationDropdown activation={this.props.activation} history={this.props.history} />
                     </li>
                 )}
-                {(!this.props.showDotComMarketing || !!this.props.authenticatedUser) && (
+                {(!this.props.showDotComMarketing || !!this.props.authenticatedUser) && false && (
                     <li className="nav-item">
                         <Link to="/explore" className="nav-link">
                             <CompassOutlineIcon className="icon-inline" /> Explore
@@ -81,7 +81,7 @@ export class NavLinks extends React.PureComponent<Props> {
                             <InsightsNavItem />
                         </li>
                     )}
-                {this.props.showCampaigns && (
+                {this.props.showCampaigns && false /* TODO(sqs): add campaigns to the user menu */ && (
                     <li className="nav-item">
                         <CampaignsNavItem />
                     </li>
