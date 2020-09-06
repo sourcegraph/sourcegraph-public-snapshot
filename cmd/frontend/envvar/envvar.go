@@ -19,7 +19,7 @@ var sourcegraphDotComMode, _ = strconv.ParseBool(env.Get("SOURCEGRAPHDOTCOM_MODE
 // SOURCEGRAPHDOTCOM_MODE env var). Sourcegraph.com shows add'l marketing and sets up some add'l
 // redirects.
 func SourcegraphDotComMode() bool {
-	return sourcegraphDotComMode
+	return true // sourcegraphDotComMode
 }
 
 // MockSourcegraphDotComMode is used by tests to mock the result of SourcegraphDotComMode.
