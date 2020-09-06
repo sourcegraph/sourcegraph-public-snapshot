@@ -21,6 +21,7 @@ type EncryptionError struct {
 // Encryptor is an interface that provides encryption & decryption primitives
 type Encryptor interface {
 	ConfiguredToEncrypt() bool
+	ConfiguredToRotate() bool
 	DecryptBytes(b []byte) ([]byte, error)
 	EncryptBytes(b []byte) ([]byte, error)
 	EncryptWithKey(b, k []byte) ([]byte, error)
@@ -93,6 +94,10 @@ func (e encryptor) ConfiguredToEncrypt() bool {
 	return len(e.primaryKey) == validKeyLength
 }
 
+func (e encryptor) ConfiguredToRotate() bool {
+	return len(e.primaryKey) == validKeyLength && len(e.secondaryKey) == validKeyLength
+}
+
 // EncryptBytes encrypts the plaintext using the primaryKey of the encryptor. This
 // relies on the AES-GCM encryption defined in encrypt, within this package.
 func (e encryptor) EncryptBytes(plaintext []byte) (ciphertext []byte, err error) {
@@ -121,9 +126,16 @@ func (e encryptor) EncryptWithKey(plaintext, key []byte) ([]byte, error) {
 // decrypting the byte array using the primaryKey, and then reencrypting
 // it using the secondaryKey.
 func (e encryptor) RotateEncryption(ciphertext []byte) ([]byte, error) {
+	if !e.ConfiguredToRotate() {
+		return nil, &EncryptionError{errors.New("key rotatation not configured")}
+	}
 	plaintext, err := gcmDecrypt(ciphertext, e.primaryKey)
-	if err != nil {
-		return nil, err
+	if err != nil { // perhaps it's already encrypted?
+		_, err = gcmDecrypt(ciphertext, e.secondaryKey)
+		if err == nil {
+			return ciphertext, nil
+		}
+		return ciphertext, err
 	}
 
 	return e.EncryptWithKey(plaintext, e.secondaryKey)
@@ -144,6 +156,10 @@ func (noOpEncryptor) ConfiguredToEncrypt() bool {
 	return false
 }
 
+func (noOpEncryptor) ConfiguredToRotate() bool {
+	return false
+}
+
 func (noOpEncryptor) RotateEncryption(b []byte) ([]byte, error) {
 	return b, nil
 }
@@ -157,6 +173,13 @@ func (noOpEncryptor) EncryptWithKey(b, k []byte) ([]byte, error) {
 // a struct having an encryption key specified.
 func ConfiguredToEncrypt() bool {
 	return defaultEncryptor.ConfiguredToEncrypt()
+}
+
+// ConfiguredToRotate returns a boolean indicating whether this type of
+// encryption was configured to rotate keys. This is effectively the status of
+// a struct having two encryption keys specified.
+func ConfiguredToRotate() bool {
+	return defaultEncryptor.ConfiguredToRotate()
 }
 
 // EncryptBytes encrypts the plaintext and returns the encrypted value.

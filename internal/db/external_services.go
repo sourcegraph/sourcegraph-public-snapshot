@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	secretPkg "github.com/sourcegraph/sourcegraph/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -103,6 +104,10 @@ type ValidateExternalServiceConfigOptions struct {
 	// When true, indicates this is a user-added the external service.
 	HasNamespace bool
 }
+
+var (
+	secretColumns = []string{"config"}
+)
 
 // ValidateConfig validates the given external service configuration.
 // A non zero id indicates we are updating an existing service, 0 indicates we are adding a new one.
@@ -580,6 +585,64 @@ func (*ExternalServicesStore) Count(ctx context.Context, opt ExternalServicesLis
 		return 0, err
 	}
 	return count, nil
+}
+
+// EncryptTable handles both encrypting the data within the table columns that
+// should be private.
+func (*ExternalServicesStore) EncryptTable(ctx context.Context) error {
+	if !secretPkg.ConfiguredToEncrypt() {
+		return nil
+	}
+
+	q := sqlf.Sprintf("SELECT id, %s from external_services", secretColumns)
+	tx, err := dbconn.Global.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	rows, err := tx.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args())
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var es *types.ExternalService
+		err := rows.Scan(&es.ID, &es.Config)
+		if err != nil {
+			return err
+		}
+
+		var cfg []byte
+		if secretPkg.ConfiguredToRotate() {
+			cfg, err = secretPkg.RotateEncryption([]byte(es.Config))
+			if err != nil {
+				return err
+			}
+			// if the values are the same after rotation, there's nothing to do here
+			if string(cfg) == es.Config {
+				continue
+			}
+		} else {
+			cfg, err = secretPkg.EncryptBytes([]byte(es.Config))
+			if err != nil {
+				return err
+			}
+			if string(cfg) == es.Config {
+				continue
+			}
+		}
+
+		// now, time for an update!
+		updateQ := sqlf.Sprintf(
+			`UPDATE external_services
+			SET config=%s
+			WHERE id=%d
+		`, &es.ID, string(cfg))
+		_, err = tx.ExecContext(ctx, updateQ.Query(sqlf.PostgresBindVar), updateQ.Args())
+		return err
+	}
+
+	return nil
 }
 
 // MockExternalServices mocks the external services store.
