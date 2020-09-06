@@ -434,7 +434,7 @@ export function registerHoverContributions({
                         {
                             action: 'findReferences',
                             when: parse(
-                                'findReferences.url && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)'
+                                'findReferences.url && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error || goToDefinition.notFound)'
                             ),
                         },
                     ],
