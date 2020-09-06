@@ -121,7 +121,7 @@ func (e encryptor) EncryptWithKey(plaintext, key []byte) ([]byte, error) {
 // decrypting the byte array using the primaryKey, and then reencrypting
 // it using the secondaryKey.
 func (e encryptor) RotateEncryption(ciphertext []byte) ([]byte, error) {
-	plaintext, err := e.DecryptBytes(ciphertext)
+	plaintext, err := gcmDecrypt(ciphertext, e.primaryKey)
 	if err != nil {
 		return nil, err
 	}
