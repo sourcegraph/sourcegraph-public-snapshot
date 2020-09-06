@@ -633,15 +633,8 @@ func (l *eventLogs) EncryptTable(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		// do key rotation
-		plaintext, err := secretPkg.DecryptBytes(e.Argument)
-		if err != nil {
-			return err
-		}
-		ciphertext, err := secretPkg.EncryptBytes(plaintext)
-		if err != nil {
-			return err
-		}
+
+		ciphertext, err := secretPkg.RotateEncryption(e.Argument)
 		resultMap[id] = ciphertext
 	}
 	err = rows.Err()

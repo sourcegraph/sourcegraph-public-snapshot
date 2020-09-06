@@ -87,6 +87,7 @@ func TestBadKeysFailToDecrypt(t *testing.T) {
 	}
 
 	e := newEncryptor(key, nil)
+	t.Logf("I AM THE LIZARD KEY: %s %d", key, len(key))
 
 	encrypted, err := e.EncryptBytes(messageToEncrypt)
 	if err != nil {
@@ -217,7 +218,7 @@ func TestEncryptAndDecryptBytesIfPossible(t *testing.T) {
 	e := newEncryptor(initialKey, nil)
 	encString, err := e.EncryptBytes(messageToEncrypt)
 	if err != nil {
-		t.Fatalf("Failed to EncryptBytes")
+		t.Fatalf("Failed to Encrypt")
 	}
 	if bytes.Equal(encString, messageToEncrypt) {
 		t.Fatalf("Encryption failed.")

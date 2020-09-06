@@ -20,9 +20,11 @@ type EncryptionError struct {
 
 // Encryptor is an interface that provides encryption & decryption primitives
 type Encryptor interface {
-	EncryptBytes(b []byte) ([]byte, error)
-	DecryptBytes(b []byte) ([]byte, error)
 	ConfiguredToEncrypt() bool
+	DecryptBytes(b []byte) ([]byte, error)
+	EncryptBytes(b []byte) ([]byte, error)
+	EncryptWithKey(b, k []byte) ([]byte, error)
+	RotateEncryption(b []byte) ([]byte, error)
 }
 
 // encryptor performs encryption and decryption.
@@ -34,30 +36,14 @@ type encryptor struct {
 	secondaryKey []byte
 }
 
-func newEncryptor(primaryKey, secondaryKey []byte) Encryptor {
-	return encryptor{
-		primaryKey:   primaryKey,
-		secondaryKey: secondaryKey,
-	}
-}
-
-// ConfiguredToEncrypt returns the statue of our encryptor, whether or not
-// it has a key specified, and can thus encrypt.
-func (e encryptor) ConfiguredToEncrypt() bool {
-	return len(e.primaryKey) == validKeyLength
-}
-
-// EncryptBytes encrypts data using 256-bit AES-GCM. This both hides the content of
+// EncryptBytes is the general purpose encryption function used to
+// return the encrypted versions of bytes.
+// EncryptBytes uses 256-bit AES-GCM. This both hides the content of
 // the data and provides a check that it hasn't been altered. Output takes the form
 // `nonce|ciphertext|tag` where '|' indicates concatenation. It is a modified version of
 // https://github.com/gtank/cryptopasta/blob/1f550f6f2f69009f6ae57347c188e0a67cd4e500/encrypt.go#L37
-func (e encryptor) EncryptBytes(plaintext []byte) (ciphertext []byte, err error) {
-	// ONLY use the primary key to EncryptBytes
-	if len(e.primaryKey) < validKeyLength {
-		return nil, &EncryptionError{errors.New("primary key is not available")}
-	}
-
-	block, err := aes.NewCipher(e.primaryKey)
+func gcmEncrypt(plaintext, key []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
@@ -76,43 +62,71 @@ func (e encryptor) EncryptBytes(plaintext []byte) (ciphertext []byte, err error)
 	return gcm.Seal(nonce, nonce, plaintext, nil), nil
 }
 
-// DecryptBytes decrypts data using 256-bit AES-GCM. This both hides the content of
-// the data and provides a check that it hasn't been altered. Expects input form
-// `nonce|ciphertext|tag` where '|' indicates concatenation. It is a modified version of
-// https://github.com/gtank/cryptopasta/blob/1f550f6f2f69009f6ae57347c188e0a67cd4e500/encrypt.go#L60
+func gcmDecrypt(ciphertext, key []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(ciphertext) < gcm.NonceSize() {
+		return nil, errors.New("malformed ciphertext")
+	}
+
+	return gcm.Open(nil, ciphertext[:gcm.NonceSize()], ciphertext[gcm.NonceSize():], nil)
+}
+
+func newEncryptor(primaryKey, secondaryKey []byte) Encryptor {
+	return encryptor{
+		primaryKey:   primaryKey,
+		secondaryKey: secondaryKey,
+	}
+}
+
+// ConfiguredToEncrypt returns the statue of our encryptor, whether or not
+// it has a key specified, and can thus encrypt.
+func (e encryptor) ConfiguredToEncrypt() bool {
+	return len(e.primaryKey) == validKeyLength
+}
+
+// EncryptBytes encrypts the plaintext using the primaryKey of the encryptor. This
+// relies on the AES-GCM encryption defined in encrypt, within this package.
+func (e encryptor) EncryptBytes(plaintext []byte) (ciphertext []byte, err error) {
+	if len(e.primaryKey) < validKeyLength {
+		return nil, &EncryptionError{errors.New("primary key is unavailable")}
+	}
+
+	return gcmEncrypt(plaintext, e.primaryKey)
+}
+
+// DecryptBytes decrypts the plaintext using the primaryKey of the encryptor.
+// This relies on AES-GCM.
 func (e encryptor) DecryptBytes(ciphertext []byte) (plaintext []byte, err error) {
-	if len(e.primaryKey) < validKeyLength && len(e.secondaryKey) < validKeyLength {
+	if len(e.primaryKey) < validKeyLength {
 		return nil, &EncryptionError{errors.New("no valid keys available")}
 	}
 
-	decrypt := func(key, ciphertext []byte) ([]byte, error) {
-		block, err := aes.NewCipher(key)
-		if err != nil {
-			return nil, err
-		}
+	return gcmDecrypt(e.primaryKey, ciphertext)
+}
 
-		gcm, err := cipher.NewGCM(block)
-		if err != nil {
-			return nil, err
-		}
+func (e encryptor) EncryptWithKey(plaintext, key []byte) ([]byte, error) {
+	return gcmEncrypt(plaintext, key)
+}
 
-		if len(ciphertext) < gcm.NonceSize() {
-			return nil, errors.New("malformed ciphertext")
-		}
+// RotateEncryption rotates the encryption on a ciphertext by
+// decrypting the byte array using the primaryKey, and then reencrypting
+// it using the secondaryKey.
+func (e encryptor) RotateEncryption(ciphertext []byte) ([]byte, error) {
+	plaintext, err := e.DecryptBytes(ciphertext)
+	if err != nil {
+		return nil, err
+	}
 
-		return gcm.Open(nil,
-			ciphertext[:gcm.NonceSize()],
-			ciphertext[gcm.NonceSize():],
-			nil,
-		)
-	}
-	if plaintext, err = decrypt(e.primaryKey, ciphertext); err == nil {
-		return plaintext, nil
-	}
-	if plaintext, err = decrypt(e.secondaryKey, ciphertext); err == nil {
-		return plaintext, nil
-	}
-	return nil, &EncryptionError{err}
+	return e.EncryptWithKey(plaintext, e.secondaryKey)
 }
 
 // noOpEncryptor always returns original content and does no encryption or decryption.
@@ -128,6 +142,14 @@ func (noOpEncryptor) DecryptBytes(b []byte) ([]byte, error) {
 
 func (noOpEncryptor) ConfiguredToEncrypt() bool {
 	return false
+}
+
+func (noOpEncryptor) RotateEncryption(b []byte) ([]byte, error) {
+	return b, nil
+}
+
+func (noOpEncryptor) EncryptWithKey(b, k []byte) ([]byte, error) {
+	return b, nil
 }
 
 // ConfiguredToEncrypt returns a boolean indicating whether this type of
@@ -149,4 +171,12 @@ func EncryptBytes(plaintext []byte) ([]byte, error) {
 // content if encryption is not configured.
 func DecryptBytes(ciphertext []byte) ([]byte, error) {
 	return defaultEncryptor.DecryptBytes(ciphertext)
+}
+
+func EncryptWithKey(ciphertext, key []byte) ([]byte, error) {
+	return defaultEncryptor.EncryptWithKey(ciphertext, key)
+}
+
+func RotateEncryption(ciphertext []byte) ([]byte, error) {
+	return defaultEncryptor.RotateEncryption(ciphertext)
 }
