@@ -4,6 +4,14 @@ on:
     types: [ completed ]
 
 jobs:
+  report-event:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Output event ${{ github.event.check_run.name }}
+        run: |
+          echo "${{ github.ref }}"
+          echo "${{ toJson(github.event) }}"
+
   # This job should trigger rennovate to run on the repositories defined in renovate-downstream.json
   renovate:
     runs-on: ubuntu-latest
