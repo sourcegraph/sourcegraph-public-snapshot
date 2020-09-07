@@ -60,6 +60,7 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/UpsertSources", testStoreUpsertSources},
 		{"DBStore/ListRepos", testStoreListRepos},
 		{"DBStore/ListRepos/Pagination", testStoreListReposPagination},
+		{"DBStore/ListExternalRepoSpecs", testStoreListExternalRepoSpecs(db)},
 		{"DBStore/SetClonedRepos", testStoreSetClonedRepos},
 		{"DBStore/CountNotClonedRepos", testStoreCountNotClonedRepos},
 		{"DBStore/Syncer/Sync", testSyncerSync},
@@ -74,6 +75,7 @@ func TestIntegration(t *testing.T) {
 DELETE FROM external_service_sync_jobs;
 DELETE FROM external_service_repos;
 DELETE FROM external_services;
+DELETE FROM repo;
 `); err != nil {
 					t.Fatalf("cleaning up external services failed: %v", err)
 				}
