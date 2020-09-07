@@ -1851,7 +1851,7 @@ VALUES
 				t.Fatal(err)
 			}
 			want := map[api.ExternalRepoSpec]struct{}{
-				api.ExternalRepoSpec{
+				{
 					ID:          "MDEwOlJlcG9zaXRvcnk1",
 					ServiceType: "github",
 					ServiceID:   "https://github.com/",
