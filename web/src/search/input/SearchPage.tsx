@@ -43,7 +43,7 @@ interface Props
         KeyboardShortcutsProps,
         EventLoggerProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         InteractiveSearchProps,
         CopyQueryButtonProps,
         VersionContextProps,
