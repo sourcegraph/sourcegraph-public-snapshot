@@ -502,6 +502,27 @@ func (o *ObservedStore) ListRepos(ctx context.Context, args StoreListReposArgs) 
 	return o.store.ListRepos(ctx, args)
 }
 
+// ListExternalRepoSpecs calls into the inner Store and registers the observed results.
+func (o *ObservedStore) ListExternalRepoSpecs(ctx context.Context) (ids map[api.ExternalRepoSpec]struct{}, err error) {
+	tr, ctx := o.trace(ctx, "Store.ListExternalRepoSpecs")
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		count := float64(len(ids))
+
+		o.metrics.ListRepos.Observe(secs, count, &err)
+		logging.Log(o.log, "store.list-external-repo-specs", &err,
+			"count", len(ids),
+		)
+
+		tr.LogFields(otlog.Int("count", len(ids)))
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
+	return o.store.ListExternalRepoSpecs(ctx)
+}
+
 // UpsertRepos calls into the inner Store and registers the observed results.
 func (o *ObservedStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 	tr, ctx := o.trace(ctx, "Store.UpsertRepos")
