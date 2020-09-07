@@ -32,7 +32,7 @@
         opacity: 0.5;
     }
 
-    &:focus &__bar {
+    &:focus-visible &__bar {
         opacity: 0.5;
         background-color: var(--text-muted);
 
@@ -45,7 +45,7 @@
         background-color: transparent;
     }
 
-    &:focus &__bar-shadow {
+    &:focus-visible &__bar-shadow {
         opacity: 0.2;
         box-shadow: 0 0 0 0.1875rem var(--text-muted);
 
@@ -71,9 +71,9 @@
             background-color: var(--primary);
             transform: translate3d(1rem, 0, 0);
         }
+    }
 
-        &--disabled {
-            opacity: 0.2;
-        }
+    &:disabled &__knob {
+        opacity: 0.2;
     }
 }

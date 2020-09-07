@@ -63,7 +63,7 @@ exports[`ToggleBig disabled 1`] = `
     value={0}
   >
     <span
-      className="toggle-big__bar toggle-big__bar--disabled"
+      className="toggle-big__bar"
     />
     <span
       className="toggle-big__bar-shadow"

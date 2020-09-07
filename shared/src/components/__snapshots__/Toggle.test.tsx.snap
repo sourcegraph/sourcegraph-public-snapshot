@@ -38,13 +38,13 @@ exports[`Toggle disabled 1`] = `
     value={0}
   >
     <span
-      className="toggle__bar toggle__bar--disabled"
+      className="toggle__bar"
     />
     <span
       className="toggle__bar-shadow"
     />
     <span
-      className="toggle__knob toggle__knob--disabled"
+      className="toggle__knob"
     />
   </button>
 </Toggle>

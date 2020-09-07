@@ -68,7 +68,6 @@ export const ToggleBig: React.FunctionComponent<Props> = ({
             <span
                 className={classnames('toggle-big__bar', {
                     'toggle-big__bar--on': value,
-                    'toggle-big__bar--disabled': disabled,
                 })}
             />
             <span

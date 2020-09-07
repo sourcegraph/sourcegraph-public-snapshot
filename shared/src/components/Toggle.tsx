@@ -53,7 +53,6 @@ export const Toggle: React.FunctionComponent<Props> = ({
             <span
                 className={classnames('toggle__bar', {
                     'toggle__bar--on': value,
-                    'toggle__bar--disabled': disabled,
                 })}
             />
             <span
@@ -64,7 +63,6 @@ export const Toggle: React.FunctionComponent<Props> = ({
             <span
                 className={classnames('toggle__knob', {
                     'toggle__knob--on': value,
-                    'toggle__knob--disabled': disabled,
                 })}
             />
         </button>
