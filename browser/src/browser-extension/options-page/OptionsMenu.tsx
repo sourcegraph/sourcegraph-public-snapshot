@@ -9,7 +9,7 @@ export interface OptionsMenuProps
     onURLChange: ServerUrlFormProps['onChange']
     onURLSubmit: ServerUrlFormProps['onSubmit']
 
-    isOptionsMenuExpanded?: boolean
+    showOptionFlags?: boolean
     isActivated: boolean
     onChangeOptionFlag: (key: string, value: boolean) => void
     optionFlags?: { key: string; label: string; value: boolean }[]
@@ -23,7 +23,7 @@ export interface OptionsMenuProps
 /**
  * Determine if the options menu is being showed as a popup panel (opened via
  * the toolbar icon) or as a full page (opened via the options URL on a page of
- * its owen)
+ * its own)
  */
 const isFullPage = (): boolean => !new URLSearchParams(window.location.search).get('popup')
 
@@ -44,7 +44,7 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
     sourcegraphURL,
     onURLChange,
     onURLSubmit,
-    isOptionsMenuExpanded,
+    showOptionFlags,
     isActivated,
     onChangeOptionFlag,
     optionFlags: options,
@@ -104,7 +104,7 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
                 .
             </p>
         </div>
-        {isOptionsMenuExpanded && options && (
+        {showOptionFlags && options && (
             <div className="options-menu__section">
                 <label>Configuration</label>
                 <div>

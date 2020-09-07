@@ -29,7 +29,7 @@ interface OptionsContainerState
         | 'status'
         | 'sourcegraphURL'
         | 'connectionError'
-        | 'isOptionsMenuExpanded'
+        | 'showOptionFlags'
         | 'isActivated'
         | 'urlHasPermissions'
         | 'currentTabStatus'
@@ -53,7 +53,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
             isActivated: props.isActivated,
             urlHasPermissions: false,
             connectionError: undefined,
-            isOptionsMenuExpanded: false,
+            showOptionFlags: false,
         }
 
         const fetchingSite: Observable<string | ErrorLike> = this.urlUpdates.pipe(
@@ -156,7 +156,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
 
     private handleClickExpandOptionsMenu = (): void => {
         this.setState(state => ({
-            isOptionsMenuExpanded: !state.isOptionsMenuExpanded,
+            showOptionFlags: !state.showOptionFlags,
         }))
     }
 

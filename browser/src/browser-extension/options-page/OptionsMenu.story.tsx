@@ -21,9 +21,9 @@ storiesOf('browser/Options/OptionsMenu', module)
             onClickExpandOptionsMenu={action('Expand clicked')}
             onToggleActivationClick={action('Toggle activation clicked')}
             optionFlags={[]}
-            isOptionsMenuExpanded={false}
+            showOptionFlags={false}
             isActivated={true}
-            onChangeOptionFlag={action('Feature flag changed')}
+            onChangeOptionFlag={action('Option flag changed')}
             requestPermissions={() => undefined}
             urlHasPermissions={true}
         />
@@ -35,11 +35,11 @@ storiesOf('browser/Options/OptionsMenu', module)
             sourcegraphURL="https://sourcegraph.com"
             onURLChange={action('Sourcegraph URL changed')}
             onURLSubmit={action('New Sourcegraph URL submitted')}
-            onClickExpandOptionsMenu={action('Settings clicked')}
+            onClickExpandOptionsMenu={action('Expand clicked')}
             onToggleActivationClick={action('Toggle activation clicked')}
-            isOptionsMenuExpanded={true}
+            showOptionFlags={true}
             isActivated={true}
-            onChangeOptionFlag={action('Feature flag changed')}
+            onChangeOptionFlag={action('Option flag changed')}
             optionFlags={[
                 { label: 'Test setting 1', key: 'testSetting1', value: true },
                 { label: 'Test setting 2', key: 'testSetting2', value: false },

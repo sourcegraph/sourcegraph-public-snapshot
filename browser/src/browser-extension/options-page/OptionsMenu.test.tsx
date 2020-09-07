@@ -93,7 +93,7 @@ describe('OptionsMenu', () => {
             renderer.create(
                 <OptionsMenu
                     {...stubs}
-                    isOptionsMenuExpanded={true}
+                    showOptionFlags={true}
                     optionFlags={[
                         { label: 'Foo', key: 'foo', value: true },
                         { label: 'Bar', key: 'bar', value: false },
@@ -108,7 +108,7 @@ describe('OptionsMenu', () => {
         const { container } = render(
             <OptionsMenu
                 {...stubs}
-                isOptionsMenuExpanded={true}
+                showOptionFlags={true}
                 optionFlags={[
                     { label: 'Foo', key: 'foo', value: true },
                     { label: 'Bar', key: 'bar', value: false },
