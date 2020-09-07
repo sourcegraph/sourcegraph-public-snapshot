@@ -727,7 +727,7 @@ func (r *Repo) With(opts ...func(*Repo)) *Repo {
 //
 // Context on using other fields such as timestamps to order/resolve
 // conflicts: We only want to rely on values that have constraints in our
-// database. Tmestamps have the following downsides:
+// database. Timestamps have the following downsides:
 //
 //   - We need to assume the upstream codehost has reasonable values for them
 //   - Not all codehosts set them to relevant values (eg gitolite or other)
