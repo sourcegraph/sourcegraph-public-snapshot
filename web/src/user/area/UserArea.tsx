@@ -7,7 +7,7 @@ import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxj
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, filter } from 'rxjs/operators'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors, requestGraphQL } from '../../../../shared/src/graphql/graphql'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { isErrorLike, asError } from '../../../../shared/src/util/errors'
@@ -24,14 +24,13 @@ import { ErrorMessage } from '../../components/alerts'
 import { isDefined } from '../../../../shared/src/util/types'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../../auth'
-import { UserAreaUserFields } from '../../graphql-operations'
+import { UserResult, UserVariables, UserAreaUserFields } from '../../graphql-operations'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { Link } from '../../../../shared/src/components/Link'
-import { queryGraphQL } from '../../backend/graphql'
 
 const fetchUser = (args: { username: string; siteAdmin: boolean }): Observable<UserAreaUserFields> =>
-    queryGraphQL(
-        gql`
+    requestGraphQL<UserResult, UserVariables>({
+        request: gql`
             query User($username: String!, $siteAdmin: Boolean!) {
                 user(username: $username) {
                     ...UserAreaUserFields
@@ -65,17 +64,16 @@ const fetchUser = (args: { username: string; siteAdmin: boolean }): Observable<U
                     syncedAt
                     updatedAt
                 }
-                tags @include(if: $siteAdmin)
             }
         `,
-        args
-    ).pipe(
+        variables: args,
+    }).pipe(
         map(dataOrThrowErrors),
         map(data => {
             if (!data.user) {
                 throw new Error(`User not found: ${JSON.stringify(args.username)}`)
             }
-            return data.user as UserAreaUserFields
+            return data.user
         })
     )
 

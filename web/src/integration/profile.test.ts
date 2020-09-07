@@ -40,7 +40,6 @@ describe('User profile page', () => {
                     emails: [{ email: 'test@example.com', verified: true }],
                     organizations: { nodes: [] },
                     permissionsInfo: null,
-                    tags: [],
                 },
             }),
             UserForProfilePage: () => ({

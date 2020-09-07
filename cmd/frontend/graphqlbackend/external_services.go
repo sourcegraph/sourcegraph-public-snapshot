@@ -308,10 +308,7 @@ func (r *externalServiceConnectionResolver) Nodes(ctx context.Context) ([]*exter
 }
 
 func (r *externalServiceConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	// Reset pagination cursor to get correct total count
-	opt := r.opt
-	opt.AfterID = 0
-	count, err := db.ExternalServices.Count(ctx, opt)
+	count, err := db.ExternalServices.Count(ctx, r.opt)
 	return int32(count), err
 }
 
@@ -321,25 +318,8 @@ func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*grap
 		return nil, err
 	}
 
-	// We would have had all results when no limit set
-	if r.opt.LimitOffset == nil {
-		return graphqlutil.HasNextPage(false), nil
-	}
-
-	// We got less results than limit, means we've had all results
-	if len(externalServices) < r.opt.Limit {
-		return graphqlutil.HasNextPage(false), nil
-	}
-
-	// In case the number of results happens to be the same as the limit,
-	// we need another query to get accurate total count with same cursor
-	// to determine if there are more results than the limit we set.
-	count, err := db.ExternalServices.Count(ctx, r.opt)
-	if err != nil {
-		return nil, err
-	}
-
-	if count > len(externalServices) {
+	hasNextPage := r.opt.LimitOffset != nil && len(externalServices) >= r.opt.Limit
+	if hasNextPage {
 		endCursorID := externalServices[len(externalServices)-1].ID
 		return graphqlutil.NextPageCursor(string(marshalExternalServiceID(endCursorID))), nil
 	}

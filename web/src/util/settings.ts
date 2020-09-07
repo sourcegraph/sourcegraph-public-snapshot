@@ -51,7 +51,6 @@ export function experimentalFeaturesFromSettings(
     copyQueryButton: boolean
     showRepogroupHomepage: boolean
     showOnboardingTour: boolean
-    showEnterpriseHomePanels: boolean
 } {
     const experimentalFeatures: SettingsExperimentalFeatures =
         (settingsCascade.final && !isErrorLike(settingsCascade.final) && settingsCascade.final.experimentalFeatures) ||
@@ -62,8 +61,7 @@ export function experimentalFeaturesFromSettings(
         copyQueryButton = false,
         showRepogroupHomepage = false,
         showOnboardingTour = false,
-        showEnterpriseHomePanels = false,
     } = experimentalFeatures
 
-    return { splitSearchModes, copyQueryButton, showRepogroupHomepage, showOnboardingTour, showEnterpriseHomePanels }
+    return { splitSearchModes, copyQueryButton, showRepogroupHomepage, showOnboardingTour }
 }

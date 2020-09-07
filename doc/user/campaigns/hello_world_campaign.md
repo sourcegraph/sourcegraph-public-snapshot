@@ -62,9 +62,7 @@ Let's see the changes that will be made. Don't worry---no commits, branches, or 
 
 1. In your terminal, run this command:
 
-    <pre><code>src campaign preview -f hello-world.campaign.yaml -namespace <em>USERNAME_OR_ORG</em></code></pre>
-
-    > The `namespace` can be your Sourcegraph username or the name of a Sourcegraph organisation under which you want to create the campaign.
+    <pre><code>src campaign preview -f hello-world.campaign.yaml</code></pre>
 1. Wait for it to run and compute the changes for each repository.
 1. When it's done, click the displayed link to see all of the changes that will be made.
 1. Make sure the changes look right.
@@ -78,14 +76,12 @@ You created your first campaign! The campaign's changesets are still unpublished
 
 Publishing causes commits, branches, and changesets to be created on your code host.
 
-You probably don't want to publish these toy "Hello World" changesets to actively developed repositories, because that might confuse people ("Why did you add this line to our READMEs?").
-
-On a real campaign, you would change the `published: false` in the `hello-world.campaign.yaml` to `published: true` and run the `src campaign preview` command again.
+You probably don't want to publish these toy "Hello World" changesets to actively developed repositories, because that might confuse people ("Why did you add this line to our READMEs?"). On a real campaign, you would click the **Publish** button next to a changeset to publish it (or the **Publish all** button to publish all changesets).
 
 ## Congratulations!
 
 You've created your first campaign! 🎉🎉
 
-You can customize your campaign spec and experiment with making other types of changes. To update your campaign, edit `hello-world.campaign.yaml` and run `src campaign preview` again. (As before, you'll see a preview before any changes are applied.)
+You can customize your campaign spec and experiment with making other types of changes. To update your campaign, edit `hello-world.campaign.yaml` and run `src campaign preview -f hello-world.campaign.yaml` again. (As before, you'll see a preview before any changes are applied.)
 
 To learn what else you can do with campaigns, see "[Campaigns](index.md)" in Sourcegraph documentation.

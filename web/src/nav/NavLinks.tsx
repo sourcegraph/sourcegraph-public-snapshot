@@ -10,6 +10,7 @@ import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
 import { ThemeProps } from '../../../shared/src/theme'
+import { EventLoggerProps } from '../tracking/eventLogger'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
 import { CampaignsNavItem } from '../enterprise/campaigns/global/nav/CampaignsNavItem'
@@ -24,8 +25,6 @@ import { Settings } from '../schema/settings.schema'
 import { InsightsNavItem } from '../insights/InsightsNavLink'
 import { ExtensionsNavItem } from '../extensions/ExtensionsNavItem'
 import { AuthenticatedUser } from '../auth'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
-import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -34,7 +33,7 @@ interface Props
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         ThemeProps,
         ThemePreferenceProps,
-        TelemetryProps,
+        EventLoggerProps,
         ActivationProps {
     location: H.Location
     history: H.History
@@ -93,19 +92,14 @@ export class NavLinks extends React.PureComponent<Props> {
                         )}
                         {this.props.showDotComMarketing && (
                             <li className="nav-item">
-                                <a
-                                    href="https://about.sourcegraph.com"
-                                    className="nav-link"
-                                    target="_blank"
-                                    rel="noopener"
-                                >
-                                    About <OpenInNewIcon className="icon-inline" />
+                                <a href="https://about.sourcegraph.com" className="nav-link">
+                                    About
                                 </a>
                             </li>
                         )}
                         <li className="nav-item">
-                            <Link to="/help" className="nav-link" target="_blank" rel="noopener">
-                                Help <OpenInNewIcon className="icon-inline" />
+                            <Link to="/help" className="nav-link">
+                                Help
                             </Link>
                         </li>
                     </>

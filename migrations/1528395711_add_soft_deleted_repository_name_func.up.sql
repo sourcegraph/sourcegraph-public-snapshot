@@ -1,6 +1,6 @@
 BEGIN;
 
-DROP FUNCTION IF EXISTS soft_deleted_repository_name(text);
+DROP FUNCTION IF EXISTS soft_deleted_repository_name();
 
 CREATE FUNCTION soft_deleted_repository_name(name TEXT) RETURNS TEXT AS $$
 BEGIN

@@ -666,7 +666,7 @@ func TestComputeExcludedRepositories(t *testing.T) {
 		Name              string
 		Query             string
 		Repos             []types.Repo
-		WantExcludedRepos excludedRepos
+		WantExcludedRepos *excludedRepos
 	}{
 		{
 			Name:  "filter out forks and archived repos",
@@ -689,7 +689,7 @@ func TestComputeExcludedRepositories(t *testing.T) {
 					RepoFields: &types.RepoFields{Archived: true},
 				},
 			},
-			WantExcludedRepos: excludedRepos{forks: 2, archived: 1},
+			WantExcludedRepos: &excludedRepos{forks: 2, archived: 1},
 		},
 		{
 			Name:  "exact repo match does not exclude fork",
@@ -700,7 +700,7 @@ func TestComputeExcludedRepositories(t *testing.T) {
 					RepoFields: &types.RepoFields{Fork: true},
 				},
 			},
-			WantExcludedRepos: excludedRepos{forks: 0, archived: 0},
+			WantExcludedRepos: &excludedRepos{forks: 0, archived: 0},
 		},
 		{
 			Name:  "when fork is set don't populate exclude",
@@ -715,7 +715,7 @@ func TestComputeExcludedRepositories(t *testing.T) {
 					RepoFields: &types.RepoFields{Fork: true},
 				},
 			},
-			WantExcludedRepos: excludedRepos{forks: 0, archived: 0},
+			WantExcludedRepos: &excludedRepos{forks: 0, archived: 0},
 		},
 	}
 

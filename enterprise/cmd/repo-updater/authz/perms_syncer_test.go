@@ -92,10 +92,6 @@ func (s *mockReposStore) ListRepos(ctx context.Context, args repos.StoreListRepo
 	return s.listRepos(ctx, args)
 }
 
-func (s *mockReposStore) ListExternalRepoSpecs(ctx context.Context) (map[api.ExternalRepoSpec]struct{}, error) {
-	return nil, nil
-}
-
 func (s *mockReposStore) InsertRepos(context.Context, ...*repos.Repo) error {
 	return nil
 }

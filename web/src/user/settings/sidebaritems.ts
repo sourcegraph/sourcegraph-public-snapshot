@@ -29,14 +29,5 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = {
             to: '/tokens',
             condition: () => window.context.accessTokensAllow !== 'none',
         },
-        {
-            label: 'Manage repositories',
-            to: '/external-services',
-            condition: props =>
-                window.context.externalServicesUserModeEnabled ||
-                (props.user.id === props.authenticatedUser.id &&
-                    props.authenticatedUser.tags.includes('AllowUserExternalServicePublic')) ||
-                props.user.tags?.includes('AllowUserExternalServicePublic'),
-        },
     ],
 }

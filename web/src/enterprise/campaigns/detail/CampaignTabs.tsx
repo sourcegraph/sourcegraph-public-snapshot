@@ -15,10 +15,8 @@ import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
 import { CampaignBurndownChart } from './BurndownChart'
 import { CampaignChangesets } from './changesets/CampaignChangesets'
-import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import { CampaignSpecTab } from './CampaignSpecTab'
 
-type SelectedTab = 'changesets' | 'chart' | 'spec'
+type SelectedTab = 'changesets' | 'chart'
 
 export interface CampaignTabsProps extends ExtensionsControllerProps, ThemeProps, PlatformContextProps, TelemetryProps {
     campaign: CampaignFields
@@ -44,51 +42,20 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
     queryChangesetCountsOverTime,
     queryExternalChangesetWithFileDiffs,
 }) => {
-    const [selectedTab, setSelectedTab] = useState<SelectedTab>(() => {
-        const urlParameters = new URLSearchParams(location.search)
-        if (urlParameters.get('tab') === 'chart') {
-            return 'chart'
-        }
-        if (urlParameters.get('tab') === 'spec') {
-            return 'spec'
-        }
-        return 'changesets'
-    })
+    const [selectedTab, setSelectedTab] = useState<SelectedTab>('changesets')
     const onSelectChangesets = useCallback<React.MouseEventHandler>(
         event => {
             event.preventDefault()
             setSelectedTab('changesets')
-            const urlParameters = new URLSearchParams(location.search)
-            urlParameters.delete('tab')
-            if (location.search !== urlParameters.toString()) {
-                history.replace({ ...location, search: urlParameters.toString() })
-            }
         },
-        [history, location]
+        [setSelectedTab]
     )
     const onSelectChart = useCallback<React.MouseEventHandler>(
         event => {
             event.preventDefault()
             setSelectedTab('chart')
-            const urlParameters = new URLSearchParams(location.search)
-            urlParameters.set('tab', 'chart')
-            if (location.search !== urlParameters.toString()) {
-                history.replace({ ...location, search: urlParameters.toString() })
-            }
         },
-        [history, location]
-    )
-    const onSelectSpec = useCallback<React.MouseEventHandler>(
-        event => {
-            event.preventDefault()
-            setSelectedTab('spec')
-            const urlParameters = new URLSearchParams(location.search)
-            urlParameters.set('tab', 'spec')
-            if (location.search !== urlParameters.toString()) {
-                history.replace({ ...location, search: urlParameters.toString() })
-            }
-        },
-        [history, location]
+        [setSelectedTab]
     )
     return (
         <>
@@ -109,15 +76,6 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
                         className={classNames('nav-link', selectedTab === 'chart' && 'active')}
                     >
                         <ChartLineVariantIcon className="icon-inline text-muted mr-1" /> Burndown chart
-                    </a>
-                </li>
-                <li className="nav-item test-campaigns-spec-tab">
-                    <a
-                        href=""
-                        onClick={onSelectSpec}
-                        className={classNames('nav-link', selectedTab === 'spec' && 'active')}
-                    >
-                        <FileDocumentIcon className="icon-inline text-muted mr-1" /> Campaign spec
                     </a>
                 </li>
             </ul>
@@ -141,9 +99,6 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
                     queryChangesets={queryChangesets}
                     queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                 />
-            )}
-            {selectedTab === 'spec' && (
-                <CampaignSpecTab campaignName={campaign.name} originalInput={campaign.currentSpec.originalInput} />
             )}
         </>
     )

@@ -8,7 +8,6 @@ import React from 'react'
 import webStyles from '../../SourcegraphWebApp.scss'
 import { SourcegraphContext } from '../../jscontext'
 import { LSIFUploadState } from '../../../../shared/src/graphql-operations'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
 
 window.context = {} as SourcegraphContext & SuiteFunction
 
@@ -31,10 +30,10 @@ const commonProps = {
         url: '',
     },
     now: () => new Date('2020-06-15T15:25:00+00:00'),
-    telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
-const upload: Pick<Upload, 'projectRoot' | 'inputCommit' | 'inputRoot' | 'inputIndexer' | 'isLatestForRepo'> = {
+const upload: Pick<Upload, 'id' | 'projectRoot' | 'inputCommit' | 'inputRoot' | 'inputIndexer' | 'isLatestForRepo'> = {
+    id: '1234',
     projectRoot: {
         url: '',
         path: 'web/',
@@ -62,7 +61,6 @@ add('List', () => (
                 nodes: [
                     {
                         ...upload,
-                        id: '1',
                         state: LSIFUploadState.COMPLETED,
                         uploadedAt: '2020-06-15T12:20:30+00:00',
                         startedAt: '2020-06-15T12:25:30+00:00',
@@ -72,7 +70,6 @@ add('List', () => (
                     },
                     {
                         ...upload,
-                        id: '2',
                         state: LSIFUploadState.ERRORED,
                         uploadedAt: '2020-06-15T12:20:30+00:00',
                         startedAt: '2020-06-15T12:25:30+00:00',
@@ -82,7 +79,6 @@ add('List', () => (
                     },
                     {
                         ...upload,
-                        id: '3',
                         state: LSIFUploadState.PROCESSING,
                         uploadedAt: '2020-06-15T12:20:30+00:00',
                         startedAt: '2020-06-15T12:25:30+00:00',
@@ -92,7 +88,6 @@ add('List', () => (
                     },
                     {
                         ...upload,
-                        id: '4',
                         state: LSIFUploadState.QUEUED,
                         uploadedAt: '2020-06-15T12:20:30+00:00',
                         startedAt: null,
@@ -102,7 +97,6 @@ add('List', () => (
                     },
                     {
                         ...upload,
-                        id: '5',
                         state: LSIFUploadState.UPLOADING,
                         uploadedAt: '2020-06-15T12:20:30+00:00',
                         startedAt: null,

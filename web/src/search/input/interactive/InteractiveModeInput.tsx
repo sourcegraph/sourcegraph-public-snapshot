@@ -14,6 +14,7 @@ import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../..
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { ThemePreferenceProps } from '../../../theme'
+import { EventLoggerProps } from '../../../tracking/eventLogger'
 import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
 import { FiltersToTypeAndValue, FilterType } from '../../../../../shared/src/search/interactive/util'
 import { QueryInput } from '../QueryInput'
@@ -33,7 +34,6 @@ import { VersionContextProps } from '../../../../../shared/src/search/util'
 import { VersionContext } from '../../../schema/site.schema'
 import { globbingEnabledFromSettings } from '../../../util/globbing'
 import { AuthenticatedUser } from '../../../auth'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 
 interface InteractiveModeProps
     extends SettingsCascadeProps,
@@ -42,7 +42,7 @@ interface InteractiveModeProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         ThemeProps,
         ThemePreferenceProps,
-        TelemetryProps,
+        EventLoggerProps,
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,

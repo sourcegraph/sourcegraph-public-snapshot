@@ -282,9 +282,9 @@ func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
 // ListCampaignsOpts captures the query options needed for
 // listing campaigns.
 type ListCampaignsOpts struct {
-	LimitOpts
 	ChangesetID int64
 	Cursor      int64
+	Limit       int
 	State       campaigns.CampaignState
 
 	InitialApplierID int32
@@ -297,7 +297,7 @@ type ListCampaignsOpts struct {
 func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs []*campaigns.Campaign, next int64, err error) {
 	q := listCampaignsQuery(&opts)
 
-	cs = make([]*campaigns.Campaign, 0, opts.DBLimit())
+	cs = make([]*campaigns.Campaign, 0, opts.Limit)
 	err = s.query(ctx, q, func(sc scanner) error {
 		var c campaigns.Campaign
 		if err := scanCampaign(&c, sc); err != nil {
@@ -307,7 +307,7 @@ func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs [
 		return nil
 	})
 
-	if opts.Limit != 0 && len(cs) == opts.DBLimit() {
+	if opts.Limit != 0 && len(cs) == opts.Limit {
 		next = cs[len(cs)-1].ID
 		cs = cs[:len(cs)-1]
 	}
@@ -320,9 +320,15 @@ var listCampaignsQueryFmtstr = `
 SELECT %s FROM campaigns
 WHERE %s
 ORDER BY id DESC
+LIMIT %s
 `
 
 func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
+	if opts.Limit == 0 {
+		opts.Limit = defaultListLimit
+	}
+	opts.Limit++
+
 	preds := []*sqlf.Query{}
 
 	if opts.Cursor != 0 {
@@ -357,9 +363,10 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		listCampaignsQueryFmtstr+opts.LimitOpts.ToDB(),
+		listCampaignsQueryFmtstr,
 		sqlf.Join(campaignColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
+		opts.Limit,
 	)
 }
 

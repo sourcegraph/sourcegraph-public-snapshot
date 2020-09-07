@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -152,7 +153,7 @@ func TestServicePermissionLevels(t *testing.T) {
 			})
 
 			t.Run("CloseCampaign", func(t *testing.T) {
-				_, err := svc.CloseCampaign(currentUserCtx, campaign.ID, false)
+				_, err := svc.CloseCampaign(currentUserCtx, campaign.ID, false, false)
 				tc.assertFunc(t, err)
 			})
 
@@ -197,10 +198,7 @@ func TestService(t *testing.T) {
 		t.Fatal("user is admin, want non-admin")
 	}
 
-	now := time.Now().UTC().Truncate(time.Microsecond)
-	clock := func() time.Time { return now }
-
-	store := NewStoreWithClock(dbconn.Global, clock)
+	store := NewStore(dbconn.Global)
 	rs, _ := createTestRepos(t, ctx, dbconn.Global, 4)
 
 	fakeSource := &ct.FakeChangesetSource{}
@@ -247,35 +245,22 @@ func TestService(t *testing.T) {
 
 		adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
 
+		mockCloseChangesets = func(ctx context.Context, cs campaigns.Changesets) {
+			if a := actor.FromContext(ctx); a.UID != admin.ID {
+				t.Errorf("wrong actor in context. want=%d, have=%d", admin.ID, a.UID)
+			}
+		}
+		t.Cleanup(func() { mockCloseChangesets = nil })
+
 		closeConfirm := func(t *testing.T, c *campaigns.Campaign, closeChangesets bool) {
 			t.Helper()
 
-			closedCampaign, err := svc.CloseCampaign(adminCtx, c.ID, closeChangesets)
+			closedCampaign, err := svc.CloseCampaign(adminCtx, c.ID, closeChangesets, false)
 			if err != nil {
 				t.Fatalf("campaign not closed: %s", err)
 			}
-			if !closedCampaign.ClosedAt.Equal(now) {
+			if closedCampaign.ClosedAt.IsZero() {
 				t.Fatalf("campaign ClosedAt is zero")
-			}
-
-			if !closeChangesets {
-				return
-			}
-
-			cs, _, err := store.ListChangesets(ctx, ListChangesetsOpts{
-				OwnedByCampaignID: c.ID,
-			})
-			if err != nil {
-				t.Fatalf("listing changesets failed: %s", err)
-			}
-			for _, c := range cs {
-				if !c.Closing {
-					t.Errorf("changeset should be Closing, but is not")
-				}
-
-				if have, want := c.ReconcilerState, campaigns.ReconcilerStateQueued; have != want {
-					t.Errorf("changeset ReconcilerState wrong. want=%s, have=%s", want, have)
-				}
 			}
 		}
 
@@ -284,18 +269,31 @@ func TestService(t *testing.T) {
 			closeConfirm(t, campaign, false)
 		})
 
-		t.Run("changesets", func(t *testing.T) {
+		t.Run("processing changesets", func(t *testing.T) {
 			campaign := createCampaign(t)
 
-			changeset1 := testChangeset(rs[0].ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
-			changeset1.ReconcilerState = campaigns.ReconcilerStateCompleted
-			if err := store.CreateChangeset(ctx, changeset1); err != nil {
+			changeset := testChangeset(rs[0].ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
+			changeset.ReconcilerState = campaigns.ReconcilerStateProcessing
+			if err := store.CreateChangeset(ctx, changeset); err != nil {
 				t.Fatal(err)
 			}
 
-			changeset2 := testChangeset(rs[1].ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
-			changeset2.ReconcilerState = campaigns.ReconcilerStateCompleted
-			if err := store.CreateChangeset(ctx, changeset2); err != nil {
+			// should fail
+			_, err := svc.CloseCampaign(adminCtx, campaign.ID, true, false)
+			if err != ErrCloseProcessingCampaign {
+				t.Fatalf("CloseCampaign returned unexpected error: %s", err)
+			}
+
+			// without trying to close changesets, it should succeed:
+			closeConfirm(t, campaign, false)
+		})
+
+		t.Run("non-processing changesets", func(t *testing.T) {
+			campaign := createCampaign(t)
+
+			changeset := testChangeset(rs[0].ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
+			changeset.ReconcilerState = campaigns.ReconcilerStateCompleted
+			if err := store.CreateChangeset(ctx, changeset); err != nil {
 				t.Fatal(err)
 			}
 
@@ -348,6 +346,53 @@ func TestService(t *testing.T) {
 		// should result in a not found error
 		if err := svc.EnqueueChangesetSync(ctx, changeset.ID); !errcode.IsNotFound(err) {
 			t.Fatalf("expected not-found error but got %s", err)
+		}
+	})
+
+	t.Run("CloseOpenChangesets", func(t *testing.T) {
+		// After close, the changesets will be synced, so we need to mock that operation.
+		state := ct.MockChangesetSyncState(&protocol.RepoInfo{
+			Name: api.RepoName(rs[0].Name),
+			VCS:  protocol.VCSInfo{URL: rs[0].URI},
+		})
+		defer state.Unmock()
+
+		changeset1 := testChangeset(rs[0].ID, 0, campaigns.ChangesetExternalStateOpen)
+		if err := store.CreateChangeset(ctx, changeset1); err != nil {
+			t.Fatal(err)
+		}
+		changeset2 := testChangeset(rs[1].ID, 0, campaigns.ChangesetExternalStateOpen)
+		if err := store.CreateChangeset(ctx, changeset2); err != nil {
+			t.Fatal(err)
+		}
+
+		// Repo of changeset2 filtered out by authzFilter
+		ct.AuthzFilterRepos(t, changeset2.RepoID)
+
+		fakeSource := &ct.FakeChangesetSource{
+			// Metadata returned by code host doesn't matter in this test, so we
+			// return the same for both changesets.
+			FakeMetadata: changeset1.Metadata,
+			Err:          nil,
+		}
+		sourcer := repos.NewFakeSourcer(nil, fakeSource)
+
+		svc := NewService(store, nil)
+		svc.sourcer = sourcer
+
+		// Try to close open changesets
+		err := svc.CloseOpenChangesets(ctx, []*campaigns.Changeset{changeset1, changeset2})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Only changeset1 should be closed
+		if have, want := len(fakeSource.ClosedChangesets), 1; have != want {
+			t.Fatalf("ClosedChangesets has wrong length. want=%d, have=%d", want, have)
+		}
+
+		if have, want := fakeSource.ClosedChangesets[0].RepoID, changeset1.RepoID; have != want {
+			t.Fatalf("wrong changesets closed. want=%d, have=%d", want, have)
 		}
 	})
 

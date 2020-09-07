@@ -2,7 +2,6 @@ package campaigns
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"testing"
@@ -44,8 +43,7 @@ func TestReconcilerProcess(t *testing.T) {
 	})
 	defer state.Unmock()
 
-	githubPR := buildGithubPR(clock(), "OPEN")
-	closedGitHubPR := buildGithubPR(clock(), "CLOSED")
+	githubPR := buildGithubPR(clock(), "12345", "Remote title", "Remote body", "head-ref-on-github")
 
 	type testCase struct {
 		changeset    testChangesetOpts
@@ -58,7 +56,6 @@ func TestReconcilerProcess(t *testing.T) {
 
 		wantCreateOnHostCode bool
 		wantUpdateOnCodeHost bool
-		wantCloseOnCodeHost  bool
 		wantLoadFromCodeHost bool
 		wantGitserverCommit  bool
 
@@ -69,21 +66,24 @@ func TestReconcilerProcess(t *testing.T) {
 		"published unsynced changeset without changesetSpec": {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalID:       githubPR.ID,
+				externalID:       "12345",
 				unsynced:         true,
 			},
 			sourcerMetadata: githubPR,
+
+			wantCreateOnHostCode: false,
+			wantUpdateOnCodeHost: false,
+			wantGitserverCommit:  false,
 
 			wantLoadFromCodeHost: true,
 
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
-				externalState:    campaigns.ChangesetExternalStateOpen,
+				externalID:       "12345",
+				externalBranch:   "head-ref-on-github",
 				unsynced:         false,
-				title:            githubPR.Title,
-				body:             githubPR.Body,
+				title:            "Remote title",
+				body:             "Remote body",
 				diffStat:         state.DiffStat,
 			},
 		},
@@ -97,9 +97,12 @@ func TestReconcilerProcess(t *testing.T) {
 			},
 			sourcerMetadata: githubPR,
 
+			wantCreateOnHostCode: false,
+			wantUpdateOnCodeHost: false,
+			wantGitserverCommit:  false,
+
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
-				externalState:    "",
 				externalID:       "",
 				externalBranch:   "",
 			},
@@ -115,15 +118,15 @@ func TestReconcilerProcess(t *testing.T) {
 			sourcerMetadata: githubPR,
 
 			wantCreateOnHostCode: true,
+			wantUpdateOnCodeHost: false,
 			wantGitserverCommit:  true,
 
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
-				externalState:    campaigns.ChangesetExternalStateOpen,
-				title:            githubPR.Title,
-				body:             githubPR.Body,
+				externalID:       "12345",
+				externalBranch:   "head-ref-on-github",
+				title:            "Remote title",
+				body:             "Remote body",
 				diffStat:         state.DiffStat,
 			},
 		},
@@ -149,11 +152,10 @@ func TestReconcilerProcess(t *testing.T) {
 
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
-				externalState:    campaigns.ChangesetExternalStateOpen,
-				title:            githubPR.Title,
-				body:             githubPR.Body,
+				externalID:       "12345",
+				externalBranch:   "head-ref-on-github",
+				title:            "Remote title",
+				body:             "Remote body",
 				diffStat:         state.DiffStat,
 			},
 		},
@@ -180,18 +182,19 @@ func TestReconcilerProcess(t *testing.T) {
 			},
 			sourcerMetadata: githubPR,
 
+			wantCreateOnHostCode: false,
 			// We don't want a new commit, only an update on the code host.
 			wantUpdateOnCodeHost: true,
+			wantGitserverCommit:  false,
 
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
-				externalState:    campaigns.ChangesetExternalStateOpen,
+				externalID:       "12345",
+				externalBranch:   "head-ref-on-github",
 				diffStat:         state.DiffStat,
 				// We update the title/body but want the title/body returned by the code host.
-				title: githubPR.Title,
-				body:  githubPR.Body,
+				title: "Remote title",
+				body:  "Remote body",
 			},
 		},
 		"retry update published changeset metadata": {
@@ -211,24 +214,24 @@ func TestReconcilerProcess(t *testing.T) {
 			},
 			changeset: testChangesetOpts{
 				publicationState:  campaigns.ChangesetPublicationStatePublished,
-				externalID:        githubPR.ID,
-				externalBranch:    githubPR.HeadRefName,
-				externalState:     campaigns.ChangesetExternalStateOpen,
+				externalID:        "12345",
+				externalBranch:    "head-ref-on-github",
 				createdByCampaign: true,
 				// Previous update failed:
 				failureMessage: "failed to update changeset metadata",
 			},
 			sourcerMetadata: githubPR,
 
+			wantCreateOnHostCode: false,
 			wantUpdateOnCodeHost: true,
+			wantGitserverCommit:  false,
 
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
-				externalState:    campaigns.ChangesetExternalStateOpen,
-				title:            githubPR.Title,
-				body:             githubPR.Body,
+				externalID:       "12345",
+				externalBranch:   "head-ref-on-github",
+				title:            "Remote title",
+				body:             "Remote body",
 				diffStat:         state.DiffStat,
 				// failureMessage should be nil
 			},
@@ -253,22 +256,19 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState:  campaigns.ChangesetPublicationStatePublished,
 				externalID:        "12345",
 				externalBranch:    "head-ref-on-github",
-				externalState:     campaigns.ChangesetExternalStateOpen,
 				createdByCampaign: true,
 			},
 			sourcerMetadata: githubPR,
 
+			wantCreateOnHostCode: false,
 			// We don't want an update on the code host, only a new commit pushed.
-			wantGitserverCommit: true,
-			// And we want the changeset to be synced after pushing the commit.
-			wantLoadFromCodeHost: true,
+			wantUpdateOnCodeHost: false,
+			wantGitserverCommit:  true,
 
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalState:    campaigns.ChangesetExternalStateOpen,
-				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
-				diffStat:         state.DiffStat,
+				externalID:       "12345",
+				externalBranch:   "head-ref-on-github",
 			},
 		},
 		"retry update published changeset commit": {
@@ -289,7 +289,6 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState:  campaigns.ChangesetPublicationStatePublished,
 				externalID:        "12345",
 				externalBranch:    "head-ref-on-github",
-				externalState:     campaigns.ChangesetExternalStateOpen,
 				createdByCampaign: true,
 
 				// Previous update failed:
@@ -297,15 +296,14 @@ func TestReconcilerProcess(t *testing.T) {
 			},
 			sourcerMetadata: githubPR,
 
+			wantCreateOnHostCode: false,
+			wantUpdateOnCodeHost: false,
 			wantGitserverCommit:  true,
-			wantLoadFromCodeHost: true,
 
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalState:    campaigns.ChangesetExternalStateOpen,
-				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
-				diffStat:         state.DiffStat,
+				externalID:       "12345",
+				externalBranch:   "head-ref-on-github",
 				// failureMessage should be nil
 			},
 		},
@@ -321,84 +319,20 @@ func TestReconcilerProcess(t *testing.T) {
 			},
 			changeset: testChangesetOpts{
 				publicationState:  campaigns.ChangesetPublicationStatePublished,
-				externalID:        githubPR.ID,
-				externalBranch:    githubPR.HeadRefName,
-				externalState:     campaigns.ChangesetExternalStateOpen,
+				externalID:        "12345",
+				externalBranch:    "head-ref-on-github",
 				createdByCampaign: true,
 			},
 			sourcerMetadata: githubPR,
 
-			wantChangeset: changesetAssertions{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
-				externalState:    campaigns.ChangesetExternalStateOpen,
-			},
-		},
-		"closing published open changeset": {
-			currentSpec: &testSpecOpts{
-				headRef:   "refs/heads/head-ref-on-github",
-				published: true,
-
-				title: "title",
-				body:  "body",
-			},
-			changeset: testChangesetOpts{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
-				externalState:    campaigns.ChangesetExternalStateOpen,
-				closing:          true,
-			},
-			// We return a closed GitHub PR here
-			sourcerMetadata: closedGitHubPR,
-
-			wantCloseOnCodeHost: true,
-			// We want to also sync the changeset after closing it
-			wantLoadFromCodeHost: true,
+			wantCreateOnHostCode: false,
+			wantUpdateOnCodeHost: false,
+			wantGitserverCommit:  false,
 
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
-				closing:          false,
-
-				externalID:     closedGitHubPR.ID,
-				externalBranch: closedGitHubPR.HeadRefName,
-				externalState:  campaigns.ChangesetExternalStateClosed,
-
-				title:    closedGitHubPR.Title,
-				body:     closedGitHubPR.Body,
-				diffStat: state.DiffStat,
-			},
-		},
-		"closing non-open changeset": {
-			currentSpec: &testSpecOpts{
-				headRef:   "refs/heads/head-ref-on-github",
-				published: true,
-
-				title: "title",
-				body:  "body",
-			},
-			changeset: testChangesetOpts{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
-				externalState:    campaigns.ChangesetExternalStateClosed,
-				closing:          true,
-			},
-			// We return a closed GitHub PR here, but since it's a noop, we
-			// don't sync and thus don't set its attributes on the changeset.
-			sourcerMetadata: closedGitHubPR,
-
-			// Should be a noop
-			wantCloseOnCodeHost: false,
-
-			wantChangeset: changesetAssertions{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				closing:          false,
-
-				externalID:     closedGitHubPR.ID,
-				externalBranch: closedGitHubPR.HeadRefName,
-				externalState:  campaigns.ChangesetExternalStateClosed,
+				externalID:       "12345",
+				externalBranch:   "head-ref-on-github",
 			},
 		},
 	}
@@ -445,6 +379,10 @@ func TestReconcilerProcess(t *testing.T) {
 			}
 			changeset := createChangeset(t, ctx, store, changesetOpts)
 
+			// Setup the assertion: wantChangeset is what we want in the database
+			// after the reconciler processed it.
+			metadata := tc.sourcerMetadata
+
 			// Setup gitserver dependency.
 			gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
 			if changesetSpec != nil {
@@ -457,7 +395,7 @@ func TestReconcilerProcess(t *testing.T) {
 				Svc:             extSvc,
 				Err:             nil,
 				ChangesetExists: tc.alreadyExists,
-				FakeMetadata:    tc.sourcerMetadata,
+				FakeMetadata:    metadata,
 			}
 			if changesetSpec != nil {
 				fakeSource.WantHeadRef = changesetSpec.Spec.HeadRef
@@ -467,15 +405,26 @@ func TestReconcilerProcess(t *testing.T) {
 			sourcer := repos.NewFakeSourcer(nil, fakeSource)
 
 			// Run the reconciler
-			rec := reconciler{
-				noSleepBeforeSync: true,
-				gitserverClient:   gitClient,
-				sourcer:           sourcer,
-				store:             store,
-			}
+			rec := reconciler{gitserverClient: gitClient, sourcer: sourcer, store: store}
 			if err := rec.process(ctx, store, changeset); err != nil {
 				t.Fatalf("reconciler process failed: %s", err)
 			}
+
+			// Assert that the changeset in the database looks like we want
+			haveChangeset, err := store.GetChangeset(ctx, GetChangesetOpts{ID: changeset.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			assertions := tc.wantChangeset
+			assertions.repo = rs[0].ID
+			if changesetSpec != nil {
+				assertions.currentSpec = changesetSpec.ID
+			}
+			if previousSpec != nil {
+				assertions.previousSpec = previousSpec.ID
+			}
+			assertChangeset(t, haveChangeset, assertions)
 
 			// Assert that all the calls happened
 			if have, want := gitClient.CreateCommitFromPatchCalled, tc.wantGitserverCommit; have != want {
@@ -493,21 +442,6 @@ func TestReconcilerProcess(t *testing.T) {
 			if have, want := fakeSource.LoadChangesetsCalled, tc.wantLoadFromCodeHost; have != want {
 				t.Fatalf("wrong LoadChangesets call. wantCalled=%t, wasCalled=%t", want, have)
 			}
-
-			if have, want := fakeSource.CloseChangesetCalled, tc.wantCloseOnCodeHost; have != want {
-				t.Fatalf("wrong CloseChangeset call. wantCalled=%t, wasCalled=%t", want, have)
-			}
-
-			// Assert that the changeset in the database looks like we want
-			assertions := tc.wantChangeset
-			assertions.repo = rs[0].ID
-			if changesetSpec != nil {
-				assertions.currentSpec = changesetSpec.ID
-			}
-			if previousSpec != nil {
-				assertions.previousSpec = previousSpec.ID
-			}
-			reloadAndAssertChangeset(t, ctx, store, changeset, assertions)
 		})
 	}
 }
@@ -578,14 +512,14 @@ func TestReconcilerProcess_PublishedChangesetDuplicateBranch(t *testing.T) {
 	}
 }
 
-func buildGithubPR(now time.Time, state string) *github.PullRequest {
-	pr := &github.PullRequest{
-		ID:          "12345",
+func buildGithubPR(now time.Time, externalID, title, body, headRef string) interface{} {
+	return &github.PullRequest{
+		ID:          externalID,
+		Title:       title,
+		Body:        body,
+		HeadRefName: git.AbbreviateRef(headRef),
 		Number:      12345,
-		Title:       state + " GitHub PR",
-		Body:        state + " GitHub PR",
-		HeadRefName: git.AbbreviateRef("head-ref-on-github"),
-		State:       state,
+		State:       "OPEN",
 		TimelineItems: []github.TimelineItem{
 			{Type: "PullRequestCommit", Item: &github.PullRequestCommit{
 				Commit: github.Commit{
@@ -598,19 +532,6 @@ func buildGithubPR(now time.Time, state string) *github.PullRequest {
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
-
-	if strings.ToLower(state) == "closed" {
-		pr.State = "CLOSED"
-		// We add a "ClosedEvent" so that the SyncChangesets call that happens after closing
-		// the PR has the "correct" state to set the ExternalState
-		pr.TimelineItems = append(pr.TimelineItems, github.TimelineItem{
-			Type: "ClosedEvent",
-			Item: &github.ClosedEvent{CreatedAt: now.Add(1 * time.Hour)},
-		})
-		pr.UpdatedAt = now.Add(1 * time.Hour)
-	}
-
-	return pr
 }
 
 type testChangesetOpts struct {
@@ -622,19 +543,14 @@ type testChangesetOpts struct {
 	externalServiceType string
 	externalID          string
 	externalBranch      string
-	externalState       campaigns.ChangesetExternalState
 
 	publicationState campaigns.ChangesetPublicationState
-
-	reconcilerState campaigns.ReconcilerState
-	failureMessage  string
-	numResets       int64
+	failureMessage   string
 
 	createdByCampaign bool
 	ownedByCampaign   int64
 
 	unsynced bool
-	closing  bool
 }
 
 func createChangeset(
@@ -657,7 +573,6 @@ func createChangeset(
 		ExternalServiceType: opts.externalServiceType,
 		ExternalID:          opts.externalID,
 		ExternalBranch:      opts.externalBranch,
-		ExternalState:       opts.externalState,
 
 		PublicationState: opts.publicationState,
 
@@ -665,10 +580,6 @@ func createChangeset(
 		OwnedByCampaignID: opts.ownedByCampaign,
 
 		Unsynced: opts.unsynced,
-		Closing:  opts.closing,
-
-		ReconcilerState: opts.reconcilerState,
-		NumResets:       opts.numResets,
 	}
 
 	if opts.failureMessage != "" {

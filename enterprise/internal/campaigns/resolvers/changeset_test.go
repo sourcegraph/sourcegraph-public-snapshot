@@ -204,7 +204,6 @@ func TestChangesetResolver(t *testing.T) {
 				},
 				PublicationState: string(campaigns.ChangesetPublicationStateUnpublished),
 				ReconcilerState:  string(campaigns.ReconcilerStateCompleted),
-				CurrentSpec:      apitest.ChangesetSpec{ID: string(marshalChangesetSpecRandID(unpublishedSpec.RandID))},
 			},
 		},
 		{
@@ -212,8 +211,8 @@ func TestChangesetResolver(t *testing.T) {
 			changeset: erroredChangeset,
 			want: apitest.Changeset{
 				Typename:   "ExternalChangeset",
-				Title:      erroredSpec.Spec.Title,
-				Body:       erroredSpec.Spec.Body,
+				Title:      unpublishedSpec.Spec.Title,
+				Body:       unpublishedSpec.Spec.Body,
 				Repository: apitest.Repository{Name: repo.Name},
 				// Not scheduled for sync, because it's not published.
 				NextSyncAt: "",
@@ -225,7 +224,6 @@ func TestChangesetResolver(t *testing.T) {
 				PublicationState: string(campaigns.ChangesetPublicationStateUnpublished),
 				ReconcilerState:  string(campaigns.ReconcilerStateErrored),
 				Error:            "very bad error",
-				CurrentSpec:      apitest.ChangesetSpec{ID: string(marshalChangesetSpecRandID(erroredSpec.RandID))},
 			},
 		},
 		{
@@ -327,8 +325,6 @@ query($changeset: ID!) {
 
       events(first: 100) { totalCount }
       labels { text, color, description }
-
-      currentSpec { id }
 
       diff {
         __typename

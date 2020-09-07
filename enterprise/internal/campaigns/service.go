@@ -2,9 +2,12 @@ package campaigns
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -81,7 +84,7 @@ func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpe
 		return spec, s.store.CreateCampaignSpec(ctx, spec)
 	}
 
-	listOpts := ListChangesetSpecsOpts{RandIDs: opts.ChangesetSpecRandIDs}
+	listOpts := ListChangesetSpecsOpts{Limit: -1, RandIDs: opts.ChangesetSpecRandIDs}
 	cs, _, err := s.store.ListChangesetSpecs(ctx, listOpts)
 	if err != nil {
 		return nil, err
@@ -267,8 +270,13 @@ func (s *Service) MoveCampaign(ctx context.Context, opts MoveCampaignOpts) (camp
 // in the given namespace but has a different ID.
 var ErrEnsureCampaignFailed = errors.New("a campaign in the given namespace and with the given name exists but does not match the given ID")
 
+// ErrCloseProcessingCampaign is returned by CloseCampaign if the Campaign has
+// been published at the time of closing but its Changesets are still being
+// processed by the reconciler.
+var ErrCloseProcessingCampaign = errors.New("cannot close a campaign while changesets are being processed")
+
 // CloseCampaign closes the Campaign with the given ID if it has not been closed yet.
-func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets bool) (campaign *campaigns.Campaign, err error) {
+func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets, closeAsync bool) (campaign *campaigns.Campaign, err error) {
 	traceTitle := fmt.Sprintf("campaign: %d, closeChangesets: %t", id, closeChangesets)
 	tr, ctx := trace.New(ctx, "service.CloseCampaign", traceTitle)
 	defer func() {
@@ -276,41 +284,82 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 		tr.Finish()
 	}()
 
-	campaign, err = s.store.GetCampaign(ctx, GetCampaignOpts{ID: id})
+	transaction := func() (err error) {
+		tx, err := s.store.Transact(ctx)
+		if err != nil {
+			return err
+		}
+		defer func() { err = tx.Done(err) }()
+
+		campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: id})
+		if err != nil {
+			return errors.Wrap(err, "getting campaign")
+		}
+
+		if campaign.Closed() {
+			return nil
+		}
+
+		if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.InitialApplierID); err != nil {
+			return err
+		}
+
+		if closeChangesets {
+			processingState := campaigns.ReconcilerStateProcessing
+			countOpts := CountChangesetsOpts{
+				CampaignID:      campaign.ID,
+				ReconcilerState: &processingState,
+			}
+			processingCount, err := tx.CountChangesets(ctx, countOpts)
+			if err != nil {
+				return errors.Wrap(err, "checking for processing changesets")
+			}
+			if processingCount != 0 {
+				err = ErrCloseProcessingCampaign
+				return err
+			}
+		}
+
+		campaign.ClosedAt = time.Now().UTC()
+
+		return tx.UpdateCampaign(ctx, campaign)
+	}
+
+	err = transaction()
 	if err != nil {
-		return nil, errors.Wrap(err, "getting campaign")
-	}
-
-	if campaign.Closed() {
-		return campaign, nil
-	}
-
-	if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.InitialApplierID); err != nil {
 		return nil, err
 	}
 
-	tx, err := s.store.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = tx.Done(err) }()
+	if closeChangesets {
+		user := actor.FromContext(ctx)
+		actorCtx := contextWithActor(context.Background(), user.UID)
+		ctx := trace.ContextWithTrace(actorCtx, tr)
 
-	campaign.ClosedAt = s.clock()
-	if err := tx.UpdateCampaign(ctx, campaign); err != nil {
-		return nil, err
-	}
+		closer := func() {
+			open := campaigns.ChangesetExternalStateOpen
+			published := campaigns.ChangesetPublicationStatePublished
+			cs, _, err := s.store.ListChangesets(ctx, ListChangesetsOpts{
+				OwnedByCampaignID: campaign.ID,
+				ExternalState:     &open,
+				PublicationState:  &published,
+				Limit:             -1,
+			})
+			if err != nil {
+				log15.Error("ListChangesets", "err", err)
+				return
+			}
 
-	if !closeChangesets {
-		return campaign, nil
-	}
-
-	// At this point we don't know which changesets have ExternalStateOpen,
-	// since some might still be being processed in the background by the
-	// reconciler.
-	// So enqueue all, except the ones that are completed and closed/merged,
-	// for closing. If after being processed they're not open, it'll be a noop.
-	if err := tx.EnqueueChangesetsToClose(ctx, campaign.ID); err != nil {
-		return nil, err
+			// Close only the changesets that are open
+			err = s.CloseOpenChangesets(ctx, cs)
+			if err != nil {
+				log15.Error("CloseCampaignChangesets", "err", err)
+			}
+		}
+		if closeAsync {
+			go closer()
+		} else {
+			closer()
+		}
 	}
 
 	return campaign, nil
@@ -336,6 +385,66 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64) (err error) {
 	}
 
 	return s.store.DeleteCampaign(ctx, id)
+}
+
+// mockCloseOpenChangesets is used to test CloseOpenChangesets closing
+// the correct changesets with the correct context.
+// This is a temporary mock that should be removed once we move closing of
+// changesets into the background.
+var mockCloseChangesets func(context.Context, campaigns.Changesets)
+
+// CloseOpenChangesets closes the given Changesets on their respective codehosts and syncs them.
+func (s *Service) CloseOpenChangesets(ctx context.Context, cs campaigns.Changesets) (err error) {
+	if mockCloseChangesets != nil {
+		mockCloseChangesets(ctx, cs)
+		return nil
+	}
+
+	cs = cs.Filter(func(c *campaigns.Changeset) bool {
+		return c.ExternalState == campaigns.ChangesetExternalStateOpen
+	})
+
+	if len(cs) == 0 {
+		return nil
+	}
+
+	// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
+	// filters out repositories that the user doesn't have access to.
+	accessibleReposByID, err := db.Repos.GetReposSetByIDs(ctx, cs.RepoIDs()...)
+	if err != nil {
+		return err
+	}
+
+	reposStore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
+	bySource, err := groupChangesetsBySource(ctx, reposStore, s.sourcer, cs...)
+	if err != nil {
+		return err
+	}
+
+	errs := &multierror.Error{}
+	for _, group := range bySource {
+		for _, c := range group.Changesets {
+			if _, ok := accessibleReposByID[c.RepoID]; !ok {
+				continue
+			}
+
+			if err := group.CloseChangeset(ctx, c); err != nil {
+				errs = multierror.Append(errs, err)
+			}
+		}
+	}
+
+	if len(errs.Errors) != 0 {
+		return errs
+	}
+
+	// Here we need to sync the just-closed changesets (even though
+	// CloseChangesets updates the given Changesets too), because closing a
+	// Changeset often produces a ChangesetEvent on the codehost and if we were
+	// to close the Changesets and not update the events (which is what
+	// syncChangesetsWithSources does) our burndown chart will be outdated
+	// until the next run of campaigns.Syncer.
+	return syncChangesetsWithSources(ctx, s.store, bySource)
 }
 
 // EnqueueChangesetSync loads the given changeset from the database, checks
@@ -392,6 +501,10 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 
 	return nil
 }
+
+// ErrCampaignNameBlank is returned by CreateCampaign or UpdateCampaign if the
+// specified Campaign name is blank.
+var ErrCampaignNameBlank = errors.New("Campaign title cannot be blank")
 
 // checkNamespaceAccess checks whether the current user in the ctx has access
 // to either the user ID or the org ID as a namespace.

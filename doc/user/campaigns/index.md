@@ -39,18 +39,13 @@ Use the filters to switch between showing all campaigns, open campaigns, or clos
 
 If you lack read access to a repository in a campaign, you can only see [limited information about the changes to that repository](managing_access.md#repository-permissions-for-campaigns).
 
-## Campaign specs
+### Campaign specs
 
-You can create or update a campaign from a campaign spec, which is a YAML file that defines a campaign. You then use the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) to apply the campaign spec.
+You can create or update a campaign from a campaign spec, which is a YAML file that defines a campaign.
 
 See the [Creating a campaign](#creating-a-campaign) section for an example campaign spec YAML file.
 
-For more information, see:
-
-- [Creating a campaign](#creating-a-campaign)
-- [Updating a campaign](#updating-a-campaign)
-- [Example campaign specs](examples.md)
-- [Campaign spec YAML reference](campaign_spec_yaml_reference.md)
+<!-- - TODO(sqs) <u>Campaign spec YAML reference</u> -->
 
 ## Creating a campaign
 
@@ -85,11 +80,9 @@ changesetTemplate:
 
 1. Get started by running the following [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) command:
 
-    <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em> -namespace <em>USERNAME_OR_ORG</em></code></pre>
+    <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em></code></pre>
 
     > **Don't worry!** Before any branches are pushed or changesets (e.g., GitHub pull requests) are created, you will see a preview of all changes and can confirm each one before proceeding.
-
-    The `namespace` can be your Sourcegraph username or the name of a Sourcegraph organisation under which you want to create the camapign.
 
 1. Wait for it to run and compute the changes for each repository (using the repositories and commands in the campaign spec).
 1. Open the preview URL that the command printed out.
@@ -103,13 +96,6 @@ You can share the link to your campaign with other people if you want their help
 If a person viewing the campaign lacks read access to a repository in the campaign, they can only see [limited information about the changes to that repository](managing_access.md#repository-permissions-for-campaigns) (and not the repository name, file paths, or diff).
 
 You can update a campaign's changes at any time, even after you've published changesets. For more information, see [Updating a campaign](#updating-a-campaign).
-
-### Example campaigns
-
-The [example campaigns](examples/index.md) show how to use campaigns to make useful, real-world changes:
-
-- [Refactoring Go code using Comby](examples/refactor_go_comby.md)
-- [Updating Go import statements using Comby](examples/updating_go_import_statements.md)
 
 ## Publishing changesets to the code host
 
@@ -159,17 +145,15 @@ If you lack read access to a repository, you can only see [limited information a
 
 ## Updating a campaign
 
-Campaigns are identified by their name. It must be unique within a single namespace (your user account on Sourcegraph, or an organization you are a member of).
-Updating a campaign works by targetting an **existing** campaign in the namespace by specifying the name in the spec. If the name matches an existing campaign, it will update the campaign. (Otherwise, a new campaign will be created.)
+<!-- TODO(sqs): needs wireframes/mocks -->
 
-You can edit a the campaign's description, and any other part of its campaign spec at any time.
+You can edit a campaign's name, description, and any other part of its campaign spec at any time.
 
 To update a campaign, you need [admin access to the campaign](managing_access.md#campaign-access-for-each-permission-level), and [write access to all affected repositories](managing_access.md#repository-permissions-for-campaigns) with published changesets.
 
-1. Update the [campaign spec](#campaign-specs) to include the changes you want to make to the campaign. For example, change the `description` of the campaign or change the commit message in the `changesetTemplate`.
 1. In your terminal, run the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) command shown. The command will execute your campaign spec to generate changes and then upload them to the campaign for you to preview and accept.
 
-    <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em> -namespace USERNAME_OR_ORG</code></pre>
+    <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em></code></pre>
 
     > **Don't worry!** Before any branches or changesets are modified, you will see a preview of all changes and can confirm before proceeding.
 
@@ -178,9 +162,6 @@ To update a campaign, you need [admin access to the campaign](managing_access.md
 1. Click the **Update campaign** button.
 
 All of the changesets on your code host will be updated to the desired state that was shown in the preview.
-
-> NOTE: If you are sure about the changes you want to make and don't need to preview them, you can run `src campaign apply` to apply the campaign spec directly:
-> <pre><code>src campaign apply -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em> -namespace USERNAME_OR_ORG</code></pre>
 
 ## Tracking existing changesets
 
@@ -203,15 +184,13 @@ importChangesets:
 
 1. Create a campaign from the campaign spec by running the following [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) command:
 
-    <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em> -namespace USERNAME_OR_ORG</code></pre>
+    <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em></code></pre>
 
 1. Open the preview URL that the command printed out.
 1. Examine the preview. Confirm that the changesets are the ones you intended to track. If not, edit the campaign spec and then rerun the command above.
 1. Click the **Create campaign** button.
 
 You'll see the existing changeset in the list. The campaign will track the changeset's status and include it in the overall campaign progress (in the same way as if it had been created by the campaign). For more information, see [Tracking campaign progress and changeset statuses](#tracking-campaign-progress-and-changeset-statuses).
-
-> NOTE: You can combine the tracking of existing changesets and creating new ones by adding `importChangesets:` to your campaign specs that have `on:`, `steps:` and `changesetTemplate:` properties.
 
 ## Closing or deleting a campaign
 
@@ -222,10 +201,10 @@ Any person with [admin access to the campaign](managing_access.md#permission-lev
 1. Click the <img src="campaigns-icon.svg" alt="Campaigns icon" /> campaigns icon in the top navigation bar.
 1. In the list of campaigns, click the campaign that you'd like to close or delete.
 1. In the top right, click the **Close** button.
-1. Select whether you want to close all of the campaign's open changesets (e.g., closing all associated GitHub pull requests on the code host).
+1. Select whether you want to close all of the campaign's changesets (e.g., closing all associated GitHub pull requests on the code host).
 1. Click **Close campaign**.
 
-## Managing access to campaigns
+## [Managing access to campaigns]
 
 See [Managing access to campaigns](managing_access.md).
 
@@ -259,9 +238,9 @@ To learn about the internals of campaigns, see [Campaigns](../../dev/campaigns_d
 
 ### Known issues
 
+<!-- TODO(sqs): This section is rough/incomplete/outline-only. -->
+
 - Campaigns currently support **GitHub**, **GitLab** and **Bitbucket Server** repositories. If you're interested in using campaigns on other code hosts, [let us know](https://about.sourcegraph.com/contact).
 - It is not yet possible for a campaign to create multiple changesets in a single repository (e.g., to make changes to multiple subtrees in a monorepo).
 - Forking a repository and creating a pull request on the fork is not yet supported. Because of this limitation, you need write access to each repository that your campaign will change (in order to push a branch to it).
 - Campaign steps are run locally (in the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli)). Sourcegraph does not yet support executing campaign steps (which can be arbitrary commands) on the server. For this reason, the APIs for creating and updating a campaign require you to upload all of the changeset specs (which are produced by executing the campaign spec locally). {#server-execution}
-- It is not yet possible for multiple users to edit the same campaign that was created under an organization.
-- It is currently not yet possible to reuse a branch in a repository across multiple campaigns.

@@ -5,7 +5,6 @@ import { commonWebGraphQlResults } from './graphQlResults'
 import { siteID, siteGQLID } from './jscontext'
 import assert from 'assert'
 import expect from 'expect'
-import { SearchResult } from '../graphql-operations'
 
 describe('Search onboarding', () => {
     let driver: Driver
@@ -22,33 +21,6 @@ describe('Search onboarding', () => {
         })
         testContext.overrideGraphQL({
             ...commonWebGraphQlResults,
-            SearchSuggestions: () => ({
-                search: {
-                    suggestions: [],
-                },
-            }),
-            Search: (): SearchResult => ({
-                search: {
-                    results: {
-                        __typename: 'SearchResults',
-                        limitHit: true,
-                        matchCount: 30,
-                        approximateResultCount: '30+',
-                        missing: [],
-                        cloning: [],
-                        repositoriesCount: 372,
-                        timedout: [],
-                        indexUnavailable: false,
-                        dynamicFilters: [],
-                        results: [],
-                        alert: null,
-                        elapsedMilliseconds: 103,
-                    },
-                },
-            }),
-            RepoGroups: () => ({
-                repoGroups: [],
-            }),
             ViewerSettings: () => ({
                 viewerSettings: {
                     subjects: [
@@ -101,15 +73,13 @@ describe('Search onboarding', () => {
             await driver.page.click('.test-tour-language-example')
 
             await driver.page.waitForSelector('.test-tour-step-4')
+            await driver.page.click('.test-search-help-dropdown-button-icon')
+            await driver.page.waitForSelector('.test-tour-step-5')
             await driver.page.click('.test-search-button')
             await driver.assertWindowLocation(
                 '/search?q=lang:typescript+try%7B:%5Bmy_match%5D%7D&patternType=structural&onboardingTour=true'
             )
-            await driver.page.waitForSelector('.test-tour-step-5')
-            await driver.page.waitForSelector('.test-tour-structural-next-button')
-            await driver.page.click('.test-tour-structural-next-button')
             await driver.page.waitForSelector('.test-tour-step-6')
-            await driver.page.click('.test-search-help-dropdown-button-icon')
         })
 
         it('displays all steps in the repo onboarding flow', async () => {
@@ -133,10 +103,10 @@ describe('Search onboarding', () => {
             await driver.page.waitForSelector('.test-tour-step-3')
             await driver.page.keyboard.type('test')
             await driver.page.waitForSelector('.test-tour-step-4')
+            await driver.page.click('.test-search-help-dropdown-button-icon')
+            await driver.page.waitForSelector('.test-tour-step-5')
             await driver.page.click('.test-search-button')
             await driver.assertWindowLocation('/search?q=repo:sourcegraph+test&patternType=literal&onboardingTour=true')
-            await driver.page.waitForSelector('.test-tour-step-5')
-            await driver.page.click('.test-search-help-dropdown-button-icon')
         })
         it('advances filter-lang only after the autocomplete is closed and there is whitespace after the filter', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')

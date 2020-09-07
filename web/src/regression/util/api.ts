@@ -217,7 +217,7 @@ export function getExternalServices(
     return gqlClient
         .queryGraphQL(
             gql`
-                query ExternalServicesRegression($first: Int) {
+                query ExternalServices($first: Int) {
                     externalServices(first: $first) {
                         nodes {
                             id
@@ -253,7 +253,7 @@ export async function updateExternalService(
     await gqlClient
         .mutateGraphQL(
             gql`
-                mutation UpdateExternalServiceRegression($input: UpdateExternalServiceInput!) {
+                mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
                     updateExternalService(input: $input) {
                         warning
                     }

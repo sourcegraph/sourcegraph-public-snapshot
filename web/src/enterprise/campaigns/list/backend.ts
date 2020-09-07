@@ -1,5 +1,5 @@
 import { map } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql, requestGraphQL } from '../../../../../shared/src/graphql/graphql'
 import { Observable } from 'rxjs'
 import {
     CampaignsVariables,
@@ -9,7 +9,6 @@ import {
     CampaignsByOrgResult,
     CampaignsByOrgVariables,
 } from '../../../graphql-operations'
-import { requestGraphQL } from '../../../backend/graphql'
 
 const ListCampaignFragment = gql`
     fragment ListCampaign on Campaign {
@@ -39,8 +38,8 @@ export const queryCampaigns = ({
     state,
     viewerCanAdminister,
 }: Partial<CampaignsVariables>): Observable<CampaignsResult['campaigns']> =>
-    requestGraphQL<CampaignsResult, CampaignsVariables>(
-        gql`
+    requestGraphQL<CampaignsResult, CampaignsVariables>({
+        request: gql`
             query Campaigns($first: Int, $after: String, $state: CampaignState, $viewerCanAdminister: Boolean) {
                 campaigns(first: $first, after: $after, state: $state, viewerCanAdminister: $viewerCanAdminister) {
                     nodes {
@@ -56,13 +55,13 @@ export const queryCampaigns = ({
 
             ${ListCampaignFragment}
         `,
-        {
+        variables: {
             first: first ?? null,
             after: after ?? null,
             state: state ?? null,
             viewerCanAdminister: viewerCanAdminister ?? null,
-        }
-    ).pipe(
+        },
+    }).pipe(
         map(dataOrThrowErrors),
         map(data => data.campaigns)
     )
@@ -74,8 +73,8 @@ export const queryCampaignsByUser = ({
     state,
     viewerCanAdminister,
 }: CampaignsByUserVariables): Observable<CampaignsResult['campaigns']> =>
-    requestGraphQL<CampaignsByUserResult, CampaignsByUserVariables>(
-        gql`
+    requestGraphQL<CampaignsByUserResult, CampaignsByUserVariables>({
+        request: gql`
             query CampaignsByUser(
                 $userID: ID!
                 $first: Int
@@ -107,8 +106,8 @@ export const queryCampaignsByUser = ({
 
             ${ListCampaignFragment}
         `,
-        { first, after, state, viewerCanAdminister, userID }
-    ).pipe(
+        variables: { first, after, state, viewerCanAdminister, userID },
+    }).pipe(
         map(dataOrThrowErrors),
         map(data => {
             if (!data.node) {
@@ -128,8 +127,8 @@ export const queryCampaignsByOrg = ({
     state,
     viewerCanAdminister,
 }: CampaignsByOrgVariables): Observable<CampaignsResult['campaigns']> =>
-    requestGraphQL<CampaignsByOrgResult, CampaignsByOrgVariables>(
-        gql`
+    requestGraphQL<CampaignsByOrgResult, CampaignsByOrgVariables>({
+        request: gql`
             query CampaignsByOrg(
                 $orgID: ID!
                 $first: Int
@@ -161,8 +160,8 @@ export const queryCampaignsByOrg = ({
 
             ${ListCampaignFragment}
         `,
-        { first, after, state, viewerCanAdminister, orgID }
-    ).pipe(
+        variables: { first, after, state, viewerCanAdminister, orgID },
+    }).pipe(
         map(dataOrThrowErrors),
         map(data => {
             if (!data.node) {

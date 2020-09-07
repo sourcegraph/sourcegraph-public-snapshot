@@ -7,11 +7,12 @@ import {
     dataOrThrowErrors,
     isErrorGraphQLResult,
     gql,
+    requestGraphQL,
 } from '../../../shared/src/graphql/graphql'
 import { createAggregateError } from '../../../shared/src/util/errors'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { resetAllMemoizationCaches } from '../../../shared/src/util/memoizeObservable'
-import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
+import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { Settings } from '../../../shared/src/settings/settings'
 import { RepositoriesVariables, RepositoriesResult, ExternalServiceKind, UserActivePeriod } from '../graphql-operations'
 
@@ -109,8 +110,8 @@ const siteAdminRepositoryFieldsFragment = gql`
  * @returns Observable that emits the list of repositories
  */
 function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<RepositoriesResult['repositories']> {
-    return requestGraphQL<RepositoriesResult, RepositoriesVariables>(
-        gql`
+    return requestGraphQL<RepositoriesResult, RepositoriesVariables>({
+        request: gql`
             query Repositories(
                 $first: Int
                 $query: String
@@ -139,15 +140,15 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
 
             ${siteAdminRepositoryFieldsFragment}
         `,
-        {
+        variables: {
             cloned: args.cloned ?? true,
             notCloned: args.notCloned ?? true,
             indexed: args.indexed ?? true,
             notIndexed: args.notIndexed ?? true,
             first: args.first ?? null,
             query: args.query ?? null,
-        }
-    ).pipe(
+        },
+    }).pipe(
         map(dataOrThrowErrors),
         map(data => data.repositories)
     )

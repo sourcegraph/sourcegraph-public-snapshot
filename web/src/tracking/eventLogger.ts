@@ -5,6 +5,17 @@ import { serverAdmin } from './services/serverAdminWrapper'
 
 const uidKey = 'sourcegraphAnonymousUid'
 
+/**
+ * Props interface that can be extended by React components that need access to the full webapp EventLogger.
+ * The EventLogger provides more functionality than TelemetryService, but can only be used in the webapp.
+ */
+export interface EventLoggerProps {
+    /**
+     * The full webapp EventLogger to log telemetry events.
+     */
+    telemetryService: EventLogger
+}
+
 export class EventLogger implements TelemetryService {
     private hasStrippedQueryParameters = false
 

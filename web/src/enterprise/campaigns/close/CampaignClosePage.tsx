@@ -3,11 +3,11 @@ import * as H from 'history'
 import { PageTitle } from '../../../components/PageTitle'
 import { CampaignHeader } from '../detail/CampaignHeader'
 import { CampaignCloseAlert } from './CampaignCloseAlert'
-import { CampaignFields, Scalars } from '../../../graphql-operations'
+import { Scalars } from '../../../graphql-operations'
 import {
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryChangesets as _queryChangesets,
-    fetchCampaignByNamespace as _fetchCampaignByNamespace,
+    fetchCampaignById as _fetchCampaignById,
 } from '../detail/backend'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
@@ -29,19 +29,12 @@ export interface CampaignClosePageProps
         PlatformContextProps,
         BreadcrumbSetters,
         ExtensionsControllerProps {
-    /**
-     * The namespace ID.
-     */
-    namespaceID: Scalars['ID']
-    /**
-     * The campaign name.
-     */
-    campaignName: CampaignFields['name']
+    campaignID: Scalars['ID']
     history: H.History
     location: H.Location
 
     /** For testing only. */
-    fetchCampaignByNamespace?: typeof _fetchCampaignByNamespace
+    fetchCampaignById?: typeof _fetchCampaignById
     /** For testing only. */
     queryChangesets?: typeof _queryChangesets
     /** For testing only. */
@@ -51,8 +44,7 @@ export interface CampaignClosePageProps
 }
 
 export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> = ({
-    namespaceID,
-    campaignName,
+    campaignID,
     history,
     location,
     extensionsController,
@@ -60,19 +52,13 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
     platformContext,
     telemetryService,
     useBreadcrumb,
-    fetchCampaignByNamespace = _fetchCampaignByNamespace,
+    fetchCampaignById = _fetchCampaignById,
     queryChangesets,
     queryExternalChangesetWithFileDiffs,
     closeCampaign,
 }) => {
     const [closeChangesets, setCloseChangesets] = useState<boolean>(false)
-    const campaign = useObservable(
-        useMemo(() => fetchCampaignByNamespace(namespaceID, campaignName), [
-            namespaceID,
-            campaignName,
-            fetchCampaignByNamespace,
-        ])
-    )
+    const campaign = useObservable(useMemo(() => fetchCampaignById(campaignID), [campaignID, fetchCampaignById]))
 
     useBreadcrumb(
         useMemo(
@@ -113,7 +99,7 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
                 className="mb-3"
             />
             <CampaignCloseAlert
-                campaignID={campaign.id}
+                campaignID={campaignID}
                 campaignURL={campaign.url}
                 closeChangesets={closeChangesets}
                 setCloseChangesets={setCloseChangesets}
@@ -128,7 +114,7 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
             )}
             {!closeChangesets && <h2>The following changesets will remain open:</h2>}
             <CampaignCloseChangesetsList
-                campaignID={campaign.id}
+                campaignID={campaignID}
                 history={history}
                 location={location}
                 viewerCanAdminister={campaign.viewerCanAdminister}

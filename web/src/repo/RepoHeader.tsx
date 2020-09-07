@@ -8,13 +8,13 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { ErrorLike } from '../../../shared/src/util/errors'
 import { WebActionsNavItems } from '../components/shared'
+import { EventLoggerProps } from '../tracking/eventLogger'
 import { ActionButtonDescriptor } from '../util/contributions'
 import { ResolvedRevision } from './backend'
 import { SettingsCascadeOrError } from '../../../shared/src/settings/settings'
 import { onlyDefaultExtensionsAdded } from '../../../shared/src/extensions/extensions'
 import { Breadcrumbs, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { AuthenticatedUser } from '../auth'
-import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 /**
  * Stores the list of RepoHeaderContributions, manages addition/deletion, and ensures they are sorted.
  *
@@ -122,7 +122,7 @@ export interface RepoHeaderContext {
 
 export interface RepoHeaderActionButton extends ActionButtonDescriptor<RepoHeaderContext> {}
 
-interface Props extends PlatformContextProps, ExtensionsControllerProps, TelemetryProps, BreadcrumbsProps {
+interface Props extends PlatformContextProps, ExtensionsControllerProps, EventLoggerProps, BreadcrumbsProps {
     /**
      * An array of render functions for action buttons that can be configured *in addition* to action buttons
      * contributed through {@link RepoHeaderContributionsLifecycleProps} and through extensions.

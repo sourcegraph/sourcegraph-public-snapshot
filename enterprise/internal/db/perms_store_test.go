@@ -1602,64 +1602,6 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 	}
 }
 
-// This test is used to detect the handle of the following error:
-// 	execute upsert user pending permissions batch query: pq: ON CONFLICT DO UPDATE command cannot affect row a second time
-func testPermsStore_SetPendingPermissionsAfterGrant(db *sql.DB) func(*testing.T) {
-	return func(t *testing.T) {
-		s := NewPermsStore(db, clock)
-		defer cleanupPermsTables(t, s)
-
-		ctx := context.Background()
-
-		// Set up pending permissions for at least two users
-		if err := s.SetRepoPendingPermissions(ctx, &extsvc.Accounts{
-			ServiceType: authz.SourcegraphServiceType,
-			ServiceID:   authz.SourcegraphServiceID,
-			AccountIDs:  []string{"alice", "bob"},
-		}, &authz.RepoPermissions{
-			RepoID: 1,
-			Perm:   authz.Read,
-		}); err != nil {
-			t.Fatal(err)
-		}
-
-		// Now grant permissions for these two users, which effectively remove corresponding rows
-		// from the `user_pending_permissions` table.
-		if err := s.GrantPendingPermissions(ctx, 1, &authz.UserPendingPermissions{
-			ServiceType: authz.SourcegraphServiceType,
-			ServiceID:   authz.SourcegraphServiceID,
-			BindID:      "alice",
-			Perm:        authz.Read,
-			Type:        authz.PermRepos,
-		}); err != nil {
-			t.Fatal(err)
-		}
-
-		if err := s.GrantPendingPermissions(ctx, 1, &authz.UserPendingPermissions{
-			ServiceType: authz.SourcegraphServiceType,
-			ServiceID:   authz.SourcegraphServiceID,
-			BindID:      "bob",
-			Perm:        authz.Read,
-			Type:        authz.PermRepos,
-		}); err != nil {
-			t.Fatal(err)
-		}
-
-		// Now the `repo_pending_permissions` table has references to these two deleted rows,
-		// it should just ignore them.
-		if err := s.SetRepoPendingPermissions(ctx, &extsvc.Accounts{
-			ServiceType: authz.SourcegraphServiceType,
-			ServiceID:   authz.SourcegraphServiceID,
-			AccountIDs:  []string{"cindy"},
-		}, &authz.RepoPermissions{
-			RepoID: 1,
-			Perm:   authz.Read,
-		}); err != nil {
-			t.Fatal(err)
-		}
-	}
-}
-
 func testPermsStore_DeleteAllUserPermissions(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := NewPermsStore(db, clock)

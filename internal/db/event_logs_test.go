@@ -430,66 +430,6 @@ func TestEventLogs_AggregatedEventsSparseEvents(t *testing.T) {
 	}
 }
 
-func TestEventLogs_ListAll(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
-
-	now := time.Now()
-
-	startDate, _ := calcStartDate(now, Daily, 3)
-
-	events := []*Event{
-		{
-			UserID:    1,
-			Name:      "SearchResultsQueried",
-			URL:       "test",
-			Source:    "test",
-			Timestamp: startDate,
-		}, {
-			UserID:    2,
-			Name:      "codeintel",
-			URL:       "test",
-			Source:    "test",
-			Timestamp: startDate,
-		},
-		{
-			UserID:    2,
-			Name:      "ViewRepository",
-			URL:       "test",
-			Source:    "test",
-			Timestamp: startDate,
-		},
-		{
-			UserID:    2,
-			Name:      "SearchResultsQueried",
-			URL:       "test",
-			Source:    "test",
-			Timestamp: startDate,
-		}}
-
-	for _, event := range events {
-		if err := EventLogs.Insert(ctx, event); err != nil {
-			t.Fatal(err)
-		}
-
-	}
-
-	searchResultQueriedEvent := "SearchResultsQueried"
-	have, err := EventLogs.ListAll(ctx, EventLogsListOptions{EventName: &searchResultQueriedEvent})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	want := 2
-
-	if diff := cmp.Diff(want, len(have)); diff != "" {
-		t.Error(diff)
-	}
-}
-
 // makeTestEvent sets the required (uninteresting) fields that are required on insertion
 // due to db constraints. This method will also add some sub-day jitter to the timestamp.
 func makeTestEvent(e *Event) *Event {

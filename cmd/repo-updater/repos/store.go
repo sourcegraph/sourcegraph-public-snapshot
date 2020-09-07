@@ -10,7 +10,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -29,7 +28,6 @@ type Store interface {
 
 	InsertRepos(context.Context, ...*Repo) error
 	ListRepos(context.Context, StoreListReposArgs) ([]*Repo, error)
-	ListExternalRepoSpecs(context.Context) (map[api.ExternalRepoSpec]struct{}, error)
 	DeleteRepos(ctx context.Context, ids ...api.RepoID) error
 	UpsertRepos(ctx context.Context, repos ...*Repo) error
 	UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]SourceInfo) error
@@ -716,45 +714,6 @@ func listReposQuery(args StoreListReposArgs) paginatedQuery {
 			limit,
 		)
 	}
-}
-
-func (s DBStore) ListExternalRepoSpecs(ctx context.Context) (map[api.ExternalRepoSpec]struct{}, error) {
-	const ListExternalRepoSpecsQueryFmtstr = `
--- source: cmd/repo-updater/repos/store.go:DBStore.ListExternalRepoSpecs
-SELECT
-	id,
-	external_id,
-	external_service_type,
-	external_service_id
-FROM repo
-WHERE
-	deleted_at IS NULL
-AND	external_id IS NOT NULL
-AND	external_service_type IS NOT NULL
-AND	external_service_id IS NOT NULL
-AND	id > %s
-ORDER BY id ASC LIMIT %s
-`
-	paginatedQuery := func(cursor, limit int64) *sqlf.Query {
-		return sqlf.Sprintf(
-			ListExternalRepoSpecsQueryFmtstr,
-			cursor,
-			limit,
-		)
-	}
-	ids := make(map[api.ExternalRepoSpec]struct{})
-	return ids, s.paginate(ctx, 0, 0, 0, paginatedQuery,
-		func(sc scanner) (last, count int64, err error) {
-			var id int64
-			var spec api.ExternalRepoSpec
-			if err := sc.Scan(&id, &spec.ID, &spec.ServiceType, &spec.ServiceID); err != nil {
-				return 0, 0, err
-			}
-
-			ids[spec] = struct{}{}
-			return id, 1, nil
-		},
-	)
 }
 
 func (s DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]SourceInfo) error {

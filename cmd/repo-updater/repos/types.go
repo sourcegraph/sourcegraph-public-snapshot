@@ -13,8 +13,6 @@ import (
 	"github.com/goware/urlx"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/xeipuuv/gojsonschema"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -27,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/xeipuuv/gojsonschema"
 )
 
 // A Changeset of an existing Repo.
@@ -664,6 +663,10 @@ func (r *Repo) Update(n *Repo) (modified bool) {
 
 	if r.Archived != n.Archived {
 		r.Archived, modified = n.Archived, true
+	}
+
+	if r.Cloned != n.Cloned {
+		r.Cloned, modified = n.Cloned, true
 	}
 
 	if r.Fork != n.Fork {

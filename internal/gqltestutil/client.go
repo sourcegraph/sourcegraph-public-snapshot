@@ -203,7 +203,7 @@ func (c *Client) CurrentUserID(token string) (string, error) {
 			} `json:"currentUser"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", token, query, nil, &resp)
+	err := c.GraphQL(token, query, nil, &resp)
 	if err != nil {
 		return "", errors.Wrap(err, "request GraphQL")
 	}
@@ -219,7 +219,7 @@ func (c *Client) AuthenticatedUserID() string {
 // GraphQL makes a GraphQL request to the server on behalf of the user authenticated by the client.
 // An optional token can be passed to impersonate other users. A nil target will skip unmarshalling
 // the returned JSON response.
-func (c *Client) GraphQL(name, token, query string, variables map[string]interface{}, target interface{}) error {
+func (c *Client) GraphQL(token, query string, variables map[string]interface{}, target interface{}) error {
 	body, err := jsoniter.Marshal(map[string]interface{}{
 		"query":     query,
 		"variables": variables,
@@ -228,7 +228,7 @@ func (c *Client) GraphQL(name, token, query string, variables map[string]interfa
 		return err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/.api/graphql?%s", c.baseURL, name), bytes.NewReader(body))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/.api/graphql", c.baseURL), bytes.NewReader(body))
 	if err != nil {
 		return err
 	}

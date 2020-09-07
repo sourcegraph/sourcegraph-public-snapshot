@@ -56,12 +56,12 @@ func TestAndOrQuery_Validation(t *testing.T) {
 		},
 		{
 			input:      `-content:"foo"`,
-			want:       "the query contains a negated search pattern. Structural search does not support negated search patterns at the moment",
+			want:       "The query contains a negated search pattern. Structural search does not support negated search patterns at the moment.",
 			searchType: SearchTypeStructural,
 		},
 		{
 			input:      `NOT foo`,
-			want:       "the query contains a negated search pattern. Structural search does not support negated search patterns at the moment",
+			want:       "The query contains a negated search pattern. Structural search does not support negated search patterns at the moment.",
 			searchType: SearchTypeStructural,
 		},
 		{

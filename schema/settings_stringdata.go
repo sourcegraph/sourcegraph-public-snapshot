@@ -58,12 +58,6 @@ const SettingsSchemaJSON = `{
           "type": "boolean",
           "default": false,
           "!go": { "pointer": true }
-        },
-        "showEnterpriseHomePanels": {
-          "description": "Enabled the homepage panels in the Enterprise homepage",
-          "type": "boolean",
-          "default": false,
-          "!go": { "pointer": true }
         }
       },
       "group": "Experimental"
@@ -220,13 +214,7 @@ const SettingsSchemaJSON = `{
       "!go": { "pointer": true }
     },
     "search.migrateParser": {
-      "description": "If false, disables the new and/or-compatible parser for all search queries. It is a flag to aid transition to the new parser.",
-      "type": "boolean",
-      "default": true,
-      "!go": { "pointer": true }
-    },
-    "search.hideSuggestions": {
-      "description": "Disable search suggestions below the search bar when constructing queries. Defaults to false.",
+      "description": "If true, uses the new and/or-compatible parser for all search queries. It is a flag to aid transition to the new parser.",
       "type": "boolean",
       "default": false,
       "!go": { "pointer": true }
@@ -275,6 +263,12 @@ const SettingsSchemaJSON = `{
         }
       }
     }
+  },
+  "search.hideSuggestions": {
+    "description": "Disable search suggestions below the search bar when constructing queries. Defaults to false.",
+    "type": "boolean",
+    "default": false,
+    "!go": { "pointer": true }
   }
 }
 `

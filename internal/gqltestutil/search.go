@@ -55,7 +55,7 @@ query Search($query: String!) {
 			} `json:"search"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", "", gqlQuery, variables, &resp)
+	err := c.GraphQL("", gqlQuery, variables, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "request GraphQL")
 	}
@@ -136,7 +136,7 @@ query Search($query: String!) {
 			} `json:"search"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", "", gqlQuery, variables, &resp)
+	err := c.GraphQL("", gqlQuery, variables, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "request GraphQL")
 	}
@@ -180,7 +180,7 @@ query Search($query: String!) {
 			} `json:"search"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", "", gqlQuery, variables, &resp)
+	err := c.GraphQL("", gqlQuery, variables, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "request GraphQL")
 	}
@@ -219,7 +219,7 @@ query SearchResultsStats($query: String!) {
 			} `json:"search"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", "", gqlQuery, variables, &resp)
+	err := c.GraphQL("", gqlQuery, variables, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "request GraphQL")
 	}

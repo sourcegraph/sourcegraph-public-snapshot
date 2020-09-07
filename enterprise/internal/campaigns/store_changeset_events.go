@@ -3,6 +3,7 @@ package campaigns
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -76,16 +77,16 @@ func getChangesetEventQuery(opts *GetChangesetEventOpts) *sqlf.Query {
 // ListChangesetEventsOpts captures the query options needed for
 // listing changeset events.
 type ListChangesetEventsOpts struct {
-	LimitOpts
 	ChangesetIDs []int64
 	Cursor       int64
+	Limit        int
 }
 
 // ListChangesetEvents lists ChangesetEvents with the given filters.
 func (s *Store) ListChangesetEvents(ctx context.Context, opts ListChangesetEventsOpts) (cs []*campaigns.ChangesetEvent, next int64, err error) {
 	q := listChangesetEventsQuery(&opts)
 
-	cs = make([]*campaigns.ChangesetEvent, 0, opts.DBLimit())
+	cs = make([]*campaigns.ChangesetEvent, 0, opts.Limit)
 	err = s.query(ctx, q, func(sc scanner) (err error) {
 		var c campaigns.ChangesetEvent
 		if err = scanChangesetEvent(&c, sc); err != nil {
@@ -95,7 +96,7 @@ func (s *Store) ListChangesetEvents(ctx context.Context, opts ListChangesetEvent
 		return nil
 	})
 
-	if opts.Limit != 0 && len(cs) == opts.DBLimit() {
+	if opts.Limit != 0 && len(cs) == opts.Limit {
 		next = cs[len(cs)-1].ID
 		cs = cs[:len(cs)-1]
 	}
@@ -119,6 +120,16 @@ ORDER BY id ASC
 `
 
 func listChangesetEventsQuery(opts *ListChangesetEventsOpts) *sqlf.Query {
+	if opts.Limit == 0 {
+		opts.Limit = defaultListLimit
+	}
+	opts.Limit++
+
+	var limitClause string
+	if opts.Limit > 0 {
+		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
+	}
+
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("id >= %s", opts.Cursor),
 	}
@@ -135,7 +146,7 @@ func listChangesetEventsQuery(opts *ListChangesetEventsOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		listChangesetEventsQueryFmtstr+opts.LimitOpts.ToDB(),
+		listChangesetEventsQueryFmtstr+limitClause,
 		sqlf.Join(preds, "\n AND "),
 	)
 }

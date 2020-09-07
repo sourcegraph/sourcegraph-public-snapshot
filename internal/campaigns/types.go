@@ -11,6 +11,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
@@ -94,6 +95,15 @@ func (c *Campaign) RemoveChangesetID(id int64) {
 
 // Closed returns true when the ClosedAt timestamp has been set.
 func (c *Campaign) Closed() bool { return !c.ClosedAt.IsZero() }
+
+// GenChangesetBody creates the markdown to be used as the body of a changeset.
+// It includes a URL back to the campaign on the Sourcegraph instance.
+func (c *Campaign) GenChangesetBody(externalURL string) string {
+	campaignID := MarshalCampaignID(c.ID)
+	campaignURL := fmt.Sprintf("%s/campaigns/%s", externalURL, string(campaignID))
+	description := fmt.Sprintf("%s\n\n---\n\nThis pull request was created by a Sourcegraph campaign. [Click here to see the campaign](%s).", c.Description, campaignURL)
+	return description
+}
 
 // ChangesetPublicationState defines the possible publication states of a Changeset.
 type ChangesetPublicationState string
@@ -287,10 +297,6 @@ type Changeset struct {
 	// Unsynced is true if the changeset tracks an external changeset but the
 	// data hasn't been synced yet.
 	Unsynced bool
-
-	// Closing is set to true (along with the ReocncilerState) when the
-	// reconciler should close the changeset.
-	Closing bool
 }
 
 // RecordID is needed to implement the workerutil.Record interface.
@@ -494,13 +500,6 @@ func (c *Changeset) URL() (s string, err error) {
 	default:
 		return "", errors.New("unknown changeset type")
 	}
-}
-
-// ResetQueued resets the failure message and reset count and sets the changesets ReconcilerState to queued.
-func (c *Changeset) ResetQueued() {
-	c.ReconcilerState = ReconcilerStateQueued
-	c.NumResets = 0
-	c.FailureMessage = nil
 }
 
 // ChangesetSpecs is a slice of *ChangesetSpecs.
@@ -1671,6 +1670,15 @@ type ChangesetSyncData struct {
 	// RepoExternalServiceID is the external_service_id in the repo table, usually
 	// represented by the code host URL
 	RepoExternalServiceID string
+}
+
+func MarshalCampaignID(id int64) graphql.ID {
+	return relay.MarshalID("Campaign", id)
+}
+
+func UnmarshalCampaignID(id graphql.ID) (campaignID int64, err error) {
+	err = relay.UnmarshalSpec(id, &campaignID)
+	return
 }
 
 func unixMilliToTime(ms int64) time.Time {

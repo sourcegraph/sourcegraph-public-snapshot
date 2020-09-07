@@ -8,7 +8,7 @@
 
 {{define "versionSelector"}}
     <div id="version-selector" class="dropdown version-dropdown ml-2">
-        {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.18.0"}} {{$previousReleaseVersion := "3.18"}} {{$currentReleaseRevspec := "v3.19.2"}} {{$currentReleaseVersion := "3.19"}} {{$nextReleaseVersion := "main"}}
+        {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.18.0"}} {{$previousReleaseVersion := "3.18"}} {{$currentReleaseRevspec := "v3.19.1"}} {{$currentReleaseVersion := "3.19"}} {{$nextReleaseVersion := "main"}}
         <button class="btn btn-outline dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           {{.ContentVersion}}{{/* If no version is specified we are on the currentReleaseVersion */}}{{if eq .ContentVersion ""}}{{$currentReleaseVersion}}{{end}}
         </button>
@@ -104,7 +104,7 @@
                                 <ul class="content-nav-section-subsection">
                                     <li><a href="/user/search/queries">Search query syntax</a></li>
                                     <li><a href="/user/search/language">Search query language</a></li>
-                                    <li><a href="/user/search/structural">Structural search</a></li>
+                                    <li><a href="/user/search/structural">Structural search <span class="badge badge-primary">new</span></a></li>
                                     <li><a href="/user/search/examples">Search examples</a></li>
                                     <li><a href="/user/search/scopes">Search scopes</a></li>
                                     <li><a href="/user/search/saved_searches">Saved searches</a></li>

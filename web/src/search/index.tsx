@@ -162,11 +162,6 @@ export interface RepogroupHomepageProps {
 export interface OnboardingTourProps {
     showOnboardingTour: boolean
 }
-
-export interface EnterpriseHomePanelsProps {
-    showEnterpriseHomePanels: boolean
-}
-
 /**
  * Verifies whether a version context exists on an instance.
  *

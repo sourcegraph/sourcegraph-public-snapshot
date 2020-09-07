@@ -245,10 +245,10 @@ body,
 }
 
 // Hide the given element from Percy.
-.percy-hide,
-.monaco-editor .cursor {
+.percy-hide {
     @media only percy {
-        visibility: hidden !important;
+        visibility: hidden;
+        display: none;
     }
 }
 
@@ -302,7 +302,6 @@ body,
 @import './components/SearchResult';
 @import './components/SearchResultMatch';
 @import './components/diff/FileDiffNode';
-@import './components/externalServices/AddExternalServicesPage';
 @import '~@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 
 @import '../../shared/src/index';

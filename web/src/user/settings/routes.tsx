@@ -1,24 +1,9 @@
 import React from 'react'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { lazyComponent } from '../../util/lazyComponent'
-import { UserSettingsAreaRoute, UserSettingsAreaRouteContext } from './UserSettingsArea'
-import { Scalars } from '../../graphql-operations'
-import { RouteComponentProps } from 'react-router'
-import type { UserAddExternalServicesPageProps } from './UserAddExternalServicesPage'
+import { UserSettingsAreaRoute } from './UserSettingsArea'
 
 const SettingsArea = lazyComponent(() => import('../../settings/SettingsArea'), 'SettingsArea')
-const ExternalServicesPage = lazyComponent(
-    () => import('../../components/externalServices/ExternalServicesPage'),
-    'ExternalServicesPage'
-)
-const UserAddExternalServicesPage = lazyComponent<UserAddExternalServicesPageProps, 'UserAddExternalServicesPage'>(
-    () => import('./UserAddExternalServicesPage'),
-    'UserAddExternalServicesPage'
-)
-const ExternalServicePage = lazyComponent(
-    () => import('../../components/externalServices/ExternalServicePage'),
-    'ExternalServicePage'
-)
 
 export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
@@ -71,53 +56,5 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
             'UserSettingsCreateAccessTokenPage'
         ),
         condition: () => window.context.accessTokensAllow !== 'none',
-    },
-    {
-        path: '/external-services',
-        render: props => (
-            <ExternalServicesPage
-                {...props}
-                userID={props.user.id}
-                routingPrefix={props.user.url + '/settings'}
-                afterDeleteRoute={props.user.url + '/settings/external-services'}
-            />
-        ),
-        exact: true,
-        condition: props =>
-            window.context.externalServicesUserModeEnabled ||
-            (props.user.id === props.authenticatedUser.id &&
-                props.authenticatedUser.tags.includes('AllowUserExternalServicePublic')) ||
-            props.user.tags?.includes('AllowUserExternalServicePublic'),
-    },
-    {
-        path: '/external-services/new',
-        render: props => (
-            <UserAddExternalServicesPage
-                {...props}
-                routingPrefix={props.user.url + '/settings'}
-                afterCreateRoute={props.user.url + '/settings/external-services'}
-                userID={props.user.id}
-            />
-        ),
-        exact: true,
-        condition: props =>
-            window.context.externalServicesUserModeEnabled ||
-            props.authenticatedUser.tags?.includes('AllowUserExternalServicePublic'),
-    },
-    {
-        path: '/external-services/:id',
-        render: ({ match, ...props }: RouteComponentProps<{ id: Scalars['ID'] }> & UserSettingsAreaRouteContext) => (
-            <ExternalServicePage
-                {...props}
-                externalServiceID={match.params.id}
-                afterUpdateRoute={props.user.url + '/settings/external-services'}
-            />
-        ),
-        exact: true,
-        condition: props =>
-            window.context.externalServicesUserModeEnabled ||
-            (props.user.id === props.authenticatedUser.id &&
-                props.authenticatedUser.tags.includes('AllowUserExternalServicePublic')) ||
-            props.user.tags?.includes('AllowUserExternalServicePublic'),
     },
 ]

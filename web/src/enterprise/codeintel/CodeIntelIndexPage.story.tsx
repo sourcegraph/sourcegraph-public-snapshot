@@ -8,7 +8,6 @@ import React from 'react'
 import webStyles from '../../SourcegraphWebApp.scss'
 import { SourcegraphContext } from '../../jscontext'
 import { LSIFIndexState } from '../../../../shared/src/graphql-operations'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
 
 window.context = {} as SourcegraphContext & SuiteFunction
 
@@ -31,7 +30,6 @@ const commonProps = {
         url: '',
     },
     now: () => new Date('2020-06-15T15:25:00+00:00'),
-    telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
 const index: Pick<Index, 'id' | 'projectRoot' | 'inputCommit'> = {

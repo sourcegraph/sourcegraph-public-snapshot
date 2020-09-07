@@ -126,30 +126,35 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 
 	t.Run("List", func(t *testing.T) {
 		t.Run("NoLimit", func(t *testing.T) {
-			// Empty limit should return all entries.
-			opts := ListChangesetSpecsOpts{}
-			ts, next, err := s.ListChangesetSpecs(ctx, opts)
-			if err != nil {
-				t.Fatal(err)
+			opts := []ListChangesetSpecsOpts{
+				{},          // Empty limit should return default limit
+				{Limit: -1}, // -1 should return all entries
 			}
 
-			if have, want := next, int64(0); have != want {
-				t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
-			}
+			for _, o := range opts {
+				ts, next, err := s.ListChangesetSpecs(ctx, o)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-			have, want := ts, changesetSpecs
-			if len(have) != len(want) {
-				t.Fatalf("listed %d changesetSpecs, want: %d", len(have), len(want))
-			}
+				if have, want := next, int64(0); have != want {
+					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+				}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				have, want := ts, changesetSpecs
+				if len(have) != len(want) {
+					t.Fatalf("listed %d changesetSpecs, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				}
 			}
 		})
 
 		t.Run("WithLimit", func(t *testing.T) {
 			for i := 1; i <= len(changesetSpecs); i++ {
-				cs, next, err := s.ListChangesetSpecs(ctx, ListChangesetSpecsOpts{LimitOpts: LimitOpts{Limit: i}})
+				cs, next, err := s.ListChangesetSpecs(ctx, ListChangesetSpecsOpts{Limit: i})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -181,7 +186,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 		t.Run("WithLimitAndCursor", func(t *testing.T) {
 			var cursor int64
 			for i := 1; i <= len(changesetSpecs); i++ {
-				opts := ListChangesetSpecsOpts{Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
+				opts := ListChangesetSpecsOpts{Cursor: cursor, Limit: 1}
 				have, next, err := s.ListChangesetSpecs(ctx, opts)
 				if err != nil {
 					t.Fatal(err)

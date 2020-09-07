@@ -46,7 +46,14 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
                 first: args.first ?? null,
                 changesetSpec: node.id,
                 isLightTheme,
-            }).pipe(map(diff => diff.fileDiffs)),
+            }).pipe(
+                map(diff => {
+                    if (!diff) {
+                        throw new Error('The given changeset spec has no diff')
+                    }
+                    return diff.fileDiffs
+                })
+            ),
         [node.id, isLightTheme, queryChangesetSpecFileDiffs]
     )
 
@@ -92,7 +99,7 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
             </div>
             <div className="visible-changeset-spec-node__diffstat">
                 {node.description.__typename === 'GitBranchChangesetDescription' && (
-                    <DiffStat {...node.description.diffStat} expandedCounts={true} separateLines={true} />
+                    <DiffStat {...node.description.diffStat} expandedCounts={true} />
                 )}
             </div>
             {isExpanded && (

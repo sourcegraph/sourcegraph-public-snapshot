@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
@@ -31,10 +30,6 @@ type reconciler struct {
 	gitserverClient GitserverClient
 	sourcer         repos.Sourcer
 	store           *Store
-
-	// This is used to disable a time.Sleep in updateChangeset so that the
-	// tests don't run slower.
-	noSleepBeforeSync bool
 }
 
 // HandlerFunc returns a dbworker.HandlerFunc that can be passed to a
@@ -76,9 +71,6 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 
 	case actionUpdate:
 		return r.updateChangeset(ctx, tx, ch, action.spec, action.delta)
-
-	case actionClose:
-		return r.closeChangeset(ctx, tx, ch)
 
 	case actionNone:
 		return nil
@@ -217,19 +209,7 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 	// pushed the commit. We don't need to update anything on the codehost.
 	if !delta.NeedCodeHostUpdate() {
 		ch.FailureMessage = nil
-		// But we need to sync the changeset so that it has the new commit.
-		//
-		// The problem: the code host might not have updated the changeset to
-		// have the new commit SHA as its head ref oid (and the check states,
-		// ...).
-		//
-		// That's why we give them 3 seconds to update the changesets.
-		//
-		// Why 3 seconds? Well... 1 or 2 seem to be too short and 4 too long?
-		if !r.noSleepBeforeSync {
-			time.Sleep(3 * time.Second)
-		}
-		return r.syncChangeset(ctx, tx, ch)
+		return tx.UpdateChangeset(ctx, ch)
 	}
 
 	// Otherwise, we need to update the pull request on the code host.
@@ -258,36 +238,6 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 
 	ch.FailureMessage = nil
 	return tx.UpdateChangeset(ctx, ch)
-}
-
-// closeChangeset closes the given changeset on its code host if its ExternalState is OPEN.
-func (r *reconciler) closeChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset) (err error) {
-	ch.Closing = false
-	ch.FailureMessage = nil
-
-	if ch.ExternalState != campaigns.ChangesetExternalStateOpen {
-		return tx.UpdateChangeset(ctx, ch)
-	}
-
-	repo, extSvc, err := loadAssociations(ctx, tx, ch)
-	if err != nil {
-		return errors.Wrap(err, "failed to load associations")
-	}
-
-	// Set up a source with which we can close the changeset
-	ccs, err := r.buildChangesetSource(repo, extSvc)
-	if err != nil {
-		return err
-	}
-
-	cs := &repos.Changeset{Changeset: ch}
-
-	if err := ccs.CloseChangeset(ctx, cs); err != nil {
-		return errors.Wrap(err, "creating changeset")
-	}
-
-	// syncChangeset updates the changeset in the same transaction
-	return r.syncChangeset(ctx, tx, ch)
 }
 
 func (r *reconciler) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) (string, error) {
@@ -378,7 +328,6 @@ const (
 	actionUpdate  actionType = "update"
 	actionPublish actionType = "publish"
 	actionSync    actionType = "sync"
-	actionClose   actionType = "close"
 )
 
 // reconcilerAction represents the possible actions the reconciler can take for
@@ -409,12 +358,6 @@ func determineAction(ctx context.Context, tx *Store, ch *campaigns.Changeset) (r
 		if ch.Unsynced {
 			action.actionType = actionSync
 		}
-		return action, nil
-	}
-
-	// If it's marked as closing, we don't need to look at the specs.
-	if ch.Closing {
-		action.actionType = actionClose
 		return action, nil
 	}
 

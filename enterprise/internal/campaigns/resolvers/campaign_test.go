@@ -66,19 +66,18 @@ func TestCampaignResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	campaignAPIID := string(marshalCampaignID(campaign.ID))
-	namespaceAPIID := string(graphqlbackend.MarshalOrgID(org.ID))
+	campaignAPIID := string(campaigns.MarshalCampaignID(campaign.ID))
 	apiUser := &apitest.User{DatabaseID: userID, SiteAdmin: true}
 	wantCampaign := apitest.Campaign{
 		ID:             campaignAPIID,
 		Name:           campaign.Name,
 		Description:    campaign.Description,
-		Namespace:      apitest.UserOrg{ID: namespaceAPIID, Name: org.Name},
+		Namespace:      apitest.UserOrg{ID: string(graphqlbackend.MarshalOrgID(org.ID)), Name: org.Name},
 		InitialApplier: apiUser,
 		LastApplier:    apiUser,
 		SpecCreator:    apiUser,
 		LastAppliedAt:  marshalDateTime(t, now),
-		URL:            fmt.Sprintf("/organizations/%s/campaigns/%s", org.Name, campaign.Name),
+		URL:            fmt.Sprintf("/organizations/%s/campaigns/%s", org.Name, campaignAPIID),
 		CreatedAt:      marshalDateTime(t, now),
 		UpdatedAt:      marshalDateTime(t, now),
 		// Not closed.
@@ -91,16 +90,6 @@ func TestCampaignResolver(t *testing.T) {
 		apitest.MustExec(ctx, t, s, input, &response, queryCampaign)
 
 		if diff := cmp.Diff(wantCampaign, response.Node); diff != "" {
-			t.Fatalf("wrong campaign response (-want +got):\n%s", diff)
-		}
-	}
-	// Test resolver by namespace and name
-	byNameInput := map[string]interface{}{"name": campaign.Name, "namespace": namespaceAPIID}
-	{
-		var response struct{ Campaign apitest.Campaign }
-		apitest.MustExec(ctx, t, s, byNameInput, &response, queryCampaignByName)
-
-		if diff := cmp.Diff(wantCampaign, response.Campaign); diff != "" {
 			t.Fatalf("wrong campaign response (-want +got):\n%s", diff)
 		}
 	}
@@ -160,28 +149,6 @@ query($campaign: ID!){
       }
       url
     }
-  }
-}
-`
-const queryCampaignByName = `
-fragment u on User { databaseID, siteAdmin }
-fragment o on Org  { id, name }
-
-query($namespace: ID!, $name: String!){
-  campaign(namespace: $namespace, name: $name) {
-    id, name, description
-    initialApplier { ...u }
-    lastApplier    { ...u }
-    specCreator    { ...u }
-    lastAppliedAt
-    createdAt
-    updatedAt
-    closedAt
-    namespace {
-      ... on User { ...u }
-      ... on Org  { ...o }
-    }
-    url
   }
 }
 `

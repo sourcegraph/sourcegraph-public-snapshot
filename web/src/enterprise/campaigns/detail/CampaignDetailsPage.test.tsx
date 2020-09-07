@@ -20,15 +20,14 @@ describe('CampaignDetailsPage', () => {
 
     const renderCampaignDetailsPage = ({ viewerCanAdminister }: { viewerCanAdminister: boolean }) => (
         <CampaignDetailsPage
-            namespaceID="namespace123"
-            campaignName="c"
+            campaignID="c"
             history={history}
             location={history.location}
             isLightTheme={true}
             extensionsController={undefined as any}
             platformContext={undefined as any}
             telemetryService={NOOP_TELEMETRY_SERVICE}
-            fetchCampaignByNamespace={() =>
+            fetchCampaignById={() =>
                 of({
                     __typename: 'Campaign',
                     id: 'c',
@@ -55,9 +54,6 @@ describe('CampaignDetailsPage', () => {
                     lastApplier: {
                         url: '/users/bob',
                         username: 'bob',
-                    },
-                    currentSpec: {
-                        originalInput: 'name: awesome-campaign\ndescription: somestring',
                     },
                 })
             }

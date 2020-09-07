@@ -42,6 +42,18 @@ import (
 // logic that spans out into all the other search_* files.
 var mockResolveRepositories func(effectiveRepoFieldValues []string) (resolved resolvedRepositories, err error)
 
+var disallowLogQuery = lazyregexp.New(`(type:symbol|type:commit|type:diff)`)
+
+func maxReposToSearch() int {
+	switch max := conf.Get().MaxReposToSearch; {
+	case max <= 0:
+		// Default to a very large number that will not overflow if incremented.
+		return math.MaxInt32 >> 1
+	default:
+		return max
+	}
+}
+
 type SearchArgs struct {
 	Version        string
 	PatternType    *string
@@ -65,7 +77,7 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 		return nil, err
 	}
 
-	useNewParser := getBoolPtr(settings.SearchMigrateParser, true)
+	useNewParser := getBoolPtr(settings.SearchMigrateParser, false)
 
 	searchType, err := detectSearchType(args.Version, args.PatternType)
 	if err != nil {
@@ -77,8 +89,19 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 		return nil, errors.New("Structural search is disabled in the site configuration.")
 	}
 
+	if envvar.SourcegraphDotComMode() {
+		// Instrumentation to log search inputs for differential testing, see #12477.
+		if !disallowLogQuery.MatchString(args.Query) {
+			log15.Info("search input", "type", searchType, "magic-887c6d4c", args.Query)
+		}
+	}
+
 	var queryInfo query.QueryInfo
-	if useNewParser {
+	if (conf.AndOrQueryEnabled() && query.ContainsAndOrKeyword(args.Query)) || useNewParser || searchType == query.SearchTypeStructural {
+		// To process the input as an and/or query, the flag must be
+		// enabled (default is on) and must contain either an 'and' or
+		// 'or' expression or set in settings. Else, fallback to the
+		// older existing parser.
 		globbing := getBoolPtr(settings.SearchGlobbing, false)
 		queryInfo, err = query.ProcessAndOr(args.Query, query.ParserOptions{SearchType: searchType, Globbing: globbing})
 		if err != nil {
@@ -265,7 +288,7 @@ func getBoolPtr(b *bool, def bool) bool {
 type resolvedRepositories struct {
 	repoRevs        []*search.RepositoryRevisions
 	missingRepoRevs []*search.RepositoryRevisions
-	excludedRepos   excludedRepos
+	excludedRepos   *excludedRepos
 	overLimit       bool
 }
 
@@ -403,9 +426,9 @@ type excludedRepos struct {
 
 // computeExcludedRepositories returns a list of excluded repositories (forks or
 // archives) based on the search query.
-func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.ReposListOptions) (excluded excludedRepos) {
+func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.ReposListOptions) (excluded *excludedRepos) {
 	if q == nil {
-		return excludedRepos{}
+		return &excludedRepos{}
 	}
 
 	// PERF: We query concurrently since each count call can be slow on
@@ -453,7 +476,7 @@ func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.R
 
 	wg.Wait()
 
-	return excludedRepos{forks: numExcludedForks, archived: numExcludedArchived}
+	return &excludedRepos{forks: numExcludedForks, archived: numExcludedArchived}
 }
 
 // resolveRepositories calls doResolveRepositories, caching the result for the common
@@ -478,7 +501,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	if effectiveRepoFieldValues == nil {
 		r.reposMu.Lock()
 		defer r.reposMu.Unlock()
-		if r.resolved.repoRevs != nil || r.resolved.missingRepoRevs != nil || r.repoErr != nil {
+		if r.resolved.repoRevs != nil || r.resolved.missingRepoRevs != nil || r.resolved.excludedRepos != nil || r.repoErr != nil {
 			tr.LazyPrintf("cached")
 			return r.resolved, r.repoErr
 		}
@@ -707,35 +730,6 @@ func (op *resolveRepoOp) String() string {
 	return b.String()
 }
 
-func searchLimits() schema.SearchLimits {
-	// Our configuration reader does not set defaults from schema. So we rely
-	// on Go default values to mean defaults.
-	withDefault := func(x *int, def int) {
-		if *x <= 0 {
-			*x = def
-		}
-	}
-
-	c := conf.Get()
-
-	var limits schema.SearchLimits
-	if c.SearchLimits != nil {
-		limits = *c.SearchLimits
-	}
-
-	// If MaxRepos unset use deprecated value
-	if limits.MaxRepos == 0 {
-		limits.MaxRepos = c.MaxReposToSearch
-	}
-
-	withDefault(&limits.MaxRepos, math.MaxInt32>>1)
-	withDefault(&limits.CommitDiffMaxRepos, 50)
-	withDefault(&limits.CommitDiffWithTimeFilterMaxRepos, 10000)
-	withDefault(&limits.MaxTimeoutSeconds, 60)
-
-	return limits
-}
-
 func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedRepositories, error) {
 	var err error
 	tr, ctx := trace.New(ctx, "resolveRepositories", op.String())
@@ -752,7 +746,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedReposit
 
 	excludePatterns := op.minusRepoFilters
 
-	maxRepoListSize := searchLimits().MaxRepos
+	maxRepoListSize := maxReposToSearch()
 
 	// If any repo groups are specified, take the intersection of the repo
 	// groups and the set of repos specified with repo:. (If none are specified
@@ -816,7 +810,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedReposit
 	}
 
 	var repos []*types.Repo
-	var excluded excludedRepos
+	var excluded *excludedRepos
 	if len(defaultRepos) > 0 {
 		repos = defaultRepos
 		if len(repos) > maxRepoListSize {
@@ -841,7 +835,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedReposit
 
 		// PERF: We query concurrently since Count and List call can be slow
 		// on Sourcegraph.com (100ms+).
-		excludedC := make(chan excludedRepos)
+		excludedC := make(chan *excludedRepos)
 		go func() {
 			excludedC <- computeExcludedRepositories(ctx, op.query, options)
 		}()

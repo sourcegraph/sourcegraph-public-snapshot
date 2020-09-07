@@ -1,5 +1,6 @@
 import * as GQL from '../../../../shared/src/graphql/schema'
 import React, { FunctionComponent, useCallback, useEffect, useState, useMemo } from 'react'
+import { eventLogger } from '../../tracking/eventLogger'
 import {
     FilteredConnection,
     FilteredConnectionQueryArgs,
@@ -16,7 +17,6 @@ import { ErrorAlert } from '../../components/alerts'
 import { Subject } from 'rxjs'
 import * as H from 'history'
 import { LSIFUploadState } from '../../../../shared/src/graphql-operations'
-import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
 const Header: FunctionComponent<{}> = () => (
     <thead>
@@ -138,7 +138,7 @@ const UploadNode: FunctionComponent<UploadNodeProps> = ({ node, onDelete, histor
     )
 }
 
-export interface CodeIntelUploadsPageProps extends RouteComponentProps<{}>, TelemetryProps {
+interface Props extends RouteComponentProps<{}> {
     repo?: GQL.IRepository
     fetchLsifUploads?: typeof defaultFetchLsifUploads
 
@@ -149,14 +149,13 @@ export interface CodeIntelUploadsPageProps extends RouteComponentProps<{}>, Tele
 /**
  * The repository settings code intel uploads page.
  */
-export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> = ({
+export const CodeIntelUploadsPage: FunctionComponent<Props> = ({
     repo,
     fetchLsifUploads = defaultFetchLsifUploads,
     now,
-    telemetryService,
     ...props
 }) => {
-    useEffect(() => telemetryService.logViewEvent('CodeIntelUploads'), [telemetryService])
+    useEffect(() => eventLogger.logViewEvent('CodeIntelUploads'), [])
 
     const filters: FilteredConnectionFilter[] = [
         {

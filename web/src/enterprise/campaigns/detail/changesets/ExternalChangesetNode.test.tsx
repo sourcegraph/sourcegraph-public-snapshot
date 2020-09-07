@@ -56,7 +56,6 @@ describe('ExternalChangesetNode', () => {
                         createdAt: new Date('2020-01-01').toISOString(),
                         updatedAt: new Date('2020-01-01').toISOString(),
                         nextSyncAt: null,
-                        currentSpec: { id: 'spec-rand-id-1' },
                     }}
                 />
             )

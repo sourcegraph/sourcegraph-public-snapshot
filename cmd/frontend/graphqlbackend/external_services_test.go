@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go/gqltesting"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -569,13 +567,6 @@ func TestExternalServices(t *testing.T) {
 		}
 		return ess, nil
 	}
-	db.Mocks.ExternalServices.Count = func(ctx context.Context, opt db.ExternalServicesListOptions) (int, error) {
-		if opt.NamespaceUserID > 0 || opt.AfterID > 0 {
-			return 1, nil
-		}
-
-		return 2, nil
-	}
 	defer func() {
 		db.Mocks.Users = db.MockUsers{}
 		db.Mocks.ExternalServices = db.MockExternalServices{}
@@ -672,86 +663,4 @@ func TestExternalServices(t *testing.T) {
 		`,
 		},
 	})
-}
-
-func TestExternalServices_PageInfo(t *testing.T) {
-	cmpOpts := cmp.AllowUnexported(graphqlutil.PageInfo{})
-	tests := []struct {
-		name         string
-		opt          db.ExternalServicesListOptions
-		mockList     func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error)
-		mockCount    func(ctx context.Context, opt db.ExternalServicesListOptions) (int, error)
-		wantPageInfo *graphqlutil.PageInfo
-	}{
-		{
-			name: "no limit set",
-			mockList: func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				return []*types.ExternalService{{ID: 1}}, nil
-			},
-			wantPageInfo: graphqlutil.HasNextPage(false),
-		},
-		{
-			name: "less results than the limit",
-			opt: db.ExternalServicesListOptions{
-				LimitOffset: &db.LimitOffset{
-					Limit: 10,
-				},
-			},
-			mockList: func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				return []*types.ExternalService{{ID: 1}}, nil
-			},
-			wantPageInfo: graphqlutil.HasNextPage(false),
-		},
-		{
-			name: "same number of results as the limit, and no more",
-			opt: db.ExternalServicesListOptions{
-				LimitOffset: &db.LimitOffset{
-					Limit: 1,
-				},
-			},
-			mockList: func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				return []*types.ExternalService{{ID: 1}}, nil
-			},
-			mockCount: func(ctx context.Context, opt db.ExternalServicesListOptions) (int, error) {
-				return 1, nil
-			},
-			wantPageInfo: graphqlutil.HasNextPage(false),
-		},
-		{
-			name: "same number of results as the limit, and has more",
-			opt: db.ExternalServicesListOptions{
-				LimitOffset: &db.LimitOffset{
-					Limit: 1,
-				},
-			},
-			mockList: func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				return []*types.ExternalService{{ID: 1}}, nil
-			},
-			mockCount: func(ctx context.Context, opt db.ExternalServicesListOptions) (int, error) {
-				return 2, nil
-			},
-			wantPageInfo: graphqlutil.NextPageCursor(string(marshalExternalServiceID(1))),
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			db.Mocks.ExternalServices.List = test.mockList
-			db.Mocks.ExternalServices.Count = test.mockCount
-			defer func() {
-				db.Mocks.ExternalServices = db.MockExternalServices{}
-			}()
-
-			r := &externalServiceConnectionResolver{
-				opt: test.opt,
-			}
-			pageInfo, err := r.PageInfo(context.Background())
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if diff := cmp.Diff(test.wantPageInfo, pageInfo, cmpOpts); diff != "" {
-				t.Fatalf("PageInfo mismatch (-want +got):\n%s", diff)
-			}
-		})
-	}
 }

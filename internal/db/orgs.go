@@ -267,3 +267,34 @@ func (o *orgs) Delete(ctx context.Context, id int32) error {
 
 	return nil
 }
+
+// TmpListAllOrgsWithSlackWebhookURL is a temporary method to support migrating
+// orgs.slack_webhook_url to the org's JSON settings. See bg.MigrateOrgSlackWebhookURLs.
+func (o *orgs) TmpListAllOrgsWithSlackWebhookURL(ctx context.Context) (orgIDsToWebhookURL map[int32]string, err error) {
+	rows, err := dbconn.Global.QueryContext(ctx, "SELECT id, slack_webhook_url FROM orgs WHERE slack_webhook_url IS NOT NULL")
+	if err != nil {
+		return nil, err
+	}
+
+	orgIDsToWebhookURL = map[int32]string{}
+	defer rows.Close()
+	for rows.Next() {
+		var orgID int32
+		var slackWebhookURL string
+		if err := rows.Scan(&orgID, &slackWebhookURL); err != nil {
+			return nil, err
+		}
+		orgIDsToWebhookURL[orgID] = slackWebhookURL
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return orgIDsToWebhookURL, nil
+}
+
+// TmpRemoveOrgSlackWebhookURL is a temporary method to support migrating
+// orgs.slack_webhook_url to the org's JSON settings. See bg.MigrateOrgSlackWebhookURLs.
+func (o *orgs) TmpRemoveOrgSlackWebhookURL(ctx context.Context, orgID int32) error {
+	_, err := dbconn.Global.ExecContext(ctx, "UPDATE orgs SET slack_webhook_url = null WHERE id=$1", orgID)
+	return err
+}

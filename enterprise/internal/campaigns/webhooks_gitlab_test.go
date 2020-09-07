@@ -868,7 +868,7 @@ func assertBodyIncludes(t *testing.T, r io.Reader, want string) {
 func assertChangesetEventForChangeset(t *testing.T, ctx context.Context, store *Store, changeset *campaigns.Changeset, want campaigns.ChangesetEventKind) {
 	ces, _, err := store.ListChangesetEvents(ctx, ListChangesetEventsOpts{
 		ChangesetIDs: []int64{changeset.ID},
-		LimitOpts:    LimitOpts{Limit: 100},
+		Limit:        100,
 	})
 	if err != nil {
 		t.Fatal(err)

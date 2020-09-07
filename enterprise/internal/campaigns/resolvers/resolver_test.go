@@ -34,7 +34,7 @@ func TestNullIDResilience(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 
 	ids := []graphql.ID{
-		marshalCampaignID(0),
+		campaigns.MarshalCampaignID(0),
 		marshalChangesetID(0),
 		marshalCampaignSpecRandID(""),
 		marshalChangesetSpecRandID(""),
@@ -52,12 +52,12 @@ func TestNullIDResilience(t *testing.T) {
 	}
 
 	mutations := []string{
-		fmt.Sprintf(`mutation { closeCampaign(campaign: %q) { id } }`, marshalCampaignID(0)),
-		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, marshalCampaignID(0)),
+		fmt.Sprintf(`mutation { closeCampaign(campaign: %q) { id } }`, campaigns.MarshalCampaignID(0)),
+		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, campaigns.MarshalCampaignID(0)),
 		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, marshalChangesetID(0)),
 		fmt.Sprintf(`mutation { applyCampaign(campaignSpec: %q) { id } }`, marshalCampaignSpecRandID("")),
 		fmt.Sprintf(`mutation { createCampaign(campaignSpec: %q) { id } }`, marshalCampaignSpecRandID("")),
-		fmt.Sprintf(`mutation { moveCampaign(campaign: %q, newName: "foobar") { id } }`, marshalCampaignID(0)),
+		fmt.Sprintf(`mutation { moveCampaign(campaign: %q, newName: "foobar") { id } }`, campaigns.MarshalCampaignID(0)),
 	}
 
 	for _, m := range mutations {
@@ -379,11 +379,11 @@ func TestApplyCampaign(t *testing.T) {
 	}
 
 	// Execute it again but ensureCampaign set to wrong campaign ID
-	campaignID, err := unmarshalCampaignID(graphql.ID(have3.ID))
+	campaignID, err := campaigns.UnmarshalCampaignID(graphql.ID(have3.ID))
 	if err != nil {
 		t.Fatal(err)
 	}
-	input["ensureCampaign"] = marshalCampaignID(campaignID + 999)
+	input["ensureCampaign"] = campaigns.MarshalCampaignID(campaignID + 999)
 	errs := apitest.Exec(actorCtx, t, s, input, &response, mutationApplyCampaign)
 	if len(errs) == 0 {
 		t.Fatalf("expected errors, got none")
@@ -531,11 +531,10 @@ func TestMoveCampaign(t *testing.T) {
 	}
 
 	// Move to a new name
-	campaignAPIID := string(marshalCampaignID(campaign.ID))
-	newCampaignName := "new-name"
+	campaignAPIID := string(campaigns.MarshalCampaignID(campaign.ID))
 	input := map[string]interface{}{
 		"campaign": campaignAPIID,
-		"newName":  newCampaignName,
+		"newName":  "new-name",
 	}
 
 	var response struct{ MoveCampaign apitest.Campaign }
@@ -547,7 +546,7 @@ func TestMoveCampaign(t *testing.T) {
 		t.Fatalf("unexpected name (-want +got):\n%s", diff)
 	}
 
-	wantURL := fmt.Sprintf("/users/%s/campaigns/%s", username, newCampaignName)
+	wantURL := fmt.Sprintf("/users/%s/campaigns/%s", username, campaignAPIID)
 	if diff := cmp.Diff(wantURL, haveCampaign.URL); diff != "" {
 		t.Fatalf("unexpected URL (-want +got):\n%s", diff)
 	}
@@ -555,7 +554,7 @@ func TestMoveCampaign(t *testing.T) {
 	// Move to a new namespace
 	orgAPIID := graphqlbackend.MarshalOrgID(org.ID)
 	input = map[string]interface{}{
-		"campaign":     string(marshalCampaignID(campaign.ID)),
+		"campaign":     string(campaigns.MarshalCampaignID(campaign.ID)),
 		"newNamespace": orgAPIID,
 	}
 
@@ -565,7 +564,7 @@ func TestMoveCampaign(t *testing.T) {
 	if diff := cmp.Diff(string(orgAPIID), haveCampaign.Namespace.ID); diff != "" {
 		t.Fatalf("unexpected namespace (-want +got):\n%s", diff)
 	}
-	wantURL = fmt.Sprintf("/organizations/%s/campaigns/%s", org.Name, newCampaignName)
+	wantURL = fmt.Sprintf("/organizations/%s/campaigns/%s", org.Name, campaignAPIID)
 	if diff := cmp.Diff(wantURL, haveCampaign.URL); diff != "" {
 		t.Fatalf("unexpected URL (-want +got):\n%s", diff)
 	}
@@ -620,10 +619,10 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		// First argument is set in opts, and considered safe.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				First: wantFirst,
+				First: &wantFirst,
 			},
 			wantSafe:   true,
-			wantParsed: ee.ListChangesetsOpts{LimitOpts: ee.LimitOpts{Limit: 10}},
+			wantParsed: ee.ListChangesetsOpts{Limit: 10},
 		},
 		// Setting publication state is safe and transferred to opts.
 		{

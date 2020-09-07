@@ -28,6 +28,7 @@ import {
     repoFilterForRepoRevision,
     CopyQueryButtonProps,
 } from '../search'
+import { EventLoggerProps } from '../tracking/eventLogger'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
@@ -53,7 +54,6 @@ import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import { RepositoriesPopover } from './RepositoriesPopover'
 import { displayRepoName, splitPath } from '../../../shared/src/components/RepoFileLink'
 import { AuthenticatedUser } from '../auth'
-import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -64,7 +64,7 @@ export interface RepoContainerContext
         ExtensionsControllerProps,
         PlatformContextProps,
         ThemeProps,
-        TelemetryProps,
+        EventLoggerProps,
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
@@ -96,7 +96,7 @@ interface RepoContainerProps
     extends RouteComponentProps<{ repoRevAndRest: string }>,
         SettingsCascadeProps,
         PlatformContextProps,
-        TelemetryProps,
+        EventLoggerProps,
         ExtensionsControllerProps,
         ActivationProps,
         ThemeProps,

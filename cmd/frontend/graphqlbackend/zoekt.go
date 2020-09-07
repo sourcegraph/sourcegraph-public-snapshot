@@ -64,25 +64,6 @@ type indexedSearchRequest struct {
 	since func(time.Time) time.Duration
 }
 
-// TODO (stefan) move this out of zoekt.go to the new parser once it is guaranteed that the old parser is turned off for all customers
-func containsRefGlobs(q query.QueryInfo) bool {
-	containsRefGlobs := false
-	if repoFilterValues, _ := q.RegexpPatterns(query.FieldRepo); len(repoFilterValues) > 0 {
-		for _, v := range repoFilterValues {
-			repoRev := strings.SplitN(v, "@", 2)
-			if len(repoRev) == 1 { // no revision
-				continue
-			}
-			if query.ContainsNoGlobSyntax(repoRev[1]) {
-				continue
-			}
-			containsRefGlobs = true
-			break
-		}
-	}
-	return containsRefGlobs
-}
-
 func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ indexedRequestType) (*indexedSearchRequest, error) {
 	// Parse index:yes (default), index:only, and index:no in search query.
 	indexParam := Yes
@@ -103,16 +84,6 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		return &indexedSearchRequest{
 			Unindexed:        args.Repos,
 			IndexUnavailable: true,
-		}, nil
-	}
-
-	// Fallback to Unindexed if the query contains ref-globs
-	if containsRefGlobs(args.Query) {
-		if indexParam == Only {
-			return nil, fmt.Errorf("invalid index:%q (revsions with glob pattern cannot be resolved for indexed searches)", indexParam)
-		}
-		return &indexedSearchRequest{
-			Unindexed: args.Repos,
 		}, nil
 	}
 
@@ -686,7 +657,7 @@ func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.
 		return reporev.Revs
 	}
 
-	if len(reporev.Revs) == 1 && repo.Branches[0].Name == "HEAD" && (reporev.Revs[0].RevSpec == "" || reporev.Revs[0].RevSpec == "HEAD") {
+	if len(reporev.Revs) == 1 && (reporev.Revs[0].RevSpec == "" || reporev.Revs[0].RevSpec == "HEAD") {
 		rb.repoRevs[string(reporev.Repo.Name)] = reporev
 		rb.repoBranches[string(reporev.Repo.Name)] = headBranch
 		return nil

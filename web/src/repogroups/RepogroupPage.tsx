@@ -14,7 +14,7 @@ import {
     CopyQueryButtonProps,
     OnboardingTourProps,
 } from '../search'
-import { eventLogger } from '../tracking/eventLogger'
+import { EventLoggerProps, eventLogger } from '../tracking/eventLogger'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { VersionContextProps } from '../../../shared/src/search/util'
@@ -30,17 +30,16 @@ import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { PrivateCodeCta } from '../search/input/PrivateCodeCta'
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
-import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
 export interface RepogroupPageProps
     extends SettingsCascadeProps<Settings>,
         ThemeProps,
         ThemePreferenceProps,
         ActivationProps,
-        TelemetryProps,
         PatternTypeProps,
         CaseSensitivityProps,
         KeyboardShortcutsProps,
+        EventLoggerProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         InteractiveSearchProps,
@@ -58,6 +57,9 @@ export interface RepogroupPageProps
     authRequired?: boolean
     showCampaigns: boolean
 
+    /** Controls focusing the query input on the page. Query inputs are autofocused by default. */
+    autoFocus?: boolean
+
     // Repogroup page metadata
     repogroupMetadata: RepogroupMetadata
 
@@ -66,10 +68,7 @@ export interface RepogroupPageProps
 }
 
 export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props: RepogroupPageProps) => {
-    useEffect(() => props.telemetryService.logViewEvent(`Repogroup:${props.repogroupMetadata.name}`), [
-        props.repogroupMetadata.name,
-        props.telemetryService,
-    ])
+    useEffect(() => eventLogger.logViewEvent(`Repogroup:${props.repogroupMetadata.name}`))
 
     const repogroupQuery = `repogroup:${props.repogroupMetadata.name}`
 

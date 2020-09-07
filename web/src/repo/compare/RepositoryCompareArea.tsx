@@ -27,6 +27,7 @@ import {
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { HeroPage } from '../../components/HeroPage'
 import { WebHoverOverlay } from '../../components/shared'
+import { EventLoggerProps } from '../../tracking/eventLogger'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepositoryCompareHeader } from './RepositoryCompareHeader'
 import { RepositoryCompareOverviewPage } from './RepositoryCompareOverviewPage'
@@ -34,7 +35,6 @@ import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorMessage } from '../../components/alerts'
 import * as H from 'history'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -48,7 +48,7 @@ interface RepositoryCompareAreaProps
     extends RouteComponentProps<{ spec: string }>,
         RepoHeaderContributionsLifecycleProps,
         PlatformContextProps,
-        TelemetryProps,
+        EventLoggerProps,
         ExtensionsControllerProps,
         ThemeProps,
         BreadcrumbSetters {

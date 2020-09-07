@@ -1,11 +1,14 @@
 import React from 'react'
+import * as H from 'history'
 import { storiesOf } from '@storybook/react'
-import { boolean } from '@storybook/addon-knobs'
+import { radios, boolean } from '@storybook/addon-knobs'
+import webStyles from '../../../enterprise.scss'
+import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { CampaignClosePage } from './CampaignClosePage'
 import {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs,
-    fetchCampaignByNamespace,
+    fetchCampaignById,
 } from '../detail/backend'
 import { of } from 'rxjs'
 import { subDays } from 'date-fns'
@@ -17,12 +20,24 @@ import {
     ChangesetReviewState,
     CampaignFields,
 } from '../../../graphql-operations'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 import { useMemo, useCallback } from '@storybook/addons'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { useBreadcrumbs } from '../../../components/Breadcrumbs'
 
-const { add } = storiesOf('web/campaigns/close/CampaignClosePage', module).addDecorator(story => (
-    <div className="p-3 container web-content">{story()}</div>
-))
+let isLightTheme = true
+const { add } = storiesOf('web/campaigns/close/CampaignClosePage', module).addDecorator(story => {
+    const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
+    document.body.classList.toggle('theme-light', theme === 'light')
+    document.body.classList.toggle('theme-dark', theme === 'dark')
+    isLightTheme = theme === 'light'
+    return (
+        <>
+            <Tooltip />
+            <style>{webStyles}</style>
+            <div className="p-3 container web-content">{story()}</div>
+        </>
+    )
+})
 
 const queryChangesets: typeof _queryChangesets = () =>
     of({
@@ -101,7 +116,6 @@ const queryChangesets: typeof _queryChangesets = () =>
                 reconcilerState: ChangesetReconcilerState.COMPLETED,
                 publicationState: ChangesetPublicationState.PUBLISHED,
                 error: null,
-                currentSpec: { id: 'spec-rand-id-1' },
             },
             {
                 __typename: 'ExternalChangeset',
@@ -130,7 +144,6 @@ const queryChangesets: typeof _queryChangesets = () =>
                 reconcilerState: ChangesetReconcilerState.ERRORED,
                 publicationState: ChangesetPublicationState.UNPUBLISHED,
                 error: 'Cannot create PR, insufficient token scope.',
-                currentSpec: { id: 'spec-rand-id-2' },
             },
         ],
     })
@@ -151,7 +164,9 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
     })
 
 add('Overview', () => {
+    const history = H.createMemoryHistory()
     const viewerCanAdminister = boolean('viewerCanAdminister', true)
+    const breadcrumbsProps = useBreadcrumbs()
     const campaign: CampaignFields = useMemo(
         () => ({
             __typename: 'Campaign',
@@ -190,27 +205,23 @@ add('Overview', () => {
                 url: '/users/bob',
                 username: 'bob',
             },
-            currentSpec: {
-                originalInput: 'name: awesome-campaign\ndescription: somestring',
-            },
         }),
         [viewerCanAdminister]
     )
-    const fetchCampaign: typeof fetchCampaignByNamespace = useCallback(() => of(campaign), [campaign])
+    const fetchCampaign: typeof fetchCampaignById = useCallback(() => of(campaign), [campaign])
     return (
-        <EnterpriseWebStory>
-            {props => (
-                <CampaignClosePage
-                    {...props}
-                    queryChangesets={queryChangesets}
-                    queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
-                    namespaceID="n123"
-                    campaignName="c123"
-                    fetchCampaignByNamespace={fetchCampaign}
-                    extensionsController={{} as any}
-                    platformContext={{} as any}
-                />
-            )}
-        </EnterpriseWebStory>
+        <CampaignClosePage
+            {...breadcrumbsProps}
+            history={history}
+            location={history.location}
+            queryChangesets={queryChangesets}
+            queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
+            campaignID="123"
+            fetchCampaignById={fetchCampaign}
+            extensionsController={{} as any}
+            platformContext={{} as any}
+            telemetryService={NOOP_TELEMETRY_SERVICE}
+            isLightTheme={isLightTheme}
+        />
     )
 })

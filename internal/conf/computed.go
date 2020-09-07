@@ -277,6 +277,14 @@ func SearchSymbolsParallelism() int {
 	return val
 }
 
+func PermissionsBackgroundSyncEnabled() bool {
+	val := Get().PermissionsBackgroundSync
+	if val == nil {
+		return false
+	}
+	return val.Enabled
+}
+
 func BitbucketServerPluginPerm() bool {
 	val := Get().ExperimentalFeatures.BitbucketServerFastPerm
 	return val == "enabled"

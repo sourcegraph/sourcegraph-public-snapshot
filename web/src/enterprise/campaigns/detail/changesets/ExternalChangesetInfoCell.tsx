@@ -9,7 +9,6 @@ import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import { ChangesetLabel } from './ChangesetLabel'
 import { Link } from '../../../../../../shared/src/components/Link'
 import { ChangesetLastSynced } from './ChangesetLastSynced'
-import { ChangesetReconcilerState } from '../../../../../../shared/src/graphql/schema'
 
 export interface ExternalChangesetInfoCellProps {
     node: ExternalChangesetFields
@@ -33,18 +32,8 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
                     target="_blank"
                     rel="noopener noreferrer"
                 >
-                    {isImporting(node) && (
-                        <>
-                            Importing changeset
-                            {node.externalID && <> #{node.externalID} </>}
-                        </>
-                    )}
-                    {!isImporting(node) && (
-                        <>
-                            {node.title}
-                            {node.externalID && <> (#{node.externalID}) </>}
-                        </>
-                    )}
+                    {node.title}
+                    {node.externalID && <> (#{node.externalID}) </>}
                     {node.externalURL && node.externalState !== ChangesetExternalState.DELETED && (
                         <>
                             {' '}
@@ -73,10 +62,3 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
         </div>
     </div>
 )
-
-function isImporting(node: ExternalChangesetFields): boolean {
-    return (
-        [ChangesetReconcilerState.QUEUED, ChangesetReconcilerState.PROCESSING].includes(node.reconcilerState) &&
-        !node.title
-    )
-}

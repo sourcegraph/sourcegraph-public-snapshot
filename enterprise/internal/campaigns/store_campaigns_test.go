@@ -181,7 +181,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 
 		t.Run("With Limit", func(t *testing.T) {
 			for i := 1; i <= len(reversedCampaigns); i++ {
-				cs, next, err := s.ListCampaigns(ctx, ListCampaignsOpts{LimitOpts: LimitOpts{Limit: i}})
+				cs, next, err := s.ListCampaigns(ctx, ListCampaignsOpts{Limit: i})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -213,7 +213,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 		t.Run("With Cursor", func(t *testing.T) {
 			var cursor int64
 			for i := 1; i <= len(reversedCampaigns); i++ {
-				opts := ListCampaignsOpts{Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
+				opts := ListCampaignsOpts{Cursor: cursor, Limit: 1}
 				have, next, err := s.ListCampaigns(ctx, opts)
 				if err != nil {
 					t.Fatal(err)

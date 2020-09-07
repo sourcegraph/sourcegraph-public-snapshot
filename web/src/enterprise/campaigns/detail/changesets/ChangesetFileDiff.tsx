@@ -19,7 +19,6 @@ export interface ChangesetFileDiffProps extends ThemeProps {
     location: H.Location
     repositoryID: Scalars['ID']
     repositoryName: string
-    updateOnChange?: string
     extensionInfo?: {
         hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
     } & ExtensionsControllerProps
@@ -35,7 +34,6 @@ export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> 
     extensionInfo,
     repositoryID,
     repositoryName,
-    updateOnChange,
     queryExternalChangesetWithFileDiffs = _queryExternalChangesetWithFileDiffs,
 }) => {
     const [range, setRange] = useState<
@@ -105,7 +103,7 @@ export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> 
                 extensionInfo: hydratedExtensionInfo,
                 lineNumbers: true,
             }}
-            updateOnChange={`${repositoryID}-${updateOnChange ?? ''}`}
+            updateOnChange={repositoryID}
             defaultFirst={15}
             hideSearch={true}
             noSummaryIfAllNodesVisible={true}

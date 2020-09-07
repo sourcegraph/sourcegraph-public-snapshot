@@ -30,7 +30,6 @@ func TestIntegration_PermsStore(t *testing.T) {
 		{"PermsStore/SetRepoPendingPermissions", testPermsStore_SetRepoPendingPermissions(db)},
 		{"PermsStore/ListPendingUsers", testPermsStore_ListPendingUsers(db)},
 		{"PermsStore/GrantPendingPermissions", testPermsStore_GrantPendingPermissions(db)},
-		{"PermsStore/SetPendingPermissionsAfterGrant", testPermsStore_SetPendingPermissionsAfterGrant(db)},
 		{"PermsStore/DeleteAllUserPermissions", testPermsStore_DeleteAllUserPermissions(db)},
 		{"PermsStore/DeleteAllUserPendingPermissions", testPermsStore_DeleteAllUserPendingPermissions(db)},
 		{"PermsStore/DatabaseDeadlocks", testPermsStore_DatabaseDeadlocks(db)},
