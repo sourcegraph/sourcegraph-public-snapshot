@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as React from 'react'
 import { numberWithCommas, pluralize } from '../../../../shared/src/util/strings'
 
@@ -16,6 +17,8 @@ interface Props {
     /* Show +/- numbers, not just the total change count. */
     expandedCounts?: boolean
 
+    separateLines?: boolean
+
     className?: string
 }
 
@@ -25,6 +28,7 @@ export const DiffStat: React.FunctionComponent<Props> = React.memo(function Diff
     changed,
     deleted,
     expandedCounts = false,
+    separateLines = false,
     className = '',
 }) {
     const total = added + changed + deleted
@@ -55,12 +59,12 @@ export const DiffStat: React.FunctionComponent<Props> = React.memo(function Diff
         }
     }
 
-    const squares: ('added' | 'changed' | 'deleted')[] = new Array(addedSquares)
-        .fill('added')
+    const squares = new Array<'bg-success' | 'bg-warning' | 'bg-danger' | 'diff-stat__empty'>(addedSquares)
+        .fill('bg-success')
         .concat(
-            new Array(changedSquares).fill('changed'),
-            new Array(deletedSquares).fill('deleted'),
-            new Array(NUM_SQUARES - numberOfSquares).fill('empty')
+            new Array<'bg-warning'>(changedSquares).fill('bg-warning'),
+            new Array<'bg-danger'>(deletedSquares).fill('bg-danger'),
+            new Array<'diff-stat__empty'>(NUM_SQUARES - numberOfSquares).fill('diff-stat__empty')
         )
 
     const labels: string[] = []
@@ -74,21 +78,26 @@ export const DiffStat: React.FunctionComponent<Props> = React.memo(function Diff
         labels.push(`${numberWithCommas(deleted)} ${pluralize('deletion', deleted)}`)
     }
     return (
-        <div className={`diff-stat ${className}`} data-tooltip={labels.join(', ')}>
+        <div
+            className={classNames('diff-stat', separateLines && 'flex-column', className)}
+            data-tooltip={labels.join(', ')}
+        >
             {expandedCounts ? (
                 <span className="diff-stat__total font-weight-bold">
-                    <span className="diff-stat__text-added mr-1">+{numberWithCommas(added)}</span>
-                    {changed > 0 && (
-                        <span className="diff-stat__text-changed mr-1">&bull;{numberWithCommas(changed)}</span>
-                    )}
-                    <span className="diff-stat__text-deleted mr-1">&minus;{numberWithCommas(deleted)}</span>
+                    <span className="text-success mr-1">+{numberWithCommas(added)}</span>
+                    {changed > 0 && <span className="text-warning mr-1">&bull;{numberWithCommas(changed)}</span>}
+                    <span className={classNames('text-danger', !separateLines && 'mr-1')}>
+                        &minus;{numberWithCommas(deleted)}
+                    </span>
                 </span>
             ) : (
                 <small className="diff-stat__total">{numberWithCommas(total + changed)}</small>
             )}
-            {squares.map((verb, index) => (
-                <div key={index} className={`diff-stat__square diff-stat__${verb}`} />
-            ))}
+            <div>
+                {squares.map((className, index) => (
+                    <div key={index} className={`diff-stat__square ${className}`} />
+                ))}
+            </div>
         </div>
     )
 })

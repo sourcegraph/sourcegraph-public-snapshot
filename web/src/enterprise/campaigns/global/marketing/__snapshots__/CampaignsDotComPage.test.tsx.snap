@@ -173,8 +173,28 @@ exports[`CampaignsDotComPage renders 1`] = `
             <div
               className="web-content cta-banner shadow d-flex flex-row card"
             >
+<<<<<<< HEAD
               <div
                 className="cta-banner__icon-column d-flex flex-column align-items-center"
+=======
+              <img
+                className="private-code-cta__logo"
+                src="/.assets/img/download-illus.svg"
+              />
+            </div>
+            <div>
+              <h3>
+                Search your private code
+              </h3>
+              <p>
+                Set up a self-hosted Sourcegraph instance to search your private repositories on GitHub, GitLab, Bitbucket and local installations of Git, Perforce, Subversion and other code repositories.
+              </p>
+              <a
+                className="btn btn-primary ga-cta-install-now"
+                href="https://docs.sourcegraph.com/"
+                rel="noopener"
+                target="_blank"
+>>>>>>> main
               >
                 <Memo()>
                   <svg

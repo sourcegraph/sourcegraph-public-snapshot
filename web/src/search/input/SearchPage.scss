@@ -6,6 +6,7 @@
 @import './InfoDropdown';
 @import './interactive/InteractiveModeInput';
 @import './SearchOnboardingTour';
+@import '../panels/EnterpriseHomePanels.scss';
 
 .search-page {
     display: flex;
@@ -45,7 +46,7 @@
             }
         }
 
-        &--with-repogroups {
+        &--with-content-below {
             flex-grow: 0;
         }
     }

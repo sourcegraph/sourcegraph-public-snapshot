@@ -193,6 +193,7 @@ Referenced by:
  process_after         | timestamp with time zone | 
  num_resets            | integer                  | not null default 0
  unsynced              | boolean                  | not null default false
+ closing               | boolean                  | not null default false
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -412,6 +413,8 @@ Indexes:
 Foreign-key constraints:
     "external_service_repos_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE
     "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+Triggers:
+    trig_soft_delete_orphan_repo_by_external_service_repo AFTER DELETE ON external_service_repos FOR EACH ROW EXECUTE PROCEDURE soft_delete_orphan_repo_by_external_service_repos()
 
 ```
 

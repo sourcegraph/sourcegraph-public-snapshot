@@ -1,6 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
+<<<<<<< HEAD
 Array [
   "Search /search",
   "WebActionsNavItems",
@@ -88,4 +89,1925 @@ Array [
   "Help /help",
   "WebCommandListPopoverButton",
 ]
+=======
+<ul
+  class="nav-links nav align-items-center pl-2 pr-1"
+>
+  <li
+    class="nav-item d-sm-none"
+  >
+    <a
+      class="nav-link"
+      href="/search"
+    >
+      Search
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <a
+      class="nav-link"
+      href="/explore"
+    >
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M7,17L10.2,10.2L17,7L13.8,13.8L7,17M12,11.1A0.9,0.9 0 0,0 11.1,12A0.9,0.9 0 0,0 12,12.9A0.9,0.9 0 0,0 12.9,12A0.9,0.9 0 0,0 12,11.1M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4Z"
+        />
+      </svg>
+       Explore
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <a
+      class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      href="/campaigns"
+    >
+      <svg
+        class="mdi-icon icon-inline d-lg-none"
+        data-tooltip="Campaigns"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19 10V19H5V5H14V3H5C3.92 3 3 3.9 3 5V19C3 20.1 3.92 21 5 21H19C20.12 21 21 20.1 21 19V10H19M17 10L17.94 7.94L20 7L17.94 6.06L17 4L16.06 6.06L14 7L16.06 7.94L17 10M13.25 10.75L12 8L10.75 10.75L8 12L10.75 13.25L12 16L13.25 13.25L16 12L13.25 10.75Z"
+        />
+      </svg>
+      <svg
+        class="mdi-icon icon-inline d-none d-lg-inline-block"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19 10V19H5V5H14V3H5C3.92 3 3 3.9 3 5V19C3 20.1 3.92 21 5 21H19C20.12 21 21 20.1 21 19V10H19M17 10L17.94 7.94L20 7L17.94 6.06L17 4L16.06 6.06L14 7L16.06 7.94L17 10M13.25 10.75L12 8L10.75 10.75L8 12L10.75 13.25L12 16L13.25 13.25L16 12L13.25 10.75Z"
+        />
+      </svg>
+      <span
+        class="d-none d-lg-inline-block ml-1"
+      >
+        Campaigns
+      </span>
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <div
+      class="nav-link py-0 px-0 percy-hide chromatic-ignore btn-group"
+    >
+      <a
+        aria-expanded="false"
+        aria-haspopup="true"
+        class="btn btn-link nav-link"
+        href="#"
+      >
+        <svg
+          class="mdi-icon icon-inline"
+          data-tooltip="Repositories up to date"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M10,17L6.5,13.5L7.91,12.08L10,14.17L15.18,9L16.59,10.41M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14A6,6 0 0,0 6,20H19A5,5 0 0,0 24,15C24,12.36 21.95,10.22 19.35,10.03Z"
+          />
+        </svg>
+      </a>
+      <div
+        aria-hidden="true"
+        class="status-messages-nav-item__dropdown-menu dropdown-menu dropdown-menu-right"
+        role="menu"
+        tabindex="-1"
+      >
+        <h3>
+          Code host status
+        </h3>
+        <div
+          class="status-messages-nav-item__dropdown-menu-content"
+        >
+          <div
+            class="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-success"
+          >
+            <h4>
+              <svg
+                class="mdi-icon icon-inline mr-1"
+                fill="currentColor"
+                height="24"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M10,17L6.5,13.5L7.91,12.08L10,14.17L15.18,9L16.59,10.41M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14A6,6 0 0,0 6,20H19A5,5 0 0,0 24,15C24,12.36 21.95,10.22 19.35,10.03Z"
+                />
+              </svg>
+              Repositories up to date
+            </h4>
+            <p>
+              All repositories hosted on the configured code hosts are synced.
+            </p>
+            <p
+              class="status-messages-nav-item__entry-link"
+            >
+              <a
+                href="/site-admin/external-services"
+              >
+                Manage repositories
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <span
+      class="command-list-popover-button btn btn-link "
+      id="command-list-popover-button-7"
+      role="button"
+    >
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+        />
+      </svg>
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M7,10L12,15L17,10H7Z"
+        />
+      </svg>
+    </span>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <div
+      class="py-0 btn-group"
+    >
+      <a
+        aria-expanded="false"
+        aria-haspopup="true"
+        class="bg-transparent d-flex align-items-center test-user-nav-item-toggle dropdown-toggle nav-link"
+        href="#"
+      >
+        <strong>
+          alice
+        </strong>
+      </a>
+      <div
+        aria-hidden="true"
+        class="user-nav-item__dropdown-menu dropdown-menu dropdown-menu-right"
+        role="menu"
+        tabindex="-1"
+      >
+        <h6
+          class="py-1 dropdown-header"
+          tabindex="-1"
+        >
+          Signed in as 
+          <strong>
+            @alice
+          </strong>
+        </h6>
+        <div
+          class="dropdown-divider"
+          tabindex="-1"
+        />
+        <a
+          class="dropdown-item"
+          href="/"
+        >
+          Settings
+        </a>
+        <a
+          class="dropdown-item"
+          href="/extensions"
+        >
+          Extensions
+        </a>
+        <a
+          class="dropdown-item"
+          href="/users/alice/searches"
+        >
+          Saved searches
+        </a>
+        <div
+          class="dropdown-divider"
+          tabindex="-1"
+        />
+        <div
+          class="px-2 py-1"
+        >
+          <div
+            class="d-flex align-items-center"
+          >
+            <div
+              class="mr-2"
+            >
+              Theme
+            </div>
+            <select
+              class="custom-select custom-select-sm test-theme-toggle"
+            >
+              <option
+                selected=""
+                value="light"
+              >
+                Light
+              </option>
+              <option
+                value="dark"
+              >
+                Dark
+              </option>
+              <option
+                value="system"
+              >
+                System
+              </option>
+            </select>
+          </div>
+        </div>
+        <div
+          class="dropdown-divider"
+          tabindex="-1"
+        />
+        <h6
+          class="dropdown-header"
+          tabindex="-1"
+        >
+          Organizations
+        </h6>
+        <a
+          class="dropdown-item"
+          href="/organizations/acme/settings"
+        >
+          Acme Corp
+        </a>
+        <a
+          class="dropdown-item"
+          href="/organizations/beta/settings"
+        >
+          Beta Inc
+        </a>
+        <div
+          class="dropdown-divider"
+          tabindex="-1"
+        />
+        <a
+          class="dropdown-item"
+          href="/site-admin"
+        >
+          Site admin
+        </a>
+        <a
+          class="dropdown-item"
+          href="/help"
+          rel="noopener"
+          target="_blank"
+        >
+          Help 
+          <svg
+            class="mdi-icon icon-inline"
+            fill="currentColor"
+            height="24"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
+            />
+          </svg>
+        </a>
+        <a
+          class="dropdown-item"
+          href="/-/sign-out"
+        >
+          Sign out
+        </a>
+        <div
+          class="dropdown-divider"
+          tabindex="-1"
+        />
+        <a
+          class="dropdown-item"
+          href="https://about.sourcegraph.com"
+          rel="noopener"
+          target="_blank"
+        >
+          About Sourcegraph 
+          <svg
+            class="mdi-icon icon-inline"
+            fill="currentColor"
+            height="24"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
+            />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </li>
+</ul>
+`;
+
+exports[`NavLinks authed Sourcegraph.com /search 1`] = `
+<ul
+  class="nav-links nav align-items-center pl-2 pr-1"
+>
+  <li
+    class="nav-item"
+  >
+    <a
+      class="nav-link"
+      href="/explore"
+    >
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M7,17L10.2,10.2L17,7L13.8,13.8L7,17M12,11.1A0.9,0.9 0 0,0 11.1,12A0.9,0.9 0 0,0 12,12.9A0.9,0.9 0 0,0 12.9,12A0.9,0.9 0 0,0 12,11.1M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4Z"
+        />
+      </svg>
+       Explore
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <a
+      class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      href="/campaigns"
+    >
+      <svg
+        class="mdi-icon icon-inline d-lg-none"
+        data-tooltip="Campaigns"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19 10V19H5V5H14V3H5C3.92 3 3 3.9 3 5V19C3 20.1 3.92 21 5 21H19C20.12 21 21 20.1 21 19V10H19M17 10L17.94 7.94L20 7L17.94 6.06L17 4L16.06 6.06L14 7L16.06 7.94L17 10M13.25 10.75L12 8L10.75 10.75L8 12L10.75 13.25L12 16L13.25 13.25L16 12L13.25 10.75Z"
+        />
+      </svg>
+      <svg
+        class="mdi-icon icon-inline d-none d-lg-inline-block"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19 10V19H5V5H14V3H5C3.92 3 3 3.9 3 5V19C3 20.1 3.92 21 5 21H19C20.12 21 21 20.1 21 19V10H19M17 10L17.94 7.94L20 7L17.94 6.06L17 4L16.06 6.06L14 7L16.06 7.94L17 10M13.25 10.75L12 8L10.75 10.75L8 12L10.75 13.25L12 16L13.25 13.25L16 12L13.25 10.75Z"
+        />
+      </svg>
+      <span
+        class="d-none d-lg-inline-block ml-1"
+      >
+        Campaigns
+      </span>
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <div
+      class="nav-link py-0 px-0 percy-hide chromatic-ignore btn-group"
+    >
+      <a
+        aria-expanded="false"
+        aria-haspopup="true"
+        class="btn btn-link nav-link"
+        href="#"
+      >
+        <svg
+          class="mdi-icon icon-inline"
+          data-tooltip="Repositories up to date"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M10,17L6.5,13.5L7.91,12.08L10,14.17L15.18,9L16.59,10.41M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14A6,6 0 0,0 6,20H19A5,5 0 0,0 24,15C24,12.36 21.95,10.22 19.35,10.03Z"
+          />
+        </svg>
+      </a>
+      <div
+        aria-hidden="true"
+        class="status-messages-nav-item__dropdown-menu dropdown-menu dropdown-menu-right"
+        role="menu"
+        tabindex="-1"
+      >
+        <h3>
+          Code host status
+        </h3>
+        <div
+          class="status-messages-nav-item__dropdown-menu-content"
+        >
+          <div
+            class="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-success"
+          >
+            <h4>
+              <svg
+                class="mdi-icon icon-inline mr-1"
+                fill="currentColor"
+                height="24"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M10,17L6.5,13.5L7.91,12.08L10,14.17L15.18,9L16.59,10.41M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14A6,6 0 0,0 6,20H19A5,5 0 0,0 24,15C24,12.36 21.95,10.22 19.35,10.03Z"
+                />
+              </svg>
+              Repositories up to date
+            </h4>
+            <p>
+              All repositories hosted on the configured code hosts are synced.
+            </p>
+            <p
+              class="status-messages-nav-item__entry-link"
+            >
+              <a
+                href="/site-admin/external-services"
+              >
+                Manage repositories
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <span
+      class="command-list-popover-button btn btn-link "
+      id="command-list-popover-button-8"
+      role="button"
+    >
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+        />
+      </svg>
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M7,10L12,15L17,10H7Z"
+        />
+      </svg>
+    </span>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <div
+      class="py-0 btn-group"
+    >
+      <a
+        aria-expanded="false"
+        aria-haspopup="true"
+        class="bg-transparent d-flex align-items-center test-user-nav-item-toggle dropdown-toggle nav-link"
+        href="#"
+      >
+        <strong>
+          alice
+        </strong>
+      </a>
+      <div
+        aria-hidden="true"
+        class="user-nav-item__dropdown-menu dropdown-menu dropdown-menu-right"
+        role="menu"
+        tabindex="-1"
+      >
+        <h6
+          class="py-1 dropdown-header"
+          tabindex="-1"
+        >
+          Signed in as 
+          <strong>
+            @alice
+          </strong>
+        </h6>
+        <div
+          class="dropdown-divider"
+          tabindex="-1"
+        />
+        <a
+          class="dropdown-item"
+          href="/"
+        >
+          Settings
+        </a>
+        <a
+          class="dropdown-item"
+          href="/extensions"
+        >
+          Extensions
+        </a>
+        <a
+          class="dropdown-item"
+          href="/users/alice/searches"
+        >
+          Saved searches
+        </a>
+        <div
+          class="dropdown-divider"
+          tabindex="-1"
+        />
+        <div
+          class="px-2 py-1"
+        >
+          <div
+            class="d-flex align-items-center"
+          >
+            <div
+              class="mr-2"
+            >
+              Theme
+            </div>
+            <select
+              class="custom-select custom-select-sm test-theme-toggle"
+            >
+              <option
+                selected=""
+                value="light"
+              >
+                Light
+              </option>
+              <option
+                value="dark"
+              >
+                Dark
+              </option>
+              <option
+                value="system"
+              >
+                System
+              </option>
+            </select>
+          </div>
+        </div>
+        <div
+          class="dropdown-divider"
+          tabindex="-1"
+        />
+        <h6
+          class="dropdown-header"
+          tabindex="-1"
+        >
+          Organizations
+        </h6>
+        <a
+          class="dropdown-item"
+          href="/organizations/acme/settings"
+        >
+          Acme Corp
+        </a>
+        <a
+          class="dropdown-item"
+          href="/organizations/beta/settings"
+        >
+          Beta Inc
+        </a>
+        <div
+          class="dropdown-divider"
+          tabindex="-1"
+        />
+        <a
+          class="dropdown-item"
+          href="/site-admin"
+        >
+          Site admin
+        </a>
+        <a
+          class="dropdown-item"
+          href="/help"
+          rel="noopener"
+          target="_blank"
+        >
+          Help 
+          <svg
+            class="mdi-icon icon-inline"
+            fill="currentColor"
+            height="24"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
+            />
+          </svg>
+        </a>
+        <a
+          class="dropdown-item"
+          href="/-/sign-out"
+        >
+          Sign out
+        </a>
+        <div
+          class="dropdown-divider"
+          tabindex="-1"
+        />
+        <a
+          class="dropdown-item"
+          href="https://about.sourcegraph.com"
+          rel="noopener"
+          target="_blank"
+        >
+          About Sourcegraph 
+          <svg
+            class="mdi-icon icon-inline"
+            fill="currentColor"
+            height="24"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
+            />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </li>
+</ul>
+`;
+
+exports[`NavLinks authed self-hosted /foo 1`] = `
+<ul
+  class="nav-links nav align-items-center pl-2 pr-1"
+>
+  <li
+    class="nav-item d-sm-none"
+  >
+    <a
+      class="nav-link"
+      href="/search"
+    >
+      Search
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <a
+      class="nav-link"
+      href="/explore"
+    >
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M7,17L10.2,10.2L17,7L13.8,13.8L7,17M12,11.1A0.9,0.9 0 0,0 11.1,12A0.9,0.9 0 0,0 12,12.9A0.9,0.9 0 0,0 12.9,12A0.9,0.9 0 0,0 12,11.1M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4Z"
+        />
+      </svg>
+       Explore
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <a
+      class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      href="/campaigns"
+    >
+      <svg
+        class="mdi-icon icon-inline d-lg-none"
+        data-tooltip="Campaigns"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19 10V19H5V5H14V3H5C3.92 3 3 3.9 3 5V19C3 20.1 3.92 21 5 21H19C20.12 21 21 20.1 21 19V10H19M17 10L17.94 7.94L20 7L17.94 6.06L17 4L16.06 6.06L14 7L16.06 7.94L17 10M13.25 10.75L12 8L10.75 10.75L8 12L10.75 13.25L12 16L13.25 13.25L16 12L13.25 10.75Z"
+        />
+      </svg>
+      <svg
+        class="mdi-icon icon-inline d-none d-lg-inline-block"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19 10V19H5V5H14V3H5C3.92 3 3 3.9 3 5V19C3 20.1 3.92 21 5 21H19C20.12 21 21 20.1 21 19V10H19M17 10L17.94 7.94L20 7L17.94 6.06L17 4L16.06 6.06L14 7L16.06 7.94L17 10M13.25 10.75L12 8L10.75 10.75L8 12L10.75 13.25L12 16L13.25 13.25L16 12L13.25 10.75Z"
+        />
+      </svg>
+      <span
+        class="d-none d-lg-inline-block ml-1"
+      >
+        Campaigns
+      </span>
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <div
+      class="nav-link py-0 px-0 percy-hide chromatic-ignore btn-group"
+    >
+      <a
+        aria-expanded="false"
+        aria-haspopup="true"
+        class="btn btn-link nav-link"
+        href="#"
+      >
+        <svg
+          class="mdi-icon icon-inline"
+          data-tooltip="Repositories up to date"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M10,17L6.5,13.5L7.91,12.08L10,14.17L15.18,9L16.59,10.41M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14A6,6 0 0,0 6,20H19A5,5 0 0,0 24,15C24,12.36 21.95,10.22 19.35,10.03Z"
+          />
+        </svg>
+      </a>
+      <div
+        aria-hidden="true"
+        class="status-messages-nav-item__dropdown-menu dropdown-menu dropdown-menu-right"
+        role="menu"
+        tabindex="-1"
+      >
+        <h3>
+          Code host status
+        </h3>
+        <div
+          class="status-messages-nav-item__dropdown-menu-content"
+        >
+          <div
+            class="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-success"
+          >
+            <h4>
+              <svg
+                class="mdi-icon icon-inline mr-1"
+                fill="currentColor"
+                height="24"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M10,17L6.5,13.5L7.91,12.08L10,14.17L15.18,9L16.59,10.41M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14A6,6 0 0,0 6,20H19A5,5 0 0,0 24,15C24,12.36 21.95,10.22 19.35,10.03Z"
+                />
+              </svg>
+              Repositories up to date
+            </h4>
+            <p>
+              All repositories hosted on the configured code hosts are synced.
+            </p>
+            <p
+              class="status-messages-nav-item__entry-link"
+            >
+              <a
+                href="/site-admin/external-services"
+              >
+                Manage repositories
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <span
+      class="command-list-popover-button btn btn-link "
+      id="command-list-popover-button-5"
+      role="button"
+    >
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+        />
+      </svg>
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M7,10L12,15L17,10H7Z"
+        />
+      </svg>
+    </span>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <div
+      class="py-0 btn-group"
+    >
+      <a
+        aria-expanded="false"
+        aria-haspopup="true"
+        class="bg-transparent d-flex align-items-center test-user-nav-item-toggle dropdown-toggle nav-link"
+        href="#"
+      >
+        <strong>
+          alice
+        </strong>
+      </a>
+      <div
+        aria-hidden="true"
+        class="user-nav-item__dropdown-menu dropdown-menu dropdown-menu-right"
+        role="menu"
+        tabindex="-1"
+      >
+        <h6
+          class="py-1 dropdown-header"
+          tabindex="-1"
+        >
+          Signed in as 
+          <strong>
+            @alice
+          </strong>
+        </h6>
+        <div
+          class="dropdown-divider"
+          tabindex="-1"
+        />
+        <a
+          class="dropdown-item"
+          href="/"
+        >
+          Settings
+        </a>
+        <a
+          class="dropdown-item"
+          href="/extensions"
+        >
+          Extensions
+        </a>
+        <a
+          class="dropdown-item"
+          href="/users/alice/searches"
+        >
+          Saved searches
+        </a>
+        <div
+          class="dropdown-divider"
+          tabindex="-1"
+        />
+        <div
+          class="px-2 py-1"
+        >
+          <div
+            class="d-flex align-items-center"
+          >
+            <div
+              class="mr-2"
+            >
+              Theme
+            </div>
+            <select
+              class="custom-select custom-select-sm test-theme-toggle"
+            >
+              <option
+                selected=""
+                value="light"
+              >
+                Light
+              </option>
+              <option
+                value="dark"
+              >
+                Dark
+              </option>
+              <option
+                value="system"
+              >
+                System
+              </option>
+            </select>
+          </div>
+        </div>
+        <div
+          class="dropdown-divider"
+          tabindex="-1"
+        />
+        <h6
+          class="dropdown-header"
+          tabindex="-1"
+        >
+          Organizations
+        </h6>
+        <a
+          class="dropdown-item"
+          href="/organizations/acme/settings"
+        >
+          Acme Corp
+        </a>
+        <a
+          class="dropdown-item"
+          href="/organizations/beta/settings"
+        >
+          Beta Inc
+        </a>
+        <div
+          class="dropdown-divider"
+          tabindex="-1"
+        />
+        <a
+          class="dropdown-item"
+          href="/site-admin"
+        >
+          Site admin
+        </a>
+        <a
+          class="dropdown-item"
+          href="/help"
+          rel="noopener"
+          target="_blank"
+        >
+          Help 
+          <svg
+            class="mdi-icon icon-inline"
+            fill="currentColor"
+            height="24"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
+            />
+          </svg>
+        </a>
+        <a
+          class="dropdown-item"
+          href="/-/sign-out"
+        >
+          Sign out
+        </a>
+      </div>
+    </div>
+  </li>
+</ul>
+`;
+
+exports[`NavLinks authed self-hosted /search 1`] = `
+<ul
+  class="nav-links nav align-items-center pl-2 pr-1"
+>
+  <li
+    class="nav-item"
+  >
+    <a
+      class="nav-link"
+      href="/explore"
+    >
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M7,17L10.2,10.2L17,7L13.8,13.8L7,17M12,11.1A0.9,0.9 0 0,0 11.1,12A0.9,0.9 0 0,0 12,12.9A0.9,0.9 0 0,0 12.9,12A0.9,0.9 0 0,0 12,11.1M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4Z"
+        />
+      </svg>
+       Explore
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <a
+      class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      href="/campaigns"
+    >
+      <svg
+        class="mdi-icon icon-inline d-lg-none"
+        data-tooltip="Campaigns"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19 10V19H5V5H14V3H5C3.92 3 3 3.9 3 5V19C3 20.1 3.92 21 5 21H19C20.12 21 21 20.1 21 19V10H19M17 10L17.94 7.94L20 7L17.94 6.06L17 4L16.06 6.06L14 7L16.06 7.94L17 10M13.25 10.75L12 8L10.75 10.75L8 12L10.75 13.25L12 16L13.25 13.25L16 12L13.25 10.75Z"
+        />
+      </svg>
+      <svg
+        class="mdi-icon icon-inline d-none d-lg-inline-block"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19 10V19H5V5H14V3H5C3.92 3 3 3.9 3 5V19C3 20.1 3.92 21 5 21H19C20.12 21 21 20.1 21 19V10H19M17 10L17.94 7.94L20 7L17.94 6.06L17 4L16.06 6.06L14 7L16.06 7.94L17 10M13.25 10.75L12 8L10.75 10.75L8 12L10.75 13.25L12 16L13.25 13.25L16 12L13.25 10.75Z"
+        />
+      </svg>
+      <span
+        class="d-none d-lg-inline-block ml-1"
+      >
+        Campaigns
+      </span>
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <div
+      class="nav-link py-0 px-0 percy-hide chromatic-ignore btn-group"
+    >
+      <a
+        aria-expanded="false"
+        aria-haspopup="true"
+        class="btn btn-link nav-link"
+        href="#"
+      >
+        <svg
+          class="mdi-icon icon-inline"
+          data-tooltip="Repositories up to date"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M10,17L6.5,13.5L7.91,12.08L10,14.17L15.18,9L16.59,10.41M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14A6,6 0 0,0 6,20H19A5,5 0 0,0 24,15C24,12.36 21.95,10.22 19.35,10.03Z"
+          />
+        </svg>
+      </a>
+      <div
+        aria-hidden="true"
+        class="status-messages-nav-item__dropdown-menu dropdown-menu dropdown-menu-right"
+        role="menu"
+        tabindex="-1"
+      >
+        <h3>
+          Code host status
+        </h3>
+        <div
+          class="status-messages-nav-item__dropdown-menu-content"
+        >
+          <div
+            class="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-success"
+          >
+            <h4>
+              <svg
+                class="mdi-icon icon-inline mr-1"
+                fill="currentColor"
+                height="24"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M10,17L6.5,13.5L7.91,12.08L10,14.17L15.18,9L16.59,10.41M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14A6,6 0 0,0 6,20H19A5,5 0 0,0 24,15C24,12.36 21.95,10.22 19.35,10.03Z"
+                />
+              </svg>
+              Repositories up to date
+            </h4>
+            <p>
+              All repositories hosted on the configured code hosts are synced.
+            </p>
+            <p
+              class="status-messages-nav-item__entry-link"
+            >
+              <a
+                href="/site-admin/external-services"
+              >
+                Manage repositories
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <span
+      class="command-list-popover-button btn btn-link "
+      id="command-list-popover-button-6"
+      role="button"
+    >
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+        />
+      </svg>
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M7,10L12,15L17,10H7Z"
+        />
+      </svg>
+    </span>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <div
+      class="py-0 btn-group"
+    >
+      <a
+        aria-expanded="false"
+        aria-haspopup="true"
+        class="bg-transparent d-flex align-items-center test-user-nav-item-toggle dropdown-toggle nav-link"
+        href="#"
+      >
+        <strong>
+          alice
+        </strong>
+      </a>
+      <div
+        aria-hidden="true"
+        class="user-nav-item__dropdown-menu dropdown-menu dropdown-menu-right"
+        role="menu"
+        tabindex="-1"
+      >
+        <h6
+          class="py-1 dropdown-header"
+          tabindex="-1"
+        >
+          Signed in as 
+          <strong>
+            @alice
+          </strong>
+        </h6>
+        <div
+          class="dropdown-divider"
+          tabindex="-1"
+        />
+        <a
+          class="dropdown-item"
+          href="/"
+        >
+          Settings
+        </a>
+        <a
+          class="dropdown-item"
+          href="/extensions"
+        >
+          Extensions
+        </a>
+        <a
+          class="dropdown-item"
+          href="/users/alice/searches"
+        >
+          Saved searches
+        </a>
+        <div
+          class="dropdown-divider"
+          tabindex="-1"
+        />
+        <div
+          class="px-2 py-1"
+        >
+          <div
+            class="d-flex align-items-center"
+          >
+            <div
+              class="mr-2"
+            >
+              Theme
+            </div>
+            <select
+              class="custom-select custom-select-sm test-theme-toggle"
+            >
+              <option
+                selected=""
+                value="light"
+              >
+                Light
+              </option>
+              <option
+                value="dark"
+              >
+                Dark
+              </option>
+              <option
+                value="system"
+              >
+                System
+              </option>
+            </select>
+          </div>
+        </div>
+        <div
+          class="dropdown-divider"
+          tabindex="-1"
+        />
+        <h6
+          class="dropdown-header"
+          tabindex="-1"
+        >
+          Organizations
+        </h6>
+        <a
+          class="dropdown-item"
+          href="/organizations/acme/settings"
+        >
+          Acme Corp
+        </a>
+        <a
+          class="dropdown-item"
+          href="/organizations/beta/settings"
+        >
+          Beta Inc
+        </a>
+        <div
+          class="dropdown-divider"
+          tabindex="-1"
+        />
+        <a
+          class="dropdown-item"
+          href="/site-admin"
+        >
+          Site admin
+        </a>
+        <a
+          class="dropdown-item"
+          href="/help"
+          rel="noopener"
+          target="_blank"
+        >
+          Help 
+          <svg
+            class="mdi-icon icon-inline"
+            fill="currentColor"
+            height="24"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
+            />
+          </svg>
+        </a>
+        <a
+          class="dropdown-item"
+          href="/-/sign-out"
+        >
+          Sign out
+        </a>
+      </div>
+    </div>
+  </li>
+</ul>
+`;
+
+exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
+<ul
+  class="nav-links nav align-items-center pl-2 pr-1"
+>
+  <li
+    class="nav-item d-sm-none"
+  >
+    <a
+      class="nav-link"
+      href="/search"
+    >
+      Search
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <a
+      class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      href="/campaigns"
+    >
+      <svg
+        class="mdi-icon icon-inline d-lg-none"
+        data-tooltip="Campaigns"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19 10V19H5V5H14V3H5C3.92 3 3 3.9 3 5V19C3 20.1 3.92 21 5 21H19C20.12 21 21 20.1 21 19V10H19M17 10L17.94 7.94L20 7L17.94 6.06L17 4L16.06 6.06L14 7L16.06 7.94L17 10M13.25 10.75L12 8L10.75 10.75L8 12L10.75 13.25L12 16L13.25 13.25L16 12L13.25 10.75Z"
+        />
+      </svg>
+      <svg
+        class="mdi-icon icon-inline d-none d-lg-inline-block"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19 10V19H5V5H14V3H5C3.92 3 3 3.9 3 5V19C3 20.1 3.92 21 5 21H19C20.12 21 21 20.1 21 19V10H19M17 10L17.94 7.94L20 7L17.94 6.06L17 4L16.06 6.06L14 7L16.06 7.94L17 10M13.25 10.75L12 8L10.75 10.75L8 12L10.75 13.25L12 16L13.25 13.25L16 12L13.25 10.75Z"
+        />
+      </svg>
+      <span
+        class="d-none d-lg-inline-block ml-1"
+      >
+        Campaigns
+      </span>
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <a
+      class="nav-link"
+      href="/extensions"
+    >
+      Extensions
+    </a>
+  </li>
+  <li
+    class="nav-item mx-1"
+  >
+    <a
+      class="nav-link btn btn-primary"
+      href="/sign-in"
+    >
+      Sign in
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <a
+      class="nav-link"
+      href="https://about.sourcegraph.com"
+      rel="noopener"
+      target="_blank"
+    >
+      About 
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
+        />
+      </svg>
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <a
+      class="nav-link"
+      href="/help"
+      rel="noopener"
+      target="_blank"
+    >
+      Help 
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
+        />
+      </svg>
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <span
+      class="command-list-popover-button btn btn-link "
+      id="command-list-popover-button-3"
+      role="button"
+    >
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+        />
+      </svg>
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M7,10L12,15L17,10H7Z"
+        />
+      </svg>
+    </span>
+  </li>
+</ul>
+`;
+
+exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
+<ul
+  class="nav-links nav align-items-center pl-2 pr-1"
+>
+  <li
+    class="nav-item"
+  >
+    <a
+      class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      href="/campaigns"
+    >
+      <svg
+        class="mdi-icon icon-inline d-lg-none"
+        data-tooltip="Campaigns"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19 10V19H5V5H14V3H5C3.92 3 3 3.9 3 5V19C3 20.1 3.92 21 5 21H19C20.12 21 21 20.1 21 19V10H19M17 10L17.94 7.94L20 7L17.94 6.06L17 4L16.06 6.06L14 7L16.06 7.94L17 10M13.25 10.75L12 8L10.75 10.75L8 12L10.75 13.25L12 16L13.25 13.25L16 12L13.25 10.75Z"
+        />
+      </svg>
+      <svg
+        class="mdi-icon icon-inline d-none d-lg-inline-block"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19 10V19H5V5H14V3H5C3.92 3 3 3.9 3 5V19C3 20.1 3.92 21 5 21H19C20.12 21 21 20.1 21 19V10H19M17 10L17.94 7.94L20 7L17.94 6.06L17 4L16.06 6.06L14 7L16.06 7.94L17 10M13.25 10.75L12 8L10.75 10.75L8 12L10.75 13.25L12 16L13.25 13.25L16 12L13.25 10.75Z"
+        />
+      </svg>
+      <span
+        class="d-none d-lg-inline-block ml-1"
+      >
+        Campaigns
+      </span>
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <a
+      class="nav-link"
+      href="/extensions"
+    >
+      Extensions
+    </a>
+  </li>
+  <li
+    class="nav-item mx-1"
+  >
+    <a
+      class="nav-link btn btn-primary"
+      href="/sign-in"
+    >
+      Sign in
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <a
+      class="nav-link"
+      href="https://about.sourcegraph.com"
+      rel="noopener"
+      target="_blank"
+    >
+      About 
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
+        />
+      </svg>
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <a
+      class="nav-link"
+      href="/help"
+      rel="noopener"
+      target="_blank"
+    >
+      Help 
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
+        />
+      </svg>
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <span
+      class="command-list-popover-button btn btn-link "
+      id="command-list-popover-button-4"
+      role="button"
+    >
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+        />
+      </svg>
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M7,10L12,15L17,10H7Z"
+        />
+      </svg>
+    </span>
+  </li>
+</ul>
+`;
+
+exports[`NavLinks unauthed self-hosted /foo 1`] = `
+<ul
+  class="nav-links nav align-items-center pl-2 pr-1"
+>
+  <li
+    class="nav-item d-sm-none"
+  >
+    <a
+      class="nav-link"
+      href="/search"
+    >
+      Search
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <a
+      class="nav-link"
+      href="/explore"
+    >
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M7,17L10.2,10.2L17,7L13.8,13.8L7,17M12,11.1A0.9,0.9 0 0,0 11.1,12A0.9,0.9 0 0,0 12,12.9A0.9,0.9 0 0,0 12.9,12A0.9,0.9 0 0,0 12,11.1M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4Z"
+        />
+      </svg>
+       Explore
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <a
+      class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      href="/campaigns"
+    >
+      <svg
+        class="mdi-icon icon-inline d-lg-none"
+        data-tooltip="Campaigns"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19 10V19H5V5H14V3H5C3.92 3 3 3.9 3 5V19C3 20.1 3.92 21 5 21H19C20.12 21 21 20.1 21 19V10H19M17 10L17.94 7.94L20 7L17.94 6.06L17 4L16.06 6.06L14 7L16.06 7.94L17 10M13.25 10.75L12 8L10.75 10.75L8 12L10.75 13.25L12 16L13.25 13.25L16 12L13.25 10.75Z"
+        />
+      </svg>
+      <svg
+        class="mdi-icon icon-inline d-none d-lg-inline-block"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19 10V19H5V5H14V3H5C3.92 3 3 3.9 3 5V19C3 20.1 3.92 21 5 21H19C20.12 21 21 20.1 21 19V10H19M17 10L17.94 7.94L20 7L17.94 6.06L17 4L16.06 6.06L14 7L16.06 7.94L17 10M13.25 10.75L12 8L10.75 10.75L8 12L10.75 13.25L12 16L13.25 13.25L16 12L13.25 10.75Z"
+        />
+      </svg>
+      <span
+        class="d-none d-lg-inline-block ml-1"
+      >
+        Campaigns
+      </span>
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <a
+      class="nav-link"
+      href="/extensions"
+    >
+      Extensions
+    </a>
+  </li>
+  <li
+    class="nav-item mx-1"
+  >
+    <a
+      class="nav-link btn btn-primary"
+      href="/sign-in"
+    >
+      Sign in
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <a
+      class="nav-link"
+      href="/help"
+      rel="noopener"
+      target="_blank"
+    >
+      Help 
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
+        />
+      </svg>
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <span
+      class="command-list-popover-button btn btn-link "
+      id="command-list-popover-button-1"
+      role="button"
+    >
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+        />
+      </svg>
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M7,10L12,15L17,10H7Z"
+        />
+      </svg>
+    </span>
+  </li>
+</ul>
+`;
+
+exports[`NavLinks unauthed self-hosted /search 1`] = `
+<ul
+  class="nav-links nav align-items-center pl-2 pr-1"
+>
+  <li
+    class="nav-item"
+  >
+    <a
+      class="nav-link"
+      href="/explore"
+    >
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M7,17L10.2,10.2L17,7L13.8,13.8L7,17M12,11.1A0.9,0.9 0 0,0 11.1,12A0.9,0.9 0 0,0 12,12.9A0.9,0.9 0 0,0 12.9,12A0.9,0.9 0 0,0 12,11.1M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4Z"
+        />
+      </svg>
+       Explore
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <a
+      class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      href="/campaigns"
+    >
+      <svg
+        class="mdi-icon icon-inline d-lg-none"
+        data-tooltip="Campaigns"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19 10V19H5V5H14V3H5C3.92 3 3 3.9 3 5V19C3 20.1 3.92 21 5 21H19C20.12 21 21 20.1 21 19V10H19M17 10L17.94 7.94L20 7L17.94 6.06L17 4L16.06 6.06L14 7L16.06 7.94L17 10M13.25 10.75L12 8L10.75 10.75L8 12L10.75 13.25L12 16L13.25 13.25L16 12L13.25 10.75Z"
+        />
+      </svg>
+      <svg
+        class="mdi-icon icon-inline d-none d-lg-inline-block"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19 10V19H5V5H14V3H5C3.92 3 3 3.9 3 5V19C3 20.1 3.92 21 5 21H19C20.12 21 21 20.1 21 19V10H19M17 10L17.94 7.94L20 7L17.94 6.06L17 4L16.06 6.06L14 7L16.06 7.94L17 10M13.25 10.75L12 8L10.75 10.75L8 12L10.75 13.25L12 16L13.25 13.25L16 12L13.25 10.75Z"
+        />
+      </svg>
+      <span
+        class="d-none d-lg-inline-block ml-1"
+      >
+        Campaigns
+      </span>
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <a
+      class="nav-link"
+      href="/extensions"
+    >
+      Extensions
+    </a>
+  </li>
+  <li
+    class="nav-item mx-1"
+  >
+    <a
+      class="nav-link btn btn-primary"
+      href="/sign-in"
+    >
+      Sign in
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <a
+      class="nav-link"
+      href="/help"
+      rel="noopener"
+      target="_blank"
+    >
+      Help 
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
+        />
+      </svg>
+    </a>
+  </li>
+  <li
+    class="nav-item"
+  >
+    <span
+      class="command-list-popover-button btn btn-link "
+      id="command-list-popover-button-2"
+      role="button"
+    >
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+        />
+      </svg>
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M7,10L12,15L17,10H7Z"
+        />
+      </svg>
+    </span>
+  </li>
+</ul>
+>>>>>>> main
 `;

@@ -155,18 +155,10 @@ type BitbucketCloudRateLimit struct {
 
 // BitbucketServerAuthorization description: If non-null, enforces Bitbucket Server repository permissions.
 type BitbucketServerAuthorization struct {
-	// HardTTL description: DEPRECATED: Duration after which a user's cached permissions must be updated before authorizing any user actions. This is 3 days by default.
-	HardTTL string `json:"hardTTL,omitempty"`
 	// IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the Bitbucket Server identity to use for a given Sourcegraph user. When 'username' is used, Sourcegraph assumes usernames are identical in Sourcegraph and Bitbucket Server accounts and `auth.enableUsernameChanges` must be set to false for security reasons.
 	IdentityProvider BitbucketServerIdentityProvider `json:"identityProvider"`
 	// Oauth description: OAuth configuration specified when creating the Bitbucket Server Application Link with incoming authentication. Two Legged OAuth with 'ExecuteAs=admin' must be enabled as well as user impersonation.
 	Oauth BitbucketServerOAuth `json:"oauth"`
-	// Ttl description: DEPRECATED: Duration after which a user's cached permissions will be updated in the background (during which time the previously cached permissions will be used). This is 3 hours by default.
-	//
-	// Decreasing the TTL will increase the load on the code host API. If you have X repos on your instance, it will take ~X/1000 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur X*Y/1000 API requests per cache refresh period.
-	//
-	// If set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).
-	Ttl string `json:"ttl,omitempty"`
 }
 
 // BitbucketServerConnection description: Configuration for a connection to Bitbucket Server.
@@ -423,7 +415,7 @@ type ExpandedGitCommitDescription struct {
 
 // ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
-	// AndOrQuery description: Interpret a search input query as an and/or query.
+	// AndOrQuery description: DEPRECATED: Interpret a search input query as an and/or query.
 	AndOrQuery string `json:"andOrQuery,omitempty"`
 	// Automation description: DEPRECATED: Enables the experimental code change management campaigns feature. This field has been deprecated in favour of campaigns.enabled
 	Automation string `json:"automation,omitempty"`
@@ -494,14 +486,6 @@ type GitHubAuthProvider struct {
 
 // GitHubAuthorization description: If non-null, enforces GitHub repository permissions. This requires that there is an item in the `auth.providers` field of type "github" with the same `url` field as specified in this `GitHubConnection`.
 type GitHubAuthorization struct {
-	// Ttl description: DEPRECATED: The TTL of how long to cache permissions data. This is 3 hours by default.
-	//
-	// Decreasing the TTL will increase the load on the code host API. If you have X private repositories on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur up to X*Y/100 API requests per cache refresh period (depending on user activity).
-	//
-	// If set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).
-	//
-	// Public repositories are cached once for all users per cache TTL period.
-	Ttl string `json:"ttl,omitempty"`
 }
 
 // GitHubConnection description: Configuration for a connection to GitHub or GitHub Enterprise.
@@ -591,14 +575,6 @@ type GitLabAuthProvider struct {
 type GitLabAuthorization struct {
 	// IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the GitLab identity to use for a given Sourcegraph user.
 	IdentityProvider IdentityProvider `json:"identityProvider"`
-	// Ttl description: DEPRECATED: The TTL of how long to cache permissions data. This is 3 hours by default.
-	//
-	// Decreasing the TTL will increase the load on the code host API. If you have X private repositories on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur up to X*Y/100 API requests per cache refresh period (depending on user activity).
-	//
-	// If set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).
-	//
-	// Public and internal repositories are cached once for all users per cache TTL period.
-	Ttl string `json:"ttl,omitempty"`
 }
 
 // GitLabConnection description: Configuration for a connection to GitLab (GitLab.com or GitLab self-managed).
@@ -846,11 +822,7 @@ type NotifierWebhook struct {
 	Username    string `json:"username,omitempty"`
 }
 type OAuthIdentity struct {
-	// MaxBatchRequests description: DEPRECATED: The maximum number of batch API requests to make for GitLab Project visibility. Please consult with the Sourcegraph support team before modifying this.
-	MaxBatchRequests int `json:"maxBatchRequests,omitempty"`
-	// MinBatchingThreshold description: DEPRECATED: The minimum number of GitLab projects to fetch at which to start batching requests to fetch project visibility. Please consult with the Sourcegraph support team before modifying this.
-	MinBatchingThreshold int    `json:"minBatchingThreshold,omitempty"`
-	Type                 string `json:"type"`
+	Type string `json:"type"`
 }
 type ObservabilityAlerts struct {
 	// DisableSendResolved description: Disable notifications when alerts resolve themselves.
@@ -921,12 +893,6 @@ type OtherExternalServiceConnection struct {
 // ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 type ParentSourcegraph struct {
 	Url string `json:"url,omitempty"`
-}
-
-// PermissionsBackgroundSync description: DEPRECATED: Sync code host repository and user permissions in the background.
-type PermissionsBackgroundSync struct {
-	// Enabled description: Whether syncing permissions in the background is enabled.
-	Enabled bool `json:"enabled,omitempty"`
 }
 
 // PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).
@@ -1018,6 +984,18 @@ type SMTPServerConfig struct {
 	// Username description: The username to use when communicating with the SMTP server.
 	Username string `json:"username,omitempty"`
 }
+
+// SearchLimits description: Limits that search applies for number of repositories searched and timeouts.
+type SearchLimits struct {
+	// CommitDiffMaxRepos description: The maximum number of repositories to search across when doing a "type:diff" or "type:commit". The user is prompted to narrow their query if exceeded. There is a seperate limit (commitDiffWithTimeFilterMaxRepos) when "after:" or "before:" is specified since those queries are faster. Value must be positive. Defaults to 50.
+	CommitDiffMaxRepos int `json:"commitDiffMaxRepos,omitempty"`
+	// CommitDiffWithTimeFilterMaxRepos description: The maximum number of repositories to search across when doing a "type:diff" or "type:commit" with a "after:" or "before:" filter. The user is prompted to narrow their query if exceeded. There is a seperate limit (commitDiffMaxRepos) when "after:" or "before:" is not specified since those queries are slower. Value must be positive. Defaults to 10000.
+	CommitDiffWithTimeFilterMaxRepos int `json:"commitDiffWithTimeFilterMaxRepos,omitempty"`
+	// MaxRepos description: The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.
+	MaxRepos int `json:"maxRepos,omitempty"`
+	// MaxTimeoutSeconds description: The maximum value for "timeout:" that search will respect. "timeout:" values larger than maxTimeoutSeconds are capped at maxTimeoutSeconds. Note: You need to ensure your load balancer / reverse proxy in front of Sourcegraph won't timeout the request for larger values. Note: Too many large rearch requests may harm Soucregraph for other users. Defaults to 1 minute.
+	MaxTimeoutSeconds int `json:"maxTimeoutSeconds,omitempty"`
+}
 type SearchSavedQueries struct {
 	// Description description: Description of this saved query
 	Description string `json:"description"`
@@ -1085,11 +1063,13 @@ type Settings struct {
 	SearchDefaultPatternType string `json:"search.defaultPatternType,omitempty"`
 	// SearchGlobbing description: Enables globbing for supported field values
 	SearchGlobbing *bool `json:"search.globbing,omitempty"`
+	// SearchHideSuggestions description: Disable search suggestions below the search bar when constructing queries. Defaults to false.
+	SearchHideSuggestions *bool `json:"search.hideSuggestions,omitempty"`
 	// SearchIncludeArchived description: Whether searches should include searching archived repositories.
 	SearchIncludeArchived *bool `json:"search.includeArchived,omitempty"`
 	// SearchIncludeForks description: Whether searches should include searching forked repositories.
 	SearchIncludeForks *bool `json:"search.includeForks,omitempty"`
-	// SearchMigrateParser description: If true, uses the new and/or-compatible parser for all search queries. It is a flag to aid transition to the new parser.
+	// SearchMigrateParser description: If false, disables the new and/or-compatible parser for all search queries. It is a flag to aid transition to the new parser.
 	SearchMigrateParser *bool `json:"search.migrateParser,omitempty"`
 	// SearchRepositoryGroups description: Named groups of repositories that can be referenced in a search query using the repogroup: operator.
 	SearchRepositoryGroups map[string][]string `json:"search.repositoryGroups,omitempty"`
@@ -1111,6 +1091,8 @@ type SettingsExperimentalFeatures struct {
 	SearchStats *bool `json:"searchStats,omitempty"`
 	// ShowBadgeAttachments description: Enables the UI indicators for code intelligence precision.
 	ShowBadgeAttachments *bool `json:"showBadgeAttachments,omitempty"`
+	// ShowEnterpriseHomePanels description: Enabled the homepage panels in the Enterprise homepage
+	ShowEnterpriseHomePanels *bool `json:"showEnterpriseHomePanels,omitempty"`
 	// ShowOnboardingTour description: Enables the onboarding tour.
 	ShowOnboardingTour *bool `json:"showOnboardingTour,omitempty"`
 	// ShowRepogroupHomepage description: Enables the repository group homepage
@@ -1207,7 +1189,7 @@ type SiteConfiguration struct {
 	Log *Log `json:"log,omitempty"`
 	// LsifEnforceAuth description: Whether or not LSIF uploads will be blocked unless a valid LSIF upload token is provided.
 	LsifEnforceAuth bool `json:"lsifEnforceAuth,omitempty"`
-	// MaxReposToSearch description: The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.
+	// MaxReposToSearch description: DEPRECATED: Configure maxRepos in search.limits. The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.
 	MaxReposToSearch int `json:"maxReposToSearch,omitempty"`
 	// ObservabilityAlerts description: Configure notifications for Sourcegraph's built-in alerts.
 	ObservabilityAlerts []*ObservabilityAlerts `json:"observability.alerts,omitempty"`
@@ -1221,8 +1203,6 @@ type SiteConfiguration struct {
 	ObservabilityTracing *ObservabilityTracing `json:"observability.tracing,omitempty"`
 	// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 	ParentSourcegraph *ParentSourcegraph `json:"parentSourcegraph,omitempty"`
-	// PermissionsBackgroundSync description: DEPRECATED: Sync code host repository and user permissions in the background.
-	PermissionsBackgroundSync *PermissionsBackgroundSync `json:"permissions.backgroundSync,omitempty"`
 	// PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).
 	PermissionsUserMapping *PermissionsUserMapping `json:"permissions.userMapping,omitempty"`
 	// RepoListUpdateInterval description: Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.
@@ -1233,6 +1213,8 @@ type SiteConfiguration struct {
 	SearchIndexSymbolsEnabled *bool `json:"search.index.symbols.enabled,omitempty"`
 	// SearchLargeFiles description: A list of file glob patterns where matching files will be indexed and searched regardless of their size. The glob pattern syntax can be found here: https://golang.org/pkg/path/filepath/#Match.
 	SearchLargeFiles []string `json:"search.largeFiles,omitempty"`
+	// SearchLimits description: Limits that search applies for number of repositories searched and timeouts.
+	SearchLimits *SearchLimits `json:"search.limits,omitempty"`
 	// UpdateChannel description: The channel on which to automatically check for Sourcegraph updates.
 	UpdateChannel string `json:"update.channel,omitempty"`
 	// UseJaeger description: DEPRECATED. Use `"observability.tracing": { "sampling": "all" }`, instead. Enables Jaeger tracing.

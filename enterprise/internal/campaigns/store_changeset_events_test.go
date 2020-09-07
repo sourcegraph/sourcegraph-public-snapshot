@@ -182,7 +182,7 @@ func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, _ rep
 
 		t.Run("WithLimit", func(t *testing.T) {
 			for i := 1; i <= len(events); i++ {
-				cs, next, err := s.ListChangesetEvents(ctx, ListChangesetEventsOpts{Limit: i})
+				cs, next, err := s.ListChangesetEvents(ctx, ListChangesetEventsOpts{LimitOpts: LimitOpts{Limit: i}})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -214,7 +214,7 @@ func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, _ rep
 		t.Run("WithCursor", func(t *testing.T) {
 			var cursor int64
 			for i := 1; i <= len(events); i++ {
-				opts := ListChangesetEventsOpts{Cursor: cursor, Limit: 1}
+				opts := ListChangesetEventsOpts{Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
 				have, next, err := s.ListChangesetEvents(ctx, opts)
 				if err != nil {
 					t.Fatal(err)
@@ -230,7 +230,7 @@ func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, _ rep
 		})
 
 		t.Run("EmptyResultListingAll", func(t *testing.T) {
-			opts := ListChangesetEventsOpts{ChangesetIDs: []int64{99999}, Limit: -1}
+			opts := ListChangesetEventsOpts{ChangesetIDs: []int64{99999}}
 
 			ts, next, err := s.ListChangesetEvents(ctx, opts)
 			if err != nil {

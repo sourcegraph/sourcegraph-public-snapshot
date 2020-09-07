@@ -122,8 +122,12 @@
 // 1528395709_create_external_service_sync_jobs_table.up.sql (1.3kB)
 // 1528395710_add_unsynced_flag_to_changesets.down.sql (72B)
 // 1528395710_add_unsynced_flag_to_changesets.up.sql (106B)
-// 1528395711_add_soft_deleted_repository_name_func.down.sql (73B)
-// 1528395711_add_soft_deleted_repository_name_func.up.sql (282B)
+// 1528395711_add_soft_deleted_repository_name_func.down.sql (77B)
+// 1528395711_add_soft_deleted_repository_name_func.up.sql (286B)
+// 1528395712_add_closing_flag_to_changesets.down.sql (71B)
+// 1528395712_add_closing_flag_to_changesets.up.sql (105B)
+// 1528395713_add_trigger_to_delete_orphan_repos.down.sql (102B)
+// 1528395713_add_trigger_to_delete_orphan_repos.up.sql (861B)
 
 package migrations
 
@@ -2632,7 +2636,7 @@ func _1528395710_add_unsynced_flag_to_changesetsUpSql() (*asset, error) {
 	return a, nil
 }
 
-var __1528395711_add_soft_deleted_repository_name_funcDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x70\x0b\xf5\x73\x0e\xf1\xf4\xf7\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\xce\x4f\x2b\x89\x4f\x49\xcd\x49\x2d\x49\x4d\x89\x2f\x4a\x2d\xc8\x2f\xce\x2c\xc9\x2f\xaa\x8c\xcf\x4b\xcc\x4d\xd5\xd0\xb4\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xcc\x94\xe9\x81\x49\x00\x00\x00")
+var __1528395711_add_soft_deleted_repository_name_funcDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x70\x0b\xf5\x73\x0e\xf1\xf4\xf7\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\xce\x4f\x2b\x89\x4f\x49\xcd\x49\x2d\x49\x4d\x89\x2f\x4a\x2d\xc8\x2f\xce\x2c\xc9\x2f\xaa\x8c\xcf\x4b\xcc\x4d\xd5\x28\x49\xad\x28\xd1\xb4\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xb0\xea\x58\xc3\x4d\x00\x00\x00")
 
 func _1528395711_add_soft_deleted_repository_name_funcDownSqlBytes() ([]byte, error) {
 	return bindataRead(
@@ -2648,11 +2652,11 @@ func _1528395711_add_soft_deleted_repository_name_funcDownSql() (*asset, error) 
 	}
 
 	info := bindataFileInfo{name: "1528395711_add_soft_deleted_repository_name_func.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x19, 0x90, 0xb0, 0x3a, 0xe, 0xfc, 0xa3, 0x14, 0xda, 0x4c, 0x73, 0xbc, 0x52, 0x99, 0x46, 0x9, 0x70, 0xed, 0x94, 0xf9, 0xbe, 0xdb, 0x5d, 0x5c, 0xce, 0xda, 0x50, 0xaf, 0x29, 0x21, 0x6c, 0x82}}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x74, 0x92, 0x22, 0xa5, 0xf4, 0xec, 0x7b, 0xd4, 0xf8, 0x1b, 0xf7, 0xf5, 0x52, 0x1d, 0x92, 0x2d, 0x8a, 0xc1, 0x2d, 0xcb, 0xea, 0xa7, 0xa3, 0xcd, 0xba, 0x62, 0x9f, 0xaa, 0xb, 0xc8, 0x23, 0x0}}
 	return a, nil
 }
 
-var __1528395711_add_soft_deleted_repository_name_funcUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\x8f\x41\x6b\x84\x30\x14\x84\xef\xf9\x15\x73\x10\xd4\x43\x7f\x81\x27\xab\x6f\x25\xe0\xc6\xa2\xcf\xb2\x37\x09\x6e\xb6\x15\xd4\xa4\x49\x0e\x2d\xec\x8f\x2f\x6e\x0b\xbd\xf5\xf2\xe0\x31\xf3\x31\x33\xcf\xd4\x48\x55\x08\x51\xf7\xdd\x0b\x4e\xa3\xaa\x58\x76\x0a\xf2\x04\xba\xc8\x81\x07\x04\x7b\x8b\xd3\xd5\xac\x26\x9a\xeb\xe4\x8d\xb3\x61\x89\xd6\x7f\x4d\xbb\xde\x4c\x96\x17\x42\x54\x3d\x95\x4c\x7f\xe8\xbf\xc0\x71\xc0\x74\xe1\x1c\x3d\xf1\xd8\xab\xe1\xf1\xa1\x1c\x90\x24\xe2\xd1\x45\x00\xf8\x15\x91\xd6\xd4\x12\x53\xfd\x94\xe2\x7e\x87\xf9\x8c\x5e\xcf\x31\x33\xce\xce\xef\xb8\x79\xbb\x21\x7a\xbd\x07\x3d\xc7\xc5\xee\x53\x5c\x36\x13\xa2\xde\x5c\x96\xe7\x87\x3d\xfd\xa1\x8e\xc8\x42\x90\xaa\x0b\x91\x24\x68\x4b\xd5\x8c\x65\x43\x70\xab\x7b\x0b\x1f\x2b\x5e\xbb\xb6\x64\xd9\x12\x06\xee\x65\xc5\xc7\xa0\xee\x7c\x96\x5c\x88\xef\x00\x00\x00\xff\xff\x75\x23\x68\xc3\x1a\x01\x00\x00")
+var __1528395711_add_soft_deleted_repository_name_funcUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\x8f\xc1\x6a\xb4\x40\x10\x84\xef\xf3\x14\x75\x10\xd4\xc3\xff\x04\x9e\xfc\xb5\x57\x06\xdc\x31\x68\x1b\xf6\x26\xe2\xce\x26\x82\x3a\x66\xa6\x0f\x1b\xd8\x87\x0f\x6e\x02\xb9\xe5\xd2\xd0\x54\x7d\x54\xd5\x7f\xaa\xb4\xc9\x94\x2a\xdb\xe6\x05\xa7\xde\x14\xac\x1b\x03\x7d\x02\x5d\x74\xc7\x1d\x82\xbb\xc9\x70\xb5\x8b\x15\x7b\x1d\xbc\xdd\x5d\x98\xc5\xf9\xcf\x61\x1b\x57\x9b\x88\xbd\x4b\x9a\x29\x55\xb4\x94\x33\xfd\xe2\x7f\x42\xc7\x01\xd3\x85\x53\xb4\xc4\x7d\x6b\xba\xe7\x87\xbc\x43\x14\xa9\x67\x1f\x05\xe0\x47\x44\x5c\x52\x4d\x4c\xe5\xbf\x18\x8f\x07\xec\x5d\xfc\x38\x49\x62\x77\x37\xbd\xe3\xe6\xdd\x0a\xf1\xe3\x16\xc6\x49\x66\xb7\x0d\x32\xaf\x36\xc8\xb8\xee\x49\x9a\x1e\xf6\xf8\x9b\x3a\x22\x33\x45\xa6\xcc\x54\x14\xa1\xce\x4d\xd5\xe7\x15\x61\x5f\xf6\xb7\xf0\xb1\xe0\xb5\xa9\x73\xd6\x35\xa1\xe3\x56\x17\x7c\x0c\x6a\xce\x67\xcd\x99\xfa\x0a\x00\x00\xff\xff\xab\x58\xd9\x08\x1e\x01\x00\x00")
 
 func _1528395711_add_soft_deleted_repository_name_funcUpSqlBytes() ([]byte, error) {
 	return bindataRead(
@@ -2668,7 +2672,87 @@ func _1528395711_add_soft_deleted_repository_name_funcUpSql() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "1528395711_add_soft_deleted_repository_name_func.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x72, 0xec, 0x4d, 0x9f, 0x57, 0x20, 0xcd, 0xda, 0x0, 0x7d, 0xb1, 0xe0, 0x33, 0xf1, 0x49, 0x6a, 0x9f, 0xbe, 0xfc, 0xa5, 0xa, 0x6f, 0x73, 0xc1, 0x54, 0xcb, 0x85, 0xba, 0xa3, 0xb5, 0xb4, 0xd1}}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x6, 0x3d, 0xa3, 0xf9, 0xf1, 0x8b, 0x51, 0xf8, 0xab, 0x81, 0x15, 0x65, 0x12, 0x76, 0x4f, 0x5e, 0x46, 0xc9, 0xbd, 0xfd, 0xbe, 0x85, 0x47, 0xd4, 0xe5, 0x50, 0xc1, 0x4f, 0x13, 0xba, 0xff, 0xa8}}
+	return a, nil
+}
+
+var __1528395712_add_closing_flag_to_changesetsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x29\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xce\xc9\x2f\xce\xcc\x4b\xb7\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xd8\x3b\x48\x01\x47\x00\x00\x00")
+
+func _1528395712_add_closing_flag_to_changesetsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395712_add_closing_flag_to_changesetsDownSql,
+		"1528395712_add_closing_flag_to_changesets.down.sql",
+	)
+}
+
+func _1528395712_add_closing_flag_to_changesetsDownSql() (*asset, error) {
+	bytes, err := _1528395712_add_closing_flag_to_changesetsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395712_add_closing_flag_to_changesets.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x33, 0x54, 0xa, 0xdf, 0xe8, 0xb1, 0xc7, 0xe, 0x17, 0x2b, 0xef, 0x82, 0x1c, 0x5b, 0x0, 0x7d, 0xd3, 0x1d, 0xfb, 0xf5, 0xea, 0x3d, 0xd1, 0x21, 0x57, 0xa4, 0xe, 0x16, 0x2e, 0xa5, 0x64, 0x99}}
+	return a, nil
+}
+
+var __1528395712_add_closing_flag_to_changesetsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x1c\xc9\x31\xaa\xc3\x30\x0c\x06\xe0\x5d\xa7\xf8\xef\xe1\x49\x8e\xe5\x87\x41\x96\xe0\x59\x86\xae\x25\x84\xb4\x50\xd2\xc1\xbd\x3f\x85\xce\x5f\x96\xbf\x66\x89\x88\x35\xe4\x1f\xc1\x59\x05\xfb\xe3\x7e\x9d\xc7\x3a\x3e\x0b\x5c\x0a\x36\xd7\xd9\x0d\xad\xc2\x3c\x20\xb7\x36\x62\x60\x7f\xbd\xd7\xf3\x3a\x91\xdd\x55\xd8\x7e\x64\x53\x15\x45\x2a\x4f\x0d\x54\xd6\x21\x89\x68\xf3\xde\x5b\x24\xfa\x06\x00\x00\xff\xff\xac\x79\x50\x5d\x69\x00\x00\x00")
+
+func _1528395712_add_closing_flag_to_changesetsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395712_add_closing_flag_to_changesetsUpSql,
+		"1528395712_add_closing_flag_to_changesets.up.sql",
+	)
+}
+
+func _1528395712_add_closing_flag_to_changesetsUpSql() (*asset, error) {
+	bytes, err := _1528395712_add_closing_flag_to_changesetsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395712_add_closing_flag_to_changesets.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xda, 0xc8, 0xa7, 0xfd, 0xec, 0xf5, 0xf8, 0x36, 0x7e, 0xda, 0x33, 0x74, 0xeb, 0x8c, 0x5b, 0x85, 0x52, 0x3e, 0xda, 0xc2, 0xbf, 0x29, 0xe9, 0x6b, 0xc4, 0x28, 0xf4, 0xf, 0xea, 0xdc, 0x6c, 0xcc}}
+	return a, nil
+}
+
+var __1528395713_add_trigger_to_delete_orphan_reposDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x70\x0b\xf5\x73\x0e\xf1\xf4\xf7\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\xce\x4f\x2b\x89\x4f\x49\xcd\x49\x2d\x49\x8d\xcf\x2f\x2a\xc8\x48\xcc\x8b\x2f\x4a\x2d\xc8\x8f\x4f\xaa\x8c\x4f\xad\x28\x49\x2d\xca\x4b\xcc\x89\x2f\x4e\x2d\x2a\xcb\x4c\x4e\x05\x4b\x14\x6b\x68\x2a\x38\x3b\x06\x3b\x3b\xba\xb8\x5a\x73\x71\x39\xfb\xfb\xfa\x7a\x86\x58\x73\x01\x02\x00\x00\xff\xff\x5d\x64\x99\x19\x66\x00\x00\x00")
+
+func _1528395713_add_trigger_to_delete_orphan_reposDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395713_add_trigger_to_delete_orphan_reposDownSql,
+		"1528395713_add_trigger_to_delete_orphan_repos.down.sql",
+	)
+}
+
+func _1528395713_add_trigger_to_delete_orphan_reposDownSql() (*asset, error) {
+	bytes, err := _1528395713_add_trigger_to_delete_orphan_reposDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395713_add_trigger_to_delete_orphan_repos.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x23, 0x94, 0xa6, 0x98, 0x1e, 0x7e, 0xa0, 0x6f, 0x3c, 0x54, 0x66, 0xf6, 0xfa, 0x97, 0xc5, 0xb3, 0x27, 0x51, 0x3e, 0xd2, 0xf3, 0xe0, 0xda, 0x42, 0x29, 0x1e, 0x8a, 0x52, 0xf4, 0x96, 0xf2, 0xcf}}
+	return a, nil
+}
+
+var __1528395713_add_trigger_to_delete_orphan_reposUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x52\xc1\x8e\xa3\x3a\x10\xbc\xfb\x2b\xea\x90\x43\x22\x4d\xe6\x07\x50\x0e\x3c\xe8\x64\x2c\x11\x3b\x32\x46\x99\x9b\xe5\x17\x3c\x09\x12\x01\xd6\x78\x57\x3b\x7f\xbf\xc2\x49\x98\xd5\x6a\xb4\xd2\x0e\x07\x64\xba\xab\x8a\x6a\x57\xff\x47\x3b\x2e\x12\xc6\x72\x25\x0f\xd8\x56\x22\xd3\x5c\x0a\xf0\x2d\xe8\x95\x97\xba\xc4\xd8\xbf\x05\x53\xbb\xd6\x05\x67\x7a\x3f\x5c\x6c\x67\xbc\x1b\x7a\xf3\xff\xbb\x71\x3f\x83\xf3\x9d\x6d\xcd\xe8\xfc\x8f\xe6\xe4\x62\x63\x5c\xae\x90\xa5\x65\x96\xe6\x94\x30\x96\x29\x4a\x35\x7d\xe8\x7e\x45\x4d\x91\xae\x94\x28\x11\x7c\x73\x3e\x3b\xcf\x00\xa0\x48\xc5\xae\x4a\x77\x84\xa1\x1d\xce\xe3\xb7\x96\xa5\x25\x16\x0b\x16\x87\x89\x80\xf5\x1a\xc7\x8b\xeb\x60\x3b\x3c\x84\x71\x17\x46\x33\x46\x1f\xe8\x3d\x2e\xd6\xd7\xeb\x9b\x9f\xfa\xe9\x41\x1c\x9c\x7f\xeb\xfd\x75\x84\xc5\xa9\x75\xb6\xc3\xf7\x01\xa1\x8f\x9c\x3b\x16\x37\xef\x88\x16\x9b\xd0\xfb\xc6\x8d\xcf\x91\x5e\x1d\xf2\x54\x53\x3c\x4e\xcf\x04\x88\x1f\x25\xe9\xb9\xd8\xd9\xab\xc3\xe6\xf7\xbb\xa8\xcd\xac\xf4\x6e\xa6\xf6\x72\x7a\xad\x9e\x66\xca\x03\x66\x03\x36\x08\xde\x76\xa3\x3d\x85\xa6\xef\x4c\x68\xae\x6e\x0c\xf6\x3a\x2c\x57\x11\x7c\x7c\x21\x45\x9f\xd1\x78\x09\x51\x15\xc5\xdc\x4a\x45\x8e\xa6\xc6\x06\xb2\xc8\x9f\x63\x06\x4d\xfd\x67\x53\x48\x0d\x2e\xb0\x9c\xeb\xb7\x49\x0a\xca\x34\x72\x5e\x6a\x2e\x32\xbd\xbc\x73\x57\xd8\x2a\xb9\xc7\xe7\x29\xce\x02\xab\x84\xc5\xf3\x2d\xd3\xe9\xdf\x09\x23\x91\x27\x6c\xb1\xf8\xd8\x16\xad\xf8\x6e\x47\x2a\x06\x6e\xfe\x75\x63\xa2\x7c\xba\xd5\xa4\x90\x53\x41\x9a\x20\xc5\xdf\x5c\x6d\xa5\x02\xa5\xd9\x0b\x94\x3c\x82\x5e\x29\xab\x34\xe1\xa0\x64\x46\x79\xa5\xe8\x2b\x0b\x3b\x0d\x22\xf7\x7b\xae\x13\xf6\x2b\x00\x00\xff\xff\x39\xc3\x1d\x54\x5d\x03\x00\x00")
+
+func _1528395713_add_trigger_to_delete_orphan_reposUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395713_add_trigger_to_delete_orphan_reposUpSql,
+		"1528395713_add_trigger_to_delete_orphan_repos.up.sql",
+	)
+}
+
+func _1528395713_add_trigger_to_delete_orphan_reposUpSql() (*asset, error) {
+	bytes, err := _1528395713_add_trigger_to_delete_orphan_reposUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395713_add_trigger_to_delete_orphan_repos.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x9, 0x59, 0x13, 0x7, 0x64, 0x84, 0x85, 0xb3, 0x6, 0x59, 0x93, 0x4c, 0x2c, 0x63, 0x2a, 0x11, 0xd5, 0xde, 0x22, 0x1d, 0x0, 0xc9, 0x19, 0x7c, 0x45, 0x67, 0xe8, 0x7b, 0xf9, 0x9d, 0x75, 0x70}}
 	return a, nil
 }
 
@@ -2887,6 +2971,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395710_add_unsynced_flag_to_changesets.up.sql":                            _1528395710_add_unsynced_flag_to_changesetsUpSql,
 	"1528395711_add_soft_deleted_repository_name_func.down.sql":                    _1528395711_add_soft_deleted_repository_name_funcDownSql,
 	"1528395711_add_soft_deleted_repository_name_func.up.sql":                      _1528395711_add_soft_deleted_repository_name_funcUpSql,
+	"1528395712_add_closing_flag_to_changesets.down.sql":                           _1528395712_add_closing_flag_to_changesetsDownSql,
+	"1528395712_add_closing_flag_to_changesets.up.sql":                             _1528395712_add_closing_flag_to_changesetsUpSql,
+	"1528395713_add_trigger_to_delete_orphan_repos.down.sql":                       _1528395713_add_trigger_to_delete_orphan_reposDownSql,
+	"1528395713_add_trigger_to_delete_orphan_repos.up.sql":                         _1528395713_add_trigger_to_delete_orphan_reposUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3057,6 +3145,10 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395710_add_unsynced_flag_to_changesets.up.sql":                            {_1528395710_add_unsynced_flag_to_changesetsUpSql, map[string]*bintree{}},
 	"1528395711_add_soft_deleted_repository_name_func.down.sql":                    {_1528395711_add_soft_deleted_repository_name_funcDownSql, map[string]*bintree{}},
 	"1528395711_add_soft_deleted_repository_name_func.up.sql":                      {_1528395711_add_soft_deleted_repository_name_funcUpSql, map[string]*bintree{}},
+	"1528395712_add_closing_flag_to_changesets.down.sql":                           {_1528395712_add_closing_flag_to_changesetsDownSql, map[string]*bintree{}},
+	"1528395712_add_closing_flag_to_changesets.up.sql":                             {_1528395712_add_closing_flag_to_changesetsUpSql, map[string]*bintree{}},
+	"1528395713_add_trigger_to_delete_orphan_repos.down.sql":                       {_1528395713_add_trigger_to_delete_orphan_reposDownSql, map[string]*bintree{}},
+	"1528395713_add_trigger_to_delete_orphan_repos.up.sql":                         {_1528395713_add_trigger_to_delete_orphan_reposUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

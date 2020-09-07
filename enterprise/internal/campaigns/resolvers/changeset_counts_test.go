@@ -103,7 +103,7 @@ func TestChangesetCountsOverTimeResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	campaignAPIID := string(campaigns.MarshalCampaignID(campaign.ID))
+	campaignAPIID := string(marshalCampaignID(campaign.ID))
 	input := map[string]interface{}{"campaign": campaignAPIID}
 	var response struct{ Node apitest.Campaign }
 	apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryChangesetCountsConnection)

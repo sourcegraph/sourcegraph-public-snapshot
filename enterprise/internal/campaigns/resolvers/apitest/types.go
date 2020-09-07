@@ -137,6 +137,8 @@ type Changeset struct {
 	Diff Comparison
 
 	Labels []Label
+
+	CurrentSpec ChangesetSpec
 }
 
 type Comparison struct {

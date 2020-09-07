@@ -9,7 +9,7 @@ export const HAS_CANCELLED_TOUR_KEY = 'has-cancelled-onboarding-tour'
 export const HAS_SEEN_TOUR_KEY = 'has-seen-onboarding-tour'
 
 export const defaultTourOptions: Shepherd.Tour.TourOptions = {
-    useModalOverlay: true,
+    useModalOverlay: false,
     defaultStepOptions: {
         arrow: true,
         classes: 'web-content tour-card card py-4 px-3 shadow-lg',
@@ -35,9 +35,9 @@ export function generateStepTooltip(
     tour: Shepherd.Tour,
     dangerousTitleHtml: string,
     stepNumber: number,
+    totalStepCount: number,
     description?: string,
-    additionalContent?: HTMLElement,
-    dontShowStepCount?: boolean
+    additionalContent?: HTMLElement
 ): HTMLElement {
     const element = document.createElement('div')
     element.className = `d-flex flex-column test-tour-step-${stepNumber}`
@@ -56,7 +56,7 @@ export function generateStepTooltip(
         additionalContentContainer.append(additionalContent)
         element.append(additionalContent)
     }
-    const bottomRow = generateBottomRow(tour, stepNumber, dontShowStepCount)
+    const bottomRow = generateBottomRow(tour, stepNumber, totalStepCount)
     element.append(bottomRow)
     return element
 }
@@ -67,7 +67,7 @@ export function generateStepTooltip(
  * @param tour the tour instance.
  * @param stepNumber the step number.
  */
-export function generateBottomRow(tour: Shepherd.Tour, stepNumber: number, dontShowStepCount?: boolean): HTMLElement {
+export function generateBottomRow(tour: Shepherd.Tour, stepNumber: number, totalStepCount: number): HTMLElement {
     const closeTourButton = document.createElement('button')
     closeTourButton.className = 'btn btn-link p-0'
     closeTourButton.textContent = 'Close tour'
@@ -78,14 +78,12 @@ export function generateBottomRow(tour: Shepherd.Tour, stepNumber: number, dontS
     })
 
     const bottomRow = document.createElement('div')
-    bottomRow.className = 'd-flex justify-content-between'
+    bottomRow.className = 'd-flex justify-content-between mt-2'
 
-    if (!dontShowStepCount) {
-        const stepNumberLabel = document.createElement('span')
-        stepNumberLabel.className = 'font-weight-light font-italic'
-        stepNumberLabel.textContent = `${stepNumber} of 5`
-        bottomRow.append(stepNumberLabel)
-    }
+    const stepNumberLabel = document.createElement('span')
+    stepNumberLabel.className = 'font-weight-light font-italic'
+    stepNumberLabel.textContent = `${stepNumber} of ${totalStepCount}`
+    bottomRow.append(stepNumberLabel)
 
     bottomRow.append(closeTourButton)
     return bottomRow
@@ -103,7 +101,7 @@ export function createStep1Tooltip(
     repositoryButtonHandler: () => void
 ): HTMLElement {
     const list = document.createElement('ul')
-    list.className = 'my-4 dash-list'
+    list.className = 'my-4 list-dashed'
     const languageListItem = document.createElement('li')
     languageListItem.className = 'p-0 mb-2'
 
@@ -127,7 +125,7 @@ export function createStep1Tooltip(
     repositoryListItem.append(repositoryButton)
     list.append(languageListItem)
     list.append(repositoryListItem)
-    return generateStepTooltip(tour, 'Code search tour', 1, 'How would you like to begin?', list)
+    return generateStepTooltip(tour, 'Code search tour', 1, 5, 'How would you like to begin?', list)
 }
 
 /**
@@ -140,6 +138,7 @@ export function createAddCodeStepTooltip(tour: Shepherd.Tour): HTMLElement {
         tour,
         'Add code to your search',
         3,
+        5,
         'Type the name of a function, variable or other code.'
     )
 }
@@ -186,13 +185,13 @@ export function createAddCodeStepWithLanguageExampleTooltip(
     exampleCallback: (query: string, patternType: SearchPatternType) => void
 ): HTMLElement {
     const list = document.createElement('ul')
-    list.className = 'my-4 caret-list'
+    list.className = 'my-4 list-dashed'
 
     const listItem = document.createElement('li')
     listItem.className = 'p-0'
 
     const exampleButton = document.createElement('button')
-    exampleButton.className = 'btn btn-link test-tour-language-example'
+    exampleButton.className = 'btn btn-link test-tour-language-example p-0'
 
     const langsList = languageFilterToSearchExamples
     let example = { query: '', patternType: SearchPatternType.literal }
@@ -215,9 +214,44 @@ export function createAddCodeStepWithLanguageExampleTooltip(
         tour,
         'Add code to your search',
         3,
+        5,
         'Type the name of a function, variable or other code. Or try an example:',
         list
     )
+}
+
+/** Creates the tooltip for the structural search informational step. */
+export function createStructuralSearchTourTooltip(tour: Shepherd.Tour): HTMLElement {
+    const container = document.createElement('div')
+    const list = document.createElement('ul')
+    list.className = 'list-dashed mb-0'
+    const listItem = document.createElement('li')
+    listItem.className = 'p-0 my-4'
+    list.append(listItem)
+    const exampleButton = document.createElement('a')
+    exampleButton.href = 'https://docs.sourcegraph.com/user/search/structural'
+    exampleButton.target = '_blank'
+    exampleButton.rel = 'noopener'
+    exampleButton.className = 'btn btn-link test-tour-language-example p-0'
+    exampleButton.textContent = 'Structural search documentation'
+    listItem.append(exampleButton)
+    container.append(list)
+
+    const nextButtonRow = document.createElement('div')
+    nextButtonRow.className = 'd-flex justify-content-end'
+    const nextButton = document.createElement('button')
+    nextButton.className = 'btn btn-link test-tour-structural-next-button p-0 font-weight-bold'
+    nextButton.textContent = 'Next'
+    nextButton.addEventListener('click', () => {
+        tour.getById('view-search-reference').updateStepOptions({
+            text: generateStepTooltip(tour, 'Review the search reference', 6, 6),
+        })
+        tour.show('view-search-reference')
+    })
+    nextButtonRow.append(nextButton)
+    container.append(nextButtonRow)
+
+    return container
 }
 
 export const isValidLangQuery = (query: string): boolean => Object.keys(languageFilterToSearchExamples).includes(query)
@@ -299,7 +333,7 @@ export const stepCallbacks: CallbackToAdvanceTourStep[] = [
         stepToAdvance: 'add-query-term',
         handler: (tour: Shepherd.Tour): void => {
             if (tour.getById('add-query-term').isOpen()) {
-                tour.show('view-search-reference')
+                tour.show('submit-search')
             }
         },
         queryConditions: (query: string): boolean => query !== 'repo:' && query !== 'lang:',

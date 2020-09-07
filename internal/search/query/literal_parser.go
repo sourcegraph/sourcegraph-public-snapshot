@@ -33,17 +33,17 @@ func ScanAnyPatternLiteral(buf []byte) (scanned string, count int) {
 	return scanned, count
 }
 
-// isParameter returns whether the token is a parameter.
-func isParameter(token []byte) bool {
-	parser := &parser{buf: token}
-	_, ok, _ := parser.ParseParameter()
-	return ok
+// isField returns whether the prefix of the buf matches a recognized field.
+func isField(buf []byte) bool {
+	field, _, _ := ScanField(buf)
+	return field != ""
 }
 
 // ScanBalancedPatternLiteral attempts to scan parentheses as literal patterns.
 // It returns the scanned string, how much to advance, and whether it succeeded.
 // Basically it scans any literal string, including whitespace, but ensures that
-// a resulting string does not contain 'and' or 'or keywords, and is balanced.
+// a resulting string does not contain 'and' or 'or keywords, nor parameters, and
+// is balanced.
 func ScanBalancedPatternLiteral(buf []byte) (scanned string, count int, ok bool) {
 	var advance, balanced int
 	var r rune
@@ -83,8 +83,8 @@ loop:
 			}
 			result = append(result, r)
 		case unicode.IsSpace(r):
-			if isParameter(token) {
-				// This is not a pattern, one of the tokens is parameter.
+			if isField(token) {
+				// This is not a pattern, one of the tokens match a field.
 				return "", 0, false
 			}
 			token = []byte{}
@@ -94,7 +94,7 @@ loop:
 			result = append(result, r)
 		case r == '\\':
 			// Handle escape sequence.
-			if len(buf) > advance {
+			if len(buf) > 0 {
 				r = next()
 				// Accept anything anything escaped. The point
 				// is to consume escaped spaces like "\ " so
@@ -110,8 +110,8 @@ loop:
 		}
 	}
 
-	if isParameter(token) {
-		// This is not a pattern, one of the tokens is parameter.
+	if isField(token) {
+		// This is not a pattern, one of the tokens match a field.
 		return "", 0, false
 	}
 

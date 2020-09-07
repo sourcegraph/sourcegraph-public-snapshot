@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
+import { createDriverForTest, Driver, percySnapshot } from '../../../shared/src/testing/driver'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import {
@@ -227,7 +227,7 @@ describe('Repository', () => {
                                         },
                                     },
                                 ],
-                                pageInfo: { hasNextPage: true },
+                                pageInfo: { hasNextPage: false },
                             },
                         },
                     },
@@ -351,6 +351,8 @@ describe('Repository', () => {
 
             // Assert that the directory listing displays properly
             await driver.page.waitForSelector('.test-tree-entries')
+
+            await percySnapshot(driver.page, 'Repository index page')
 
             const numberOfFileEntries = await driver.page.evaluate(
                 () => document.querySelectorAll<HTMLButtonElement>('.test-tree-entry-file')?.length

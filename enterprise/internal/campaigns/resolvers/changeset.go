@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -115,7 +114,6 @@ func (r *changesetResolver) computeEvents(ctx context.Context) ([]*campaigns.Cha
 	r.eventsOnce.Do(func() {
 		opts := ee.ListChangesetEventsOpts{
 			ChangesetIDs: []int64{r.changeset.ID},
-			Limit:        -1,
 		}
 		es, _, err := r.store.ListChangesetEvents(ctx, opts)
 
@@ -165,7 +163,7 @@ func (r *changesetResolver) Repository(ctx context.Context) *graphqlbackend.Repo
 	return r.repoResolver
 }
 
-func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
+func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignsArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
 	opts := ee.ListCampaignsOpts{
 		ChangesetID: r.changeset.ID,
 	}
@@ -175,9 +173,10 @@ func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.
 		return nil, err
 	}
 	opts.State = state
-	if args.First != nil {
-		opts.Limit = int(*args.First)
+	if err := validateFirstParamDefaults(args.First); err != nil {
+		return nil, err
 	}
+	opts.Limit = int(args.First)
 	if args.After != nil {
 		cursor, err := strconv.ParseInt(*args.After, 10, 32)
 		if err != nil {
@@ -325,6 +324,25 @@ func (r *changesetResolver) CheckState() *campaigns.ChangesetCheckState {
 
 func (r *changesetResolver) Error() *string { return r.changeset.FailureMessage }
 
+func (r *changesetResolver) CurrentSpec(ctx context.Context) (graphqlbackend.VisibleChangesetSpecResolver, error) {
+	if r.changeset.CurrentSpecID == 0 {
+		return nil, nil
+	}
+
+	spec, err := r.computeSpec(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &changesetSpecResolver{
+		store:                r.store,
+		httpFactory:          r.httpFactory,
+		changesetSpec:        spec,
+		preloadedRepo:        r.repo,
+		attemptedPreloadRepo: true,
+	}, nil
+}
+
 func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.ChangesetLabelResolver, error) {
 	if !r.changeset.PublishedAndSynced() {
 		return []graphqlbackend.ChangesetLabelResolver{}, nil
@@ -352,15 +370,25 @@ func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.Change
 	return resolvers, nil
 }
 
-func (r *changesetResolver) Events(ctx context.Context, args *struct {
-	graphqlutil.ConnectionArgs
-}) (graphqlbackend.ChangesetEventsConnectionResolver, error) {
+func (r *changesetResolver) Events(ctx context.Context, args *graphqlbackend.ChangesetEventsConnectionArgs) (graphqlbackend.ChangesetEventsConnectionResolver, error) {
+	if err := validateFirstParamDefaults(args.First); err != nil {
+		return nil, err
+	}
+	var cursor int64
+	if args.After != nil {
+		var err error
+		cursor, err = strconv.ParseInt(*args.After, 10, 32)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse after cursor")
+		}
+	}
 	// TODO: We already need to fetch all events for ReviewState and Labels
 	// perhaps we can use the cached data here
 	return &changesetEventsConnectionResolver{
 		store:             r.store,
 		changesetResolver: r,
-		first:             int(args.GetFirst()),
+		first:             int(args.First),
+		cursor:            cursor,
 	}, nil
 }
 

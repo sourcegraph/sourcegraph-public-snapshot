@@ -546,6 +546,7 @@ func TrailingParensToLiteral(nodes []Node) []Node {
 func EmptyGroupsToLiteral(nodes []Node) []Node {
 	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
 		if ok, _ := regexp.MatchString(`\(\)`, value); ok {
+			annotation.Labels.set(HeuristicParensAsPatterns)
 			annotation.Labels.set(Literal)
 			annotation.Labels.unset(Regexp)
 		}
@@ -590,5 +591,16 @@ func concatRevFilters(nodes []Node) []Node {
 			return Parameter{Value: value + "@" + revision, Field: FieldRepo, Negated: negated}
 		}
 		return Parameter{Value: value, Field: FieldRepo, Negated: negated}
+	})
+}
+
+// ellipsesForHoles substitutes ellipses ... for :[_] holes in structural search queries.
+func ellipsesForHoles(nodes []Node) []Node {
+	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
+		return Pattern{
+			Value:      strings.ReplaceAll(value, "...", ":[_]"),
+			Negated:    negated,
+			Annotation: annotation,
+		}
 	})
 }

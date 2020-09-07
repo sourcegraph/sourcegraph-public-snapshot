@@ -1,10 +1,9 @@
 import { storiesOf } from '@storybook/react'
-import { radios, boolean } from '@storybook/addon-knobs'
+import { boolean } from '@storybook/addon-knobs'
 import React from 'react'
 import { FileDiffHunks } from './FileDiffHunks'
-import { createMemoryHistory } from 'history'
-import webStyles from '../../SourcegraphWebApp.scss'
 import { FileDiffHunkFields, DiffHunkLineType } from '../../graphql-operations'
+import { WebStory } from '../WebStory'
 
 export const DEMO_HUNKS: FileDiffHunkFields[] = [
     {
@@ -52,28 +51,21 @@ export const DEMO_HUNKS: FileDiffHunkFields[] = [
     },
 ]
 
-const { add } = storiesOf('web/FileDiffHunks', module).addDecorator(story => {
-    // TODO find a way to do this globally for all stories and storybook itself.
-    const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
-    document.body.classList.toggle('theme-light', theme === 'light')
-    document.body.classList.toggle('theme-dark', theme === 'dark')
-    return (
-        <>
-            <style>{webStyles}</style>
-            <div className="p-3 container">{story()}</div>
-        </>
-    )
-})
+const { add } = storiesOf('web/diffs/FileDiffHunks', module).addDecorator(story => (
+    <div className="p-3 container">{story()}</div>
+))
 
 add('One diff hunk', () => (
-    <FileDiffHunks
-        persistLines={boolean('persistLines', false)}
-        fileDiffAnchor="abc"
-        lineNumbers={boolean('lineNumbers', true)}
-        isLightTheme={true}
-        hunks={DEMO_HUNKS}
-        className="abcdef"
-        location={createMemoryHistory().location}
-        history={createMemoryHistory()}
-    />
+    <WebStory>
+        {webProps => (
+            <FileDiffHunks
+                {...webProps}
+                persistLines={boolean('persistLines', false)}
+                fileDiffAnchor="abc"
+                lineNumbers={boolean('lineNumbers', true)}
+                hunks={DEMO_HUNKS}
+                className="abcdef"
+            />
+        )}
+    </WebStory>
 ))
