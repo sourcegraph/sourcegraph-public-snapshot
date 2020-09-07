@@ -27,8 +27,6 @@ import (
 
 func testStoreListExternalServicesByRepos(t *testing.T, store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
-		t.Helper()
-
 		ctx := context.Background()
 		clock := repos.NewFakeClock(time.Now(), 0)
 		now := clock.Now()
@@ -357,8 +355,6 @@ func testStoreUpsertExternalServices(t *testing.T, store repos.Store) func(*test
 	now := clock.Now()
 
 	return func(t *testing.T) {
-		t.Helper()
-
 		github := repos.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test",
@@ -488,8 +484,6 @@ func testStoreInsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
 	now := clock.Now()
 
 	return func(t *testing.T) {
-		t.Helper()
-
 		servicesPerKind := createExternalServices(t, store)
 
 		repo1 := repos.Repo{
@@ -574,8 +568,6 @@ func testStoreDeleteRepos(t *testing.T, store repos.Store) func(*testing.T) {
 	now := clock.Now()
 
 	return func(t *testing.T) {
-		t.Helper()
-
 		servicesPerKind := createExternalServices(t, store)
 
 		repo1 := repos.Repo{
@@ -662,8 +654,6 @@ func testStoreUpsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
 	now := clock.Now()
 
 	return func(t *testing.T) {
-		t.Helper()
-
 		kinds := []string{
 			extsvc.KindGitHub,
 			extsvc.KindGitLab,
@@ -1002,8 +992,6 @@ func testStoreUpsertSources(t *testing.T, store repos.Store) func(*testing.T) {
 	servicesPerKind := createExternalServices(t, store)
 
 	return func(t *testing.T) {
-		t.Helper()
-
 		github := repos.Repo{
 			Name:        "github.com/foo/bar",
 			URI:         "github.com/foo/bar",
@@ -1206,8 +1194,6 @@ func testStoreSetClonedRepos(t *testing.T, store repos.Store) func(*testing.T) {
 	servicesPerKind := createExternalServices(t, store)
 
 	return func(t *testing.T) {
-		t.Helper()
-
 		var repositories repos.Repos
 		for i := 0; i < 3; i++ {
 			repositories = append(repositories, &repos.Repo{
@@ -1320,8 +1306,6 @@ func testStoreSetClonedRepos(t *testing.T, store repos.Store) func(*testing.T) {
 
 func testStoreCountNotClonedRepos(t *testing.T, store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
-		t.Helper()
-
 		servicesPerKind := createExternalServices(t, store)
 
 		var repositories repos.Repos
@@ -1699,8 +1683,6 @@ func testStoreListRepos(t *testing.T, store repos.Store) func(*testing.T) {
 	}
 
 	return func(t *testing.T) {
-		t.Helper()
-
 		ctx := context.Background()
 
 		for _, tc := range testCases {
