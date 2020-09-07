@@ -1,6 +1,7 @@
 package db
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	secretPkg "github.com/sourcegraph/sourcegraph/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -316,6 +318,79 @@ func (*userExternalAccounts) listSQL(opt ExternalAccountsListOptions) (conds []*
 		conds = append(conds, sqlf.Sprintf("(service_type=%s AND service_id=%s AND client_id=%s)", opt.ServiceType, opt.ServiceID, opt.ClientID))
 	}
 	return conds
+}
+
+func (*userExternalAccounts) EncryptTable(ctx context.Context) error {
+	if !secretPkg.ConfiguredToEncrypt() {
+		return nil
+	}
+
+	q := sqlf.Sprintf("SELECT id,auth_data,account_data from user_external_accounts")
+	tx, err := dbconn.Global.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	rows, err := tx.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args())
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var a extsvc.Account
+		err := rows.Scan(&a.ID, &a.AuthData, &a.AccountData)
+		if err != nil {
+			return err
+		}
+
+		var (
+			authData   []byte
+			authConfig []byte
+		)
+		if secretPkg.ConfiguredToRotate() {
+			authData, err = secretPkg.RotateEncryption(*a.AuthData)
+			if err != nil {
+				return err
+			}
+
+			authConfig, err = secretPkg.RotateEncryption(*a.Data)
+			if err != nil {
+				return err
+			}
+
+			// if the values are the same after rotation, there's nothing to do here
+			if bytes.Equal(authConfig, *a.AuthData) && bytes.Equal(authData, *a.Data) {
+				continue
+			}
+
+		} else {
+			authData, err = secretPkg.EncryptBytes(*a.AuthData)
+			if err != nil {
+				return err
+			}
+
+			authConfig, err = secretPkg.EncryptBytes(*a.Data)
+			if err != nil {
+				return err
+			}
+
+			if bytes.Equal(authConfig, *a.AuthData) && bytes.Equal(authData, *a.Data) {
+				continue
+			}
+		}
+
+		// now, time for an update!
+		updateQ := sqlf.Sprintf(
+			`UPDATE user_external_accounts
+			SET auth_data=%s, account_data=%s
+			WHERE id=%d
+		`, &a.ID, a.AuthData, a.AccountData)
+		_, err = tx.ExecContext(ctx, updateQ.Query(sqlf.PostgresBindVar), updateQ.Args())
+		return err
+	}
+
+	return nil
 }
 
 // MockExternalAccounts mocks the Stores.ExternalAccounts DB store.

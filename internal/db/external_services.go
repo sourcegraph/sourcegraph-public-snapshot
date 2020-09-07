@@ -105,10 +105,6 @@ type ValidateExternalServiceConfigOptions struct {
 	HasNamespace bool
 }
 
-var (
-	secretColumns = []string{"config"}
-)
-
 // ValidateConfig validates the given external service configuration.
 // A non zero id indicates we are updating an existing service, 0 indicates we are adding a new one.
 func (e *ExternalServicesStore) ValidateConfig(ctx context.Context, opt ValidateExternalServiceConfigOptions) error {
@@ -594,7 +590,7 @@ func (*ExternalServicesStore) EncryptTable(ctx context.Context) error {
 		return nil
 	}
 
-	q := sqlf.Sprintf("SELECT id, %s from external_services", secretColumns)
+	q := sqlf.Sprintf("SELECT id, config from external_services")
 	tx, err := dbconn.Global.BeginTx(ctx, nil)
 	if err != nil {
 		return err
