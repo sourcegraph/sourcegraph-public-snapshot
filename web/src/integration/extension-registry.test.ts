@@ -190,10 +190,6 @@ describe('Extension Registry', () => {
         })
     }
 
-    function elementExists(selector: string) {
-        return driver.page.evaluate(selector => document.querySelector(selector) !== null, selector)
-    }
-
     describe('filtering by category', () => {
         it('does not show language extensions until user clicks show more', async () => {
             overrideGraphQLExtensionRegistry({ enabled: false })
@@ -201,15 +197,13 @@ describe('Extension Registry', () => {
 
             //  wait for initial set of extensions
             await driver.page.waitForSelector('[data-test="extension-toggle-sqs/word-count"]')
-            assert.deepStrictEqual(
-                await elementExists('[data-test="extension-toggle-sourcegraph/typescript"]'),
-                false,
+            assert(
+                !(await driver.page.$('[data-test="extension-toggle-sourcegraph/typescript"]')),
                 'Expected language extensions to not be displayed by default'
             )
             await driver.findElementWithText('Show more extensions', { action: 'click' })
-            assert.deepStrictEqual(
-                await elementExists('[data-test="extension-toggle-sourcegraph/typescript"]'),
-                true,
+            assert(
+                await driver.page.$('[data-test="extension-toggle-sourcegraph/typescript"]'),
                 "Expected langauge extensions to be displayed after clicking 'Show more extensions'"
             )
         })
@@ -220,25 +214,22 @@ describe('Extension Registry', () => {
 
             //  wait for initial set of extensions
             await driver.page.waitForSelector('[data-test="extension-toggle-sqs/word-count"]')
-            assert.deepStrictEqual(
-                await elementExists('[data-test="extension-toggle-sqs/word-count"]'),
-                true,
+            assert(
+                await driver.page.$('[data-test="extension-toggle-sqs/word-count"]'),
                 'Expected non-language extensions to be displayed by default'
             )
-            assert.deepStrictEqual(
-                await elementExists('[data-test="extension-toggle-sourcegraph/typescript"]'),
-                false,
+            assert(
+                !(await driver.page.$('[data-test="extension-toggle-sourcegraph/typescript"]')),
                 'Expected language extensions to not be displayed by default'
             )
+            // Toggle programming language extension category
             await driver.page.click('[data-test-extension-category="Programming languages"')
-            assert.deepStrictEqual(
-                await elementExists('[data-test="extension-toggle-sqs/word-count"]'),
-                false,
+            assert(
+                !(await driver.page.$('[data-test="extension-toggle-sqs/word-count"]')),
                 "Expected non-language extensions to not be displayed when only 'Programming languages' are toggled"
             )
-            assert.deepStrictEqual(
-                await elementExists('[data-test="extension-toggle-sourcegraph/typescript"]'),
-                true,
+            assert(
+                await driver.page.$('[data-test="extension-toggle-sourcegraph/typescript"]'),
                 "Expected language extensions to be displayed by when 'Programming languages' are toggled"
             )
         })
@@ -251,7 +242,6 @@ describe('Extension Registry', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/extensions')
 
             await driver.page.waitForSelector('.test-extension-registry-input')
-            // driver.page.$
             const request = await testContext.waitForGraphQLRequest(async () => {
                 await driver.replaceText({
                     selector: '.test-extension-registry-input',
