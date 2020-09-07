@@ -773,7 +773,7 @@ func sortedSliceLess(a, b []string) bool {
 			return v < b[i]
 		}
 	}
-	return true
+	return len(a) != len(b)
 }
 
 // pick deterministically chooses between a and b a repo to keep and

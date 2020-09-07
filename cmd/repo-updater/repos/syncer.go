@@ -197,6 +197,42 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	storedCopy := stored.Clone()
 
 	diff = newDiff(svc, sourced, stored)
+
+	var conflicting Repos
+	if conflicting, err = store.ListRepos(ctx, StoreListReposArgs{Names: sourced.Names()}); err != nil {
+		return errors.Wrap(err, "syncer.sync.store.list-repos")
+	}
+	conflicting = conflicting.Filter(func(r *Repo) bool {
+		for _, id := range r.ExternalServiceIDs() {
+			if id == externalServiceID {
+				return false
+			}
+		}
+
+		return true
+	})
+
+	storedCopy = append(storedCopy, conflicting...)
+
+	diff.Added = diff.Added.Filter(func(r *Repo) bool {
+		for _, cr := range conflicting {
+			if cr.Name == r.Name {
+				if cr.With(func(cr *Repo) { cr.ID = 0; cr.Sources = r.Sources }).Less(r) {
+					return false
+				}
+
+				if cr.ExternalRepo.Equal(&r.ExternalRepo) {
+					return true
+				}
+
+				diff.Deleted = append(diff.Deleted, cr.With(func(r *Repo) { r.Sources = nil }))
+				return true
+			}
+		}
+
+		return true
+	})
+
 	upserts := s.upserts(diff)
 
 	// Delete from external_service_repos only. Deletes need to happen first so that we don't end up with
