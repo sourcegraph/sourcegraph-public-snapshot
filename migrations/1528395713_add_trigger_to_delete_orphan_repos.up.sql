@@ -1,6 +1,6 @@
 BEGIN;
 
-DROP FUNCTION IF EXISTS soft_delete_orphan_repo_by_external_service_repos();
+DROP FUNCTION IF EXISTS soft_delete_orphan_repo_by_external_service_repos() CASCADE;
 
 CREATE FUNCTION soft_delete_orphan_repo_by_external_service_repos() RETURNS trigger
     LANGUAGE plpgsql
