@@ -14,7 +14,6 @@ import { ResolvedRevision } from './backend'
 import { SettingsCascadeOrError } from '../../../shared/src/settings/settings'
 import { onlyDefaultExtensionsAdded } from '../../../shared/src/extensions/extensions'
 import { Breadcrumbs, BreadcrumbsProps } from '../components/Breadcrumbs'
-import { Link } from 'react-router-dom'
 import { AuthenticatedUser } from '../auth'
 /**
  * Stores the list of RepoHeaderContributions, manages addition/deletion, and ensures they are sorted.
