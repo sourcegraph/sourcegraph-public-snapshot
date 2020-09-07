@@ -1,6 +1,6 @@
 import { RepogroupMetadata } from './types'
-import { SearchPatternType } from '../../../shared/src/graphql/schema'
 import * as React from 'react'
+import { SearchPatternType } from '../../../shared/src/graphql-operations'
 export const reactHooks: RepogroupMetadata = {
     title: 'React Hooks',
     name: 'react-hooks',
@@ -33,7 +33,7 @@ export const reactHooks: RepogroupMetadata = {
             exampleQuery: (
                 <>
                     useState(:[string])
-                    <span className="repogroup-page__keyword-text">lang:</span>typescript
+                    <span className="search-keyword">lang:</span>typescript
                 </>
             ),
             rawQuery: 'useState(:[string]) count:1000 lang:typescript',

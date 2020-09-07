@@ -12,9 +12,10 @@ import { accessTokenFragment, AccessTokenNode, AccessTokenNodeProps } from '../s
 import { eventLogger } from '../tracking/eventLogger'
 import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
 import { FilteredConnection } from '../components/FilteredConnection'
+import { AuthenticatedUser } from '../auth'
 
 interface Props extends RouteComponentProps<{}> {
-    authenticatedUser: GQL.IUser
+    authenticatedUser: AuthenticatedUser
 }
 
 interface State {}
@@ -73,7 +74,7 @@ export class SiteAdminTokensPage extends React.PureComponent<Props, State> {
     private queryAccessTokens = (args: { first?: number }): Observable<GQL.IAccessTokenConnection> =>
         queryGraphQL(
             gql`
-                query AccessTokens($first: Int) {
+                query SiteAdminAccessTokens($first: Int) {
                     site {
                         accessTokens(first: $first) {
                             nodes {

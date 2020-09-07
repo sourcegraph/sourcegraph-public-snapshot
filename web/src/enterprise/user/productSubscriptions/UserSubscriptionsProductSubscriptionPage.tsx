@@ -150,12 +150,12 @@ function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscrip
             query ProductSubscription($uuid: String!) {
                 dotcom {
                     productSubscription(uuid: $uuid) {
-                        ...ProductSubscriptionFields
+                        ...ProductSubscriptionFieldsOnSubscriptionPage
                     }
                 }
             }
 
-            fragment ProductSubscriptionFields on ProductSubscription {
+            fragment ProductSubscriptionFieldsOnSubscriptionPage on ProductSubscription {
                 id
                 name
                 account {

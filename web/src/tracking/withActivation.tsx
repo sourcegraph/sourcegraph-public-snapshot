@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import React from 'react'
 import { combineLatest, merge, Observable, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, first, map, scan, startWith, switchMap, tap } from 'rxjs/operators'
@@ -9,9 +9,10 @@ import {
     ActivationStep,
 } from '../../../shared/src/components/activation/Activation'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { queryGraphQL } from '../backend/graphql'
 import { logUserEvent, logEvent } from '../user/settings/backend'
+import { AuthenticatedUser } from '../auth'
+import { UserEvent } from '../../../shared/src/graphql-operations'
 
 /**
  * Fetches activation status from server.
@@ -20,7 +21,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
     queryGraphQL(
         isSiteAdmin
             ? gql`
-                  query ActivationStatus {
+                  query SiteAdminActivationStatus {
                       externalServices {
                           totalCount
                       }
@@ -83,7 +84,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
  */
 const fetchReferencesLink = (): Observable<string | null> =>
     queryGraphQL(gql`
-        query {
+        query LinksForRepositories {
             repositories(cloned: true, first: 100, indexed: true) {
                 nodes {
                     url
@@ -113,7 +114,7 @@ const fetchReferencesLink = (): Observable<string | null> =>
 /**
  * Gets the activation steps that need to be completed for a given user.
  */
-const getActivationSteps = (authenticatedUser: GQL.IUser): ActivationStep[] => {
+const getActivationSteps = (authenticatedUser: AuthenticatedUser): ActivationStep[] => {
     const sources: (ActivationStep & { siteAdminOnly?: boolean })[] = [
         {
             id: 'ConnectedCodeHost',
@@ -173,13 +174,13 @@ const getActivationSteps = (authenticatedUser: GQL.IUser): ActivationStep[] => {
  */
 const recordUpdate = (update: Partial<ActivationCompletionStatus>): void => {
     if (update.FoundReferences) {
-        logUserEvent(GQL.UserEvent.CODEINTELREFS)
+        logUserEvent(UserEvent.CODEINTELREFS)
         logEvent('CodeIntelRefs')
     }
 }
 
 interface WithActivationProps {
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 }
 
 interface WithActivationState {
@@ -210,7 +211,7 @@ export const withActivation = <P extends ActivationProps>(
         private updates = new Subject<Partial<ActivationCompletionStatus>>()
 
         public componentDidMount(): void {
-            const authenticatedUser: Observable<GQL.IUser | null> = this.componentUpdates.pipe(
+            const authenticatedUser: Observable<AuthenticatedUser | null> = this.componentUpdates.pipe(
                 startWith(this.props),
                 map(props => props.authenticatedUser),
                 distinctUntilChanged()
@@ -254,7 +255,7 @@ export const withActivation = <P extends ActivationProps>(
         }
 
         private steps(): ActivationStep[] | undefined {
-            const user: GQL.IUser | null = this.props.authenticatedUser
+            const user: AuthenticatedUser | null = this.props.authenticatedUser
             if (user) {
                 return getActivationSteps(user)
             }

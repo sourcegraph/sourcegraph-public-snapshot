@@ -6,29 +6,28 @@ import (
 	"time"
 
 	"github.com/google/zoekt"
-	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
 func (r *schemaResolver) Repositories(args *struct {
 	graphqlutil.ConnectionArgs
-	Query           *string
-	Names           *[]string
-	Cloned          bool
-	CloneInProgress bool
-	NotCloned       bool
-	Indexed         bool
-	NotIndexed      bool
-	OrderBy         string
-	Descending      bool
+	Query      *string
+	Names      *[]string
+	Cloned     bool
+	NotCloned  bool
+	Indexed    bool
+	NotIndexed bool
+	OrderBy    string
+	Descending bool
 }) (*repositoryConnectionResolver, error) {
 	opt := db.ReposListOptions{
 		OrderBy: db.RepoListOrderBy{{
@@ -44,12 +43,11 @@ func (r *schemaResolver) Repositories(args *struct {
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &repositoryConnectionResolver{
-		opt:             opt,
-		cloned:          args.Cloned,
-		cloneInProgress: args.CloneInProgress,
-		notCloned:       args.NotCloned,
-		indexed:         args.Indexed,
-		notIndexed:      args.NotIndexed,
+		opt:        opt,
+		cloned:     args.Cloned,
+		notCloned:  args.NotCloned,
+		indexed:    args.Indexed,
+		notIndexed: args.NotIndexed,
 	}, nil
 }
 
@@ -66,12 +64,11 @@ type RepositoryConnectionResolver interface {
 var _ RepositoryConnectionResolver = &repositoryConnectionResolver{}
 
 type repositoryConnectionResolver struct {
-	opt             db.ReposListOptions
-	cloned          bool
-	cloneInProgress bool
-	notCloned       bool
-	indexed         bool
-	notIndexed      bool
+	opt        db.ReposListOptions
+	cloned     bool
+	notCloned  bool
+	indexed    bool
+	notIndexed bool
 
 	// cache results because they are used by multiple fields
 	once  sync.Once
@@ -110,13 +107,17 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 				r.err = err
 				return
 			}
+			// ensure we fetch atleast as many repos as we have indexed.
+			if opt2.LimitOffset != nil && opt2.LimitOffset.Limit < len(indexed) {
+				opt2.LimitOffset.Limit = len(indexed) * 2
+			}
 		}
 
 		if !r.cloned {
 			opt2.NoCloned = true
-		} else if !r.notCloned || !r.cloneInProgress {
-			// notCloned and cloneInProgress are true by default.
-			// this condition is valid only if one of them has been
+		} else if !r.notCloned {
+			// notCloned is true by default.
+			// this condition is valid only if it has been
 			// explicitly set to false by the client.
 			opt2.OnlyCloned = true
 		}
@@ -185,7 +186,7 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 		return &v
 	}
 
-	if !r.cloned || !r.cloneInProgress || !r.notCloned {
+	if !r.cloned || !r.notCloned {
 		// Don't support counting if filtering by clone status.
 		return nil, nil
 	}

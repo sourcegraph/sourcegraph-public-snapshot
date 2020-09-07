@@ -7,7 +7,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-bundle-manager/internal/paths"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
@@ -16,8 +15,8 @@ import (
 const GetUploadsBatchSize = 100
 
 // removeRecordsForDeletedRepositories removes all upload records for deleted repositories.
-func (j *Janitor) removeRecordsForDeletedRepositories() error {
-	counts, err := j.store.DeleteUploadsWithoutRepository(context.Background(), time.Now())
+func (j *Janitor) removeRecordsForDeletedRepositories(ctx context.Context) error {
+	counts, err := j.store.DeleteUploadsWithoutRepository(ctx, time.Now())
 	if err != nil {
 		return err
 	}
@@ -32,9 +31,7 @@ func (j *Janitor) removeRecordsForDeletedRepositories() error {
 
 // removeCompletedRecordsWithoutBundleFile removes all upload records in the
 // completed state that do not have a corresponding bundle file on disk.
-func (j *Janitor) removeCompletedRecordsWithoutBundleFile() error {
-	ctx := context.Background()
-
+func (j *Janitor) removeCompletedRecordsWithoutBundleFile(ctx context.Context) error {
 	ids, err := j.getUploadIDs(ctx, store.GetUploadsOptions{
 		State: "completed",
 	})
@@ -51,7 +48,7 @@ func (j *Janitor) removeCompletedRecordsWithoutBundleFile() error {
 			continue
 		}
 
-		deleted, err := j.store.DeleteUploadByID(ctx, id, j.getTipCommit)
+		deleted, err := j.store.DeleteUploadByID(ctx, id)
 		if err != nil {
 			return errors.Wrap(err, "store.DeleteUploadByID")
 		}
@@ -67,8 +64,7 @@ func (j *Janitor) removeCompletedRecordsWithoutBundleFile() error {
 
 // removeOldUploadingRecords removes all upload records in the uploading state that
 // are older than the max upload part age.
-func (j *Janitor) removeOldUploadingRecords() error {
-	ctx := context.Background()
+func (j *Janitor) removeOldUploadingRecords(ctx context.Context) error {
 	t := time.Now().UTC().Add(-j.maxUploadPartAge)
 
 	ids, err := j.getUploadIDs(ctx, store.GetUploadsOptions{
@@ -80,7 +76,7 @@ func (j *Janitor) removeOldUploadingRecords() error {
 	}
 
 	for _, id := range ids {
-		deleted, err := j.store.DeleteUploadByID(ctx, id, j.getTipCommit)
+		deleted, err := j.store.DeleteUploadByID(ctx, id)
 		if err != nil {
 			return errors.Wrap(err, "store.DeleteUploadByID")
 		}
@@ -117,17 +113,6 @@ func (j *Janitor) getUploadIDs(ctx context.Context, opts store.GetUploadsOptions
 	}
 
 	return ids, nil
-}
-
-// getTipCommit returns the head of the default branch for the given repository. This
-// is used to recalculate the set of visible dumps for a repository on dump deletion.
-func (j *Janitor) getTipCommit(ctx context.Context, repositoryID int) (string, error) {
-	tipCommit, err := gitserver.Head(ctx, j.store, repositoryID)
-	if err != nil && !isRepoNotExist(err) {
-		return "", errors.Wrap(err, "gitserver.Head")
-	}
-
-	return tipCommit, nil
 }
 
 func isRepoNotExist(err error) bool {

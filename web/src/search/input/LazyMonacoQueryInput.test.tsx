@@ -3,7 +3,7 @@ import React from 'react'
 import { noop } from 'lodash'
 import { PlainQueryInput } from './LazyMonacoQueryInput'
 import { createMemoryHistory } from 'history'
-import { SearchPatternType } from '../../../../shared/src/graphql/schema'
+import { SearchPatternType } from '../../graphql-operations'
 
 describe('PlainQueryInput', () => {
     const history = createMemoryHistory()
@@ -28,6 +28,7 @@ describe('PlainQueryInput', () => {
                         settingsCascade={{ subjects: [], final: {} }}
                         copyQueryButton={false}
                         versionContext={undefined}
+                        globbing={false}
                     />
                 )
                 .toJSON()
@@ -54,6 +55,7 @@ describe('PlainQueryInput', () => {
                         settingsCascade={{ subjects: [], final: {} }}
                         copyQueryButton={false}
                         versionContext={undefined}
+                        globbing={false}
                     />
                 )
                 .toJSON()

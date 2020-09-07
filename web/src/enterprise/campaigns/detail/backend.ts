@@ -1,300 +1,250 @@
 import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
-import { queryGraphQL, mutateGraphQL } from '../../../backend/graphql'
 import { Observable } from 'rxjs'
+import { diffStatFields, fileDiffFields } from '../../../backend/diff'
 import {
-    Changeset,
-    ID,
-    ICampaign,
-    IUpdateCampaignInput,
-    ICreateCampaignInput,
-    IChangesetsOnCampaignArguments,
-    IEmptyResponse,
-    IExternalChangeset,
-    IFileDiffConnection,
-    IPatchSet,
-    IPatchesOnCampaignArguments,
-    IPatchConnection,
-} from '../../../../../shared/src/graphql/schema'
-import { DiffStatFields, FileDiffFields } from '../../../backend/diff'
-import { Connection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
+    CampaignFields,
+    CampaignChangesetsVariables,
+    CampaignChangesetsResult,
+    ExternalChangesetFileDiffsResult,
+    ExternalChangesetFileDiffsVariables,
+    ExternalChangesetFileDiffsFields,
+    SyncChangesetResult,
+    SyncChangesetVariables,
+    Scalars,
+    ChangesetCountsOverTimeVariables,
+    ChangesetCountsOverTimeFields,
+    ChangesetCountsOverTimeResult,
+    DeleteCampaignResult,
+    DeleteCampaignVariables,
+    CampaignByNamespaceResult,
+    CampaignByNamespaceVariables,
+} from '../../../graphql-operations'
+import { requestGraphQL } from '../../../backend/graphql'
+
+const changesetStatsFragment = gql`
+    fragment ChangesetStatsFields on ChangesetConnectionStats {
+        total
+        closed
+        merged
+        open
+        unpublished
+    }
+`
 
 const campaignFragment = gql`
     fragment CampaignFields on Campaign {
         __typename
         id
+        url
         name
+        namespace {
+            namespaceName
+            url
+        }
         description
-        author {
-            username
-            avatarURL
-        }
-        status {
-            completedCount
-            pendingCount
-            state
-            errors
-        }
-        branch
+
         createdAt
+        initialApplier {
+            username
+            url
+        }
+
+        lastAppliedAt
+        lastApplier {
+            username
+            url
+        }
+
         updatedAt
         closedAt
         viewerCanAdminister
-        hasUnpublishedPatches
+
         changesets {
-            totalCount
+            stats {
+                ...ChangesetStatsFields
+            }
         }
-        patches {
-            totalCount
-        }
-        # TODO move to separate query and configure from/to
-        changesetCountsOverTime {
-            date
-            merged
-            closed
-            openApproved
-            openChangesRequested
-            openPending
-            total
-        }
+
         diffStat {
             ...DiffStatFields
         }
+
+        currentSpec {
+            originalInput
+        }
     }
 
-    ${DiffStatFields}
+    ${diffStatFields}
+
+    ${changesetStatsFragment}
 `
 
-const patchSetFragment = gql`
-    fragment PatchSetFields on PatchSet {
+const changesetLabelFragment = gql`
+    fragment ChangesetLabelFields on ChangesetLabel {
+        color
+        description
+        text
+    }
+`
+
+export const fetchCampaignByNamespace = (
+    namespaceID: Scalars['ID'],
+    campaign: CampaignFields['name']
+): Observable<CampaignFields | null> =>
+    requestGraphQL<CampaignByNamespaceResult, CampaignByNamespaceVariables>(
+        gql`
+            query CampaignByNamespace($namespaceID: ID!, $campaign: String!) {
+                campaign(namespace: $namespaceID, name: $campaign) {
+                    ...CampaignFields
+                }
+            }
+            ${campaignFragment}
+        `,
+        { namespaceID, campaign }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ campaign }) => {
+            if (!campaign) {
+                return null
+            }
+            return campaign
+        })
+    )
+
+export const hiddenExternalChangesetFieldsFragment = gql`
+    fragment HiddenExternalChangesetFields on HiddenExternalChangeset {
         __typename
         id
+        createdAt
+        updatedAt
+        nextSyncAt
+        externalState
+        publicationState
+        reconcilerState
+    }
+`
+export const externalChangesetFieldsFragment = gql`
+    fragment ExternalChangesetFields on ExternalChangeset {
+        __typename
+        id
+        title
+        body
+        publicationState
+        reconcilerState
+        externalState
+        reviewState
+        checkState
+        error
+        labels {
+            ...ChangesetLabelFields
+        }
+        repository {
+            id
+            name
+            url
+        }
+        externalURL {
+            url
+        }
+        externalID
         diffStat {
             ...DiffStatFields
         }
-        patches {
-            totalCount
+        createdAt
+        updatedAt
+        nextSyncAt
+        currentSpec {
+            id
         }
     }
 
-    ${DiffStatFields}
+    ${diffStatFields}
+
+    ${changesetLabelFragment}
 `
 
-export async function updateCampaign(update: IUpdateCampaignInput): Promise<ICampaign> {
-    const result = await mutateGraphQL(
-        gql`
-            mutation UpdateCampaign($update: UpdateCampaignInput!) {
-                updateCampaign(input: $update) {
-                    ...CampaignFields
-                }
-            }
-            ${campaignFragment}
-        `,
-        { update }
-    ).toPromise()
-    return dataOrThrowErrors(result).updateCampaign
-}
+export const changesetFieldsFragment = gql`
+    fragment ChangesetFields on Changeset {
+        __typename
+        ... on HiddenExternalChangeset {
+            ...HiddenExternalChangesetFields
+        }
+        ... on ExternalChangeset {
+            ...ExternalChangesetFields
+        }
+    }
 
-export async function createCampaign(input: ICreateCampaignInput): Promise<ICampaign> {
-    const result = await mutateGraphQL(
-        gql`
-            mutation CreateCampaign($input: CreateCampaignInput!) {
-                createCampaign(input: $input) {
-                    id
-                    url
-                }
-            }
-        `,
-        { input }
-    ).toPromise()
-    return dataOrThrowErrors(result).createCampaign
-}
+    ${hiddenExternalChangesetFieldsFragment}
 
-export async function retryCampaignChangesets(campaignID: ID): Promise<ICampaign> {
-    const result = await mutateGraphQL(
-        gql`
-            mutation RetryCampaignChangesets($campaign: ID!) {
-                retryCampaignChangesets(campaign: $campaign) {
-                    ...CampaignFields
-                }
-            }
+    ${externalChangesetFieldsFragment}
+`
 
-            ${campaignFragment}
-        `,
-        { campaign: campaignID }
-    ).toPromise()
-    return dataOrThrowErrors(result).retryCampaignChangesets
-}
-
-export async function publishCampaignChangesets(campaignID: ID): Promise<ICampaign> {
-    const result = await mutateGraphQL(
-        gql`
-            mutation PublishCampaignChangesets($campaign: ID!) {
-                publishCampaignChangesets(campaign: $campaign) {
-                    ...CampaignFields
-                }
-            }
-
-            ${campaignFragment}
-        `,
-        { campaign: campaignID }
-    ).toPromise()
-    return dataOrThrowErrors(result).publishCampaignChangesets
-}
-
-export async function closeCampaign(campaign: ID, closeChangesets = false): Promise<void> {
-    const result = await mutateGraphQL(
-        gql`
-            mutation CloseCampaign($campaign: ID!, $closeChangesets: Boolean!) {
-                closeCampaign(campaign: $campaign, closeChangesets: $closeChangesets) {
-                    id
-                }
-            }
-        `,
-        { campaign, closeChangesets }
-    ).toPromise()
-    dataOrThrowErrors(result)
-}
-
-export async function deleteCampaign(campaign: ID, closeChangesets = false): Promise<void> {
-    const result = await mutateGraphQL(
-        gql`
-            mutation DeleteCampaign($campaign: ID!, $closeChangesets: Boolean!) {
-                deleteCampaign(campaign: $campaign, closeChangesets: $closeChangesets) {
-                    alwaysNil
-                }
-            }
-        `,
-        { campaign, closeChangesets }
-    ).toPromise()
-    dataOrThrowErrors(result)
-}
-
-export const fetchCampaignById = (campaign: ID): Observable<ICampaign | null> =>
-    queryGraphQL(
-        gql`
-            query CampaignByID($campaign: ID!) {
-                node(id: $campaign) {
-                    __typename
-                    ... on Campaign {
-                        ...CampaignFields
-                    }
-                }
-            }
-            ${campaignFragment}
-        `,
-        { campaign }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                return null
-            }
-            if (node.__typename !== 'Campaign') {
-                throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
-            }
-            return node
-        })
-    )
-
-export const fetchPatchSetById = (patchSet: ID): Observable<IPatchSet | null> =>
-    queryGraphQL(
-        gql`
-            query PatchSetByID($patchSet: ID!) {
-                node(id: $patchSet) {
-                    __typename
-                    ... on PatchSet {
-                        ...PatchSetFields
-                    }
-                }
-            }
-            ${patchSetFragment}
-        `,
-        { patchSet }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                return null
-            }
-            if (node.__typename !== 'PatchSet') {
-                throw new Error(`The given ID is a ${node.__typename}, not a PatchSet`)
-            }
-            return node
-        })
-    )
-
-export const queryChangesets = (
-    campaign: ID,
-    { first, state, reviewState, checkState }: IChangesetsOnCampaignArguments
-): Observable<Connection<Changeset>> =>
-    queryGraphQL(
+export const queryChangesets = ({
+    campaign,
+    first,
+    after,
+    externalState,
+    reviewState,
+    checkState,
+    publicationState,
+    reconcilerState,
+    onlyPublishedByThisCampaign,
+}: CampaignChangesetsVariables): Observable<
+    (CampaignChangesetsResult['node'] & { __typename: 'Campaign' })['changesets']
+> =>
+    requestGraphQL<CampaignChangesetsResult, CampaignChangesetsVariables>(
         gql`
             query CampaignChangesets(
                 $campaign: ID!
                 $first: Int
-                $state: ChangesetState
+                $after: String
+                $externalState: ChangesetExternalState
                 $reviewState: ChangesetReviewState
                 $checkState: ChangesetCheckState
+                $publicationState: ChangesetPublicationState
+                $reconcilerState: ChangesetReconcilerState
+                $onlyPublishedByThisCampaign: Boolean
             ) {
                 node(id: $campaign) {
                     __typename
                     ... on Campaign {
-                        changesets(first: $first, state: $state, reviewState: $reviewState, checkState: $checkState) {
+                        changesets(
+                            first: $first
+                            after: $after
+                            externalState: $externalState
+                            publicationState: $publicationState
+                            reconcilerState: $reconcilerState
+                            reviewState: $reviewState
+                            checkState: $checkState
+                            onlyPublishedByThisCampaign: $onlyPublishedByThisCampaign
+                        ) {
                             totalCount
+                            pageInfo {
+                                endCursor
+                                hasNextPage
+                            }
                             nodes {
-                                __typename
-
-                                state
-                                createdAt
-                                updatedAt
-                                nextSyncAt
-
-                                ... on HiddenExternalChangeset {
-                                    id
-                                }
-                                ... on ExternalChangeset {
-                                    id
-                                    title
-                                    body
-                                    reviewState
-                                    checkState
-                                    labels {
-                                        text
-                                        description
-                                        color
-                                    }
-                                    repository {
-                                        id
-                                        name
-                                        url
-                                    }
-                                    externalURL {
-                                        url
-                                    }
-                                    externalID
-                                    diff {
-                                        fileDiffs {
-                                            diffStat {
-                                                ...DiffStatFields
-                                            }
-                                        }
-                                    }
-                                    diffStat {
-                                        added
-                                        changed
-                                        deleted
-                                    }
-                                }
+                                ...ChangesetFields
                             }
                         }
                     }
                 }
             }
 
-            ${DiffStatFields}
+            ${changesetFieldsFragment}
         `,
-        { campaign, first, state, reviewState, checkState }
+        {
+            campaign,
+            first,
+            after,
+            externalState,
+            reviewState,
+            checkState,
+            publicationState,
+            reconcilerState,
+            onlyPublishedByThisCampaign,
+        }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
@@ -307,131 +257,9 @@ export const queryChangesets = (
             return node.changesets
         })
     )
-export const queryPatchesFromCampaign = (
-    campaign: ID,
-    { first }: IPatchesOnCampaignArguments
-): Observable<IPatchConnection> =>
-    queryGraphQL(
-        gql`
-            query CampaignPatches($campaign: ID!, $first: Int) {
-                node(id: $campaign) {
-                    __typename
-                    ... on Campaign {
-                        patches(first: $first) {
-                            totalCount
-                            nodes {
-                                __typename
-                                ... on HiddenPatch {
-                                    id
-                                }
-                                ... on Patch {
-                                    id
-                                    repository {
-                                        id
-                                        name
-                                        url
-                                    }
-                                    publishable
-                                    publicationEnqueued
-                                    diff {
-                                        fileDiffs {
-                                            diffStat {
-                                                ...DiffStatFields
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
 
-            ${DiffStatFields}
-        `,
-        { campaign, first }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                throw new Error(`Campaign with ID ${campaign} does not exist`)
-            }
-            if (node.__typename !== 'Campaign') {
-                throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
-            }
-            return node.patches
-        })
-    )
-
-export const queryPatchesFromPatchSet = (
-    patchSet: ID,
-    { first }: IPatchesOnCampaignArguments
-): Observable<IPatchConnection> =>
-    queryGraphQL(
-        gql`
-            query PatchSetPatches($patchSet: ID!, $first: Int) {
-                node(id: $patchSet) {
-                    __typename
-                    ... on PatchSet {
-                        patches(first: $first) {
-                            totalCount
-                            nodes {
-                                __typename
-                                id
-                                ... on Patch {
-                                    repository {
-                                        id
-                                        name
-                                        url
-                                    }
-                                    publishable
-                                    publicationEnqueued
-                                    diff {
-                                        fileDiffs {
-                                            diffStat {
-                                                ...DiffStatFields
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            ${DiffStatFields}
-        `,
-        { patchSet, first }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                throw new Error(`PatchSet with ID ${patchSet} does not exist`)
-            }
-            if (node.__typename !== 'PatchSet') {
-                throw new Error(`The given ID is a ${node.__typename}, not a PatchSet`)
-            }
-            return node.patches
-        })
-    )
-
-export async function publishChangeset(patch: ID): Promise<IEmptyResponse> {
-    const result = await mutateGraphQL(
-        gql`
-            mutation PublishChangeset($patch: ID!) {
-                publishChangeset(patch: $patch) {
-                    alwaysNil
-                }
-            }
-        `,
-        { patch }
-    ).toPromise()
-    return dataOrThrowErrors(result).publishChangeset
-}
-
-export async function syncChangeset(changeset: ID): Promise<void> {
-    const result = await mutateGraphQL(
+export async function syncChangeset(changeset: Scalars['ID']): Promise<void> {
+    const result = await requestGraphQL<SyncChangesetResult, SyncChangesetVariables>(
         gql`
             mutation SyncChangeset($changeset: ID!) {
                 syncChangeset(changeset: $changeset) {
@@ -444,11 +272,78 @@ export async function syncChangeset(changeset: ID): Promise<void> {
     dataOrThrowErrors(result)
 }
 
-export const queryExternalChangesetWithFileDiffs = (
-    externalChangeset: ID,
-    { first, after, isLightTheme }: FilteredConnectionQueryArgs & { isLightTheme: boolean }
-): Observable<IExternalChangeset> =>
-    queryGraphQL(
+// Because thats the name in the API:
+// eslint-disable-next-line unicorn/prevent-abbreviations
+export const gitRefSpecFields = gql`
+    fragment GitRefSpecFields on GitRevSpec {
+        __typename
+        ... on GitObject {
+            oid
+        }
+        ... on GitRef {
+            target {
+                oid
+            }
+        }
+        ... on GitRevSpecExpr {
+            object {
+                oid
+            }
+        }
+    }
+`
+
+export const externalChangesetFileDiffsFields = gql`
+    fragment ExternalChangesetFileDiffsFields on ExternalChangeset {
+        diff {
+            __typename
+            ... on RepositoryComparison {
+                range {
+                    base {
+                        ...GitRefSpecFields
+                    }
+                    head {
+                        ...GitRefSpecFields
+                    }
+                }
+                fileDiffs(first: $first, after: $after) {
+                    nodes {
+                        ...FileDiffFields
+                    }
+                    totalCount
+                    pageInfo {
+                        hasNextPage
+                        endCursor
+                    }
+                }
+            }
+            ... on PreviewRepositoryComparison {
+                fileDiffs(first: $first, after: $after) {
+                    nodes {
+                        ...FileDiffFields
+                    }
+                    totalCount
+                    pageInfo {
+                        hasNextPage
+                        endCursor
+                    }
+                }
+            }
+        }
+    }
+
+    ${fileDiffFields}
+
+    ${gitRefSpecFields}
+`
+
+export const queryExternalChangesetWithFileDiffs = ({
+    externalChangeset,
+    first,
+    after,
+    isLightTheme,
+}: ExternalChangesetFileDiffsVariables): Observable<ExternalChangesetFileDiffsFields> =>
+    requestGraphQL<ExternalChangesetFileDiffsResult, ExternalChangesetFileDiffsVariables>(
         gql`
             query ExternalChangesetFileDiffs(
                 $externalChangeset: ID!
@@ -458,54 +353,11 @@ export const queryExternalChangesetWithFileDiffs = (
             ) {
                 node(id: $externalChangeset) {
                     __typename
-                    ... on ExternalChangeset {
-                        diff {
-                            range {
-                                base {
-                                    ...GitRefSpecFields
-                                }
-                                head {
-                                    ...GitRefSpecFields
-                                }
-                            }
-                            fileDiffs(first: $first, after: $after) {
-                                nodes {
-                                    ...FileDiffFields
-                                }
-                                totalCount
-                                pageInfo {
-                                    hasNextPage
-                                    endCursor
-                                }
-                                diffStat {
-                                    ...DiffStatFields
-                                }
-                            }
-                        }
-                    }
+                    ...ExternalChangesetFileDiffsFields
                 }
             }
 
-            fragment GitRefSpecFields on GitRevSpec {
-                __typename
-                ... on GitObject {
-                    oid
-                }
-                ... on GitRef {
-                    target {
-                        oid
-                    }
-                }
-                ... on GitRevSpecExpr {
-                    object {
-                        oid
-                    }
-                }
-            }
-
-            ${FileDiffFields}
-
-            ${DiffStatFields}
+            ${externalChangesetFileDiffsFields}
         `,
         { externalChangeset, first, after, isLightTheme }
     ).pipe(
@@ -521,52 +373,60 @@ export const queryExternalChangesetWithFileDiffs = (
         })
     )
 
-export const queryPatchFileDiffs = (
-    patch: ID,
-    { first, after, isLightTheme }: FilteredConnectionQueryArgs & { isLightTheme: boolean }
-): Observable<IFileDiffConnection> =>
-    queryGraphQL(
+const changesetCountsOverTimeFragment = gql`
+    fragment ChangesetCountsOverTimeFields on ChangesetCounts {
+        date
+        merged
+        closed
+        openApproved
+        openChangesRequested
+        openPending
+        total
+    }
+`
+
+export const queryChangesetCountsOverTime = ({
+    campaign,
+}: ChangesetCountsOverTimeVariables): Observable<ChangesetCountsOverTimeFields[]> =>
+    requestGraphQL<ChangesetCountsOverTimeResult, ChangesetCountsOverTimeVariables>(
         gql`
-            query PatchFileDiffs($patch: ID!, $first: Int, $after: String, $isLightTheme: Boolean!) {
-                node(id: $patch) {
+            query ChangesetCountsOverTime($campaign: ID!) {
+                node(id: $campaign) {
                     __typename
-                    ... on Patch {
-                        diff {
-                            fileDiffs(first: $first, after: $after) {
-                                nodes {
-                                    ...FileDiffFields
-                                }
-                                totalCount
-                                pageInfo {
-                                    hasNextPage
-                                    endCursor
-                                }
-                                diffStat {
-                                    ...DiffStatFields
-                                }
-                            }
+                    ... on Campaign {
+                        changesetCountsOverTime {
+                            ...ChangesetCountsOverTimeFields
                         }
                     }
                 }
             }
 
-            ${FileDiffFields}
-
-            ${DiffStatFields}
+            ${changesetCountsOverTimeFragment}
         `,
-        { patch, first, after, isLightTheme }
+        { campaign }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
             if (!node) {
-                throw new Error(`Patch with ID ${patch} does not exist`)
+                throw new Error(`Campaign with ID ${campaign} does not exist`)
             }
-            if (node.__typename !== 'Patch') {
-                throw new Error(`The given ID is a ${node.__typename}, not a Patch`)
+            if (node.__typename !== 'Campaign') {
+                throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
             }
-            if (!node.diff) {
-                throw new Error('The given Patch has no diff')
-            }
-            return node.diff.fileDiffs
+            return node.changesetCountsOverTime
         })
     )
+
+export async function deleteCampaign(campaign: Scalars['ID']): Promise<void> {
+    const result = await requestGraphQL<DeleteCampaignResult, DeleteCampaignVariables>(
+        gql`
+            mutation DeleteCampaign($campaign: ID!) {
+                deleteCampaign(campaign: $campaign) {
+                    alwaysNil
+                }
+            }
+        `,
+        { campaign }
+    ).toPromise()
+    dataOrThrowErrors(result)
+}

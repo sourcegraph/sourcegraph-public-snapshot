@@ -4,38 +4,43 @@ import CloudSyncIcon from 'mdi-react/CloudSyncIcon'
 import React from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { Observable, Subscription } from 'rxjs'
-import { catchError, map, repeatWhen, delay } from 'rxjs/operators'
+import { catchError, map, repeatWhen, delay, distinctUntilChanged } from 'rxjs/operators'
 import { Link } from '../../../shared/src/components/Link'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
-import { queryGraphQL } from '../backend/graphql'
+import { requestGraphQL } from '../backend/graphql'
 import classNames from 'classnames'
 import { ErrorAlert } from '../components/alerts'
 import * as H from 'history'
 import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
+import { StatusMessagesResult, StatusMessageFields } from '../graphql-operations'
+import { isEqual } from 'lodash'
 
-export function fetchAllStatusMessages(): Observable<GQL.StatusMessage[]> {
-    return queryGraphQL(
+export function fetchAllStatusMessages(): Observable<StatusMessagesResult['statusMessages']> {
+    return requestGraphQL<StatusMessagesResult>(
         gql`
             query StatusMessages {
                 statusMessages {
-                    __typename
+                    ...StatusMessageFields
+                }
+            }
 
-                    ... on CloningProgress {
-                        message
-                    }
+            fragment StatusMessageFields on StatusMessage {
+                __typename
 
-                    ... on SyncError {
-                        message
-                    }
+                ... on CloningProgress {
+                    message
+                }
 
-                    ... on ExternalServiceSyncError {
-                        message
-                        externalService {
-                            id
-                            displayName
-                        }
+                ... on SyncError {
+                    message
+                }
+
+                ... on ExternalServiceSyncError {
+                    message
+                    externalService {
+                        id
+                        displayName
                     }
                 }
             }
@@ -93,13 +98,13 @@ const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProp
 )
 
 interface Props {
-    fetchMessages: () => Observable<GQL.StatusMessage[]>
+    fetchMessages?: () => Observable<StatusMessagesResult['statusMessages']>
     isSiteAdmin: boolean
     history: H.History
 }
 
 interface State {
-    messagesOrError: GQL.StatusMessage[] | ErrorLike
+    messagesOrError: StatusMessagesResult['statusMessages'] | ErrorLike
     isOpen: boolean
 }
 
@@ -120,13 +125,13 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            this.props
-                .fetchMessages()
+            (this.props.fetchMessages ?? fetchAllStatusMessages)()
                 .pipe(
                     catchError(error => [asError(error) as ErrorLike]),
                     // Poll on REFRESH_INTERVAL_MS, or REFRESH_INTERVAL_AFTER_ERROR_MS if there is an error.
                     repeatUntil(messagesOrError => isErrorLike(messagesOrError), { delay: REFRESH_INTERVAL_MS }),
-                    repeatWhen(completions => completions.pipe(delay(REFRESH_INTERVAL_AFTER_ERROR_MS)))
+                    repeatWhen(completions => completions.pipe(delay(REFRESH_INTERVAL_AFTER_ERROR_MS))),
+                    distinctUntilChanged((a, b) => isEqual(a, b))
                 )
                 .subscribe(messagesOrError => this.setState({ messagesOrError }))
         )
@@ -136,7 +141,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    private renderMessage(message: GQL.StatusMessage, key: number): JSX.Element | null {
+    private renderMessage(message: StatusMessageFields, key: number): JSX.Element | null {
         switch (message.__typename) {
             case 'CloningProgress':
                 return (
@@ -213,7 +218,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             <ButtonDropdown
                 isOpen={this.state.isOpen}
                 toggle={this.toggleIsOpen}
-                className="nav-link py-0 px-0 status-messages-nav-item__nav-link"
+                className="nav-link py-0 px-0 percy-hide chromatic-ignore"
             >
                 <DropdownToggle caret={false} className="btn btn-link" nav={true}>
                     {this.renderIcon()}

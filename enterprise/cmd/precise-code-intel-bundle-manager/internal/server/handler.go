@@ -101,6 +101,8 @@ func (s *Server) handlePostUploadStitch(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	_ = writeFileSize(w, filename)
 }
 
 // DELETE /uploads/{id:[0-9]+}
@@ -133,6 +135,8 @@ func (s *Server) handlePostDatabaseStitch(w http.ResponseWriter, r *http.Request
 
 	// Once we have a database, we no longer need the upload file
 	s.deleteUpload(w, r)
+
+	_ = writeFileSize(w, filename)
 }
 
 // GET /dbs/{id:[0-9]+}/exists
@@ -288,13 +292,15 @@ func (s *Server) handlePackageInformation(w http.ResponseWriter, r *http.Request
 // doUpload writes the HTTP request body to the path determined by the given
 // makeFilename function.
 func (s *Server) doUpload(w http.ResponseWriter, r *http.Request, makeFilename func(bundleDir string, id int64) string) bool {
-	if err := writeToFile(makeFilename(s.bundleDir, idFromRequest(r)), r.Body); err != nil {
+	filename := makeFilename(s.bundleDir, idFromRequest(r))
+
+	if err := writeToFile(filename, r.Body); err != nil {
 		log15.Error("Failed to write payload", "err", err)
 		http.Error(w, fmt.Sprintf("failed to write payload: %s", err.Error()), http.StatusInternalServerError)
 		return false
 	}
 
-	return true
+	return writeFileSize(w, filename)
 }
 
 func writeToFile(filename string, r io.Reader) (err error) {
@@ -310,6 +316,22 @@ func writeToFile(filename string, r io.Reader) (err error) {
 
 	_, err = io.Copy(targetFile, r)
 	return err
+}
+
+func writeFileSize(w http.ResponseWriter, filename string) bool {
+	fi, err := os.Stat(filename)
+	if err != nil {
+		log15.Error("Failed to stat file", "err", err)
+		http.Error(w, fmt.Sprintf("failed to stat file: %s", err.Error()), http.StatusInternalServerError)
+		return false
+	}
+
+	payload := map[string]int{
+		"size": int(fi.Size()),
+	}
+
+	writeJSON(w, payload)
+	return true
 }
 
 func (s *Server) deleteUpload(w http.ResponseWriter, r *http.Request) {
@@ -355,8 +377,8 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 		span.Finish()
 	}()
 
-	return s.readerCache.WithReader(ctx, filename, func(reader persistence.Reader) error {
-		db, err := database.OpenDatabase(ctx, filename, persistence.NewObserved(reader, s.observationContext))
+	return s.storeCache.WithStore(ctx, filename, func(store persistence.Store) error {
+		db, err := database.OpenDatabase(ctx, filename, persistence.NewObserved(store, s.observationContext))
 		if err != nil {
 			return pkgerrors.Wrap(err, "database.OpenDatabase")
 		}

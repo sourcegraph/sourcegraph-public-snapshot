@@ -1,8 +1,6 @@
 package query
 
 import (
-	"fmt"
-	"strings"
 	"unicode"
 	"unicode/utf8"
 
@@ -35,17 +33,17 @@ func ScanAnyPatternLiteral(buf []byte) (scanned string, count int) {
 	return scanned, count
 }
 
-// isParameter returns whether the token is a parameter.
-func isParameter(token []byte) bool {
-	parser := &parser{buf: token}
-	_, ok, _ := parser.ParseParameter()
-	return ok
+// isField returns whether the prefix of the buf matches a recognized field.
+func isField(buf []byte) bool {
+	field, _, _ := ScanField(buf)
+	return field != ""
 }
 
 // ScanBalancedPatternLiteral attempts to scan parentheses as literal patterns.
 // It returns the scanned string, how much to advance, and whether it succeeded.
 // Basically it scans any literal string, including whitespace, but ensures that
-// a resulting string does not contain 'and' or 'or keywords, and is balanced.
+// a resulting string does not contain 'and' or 'or keywords, nor parameters, and
+// is balanced.
 func ScanBalancedPatternLiteral(buf []byte) (scanned string, count int, ok bool) {
 	var advance, balanced int
 	var r rune
@@ -68,6 +66,7 @@ loop:
 		case unicode.IsSpace(r) && balanced == 0:
 			// Stop scanning a potential pattern when we see
 			// whitespace in a balanced state.
+			count = start
 			break loop
 		case r == '(':
 			balanced++
@@ -84,8 +83,8 @@ loop:
 			}
 			result = append(result, r)
 		case unicode.IsSpace(r):
-			if isParameter(token) {
-				// This is not a pattern, one of the tokens is parameter.
+			if isField(token) {
+				// This is not a pattern, one of the tokens match a field.
 				return "", 0, false
 			}
 			token = []byte{}
@@ -93,14 +92,26 @@ loop:
 			// We see a space and the pattern is unbalanced, so assume this
 			// this space is still part of the pattern.
 			result = append(result, r)
+		case r == '\\':
+			// Handle escape sequence.
+			if len(buf) > 0 {
+				r = next()
+				// Accept anything anything escaped. The point
+				// is to consume escaped spaces like "\ " so
+				// that we don't recognize it as terminating a
+				// pattern.
+				result = append(result, '\\', r)
+				continue
+			}
+			result = append(result, r)
 		default:
 			token = append(token, []byte(string(r))...)
 			result = append(result, r)
 		}
 	}
 
-	if isParameter(token) {
-		// This is not a pattern, one of the tokens is parameter.
+	if isField(token) {
+		// This is not a pattern, one of the tokens match a field.
 		return "", 0, false
 	}
 
@@ -138,8 +149,9 @@ func (p *parser) ParsePatternLiteral() Pattern {
 	}
 }
 
-// parseParameterParameterList scans for consecutive leaf nodes.
-func (p *parser) parseParameterListLiteral() ([]Node, error) {
+// parseLeavesRegexp scans for consecutive leaf nodes when interpreting the
+// query as containing literal patterns.
+func (p *parser) parseLeavesLiteral() ([]Node, error) {
 	var nodes []Node
 	start := p.pos
 loop:
@@ -176,7 +188,7 @@ loop:
 			_ = p.expect(LPAREN) // Guaranteed to succeed.
 			p.balanced++
 			p.heuristics |= disambiguated
-			result, err := p.parseOrLiteral()
+			result, err := p.parseOr()
 			if err != nil {
 				return nil, err
 			}
@@ -190,15 +202,17 @@ loop:
 
 				// Heuristic: This right paren may be one we should associate with a previous pattern, and not
 				// just a dangling one. Check if a pattern occurred before it and append it if so.
-				if p.pos > 0 {
+				if pattern.Annotation.Range.Start.Column > 0 {
 					// Heuristic is imprecise and that's OK: It will only look for a 1-byte whitespace
 					// character (not any unicode whitespace) before this paren.
-					if r, _ := utf8.DecodeRune([]byte{p.buf[p.pos-1]}); !unicode.IsSpace(r) {
+					if r, _ := utf8.DecodeRune([]byte{p.buf[pattern.Annotation.Range.Start.Column-1]}); !unicode.IsSpace(r) {
 						if len(nodes) > 0 {
 							if previous, ok := nodes[len(nodes)-1].(Pattern); ok {
-								previous.Value += pattern.Value
-								previous.Annotation.Labels |= pattern.Annotation.Labels
-								nodes[len(nodes)-1] = previous
+								result, err := concatPatterns(previous, pattern)
+								if err != nil {
+									return nil, err
+								}
+								nodes[len(nodes)-1] = result
 								continue
 							}
 						}
@@ -227,6 +241,12 @@ loop:
 		case p.matchKeyword(AND), p.matchKeyword(OR):
 			// Caller advances.
 			break loop
+		case p.matchUnaryKeyword(NOT):
+			parameter, err := p.parseNegatedLeafNode()
+			if err != nil {
+				return nil, err
+			}
+			nodes = append(nodes, parameter)
 		default:
 			parameter, ok, err := p.ParseParameter()
 			if err != nil {
@@ -241,60 +261,6 @@ loop:
 		}
 	}
 	return partitionParameters(nodes), nil
-}
-
-// parseAnd parses and-expressions.
-func (p *parser) parseAndLiteral() ([]Node, error) {
-	left, err := p.parseParameterListLiteral()
-	if err != nil {
-		return nil, err
-	}
-	if left == nil {
-		return nil, &ExpectedOperand{Msg: fmt.Sprintf("expected operand at %d", p.pos)}
-	}
-	if !p.expect(AND) {
-		return left, nil
-	}
-	right, err := p.parseAndLiteral()
-	if err != nil {
-		return nil, err
-	}
-	return newOperator(append(left, right...), And), nil
-}
-
-// parseOr parses or-expressions. Or operators have lower precedence than And
-// operators, therefore this function calls parseAnd.
-func (p *parser) parseOrLiteral() ([]Node, error) {
-	left, err := p.parseAndLiteral()
-	if err != nil {
-		return nil, err
-	}
-	if left == nil {
-		return nil, &ExpectedOperand{Msg: fmt.Sprintf("expected operand at %d", p.pos)}
-	}
-	if !p.expect(OR) {
-		return left, nil
-	}
-	right, err := p.parseOrLiteral()
-	if err != nil {
-		return nil, err
-	}
-	return newOperator(append(left, right...), Or), nil
-}
-
-func literalFallbackParser(in string) ([]Node, error) {
-	parser := &parser{
-		buf:        []byte(in),
-		heuristics: allowDanglingParens,
-	}
-	nodes, err := parser.parseOrLiteral()
-	if err != nil {
-		return nil, err
-	}
-	if hoistedNodes, err := Hoist(nodes); err == nil {
-		return newOperator(hoistedNodes, And), nil
-	}
-	return newOperator(nodes, And), nil
 }
 
 // validatePureLiteralPattern checks that no pattern expression contains and/or
@@ -318,49 +284,4 @@ func validatePureLiteralPattern(nodes []Node, balanced bool) error {
 		return errors.New("i'm having trouble understanding that query. The combination of parentheses is the problem. Try using the content: filter to quote patterns that contain parentheses")
 	}
 	return nil
-}
-
-func ParseAndOrLiteral(in string) ([]Node, error) {
-	if strings.TrimSpace(in) == "" {
-		return nil, nil
-	}
-	parser := &parser{buf: []byte(in)}
-	nodes, err := parser.parseOrLiteral()
-	if err != nil {
-		switch err.(type) {
-		case *ExpectedOperand:
-			// The query may be unbalanced or malformed as in "(" or
-			// "x or" and expects an operand. Try harder to parse it.
-			if nodes, err := literalFallbackParser(in); err == nil {
-				return nodes, nil
-			}
-		}
-		// Another kind of error, like a malformed parameter.
-		return nil, err
-	}
-	if parser.balanced != 0 {
-		// The query is unbalanced and might be something like "(x" or
-		// "x or (x" where patterns start with a leading open
-		// parenthesis. Try harder to parse it.
-		if nodes, err := literalFallbackParser(in); err == nil {
-			return nodes, nil
-		}
-		return nil, errors.Wrap(err, "unbalanced expression")
-	}
-	if !isSet(parser.heuristics, disambiguated) {
-		// Hoist or expressions if this query is potential ambiguous.
-		if hoistedNodes, err := Hoist(nodes); err == nil {
-			nodes = hoistedNodes
-		}
-	}
-	nodes = Map(nodes, LowercaseFieldNames, SubstituteAliases)
-	err = validate(nodes)
-	if err != nil {
-		return nil, err
-	}
-	err = validatePureLiteralPattern(nodes, parser.balanced == 0)
-	if err != nil {
-		return nil, err
-	}
-	return newOperator(nodes, And), nil
 }

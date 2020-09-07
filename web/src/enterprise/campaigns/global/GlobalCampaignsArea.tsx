@@ -1,99 +1,265 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { RouteComponentProps, Switch, Route } from 'react-router'
-import { GlobalCampaignListPage } from './list/GlobalCampaignListPage'
-import { CampaignDetails } from '../detail/CampaignDetails'
-import { IUser } from '../../../../../shared/src/graphql/schema'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { ThemeProps } from '../../../../../shared/src/theme'
-import { CreateCampaign } from './create/CreateCampaign'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import { CampaignUpdateSelection } from '../detail/CampaignUpdateSelection'
-import { CampaignCliHelp } from './create/CampaignCliHelp'
-import { CampaignsDotComPage } from './marketing/CampaignsDotComPage'
-import { CampaignsSiteAdminMarketingPage } from './marketing/CampaignsSiteAdminMarketingPage'
-import { CampaignsUserMarketingPage } from './marketing/CampaignsUserMarketingPage'
-import { DismissibleAlert } from '../../../components/DismissibleAlert'
+import { AuthenticatedUser } from '../../../auth'
+import { BreadcrumbSetters, BreadcrumbsProps, Breadcrumbs } from '../../../components/Breadcrumbs'
+import { Scalars } from '../../../../../shared/src/graphql-operations'
+import { lazyComponent } from '../../../util/lazyComponent'
+import { UserCampaignListPageProps, CampaignListPageProps, OrgCampaignListPageProps } from '../list/CampaignListPage'
+import { CampaignApplyPageProps } from '../apply/CampaignApplyPage'
+import { CreateCampaignPageProps } from '../create/CreateCampaignPage'
+import { CampaignDetailsPageProps } from '../detail/CampaignDetailsPage'
+import { CampaignClosePageProps } from '../close/CampaignClosePage'
+import { CampaignsDotComPageProps } from './marketing/CampaignsDotComPage'
+import { Link } from '../../../../../shared/src/components/Link'
+
+const CampaignListPage = lazyComponent<CampaignListPageProps, 'CampaignListPage'>(
+    () => import('../list/CampaignListPage'),
+    'CampaignListPage'
+)
+const OrgCampaignListPage = lazyComponent<OrgCampaignListPageProps, 'OrgCampaignListPage'>(
+    () => import('../list/CampaignListPage'),
+    'OrgCampaignListPage'
+)
+const UserCampaignListPage = lazyComponent<UserCampaignListPageProps, 'UserCampaignListPage'>(
+    () => import('../list/CampaignListPage'),
+    'UserCampaignListPage'
+)
+const CampaignApplyPage = lazyComponent<CampaignApplyPageProps, 'CampaignApplyPage'>(
+    () => import('../apply/CampaignApplyPage'),
+    'CampaignApplyPage'
+)
+const CreateCampaignPage = lazyComponent<CreateCampaignPageProps, 'CreateCampaignPage'>(
+    () => import('../create/CreateCampaignPage'),
+    'CreateCampaignPage'
+)
+const CampaignDetailsPage = lazyComponent<CampaignDetailsPageProps, 'CampaignDetailsPage'>(
+    () => import('../detail/CampaignDetailsPage'),
+    'CampaignDetailsPage'
+)
+const CampaignClosePage = lazyComponent<CampaignClosePageProps, 'CampaignClosePage'>(
+    () => import('../close/CampaignClosePage'),
+    'CampaignClosePage'
+)
+const CampaignsDotComPage = lazyComponent<CampaignsDotComPageProps, 'CampaignsDotComPage'>(
+    () => import('./marketing/CampaignsDotComPage'),
+    'CampaignsDotComPage'
+)
 
 interface Props
     extends RouteComponentProps<{}>,
         ThemeProps,
         ExtensionsControllerProps,
         TelemetryProps,
-        PlatformContextProps {
-    authenticatedUser: IUser
+        PlatformContextProps,
+        BreadcrumbsProps,
+        BreadcrumbSetters {
+    authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
 }
 
 /**
  * The global campaigns area.
  */
-export const GlobalCampaignsArea = withAuthenticatedUser<Props>(({ match, ...outerProps }) => {
-    let content: React.ReactFragment
-    if (outerProps.isSourcegraphDotCom) {
-        content = <CampaignsDotComPage {...outerProps} />
-    } else if (window.context.experimentalFeatures?.automation === 'enabled') {
-        if (!outerProps.authenticatedUser.siteAdmin && window.context.site['campaigns.readAccess.enabled'] !== true) {
-            content = <CampaignsUserMarketingPage {...outerProps} enableReadAccess={true} />
-        } else {
-            content = (
-                <>
-                    <DismissibleAlert partialStorageKey="campaigns-beta" className="alert-info">
-                        <p className="mb-0">
-                            Campaigns are currently in beta. During the beta period, campaigns are free to use. After
-                            the beta period, campaigns will be available as a paid add-on. Get in touch on Twitter{' '}
-                            <a href="https://twitter.com/srcgraph">@srcgraph</a>, file an issue in our{' '}
-                            <a href="https://github.com/sourcegraph/sourcegraph/issues">public issue tracker</a>, or
-                            email{' '}
-                            <a href="mailto:feedback@sourcegraph.com?subject=Feedback on Campaigns">
-                                feedback@sourcegraph.com
-                            </a>
-                            . We're looking forward to your feedback!
-                        </p>
-                    </DismissibleAlert>
+export const GlobalCampaignsArea: React.FunctionComponent<Props> = props => {
+    if (props.isSourcegraphDotCom) {
+        return <CampaignsDotComPage />
+    }
+    return <AuthenticatedCampaignsArea {...props} />
+}
+
+interface AuthenticatedProps extends Props {
+    authenticatedUser: AuthenticatedUser
+}
+
+export const AuthenticatedCampaignsArea = withAuthenticatedUser<AuthenticatedProps>(({ match, ...outerProps }) => {
+    const breadcrumbSetters = outerProps.useBreadcrumb(
+        useMemo(
+            () => ({
+                key: 'CampaignsArea',
+                element: <Link to={match.url}>Campaigns</Link>,
+            }),
+            [match.url]
+        )
+    )
+    return (
+        <div className="w-100 web-content">
+            <Breadcrumbs breadcrumbs={outerProps.breadcrumbs} />
+            <div className="container">
+                {/* eslint-disable react/jsx-no-bind */}
+                <Switch>
+                    <Route
+                        render={props => <CampaignListPage {...outerProps} {...props} {...breadcrumbSetters} />}
+                        path={match.url}
+                        exact={true}
+                    />
+                    <Route
+                        path={`${match.url}/create`}
+                        render={props => <CreateCampaignPage {...outerProps} {...props} {...breadcrumbSetters} />}
+                        exact={true}
+                    />
+                </Switch>
+                {/* eslint-enable react/jsx-no-bind */}
+            </div>
+        </div>
+    )
+})
+
+export interface UserCampaignsAreaProps extends Props {
+    userID: Scalars['ID']
+}
+
+export const UserCampaignsArea = withAuthenticatedUser<
+    UserCampaignsAreaProps & { authenticatedUser: AuthenticatedUser }
+>(({ match, userID, ...outerProps }) => {
+    const breadcrumbSetters = outerProps.useBreadcrumb(
+        useMemo(
+            () => ({
+                key: 'CampaignsArea',
+                element: <Link to={match.url}>Campaigns</Link>,
+            }),
+            [match.url]
+        )
+    )
+    if (outerProps.isSourcegraphDotCom || !window.context.campaignsEnabled) {
+        return <></>
+    }
+    return (
+        <div className="w-100 web-content">
+            <Breadcrumbs breadcrumbs={outerProps.breadcrumbs} />
+            <div className="container">
+                <Switch>
                     {/* eslint-disable react/jsx-no-bind */}
+                    <Route
+                        path={`${match.url}/apply/:specID`}
+                        render={({ match, ...props }: RouteComponentProps<{ specID: string }>) => (
+                            <CampaignApplyPage
+                                {...outerProps}
+                                {...props}
+                                {...breadcrumbSetters}
+                                specID={match.params.specID}
+                            />
+                        )}
+                    />
+                    <Route
+                        path={`${match.url}/create`}
+                        render={props => <CreateCampaignPage {...outerProps} {...props} {...breadcrumbSetters} />}
+                    />
+                    <Route
+                        path={`${match.url}/:campaignName/close`}
+                        render={({ match, ...props }: RouteComponentProps<{ campaignName: string }>) => (
+                            <CampaignClosePage
+                                {...outerProps}
+                                {...props}
+                                {...breadcrumbSetters}
+                                namespaceID={userID}
+                                campaignName={match.params.campaignName}
+                            />
+                        )}
+                    />
+                    <Route
+                        path={`${match.url}/:campaignName`}
+                        render={({ match, ...props }: RouteComponentProps<{ campaignName: string }>) => (
+                            <CampaignDetailsPage
+                                {...outerProps}
+                                {...props}
+                                {...breadcrumbSetters}
+                                namespaceID={userID}
+                                campaignName={match.params.campaignName}
+                            />
+                        )}
+                    />
+                    <Route
+                        path={match.url}
+                        render={props => (
+                            <UserCampaignListPage {...outerProps} {...props} {...breadcrumbSetters} userID={userID} />
+                        )}
+                    />
+                    {/* eslint-enable react/jsx-no-bind */}
+                </Switch>
+            </div>
+        </div>
+    )
+})
+
+export interface OrgCampaignsAreaProps extends Props {
+    orgID: Scalars['ID']
+}
+
+export const OrgCampaignsArea = withAuthenticatedUser<OrgCampaignsAreaProps & { authenticatedUser: AuthenticatedUser }>(
+    ({ match, orgID, ...outerProps }) => {
+        const breadcrumbSetters = outerProps.useBreadcrumb(
+            useMemo(
+                () => ({
+                    key: 'CampaignsArea',
+                    element: <Link to={match.url}>Campaigns</Link>,
+                }),
+                [match.url]
+            )
+        )
+        if (outerProps.isSourcegraphDotCom || !window.context.campaignsEnabled) {
+            return <></>
+        }
+        return (
+            <div className="w-100 web-content">
+                <Breadcrumbs breadcrumbs={outerProps.breadcrumbs} />
+                <div className="container">
                     <Switch>
+                        {/* eslint-disable react/jsx-no-bind */}
                         <Route
-                            render={props => <GlobalCampaignListPage {...outerProps} {...props} />}
-                            path={match.url}
-                            exact={true}
+                            path={`${match.url}/apply/:specID`}
+                            render={({ match, ...props }: RouteComponentProps<{ specID: string }>) => (
+                                <CampaignApplyPage
+                                    {...props}
+                                    {...outerProps}
+                                    {...breadcrumbSetters}
+                                    specID={match.params.specID}
+                                />
+                            )}
                         />
                         <Route
                             path={`${match.url}/create`}
-                            render={props => <CreateCampaign {...outerProps} {...props} />}
-                            exact={true}
+                            render={props => <CreateCampaignPage {...props} {...outerProps} {...breadcrumbSetters} />}
                         />
                         <Route
-                            path={`${match.url}/cli`}
-                            render={props => <CampaignCliHelp {...outerProps} {...props} />}
-                            exact={true}
-                        />
-                        <Route
-                            path={`${match.url}/new`}
-                            render={props => <CampaignDetails {...outerProps} {...props} />}
-                            exact={true}
-                        />
-                        <Route
-                            path={`${match.url}/update`}
-                            render={props => <CampaignUpdateSelection {...outerProps} {...props} />}
-                            exact={true}
-                        />
-                        <Route
-                            path={`${match.url}/:campaignID`}
-                            render={({ match, ...props }: RouteComponentProps<{ campaignID: string }>) => (
-                                <CampaignDetails {...outerProps} {...props} campaignID={match.params.campaignID} />
+                            path={`${match.url}/:campaignName/close`}
+                            render={({ match, ...props }: RouteComponentProps<{ campaignName: string }>) => (
+                                <CampaignClosePage
+                                    {...props}
+                                    {...outerProps}
+                                    {...breadcrumbSetters}
+                                    namespaceID={orgID}
+                                    campaignName={match.params.campaignName}
+                                />
                             )}
                         />
+                        <Route
+                            path={`${match.url}/:campaignName`}
+                            render={({ match, ...props }: RouteComponentProps<{ campaignName: string }>) => (
+                                <CampaignDetailsPage
+                                    {...props}
+                                    {...outerProps}
+                                    {...breadcrumbSetters}
+                                    namespaceID={orgID}
+                                    campaignName={match.params.campaignName}
+                                />
+                            )}
+                        />
+                        <Route
+                            path={match.url}
+                            render={props => (
+                                <OrgCampaignListPage {...props} {...outerProps} {...breadcrumbSetters} orgID={orgID} />
+                            )}
+                            exact={true}
+                        />
+                        {/* eslint-enable react/jsx-no-bind */}
                     </Switch>
-                    {/* eslint-enable react/jsx-no-bind */}
-                </>
-            )
-        }
-    } else if (outerProps.authenticatedUser.siteAdmin) {
-        content = <CampaignsSiteAdminMarketingPage {...outerProps} />
-    } else {
-        content = <CampaignsUserMarketingPage {...outerProps} enableReadAccess={false} />
+                </div>
+            </div>
+        )
     }
-    return <div className="container mt-4">{content}</div>
-})
+)

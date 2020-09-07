@@ -9,24 +9,31 @@ import (
 	"sync"
 
 	"github.com/inconshreveable/log15"
+	indexmanager "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/index_manager"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 const Port = 3189
 
 type Server struct {
-	server *http.Server
-	once   sync.Once
+	indexManager indexmanager.Manager
+	server       *http.Server
+	once         sync.Once
 }
 
-func New() *Server {
+var _ goroutine.BackgroundRoutine = &Server{}
+
+func New(indexManager indexmanager.Manager) *Server {
 	host := ""
 	if env.InsecureDev {
 		host = "127.0.0.1"
 	}
 
-	s := &Server{}
+	s := &Server{
+		indexManager: indexManager,
+	}
 
 	s.server = &http.Server{
 		Addr:    net.JoinHostPort(host, strconv.FormatInt(int64(Port), 10)),

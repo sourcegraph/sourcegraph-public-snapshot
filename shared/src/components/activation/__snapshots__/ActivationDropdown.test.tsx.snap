@@ -87,12 +87,12 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
       set={[Function]}
     >
       <MenuButton
-        className="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center e2e-activation-nav-item-toggle"
+        className="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center test-activation-nav-item-toggle"
       >
         <button
           aria-controls="menu--1"
           aria-haspopup={true}
-          className="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center e2e-activation-nav-item-toggle"
+          className="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center test-activation-nav-item-toggle"
           data-reach-menu-button=""
           id="menu-button--menu--1"
           onKeyDown={[Function]}
@@ -173,7 +173,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
               background={false}
               backgroundPadding={0}
               circleRatio={1}
-              className="activation-dropdown-button__circular-progress-bar"
+              className="activation-dropdown-button__circular-progress-bar test-activation-progress-bar"
               classes={
                 Object {
                   "background": "CircularProgressbar-background",
@@ -200,7 +200,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
               value={0}
             >
               <svg
-                className="CircularProgressbar activation-dropdown-button__circular-progress-bar"
+                className="CircularProgressbar activation-dropdown-button__circular-progress-bar test-activation-progress-bar"
                 data-test-id="CircularProgressbar"
                 style={Object {}}
                 viewBox="0 0 100 100"
@@ -276,7 +276,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
               "current": <button
                 aria-controls="menu--1"
                 aria-haspopup="true"
-                class="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center e2e-activation-nav-item-toggle"
+                class="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center test-activation-nav-item-toggle"
                 data-reach-menu-button=""
                 id="menu-button--menu--1"
                 type="button"
@@ -300,7 +300,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                   class="activation-dropdown-button__progress-bar-container"
                 >
                   <svg
-                    class="CircularProgressbar activation-dropdown-button__circular-progress-bar"
+                    class="CircularProgressbar activation-dropdown-button__circular-progress-bar test-activation-progress-bar"
                     data-test-id="CircularProgressbar"
                     viewBox="0 0 100 100"
                   >
@@ -742,7 +742,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                     "current": <button
                       aria-controls="menu--1"
                       aria-haspopup="true"
-                      class="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center e2e-activation-nav-item-toggle"
+                      class="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center test-activation-nav-item-toggle"
                       data-reach-menu-button=""
                       id="menu-button--menu--1"
                       type="button"
@@ -766,7 +766,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                         class="activation-dropdown-button__progress-bar-container"
                       >
                         <svg
-                          class="CircularProgressbar activation-dropdown-button__circular-progress-bar"
+                          class="CircularProgressbar activation-dropdown-button__circular-progress-bar test-activation-progress-bar"
                           data-test-id="CircularProgressbar"
                           viewBox="0 0 100 100"
                         >
@@ -1286,38 +1286,14 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                           >
                                             <Memo(ChevronDownIcon)
                                               className="activation-checklist-item__icon"
-                                            >
-                                              <svg
-                                                className="mdi-icon activation-checklist-item__icon"
-                                                fill="currentColor"
-                                                height={24}
-                                                viewBox="0 0 24 24"
-                                                width={24}
-                                              >
-                                                <path
-                                                  d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
-                                                />
-                                              </svg>
-                                            </Memo(ChevronDownIcon)>
+                                            />
                                           </span>
                                           <span
                                             className="activation-checklist-item__icon-container icon-inline icon-right"
                                           >
                                             <Memo(ChevronRightIcon)
                                               className="activation-checklist-item__icon"
-                                            >
-                                              <svg
-                                                className="mdi-icon activation-checklist-item__icon"
-                                                fill="currentColor"
-                                                height={24}
-                                                viewBox="0 0 24 24"
-                                                width={24}
-                                              >
-                                                <path
-                                                  d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"
-                                                />
-                                              </svg>
-                                            </Memo(ChevronRightIcon)>
+                                            />
                                           </span>
                                           <a
                                             className="activation-checklist__title"
@@ -1329,19 +1305,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                         <div>
                                           <Memo(CheckboxBlankCircleOutlineIcon)
                                             className="icon-inline text-muted"
-                                          >
-                                            <svg
-                                              className="mdi-icon icon-inline text-muted"
-                                              fill="currentColor"
-                                              height={24}
-                                              viewBox="0 0 24 24"
-                                              width={24}
-                                            >
-                                              <path
-                                                d="M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
-                                              />
-                                            </svg>
-                                          </Memo(CheckboxBlankCircleOutlineIcon)>
+                                          />
                                         </div>
                                       </div>
                                     </ActivationChecklistItem>
@@ -1424,38 +1388,14 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                           >
                                             <Memo(ChevronDownIcon)
                                               className="activation-checklist-item__icon"
-                                            >
-                                              <svg
-                                                className="mdi-icon activation-checklist-item__icon"
-                                                fill="currentColor"
-                                                height={24}
-                                                viewBox="0 0 24 24"
-                                                width={24}
-                                              >
-                                                <path
-                                                  d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
-                                                />
-                                              </svg>
-                                            </Memo(ChevronDownIcon)>
+                                            />
                                           </span>
                                           <span
                                             className="activation-checklist-item__icon-container icon-inline icon-right"
                                           >
                                             <Memo(ChevronRightIcon)
                                               className="activation-checklist-item__icon"
-                                            >
-                                              <svg
-                                                className="mdi-icon activation-checklist-item__icon"
-                                                fill="currentColor"
-                                                height={24}
-                                                viewBox="0 0 24 24"
-                                                width={24}
-                                              >
-                                                <path
-                                                  d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"
-                                                />
-                                              </svg>
-                                            </Memo(ChevronRightIcon)>
+                                            />
                                           </span>
                                           <a
                                             className="activation-checklist__title"
@@ -1467,19 +1407,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                         <div>
                                           <Memo(CheckboxBlankCircleOutlineIcon)
                                             className="icon-inline text-muted"
-                                          >
-                                            <svg
-                                              className="mdi-icon icon-inline text-muted"
-                                              fill="currentColor"
-                                              height={24}
-                                              viewBox="0 0 24 24"
-                                              width={24}
-                                            >
-                                              <path
-                                                d="M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
-                                              />
-                                            </svg>
-                                          </Memo(CheckboxBlankCircleOutlineIcon)>
+                                          />
                                         </div>
                                       </div>
                                     </ActivationChecklistItem>
@@ -1560,38 +1488,14 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                           >
                                             <Memo(ChevronDownIcon)
                                               className="activation-checklist-item__icon"
-                                            >
-                                              <svg
-                                                className="mdi-icon activation-checklist-item__icon"
-                                                fill="currentColor"
-                                                height={24}
-                                                viewBox="0 0 24 24"
-                                                width={24}
-                                              >
-                                                <path
-                                                  d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
-                                                />
-                                              </svg>
-                                            </Memo(ChevronDownIcon)>
+                                            />
                                           </span>
                                           <span
                                             className="activation-checklist-item__icon-container icon-inline icon-right"
                                           >
                                             <Memo(ChevronRightIcon)
                                               className="activation-checklist-item__icon"
-                                            >
-                                              <svg
-                                                className="mdi-icon activation-checklist-item__icon"
-                                                fill="currentColor"
-                                                height={24}
-                                                viewBox="0 0 24 24"
-                                                width={24}
-                                              >
-                                                <path
-                                                  d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"
-                                                />
-                                              </svg>
-                                            </Memo(ChevronRightIcon)>
+                                            />
                                           </span>
                                           <a
                                             className="activation-checklist__title"
@@ -1603,19 +1507,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                         <div>
                                           <Memo(CheckboxBlankCircleOutlineIcon)
                                             className="icon-inline text-muted"
-                                          >
-                                            <svg
-                                              className="mdi-icon icon-inline text-muted"
-                                              fill="currentColor"
-                                              height={24}
-                                              viewBox="0 0 24 24"
-                                              width={24}
-                                            >
-                                              <path
-                                                d="M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
-                                              />
-                                            </svg>
-                                          </Memo(CheckboxBlankCircleOutlineIcon)>
+                                          />
                                         </div>
                                       </div>
                                     </ActivationChecklistItem>
@@ -1683,38 +1575,14 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                           >
                                             <Memo(ChevronDownIcon)
                                               className="activation-checklist-item__icon"
-                                            >
-                                              <svg
-                                                className="mdi-icon activation-checklist-item__icon"
-                                                fill="currentColor"
-                                                height={24}
-                                                viewBox="0 0 24 24"
-                                                width={24}
-                                              >
-                                                <path
-                                                  d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
-                                                />
-                                              </svg>
-                                            </Memo(ChevronDownIcon)>
+                                            />
                                           </span>
                                           <span
                                             className="activation-checklist-item__icon-container icon-inline icon-right"
                                           >
                                             <Memo(ChevronRightIcon)
                                               className="activation-checklist-item__icon"
-                                            >
-                                              <svg
-                                                className="mdi-icon activation-checklist-item__icon"
-                                                fill="currentColor"
-                                                height={24}
-                                                viewBox="0 0 24 24"
-                                                width={24}
-                                              >
-                                                <path
-                                                  d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"
-                                                />
-                                              </svg>
-                                            </Memo(ChevronRightIcon)>
+                                            />
                                           </span>
                                           <a
                                             className="activation-checklist__title"
@@ -1726,19 +1594,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                         <div>
                                           <Memo(CheckboxBlankCircleOutlineIcon)
                                             className="icon-inline text-muted"
-                                          >
-                                            <svg
-                                              className="mdi-icon icon-inline text-muted"
-                                              fill="currentColor"
-                                              height={24}
-                                              viewBox="0 0 24 24"
-                                              width={24}
-                                            >
-                                              <path
-                                                d="M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
-                                              />
-                                            </svg>
-                                          </Memo(CheckboxBlankCircleOutlineIcon)>
+                                          />
                                         </div>
                                       </div>
                                     </ActivationChecklistItem>

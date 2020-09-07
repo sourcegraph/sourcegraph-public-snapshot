@@ -111,6 +111,7 @@ async function createTestUser(
     }
 
     await driver.page.goto(passwordResetURL)
+    await driver.page.waitForSelector('.reset-password-page__form')
     await driver.page.keyboard.type(testUserPassword)
     await driver.page.keyboard.down(Key.Enter)
 
@@ -317,7 +318,7 @@ export async function loginToGitHub(driver: Driver, username: string, password: 
 }
 
 export async function loginToGitLab(driver: Driver, username: string, password: string): Promise<void> {
-    await driver.page.waitForSelector('input[name="user[login]"]', { timeout: 2000 })
+    await driver.page.waitForSelector('input[name="user[login]"]', { timeout: 10000 })
     await driver.replaceText({
         selector: '#user_login',
         newText: username,

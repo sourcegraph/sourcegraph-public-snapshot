@@ -13,10 +13,12 @@ import phabricatorSchemaJSON from '../../../schema/phabricator.schema.json'
 import settingsSchemaJSON from '../../../schema/settings.schema.json'
 import siteSchemaJSON from '../../../schema/site.schema.json'
 import { PageTitle } from '../components/PageTitle'
-import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { useObservable } from '../../../shared/src/util/useObservable'
 import { mapValues, values } from 'lodash'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { ThemeProps } from '../../../shared/src/theme'
+import { ExternalServiceKind } from '../../../shared/src/graphql-operations'
 
 /**
  * Minimal shape of a JSON Schema. These values are treated as opaque, so more specific types are
@@ -85,11 +87,9 @@ const allConfigSchema = {
         .reduce((allDefinitions, definitions) => ({ ...allDefinitions, ...definitions }), {}),
 }
 
-interface Props extends RouteComponentProps {
-    isLightTheme: boolean
-}
+interface Props extends RouteComponentProps, ThemeProps, TelemetryProps {}
 
-export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLightTheme, history }) => {
+export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLightTheme, telemetryService, history }) => {
     const monitoringDaysBack = 7
     const monitoringStats = useObservable(useMemo(() => fetchMonitoringStats(monitoringDaysBack), []))
     const allConfig = useObservable(useMemo(fetchAllConfigAndSettings, []))
@@ -133,6 +133,7 @@ export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLight
                     isLightTheme={isLightTheme}
                     history={history}
                     readOnly={true}
+                    telemetryService={telemetryService}
                 />
             )}
         </div>

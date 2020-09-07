@@ -13,7 +13,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/felixge/httpsnoop"
-	raven "github.com/getsentry/raven-go"
+	"github.com/getsentry/raven-go"
 	"github.com/gorilla/mux"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -54,23 +54,28 @@ var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Help: "Last time a request finished for a http endpoint.",
 }, metricLabels)
 
-func init() {
-	if err := raven.SetDSN(os.Getenv("SENTRY_DSN_BACKEND")); err != nil {
-		log15.Error("sentry.dsn", "error", err)
-	}
-
+func Init(shouldInitSentry bool) {
 	if origin := os.Getenv("METRICS_TRACK_ORIGIN"); origin != "" {
 		trackOrigin = origin
+	}
+
+	prometheus.MustRegister(requestDuration)
+	prometheus.MustRegister(requestHeartbeat)
+
+	if shouldInitSentry {
+		initSentry()
+	}
+}
+
+func initSentry() {
+	if err := raven.SetDSN(os.Getenv("SENTRY_DSN_BACKEND")); err != nil {
+		log15.Error("sentry.dsn", "error", err)
 	}
 
 	raven.SetRelease(version.Version())
 	raven.SetTagsContext(map[string]string{
 		"service": filepath.Base(os.Args[0]),
 	})
-
-	prometheus.MustRegister(requestDuration)
-	prometheus.MustRegister(requestHeartbeat)
-
 	go func() {
 		conf.Watch(func() {
 			if conf.Get().Log == nil {

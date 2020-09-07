@@ -28,7 +28,10 @@ export function getAssetsURL(sourcegraphURL: string): string {
     return assetsURL.endsWith('/') ? assetsURL : assetsURL + '/'
 }
 
-type PlatformName = NonNullable<typeof globalThis.SOURCEGRAPH_INTEGRATION> | 'firefox-extension' | 'chrome-extension'
+export type PlatformName =
+    | NonNullable<typeof globalThis.SOURCEGRAPH_INTEGRATION>
+    | 'firefox-extension'
+    | 'chrome-extension'
 
 export function getPlatformName(): PlatformName {
     if (window.SOURCEGRAPH_PHABRICATOR_EXTENSION) {
@@ -51,4 +54,9 @@ export function getExtensionVersion(): string {
 
 export function isFirefox(): boolean {
     return window.navigator.userAgent.includes('Firefox')
+}
+
+export function isDefaultSourcegraphUrl(url: string): boolean {
+    // TODO: Can this be improved by normalizing the url first?
+    return url === DEFAULT_SOURCEGRAPH_URL
 }

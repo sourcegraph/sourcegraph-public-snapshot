@@ -1,12 +1,43 @@
 import React from 'react'
-import { CampaignsMarketing } from './CampaignsMarketing'
+import { PrivateCodeCta } from '../../../../search/input/PrivateCodeCta'
+import { CampaignsIcon } from '../../icons'
+import { PageHeader } from '../../../../components/PageHeader'
 
-export interface CampaignsDotComPageProps {}
+export interface CampaignsDotComPageProps {
+    // Nothing for now.
+}
 
 export const CampaignsDotComPage: React.FunctionComponent<CampaignsDotComPageProps> = () => (
-    <CampaignsMarketing
-        body={
-            <section className="my-3">
+    <div className="container web-content mt-3">
+        <section className="mt-3 mb-5">
+            <PageHeader
+                icon={CampaignsIcon}
+                title={
+                    <>
+                        Campaigns{' '}
+                        <sup>
+                            <span className="badge badge-merged text-uppercase">Beta</span>
+                        </sup>
+                    </>
+                }
+            />
+            <h2 className="mb-5">Make and track large-scale changes across all code</h2>
+
+            <div className="text-center">
+                <iframe
+                    className="percy-hide chromatic-ignore"
+                    width="560"
+                    height="315"
+                    src="https://www.youtube.com/embed/aqcCrqRB17w"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen={true}
+                />
+            </div>
+        </section>
+
+        <div className="row">
+            <section className="my-3 col-md-8 col-xs-12">
                 <h2>Get started</h2>
                 <p>
                     <strong>Campaigns are not available on Sourcegraph.com</strong>. Instead, use a private Sourcegraph
@@ -39,7 +70,19 @@ export const CampaignsDotComPage: React.FunctionComponent<CampaignsDotComPagePro
                     </a>
                     .
                 </p>
+                <section className="my-3">
+                    <h2>Ask questions and share feedback</h2>
+                    <p>
+                        Get in touch on Twitter <a href="https://twitter.com/srcgraph">@srcgraph</a>, file an issue in
+                        our <a href="https://github.com/sourcegraph/sourcegraph/issues">public issue tracker</a>, or
+                        email <a href="mailto:feedback@sourcegraph.com">feedback@sourcegraph.com</a>. We look forward to
+                        hearing from you!
+                    </p>
+                </section>
             </section>
-        }
-    />
+            <div className="offset-md-1 col-md-10 offset-lg-0 col-lg-4">
+                <PrivateCodeCta />
+            </div>
+        </div>
+    </div>
 )

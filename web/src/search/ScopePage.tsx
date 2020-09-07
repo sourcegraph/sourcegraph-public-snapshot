@@ -15,7 +15,6 @@ import { Settings } from '../schema/settings.schema'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchReposByQuery } from './backend'
 import { submitSearch, QueryState } from './helpers'
-import { QueryInput } from './input/QueryInput'
 import { SearchButton } from './input/SearchButton'
 import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps } from '.'
 import { ErrorAlert } from '../components/alerts'
@@ -25,6 +24,9 @@ import { Markdown } from '../../../shared/src/components/Markdown'
 import { pluralize } from '../../../shared/src/util/strings'
 import * as H from 'history'
 import { VersionContextProps } from '../../../shared/src/search/util'
+import { LazyMonacoQueryInput } from './input/LazyMonacoQueryInput'
+import { ThemeProps } from '../../../shared/src/theme'
+import { AuthenticatedUser } from '../auth'
 
 const ScopeNotFound: React.FunctionComponent = () => (
     <HeroPage
@@ -46,10 +48,14 @@ interface Props
         PatternTypeProps,
         CaseSensitivityProps,
         CopyQueryButtonProps,
-        VersionContextProps {
-    authenticatedUser: GQL.IUser | null
+        VersionContextProps,
+        ThemeProps {
+    authenticatedUser: AuthenticatedUser | null
     onNavbarQueryChange: (queryState: QueryState) => void
     history: H.History
+
+    /** Whether globbing is enabled for filters. */
+    globbing: boolean
 }
 
 /**
@@ -89,8 +95,8 @@ export const ScopePage: React.FunctionComponent<Props> = ({ settingsCascade, onN
     )
 
     const onSubmit = useCallback(
-        (event: React.FormEvent<HTMLFormElement>): void => {
-            event.preventDefault()
+        (event?: React.FormEvent<HTMLFormElement>): void => {
+            event?.preventDefault()
             submitSearch({
                 ...props,
                 query: `${searchScope ? searchScope.value : ''} ${queryState.query}`,
@@ -120,16 +126,14 @@ export const ScopePage: React.FunctionComponent<Props> = ({ settingsCascade, onN
             </header>
             <section className="mb-5">
                 <Form className="d-flex" onSubmit={onSubmit}>
-                    <QueryInput
+                    <LazyMonacoQueryInput
                         {...props}
-                        value={queryState}
-                        onChange={setQueryState}
-                        prependQueryForSuggestions={searchScope.value}
-                        autoFocus={true}
-                        location={props.location}
-                        history={props.history}
                         settingsCascade={settingsCascade}
-                        placeholder="Search..."
+                        hasGlobalQueryBehavior={true}
+                        queryState={queryState}
+                        onChange={setQueryState}
+                        onSubmit={onSubmit}
+                        autoFocus={true}
                     />
                     <SearchButton />
                 </Form>

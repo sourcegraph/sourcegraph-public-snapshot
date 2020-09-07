@@ -15,9 +15,9 @@
 It takes less than 5 minutes to run and install Sourcegraph using Docker Compose:
 
 ```bash
-git clone git@github.com:sourcegraph/deploy-sourcegraph-docker.git
+git clone https://github.com/sourcegraph/deploy-sourcegraph-docker
 cd deploy-sourcegraph-docker/docker-compose
-git checkout v3.17.2
+git checkout v3.19.2
 docker-compose up -d
 ```
 
@@ -26,6 +26,9 @@ Once the server is ready (the `sourcegraph-frontend-0` service is healthy when r
 For next steps and further configuration options, visit the [site administration documentation](../../index.md).
 
 > NOTE: If you get stuck or need help, [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@srcgraph)](https://twitter.com/srcgraph) or [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
+
+### Note About Windows Installation 
+The docker compose installation requires a minimum of 8 CPU cores (logical) on the host machine in order to complete successfully. If using the Docker for Windows app, the default CPU count is only 2 which will result in errors during installation. You can go into the docker app settings->resources window to increase the CPU count to > 8 to resolve this issue.
 
 ## (optional, recommended) Store customizations in a fork
 
@@ -37,7 +40,7 @@ We **strongly** recommend that you create your own fork of [sourcegraph/deploy-s
 * Create a `release` branch (to track all of your customizations to Sourcegraph. When you upgrade Sourcegraph's Docker Compose definition, you will merge upstream into this branch.
 
 ```bash
-SOURCEGRAPH_VERSION="v3.17.2"
+SOURCEGRAPH_VERSION="v3.19.2"
 git checkout $SOURCEGRAPH_VERSION -b release
 ```
 

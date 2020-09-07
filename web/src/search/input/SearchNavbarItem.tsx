@@ -1,70 +1,133 @@
 import * as H from 'history'
-import React from 'react'
+import React, { useCallback, useMemo, useEffect } from 'react'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { Form } from '../../components/Form'
 import { submitSearch, QueryState } from '../helpers'
 import { SearchButton } from './SearchButton'
-import { PatternTypeProps, CaseSensitivityProps, SmartSearchFieldProps, CopyQueryButtonProps } from '..'
+import {
+    PatternTypeProps,
+    CaseSensitivityProps,
+    CopyQueryButtonProps,
+    OnboardingTourProps,
+    parseSearchURLPatternType,
+} from '..'
 import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
-import { QueryInput } from './QueryInput'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { VersionContextProps } from '../../../../shared/src/search/util'
-import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
+import Shepherd from 'shepherd.js'
+import { defaultTourOptions, generateStepTooltip, createStructuralSearchTourTooltip } from './SearchOnboardingTour'
+import { SearchPatternType } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 
 interface Props
     extends ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        SmartSearchFieldProps,
         SettingsCascadeProps,
         ThemeProps,
         CopyQueryButtonProps,
-        VersionContextProps {
+        VersionContextProps,
+        OnboardingTourProps {
     location: H.Location
     history: H.History
     navbarSearchState: QueryState
     onChange: (newValue: QueryState) => void
+    globbing: boolean
 }
 
 /**
  * The search item in the navbar
  */
-export class SearchNavbarItem extends React.PureComponent<Props> {
-    private onSubmit = (): void => {
-        submitSearch({ ...this.props, query: this.props.navbarSearchState.query, source: 'nav' })
-    }
+export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) => {
+    const onSubmit = useCallback(
+        (event?: React.FormEvent): void => {
+            event?.preventDefault()
+            submitSearch({ ...props, query: props.navbarSearchState.query, source: 'nav' })
+        },
+        [props]
+    )
 
-    private onFormSubmit = (event: React.FormEvent): void => {
-        event.preventDefault()
-        this.onSubmit()
-    }
+    const tour = useMemo(() => new Shepherd.Tour(defaultTourOptions), [])
 
-    public render(): React.ReactNode {
-        return (
-            <Form
-                className="search--navbar-item d-flex align-items-flex-start flex-grow-1 flex-shrink-past-contents"
-                onSubmit={this.onFormSubmit}
-            >
-                {this.props.smartSearchField ? (
-                    <LazyMonacoQueryInput
-                        {...this.props}
-                        hasGlobalQueryBehavior={true}
-                        queryState={this.props.navbarSearchState}
-                        onSubmit={this.onSubmit}
-                        autoFocus={true}
-                    />
-                ) : (
-                    <QueryInput
-                        {...this.props}
-                        value={this.props.navbarSearchState}
-                        autoFocus={this.props.location.pathname === '/search' ? 'cursor-at-end' : undefined}
-                        keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
-                        hasGlobalQueryBehavior={true}
-                    />
-                )}
-                <SearchButton />
-            </Form>
-        )
-    }
+    useEffect(() => {
+        tour.addSteps([
+            {
+                id: 'structural-search-tip',
+                text: generateStepTooltip(
+                    tour,
+                    'You ran a structural search',
+                    5,
+                    6,
+                    `Note that it properly matches the entire code block within the braces.\n
+                It is hard to match blocks of code or multiline expressions with regex,\n
+                but simple with structural search. Tip: 'my_match' is a name for the\n
+                code we matched between code boundries. This is similar to a named capture\n
+                group in regex.`,
+                    createStructuralSearchTourTooltip(tour)
+                ),
+                when: {
+                    show() {
+                        eventLogger.log('ViewedOnboardingTourStructuralSearchStep')
+                    },
+                },
+                attachTo: {
+                    element: '.test-structural-search-toggle',
+                    on: 'bottom',
+                },
+            },
+            {
+                id: 'view-search-reference',
+                text: generateStepTooltip(tour, 'Review the search reference', 5, 5),
+                attachTo: {
+                    element: '.search-help-dropdown-button',
+                    on: 'bottom',
+                },
+                when: {
+                    show() {
+                        eventLogger.log('ViewedOnboardingTourSearchReferenceStep')
+                    },
+                },
+                advanceOn: { selector: '.search-help-dropdown-button', event: 'click' },
+            },
+        ])
+    }, [tour])
+
+    useEffect(() => {
+        const url = new URLSearchParams(props.location.search)
+        const isStructuralSearch = parseSearchURLPatternType(props.location.search) === SearchPatternType.structural
+        if (url.has('onboardingTour') && props.showOnboardingTour) {
+            if (isStructuralSearch) {
+                tour.show('structural-search-tip')
+            } else {
+                tour.show('view-search-reference')
+            }
+        }
+    }, [tour, props.showOnboardingTour, props.location.search])
+
+    useEffect(
+        () => () => {
+            // End tour on unmount.
+            if (tour.isActive()) {
+                tour.complete()
+            }
+        },
+        [tour]
+    )
+
+    return (
+        <Form
+            className="search--navbar-item d-flex align-items-flex-start flex-grow-1 flex-shrink-past-contents"
+            onSubmit={onSubmit}
+        >
+            <LazyMonacoQueryInput
+                {...props}
+                hasGlobalQueryBehavior={true}
+                queryState={props.navbarSearchState}
+                onSubmit={onSubmit}
+                autoFocus={true}
+            />
+            <SearchButton />
+        </Form>
+    )
 }

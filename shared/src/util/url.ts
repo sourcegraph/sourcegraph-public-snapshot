@@ -1,12 +1,12 @@
 import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
-import { SearchPatternType } from '../graphql/schema'
 import { FiltersToTypeAndValue } from '../search/interactive/util'
 import { isEmpty } from 'lodash'
 import { parseSearchQuery, CharacterRange } from '../search/parser/parser'
 import { replaceRange } from './strings'
 import { discreteValueAliases } from '../search/parser/filters'
 import { tryCatch } from './errors'
+import { SearchPatternType } from '../graphql-operations'
 
 export interface RepoSpec {
     /**

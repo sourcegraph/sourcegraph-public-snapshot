@@ -114,6 +114,26 @@ export class SiteAdminPingsPage extends React.Component<Props, State> {
                             <li>Total count of changesets manually added to a campaign that have been merged</li>
                         </ul>
                     </li>
+                    <li>
+                        Monthly aggregated user state changes
+                        <ul>
+                            <li>Count of users created</li>
+                            <li>Count of users deleted</li>
+                            <li>Count of users retained</li>
+                            <li>Count of users resurrected</li>
+                            <li>Count of users churned</li>
+                        </ul>
+                    </li>
+                    <li>
+                        Saved searches usage data
+                        <ul>
+                            <li>Count of saved searches</li>
+                            <li>Count of users using saved searches</li>
+                            <li>Count of notifications triggered</li>
+                            <li>Count of notifications clicked</li>
+                            <li>Count of saved search views</li>
+                        </ul>
+                    </li>
                 </ul>
                 {updatesDisabled ? (
                     <p>All telemetry is disabled.</p>

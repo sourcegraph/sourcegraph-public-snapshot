@@ -27,7 +27,7 @@ func CSRFMiddleware(next http.Handler, isSecure func() bool) http.Handler {
 		// 			 browser extension.
 		//
 		// See https://github.com/sourcegraph/sourcegraph/issues/6167 for more information.
-		var sameSite csrf.Option = csrf.SameSite(csrf.SameSiteLaxMode)
+		var sameSite = csrf.SameSite(csrf.SameSiteLaxMode)
 		if secure {
 			sameSite = csrf.SameSite(csrf.SameSiteNoneMode)
 		}

@@ -2,17 +2,17 @@ import * as H from 'history'
 import UserIcon from 'mdi-react/UserIcon'
 import * as React from 'react'
 import { Link, Redirect } from 'react-router-dom'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { getReturnTo } from './SignInSignUpCommon'
 import { SignUpArgs, SignUpForm } from './SignUpForm'
+import { AuthenticatedUser } from '../auth'
 
 interface SignUpPageProps {
     location: H.Location
     history: H.History
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 }
 
 export class SignUpPage extends React.Component<SignUpPageProps> {

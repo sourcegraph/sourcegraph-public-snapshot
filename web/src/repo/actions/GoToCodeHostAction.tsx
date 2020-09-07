@@ -127,14 +127,20 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
             }
             // Add range or position path to the code host URL.
             if (this.props.range) {
-                url += `#L${this.props.range.start.line}-L${this.props.range.end.line}`
+                const rangeEndPrefix = externalURL.serviceType === 'gitlab' ? '' : 'L'
+                url += `#L${this.props.range.start.line}-${rangeEndPrefix}${this.props.range.end.line}`
             } else if (this.props.position) {
                 url += `#L${this.props.position.line}`
             }
         }
 
         return (
-            <LinkOrButton to={url} target="_self" data-tooltip={`View on ${displayName}`}>
+            <LinkOrButton
+                className="nav-link test-go-to-code-host"
+                to={url}
+                target="_self"
+                data-tooltip={`View on ${displayName}`}
+            >
                 <Icon className="icon-inline" />
             </LinkOrButton>
         )

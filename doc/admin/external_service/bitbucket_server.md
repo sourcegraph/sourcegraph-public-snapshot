@@ -36,11 +36,11 @@ To set up webhooks:
 1. Note the webhook URL displayed below the **Update repositories** button.
 1. On your Bitbucket Server instance, go to **Administration > Add-ons > Sourcegraph**
 1. Fill in the **Add a webhook** form
-   * Name: A unique name representing your Sourcegraph instance
-   * Scope: `global`
-   * Endpoint: The URL from step 6
-   * Events: `pr, repo`
-   * Secret: The secret you configured in step 4
+   * **Name**: A unique name representing your Sourcegraph instance
+   * **Scope**: `global`
+   * **Endpoint**: The URL from step 6
+   * **Events**: `pr, repo`
+   * **Secret**: The secret you configured in step 4
 1. Confirm that the new webhook is listed under **All webhooks** with a timestamp in the **Last successful** column.
 
 Done! Sourcegraph will now receive webhook events from Bitbucket Server and use them to sync pull request events, used by [campaigns](../../user/campaigns/index.md), faster and more efficiently.

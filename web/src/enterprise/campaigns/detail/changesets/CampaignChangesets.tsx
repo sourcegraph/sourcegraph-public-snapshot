@@ -1,88 +1,90 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
-import H from 'history'
-import * as GQL from '../../../../../../shared/src/graphql/schema'
+import * as H from 'history'
 import { ChangesetNodeProps, ChangesetNode } from './ChangesetNode'
 import { ThemeProps } from '../../../../../../shared/src/theme'
-import { FilteredConnection, FilteredConnectionQueryArgs, Connection } from '../../../../components/FilteredConnection'
-import { Observable, Subject, merge, of } from 'rxjs'
-import { DEFAULT_CHANGESET_PATCH_LIST_COUNT } from '../presentation'
-import { upperFirst, lowerCase } from 'lodash'
-import { queryChangesets as _queryChangesets } from '../backend'
-import { repeatWhen, delay, withLatestFrom, map, filter, switchMap } from 'rxjs/operators'
-import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
-import { createHoverifier, HoveredToken } from '@sourcegraph/codeintellify'
+import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
+import { Subject } from 'rxjs'
 import {
-    RepoSpec,
-    RevisionSpec,
-    FileSpec,
-    ResolvedRevisionSpec,
-    UIPositionSpec,
-    ModeSpec,
-} from '../../../../../../shared/src/util/url'
+    queryChangesets as _queryChangesets,
+    queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
+} from '../backend'
+import { repeatWhen, delay, withLatestFrom, map, filter } from 'rxjs/operators'
+import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
+import { createHoverifier } from '@sourcegraph/codeintellify'
+import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '../../../../../../shared/src/util/url'
 import { HoverMerged } from '../../../../../../shared/src/api/client/types/hover'
 import { ActionItemAction } from '../../../../../../shared/src/actions/ActionItem'
 import { getHoverActions } from '../../../../../../shared/src/hover/actions'
 import { WebHoverOverlay } from '../../../../components/shared'
-import { getModeFromPath } from '../../../../../../shared/src/languages'
 import { getHover, getDocumentHighlights } from '../../../../backend/features'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../../shared/src/telemetry/telemetryService'
 import { property, isDefined } from '../../../../../../shared/src/util/types'
 import { useObservable } from '../../../../../../shared/src/util/useObservable'
+import { ChangesetFields, Scalars } from '../../../../graphql-operations'
+import { getLSPTextDocumentPositionParameters } from '../../utils'
+import { CampaignChangesetsHeader } from './CampaignChangesetsHeader'
+import { ChangesetFilters, ChangesetFilterRow } from './ChangesetFilterRow'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
-    campaign: Pick<GQL.ICampaign, 'id' | 'closedAt' | 'viewerCanAdminister'>
+    campaignID: Scalars['ID']
+    viewerCanAdminister: boolean
     history: H.History
     location: H.Location
-    campaignUpdates: Subject<void>
-    changesetUpdates: Subject<void>
+
+    hideFilters?: boolean
 
     /** For testing only. */
-    queryChangesets?: (campaignID: GQL.ID, args: FilteredConnectionQueryArgs) => Observable<Connection<GQL.Changeset>>
-}
-
-function getLSPTextDocumentPositionParameters(
-    hoveredToken: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
-): RepoSpec & RevisionSpec & ResolvedRevisionSpec & FileSpec & UIPositionSpec & ModeSpec {
-    return {
-        repoName: hoveredToken.repoName,
-        revision: hoveredToken.revision,
-        filePath: hoveredToken.filePath,
-        commitID: hoveredToken.commitID,
-        position: hoveredToken,
-        mode: getModeFromPath(hoveredToken.filePath || ''),
-    }
+    queryChangesets?: typeof _queryChangesets
+    /** For testing only. */
+    queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
 }
 
 /**
  * A list of a campaign's changesets.
  */
 export const CampaignChangesets: React.FunctionComponent<Props> = ({
-    campaign,
+    campaignID,
+    viewerCanAdminister,
     history,
     location,
     isLightTheme,
-    changesetUpdates,
-    campaignUpdates,
     extensionsController,
     platformContext,
     telemetryService,
+    hideFilters = false,
     queryChangesets = _queryChangesets,
+    queryExternalChangesetWithFileDiffs,
 }) => {
-    const [state, setState] = useState<GQL.ChangesetState | undefined>()
-    const [reviewState, setReviewState] = useState<GQL.ChangesetReviewState | undefined>()
-    const [checkState, setCheckState] = useState<GQL.ChangesetCheckState | undefined>()
-
+    const [changesetFilters, setChangesetFilters] = useState<ChangesetFilters>({
+        checkState: null,
+        externalState: null,
+        reviewState: null,
+        publicationState: null,
+        reconcilerState: null,
+    })
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArgs) =>
-            merge(of(undefined), changesetUpdates).pipe(
-                switchMap(() =>
-                    queryChangesets(campaign.id, { ...args, state, reviewState, checkState }).pipe(
-                        repeatWhen(notifier => notifier.pipe(delay(5000)))
-                    )
-                )
-            ),
-        [campaign.id, state, reviewState, checkState, queryChangesets, changesetUpdates]
+            queryChangesets({
+                externalState: changesetFilters.externalState,
+                reviewState: changesetFilters.reviewState,
+                checkState: changesetFilters.checkState,
+                publicationState: changesetFilters.publicationState,
+                reconcilerState: changesetFilters.reconcilerState,
+                first: args.first ?? null,
+                after: args.after ?? null,
+                campaign: campaignID,
+                onlyPublishedByThisCampaign: null,
+            }).pipe(repeatWhen(notifier => notifier.pipe(delay(5000)))),
+        [
+            campaignID,
+            changesetFilters.externalState,
+            changesetFilters.reviewState,
+            changesetFilters.checkState,
+            changesetFilters.reconcilerState,
+            changesetFilters.publicationState,
+            queryChangesets,
+        ]
     )
 
     const containerElements = useMemo(() => new Subject<HTMLElement | null>(), [])
@@ -139,80 +141,36 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
         componentRerenders.next()
     }, [componentRerenders, hoverState])
 
-    const changesetFiltersRow = (
-        <div className="form-inline mb-0 mt-2">
-            <label htmlFor="changeset-state-filter">State</label>
-            <select
-                className="form-control mx-2"
-                value={state}
-                onChange={event => setState((event.target.value || undefined) as GQL.ChangesetState | undefined)}
-                id="changeset-state-filter"
-            >
-                <option value="">All</option>
-                {Object.values(GQL.ChangesetState).map(state => (
-                    <option value={state} key={state}>
-                        {upperFirst(lowerCase(state))}
-                    </option>
-                ))}
-            </select>
-            <label htmlFor="changeset-review-state-filter">Review state</label>
-            <select
-                className="form-control mx-2"
-                value={reviewState}
-                onChange={event =>
-                    setReviewState((event.target.value || undefined) as GQL.ChangesetReviewState | undefined)
-                }
-                id="changeset-review-state-filter"
-            >
-                <option value="">All</option>
-                {Object.values(GQL.ChangesetReviewState).map(state => (
-                    <option value={state} key={state}>
-                        {upperFirst(lowerCase(state))}
-                    </option>
-                ))}
-            </select>
-            <label htmlFor="changeset-check-state-filter">Check state</label>
-            <select
-                className="form-control mx-2"
-                value={checkState}
-                onChange={event =>
-                    setCheckState((event.target.value || undefined) as GQL.ChangesetCheckState | undefined)
-                }
-                id="changeset-check-state-filter"
-            >
-                <option value="">All</option>
-                {Object.values(GQL.ChangesetCheckState).map(state => (
-                    <option value={state} key={state}>
-                        {upperFirst(lowerCase(state))}
-                    </option>
-                ))}
-            </select>
-        </div>
-    )
-
     return (
         <>
-            {changesetFiltersRow}
+            {!hideFilters && (
+                <div className="d-flex justify-content-end">
+                    <ChangesetFilterRow history={history} location={location} onFiltersChange={setChangesetFilters} />
+                </div>
+            )}
             <div className="list-group position-relative" ref={nextContainerElement}>
-                <FilteredConnection<GQL.Changeset, Omit<ChangesetNodeProps, 'node'>>
+                <FilteredConnection<ChangesetFields, Omit<ChangesetNodeProps, 'node'>>
                     className="mt-2"
                     nodeComponent={ChangesetNode}
                     nodeComponentProps={{
                         isLightTheme,
-                        viewerCanAdminister: campaign.viewerCanAdminister,
+                        viewerCanAdminister,
                         history,
                         location,
-                        campaignUpdates,
                         extensionInfo: { extensionsController, hoverifier },
+                        queryExternalChangesetWithFileDiffs,
                     }}
                     queryConnection={queryChangesetsConnection}
                     hideSearch={true}
-                    defaultFirst={DEFAULT_CHANGESET_PATCH_LIST_COUNT}
+                    defaultFirst={15}
                     noun="changeset"
                     pluralNoun="changesets"
                     history={history}
                     location={location}
-                    useURLQuery={false}
+                    useURLQuery={true}
+                    listComponent="div"
+                    listClassName="campaign-changesets__grid mb-3"
+                    headComponent={CampaignChangesetsHeader}
                 />
                 {hoverState?.hoverOverlayProps && (
                     <WebHoverOverlay

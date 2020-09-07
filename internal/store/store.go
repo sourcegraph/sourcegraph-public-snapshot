@@ -16,7 +16,8 @@ import (
 	"sync"
 	"time"
 
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
@@ -78,36 +79,22 @@ type Store struct {
 	ZipCache ZipCache
 }
 
-// SetMaxConcurrentFetchTar sets the maximum number of concurrent calls allowed
-// to FetchTar. It defaults to 15.
-func (s *Store) SetMaxConcurrentFetchTar(limit int) {
-	if limit == 0 {
-		limit = 15
-	}
-	if s.fetchLimiter == nil {
-		s.fetchLimiter = mutablelimiter.New(limit)
-	} else {
-		s.fetchLimiter.SetLimit(limit)
-	}
-}
-
 // Start initializes state and starts background goroutines. It can be called
 // more than once. It is optional to call, but starting it earlier avoids a
 // search request paying the cost of initializing.
 func (s *Store) Start() {
 	s.once.Do(func() {
-		if s.fetchLimiter == nil {
-			s.SetMaxConcurrentFetchTar(0)
-		}
+		s.fetchLimiter = mutablelimiter.New(15)
 		s.cache = &diskcache.Store{
 			Dir:               s.Path,
 			Component:         "store",
-			BackgroundTimeout: 2 * time.Minute,
+			BackgroundTimeout: 10 * time.Minute,
 			BeforeEvict:       s.ZipCache.delete,
 		}
 		_ = os.MkdirAll(s.Path, 0700)
 		metrics.MustRegisterDiskMonitor(s.Path)
 		go s.watchAndEvict()
+		go s.watchConfig()
 	})
 }
 
@@ -148,6 +135,7 @@ func (s *Store) PrepareZip(ctx context.Context, repo gitserver.Repo, commit api.
 	}
 	resC := make(chan result, 1)
 	go func() {
+		start := time.Now()
 		// TODO: consider adding a cache method that doesn't actually bother opening the file,
 		// since we're just going to close it again immediately.
 		bgctx := opentracing.ContextWithSpan(context.Background(), opentracing.SpanFromContext(ctx))
@@ -160,6 +148,9 @@ func (s *Store) PrepareZip(ctx context.Context, repo gitserver.Repo, commit api.
 			if f.File != nil {
 				f.File.Close()
 			}
+		}
+		if err != nil {
+			log15.Error("failed to fetch archive", "repo", repo.Name, "commit", commit, "duration", time.Since(start), "error", err)
 		}
 		resC <- result{path, err}
 	}()
@@ -339,17 +330,8 @@ func (s *Store) watchAndEvict() {
 		return
 	}
 
-	ctx := context.Background()
-	prevAddrs := len(gitserver.DefaultClient.Addrs(ctx))
 	for {
 		time.Sleep(10 * time.Second)
-
-		// Allow roughly 10 fetches per gitserver
-		addrs := len(gitserver.DefaultClient.Addrs(ctx))
-		if addrs != prevAddrs {
-			prevAddrs = addrs
-			s.SetMaxConcurrentFetchTar(10 * addrs)
-		}
 
 		stats, err := s.cache.Evict(s.MaxCacheSizeBytes)
 		if err != nil {
@@ -358,6 +340,20 @@ func (s *Store) watchAndEvict() {
 		}
 		cacheSizeBytes.Set(float64(stats.CacheSize))
 		evictions.Add(float64(stats.Evicted))
+	}
+}
+
+// watchConfig updates fetchLimiter as the number of gitservers change.
+func (s *Store) watchConfig() {
+	for {
+		// Allow roughly 10 fetches per gitserver
+		limit := 10 * len(gitserver.DefaultClient.Addrs(context.Background()))
+		if limit == 0 {
+			limit = 15
+		}
+		s.fetchLimiter.SetLimit(limit)
+
+		time.Sleep(10 * time.Second)
 	}
 }
 

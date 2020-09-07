@@ -9,9 +9,24 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import { Link } from '../../../shared/src/components/Link'
 import GearIcon from 'mdi-react/GearIcon'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { PageHeader } from '../components/PageHeader'
+import { BreadcrumbsProps, BreadcrumbSetters, Breadcrumbs } from '../components/Breadcrumbs'
 
-interface InsightsPageProps extends ExtensionsControllerProps, Omit<ViewGridProps, 'views'> {}
+interface InsightsPageProps
+    extends ExtensionsControllerProps,
+        Omit<ViewGridProps, 'views'>,
+        BreadcrumbsProps,
+        BreadcrumbSetters {}
 export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props => {
+    props.useBreadcrumb(
+        useMemo(
+            () => ({
+                key: 'Insights',
+                element: <>Insights</>,
+            }),
+            []
+        )
+    )
     const views = useObservable(
         useMemo(
             () =>
@@ -24,29 +39,38 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
         )
     )
     return (
-        <div className="container mt-3">
-            <div className="d-flex align-items-center">
-                <h1 className="flex-grow-1 text-nowrap">
-                    <InsightsIcon className="icon-inline" /> Insights{' '}
-                    <sup>
-                        <span className="badge badge-primary">prototype</span>
-                    </sup>
-                </h1>
-                {/* These buttons are just links until there is a proper configuration UI */}
-                <Link to="/user/settings" className="btn btn-secondary mr-1">
-                    <GearIcon className="icon-inline" /> Configure insights
-                </Link>
-                <Link to="/extensions?query=category:Insights" className="btn btn-secondary">
-                    <PlusIcon className="icon-inline" /> Add more insights
-                </Link>
+        <div className="w-100">
+            <Breadcrumbs breadcrumbs={props.breadcrumbs} />
+            <div className="container mt-3 web-content">
+                <PageHeader
+                    icon={InsightsIcon}
+                    title={
+                        <>
+                            Insights{' '}
+                            <sup>
+                                <span className="badge badge-info text-uppercase">Prototype</span>
+                            </sup>
+                        </>
+                    }
+                    actions={
+                        <>
+                            <Link to="/user/settings" className="btn btn-secondary mr-1">
+                                <GearIcon className="icon-inline" /> Configure insights
+                            </Link>
+                            <Link to="/extensions?query=category:Insights" className="btn btn-secondary">
+                                <PlusIcon className="icon-inline" /> Add more insights
+                            </Link>
+                        </>
+                    }
+                />
+                {views === undefined ? (
+                    <div className="d-flex w-100">
+                        <LoadingSpinner className="my-4" />
+                    </div>
+                ) : (
+                    <ViewGrid {...props} views={views} />
+                )}
             </div>
-            {views === undefined ? (
-                <div className="d-flex w-100">
-                    <LoadingSpinner className="my-4" />
-                </div>
-            ) : (
-                <ViewGrid {...props} views={views} />
-            )}
         </div>
     )
 }

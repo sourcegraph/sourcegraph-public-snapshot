@@ -59,7 +59,7 @@ done
 
 $generate_graphql && { go generate github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend || failed=true; }
 $generate_dashboards && { docker-images/grafana/jsonnet/build.sh || failed=true; }
-$generate_monitoring && { pushd monitoring && DEV=true go generate && popd || failed=true; }
+$generate_monitoring && { pushd monitoring >/dev/null && DEV=true go generate && popd >/dev/null || failed=true; }
 $generate_schema && { go generate github.com/sourcegraph/sourcegraph/schema || failed=true; }
 $generate_ctags_image && { ./cmd/symbols/build-ctags.sh || failed=true; }
 
@@ -77,7 +77,11 @@ if [ ${#rebuilt[@]} -gt 0 ]; then
   echo >&2 "Rebuilt: ${rebuilt[*]}"
 
   if [ -n "$GOREMAN" ]; then
-    $GOREMAN run restart "${rebuilt[@]}"
+    for cmd in "${rebuilt[@]}"; do
+      if $GOREMAN run list | grep -Ee "^${cmd}$"; then
+        $GOREMAN run restart "${cmd}"
+      fi
+    done
   fi
 
 else

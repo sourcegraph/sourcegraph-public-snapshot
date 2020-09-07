@@ -2,6 +2,7 @@
 package types
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -64,13 +65,16 @@ func (rs Repos) Swap(i, j int)      { rs[i], rs[j] = rs[j], rs[i] }
 
 // ExternalService is a connection to an external service.
 type ExternalService struct {
-	ID          int64
-	Kind        string
-	DisplayName string
-	Config      string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	DeletedAt   *time.Time
+	ID              int64
+	Kind            string
+	DisplayName     string
+	Config          string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	DeletedAt       *time.Time
+	LastSyncAt      *time.Time
+	NextSyncAt      *time.Time
+	NamespaceUserID *int32
 }
 
 // URN returns a unique resource identifier of this external service.
@@ -374,4 +378,41 @@ type Event struct {
 	Source          string
 	Version         string
 	Timestamp       time.Time
+}
+
+// GrowthStatistics represents the total users that were created,
+// deleted, resurrected, churned and retained over the current month.
+type GrowthStatistics struct {
+	DeletedUsers     int32
+	CreatedUsers     int32
+	ResurrectedUsers int32
+	ChurnedUsers     int32
+	RetainedUsers    int32
+}
+
+// SavedSearches represents the total number of saved searches, users
+// using saved searches, and usage of saved searches.
+type SavedSearches struct {
+	TotalSavedSearches   int32
+	UniqueUsers          int32
+	NotificationsSent    int32
+	NotificationsClicked int32
+	UniqueUserPageViews  int32
+}
+
+// Secret represents the secrets table
+type Secret struct {
+	ID int32
+
+	// The table containing an object whose token is being encrypted.
+	SourceType sql.NullString
+
+	// The ID of the object in the SourceType table.
+	SourceID sql.NullInt32
+
+	// KeyName represents a unique key for the case where we're storing key-value pairs.
+	KeyName sql.NullString
+
+	// Value contains the encrypted string
+	Value string
 }

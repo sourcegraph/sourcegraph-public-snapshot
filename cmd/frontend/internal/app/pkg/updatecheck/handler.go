@@ -34,17 +34,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	//version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.17.3")
+	latestReleaseDockerServerImageBuild = newBuild("3.19.2")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.17.3-1")
+	latestReleaseKubernetesBuild = newBuild("3.19.2")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newBuild("3.17.2")
+	latestReleaseDockerComposeOrPureDocker = newBuild("3.19.2")
 )
 
 func getLatestRelease(deployType string) build {
@@ -176,6 +176,8 @@ type pingRequest struct {
 	UniqueUsers          int32           `json:"u"`
 	Activity             json.RawMessage `json:"act"`
 	CampaignsUsage       json.RawMessage `json:"automationUsage"`
+	GrowthStatistics     json.RawMessage `json:"growthStatistics"`
+	SavedSearches        json.RawMessage `json:"savedSearches"`
 	CodeIntelUsage       json.RawMessage `json:"codeIntelUsage"`
 	SearchUsage          json.RawMessage `json:"searchUsage"`
 	InitialAdminEmail    string          `json:"initAdmin"`
@@ -265,6 +267,8 @@ type pingPayload struct {
 	CampaignsUsage       json.RawMessage `json:"automation_usage"`
 	CodeIntelUsage       json.RawMessage `json:"code_intel_usage"`
 	SearchUsage          json.RawMessage `json:"search_usage"`
+	GrowthStatistics     json.RawMessage `json:"growth_statistics"`
+	SavedSearches        json.RawMessage `json:"saved_searches"`
 	InstallerEmail       string          `json:"installer_email"`
 	AuthProviders        string          `json:"auth_providers"`
 	ExtServices          string          `json:"ext_services"`
@@ -339,6 +343,8 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		CampaignsUsage:       pr.CampaignsUsage, // no change in schema
 		CodeIntelUsage:       codeIntelUsage,
 		SearchUsage:          searchUsage,
+		GrowthStatistics:     pr.GrowthStatistics,
+		SavedSearches:        pr.SavedSearches,
 		InstallerEmail:       pr.InitialAdminEmail,
 		AuthProviders:        strings.Join(pr.AuthProviders, ","),
 		ExtServices:          strings.Join(pr.ExternalServices, ","),

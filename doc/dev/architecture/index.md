@@ -6,13 +6,6 @@ You can click on each component to jump to its respective code repository or sub
 <object data="/dev/architecture/architecture.svg" type="image/svg+xml" style="width:100%; height: 100%">
 </object>
 
-The Code intelligence processes (the LSIF-based code intelligence service) has been extracted into its own diagram.
-
-<object data="/dev/architecture/codeintel.svg" type="image/svg+xml" style="width:100%; height: 100%">
-</object>
-
-To re-generate the architecture diagram from the `architecture.dot` file with Graphviz, run: `dot -Tsvg -o architecture.svg architecture.dot` (and similar for `codeintel.dot`).
-
 ## Clients
 
 We maintain multiple Sourcegraph clients:
@@ -48,11 +41,13 @@ Our backend is composed of multiple services:
 Here are some guides to help you understand how multiple systems fit together:
 
 - [Life of a search query](life-of-a-search-query.md)
-- [Life of an LSIF upload](life-of-an-lsif-upload.md)
-- [Life of a code intelligence query](life-of-a-code-intelligence-query.md)
 - [Life of a repository](life-of-a-repository.md)
 - [Life of a ping](life-of-a-ping.md)
 - [Search pagination](search-pagination.md)
+- Code intelligence
+  - [Uploads](../codeintel/queries.md)
+  - [Queries](../codeintel/queries.md)
+  - [Extensions](../codeintel/queries.md)
 - Future topics we will cover here:
   - Sourcegraph extension architecture
   - Web app and browser extension architecture

@@ -37,32 +37,16 @@ func scanPackageReferences(rows *sql.Rows, queryErr error) (_ []types.PackageRef
 // SameRepoPager returns a ReferencePager for dumps that belong to the given repository and commit and reference the package with the
 // given scheme, name, and version.
 func (s *store) SameRepoPager(ctx context.Context, repositoryID int, commit, scheme, name, version string, limit int) (_ int, _ ReferencePager, err error) {
-	tx, started, err := s.transact(ctx)
+	tx, err := s.transact(ctx)
 	if err != nil {
 		return 0, nil, err
-	}
-
-	done := noopDoneFunc
-	if started {
-		done = tx.Done
-	}
-
-	visibleIDs, err := scanInts(tx.query(
-		ctx,
-		withBidirectionalLineage(`SELECT id FROM visible_ids`, repositoryID, commit),
-	))
-	if err != nil {
-		return 0, nil, done(err)
-	}
-	if len(visibleIDs) == 0 {
-		return 0, newReferencePager(noopPageFromOffsetFunc, done), nil
 	}
 
 	conds := []*sqlf.Query{
 		sqlf.Sprintf("r.scheme = %s", scheme),
 		sqlf.Sprintf("r.name = %s", name),
 		sqlf.Sprintf("r.version = %s", version),
-		sqlf.Sprintf("r.dump_id IN (%s)", sqlf.Join(intsToQueries(visibleIDs), ", ")),
+		sqlf.Sprintf("r.dump_id IN (SELECT upload_id FROM lsif_nearest_uploads WHERE repository_id = %s AND commit = %s)", repositoryID, commit),
 	}
 
 	totalCount, _, err := scanFirstInt(tx.query(
@@ -70,7 +54,7 @@ func (s *store) SameRepoPager(ctx context.Context, repositoryID int, commit, sch
 		sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_references r WHERE %s`, sqlf.Join(conds, " AND ")),
 	))
 	if err != nil {
-		return 0, nil, done(err)
+		return 0, nil, tx.Done(err)
 	}
 
 	pageFromOffset := func(ctx context.Context, offset int) ([]types.PackageReference, error) {
@@ -84,21 +68,16 @@ func (s *store) SameRepoPager(ctx context.Context, repositoryID int, commit, sch
 		))
 	}
 
-	return totalCount, newReferencePager(pageFromOffset, done), nil
+	return totalCount, newReferencePager(pageFromOffset, tx.Done), nil
 }
 
 // PackageReferencePager returns a ReferencePager for dumps that belong to a remote repository (distinct from the given repository id)
 // and reference the package with the given scheme, name, and version. All resulting dumps are visible at the tip of their repository's
 // default branch.
 func (s *store) PackageReferencePager(ctx context.Context, scheme, name, version string, repositoryID, limit int) (_ int, _ ReferencePager, err error) {
-	tx, started, err := s.transact(ctx)
+	tx, err := s.transact(ctx)
 	if err != nil {
 		return 0, nil, err
-	}
-
-	done := noopDoneFunc
-	if started {
-		done = tx.Done
 	}
 
 	conds := []*sqlf.Query{
@@ -106,7 +85,7 @@ func (s *store) PackageReferencePager(ctx context.Context, scheme, name, version
 		sqlf.Sprintf("r.name = %s", name),
 		sqlf.Sprintf("r.version = %s", version),
 		sqlf.Sprintf("d.repository_id != %s", repositoryID),
-		sqlf.Sprintf("d.visible_at_tip = true"),
+		sqlf.Sprintf("EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = d.repository_id and upload_id = d.id)"),
 	}
 
 	totalCount, _, err := scanFirstInt(tx.query(
@@ -118,7 +97,7 @@ func (s *store) PackageReferencePager(ctx context.Context, scheme, name, version
 		`, sqlf.Join(conds, " AND ")),
 	))
 	if err != nil {
-		return 0, nil, done(err)
+		return 0, nil, tx.Done(err)
 	}
 
 	pageFromOffset := func(ctx context.Context, offset int) ([]types.PackageReference, error) {
@@ -129,7 +108,7 @@ func (s *store) PackageReferencePager(ctx context.Context, scheme, name, version
 		`, sqlf.Join(conds, " AND "), limit, offset)))
 	}
 
-	return totalCount, newReferencePager(pageFromOffset, done), nil
+	return totalCount, newReferencePager(pageFromOffset, tx.Done), nil
 }
 
 // UpdatePackageReferences inserts reference data tied to the given upload.

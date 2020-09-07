@@ -1,6 +1,5 @@
 import * as GQL from '../../../../shared/src/graphql/schema'
 import React, { FunctionComponent, useCallback, useEffect, useState, useMemo } from 'react'
-import { eventLogger } from '../../tracking/eventLogger'
 import {
     FilteredConnection,
     FilteredConnectionQueryArgs,
@@ -16,6 +15,8 @@ import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../components/alerts'
 import { Subject } from 'rxjs'
 import * as H from 'history'
+import { LSIFIndexState } from '../../../../shared/src/graphql-operations'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
 const Header: FunctionComponent<{}> = () => (
     <thead>
@@ -82,11 +83,11 @@ const IndexNode: FunctionComponent<IndexNodeProps> = ({ node, onDelete, history,
             </td>
             <td>
                 <Link to={`./indexes/${node.id}`}>
-                    {node.state === GQL.LSIFIndexState.PROCESSING ? (
+                    {node.state === LSIFIndexState.PROCESSING ? (
                         <span>Processing</span>
-                    ) : node.state === GQL.LSIFIndexState.COMPLETED ? (
+                    ) : node.state === LSIFIndexState.COMPLETED ? (
                         <span className="text-success">Completed</span>
-                    ) : node.state === GQL.LSIFIndexState.ERRORED ? (
+                    ) : node.state === LSIFIndexState.ERRORED ? (
                         <span className="text-danger">Failed to process</span>
                     ) : (
                         <span>Waiting to process (#{node.placeInQueue} in line)</span>
@@ -123,7 +124,7 @@ const IndexNode: FunctionComponent<IndexNodeProps> = ({ node, onDelete, history,
     )
 }
 
-interface Props extends RouteComponentProps<{}> {
+export interface CodeIntelIndexesPageProps extends RouteComponentProps<{}>, TelemetryProps {
     repo?: GQL.IRepository
     fetchLsifIndexes?: typeof defaultFetchLsifIndexes
 
@@ -134,13 +135,14 @@ interface Props extends RouteComponentProps<{}> {
 /**
  * The repository settings code intelligence page.
  */
-export const CodeIntelIndexesPage: FunctionComponent<Props> = ({
+export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> = ({
     repo,
     fetchLsifIndexes = defaultFetchLsifIndexes,
     now,
+    telemetryService,
     ...props
 }) => {
-    useEffect(() => eventLogger.logViewEvent('CodeIntelIndexes'), [])
+    useEffect(() => telemetryService.logViewEvent('CodeIntelIndexes'), [telemetryService])
 
     const filters: FilteredConnectionFilter[] = [
         {
@@ -153,19 +155,19 @@ export const CodeIntelIndexesPage: FunctionComponent<Props> = ({
             label: 'Completed',
             id: 'completed',
             tooltip: 'Show completed indexes only',
-            args: { state: GQL.LSIFIndexState.COMPLETED },
+            args: { state: LSIFIndexState.COMPLETED },
         },
         {
             label: 'Errored',
             id: 'errored',
             tooltip: 'Show errored indexes only',
-            args: { state: GQL.LSIFIndexState.ERRORED },
+            args: { state: LSIFIndexState.ERRORED },
         },
         {
             label: 'Queued',
             id: 'queued',
             tooltip: 'Show queued indexes only',
-            args: { state: GQL.LSIFIndexState.QUEUED },
+            args: { state: LSIFIndexState.QUEUED },
         },
     ]
 
@@ -194,7 +196,7 @@ export const CodeIntelIndexesPage: FunctionComponent<Props> = ({
                 </a>
                 . Enable precise code intelligence for non-Go code by{' '}
                 <a
-                    href="https://docs.sourcegraph.com/user/code_intelligence/lsif"
+                    href="https://docs.sourcegraph.com/user/code_intelligence/precise_code_intelligence"
                     target="_blank"
                     rel="noreferrer noopener"
                 >

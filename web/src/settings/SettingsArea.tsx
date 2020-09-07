@@ -19,18 +19,20 @@ import { mergeSettingsSchemas } from './configuration'
 import { SettingsPage } from './SettingsPage'
 import { ErrorMessage } from '../components/alerts'
 import * as H from 'history'
+import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { AuthenticatedUser } from '../auth'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
 /** Props shared by SettingsArea and its sub-pages. */
-interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCascadeProps, ThemeProps {
+interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCascadeProps, ThemeProps, TelemetryProps {
     /** The subject whose settings to edit. */
     subject: Pick<GQL.SettingsSubject, '__typename' | 'id'>
 
     /**
      * The currently authenticated user, NOT (necessarily) the user who is the subject of the page.
      */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 }
 
 interface SettingsData {
@@ -154,6 +156,7 @@ export class SettingsArea extends React.Component<Props, State> {
             isLightTheme: this.props.isLightTheme,
             platformContext: this.props.platformContext,
             settingsCascade: this.props.settingsCascade,
+            telemetryService: this.props.telemetryService,
         }
 
         return (

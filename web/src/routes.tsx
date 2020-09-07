@@ -10,6 +10,8 @@ import { kubernetes } from './repogroups/Kubernetes'
 import { golang } from './repogroups/Golang'
 import { reactHooks } from './repogroups/ReactHooks'
 import { android } from './repogroups/Android'
+import { stanford } from './repogroups/Stanford'
+import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
 const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')
@@ -18,7 +20,9 @@ const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea')
 
 interface LayoutRouteComponentProps<Params extends { [K in keyof Params]?: string }>
     extends RouteComponentProps<Params>,
-        Omit<LayoutProps, 'match'> {}
+        Omit<LayoutProps, 'match'>,
+        BreadcrumbsProps,
+        BreadcrumbSetters {}
 
 export interface LayoutRouteProps<Params extends { [K in keyof Params]?: string }> {
     path: string
@@ -173,22 +177,32 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/refactor-python2-to-3',
         render: props => <RepogroupPage {...props} repogroupMetadata={python2To3Metadata} />,
+        condition: props => window.context.sourcegraphDotComMode,
     },
     {
         path: '/kubernetes',
         render: props => <RepogroupPage {...props} repogroupMetadata={kubernetes} />,
+        condition: props => window.context.sourcegraphDotComMode,
     },
     {
         path: '/golang',
         render: props => <RepogroupPage {...props} repogroupMetadata={golang} />,
+        condition: props => window.context.sourcegraphDotComMode,
     },
     {
         path: '/react-hooks',
         render: props => <RepogroupPage {...props} repogroupMetadata={reactHooks} />,
+        condition: props => window.context.sourcegraphDotComMode,
     },
     {
         path: '/android',
         render: props => <RepogroupPage {...props} repogroupMetadata={android} />,
+        condition: props => window.context.sourcegraphDotComMode,
+    },
+    {
+        path: '/stanford',
+        render: props => <RepogroupPage {...props} repogroupMetadata={stanford} />,
+        condition: props => window.context.sourcegraphDotComMode,
     },
     {
         path: '/:repoRevAndRest+',

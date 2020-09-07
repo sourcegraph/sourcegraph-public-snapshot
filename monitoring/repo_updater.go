@@ -10,7 +10,7 @@ func RepoUpdater() *Container {
 				Title: "General",
 				Rows: []Row{
 					{
-						sharedFrontendInternalAPIErrorResponses("repo-updater"),
+						sharedFrontendInternalAPIErrorResponses("repo-updater", ObservableOwnerCloud),
 					},
 				},
 			},
@@ -19,9 +19,12 @@ func RepoUpdater() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("repo-updater"),
-						sharedContainerMemoryUsage("repo-updater"),
-						sharedContainerCPUUsage("repo-updater"),
+						sharedContainerCPUUsage("repo-updater", ObservableOwnerCloud),
+						sharedContainerMemoryUsage("repo-updater", ObservableOwnerCloud),
+					},
+					{
+						sharedContainerRestarts("repo-updater", ObservableOwnerCloud),
+						sharedContainerFsInodes("repo-updater", ObservableOwnerCloud),
 					},
 				},
 			},
@@ -30,12 +33,31 @@ func RepoUpdater() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage1d("repo-updater"),
-						sharedProvisioningMemoryUsage1d("repo-updater"),
+						sharedProvisioningCPUUsageLongTerm("repo-updater", ObservableOwnerCloud),
+						sharedProvisioningMemoryUsageLongTerm("repo-updater", ObservableOwnerCloud),
 					},
 					{
-						sharedProvisioningCPUUsage5m("repo-updater"),
-						sharedProvisioningMemoryUsage5m("repo-updater"),
+						sharedProvisioningCPUUsageShortTerm("repo-updater", ObservableOwnerCloud),
+						sharedProvisioningMemoryUsageShortTerm("repo-updater", ObservableOwnerCloud),
+					},
+				},
+			},
+			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("repo-updater", ObservableOwnerCloud),
+						sharedGoGcDuration("repo-updater", ObservableOwnerCloud),
+					},
+				},
+			},
+			{
+				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedKubernetesPodsAvailable("repo-updater", ObservableOwnerCloud),
 					},
 				},
 			},

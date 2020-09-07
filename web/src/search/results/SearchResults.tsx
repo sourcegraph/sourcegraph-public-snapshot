@@ -30,13 +30,15 @@ import { SearchResultsFilterBars, SearchScopeWithOptionalName } from './SearchRe
 import { SearchResultsList } from './SearchResultsList'
 import { SearchResultTypeTabs } from './SearchResultTypeTabs'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
-import { convertPlainTextToInteractiveQuery } from '../input/helpers'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { VersionContext } from '../../schema/site.schema'
 import AlertOutlineIcon from 'mdi-react/AlertOutlineIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import { Remote } from 'comlink'
 import { FlatExtHostAPI } from '../../../../shared/src/api/contract'
+import { DeployType } from '../../jscontext'
+import { AuthenticatedUser } from '../../auth'
+import { SearchPatternType } from '../../../../shared/src/graphql-operations'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI' | 'services'>,
@@ -48,7 +50,7 @@ export interface SearchResultsProps
         CaseSensitivityProps,
         InteractiveSearchProps,
         VersionContextProps {
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
     navbarSearchQueryState: QueryState
@@ -57,7 +59,7 @@ export interface SearchResultsProps
     searchRequest: (
         query: string,
         version: string,
-        patternType: GQL.SearchPatternType,
+        patternType: SearchPatternType,
         versionContext: string | undefined,
         extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
     ) => Observable<GQL.ISearchResults | ErrorLike>
@@ -113,17 +115,14 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         if (!patternType) {
             // If the patternType query parameter does not exist in the URL or is invalid, redirect to a URL which
             // has patternType=regexp appended. This is to ensure old URLs before requiring patternType still work.
-
-            const query = parseSearchURLQuery(this.props.location.search) || ''
-            const { navbarQuery, filtersInQuery } = convertPlainTextToInteractiveQuery(query)
+            const query = parseSearchURLQuery(this.props.location.search) ?? ''
             const newLocation =
                 '/search?' +
                 buildSearchURLQuery(
-                    navbarQuery,
-                    GQL.SearchPatternType.regexp,
+                    query,
+                    SearchPatternType.regexp,
                     this.props.caseSensitive,
-                    this.props.versionContext,
-                    filtersInQuery
+                    this.props.versionContext
                 )
             this.props.history.replace(newLocation)
         }
@@ -142,7 +141,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             queryAndPatternTypeAndCase
                         ): queryAndPatternTypeAndCase is {
                             query: string
-                            patternType: GQL.SearchPatternType
+                            patternType: SearchPatternType
                             caseSensitive: boolean
                             versionContext: string | undefined
                         } => !!queryAndPatternTypeAndCase.query && !!queryAndPatternTypeAndCase.patternType
@@ -296,7 +295,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             (isSettingsValid<Settings>(this.props.settingsCascade) && this.props.settingsCascade.final.quicklinks) || []
 
         return (
-            <div className="e2e-search-results search-results d-flex flex-column w-100">
+            <div className="test-search-results search-results d-flex flex-column w-100">
                 <PageTitle key="page-title" title={query} />
                 {!this.props.interactiveSearchMode && (
                     <SearchResultsFilterBars

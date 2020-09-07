@@ -1,6 +1,6 @@
 import { startCase } from 'lodash'
 import assert from 'assert'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
 import { testSingleFilePage } from './shared'
 import { retry } from '../../../shared/src/testing/utils'
@@ -29,7 +29,7 @@ describe('Sourcegraph browser extension on github.com', function () {
     })
 
     // Take a screenshot when a test fails
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
 
     after('Close browser', () => driver?.close())
 
@@ -102,13 +102,13 @@ describe('Sourcegraph browser extension on github.com', function () {
                         // Retry is here to wait for listeners to be registered
                         await retry(async () => {
                             await tokenElement.hover()
-                            await driver.page.waitForSelector('.e2e-tooltip-go-to-definition', { timeout: 5000 })
+                            await driver.page.waitForSelector('.test-tooltip-go-to-definition', { timeout: 5000 })
                         })
 
                         // Check go-to-definition jumps to the right place
                         await retry(async () => {
                             const href = await driver.page.evaluate(
-                                () => document.querySelector<HTMLAnchorElement>('.e2e-tooltip-go-to-definition')?.href
+                                () => document.querySelector<HTMLAnchorElement>('.test-tooltip-go-to-definition')?.href
                             )
                             assert.strictEqual(href, goToDefinitionURL)
                         })
@@ -123,12 +123,12 @@ describe('Sourcegraph browser extension on github.com', function () {
                                         first()
                                     )
                                     .toPromise(),
-                                driver.page.click('.e2e-tooltip-go-to-definition'),
+                                driver.page.click('.test-tooltip-go-to-definition'),
                             ])
                         } else {
                             await Promise.all([
                                 driver.page.waitForNavigation(),
-                                driver.page.click('.e2e-tooltip-go-to-definition'),
+                                driver.page.click('.test-tooltip-go-to-definition'),
                             ])
                         }
                         await retry(async () => {

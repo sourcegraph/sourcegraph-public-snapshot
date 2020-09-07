@@ -13,7 +13,7 @@ RUN DOC_SOLUTIONS_FILE='' PROMETHEUS_DIR=/generated/prometheus GRAFANA_DIR='' /g
 # (replacing master with the version number) to see if any changes (added/removed files, etc.) need to be
 # synchronized with this derivative Dockerfile. Also make sure to update the appropriate com.sourcegraph.*.version
 # labels below.
-FROM prom/prometheus:v2.16.0@sha256:e4ca62c0d62f3e886e684806dfe9d4e0cda60d54986898173c1083856cfda0f4 AS prom_upstream
+FROM prom/prometheus:v2.20.1@sha256:dad37e9735c6a3a8b7cf7fd560ffb287cb5eefdfb297145f0e28c7cccde7a732 AS prom_upstream
 
 # Similarly to above, this Dockerfile also extends https://github.com/prometheus/alertmanager/blob/v0.21.0/Dockerfile
 # When upgrading alertmanager, make sure to make similar checks to the one above.
@@ -63,7 +63,7 @@ USER root
 # user on the host machine (where this user does not exist).
 # See https://github.com/sourcegraph/sourcegraph/issues/1884
 #
-# Note: This mirrors what we do in e.g. our base alpine image: https://github.com/sourcegraph/sourcegraph/blob/master/docker-images/alpine/Dockerfile#L10-L15
+# Note: This mirrors what we do in e.g. our base alpine image: https://github.com/sourcegraph/sourcegraph/blob/main/docker-images/alpine/Dockerfile#L10-L15
 RUN addgroup -g 101 -S sourcegraph && adduser -u 100 -S -G sourcegraph -h /home/sourcegraph sourcegraph
 RUN mkdir -p /prometheus && chown -R sourcegraph:sourcegraph /prometheus
 RUN mkdir -p /alertmanager && chown -R sourcegraph:sourcegraph /alertmanager

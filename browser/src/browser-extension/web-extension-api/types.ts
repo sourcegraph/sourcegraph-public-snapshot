@@ -1,6 +1,5 @@
 import { GraphQLResult } from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { ExtensionHoverAlertType } from '../../shared/code-hosts/shared/hoverAlerts'
+import { OptionFlagValues } from '../../shared/util/optionFlags'
 
 export interface PhabricatorMapping {
     callsign: string
@@ -19,6 +18,11 @@ export interface FeatureFlags {
     allowErrorReporting: boolean
 
     /**
+     * Send telemetry
+     */
+    sendTelemetry: boolean
+
+    /**
      * Support link previews from extensions in content views (such as GitHub issues).
      */
     experimentalLinkPreviews: boolean
@@ -31,6 +35,7 @@ export interface FeatureFlags {
 
 export const featureFlagDefaults: FeatureFlags = {
     allowErrorReporting: false,
+    sendTelemetry: true,
     experimentalLinkPreviews: false,
     experimentalTextFieldCompletion: false,
 }
@@ -48,14 +53,12 @@ export interface SyncStorageItems extends SourcegraphURL {
     /**
      * Storage for feature flags.
      */
-    featureFlags: Partial<FeatureFlags>
+    featureFlags: Partial<OptionFlagValues>
     /**
      * Overrides settings from Sourcegraph.
      */
     clientSettings: string
-    dismissedHoverAlerts: {
-        [alertType in ExtensionHoverAlertType]?: boolean
-    }
+    dismissedHoverAlerts: Record<string, boolean | undefined>
 }
 
 export interface LocalStorageItems {
@@ -72,8 +75,5 @@ export interface ManagedStorageItems extends SourcegraphURL {
 export interface BackgroundMessageHandlers {
     openOptionsPage(): Promise<void>
     createBlobURL(bundleUrl: string): Promise<string>
-    requestGraphQL<T extends GQL.IQuery | GQL.IMutation>(options: {
-        request: string
-        variables: {}
-    }): Promise<GraphQLResult<T>>
+    requestGraphQL<T, V = object>(options: { request: string; variables: V }): Promise<GraphQLResult<T>>
 }

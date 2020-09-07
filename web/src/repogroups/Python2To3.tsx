@@ -1,6 +1,6 @@
 import { RepogroupMetadata } from './types'
-import { SearchPatternType } from '../../../shared/src/graphql/schema'
 import * as React from 'react'
+import { SearchPatternType } from '../graphql-operations'
 
 export const python2To3Metadata: RepogroupMetadata = {
     title: 'Refactor Python 2 to 3',
@@ -31,7 +31,7 @@ export const python2To3Metadata: RepogroupMetadata = {
             description: 'Find print statements with double quotes like print "Hello, World!".',
             exampleQuery: (
                 <>
-                    <span className="repogroup-page__keyword-text">lang:</span>python print ":[string]"
+                    <span className="search-keyword">lang:</span>python print ":[string]"
                 </>
             ),
             rawQuery: 'lang:python print ":[string]"',
@@ -43,7 +43,7 @@ export const python2To3Metadata: RepogroupMetadata = {
                 'Convert print statements to the print( ) function like print("Hello, World!"). These will work with both Python 2 and Python 3.',
             exampleQuery: (
                 <>
-                    <span className="repogroup-page__keyword-text">lang:</span>python print(":[string]")
+                    <span className="search-keyword">lang:</span>python print(":[string]")
                 </>
             ),
             rawQuery: 'lang:python print(":[string]")',
@@ -64,7 +64,7 @@ export const python2To3Metadata: RepogroupMetadata = {
             int(100.8) will be converted to 100.`,
             exampleQuery: (
                 <>
-                    <span className="repogroup-page__keyword-text">lang:</span>python \\sint\\(-*\\d+\\)
+                    <span className="search-keyword">lang:</span>python \\sint\\(-*\\d+\\)
                 </>
             ),
             rawQuery: 'lang:python \\sint\\(-*\\d+\\)',

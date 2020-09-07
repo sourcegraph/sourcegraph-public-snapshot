@@ -405,7 +405,7 @@ A pattern to search. By default the pattern is searched literally. The kind of s
       </tr>
       <tr class="r">
         <td class="ks"></td>
-        <td class="d"><code class="c"><a href="#fork">fork<a/></code></td>
+        <td class="d"><code class="c"><a href="#fork">fork</a></code></td>
         <td class="ke"></td>
       </tr>
       <tr class="r">
@@ -466,11 +466,22 @@ Search parameters allow you to filter search results or modify search behavior.
               <tr class="r">
                 <td class="ts"></td>
                 <td class="d">&nbsp;</td>
+                <td class="d">&nbsp;</td>
+                <td class="d">&nbsp;</td>
                 <td class="te"></td>
               </tr>
               <tr class="r">
-                <td class="ls"></td>
+                <td class="ks"></td>
                 <td class="d"><code class="c">–</code></td>
+                <td class="d">&nbsp;</td>
+                <td class="d">&nbsp;</td>
+                <td class="ke"></td>
+              </tr>
+              <tr class="r">
+                <td class="ls"></td>
+                <td class="d"><code class="c">NOT</code></td>
+                <td class="d">&nbsp;</td>
+                <td class="d"><code class="c"><a href="#whitespace">whitespace</a></code></td>
                 <td class="le"></td>
               </tr>
             </tbody>
@@ -511,13 +522,24 @@ Search parameters allow you to filter search results or modify search behavior.
                 <tr class="r">
                   <td class="ts"></td>
                   <td class="d">&nbsp;</td>
+                  <td class="d">
+                  <td class="d">
                   <td class="te"></td>
                 </tr>
                 <tr class="r">
-                  <td class="ls"></td>
+                  <td class="ks"></td>
                   <td class="d"><code class="c">@<a href="#revision">revision</a></code></td>
-                  <td class="le"></td>
+                  <td class="d">
+                  <td class="d">
+                  <td class="ke"></td>
                 </tr>
+                <tr class="r">
+                  <td class="ls"></td>
+                  <td class="d"><code class="c"><a href="#whitespace">whitespace</a></code></td>
+                  <td class="d">
+                  <td class="d"><code class="c">rev:<a href="#revison">revision</a></code></td>
+                  <td class="le"></td>
+              </tr>
               </tbody>
             </table>
           </td>
@@ -608,7 +630,11 @@ branch. You can optionally change the [revision](#revision).
 
 Search a repository at a given revision. For example, a branch name, commit hash, or git tag.
 
-**Example:** `repo:^github\.com/gorilla/mux@948bec34 testroute` [↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/gorilla/mux%40948bec34+testroute&patternType=literal)
+**Example:** `repo:^github\.com/gorilla/mux$@948bec34 testroute` [↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/gorilla/mux%24%40948bec34+testroute&patternType=literal) or `repo:^github\.com/gorilla/mux$ rev:v1.8.0 testroute` [↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/gorilla/mux+rev:v1.8.0+testroute&patternType=literal)
+
+You can search multiple revisions by separating the revisions with `:`. Specify `HEAD` for the default branch.
+
+**Example:** `repo:^github\.com/gorilla/mux$@v1.7.4:v1.4.0 testing.T` [↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/gorilla/mux%24%40v1.7.4:v1.4.0+testing.T&patternType=literal) or `repo:^github\.com/gorilla/mux$ rev:v1.7.4:v1.4.0 testing.T` [↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/gorilla/mux%24+rev:v1.7.4:v1.4.0+testing.T&patternType=literal)
 
 ### File
 
@@ -622,11 +648,22 @@ Search a repository at a given revision. For example, a branch name, commit hash
               <tr class="r">
                 <td class="ts"></td>
                 <td class="d">&nbsp;</td>
+                <td class="d">&nbsp;</td>
+                <td class="d">&nbsp;</td>
                 <td class="te"></td>
               </tr>
               <tr class="r">
-                <td class="ls"></td>
+                <td class="ks"></td>
                 <td class="d"><code class="c">–</code></td>
+                <td class="d">&nbsp;</td>
+                <td class="d">&nbsp;</td>
+                <td class="ke"></td>
+              </tr>
+              <tr class="r">
+                <td class="ls"></td>
+                <td class="d"><code class="c">NOT</code></td>
+                <td class="d">&nbsp;</td>
+                <td class="d"><code class="c"><a href="#whitespace">whitespace</a></code></td>
                 <td class="le"></td>
               </tr>
             </tbody>
@@ -692,8 +729,6 @@ excludes the file from being searched.
       </tr>
     </tbody>
   </table>
-</tbody>
-</table>
 </div>
 
 Only search files in the specified programming language, like `typescript` or
@@ -708,6 +743,33 @@ Only search files in the specified programming language, like `typescript` or
     <tbody>
       <tr class="r">
         <td class="d"></td>
+        <td class="d">
+          <table class="r">
+            <tbody>
+              <tr class="r">
+                <td class="ts"></td>
+                <td class="d">&nbsp;</td>
+                <td class="d">&nbsp;</td>
+                <td class="d">&nbsp;</td>
+                <td class="te"></td>
+              </tr>
+              <tr class="r">
+                <td class="ks"></td>
+                <td class="d"><code class="c">–</code></td>
+                <td class="d">&nbsp;</td>
+                <td class="d">&nbsp;</td>
+                <td class="ke"></td>
+              </tr>
+              <tr class="r">
+                <td class="ls"></td>
+                <td class="d"><code class="c">NOT</code></td>
+                <td class="d">&nbsp;</td>
+                <td class="d"><code class="c"><a href="#whitespace">whitespace</a></code></td>
+                <td class="le"></td>
+              </tr>
+            </tbody>
+          </table>
+        </td>
         <td class="d"><code class="c">content:</code></td>
         <td class="d"></td>
         <td class="d"><code class="c"><a href="#quoted-string">quoted string</a></code></td>
@@ -967,11 +1029,22 @@ exists.
               <tr class="r">
                 <td class="ts"></td>
                 <td class="d">&nbsp;</td>
+                <td class="d">&nbsp;</td>
+                <td class="d">&nbsp;</td>
                 <td class="te"></td>
               </tr>
               <tr class="r">
-                <td class="ls"></td>
+                <td class="ks"></td>
                 <td class="d"><code class="c">–</code></td>
+                <td class="d">&nbsp;</td>
+                <td class="d">&nbsp;</td>
+                <td class="ke"></td>
+              </tr>
+              <tr class="r">
+                <td class="ls"></td>
+                <td class="d"><code class="c">NOT</code></td>
+                <td class="d">&nbsp;</td>
+                <td class="d"><code class="c"><a href="#whitespace">whitespace</a></code></td>
                 <td class="le"></td>
               </tr>
             </tbody>
@@ -1442,6 +1515,44 @@ Include results which have a commit date before the specified time frame.
 Include results which have commit messages containing the string.
 
 **Example:** `type:commit message:"testing"` [↗](https://sourcegraph.com/search?q=type:commit+message:%22testing%22+repo:sourcegraph/sourcegraph%24+&patternType=regexp)
+
+## Whitespace
+
+<div name="r">
+  <table class="r">
+    <tbody>
+      <tr class="r">
+        <td class="d">
+          <table class="r">
+            <tbody>
+              <tr class="r">
+                <td class="d"></td>
+                <td class="d"><code class="c">space</code></td>
+                <td class="d"></td>
+              </tr>
+            </tbody>
+          </table>
+        </td>
+        <td class="d">
+          <table class="r">
+            <tbody>
+              <tr class="r">
+                <td class="ts"></td>
+                <td class="d"> </td>
+                <td class="te"></td>
+              </tr>
+              <tr class="r">
+                <td class="ls"></td>
+                <td class="d"><code class="c">...</code></td>
+                <td class="le"></td>
+              </tr>
+            </tbody>
+          </table>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
 
 
 <br>

@@ -10,9 +10,10 @@ import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { externalAccountFragment, ExternalAccountNode, ExternalAccountNodeProps } from './ExternalAccountNode'
+import { UserAreaUserFields } from '../../../graphql-operations'
 
 interface Props extends RouteComponentProps<{}> {
-    user: GQL.IUser
+    user: UserAreaUserFields
 }
 
 /**

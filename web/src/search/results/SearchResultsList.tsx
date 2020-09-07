@@ -31,6 +31,8 @@ import { shouldDisplayPerformanceWarning } from '../backend'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { ErrorAlert } from '../../components/alerts'
 import { VersionContextProps } from '../../../../shared/src/search/util'
+import { DeployType } from '../../jscontext'
+import { AuthenticatedUser } from '../../auth'
 
 const isSearchResults = (value: unknown): value is GQL.ISearchResults =>
     typeof value === 'object' &&
@@ -50,7 +52,7 @@ export interface SearchResultsListProps
         VersionContextProps {
     location: H.Location
     history: H.History
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     deployType: DeployType
 
@@ -355,6 +357,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     ) : (
                         (() => {
                             const results = this.props.resultsOrError
+
                             return (
                                 <>
                                     {/* Info Bar */}
@@ -372,6 +375,63 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                 : false
                                         }
                                     />
+
+                                    {/* Server-provided help message */}
+                                    {results.alert && (
+                                        <div className="alert alert-info m-2" data-testid="alert-container">
+                                            <h3>
+                                                <AlertCircleIcon className="icon-inline" /> {results.alert.title}
+                                            </h3>
+                                            <p>{results.alert.description}</p>
+                                            {results.alert.proposedQueries && (
+                                                <>
+                                                    <h4>Did you mean:</h4>
+                                                    <ul className="list-unstyled">
+                                                        {results.alert.proposedQueries.map(proposedQuery => (
+                                                            <li key={proposedQuery.query}>
+                                                                <Link
+                                                                    className="btn btn-secondary btn-sm"
+                                                                    data-testid="proposed-query-link"
+                                                                    to={
+                                                                        '/search?' +
+                                                                        buildSearchURLQuery(
+                                                                            proposedQuery.query,
+                                                                            this.props.patternType,
+                                                                            this.props.caseSensitive,
+                                                                            this.props.versionContext,
+                                                                            {}
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    {proposedQuery.query || proposedQuery.description}
+                                                                </Link>
+                                                                {proposedQuery.query &&
+                                                                    proposedQuery.description &&
+                                                                    ` — ${proposedQuery.description}`}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </>
+                                            )}{' '}
+                                            {results.timedout.length > 0 &&
+                                                results.timedout.length === results.repositoriesCount &&
+                                                /* All repositories timed out. */
+                                                this.renderRecommendations(
+                                                    ['dev', 'docker-container'].includes(window.context.deployType)
+                                                        ? [
+                                                              <>
+                                                                  Upgrade to Sourcegraph Enterprise for a highly
+                                                                  scalable Docker Compose or Kubernetes cluster
+                                                                  deployment option.
+                                                              </>,
+                                                              window.context.likelyDockerOnMac
+                                                                  ? 'Use Docker Machine instead of Docker for Mac for better performance on macOS.'
+                                                                  : 'Contact your Sourcegraph administrator if you are seeing timeouts regularly, as more CPU, memory, or disk resources may need to be provisioned.',
+                                                          ]
+                                                        : []
+                                                )}
+                                        </div>
+                                    )}
 
                                     {/* Results */}
                                     <VirtualList
@@ -407,62 +467,6 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         >
                                             Show more
                                         </button>
-                                    )}
-
-                                    {/* Server-provided help message */}
-                                    {results.alert && (
-                                        <div className="alert alert-info m-2">
-                                            <h3>
-                                                <AlertCircleIcon className="icon-inline" /> {results.alert.title}
-                                            </h3>
-                                            <p>{results.alert.description}</p>
-                                            {results.alert.proposedQueries && (
-                                                <>
-                                                    <h4>Did you mean:</h4>
-                                                    <ul className="list-unstyled">
-                                                        {results.alert.proposedQueries.map(proposedQuery => (
-                                                            <li key={proposedQuery.query}>
-                                                                <Link
-                                                                    className="btn btn-secondary btn-sm"
-                                                                    to={
-                                                                        '/search?' +
-                                                                        buildSearchURLQuery(
-                                                                            proposedQuery.query,
-                                                                            this.props.patternType,
-                                                                            this.props.caseSensitive,
-                                                                            this.props.versionContext,
-                                                                            this.props.filtersInQuery
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    {proposedQuery.query || proposedQuery.description}
-                                                                </Link>
-                                                                {proposedQuery.query &&
-                                                                    proposedQuery.description &&
-                                                                    ` — ${proposedQuery.description}`}
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </>
-                                            )}{' '}
-                                            {results.timedout.length > 0 &&
-                                                results.timedout.length === results.repositoriesCount &&
-                                                /* All repositories timed out. */
-                                                this.renderRecommendations(
-                                                    ['dev', 'docker-container'].includes(window.context.deployType)
-                                                        ? [
-                                                              <>
-                                                                  Upgrade to Sourcegraph Enterprise for a highly
-                                                                  scalable Docker Compose or Kubernetes cluster
-                                                                  deployment option.
-                                                              </>,
-                                                              window.context.likelyDockerOnMac
-                                                                  ? 'Use Docker Machine instead of Docker for Mac for better performance on macOS.'
-                                                                  : 'Contact your Sourcegraph administrator if you are seeing timeouts regularly, as more CPU, memory, or disk resources may need to be provisioned.',
-                                                          ]
-                                                        : []
-                                                )}
-                                        </div>
                                     )}
 
                                     {results.matchCount === 0 && !results.alert && (

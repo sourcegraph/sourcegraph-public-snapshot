@@ -3,17 +3,19 @@ import { of } from 'rxjs'
 import { storiesOf } from '@storybook/react'
 import { SuiteFunction } from 'mocha'
 import { Upload } from './backend'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import * as H from 'history'
 import React from 'react'
 import webStyles from '../../SourcegraphWebApp.scss'
+import { SourcegraphContext } from '../../jscontext'
+import { LSIFUploadState } from '../../../../shared/src/graphql-operations'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
 
 window.context = {} as SourcegraphContext & SuiteFunction
 
-const { add } = storiesOf('web/CodeIntelUpload', module).addDecorator(story => (
+const { add } = storiesOf('web/Codeintel administration/CodeIntelUpload', module).addDecorator(story => (
     <>
-        <style>{webStyles}</style>
         <div className="theme-light container">{story()}</div>
+        <style>{webStyles}</style>
     </>
 ))
 
@@ -29,6 +31,7 @@ const commonProps = {
         url: '',
     },
     now: () => new Date('2020-06-15T15:25:00+00:00'),
+    telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
 const upload: Pick<Upload, 'id' | 'projectRoot' | 'inputCommit' | 'inputRoot' | 'inputIndexer' | 'isLatestForRepo'> = {
@@ -58,7 +61,7 @@ add('Completed', () => (
         fetchLsifUpload={() =>
             of({
                 ...upload,
-                state: GQL.LSIFUploadState.COMPLETED,
+                state: LSIFUploadState.COMPLETED,
                 uploadedAt: '2020-06-15T12:20:30+00:00',
                 startedAt: '2020-06-15T12:25:30+00:00',
                 finishedAt: '2020-06-15T12:30:30+00:00',
@@ -75,7 +78,7 @@ add('Errored', () => (
         fetchLsifUpload={() =>
             of({
                 ...upload,
-                state: GQL.LSIFUploadState.ERRORED,
+                state: LSIFUploadState.ERRORED,
                 uploadedAt: '2020-06-15T12:20:30+00:00',
                 startedAt: '2020-06-15T12:25:30+00:00',
                 finishedAt: '2020-06-15T12:30:30+00:00',
@@ -92,7 +95,7 @@ add('Processing', () => (
         fetchLsifUpload={() =>
             of({
                 ...upload,
-                state: GQL.LSIFUploadState.PROCESSING,
+                state: LSIFUploadState.PROCESSING,
                 uploadedAt: '2020-06-15T12:20:30+00:00',
                 startedAt: '2020-06-15T12:25:30+00:00',
                 finishedAt: null,
@@ -109,7 +112,7 @@ add('Queued', () => (
         fetchLsifUpload={() =>
             of({
                 ...upload,
-                state: GQL.LSIFUploadState.QUEUED,
+                state: LSIFUploadState.QUEUED,
                 uploadedAt: '2020-06-15T12:20:30+00:00',
                 startedAt: null,
                 finishedAt: null,
@@ -126,7 +129,7 @@ add('Uploading', () => (
         fetchLsifUpload={() =>
             of({
                 ...upload,
-                state: GQL.LSIFUploadState.UPLOADING,
+                state: LSIFUploadState.UPLOADING,
                 uploadedAt: '2020-06-15T12:20:30+00:00',
                 startedAt: null,
                 finishedAt: null,

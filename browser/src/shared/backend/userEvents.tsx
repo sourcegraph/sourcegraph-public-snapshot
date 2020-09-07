@@ -2,6 +2,7 @@ import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { DEFAULT_SOURCEGRAPH_URL } from '../util/context'
+import { UserEvent, EventSource } from '../../graphql-operations'
 
 /**
  * Log a user action on the associated self-hosted Sourcegraph instance (allows site admins on a private
@@ -10,7 +11,7 @@ import { DEFAULT_SOURCEGRAPH_URL } from '../util/context'
  * @deprecated Use logEvent
  */
 export const logUserEvent = (
-    event: GQL.UserEvent,
+    event: UserEvent,
     uid: string,
     url: string,
     requestGraphQL: PlatformContext['requestGraphQL']
@@ -43,7 +44,7 @@ export const logUserEvent = (
  * Sourcegraph instance to see a count of unique users on a daily, weekly, and monthly basis).
  */
 export const logEvent = (
-    event: { name: string; userCookieID: string; url: string; argument?: string },
+    event: { name: string; userCookieID: string; url: string; argument?: string | {} },
     requestGraphQL: PlatformContext['requestGraphQL']
 ): void => {
     // Only send the request if this is a private, self-hosted Sourcegraph instance.
@@ -67,7 +68,7 @@ export const logEvent = (
         `,
         variables: {
             ...event,
-            source: GQL.EventSource.CODEHOSTINTEGRATION,
+            source: EventSource.CODEHOSTINTEGRATION,
             argument: event.argument && JSON.stringify(event.argument),
         },
         mightContainPrivateInfo: false,

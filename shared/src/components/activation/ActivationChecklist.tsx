@@ -1,6 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Accordion, AccordionItem, AccordionButton, AccordionPanel } from '@reach/accordion'
-import H from 'history'
+import * as H from 'history'
 import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import * as React from 'react'

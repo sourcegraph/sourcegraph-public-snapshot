@@ -19,18 +19,18 @@ const GetStateBatchSize = 100
 
 // MinimumUploadAge is the minimum age an upload has to be before it can be considered orphaned.
 // We allow a grace period here because the transaction that writes the initial record may not
-// have committed by the time this clenaup function runs.
+// have committed by the time this cleanup function runs.
 const MinimumUploadAge = time.Minute
 
 // removeOrphanedUploadFiles removes any upload file on disk that is associated with an
 // errored (or missing) entry in the database.
-func (j *Janitor) removeOrphanedUploadFiles() error {
+func (j *Janitor) removeOrphanedUploadFiles(ctx context.Context) error {
 	pathsByID, err := j.uploadPathsByID()
 	if err != nil {
 		return err
 	}
 
-	return j.removeOrphans(pathsByID, func(id int, path string) {
+	return j.removeOrphans(ctx, pathsByID, func(id int, path string) {
 		log15.Debug("Removed orphaned upload file", "id", id, "path", path)
 		j.metrics.OrphanedFilesRemoved.Inc()
 	})
@@ -38,13 +38,13 @@ func (j *Janitor) removeOrphanedUploadFiles() error {
 
 // removeOrphanedUploadFiles removes any bundle file on disk that is associated with an
 // errored (or missing) entry in the database.
-func (j *Janitor) removeOrphanedBundleFiles() error {
+func (j *Janitor) removeOrphanedBundleFiles(ctx context.Context) error {
 	pathsByID, err := j.databasePathsByID()
 	if err != nil {
 		return err
 	}
 
-	return j.removeOrphans(pathsByID, func(id int, path string) {
+	return j.removeOrphans(ctx, pathsByID, func(id int, path string) {
 		log15.Debug("Removed orphaned bundle file", "id", id, "path", path)
 		j.metrics.OrphanedFilesRemoved.Inc()
 	})
@@ -53,7 +53,7 @@ func (j *Janitor) removeOrphanedBundleFiles() error {
 // removeOrphans removes files from the given mapping if the upload identifier matches an
 // errored (or missing) entry in the database. The onRemove function is called when a file
 // or directory is successfully unlinked.
-func (j *Janitor) removeOrphans(pathsByID map[int]string, onRemove func(id int, path string)) error {
+func (j *Janitor) removeOrphans(ctx context.Context, pathsByID map[int]string, onRemove func(id int, path string)) error {
 	var ids []int
 	for id := range pathsByID {
 		ids = append(ids, id)
@@ -61,7 +61,7 @@ func (j *Janitor) removeOrphans(pathsByID map[int]string, onRemove func(id int, 
 
 	states := map[int]string{}
 	for _, batch := range batchIntSlice(ids, GetStateBatchSize) {
-		batchStates, err := j.store.GetStates(context.Background(), batch)
+		batchStates, err := j.store.GetStates(ctx, batch)
 		if err != nil {
 			return errors.Wrap(err, "store.GetStates")
 		}

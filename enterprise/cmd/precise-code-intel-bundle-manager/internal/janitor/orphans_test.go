@@ -50,7 +50,7 @@ func TestRemoveOrphanedUploadFile(t *testing.T) {
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.removeOrphanedUploadFiles(); err != nil {
+	if err := j.removeOrphanedUploadFiles(context.Background()); err != nil {
 		t.Fatalf("unexpected error removing orphaned upload files: %s", err)
 	}
 
@@ -106,7 +106,7 @@ func TestRemoveOrphanedBundleFile(t *testing.T) {
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.removeOrphanedBundleFiles(); err != nil {
+	if err := j.removeOrphanedBundleFiles(context.Background()); err != nil {
 		t.Fatalf("unexpected error removing orphaned bundle files: %s", err)
 	}
 
@@ -162,7 +162,7 @@ func TestRemoveOrphanedBundleFilesMaxRequestBatchSize(t *testing.T) {
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.removeOrphanedBundleFiles(); err != nil {
+	if err := j.removeOrphanedBundleFiles(context.Background()); err != nil {
 		t.Fatalf("unexpected error removing dead dumps: %s", err)
 	}
 

@@ -8,6 +8,8 @@ Currently, GitHub, GitHub Enterprise, GitLab and Bitbucket Server permissions ar
 
 ## GitHub
 
+> WARNING: It takes time to complete mirroring repository permissions from the code host, please read about [background permissions syncing](#background-permissions-syncing) to know what to expect.
+
 Prerequisite: [Add GitHub as an authentication provider.](../auth/index.md#github)
 
 Then, [add or edit a GitHub connection](../external_service/github.md#repository-syncing) and include the `authorization` field:
@@ -16,13 +18,13 @@ Then, [add or edit a GitHub connection](../external_service/github.md#repository
 {
    "url": "https://github.com",
    "token": "$PERSONAL_ACCESS_TOKEN",
-   "authorization": {
-     "ttl": "3h"
-   }
+   "authorization": {}
 }
 ```
 
 ## GitLab
+
+> WARNING: It takes time to complete mirroring repository permissions from the code host, please read about [background permissions syncing](#background-permissions-syncing) to know what to expect.
 
 GitLab permissions can be configured in three ways:
 
@@ -45,8 +47,7 @@ Then, [add or edit a GitLab connection](../external_service/gitlab.md#repository
   "authorization": {
     "identityProvider": {
       "type": "oauth"
-    },
-    "ttl": "3h"
+    }
   }
 }
 ```
@@ -68,8 +69,7 @@ Then, [add or edit a GitLab connection](../external_service/gitlab.md#repository
       "authProviderID": "$AUTH_PROVIDER_ID",
       "authProviderType": "$AUTH_PROVIDER_TYPE",
       "gitlabProvider": "$AUTH_PROVIDER_GITLAB_ID"
-    },
-    "ttl": "3h"
+    }
   }
 }
 ```
@@ -94,19 +94,19 @@ because Sourcegraph usernames are mutable.
   "authorization": {
     "identityProvider": {
       "type": "username"
-    },
-    "ttl": "3h"
+    }
   }
 }
 ```
 
 ## Bitbucket Server
 
+> WARNING: It takes time to complete mirroring repository permissions from the code host, please read about [background permissions syncing](#background-permissions-syncing) to know what to expect.
+
 Enforcing Bitbucket Server permissions can be configured via the `authorization` setting in its configuration.
 
 ### Prerequisites
 
-1. You have **fewer than 2500 repositories** on your Bitbucket Server instance.
 1. You have the exact same user accounts, **with matching usernames**, in Sourcegraph and Bitbucket Server. This can be accomplished by configuring an [external authentication provider](../auth/index.md) that mirrors user accounts from a central directory like LDAP or Active Directory. The same should be done on Bitbucket Server with [external user directories](https://confluence.atlassian.com/bitbucketserver/external-user-directories-776640394.html).
 1. Ensure you have set `auth.enableUsernameChanges` to **`false`** in the [site config](../config/site_config.md) to prevent users from changing their usernames and **escalating their privileges**.
 
@@ -163,14 +163,6 @@ Go to your Sourcegraph's *Manage repositories* page (i.e. `https://sourcegraph.e
 
 <img src="https://imgur.com/ucetesA.png" width="800">
 
----
-
-### Caching
-
-Permissions for each user are cached for the configured `ttl` duration (**3h** by default). When the `ttl` expires for a given user, during request that needs to be authorized, permissions will be refetched from Bitbucket Server again in the background, during which time the previously cached permissions will be used to authorize the user's actions. A lower `ttl` makes Sourcegraph refresh permissions for each user more often which increases load on Bitbucket Server, so have that in consideration when changing this value.
-
-The default `hardTTL` is **3 days**, after which a user's cached permissions must be updated before any user action can be authorized. While the update is happening an error is returned to the user. The default `hardTTL` value was chosen so that it reduces the chances of users being forced to wait for their permissions to be updated after a weekend of inactivity.
-
 ### Fast permission sync with Bitbucket Server plugin
 
 By installing the [Bitbucket Server plugin](../../../integration/bitbucket_server.md), you can make use of the fast permission sync feature that allows using Bitbucket Server permissions on larger instances.
@@ -181,7 +173,7 @@ Finally, **save the configuration**. You're done!
 
 ## Background permissions syncing
 
-Sourcegraph 3.17+ supports syncing permissions in the background by default to better handle repository permissions at scale for GitHub, GitLab, and Bitbucket Server code hosts. Rather than syncing a user's permissions when they log in and potentially blocking them from seeing search results, Sourcegraph syncs these permissions asynchronously in the background, opportunistically refreshing them in a timely manner.
+Sourcegraph 3.17+ supports syncing permissions in the background by default to better handle repository permissions at scale for GitHub, GitLab, and Bitbucket Server code hosts, and has become the only permissions mirror option since Sourcegraph 3.19. Rather than syncing a user's permissions when they log in and potentially blocking them from seeing search results, Sourcegraph syncs these permissions asynchronously in the background, opportunistically refreshing them in a timely manner.
 
 For older versions (Sourcegraph 3.14, 3.15, and 3.16), background permissions syncing is behind a feature flag in the [site configuration](../config/site_config.md):
 
@@ -191,11 +183,11 @@ For older versions (Sourcegraph 3.14, 3.15, and 3.16), background permissions sy
 }
 ```
 
-Benefits of backround syncing:
+Benefits of background syncing:
 
 1. More predictable load on the code host API due to maintaining a schedule of permission updates.
 1. Permissions are quickly synced for new repositories added to the Sourcegraph instance.
-1. Users who sign up on the Sourcegraph instance can immediately get search results from the repositories they have access to on the code host.
+1. Users who sign up on the Sourcegraph instance can immediately get search results from some repositories they have access to on the code host as we begin to incrementally sync their permissions.
 
 Considerations when enabling for the first time:
 

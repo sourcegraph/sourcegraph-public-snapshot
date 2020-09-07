@@ -75,15 +75,16 @@ func NewDB(t testing.TB, dsn string) *sql.DB {
 	t.Cleanup(func() {
 		defer db.Close()
 
-		if !t.Failed() {
-			if err := testDB.Close(); err != nil {
-				t.Fatalf("failed to close test database: %s", err)
-			}
-			dbExec(t, db, killClientConnsQuery, dbname)
-			dbExec(t, db, `DROP DATABASE `+pq.QuoteIdentifier(dbname))
-		} else {
+		if t.Failed() {
 			t.Logf("DATABASE %s left intact for inspection", dbname)
+			return
 		}
+
+		if err := testDB.Close(); err != nil {
+			t.Fatalf("failed to close test database: %s", err)
+		}
+		dbExec(t, db, killClientConnsQuery, dbname)
+		dbExec(t, db, `DROP DATABASE `+pq.QuoteIdentifier(dbname))
 	})
 
 	return testDB

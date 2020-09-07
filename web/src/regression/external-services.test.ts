@@ -17,7 +17,7 @@ import {
     updateExternalService,
 } from './util/api'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 
 describe('External services GUI', () => {
     const testUsername = 'test-extsvc'
@@ -56,7 +56,7 @@ describe('External services GUI', () => {
         await setUserSiteAdmin(gqlClient, user.id, true)
     })
 
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
 
     after(async function () {
         this.timeout(10 * 1000)
@@ -92,13 +92,13 @@ describe('External services GUI', () => {
                     "repositoryPathPattern": "github-prefix/{nameWithOwner}"
                 `
                 await driver.replaceText({
-                    selector: '#e2e-external-service-form-display-name',
+                    selector: '#test-external-service-form-display-name',
                     newText: externalServiceName,
                     selectMethod: 'selectall',
                     enterTextMethod: 'paste',
                 })
                 await driver.replaceText({
-                    selector: '.monaco-editor',
+                    selector: '.test-external-service-editor .monaco-editor',
                     newText: githubConfig,
                     selectMethod: 'keyboard',
                     enterTextMethod: 'paste',
@@ -248,7 +248,7 @@ describe('External services permissions', () => {
         ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
     })
 
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
 
     after(async function () {
         this.timeout(10 * 1000)

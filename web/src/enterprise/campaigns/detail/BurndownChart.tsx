@@ -1,5 +1,5 @@
-import H from 'history'
-import React from 'react'
+import * as H from 'history'
+import React, { useMemo } from 'react'
 import {
     Area,
     ComposedChart,
@@ -11,11 +11,18 @@ import {
     YAxis,
     TooltipPayload,
 } from 'recharts'
-import { ICampaign } from '../../../../../shared/src/graphql/schema'
+import { ChangesetCountsOverTimeFields, Scalars } from '../../../graphql-operations'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { useObservable } from '../../../../../shared/src/util/useObservable'
+import { queryChangesetCountsOverTime as _queryChangesetCountsOverTime } from './backend'
 
-interface Props extends Pick<ICampaign, 'changesetCountsOverTime'> {
+interface Props {
+    campaignID: Scalars['ID']
     history: H.History
     width?: string | number
+
+    /** For testing only. */
+    queryChangesetCountsOverTime?: typeof _queryChangesetCountsOverTime
 }
 
 const dateTickFormat = new Intl.DateTimeFormat(undefined, { month: 'long', day: 'numeric' })
@@ -46,7 +53,12 @@ interface StateDefinition {
     sortOrder: number
 }
 
-const states: Record<string, StateDefinition> = {
+type DisplayableChangesetCounts = Pick<
+    ChangesetCountsOverTimeFields,
+    'openPending' | 'openChangesRequested' | 'openApproved' | 'closed' | 'merged'
+>
+
+const states: Record<keyof DisplayableChangesetCounts, StateDefinition> = {
     openPending: { fill: 'var(--warning)', label: 'Open & awaiting review', sortOrder: 4 },
     openChangesRequested: { fill: 'var(--danger)', label: 'Open & changes requested', sortOrder: 3 },
     openApproved: { fill: 'var(--success)', label: 'Open & approved', sortOrder: 2 },
@@ -54,12 +66,33 @@ const states: Record<string, StateDefinition> = {
     merged: { fill: 'var(--merged)', label: 'Merged', sortOrder: 0 },
 }
 
-const tooltipItemSorter = ({ dataKey }: TooltipPayload): number => states[dataKey as string].sortOrder
+const tooltipItemSorter = ({ dataKey }: TooltipPayload): number =>
+    states[dataKey as keyof DisplayableChangesetCounts].sortOrder
 
 /**
  * A burndown chart showing progress of the campaigns changesets.
  */
-export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changesetCountsOverTime, width = '100%' }) => {
+export const CampaignBurndownChart: React.FunctionComponent<Props> = ({
+    campaignID,
+    queryChangesetCountsOverTime = _queryChangesetCountsOverTime,
+    width = '100%',
+}) => {
+    const changesetCountsOverTime: ChangesetCountsOverTimeFields[] | undefined = useObservable(
+        useMemo(() => queryChangesetCountsOverTime({ campaign: campaignID }), [
+            campaignID,
+            queryChangesetCountsOverTime,
+        ])
+    )
+
+    // Is loading.
+    if (changesetCountsOverTime === undefined) {
+        return (
+            <div className="text-center">
+                <LoadingSpinner className="icon-inline mx-auto my-4" />
+            </div>
+        )
+    }
+
     if (changesetCountsOverTime.length <= 1) {
         return (
             <p>
@@ -76,7 +109,7 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changese
         )
     }
     return (
-        <ResponsiveContainer width={width} height={300}>
+        <ResponsiveContainer width={width} height={300} className="test-campaigns-chart">
             <ComposedChart
                 data={changesetCountsOverTime.map(snapshot => ({ ...snapshot, date: Date.parse(snapshot.date) }))}
             >
@@ -118,8 +151,8 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changese
                             dataKey={dataKey}
                             name={state.label}
                             fill={state.fill}
-                            // The stroke is used to colour the legend, which we
-                            // want to match the fill colour for each area.
+                            // The stroke is used to color the legend, which we
+                            // want to match the fill color for each area.
                             stroke={state.fill}
                             {...commonAreaProps}
                         />

@@ -27,19 +27,13 @@ func TestIntegration(t *testing.T) {
 		t.Run("Changesets", storeTest(db, testStoreChangesets))
 		t.Run("ChangesetEvents", storeTest(db, testStoreChangesetEvents))
 		t.Run("ListChangesetSyncData", storeTest(db, testStoreListChangesetSyncData))
-		t.Run("PatchSets", storeTest(db, testStorePatchSets))
-		t.Run("PatchSets_DeleteExpired", storeTest(db, testStorePatchSetsDeleteExpired))
-		t.Run("Patches", storeTest(db, testStorePatches))
-		t.Run("ChangesetJobs", storeTest(db, testStoreChangesetJobs))
+		t.Run("CampaignSpecs", storeTest(db, testStoreCampaignSpecs))
+		t.Run("ChangesetSpecs", storeTest(db, testStoreChangesetSpecs))
 	})
 
 	t.Run("GitHubWebhook", testGitHubWebhook(db, userID))
 	t.Run("BitbucketWebhook", testBitbucketWebhook(db, userID))
-	t.Run("MigratePatchesWithoutDiffStats", testMigratePatchesWithoutDiffStats(db, userID))
-
-	// The following tests need to be separate because testStore above wraps everything in a global transaction
-	t.Run("StoreLocking", testStoreLocking(db))
-	t.Run("ProcessChangesetJob", testProcessChangesetJob(db, userID))
+	t.Run("GitLabWebhook", testGitLabWebhook(db, userID))
 }
 
 func truncateTables(t *testing.T, db *sql.DB, tables ...string) {
@@ -49,6 +43,17 @@ func truncateTables(t *testing.T, db *sql.DB, tables ...string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func insertTestOrg(t *testing.T, db *sql.DB) (orgID int32) {
+	t.Helper()
+
+	err := db.QueryRow("INSERT INTO orgs (name) VALUES ('bbs-org') RETURNING id").Scan(&orgID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return orgID
 }
 
 func insertTestUser(t *testing.T, db *sql.DB) (userID int32) {

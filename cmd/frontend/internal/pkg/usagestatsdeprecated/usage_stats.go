@@ -17,8 +17,8 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
@@ -147,8 +147,11 @@ func GetSiteUsageStatistics(opt *SiteUsageStatisticsOptions) (*types.SiteUsageSt
 }
 
 // GetUsersActiveTodayCount returns a count of users that have been active today.
-func GetUsersActiveTodayCount() (int, error) {
-	c := pool.Get()
+func GetUsersActiveTodayCount(ctx context.Context) (int, error) {
+	c, err := pool.GetContext(ctx)
+	if err != nil {
+		return 0, err
+	}
 	defer c.Close()
 
 	count, err := redis.Int(c.Do("SCARD", usersActiveKeyFromDaysAgo(0)))

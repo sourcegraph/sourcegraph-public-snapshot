@@ -58,7 +58,7 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                     }),
                     filter(event => event.currentTarget.checkValidity()),
                     mergeMap(() =>
-                        createOrganization(this.state).pipe(
+                        createOrganization({ name: this.state.name, displayName: this.state.displayName }).pipe(
                             catchError(error => {
                                 console.error(error)
                                 this.setState({ error })
@@ -97,7 +97,7 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                         <input
                             id="new-org-page__form-name"
                             type="text"
-                            className="form-control e2e-new-org-name-input"
+                            className="form-control test-new-org-name-input"
                             placeholder="acme-corp"
                             pattern={VALID_ORG_NAME_REGEXP}
                             maxLength={ORG_NAME_MAX_LENGTH}
@@ -121,7 +121,7 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                         <input
                             id="new-org-page__form-display-name"
                             type="text"
-                            className="form-control e2e-new-org-display-name-input"
+                            className="form-control test-new-org-display-name-input"
                             placeholder="ACME Corporation"
                             autoCorrect="off"
                             value={this.state.displayName}
@@ -130,7 +130,11 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                         />
                     </div>
 
-                    <button type="submit" className="btn btn-primary" disabled={this.state.loading}>
+                    <button
+                        type="submit"
+                        className="btn btn-primary test-create-org-submit-button"
+                        disabled={this.state.loading}
+                    >
                         Create organization
                     </button>
                     {this.state.loading && <LoadingSpinner className="icon-inline" />}

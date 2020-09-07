@@ -1,61 +1,54 @@
-# Example: Refactor Go code using Comby
+# Refactor Go code using Comby
 
-Our goal for this campaign is to simplify Go code by using [Comby](https://comby.dev/) to rewrite statements of this form
-
-```go
-fmt.Sprintf("%d", arg)
-```
-
-to this form:
+This campaign rewrites Go statements from
 
 ```go
-strconv.Itoa(arg)
+fmt.Sprintf("%d", number)
 ```
 
-The semantics are the same, but one more cleanly expresses the intention behind the code.
+to
 
-We're going to use two Docker containers in our action.
-
-The first container launches Comby to rewrite the Go code.
-
->NOTE: Learn more about Comby and what it's capable of at [comby.dev](https://comby.dev/)
-
-The second container runs [goimports](https://godoc.org/golang.org/x/tools/cmd/goimports) to update the `import` statements in the updated Go code so that `strconv` is correctly imported and, possibly, `fmt` is removed.
-
-Here is the `action.json` file that defines this as an action:
-
-```json
-{
-  "scopeQuery": "lang:go fmt.Sprintf",
-  "steps": [
-    {
-      "type": "docker",
-      "image": "comby/comby",
-      "args": ["-in-place", "fmt.Sprintf(\"%d\", :[v])", "strconv.Itoa(:[v])", "-matcher", ".go", "-d", "/work"]
-    },
-    {
-      "type": "docker",
-      "image": "cytopia/goimports",
-      "args": ["-w", "/work"]
-    }
-  ]
-}
+```go
+strconv.Itoa(number)
 ```
 
-Please note that the `"scopeQuery"` makes sure that the repositories over which we run the action all contain Go code in which we have a call to `fmt.Sprintf`. That narrows the list of repositories down considerably, even though we still need to search through the whole repository with Comby. (We're aware that this is a limitation and are working on improving the workflows involving exact search results.)
+since they are equivalent.
 
-Save the definition in a file, for example `go-comby.action.json`.
+Since the replacements could change the formatting of the code, it also runs `gofmt` over the repository.
 
-Now we can execute the action and turn it into a campaign:
+## Campaign spec
 
-1. Make sure that the `"scopeQuery"` returns the repositories we want to run over:
+```yaml
+name: sprintf-to-itoa
+description: Run `comby` to replace `fmt.Sprintf("%d", integer)` calls with `strconv.Iota`
 
-    ```
-    src actions scope-query -f go-comby.action.json
-    ```
-1. Execute the action and create a patchset:
+# Find all repositories that contain the `fmt.Sprintf` statement using structural search
+on:
+  - repositoriesMatchingQuery: lang:go fmt.Sprintf("%d", :[v]) patterntype:structural
 
-    ```
-    src actions exec -f action.json | src campaign patchset create-from-patches
-    ```
-1. Follow the printed instructions to create the campaign on Sourcegraph.
+steps:
+  - run: comby -in-place 'fmt.Sprintf("%d", :[v])' 'strconv.Itoa(:[v])' .go -matcher .go -exclude-dir .,vendor
+    container: comby/comby
+  - run: gofmt -w ./
+    container: golang:1.15-alpine
+
+# Describe the changeset (e.g., GitHub pull request) you want for each repository.
+changesetTemplate:
+  title: Replace equivalent fmt.Sprintf calls with strconv.Itoa
+  body: This campaign replaces `fmt.Sprintf("%d", integer)` calls with semantically equivalent `strconv.Itoa` calls
+  branch: campaigns/sprintf-to-itoa # Push the commit to this branch.
+  commit:
+    message: Replacing fmt.Sprintf with strconv.Iota
+  published: false
+```
+
+## Instructions
+
+1. Save the campaign spec above as `YOUR_CAMPAIGN_SPEC.campaign.yaml`.
+1. Create a campaign from the campaign spec by running the following [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) command:
+
+    <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em> -namespace USERNAME_OR_ORG</code></pre>
+
+1. Open the preview URL that the command printed out.
+1. Examine the preview. Confirm that the changesets are the ones you intended to track. If not, edit the campaign spec and then rerun the command above.
+1. Click the **Create campaign** button.

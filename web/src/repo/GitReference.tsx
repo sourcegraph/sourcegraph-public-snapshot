@@ -9,6 +9,7 @@ import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { numberWithCommas } from '../../../shared/src/util/strings'
 import { queryGraphQL } from '../backend/graphql'
 import { Timestamp } from '../components/time/Timestamp'
+import { GitRefType } from '../graphql-operations'
 
 interface GitReferenceNodeProps {
     node: GQL.IGitRef
@@ -67,10 +68,10 @@ export const gitReferenceFragments = gql`
         target {
             commit {
                 author {
-                    ...SignatureFields
+                    ...SignatureFieldsForReferences
                 }
                 committer {
-                    ...SignatureFields
+                    ...SignatureFieldsForReferences
                 }
                 behindAhead(revspec: "HEAD") @include(if: $withBehindAhead) {
                     behind
@@ -80,7 +81,7 @@ export const gitReferenceFragments = gql`
         }
     }
 
-    fragment SignatureFields on Signature {
+    fragment SignatureFieldsForReferences on Signature {
         person {
             displayName
             user {
@@ -96,7 +97,7 @@ export const queryGitReferences = memoizeObservable(
         repo: GQL.ID
         first?: number
         query?: string
-        type: GQL.GitRefType
+        type: GitRefType
         withBehindAhead?: boolean
     }): Observable<GQL.IGitRefConnection> =>
         queryGraphQL(
@@ -127,7 +128,7 @@ export const queryGitReferences = memoizeObservable(
             {
                 ...args,
                 withBehindAhead:
-                    args.withBehindAhead !== undefined ? args.withBehindAhead : args.type === GQL.GitRefType.GIT_BRANCH,
+                    args.withBehindAhead !== undefined ? args.withBehindAhead : args.type === GitRefType.GIT_BRANCH,
             }
         ).pipe(
             map(({ data, errors }) => {

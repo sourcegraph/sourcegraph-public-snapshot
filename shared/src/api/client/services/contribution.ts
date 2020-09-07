@@ -185,42 +185,64 @@ export function mergeContributions(contributions: Evaluated<Contributions>[]): E
     }
     const merged: Evaluated<Contributions> = {}
     for (const contribution of contributions) {
+        // swallow errors from malformed manifests to prevent breaking other
+        // contributions or extensions: https://github.com/sourcegraph/sourcegraph/pull/12573
         if (contribution.actions) {
-            if (!merged.actions) {
-                merged.actions = [...contribution.actions]
-            } else {
-                merged.actions = [...merged.actions, ...contribution.actions]
+            try {
+                if (!merged.actions) {
+                    merged.actions = [...contribution.actions]
+                } else {
+                    merged.actions = [...merged.actions, ...contribution.actions]
+                }
+            } catch {
+                // noop
             }
         }
         if (contribution.menus) {
-            if (!merged.menus) {
-                merged.menus = { ...contribution.menus }
-            } else {
-                for (const [menu, items] of Object.entries(contribution.menus) as [
-                    ContributableMenu,
-                    Evaluated<MenuItemContribution>[]
-                ][]) {
-                    const mergedItems = merged.menus[menu]
-                    if (!mergedItems) {
-                        merged.menus[menu] = [...items]
-                    } else {
-                        merged.menus[menu] = [...mergedItems, ...items]
+            try {
+                if (!merged.menus) {
+                    merged.menus = { ...contribution.menus }
+                } else {
+                    for (const [menu, items] of Object.entries(contribution.menus) as [
+                        ContributableMenu,
+                        Evaluated<MenuItemContribution>[]
+                    ][]) {
+                        const mergedItems = merged.menus[menu]
+                        try {
+                            if (!mergedItems) {
+                                merged.menus[menu] = [...items]
+                            } else {
+                                merged.menus[menu] = [...mergedItems, ...items]
+                            }
+                        } catch {
+                            // noop
+                        }
                     }
                 }
+            } catch {
+                // noop
             }
         }
         if (contribution.views) {
-            if (!merged.views) {
-                merged.views = [...contribution.views]
-            } else {
-                merged.views = [...merged.views, ...contribution.views]
+            try {
+                if (!merged.views) {
+                    merged.views = [...contribution.views]
+                } else {
+                    merged.views = [...merged.views, ...contribution.views]
+                }
+            } catch {
+                // noop
             }
         }
         if (contribution.searchFilters) {
-            if (!merged.searchFilters) {
-                merged.searchFilters = [...contribution.searchFilters]
-            } else {
-                merged.searchFilters = [...merged.searchFilters, ...contribution.searchFilters]
+            try {
+                if (!merged.searchFilters) {
+                    merged.searchFilters = [...contribution.searchFilters]
+                } else {
+                    merged.searchFilters = [...merged.searchFilters, ...contribution.searchFilters]
+                }
+            } catch {
+                // noop
             }
         }
     }

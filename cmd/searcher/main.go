@@ -21,7 +21,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
@@ -35,7 +37,9 @@ func main() {
 	env.Lock()
 	env.HandleHelpFlag()
 	log.SetFlags(0)
+	logging.Init()
 	tracer.Init()
+	trace.Init(true)
 
 	go debugserver.Start()
 
@@ -56,7 +60,6 @@ func main() {
 		},
 		Log: log15.Root(),
 	}
-	service.Store.SetMaxConcurrentFetchTar(10)
 	service.Store.Start()
 	handler := ot.Middleware(service)
 

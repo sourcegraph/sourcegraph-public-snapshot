@@ -19,7 +19,7 @@ CHECKS=(
   ./go-dbconn-import.sh
   ./go-generate.sh
   ./go-lint.sh
-  ./todo-security.sh
+  ./no-alpine-guard.sh
   ./no-localhost-guard.sh
   ./bash-syntax.sh
   ./check-owners.sh

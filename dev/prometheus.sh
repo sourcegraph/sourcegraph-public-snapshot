@@ -34,9 +34,9 @@ docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
 
 cp ${PROM_TARGETS} "${CONFIG_DIR}"/prometheus_targets.yml
 
-pushd monitoring
+pushd monitoring >/dev/null || exit 1
 DEV=true RELOAD=false go generate
-popd
+popd >/dev/null || exit 1
 
 PROMETHEUS_LOGS="${HOME}/.sourcegraph-dev/logs/prometheus"
 mkdir -p "${PROMETHEUS_LOGS}"
@@ -65,6 +65,5 @@ docker run --rm ${DOCKER_NET} ${DOCKER_USER} \
   -p 0.0.0.0:9090:9090 \
   -v "${PROMETHEUS_DISK}":/prometheus \
   -v "${CONFIG_DIR}":/sg_prometheus_add_ons \
-  -e PROMETHEUS_ADDITIONAL_FLAGS=--web.enable-lifecycle \
   -e SRC_FRONTEND_INTERNAL="${SRC_FRONTEND_INTERNAL}" \
   ${IMAGE} >"${PROMETHEUS_LOG_FILE}" 2>&1 || finish

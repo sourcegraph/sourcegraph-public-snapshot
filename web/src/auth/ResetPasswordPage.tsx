@@ -2,7 +2,6 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import KeyIcon from 'mdi-react/KeyIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { Form } from '../components/Form'
 import { HeroPage } from '../components/HeroPage'
@@ -11,6 +10,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { PasswordInput } from './SignInSignUpCommon'
 import { ErrorAlert } from '../components/alerts'
 import * as H from 'history'
+import { AuthenticatedUser } from '../auth'
 
 interface ResetPasswordInitFormState {
     /** The user's email input value. */
@@ -196,11 +196,11 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
                 password: this.state.password,
             }),
         })
-            .then(response => {
+            .then(async response => {
                 if (response.status === 200) {
                     this.setState({ submitOrError: null })
-                } else if (response.status === 401) {
-                    this.setState({ submitOrError: new Error('Password reset code was invalid or expired.') })
+                } else if (response.status >= 400 && response.status < 500) {
+                    this.setState({ submitOrError: new Error(await response.text()) })
                 } else {
                     this.setState({ submitOrError: new Error('Password reset failed.') })
                 }
@@ -210,7 +210,7 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
 }
 
 interface ResetPasswordPageProps extends RouteComponentProps<{}> {
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 }
 
 /**

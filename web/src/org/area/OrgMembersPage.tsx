@@ -16,16 +16,18 @@ import { InviteForm } from '../invite/InviteForm'
 import { OrgAreaPageProps } from './OrgArea'
 import { ErrorAlert } from '../../components/alerts'
 import * as H from 'history'
+import { AuthenticatedUser } from '../../auth'
+import { OrgAreaOrganizationFields } from '../../graphql-operations'
 
 interface UserNodeProps {
     /** The user to display in this list item. */
     node: GQL.IUser
 
     /** The organization being displayed. */
-    org: GQL.IOrg
+    org: OrgAreaOrganizationFields
 
     /** The currently authenticated user. */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 
     /** Called when the user is updated by an action in this list item. */
     onDidUpdate?: () => void
@@ -87,7 +89,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     public render(): JSX.Element | null {
         const loading = this.state.removalOrError === undefined
         return (
-            <li className="list-group-item py-2">
+            <li className="list-group-item py-2" data-test-username={this.props.node.username}>
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
                         <Link to={userURL(this.props.node.username)}>
@@ -104,7 +106,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                         {this.props.authenticatedUser && this.props.org.viewerCanAdminister && (
                             <button
                                 type="button"
-                                className="btn btn-secondary btn-sm site-admin-detail-list__action"
+                                className="btn btn-secondary btn-sm site-admin-detail-list__action test-remove-org-member"
                                 onClick={this.remove}
                                 disabled={loading}
                             >
@@ -194,7 +196,7 @@ export class OrgMembersPage extends React.PureComponent<Props, State> {
                     />
                 )}
                 <FilteredConnection<GQL.IUser, Omit<UserNodeProps, 'node'>>
-                    className="list-group list-group-flush mt-3"
+                    className="list-group list-group-flush mt-3 test-org-members"
                     noun="member"
                     pluralNoun="members"
                     queryConnection={this.fetchOrgMembers}

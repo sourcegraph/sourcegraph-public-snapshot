@@ -73,10 +73,10 @@ const SiteSchemaJSON = `{
           }
         },
         "automation": {
-          "description": "Enables the experimental code change management campaigns feature. NOTE: The automation feature was renamed to campaigns, but this experimental feature flag name was not changed (because the feature flag will go away soon anyway).",
+          "description": "DEPRECATED: Enables the experimental code change management campaigns feature. This field has been deprecated in favour of campaigns.enabled",
           "type": "string",
           "enum": ["enabled", "disabled"],
-          "default": "disabled"
+          "default": "enabled"
         },
         "structuralSearch": {
           "description": "Enables structural search.",
@@ -85,7 +85,7 @@ const SiteSchemaJSON = `{
           "default": "enabled"
         },
         "andOrQuery": {
-          "description": "Interpret a search input query as an and/or query.",
+          "description": "DEPRECATED: Interpret a search input query as an and/or query.",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
@@ -157,6 +157,21 @@ const SiteSchemaJSON = `{
             ]
           ]
         },
+        "search.index.branches": {
+          "description": "A map from repository name to a list of extra revs (branch, ref, tag, commit sha, etc) to index for a repository. We always index the default branch (\"HEAD\") and revisions in version contexts. This allows specifying additional revisions. Sourcegraph can index up to 64 branches per repository.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "type": "string" },
+            "maxItems": 64
+          },
+          "examples": [
+            {
+              "github.com/sourcegraph/sourcegraph": ["3.17", "f6ca985c27486c2df5231ea3526caa4a4108ffb6", "v3.17.1"],
+              "name/of/repo": ["develop"]
+            }
+          ]
+        },
         "versionContexts": {
           "description": "JSON array of version context configuration",
           "type": "array",
@@ -188,7 +203,7 @@ const SiteSchemaJSON = `{
                       "type": "string"
                     },
                     "rev": {
-                      "description": "Branch, tag, or commit hash",
+                      "description": "Branch, tag, or commit hash. \"HEAD\" or \"\" can be used for the default branch.",
                       "type": "string"
                     }
                   }
@@ -243,8 +258,15 @@ const SiteSchemaJSON = `{
       "!go": { "pointer": true },
       "group": "Campaigns"
     },
+    "campaigns.enabled": {
+      "description": "Enables/disables the campaigns feature.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Campaigns",
+      "default": true
+    },
     "campaigns.readAccess.enabled": {
-      "description": "Enables read-only access to campaigns for non-site-admin users. This is a setting for the experimental campaigns feature. These will only have an effect when campaigns is enabled with ` + "`" + `{\"experimentalFeatures\": {\"automation\": \"enabled\"}}` + "`" + `.",
+      "description": "DEPRECATED: Enables read-only access to campaigns for non-site-admin users. This doesn't have an effect anymore.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Campaigns"
@@ -326,10 +348,41 @@ const SiteSchemaJSON = `{
       "group": "External services"
     },
     "maxReposToSearch": {
-      "description": "The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.",
+      "description": "DEPRECATED: Configure maxRepos in search.limits. The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.",
       "type": "integer",
       "default": -1,
       "group": "Search"
+    },
+    "search.limits": {
+      "description": "Limits that search applies for number of repositories searched and timeouts.",
+      "type": "object",
+      "group": "Search",
+      "additionalProperties": false,
+      "properties": {
+        "maxTimeoutSeconds": {
+          "description": "The maximum value for \"timeout:\" that search will respect. \"timeout:\" values larger than maxTimeoutSeconds are capped at maxTimeoutSeconds. Note: You need to ensure your load balancer / reverse proxy in front of Sourcegraph won't timeout the request for larger values. Note: Too many large rearch requests may harm Soucregraph for other users. Defaults to 1 minute.",
+          "type": "integer",
+          "default": "60",
+          "minimum": 1
+        },
+        "maxRepos": {
+          "description": "The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.",
+          "type": "integer",
+          "default": -1
+        },
+        "commitDiffMaxRepos": {
+          "description": "The maximum number of repositories to search across when doing a \"type:diff\" or \"type:commit\". The user is prompted to narrow their query if exceeded. There is a seperate limit (commitDiffWithTimeFilterMaxRepos) when \"after:\" or \"before:\" is specified since those queries are faster. Value must be positive. Defaults to 50.",
+          "type": "integer",
+          "default": 50,
+          "minimum": 1
+        },
+        "commitDiffWithTimeFilterMaxRepos": {
+          "description": "The maximum number of repositories to search across when doing a \"type:diff\" or \"type:commit\" with a \"after:\" or \"before:\" filter. The user is prompted to narrow their query if exceeded. There is a seperate limit (commitDiffMaxRepos) when \"after:\" or \"before:\" is not specified since those queries are slower. Value must be positive. Defaults to 10000.",
+          "type": "integer",
+          "default": 10000,
+          "minimum": 1
+        }
+      }
     },
     "parentSourcegraph": {
       "description": "URL to fetch unreachable repository details from. Defaults to \"https://sourcegraph.com\"",
@@ -366,6 +419,12 @@ const SiteSchemaJSON = `{
       ],
       "group": "Security"
     },
+    "externalService.userMode": {
+      "description": "Enable to allow users to add external services for public reposirories to the Sourcegraph instance.",
+      "type": "string",
+      "enum": ["public", "disabled"],
+      "default": "disabled"
+    },
     "permissions.userMapping": {
       "description": "Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's ` + "`" + `authorization` + "`" + ` field is set).",
       "type": "object",
@@ -388,23 +447,6 @@ const SiteSchemaJSON = `{
         "bindID": "email"
       },
       "examples": [{ "bindID": "email" }, { "bindID": "username" }],
-      "group": "Security"
-    },
-    "permissions.backgroundSync": {
-      "description": "Sync code host repository and user permissions in the background.",
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "enabled": {
-          "description": "Whether syncing permissions in the background is enabled.",
-          "type": "boolean",
-          "default": true
-        }
-      },
-      "default": {
-        "enabled": true
-      },
-      "examples": [{ "enabled": true }],
       "group": "Security"
     },
     "branding": {
@@ -482,7 +524,7 @@ const SiteSchemaJSON = `{
           "type": "string"
         },
         "disableTLS": {
-          "description": "Disable TLS verification - only compatible with observability.alerts today, see https://github.com/sourcegraph/sourcegraph/issues/10702",
+          "description": "Disable TLS verification",
           "type": "boolean"
         }
       },
@@ -579,17 +621,6 @@ const SiteSchemaJSON = `{
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
     },
-    "lightstepAccessToken": {
-      "description": "DEPRECATED. Use Jaeger (` + "`" + `\"observability.tracing\": { \"sampling\": \"selective\" }` + "`" + `), instead.",
-      "type": "string",
-      "group": "Misc."
-    },
-    "lightstepProject": {
-      "description": "DEPRECATED. Use Jaeger (` + "`" + `\"observability.tracing\": { \"sampling\": \"selective\" }` + "`" + `), instead.",
-      "type": "string",
-      "examples": ["myproject"],
-      "group": "Misc."
-    },
     "useJaeger": {
       "description": "DEPRECATED. Use ` + "`" + `\"observability.tracing\": { \"sampling\": \"all\" }` + "`" + `, instead. Enables Jaeger tracing.",
       "type": "boolean",
@@ -647,6 +678,13 @@ const SiteSchemaJSON = `{
             "description": "Disable notifications when alerts resolve themselves.",
             "type": "boolean",
             "default": false
+          },
+          "owners": {
+            "description": "Do not use. When set, only receive alerts owned by the specified teams. Used by Sourcegraph internally.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "default": {
@@ -655,6 +693,13 @@ const SiteSchemaJSON = `{
             "type": ""
           }
         }
+      }
+    },
+    "observability.silenceAlerts": {
+      "description": "Silence individual Sourcegraph alerts by identifier.",
+      "type": "array",
+      "items": {
+        "type": "string"
       }
     },
     "observability.logSlowSearches": {
@@ -1095,7 +1140,7 @@ const SiteSchemaJSON = `{
     "NotifierOpsGenie": {
       "description": "OpsGenie notifier",
       "type": "object",
-      "required": ["type", "apiKey", "apiUrl"],
+      "required": ["type", "apiKey"],
       "properties": {
         "type": {
           "type": "string",

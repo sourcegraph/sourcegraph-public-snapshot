@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 func PreciseCodeIntelWorker() *Container {
 	return &Container{
 		Name:        "precise-code-intel-worker",
@@ -17,6 +19,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 100},
 							PanelOptions:      PanelOptions().LegendFormat("uploads queued for processing"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -24,8 +27,10 @@ func PreciseCodeIntelWorker() *Container {
 							Description:       "upload queue growth rate every 5m",
 							Query:             `sum(increase(src_upload_queue_uploads_total[30m])) / sum(increase(src_upload_queue_processor_total[30m]))`,
 							DataMayNotExist:   true,
+							DataMayBeNaN:      true, // numerator and denominator could both be 0
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("upload queue growth rate"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -36,6 +41,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -49,6 +55,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -58,6 +65,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("store operation"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -75,6 +83,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("uploads"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -84,6 +93,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("uploads"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -93,6 +103,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -111,6 +122,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 300},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -120,6 +132,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -132,20 +145,23 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						{
 							Name:              "gitserver_error_responses",
 							Description:       "gitserver error responses every 5m",
-							Query:             `sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="precise-code-intel-worker",code!~"2.."}[5m]))`,
+							Query:             `sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="precise-code-intel-worker",code!~"2.."}[5m])) / ignoring(code) group_left sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="precise-code-intel-worker"}[5m])) * 100`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 5},
-							PanelOptions:      PanelOptions().LegendFormat("{{category}}"),
+							DataMayBeNaN:      true, // ratio denominator could be 0
+							Warning:           Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Percentage),
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 					},
 					{
-						sharedFrontendInternalAPIErrorResponses("precise-code-intel-worker"),
+						sharedFrontendInternalAPIErrorResponses("precise-code-intel-worker", ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -154,9 +170,12 @@ func PreciseCodeIntelWorker() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("precise-code-intel-worker"),
-						sharedContainerMemoryUsage("precise-code-intel-worker"),
-						sharedContainerCPUUsage("precise-code-intel-worker"),
+						sharedContainerCPUUsage("precise-code-intel-worker", ObservableOwnerCodeIntel),
+						sharedContainerMemoryUsage("precise-code-intel-worker", ObservableOwnerCodeIntel),
+					},
+					{
+						sharedContainerRestarts("precise-code-intel-worker", ObservableOwnerCodeIntel),
+						sharedContainerFsInodes("precise-code-intel-worker", ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -165,12 +184,31 @@ func PreciseCodeIntelWorker() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage1d("precise-code-intel-worker"),
-						sharedProvisioningMemoryUsage1d("precise-code-intel-worker"),
+						sharedProvisioningCPUUsageLongTerm("precise-code-intel-worker", ObservableOwnerCodeIntel),
+						sharedProvisioningMemoryUsageLongTerm("precise-code-intel-worker", ObservableOwnerCodeIntel),
 					},
 					{
-						sharedProvisioningCPUUsage5m("precise-code-intel-worker"),
-						sharedProvisioningMemoryUsage5m("precise-code-intel-worker"),
+						sharedProvisioningCPUUsageShortTerm("precise-code-intel-worker", ObservableOwnerCodeIntel),
+						sharedProvisioningMemoryUsageShortTerm("precise-code-intel-worker", ObservableOwnerCodeIntel),
+					},
+				},
+			},
+			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("precise-code-intel-worker", ObservableOwnerCodeIntel),
+						sharedGoGcDuration("precise-code-intel-worker", ObservableOwnerCodeIntel),
+					},
+				},
+			},
+			{
+				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedKubernetesPodsAvailable("precise-code-intel-worker", ObservableOwnerCodeIntel),
 					},
 				},
 			},
