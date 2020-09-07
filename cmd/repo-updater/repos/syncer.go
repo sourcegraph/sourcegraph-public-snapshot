@@ -187,17 +187,14 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 		return errors.Wrap(err, "syncer.sync.sourced")
 	}
 
-	var stored Repos
+	var serviceRepos Repos
 	// Fetch repos from our DB related to externalServiceID
-	if stored, err = store.ListRepos(ctx, StoreListReposArgs{ExternalServiceID: externalServiceID}); err != nil {
+	if serviceRepos, err = store.ListRepos(ctx, StoreListReposArgs{ExternalServiceID: externalServiceID}); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.list-repos")
 	}
 
-	// NewDiff modifies the stored slice so we clone it before passing it
-	storedCopy := stored.Clone()
-
-	diff = newDiff(svc, sourced, stored)
-
+	// Now fetch any possible name conflicts.
+	// Repo names must be globally unique, if there's conflict we need to deterministically choose one.
 	var conflicting Repos
 	if conflicting, err = store.ListRepos(ctx, StoreListReposArgs{Names: sourced.Names()}); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.list-repos")
@@ -212,26 +209,40 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 		return true
 	})
 
-	storedCopy = append(storedCopy, conflicting...)
+	// Add the conflicts to the list of repos fetched from the db.
+	// NewDiff modifies the serviceRepos slice so we clone it before passing it
+	serviceReposAndConflicting := append(serviceRepos.Clone(), conflicting...)
 
+	// Find the diff associated with only the currently syncing external service.
+	diff = newDiff(svc, sourced, serviceRepos)
+	// We need to resolve name conflicts by deciding whether to keep the newly added repo
+	// or the repo that already exists in the db.
+	// If the new repo wins, then the old repo is added to the diff.Deleted slice.
+	// If the old repo wins, then the new repo is no longer inserted and is filtered out from
+	// the diff.Added slice.
+	var toDelete Repos
 	diff.Added = diff.Added.Filter(func(r *Repo) bool {
 		for _, cr := range conflicting {
 			if cr.Name == r.Name {
-				if cr.With(func(cr *Repo) { cr.ID = 0; cr.Sources = r.Sources }).Less(r) {
+				// The repos are conflicting, we deterministically choose the one
+				// that has the smallest external repo spec.
+				switch cr.ExternalRepo.Compare(r.ExternalRepo) {
+				case -1:
+					// the repo that is currently existing in the database wins
+					// causing the new one to be filtered out
 					return false
+				case 1:
+					// the new repo wins so the old repo is deleted along with all of its relationships.
+					toDelete = append(toDelete, cr.With(func(r *Repo) { r.Sources = nil }))
 				}
 
-				if cr.ExternalRepo.Equal(&r.ExternalRepo) {
-					return true
-				}
-
-				diff.Deleted = append(diff.Deleted, cr.With(func(r *Repo) { r.Sources = nil }))
 				return true
 			}
 		}
 
 		return true
 	})
+	diff.Deleted = append(diff.Deleted, toDelete...)
 
 	upserts := s.upserts(diff)
 
@@ -240,7 +251,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	// The trigger 'trig_soft_delete_orphan_repo_by_external_service_repo' will run
 	// and remove any repos that no longer have any rows in the external_service_repos
 	// table.
-	sdiff := s.sourcesUpserts(&diff, storedCopy)
+	sdiff := s.sourcesUpserts(&diff, serviceReposAndConflicting)
 	if err = store.UpsertSources(ctx, nil, nil, sdiff.Deleted); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.delete-sources")
 	}
@@ -254,7 +265,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	// Only modify added and modified relationships in external_service_repos, deleted was
 	// handled above
 	// Recalculate sdiff so that we have foreign keys
-	sdiff = s.sourcesUpserts(&diff, storedCopy)
+	sdiff = s.sourcesUpserts(&diff, serviceReposAndConflicting)
 	if err = store.UpsertSources(ctx, sdiff.Added, sdiff.Modified, nil); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.upsert-sources")
 	}
