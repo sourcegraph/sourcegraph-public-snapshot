@@ -215,35 +215,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 
 	// Find the diff associated with only the currently syncing external service.
 	diff = newDiff(svc, sourced, serviceRepos)
-	// We need to resolve name conflicts by deciding whether to keep the newly added repo
-	// or the repo that already exists in the db.
-	// If the new repo wins, then the old repo is added to the diff.Deleted slice.
-	// If the old repo wins, then the new repo is no longer inserted and is filtered out from
-	// the diff.Added slice.
-	var toDelete Repos
-	diff.Added = diff.Added.Filter(func(r *Repo) bool {
-		for _, cr := range conflicting {
-			if cr.Name == r.Name {
-				// The repos are conflicting, we deterministically choose the one
-				// that has the smallest external repo spec.
-				switch cr.ExternalRepo.Compare(r.ExternalRepo) {
-				case -1:
-					// the repo that is currently existing in the database wins
-					// causing the new one to be filtered out
-					return false
-				case 1:
-					// the new repo wins so the old repo is deleted along with all of its relationships.
-					toDelete = append(toDelete, cr.With(func(r *Repo) { r.Sources = nil }))
-				}
-
-				return true
-			}
-		}
-
-		return true
-	})
-	diff.Deleted = append(diff.Deleted, toDelete...)
-
+	resolveNameConflicts(&diff, conflicting)
 	upserts := s.upserts(diff)
 
 	// Delete from external_service_repos only. Deletes need to happen first so that we don't end up with
@@ -289,6 +261,59 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	}
 
 	return nil
+}
+
+// We need to resolve name conflicts by deciding whether to keep the newly added repo
+// or the repo that already exists in the db.
+// If the new repo wins, then the old repo is added to the diff.Deleted slice.
+// If the old repo wins, then the new repo is no longer inserted and is filtered out from
+// the diff.Added slice.
+func resolveNameConflicts(diff *Diff, conflicting Repos) {
+	var toDelete Repos
+	diff.Added = diff.Added.Filter(func(r *Repo) bool {
+		for _, cr := range conflicting {
+			if cr.Name == r.Name {
+				// The repos are conflicting, we deterministically choose the one
+				// that has the smallest external repo spec.
+				switch cr.ExternalRepo.Compare(r.ExternalRepo) {
+				case -1:
+					// the repo that is currently existing in the database wins
+					// causing the new one to be filtered out
+					return false
+				case 1:
+					// the new repo wins so the old repo is deleted along with all of its relationships.
+					toDelete = append(toDelete, cr.With(func(r *Repo) { r.Sources = nil }))
+				}
+
+				return true
+			}
+		}
+
+		return true
+	})
+	diff.Modified = diff.Modified.Filter(func(r *Repo) bool {
+		for _, cr := range conflicting {
+			if cr.Name == r.Name {
+				// The repos are conflicting, we deterministically choose the one
+				// that has the smallest external repo spec.
+				switch cr.ExternalRepo.Compare(r.ExternalRepo) {
+				case -1:
+					// the repo that is currently existing in the database wins
+					// causing the new one to be filtered out
+					toDelete = append(toDelete, r.With(func(r *Repo) { r.Sources = nil }))
+					return false
+				case 1:
+					// the new repo wins so the old repo is deleted along with all of its relationships.
+					toDelete = append(toDelete, cr.With(func(r *Repo) { r.Sources = nil }))
+				}
+
+				return true
+			}
+		}
+
+		return true
+	})
+	diff.Deleted = append(diff.Deleted, toDelete...)
 }
 
 func calcSyncInterval(now time.Time, lastSync time.Time, minSyncInterval time.Duration, diff Diff) time.Duration {
