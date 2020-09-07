@@ -129,6 +129,7 @@ export interface LayoutProps
     globbing: boolean
     isSourcegraphDotCom: boolean
     showCampaigns: boolean
+    fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
     children?: never
 }
 

@@ -297,6 +297,7 @@ const savedSearchFragment = gql`
         query
         namespace {
             id
+            namespaceName
         }
         slackWebhookURL
     }

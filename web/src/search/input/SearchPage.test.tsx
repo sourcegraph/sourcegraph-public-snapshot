@@ -6,6 +6,7 @@ import { SearchPage, SearchPageProps } from './SearchPage'
 import { SearchPatternType } from '../../graphql-operations'
 import { Services } from '../../../../shared/src/api/client/services'
 import { ThemePreference } from '../../theme'
+import { of } from 'rxjs'
 
 // Mock the Monaco input box to make this a shallow test
 jest.mock('./SearchPageInput', () => ({
@@ -54,6 +55,7 @@ describe('SearchPage', () => {
         showEnterpriseHomePanels: false,
         showOnboardingTour: false,
         isLightTheme: true,
+        fetchSavedSearches: () => of([]),
     }
 
     it('should not show enterprise home panels if on Sourcegraph.com', () => {
