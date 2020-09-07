@@ -1424,6 +1424,104 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store repos.Store) func(t *
 	}
 }
 
+func testNameConflictMultipleServices(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store repos.Store) func(t *testing.T) {
+		return func(t *testing.T) {
+			// Test the case where more than one external service returns the same name for different repos. The names
+			// are the same, but the external id are different.
+
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			now := time.Now()
+
+			svc1 := &repos.ExternalService{
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "Github - Test1",
+				Config:      `{"url": "https://github.com"}`,
+				CreatedAt:   now,
+				UpdatedAt:   now,
+			}
+			svc2 := &repos.ExternalService{
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "Github - Test2",
+				Config:      `{"url": "https://github.com"}`,
+				CreatedAt:   now,
+				UpdatedAt:   now,
+			}
+
+			// setup services
+			if err := store.UpsertExternalServices(ctx, svc1, svc2); err != nil {
+				t.Fatal(err)
+			}
+
+			githubRepo1 := &repos.Repo{
+				Name:     "github.com/org/foo",
+				Metadata: &github.Repository{},
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "foo-external-foo",
+					ServiceID:   "https://github.com/",
+					ServiceType: extsvc.TypeGitHub,
+				},
+			}
+
+			githubRepo2 := &repos.Repo{
+				Name:     "github.com/org/foo",
+				Metadata: &github.Repository{},
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "foo-external-bar",
+					ServiceID:   "https://github.com/",
+					ServiceType: extsvc.TypeGitHub,
+				},
+			}
+
+			// Add two services, one with each repo
+
+			// Sync first service
+			syncer := &repos.Syncer{
+				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+					s := repos.NewFakeSource(svc1, nil, githubRepo1)
+					return repos.Sources{s}, nil
+				},
+				Now: time.Now,
+			}
+			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
+				t.Fatal(err)
+			}
+
+			// Sync second service
+			syncer = &repos.Syncer{
+				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+					s := repos.NewFakeSource(svc2, nil, githubRepo2)
+					return repos.Sources{s}, nil
+				},
+				Now: time.Now,
+			}
+			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
+				t.Fatal(err)
+			}
+
+			// We expect repo2 to be synced since it sorts before repo1 because the ID is alphabetically first
+			fromDB, err := store.ListRepos(ctx, repos.StoreListReposArgs{
+				Names: []string{"github.com/org/foo"},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(fromDB) != 1 {
+				t.Fatalf("Expected 1 repo, have %d", len(fromDB))
+			}
+
+			found := fromDB[0]
+			expectedID := "foo-external-bar"
+			if found.ExternalRepo.ID != expectedID {
+				t.Fatalf("Want %q, got %q", expectedID, found.ExternalRepo.ID)
+			}
+		}
+	}
+}
+
 func testDeleteExternalService(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testing.T) {
 	return func(t *testing.T, store repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
