@@ -50,7 +50,6 @@ CREATE EXTENSION IF NOT EXISTS postgres_fdw;
 -- CREATE FOREIGN TABLE lsif_data_references_0 PARTITION OF lsif_data_references FOR VALUES WITH (modulus 2, remainder 0) SERVER shard1 OPTIONS (table_name 'lsif_data_references');
 -- CREATE FOREIGN TABLE lsif_data_references_1 PARTITION OF lsif_data_references FOR VALUES WITH (modulus 2, remainder 1) SERVER shard2 OPTIONS (table_name 'lsif_data_references');
 
-
 CREATE TABLE lsif_data_metadata (dump_id int, num_result_chunks int, PRIMARY KEY (dump_id));
 CREATE TABLE lsif_data_documents (dump_id int, path text, data bytea, PRIMARY KEY (dump_id, path));
 CREATE TABLE lsif_data_result_chunks (dump_id int, idx int, data bytea, PRIMARY KEY (dump_id, idx));
