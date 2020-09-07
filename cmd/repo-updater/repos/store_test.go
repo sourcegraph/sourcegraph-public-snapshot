@@ -2,6 +2,7 @@ package repos_test
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -1822,6 +1824,43 @@ func testStoreListReposPagination(t *testing.T, store repos.Store) func(*testing
 				}
 			}
 		}))
+	}
+}
+
+func testStoreListExternalRepoSpecs(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(*testing.T) {
+	return func(t *testing.T, store repos.Store) func(*testing.T) {
+		return func(t *testing.T) {
+			ctx := context.Background()
+
+			// Insert test repositories
+			_, err := db.ExecContext(ctx, `
+INSERT INTO repo (id, name, description, language, fork, external_id, external_service_type, external_service_id, deleted_at)
+VALUES
+	(1, 'github.com/user/repo1', '', '', FALSE, NULL, 'github', 'https://github.com/', NULL),
+	(2, 'github.com/user/repo2', '', '', FALSE, 'MDEwOlJlcG9zaXRvcnky', NULL, 'https://github.com/', NULL),
+	(3, 'github.com/user/repo3', '', '', FALSE, 'MDEwOlJlcG9zaXRvcnkz', 'github', NULL, NULL),
+	(4, 'github.com/user/repo4', '', '', FALSE, 'MDEwOlJlcG9zaXRvcnk0', 'github', 'https://github.com/', NOW()),
+	(5, 'github.com/user/repo5', '', '', FALSE, 'MDEwOlJlcG9zaXRvcnk1', 'github', 'https://github.com/', NULL)
+`)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			ids, err := store.ListExternalRepoSpecs(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := map[api.ExternalRepoSpec]struct{}{
+				api.ExternalRepoSpec{
+					ID:          "MDEwOlJlcG9zaXRvcnk1",
+					ServiceType: "github",
+					ServiceID:   "https://github.com/",
+				}: {},
+			}
+			if diff := cmp.Diff(want, ids); diff != "" {
+				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
+			}
+		}
 	}
 }
 
