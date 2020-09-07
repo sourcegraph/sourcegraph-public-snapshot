@@ -2,6 +2,7 @@ package repos_test
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -27,8 +29,6 @@ import (
 
 func testStoreListExternalServicesByRepos(t *testing.T, store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
-		t.Helper()
-
 		ctx := context.Background()
 		clock := repos.NewFakeClock(time.Now(), 0)
 		now := clock.Now()
@@ -357,8 +357,6 @@ func testStoreUpsertExternalServices(t *testing.T, store repos.Store) func(*test
 	now := clock.Now()
 
 	return func(t *testing.T) {
-		t.Helper()
-
 		github := repos.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test",
@@ -488,8 +486,6 @@ func testStoreInsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
 	now := clock.Now()
 
 	return func(t *testing.T) {
-		t.Helper()
-
 		servicesPerKind := createExternalServices(t, store)
 
 		repo1 := repos.Repo{
@@ -574,8 +570,6 @@ func testStoreDeleteRepos(t *testing.T, store repos.Store) func(*testing.T) {
 	now := clock.Now()
 
 	return func(t *testing.T) {
-		t.Helper()
-
 		servicesPerKind := createExternalServices(t, store)
 
 		repo1 := repos.Repo{
@@ -662,8 +656,6 @@ func testStoreUpsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
 	now := clock.Now()
 
 	return func(t *testing.T) {
-		t.Helper()
-
 		kinds := []string{
 			extsvc.KindGitHub,
 			extsvc.KindGitLab,
@@ -1002,8 +994,6 @@ func testStoreUpsertSources(t *testing.T, store repos.Store) func(*testing.T) {
 	servicesPerKind := createExternalServices(t, store)
 
 	return func(t *testing.T) {
-		t.Helper()
-
 		github := repos.Repo{
 			Name:        "github.com/foo/bar",
 			URI:         "github.com/foo/bar",
@@ -1206,8 +1196,6 @@ func testStoreSetClonedRepos(t *testing.T, store repos.Store) func(*testing.T) {
 	servicesPerKind := createExternalServices(t, store)
 
 	return func(t *testing.T) {
-		t.Helper()
-
 		var repositories repos.Repos
 		for i := 0; i < 3; i++ {
 			repositories = append(repositories, &repos.Repo{
@@ -1320,8 +1308,6 @@ func testStoreSetClonedRepos(t *testing.T, store repos.Store) func(*testing.T) {
 
 func testStoreCountNotClonedRepos(t *testing.T, store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
-		t.Helper()
-
 		servicesPerKind := createExternalServices(t, store)
 
 		var repositories repos.Repos
@@ -1699,8 +1685,6 @@ func testStoreListRepos(t *testing.T, store repos.Store) func(*testing.T) {
 	}
 
 	return func(t *testing.T) {
-		t.Helper()
-
 		ctx := context.Background()
 
 		for _, tc := range testCases {
@@ -1822,6 +1806,43 @@ func testStoreListReposPagination(t *testing.T, store repos.Store) func(*testing
 				}
 			}
 		}))
+	}
+}
+
+func testStoreListExternalRepoSpecs(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(*testing.T) {
+	return func(t *testing.T, store repos.Store) func(*testing.T) {
+		return func(t *testing.T) {
+			ctx := context.Background()
+
+			// Insert test repositories
+			_, err := db.ExecContext(ctx, `
+INSERT INTO repo (id, name, description, language, fork, external_id, external_service_type, external_service_id, deleted_at)
+VALUES
+	(1, 'github.com/user/repo1', '', '', FALSE, NULL, 'github', 'https://github.com/', NULL),
+	(2, 'github.com/user/repo2', '', '', FALSE, 'MDEwOlJlcG9zaXRvcnky', NULL, 'https://github.com/', NULL),
+	(3, 'github.com/user/repo3', '', '', FALSE, 'MDEwOlJlcG9zaXRvcnkz', 'github', NULL, NULL),
+	(4, 'github.com/user/repo4', '', '', FALSE, 'MDEwOlJlcG9zaXRvcnk0', 'github', 'https://github.com/', NOW()),
+	(5, 'github.com/user/repo5', '', '', FALSE, 'MDEwOlJlcG9zaXRvcnk1', 'github', 'https://github.com/', NULL)
+`)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			ids, err := store.ListExternalRepoSpecs(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := map[api.ExternalRepoSpec]struct{}{
+				{
+					ID:          "MDEwOlJlcG9zaXRvcnk1",
+					ServiceType: "github",
+					ServiceID:   "https://github.com/",
+				}: {},
+			}
+			if diff := cmp.Diff(want, ids); diff != "" {
+				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
+			}
+		}
 	}
 }
 
