@@ -245,10 +245,10 @@ body,
 }
 
 // Hide the given element from Percy.
-.percy-hide {
+.percy-hide,
+.monaco-editor .cursor {
     @media only percy {
-        visibility: hidden;
-        display: none;
+        visibility: hidden !important;
     }
 }
 

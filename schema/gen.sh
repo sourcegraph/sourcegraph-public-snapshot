@@ -6,6 +6,7 @@ export GOBIN="$PWD/.bin"
 export GO111MODULE=on
 
 go install github.com/sourcegraph/go-jsonschema/cmd/go-jsonschema-compiler
+go build -o "$GOBIN"/stringdata stringdata.go
 
 # shellcheck disable=SC2010
 schemas="$(ls -- *.schema.json | grep -v json-schema-draft)"
@@ -16,7 +17,7 @@ schemas="$(ls -- *.schema.json | grep -v json-schema-draft)"
 stringdata() {
   # shellcheck disable=SC2039
   target="${1/.schema.json/_stringdata.go}"
-  go run stringdata.go -i "$1" -name "$2" -pkg schema -o "$target"
+  "$GOBIN"/stringdata -i "$1" -name "$2" -pkg schema -o "$target"
 }
 
 stringdata aws_codecommit.schema.json AWSCodeCommitSchemaJSON
