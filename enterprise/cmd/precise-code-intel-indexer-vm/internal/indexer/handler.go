@@ -113,7 +113,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		"-w", "/data",
 		"sourcegraph/lsif-go:latest",
 		"lsif-go",
-		"--noProgress",
+		"--no-animation",
 	}
 	if h.options.UseFirecracker {
 		indexArgs = append([]string{"ignite", "exec", name.String(), "--"}, indexArgs...)
