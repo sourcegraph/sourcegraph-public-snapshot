@@ -674,7 +674,7 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolv
 		ev.AddField("type", trace.GraphQLRequestName(ctx))
 		ev.AddField("source", string(trace.RequestSource(ctx)))
 		ev.AddField("status", status)
-		ev.AddField("alertType", alertType)
+		ev.AddField("alert_type", alertType)
 		ev.AddField("duration_ms", time.Since(start).Milliseconds())
 
 		if honey.Enabled() {
