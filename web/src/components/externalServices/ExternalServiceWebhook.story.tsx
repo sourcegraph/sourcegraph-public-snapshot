@@ -13,13 +13,22 @@ add('Bitbucket Server', () => (
         externalService={{ webhookURL: 'http://test.test/webhook', kind: ExternalServiceKind.BITBUCKETSERVER }}
     />
 ))
-add('GitLab', () => (
-    <ExternalServiceWebhook
-        externalService={{ webhookURL: 'http://test.test/webhook', kind: ExternalServiceKind.GITLAB }}
-    />
-))
 add('GitHub', () => (
     <ExternalServiceWebhook
         externalService={{ webhookURL: 'http://test.test/webhook', kind: ExternalServiceKind.GITHUB }}
     />
 ))
+add(
+    'GitLab',
+    () => (
+        <ExternalServiceWebhook
+            externalService={{ webhookURL: 'http://test.test/webhook', kind: ExternalServiceKind.GITLAB }}
+        />
+    ),
+    {
+        chromatic: {
+            // Visually the same as GitHub
+            disable: true,
+        },
+    }
+)

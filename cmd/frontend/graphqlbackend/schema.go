@@ -1477,7 +1477,7 @@ type ExternalChangeset implements Node & Changeset {
     """
     The events belonging to this changeset.
     """
-    events(first: Int = 50): ChangesetEventConnection!
+    events(first: Int = 50, after: String): ChangesetEventConnection!
 
     """
     The date and time when the changeset was created.
@@ -1515,7 +1515,7 @@ type ExternalChangeset implements Node & Changeset {
     reconcilerState: ChangesetReconcilerState!
 
     """
-    The external state of the changeset, or null when not yet published to the code host or when the changeset data hasn't been sycned from the code host yet.
+    The external state of the changeset, or null when not yet published to the code host or when the changeset data hasn't been synced from the code host yet.
     """
     externalState: ChangesetExternalState
 
@@ -1557,6 +1557,13 @@ type ExternalChangeset implements Node & Changeset {
     An error that has occurred when publishing or updating the changeset. This is only set when the changeset state is ERRORED and the viewer can administer this changeset.
     """
     error: String
+
+    """
+    The current changeset spec for this changeset.
+
+    Null if the changeset was only imported.
+    """
+    currentSpec: VisibleChangesetSpec
 }
 
 """
@@ -5382,6 +5389,10 @@ type User implements Node & SettingsSubject & Namespace {
         Returns the first n event logs from the list.
         """
         first: Int
+        """
+        Only return events matching this event name
+        """
+        eventName: String
     ): EventLogsConnection!
     """
     The user's email addresses.
@@ -6996,7 +7007,7 @@ type RegistryExtensionConnection {
 }
 
 """
-Aggregate local code intelligence for all ranges that fall bewteen a window of lines in a document.
+Aggregate local code intelligence for all ranges that fall between a window of lines in a document.
 """
 type CodeIntelligenceRangeConnection {
     """

@@ -24,7 +24,7 @@ func main() {
 	env.Lock()
 	env.HandleHelpFlag()
 	logging.Init()
-	//	tracer.Init() // TODO(efritz) - disabled as it requires internal API access
+	trace.Init(false)
 
 	var (
 		frontendURL              = mustGet(rawFrontendURL, "PRECISE_CODE_INTEL_EXTERNAL_URL")

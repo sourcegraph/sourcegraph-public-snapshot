@@ -96,12 +96,15 @@ describe('activeExtensions', () => {
             } as Record<string, ExecutableExtension[]>)
         ))
 
-    test('fetches a sideloaded extension and adds it to the set of registry extensions', () => {
+    test('fetches a sideloaded extension and disables the official extension', () => {
         scheduler().run(({ cold, expectObservable }) => {
             expectObservable(
                 from(
                     new TestExtensionsService(
-                        [{ id: 'foo', manifest, rawManifest: null }],
+                        [
+                            { id: 'a/x', manifest, rawManifest: null },
+                            { id: 'y', manifest, rawManifest: null },
+                        ],
                         {
                             activeLanguages: cold<ReadonlySet<string>>('a-|', {
                                 a: new Set([]),
@@ -111,7 +114,8 @@ describe('activeExtensions', () => {
                             a: {
                                 final: {
                                     extensions: {
-                                        foo: true,
+                                        'a/x': true,
+                                        y: true,
                                     },
                                 },
                                 subjects: [],
@@ -119,13 +123,14 @@ describe('activeExtensions', () => {
                         }),
 
                         enabledExtensions => enabledExtensions,
-                        cold('a-|', { a: 'bar' }),
+                        cold('a-|', { a: 'x' }),
                         baseUrl =>
                             of({
                                 id: baseUrl,
                                 manifest: {
-                                    url: 'bar.js',
+                                    url: 'x.js',
                                     activationEvents: [],
+                                    publisher: 'a',
                                 },
                                 rawManifest: null,
                             })
@@ -133,8 +138,16 @@ describe('activeExtensions', () => {
                 )
             ).toBe('a-|', {
                 a: [
-                    { id: 'foo', manifest, scriptURL: 'u' },
-                    { id: 'bar', manifest: { url: 'bar.js', activationEvents: [] }, scriptURL: 'bar.js' },
+                    {
+                        id: 'y',
+                        manifest,
+                        scriptURL: 'u',
+                    },
+                    {
+                        id: 'x',
+                        manifest: { url: 'x.js', activationEvents: [], publisher: 'a' },
+                        scriptURL: 'x.js',
+                    },
                 ],
             })
         })

@@ -51,6 +51,7 @@ const nodes: ChangesetFields[] = [
             },
             reviewState: ChangesetReviewState.COMMENTED,
             error: null,
+            currentSpec: { id: 'spec-rand-id-1' },
         })
     ),
     ...Object.values(ChangesetExternalState).map(

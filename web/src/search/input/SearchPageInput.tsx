@@ -131,7 +131,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                 },
                 {
                     id: 'filter-lang',
-                    text: generateStepTooltip(tour, 'Type to filter the language autocomplete', 2),
+                    text: generateStepTooltip(tour, 'Type to filter the language autocomplete', 2, 5),
                     when: {
                         show() {
                             eventLogger.log('ViewedOnboardingTourFilterLangStep')
@@ -147,7 +147,8 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                     text: generateStepTooltip(
                         tour,
                         "Type the name of a repository you've used recently to filter the autocomplete list",
-                        2
+                        2,
+                        5
                     ),
                     when: {
                         show() {
@@ -174,24 +175,11 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                     },
                 },
                 {
-                    id: 'view-search-reference',
-                    text: generateStepTooltip(tour, 'Review the search reference', 4),
-                    attachTo: {
-                        element: '.search-help-dropdown-button',
-                        on: 'bottom',
-                    },
-                    when: {
-                        show() {
-                            eventLogger.log('ViewedOnboardingTourSearchReferenceStep')
-                        },
-                    },
-                    advanceOn: { selector: '.search-help-dropdown-button', event: 'click' },
-                },
-                {
-                    id: 'final-step',
+                    id: 'submit-search',
                     text: generateStepTooltip(
                         tour,
-                        'Use <kbd>return</kbd><br/>or the search button to run your search',
+                        'Use <kbd>return</kbd> or the search button to run your search',
+                        4,
                         5
                     ),
                     when: {

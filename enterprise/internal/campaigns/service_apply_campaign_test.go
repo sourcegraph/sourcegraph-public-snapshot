@@ -524,6 +524,69 @@ func TestServiceApplyCampaign(t *testing.T) {
 				t.Fatalf("wrong repository ID in RepoNotFoundErr: %d", notFoundErr.ID)
 			}
 		})
+
+		t.Run("campaign with errored changeset", func(t *testing.T) {
+			campaignSpec1 := createCampaignSpec(t, ctx, store, "errored-changeset-campaign", admin.ID)
+
+			spec1Opts := testSpecOpts{
+				user:         admin.ID,
+				repo:         repos[0].ID,
+				campaignSpec: campaignSpec1.ID,
+				externalID:   "1234",
+			}
+			createChangesetSpec(t, ctx, store, spec1Opts)
+
+			spec2Opts := testSpecOpts{
+				user:         admin.ID,
+				repo:         repos[1].ID,
+				campaignSpec: campaignSpec1.ID,
+				headRef:      "refs/heads/repo-1-branch-1",
+			}
+			oldSpec2 := createChangesetSpec(t, ctx, store, spec2Opts)
+
+			_, oldChangesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec1.RandID, 2)
+
+			// Set the changesets to look like they failed in the reconciler
+			for _, c := range oldChangesets {
+				setChangesetFailed(t, ctx, store, c)
+			}
+
+			// Now we create another campaign spec with the same campaign name
+			// and namespace.
+			campaignSpec2 := createCampaignSpec(t, ctx, store, "errored-changeset-campaign", admin.ID)
+			spec1Opts.campaignSpec = campaignSpec2.ID
+			newSpec1 := createChangesetSpec(t, ctx, store, spec1Opts)
+			spec2Opts.campaignSpec = campaignSpec2.ID
+			newSpec2 := createChangesetSpec(t, ctx, store, spec2Opts)
+
+			campaign, cs := applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 2)
+
+			c1 := cs.Find(campaigns.WithExternalID(newSpec1.Spec.ExternalID))
+			reloadAndAssertChangeset(t, ctx, store, c1, changesetAssertions{
+				repo:             spec1Opts.repo,
+				externalID:       "1234",
+				unsynced:         true,
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+
+				reconcilerState: campaigns.ReconcilerStateQueued,
+				failureMessage:  nil,
+				numResets:       0,
+			})
+
+			c2 := cs.Find(campaigns.WithCurrentSpecID(newSpec2.ID))
+			assertChangeset(t, c2, changesetAssertions{
+				repo:             newSpec2.RepoID,
+				currentSpec:      newSpec2.ID,
+				previousSpec:     oldSpec2.ID,
+				ownedByCampaign:  campaign.ID,
+				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				diffStat:         testChangsetSpecDiffStat,
+
+				reconcilerState: campaigns.ReconcilerStateQueued,
+				failureMessage:  nil,
+				numResets:       0,
+			})
+		})
 	})
 
 	t.Run("applying to closed campaign", func(t *testing.T) {
@@ -562,6 +625,7 @@ type changesetAssertions struct {
 	body  string
 
 	failureMessage *string
+	numResets      int64
 }
 
 func assertChangeset(t *testing.T, c *campaigns.Changeset, a changesetAssertions) {
@@ -632,6 +696,10 @@ func assertChangeset(t *testing.T, c *campaigns.Changeset, a changesetAssertions
 		}
 	}
 
+	if have, want := c.NumResets, a.numResets; have != want {
+		t.Fatalf("changeset NumResets wrong. want=%d, have=%d", want, have)
+	}
+
 	if have, want := c.ExternalBranch, a.externalBranch; have != want {
 		t.Fatalf("changeset ExternalBranch wrong. want=%s, have=%s", want, have)
 	}
@@ -671,6 +739,8 @@ func reloadAndAssertChangeset(t *testing.T, ctx context.Context, s *Store, c *ca
 }
 
 func applyAndListChangesets(ctx context.Context, t *testing.T, svc *Service, campaignSpecRandID string, wantChangesets int) (*campaigns.Campaign, campaigns.Changesets) {
+	t.Helper()
+
 	campaign, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
 		CampaignSpecRandID: campaignSpecRandID,
 	})
@@ -702,6 +772,18 @@ func setChangesetPublished(t *testing.T, ctx context.Context, s *Store, c *campa
 	c.PublicationState = campaigns.ChangesetPublicationStatePublished
 	c.ReconcilerState = campaigns.ReconcilerStateCompleted
 	c.Unsynced = false
+
+	if err := s.UpdateChangeset(ctx, c); err != nil {
+		t.Fatalf("failed to update changeset: %s", err)
+	}
+}
+
+func setChangesetFailed(t *testing.T, ctx context.Context, s *Store, c *campaigns.Changeset) {
+	t.Helper()
+
+	c.ReconcilerState = campaigns.ReconcilerStateErrored
+	c.FailureMessage = &canceledChangesetFailureMessage
+	c.NumResets = 5
 
 	if err := s.UpdateChangeset(ctx, c); err != nil {
 		t.Fatalf("failed to update changeset: %s", err)

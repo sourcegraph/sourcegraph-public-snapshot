@@ -1,0 +1,9 @@
+@import './PanelContainer.scss';
+
+.enterprise-home-panels {
+    margin-top: 4rem;
+
+    &__panel {
+        height: 15rem;
+    }
+}

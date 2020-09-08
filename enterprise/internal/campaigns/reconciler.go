@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
@@ -30,6 +31,10 @@ type reconciler struct {
 	gitserverClient GitserverClient
 	sourcer         repos.Sourcer
 	store           *Store
+
+	// This is used to disable a time.Sleep in updateChangeset so that the
+	// tests don't run slower.
+	noSleepBeforeSync bool
 }
 
 // HandlerFunc returns a dbworker.HandlerFunc that can be passed to a
@@ -212,7 +217,19 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 	// pushed the commit. We don't need to update anything on the codehost.
 	if !delta.NeedCodeHostUpdate() {
 		ch.FailureMessage = nil
-		return tx.UpdateChangeset(ctx, ch)
+		// But we need to sync the changeset so that it has the new commit.
+		//
+		// The problem: the code host might not have updated the changeset to
+		// have the new commit SHA as its head ref oid (and the check states,
+		// ...).
+		//
+		// That's why we give them 3 seconds to update the changesets.
+		//
+		// Why 3 seconds? Well... 1 or 2 seem to be too short and 4 too long?
+		if !r.noSleepBeforeSync {
+			time.Sleep(3 * time.Second)
+		}
+		return r.syncChangeset(ctx, tx, ch)
 	}
 
 	// Otherwise, we need to update the pull request on the code host.
@@ -245,6 +262,13 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 
 // closeChangeset closes the given changeset on its code host if its ExternalState is OPEN.
 func (r *reconciler) closeChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset) (err error) {
+	ch.Closing = false
+	ch.FailureMessage = nil
+
+	if ch.ExternalState != campaigns.ChangesetExternalStateOpen {
+		return tx.UpdateChangeset(ctx, ch)
+	}
+
 	repo, extSvc, err := loadAssociations(ctx, tx, ch)
 	if err != nil {
 		return errors.Wrap(err, "failed to load associations")
@@ -261,9 +285,6 @@ func (r *reconciler) closeChangeset(ctx context.Context, tx *Store, ch *campaign
 	if err := ccs.CloseChangeset(ctx, cs); err != nil {
 		return errors.Wrap(err, "creating changeset")
 	}
-
-	ch.Closing = false
-	ch.FailureMessage = nil
 
 	// syncChangeset updates the changeset in the same transaction
 	return r.syncChangeset(ctx, tx, ch)

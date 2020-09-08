@@ -1077,6 +1077,8 @@ type Settings struct {
 	SearchSavedQueries []*SearchSavedQueries `json:"search.savedQueries,omitempty"`
 	// SearchScopes description: Predefined search scopes
 	SearchScopes []*SearchScope `json:"search.scopes,omitempty"`
+	// SearchStreaming description: Enables experimental streaming support.
+	SearchStreaming *bool `json:"search.streaming,omitempty"`
 	// SearchUppercase description: When active, any uppercase characters in the pattern will make the entire query case-sensitive.
 	SearchUppercase *bool `json:"search.uppercase,omitempty"`
 }

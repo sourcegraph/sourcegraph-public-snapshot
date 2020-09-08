@@ -14,6 +14,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - The site configuration `search.limits`. This allows configuring the maximum timeout (defaults to 1 minute). Also allows configuring the maximum repositories to search in different scenarios. [#13448](https://github.com/sourcegraph/sourcegraph/pull/13448)
+- Sourcegraph watches the [advanced config files](https://docs.sourcegraph.com/admin/config/advanced_config_file) and automatically applies the changes to Sourcegraph's configuration when they change. For example this allows Sourcegraph to notice when Kubernetes updates ConfigMap for the configuration. [#13646](https://github.com/sourcegraph/sourcegraph/pull/13646)
 
 ### Changed
 
@@ -27,6 +28,7 @@ All notable changes to Sourcegraph are documented in this file.
 - `NOT` is available as an alternative syntax of `-` on supported keywords `repo`, `file`, `content`, `lang`, and `repohasfile`. [#12412](https://github.com/sourcegraph/sourcegraph/pull/12412)
 - Negated content search is now also supported for unindexed repositories. Previously it was only supported for indexed repositories [#13359](https://github.com/sourcegraph/sourcegraph/pull/13359).
 - The experimental feature flag `andOrQuery` is deprecated. [#13435](https://github.com/sourcegraph/sourcegraph/pull/13435)
+- `rev:` is available as alternative syntax of `@` for searching revisions instead of the default branch [#13133](https://github.com/sourcegraph/sourcegraph/pull/13133)
 
 ### Fixed
 
@@ -37,6 +39,14 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 - The smartSearchField feature is now always enabled. The `experimentalFeatures.smartSearchField` settings option has been removed.
+
+## 3.19.2
+
+### Fixed
+
+- search: always limit commit and diff to less than 10,000 repos [a97f81b0f7](https://github.com/sourcegraph/sourcegraph/commit/a97f81b0f79535253bd7eae6c30d5c91d48da5ca)
+- search: configurable limits on commit/diff search [1c22d8ce1](https://github.com/sourcegraph/sourcegraph/commit/1c22d8ce13c149b3fa3a7a26f8cb96adc89fc556)
+- search: add site configuration for maxTimeout [d8d61b43c0f](https://github.com/sourcegraph/sourcegraph/commit/d8d61b43c0f0d229d46236f2f128ca0f93455172)
 
 ## 3.19.1
 

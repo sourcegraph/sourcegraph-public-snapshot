@@ -197,6 +197,7 @@ const CampaignChangesets: (variables: CampaignChangesetsVariables) => CampaignCh
                     },
                     reviewState: ChangesetReviewState.APPROVED,
                     title: 'The changeset title',
+                    currentSpec: { id: 'spec-rand-id-1' },
                 },
             ],
         },

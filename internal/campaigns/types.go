@@ -496,6 +496,13 @@ func (c *Changeset) URL() (s string, err error) {
 	}
 }
 
+// ResetQueued resets the failure message and reset count and sets the changesets ReconcilerState to queued.
+func (c *Changeset) ResetQueued() {
+	c.ReconcilerState = ReconcilerStateQueued
+	c.NumResets = 0
+	c.FailureMessage = nil
+}
+
 // ChangesetSpecs is a slice of *ChangesetSpecs.
 type ChangesetSpecs []*ChangesetSpec
 
