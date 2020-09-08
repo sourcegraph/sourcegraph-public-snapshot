@@ -1,19 +1,12 @@
 import classNames from 'classnames'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { AuthenticatedUser } from '../../auth'
-import { dataOrThrowErrors, gql, requestGraphQL } from '../../../../shared/src/graphql/graphql'
 import { Link } from '../../../../shared/src/components/Link'
-import { map } from 'rxjs/operators'
-import { Maybe } from '../../../../shared/src/graphql-operations'
 import { PanelContainer } from './PanelContainer'
-import { RecentSearchesPanelDataResult, RecentSearchesPanelDataVariables } from '../../graphql-operations'
 import { Timestamp } from '../../components/time/Timestamp'
-
-interface EventLogResult {
-    totalCount: number
-    nodes: { argument: Maybe<string>; timestamp: string; url: string }[]
-    pageInfo: { endCursor: Maybe<string>; hasNextPage: boolean }
-}
+import { EventLogResult } from '../backend'
+import { Observable } from 'rxjs'
+import { useObservable } from '../../../../shared/src/util/useObservable'
 
 interface RecentSearch {
     count: number
@@ -22,47 +15,11 @@ interface RecentSearch {
     url: string
 }
 
-const getData = ({ userId, first }: RecentSearchesPanelDataVariables): Promise<EventLogResult> => {
-    const result = requestGraphQL<RecentSearchesPanelDataResult, RecentSearchesPanelDataVariables>({
-        request: gql`
-            query RecentSearchesPanelData($userId: ID!, $first: Int) {
-                node(id: $userId) {
-                    ... on User {
-                        recentSearches: eventLogs(first: $first, eventName: "SearchResultsQueried") {
-                            nodes {
-                                argument
-                                timestamp
-                                url
-                            }
-                            pageInfo {
-                                endCursor
-                                hasNextPage
-                            }
-                            totalCount
-                        }
-                    }
-                }
-            }
-        `,
-        variables: { userId, first: first ?? null },
-    })
+const processRecentSearches = (eventLogResult?: EventLogResult): RecentSearch[] | null => {
+    if (!eventLogResult) {
+        return null
+    }
 
-    return result
-        .pipe(
-            map(dataOrThrowErrors),
-            map(
-                (data: RecentSearchesPanelDataResult): EventLogResult => {
-                    if (!data.node) {
-                        throw new Error('User not found')
-                    }
-                    return data.node.recentSearches
-                }
-            )
-        )
-        .toPromise()
-}
-
-const processRecentSearches = (eventLogResult: EventLogResult): RecentSearch[] => {
     const recentSearches: RecentSearch[] = []
 
     for (const node of eventLogResult.nodes) {
@@ -90,29 +47,20 @@ const processRecentSearches = (eventLogResult: EventLogResult): RecentSearch[] =
 export const RecentSearchesPanel: React.FunctionComponent<{
     className?: string
     authenticatedUser: AuthenticatedUser | null
-}> = ({ className, authenticatedUser }) => {
-    const [state, setState] = useState<'loading' | 'populated' | 'empty'>('loading')
-    const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([])
+    fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult>
+}> = ({ className, authenticatedUser, fetchRecentSearches }) => {
+    const recentSearches = useObservable(
+        useMemo(() => fetchRecentSearches(authenticatedUser?.id || '', 100), [
+            authenticatedUser?.id,
+            fetchRecentSearches,
+        ])
+    )
 
-    useEffect(() => {
-        const getDataAsync = async (): Promise<void> => {
-            if (!authenticatedUser) {
-                return
-            }
-            const data = await getData({ userId: authenticatedUser.id, first: 100 })
-            setRecentSearches(processRecentSearches(data))
-            if (!data.totalCount) {
-                setState('empty')
-            } else {
-                setState('populated')
-            }
-        }
-
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        getDataAsync()
-    }, [authenticatedUser])
+    const processedResults = processRecentSearches(recentSearches)
 
     const loadingDisplay = <div>Loading</div>
+    const emptyDisplay = <div>Empty</div>
+
     const contentDisplay = (
         <table className="recent-searches-panel__results-table">
             <thead className="recent-searches-panel__results-table-head">
@@ -123,7 +71,7 @@ export const RecentSearchesPanel: React.FunctionComponent<{
                 </tr>
             </thead>
             <tbody className="recent-searches-panel__results-table-body">
-                {recentSearches.map(recentSearch => (
+                {processedResults?.map(recentSearch => (
                     <tr key={recentSearch.timestamp}>
                         <td className="recent-searches-panel__results-count-cell">
                             <span className="recent-searches-panel__results-count">{recentSearch.count}</span>
@@ -139,13 +87,12 @@ export const RecentSearchesPanel: React.FunctionComponent<{
             </tbody>
         </table>
     )
-    const emptyDisplay = <div>Empty</div>
 
     return (
         <PanelContainer
             className={classNames(className, 'recent-searches-panel')}
             title="Recent searches"
-            state={state}
+            state={processedResults ? (processedResults.length > 0 ? 'populated' : 'empty') : 'loading'}
             loadingContent={loadingDisplay}
             populatedContent={contentDisplay}
             emptyContent={emptyDisplay}
