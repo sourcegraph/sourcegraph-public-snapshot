@@ -273,7 +273,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 		t.Run("ReconcilerState", func(t *testing.T) {
 			completed := campaigns.ReconcilerStateCompleted
-			countCompleted, err := s.CountChangesets(ctx, CountChangesetsOpts{ReconcilerState: &completed})
+			countCompleted, err := s.CountChangesets(ctx, CountChangesetsOpts{ReconcilerStates: []campaigns.ReconcilerState{completed}})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -283,7 +283,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			}
 
 			processing := campaigns.ReconcilerStateProcessing
-			countProcessing, err := s.CountChangesets(ctx, CountChangesetsOpts{ReconcilerState: &processing})
+			countProcessing, err := s.CountChangesets(ctx, CountChangesetsOpts{ReconcilerStates: []campaigns.ReconcilerState{processing}})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -473,13 +473,13 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			},
 			{
 				opts: ListChangesetsOpts{
-					ReconcilerState: &stateQueued,
+					ReconcilerStates: []campaigns.ReconcilerState{stateQueued},
 				},
 				wantCount: 0,
 			},
 			{
 				opts: ListChangesetsOpts{
-					ReconcilerState: &stateCompleted,
+					ReconcilerStates: []campaigns.ReconcilerState{stateCompleted},
 				},
 				wantCount: 3,
 			},

@@ -20,7 +20,7 @@ export interface ChangesetFilters {
     externalState: ChangesetExternalState | null
     reviewState: ChangesetReviewState | null
     checkState: ChangesetCheckState | null
-    reconcilerState: ChangesetReconcilerState | null
+    reconcilerState: ChangesetReconcilerState[] | null
     publicationState: ChangesetPublicationState | null
 }
 
@@ -147,43 +147,42 @@ function changesetUIStateToChangesetFilters(
         case ChangesetUIState.OPEN:
             return {
                 externalState: ChangesetExternalState.OPEN,
-                reconcilerState: ChangesetReconcilerState.COMPLETED,
+                reconcilerState: [ChangesetReconcilerState.COMPLETED],
                 publicationState: ChangesetPublicationState.PUBLISHED,
             }
         case ChangesetUIState.CLOSED:
             return {
                 externalState: ChangesetExternalState.CLOSED,
-                reconcilerState: ChangesetReconcilerState.COMPLETED,
+                reconcilerState: [ChangesetReconcilerState.COMPLETED],
                 publicationState: ChangesetPublicationState.PUBLISHED,
             }
         case ChangesetUIState.MERGED:
             return {
                 externalState: ChangesetExternalState.MERGED,
-                reconcilerState: ChangesetReconcilerState.COMPLETED,
+                reconcilerState: [ChangesetReconcilerState.COMPLETED],
                 publicationState: ChangesetPublicationState.PUBLISHED,
             }
         case ChangesetUIState.DELETED:
             return {
                 externalState: ChangesetExternalState.DELETED,
-                reconcilerState: ChangesetReconcilerState.COMPLETED,
+                reconcilerState: [ChangesetReconcilerState.COMPLETED],
                 publicationState: ChangesetPublicationState.PUBLISHED,
             }
         case ChangesetUIState.UNPUBLISHED:
             return {
-                reconcilerState: ChangesetReconcilerState.COMPLETED,
+                reconcilerState: [ChangesetReconcilerState.COMPLETED],
                 externalState: null,
                 publicationState: ChangesetPublicationState.UNPUBLISHED,
             }
         case ChangesetUIState.PROCESSING:
             return {
-                reconcilerState: ChangesetReconcilerState.PROCESSING,
-                // TODO: reconcilerState: [ChangesetReconcilerState.QUEUED, ChangesetReconcilerState.PROCESSING],
+                reconcilerState: [ChangesetReconcilerState.QUEUED, ChangesetReconcilerState.PROCESSING],
                 externalState: null,
                 publicationState: null,
             }
         case ChangesetUIState.ERRORED:
             return {
-                reconcilerState: ChangesetReconcilerState.ERRORED,
+                reconcilerState: [ChangesetReconcilerState.ERRORED],
                 publicationState: null,
                 externalState: null,
             }
