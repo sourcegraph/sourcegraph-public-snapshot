@@ -16,6 +16,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/zoekt/ignore"
+
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -228,25 +230,66 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 	// Write tr to zw. Return the first error encountered, but clean up if
 	// we encounter an error.
 	go func() {
-		defer r.Close()
-		tr := tar.NewReader(r)
+		// clean up
+		var err error
+		defer func() {
+			done(err)
+			// CloseWithError is guaranteed to return a nil error
+			_ = pw.CloseWithError(errors.Wrapf(err, "failed to fetch %s@%s", repo, commit))
+			r.Close()
+		}()
+
+		// get ignore.Matcher
+		var ig *ignore.Matcher
+		var buf bytes.Buffer
+		tee := io.TeeReader(r, &buf)
+		ig, err = newIgnoreMatcher(tar.NewReader(tee))
+		if err != nil {
+			return
+		}
+
+		// for buf to contain the entire tar,
+		// newIgnoreMatcher has to exhaust tee
+		tr := tar.NewReader(&buf)
 		zw := zip.NewWriter(pw)
-		err := copySearchable(tr, zw, largeFilePatterns)
+		err = copySearchable(tr, zw, largeFilePatterns, ig)
 		if err1 := zw.Close(); err == nil {
 			err = err1
 		}
-		done(err)
-		// CloseWithError is guaranteed to return a nil error
-		_ = pw.CloseWithError(errors.Wrapf(err, "failed to fetch %s@%s", repo, commit))
 	}()
 
 	return pr, nil
 }
 
+// newIgnoreMatcher creates an ignore.Matcher from a tar-archive tr.
+// Usually we could return early once we have found and parsed an
+// ignore-file. However, we have to exhaust tr because newIgnoreMatcher
+// is called in the context of an io.TeeReader.
+func newIgnoreMatcher(tr *tar.Reader) (*ignore.Matcher, error) {
+	ig := &ignore.Matcher{}
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			return ig, nil
+		}
+		if err != nil {
+			if err == tar.ErrHeader {
+				return nil, temporaryError{error: err}
+			}
+			return nil, err
+		}
+		if hdr.Name == ignore.IgnoreFile {
+			ig, err = ignore.ParseIgnoreFile(tr)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+}
+
 // copySearchable copies searchable files from tr to zw. A searchable file is
-// any file that is a candidate for being searched (under size limit and
-// non-binary).
-func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string) error {
+// any file that is under size limit, non-binary, and not matching an ignore-pattern.
+func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string, ig *ignore.Matcher) error {
 	// 32*1024 is the same size used by io.Copy
 	buf := make([]byte, 32*1024)
 	for {
@@ -267,6 +310,12 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string) 
 
 		// We only care about files
 		if hdr.Typeflag != tar.TypeReg && hdr.Typeflag != tar.TypeRegA {
+			continue
+		}
+
+		// files matching an ignore-pattern are skipped and
+		// not written to the cache
+		if ig.Match(hdr.Name) {
 			continue
 		}
 

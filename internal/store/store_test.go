@@ -4,12 +4,16 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/google/zoekt/ignore"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -166,4 +170,68 @@ func emptyTar(t *testing.T) io.ReadCloser {
 		t.Fatal(err)
 	}
 	return ioutil.NopCloser(bytes.NewReader(buf.Bytes()))
+}
+
+func writeArchive(w io.Writer, files map[string]string) (err error) {
+	tw := tar.NewWriter(w)
+	for name, body := range files {
+		hdr := &tar.Header{
+			Name: name,
+			Mode: 0600,
+			Size: int64(len(body)),
+		}
+		if err := tw.WriteHeader(hdr); err != nil {
+			return err
+		}
+		if _, err := tw.Write([]byte(body)); err != nil {
+			return err
+		}
+	}
+	if err := tw.Close(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func TestNewIgnoreMatcher(t *testing.T) {
+	// create a tar with 4 files + ignore-file
+	n := 4
+	files := map[string]string{}
+	for i := 0; i < n; i++ {
+		s := fmt.Sprintf("%d", i)
+		files["F"+s] = strings.Repeat("a", 10)
+	}
+	files[ignore.IgnoreFile] = "dir/"
+	archive := bytes.Buffer{}
+	err := writeArchive(&archive, files)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// we use an io.TeeReader just like in the prod code to
+	// make sure that newIgnoreMatcher really exhausts tee
+	var buf bytes.Buffer
+	tee := io.TeeReader(&archive, &buf)
+	ig, err := newIgnoreMatcher(tar.NewReader(tee))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !ig.Match("dir/foo.txt") {
+		t.Fatal("ig should haved matched dir/foo.txt")
+	}
+
+	// buf should contain the entire archive
+	i := 0
+	tr := tar.NewReader(&buf)
+	for {
+		_, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		i++
+	}
+	if i != n+1 { // +1 for the ignore-file
+		t.Fatal("newIgnoreMatcher did no exhaust tee")
+	}
 }
