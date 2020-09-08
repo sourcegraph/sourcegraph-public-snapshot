@@ -628,7 +628,7 @@ type testChangesetOpts struct {
 
 	reconcilerState campaigns.ReconcilerState
 	failureMessage  string
-	numResets       int64
+	numFailures     int64
 
 	createdByCampaign bool
 	ownedByCampaign   int64
@@ -668,7 +668,7 @@ func createChangeset(
 		Closing:  opts.closing,
 
 		ReconcilerState: opts.reconcilerState,
-		NumResets:       opts.numResets,
+		NumFailures:     opts.numFailures,
 	}
 
 	if opts.failureMessage != "" {
