@@ -177,7 +177,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	}
 
 	if len(svcs) != 1 {
-		return errors.Wrapf(err, "want 1 external service but got %d", len(svcs))
+		return errors.Errorf("want 1 external service but got %d", len(svcs))
 	}
 	svc := svcs[0]
 
