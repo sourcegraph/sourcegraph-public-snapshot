@@ -1103,6 +1103,7 @@ WITH due AS (
     SELECT id
     FROM external_services
     WHERE (next_sync_at <= clock_timestamp() OR next_sync_at IS NULL)
+    AND deleted_at IS NULL
     AND LOWER(kind) != 'phabricator'
     AND %s
 ),
