@@ -31,7 +31,7 @@ func RepoUpdater() *Container {
 							Warning:           Alert{GreaterOrEqual: (3 * 24 * time.Hour).Seconds(), For: 5 * time.Minute}, // 3 days
 							PanelOptions:      PanelOptions().LegendFormat("{{type}}").Unit(Seconds),
 							Owner:             ObservableOwnerCloud,
-							PossibleSolutions: "Increase the API rate limit to the code host.",
+							PossibleSolutions: "Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).",
 						},
 						Observable{
 							Name:              "perms_syncer_stale_perms",
@@ -41,7 +41,7 @@ func RepoUpdater() *Container {
 							Warning:           Alert{GreaterOrEqual: 100, For: 5 * time.Minute},
 							PanelOptions:      PanelOptions().LegendFormat("{{type}}").Unit(Number),
 							Owner:             ObservableOwnerCloud,
-							PossibleSolutions: "Increase the API rate limit to the code host.",
+							PossibleSolutions: "Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).",
 						},
 						Observable{
 							Name:            "perms_syncer_no_perms",
@@ -53,7 +53,7 @@ func RepoUpdater() *Container {
 							Owner:           ObservableOwnerCloud,
 							PossibleSolutions: `
 								- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
-								- **Otherwise:** Increase the API rate limit to the code host.
+								- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
 							`,
 						},
 					},
@@ -78,7 +78,7 @@ func RepoUpdater() *Container {
 							Owner:           ObservableOwnerCloud,
 							PossibleSolutions: `
 								- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
-								- **Otherwise:** Increase the API rate limit to the code host.
+								- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
 							`,
 						},
 					},
@@ -103,7 +103,7 @@ func RepoUpdater() *Container {
 							Owner:           ObservableOwnerCloud,
 							PossibleSolutions: `
 								- Check the network connectivity the Sourcegraph and the code host.
-								- Check if API rate limit quota is exhausted.
+								- Check if API rate limit quota is exhausted on the code host.
 							`,
 						},
 					},
