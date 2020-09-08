@@ -605,7 +605,11 @@ AND repo.id = repo_ids.id::int
 
 // ListRepos lists all stored repos that match the given arguments.
 func (s DBStore) ListRepos(ctx context.Context, args StoreListReposArgs) (repos []*Repo, _ error) {
-	return repos, s.paginate(ctx, args.Limit, args.PerPage, 0, listReposQuery(args),
+	listQuery, err := listReposQuery(args)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating list repos query function")
+	}
+	return repos, s.paginate(ctx, args.Limit, args.PerPage, 0, listQuery,
 		func(sc scanner) (last, count int64, err error) {
 			var r Repo
 			if err := scanRepo(&r, sc); err != nil {
@@ -663,15 +667,15 @@ AND %s
 ORDER BY id ASC LIMIT %s
 `
 
-func listReposQuery(args StoreListReposArgs) paginatedQuery {
+func listReposQuery(args StoreListReposArgs) (paginatedQuery, error) {
 	var preds []*sqlf.Query
 
 	if len(args.Names) > 0 {
-		ns := make([]*sqlf.Query, 0, len(args.Names))
-		for _, name := range args.Names {
-			ns = append(ns, sqlf.Sprintf("%s", name))
+		encodedNames, err := json.Marshal(args.Names)
+		if err != nil {
+			return nil, errors.Wrap(err, "marshalling name args")
 		}
-		preds = append(preds, sqlf.Sprintf("name IN (%s)", sqlf.Join(ns, ",")))
+		preds = append(preds, sqlf.Sprintf("name IN (SELECT jsonb_array_elements_text(%s) AS id)", encodedNames))
 	}
 
 	if len(args.IDs) > 0 {
@@ -736,7 +740,7 @@ func listReposQuery(args StoreListReposArgs) paginatedQuery {
 			joinFilter,
 			limit,
 		)
-	}
+	}, nil
 }
 
 func (s DBStore) ListExternalRepoSpecs(ctx context.Context) (map[api.ExternalRepoSpec]struct{}, error) {
