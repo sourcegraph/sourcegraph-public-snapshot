@@ -32,7 +32,8 @@ for dst in "$@"; do
 done
 
 echo "+++ summary"
-id="$(docker inspect --format='{{.Id}}' "$src")"
+
+id=$(docker inspect --format='{{index .RepoDigests 0}}' "$src" | grep -o '@sha256:.*')
 for dst in "$@"; do
-  echo "$dst@$id"
+  echo "$dst$id"
 done
