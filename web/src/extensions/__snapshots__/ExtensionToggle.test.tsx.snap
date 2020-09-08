@@ -3,6 +3,7 @@
 exports[`ExtensionToggle extension disabled in settings 1`] = `
 <button
   className="toggle  "
+  data-test="extension-toggle-x/y"
   onClick={[Function]}
   title="Click to enable"
   type="button"
@@ -20,8 +21,9 @@ exports[`ExtensionToggle extension disabled in settings 1`] = `
 exports[`ExtensionToggle extension enabled in settings 1`] = `
 <button
   className="toggle  "
+  data-test="extension-toggle-x/y"
   onClick={[Function]}
-  title="Click to enable"
+  title="Click to disable"
   type="button"
   value={1}
 >
@@ -37,6 +39,7 @@ exports[`ExtensionToggle extension enabled in settings 1`] = `
 exports[`ExtensionToggle extension not present in settings 1`] = `
 <button
   className="toggle  "
+  data-test="extension-toggle-x/y"
   onClick={[Function]}
   title="Click to enable"
   type="button"

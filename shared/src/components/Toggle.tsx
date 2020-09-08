@@ -18,6 +18,9 @@ interface Props {
     disabled?: boolean
     tabIndex?: number
     className?: string
+
+    /** Data attribute for testing */
+    dataTest?: string
 }
 
 /** A toggle switch input component. */
@@ -37,6 +40,7 @@ export class Toggle extends React.PureComponent<Props> {
                 value={this.props.value ? 1 : 0}
                 onClick={this.onClick}
                 tabIndex={this.props.tabIndex}
+                data-test={this.props.dataTest}
             >
                 <span
                     className={`toggle__bar ${this.props.value ? 'toggle__bar--active' : ''} ${
