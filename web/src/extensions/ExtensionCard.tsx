@@ -33,7 +33,7 @@ const stopPropagation: React.MouseEventHandler<HTMLElement> = event => {
 }
 
 /** ms after which to remove visual feedback */
-const FEEDBACK_DELAY = 5000
+const FEEDBACK_DELAY = 50000
 
 /** Displays an extension as a card. */
 export const ExtensionCard = React.memo<Props>(function ExtensionCard({
@@ -100,8 +100,9 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
                     </div>
                     {/* Item 2: Text */}
                     {change === 'enabled' ? (
-                        <span className="extension-card__enabled-feedback">
-                            <strong>{name}</strong> is now enabled in code search results.{' '}
+                        <span className="extension-card__enabled-feedback mr-1">
+                            <span className="alert-success font-weight-bold">{name}</span> is now enabled in code search
+                            results.{' '}
                             <Link to={`/extensions/${extension.id}`} className="extension-card__link alert-link">
                                 See how it works
                             </Link>
