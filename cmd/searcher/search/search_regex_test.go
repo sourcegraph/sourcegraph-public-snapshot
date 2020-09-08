@@ -476,45 +476,6 @@ func TestMaxMatches(t *testing.T) {
 	}
 }
 
-func TestIgnore(t *testing.T) {
-	zipData, err := testutil.CreateZip(map[string]string{
-		".sourcegraph/ignore": "a/\n**d",
-		"a/b":                 "eeee",
-		"a/c":                 "eeee",
-		"ab":                  "eeee",
-		"b/a":                 "eeee",
-		"ba":                  "eeee",
-		"c/d":                 "eeee",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	zf, err := store.MockZipFile(zipData)
-	if err != nil {
-		t.Fatal(err)
-	}
-	rg, err := compile(&protocol.PatternInfo{
-		Pattern: "eeee",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	fileMatches, _, err := regexSearch(context.Background(), rg, zf, 10, true, true, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	want := []string{"ab", "b/a", "ba"}
-	got := make([]string, len(fileMatches))
-	for i, fm := range fileMatches {
-		got[i] = fm.Path
-	}
-	sort.Strings(got)
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("got file matches %v, want %v", got, want)
-	}
-}
-
 // Tests that:
 //
 // - IncludePatterns can match the path in any order
