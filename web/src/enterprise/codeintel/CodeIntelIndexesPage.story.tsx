@@ -3,11 +3,12 @@ import { Index } from './backend'
 import { of } from 'rxjs'
 import { storiesOf } from '@storybook/react'
 import { SuiteFunction } from 'mocha'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import * as H from 'history'
 import React from 'react'
 import webStyles from '../../SourcegraphWebApp.scss'
 import { SourcegraphContext } from '../../jscontext'
+import { LSIFIndexState } from '../../../../shared/src/graphql-operations'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
 
 window.context = {} as SourcegraphContext & SuiteFunction
 
@@ -30,10 +31,10 @@ const commonProps = {
         url: '',
     },
     now: () => new Date('2020-06-15T15:25:00+00:00'),
+    telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
-const index: Pick<Index, 'id' | 'projectRoot' | 'inputCommit'> = {
-    id: '1234',
+const index: Pick<Index, 'projectRoot' | 'inputCommit'> = {
     projectRoot: {
         url: '',
         path: 'web/',
@@ -58,7 +59,8 @@ add('List', () => (
                 nodes: [
                     {
                         ...index,
-                        state: GQL.LSIFIndexState.COMPLETED,
+                        id: '1',
+                        state: LSIFIndexState.COMPLETED,
                         queuedAt: '2020-06-15T12:20:30+00:00',
                         startedAt: '2020-06-15T12:25:30+00:00',
                         finishedAt: '2020-06-15T12:30:30+00:00',
@@ -67,7 +69,8 @@ add('List', () => (
                     },
                     {
                         ...index,
-                        state: GQL.LSIFIndexState.ERRORED,
+                        id: '2',
+                        state: LSIFIndexState.ERRORED,
                         queuedAt: '2020-06-15T12:20:30+00:00',
                         startedAt: '2020-06-15T12:25:30+00:00',
                         finishedAt: '2020-06-15T12:30:30+00:00',
@@ -76,7 +79,8 @@ add('List', () => (
                     },
                     {
                         ...index,
-                        state: GQL.LSIFIndexState.PROCESSING,
+                        id: '3',
+                        state: LSIFIndexState.PROCESSING,
                         queuedAt: '2020-06-15T12:20:30+00:00',
                         startedAt: '2020-06-15T12:25:30+00:00',
                         finishedAt: null,
@@ -85,7 +89,8 @@ add('List', () => (
                     },
                     {
                         ...index,
-                        state: GQL.LSIFIndexState.QUEUED,
+                        id: '4',
+                        state: LSIFIndexState.QUEUED,
                         queuedAt: '2020-06-15T12:20:30+00:00',
                         startedAt: null,
                         finishedAt: null,

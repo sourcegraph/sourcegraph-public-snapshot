@@ -2,34 +2,26 @@
     flex: 1;
     position: relative;
 
-    &__body-title {
-        color: var(--body-color) !important;
-    }
-
     &__icon {
         width: 3rem;
         height: 3rem;
         object-fit: contain;
     }
 
-    &__toggle {
-        z-index: 1;
-    }
-
     &__footer {
         background: unset;
     }
 
-    &__body:hover {
-        text-decoration: none;
-    }
-    &__body:hover &__body-title,
-    &__body:focus &__body-title {
-        text-decoration: underline;
-        color: var(--link-hover-color);
+    &__enabled-feedback {
+        line-height: 1.4375rem;
     }
 
-    .btn-link {
-        text-decoration: none !important;
+    &__disabled-feedback {
+        position: absolute;
+        top: -1.625rem;
+        // feedback is centered on top of toggle, so right is pr (0.5rem) + 50% of toggle width (1.0625rem)
+        right: 1.5625rem;
+        transform: translateX(50%);
+        z-index: 1;
     }
 }

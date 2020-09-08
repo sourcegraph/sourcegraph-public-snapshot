@@ -34,8 +34,8 @@ func GitServer() *Container {
 							Description:     "running git commands (signals load)",
 							Query:           "max(src_gitserver_exec_running)",
 							DataMayNotExist: true,
-							Warning:         Alert{GreaterOrEqual: 50},
-							Critical:        Alert{GreaterOrEqual: 100},
+							Warning:         Alert{GreaterOrEqual: 50, For: 2 * time.Minute},
+							Critical:        Alert{GreaterOrEqual: 100, For: 5 * time.Minute},
 							PanelOptions:    PanelOptions().LegendFormat("running commands"),
 							Owner:           ObservableOwnerCloud,
 							PossibleSolutions: `
@@ -103,6 +103,18 @@ func GitServer() *Container {
 					{
 						sharedContainerRestarts("gitserver", ObservableOwnerCloud),
 						sharedContainerFsInodes("gitserver", ObservableOwnerCloud),
+					},
+					{
+						{
+							Name:              "fs_io_operations",
+							Description:       "filesystem reads and writes rate by instance over 1h",
+							Query:             fmt.Sprintf(`sum by(name) (rate(container_fs_reads_total{%[1]s}[1h]) + rate(container_fs_writes_total{%[1]s}[1h]))`, promCadvisorContainerMatchers("gitserver")),
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 5000},
+							PanelOptions:      PanelOptions().LegendFormat("{{name}}"),
+							Owner:             ObservableOwnerSearch,
+							PossibleSolutions: "none",
+						},
 					},
 				},
 			},

@@ -38,6 +38,7 @@ import { Remote } from 'comlink'
 import { FlatExtHostAPI } from '../../../../shared/src/api/contract'
 import { DeployType } from '../../jscontext'
 import { AuthenticatedUser } from '../../auth'
+import { SearchPatternType } from '../../../../shared/src/graphql-operations'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI' | 'services'>,
@@ -58,7 +59,7 @@ export interface SearchResultsProps
     searchRequest: (
         query: string,
         version: string,
-        patternType: GQL.SearchPatternType,
+        patternType: SearchPatternType,
         versionContext: string | undefined,
         extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
     ) => Observable<GQL.ISearchResults | ErrorLike>
@@ -119,7 +120,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 '/search?' +
                 buildSearchURLQuery(
                     query,
-                    GQL.SearchPatternType.regexp,
+                    SearchPatternType.regexp,
                     this.props.caseSensitive,
                     this.props.versionContext
                 )
@@ -140,7 +141,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             queryAndPatternTypeAndCase
                         ): queryAndPatternTypeAndCase is {
                             query: string
-                            patternType: GQL.SearchPatternType
+                            patternType: SearchPatternType
                             caseSensitive: boolean
                             versionContext: string | undefined
                         } => !!queryAndPatternTypeAndCase.query && !!queryAndPatternTypeAndCase.patternType

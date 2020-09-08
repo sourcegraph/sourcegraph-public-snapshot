@@ -8,10 +8,13 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { ErrorLike } from '../../../shared/src/util/errors'
 import { WebActionsNavItems } from '../components/shared'
-import { EventLoggerProps } from '../tracking/eventLogger'
 import { ActionButtonDescriptor } from '../util/contributions'
 import { ResolvedRevision } from './backend'
 import { Breadcrumbs, BreadcrumbsProps } from '../components/Breadcrumbs'
+import { onlyDefaultExtensionsAdded } from '../../../shared/src/extensions/extensions'
+import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { SettingsCascadeOrError } from '../../../shared/src/settings/settings'
+import { AuthenticatedUser } from '../auth'
 /**
  * Stores the list of RepoHeaderContributions, manages addition/deletion, and ensures they are sorted.
  *
@@ -119,7 +122,7 @@ export interface RepoHeaderContext {
 
 export interface RepoHeaderActionButton extends ActionButtonDescriptor<RepoHeaderContext> {}
 
-interface Props extends PlatformContextProps, ExtensionsControllerProps, EventLoggerProps, BreadcrumbsProps {
+interface Props extends PlatformContextProps, ExtensionsControllerProps, TelemetryProps, BreadcrumbsProps {
     /**
      * An array of render functions for action buttons that can be configured *in addition* to action buttons
      * contributed through {@link RepoHeaderContributionsLifecycleProps} and through extensions.
@@ -152,6 +155,10 @@ interface Props extends PlatformContextProps, ExtensionsControllerProps, EventLo
      * callbacks to its children for them to add and remove contributions.
      */
     onLifecyclePropsChange: (lifecycleProps: RepoHeaderContributionsLifecycleProps) => void
+
+    settingsCascade: SettingsCascadeOrError
+
+    authenticatedUser: AuthenticatedUser | null
 
     location: H.Location
     history: H.History
@@ -192,6 +199,13 @@ export const RepoHeader: React.FunctionComponent<Props> = ({ onLifecyclePropsCha
                 ))}
             </ul>
             <div className="repo-header__spacer" />
+            <div className="d-flex align-items-center">
+                {determineShowAddExtensions(props) && (
+                    <LinkOrButton to="/extensions" className="btn btn-outline-secondary btn-sm mx-2">
+                        Add extensions
+                    </LinkOrButton>
+                )}
+            </div>
             <ul className="navbar-nav">
                 <WebActionsNavItems
                     {...props}
@@ -228,4 +242,19 @@ export const RepoHeader: React.FunctionComponent<Props> = ({ onLifecyclePropsCha
             </ul>
         </nav>
     )
+}
+
+/**
+ * Determine whether to show the "add extensions" button. Display to all unautenticated users,
+ * and only to authenticated users who have not added extensions.
+ */
+function determineShowAddExtensions({
+    settingsCascade,
+    authenticatedUser,
+}: Pick<Props, 'settingsCascade' | 'authenticatedUser'>): boolean {
+    if (!authenticatedUser) {
+        return true
+    }
+
+    return onlyDefaultExtensionsAdded(settingsCascade)
 }

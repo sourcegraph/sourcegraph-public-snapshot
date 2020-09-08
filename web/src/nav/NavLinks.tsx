@@ -10,8 +10,7 @@ import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
 import { ThemeProps } from '../../../shared/src/theme'
-import { EventLoggerProps } from '../tracking/eventLogger'
-import { fetchAllStatusMessages, StatusMessagesNavItem } from './StatusMessagesNavItem'
+import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
 import { CampaignsNavItem } from '../enterprise/campaigns/global/nav/CampaignsNavItem'
 import { ThemePreferenceProps } from '../theme'
@@ -22,9 +21,11 @@ import {
 } from '../keyboardShortcuts/keyboardShortcuts'
 import { isErrorLike } from '../../../shared/src/util/errors'
 import { Settings } from '../schema/settings.schema'
-import CompassOutlineIcon from 'mdi-react/CompassOutlineIcon'
 import { InsightsNavItem } from '../insights/InsightsNavLink'
 import { AuthenticatedUser } from '../auth'
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
+import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { ExtensionsNavItem } from '../extensions/ExtensionsNavItem'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -33,7 +34,7 @@ interface Props
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         ThemeProps,
         ThemePreferenceProps,
-        EventLoggerProps,
+        TelemetryProps,
         ActivationProps {
     location: H.Location
     history: H.History
@@ -67,19 +68,15 @@ export class NavLinks extends React.PureComponent<Props> {
                         <ActivationDropdown activation={this.props.activation} history={this.props.history} />
                     </li>
                 )}
-                {(!this.props.showDotComMarketing || !!this.props.authenticatedUser) && (
-                    <li className="nav-item">
-                        <Link to="/explore" className="nav-link">
-                            <CompassOutlineIcon className="icon-inline" /> Explore
-                        </Link>
-                    </li>
-                )}
                 {!isErrorLike(this.props.settingsCascade.final) &&
                     this.props.settingsCascade.final?.experimentalFeatures?.codeInsights && (
                         <li className="nav-item">
                             <InsightsNavItem />
                         </li>
                     )}
+                <li className="nav-item">
+                    <ExtensionsNavItem />
+                </li>
                 {this.props.showCampaigns && (
                     <li className="nav-item">
                         <CampaignsNavItem />
@@ -87,11 +84,6 @@ export class NavLinks extends React.PureComponent<Props> {
                 )}
                 {!this.props.authenticatedUser && (
                     <>
-                        <li className="nav-item">
-                            <Link to="/extensions" className="nav-link">
-                                Extensions
-                            </Link>
-                        </li>
                         {this.props.location.pathname !== '/sign-in' && (
                             <li className="nav-item mx-1">
                                 <Link className="nav-link btn btn-primary" to="/sign-in">
@@ -101,29 +93,31 @@ export class NavLinks extends React.PureComponent<Props> {
                         )}
                         {this.props.showDotComMarketing && (
                             <li className="nav-item">
-                                <a href="https://about.sourcegraph.com" className="nav-link">
-                                    About
+                                <a
+                                    href="https://about.sourcegraph.com"
+                                    className="nav-link"
+                                    target="_blank"
+                                    rel="noopener"
+                                >
+                                    About <OpenInNewIcon className="icon-inline" />
                                 </a>
                             </li>
                         )}
                         <li className="nav-item">
-                            <Link to="/help" className="nav-link">
-                                Help
+                            <Link to="/help" className="nav-link" target="_blank" rel="noopener">
+                                Help <OpenInNewIcon className="icon-inline" />
                             </Link>
                         </li>
                     </>
                 )}
-                {!this.props.isSourcegraphDotCom &&
-                    this.props.authenticatedUser &&
-                    this.props.authenticatedUser.siteAdmin && (
-                        <li className="nav-item">
-                            <StatusMessagesNavItem
-                                fetchMessages={fetchAllStatusMessages}
-                                isSiteAdmin={this.props.authenticatedUser.siteAdmin}
-                                history={this.props.history}
-                            />
-                        </li>
-                    )}
+                {!this.props.isSourcegraphDotCom && this.props.authenticatedUser?.siteAdmin && (
+                    <li className="nav-item">
+                        <StatusMessagesNavItem
+                            isSiteAdmin={this.props.authenticatedUser.siteAdmin}
+                            history={this.props.history}
+                        />
+                    </li>
+                )}
                 <li className="nav-item">
                     <WebCommandListPopoverButton
                         {...this.props}

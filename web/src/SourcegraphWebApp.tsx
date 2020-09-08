@@ -13,7 +13,6 @@ import {
     Controller as ExtensionsController,
     createController as createExtensionsController,
 } from '../../shared/src/extensions/controller'
-import * as GQL from '../../shared/src/graphql/schema'
 import { Notifications } from '../../shared/src/notifications/Notifications'
 import { PlatformContext } from '../../shared/src/platform/context'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '../../shared/src/settings/settings'
@@ -23,7 +22,6 @@ import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
 import { RouterLinkOrAnchor } from './components/RouterLinkOrAnchor'
 import { Tooltip } from './components/tooltip/Tooltip'
-import { ExploreSectionDescriptor } from './explore/ExploreArea'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
@@ -69,9 +67,9 @@ import {
     defaultPatternTypeFromSettings,
     experimentalFeaturesFromSettings,
 } from './util/settings'
+import { SearchPatternType } from '../../shared/src/graphql-operations'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
-    exploreSections: readonly ExploreSectionDescriptor[]
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes: readonly ExtensionsAreaRoute[]
@@ -119,7 +117,7 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     /**
      * The current search pattern type.
      */
-    searchPatternType: GQL.SearchPatternType
+    searchPatternType: SearchPatternType
 
     /**
      * Whether the current search is case sensitive.
@@ -169,6 +167,8 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     showRepogroupHomepage: boolean
 
     showOnboardingTour: boolean
+
+    showEnterpriseHomePanels: boolean
 
     /**
      * Whether globbing is enabled for filters.
@@ -226,7 +226,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
         // The patternType in the URL query parameter. If none is provided, default to literal.
         // This will be updated with the default in settings when the web app mounts.
-        const urlPatternType = parseSearchURLPatternType(window.location.search) || GQL.SearchPatternType.literal
+        const urlPatternType = parseSearchURLPatternType(window.location.search) || SearchPatternType.literal
         const urlCase = searchURLIsCaseSensitive(window.location.search)
         const currentSearchMode = localStorage.getItem(SEARCH_MODE_KEY)
         const availableVersionContexts = window.context.experimentalFeatures.versionContexts
@@ -254,6 +254,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             previousVersionContext,
             showRepogroupHomepage: false,
             showOnboardingTour: false,
+            showEnterpriseHomePanels: false,
             globbing: false,
         }
     }
@@ -413,6 +414,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     previousVersionContext={this.state.previousVersionContext}
                                     showRepogroupHomepage={this.state.showRepogroupHomepage}
                                     showOnboardingTour={this.state.showOnboardingTour}
+                                    showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
                                     globbing={this.state.globbing}
                                 />
                             )}
@@ -442,7 +444,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.setState({ filtersInQuery })
     }
 
-    private setPatternType = (patternType: GQL.SearchPatternType): void => {
+    private setPatternType = (patternType: SearchPatternType): void => {
         this.setState({
             searchPatternType: patternType,
         })

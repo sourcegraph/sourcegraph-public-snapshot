@@ -5,4 +5,8 @@
         grid-auto-rows: minmax(4rem, auto);
         gap: $spacer * 0.75;
     }
+
+    &__category {
+        margin-top: 2rem;
+    }
 }

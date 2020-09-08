@@ -10,8 +10,8 @@ Code intelligence queries are resolved favoring [precise](http://localhost:5080/
 
 The definitions provider returns the set of locations that define the symbol at the hover location. This provider supports the `Go to definition` button on the hover tooltip. If there is only one result, the button will act as a link to that location. If there are multiple results, they are shown in a definitions panel at the bottom of the screen.
 
-<a href="/dev/codeintel/diagrams/extension-definitions.svg" target="_blank">
-  <img src="/dev/codeintel/diagrams/extension-definitions.svg">
+<a href="diagrams/extension-definitions.svg" target="_blank">
+  <img src="diagrams/extension-definitions.svg">
 </a>
 
 The LSIF provider is invoked first. This provider will make two types of queries:
@@ -27,8 +27,8 @@ If the LSIF provider did not return any results (due to the repository or the ta
 
 The definitions provider returns the set of locations that reference the symbol at the hover location. This provider supports the `Find references` button on the hover tooltip. These results are shown in a references panel at the bottom of the screen.
 
-<a href="/dev/codeintel/diagrams/extension-references.svg" target="_blank">
-  <img src="/dev/codeintel/diagrams/extension-references.svg">
+<a href="diagrams/extension-references.svg" target="_blank">
+  <img src="diagrams/extension-references.svg">
 </a>
 
 The LSIF provider is invoked first. This provider will make a paginated `References` query, returning each page of results to the extension host as they are resolved (up to a maximum number of pages).
@@ -39,8 +39,8 @@ This result set is then supplemented by results from the search provider. The se
 
 The definitions provider returns the hover text associated with the symbol at the hover location. This provider populates the text shown in the hover tooltip.
 
-<a href="/dev/codeintel/diagrams/extension-hover.svg" target="_blank">
-  <img src="/dev/codeintel/diagrams/extension-hover.svg">
+<a href="diagrams/extension-hover.svg" target="_blank">
+  <img src="diagrams/extension-hover.svg">
 </a>
 
 The LSIF provider is invoked first. This provider will make two types of queries:

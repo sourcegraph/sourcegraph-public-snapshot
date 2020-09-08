@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import FolderIcon from 'mdi-react/FolderIcon'
@@ -28,7 +27,6 @@ import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps } from '../../search'
-import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
@@ -45,57 +43,8 @@ import { ViewGrid } from './ViewGrid'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
-
-const TreeEntry: React.FunctionComponent<{
-    isDir: boolean
-    name: string
-    parentPath: string
-    url: string
-}> = ({ isDir, name, parentPath, url }) => {
-    const filePath = parentPath ? parentPath + '/' + name : name
-    return (
-        <Link
-            to={url}
-            className={classNames(
-                'tree-entry',
-                isDir && 'font-weight-bold',
-                `test-tree-entry-${isDir ? 'directory' : 'file'}`
-            )}
-            title={filePath}
-        >
-            {name}
-            {isDir && '/'}
-        </Link>
-    )
-}
-
-/**
- * Use a multi-column layout for tree entries when there are at least this many. See TreePage.scss
- * for more information.
- */
-const MIN_ENTRIES_FOR_COLUMN_LAYOUT = 6
-
-const TreeEntriesSection: React.FunctionComponent<{
-    title: string
-    parentPath: string
-    entries: Pick<GQL.ITreeEntry, 'name' | 'isDirectory' | 'url'>[]
-}> = ({ title, parentPath, entries }) =>
-    entries.length > 0 ? (
-        <section className="tree-page__section test-tree-entries">
-            <h3 className="tree-page__section-header">{title}</h3>
-            <div className={entries.length > MIN_ENTRIES_FOR_COLUMN_LAYOUT ? 'tree-page__entries--columns' : undefined}>
-                {entries.map((entry, index) => (
-                    <TreeEntry
-                        key={entry.name + String(index)}
-                        isDir={entry.isDirectory}
-                        name={entry.name}
-                        parentPath={parentPath}
-                        url={entry.url}
-                    />
-                ))}
-            </div>
-        </section>
-    ) : null
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { TreeEntriesSection } from './TreeEntriesSection'
 
 const fetchTreeCommits = memoizeObservable(
     (args: {
@@ -150,7 +99,7 @@ interface Props
         ExtensionsControllerProps,
         PlatformContextProps,
         ThemeProps,
-        EventLoggerProps,
+        TelemetryProps,
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
@@ -184,11 +133,11 @@ export const TreePage: React.FunctionComponent<Props> = ({
 }) => {
     useEffect(() => {
         if (filePath === '') {
-            eventLogger.logViewEvent('Repository')
+            props.telemetryService.logViewEvent('Repository')
         } else {
-            eventLogger.logViewEvent('Tree')
+            props.telemetryService.logViewEvent('Tree')
         }
-    }, [filePath])
+    }, [filePath, props.telemetryService])
 
     useBreadcrumb(
         useMemo(() => {
@@ -397,11 +346,10 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             caseSensitive={caseSensitive}
                         />
                     )}
-                    <TreeEntriesSection
-                        title="Files and directories"
-                        parentPath={filePath}
-                        entries={treeOrError.entries}
-                    />
+                    <section className="tree-page__section test-tree-entries">
+                        <h3 className="tree-page__section-header">Files and directories</h3>
+                        <TreeEntriesSection parentPath={filePath} entries={treeOrError.entries} />
+                    </section>
                     {/* eslint-disable react/jsx-no-bind */}
                     <ActionsContainer
                         {...props}

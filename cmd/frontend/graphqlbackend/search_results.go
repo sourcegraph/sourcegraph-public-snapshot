@@ -14,27 +14,24 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/src-d/enry/v2"
-
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-
-	"github.com/inconshreveable/log15"
-
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -42,6 +39,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/src-d/enry/v2"
 )
 
 // searchResultsCommon contains fields that should be returned by all funcs
@@ -659,25 +657,32 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolv
 		trace.GraphQLRequestName(ctx),
 	).Inc()
 
-	if v := conf.Get().ObservabilityLogSlowSearches; v != 0 && time.Since(start).Milliseconds() > int64(v) {
-		// Note: We don't care about the error here, we just extract the username if
-		// we get a non-nil user object.
-		currentUser, _ := CurrentUser(ctx)
-		var currentUserName string
-		if currentUser != nil {
-			currentUserName = currentUser.Username()
+	isSlow := time.Since(start) > logSlowSearchesThreshold()
+	if honey.Enabled() || isSlow {
+		var act actor.Actor
+		if a := actor.FromContext(ctx); a != nil {
+			act = *a
 		}
 
-		log15.Warn("slow search request",
-			"time", time.Since(start),
-			"query", `"`+r.rawQuery()+`"`,
-			"type", trace.GraphQLRequestName(ctx),
-			"user", currentUserName,
-			"source", trace.RequestSource(ctx),
-			"status", status,
-			"alertType", alertType,
-		)
+		ev := honey.Event("search")
+		ev.AddField("query", r.rawQuery())
+		ev.AddField("actor_uid", act.UID)
+		ev.AddField("actor_internal", act.Internal)
+		ev.AddField("type", trace.GraphQLRequestName(ctx))
+		ev.AddField("source", string(trace.RequestSource(ctx)))
+		ev.AddField("status", status)
+		ev.AddField("alert_type", alertType)
+		ev.AddField("duration_ms", time.Since(start).Milliseconds())
+
+		if honey.Enabled() {
+			_ = ev.Send()
+		}
+
+		if isSlow {
+			log15.Warn("slow search request", mapToLog15Ctx(ev.Fields())...)
+		}
 	}
+
 	return rr, err
 }
 
@@ -1378,8 +1383,6 @@ func langIncludeExcludePatterns(values, negatedValues []string) (includePatterns
 var (
 	// The default timeout to use for queries.
 	defaultTimeout = 20 * time.Second
-	// The max timeout to use for queries.
-	maxTimeout = time.Minute
 )
 
 func (r *searchResolver) searchTimeoutFieldSet() bool {
@@ -1389,6 +1392,7 @@ func (r *searchResolver) searchTimeoutFieldSet() bool {
 
 func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, context.CancelFunc, error) {
 	d := defaultTimeout
+	maxTimeout := time.Duration(searchLimits().MaxTimeoutSeconds) * time.Second
 	timeout, _ := r.query.StringValue(query.FieldTimeout)
 	if timeout != "" {
 		var err error
@@ -1400,8 +1404,7 @@ func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, cont
 		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
 		d = maxTimeout
 	}
-	// don't run queries longer than 1 minute.
-	if d.Minutes() > 1 {
+	if d > maxTimeout {
 		d = maxTimeout
 	}
 	ctx, cancel := context.WithTimeout(ctx, d)
@@ -1428,60 +1431,69 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceO
 	return resultTypes
 }
 
-func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (repos, missingRepoRevs []*search.RepositoryRevisions, excludedRepos *excludedRepos, res *SearchResultsResolver, err error) {
-	repos, missingRepoRevs, excludedRepos, overLimit, err := r.resolveRepositories(ctx, nil)
+func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (resolved resolvedRepositories, res *SearchResultsResolver, err error) {
+	resolved, err = r.resolveRepositories(ctx, nil)
 	if err != nil {
 		if errors.Is(err, authz.ErrStalePermissions{}) {
 			log15.Debug("searchResolver.determineRepos", "err", err)
 			alert := alertForStalePermissions()
-			return nil, nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
+			return resolvedRepositories{}, &SearchResultsResolver{alert: alert, start: start}, nil
 		}
 		e := git.BadCommitError{}
 		if errors.As(err, &e) {
 			alert := r.alertForInvalidRevision(e.Spec)
-			return nil, nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
+			return resolvedRepositories{}, &SearchResultsResolver{alert: alert, start: start}, nil
 		}
-		return nil, nil, nil, nil, err
+		return resolvedRepositories{}, nil, err
 	}
 
-	tr.LazyPrintf("searching %d repos, %d missing", len(repos), len(missingRepoRevs))
-	if len(repos) == 0 {
+	tr.LazyPrintf("searching %d repos, %d missing", len(resolved.repoRevs), len(resolved.missingRepoRevs))
+	if len(resolved.repoRevs) == 0 {
 		alert := r.alertForNoResolvedRepos(ctx)
-		return nil, nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
+		return resolvedRepositories{}, &SearchResultsResolver{alert: alert, start: start}, nil
 	}
-	if overLimit {
+	if resolved.overLimit {
 		alert := r.alertForOverRepoLimit(ctx)
-		return nil, nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
+		return resolvedRepositories{}, &SearchResultsResolver{alert: alert, start: start}, nil
 	}
-	return repos, missingRepoRevs, excludedRepos, nil, nil
+	return resolved, nil, nil
 }
 
 // Surface an alert if a query exceeds limits that we place on search. Currently limits
 // diff and commit searches where more than repoLimit repos need to be searched.
 func alertOnSearchLimit(resultTypes []string, args *search.TextParameters) ([]string, *searchAlert) {
-	var alert *searchAlert
-	repoLimit := 50
-	if len(args.Repos) > repoLimit {
-		if len(resultTypes) == 1 {
-			resultType := resultTypes[0]
-			switch resultType {
-			case "commit", "diff":
-				if _, afterPresent := args.Query.Fields()["after"]; afterPresent {
-					break
-				}
-				if _, beforePresent := args.Query.Fields()["before"]; beforePresent {
-					break
-				}
-				resultTypes = []string{}
-				alert = &searchAlert{
-					prometheusType: "exceeded_diff_commit_search_limit",
-					title:          fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
-					description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), repoLimit),
-				}
+	limits := searchLimits()
+
+	for _, resultType := range resultTypes {
+		if resultType != "commit" && resultType != "diff" {
+			continue
+		}
+
+		hasTimeFilter := false
+		if _, afterPresent := args.Query.Fields()["after"]; afterPresent {
+			hasTimeFilter = true
+		}
+		if _, beforePresent := args.Query.Fields()["before"]; beforePresent {
+			hasTimeFilter = true
+		}
+
+		if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(args.Repos) > max {
+			return []string{}, &searchAlert{
+				prometheusType: "exceeded_diff_commit_search_limit",
+				title:          fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
+				description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), max),
+			}
+		}
+		if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(args.Repos) > max {
+			return []string{}, &searchAlert{
+				prometheusType: "exceeded_diff_commit_with_time_search_limit",
+				title:          fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
+				description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), max),
 			}
 		}
 	}
-	return resultTypes, alert
+
+	return resultTypes, nil
 }
 
 // doResults is one of the highest level search functions that handles finding results.
@@ -1505,7 +1517,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 	defer cancel()
 
-	repos, missingRepoRevs, excludedRepos, alertResult, err := r.determineRepos(ctx, tr, start)
+	resolved, alertResult, err := r.determineRepos(ctx, tr, start)
 	if err != nil {
 		return nil, err
 	}
@@ -1536,7 +1548,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	args := search.TextParameters{
 		PatternInfo:     p,
-		Repos:           repos,
+		Repos:           resolved.repoRevs,
 		Query:           r.query,
 		UseFullDeadline: r.searchTimeoutFieldSet(),
 		Zoekt:           r.zoekt,
@@ -1583,9 +1595,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return &optionalWg
 	}
 
-	if excludedRepos != nil {
-		common.excluded = *excludedRepos
-	}
+	common.excluded = resolved.excludedRepos
 
 	// Apply search limits and generate warnings before firing off workers.
 	// This currently limits diff and commit search to a set number of
@@ -1675,16 +1685,11 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					multiErr = multierror.Append(multiErr, errors.Wrap(err, "text search failed"))
 					multiErrMu.Unlock()
 				}
-				if args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults && len(fileResults) == 0 {
+				if args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults && len(fileResults) == 0 && err == nil {
 					// No results for structural search? Automatically search again and force Zoekt to resolve
 					// more potential file matches by setting a higher FileMatchLimit.
 					args.PatternInfo.FileMatchLimit = 1000
 					fileResults, fileCommon, err = searchFilesInRepos(ctx, &args)
-					if err != nil && !isContextError(ctx, err) {
-						multiErrMu.Lock()
-						multiErr = multierror.Append(multiErr, errors.Wrap(err, "text search failed"))
-						multiErrMu.Unlock()
-					}
 					if len(fileResults) == 0 {
 						// Still no results? Give up.
 						log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
@@ -1830,8 +1835,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		alert = alertForStructuralSearchNotSet(r.originalQuery)
 	}
 
-	if len(missingRepoRevs) > 0 {
-		alert = alertForMissingRepoRevs(r.patternType, missingRepoRevs)
+	if len(resolved.missingRepoRevs) > 0 {
+		alert = alertForMissingRepoRevs(r.patternType, resolved.missingRepoRevs)
 	}
 
 	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == query.SearchTypeLiteral {
@@ -1957,4 +1962,33 @@ func validateRepoHasFileUsage(q query.QueryInfo) error {
 		return errors.New("repohasfile does not currently return symbol results. Support for symbol results is coming soon. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4610 for updates")
 	}
 	return nil
+}
+
+// logSlowSearchesThreshold returns the minimum duration configured in site
+// settings for logging slow searches.
+func logSlowSearchesThreshold() time.Duration {
+	ms := conf.Get().ObservabilityLogSlowSearches
+	if ms == 0 {
+		return time.Duration(math.MaxInt64)
+	}
+	return time.Duration(ms) * time.Millisecond
+}
+
+// mapToLog15Ctx translates a map to log15 context fields.
+func mapToLog15Ctx(m map[string]interface{}) []interface{} {
+	// sort so its stable
+	keys := make([]string, len(m))
+	i := 0
+	for k := range m {
+		keys[i] = k
+		i++
+	}
+	sort.Strings(keys)
+	ctx := make([]interface{}, len(m)*2)
+	for i, k := range keys {
+		j := i * 2
+		ctx[j] = k
+		ctx[j+1] = m[k]
+	}
+	return ctx
 }

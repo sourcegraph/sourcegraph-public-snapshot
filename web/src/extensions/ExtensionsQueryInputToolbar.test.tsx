@@ -1,13 +1,20 @@
 import React from 'react'
 import renderer from 'react-test-renderer'
-import { EXTENSION_CATEGORIES } from '../../../shared/src/schema/extensionSchema'
-import { extensionsQuery } from './extension/extension'
 import { ExtensionsQueryInputToolbar } from './ExtensionsQueryInputToolbar'
 
 describe('ExtensionsQueryInputToolbar', () => {
     test('renders', () => {
         expect(
-            renderer.create(<ExtensionsQueryInputToolbar query="q" onQueryChange={() => undefined} />).toJSON()
+            renderer
+                .create(
+                    <ExtensionsQueryInputToolbar
+                        selectedCategories={[]}
+                        onSelectCategories={() => {}}
+                        enablementFilter="all"
+                        setEnablementFilter={() => {}}
+                    />
+                )
+                .toJSON()
         ).toMatchSnapshot()
     })
 
@@ -16,8 +23,10 @@ describe('ExtensionsQueryInputToolbar', () => {
             renderer
                 .create(
                     <ExtensionsQueryInputToolbar
-                        query={extensionsQuery({ category: EXTENSION_CATEGORIES[0] })}
-                        onQueryChange={() => undefined}
+                        selectedCategories={[]}
+                        onSelectCategories={() => {}}
+                        enablementFilter="all"
+                        setEnablementFilter={() => {}}
                     />
                 )
                 .toJSON()

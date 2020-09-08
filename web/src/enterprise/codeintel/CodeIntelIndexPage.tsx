@@ -6,7 +6,6 @@ import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { catchError, takeWhile, concatMap, repeatWhen, delay } from 'rxjs/operators'
 import { ErrorAlert } from '../../components/alerts'
-import { eventLogger } from '../../tracking/eventLogger'
 import { fetchLsifIndex as defaultFetchLsifIndex, deleteLsifIndex, Index } from './backend'
 import { Link } from '../../../../shared/src/components/Link'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -17,10 +16,12 @@ import { useObservable } from '../../../../shared/src/util/useObservable'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import { SchedulerLike, timer } from 'rxjs'
 import * as H from 'history'
+import { LSIFIndexState } from '../../../../shared/src/graphql-operations'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
 const REFRESH_INTERVAL_MS = 5000
 
-interface Props extends RouteComponentProps<{ id: string }> {
+export interface CodeIntelIndexPageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {
     repo?: GQL.IRepository
     fetchLsifIndex?: typeof defaultFetchLsifIndex
 
@@ -32,7 +33,7 @@ interface Props extends RouteComponentProps<{ id: string }> {
     now?: () => Date
 }
 
-const terminalStates = new Set([GQL.LSIFIndexState.COMPLETED, GQL.LSIFIndexState.ERRORED])
+const terminalStates = new Set([LSIFIndexState.COMPLETED, LSIFIndexState.ERRORED])
 
 function shouldReload(index: Index | ErrorLike | null | undefined): boolean {
     return !isErrorLike(index) && !(index && terminalStates.has(index.state))
@@ -41,17 +42,18 @@ function shouldReload(index: Index | ErrorLike | null | undefined): boolean {
 /**
  * A page displaying metadata about an LSIF index.
  */
-export const CodeIntelIndexPage: FunctionComponent<Props> = ({
+export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
     repo,
     scheduler,
     match: {
         params: { id },
     },
     history,
+    telemetryService,
     fetchLsifIndex = defaultFetchLsifIndex,
     now,
 }) => {
-    useEffect(() => eventLogger.logViewEvent('CodeIntelIndex'))
+    useEffect(() => telemetryService.logViewEvent('CodeIntelIndex'), [telemetryService])
 
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
 
@@ -112,17 +114,17 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
                         </h2>
                     </div>
 
-                    {indexOrError.state === GQL.LSIFIndexState.PROCESSING ? (
+                    {indexOrError.state === LSIFIndexState.PROCESSING ? (
                         <div className="alert alert-primary mb-4 mt-3">
                             <LoadingSpinner className="icon-inline" />{' '}
                             <span className="test-index-state">Index is currently being processed...</span>
                         </div>
-                    ) : indexOrError.state === GQL.LSIFIndexState.COMPLETED ? (
+                    ) : indexOrError.state === LSIFIndexState.COMPLETED ? (
                         <div className="alert alert-success mb-4 mt-3">
                             <CheckIcon className="icon-inline" />{' '}
                             <span className="test-index-state">Index processed successfully.</span>
                         </div>
-                    ) : indexOrError.state === GQL.LSIFIndexState.ERRORED ? (
+                    ) : indexOrError.state === LSIFIndexState.ERRORED ? (
                         <div className="alert alert-danger mb-4 mt-3">
                             <AlertCircleIcon className="icon-inline" />{' '}
                             <span className="test-index-state">Index failed to complete:</span>{' '}
@@ -185,7 +187,7 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
 
                             <tr>
                                 <td>
-                                    {indexOrError.state === GQL.LSIFIndexState.ERRORED && indexOrError.finishedAt
+                                    {indexOrError.state === LSIFIndexState.ERRORED && indexOrError.finishedAt
                                         ? 'Failed'
                                         : 'Finished'}{' '}
                                     processing

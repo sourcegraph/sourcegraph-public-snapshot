@@ -130,7 +130,11 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                         />
                     </div>
 
-                    <button type="submit" className="btn btn-primary" disabled={this.state.loading}>
+                    <button
+                        type="submit"
+                        className="btn btn-primary test-create-org-submit-button"
+                        disabled={this.state.loading}
+                    >
                         Create organization
                     </button>
                     {this.state.loading && <LoadingSpinner className="icon-inline" />}

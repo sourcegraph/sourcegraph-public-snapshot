@@ -2,12 +2,12 @@ package query
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/pkg/errors"
 )
 
 func TestParseParameterList(t *testing.T) {
@@ -134,6 +134,24 @@ func TestParseParameterList(t *testing.T) {
 			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":9}}`,
 			WantLabels: Regexp | HeuristicDanglingParens,
 		},
+		{
+			Input:      `/a regex pattern/`,
+			Want:       `{"value":"a regex pattern","negated":false}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":17}}`,
+			WantLabels: Regexp,
+		},
+		{
+			Input:      `Search()\(`,
+			Want:       `{"value":"Search()\\(","negated":false}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":10}}`,
+			WantLabels: Regexp,
+		},
+		{
+			Input:      `Search(xxx)\(`,
+			Want:       `{"value":"Search(xxx)\\(","negated":false}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":13}}`,
+			WantLabels: Regexp,
+		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
@@ -174,11 +192,13 @@ func TestParseParameterList(t *testing.T) {
 func TestScanField(t *testing.T) {
 	type value struct {
 		Field   string
+		Negated bool
 		Advance int
 	}
 	cases := []struct {
-		Input string
-		Want  value
+		Input   string
+		Negated bool
+		Want    value
 	}{
 		// Valid field.
 		{
@@ -205,7 +225,8 @@ func TestScanField(t *testing.T) {
 		{
 			Input: "-repo:",
 			Want: value{
-				Field:   "-repo",
+				Field:   "repo",
+				Negated: true,
 				Advance: 6,
 			},
 		},
@@ -276,8 +297,8 @@ func TestScanField(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run("scan field", func(t *testing.T) {
-			gotField, gotAdvance := ScanField([]byte(c.Input))
-			if diff := cmp.Diff(c.Want, value{gotField, gotAdvance}); diff != "" {
+			gotField, gotNegated, gotAdvance := ScanField([]byte(c.Input))
+			if diff := cmp.Diff(c.Want, value{gotField, gotNegated, gotAdvance}); diff != "" {
 				t.Error(diff)
 			}
 		})
@@ -743,7 +764,7 @@ func TestParse(t *testing.T) {
 		},
 		{
 			Input:         `\t\r\n`,
-			WantGrammar:   `"\t\r\n"`,
+			WantGrammar:   `"\\t\\r\\n"`,
 			WantHeuristic: Same,
 		},
 		{
@@ -761,17 +782,27 @@ func TestParse(t *testing.T) {
 			WantGrammar:   `(and "file:(a)" "file:(b)")`,
 			WantHeuristic: Same,
 		},
+		{
+			Input:         `(repohascommitafter:"7 days")`,
+			WantGrammar:   `"repohascommitafter:7 days"`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `(foo repohascommitafter:"7 days")`,
+			WantGrammar:   `(and "repohascommitafter:7 days" "foo")`,
+			WantHeuristic: Same,
+		},
 		// Fringe tests cases at the boundary of heuristics and invalid syntax.
 		{
 			Input:         `(0(F)(:())(:())(<0)0()`,
 			WantGrammar:   Spec(`unbalanced expression`),
-			WantHeuristic: `invalid query syntax`,
+			WantHeuristic: `"(0(F)(:())(:())(<0)0()"`,
 		},
 		// The space-looking character below is U+00A0.
 		{
 			Input:         `00 (000)`,
 			WantGrammar:   `(concat "00" "000")`,
-			WantHeuristic: `invalid query syntax`,
+			WantHeuristic: `(concat "00" "(000)")`,
 		},
 	}
 	for _, tt := range cases {

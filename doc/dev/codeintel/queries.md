@@ -9,8 +9,8 @@ Precise code intelligence results are obtained by making [GraphQL requests](http
 
 A definitions request returns the set of locations that define the symbol at a particular location (defined uniquely by a repository, commit, path, line offset, and character offset). The sequence of actions required to resolve a definitions query is shown below (click to enlarge).
 
-<a href="/dev/codeintel/diagrams/definitions.svg" target="_blank">
-  <img src="/dev/codeintel/diagrams/definitions.svg">
+<a href="diagrams/definitions.svg" target="_blank">
+  <img src="diagrams/definitions.svg">
 </a>
 
 First, the repository, commit, and path inputs are used to determine the set of LSIF uploads that can answer queries for that data. Such an upload may have been indexed on another commit. In this case, the output of `git diff` between the two commits is used to adjust the input path and line number.
@@ -31,8 +31,8 @@ Finally, if the resulting locations were provided by an upload that was indexed 
 
 A references request returns the set of locations that reference the symbol at a particular location (defined uniquely by a repository, commit, path, line offset, and character offset). Unlike the set of definitions, which should generally have only member, the set of references can unbounded for popular repositories. The resolution of references is therefore done in chunks, allowing the user to request reference results page-by-page. The sequence of actions required to resolve a references query is shown below (click to enlarge).
 
-<a href="/dev/codeintel/diagrams/references.svg" target="_blank">
-  <img src="/dev/codeintel/diagrams/references.svg">
+<a href="diagrams/references.svg" target="_blank">
+  <img src="diagrams/references.svg">
 </a>
 
 First, the repository, commit, and path inputs are used to determine the set of LSIF uploads that can answer queries for that data. Such an upload may have been indexed on another commit. In this case, the output of `git diff` between the two commits is used to adjust the input path and line number.
@@ -47,8 +47,8 @@ Finally, if the resulting locations were provided by an upload that was indexed 
 
 The sequence of actions required to resolve a page of references given a cursor is shown below (click to enlarge).
 
-<a href="/dev/codeintel/diagrams/resolve-page.svg" target="_blank">
-  <img src="/dev/codeintel/diagrams/resolve-page.svg">
+<a href="diagrams/resolve-page.svg" target="_blank">
+  <img src="diagrams/resolve-page.svg">
 </a>
 
 The cursor can be in one of five _phases_, ordered as follows. Each phase handles a distinct segment of the result set. A phase may return no results, or it may return multiple pages worth of results. In the later case, the cursor encodes sufficient information (e.g. number of uploads, references previously returned in the phase) to be able to skip duplicate results.
@@ -72,8 +72,8 @@ The cursor can be in one of five _phases_, ordered as follows. Each phase handle
 
 A hover request returns the hover text associated with the symbol at a particular location (defined uniquely by a repository, commit, path, line offset, and character offset), as well as the range of the hovered symbol. The sequence of actions required to resolve a hover query is shown below (click to enlarge).
 
-<a href="/dev/codeintel/diagrams/hover.svg" target="_blank">
-  <img src="/dev/codeintel/diagrams/hover.svg">
+<a href="diagrams/hover.svg" target="_blank">
+  <img src="diagrams/hover.svg">
 </a>
 
 First, the repository, commit, and path inputs are used to determine the set of LSIF uploads that can answer queries for that data. Such an upload may have been indexed on another commit. In this case, the output of `git diff` between the two commits is used to adjust the input path and line number.

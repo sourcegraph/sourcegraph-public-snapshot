@@ -20,6 +20,9 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
         "body": "We should remove lodash",
         "checkState": "FAILED",
         "createdAt": "2020-01-01T00:00:00.000Z",
+        "currentSpec": Object {
+          "id": "spec-rand-id-1",
+        },
         "diffStat": Object {
           "added": 100,
           "changed": 200,
@@ -54,13 +57,15 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
     }
   />
   <ExternalChangesetInfoCell
-    campaignUpdates="[Subject]"
     node={
       Object {
         "__typename": "ExternalChangeset",
         "body": "We should remove lodash",
         "checkState": "FAILED",
         "createdAt": "2020-01-01T00:00:00.000Z",
+        "currentSpec": Object {
+          "id": "spec-rand-id-1",
+        },
         "diffStat": Object {
           "added": 100,
           "changed": 200,
@@ -105,14 +110,13 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
       reviewState="PENDING"
     />
   </span>
-  <div
-    className="external-changeset-node__diffstat"
-  >
-    <DiffStat
+  <div>
+    <Memo(DiffStat)
       added={100}
       changed={200}
       deleted={100}
       expandedCounts={true}
+      separateLines={true}
     />
   </div>
 </Fragment>
