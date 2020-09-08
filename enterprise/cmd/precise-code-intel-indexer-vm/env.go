@@ -19,6 +19,7 @@ var (
 	rawUseFirecracker           = env.Get("PRECISE_CODE_INTEL_USE_FIRECRACKER", "true", "Whether to isolate index containers in virtual machines.")
 	rawFirecrackerNumCPUs       = env.Get("PRECISE_CODE_INTEL_FIRECRACKER_NUM_CPUS", "4", "How many CPUs to allocate to each virtual machine or container.")
 	rawFirecrackerMemory        = env.Get("PRECISE_CODE_INTEL_FIRECRACKER_MEMORY", "12G", "How much memory to allocate to each virtual machine or container.")
+	rawImageArchivePath         = env.Get("PRECISE_CODE_INTEL_IMAGE_ARCHIVE_PATH", "", "Where to store tar archives of docker images shared by virtual machines.")
 )
 
 // mustGet returns the non-empty version of the given raw value fatally logs on failure.
