@@ -218,9 +218,9 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                         />
                         {!authenticatedUser && (
                             <div className="alert alert-info my-4">
-                                <span>An account is required to create and configure extensions. </span>
+                                <span>An account is required to create, enable and disable extensions. </span>
                                 <Link to="/sign-up?returnTo=/extensions">
-                                    <span className="alert-link">Register Now!</span>
+                                    <span className="alert-link">Register now!</span>
                                 </Link>
                             </div>
                         )}
