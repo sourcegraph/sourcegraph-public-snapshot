@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/src-d/enry/v2"
 
 	"github.com/hashicorp/go-multierror"
@@ -659,25 +660,32 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolv
 		trace.GraphQLRequestName(ctx),
 	).Inc()
 
-	if v := conf.Get().ObservabilityLogSlowSearches; v != 0 && time.Since(start).Milliseconds() > int64(v) {
-		// Note: We don't care about the error here, we just extract the username if
-		// we get a non-nil user object.
-		currentUser, _ := CurrentUser(ctx)
-		var currentUserName string
-		if currentUser != nil {
-			currentUserName = currentUser.Username()
+	isSlow := time.Since(start) > logSlowSearchesThreshold()
+	if honey.Enabled() || isSlow {
+		var act actor.Actor
+		if a := actor.FromContext(ctx); a != nil {
+			act = *a
 		}
 
-		log15.Warn("slow search request",
-			"time", time.Since(start),
-			"query", `"`+r.rawQuery()+`"`,
-			"type", trace.GraphQLRequestName(ctx),
-			"user", currentUserName,
-			"source", trace.RequestSource(ctx),
-			"status", status,
-			"alertType", alertType,
-		)
+		ev := honey.Event("search")
+		ev.AddField("query", r.rawQuery())
+		ev.AddField("actor_uid", act.UID)
+		ev.AddField("actor_internal", act.Internal)
+		ev.AddField("type", trace.GraphQLRequestName(ctx))
+		ev.AddField("source", string(trace.RequestSource(ctx)))
+		ev.AddField("status", status)
+		ev.AddField("alert_type", alertType)
+		ev.AddField("duration_ms", time.Since(start).Milliseconds())
+
+		if honey.Enabled() {
+			_ = ev.Send()
+		}
+
+		if isSlow {
+			log15.Warn("slow search request", mapToLog15Ctx(ev.Fields())...)
+		}
 	}
+
 	return rr, err
 }
 
@@ -1957,4 +1965,33 @@ func validateRepoHasFileUsage(q query.QueryInfo) error {
 		return errors.New("repohasfile does not currently return symbol results. Support for symbol results is coming soon. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4610 for updates")
 	}
 	return nil
+}
+
+// logSlowSearchesThreshold returns the minimum duration configured in site
+// settings for logging slow searches.
+func logSlowSearchesThreshold() time.Duration {
+	ms := conf.Get().ObservabilityLogSlowSearches
+	if ms == 0 {
+		return time.Duration(math.MaxInt64)
+	}
+	return time.Duration(ms) * time.Millisecond
+}
+
+// mapToLog15Ctx translates a map to log15 context fields.
+func mapToLog15Ctx(m map[string]interface{}) []interface{} {
+	// sort so its stable
+	keys := make([]string, len(m))
+	i := 0
+	for k := range m {
+		keys[i] = k
+		i++
+	}
+	sort.Strings(keys)
+	ctx := make([]interface{}, len(m)*2)
+	for i, k := range keys {
+		j := i * 2
+		ctx[j] = k
+		ctx[j+1] = m[k]
+	}
+	return ctx
 }
