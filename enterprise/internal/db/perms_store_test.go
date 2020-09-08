@@ -1951,7 +1951,7 @@ func testPermsStore_FallbackToOldFormat(db *sql.DB) func(t *testing.T) {
 			equal(t, "IDs", []int{1}, bitmapToArray(alice.IDs))
 
 			q = loadUserPendingPermissionsByIDBatchQuery([]uint32{uint32(alice.ID)}, alice.Perm, alice.Type, "")
-			_, loaded, err := s.batchLoadUserPendingPermissions(ctx, q)
+			loaded, err := s.batchLoadIDs(ctx, q)
 			if err != nil {
 				t.Fatal(err)
 			}

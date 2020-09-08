@@ -785,11 +785,7 @@ AND permission = %s
 func loadUserPendingPermissionsByIDBatchQuery(ids []uint32, perm authz.Perms, typ authz.PermType, lock string) *sqlf.Query {
 	const format = `
 -- source: enterprise/internal/db/perms_store.go:loadUserPendingPermissionsByIDBatchQuery
-<<<<<<< HEAD
-SELECT id, service_type, service_id, bind_id, object_ids, object_ids_ints
-=======
-SELECT id, object_ids
->>>>>>> 8d58bb21703669758622bb74ca8548199cbcf982
+SELECT id, object_ids, object_ids_ints
 FROM user_pending_permissions
 WHERE id IN (%s)
 AND permission = %s
@@ -814,7 +810,7 @@ func updateUserPendingPermissionsBatchQuery(ps ...*authz.UserPendingPermissions)
 UPDATE user_pending_permissions
 SET
 	object_ids = update.object_ids,
-	object_ids_ints = excluded.object_ids_ints,
+	object_ids_ints = update.object_ids_ints,
 	updated_at = update.updated_at
 FROM (VALUES %s) AS update (id, object_ids, object_ids_ints, updated_at)
 WHERE user_pending_permissions.id = update.id
