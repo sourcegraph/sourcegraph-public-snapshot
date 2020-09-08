@@ -128,7 +128,7 @@ func migrateWithinTransaction(ctx context.Context, dumpID int, filename string, 
 	fmt.Printf("migrating %s\n", filename)
 	defer func() {
 		stat, _ := os.Stat(filename)
-		fmt.Printf("finished in %d (%d MB)\n", time.Since(start), stat.Size()/1024/1024)
+		fmt.Printf("finished in %s (%.2f MB)\n", time.Since(start), float64(stat.Size())/1024/1024)
 	}()
 
 	tx, err := db.BeginTx(context.Background(), &sql.TxOptions{})
