@@ -94,7 +94,7 @@ func mainErr() error {
 	finishedBytes := int64(0)
 	for result := range errs {
 		if result.Err != nil {
-			fmt.Printf("error: %s\n", err)
+			fmt.Printf("error: %s\n", result.Err)
 		}
 
 		finished++
