@@ -273,7 +273,7 @@ func InvalidateSessionCurrentUser(r *http.Request) error {
 // InvalidateSessionsByID invalidates all sessions for a user
 // If an error occurs, it returns the error
 func InvalidateSessionsByID(ctx context.Context, id int32) error {
-	// Get the user from the body
+	// Get the user from the request context
 	return db.Users.InvalidateSessionsByID(ctx, id)
 }
 
