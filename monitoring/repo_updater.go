@@ -52,8 +52,9 @@ func RepoUpdater() *Container {
 							PanelOptions:    PanelOptions().LegendFormat("{{type}}").Unit(Number),
 							Owner:           ObservableOwnerCloud,
 							PossibleSolutions: `
-- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
-- **Otherwise:** Increase the API rate limit to the code host.`,
+								- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
+								- **Otherwise:** Increase the API rate limit to the code host.
+							`,
 						},
 					},
 					{
@@ -76,8 +77,9 @@ func RepoUpdater() *Container {
 							PanelOptions:    PanelOptions().Unit(Number),
 							Owner:           ObservableOwnerCloud,
 							PossibleSolutions: `
-- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
-- **Otherwise:** Increase the API rate limit to the code host.`,
+								- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
+								- **Otherwise:** Increase the API rate limit to the code host.
+							`,
 						},
 					},
 					{
@@ -100,8 +102,9 @@ func RepoUpdater() *Container {
 							PanelOptions:    PanelOptions().LegendFormat("{{type}}").Unit(Number),
 							Owner:           ObservableOwnerCloud,
 							PossibleSolutions: `
-- Check the network connectivity the Sourcegraph and the code host.
-- Check if API rate limit quota is exhausted.`,
+								- Check the network connectivity the Sourcegraph and the code host.
+								- Check if API rate limit quota is exhausted.
+							`,
 						},
 					},
 				},
