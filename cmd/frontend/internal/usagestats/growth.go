@@ -25,18 +25,18 @@ func GetGrowthStatistics(ctx context.Context) (*types.GrowthStatistics, error) {
   sub AS (
   SELECT
     DISTINCT users.id,
-    CASE
+    BOOL_OR(CASE
       WHEN DATE_TRUNC('month', month_active) = DATE_TRUNC('month', now()) THEN TRUE
     ELSE
     FALSE
   END
-    AS current_month,
-    CASE
+    ) AS current_month,
+    BOOL_OR(CASE
       WHEN DATE_TRUNC('month', month_active) = DATE_TRUNC('month', now()) - INTERVAL '1 month' THEN TRUE
     ELSE
     FALSE
   END
-    AS previous_month,
+    ) AS previous_month,
     DATE_TRUNC('month', DATE(users.created_at)) AS created_month,
     DATE_TRUNC('month', DATE(users.deleted_at)) AS deleted_month
   FROM
@@ -44,7 +44,11 @@ func GetGrowthStatistics(ctx context.Context) (*types.GrowthStatistics, error) {
   LEFT JOIN
     latest_usage_by_user
   ON
-    latest_usage_by_user.user_id = users.id)
+    latest_usage_by_user.user_id = users.id
+  GROUP BY
+    1,
+    4,
+    5 )
 SELECT
   COUNT(*) FILTER (
   WHERE
