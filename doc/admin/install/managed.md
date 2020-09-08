@@ -6,7 +6,7 @@ If you are interested in this service, please [contact us](https://about.sourceg
 
 ## Overview
 
-The Sourcegraph team will provision and manage a Sourcegraph deployment for you in completely isolated and secure cloud infrastructure. It will be restricted to your organization only through your enterprise VPN and/or SSO provider of choice.
+The Sourcegraph team will provision and manage a Sourcegraph deployment for you in completely isolated and secure cloud infrastructure. It will be restricted to only your organization through your enterprise VPN and/or SSO provider of choice.
 
 ### Costs
 
