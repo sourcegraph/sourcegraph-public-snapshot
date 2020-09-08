@@ -28,7 +28,7 @@ func RepoUpdater() *Container {
 							Description:       "time gap between least and most up to date permissions",
 							Query:             `src_repoupdater_perms_syncer_perms_gap_seconds`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 3 * 24 * 60 * 60, For: 5 * time.Minute}, // 3 days
+							Warning:           Alert{GreaterOrEqual: (3 * 24 * time.Hour).Seconds(), For: 5 * time.Minute}, // 3 days
 							PanelOptions:      PanelOptions().LegendFormat("{{type}}").Unit(Seconds),
 							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "Increase the API rate limit to the code host.",
