@@ -1,6 +1,6 @@
 # Managed Sourcegraph instances
 
-The Sourcegraph team can host and manage a Sourcegraph instance for your on our Google Cloud infrastructure at e.g. https://example.sourcegraph.com.
+The Sourcegraph team can host and manage a Sourcegraph instance for you on our Google Cloud infrastructure at e.g. https://example.sourcegraph.com.
 
 If you are interested in this service, please [contact us](https://about.sourcegraph.com/contact/sales) to start a trial or discuss [pricing](https://about.sourcegraph.com/pricing) and requirements.
 
