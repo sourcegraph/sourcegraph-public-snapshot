@@ -109,7 +109,7 @@ func (p *UserPermissions) Expired(ttl time.Duration, now time.Time) bool {
 func (p *UserPermissions) AuthorizedRepos(repos []*types.Repo) []RepoPerms {
 	// Return directly if it's used for wrong permissions type or no permissions available.
 	if p.Type != PermRepos ||
-		p.IDs == nil || p.IDs.GetCardinality() == 0 {
+		p.IDs == nil || p.IDs.IsEmpty() {
 		return []RepoPerms{}
 	}
 

@@ -1136,7 +1136,7 @@ AND service_id = %s
 		}
 
 		// This user has no pending permissions, only has an empty record
-		if bm.GetCardinality() == 0 {
+		if bm.IsEmpty() {
 			continue
 		}
 		bindIDs = append(bindIDs, bindID)
