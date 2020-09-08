@@ -100,11 +100,8 @@ func mainErr() error {
 		finished++
 		finishedBytes += getSize(result.DumpID)
 
-		fmt.Printf(
-			"%d of %d complete (%.2f%%) (%d of %d bytes complete (%2.f%%))\n",
-			finished, total, float64(finished)/float64(total)*100,
-			finishedBytes, totalBytes, float64(finishedBytes)/float64(totalBytes)*100,
-		)
+		fmt.Printf("%d of %d bundles complete (%.2f%%)\n", finished, total, float64(finished)/float64(total)*100)
+		fmt.Printf("%d of %d bytes complete (%.2f%%)\n", finishedBytes, totalBytes, float64(finishedBytes)/float64(totalBytes)*100)
 	}
 
 	return nil
