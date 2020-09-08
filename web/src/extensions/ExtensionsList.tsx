@@ -11,11 +11,13 @@ import { applyExtensionsEnablement } from './extensions'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '../../../shared/src/schema/extensionSchema'
 import { ExtensionsAreaRouteContext } from './ExtensionsArea'
 import { ExtensionListData, ExtensionsEnablement } from './ExtensionRegistry'
+import { ThemeProps } from '../../../shared/src/theme'
 
 interface Props
     extends SettingsCascadeProps,
         PlatformContextProps<'settings' | 'updateSettings' | 'requestGraphQL'>,
-        Pick<ExtensionsAreaRouteContext, 'authenticatedUser'> {
+        Pick<ExtensionsAreaRouteContext, 'authenticatedUser'>,
+        ThemeProps {
     subject: Pick<SettingsSubject, 'id' | 'viewerCanAdminister'>
     location: H.Location
     history: H.History
@@ -42,6 +44,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
     enablementFilter,
     query,
     showMoreExtensions,
+    ...props
 }) => {
     if (!data || data === LOADING) {
         return <LoadingSpinner className="icon-inline" />
@@ -102,6 +105,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
                             settingsCascade={settingsCascade}
                             platformContext={platformContext}
                             enabled={isExtensionEnabled(settingsCascade.final, extensionId)}
+                            isLightTheme={props.isLightTheme}
                         />
                     ))}
                 </div>

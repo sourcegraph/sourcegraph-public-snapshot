@@ -13,8 +13,9 @@ import { ExtensionToggle } from './ExtensionToggle'
 import { isEncodedImage } from '../../../shared/src/util/icon'
 import { Link } from 'react-router-dom'
 import { DefaultIconEnabled, DefaultIcon } from './icons'
+import { ThemeProps } from '../../../shared/src/theme'
 
-interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
+interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'>, ThemeProps {
     node: Pick<
         ConfiguredRegistryExtension<
             Pick<
@@ -42,6 +43,7 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
     platformContext,
     subject,
     enabled,
+    isLightTheme,
 }) {
     const manifest: ExtensionManifest | undefined =
         extension.manifest && !isErrorLike(extension.manifest) ? extension.manifest : undefined
@@ -92,7 +94,7 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
                             <img className="extension-card__icon" src={icon} />
                         ) : publisher === 'sourcegraph' ? (
                             change === 'enabled' ? (
-                                <DefaultIconEnabled />
+                                <DefaultIconEnabled isLightTheme={isLightTheme} />
                             ) : (
                                 <DefaultIcon />
                             )

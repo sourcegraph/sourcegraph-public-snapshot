@@ -24,11 +24,13 @@ import { extensionsQuery, isExtensionAdded } from './extension/extension'
 import { Link } from 'react-router-dom'
 import { Form } from '../components/Form'
 import { ExtensionsQueryInputToolbar } from './ExtensionsQueryInputToolbar'
+import { ThemeProps } from '../../../shared/src/theme'
 
 interface Props
     extends Pick<ExtensionsAreaRouteContext, 'authenticatedUser' | 'subject'>,
         PlatformContextProps<'settings' | 'updateSettings' | 'requestGraphQL'>,
-        SettingsCascadeProps {
+        SettingsCascadeProps,
+        ThemeProps {
     location: H.Location
     history: H.History
 }
