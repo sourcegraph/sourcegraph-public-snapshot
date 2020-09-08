@@ -28,7 +28,7 @@ exports[`ExtensionToggle extension enabled in settings 1`] = `
   className="toggle"
   onClick={[Function]}
   role="switch"
-  title="Click to enable"
+  title="Click to disable"
   type="button"
   value={1}
 >
