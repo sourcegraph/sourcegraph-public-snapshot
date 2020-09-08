@@ -624,50 +624,52 @@ func TestSearch(t *testing.T) {
 				query:      `repo:^github\.com/sgtest/go-diff file:^README\.md (bar and (foo or x\) ()) patterntype:literal`,
 				zeroResult: true,
 			},
-			// {
-			// 	name:  `Successful grouping removes alert`,
-			// 	query: `repo:^github\.com/sgtest/go-diff file:^README\.md (bar and (foo or (x\) ())) patterntype:literal`,
-			// },
-			// {
-			// 	name:  `No dangling right paren with complex group for literal search`,
-			// 	query: `repo:^github\.com/sgtest/go-diff$ (respObj.Size and (data)) patterntype:literal`,
-			// },
-			// {
-			// 	name:  `Concat converted to .* for regexp search`,
-			// 	query: `repo:^github\.com/sgtest/go-diff$ file:^client\.go ca Pool or x509 Pool patterntype:regexp stable:yes type:file`,
-			// },
-			// {
-			// 	name:  `Structural search uses literal search parser`,
-			// 	query: `repo:^github\.com/sgtest/go-diff$ file:^client\.go :[[v]] := x509 and AppendCertsFromPEM(:[_]) patterntype:structural`,
-			// },
-			// {
-			// 	name:  `Union file matches per file and accurate counts`,
-			// 	query: `repo:^github\.com/sgtest/go-diff file:^cmd/adapter/adapter\.go func or main`,
-			// },
-			// {
-			// 	name:  `Intersect file matches per file and accurate counts`,
-			// 	query: `repo:^github\.com/sgtest/go-diff file:^cmd/adapter/adapter\.go func and main`,
-			// },
-			// {
-			// 	name:  `Simple combined union and intersect file matches per file and accurate counts`,
-			// 	query: `repo:^github\.com/sgtest/go-diff file:^cmd/adapter/adapter\.go ((func main and package main) or return prom.NewClient)`,
-			// },
-			// {
-			// 	name:  `Complex union of intersect file matches per file and accurate counts`,
-			// 	query: `repo:^github\.com/sgtest/go-diff file:^cmd/adapter/adapter\.go ((main and NamersFromConfig) or (genericPromClient and stopCh <-))`,
-			// },
-			// {
-			// 	name:  `Complex intersect of union file matches per file and accurate counts`,
-			// 	query: `repo:^github\.com/sgtest/go-diff file:^cmd/adapter/adapter\.go ((func main or package main) and (baseURL or mprom))`,
-			// },
-			// {
-			// 	name:  `Intersect file matches per file against an empty result set`,
-			// 	query: `repo:^github\.com/sgtest/go-diff file:^cmd/adapter/adapter\.go func and doesnotexist838338`,
-			// },
-			// {
-			// 	name:  `Dedupe union operation`,
-			// 	query: `file:cors_filter.go|ginkgo_dsl.go|funcs.go repo:rvantonderp/DirectXMan12-k8s-prometheus-adapter  :[[i]], :[[x]] := range :[src.] { :[[dst]][:[i]] = :[[x]] } or if strings.ToLower(:[s1]) == strings.ToLower(:[s2]) patterntype:structural`,
-			// },
+			{
+				name:       `Successful grouping removes alert`,
+				query:      `repo:^github\.com/sgtest/go-diff file:^README\.md (bar and (foo or (x\) ())) patterntype:literal`,
+				zeroResult: true,
+			},
+			{
+				name:  `No dangling right paren with complex group for literal search`,
+				query: `repo:^github\.com/sgtest/go-diff$ (m *FileDiff and (data)) patterntype:literal`,
+			},
+			{
+				name:  `Concat converted to .* for regexp search`,
+				query: `repo:^github\.com/sgtest/go-diff$ file:^diff/print\.go t := or ts Time patterntype:regexp stable:yes type:file`,
+			},
+			{
+				name:  `Structural search uses literal search parser`,
+				query: `repo:^github\.com/sgtest/go-diff$ file:^diff/print\.go :[[v]] := ts and printFileHeader(:[_]) patterntype:structural`,
+			},
+			{
+				name:  `Union file matches per file and accurate counts`,
+				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go func or package`,
+			},
+			{
+				name:  `Intersect file matches per file and accurate counts`,
+				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go func and package`,
+			},
+			{
+				name:  `Simple combined union and intersect file matches per file and accurate counts`,
+				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go ((func timePtr and package diff) or return buf.Bytes())`,
+			},
+			{
+				name:  `Complex union of intersect file matches per file and accurate counts`,
+				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go ((func timePtr and package diff) or (ts == nil and ts.Time()))`,
+			},
+			{
+				name:  `Complex intersect of union file matches per file and accurate counts`,
+				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go ((func timePtr or package diff) and (ts == nil or ts.Time()))`,
+			},
+			{
+				name:       `Intersect file matches per file against an empty result set`,
+				query:      `repo:^github\.com/sgtest/go-diff file:^diff/print\.go func and doesnotexist838338`,
+				zeroResult: true,
+			},
+			{
+				name:  `Dedupe union operation`,
+				query: `file:diff.go|print.go|parse.go repo:^github\.com/sgtest/go-diff _, :[[x]] := range :[src.] { :[_] } or if :[s1] == :[s2] patterntype:structural`,
+			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
