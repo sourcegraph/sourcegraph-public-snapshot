@@ -33,6 +33,7 @@ export const Toggle: React.FunctionComponent<Props> = ({
     value,
     tabIndex,
     onToggle,
+    dataTest,
 }) => {
     function onClick(): void {
         if (!disabled && onToggle) {
@@ -52,6 +53,7 @@ export const Toggle: React.FunctionComponent<Props> = ({
             disabled={disabled}
             role="switch"
             aria-checked={value}
+            data-test={dataTest}
         >
             <span
                 className={classnames('toggle__bar', {
