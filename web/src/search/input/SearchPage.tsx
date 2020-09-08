@@ -97,7 +97,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
     )
     return (
         <div className="web-content search-page">
-            <BrandLogo className="search-page__logo" isLightTheme={props.isLightTheme} />
+            <BrandLogo className="search-page__logo" isLightTheme={props.isLightTheme} variant="logo" />
             {props.isSourcegraphDotCom && <div className="search-page__cloud-tag-line">Search public code</div>}
             <div
                 className={classNames('search-page__search-container', {
