@@ -268,27 +268,3 @@ function getQueryFromProps(location: H.Location): string {
 function preventDefault(event: React.FormEvent): void {
     event.preventDefault()
 }
-
-/**
- * Applies the query's client-side extensions search keywords #installed, #enabled, and #disabled by filtering
- * {@link registryExtensions}.
- *
- * @internal Exported for testing only.
- */
-export function applyExtensionsQuery<X extends { extensionID: string }>(
-    query: string,
-    settings: Pick<Settings, 'extensions'>,
-    registryExtensions: X[]
-): X[] {
-    const installed = query.includes(extensionsQuery({ installed: true }))
-    const enabled = query.includes(extensionsQuery({ enabled: true }))
-    const disabled = query.includes(extensionsQuery({ disabled: true }))
-    return registryExtensions.filter(
-        extension =>
-            (!installed || isExtensionAdded(settings, extension.extensionID)) &&
-            (!enabled || isExtensionEnabled(settings, extension.extensionID)) &&
-            (!disabled ||
-                (isExtensionAdded(settings, extension.extensionID) &&
-                    !isExtensionEnabled(settings, extension.extensionID)))
-    )
-}

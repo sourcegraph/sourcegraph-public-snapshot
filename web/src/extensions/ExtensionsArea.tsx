@@ -12,6 +12,8 @@ import { ExtensionsAreaHeader, ExtensionsAreaHeaderActionButton } from './Extens
 import { ThemeProps } from '../../../shared/src/theme'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../auth'
+import { useBreadcrumbs, Breadcrumbs, BreadcrumbSetters } from '../components/Breadcrumbs'
+import { Link } from 'react-router-dom'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -24,7 +26,8 @@ export interface ExtensionsAreaRouteContext
     extends SettingsCascadeProps,
         PlatformContextProps,
         ThemeProps,
-        TelemetryProps {
+        TelemetryProps,
+        BreadcrumbSetters {
     /** The currently authenticated user. */
     authenticatedUser: AuthenticatedUser | null
 
@@ -53,42 +56,46 @@ interface ExtensionsAreaProps
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
 }
 
-interface ExtensionsAreaState {}
-
 /**
  * The extensions area.
  */
-export class ExtensionsArea extends React.Component<ExtensionsAreaProps, ExtensionsAreaState> {
-    public state: ExtensionsAreaState = {}
+export const ExtensionsArea: React.FunctionComponent<ExtensionsAreaProps> = props => {
+    const { breadcrumbs, ...rootBreadcrumbSetters } = useBreadcrumbs()
 
-    public render(): JSX.Element | null {
-        const context: ExtensionsAreaRouteContext = {
-            authenticatedUser: this.props.authenticatedUser,
-            settingsCascade: this.props.settingsCascade,
-            platformContext: this.props.platformContext,
-            subject: this.props.viewerSubject,
-            extensionAreaRoutes: this.props.extensionAreaRoutes,
-            extensionAreaHeaderNavItems: this.props.extensionAreaHeaderNavItems,
-            isLightTheme: this.props.isLightTheme,
-            telemetryService: this.props.telemetryService,
-        }
+    const childBreadcrumbSetters = rootBreadcrumbSetters.useBreadcrumb(
+        React.useMemo(() => ({ element: <Link to="/extensions">Extensions</Link>, key: 'Extensions' }), [])
+    )
 
-        return (
-            <div className="extensions-area">
+    const context: ExtensionsAreaRouteContext = {
+        authenticatedUser: props.authenticatedUser,
+        settingsCascade: props.settingsCascade,
+        platformContext: props.platformContext,
+        subject: props.viewerSubject,
+        extensionAreaRoutes: props.extensionAreaRoutes,
+        extensionAreaHeaderNavItems: props.extensionAreaHeaderNavItems,
+        isLightTheme: props.isLightTheme,
+        telemetryService: props.telemetryService,
+        ...childBreadcrumbSetters,
+    }
+
+    return (
+        <div className="extensions-area">
+            <Breadcrumbs breadcrumbs={breadcrumbs} />
+            <div className="web-content">
                 <ExtensionsAreaHeader
-                    {...this.props}
+                    {...props}
                     {...context}
-                    actionButtons={this.props.extensionsAreaHeaderActionButtons}
-                    isPrimaryHeader={this.props.location.pathname === this.props.match.path}
+                    actionButtons={props.extensionsAreaHeaderActionButtons}
+                    isPrimaryHeader={props.location.pathname === props.match.path}
                 />
                 <Switch>
-                    {this.props.routes.map(
+                    {props.routes.map(
                         /* eslint-disable react/jsx-no-bind */
                         ({ path, exact, condition = () => true, render }) =>
                             condition(context) && (
                                 <Route
                                     key="hardcoded-key"
-                                    path={this.props.match.url + path}
+                                    path={props.match.url + path}
                                     exact={exact}
                                     render={routeComponentProps => render({ ...context, ...routeComponentProps })}
                                 />
@@ -98,6 +105,6 @@ export class ExtensionsArea extends React.Component<ExtensionsAreaProps, Extensi
                     <Route key="hardcoded-key" component={NotFoundPage} />
                 </Switch>
             </div>
-        )
-    }
+        </div>
+    )
 }
