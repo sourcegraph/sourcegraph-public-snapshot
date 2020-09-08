@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/src-d/enry/v2"
 
 	"github.com/hashicorp/go-multierror"
@@ -678,6 +679,26 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolv
 			"alertType", alertType,
 		)
 	}
+
+	if honey.Enabled() {
+		var act actor.Actor
+		if a := actor.FromContext(ctx); a != nil {
+			act = *a
+		}
+
+		ev := honey.Event("search")
+		ev.AddField("query", r.rawQuery())
+		ev.AddField("actor_uid", act.UID)
+		ev.AddField("actor_internal", act.Internal)
+		ev.AddField("type", trace.GraphQLRequestName(ctx))
+		ev.AddField("source", string(trace.RequestSource(ctx)))
+		ev.AddField("status", status)
+		ev.AddField("alertType", alertType)
+		ev.AddField("duration_ms", time.Since(start).Milliseconds())
+
+		_ = ev.Send()
+	}
+
 	return rr, err
 }
 
