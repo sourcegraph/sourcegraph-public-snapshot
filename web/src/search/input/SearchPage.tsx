@@ -60,10 +60,6 @@ export interface SearchPageProps
     availableVersionContexts: VersionContext[] | undefined
     autoFocus?: boolean
 
-    // For NavLinks
-    authRequired?: boolean
-    showCampaigns: boolean
-
     // Whether globbing is enabled for filters.
     globbing: boolean
 }

@@ -207,58 +207,53 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                 </>
             ) : (
                 <>
-                    {splitSearchModes && interactiveSearchMode ? (
-                        !authRequired && (
-                            <InteractiveModeInput
-                                {...props}
-                                authRequired={authRequired}
-                                navbarSearchState={navbarSearchQueryState}
-                                onNavbarQueryChange={onNavbarQueryChange}
-                                lowProfile={!isSearchRelatedPage}
-                                versionContext={versionContext}
-                                location={location}
+                    {logoLink}
+                    {authRequired ? (
+                        <div className="flex-1" />
+                    ) : splitSearchModes && interactiveSearchMode ? (
+                        <InteractiveModeInput
+                            {...props}
+                            navbarSearchState={navbarSearchQueryState}
+                            onNavbarQueryChange={onNavbarQueryChange}
+                            lowProfile={!isSearchRelatedPage}
+                            versionContext={versionContext}
+                            location={location}
+                            history={history}
+                            setVersionContext={setVersionContext}
+                            availableVersionContexts={availableVersionContexts}
+                            isLightTheme={isLightTheme}
+                            patternType={patternType}
+                            caseSensitive={caseSensitive}
+                            onFiltersInQueryChange={onFiltersInQueryChange}
+                        />
+                    ) : (
+                        <div className="global-navbar__search-box-container d-none d-sm-flex flex-row">
+                            {splitSearchModes && (
+                                <SearchModeToggle {...props} interactiveSearchMode={interactiveSearchMode} />
+                            )}
+                            <VersionContextDropdown
                                 history={history}
+                                navbarSearchQuery={navbarSearchQueryState.query}
+                                caseSensitive={caseSensitive}
+                                patternType={patternType}
+                                versionContext={versionContext}
                                 setVersionContext={setVersionContext}
                                 availableVersionContexts={availableVersionContexts}
+                            />
+                            <SearchNavbarItem
+                                {...props}
+                                navbarSearchState={navbarSearchQueryState}
+                                onChange={onNavbarQueryChange}
+                                location={location}
+                                history={history}
+                                versionContext={versionContext}
                                 isLightTheme={isLightTheme}
                                 patternType={patternType}
                                 caseSensitive={caseSensitive}
-                                onFiltersInQueryChange={onFiltersInQueryChange}
                             />
-                        )
-                    ) : (
-                        <>
-                            {logoLink}
-                            {!authRequired && (
-                                <div className="global-navbar__search-box-container d-none d-sm-flex flex-row">
-                                    {splitSearchModes && (
-                                        <SearchModeToggle {...props} interactiveSearchMode={interactiveSearchMode} />
-                                    )}
-                                    <VersionContextDropdown
-                                        history={history}
-                                        navbarSearchQuery={navbarSearchQueryState.query}
-                                        caseSensitive={caseSensitive}
-                                        patternType={patternType}
-                                        versionContext={versionContext}
-                                        setVersionContext={setVersionContext}
-                                        availableVersionContexts={availableVersionContexts}
-                                    />
-                                    <SearchNavbarItem
-                                        {...props}
-                                        navbarSearchState={navbarSearchQueryState}
-                                        onChange={onNavbarQueryChange}
-                                        location={location}
-                                        history={history}
-                                        versionContext={versionContext}
-                                        isLightTheme={isLightTheme}
-                                        patternType={patternType}
-                                        caseSensitive={caseSensitive}
-                                    />
-                                </div>
-                            )}
-                            {navLinks}
-                        </>
+                        </div>
                     )}
+                    {navLinks}
                 </>
             )}
         </div>
