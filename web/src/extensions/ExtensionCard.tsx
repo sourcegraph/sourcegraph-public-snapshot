@@ -50,11 +50,20 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
 
     const icon = React.useMemo(() => {
         let url: string | undefined
-        if (manifest?.icon && isEncodedImage(manifest.icon)) {
+
+        if (isLightTheme) {
+            if (manifest?.icon && isEncodedImage(manifest.icon)) {
+                url = manifest.icon
+            }
+        } else if (manifest?.iconDark && isEncodedImage(manifest.iconDark)) {
+            url = manifest.iconDark
+        } else if (manifest?.icon && isEncodedImage(manifest.icon)) {
+            // fallback: show default icon on dark theme if dark icon isn't specified
             url = manifest.icon
         }
+
         return url
-    }, [manifest])
+    }, [manifest?.icon, manifest?.iconDark, isLightTheme])
 
     const [publisher, name] = React.useMemo(() => {
         const id = extension.registryExtension ? extension.registryExtension.extensionIDWithoutRegistry : extension.id

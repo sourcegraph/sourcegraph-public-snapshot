@@ -50,6 +50,7 @@ export interface ExtensionManifest {
 
     tags?: string[]
     icon?: string
+    iconDark?: string
     activationEvents: string[]
     contributes?: Raw<Contributions> & { configuration?: { [key: string]: any } }
     publisher?: string
