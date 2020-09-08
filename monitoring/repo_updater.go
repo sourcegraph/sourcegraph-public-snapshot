@@ -1,5 +1,9 @@
 package main
 
+import (
+	"time"
+)
+
 func RepoUpdater() *Container {
 	return &Container{
 		Name:        "repo-updater",
@@ -11,6 +15,87 @@ func RepoUpdater() *Container {
 				Rows: []Row{
 					{
 						sharedFrontendInternalAPIErrorResponses("repo-updater", ObservableOwnerCloud),
+					},
+				},
+			},
+			{
+				Title: "Permissions",
+				Rows: []Row{
+					{
+						Observable{
+							Name:              "perms_syncer_perms",
+							Description:       "time gap between least and most up to date permissions",
+							Query:             `src_repoupdater_perms_syncer_perms_gap_seconds`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 3 * 24 * 60 * 60, For: 5 * time.Minute}, // 3 days
+							PanelOptions:      PanelOptions().LegendFormat("{{type}}").Unit(Seconds),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "TBD",
+						},
+						Observable{
+							Name:              "perms_syncer_stale_perms",
+							Description:       "number of entities with stale permissions",
+							Query:             `src_repoupdater_perms_syncer_stale_perms`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 100, For: 5 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("{{type}}").Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "TBD",
+						},
+						Observable{
+							Name:              "perms_syncer_no_perms",
+							Description:       "number of entities with no permissions",
+							Query:             `src_repoupdater_perms_syncer_no_perms`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 100, For: 5 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("{{type}}").Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "TBD",
+						},
+					},
+					{
+						Observable{
+							Name:              "perms_syncer_sync_duration",
+							Description:       "95th permissions sync duration",
+							Query:             `histogram_quantile(0.95, rate(src_repoupdater_perms_syncer_sync_duration_seconds_bucket[1m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 30, For: 5 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("{{type}}").Unit(Seconds),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "TBD",
+						},
+						Observable{
+							Name:              "perms_syncer_queue_size",
+							Description:       "permissions sync queued items",
+							Query:             `src_repoupdater_perms_syncer_queue_size`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 100, For: 5 * time.Minute},
+							PanelOptions:      PanelOptions().Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "TBD",
+						},
+					},
+					{
+						Observable{
+							Name:              "perms_syncer_sync_errors",
+							Description:       "permissions sync error rate",
+							Query:             `rate(src_repoupdater_perms_syncer_sync_errors_total[1m]) / rate(src_repoupdater_perms_syncer_sync_duration_seconds_count[1m])`,
+							DataMayNotExist:   true,
+							Critical:          Alert{GreaterOrEqual: 1, For: time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("{{type}}").Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "TBD",
+						},
+						Observable{
+							Name:              "authz_filter_duration",
+							Description:       "95th authorization duration",
+							Query:             `histogram_quantile(0.95, rate(src_frontend_authz_filter_duration_seconds_bucket{success="true"}[1m]))`,
+							DataMayNotExist:   true,
+							Critical:          Alert{GreaterOrEqual: 1, For: time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("seconds").Unit(Seconds),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "TBD",
+						},
 					},
 				},
 			},

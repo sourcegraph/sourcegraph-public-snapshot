@@ -2875,6 +2875,125 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
+## repo-updater: perms_syncer_perms
+
+**Descriptions:**
+
+- _repo-updater: 259200s+ time gap between least and most up to date permissions for 5m0s_
+
+**Possible solutions:**
+
+- TBD
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_perms_syncer_perms"
+]
+```
+
+## repo-updater: perms_syncer_stale_perms
+
+**Descriptions:**
+
+- _repo-updater: 100+ number of entities with stale permissions for 5m0s_
+
+**Possible solutions:**
+
+- TBD
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_perms_syncer_stale_perms"
+]
+```
+
+## repo-updater: perms_syncer_no_perms
+
+**Descriptions:**
+
+- _repo-updater: 100+ number of entities with no permissions for 5m0s_
+
+**Possible solutions:**
+
+- TBD
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_perms_syncer_no_perms"
+]
+```
+
+## repo-updater: perms_syncer_sync_duration
+
+**Descriptions:**
+
+- _repo-updater: 30s+ 95th permissions sync duration for 5m0s_
+
+**Possible solutions:**
+
+- TBD
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_perms_syncer_sync_duration"
+]
+```
+
+## repo-updater: perms_syncer_queue_size
+
+**Descriptions:**
+
+- _repo-updater: 100+ permissions sync queued items for 5m0s_
+
+**Possible solutions:**
+
+- TBD
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_perms_syncer_queue_size"
+]
+```
+
+## repo-updater: perms_syncer_sync_errors
+
+**Descriptions:**
+
+- _repo-updater: 1+ permissions sync error rate for 1m0s_
+
+**Possible solutions:**
+
+- TBD
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_repo-updater_perms_syncer_sync_errors"
+]
+```
+
+## repo-updater: authz_filter_duration
+
+**Descriptions:**
+
+- _repo-updater: 1s+ 95th authorization duration for 1m0s_
+
+**Possible solutions:**
+
+- TBD
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_repo-updater_authz_filter_duration"
+]
+```
+
 ## repo-updater: container_cpu_usage
 
 **Descriptions:**
