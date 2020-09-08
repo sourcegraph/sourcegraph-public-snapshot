@@ -832,9 +832,9 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _gitserver: 50+ running git commands (signals load)_
+- _gitserver: 50+ running git commands (signals load) for 2m0s_
 
-- _gitserver: 100+ running git commands (signals load)_
+- _gitserver: 100+ running git commands (signals load) for 5m0s_
 
 **Possible solutions:**
 
