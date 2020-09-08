@@ -572,7 +572,7 @@ func (s DBStore) DeleteRepos(ctx context.Context, ids ...api.RepoID) error {
 		return nil
 	}
 
-	// the number of deleted repos can potentially be higher
+	// The number of deleted repos can potentially be higher
 	// than the maximum number of arguments we can pass to postgres.
 	// We pass them as a json array instead to overcome this limitation.
 	encodedIds, err := json.Marshal(ids)
