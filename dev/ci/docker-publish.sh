@@ -33,6 +33,7 @@ done
 
 echo "+++ summary"
 
+id=$(docker inspect --format='{{index .RepoDigests 0}}' "$src" | grep -o '@sha256:.*')
 for dst in "$@"; do
-  docker inspect --format='{{index .RepoDigests 0}}' "$dst"
+  echo "$dst$id"
 done
