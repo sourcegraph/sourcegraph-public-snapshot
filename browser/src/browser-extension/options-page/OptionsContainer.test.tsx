@@ -12,8 +12,8 @@ describe('OptionsContainer', () => {
         | 'fetchCurrentTabStatus'
         | 'ensureValidSite'
         | 'toggleExtensionDisabled'
-        | 'toggleFeatureFlag'
-        | 'featureFlags'
+        | 'onChangeOptionFlag'
+        | 'optionFlags'
         | 'hasPermissions'
         | 'requestPermissions'
     > = {
@@ -23,8 +23,8 @@ describe('OptionsContainer', () => {
         fetchCurrentTabStatus: () => Promise.resolve(undefined),
         ensureValidSite: (url: string) => new Observable<void>(),
         toggleExtensionDisabled: (isActivated: boolean) => Promise.resolve(undefined),
-        toggleFeatureFlag: noop,
-        featureFlags: [],
+        onChangeOptionFlag: noop,
+        optionFlags: [],
     }
 
     test('checks the connection status when it mounts', () => {

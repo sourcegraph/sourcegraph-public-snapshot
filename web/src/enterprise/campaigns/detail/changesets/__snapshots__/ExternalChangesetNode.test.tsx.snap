@@ -110,9 +110,7 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
       reviewState="PENDING"
     />
   </span>
-  <div
-    className="external-changeset-node__diffstat"
-  >
+  <div>
     <Memo(DiffStat)
       added={100}
       changed={200}

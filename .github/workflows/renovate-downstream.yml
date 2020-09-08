@@ -1,14 +1,13 @@
 name: Renovate downstream
 on:
-  check_run:
-    types: [ completed ]
+  status
 
 jobs:
   # This job should trigger rennovate to run on the repositories defined in renovate-downstream.json
   renovate:
     runs-on: ubuntu-latest
-    # Run on buildkite success on branch main
-    if: github.ref == 'refs/heads/main' && github.event.name == 'buildkite/sourcegraph' && github.event.conclusion == 'success'
+    # Run on commit status success on branch main
+    if: ${{ github.ref == 'refs/heads/main' && github.event.status.state == 'success' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
