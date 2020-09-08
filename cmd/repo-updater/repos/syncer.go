@@ -691,7 +691,7 @@ func (s *Syncer) makeNewRepoInserter(ctx context.Context, store Store) (func(*Re
 	// repositories will already have related repos, so to avoid that cost we
 	// ask the store for all repositories and only do syncSubset if it might
 	// be an insert.
-	ids, err := s.storedExternalIDs(ctx, store)
+	ids, err := store.ListExternalRepoSpecs(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -708,18 +708,6 @@ func (s *Syncer) makeNewRepoInserter(ctx context.Context, store Store) (func(*Re
 			s.Logger.Warn("streaming insert failed", "external_id", r.ExternalRepo, "error", err)
 		}
 	}, nil
-}
-
-func (s *Syncer) storedExternalIDs(ctx context.Context, store Store) (map[api.ExternalRepoSpec]struct{}, error) {
-	stored, err := store.ListRepos(ctx, StoreListReposArgs{})
-	if err != nil {
-		return nil, errors.Wrap(err, "syncer.storedExternalIDs")
-	}
-	ids := make(map[api.ExternalRepoSpec]struct{}, len(stored))
-	for _, r := range stored {
-		ids[r.ExternalRepo] = struct{}{}
-	}
-	return ids, nil
 }
 
 func (s *Syncer) setOrResetLastSyncErr(serviceID int64, perr *error) {

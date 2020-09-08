@@ -135,6 +135,7 @@ type StoreMetrics struct {
 	UpsertRepos            *metrics.OperationMetrics
 	UpsertSources          *metrics.OperationMetrics
 	ListRepos              *metrics.OperationMetrics
+	ListExternalRepoSpecs  *metrics.OperationMetrics
 	UpsertExternalServices *metrics.OperationMetrics
 	ListExternalServices   *metrics.OperationMetrics
 	SetClonedRepos         *metrics.OperationMetrics
@@ -149,6 +150,7 @@ func (sm StoreMetrics) MustRegister(r prometheus.Registerer) {
 		sm.Transact,
 		sm.Done,
 		sm.ListRepos,
+		sm.ListExternalRepoSpecs,
 		sm.InsertRepos,
 		sm.DeleteRepos,
 		sm.UpsertRepos,
@@ -263,6 +265,20 @@ func NewStoreMetrics() StoreMetrics {
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Name: "src_repoupdater_store_list_repos_errors_total",
 				Help: "Total number of errors when listing repos",
+			}, []string{}),
+		},
+		ListExternalRepoSpecs: &metrics.OperationMetrics{
+			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+				Name: "src_repoupdater_store_list_external_repo_specs_duration_seconds",
+				Help: "Time spent listing external repo specs",
+			}, []string{}),
+			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_store_list_external_repo_specs_total",
+				Help: "Total number of listed external repo specs",
+			}, []string{}),
+			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_store_list_external_repo_specs_errors_total",
+				Help: "Total number of errors when listing external repo specs",
 			}, []string{}),
 		},
 		UpsertExternalServices: &metrics.OperationMetrics{
@@ -513,6 +529,27 @@ func (o *ObservedStore) ListRepos(ctx context.Context, args StoreListReposArgs) 
 	}(time.Now())
 
 	return o.store.ListRepos(ctx, args)
+}
+
+// ListExternalRepoSpecs calls into the inner Store and registers the observed results.
+func (o *ObservedStore) ListExternalRepoSpecs(ctx context.Context) (ids map[api.ExternalRepoSpec]struct{}, err error) {
+	tr, ctx := o.trace(ctx, "Store.ListExternalRepoSpecs")
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		count := float64(len(ids))
+
+		o.metrics.ListExternalRepoSpecs.Observe(secs, count, &err)
+		logging.Log(o.log, "store.list-external-repo-specs", &err,
+			"count", len(ids),
+		)
+
+		tr.LogFields(otlog.Int("count", len(ids)))
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
+	return o.store.ListExternalRepoSpecs(ctx)
 }
 
 // UpsertRepos calls into the inner Store and registers the observed results.

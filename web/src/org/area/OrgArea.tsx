@@ -6,7 +6,7 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import { gql, dataOrThrowErrors, requestGraphQL } from '../../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/errors'
@@ -25,10 +25,11 @@ import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { OrganizationResult, OrganizationVariables, OrgAreaOrganizationFields } from '../../graphql-operations'
 import { Link } from '../../../../shared/src/components/Link'
+import { requestGraphQL } from '../../backend/graphql'
 
 function queryOrganization(args: { name: string }): Observable<OrgAreaOrganizationFields> {
-    return requestGraphQL<OrganizationResult, OrganizationVariables>({
-        request: gql`
+    return requestGraphQL<OrganizationResult, OrganizationVariables>(
+        gql`
             query Organization($name: String!) {
                 organization(name: $name) {
                     ...OrgAreaOrganizationFields
@@ -57,8 +58,8 @@ function queryOrganization(args: { name: string }): Observable<OrgAreaOrganizati
                 createdAt
             }
         `,
-        variables: args,
-    }).pipe(
+        args
+    ).pipe(
         map(dataOrThrowErrors),
         map(data => {
             if (!data.organization) {
