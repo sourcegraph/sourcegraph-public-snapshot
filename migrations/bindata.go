@@ -126,8 +126,6 @@
 // 1528395711_add_soft_deleted_repository_name_func.up.sql (286B)
 // 1528395712_add_closing_flag_to_changesets.down.sql (71B)
 // 1528395712_add_closing_flag_to_changesets.up.sql (105B)
-// 1528395713_add_git_commit_author.down.sql (62B)
-// 1528395713_add_git_commit_author.up.sql (362B)
 // 1528395713_add_trigger_to_delete_orphan_repos.down.sql (102B)
 // 1528395713_add_trigger_to_delete_orphan_repos.up.sql (861B)
 // 1528395714_worker_num_failures.down.sql (1.573kB)
