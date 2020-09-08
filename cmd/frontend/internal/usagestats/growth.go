@@ -24,7 +24,7 @@ func GetGrowthStatistics(ctx context.Context) (*types.GrowthStatistics, error) {
     2 ),
   sub AS (
   SELECT
-    DISTINCT users.id,
+    users.id,
     BOOL_OR(CASE
       WHEN DATE_TRUNC('month', month_active) = DATE_TRUNC('month', now()) THEN TRUE
     ELSE
