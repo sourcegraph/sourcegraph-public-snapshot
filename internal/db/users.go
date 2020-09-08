@@ -635,17 +635,15 @@ func (u *users) InvalidateSessionsByID(ctx context.Context, id int32) error {
 		err = tx.Commit()
 	}()
 
-	fieldUpdates := []*sqlf.Query{
-		sqlf.Sprintf("updated_at=now()"), // always update updated_at timestamp
-	}
-	fieldUpdates = append(fieldUpdates, sqlf.Sprintf("invalidated_sessions_at=now()"))
-
-	query := sqlf.Sprintf("UPDATE users SET %s WHERE id=%d", sqlf.Join(fieldUpdates, ", "), id)
+	query := sqlf.Sprintf(`
+		UPDATE users
+		SET
+			updated_at=now(),
+			invalidated_sessions_at=now()
+		WHERE id=%d
+		`, id)
 	res, err := tx.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok && pqErr.Constraint == "users_username" {
-			return errCannotCreateUser{errorCodeUsernameExists}
-		}
 		return err
 	}
 	nrows, err := res.RowsAffected()
@@ -656,7 +654,6 @@ func (u *users) InvalidateSessionsByID(ctx context.Context, id int32) error {
 		return userNotFoundErr{args: []interface{}{id}}
 	}
 	return nil
-
 }
 
 func (u *users) Count(ctx context.Context, opt *UsersListOptions) (int, error) {
