@@ -1,8 +1,6 @@
 import WarningIcon from 'mdi-react/WarningIcon'
 import * as React from 'react'
-import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
-import { Path } from '../../../shared/src/components/Path'
-import { ConfiguredRegistryExtension, isExtensionEnabled } from '../../../shared/src/extensions/extension'
+import { ConfiguredRegistryExtension } from '../../../shared/src/extensions/extension'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { ExtensionManifest } from '../../../shared/src/schema/extensionSchema'
@@ -13,6 +11,8 @@ import { ExtensionConfigurationState } from './extension/ExtensionConfigurationS
 import { WorkInProgressBadge } from './extension/WorkInProgressBadge'
 import { ExtensionToggle } from './ExtensionToggle'
 import { isEncodedImage } from '../../../shared/src/util/icon'
+import { Link } from 'react-router-dom'
+import { DefaultIconEnabled, DefaultIcon } from './icons'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
     node: Pick<
@@ -32,81 +32,113 @@ const stopPropagation: React.MouseEventHandler<HTMLElement> = event => {
     event.stopPropagation()
 }
 
-/** Displays an extension as a card. */
-export const ExtensionCard = React.memo<Props>(function ExtensionCard(props) {
-    const { node } = props
-    const manifest: ExtensionManifest | undefined =
-        node.manifest && !isErrorLike(node.manifest) ? node.manifest : undefined
+/** ms after which to remove visual feedback */
+const FEEDBACK_DELAY = 5000
 
-    const iconURL = React.useMemo(() => {
-        let url: URL | undefined
-        try {
-            if (manifest?.icon) {
-                url = new URL(manifest.icon)
-            }
-        } catch {
-            // noop
+/** Displays an extension as a card. */
+export const ExtensionCard = React.memo<Props>(function ExtensionCard({
+    node: extension,
+    settingsCascade,
+    platformContext,
+    subject,
+    enabled,
+}) {
+    const manifest: ExtensionManifest | undefined =
+        extension.manifest && !isErrorLike(extension.manifest) ? extension.manifest : undefined
+
+    const icon = React.useMemo(() => {
+        let url: string | undefined
+        if (manifest?.icon && isEncodedImage(manifest.icon)) {
+            url = manifest.icon
         }
         return url
-    }, [manifest?.icon])
+    }, [manifest])
+
+    const [publisher, name] = React.useMemo(() => {
+        const id = extension.registryExtension ? extension.registryExtension.extensionIDWithoutRegistry : extension.id
+
+        return id.split('/')
+    }, [extension])
+
+    /**
+     * When extension enablement state changes, display visual feedback for $delay seconds.
+     * Clear the timeout when the component unmounts or the extension is toggled again.
+     */
+    const [change, setChange] = React.useState<'enabled' | 'disabled' | null>(null)
+    const timeoutReference = React.useRef<number | undefined>()
+
+    React.useEffect(() => () => clearTimeout(timeoutReference.current), [])
+
+    const onToggleChange = React.useCallback((enabled: boolean): void => {
+        if (timeoutReference.current) {
+            clearTimeout(timeoutReference.current)
+        }
+        setChange(enabled ? 'enabled' : 'disabled')
+        timeoutReference.current = window.setTimeout(() => setChange(null), FEEDBACK_DELAY)
+    }, [])
 
     return (
         <div className="d-flex">
-            <div className="extension-card card">
+            <div className={`extension-card card ${change === 'enabled' ? 'alert alert-success p-0 m-0' : ''}`}>
                 <div
-                    className="card-body extension-card__body d-flex flex-column position-relative"
+                    className="card-body extension-card__body d-flex position-relative"
                     // Prevent toggle clicks from propagating to the stretched-link (and
                     // navigating to the extension detail page).
                     onClick={stopPropagation}
                 >
-                    <div className="d-flex">
-                        {manifest?.icon && iconURL && iconURL.protocol === 'data:' && isEncodedImage(manifest.icon) && (
-                            <img className="extension-card__icon mr-2" src={manifest.icon} />
-                        )}
+                    {/* Item 1: Icon */}
+                    <div className="flex-shrink-0 mr-2">
+                        {icon ? (
+                            <img className="extension-card__icon" src={icon} />
+                        ) : publisher === 'sourcegraph' ? (
+                            change === 'enabled' ? (
+                                <DefaultIconEnabled />
+                            ) : (
+                                <DefaultIcon />
+                            )
+                        ) : null}
+                    </div>
+                    {/* Item 2: Text */}
+                    {change === 'enabled' ? (
+                        <span className="extension-card__enabled-feedback">
+                            <strong>{name}</strong> is now enabled in code search results.{' '}
+                            <Link to={`/extensions/${extension.id}`} className="extension-card__link alert-link">
+                                See how it works
+                            </Link>
+                        </span>
+                    ) : (
                         <div className="text-truncate w-100">
                             <div className="d-flex align-items-center">
-                                <h4 className="card-title extension-card__body-title mb-0 mr-1 text-truncate font-weight-normal flex-1">
-                                    <LinkOrSpan to={node.registryExtension?.url} className="stretched-link">
-                                        <Path
-                                            path={
-                                                node.registryExtension
-                                                    ? node.registryExtension.extensionIDWithoutRegistry
-                                                    : node.id
-                                            }
-                                        />
-                                    </LinkOrSpan>
-                                </h4>
-                                {node.registryExtension?.isWorkInProgress && (
+                                <span className="mb-0 mr-1 text-truncate flex-1">
+                                    <Link
+                                        to={`/extensions/${
+                                            extension.registryExtension
+                                                ? extension.registryExtension.extensionIDWithoutRegistry
+                                                : extension.id
+                                        }`}
+                                    >
+                                        <strong>{name}</strong>
+                                    </Link>
+                                    <span className="text-muted"> by {publisher}</span>
+                                </span>
+
+                                {extension.registryExtension?.isWorkInProgress && (
                                     <WorkInProgressBadge
-                                        viewerCanAdminister={node.registryExtension.viewerCanAdminister}
+                                        viewerCanAdminister={extension.registryExtension.viewerCanAdminister}
                                     />
                                 )}
-                                {props.subject &&
-                                    (props.subject.viewerCanAdminister ? (
-                                        <ExtensionToggle
-                                            extension={node}
-                                            settingsCascade={props.settingsCascade}
-                                            platformContext={props.platformContext}
-                                            className="extension-card__toggle"
-                                        />
-                                    ) : (
-                                        <ExtensionConfigurationState
-                                            isAdded={isExtensionAdded(props.settingsCascade.final, node.id)}
-                                            isEnabled={isExtensionEnabled(props.settingsCascade.final, node.id)}
-                                            enabledIconOnly={true}
-                                            className="small"
-                                        />
-                                    ))}
                             </div>
                             <div className="mt-1">
-                                {node.manifest ? (
-                                    isErrorLike(node.manifest) ? (
-                                        <span className="text-danger small" title={node.manifest.message}>
+                                {extension.manifest ? (
+                                    isErrorLike(extension.manifest) ? (
+                                        <span className="text-danger small" title={extension.manifest.message}>
                                             <WarningIcon className="icon-inline" /> Invalid manifest
                                         </span>
                                     ) : (
-                                        node.manifest.description && (
-                                            <div className="text-muted text-truncate">{node.manifest.description}</div>
+                                        extension.manifest.description && (
+                                            <div className="text-muted text-truncate">
+                                                {extension.manifest.description}
+                                            </div>
                                         )
                                     )
                                 ) : (
@@ -116,12 +148,38 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard(props) {
                                 )}
                             </div>
                         </div>
-                    </div>
+                    )}
+                    {/* Item 3: Toggle */}
+                    {subject &&
+                        (subject.viewerCanAdminister ? (
+                            <ExtensionToggle
+                                extensionID={extension.id}
+                                enabled={enabled}
+                                settingsCascade={settingsCascade}
+                                platformContext={platformContext}
+                                className="extension-card__toggle flex-shrink-0 align-self-start"
+                                onToggleChange={onToggleChange}
+                            />
+                        ) : (
+                            <ExtensionConfigurationState
+                                isAdded={isExtensionAdded(settingsCascade.final, extension.id)}
+                                isEnabled={enabled}
+                                enabledIconOnly={true}
+                                className="small"
+                            />
+                        ))}
                 </div>
+                {/* Visual feedback: alert when extension is disabled */}
+                {change === 'disabled' && (
+                    <div className="alert alert-secondary px-2 py-1 extension-card__disabled-feedback">
+                        <strong>{name}</strong> is off
+                    </div>
+                )}
             </div>
         </div>
     )
-}, areEqual)
+},
+areEqual)
 
 /** Custom compareFunction for ExtensionCard */
 function areEqual(oldProps: Props, newProps: Props): boolean {
