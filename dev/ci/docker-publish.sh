@@ -32,7 +32,7 @@ for dst in "$@"; do
 done
 
 echo "+++ summary"
-id="$(docker inspect --format='{{.Id}}' "$src")"
+
 for dst in "$@"; do
-  echo "$dst@$id"
+  docker inspect --format='{{index .RepoDigests 0}}' "$dst"
 done
