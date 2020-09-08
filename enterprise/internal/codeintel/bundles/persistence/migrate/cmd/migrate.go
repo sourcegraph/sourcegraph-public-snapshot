@@ -27,6 +27,11 @@ func init() {
 }
 
 func main() {
+	start := time.Now()
+	defer func() {
+		fmt.Printf("Finished migration in %s", time.Since(start))
+	}()
+
 	if err := mainErr(); err != nil {
 		fmt.Printf("error: %s\n", err)
 		os.Exit(1)
@@ -34,7 +39,7 @@ func main() {
 }
 
 func mainErr() error {
-	infos, err := getInfos()
+	infos, totalBytes, err := getInfos()
 	if err != nil {
 		return err
 	}
@@ -56,8 +61,13 @@ func mainErr() error {
 		}
 	}()
 
+	type result struct {
+		DumpID int
+		Err    error
+	}
+
 	var wg sync.WaitGroup
-	errs := make(chan error)
+	errs := make(chan result)
 
 	for i := 0; i < numWorkers; i++ {
 		wg.Add(1)
@@ -66,7 +76,10 @@ func mainErr() error {
 			defer wg.Done()
 
 			for dumpID := range dumpIDs {
-				errs <- migrateWithinTransaction(context.Background(), dumpID, makeDBFilename(dumpID), db)
+				errs <- result{
+					DumpID: dumpID,
+					Err:    migrateWithinTransaction(context.Background(), dumpID, makeDBFilename(dumpID), db),
+				}
 			}
 		}()
 	}
@@ -78,57 +91,76 @@ func mainErr() error {
 
 	total := len(infos)
 	finished := 0
-	for err := range errs {
-		if err != nil {
+	finishedBytes := int64(0)
+	for result := range errs {
+		if result.Err != nil {
 			fmt.Printf("error: %s\n", err)
 		}
 
 		finished++
-		fmt.Printf("%d of %d complete (%.2f%%)\n", finished, total, float64(finished)/float64(total)*100)
+		finishedBytes += getSize(result.DumpID)
+
+		fmt.Printf(
+			"%d of %d complete (%.2f%%) (%d of %d bytes complete (%2.f%%))\n",
+			finished, total, float64(finished)/float64(total)*100,
+			finishedBytes, totalBytes, float64(finishedBytes)/float64(totalBytes)*100,
+		)
 	}
 
 	return nil
 }
 
-func getInfos() ([]os.FileInfo, error) {
+func getInfos() ([]os.FileInfo, int64, error) {
 	infos, err := ioutil.ReadDir(dbsDir)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
+	var wg sync.WaitGroup
+	ch := make(chan int)
 	sizes := make([]int64, len(infos))
-	for i, info := range infos {
-		dumpID, err := strconv.Atoi(info.Name())
-		if err != nil {
-			continue
-		}
 
-		stat, err := os.Stat(makeDBFilename(dumpID))
-		if err != nil {
-			if os.IsNotExist(err) {
-				continue
+	for i := 0; i < numWorkers; i++ {
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			for i := range ch {
+				dumpID, err := strconv.Atoi(infos[i].Name())
+				if err != nil {
+					continue
+				}
+
+				sizes[i] = getSize(dumpID)
 			}
-
-			return nil, err
-		}
-
-		sizes[i] = stat.Size()
+		}()
 	}
 
-	sort.Slice(infos, func(i, j int) bool { return sizes[i] < sizes[j] })
-	return infos, nil
-}
+	for i := range infos {
+		ch <- i
+	}
+	close(ch)
 
-func makeDBFilename(dumpID int) string {
-	return filepath.Join(dbsDir, fmt.Sprintf("%d", dumpID), "sqlite.db")
+	wg.Wait()
+
+	totalBytes := int64(0)
+	sizeMap := map[string]int64{}
+	for i, size := range sizes {
+		sizeMap[infos[i].Name()] = size
+		totalBytes += size
+	}
+
+	sort.Slice(infos, func(i, j int) bool { return sizeMap[infos[i].Name()] < sizeMap[infos[j].Name()] })
+	return infos, totalBytes, nil
 }
 
 func migrateWithinTransaction(ctx context.Context, dumpID int, filename string, db *sql.DB) (err error) {
 	start := time.Now()
-	fmt.Printf("migrating %s\n", filename)
+
+	fmt.Printf("Migrating %s\n", filename)
 	defer func() {
-		stat, _ := os.Stat(filename)
-		fmt.Printf("finished in %s (%.2f MB)\n", time.Since(start), float64(stat.Size())/1024/1024)
+		fmt.Printf("Finished in %d (%.2f MB)\n", time.Since(start), float64(getSize(dumpID))/1024/1024)
 	}()
 
 	tx, err := db.BeginTx(context.Background(), &sql.TxOptions{})
@@ -146,7 +178,20 @@ func migrateWithinTransaction(ctx context.Context, dumpID int, filename string, 
 	return migrate.Migrate(
 		context.Background(),
 		dumpID,
-		filepath.Join(dbsDir, fmt.Sprintf("%d", dumpID), "sqlite.db"),
+		filename,
 		tx,
 	)
+}
+
+func makeDBFilename(dumpID int) string {
+	return filepath.Join(dbsDir, fmt.Sprintf("%d", dumpID), "sqlite.db")
+}
+
+func getSize(dumpID int) int64 {
+	info, err := os.Stat(makeDBFilename(dumpID))
+	if err != nil {
+		return 0
+	}
+
+	return info.Size()
 }
