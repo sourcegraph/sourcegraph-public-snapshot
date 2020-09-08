@@ -34,7 +34,7 @@ const stopPropagation: React.MouseEventHandler<HTMLElement> = event => {
 }
 
 /** ms after which to remove visual feedback */
-const FEEDBACK_DELAY = 50000
+const FEEDBACK_DELAY = 5000
 
 /** Displays an extension as a card. */
 export const ExtensionCard = React.memo<Props>(function ExtensionCard({
