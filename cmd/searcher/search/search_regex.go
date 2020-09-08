@@ -14,6 +14,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/google/zoekt/ignore"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
 	"github.com/sourcegraph/sourcegraph/internal/store"
@@ -294,6 +295,15 @@ func (rg *readerGrep) FindZip(zf *store.ZipFile, f *store.SrcFile) (protocol.Fil
 	}, err
 }
 
+func newIgnoreMatcher(zf *store.ZipFile) (*ignore.Matcher, error) {
+	for _, file := range zf.Files {
+		if file.Name == ignore.IgnoreFile {
+			return ignore.ParseIgnoreFile(bytes.NewReader(zf.DataFor(&file)))
+		}
+	}
+	return &ignore.Matcher{}, nil
+}
+
 // regexSearch concurrently searches files in zr looking for matches using rg.
 func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool) (fm []protocol.FileMatch, limitHit bool, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "RegexSearch")
@@ -337,10 +347,19 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 		matches   = []protocol.FileMatch{}
 	)
 
+	ig, err := newIgnoreMatcher(zf)
+	if err != nil {
+		return nil, false, err
+	}
+
 	if rg.re == nil || (patternMatchesPaths && !patternMatchesContent) {
 		// Fast path for only matching file paths (or with a nil pattern, which matches all files,
 		// so is effectively matching only on file paths).
 		for _, f := range files {
+			// skip the file if it matches a pattern in the ignore-file
+			if ig.Match(f.Name) {
+				continue
+			}
 			if match := rg.matchPath.MatchPath(f.Name) && rg.matchString(f.Name); match == !isPatternNegated {
 				if len(matches) < fileMatchLimit {
 					matches = append(matches, protocol.FileMatch{Path: f.Name})
@@ -385,6 +404,14 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 				f := &files[0]
 				files = files[1:]
 				filesmu.Unlock()
+
+				// skip the file if it matches a pattern in the ignore-file.
+				// we don't update the count of filesSkipped because filesSkipped
+				// tracks the files excluded due to include/exclude path patterns
+				// in the query.
+				if ig.Match(f.Name) {
+					continue
+				}
 
 				// decide whether to process, record that decision
 				if !rg.matchPath.MatchPath(f.Name) {
