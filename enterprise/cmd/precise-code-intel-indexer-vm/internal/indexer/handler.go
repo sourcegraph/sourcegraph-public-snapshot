@@ -80,11 +80,9 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 			tarfile := filepath.Join(h.options.ImageArchivePath, fmt.Sprintf("%s.tar", image))
 			copyfiles = append(copyfiles, "--copy-files", fmt.Sprintf("%s:%s", tarfile, fmt.Sprintf("/%s.tar", image)))
 
-			_, err := os.Stat(fmt.Sprintf("%s.tar", image))
-			if err == nil {
+			if _, err := os.Stat(tarfile); err == nil {
 				continue
-			}
-			if !os.IsNotExist(err) {
+			} else if !os.IsNotExist(err) {
 				return err
 			}
 
