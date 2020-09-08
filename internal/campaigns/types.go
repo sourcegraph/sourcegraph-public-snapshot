@@ -283,6 +283,7 @@ type Changeset struct {
 	FinishedAt      time.Time
 	ProcessAfter    time.Time
 	NumResets       int64
+	NumFailures     int64
 
 	// Unsynced is true if the changeset tracks an external changeset but the
 	// data hasn't been synced yet.
@@ -500,6 +501,7 @@ func (c *Changeset) URL() (s string, err error) {
 func (c *Changeset) ResetQueued() {
 	c.ReconcilerState = ReconcilerStateQueued
 	c.NumResets = 0
+	c.NumFailures = 0
 	c.FailureMessage = nil
 }
 
