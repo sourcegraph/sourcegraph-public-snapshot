@@ -10,13 +10,18 @@ import (
 )
 
 var allDockerImages = []string{
+	// Slow images first for faster CI
+	"server",
 	"frontend",
+	"grafana",
+	"prometheus",
+	"ignite-ubuntu",
+
 	"github-proxy",
 	"gitserver",
 	"query-runner",
 	"repo-updater",
 	"searcher",
-	"server",
 	"symbols",
 	"precise-code-intel-bundle-manager",
 	"precise-code-intel-worker",
@@ -25,17 +30,14 @@ var allDockerImages = []string{
 
 	// Images under docker-images/
 	"cadvisor",
-	"grafana",
 	"indexed-searcher",
 	"postgres-11.4",
-	"prometheus",
 	"redis-cache",
 	"redis-store",
 	"search-indexer",
 	"syntax-highlighter",
 	"jaeger-agent",
 	"jaeger-all-in-one",
-	"ignite-ubuntu",
 }
 
 // Verifies the docs formatting and builds the `docsite` command.
