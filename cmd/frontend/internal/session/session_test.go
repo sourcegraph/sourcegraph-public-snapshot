@@ -174,15 +174,17 @@ func TestManualSessionExpiry(t *testing.T) {
 	cleanup := ResetMockSessionStore(t)
 	defer cleanup()
 
+	user := &types.User{ID: 123, InvalidatedSessionsAt: time.Now()}
 	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
-		return &types.User{ID: id, InvalidatedSessionsAt: time.Now()}, nil
+		user.ID = id
+		return user, nil
 	}
 	defer func() { db.Mocks = db.MockStores{} }()
 
 	// Start new session
 	w := httptest.NewRecorder()
 	actr := &actor.Actor{UID: 123, FromSessionCookie: true}
-	if err := SetActor(w, httptest.NewRequest("GET", "/", nil), actr, time.Minute); err != nil {
+	if err := SetActor(w, httptest.NewRequest("GET", "/", nil), actr, time.Hour); err != nil {
 		t.Fatal(err)
 	}
 	var authCookies []*http.Cookie
@@ -191,7 +193,7 @@ func TestManualSessionExpiry(t *testing.T) {
 			authCookies = append(authCookies, cookie)
 		}
 	}
-	time.Sleep(1100 * time.Millisecond)
+	user.InvalidatedSessionsAt = time.Now().Add(6 * time.Minute)
 
 	// Create authed request with session cookie
 	authedReq := httptest.NewRequest("GET", "/", nil)
