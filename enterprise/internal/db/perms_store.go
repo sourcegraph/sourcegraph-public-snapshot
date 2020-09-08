@@ -598,9 +598,9 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 
 	p.UserIDs = roaring.NewBitmap()
 
-	// Insert rows for AcountIDs without one in the "user_pending_permissions" table.
+	// Insert rows for AccountIDs without one in the "user_pending_permissions" table.
 	// The insert does not store any permissions data but uses auto-increment key to generate unique ID.
-	// This help guarantees rows of all AcountIDs exist when getting user IDs in next load query.
+	// This help guarantees rows of all AccountIDs exist when getting user IDs in next load query.
 	updatedAt := txs.clock()
 	p.UpdatedAt = updatedAt
 	if len(accounts.AccountIDs) > 0 {
