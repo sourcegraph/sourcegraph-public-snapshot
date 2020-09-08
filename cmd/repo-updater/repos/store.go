@@ -1091,7 +1091,7 @@ func (s *DBStore) EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) err
 	if ignoreSiteAdmin {
 		filter = "namespace_user_id IS NULL"
 	}
-	q := sqlf.Sprintf(enqueueSyncJobsQueryFmtstr, filter)
+	q := sqlf.Sprintf(enqueueSyncJobsQueryFmtstr, sqlf.Sprintf(filter))
 	_, err := s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	return err
 }
