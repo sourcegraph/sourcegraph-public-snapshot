@@ -18,7 +18,7 @@ const extensionName = 'template'
  * reproducible. The particular revision was chosen as the latest commit on
  * master at the time of writing and should be updated accordingly.
  */
-const codeIntelExtensionsRepoRevision = '057464f8a4b32ed9dd9fa62c7fd11587418f5637'
+const codeIntelExtensionsRepoRevision = 'ff747b5bcdbbd5809ddd2737480d2ced88d179d5'
 
 const toDirectory = path.join(process.cwd(), 'build')
 
@@ -44,7 +44,7 @@ shelljs.exec(`unzip -q ${codeIntelExtensionsRepoRevision}.zip`)
 // - Rename directory to remove revision suffix
 shelljs.mv(`code-intel-extensions-${codeIntelExtensionsRepoRevision}`, 'code-intel-extensions')
 
-// Install dependencies and build the specified code intel extenion
+// Install dependencies and build the specified code intel extension
 shelljs.exec('yarn --cwd code-intel-extensions install')
 shelljs.exec(`yarn --cwd code-intel-extensions/extensions/${extensionName} run build`)
 shelljs.popd()
