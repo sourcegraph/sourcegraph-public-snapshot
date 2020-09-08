@@ -1,3 +1,11 @@
+.search-onboarding-tour {
+    &__structural-next-button {
+        .theme-dark & {
+            border-color: $gray-12;
+        }
+    }
+}
+
 .tour-card {
     border: none;
     border-radius: 10px;
@@ -8,7 +16,7 @@
 }
 
 .shepherd-element {
-    background: #1d2535;
+    background: $gray-19;
 }
 
 .shepherd-arrow::after {
@@ -19,7 +27,7 @@
     box-sizing: border-box;
     // stylelint-disable-next-line declaration-property-unit-whitelist
     border: 8px solid #000000;
-    border-color: transparent transparent $gray-21 transparent;
+    border-color: transparent transparent $gray-19 transparent;
     transform-origin: 0 0;
     margin-left: -0.5rem;
 }
