@@ -81,11 +81,6 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	repos.MustRegisterMetrics(db)
 
-	err = cleanupStaleJobs(ctx, db)
-	if err != nil {
-		log.Fatalf("failed to remove stale sync jobs: %v", err)
-	}
-
 	var store repos.Store
 	{
 		m := repos.NewStoreMetrics()
@@ -348,16 +343,4 @@ func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver
 		case <-time.After(10 * time.Second):
 		}
 	}
-}
-
-// cleanupStaleJobs removes old processing jobs that are no longer locked.
-// This can occur when repo-updater is restarted while a job is processing which leaves it in a
-// processing state that will never complete.
-// TODO: Perhaps we could avoid this by having workerutil select non locked processing items?
-func cleanupStaleJobs(ctx context.Context, db *sql.DB) error {
-	q := `DELETE FROM external_service_sync_jobs WHERE id IN
-          (SELECT id FROM external_service_sync_jobs where state = 'processing' FOR UPDATE SKIP LOCKED)`
-
-	_, err := db.ExecContext(ctx, q)
-	return err
 }
