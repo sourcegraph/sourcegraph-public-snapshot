@@ -148,7 +148,7 @@ func getInfos() ([]os.FileInfo, int64, error) {
 		totalBytes += size
 	}
 
-	sort.Slice(infos, func(i, j int) bool { return sizeMap[infos[i].Name()] < sizeMap[infos[j].Name()] })
+	sort.Slice(infos, func(i, j int) bool { return sizeMap[infos[j].Name()] < sizeMap[infos[i].Name()] })
 	return infos, totalBytes, nil
 }
 
