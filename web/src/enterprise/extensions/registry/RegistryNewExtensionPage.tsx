@@ -1,6 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AddIcon from 'mdi-react/AddIcon'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
+import HelpCircleOutline from 'mdi-react/HelpCircleOutlineIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
@@ -21,6 +22,7 @@ import { RegistryAreaPageProps } from './RegistryArea'
 import { ErrorAlert } from '../../../components/alerts'
 import * as H from 'history'
 import { AuthenticatedUser } from '../../../auth'
+import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 
 function createExtension(publisher: GQL.ID, name: string): Observable<GQL.IExtensionRegistryCreateExtensionResult> {
     return mutateGraphQL(
@@ -53,7 +55,7 @@ function createExtension(publisher: GQL.ID, name: string): Observable<GQL.IExten
     )
 }
 
-interface Props extends RegistryAreaPageProps, RouteComponentProps<{}> {
+interface Props extends RegistryAreaPageProps, RouteComponentProps<{}>, BreadcrumbSetters {
     authenticatedUser: AuthenticatedUser
     history: H.History
 }
@@ -121,6 +123,10 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                     )
             )
 
+            this.subscriptions.add(
+                this.props.setBreadcrumb({ key: 'create-new-extension', element: <>Create new extension</> })
+            )
+
             this.componentUpdates.next(this.props)
         }
 
@@ -148,10 +154,19 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
             return (
                 <>
                     <PageTitle title="New extension" />
-                    <ModalPage className="registry-new-extension-page">
-                        <h2>
+                    <ModalPage className="registry-new-extension-page mt-4">
+                        <h2 className="mb-4">
                             <PuzzleIcon className="icon-inline" /> New extension
                         </h2>
+                        <div className="mb-3">
+                            <a
+                                href="https://docs.sourcegraph.com/extensions/authoring"
+                                className="registry-new-extension-page__docs-link"
+                            >
+                                Learn more
+                            </a>{' '}
+                            about authoring Sourcegraph extensions <HelpCircleOutline className="icon-inline" />
+                        </div>
                         <Form onSubmit={this.onSubmit}>
                             <RegistryPublisherFormGroup
                                 value={this.state.publisher}
