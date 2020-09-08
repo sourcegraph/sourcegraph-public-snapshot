@@ -7,7 +7,7 @@ import { orgURL } from '..'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { refreshAuthenticatedUser } from '../../auth'
+import { refreshAuthenticatedUser, AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { mutateGraphQL } from '../../backend/graphql'
 import { Form } from '../../components/Form'
@@ -19,9 +19,10 @@ import { OrgAvatar } from '../OrgAvatar'
 import { OrgAreaPageProps } from './OrgArea'
 import { ErrorAlert } from '../../components/alerts'
 import * as H from 'history'
+import { OrganizationInvitationResponseType } from '../../../../shared/src/graphql-operations'
 
 interface Props extends OrgAreaPageProps {
-    authenticatedUser: GQL.IUser
+    authenticatedUser: AuthenticatedUser
 
     /** Called when the viewer responds to the invitation. */
     onDidRespondToInvitation: () => void
@@ -43,7 +44,7 @@ export const OrgInvitationPage = withAuthenticatedUser(
         public state: State = {}
 
         private componentUpdates = new Subject<Props>()
-        private responses = new Subject<GQL.OrganizationInvitationResponseType>()
+        private responses = new Subject<OrganizationInvitationResponseType>()
         private subscriptions = new Subscription()
 
         public componentDidMount(): void {
@@ -179,12 +180,12 @@ export const OrgInvitationPage = withAuthenticatedUser(
 
         private onAcceptInvitation: React.MouseEventHandler<HTMLButtonElement> = event => {
             event.preventDefault()
-            this.responses.next(GQL.OrganizationInvitationResponseType.ACCEPT)
+            this.responses.next(OrganizationInvitationResponseType.ACCEPT)
         }
 
         private onDeclineInvitation: React.MouseEventHandler<HTMLButtonElement> = event => {
             event.preventDefault()
-            this.responses.next(GQL.OrganizationInvitationResponseType.REJECT)
+            this.responses.next(OrganizationInvitationResponseType.REJECT)
         }
 
         private respondToOrganizationInvitation = (

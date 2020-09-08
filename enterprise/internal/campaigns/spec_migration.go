@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -37,10 +38,25 @@ func (svc *Service) MigratePreSpecCampaigns(ctx context.Context) (err error) {
 
 	// Basically: if err is not nil, we'll rollback at the end of the function,
 	// otherwise we commit.
-	defer func() { store.Done(err) }()
+	defer func() {
+		if err == nil {
+			err = store.Done(nil)
+		} else {
+			var errs *multierror.Error
+
+			// We don't want to overwrite err, but we do want to note an additional
+			// error if one occurs.
+			errs = multierror.Append(err)
+			if derr := store.Done(err); derr != nil {
+				errs = multierror.Append(derr)
+			}
+
+			err = errs
+		}
+	}()
 
 	// We also need a service instance that uses the transaction we just began.
-	txSvc := NewServiceWithClock(store, svc.cf, svc.clock)
+	txSvc := svc.WithStore(store)
 
 	// We're going to need the old campaigns in a few places, so let's just get
 	// them ready up front.
@@ -219,6 +235,18 @@ func (svc *Service) MigratePreSpecCampaigns(ctx context.Context) (err error) {
 		// copied the table exactly but didn't recreate campaigns or its ID
 		// sequence, which means we know the sequence is already past the ID
 		// that was on the old campaign.
+		//
+		// This is a two step process. First, we need to update the campaign
+		// IDs that are embedded with the changesets. (An alternative approach
+		// here would have been to modify ApplyCampaign to be able to set the
+		// campaign ID explicitly, but it's nice to have these temporary
+		// migration changes isolated in a single place.)
+		if err = store.updateChangesetsCampaignID(campaignCtx, nc.ID, c.ID); err != nil {
+			err = errors.Wrapf(err, "updating campaign ID from %d to %d on changesets", nc.ID, c.ID)
+			return
+		}
+
+		// Second, we need to update the actual campaign record.
 		err = store.updateCampaignID(ctx, nc, c.ID)
 		if err != nil {
 			err = errors.Wrapf(err, "resetting campaign ID %d", c.ID)

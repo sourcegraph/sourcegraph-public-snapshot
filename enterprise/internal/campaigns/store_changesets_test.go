@@ -41,10 +41,14 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		HeadRefName:  "campaigns/test",
 	}
 
-	repo := testRepo(1, extsvc.TypeGitHub)
-	deletedRepo := testRepo(2, extsvc.TypeGitHub).With(repos.Opt.RepoDeletedAt(clock.now()))
+	repo := testRepo(t, reposStore, extsvc.TypeGitHub)
+	otherRepo := testRepo(t, reposStore, extsvc.TypeGitHub)
 
-	if err := reposStore.UpsertRepos(ctx, deletedRepo, repo); err != nil {
+	if err := reposStore.InsertRepos(ctx, repo, otherRepo); err != nil {
+		t.Fatal(err)
+	}
+	deletedRepo := otherRepo.With(repos.Opt.RepoDeletedAt(clock.now()))
+	if err := reposStore.DeleteRepos(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -74,7 +78,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				CampaignIDs:         []int64{int64(i) + 1},
 				ExternalID:          fmt.Sprintf("foobar-%d", i),
 				ExternalServiceType: extsvc.TypeGitHub,
-				ExternalBranch:      "campaigns/test",
+				ExternalBranch:      fmt.Sprintf("campaigns/test/%d", i),
 				ExternalUpdatedAt:   clock.now(),
 				ExternalState:       cmpgn.ChangesetExternalStateOpen,
 				ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
@@ -88,6 +92,9 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				ReconcilerState: cmpgn.ReconcilerStateCompleted,
 				FailureMessage:  &failureMessage,
 				NumResets:       18,
+
+				Unsynced: true,
+				Closing:  true,
 			}
 
 			// Only set these fields on a subset to make sure that
@@ -178,7 +185,11 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	})
 
 	t.Run("GetChangesetExternalIDs", func(t *testing.T) {
-		have, err := s.GetChangesetExternalIDs(ctx, repo.ExternalRepo, []string{githubPR.HeadRefName})
+		refs := make([]string, len(changesets))
+		for i, c := range changesets {
+			refs[i] = c.ExternalBranch
+		}
+		have, err := s.GetChangesetExternalIDs(ctx, repo.ExternalRepo, refs)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -281,6 +292,17 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				t.Fatalf("have countProcessing: %d, want: %d", have, want)
 			}
 		})
+
+		t.Run("OwnedByCampaignID", func(t *testing.T) {
+			count, err := s.CountChangesets(ctx, CountChangesetsOpts{OwnedByCampaignID: int64(1)})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := count, 1; have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
+		})
 	})
 
 	t.Run("List", func(t *testing.T) {
@@ -307,7 +329,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		}
 
 		for i := 1; i <= len(changesets); i++ {
-			ts, next, err := s.ListChangesets(ctx, ListChangesetsOpts{Limit: i})
+			ts, next, err := s.ListChangesets(ctx, ListChangesetsOpts{LimitOpts: LimitOpts{Limit: i}})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -350,7 +372,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		{
 			var cursor int64
 			for i := 1; i <= len(changesets); i++ {
-				opts := ListChangesetsOpts{Cursor: cursor, Limit: 1}
+				opts := ListChangesetsOpts{Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
 				have, next, err := s.ListChangesets(ctx, opts)
 				if err != nil {
 					t.Fatal(err)
@@ -410,9 +432,9 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			}
 		}
 
-		// Limit of -1 should return all ChangeSets
+		// No Limit should return all Changesets
 		{
-			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{Limit: -1})
+			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -510,6 +532,12 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 					ExternalReviewState: &stateChangesRequested,
 				},
 				wantCount: 0,
+			},
+			{
+				opts: ListChangesetsOpts{
+					OwnedByCampaignID: int64(1),
+				},
+				wantCount: 1,
 			},
 		}
 
@@ -638,6 +666,22 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				t.Fatalf("have err %v, want %v", have, want)
 			}
 		})
+
+		t.Run("ExternalBranch", func(t *testing.T) {
+			for _, c := range changesets {
+				opts := GetChangesetOpts{ExternalBranch: c.ExternalBranch}
+
+				have, err := s.GetChangeset(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+				want := c
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+			}
+		})
 	})
 
 	t.Run("Update", func(t *testing.T) {
@@ -748,6 +792,164 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			t.Fatal(diff)
 		}
 	})
+
+	t.Run("CancelQueuedCampaignChangesets", func(t *testing.T) {
+		var campaignID int64 = 99999
+
+		c1 := createChangeset(t, ctx, s, testChangesetOpts{
+			repo:            repo.ID,
+			campaign:        campaignID,
+			ownedByCampaign: campaignID,
+			reconcilerState: cmpgn.ReconcilerStateQueued,
+		})
+
+		c2 := createChangeset(t, ctx, s, testChangesetOpts{
+			repo:            repo.ID,
+			campaign:        campaignID,
+			ownedByCampaign: campaignID,
+			reconcilerState: cmpgn.ReconcilerStateErrored,
+			numResets:       reconcilerMaxNumResets - 1,
+		})
+
+		c3 := createChangeset(t, ctx, s, testChangesetOpts{
+			repo:            repo.ID,
+			campaign:        campaignID,
+			ownedByCampaign: campaignID,
+			reconcilerState: cmpgn.ReconcilerStateCompleted,
+		})
+
+		c4 := createChangeset(t, ctx, s, testChangesetOpts{
+			repo:            repo.ID,
+			campaign:        campaignID,
+			ownedByCampaign: 0,
+			unsynced:        true,
+			reconcilerState: cmpgn.ReconcilerStateQueued,
+		})
+
+		c5 := createChangeset(t, ctx, s, testChangesetOpts{
+			repo:            repo.ID,
+			campaign:        campaignID,
+			ownedByCampaign: campaignID,
+			reconcilerState: cmpgn.ReconcilerStateProcessing,
+		})
+
+		if err := s.CancelQueuedCampaignChangesets(ctx, campaignID); err != nil {
+			t.Fatal(err)
+		}
+
+		reloadAndAssertChangeset(t, ctx, s, c1, changesetAssertions{
+			repo:            repo.ID,
+			reconcilerState: cmpgn.ReconcilerStateErrored,
+			ownedByCampaign: campaignID,
+			failureMessage:  &canceledChangesetFailureMessage,
+			numResets:       reconcilerMaxNumResets,
+		})
+
+		reloadAndAssertChangeset(t, ctx, s, c2, changesetAssertions{
+			repo:            repo.ID,
+			reconcilerState: cmpgn.ReconcilerStateErrored,
+			ownedByCampaign: campaignID,
+			failureMessage:  &canceledChangesetFailureMessage,
+			numResets:       reconcilerMaxNumResets,
+		})
+
+		reloadAndAssertChangeset(t, ctx, s, c3, changesetAssertions{
+			repo:            repo.ID,
+			reconcilerState: cmpgn.ReconcilerStateCompleted,
+			ownedByCampaign: campaignID,
+		})
+
+		reloadAndAssertChangeset(t, ctx, s, c4, changesetAssertions{
+			repo:            repo.ID,
+			reconcilerState: cmpgn.ReconcilerStateQueued,
+			unsynced:        true,
+		})
+
+		reloadAndAssertChangeset(t, ctx, s, c5, changesetAssertions{
+			repo:            repo.ID,
+			reconcilerState: cmpgn.ReconcilerStateErrored,
+			failureMessage:  &canceledChangesetFailureMessage,
+			ownedByCampaign: campaignID,
+			numResets:       reconcilerMaxNumResets,
+		})
+	})
+
+	t.Run("EnqueueChangesetsToClose", func(t *testing.T) {
+		var campaignID int64 = 99999
+
+		wantEnqueued := changesetAssertions{
+			repo:            repo.ID,
+			ownedByCampaign: campaignID,
+			reconcilerState: campaigns.ReconcilerStateQueued,
+			numResets:       0,
+			failureMessage:  nil,
+			closing:         true,
+		}
+
+		tests := []struct {
+			have testChangesetOpts
+			want changesetAssertions
+		}{
+			{
+				have: testChangesetOpts{reconcilerState: cmpgn.ReconcilerStateQueued},
+				want: wantEnqueued,
+			},
+			{
+				have: testChangesetOpts{reconcilerState: cmpgn.ReconcilerStateProcessing},
+				want: wantEnqueued,
+			},
+			{
+				have: testChangesetOpts{
+					reconcilerState: cmpgn.ReconcilerStateErrored,
+					failureMessage:  "failed",
+					numResets:       reconcilerMaxNumResets - 1,
+				},
+				want: wantEnqueued,
+			},
+			{
+				have: testChangesetOpts{
+					externalState:   campaigns.ChangesetExternalStateOpen,
+					reconcilerState: cmpgn.ReconcilerStateCompleted,
+				},
+				want: changesetAssertions{
+					reconcilerState: campaigns.ReconcilerStateQueued,
+					closing:         true,
+					externalState:   campaigns.ChangesetExternalStateOpen,
+				},
+			},
+			{
+				have: testChangesetOpts{
+					externalState:   campaigns.ChangesetExternalStateClosed,
+					reconcilerState: cmpgn.ReconcilerStateCompleted,
+				},
+				want: changesetAssertions{
+					reconcilerState: campaigns.ReconcilerStateCompleted,
+					externalState:   campaigns.ChangesetExternalStateClosed,
+				},
+			},
+		}
+
+		changesets := make(map[*campaigns.Changeset]changesetAssertions)
+		for _, tc := range tests {
+			opts := tc.have
+			opts.repo = repo.ID
+			opts.campaign = campaignID
+			opts.ownedByCampaign = campaignID
+
+			c := createChangeset(t, ctx, s, opts)
+			changesets[c] = tc.want
+		}
+
+		if err := s.EnqueueChangesetsToClose(ctx, campaignID); err != nil {
+			t.Fatal(err)
+		}
+
+		for changeset, want := range changesets {
+			want.repo = repo.ID
+			want.ownedByCampaign = campaignID
+			reloadAndAssertChangeset(t, ctx, s, changeset, want)
+		}
+	})
 }
 
 func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {
@@ -784,9 +986,8 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		IncludesCreatedEdit: false,
 	}
 
-	var extSvcID int64 = 1
-	repo := testRepo(int(extSvcID), extsvc.TypeGitHub)
-	if err := reposStore.UpsertRepos(ctx, repo); err != nil {
+	repo := testRepo(t, reposStore, extsvc.TypeGitHub)
+	if err := reposStore.InsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 

@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 
 set -euf -o pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")"/..
 
-DEV_PRIVATE_PATH=$PWD/../../dev-private
+DEV_PRIVATE_PATH=$PWD/../dev-private
 
 if [ ! -d "$DEV_PRIVATE_PATH" ]; then
   echo "Expected to find github.com/sourcegraph/dev-private checked out to $DEV_PRIVATE_PATH, but path wasn't a directory" 1>&2
@@ -28,7 +27,7 @@ source "$DEV_PRIVATE_PATH/enterprise/dev/env"
 if [ -z "${DEV_NO_CONFIG-}" ]; then
   export SITE_CONFIG_FILE=${SITE_CONFIG_FILE:-$DEV_PRIVATE_PATH/enterprise/dev/site-config.json}
   export EXTSVC_CONFIG_FILE=${EXTSVC_CONFIG_FILE:-$DEV_PRIVATE_PATH/enterprise/dev/external-services-config.json}
-  export GLOBAL_SETTINGS_FILE=${GLOBAL_SETTINGS_FILE:-$PWD/../dev/global-settings.json}
+  export GLOBAL_SETTINGS_FILE=${GLOBAL_SETTINGS_FILE:-$PWD/dev/global-settings.json}
   export SITE_CONFIG_ALLOW_EDITS=true
   export GLOBAL_SETTINGS_ALLOW_EDITS=true
   export EXTSVC_CONFIG_ALLOW_EDITS=true
@@ -44,11 +43,11 @@ export PRECISE_CODE_INTEL_EXTERNAL_URL=http://localhost:3080
 export PRECISE_CODE_INTEL_EXTERNAL_URL_FROM_DOCKER=http://host.docker.internal:3080
 export PRECISE_CODE_INTEL_INDEX_MANAGER_URL=http://localhost:3189
 export PRECISE_CODE_INTEL_INTERNAL_PROXY_AUTH_TOKEN=hunter2
-export PRECISE_CODE_INTEL_DISABLE_INDEXER=true
+export PRECISE_CODE_INTEL_USE_FIRECRACKER=false
 
 export WATCH_ADDITIONAL_GO_DIRS="enterprise/cmd enterprise/dev enterprise/internal"
 export ENTERPRISE_ONLY_COMMANDS=" precise-code-intel-bundle-manager precise-code-intel-indexer precise-code-intel-indexer-vm precise-code-intel-worker "
 export ENTERPRISE_COMMANDS="frontend repo-updater ${ENTERPRISE_ONLY_COMMANDS}"
 export ENTERPRISE=1
 export PROCFILE=enterprise/dev/Procfile
-../dev/start.sh "$@"
+./dev/start.sh "$@"

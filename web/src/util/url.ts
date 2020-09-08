@@ -61,7 +61,7 @@ export function replaceRevisionInURL(href: string, newRevision: string): string 
 /**
  * Parses the properties of a blob URL.
  */
-export function parseBrowserRepoURL(href: string): ParsedRepoURI {
+export function parseBrowserRepoURL(href: string): ParsedRepoURI & Pick<ParsedRepoRevision, 'rawRevision'> {
     const url = new URL(href, window.location.href)
     let pathname = url.pathname.slice(1) // trim leading '/'
     if (pathname.endsWith('/')) {
@@ -83,7 +83,7 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI {
     } else {
         repoRevision = pathname.slice(0, indexOfSeparator) // the whole string leading up to the separator (allows revision to be multiple path parts)
     }
-    const { repoName, revision } = parseRepoRevision(repoRevision)
+    const { repoName, revision, rawRevision } = parseRepoRevision(repoRevision)
     if (!repoName) {
         throw new Error('unexpected repo url: ' + href)
     }
@@ -124,7 +124,7 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI {
         }
     }
 
-    return { repoName, revision, commitID, filePath, commitRange, position, range }
+    return { repoName, revision, rawRevision, commitID, filePath, commitRange, position, range }
 }
 
 /** The results of parsing a repo-revision string like "my/repo@my/revision". */

@@ -55,7 +55,7 @@ query Search($query: String!) {
 			} `json:"search"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", gqlQuery, variables, &resp)
+	err := c.GraphQL("", "", gqlQuery, variables, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "request GraphQL")
 	}
@@ -64,7 +64,8 @@ query Search($query: String!) {
 }
 
 type SearchFileResults struct {
-	MatchCount int64 `json:"matchCount"`
+	MatchCount int64        `json:"matchCount"`
+	Alert      *SearchAlert `json:"alert"`
 	Results    []*struct {
 		File struct {
 			Name string `json:"name"`
@@ -78,14 +79,32 @@ type SearchFileResults struct {
 	} `json:"results"`
 }
 
+// SearchAlert is an alert specific to searches (i.e. not site alert).
+type SearchAlert struct {
+	Title           string `json:"title"`
+	Description     string `json:"description"`
+	ProposedQueries []struct {
+		Description string `json:"description"`
+		Query       string `json:"query"`
+	} `json:"proposedQueries"`
+}
+
 // SearchFiles searches files with given query. It returns the match count and
-// corresponding file matches.
+// corresponding file matches. Search alert is also included if any.
 func (c *Client) SearchFiles(query string) (*SearchFileResults, error) {
 	const gqlQuery = `
 query Search($query: String!) {
 	search(query: $query) {
 		results {
 			matchCount
+			alert {
+				title
+				description
+				proposedQueries {
+					description
+					query
+				}
+			}
 			results {
 				... on FileMatch {
 					file {
@@ -117,7 +136,7 @@ query Search($query: String!) {
 			} `json:"search"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", gqlQuery, variables, &resp)
+	err := c.GraphQL("", "", gqlQuery, variables, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "request GraphQL")
 	}
@@ -161,61 +180,12 @@ query Search($query: String!) {
 			} `json:"search"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", gqlQuery, variables, &resp)
+	err := c.GraphQL("", "", gqlQuery, variables, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "request GraphQL")
 	}
 
 	return resp.Data.Search.Results.SearchCommitResults, nil
-}
-
-// SearchAlert is an alert specific to searches (i.e. not site alert).
-type SearchAlert struct {
-	Title           string `json:"title"`
-	Description     string `json:"description"`
-	ProposedQueries []struct {
-		Description string `json:"description"`
-		Query       string `json:"query"`
-	} `json:"proposedQueries"`
-}
-
-// SearchAlert returns the alert returned by searching for given query.
-// It returns both nil values if no alert raised and no error occurred.
-func (c *Client) SearchAlert(query string) (*SearchAlert, error) {
-	const gqlQuery = `
-query Search($query: String!) {
-	search(query: $query) {
-		results {
-			alert {
-				title
-				description
-				proposedQueries {
-					description
-					query
-				}
-			}
-		}
-	}
-}
-`
-	variables := map[string]interface{}{
-		"query": query,
-	}
-	var resp struct {
-		Data struct {
-			Search struct {
-				Results struct {
-					*SearchAlert `json:"alert"`
-				} `json:"results"`
-			} `json:"search"`
-		} `json:"data"`
-	}
-	err := c.GraphQL("", gqlQuery, variables, &resp)
-	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
-	}
-
-	return resp.Data.Search.Results.SearchAlert, nil
 }
 
 type SearchStatsResult struct {
@@ -249,7 +219,7 @@ query SearchResultsStats($query: String!) {
 			} `json:"search"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", gqlQuery, variables, &resp)
+	err := c.GraphQL("", "", gqlQuery, variables, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "request GraphQL")
 	}

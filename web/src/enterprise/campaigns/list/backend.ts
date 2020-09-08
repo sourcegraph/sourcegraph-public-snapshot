@@ -1,5 +1,5 @@
 import { map } from 'rxjs/operators'
-import { dataOrThrowErrors, gql, requestGraphQL } from '../../../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import { Observable } from 'rxjs'
 import {
     CampaignsVariables,
@@ -9,10 +9,12 @@ import {
     CampaignsByOrgResult,
     CampaignsByOrgVariables,
 } from '../../../graphql-operations'
+import { requestGraphQL } from '../../../backend/graphql'
 
 const ListCampaignFragment = gql`
     fragment ListCampaign on Campaign {
         id
+        url
         name
         namespace {
             namespaceName
@@ -37,12 +39,16 @@ export const queryCampaigns = ({
     state,
     viewerCanAdminister,
 }: Partial<CampaignsVariables>): Observable<CampaignsResult['campaigns']> =>
-    requestGraphQL<CampaignsResult, CampaignsVariables>({
-        request: gql`
+    requestGraphQL<CampaignsResult, CampaignsVariables>(
+        gql`
             query Campaigns($first: Int, $after: String, $state: CampaignState, $viewerCanAdminister: Boolean) {
                 campaigns(first: $first, after: $after, state: $state, viewerCanAdminister: $viewerCanAdminister) {
                     nodes {
                         ...ListCampaign
+                    }
+                    pageInfo {
+                        endCursor
+                        hasNextPage
                     }
                     totalCount
                 }
@@ -50,13 +56,13 @@ export const queryCampaigns = ({
 
             ${ListCampaignFragment}
         `,
-        variables: {
+        {
             first: first ?? null,
             after: after ?? null,
             state: state ?? null,
             viewerCanAdminister: viewerCanAdminister ?? null,
-        },
-    }).pipe(
+        }
+    ).pipe(
         map(dataOrThrowErrors),
         map(data => data.campaigns)
     )
@@ -68,8 +74,8 @@ export const queryCampaignsByUser = ({
     state,
     viewerCanAdminister,
 }: CampaignsByUserVariables): Observable<CampaignsResult['campaigns']> =>
-    requestGraphQL<CampaignsByUserResult, CampaignsByUserVariables>({
-        request: gql`
+    requestGraphQL<CampaignsByUserResult, CampaignsByUserVariables>(
+        gql`
             query CampaignsByUser(
                 $userID: ID!
                 $first: Int
@@ -89,6 +95,10 @@ export const queryCampaignsByUser = ({
                             nodes {
                                 ...ListCampaign
                             }
+                            pageInfo {
+                                endCursor
+                                hasNextPage
+                            }
                             totalCount
                         }
                     }
@@ -97,8 +107,8 @@ export const queryCampaignsByUser = ({
 
             ${ListCampaignFragment}
         `,
-        variables: { first, after, state, viewerCanAdminister, userID },
-    }).pipe(
+        { first, after, state, viewerCanAdminister, userID }
+    ).pipe(
         map(dataOrThrowErrors),
         map(data => {
             if (!data.node) {
@@ -118,8 +128,8 @@ export const queryCampaignsByOrg = ({
     state,
     viewerCanAdminister,
 }: CampaignsByOrgVariables): Observable<CampaignsResult['campaigns']> =>
-    requestGraphQL<CampaignsByOrgResult, CampaignsByOrgVariables>({
-        request: gql`
+    requestGraphQL<CampaignsByOrgResult, CampaignsByOrgVariables>(
+        gql`
             query CampaignsByOrg(
                 $orgID: ID!
                 $first: Int
@@ -139,6 +149,10 @@ export const queryCampaignsByOrg = ({
                             nodes {
                                 ...ListCampaign
                             }
+                            pageInfo {
+                                endCursor
+                                hasNextPage
+                            }
                             totalCount
                         }
                     }
@@ -147,8 +161,8 @@ export const queryCampaignsByOrg = ({
 
             ${ListCampaignFragment}
         `,
-        variables: { first, after, state, viewerCanAdminister, orgID },
-    }).pipe(
+        { first, after, state, viewerCanAdminister, orgID }
+    ).pipe(
         map(dataOrThrowErrors),
         map(data => {
             if (!data.node) {

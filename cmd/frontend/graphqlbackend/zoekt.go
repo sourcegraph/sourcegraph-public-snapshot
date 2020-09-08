@@ -64,6 +64,25 @@ type indexedSearchRequest struct {
 	since func(time.Time) time.Duration
 }
 
+// TODO (stefan) move this out of zoekt.go to the new parser once it is guaranteed that the old parser is turned off for all customers
+func containsRefGlobs(q query.QueryInfo) bool {
+	containsRefGlobs := false
+	if repoFilterValues, _ := q.RegexpPatterns(query.FieldRepo); len(repoFilterValues) > 0 {
+		for _, v := range repoFilterValues {
+			repoRev := strings.SplitN(v, "@", 2)
+			if len(repoRev) == 1 { // no revision
+				continue
+			}
+			if query.ContainsNoGlobSyntax(repoRev[1]) {
+				continue
+			}
+			containsRefGlobs = true
+			break
+		}
+	}
+	return containsRefGlobs
+}
+
 func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ indexedRequestType) (*indexedSearchRequest, error) {
 	// Parse index:yes (default), index:only, and index:no in search query.
 	indexParam := Yes
@@ -84,6 +103,16 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		return &indexedSearchRequest{
 			Unindexed:        args.Repos,
 			IndexUnavailable: true,
+		}, nil
+	}
+
+	// Fallback to Unindexed if the query contains ref-globs
+	if containsRefGlobs(args.Query) {
+		if indexParam == Only {
+			return nil, fmt.Errorf("invalid index:%q (revsions with glob pattern cannot be resolved for indexed searches)", indexParam)
+		}
+		return &indexedSearchRequest{
+			Unindexed: args.Repos,
 		}, nil
 	}
 
@@ -261,9 +290,8 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 	k := zoektResultCountFactor(len(repos.repoBranches), args.PatternInfo)
 	searchOpts := zoektSearchOpts(ctx, k, args.PatternInfo)
 
-	if args.UseFullDeadline {
+	if deadline, ok := ctx.Deadline(); ok {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
-		deadline, _ := ctx.Deadline()
 		searchOpts.MaxWallTime = time.Until(deadline)
 
 		// We don't want our context's deadline to cut off zoekt so that we can get the results
@@ -634,6 +662,10 @@ type indexedRepoRevs struct {
 	NotHEADOnlySearch bool
 }
 
+// headBranch is used as a singleton of the indexedRepoRevs.repoBranches to save
+// common-case allocations within indexedRepoRevs.Add.
+var headBranch = []string{"HEAD"}
+
 // Add will add reporev and repo to the list of repository and branches to
 // search if reporev's refs are a subset of repo's branches. It will return
 // the revision specifiers it can't add.
@@ -652,6 +684,12 @@ func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.
 		// TODO we could only process the explicit revs and return the non
 		// explicit ones as unindexed.
 		return reporev.Revs
+	}
+
+	if len(reporev.Revs) == 1 && repo.Branches[0].Name == "HEAD" && (reporev.Revs[0].RevSpec == "" || reporev.Revs[0].RevSpec == "HEAD") {
+		rb.repoRevs[string(reporev.Repo.Name)] = reporev
+		rb.repoBranches[string(reporev.Repo.Name)] = headBranch
+		return nil
 	}
 
 	// notHEADOnlySearch is set to true if we search any branch other than

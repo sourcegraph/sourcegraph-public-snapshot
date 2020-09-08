@@ -125,8 +125,11 @@ Test coverage from integration tests is tracked in [Codecov](https://codecov.io/
 
 #### Running client integration tests
 
-To run integration tests for the web app, you first need to build a JavaScript bundle by running `yarn build-web` in the repository root.
-To then run the tests, run `yarn test-integration` in the repository root.
+To run integration tests for the web app:
+
+1. Run `yarn build-web` in the repository root to build a JavaScript bundle.
+1. Run `yarn test-integration` in the repository root to run the tests.
+
 A Sourcegraph instance does not need to be running, because all backend interactions are stubbed.
 
 See the above sections for how to debug the tests, which applies to both integration and end-to-end tests.
@@ -322,5 +325,5 @@ To manually test against a Kubernetes cluster, use https://k8s.sgdev.org.
 For testing with a single Docker image, run something like
 
 ```
-IMAGE=sourcegraph/server:3.18.0 ./dev/run-server-image.sh
+IMAGE=sourcegraph/server:3.19.2 ./dev/run-server-image.sh
 ```

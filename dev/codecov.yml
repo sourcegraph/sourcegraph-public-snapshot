@@ -33,6 +33,7 @@ coverage:
 comment:
   require_changes: yes
   layout: 'diff, flags, files'
+  show_carryforward_flags: true
 ignore:
   - '**/bindata.go'
 
@@ -40,4 +41,5 @@ flags:
   typescript:
     carryforward: true
 
-show_carryforward_flags: true
+github_checks:
+    annotations: false

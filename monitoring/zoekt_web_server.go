@@ -1,6 +1,9 @@
 package main
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 func ZoektWebServer() *Container {
 	return &Container{
@@ -31,12 +34,24 @@ func ZoektWebServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerCPUUsage("zoekt-webserver"),
-						sharedContainerMemoryUsage("zoekt-webserver"),
+						sharedContainerCPUUsage("zoekt-webserver", ObservableOwnerSearch),
+						sharedContainerMemoryUsage("zoekt-webserver", ObservableOwnerSearch),
 					},
 					{
-						sharedContainerRestarts("zoekt-webserver"),
-						sharedContainerFsInodes("zoekt-webserver"),
+						sharedContainerRestarts("zoekt-webserver", ObservableOwnerSearch),
+						sharedContainerFsInodes("zoekt-webserver", ObservableOwnerSearch),
+					},
+					{
+						{
+							Name:              "fs_io_operations",
+							Description:       "filesystem reads and writes by instance rate over 1h",
+							Query:             fmt.Sprintf(`sum by(name) (rate(container_fs_reads_total{%[1]s}[1h]) + rate(container_fs_writes_total{%[1]s}[1h]))`, promCadvisorContainerMatchers("zoekt-webserver")),
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 5000},
+							PanelOptions:      PanelOptions().LegendFormat("{{name}}"),
+							Owner:             ObservableOwnerSearch,
+							PossibleSolutions: "none",
+						},
 					},
 				},
 			},
@@ -45,12 +60,12 @@ func ZoektWebServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("zoekt-webserver"),
-						sharedProvisioningMemoryUsageLongTerm("zoekt-webserver"),
+						sharedProvisioningCPUUsageLongTerm("zoekt-webserver", ObservableOwnerSearch),
+						sharedProvisioningMemoryUsageLongTerm("zoekt-webserver", ObservableOwnerSearch),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("zoekt-webserver"),
-						sharedProvisioningMemoryUsageShortTerm("zoekt-webserver"),
+						sharedProvisioningCPUUsageShortTerm("zoekt-webserver", ObservableOwnerSearch),
+						sharedProvisioningMemoryUsageShortTerm("zoekt-webserver", ObservableOwnerSearch),
 					},
 				},
 			},

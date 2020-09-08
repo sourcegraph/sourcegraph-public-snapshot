@@ -45,8 +45,8 @@ func TestChangesetCountsOverTimeResolver(t *testing.T) {
 	store := ee.NewStoreWithClock(dbconn.Global, clock)
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", 1)
-	if err := rstore.UpsertRepos(ctx, repo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, rstore))
+	if err := rstore.InsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -103,7 +103,7 @@ func TestChangesetCountsOverTimeResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	campaignAPIID := string(campaigns.MarshalCampaignID(campaign.ID))
+	campaignAPIID := string(marshalCampaignID(campaign.ID))
 	input := map[string]interface{}{"campaign": campaignAPIID}
 	var response struct{ Node apitest.Campaign }
 	apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryChangesetCountsConnection)
@@ -183,7 +183,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = repoStore.UpsertRepos(ctx, githubRepo)
+	err = repoStore.InsertRepos(ctx, githubRepo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -244,7 +244,8 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	})
 	defer mockState.Unmock()
 
-	err = ee.SyncChangesets(ctx, repoStore, store, cf, changesets...)
+	sourcer := repos.NewSourcer(cf)
+	err = ee.SyncChangesets(ctx, repoStore, store, sourcer, changesets...)
 	if err != nil {
 		t.Fatal(err)
 	}

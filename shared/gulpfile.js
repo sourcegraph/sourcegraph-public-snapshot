@@ -2,11 +2,10 @@
 
 const { generateNamespace } = require('@gql2ts/from-schema')
 const { DEFAULT_OPTIONS, DEFAULT_TYPE_MAP } = require('@gql2ts/language-typescript')
-const { buildSchema, graphql, introspectionQuery } = require('graphql')
+const { buildSchema, introspectionFromSchema } = require('graphql')
 const gulp = require('gulp')
 const { compile: compileJSONSchema } = require('json-schema-to-typescript')
-const mkdirp = require('mkdirp-promise')
-const { readFile, writeFile } = require('mz/fs')
+const { readFile, writeFile, mkdir } = require('mz/fs')
 const path = require('path')
 const { format, resolveConfig } = require('prettier')
 
@@ -24,10 +23,7 @@ async function graphQlSchema() {
   const schemaString = await readFile(GRAPHQL_SCHEMA_PATH, 'utf8')
   const schema = buildSchema(schemaString)
 
-  const result = /** @type {{ data: import('graphql').IntrospectionQuery }} */ (await graphql(
-    schema,
-    introspectionQuery
-  ))
+  const result = introspectionFromSchema(schema)
 
   const formatOptions = await resolveConfig(__dirname, { config: __dirname + '/../prettier.config.js' })
   const typings =
@@ -101,7 +97,7 @@ const draftV7resolver = {
  */
 async function schema() {
   const outputDirectory = path.join(__dirname, '..', 'web', 'src', 'schema')
-  await mkdirp(outputDirectory)
+  await mkdir(outputDirectory, { recursive: true })
   const schemaDirectory = path.join(__dirname, '..', 'schema')
   await Promise.all(
     ['json-schema-draft-07', 'settings', 'site'].map(async file => {

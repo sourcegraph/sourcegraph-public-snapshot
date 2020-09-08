@@ -1,16 +1,13 @@
 import { storiesOf } from '@storybook/react'
-import { radios, boolean } from '@storybook/addon-knobs'
+import { boolean } from '@storybook/addon-knobs'
 import React from 'react'
 import { FileDiffNode } from './FileDiffNode'
-import { createMemoryHistory } from 'history'
-import webStyles from '../../SourcegraphWebApp.scss'
 import { DEMO_HUNKS } from './FileDiffHunks.story'
-import { MemoryRouter } from 'react-router'
 import { FileDiffFields } from '../../graphql-operations'
+import { WebStory } from '../WebStory'
 
 export const FILE_DIFF_NODES: FileDiffFields[] = [
     {
-        __typename: 'FileDiff',
         hunks: DEMO_HUNKS,
         internalID: 'abcdef123',
         stat: { added: 0, changed: 1, deleted: 0 },
@@ -28,7 +25,6 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         oldPath: null,
     },
     {
-        __typename: 'FileDiff',
         hunks: DEMO_HUNKS,
         internalID: 'abcdef123',
         stat: { added: 0, changed: 1, deleted: 0 },
@@ -46,7 +42,6 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         oldPath: 'deleted_file.md',
     },
     {
-        __typename: 'FileDiff',
         hunks: [],
         internalID: 'abcdef123',
         stat: { added: 0, changed: 0, deleted: 0 },
@@ -64,7 +59,6 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         oldPath: null,
     },
     {
-        __typename: 'FileDiff',
         hunks: [],
         internalID: 'abcdef123',
         stat: { added: 0, changed: 0, deleted: 0 },
@@ -82,7 +76,6 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         oldPath: 'deleted_file.md',
     },
     {
-        __typename: 'FileDiff',
         hunks: DEMO_HUNKS,
         internalID: 'abcdef123',
         stat: { added: 0, changed: 1, deleted: 0 },
@@ -104,7 +97,6 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         oldPath: 'existing_file.md',
     },
     {
-        __typename: 'FileDiff',
         hunks: DEMO_HUNKS,
         internalID: 'abcdef123',
         stat: { added: 0, changed: 1, deleted: 0 },
@@ -126,7 +118,6 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         oldPath: 'existing_git_file.md',
     },
     {
-        __typename: 'FileDiff',
         hunks: DEMO_HUNKS,
         internalID: 'abcdef123',
         stat: { added: 0, changed: 1, deleted: 0 },
@@ -148,7 +139,6 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         oldPath: 'from.md',
     },
     {
-        __typename: 'FileDiff',
         hunks: DEMO_HUNKS,
         internalID: 'abcdef123',
         stat: { added: 0, changed: 1, deleted: 0 },
@@ -170,7 +160,6 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         oldPath: 'dir1/from.md',
     },
     {
-        __typename: 'FileDiff',
         hunks: [],
         internalID: 'abcdef123',
         stat: { added: 0, changed: 0, deleted: 0 },
@@ -193,31 +182,25 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
     },
 ]
 
-const { add } = storiesOf('web/FileDiffNode', module).addDecorator(story => {
-    const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
-    document.body.classList.toggle('theme-light', theme === 'light')
-    document.body.classList.toggle('theme-dark', theme === 'dark')
-    return (
-        <>
-            <style>{webStyles}</style>
-            <div className="p-3 container">{story()}</div>
-        </>
-    )
-})
+const { add } = storiesOf('web/diffs/FileDiffNode', module).addDecorator(story => (
+    <div className="p-3 container">{story()}</div>
+))
 
 add('All file node states overview', () => (
-    <MemoryRouter>
-        {FILE_DIFF_NODES.map((node, index) => (
-            <FileDiffNode
-                key={index}
-                persistLines={boolean('persistLines', false)}
-                lineNumbers={boolean('lineNumbers', true)}
-                isLightTheme={true}
-                node={node}
-                className="abcdef"
-                location={createMemoryHistory().location}
-                history={createMemoryHistory()}
-            />
-        ))}
-    </MemoryRouter>
+    <WebStory>
+        {webProps => (
+            <>
+                {FILE_DIFF_NODES.map((node, index) => (
+                    <FileDiffNode
+                        {...webProps}
+                        key={index}
+                        persistLines={boolean('persistLines', false)}
+                        lineNumbers={boolean('lineNumbers', true)}
+                        node={node}
+                        className="abcdef"
+                    />
+                ))}
+            </>
+        )}
+    </WebStory>
 ))

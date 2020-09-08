@@ -1,19 +1,18 @@
 import * as H from 'history'
-import React, { useEffect, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 import {
     PatternTypeProps,
     InteractiveSearchProps,
     CaseSensitivityProps,
-    SmartSearchFieldProps,
     CopyQueryButtonProps,
     RepogroupHomepageProps,
+    OnboardingTourProps,
+    EnterpriseHomePanelsProps,
 } from '..'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Settings } from '../../schema/settings.schema'
 import { ThemeProps } from '../../../../shared/src/theme'
-import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
 import { ThemePreferenceProps } from '../../theme'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
@@ -32,8 +31,11 @@ import { repogroupList, homepageLanguageList } from '../../repogroups/HomepageCo
 import { SearchPageInput } from './SearchPageInput'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { PrivateCodeCta } from './PrivateCodeCta'
+import { AuthenticatedUser } from '../../auth'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { EnterpriseHomePanels } from '../panels/EnterpriseHomePanels'
 
-interface Props
+export interface SearchPageProps
     extends SettingsCascadeProps<Settings>,
         ThemeProps,
         ThemePreferenceProps,
@@ -41,20 +43,22 @@ interface Props
         PatternTypeProps,
         CaseSensitivityProps,
         KeyboardShortcutsProps,
-        EventLoggerProps,
+        TelemetryProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         InteractiveSearchProps,
-        SmartSearchFieldProps,
         CopyQueryButtonProps,
         VersionContextProps,
-        RepogroupHomepageProps {
-    authenticatedUser: GQL.IUser | null
+        RepogroupHomepageProps,
+        OnboardingTourProps,
+        EnterpriseHomePanelsProps {
+    authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
+    autoFocus?: boolean
 
     // For NavLinks
     authRequired?: boolean
@@ -64,15 +68,20 @@ interface Props
     globbing: boolean
 }
 
-const SearchExampleClicked = (url: string) => (): void => eventLogger.log('ExampleSearchClicked', { url })
-const LanguageExampleClicked = (language: string) => (): void =>
-    eventLogger.log('ExampleLanguageSearchClicked', { language })
-
 /**
  * The search page
  */
-export const SearchPage: React.FunctionComponent<Props> = props => {
-    useEffect(() => eventLogger.logViewEvent('Home'))
+export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
+    const SearchExampleClicked = useCallback(
+        (url: string) => (): void => props.telemetryService.log('ExampleSearchClicked', { url }),
+        [props.telemetryService]
+    )
+    const LanguageExampleClicked = useCallback(
+        (language: string) => (): void => props.telemetryService.log('ExampleLanguageSearchClicked', { language }),
+        [props.telemetryService]
+    )
+
+    useEffect(() => props.telemetryService.logViewEvent('Home'), [props.telemetryService])
 
     const codeInsightsEnabled =
         !isErrorLike(props.settingsCascade.final) && !!props.settingsCascade.final?.experimentalFeatures?.codeInsights
@@ -90,14 +99,14 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
             [codeInsightsEnabled, props.extensionsController.services.view]
         )
     )
-
     return (
         <div className="web-content search-page">
             <BrandLogo className="search-page__logo" isLightTheme={props.isLightTheme} />
             {props.isSourcegraphDotCom && <div className="search-page__cloud-tag-line">Search public code</div>}
             <div
                 className={classNames('search-page__search-container', {
-                    'search-page__search-container--with-repogroups': props.isSourcegraphDotCom,
+                    'search-page__search-container--with-content-below':
+                        props.isSourcegraphDotCom || props.showEnterpriseHomePanels,
                 })}
             >
                 <SearchPageInput {...props} source="home" />
@@ -313,6 +322,8 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                     </div>
                 </>
             )}
+
+            {!props.isSourcegraphDotCom && props.showEnterpriseHomePanels && <EnterpriseHomePanels />}
         </div>
     )
 }

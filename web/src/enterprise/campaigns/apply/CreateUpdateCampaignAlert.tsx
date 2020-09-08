@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 import { CampaignSpecFields } from '../../../graphql-operations'
 import { createCampaign, applyCampaign } from './backend'
 import { Link } from '../../../../../shared/src/components/Link'
@@ -10,8 +10,6 @@ import { ErrorAlert } from '../../../components/alerts'
 export interface CreateUpdateCampaignAlertProps {
     specID: string
     campaign: CampaignSpecFields['appliesToCampaign']
-    isLoading: boolean | Error
-    setIsLoading: (newValue: boolean | Error) => void
     viewerCanAdminister: boolean
     history: H.History
 }
@@ -19,12 +17,11 @@ export interface CreateUpdateCampaignAlertProps {
 export const CreateUpdateCampaignAlert: React.FunctionComponent<CreateUpdateCampaignAlertProps> = ({
     specID,
     campaign,
-    isLoading,
-    setIsLoading,
     viewerCanAdminister,
     history,
 }) => {
     const campaignID = campaign?.id
+    const [isLoading, setIsLoading] = useState<boolean | Error>(false)
     const onApply = useCallback(async () => {
         if (!confirm(`Are you sure you want to ${campaignID ? 'update' : 'create'} this campaign?`)) {
             return
@@ -35,7 +32,6 @@ export const CreateUpdateCampaignAlert: React.FunctionComponent<CreateUpdateCamp
                 ? await applyCampaign({ campaignSpec: specID, campaign: campaignID })
                 : await createCampaign({ campaignSpec: specID })
             history.push(campaign.url)
-            setIsLoading(false)
         } catch (error) {
             setIsLoading(error)
         }
@@ -60,7 +56,7 @@ export const CreateUpdateCampaignAlert: React.FunctionComponent<CreateUpdateCamp
                 <button
                     type="button"
                     className={classNames(
-                        'btn btn-primary',
+                        'btn btn-primary test-campaigns-confirm-apply-btn',
                         isLoading === true || (!viewerCanAdminister && 'disabled')
                     )}
                     onClick={onApply}

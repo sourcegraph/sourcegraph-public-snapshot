@@ -32,7 +32,7 @@ func Searcher() *Container {
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
-						sharedFrontendInternalAPIErrorResponses("searcher"),
+						sharedFrontendInternalAPIErrorResponses("searcher", ObservableOwnerSearch),
 					},
 				},
 			},
@@ -41,12 +41,12 @@ func Searcher() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerCPUUsage("searcher"),
-						sharedContainerMemoryUsage("searcher"),
+						sharedContainerCPUUsage("searcher", ObservableOwnerSearch),
+						sharedContainerMemoryUsage("searcher", ObservableOwnerSearch),
 					},
 					{
-						sharedContainerRestarts("searcher"),
-						sharedContainerFsInodes("searcher"),
+						sharedContainerRestarts("searcher", ObservableOwnerSearch),
+						sharedContainerFsInodes("searcher", ObservableOwnerSearch),
 					},
 				},
 			},
@@ -55,12 +55,12 @@ func Searcher() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("searcher"),
-						sharedProvisioningMemoryUsageLongTerm("searcher"),
+						sharedProvisioningCPUUsageLongTerm("searcher", ObservableOwnerSearch),
+						sharedProvisioningMemoryUsageLongTerm("searcher", ObservableOwnerSearch),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("searcher"),
-						sharedProvisioningMemoryUsageShortTerm("searcher"),
+						sharedProvisioningCPUUsageShortTerm("searcher", ObservableOwnerSearch),
+						sharedProvisioningMemoryUsageShortTerm("searcher", ObservableOwnerSearch),
 					},
 				},
 			},
@@ -69,8 +69,8 @@ func Searcher() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedGoGoroutines("searcher"),
-						sharedGoGcDuration("searcher"),
+						sharedGoGoroutines("searcher", ObservableOwnerSearch),
+						sharedGoGcDuration("searcher", ObservableOwnerSearch),
 					},
 				},
 			},
@@ -79,7 +79,7 @@ func Searcher() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedKubernetesPodsAvailable("searcher"),
+						sharedKubernetesPodsAvailable("searcher", ObservableOwnerSearch),
 					},
 				},
 			},

@@ -36,13 +36,13 @@ import {
     PatternTypeProps,
     InteractiveSearchProps,
     CaseSensitivityProps,
-    SmartSearchFieldProps,
     CopyQueryButtonProps,
     RepogroupHomepageProps,
+    OnboardingTourProps,
+    EnterpriseHomePanelsProps,
 } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { EventLogger, EventLoggerProps } from './tracking/eventLogger'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
@@ -60,6 +60,10 @@ import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { Settings } from './schema/settings.schema'
 import { Remote } from 'comlink'
 import { FlatExtHostAPI } from '../../shared/src/api/contract'
+import { useBreadcrumbs } from './components/Breadcrumbs'
+import { AuthenticatedUser } from './auth'
+import { SearchPatternType } from './graphql-operations'
+import { TelemetryProps } from '../../shared/src/telemetry/telemetryService'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -68,16 +72,17 @@ export interface LayoutProps
         ExtensionsControllerProps,
         KeyboardShortcutsProps,
         ThemeProps,
-        EventLoggerProps,
+        TelemetryProps,
         ThemePreferenceProps,
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
         InteractiveSearchProps,
-        SmartSearchFieldProps,
         CopyQueryButtonProps,
         VersionContextProps,
-        RepogroupHomepageProps {
+        RepogroupHomepageProps,
+        OnboardingTourProps,
+        EnterpriseHomePanelsProps {
     exploreSections: readonly ExploreSectionDescriptor[]
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -99,15 +104,13 @@ export interface LayoutProps
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     routes: readonly LayoutRouteProps<any>[]
 
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 
     /**
      * The subject GraphQL node ID of the viewer, which is used to look up the viewer's settings. This is either
      * the site's GraphQL node ID (for anonymous users) or the authenticated user's GraphQL node ID.
      */
     viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
-
-    telemetryService: EventLogger
 
     // Search
     navbarSearchQueryState: QueryState
@@ -116,7 +119,7 @@ export interface LayoutProps
     searchRequest: (
         query: QueryState['query'],
         version: string,
-        patternType: GQL.SearchPatternType,
+        patternType: SearchPatternType,
         versionContext: string | undefined,
         extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
     ) => Observable<GQL.ISearchResults | ErrorLike>
@@ -138,16 +141,26 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const repogroupPages = ['/refactor-python2-to-3', '/kubernetes', '/golang', '/react-hooks', '/android', '/stanford']
     const isRepogroupPage = repogroupPages.includes(props.location.pathname)
 
+    // TODO add a component layer as the parent of the Layout component rendering "top-level" routes that do not render the navbar,
+    // so that Layout can always render the navbar.
     const needsSiteInit = window.context.needsSiteInit
     const isSiteInit = props.location.pathname === '/site-admin/init'
+    const isSignInOrUp = props.location.pathname === '/sign-in' || props.location.pathname === '/sign-up'
 
     const hideGlobalSearchInput: boolean =
         props.location.pathname === '/stats' || props.location.pathname === '/search/query-builder'
+
+    const breadcrumbProps = useBreadcrumbs()
 
     useScrollToLocationHash(props.location)
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
         return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
+    }
+
+    const context = {
+        ...props,
+        ...breadcrumbProps,
     }
 
     return (
@@ -165,7 +178,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 <IntegrationsToast history={props.history} />
             )}
             {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
-            {!isSiteInit && (
+            {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
                     isSearchRelatedPage={isSearchRelatedPage}
@@ -188,14 +201,14 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                         {/* eslint-disable react/jsx-no-bind */}
                         {props.routes.map(
                             ({ render, condition = () => true, ...route }) =>
-                                condition(props) && (
+                                condition(context) && (
                                     <Route
                                         {...route}
                                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                         component={undefined}
                                         render={routeComponentProps => (
                                             <div className="layout__app-router-container">
-                                                {render({ ...props, ...routeComponentProps })}
+                                                {render({ ...context, ...routeComponentProps })}
                                             </div>
                                         )}
                                     />

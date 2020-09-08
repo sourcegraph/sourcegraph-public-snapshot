@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { PageTitle } from '../../../components/PageTitle'
 import {
@@ -7,7 +7,6 @@ import {
     queryChangesetSpecs,
     queryChangesetSpecFileDiffs,
 } from './backend'
-import { ErrorAlert } from '../../../components/alerts'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { CampaignHeader } from '../detail/CampaignHeader'
 import { ChangesetSpecList } from './ChangesetSpecList'
@@ -16,8 +15,10 @@ import { CreateUpdateCampaignAlert } from './CreateUpdateCampaignAlert'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { HeroPage } from '../../../components/HeroPage'
 import { CampaignDescription } from '../detail/CampaignDescription'
+import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
+import { CampaignSpecInfoByline } from './CampaignSpecInfoByline'
 
-export interface CampaignApplyPageProps extends ThemeProps {
+export interface CampaignApplyPageProps extends ThemeProps, BreadcrumbSetters {
     specID: string
     history: H.History
     location: H.Location
@@ -35,18 +36,22 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
     history,
     location,
     isLightTheme,
+    useBreadcrumb,
     fetchCampaignSpecById = _fetchCampaignSpecById,
     queryChangesetSpecs,
     queryChangesetSpecFileDiffs,
 }) => {
-    const [isLoading, setIsLoading] = useState<boolean | Error>(false)
     const spec = useObservable(useMemo(() => fetchCampaignSpecById(specID), [specID, fetchCampaignSpecById]))
-    if (spec === undefined) {
-        return <LoadingSpinner />
-    }
-    if (spec === null) {
-        return <ErrorAlert history={history} error={new Error('Campaign spec not found')} />
-    }
+
+    useBreadcrumb(
+        useMemo(
+            () => ({
+                element: <>Apply spec</>,
+                key: 'ApplySpecPage',
+            }),
+            []
+        )
+    )
 
     if (spec === undefined) {
         return (
@@ -65,17 +70,13 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
             <CampaignHeader
                 name={spec.description.name}
                 namespace={spec.namespace}
-                createdAt={spec.createdAt}
-                creator={spec.creator}
-                verb="Uploaded"
-                className="mb-3"
+                className="test-campaign-apply-page"
             />
+            <CampaignSpecInfoByline createdAt={spec.createdAt} creator={spec.creator} className="mb-3" />
             <CreateUpdateCampaignAlert
                 history={history}
                 specID={spec.id}
                 campaign={spec.appliesToCampaign}
-                isLoading={isLoading}
-                setIsLoading={setIsLoading}
                 viewerCanAdminister={spec.viewerCanAdminister}
             />
             <CampaignDescription history={history} description={spec.description.description} className="mb-3" />
@@ -86,14 +87,6 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
                 isLightTheme={isLightTheme}
                 queryChangesetSpecs={queryChangesetSpecs}
                 queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
-            />
-            <CreateUpdateCampaignAlert
-                history={history}
-                specID={spec.id}
-                campaign={spec.appliesToCampaign}
-                isLoading={isLoading}
-                setIsLoading={setIsLoading}
-                viewerCanAdminister={spec.viewerCanAdminister}
             />
         </>
     )

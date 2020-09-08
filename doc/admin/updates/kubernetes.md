@@ -5,6 +5,13 @@ Follow the [recommended method](../install/kubernetes/update.md) of upgrading a 
 
 **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
+## 3.19
+
+No manual migration is required, follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your deployment.
+
+> Warning: If you use an overlay that does not reference one of the provided overlays, please add `- ../bases/pvcs` as an additional base
+to your `kustomization.yaml` file. Otherwise the PVCs could be pruned if `kubectl apply -prune` is used.
+
 ## 3.18
 
 No manual migration is required, follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your deployment.

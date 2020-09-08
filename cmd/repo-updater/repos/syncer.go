@@ -137,11 +137,19 @@ func (s *Syncer) Sync(ctx context.Context) (err error) {
 		return errors.Wrap(err, "syncer.sync.store.list-repos")
 	}
 
+	// NewDiff modifies the stored slice so we clone it before passing it
+	storedCopy := stored.Clone()
+
 	diff = NewDiff(sourced, stored)
 	upserts := s.upserts(diff)
 
 	if err = store.UpsertRepos(ctx, upserts...); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.upsert-repos")
+	}
+
+	sdiff := s.sourcesUpserts(&diff, storedCopy)
+	if err = store.UpsertSources(ctx, sdiff.Added, sdiff.Modified, sdiff.Deleted); err != nil {
+		return errors.Wrap(err, "syncer.sync.store.upsert-sources")
 	}
 
 	if s.Synced != nil {
@@ -212,11 +220,19 @@ func (s *Syncer) syncSubset(ctx context.Context, insertOnly bool, sourcedSubset 
 		return Diff{}, nil
 	}
 
+	// NewDiff modifies the stored slice so we clone it before passing it
+	storedCopy := storedSubset.Clone()
+
 	diff = NewDiff(sourcedSubset, storedSubset)
 	upserts := s.upserts(diff)
 
 	if err = store.UpsertRepos(ctx, upserts...); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.upsert-repos")
+	}
+
+	sdiff := s.sourcesUpserts(&diff, storedCopy)
+	if err = store.UpsertSources(ctx, sdiff.Added, sdiff.Modified, sdiff.Deleted); err != nil {
+		return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.upsert-sources")
 	}
 
 	if s.SubsetSynced != nil {
@@ -250,6 +266,73 @@ func (s *Syncer) upserts(diff Diff) []*Repo {
 	}
 
 	return upserts
+}
+
+type sourceDiff struct {
+	Added, Modified, Deleted map[api.RepoID][]SourceInfo
+}
+
+// sourcesUpserts creates a diff for sources based on the repositoried diff.
+func (s *Syncer) sourcesUpserts(diff *Diff, stored []*Repo) *sourceDiff {
+	sdiff := sourceDiff{
+		Added:    make(map[api.RepoID][]SourceInfo),
+		Modified: make(map[api.RepoID][]SourceInfo),
+		Deleted:  make(map[api.RepoID][]SourceInfo),
+	}
+
+	// When a repository is added, add its sources map to the list
+	// of sourceInfos
+	for _, repo := range diff.Added {
+		for _, si := range repo.Sources {
+			sdiff.Added[repo.ID] = append(sdiff.Added[repo.ID], *si)
+		}
+	}
+
+	// When a repository is modified, check if its source map
+	// has been modified, and if so compute the diff.
+	for _, repo := range diff.Modified {
+		if repo.Sources == nil {
+			continue
+		}
+
+		for _, storedRepo := range stored {
+			if storedRepo.ID == repo.ID {
+				s.sourceDiff(repo.ID, &sdiff, storedRepo.Sources, repo.Sources)
+				break
+			}
+		}
+	}
+
+	// When a repository is deleted, a Postgres function is
+	// triggered to automatically to delete the source,
+	// we don't need to do anything here.
+	// See the trigger `trig_soft_delete_repo_reference_on_external_service_repos` defined in `external_services` table.
+	return &sdiff
+}
+
+// sourceDiff computes the diff between the oldSources and the newSources,
+// and updates the Added, Modified and Deleted in place of `diff`.
+func (s *Syncer) sourceDiff(repoID api.RepoID, diff *sourceDiff, oldSources, newSources map[string]*SourceInfo) {
+	for k, oldSrc := range oldSources {
+		if newSrc, ok := newSources[k]; ok {
+			if oldSrc.CloneURL != newSrc.CloneURL {
+				// The source has been modified
+				diff.Modified[repoID] = append(diff.Modified[repoID], *newSrc)
+			}
+
+			continue
+		}
+
+		diff.Deleted[repoID] = append(diff.Deleted[repoID], *oldSrc)
+	}
+
+	for k := range newSources {
+		if _, ok := oldSources[k]; ok {
+			continue
+		}
+
+		diff.Added[repoID] = append(diff.Added[repoID], *newSources[k])
+	}
 }
 
 // initialUnmodifiedDiffFromStore creates a diff of all repos present in the
@@ -319,7 +402,7 @@ func (d Diff) Repos() Repos {
 
 // NewDiff returns a diff from the given sourced and stored repos.
 func NewDiff(sourced, stored []*Repo) (diff Diff) {
-	// Sort sourced so we merge determinstically
+	// Sort sourced so we merge deterministically
 	sort.Sort(Repos(sourced))
 
 	byID := make(map[api.ExternalRepoSpec]*Repo, len(sourced))
@@ -401,7 +484,7 @@ func (s *Syncer) makeNewRepoInserter(ctx context.Context) (func(*Repo), error) {
 	// repositories will already have related repos, so to avoid that cost we
 	// ask the store for all repositories and only do syncsubset if it might
 	// be an insert.
-	ids, err := s.storedExternalIDs(ctx)
+	ids, err := s.Store.ListExternalRepoSpecs(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -418,18 +501,6 @@ func (s *Syncer) makeNewRepoInserter(ctx context.Context) (func(*Repo), error) {
 			s.Logger.Warn("streaming insert failed", "external_id", r.ExternalRepo, "error", err)
 		}
 	}, nil
-}
-
-func (s *Syncer) storedExternalIDs(ctx context.Context) (map[api.ExternalRepoSpec]struct{}, error) {
-	stored, err := s.Store.ListRepos(ctx, StoreListReposArgs{})
-	if err != nil {
-		return nil, errors.Wrap(err, "syncer.storedExternalIDs")
-	}
-	ids := make(map[api.ExternalRepoSpec]struct{}, len(stored))
-	for _, r := range stored {
-		ids[r.ExternalRepo] = struct{}{}
-	}
-	return ids, nil
 }
 
 func (s *Syncer) setOrResetLastSyncErr(perr *error) {

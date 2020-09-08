@@ -282,9 +282,9 @@ func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
 // ListCampaignsOpts captures the query options needed for
 // listing campaigns.
 type ListCampaignsOpts struct {
+	LimitOpts
 	ChangesetID int64
 	Cursor      int64
-	Limit       int
 	State       campaigns.CampaignState
 
 	InitialApplierID int32
@@ -297,7 +297,7 @@ type ListCampaignsOpts struct {
 func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs []*campaigns.Campaign, next int64, err error) {
 	q := listCampaignsQuery(&opts)
 
-	cs = make([]*campaigns.Campaign, 0, opts.Limit)
+	cs = make([]*campaigns.Campaign, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) error {
 		var c campaigns.Campaign
 		if err := scanCampaign(&c, sc); err != nil {
@@ -307,7 +307,7 @@ func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs [
 		return nil
 	})
 
-	if opts.Limit != 0 && len(cs) == opts.Limit {
+	if opts.Limit != 0 && len(cs) == opts.DBLimit() {
 		next = cs[len(cs)-1].ID
 		cs = cs[:len(cs)-1]
 	}
@@ -319,18 +319,14 @@ var listCampaignsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:ListCampaigns
 SELECT %s FROM campaigns
 WHERE %s
-ORDER BY id ASC
-LIMIT %s
+ORDER BY id DESC
 `
 
 func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
-	if opts.Limit == 0 {
-		opts.Limit = defaultListLimit
-	}
-	opts.Limit++
+	preds := []*sqlf.Query{}
 
-	preds := []*sqlf.Query{
-		sqlf.Sprintf("id >= %s", opts.Cursor),
+	if opts.Cursor != 0 {
+		preds = append(preds, sqlf.Sprintf("id <= %s", opts.Cursor))
 	}
 
 	if opts.ChangesetID != 0 {
@@ -356,11 +352,14 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("campaigns.namespace_org_id = %s", opts.NamespaceOrgID))
 	}
 
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
 	return sqlf.Sprintf(
-		listCampaignsQueryFmtstr,
+		listCampaignsQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(campaignColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
-		opts.Limit,
 	)
 }
 

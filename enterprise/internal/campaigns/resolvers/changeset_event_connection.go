@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"strconv"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -16,6 +17,7 @@ type changesetEventsConnectionResolver struct {
 	httpFactory       *httpcli.Factory
 	changesetResolver *changesetResolver
 	first             int
+	cursor            int64
 
 	// cache results because they are used by multiple fields
 	once            sync.Once
@@ -52,14 +54,18 @@ func (r *changesetEventsConnectionResolver) PageInfo(ctx context.Context) (*grap
 	if err != nil {
 		return nil, err
 	}
-	return graphqlutil.HasNextPage(next != 0), nil
+	if next != 0 {
+		return graphqlutil.NextPageCursor(strconv.Itoa(int(next))), nil
+	}
+	return graphqlutil.HasNextPage(false), nil
 }
 
 func (r *changesetEventsConnectionResolver) compute(ctx context.Context) ([]*campaigns.ChangesetEvent, int64, error) {
 	r.once.Do(func() {
 		opts := ee.ListChangesetEventsOpts{
 			ChangesetIDs: []int64{r.changesetResolver.changeset.ID},
-			Limit:        r.first,
+			LimitOpts:    ee.LimitOpts{Limit: r.first},
+			Cursor:       r.cursor,
 		}
 		r.changesetEvents, r.next, r.err = r.store.ListChangesetEvents(ctx, opts)
 	})

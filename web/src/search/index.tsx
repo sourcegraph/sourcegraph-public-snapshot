@@ -1,10 +1,10 @@
 import { escapeRegExp } from 'lodash'
-import { SearchPatternType } from '../../../shared/src/graphql/schema'
 import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
 import { parseCaseSensitivityFromQuery, parsePatternTypeFromQuery } from '../../../shared/src/util/url'
 import { replaceRange } from '../../../shared/src/util/strings'
 import { discreteValueAliases } from '../../../shared/src/search/parser/filters'
 import { VersionContext } from '../schema/site.schema'
+import { SearchPatternType } from '../../../shared/src/graphql-operations'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -151,16 +151,20 @@ export interface InteractiveSearchProps {
     toggleSearchMode: (event: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
-export interface SmartSearchFieldProps {
-    smartSearchField: boolean
-}
-
 export interface CopyQueryButtonProps {
     copyQueryButton: boolean
 }
 
 export interface RepogroupHomepageProps {
     showRepogroupHomepage: boolean
+}
+
+export interface OnboardingTourProps {
+    showOnboardingTour: boolean
+}
+
+export interface EnterpriseHomePanelsProps {
+    showEnterpriseHomePanels: boolean
 }
 
 /**

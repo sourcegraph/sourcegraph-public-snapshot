@@ -1,13 +1,9 @@
-import * as H from 'history'
 import { storiesOf } from '@storybook/react'
-import { radios, boolean } from '@storybook/addon-knobs'
+import { boolean } from '@storybook/addon-knobs'
 import React from 'react'
-import webStyles from '../../../../enterprise.scss'
-import { Tooltip } from '../../../../components/tooltip/Tooltip'
 import { CampaignChangesets } from './CampaignChangesets'
 import { addHours } from 'date-fns'
-import { of, Subject } from 'rxjs'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../../../shared/src/telemetry/telemetryService'
+import { of } from 'rxjs'
 import {
     ChangesetFields,
     ChangesetExternalState,
@@ -17,25 +13,13 @@ import {
     ChangesetReviewState,
 } from '../../../../graphql-operations'
 import { queryExternalChangesetWithFileDiffs } from '../backend'
+import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
-let isLightTheme = true
-
-const { add } = storiesOf('web/campaigns/CampaignChangesets', module).addDecorator(story => {
-    const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
-    document.body.classList.toggle('theme-light', theme === 'light')
-    document.body.classList.toggle('theme-dark', theme === 'dark')
-    isLightTheme = theme === 'light'
-    return (
-        <>
-            <Tooltip />
-            <style>{webStyles}</style>
-            <div className="p-3 container web-content">{story()}</div>
-        </>
-    )
-})
+const { add } = storiesOf('web/campaigns/CampaignChangesets', module).addDecorator(story => (
+    <div className="p-3 container web-content">{story()}</div>
+))
 
 const now = new Date()
-const history = H.createMemoryHistory()
 const nodes: ChangesetFields[] = [
     ...Object.values(ChangesetExternalState).map(
         (externalState): ChangesetFields => ({
@@ -67,6 +51,7 @@ const nodes: ChangesetFields[] = [
             },
             reviewState: ChangesetReviewState.COMMENTED,
             error: null,
+            currentSpec: { id: 'spec-rand-id-1' },
         })
     ),
     ...Object.values(ChangesetExternalState).map(
@@ -83,7 +68,6 @@ const nodes: ChangesetFields[] = [
     ),
 ]
 const queryChangesets = () => of({ totalCount: nodes.length, nodes, pageInfo: { endCursor: null, hasNextPage: false } })
-const updates = new Subject<void>()
 
 const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWithFileDiffs = () =>
     of({
@@ -101,18 +85,17 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
     })
 
 add('List of changesets', () => (
-    <CampaignChangesets
-        queryChangesets={queryChangesets}
-        queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
-        extensionsController={undefined as any}
-        platformContext={undefined as any}
-        campaignID="campaignid"
-        viewerCanAdminister={boolean('viewerCanAdminister', true)}
-        campaignUpdates={updates}
-        changesetUpdates={updates}
-        telemetryService={NOOP_TELEMETRY_SERVICE}
-        history={history}
-        location={history.location}
-        isLightTheme={isLightTheme}
-    />
+    <EnterpriseWebStory>
+        {props => (
+            <CampaignChangesets
+                {...props}
+                queryChangesets={queryChangesets}
+                queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
+                extensionsController={undefined as any}
+                platformContext={undefined as any}
+                campaignID="campaignid"
+                viewerCanAdminister={boolean('viewerCanAdminister', true)}
+            />
+        )}
+    </EnterpriseWebStory>
 ))

@@ -41,12 +41,6 @@ const SettingsSchemaJSON = `{
           "default": true,
           "!go": { "pointer": true }
         },
-        "smartSearchField": {
-          "description": "Enables displaying a search field that provides syntax highlighting, hover tooltips and diagnostics for search queries.",
-          "type": "boolean",
-          "default": true,
-          "!go": { "pointer": true }
-        },
         "copyQueryButton": {
           "description": "Enables displaying the copy query button in the search bar when hovering over the global navigation bar.",
           "type": "boolean",
@@ -55,6 +49,18 @@ const SettingsSchemaJSON = `{
         },
         "showRepogroupHomepage": {
           "description": "Enables the repository group homepage ",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
+        },
+        "showOnboardingTour": {
+          "description": "Enables the onboarding tour.",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
+        },
+        "showEnterpriseHomePanels": {
+          "description": "Enabled the homepage panels in the Enterprise homepage",
           "type": "boolean",
           "default": false,
           "!go": { "pointer": true }
@@ -214,7 +220,13 @@ const SettingsSchemaJSON = `{
       "!go": { "pointer": true }
     },
     "search.migrateParser": {
-      "description": "If true, uses the new and/or-compatible parser for all search queries. It is a flag to aid transition to the new parser.",
+      "description": "If false, disables the new and/or-compatible parser for all search queries. It is a flag to aid transition to the new parser.",
+      "type": "boolean",
+      "default": true,
+      "!go": { "pointer": true }
+    },
+    "search.hideSuggestions": {
+      "description": "Disable search suggestions below the search bar when constructing queries. Defaults to false.",
       "type": "boolean",
       "default": false,
       "!go": { "pointer": true }
@@ -263,12 +275,6 @@ const SettingsSchemaJSON = `{
         }
       }
     }
-  },
-  "search.hideSuggestions": {
-    "description": "Disable search suggestions below the search bar when constructing queries. Defaults to false.",
-    "type": "boolean",
-    "default": false,
-    "!go": { "pointer": true }
   }
 }
 `

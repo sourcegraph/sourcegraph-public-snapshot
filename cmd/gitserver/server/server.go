@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -582,6 +583,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 				ev.AddField("remote_url", req.URL)
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
+				ev.AddField("actor", r.Header.Get("X-Sourcegraph-Actor"))
 				ev.AddField("ensure_revision", req.EnsureRevision)
 				ev.AddField("ensure_revision_status", ensureRevisionStatus)
 				ev.AddField("client", r.UserAgent())
@@ -596,6 +598,14 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 				if !cmdStart.IsZero() {
 					ev.AddField("cmd_duration_ms", cmdDuration.Seconds()*1000)
 					ev.AddField("fetch_duration_ms", fetchDuration.Seconds()*1000)
+				}
+				if span := opentracing.SpanFromContext(ctx); span != nil {
+					spanURL := trace.SpanURL(span)
+					// URLs starting with # don't have a trace. eg
+					// "#tracer-not-enabled"
+					if !strings.HasPrefix(spanURL, "#") {
+						ev.AddField("trace", spanURL)
+					}
 				}
 
 				if honey.Enabled() {

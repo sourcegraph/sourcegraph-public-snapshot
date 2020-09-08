@@ -31,7 +31,7 @@ func assertEqual(t *testing.T, got, want interface{}) {
 }
 
 func TestSearchResults(t *testing.T) {
-	limitOffset := &db.LimitOffset{Limit: maxReposToSearch() + 1}
+	limitOffset := &db.LimitOffset{Limit: searchLimits().MaxRepos + 1}
 
 	getResults := func(t *testing.T, query, version string) []string {
 		r, err := (&schemaResolver{}).Search(context.Background(), &SearchArgs{Query: query, Version: version})
@@ -146,15 +146,9 @@ func TestSearchResults(t *testing.T) {
 			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
-			return []*FileMatchResolver{
-				{
-					uri:          "git://repo?rev#dir/file",
-					JPath:        "dir/file",
-					JLineMatches: []*lineMatch{{JLineNumber: 123}},
-					Repo:         &RepositoryResolver{repo: &types.Repo{ID: 1}},
-				},
-			}, &searchResultsCommon{repos: []*types.Repo{{ID: 1}}}, nil
-
+			repo := &types.Repo{ID: 1, Name: "repo"}
+			fm := mkFileMatch(repo, "dir/file", 123)
+			return []*FileMatchResolver{fm}, &searchResultsCommon{repos: []*types.Repo{repo}}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -218,14 +212,9 @@ func TestSearchResults(t *testing.T) {
 			if want := `foo\\d "bar\*"`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
-			return []*FileMatchResolver{
-				{
-					uri:          "git://repo?rev#dir/file",
-					JPath:        "dir/file",
-					JLineMatches: []*lineMatch{{JLineNumber: 123}},
-					Repo:         &RepositoryResolver{repo: &types.Repo{ID: 1}},
-				},
-			}, &searchResultsCommon{repos: []*types.Repo{{ID: 1}}}, nil
+			repo := &types.Repo{ID: 1, Name: "repo"}
+			fm := mkFileMatch(repo, "dir/file", 123)
+			return []*FileMatchResolver{fm}, &searchResultsCommon{repos: []*types.Repo{repo}}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -533,52 +522,16 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 
 func TestSearchResolver_DynamicFilters(t *testing.T) {
 	repo := &types.Repo{Name: "testRepo"}
-
 	repoMatch := &RepositoryResolver{
 		repo: repo,
 	}
-
-	fileMatch := &FileMatchResolver{
-		JPath: "/testFile.md",
-		Repo:  repoMatch,
-	}
-
-	tsFileMatch := &FileMatchResolver{
-		JPath: "/testFile.ts",
-		Repo:  repoMatch,
-	}
-
-	tsxFileMatch := &FileMatchResolver{
-		JPath: "/testFile.tsx",
-		Repo:  repoMatch,
-	}
-
-	ignoreListFileMatch := &FileMatchResolver{
-		JPath: "/.gitignore",
-		Repo:  repoMatch,
-	}
-
-	goTestFileMatch := &FileMatchResolver{
-		JPath: "/foo_test.go",
-		Repo:  repoMatch,
-	}
-
-	nodeModulesMatchSub := &FileMatchResolver{
-		JPath: "/anything/node_modules/testFile.md",
-		Repo:  repoMatch,
-	}
-
-	nodeModulesMatchRoot := &FileMatchResolver{
-		JPath: "/node_modules/testFile.md",
-		Repo:  repoMatch,
+	fileMatch := func(path string) *FileMatchResolver {
+		return mkFileMatch(repo, path)
 	}
 
 	rev := "develop3.0"
-	fileMatchRev := &FileMatchResolver{
-		JPath:    "/testFile.md",
-		Repo:     repoMatch,
-		InputRev: &rev,
-	}
+	fileMatchRev := fileMatch("/testFile.md")
+	fileMatchRev.InputRev = &rev
 
 	type testCase struct {
 		descr                             string
@@ -602,7 +555,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 
 		{
 			descr:         "single file match without revision in query",
-			searchResults: []SearchResultResolver{fileMatch},
+			searchResults: []SearchResultResolver{fileMatch("/testFile.md")},
 			expectedDynamicFilterStrsRegexp: map[string]struct{}{
 				`repo:^testRepo$`: {},
 				`lang:markdown`:   {},
@@ -627,7 +580,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		},
 		{
 			descr:         "file match from a language with two file extensions, using first extension",
-			searchResults: []SearchResultResolver{tsFileMatch},
+			searchResults: []SearchResultResolver{fileMatch("/testFile.ts")},
 			expectedDynamicFilterStrsRegexp: map[string]struct{}{
 				`repo:^testRepo$`: {},
 				`lang:typescript`: {},
@@ -639,7 +592,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		},
 		{
 			descr:         "file match from a language with two file extensions, using second extension",
-			searchResults: []SearchResultResolver{tsxFileMatch},
+			searchResults: []SearchResultResolver{fileMatch("/testFile.tsx")},
 			expectedDynamicFilterStrsRegexp: map[string]struct{}{
 				`repo:^testRepo$`: {},
 				`lang:typescript`: {},
@@ -651,7 +604,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		},
 		{
 			descr:         "file match which matches one of the common file filters",
-			searchResults: []SearchResultResolver{nodeModulesMatchSub},
+			searchResults: []SearchResultResolver{fileMatch("/anything/node_modules/testFile.md")},
 			expectedDynamicFilterStrsRegexp: map[string]struct{}{
 				`repo:^testRepo$`:          {},
 				`-file:(^|/)node_modules/`: {},
@@ -665,7 +618,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		},
 		{
 			descr:         "file match which matches one of the common file filters",
-			searchResults: []SearchResultResolver{nodeModulesMatchRoot},
+			searchResults: []SearchResultResolver{fileMatch("/node_modules/testFile.md")},
 			expectedDynamicFilterStrsRegexp: map[string]struct{}{
 				`repo:^testRepo$`:          {},
 				`-file:(^|/)node_modules/`: {},
@@ -679,7 +632,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		},
 		{
 			descr:         "file match which matches one of the common file filters",
-			searchResults: []SearchResultResolver{goTestFileMatch},
+			searchResults: []SearchResultResolver{fileMatch("/foo_test.go")},
 			expectedDynamicFilterStrsRegexp: map[string]struct{}{
 				`repo:^testRepo$`:  {},
 				`-file:_test\.go$`: {},
@@ -701,7 +654,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		},
 		{
 			descr:         "values containing spaces are quoted",
-			searchResults: []SearchResultResolver{ignoreListFileMatch},
+			searchResults: []SearchResultResolver{fileMatch("/.gitignore")},
 			expectedDynamicFilterStrsRegexp: map[string]struct{}{
 				`repo:^testRepo$`:    {},
 				`lang:"ignore list"`: {},
@@ -961,9 +914,6 @@ func TestSearchResultsHydration(t *testing.T) {
 			Fork:        false,
 		}}
 
-	mockDecodedViewerFinalSettings = &schema.Settings{}
-	defer func() { mockDecodedViewerFinalSettings = nil }()
-
 	db.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 		return hydratedRepo, nil
 	}
@@ -1009,7 +959,7 @@ func TestSearchResultsHydration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resolver := &searchResolver{query: q, zoekt: z}
+	resolver := &searchResolver{query: q, zoekt: z, userSettings: &schema.Settings{}}
 	results, err := resolver.Results(ctx)
 	if err != nil {
 		t.Fatal("Results:", err)
@@ -1078,6 +1028,14 @@ func TestCommitAndDiffSearchLimits(t *testing.T) {
 			wantAlertDescription: `Commit search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
 		},
 		{
+			name:                 "commit_search_warns_on_repos_greater_than_search_limit_with_time_filter",
+			fields:               map[string][]*searchquerytypes.Value{"after": nil},
+			resultTypes:          []string{"commit"},
+			numRepoRevs:          20000,
+			wantResultTypes:      []string{},
+			wantAlertDescription: `Commit search can currently only handle searching over 10000 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
+		},
+		{
 			name:                 "no_warning_when_commit_search_within_search_limit",
 			resultTypes:          []string{"commit"},
 			numRepoRevs:          50,
@@ -1108,11 +1066,11 @@ func TestCommitAndDiffSearchLimits(t *testing.T) {
 			wantAlertDescription: "",
 		},
 		{
-			name:                 "multiple_result_type_search_is_unaffected",
+			name:                 "multiple_result_type_search_is_affected",
 			resultTypes:          []string{"file", "commit"},
 			numRepoRevs:          200,
-			wantResultTypes:      []string{"file", "commit"},
-			wantAlertDescription: "",
+			wantResultTypes:      []string{},
+			wantAlertDescription: `Commit search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
 		},
 	}
 
@@ -1134,8 +1092,8 @@ func TestCommitAndDiffSearchLimits(t *testing.T) {
 			haveAlertDescription = *alert.Description()
 		}
 
-		if haveAlertDescription != test.wantAlertDescription {
-			t.Fatalf("test %s, have alert %q, want: %q", test.name, haveAlertDescription, test.wantAlertDescription)
+		if diff := cmp.Diff(test.wantAlertDescription, haveAlertDescription); diff != "" {
+			t.Fatalf("test %s, mismatched alert (-want, +got):\n%s", test.name, diff)
 		}
 		if !reflect.DeepEqual(haveResultTypes, test.wantResultTypes) {
 			haveResultType := "is empty"
@@ -1470,9 +1428,6 @@ func TestEvaluateAnd(t *testing.T) {
 
 			ctx := context.Background()
 
-			mockDecodedViewerFinalSettings = &schema.Settings{}
-			defer func() { mockDecodedViewerFinalSettings = nil }()
-
 			db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 				return minimalRepos, nil
 			}
@@ -1485,7 +1440,7 @@ func TestEvaluateAnd(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			resolver := &searchResolver{query: q, zoekt: z}
+			resolver := &searchResolver{query: q, zoekt: z, userSettings: &schema.Settings{}}
 			results, err := resolver.Results(ctx)
 			if err != nil {
 				t.Fatal("Results:", err)

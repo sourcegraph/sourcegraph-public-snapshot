@@ -4,6 +4,8 @@ import { isErrorLike } from '../../../shared/src/util/errors'
 import { LayoutProps } from '../Layout'
 import { parseSearchURLPatternType } from '../search'
 import { SettingsExperimentalFeatures } from '../schema/settings.schema'
+import { AuthenticatedUser } from '../auth'
+import { SearchPatternType } from '../../../shared/src/graphql-operations'
 
 /** A fallback settings subject that can be constructed synchronously at initialization time. */
 export const SITE_SUBJECT_NO_ADMIN: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'> = {
@@ -13,7 +15,7 @@ export const SITE_SUBJECT_NO_ADMIN: Pick<GQL.ISettingsSubject, 'id' | 'viewerCan
 
 export function viewerSubjectFromSettings(
     cascade: SettingsCascadeOrError,
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 ): LayoutProps['viewerSubject'] {
     if (authenticatedUser) {
         return authenticatedUser
@@ -24,9 +26,7 @@ export function viewerSubjectFromSettings(
     return SITE_SUBJECT_NO_ADMIN
 }
 
-export function defaultPatternTypeFromSettings(
-    settingsCascade: SettingsCascadeOrError
-): GQL.SearchPatternType | undefined {
+export function defaultPatternTypeFromSettings(settingsCascade: SettingsCascadeOrError): SearchPatternType | undefined {
     // When the web app mounts, if the current page does not have a patternType URL
     // parameter, set the search pattern type to the defaultPatternType from settings
     // (if it is set), otherwise default to literal.
@@ -48,9 +48,10 @@ export function experimentalFeaturesFromSettings(
     settingsCascade: SettingsCascadeOrError
 ): {
     splitSearchModes: boolean
-    smartSearchField: boolean
     copyQueryButton: boolean
     showRepogroupHomepage: boolean
+    showOnboardingTour: boolean
+    showEnterpriseHomePanels: boolean
 } {
     const experimentalFeatures: SettingsExperimentalFeatures =
         (settingsCascade.final && !isErrorLike(settingsCascade.final) && settingsCascade.final.experimentalFeatures) ||
@@ -58,10 +59,11 @@ export function experimentalFeaturesFromSettings(
 
     const {
         splitSearchModes = true,
-        smartSearchField = true,
         copyQueryButton = false,
         showRepogroupHomepage = false,
+        showOnboardingTour = false,
+        showEnterpriseHomePanels = false,
     } = experimentalFeatures
 
-    return { splitSearchModes, smartSearchField, copyQueryButton, showRepogroupHomepage }
+    return { splitSearchModes, copyQueryButton, showRepogroupHomepage, showOnboardingTour, showEnterpriseHomePanels }
 }

@@ -2,9 +2,9 @@ import AddIcon from 'mdi-react/AddIcon'
 import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import LogoutIcon from 'mdi-react/LogoutIcon'
 import ServerIcon from 'mdi-react/ServerIcon'
+import MapSearchOutlineIcon from 'mdi-react/MapSearchOutlineIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import {
     SIDEBAR_BUTTON_CLASS,
     SidebarGroup,
@@ -17,10 +17,14 @@ import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { eventLogger } from '../../tracking/eventLogger'
 import { NavItemDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
+import { HAS_SEEN_TOUR_KEY, HAS_CANCELLED_TOUR_KEY } from '../../search/input/SearchOnboardingTour'
+import { OnboardingTourProps } from '../../search'
+import { AuthenticatedUser } from '../../auth'
+import { UserAreaUserFields } from '../../graphql-operations'
 
 export interface UserSettingsSidebarItemConditionContext {
-    user: Pick<GQL.IUser, 'id' | 'viewerCanAdminister' | 'builtinAuth'>
-    authenticatedUser: Pick<GQL.IUser, 'id' | 'siteAdmin'>
+    user: UserAreaUserFields
+    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'siteAdmin' | 'tags'>
 }
 
 export type UserSettingsSidebarItems = Record<
@@ -28,9 +32,14 @@ export type UserSettingsSidebarItems = Record<
     readonly NavItemDescriptor<UserSettingsSidebarItemConditionContext>[]
 >
 
-export interface UserSettingsSidebarProps extends UserAreaRouteContext, RouteComponentProps<{}> {
+export interface UserSettingsSidebarProps extends UserAreaRouteContext, OnboardingTourProps, RouteComponentProps<{}> {
     items: UserSettingsSidebarItems
     className?: string
+}
+
+function reEnableSearchTour(): void {
+    localStorage.setItem(HAS_SEEN_TOUR_KEY, 'false')
+    localStorage.setItem(HAS_CANCELLED_TOUR_KEY, 'false')
 }
 
 /** Sidebar for user account pages. */
@@ -99,6 +108,11 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                 <Link to="/site-admin" className={SIDEBAR_BUTTON_CLASS}>
                     <ServerIcon className="icon-inline list-group-item-action-icon" /> Site admin
                 </Link>
+            )}
+            {props.showOnboardingTour && (
+                <button type="button" onClick={reEnableSearchTour} className={SIDEBAR_BUTTON_CLASS}>
+                    <MapSearchOutlineIcon className="icon-inline list-group-item-action-icon" /> Show search tour
+                </button>
             )}
             {!siteAdminViewingOtherUser &&
                 props.authenticatedUser.session &&

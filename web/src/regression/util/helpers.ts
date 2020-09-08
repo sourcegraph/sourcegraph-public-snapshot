@@ -111,6 +111,7 @@ async function createTestUser(
     }
 
     await driver.page.goto(passwordResetURL)
+    await driver.page.waitForSelector('.reset-password-page__form')
     await driver.page.keyboard.type(testUserPassword)
     await driver.page.keyboard.down(Key.Enter)
 

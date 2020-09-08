@@ -15,8 +15,8 @@ import (
 const GetUploadsBatchSize = 100
 
 // removeRecordsForDeletedRepositories removes all upload records for deleted repositories.
-func (j *Janitor) removeRecordsForDeletedRepositories() error {
-	counts, err := j.store.DeleteUploadsWithoutRepository(context.Background(), time.Now())
+func (j *Janitor) removeRecordsForDeletedRepositories(ctx context.Context) error {
+	counts, err := j.store.DeleteUploadsWithoutRepository(ctx, time.Now())
 	if err != nil {
 		return err
 	}
@@ -31,9 +31,7 @@ func (j *Janitor) removeRecordsForDeletedRepositories() error {
 
 // removeCompletedRecordsWithoutBundleFile removes all upload records in the
 // completed state that do not have a corresponding bundle file on disk.
-func (j *Janitor) removeCompletedRecordsWithoutBundleFile() error {
-	ctx := context.Background()
-
+func (j *Janitor) removeCompletedRecordsWithoutBundleFile(ctx context.Context) error {
 	ids, err := j.getUploadIDs(ctx, store.GetUploadsOptions{
 		State: "completed",
 	})
@@ -66,8 +64,7 @@ func (j *Janitor) removeCompletedRecordsWithoutBundleFile() error {
 
 // removeOldUploadingRecords removes all upload records in the uploading state that
 // are older than the max upload part age.
-func (j *Janitor) removeOldUploadingRecords() error {
-	ctx := context.Background()
+func (j *Janitor) removeOldUploadingRecords(ctx context.Context) error {
 	t := time.Now().UTC().Add(-j.maxUploadPartAge)
 
 	ids, err := j.getUploadIDs(ctx, store.GetUploadsOptions{

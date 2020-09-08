@@ -137,11 +137,19 @@ func fileDiffVirtualFileContent(r *FileDiffResolver) FileContentFunc {
 }
 
 func applyPatch(fileContent string, fileDiff *diff.FileDiff) string {
+	if diffPathOrNull(fileDiff.NewName) == nil {
+		// the file was deleted, no need to do costly computation.
+		return ""
+	}
+	addNewline := true
 	contentLines := strings.Split(fileContent, "\n")
 	newContentLines := make([]string, 0)
 	var lastLine int32 = 1
 	// Assumes the hunks are sorted by ascending lines.
 	for _, hunk := range fileDiff.Hunks {
+		if hunk.OrigNoNewlineAt > 0 {
+			addNewline = true
+		}
 		// Detect holes.
 		if hunk.OrigStartLine != 0 && hunk.OrigStartLine != lastLine {
 			originalLines := contentLines[lastLine-1 : hunk.OrigStartLine-1]
@@ -152,7 +160,7 @@ func applyPatch(fileContent string, fileDiff *diff.FileDiff) string {
 		for _, line := range hunkLines {
 			switch {
 			case line == "":
-				// Skip
+				// Ignore empty lines, they just indicate the last line of a hunk.
 			case strings.HasPrefix(line, "-"):
 				lastLine++
 			case strings.HasPrefix(line, "+"):
@@ -166,6 +174,13 @@ func applyPatch(fileContent string, fileDiff *diff.FileDiff) string {
 	// Append remaining lines from original file.
 	if origLines := int32(len(contentLines)); origLines > 0 && origLines != lastLine {
 		newContentLines = append(newContentLines, contentLines[lastLine-1:]...)
+	} else {
+		content := strings.Join(newContentLines, "\n")
+		if addNewline {
+			// If the file has a final newline character, we need to append it again.
+			content += "\n"
+		}
+		return content
 	}
 	return strings.Join(newContentLines, "\n")
 }

@@ -7,11 +7,16 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	jsoniter "github.com/json-iterator/go"
+	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -61,8 +66,8 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 
 	providersEqual := func(want ...authz.Provider) func(*testing.T, []authz.Provider) {
 		return func(t *testing.T, have []authz.Provider) {
-			if !reflect.DeepEqual(have, want) {
-				t.Errorf("authzProviders: (actual) %+v != (expected) %+v", asJSON(t, have), asJSON(t, want))
+			if diff := cmp.Diff(want, have); diff != "" {
+				t.Errorf("authzProviders mismatch (-want +got):\n%s", diff)
 			}
 		}
 	}
@@ -97,7 +102,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 				{
 					Authorization: &schema.GitLabAuthorization{
 						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
-						Ttl:              "48h",
 					},
 					Url:   "https://gitlab.mine",
 					Token: "asdf",
@@ -107,6 +111,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthProviderOp{
+						URN:     "extsvc:gitlab:0",
 						BaseURL: mustURLParse(t, "https://gitlab.mine"),
 						Token:   "asdf",
 					},
@@ -132,7 +137,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 				{
 					Authorization: &schema.GitLabAuthorization{
 						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
-						Ttl:              "48h",
 					},
 					Url:   "https://gitlab.mine",
 					Token: "asdf",
@@ -154,7 +158,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 				{
 					Authorization: &schema.GitLabAuthorization{
 						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
-						Ttl:              "48h",
 					},
 					Url:   "https://gitlab.mine",
 					Token: "asdf",
@@ -208,12 +211,14 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthProviderOp{
+						URN:     "extsvc:gitlab:0",
 						BaseURL: mustURLParse(t, "https://gitlab.mine"),
 						Token:   "asdf",
 					},
 				},
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthProviderOp{
+						URN:     "extsvc:gitlab:0",
 						BaseURL: mustURLParse(t, "https://gitlab.com"),
 						Token:   "asdf",
 					},
@@ -275,6 +280,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					SudoOp: gitlab.SudoProviderOp{
+						URN:     "extsvc:gitlab:0",
 						BaseURL: mustURLParse(t, "https://gitlab.mine"),
 						AuthnConfigID: providers.ConfigID{
 							Type: "saml",
@@ -307,6 +313,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					SudoOp: gitlab.SudoProviderOp{
+						URN:               "extsvc:gitlab:0",
 						BaseURL:           mustURLParse(t, "https://gitlab.mine"),
 						SudoToken:         "asdf",
 						UseNativeUsername: true,
@@ -342,7 +349,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 							ConsumerKey: "sourcegraph",
 							SigningKey:  "Invalid Key",
 						},
-						Ttl: "15m",
 					},
 					Url:      "https://bitbucketserver.mycorp.org",
 					Username: "admin",
@@ -367,7 +373,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 							ConsumerKey: "sourcegraph",
 							SigningKey:  bogusKey,
 						},
-						Ttl: "15m",
 					},
 					Url:      "https://bitbucketserver.mycorp.org",
 					Username: "admin",
@@ -410,7 +415,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 				{
 					Authorization: &schema.GitLabAuthorization{
 						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
-						Ttl:              "48h",
 					},
 					Url:   "https://gitlab.mine",
 					Token: "asdf",
@@ -441,7 +445,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 							ConsumerKey: "sourcegraph",
 							SigningKey:  bogusKey,
 						},
-						Ttl: "15m",
 					},
 					Url:      "https://bitbucketserver.mycorp.org",
 					Username: "admin",
@@ -497,26 +500,43 @@ type fakeStore struct {
 	bitbucketServers []*schema.BitbucketServerConnection
 }
 
-func (s fakeStore) ListGitHubConnections(context.Context) ([]*types.GitHubConnection, error) {
-	conns := make([]*types.GitHubConnection, 0, len(s.githubs))
-	for _, github := range s.githubs {
-		conns = append(conns, &types.GitHubConnection{GitHubConnection: github})
+func (s fakeStore) List(ctx context.Context, opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+	mustMarshalJSONString := func(v interface{}) string {
+		str, err := jsoniter.MarshalToString(v)
+		if err != nil {
+			panic(err)
+		}
+		return str
 	}
-	return conns, nil
-}
 
-func (s fakeStore) ListGitLabConnections(context.Context) ([]*types.GitLabConnection, error) {
-	conns := make([]*types.GitLabConnection, 0, len(s.gitlabs))
-	for _, gitlab := range s.gitlabs {
-		conns = append(conns, &types.GitLabConnection{GitLabConnection: gitlab})
+	var svcs []*types.ExternalService
+	for _, kind := range opt.Kinds {
+		switch kind {
+		case extsvc.KindGitHub:
+			for _, github := range s.githubs {
+				svcs = append(svcs, &types.ExternalService{
+					Kind:   kind,
+					Config: mustMarshalJSONString(github),
+				})
+			}
+		case extsvc.KindGitLab:
+			for _, gitlab := range s.gitlabs {
+				svcs = append(svcs, &types.ExternalService{
+					Kind:   kind,
+					Config: mustMarshalJSONString(gitlab),
+				})
+			}
+		case extsvc.KindBitbucketServer:
+			for _, bbs := range s.bitbucketServers {
+				svcs = append(svcs, &types.ExternalService{
+					Kind:   kind,
+					Config: mustMarshalJSONString(bbs),
+				})
+			}
+		default:
+			return nil, errors.Errorf("unexpected kind: %s", kind)
+		}
 	}
-	return conns, nil
-}
 
-func (s fakeStore) ListBitbucketServerConnections(context.Context) ([]*types.BitbucketServerConnection, error) {
-	conns := make([]*types.BitbucketServerConnection, 0, len(s.bitbucketServers))
-	for _, bbs := range s.bitbucketServers {
-		conns = append(conns, &types.BitbucketServerConnection{BitbucketServerConnection: bbs})
-	}
-	return conns, nil
+	return svcs, nil
 }

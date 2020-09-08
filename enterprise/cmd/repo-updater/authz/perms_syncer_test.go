@@ -92,7 +92,23 @@ func (s *mockReposStore) ListRepos(ctx context.Context, args repos.StoreListRepo
 	return s.listRepos(ctx, args)
 }
 
+func (s *mockReposStore) ListExternalRepoSpecs(ctx context.Context) (map[api.ExternalRepoSpec]struct{}, error) {
+	return nil, nil
+}
+
+func (s *mockReposStore) InsertRepos(context.Context, ...*repos.Repo) error {
+	return nil
+}
+
+func (s *mockReposStore) DeleteRepos(context.Context, ...api.RepoID) error {
+	return nil
+}
+
 func (s *mockReposStore) UpsertRepos(context.Context, ...*repos.Repo) error {
+	return nil
+}
+
+func (s *mockReposStore) UpsertSources(ctx context.Context, added, modified, deleted map[api.RepoID][]repos.SourceInfo) error {
 	return nil
 }
 

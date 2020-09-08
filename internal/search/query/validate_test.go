@@ -56,13 +56,25 @@ func TestAndOrQuery_Validation(t *testing.T) {
 		},
 		{
 			input:      `-content:"foo"`,
-			want:       "The query contains a negated search pattern. Structural search does not support negated search patterns at the moment.",
+			want:       "the query contains a negated search pattern. Structural search does not support negated search patterns at the moment",
 			searchType: SearchTypeStructural,
 		},
 		{
 			input:      `NOT foo`,
-			want:       "The query contains a negated search pattern. Structural search does not support negated search patterns at the moment.",
+			want:       "the query contains a negated search pattern. Structural search does not support negated search patterns at the moment",
 			searchType: SearchTypeStructural,
+		},
+		{
+			input: "repo:foo rev:a rev:b",
+			want:  `field "rev" may not be used more than once`,
+		},
+		{
+			input: "repo:foo@a rev:b",
+			want:  "invalid syntax. You specified both @ and rev: for a repo: filter and I don't know how to interpret this. Remove either @ or rev: and try again",
+		},
+		{
+			input: "repo:foo author:rob@saucegraph.com",
+			want:  `your query contains the field 'author', which requires type:commit or type:diff in the query`,
 		},
 	}
 	for _, c := range cases {

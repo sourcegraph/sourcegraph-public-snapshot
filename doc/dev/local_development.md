@@ -210,6 +210,8 @@ The following are two recommendations for installing these dependencies:
     sudo cp lib/* /usr/local/lib
     sudo chmod 755 /usr/local/bin/watchman
     sudo chmod 2777 /usr/local/var/run/watchman
+    # On Linux, you may need to run the following in addition:
+    watchman watch <path to sourcegraph repository>
 
     # nvm (to manage Node.js)
     NVM_VERSION="$(curl https://api.github.com/repos/nvm-sh/nvm/releases/latest | jq -r .name)"
@@ -305,6 +307,8 @@ You need a fresh Postgres database and a database user that has full ownership o
     ```
     # For Linux users, first access the postgres user shell
     sudo su - postgres
+    # For Mac OS users
+    sudo su - _postgres
     ```
 
     ```

@@ -220,10 +220,12 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 	}
 
 	setMockResolveRepositories := func(numRepos int) {
-		mockResolveRepositories = func(effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*search.RepositoryRevisions, excludedRepos *excludedRepos, overLimit bool, err error) {
-			missingRepoRevs = make([]*search.RepositoryRevisions, 0)
-			repoRevs = generateRepoRevs(numRepos)
-			return repoRevs, missingRepoRevs, excludedRepos, true, nil
+		mockResolveRepositories = func(effectiveRepoFieldValues []string) (resolved resolvedRepositories, err error) {
+			return resolvedRepositories{
+				repoRevs:        generateRepoRevs(numRepos),
+				missingRepoRevs: make([]*search.RepositoryRevisions, 0),
+				overLimit:       true,
+			}, nil
 		}
 	}
 	defer func() { mockResolveRepositories = nil }()
@@ -302,14 +304,17 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			mockDecodedViewerFinalSettings = &schema.Settings{SearchGlobbing: &test.globbing}
-			defer func() { mockDecodedViewerFinalSettings = nil }()
 			setMockResolveRepositories(test.repoRevs)
 			q, err := query.ProcessAndOr(test.query, query.ParserOptions{SearchType: query.SearchType(0), Globbing: test.globbing})
 			if err != nil {
 				t.Fatal(err)
 			}
-			sr := searchResolver{query: q}
+			sr := searchResolver{
+				query: q,
+				userSettings: &schema.Settings{
+					SearchGlobbing: &test.globbing,
+				},
+			}
 
 			ctx, cancel := context.WithCancel(context.Background())
 			if test.cancelContext {

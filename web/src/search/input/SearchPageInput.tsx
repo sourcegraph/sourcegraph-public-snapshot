@@ -1,13 +1,11 @@
 import * as H from 'history'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect, useMemo } from 'react'
 import { InteractiveModeInput } from './interactive/InteractiveModeInput'
 import { Form } from 'reactstrap'
 import { SearchModeToggle } from './interactive/SearchModeToggle'
 import { VersionContextDropdown } from '../../nav/VersionContextDropdown'
 import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
-import { QueryInput } from './QueryInput'
-import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR, KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
+import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { SearchButton } from './SearchButton'
 import { Link } from '../../../../shared/src/components/Link'
 import { SearchScopes } from './SearchScopes'
@@ -22,15 +20,28 @@ import {
     PatternTypeProps,
     CaseSensitivityProps,
     InteractiveSearchProps,
-    SmartSearchFieldProps,
     CopyQueryButtonProps,
+    OnboardingTourProps,
+    parseSearchURLQuery,
 } from '..'
-import { EventLoggerProps } from '../../tracking/eventLogger'
+import { eventLogger } from '../../tracking/eventLogger'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { VersionContext } from '../../schema/site.schema'
 import { submitSearch, SubmitSearchParams } from '../helpers'
+import {
+    generateStepTooltip,
+    createStep1Tooltip,
+    stepCallbacks,
+    HAS_SEEN_TOUR_KEY,
+    HAS_CANCELLED_TOUR_KEY,
+    defaultTourOptions,
+} from './SearchOnboardingTour'
+import { useLocalStorage } from '../../util/useLocalStorage'
+import Shepherd from 'shepherd.js'
+import { AuthenticatedUser } from '../../auth'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -40,15 +51,15 @@ interface Props
         PatternTypeProps,
         CaseSensitivityProps,
         KeyboardShortcutsProps,
-        EventLoggerProps,
+        TelemetryProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         InteractiveSearchProps,
-        SmartSearchFieldProps,
         CopyQueryButtonProps,
         Pick<SubmitSearchParams, 'source'>,
-        VersionContextProps {
-    authenticatedUser: GQL.IUser | null
+        VersionContextProps,
+        OnboardingTourProps {
+    authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
@@ -74,18 +85,160 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
         cursorPosition: props.queryPrefix ? props.queryPrefix.length : 0,
     })
 
+    useEffect(() => {
+        setUserQueryState({ query: props.queryPrefix || '', cursorPosition: props.queryPrefix?.length || 0 })
+    }, [props.queryPrefix])
+
     const quickLinks =
         (isSettingsValid<Settings>(props.settingsCascade) && props.settingsCascade.final.quicklinks) || []
 
+    const [hasSeenTour, setHasSeenTour] = useLocalStorage(HAS_SEEN_TOUR_KEY, false)
+    const [hasCancelledTour, setHasCancelledTour] = useLocalStorage(HAS_CANCELLED_TOUR_KEY, false)
+
+    // tourWasActive denotes whether the tour was ever active while this component was rendered, in order
+    // for us to know whether to show the structural search informational step on the results page.
+    const [tourWasActive, setTourWasActive] = useState(false)
+
+    const isHomepage = useMemo(
+        () => props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search),
+        [props.location.pathname, props.location.search]
+    )
+
+    const showOnboardingTour = props.showOnboardingTour && isHomepage
+
+    const tour = useMemo(() => new Shepherd.Tour(defaultTourOptions), [])
+
+    useEffect(() => {
+        if (showOnboardingTour) {
+            tour.addSteps([
+                {
+                    id: 'start-tour',
+                    text: createStep1Tooltip(
+                        tour,
+                        () => {
+                            setUserQueryState({ query: 'lang:', cursorPosition: 'lang:'.length })
+                            tour.show('filter-lang')
+                        },
+                        () => {
+                            setUserQueryState({ query: 'repo:', cursorPosition: 'repo:'.length })
+                            tour.show('filter-repository')
+                        }
+                    ),
+                    attachTo: {
+                        element: '.search-page__input-container',
+                        on: 'bottom',
+                    },
+                },
+                {
+                    id: 'filter-lang',
+                    text: generateStepTooltip(tour, 'Type to filter the language autocomplete', 2, 5),
+                    when: {
+                        show() {
+                            eventLogger.log('ViewedOnboardingTourFilterLangStep')
+                        },
+                    },
+                    attachTo: {
+                        element: '.search-page__input-container',
+                        on: 'top',
+                    },
+                },
+                {
+                    id: 'filter-repository',
+                    text: generateStepTooltip(
+                        tour,
+                        "Type the name of a repository you've used recently to filter the autocomplete list",
+                        2,
+                        5
+                    ),
+                    when: {
+                        show() {
+                            eventLogger.log('ViewedOnboardingTourFilterRepoStep')
+                        },
+                    },
+                    attachTo: {
+                        element: '.search-page__input-container',
+                        on: 'top',
+                    },
+                },
+                // This step requires examples to be generated based on the language selected by the user,
+                // so the text is generated by the callback called when the previous is completed.
+                {
+                    id: 'add-query-term',
+                    when: {
+                        show() {
+                            eventLogger.log('ViewedOnboardingTourAddQueryTermStep')
+                        },
+                    },
+                    attachTo: {
+                        element: '.search-page__input-container',
+                        on: 'bottom',
+                    },
+                },
+                {
+                    id: 'submit-search',
+                    text: generateStepTooltip(
+                        tour,
+                        'Use <kbd>return</kbd> or the search button to run your search',
+                        4,
+                        5
+                    ),
+                    when: {
+                        show() {
+                            eventLogger.log('ViewedOnboardingTourSubmitSearchStep')
+                        },
+                    },
+                    attachTo: {
+                        element: '.search-button',
+                        on: 'top',
+                    },
+                    advanceOn: { selector: '.search-button__btn', event: 'click' },
+                },
+            ])
+        }
+    }, [tour, showOnboardingTour])
+
+    useEffect(() => {
+        if (showOnboardingTour && !hasCancelledTour && !hasSeenTour) {
+            setTourWasActive(true)
+            tour.start()
+            eventLogger.log('ViewOnboardingTour')
+        }
+        return
+    }, [tour, showOnboardingTour, hasCancelledTour, hasSeenTour])
+
+    useEffect(
+        () => () => {
+            // End tour on unmount.
+            if (tour.isActive()) {
+                tour.complete()
+            }
+        },
+        [tour]
+    )
+
+    useMemo(() => {
+        tour.on('complete', () => {
+            setHasSeenTour(true)
+        })
+        tour.on('cancel', () => {
+            setHasCancelledTour(true)
+            // If the user closed the tour, we don't want to show
+            // any further popups, so set this to false.
+            setTourWasActive(false)
+        })
+    }, [tour, setHasSeenTour, setHasCancelledTour])
+
     const onSubmit = useCallback(
         (event?: React.FormEvent<HTMLFormElement>): void => {
-            // False positive
-            // eslint-disable-next-line no-unused-expressions
             event?.preventDefault()
-
-            submitSearch({ ...props, query: userQueryState.query, source: 'home' })
+            submitSearch({
+                ...props,
+                query: userQueryState.query,
+                source: 'home',
+                searchParameters: tourWasActive ? [{ key: 'onboardingTour', value: 'true' }] : undefined,
+            })
         },
-        [props, userQueryState.query]
+        [props, userQueryState.query, tourWasActive]
     )
 
     return (
@@ -115,29 +268,16 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                                 setVersionContext={props.setVersionContext}
                                 availableVersionContexts={props.availableVersionContexts}
                             />
-                            {props.smartSearchField ? (
-                                <LazyMonacoQueryInput
-                                    {...props}
-                                    hasGlobalQueryBehavior={true}
-                                    queryState={userQueryState}
-                                    onChange={setUserQueryState}
-                                    onSubmit={onSubmit}
-                                    autoFocus={props.autoFocus !== false}
-                                />
-                            ) : (
-                                <QueryInput
-                                    {...props}
-                                    value={userQueryState}
-                                    onChange={setUserQueryState}
-                                    // We always want to set this to 'cursor-at-end' when true.
-                                    autoFocus={props.autoFocus ? 'cursor-at-end' : props.autoFocus}
-                                    hasGlobalQueryBehavior={true}
-                                    patternType={props.patternType}
-                                    setPatternType={props.setPatternType}
-                                    withSearchModeToggle={props.splitSearchModes}
-                                    keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
-                                />
-                            )}
+                            <LazyMonacoQueryInput
+                                {...props}
+                                hasGlobalQueryBehavior={true}
+                                queryState={userQueryState}
+                                onChange={setUserQueryState}
+                                onSubmit={onSubmit}
+                                autoFocus={props.autoFocus !== false}
+                                tour={showOnboardingTour ? tour : undefined}
+                                tourAdvanceStepCallbacks={stepCallbacks}
+                            />
                             <SearchButton />
                         </div>
                         <div className="search-page__input-sub-container">

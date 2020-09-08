@@ -14,15 +14,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type changesetResolver struct {
@@ -118,7 +114,6 @@ func (r *changesetResolver) computeEvents(ctx context.Context) ([]*campaigns.Cha
 	r.eventsOnce.Do(func() {
 		opts := ee.ListChangesetEventsOpts{
 			ChangesetIDs: []int64{r.changeset.ID},
-			Limit:        -1,
 		}
 		es, _, err := r.store.ListChangesetEvents(ctx, opts)
 
@@ -168,7 +163,7 @@ func (r *changesetResolver) Repository(ctx context.Context) *graphqlbackend.Repo
 	return r.repoResolver
 }
 
-func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
+func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignsArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
 	opts := ee.ListCampaignsOpts{
 		ChangesetID: r.changeset.ID,
 	}
@@ -178,9 +173,10 @@ func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.
 		return nil, err
 	}
 	opts.State = state
-	if args.First != nil {
-		opts.Limit = int(*args.First)
+	if err := validateFirstParamDefaults(args.First); err != nil {
+		return nil, err
 	}
+	opts.Limit = int(args.First)
 	if args.After != nil {
 		cursor, err := strconv.ParseInt(*args.After, 10, 32)
 		if err != nil {
@@ -223,30 +219,48 @@ func (r *changesetResolver) NextSyncAt(ctx context.Context) (*graphqlbackend.Dat
 	return &graphqlbackend.DateTime{Time: nextSyncAt}, nil
 }
 
-func (r *changesetResolver) Title(ctx context.Context) (string, error) {
-	if r.changeset.PublicationState.Unpublished() {
-		desc, err := r.getBranchSpecDescription(ctx)
+func (r *changesetResolver) Title(ctx context.Context) (*string, error) {
+	if r.changeset.PublishedAndSynced() {
+		t, err := r.changeset.Title()
 		if err != nil {
-			return "", err
+			return nil, err
 		}
-
-		return desc.Title, nil
+		return &t, nil
 	}
 
-	return r.changeset.Title()
+	if r.changeset.Unpublished() {
+		desc, err := r.getBranchSpecDescription(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		return &desc.Title, nil
+	}
+
+	// Marked as published, but unsynced
+	return nil, nil
 }
 
-func (r *changesetResolver) Body(ctx context.Context) (string, error) {
-	if r.changeset.PublicationState.Unpublished() {
-		desc, err := r.getBranchSpecDescription(ctx)
+func (r *changesetResolver) Body(ctx context.Context) (*string, error) {
+	if r.changeset.PublishedAndSynced() {
+		b, err := r.changeset.Body()
 		if err != nil {
-			return "", err
+			return nil, err
 		}
-
-		return desc.Body, nil
+		return &b, nil
 	}
 
-	return r.changeset.Body()
+	if r.changeset.Unpublished() {
+		desc, err := r.getBranchSpecDescription(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		return &desc.Body, nil
+	}
+
+	// Marked as published, but unsynced
+	return nil, nil
 }
 
 func (r *changesetResolver) getBranchSpecDescription(ctx context.Context) (*campaigns.ChangesetSpecDescription, error) {
@@ -271,14 +285,14 @@ func (r *changesetResolver) ReconcilerState() campaigns.ReconcilerState {
 }
 
 func (r *changesetResolver) ExternalState() *campaigns.ChangesetExternalState {
-	if r.changeset.PublicationState.Unpublished() {
+	if !r.changeset.PublishedAndSynced() {
 		return nil
 	}
 	return &r.changeset.ExternalState
 }
 
 func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
-	if r.changeset.PublicationState.Unpublished() {
+	if !r.changeset.PublishedAndSynced() {
 		return nil, nil
 	}
 	url, err := r.changeset.URL()
@@ -289,14 +303,14 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 }
 
 func (r *changesetResolver) ReviewState(ctx context.Context) *campaigns.ChangesetReviewState {
-	if r.changeset.PublicationState.Unpublished() {
+	if !r.changeset.PublishedAndSynced() {
 		return nil
 	}
 	return &r.changeset.ExternalReviewState
 }
 
 func (r *changesetResolver) CheckState() *campaigns.ChangesetCheckState {
-	if r.changeset.PublicationState.Unpublished() {
+	if !r.changeset.PublishedAndSynced() {
 		return nil
 	}
 
@@ -310,7 +324,30 @@ func (r *changesetResolver) CheckState() *campaigns.ChangesetCheckState {
 
 func (r *changesetResolver) Error() *string { return r.changeset.FailureMessage }
 
+func (r *changesetResolver) CurrentSpec(ctx context.Context) (graphqlbackend.VisibleChangesetSpecResolver, error) {
+	if r.changeset.CurrentSpecID == 0 {
+		return nil, nil
+	}
+
+	spec, err := r.computeSpec(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &changesetSpecResolver{
+		store:                r.store,
+		httpFactory:          r.httpFactory,
+		changesetSpec:        spec,
+		preloadedRepo:        r.repo,
+		attemptedPreloadRepo: true,
+	}, nil
+}
+
 func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.ChangesetLabelResolver, error) {
+	if !r.changeset.PublishedAndSynced() {
+		return []graphqlbackend.ChangesetLabelResolver{}, nil
+	}
+
 	// Not every code host supports labels on changesets so don't make a DB call unless we need to.
 	if ok := r.changeset.SupportsLabels(); !ok {
 		return []graphqlbackend.ChangesetLabelResolver{}, nil
@@ -333,20 +370,30 @@ func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.Change
 	return resolvers, nil
 }
 
-func (r *changesetResolver) Events(ctx context.Context, args *struct {
-	graphqlutil.ConnectionArgs
-}) (graphqlbackend.ChangesetEventsConnectionResolver, error) {
+func (r *changesetResolver) Events(ctx context.Context, args *graphqlbackend.ChangesetEventsConnectionArgs) (graphqlbackend.ChangesetEventsConnectionResolver, error) {
+	if err := validateFirstParamDefaults(args.First); err != nil {
+		return nil, err
+	}
+	var cursor int64
+	if args.After != nil {
+		var err error
+		cursor, err = strconv.ParseInt(*args.After, 10, 32)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse after cursor")
+		}
+	}
 	// TODO: We already need to fetch all events for ReviewState and Labels
 	// perhaps we can use the cached data here
 	return &changesetEventsConnectionResolver{
 		store:             r.store,
 		changesetResolver: r,
-		first:             int(args.GetFirst()),
+		first:             int(args.First),
+		cursor:            cursor,
 	}, nil
 }
 
 func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.RepositoryComparisonInterface, error) {
-	if r.changeset.PublicationState.Unpublished() {
+	if r.changeset.Unpublished() {
 		desc, err := r.getBranchSpecDescription(ctx)
 		if err != nil {
 			return nil, err
@@ -363,6 +410,12 @@ func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.Repository
 			desc.BaseRev,
 			diff,
 		)
+	}
+
+	// If it's published but not synced, we don't have enough information to
+	// return a diff yet.
+	if !r.changeset.PublishedAndSynced() {
+		return nil, nil
 	}
 
 	// Only return diffs for open changesets, otherwise we can't guarantee that
@@ -407,99 +460,6 @@ func (r *changesetResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffS
 		return graphqlbackend.NewDiffStat(*stat), nil
 	}
 	return nil, nil
-}
-
-func (r *changesetResolver) Head(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {
-	if r.changeset.PublicationState.Unpublished() {
-		return nil, nil
-	}
-
-	name, err := r.changeset.HeadRef()
-	if err != nil {
-		return nil, err
-	}
-	if name == "" {
-		return nil, errors.New("changeset head ref could not be determined")
-	}
-
-	var oid string
-	if r.changeset.ExternalState == campaigns.ChangesetExternalStateMerged {
-		// The PR was merged, find the merge commit
-		events, err := r.computeEvents(ctx)
-		if err != nil {
-			return nil, errors.Wrap(err, "fetching changeset events")
-		}
-		oid = ee.ChangesetEvents(events).FindMergeCommitID()
-	}
-	if oid == "" {
-		// Fall back to the head ref
-		oid, err = r.changeset.HeadRefOid()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	resolver, err := r.gitRef(ctx, name, oid)
-	if err != nil {
-		if gitserver.IsRevisionNotFound(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return resolver, nil
-}
-
-func (r *changesetResolver) Base(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {
-	if r.changeset.PublicationState.Unpublished() {
-		return nil, nil
-	}
-
-	name, err := r.changeset.BaseRef()
-	if err != nil {
-		return nil, err
-	}
-	if name == "" {
-		return nil, errors.New("changeset base ref could not be determined")
-	}
-
-	oid, err := r.changeset.BaseRefOid()
-	if err != nil {
-		return nil, err
-	}
-
-	resolver, err := r.gitRef(ctx, name, oid)
-	if err != nil {
-		if gitserver.IsRevisionNotFound(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return resolver, nil
-}
-
-func (r *changesetResolver) gitRef(ctx context.Context, name, oid string) (*graphqlbackend.GitRefResolver, error) {
-	if oid == "" {
-		commitID, err := r.commitID(ctx, r.repoResolver, name)
-		if err != nil {
-			return nil, err
-		}
-		oid = string(commitID)
-	}
-
-	return graphqlbackend.NewGitRefResolver(r.repoResolver, name, graphqlbackend.GitObjectID(oid)), nil
-}
-
-func (r *changesetResolver) commitID(ctx context.Context, repo *graphqlbackend.RepositoryResolver, refName string) (api.CommitID, error) {
-	grepo, err := backend.CachedGitRepo(ctx, &types.Repo{
-		ExternalRepo: *repo.ExternalRepo(),
-		Name:         api.RepoName(repo.Name()),
-	})
-	if err != nil {
-		return "", err
-	}
-	// Call ResolveRevision to trigger fetches from remote (in case base/head commits don't
-	// exist).
-	return git.ResolveRevision(ctx, *grepo, nil, refName, git.ResolveRevisionOptions{})
 }
 
 type changesetLabelResolver struct {

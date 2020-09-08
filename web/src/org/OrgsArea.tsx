@@ -2,7 +2,6 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { HeroPage } from '../components/HeroPage'
@@ -12,6 +11,8 @@ import { OrgAreaHeaderNavItem } from './area/OrgHeader'
 import { NewOrganizationPage } from './new/NewOrganizationPage'
 import { PatternTypeProps } from '../search'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { AuthenticatedUser } from '../auth'
+import { BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -28,11 +29,13 @@ interface Props
         SettingsCascadeProps,
         ThemeProps,
         TelemetryProps,
+        BreadcrumbsProps,
+        BreadcrumbSetters,
         Omit<PatternTypeProps, 'setPatternType'> {
     orgAreaRoutes: readonly OrgAreaRoute[]
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
 
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
 }
 

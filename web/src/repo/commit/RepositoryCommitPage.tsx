@@ -29,7 +29,6 @@ import { getHover, getDocumentHighlights } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import { WebHoverOverlay } from '../../components/shared'
-import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
 import { GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { FileDiffConnection } from '../../components/diff/FileDiffConnection'
@@ -38,6 +37,7 @@ import { queryRepositoryComparisonFileDiffs } from '../compare/RepositoryCompare
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorAlert } from '../../components/alerts'
 import { FilteredConnectionQueryArgs } from '../../components/FilteredConnection'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
 const queryCommit = memoizeObservable(
     (args: { repo: GQL.ID; revspec: string }): Observable<GQL.IGitCommit> =>
@@ -73,7 +73,7 @@ const queryCommit = memoizeObservable(
 
 interface Props
     extends RouteComponentProps<{ revspec: string }>,
-        EventLoggerProps,
+        TelemetryProps,
         PlatformContextProps,
         ExtensionsControllerProps,
         ThemeProps {
@@ -159,7 +159,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
     }
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('RepositoryCommit')
+        this.props.telemetryService.logViewEvent('RepositoryCommit')
 
         this.subscriptions.add(
             this.componentUpdates

@@ -1,7 +1,6 @@
 import * as H from 'history'
 import React, { useCallback } from 'react'
 import { NavLink } from 'react-router-dom'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Settings } from '../../schema/settings.schema'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -9,10 +8,11 @@ import { FilterChip } from '../FilterChip'
 import { submitSearch, toggleSearchFilter } from '../helpers'
 import { PatternTypeProps } from '..'
 import { VersionContextProps } from '../../../../shared/src/search/util'
+import { AuthenticatedUser } from '../../auth'
 
 interface Props extends SettingsCascadeProps, Pick<PatternTypeProps, 'patternType'>, VersionContextProps {
     history: H.History
-    authenticatedUser: Pick<GQL.IUser, never> | null
+    authenticatedUser: Pick<AuthenticatedUser, never> | null
 
     /**
      * The current query.

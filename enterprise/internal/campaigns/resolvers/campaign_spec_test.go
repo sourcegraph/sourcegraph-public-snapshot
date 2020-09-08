@@ -33,8 +33,8 @@ func TestCampaignSpecResolver(t *testing.T) {
 
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", 1)
-	if err := reposStore.UpsertRepos(ctx, repo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
+	if err := reposStore.InsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 	repoID := graphqlbackend.MarshalRepositoryID(repo.ID)
@@ -135,7 +135,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 		},
 
 		AppliesToCampaign: apitest.Campaign{
-			ID: string(campaigns.MarshalCampaignID(matchingCampaign.ID)),
+			ID: string(marshalCampaignID(matchingCampaign.ID)),
 		},
 	}
 

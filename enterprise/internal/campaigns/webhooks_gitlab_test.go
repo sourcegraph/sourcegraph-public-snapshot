@@ -868,7 +868,7 @@ func assertBodyIncludes(t *testing.T, r io.Reader, want string) {
 func assertChangesetEventForChangeset(t *testing.T, ctx context.Context, store *Store, changeset *campaigns.Changeset, want campaigns.ChangesetEventKind) {
 	ces, _, err := store.ListChangesetEvents(ctx, ListChangesetEventsOpts{
 		ChangesetIDs: []int64{changeset.ID},
-		Limit:        100,
+		LimitOpts:    LimitOpts{Limit: 100},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -921,7 +921,7 @@ func createGitLabRepo(t *testing.T, ctx context.Context, rstore repos.Store, es 
 			ServiceID:   "https://gitlab.com/",
 		},
 	}).With(repos.Opt.RepoSources(es.URN()))
-	if err := rstore.UpsertRepos(ctx, repo); err != nil {
+	if err := rstore.InsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 

@@ -21,7 +21,7 @@ export const PrivateCodeCta: React.FunctionComponent<Props> = props => {
                 <a
                     href="https://docs.sourcegraph.com/"
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener"
                     className="btn btn-primary ga-cta-install-now"
                 >
                     Install now

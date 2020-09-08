@@ -3,8 +3,7 @@ import { Subject, throwError } from 'rxjs'
 import { snakeCase } from 'lodash'
 import { Driver } from '../driver'
 import { recordCoverage } from '../coverage'
-import { readFile } from 'mz/fs'
-import mkdirp from 'mkdirp-promise'
+import { readFile, mkdir } from 'mz/fs'
 import { Polly, PollyServer } from '@pollyjs/core'
 import { PuppeteerAdapter } from './polly/PuppeteerAdapter'
 import FSPersister from '@pollyjs/persister-fs'
@@ -100,7 +99,7 @@ export const createSharedIntegrationTestContext = async <
     await driver.page.setRequestInterception(true)
     const recordingsDirectory = path.join(directory, '__fixtures__', snakeCase(currentTest.fullTitle()))
     if (record) {
-        await mkdirp(recordingsDirectory)
+        await mkdir(recordingsDirectory, { recursive: true })
     }
     const requestResourceTypes: ResourceType[] = [
         'xhr',

@@ -34,7 +34,7 @@ func TestNullIDResilience(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 
 	ids := []graphql.ID{
-		campaigns.MarshalCampaignID(0),
+		marshalCampaignID(0),
 		marshalChangesetID(0),
 		marshalCampaignSpecRandID(""),
 		marshalChangesetSpecRandID(""),
@@ -52,12 +52,12 @@ func TestNullIDResilience(t *testing.T) {
 	}
 
 	mutations := []string{
-		fmt.Sprintf(`mutation { closeCampaign(campaign: %q) { id } }`, campaigns.MarshalCampaignID(0)),
-		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, campaigns.MarshalCampaignID(0)),
+		fmt.Sprintf(`mutation { closeCampaign(campaign: %q) { id } }`, marshalCampaignID(0)),
+		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, marshalCampaignID(0)),
 		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, marshalChangesetID(0)),
 		fmt.Sprintf(`mutation { applyCampaign(campaignSpec: %q) { id } }`, marshalCampaignSpecRandID("")),
 		fmt.Sprintf(`mutation { createCampaign(campaignSpec: %q) { id } }`, marshalCampaignSpecRandID("")),
-		fmt.Sprintf(`mutation { moveCampaign(campaign: %q, newName: "foobar") { id } }`, campaigns.MarshalCampaignID(0)),
+		fmt.Sprintf(`mutation { moveCampaign(campaign: %q, newName: "foobar") { id } }`, marshalCampaignID(0)),
 	}
 
 	for _, m := range mutations {
@@ -86,8 +86,8 @@ func TestCreateCampaignSpec(t *testing.T) {
 	store := ee.NewStore(dbconn.Global)
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", 1)
-	if err := reposStore.UpsertRepos(ctx, repo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
+	if err := reposStore.InsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -200,8 +200,8 @@ func TestCreateChangesetSpec(t *testing.T) {
 	store := ee.NewStore(dbconn.Global)
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", 1)
-	if err := reposStore.UpsertRepos(ctx, repo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
+	if err := reposStore.InsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -276,8 +276,8 @@ func TestApplyCampaign(t *testing.T) {
 	store := ee.NewStoreWithClock(dbconn.Global, clock)
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", 1)
-	if err := reposStore.UpsertRepos(ctx, repo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
+	if err := reposStore.InsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -379,11 +379,11 @@ func TestApplyCampaign(t *testing.T) {
 	}
 
 	// Execute it again but ensureCampaign set to wrong campaign ID
-	campaignID, err := campaigns.UnmarshalCampaignID(graphql.ID(have3.ID))
+	campaignID, err := unmarshalCampaignID(graphql.ID(have3.ID))
 	if err != nil {
 		t.Fatal(err)
 	}
-	input["ensureCampaign"] = campaigns.MarshalCampaignID(campaignID + 999)
+	input["ensureCampaign"] = marshalCampaignID(campaignID + 999)
 	errs := apitest.Exec(actorCtx, t, s, input, &response, mutationApplyCampaign)
 	if len(errs) == 0 {
 		t.Fatalf("expected errors, got none")
@@ -531,10 +531,11 @@ func TestMoveCampaign(t *testing.T) {
 	}
 
 	// Move to a new name
-	campaignAPIID := string(campaigns.MarshalCampaignID(campaign.ID))
+	campaignAPIID := string(marshalCampaignID(campaign.ID))
+	newCampaignName := "new-name"
 	input := map[string]interface{}{
 		"campaign": campaignAPIID,
-		"newName":  "new-name",
+		"newName":  newCampaignName,
 	}
 
 	var response struct{ MoveCampaign apitest.Campaign }
@@ -546,7 +547,7 @@ func TestMoveCampaign(t *testing.T) {
 		t.Fatalf("unexpected name (-want +got):\n%s", diff)
 	}
 
-	wantURL := fmt.Sprintf("/users/%s/campaigns/%s", username, campaignAPIID)
+	wantURL := fmt.Sprintf("/users/%s/campaigns/%s", username, newCampaignName)
 	if diff := cmp.Diff(wantURL, haveCampaign.URL); diff != "" {
 		t.Fatalf("unexpected URL (-want +got):\n%s", diff)
 	}
@@ -554,7 +555,7 @@ func TestMoveCampaign(t *testing.T) {
 	// Move to a new namespace
 	orgAPIID := graphqlbackend.MarshalOrgID(org.ID)
 	input = map[string]interface{}{
-		"campaign":     string(campaigns.MarshalCampaignID(campaign.ID)),
+		"campaign":     string(marshalCampaignID(campaign.ID)),
 		"newNamespace": orgAPIID,
 	}
 
@@ -564,7 +565,7 @@ func TestMoveCampaign(t *testing.T) {
 	if diff := cmp.Diff(string(orgAPIID), haveCampaign.Namespace.ID); diff != "" {
 		t.Fatalf("unexpected namespace (-want +got):\n%s", diff)
 	}
-	wantURL = fmt.Sprintf("/organizations/%s/campaigns/%s", org.Name, campaignAPIID)
+	wantURL = fmt.Sprintf("/organizations/%s/campaigns/%s", org.Name, newCampaignName)
 	if diff := cmp.Diff(wantURL, haveCampaign.URL); diff != "" {
 		t.Fatalf("unexpected URL (-want +got):\n%s", diff)
 	}
@@ -601,6 +602,8 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 	wantExternalStates := []campaigns.ChangesetExternalState{"OPEN", "INVALID"}
 	wantReviewStates := []campaigns.ChangesetReviewState{"APPROVED", "INVALID"}
 	wantCheckStates := []campaigns.ChangesetCheckState{"PENDING", "INVALID"}
+	wantOnlyPublishedByThisCampaign := []bool{true}
+	var campaignID int64 = 1
 
 	tcs := []struct {
 		args       *graphqlbackend.ListChangesetsArgs
@@ -617,10 +620,10 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		// First argument is set in opts, and considered safe.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				First: &wantFirst,
+				First: wantFirst,
 			},
 			wantSafe:   true,
-			wantParsed: ee.ListChangesetsOpts{Limit: 10},
+			wantParsed: ee.ListChangesetsOpts{LimitOpts: ee.LimitOpts{Limit: 10}},
 		},
 		// Setting publication state is safe and transferred to opts.
 		{
@@ -701,9 +704,20 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			},
 			wantErr: "changeset check state not valid",
 		},
+		// Setting OnlyPublishedByThisCampaign true.
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				OnlyPublishedByThisCampaign: &wantOnlyPublishedByThisCampaign[0],
+			},
+			wantSafe: true,
+			wantParsed: ee.ListChangesetsOpts{
+				PublicationState:  &wantPublicationStates[0],
+				OwnedByCampaignID: campaignID,
+			},
+		},
 	}
 	for _, tc := range tcs {
-		haveParsed, haveSafe, err := listChangesetOptsFromArgs(tc.args)
+		haveParsed, haveSafe, err := listChangesetOptsFromArgs(tc.args, campaignID)
 		if tc.wantErr == "" && err != nil {
 			t.Fatal(err)
 		}

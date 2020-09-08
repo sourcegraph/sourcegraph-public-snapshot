@@ -1,7 +1,6 @@
 import * as H from 'history'
 import React from 'react'
 import { ThemeProps } from '../../../../../../shared/src/theme'
-import { Observer } from 'rxjs'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '../../../../../../shared/src/util/url'
@@ -15,7 +14,6 @@ import { queryExternalChangesetWithFileDiffs } from '../backend'
 export interface ChangesetNodeProps extends ThemeProps {
     node: ChangesetFields
     viewerCanAdminister: boolean
-    campaignUpdates?: Pick<Observer<void>, 'next'>
     history: H.History
     location: H.Location
     extensionInfo?: {
@@ -28,14 +26,14 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({ nod
     if (node.__typename === 'ExternalChangeset') {
         return (
             <>
-                <span className="changeset-spec-node__separator" />
+                <span className="changeset-node__separator" />
                 <ExternalChangesetNode node={node} {...props} />
             </>
         )
     }
     return (
         <>
-            <span className="changeset-spec-node__separator" />
+            <span className="changeset-node__separator" />
             <HiddenExternalChangesetNode node={node} {...props} />
         </>
     )

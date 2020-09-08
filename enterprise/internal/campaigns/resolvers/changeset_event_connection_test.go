@@ -37,8 +37,8 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 	store := ee.NewStoreWithClock(dbconn.Global, clock)
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", 1)
-	if err := rstore.UpsertRepos(ctx, repo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, rstore))
+	if err := rstore.InsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -129,6 +129,8 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 				TotalCount: tc.wantTotalCount,
 				PageInfo: apitest.PageInfo{
 					HasNextPage: tc.wantHasNextPage,
+					// This test doesn't check on the cursors, the below test does that.
+					EndCursor: response.Node.Events.PageInfo.EndCursor,
 				},
 				Nodes: tc.wantNodes,
 			}
@@ -138,16 +140,47 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 			}
 		})
 	}
+
+	var endCursor *string
+	for i := range nodes {
+		input := map[string]interface{}{"changeset": changesetAPIID, "first": 1}
+		if endCursor != nil {
+			input["after"] = *endCursor
+		}
+		wantHasNextPage := i != len(nodes)-1
+
+		var response struct{ Node apitest.Changeset }
+		apitest.MustExec(ctx, t, s, input, &response, queryChangesetEventConnection)
+
+		events := response.Node.Events
+		if diff := cmp.Diff(1, len(events.Nodes)); diff != "" {
+			t.Fatalf("unexpected number of nodes (-want +got):\n%s", diff)
+		}
+
+		if diff := cmp.Diff(len(nodes), events.TotalCount); diff != "" {
+			t.Fatalf("unexpected total count (-want +got):\n%s", diff)
+		}
+
+		if diff := cmp.Diff(wantHasNextPage, events.PageInfo.HasNextPage); diff != "" {
+			t.Fatalf("unexpected hasNextPage (-want +got):\n%s", diff)
+		}
+
+		endCursor = events.PageInfo.EndCursor
+		if want, have := wantHasNextPage, endCursor != nil; have != want {
+			t.Fatalf("unexpected endCursor existence. want=%t, have=%t", want, have)
+		}
+	}
 }
 
 const queryChangesetEventConnection = `
-query($changeset: ID!, $first: Int){
+query($changeset: ID!, $first: Int, $after: String){
   node(id: $changeset) {
     ... on ExternalChangeset {
-      events(first: $first) {
+      events(first: $first, after: $after) {
         totalCount
         pageInfo {
           hasNextPage
+          endCursor
         }
         nodes {
          id

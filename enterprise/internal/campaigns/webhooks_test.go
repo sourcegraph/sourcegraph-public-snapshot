@@ -76,7 +76,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		err = repoStore.UpsertRepos(ctx, githubRepo)
+		err = repoStore.InsertRepos(ctx, githubRepo)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -128,7 +128,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		})
 		defer state.Unmock()
 
-		err = SyncChangesets(ctx, repoStore, store, cf, changeset)
+		err = SyncChangesets(ctx, repoStore, store, repos.NewSourcer(cf), changeset)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -170,7 +170,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 					}
 				}
 
-				have, _, err := store.ListChangesetEvents(ctx, ListChangesetEventsOpts{Limit: -1})
+				have, _, err := store.ListChangesetEvents(ctx, ListChangesetEventsOpts{})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -250,7 +250,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal("repo not found")
 		}
 
-		err = repoStore.UpsertRepos(ctx, bitbucketRepo)
+		err = repoStore.InsertRepos(ctx, bitbucketRepo)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -310,7 +310,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		})
 		defer state.Unmock()
 
-		err = SyncChangesets(ctx, repoStore, store, cf, changesets...)
+		err = SyncChangesets(ctx, repoStore, store, repos.NewSourcer(cf), changesets...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -352,7 +352,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 					}
 				}
 
-				have, _, err := store.ListChangesetEvents(ctx, ListChangesetEventsOpts{Limit: -1})
+				have, _, err := store.ListChangesetEvents(ctx, ListChangesetEventsOpts{})
 				if err != nil {
 					t.Fatal(err)
 				}

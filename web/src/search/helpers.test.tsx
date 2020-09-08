@@ -12,6 +12,7 @@ import {
 import { SearchType } from './results/SearchResults'
 import { searchFilterSuggestions } from './searchFilterSuggestions'
 import { filterAliases, isolatedFuzzySearchFilters } from './input/Suggestion'
+import assert from 'assert'
 
 describe('search/helpers', () => {
     describe('queryIndexOfScope()', () => {
@@ -142,7 +143,8 @@ describe('search/helpers', () => {
 
         describe(`${insertSuggestionInQuery.name}()`, () => {
             describe('inserts suggestions for a filter name', () => {
-                const [suggestion] = getFilterSuggestionStartingWithR().filter(({ value }) => value === 'repo:')
+                const suggestion = getFilterSuggestionStartingWithR().find(({ value }) => value === 'repo:')
+                assert(suggestion)
                 const { query: newQuery } = insertSuggestionInQuery('test r test', suggestion, 6)
                 expect(newQuery).toBe(`test ${suggestion.value} test`)
             })

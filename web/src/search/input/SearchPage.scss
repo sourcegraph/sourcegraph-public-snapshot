@@ -6,6 +6,8 @@
 @import './InfoDropdown';
 @import './interactive/InteractiveModeInput';
 @import './PrivateCodeCta';
+@import './SearchOnboardingTour';
+@import '../panels/EnterpriseHomePanels.scss';
 
 .search-page {
     display: flex;
@@ -23,6 +25,8 @@
         width: 20rem;
         margin-top: 6rem;
         max-width: 90%;
+        // Reserve the image's height to avoid jitter before it loads.
+        min-height: 54px;
     }
 
     &__cloud-tag-line {
@@ -43,7 +47,7 @@
             }
         }
 
-        &--with-repogroups {
+        &--with-content-below {
             flex-grow: 0;
         }
     }
