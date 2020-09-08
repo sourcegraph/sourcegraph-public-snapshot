@@ -22,6 +22,8 @@ $$;
 -- Need to drop and create, since we can't create if not exstis
 DROP TRIGGER IF EXISTS trig_invalidate_session_on_password_change_or_reset ON users;
 -- Create a trigger to to invalidate sessions if the user's password is ever changed
-CREATE TRIGGER trig_invalidate_session_on_password_change_or_reset BEFORE UPDATE ON users FOR EACH ROW EXECUTE PROCEDURE invalidate_session_for_userid_on_password_change_or_reset();
+CREATE TRIGGER trig_invalidate_session_on_password_change_or_reset
+    BEFORE UPDATE OF passwd, passwd_reset_code, passwd_reset_time ON users 
+    FOR EACH ROW EXECUTE PROCEDURE invalidate_session_for_userid_on_password_change_or_reset();
 
 COMMIT;
