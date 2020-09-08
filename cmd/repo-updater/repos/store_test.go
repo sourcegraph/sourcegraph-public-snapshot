@@ -1915,6 +1915,7 @@ func testStoreEnqueueSyncJobs(db *sql.DB, store *repos.DBStore) func(t *testing.
 		}
 
 		var testCases []testCase
+
 		testCases = append(testCases, testCase{
 			name: "enqueue everything",
 			stored: services.With(func(s *repos.ExternalService) {
@@ -1929,6 +1930,15 @@ func testStoreEnqueueSyncJobs(db *sql.DB, store *repos.DBStore) func(t *testing.
 				s.NextSyncAt = now.Add(10 * time.Second)
 			}),
 			queued: func(svcs repos.ExternalServices) []int64 { return []int64{} },
+		})
+
+		testCases = append(testCases, testCase{
+			name: "ignore siteadmin repos",
+			stored: services.With(func(s *repos.ExternalService) {
+				s.NextSyncAt = now.Add(10 * time.Second)
+			}),
+			ignoreSiteAdmin: true,
+			queued:          func(svcs repos.ExternalServices) []int64 { return []int64{} },
 		})
 
 		{

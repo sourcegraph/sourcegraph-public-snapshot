@@ -91,7 +91,7 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOpti
 		ctx, cancel := contextWithSignalCancel(pctx, s.enqueueSignal.Watch())
 
 		if err := store.EnqueueSyncJobs(ctx, opts.IsCloud); err != nil {
-			s.Logger.Error("Syncer", "error", err)
+			s.Logger.Error("Enqueuing sync jobs", "error", err)
 		}
 
 		sleep(ctx, opts.EnqueueInterval())
