@@ -1092,11 +1092,14 @@ func (s *DBStore) EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) err
 	return err
 }
 
+// We ignore Phabricator repos here as they are currently synced using
+// RunPhabricatorRepositorySyncWorker
 const enqueueSyncJobsQueryFmtstr = `
 WITH due AS (
     SELECT id
     FROM external_services
     WHERE (next_sync_at <= clock_timestamp() OR next_sync_at IS NULL)
+    AND LOWER(kind) != 'phabricator'
     AND %s
 ),
 busy AS (
