@@ -19,7 +19,8 @@ func RepoUpdater() *Container {
 				},
 			},
 			{
-				Title: "Permissions",
+				Title:  "Permissions",
+				Hidden: true,
 				Rows: []Row{
 					{
 						Observable{
@@ -30,7 +31,7 @@ func RepoUpdater() *Container {
 							Warning:           Alert{GreaterOrEqual: 3 * 24 * 60 * 60, For: 5 * time.Minute}, // 3 days
 							PanelOptions:      PanelOptions().LegendFormat("{{type}}").Unit(Seconds),
 							Owner:             ObservableOwnerCloud,
-							PossibleSolutions: "TBD",
+							PossibleSolutions: "Increase the API rate limit to the code host.",
 						},
 						Observable{
 							Name:              "perms_syncer_stale_perms",
@@ -40,17 +41,19 @@ func RepoUpdater() *Container {
 							Warning:           Alert{GreaterOrEqual: 100, For: 5 * time.Minute},
 							PanelOptions:      PanelOptions().LegendFormat("{{type}}").Unit(Number),
 							Owner:             ObservableOwnerCloud,
-							PossibleSolutions: "TBD",
+							PossibleSolutions: "Increase the API rate limit to the code host.",
 						},
 						Observable{
-							Name:              "perms_syncer_no_perms",
-							Description:       "number of entities with no permissions",
-							Query:             `src_repoupdater_perms_syncer_no_perms`,
-							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 100, For: 5 * time.Minute},
-							PanelOptions:      PanelOptions().LegendFormat("{{type}}").Unit(Number),
-							Owner:             ObservableOwnerCloud,
-							PossibleSolutions: "TBD",
+							Name:            "perms_syncer_no_perms",
+							Description:     "number of entities with no permissions",
+							Query:           `src_repoupdater_perms_syncer_no_perms`,
+							DataMayNotExist: true,
+							Warning:         Alert{GreaterOrEqual: 100, For: 5 * time.Minute},
+							PanelOptions:    PanelOptions().LegendFormat("{{type}}").Unit(Number),
+							Owner:           ObservableOwnerCloud,
+							PossibleSolutions: `
+- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
+- **Otherwise:** Increase the API rate limit to the code host.`,
 						},
 					},
 					{
@@ -62,30 +65,22 @@ func RepoUpdater() *Container {
 							Warning:           Alert{GreaterOrEqual: 30, For: 5 * time.Minute},
 							PanelOptions:      PanelOptions().LegendFormat("{{type}}").Unit(Seconds),
 							Owner:             ObservableOwnerCloud,
-							PossibleSolutions: "TBD",
+							PossibleSolutions: "Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host.",
 						},
 						Observable{
-							Name:              "perms_syncer_queue_size",
-							Description:       "permissions sync queued items",
-							Query:             `src_repoupdater_perms_syncer_queue_size`,
-							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 100, For: 5 * time.Minute},
-							PanelOptions:      PanelOptions().Unit(Number),
-							Owner:             ObservableOwnerCloud,
-							PossibleSolutions: "TBD",
+							Name:            "perms_syncer_queue_size",
+							Description:     "permissions sync queued items",
+							Query:           `src_repoupdater_perms_syncer_queue_size`,
+							DataMayNotExist: true,
+							Warning:         Alert{GreaterOrEqual: 100, For: 5 * time.Minute},
+							PanelOptions:    PanelOptions().Unit(Number),
+							Owner:           ObservableOwnerCloud,
+							PossibleSolutions: `
+- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
+- **Otherwise:** Increase the API rate limit to the code host.`,
 						},
 					},
 					{
-						Observable{
-							Name:              "perms_syncer_sync_errors",
-							Description:       "permissions sync error rate",
-							Query:             `rate(src_repoupdater_perms_syncer_sync_errors_total[1m]) / rate(src_repoupdater_perms_syncer_sync_duration_seconds_count[1m])`,
-							DataMayNotExist:   true,
-							Critical:          Alert{GreaterOrEqual: 1, For: time.Minute},
-							PanelOptions:      PanelOptions().LegendFormat("{{type}}").Unit(Number),
-							Owner:             ObservableOwnerCloud,
-							PossibleSolutions: "TBD",
-						},
 						Observable{
 							Name:              "authz_filter_duration",
 							Description:       "95th authorization duration",
@@ -94,7 +89,19 @@ func RepoUpdater() *Container {
 							Critical:          Alert{GreaterOrEqual: 1, For: time.Minute},
 							PanelOptions:      PanelOptions().LegendFormat("seconds").Unit(Seconds),
 							Owner:             ObservableOwnerCloud,
-							PossibleSolutions: "TBD",
+							PossibleSolutions: "Check if database is overloaded.",
+						},
+						Observable{
+							Name:            "perms_syncer_sync_errors",
+							Description:     "permissions sync error rate",
+							Query:           `rate(src_repoupdater_perms_syncer_sync_errors_total[1m]) / rate(src_repoupdater_perms_syncer_sync_duration_seconds_count[1m])`,
+							DataMayNotExist: true,
+							Critical:        Alert{GreaterOrEqual: 1, For: time.Minute},
+							PanelOptions:    PanelOptions().LegendFormat("{{type}}").Unit(Number),
+							Owner:           ObservableOwnerCloud,
+							PossibleSolutions: `
+- Check the network connectivity the Sourcegraph and the code host.
+- Check if API rate limit quota is exhausted.`,
 						},
 					},
 				},
