@@ -1139,6 +1139,7 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 			&job.FinishedAt,
 			&job.ProcessAfter,
 			&job.NumResets,
+			&job.NumFailures,
 			&job.ExternalServiceID,
 			&job.NextSyncAt,
 		); err != nil {

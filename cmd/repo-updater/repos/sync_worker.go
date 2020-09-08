@@ -51,6 +51,7 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, 
 		ColumnExpressions: syncJobColumns,
 		StalledMaxAge:     30 * time.Second,
 		MaxNumResets:      5,
+		MaxNumRetries:     0,
 	})
 
 	worker := dbworker.NewWorker(ctx, store, dbworker.WorkerOptions{
@@ -144,6 +145,7 @@ type SyncJob struct {
 	FinishedAt        sql.NullTime
 	ProcessAfter      sql.NullTime
 	NumResets         int
+	NumFailures       int
 	ExternalServiceID int64
 	NextSyncAt        sql.NullTime
 }
