@@ -109,6 +109,12 @@ const SettingsSchemaJSON = `{
       "default": false,
       "!go": { "pointer": true }
     },
+    "search.streaming": {
+      "description": "Enables experimental streaming support.",
+      "type": "boolean",
+      "default": false,
+      "!go": { "pointer": true }
+    },
     "search.scopes": {
       "description": "Predefined search scopes",
       "type": "array",
