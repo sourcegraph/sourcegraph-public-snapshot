@@ -265,7 +265,6 @@ func deleteSession(w http.ResponseWriter, r *http.Request) error {
 
 // InvalidateSessionsCurrentUser invalidates all sessions for the current user
 // If an error occurs, return the error
-
 func InvalidateSessionCurrentUser(r *http.Request) error {
 	a := actor.FromContext(r.Context())
 	return db.Users.InvalidateSessionsByID(r.Context(), a.UID)
