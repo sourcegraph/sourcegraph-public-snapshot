@@ -1,4 +1,4 @@
-# Quickstart guide
+# LSIF quickstart guide
 
 > NOTE: We are working on creating guides by language, so first check out [language documentation](languages/index.md)! This general guide can be used when a language specific guide is not available.
 
