@@ -727,7 +727,7 @@ func (r *Repo) With(opts ...func(*Repo)) *Repo {
 //
 // Context on using other fields such as timestamps to order/resolve
 // conflicts: We only want to rely on values that have constraints in our
-// database. Timestamps have the following downsides:
+// database. Tmestamps have the following downsides:
 //
 //   - We need to assume the upstream codehost has reasonable values for them
 //   - Not all codehosts set them to relevant values (eg gitolite or other)
@@ -773,7 +773,7 @@ func sortedSliceLess(a, b []string) bool {
 			return v < b[i]
 		}
 	}
-	return len(a) != len(b)
+	return true
 }
 
 // pick deterministically chooses between a and b a repo to keep and
@@ -904,15 +904,6 @@ func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
 // ExternalServices is an utility type with
 // convenience methods for operating on lists of ExternalServices.
 type ExternalServices []*ExternalService
-
-// IDs returns the list of ids from all ExternalServices.
-func (es ExternalServices) IDs() []int64 {
-	ids := make([]int64, len(es))
-	for i := range es {
-		ids[i] = es[i].ID
-	}
-	return ids
-}
 
 // DisplayNames returns the list of display names from all ExternalServices.
 func (es ExternalServices) DisplayNames() []string {

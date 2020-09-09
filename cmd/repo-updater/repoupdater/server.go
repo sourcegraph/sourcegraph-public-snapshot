@@ -325,7 +325,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	s.Syncer.TriggerEnqueueSyncJobs()
+	s.Syncer.TriggerSync()
 
 	err := externalServiceValidate(ctx, &req)
 	if err == github.ErrIncompleteResults {
@@ -529,7 +529,7 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 		}, nil
 	}
 
-	err = s.Syncer.SyncSubset(ctx, s.Store, repo)
+	err = s.Syncer.SyncSubset(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
@@ -563,7 +563,7 @@ func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	for _, e := range s.Syncer.SyncErrors() {
+	if e := s.Syncer.LastSyncError(); e != nil {
 		if multiErr, ok := errors.Cause(e).(*multierror.Error); ok {
 			for _, e := range multiErr.Errors {
 				if sourceErr, ok := e.(*repos.SourceError); ok {

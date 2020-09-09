@@ -27,21 +27,14 @@ type Store interface {
 	ListExternalServices(context.Context, StoreListExternalServicesArgs) ([]*ExternalService, error)
 	UpsertExternalServices(ctx context.Context, svcs ...*ExternalService) error
 
+	InsertRepos(context.Context, ...*Repo) error
 	ListRepos(context.Context, StoreListReposArgs) ([]*Repo, error)
-	UpsertRepos(ctx context.Context, repos ...*Repo) error
 	ListExternalRepoSpecs(context.Context) (map[api.ExternalRepoSpec]struct{}, error)
+	DeleteRepos(ctx context.Context, ids ...api.RepoID) error
+	UpsertRepos(ctx context.Context, repos ...*Repo) error
 	UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]SourceInfo) error
 	SetClonedRepos(ctx context.Context, repoNames ...string) error
 	CountNotClonedRepos(ctx context.Context) (uint64, error)
-
-	// EnqueueSyncJobs enqueues sync jobs per external service where their next_sync_at is due.
-	// If ignoreSiteAdmin is true then we only sync user added external services.
-	EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) error
-
-	// TODO: These two methods should not be used in production, move them to
-	// an extension interface that's explicitly for testing.
-	InsertRepos(context.Context, ...*Repo) error
-	DeleteRepos(ctx context.Context, ids ...api.RepoID) error
 }
 
 // StoreListReposArgs is a query arguments type used by
@@ -210,20 +203,6 @@ func (s *DBStore) Transact(ctx context.Context) (TxStore, error) {
 		db:     tx,
 		txOpts: s.txOpts,
 	}, nil
-}
-
-// WithStore is a store that can take a db handle and return
-// a new Store implementation that uses it.
-type WithStore interface {
-	With(dbutil.DB) Store
-}
-
-// With returns a new store using the given db handle.
-// It implements the WithStore interface.
-func (s *DBStore) With(db dbutil.DB) Store {
-	return &DBStore{
-		db: db,
-	}
 }
 
 // Done terminates the underlying Tx in a DBStore either by committing or rolling
@@ -572,7 +551,7 @@ func (s DBStore) DeleteRepos(ctx context.Context, ids ...api.RepoID) error {
 		return nil
 	}
 
-	// The number of deleted repos can potentially be higher
+	// the number of deleted repos can potentially be higher
 	// than the maximum number of arguments we can pass to postgres.
 	// We pass them as a json array instead to overcome this limitation.
 	encodedIds, err := json.Marshal(ids)
@@ -605,11 +584,7 @@ AND repo.id = repo_ids.id::int
 
 // ListRepos lists all stored repos that match the given arguments.
 func (s DBStore) ListRepos(ctx context.Context, args StoreListReposArgs) (repos []*Repo, _ error) {
-	listQuery, err := listReposQuery(args)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating list repos query function")
-	}
-	return repos, s.paginate(ctx, args.Limit, args.PerPage, 0, listQuery,
+	return repos, s.paginate(ctx, args.Limit, args.PerPage, 0, listReposQuery(args),
 		func(sc scanner) (last, count int64, err error) {
 			var r Repo
 			if err := scanRepo(&r, sc); err != nil {
@@ -667,15 +642,15 @@ AND %s
 ORDER BY id ASC LIMIT %s
 `
 
-func listReposQuery(args StoreListReposArgs) (paginatedQuery, error) {
+func listReposQuery(args StoreListReposArgs) paginatedQuery {
 	var preds []*sqlf.Query
 
 	if len(args.Names) > 0 {
-		encodedNames, err := json.Marshal(args.Names)
-		if err != nil {
-			return nil, errors.Wrap(err, "marshalling name args")
+		ns := make([]*sqlf.Query, 0, len(args.Names))
+		for _, name := range args.Names {
+			ns = append(ns, sqlf.Sprintf("%s", name))
 		}
-		preds = append(preds, sqlf.Sprintf("name IN (SELECT jsonb_array_elements_text(%s) AS id)", encodedNames))
+		preds = append(preds, sqlf.Sprintf("name IN (%s)", sqlf.Join(ns, ",")))
 	}
 
 	if len(args.IDs) > 0 {
@@ -740,7 +715,7 @@ func listReposQuery(args StoreListReposArgs) (paginatedQuery, error) {
 			joinFilter,
 			limit,
 		)
-	}, nil
+	}
 }
 
 func (s DBStore) ListExternalRepoSpecs(ctx context.Context) (map[api.ExternalRepoSpec]struct{}, error) {
@@ -1084,75 +1059,6 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 	}
 
 	return nil
-}
-
-func (s *DBStore) EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) error {
-	filter := "TRUE"
-	if ignoreSiteAdmin {
-		filter = "namespace_user_id IS NOT NULL"
-	}
-	q := sqlf.Sprintf(enqueueSyncJobsQueryFmtstr, sqlf.Sprintf(filter))
-	_, err := s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	return err
-}
-
-// We ignore Phabricator repos here as they are currently synced using
-// RunPhabricatorRepositorySyncWorker
-const enqueueSyncJobsQueryFmtstr = `
-WITH due AS (
-    SELECT id
-    FROM external_services
-    WHERE (next_sync_at <= clock_timestamp() OR next_sync_at IS NULL)
-    AND deleted_at IS NULL
-    AND LOWER(kind) != 'phabricator'
-    AND %s
-),
-busy AS (
-    SELECT DISTINCT external_service_id id FROM external_service_sync_jobs
-    WHERE state = 'queued'
-    OR state = 'processing'
-)
-INSERT INTO external_service_sync_jobs (external_service_id)
-SELECT id from due EXCEPT SELECT id from busy
-`
-
-// ListSyncJobs returns all sync jobs.
-func (s *DBStore) ListSyncJobs(ctx context.Context) ([]SyncJob, error) {
-	rows, err := s.db.QueryContext(ctx, "SELECT * FROM external_service_sync_jobs_with_next_sync_at")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	return scanJobs(rows)
-}
-
-func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
-	var jobs []SyncJob
-
-	for rows.Next() {
-		var job SyncJob
-		if err := rows.Scan(
-			&job.ID,
-			&job.State,
-			&job.FailureMessage,
-			&job.StartedAt,
-			&job.FinishedAt,
-			&job.ProcessAfter,
-			&job.NumResets,
-			&job.NumFailures,
-			&job.ExternalServiceID,
-			&job.NextSyncAt,
-		); err != nil {
-			return nil, err
-		}
-
-		jobs = append(jobs, job)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return jobs, nil
 }
 
 func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {

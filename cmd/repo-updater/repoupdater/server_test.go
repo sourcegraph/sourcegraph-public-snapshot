@@ -16,16 +16,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+
+	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
-
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -808,7 +808,8 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 
 				clock := repos.NewFakeClock(time.Now(), 0)
 				syncer := &repos.Syncer{
-					Now: clock.Now,
+					Store: store,
+					Now:   clock.Now,
 				}
 
 				if tc.sourcerErr != nil || tc.listRepoErr != nil {
@@ -819,7 +820,8 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 					sourcer := repos.NewFakeSourcer(tc.sourcerErr, repos.NewFakeSource(githubService, nil))
 					// Run Sync so that possibly `LastSyncErrors` is set
 					syncer.Sourcer = sourcer
-					_ = syncer.SyncExternalService(ctx, store, githubService.ID, time.Millisecond)
+					syncer.Store = store
+					_ = syncer.Sync(ctx)
 				}
 
 				s := &Server{
@@ -1250,7 +1252,8 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 
 					clock := clock
 					syncer := &repos.Syncer{
-						Now: clock.Now,
+						Store: store,
+						Now:   clock.Now,
 					}
 					s := &Server{Syncer: syncer, Store: store}
 					if tc.githubDotComSource != nil {
