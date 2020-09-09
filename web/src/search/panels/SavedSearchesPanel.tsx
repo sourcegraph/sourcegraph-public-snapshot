@@ -16,7 +16,9 @@ export const SavedSearchesPanel: React.FunctionComponent<{
     authenticatedUser: AuthenticatedUser | null
     fetchSavedSearches: () => Observable<ISavedSearch[]>
     className?: string
-}> = ({ patternType, authenticatedUser, fetchSavedSearches, className }) => {
+    /** For testing only */
+    displayState?: 'loading' | 'empty' | 'populated'
+}> = ({ patternType, authenticatedUser, fetchSavedSearches, className, displayState }) => {
     const savedSearches = useObservable(useMemo(() => fetchSavedSearches(), [fetchSavedSearches]))
     const [showAllSearches, setShowAllSearches] = useState(true)
 
@@ -34,8 +36,11 @@ export const SavedSearchesPanel: React.FunctionComponent<{
         </div>
     )
     const loadingDisplay = (
-        <div className="icon-inline">
-            <LoadingSpinner />
+        <div className="d-flex justify-content-center align-items-center panel-container__empty-container">
+            <div className="icon-inline">
+                <LoadingSpinner />
+            </div>
+            Loading saved searches
         </div>
     )
 
@@ -123,7 +128,7 @@ export const SavedSearchesPanel: React.FunctionComponent<{
         <PanelContainer
             className={classNames(className, 'saved-searches-panel')}
             title="Saved searches"
-            state={savedSearches ? (savedSearches.length > 0 ? 'populated' : 'empty') : 'loading'}
+            state={displayState || (savedSearches ? (savedSearches.length > 0 ? 'populated' : 'empty') : 'loading')}
             loadingContent={loadingDisplay}
             populatedContent={contentDisplay}
             emptyContent={emptyDisplay}
