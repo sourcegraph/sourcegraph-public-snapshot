@@ -27,7 +27,7 @@ export const CampaignSpecTab: React.FunctionComponent<CampaignSpecTabProps> = ({
                 </a>
             </div>
             <div className="mb-3 col-md-12 col-lg-10 offset-lg-1 col-xl-8 offset-xl-2">
-                <div className="campaign-spec-tab___specfile rounded p-2">
+                <div className="campaign-spec-tab__specfile rounded p-2">
                     <pre className="m-0" dangerouslySetInnerHTML={highlightedInput} />
                 </div>
             </div>
