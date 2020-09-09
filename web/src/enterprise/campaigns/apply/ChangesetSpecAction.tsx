@@ -24,7 +24,7 @@ export const ChangesetSpecAction: React.FunctionComponent<ChangesetSpecActionPro
     return <ChangesetSpecActionNoPublish />
 }
 
-const iconClassNames = 'm-0 mx-4 text-nowrap d-flex flex-column align-items-center justify-content-center'
+const iconClassNames = 'm-0 text-nowrap d-flex flex-column align-items-center justify-content-center'
 
 export const ChangesetSpecActionPublish: React.FunctionComponent<{}> = () => (
     <div className={iconClassNames}>

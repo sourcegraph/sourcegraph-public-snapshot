@@ -96,6 +96,8 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
                 )}
             </div>
             {isExpanded && (
+                <>
+                    <div />
                 <div className="visible-changeset-spec-node__expanded-section">
                     {node.description.__typename === 'GitBranchChangesetDescription' && (
                         <FileDiffConnection
@@ -127,6 +129,7 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
                         </div>
                     )}
                 </div>
+                </>
             )}
         </>
     )
