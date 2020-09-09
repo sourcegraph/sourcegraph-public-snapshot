@@ -264,12 +264,13 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 // newIgnoreMatcher creates an ignore.Matcher from a tar-archive tr.
 // Usually we could return early once we have found and parsed an
 // ignore-file. However, we have to exhaust tr because newIgnoreMatcher
-// is called in the context of an io.TeeReader.
+// is called in the context of an io.TeeReader. newIgnoreMatcher is
+// guaranteed to return a non-nil *ignore.Matcher if err!=nil.
 func newIgnoreMatcher(tr *tar.Reader) (*ignore.Matcher, error) {
 	ig := &ignore.Matcher{}
 	for {
 		hdr, err := tr.Next()
-		if err == io.EOF {
+		if err == io.EOF { // exhausted
 			return ig, nil
 		}
 		if err != nil {
@@ -289,6 +290,7 @@ func newIgnoreMatcher(tr *tar.Reader) (*ignore.Matcher, error) {
 
 // copySearchable copies searchable files from tr to zw. A searchable file is
 // any file that is under size limit, non-binary, and not matching an ignore-pattern.
+// Do not pass nil for tr, zp, ig.
 func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string, ig *ignore.Matcher) error {
 	// 32*1024 is the same size used by io.Copy
 	buf := make([]byte, 32*1024)
