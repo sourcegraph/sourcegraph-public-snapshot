@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"runtime"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
@@ -10,15 +11,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 )
 
-// var (
-// 	NumWriterRoutines = runtime.NumCPU() * 2
-// 	factory           = NewBatchInserter
-// )
-
 var (
-	NumWriterRoutines = 1
-	factory           = NewCopyInserter
+	NumWriterRoutines = runtime.NumCPU() * 2
+	factory           = NewBatchInserter
 )
+
+// var (
+// 	NumWriterRoutines = 1
+// 	factory           = NewCopyInserter
+// )
 
 func (w *reader) WriteMeta(ctx context.Context, meta types.MetaData) (err error) {
 	inserter, err := factory(ctx, w.Handle().DB(), "lsif_data_metadata", "dump_id", "num_result_chunks")
