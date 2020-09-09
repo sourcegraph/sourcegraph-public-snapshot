@@ -17,11 +17,11 @@ type batchWriter struct {
 	queryPlaceholders []string
 }
 
-const MaxNumSqliteParameters = 32767
+const MaxNumPostgresParameters = 32767
 
 func NewBatchInserter(ctx context.Context, db dbutil.DB, tableName string, columnNames ...string) (*batchWriter, error) {
 	numColumns := len(columnNames)
-	maxBatchSize := (MaxNumSqliteParameters / numColumns) * numColumns
+	maxBatchSize := (MaxNumPostgresParameters / numColumns) * numColumns
 
 	quotedColumnNames := make([]string, numColumns)
 	for i, columnName := range columnNames {
@@ -31,7 +31,7 @@ func NewBatchInserter(ctx context.Context, db dbutil.DB, tableName string, colum
 	queryPrefix := fmt.Sprintf(`INSERT INTO "%s" (%s) VALUES `, tableName, strings.Join(quotedColumnNames, ","))
 
 	queryPlaceholders := make([]string, 0, maxBatchSize/numColumns)
-	for i := 0; i < MaxNumSqliteParameters; i += numColumns {
+	for i := 0; i < MaxNumPostgresParameters; i += numColumns {
 		var placeholders []string
 		for j := 0; j < numColumns; j++ {
 			placeholders = append(placeholders, fmt.Sprintf("$%d", i+j+1))
