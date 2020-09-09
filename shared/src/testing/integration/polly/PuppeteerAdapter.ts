@@ -110,6 +110,10 @@ export class PuppeteerAdapter extends PollyAdapter {
                     })
                     // Resolves when respondToRequest is called
                     // or when passthroughRequest is called
+                    // This is needed because puppeteer interceptor will await the Promise returned by
+                    // onInterception, then determine whether it should fulfill, abort, or intercept the response
+                    // of the original requests based on which (if any) of the control callbacks were called in onInterception
+                    // https://sourcegraph.com/github.com/jsoverson/puppeteer-interceptor@1ba312fcdfa82a329a48dd613d726a8a966e5be5/-/blob/src/index.ts#L78-160
                     return controlPromise
                 },
                 onResponseReceived: ({ request, response }) => {
