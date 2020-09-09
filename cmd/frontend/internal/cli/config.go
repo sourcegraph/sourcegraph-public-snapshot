@@ -11,8 +11,11 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -40,6 +43,14 @@ func printConfigValidation() {
 		log15.Warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 	}
 }
+
+var (
+	configOverridesWatchOnce    sync.Once
+	metricConfigOverrideRunning = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "src_frontend_config_file_watcher_running",
+		Help: "1 if the configuration file overrides watcher is running.",
+	})
+)
 
 // handleConfigOverrides allows environments to forcibly override the
 // configuration in the database upon startup. This is used to e.g. ensure dev
@@ -203,7 +214,82 @@ func handleConfigOverrides() error {
 		}
 	}
 
+	// Kick off a background fsnotify watcher of the config files.
+	go configOverridesWatchOnce.Do(func() {
+		metricConfigOverrideRunning.Inc()
+		defer metricConfigOverrideRunning.Dec()
+
+		events, err := watchPaths(ctx, overrideSiteConfig, overrideExtSvcConfig, overrideGlobalSettings)
+		if err != nil {
+			log15.Error("failed to watch config override files", "error", err)
+			return
+		}
+
+		for err := range events {
+			if err != nil {
+				log15.Warn("error while watching config override files", "error", err)
+				continue
+			}
+
+			if err := handleConfigOverrides(); err != nil {
+				log15.Error("failed to update configuration from modified config override file", "error", err)
+			} else {
+				log15.Info("updated configuration from modified config overrides files")
+			}
+		}
+	})
+
 	return nil
+}
+
+// watchPaths returns a channel which watches the non-empty paths. Whenever
+// any path changes a nil error is sent down chan. If an error occurs it is
+// sent. chan is closed when ctx is Done.
+//
+// Note: This can send many events even if the file content hasn't
+// changed. For example chmod events are sent. Another is a rename is two
+// events for watcher (remove and create). Additionally if a file is removed
+// the watch is removed. Even if a file with the same name is created in its
+// place later.
+func watchPaths(ctx context.Context, paths ...string) (<-chan error, error) {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, p := range paths {
+		// as a convenience ignore empty paths
+		if p == "" {
+			continue
+		}
+		if err := watcher.Add(p); err != nil {
+			return nil, err
+		}
+	}
+
+	out := make(chan error)
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				err := watcher.Close()
+				if err != nil {
+					out <- err
+				}
+				close(out)
+				return
+
+			case <-watcher.Events:
+				out <- nil
+
+			case err := <-watcher.Errors:
+				out <- err
+
+			}
+		}
+	}()
+
+	return out, nil
 }
 
 type configurationSource struct{}

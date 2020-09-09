@@ -92,6 +92,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				ReconcilerState: cmpgn.ReconcilerStateCompleted,
 				FailureMessage:  &failureMessage,
 				NumResets:       18,
+				NumFailures:     25,
 
 				Unsynced: true,
 				Closing:  true,
@@ -703,7 +704,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			c.StartedAt = clock.now()
 			c.FinishedAt = clock.now()
 			c.ProcessAfter = clock.now()
-			c.NumResets = 99
+			c.NumResets = 987
+			c.NumFailures = 789
 
 			clone := c.Clone()
 			have = append(have, clone)
@@ -808,7 +810,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			campaign:        campaignID,
 			ownedByCampaign: campaignID,
 			reconcilerState: cmpgn.ReconcilerStateErrored,
-			numResets:       reconcilerMaxNumResets - 1,
+			numFailures:     reconcilerMaxNumRetries - 1,
 		})
 
 		c3 := createChangeset(t, ctx, s, testChangesetOpts{
@@ -842,7 +844,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			reconcilerState: cmpgn.ReconcilerStateErrored,
 			ownedByCampaign: campaignID,
 			failureMessage:  &canceledChangesetFailureMessage,
-			numResets:       reconcilerMaxNumResets,
+			numFailures:     reconcilerMaxNumRetries,
 		})
 
 		reloadAndAssertChangeset(t, ctx, s, c2, changesetAssertions{
@@ -850,7 +852,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			reconcilerState: cmpgn.ReconcilerStateErrored,
 			ownedByCampaign: campaignID,
 			failureMessage:  &canceledChangesetFailureMessage,
-			numResets:       reconcilerMaxNumResets,
+			numFailures:     reconcilerMaxNumRetries,
 		})
 
 		reloadAndAssertChangeset(t, ctx, s, c3, changesetAssertions{
@@ -870,7 +872,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			reconcilerState: cmpgn.ReconcilerStateErrored,
 			failureMessage:  &canceledChangesetFailureMessage,
 			ownedByCampaign: campaignID,
-			numResets:       reconcilerMaxNumResets,
+			numFailures:     reconcilerMaxNumRetries,
 		})
 	})
 
@@ -881,7 +883,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			repo:            repo.ID,
 			ownedByCampaign: campaignID,
 			reconcilerState: campaigns.ReconcilerStateQueued,
-			numResets:       0,
+			numFailures:     0,
 			failureMessage:  nil,
 			closing:         true,
 		}
@@ -902,7 +904,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				have: testChangesetOpts{
 					reconcilerState: cmpgn.ReconcilerStateErrored,
 					failureMessage:  "failed",
-					numResets:       reconcilerMaxNumResets - 1,
+					numFailures:     reconcilerMaxNumRetries - 1,
 				},
 				want: wantEnqueued,
 			},

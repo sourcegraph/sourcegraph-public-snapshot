@@ -34,8 +34,8 @@ func GitServer() *Container {
 							Description:     "running git commands (signals load)",
 							Query:           "max(src_gitserver_exec_running)",
 							DataMayNotExist: true,
-							Warning:         Alert{GreaterOrEqual: 50},
-							Critical:        Alert{GreaterOrEqual: 100},
+							Warning:         Alert{GreaterOrEqual: 50, For: 2 * time.Minute},
+							Critical:        Alert{GreaterOrEqual: 100, For: 5 * time.Minute},
 							PanelOptions:    PanelOptions().LegendFormat("running commands"),
 							Owner:           ObservableOwnerCloud,
 							PossibleSolutions: `

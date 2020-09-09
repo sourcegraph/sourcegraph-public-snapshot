@@ -194,6 +194,7 @@ Referenced by:
  num_resets            | integer                  | not null default 0
  unsynced              | boolean                  | not null default false
  closing               | boolean                  | not null default false
+ num_failures          | integer                  | not null default 0
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -430,6 +431,7 @@ Triggers:
  process_after       | timestamp with time zone | 
  num_resets          | integer                  | not null default 0
  external_service_id | bigint                   | 
+ num_failures        | integer                  | not null default 0
 Foreign-key constraints:
     "external_services_id_fk" FOREIGN KEY (external_service_id) REFERENCES external_services(id)
 
@@ -519,6 +521,7 @@ Indexes:
  repository_id   | integer                  | not null
  process_after   | timestamp with time zone | 
  num_resets      | integer                  | not null default 0
+ num_failures    | integer                  | not null default 0
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
 Check constraints:
@@ -593,6 +596,7 @@ Foreign-key constraints:
  process_after   | timestamp with time zone | 
  num_resets      | integer                  | not null default 0
  upload_size     | bigint                   | 
+ num_failures    | integer                  | not null default 0
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::lsif_upload_state
