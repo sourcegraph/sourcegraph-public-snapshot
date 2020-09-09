@@ -18,7 +18,7 @@ interface Props extends Pick<PatternTypeProps, 'patternType'> {
 export const EnterpriseHomePanels: React.FunctionComponent<Props> = (props: Props) => (
     <div className="enterprise-home-panels container">
         <div className="row">
-            <RepositoriesPanel className="enterprise-home-panels__panel col-lg-4" />
+            <RepositoriesPanel {...props} className="enterprise-home-panels__panel col-lg-4" />
             <RecentSearchesPanel {...props} className="enterprise-home-panels__panel col-lg-8" />
         </div>
         <div className="row">
