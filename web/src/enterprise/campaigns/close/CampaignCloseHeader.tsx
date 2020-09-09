@@ -11,6 +11,6 @@ export const CampaignCloseHeader: React.FunctionComponent<CampaignCloseHeaderPro
         <h5 className="text-uppercase text-nowrap">Changeset information</h5>
         <h5 className="text-uppercase text-center text-nowrap">Check state</h5>
         <h5 className="text-uppercase text-center text-nowrap">Review state</h5>
-        <h5 className="text-uppercase text-right text-nowrap">Changes</h5>
+        <h5 className="text-uppercase text-center text-nowrap">Changes</h5>
     </>
 )
