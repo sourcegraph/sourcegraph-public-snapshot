@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 
 	"github.com/hashicorp/go-multierror"
@@ -169,10 +170,38 @@ func (s *userExternalAccounts) CreateUserAndSave(ctx context.Context, newUser Ne
 }
 
 func (s *userExternalAccounts) insert(ctx context.Context, tx *sql.Tx, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error {
-	_, err := tx.ExecContext(ctx, `
+	var (
+		denc  *json.RawMessage
+		adenc *json.RawMessage
+		err   error
+	)
+
+	if secretPkg.ConfiguredToEncrypt() {
+		d, err := secretPkg.EncryptBytes(*data.Data)
+		if err != nil {
+			return err
+		}
+
+		ad, err := secretPkg.EncryptBytes(*data.AuthData)
+		if err != nil {
+			return err
+		}
+
+		dtmp := json.RawMessage(d)
+		denc = &dtmp
+
+		adtmp := json.RawMessage(ad)
+		adenc = &adtmp
+
+	} else {
+		adenc = data.AuthData
+		denc = data.Data
+	}
+
+	_, err = tx.ExecContext(ctx, `
 INSERT INTO user_external_accounts(user_id, service_type, service_id, client_id, account_id, auth_data, account_data)
 VALUES($1, $2, $3, $4, $5, $6, $7)
-`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.Data)
+`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, adenc, denc)
 	return err
 }
 
@@ -300,9 +329,27 @@ func (*userExternalAccounts) listBySQL(ctx context.Context, querySuffix *sqlf.Qu
 	defer rows.Close()
 	for rows.Next() {
 		var o extsvc.Account
+
 		if err := rows.Scan(&o.ID, &o.UserID, &o.ServiceType, &o.ServiceID, &o.ClientID, &o.AccountID, &o.AuthData, &o.Data, &o.CreatedAt, &o.UpdatedAt); err != nil {
 			return nil, err
 		}
+
+		if secretPkg.ConfiguredToEncrypt() {
+			authData, err := secretPkg.DecryptBytes(*o.AuthData)
+			if err != nil {
+				return nil, err
+			}
+			data, err := secretPkg.DecryptBytes(*o.Data)
+			if err != nil {
+				return nil, err
+			}
+			encAuth := json.RawMessage(authData)
+			o.AuthData = &encAuth
+
+			encData := json.RawMessage(data)
+			o.Data = &encData
+		}
+
 		results = append(results, &o)
 	}
 	return results, rows.Err()
