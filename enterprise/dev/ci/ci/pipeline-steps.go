@@ -246,6 +246,14 @@ func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	// See RFC 137: https://docs.google.com/document/d/14f7lwfToeT6t_vxnGsCuXqf3QcB5GRZ2Zoy6kYqBAIQ/edit
 	runE2E := c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.branch == "master"
 
+	var async bool
+
+	if c.branch == "master" {
+		async = true
+	} else {
+		async = false
+	}
+
 	env := copyEnv(
 		"BUILDKITE_PULL_REQUEST",
 		"BUILDKITE_PULL_REQUEST_BASE_BRANCH",
@@ -260,9 +268,10 @@ func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 		if !runE2E {
 			return
 		}
+
 		pipeline.AddTrigger(":chromium:",
 			bk.Trigger("sourcegraph-e2e"),
-			bk.Async(true),
+			bk.Async(async),
 			bk.Build(bk.BuildOptions{
 				Message: os.Getenv("BUILDKITE_MESSAGE"),
 				Commit:  c.commit,
