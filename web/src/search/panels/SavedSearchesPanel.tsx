@@ -18,7 +18,9 @@ export const SavedSearchesPanel: React.FunctionComponent<{
     className?: string
     /** For testing only */
     displayState?: 'loading' | 'empty' | 'populated'
-}> = ({ patternType, authenticatedUser, fetchSavedSearches, className, displayState }) => {
+    /** For testing only */
+    mySearchesMode?: boolean
+}> = ({ patternType, authenticatedUser, fetchSavedSearches, className, displayState, mySearchesMode }) => {
     const savedSearches = useObservable(useMemo(() => fetchSavedSearches(), [fetchSavedSearches]))
     const [showAllSearches, setShowAllSearches] = useState(true)
 
@@ -53,9 +55,11 @@ export const SavedSearchesPanel: React.FunctionComponent<{
                 </div>
                 <dl className="list-group-flush">
                     {savedSearches
-                        ?.filter(search => (showAllSearches ? true : search.namespace.id === authenticatedUser?.id))
+                        ?.filter(search =>
+                            showAllSearches && !mySearchesMode ? true : search.namespace.id === authenticatedUser?.id
+                        )
                         .map(search => (
-                            <dd key={search.id} className="text-monospace">
+                            <dd key={search.id} className="text-monospace test-saved-search-entery">
                                 <div className="d-flex justify-content-between">
                                     <Link
                                         to={'/search?' + buildSearchURLQuery(search.query, patternType, false)}

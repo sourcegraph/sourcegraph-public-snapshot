@@ -4,11 +4,6 @@ import { SearchPatternType } from '../../graphql-operations'
 import { SavedSearchesPanel } from './SavedSearchesPanel'
 import { _fetchSavedSearches, authUser } from './utils'
 
-// Mock the Monaco input box to make this a shallow test
-jest.mock('./SearchPageInput', () => ({
-    SearchPageInput: () => null,
-}))
-
 describe('SearchPage', () => {
     afterAll(cleanup)
 
@@ -20,9 +15,14 @@ describe('SearchPage', () => {
         fetchSavedSearches: _fetchSavedSearches,
     }
 
-    it('should not show enterprise home panels if on Sourcegraph.com', () => {
+    it('should show all searches by default', () => {
         container = render(<SavedSearchesPanel {...defaultProps} />).container
-        const enterpriseHomePanels = container.querySelector('.enterprise-home-panels')
-        expect(enterpriseHomePanels).toBeFalsy()
+        const enterpriseHomePanels = container.querySelectorAll('.test-saved-search-entery')
+        expect(enterpriseHomePanels.length).toBe(2)
+    })
+    it('should show all one search on "my searches tab"', () => {
+        container = render(<SavedSearchesPanel {...defaultProps} mySearchesMode={true} />).container
+        const enterpriseHomePanels = container.querySelectorAll('.test-saved-search-entery')
+        expect(enterpriseHomePanels.length).toBe(1)
     })
 })
