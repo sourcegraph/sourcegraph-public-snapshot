@@ -13,16 +13,16 @@ import (
 func GetGrowthStatistics(ctx context.Context) (*types.GrowthStatistics, error) {
 	const q = `
 	WITH
-  latest_usage_by_user AS (
+  all_usage_by_user_and_month AS (
   SELECT
     user_id,
     DATE_TRUNC('month', timestamp) AS month_active
   FROM
     event_logs
   GROUP BY
-    1,
-    2 ),
-  sub AS (
+    user_id,
+    month_active ),
+  recent_usage_by_user AS (
   SELECT
     users.id,
     BOOL_OR(CASE
@@ -42,20 +42,20 @@ func GetGrowthStatistics(ctx context.Context) (*types.GrowthStatistics, error) {
   FROM
     users
   LEFT JOIN
-    latest_usage_by_user
+    all_usage_by_user_and_month
   ON
-    latest_usage_by_user.user_id = users.id
+    all_usage_by_user_and_month.user_id = users.id
   GROUP BY
-    1,
-    4,
-    5 )
+    id,
+    created_month,
+    deleted_month )
 SELECT
   COUNT(*) FILTER (
   WHERE
-    sub.created_month = DATE_TRUNC('month', now())) AS created_users,
+    recent_usage_by_user.created_month = DATE_TRUNC('month', now())) AS created_users,
   COUNT(*) FILTER (
   WHERE
-    sub.deleted_month = DATE_TRUNC('month', now())) AS deleted_users,
+    recent_usage_by_user.deleted_month = DATE_TRUNC('month', now())) AS deleted_users,
   COUNT(*) FILTER (
   WHERE
     current_month = TRUE
@@ -78,7 +78,7 @@ SELECT
     AND (deleted_month < DATE_TRUNC('month', now())
       OR deleted_month IS NULL)) AS retained_users
 FROM
-  sub
+  recent_usage_by_user
 	`
 	var (
 		createdUsers     int
