@@ -1089,7 +1089,7 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 func (s *DBStore) EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) error {
 	filter := "TRUE"
 	if ignoreSiteAdmin {
-		filter = "namespace_user_id IS NULL"
+		filter = "namespace_user_id IS NOT NULL"
 	}
 	q := sqlf.Sprintf(enqueueSyncJobsQueryFmtstr, sqlf.Sprintf(filter))
 	_, err := s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
