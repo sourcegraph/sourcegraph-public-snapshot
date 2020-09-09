@@ -73,7 +73,6 @@ func Main(enterpriseInit EnterpriseInit) {
 			log.Fatalf("Detected repository DSN change, restarting to take effect: %q", newDSN)
 		}
 	})
-
 	db, err := dbutil.NewDB(dsn, "repo-updater")
 	if err != nil {
 		log.Fatalf("failed to initialize db store: %v", err)
@@ -130,9 +129,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		server.SourcegraphDotComMode = true
 
 		es, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
-			// On Cloud we want to fetch our admin owned external service only here
-			NamespaceUserID: -1,
-			Kinds:           []string{extsvc.KindGitHub, extsvc.KindGitLab},
+			Kinds: []string{extsvc.KindGitHub, extsvc.KindGitLab},
 		})
 
 		if err != nil {
@@ -173,21 +170,20 @@ func Main(enterpriseInit EnterpriseInit) {
 	gps := repos.NewGitolitePhabricatorMetadataSyncer(store)
 
 	syncer := &repos.Syncer{
+		Store:   store,
 		Sourcer: src,
 		Logger:  log15.Root(),
 		Now:     clock,
 	}
 
-	syncer.Synced = make(chan repos.Diff)
-	syncer.SubsetSynced = make(chan repos.Diff)
-	go watchSyncer(ctx, syncer, scheduler, gps)
-	go func() {
-		log.Fatal(syncer.Run(ctx, db, store, repos.RunOptions{
-			EnqueueInterval:      repos.GetUpdateInterval,
-			IsCloud:              envvar.SourcegraphDotComMode(),
-			PrometheusRegisterer: prometheus.DefaultRegisterer,
-		}))
-	}()
+	if envvar.SourcegraphDotComMode() {
+		syncer.FailFullSync = true
+	} else {
+		syncer.Synced = make(chan repos.Diff)
+		syncer.SubsetSynced = make(chan repos.Diff)
+		go watchSyncer(ctx, syncer, scheduler, gps)
+		go func() { log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval)) }()
+	}
 	server.Syncer = syncer
 
 	go syncCloned(ctx, scheduler, gitserver.DefaultClient, store)

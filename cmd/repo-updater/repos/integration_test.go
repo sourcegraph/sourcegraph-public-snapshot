@@ -58,7 +58,6 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/DeleteRepos", testStoreDeleteRepos},
 		{"DBStore/UpsertRepos", testStoreUpsertRepos},
 		{"DBStore/UpsertSources", testStoreUpsertSources},
-		{"DBStore/EnqueueSyncJobs", testStoreEnqueueSyncJobs(db, dbstore)},
 		{"DBStore/ListRepos", testStoreListRepos},
 		{"DBStore/ListRepos/Pagination", testStoreListReposPagination},
 		{"DBStore/ListExternalRepoSpecs", testStoreListExternalRepoSpecs(db)},
@@ -68,19 +67,10 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/Syncer/SyncWithErrors", testSyncerSyncWithErrors},
 		{"DBStore/Syncer/SyncSubset", testSyncSubset},
 		{"DBStore/Syncer/SyncWorker", testSyncWorkerPlumbing(db)},
-		{"DBStore/Syncer/Run", testSyncRun(db)},
-		{"DBStore/Syncer/MultipleServices", testSyncer(db)},
-		{"DBStore/Syncer/OrphanedRepos", testOrphanedRepo(db)},
-		{"DBStore/Syncer/DeleteExternalService", testDeleteExternalService(db)},
-		{"DBStore/Syncer/NameConflictDiscardOld", testNameOnConflictDiscardOld(db)},
-		{"DBStore/Syncer/NameConflictDiscardNew", testNameOnConflictDiscardNew(db)},
-		{"DBStore/Syncer/NameConflictOnRename", testNameOnConflictOnRename(db)},
+		// {"DBStore/Syncer/Run", testSyncRun},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Cleanup(func() {
-				if t.Failed() {
-					return
-				}
 				if _, err := db.Exec(`
 DELETE FROM external_service_sync_jobs;
 DELETE FROM external_service_repos;
