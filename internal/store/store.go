@@ -16,7 +16,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/zoekt/ignore"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -29,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // maxFileSize is the limit on file size in bytes. Only files smaller
@@ -58,6 +56,9 @@ type Store struct {
 	// determine if the error is a bad request (eg invalid repo).
 	FetchTar func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error)
 
+	// FilterTar returns a FilterFunc that filters out files we don't want to write to disk
+	FilterTar func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (FilterFunc, error)
+
 	// Path is the directory to store the cache
 	Path string
 
@@ -79,6 +80,8 @@ type Store struct {
 	// ZipCache provides efficient access to repo zip files.
 	ZipCache ZipCache
 }
+
+type FilterFunc func(hdr *tar.Header) bool
 
 // Start initializes state and starts background goroutines. It can be called
 // more than once. It is optional to call, but starting it earlier avoids a
@@ -238,15 +241,19 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 			r.Close()
 		}()
 
-		var ig *ignore.Matcher
-		ig, err = newIgnoreMatcher(ctx, repo, commit)
-		if err != nil {
-			return
+		var filter FilterFunc
+		if s.FilterTar != nil {
+			filter, err = s.FilterTar(ctx, repo, commit)
+			if err != nil {
+				return
+			}
+		} else { // don't filter
+			filter = func(hdr *tar.Header) bool { return false }
 		}
 
 		tr := tar.NewReader(r)
 		zw := zip.NewWriter(pw)
-		err = copySearchable(tr, zw, largeFilePatterns, ig)
+		err = copySearchable(tr, zw, largeFilePatterns, filter)
 		if err1 := zw.Close(); err == nil {
 			err = err1
 		}
@@ -255,23 +262,9 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 	return pr, nil
 }
 
-// newIgnoreMatcher calls gitserver to retrieve the ignore-file.
-// If the file doesn't exist we return an empty ignore.Matcher.
-func newIgnoreMatcher(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (*ignore.Matcher, error) {
-	ignoreFile, err := git.ReadFile(ctx, repo, commit, ignore.IgnoreFile, 0)
-	if err != nil {
-		if strings.Contains(err.Error(), "file does not exist") {
-			return &ignore.Matcher{}, nil
-		}
-		return nil, err
-	}
-	return ignore.ParseIgnoreFile(bytes.NewReader(ignoreFile))
-}
-
 // copySearchable copies searchable files from tr to zw. A searchable file is
 // any file that is under size limit, non-binary, and not matching an ignore-pattern.
-// Do not pass nil for tr, zp, ig.
-func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string, ig *ignore.Matcher) error {
+func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string, filter FilterFunc) error {
 	// 32*1024 is the same size used by io.Copy
 	buf := make([]byte, 32*1024)
 	for {
@@ -295,8 +288,8 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string, 
 			continue
 		}
 
-		// Ignore files matching an ignore-pattern
-		if ig.Match(hdr.Name) {
+		// ignore files if they match the filter
+		if filter(hdr) {
 			continue
 		}
 

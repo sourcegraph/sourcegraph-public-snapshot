@@ -4,20 +4,16 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
-	"reflect"
 	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/google/zoekt/ignore"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestPrepareZip(t *testing.T) {
@@ -170,30 +166,4 @@ func emptyTar(t *testing.T) io.ReadCloser {
 		t.Fatal(err)
 	}
 	return ioutil.NopCloser(bytes.NewReader(buf.Bytes()))
-}
-
-func TestNewIgnoreMatcher(t *testing.T) {
-	git.Mocks.ReadFile = func(commit api.CommitID, name string) ([]byte, error) {
-		return []byte("foo/"), nil
-	}
-	ig, err := newIgnoreMatcher(context.Background(), gitserver.Repo{}, "")
-	if err != nil {
-		t.Error(err)
-	}
-	if !ig.Match("foo/bar.go") {
-		t.Errorf("ignore.Matcher should have matched")
-	}
-}
-
-func TestMissingIgnoreFile(t *testing.T) {
-	git.Mocks.ReadFile = func(commit api.CommitID, name string) ([]byte, error) {
-		return nil, fmt.Errorf("err open .sourcegraph/ignore: file does not exist")
-	}
-	ig, err := newIgnoreMatcher(context.Background(), gitserver.Repo{}, "")
-	if err != nil {
-		t.Error(err)
-	}
-	if !reflect.DeepEqual(ig, &ignore.Matcher{}) {
-		t.Error("newIgnoreMatchers should have returned &ignore.Matcher{} if the ignore-file is missing")
-	}
 }
