@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useState, useMemo } from 'react'
 import { AuthenticatedUser } from '../../auth'
 import { Link } from '../../../../shared/src/components/Link'
 import { PanelContainer } from './PanelContainer'
@@ -52,14 +52,20 @@ export const RecentSearchesPanel: React.FunctionComponent<{
     authenticatedUser: AuthenticatedUser | null
     fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult>
 }> = ({ className, authenticatedUser, fetchRecentSearches }) => {
+    const pageSize = 20
+
+    const [itemsToLoad, setItmesToLoad] = useState(pageSize)
     const recentSearches = useObservable(
-        useMemo(() => fetchRecentSearches(authenticatedUser?.id || '', 100), [
+        useMemo(() => fetchRecentSearches(authenticatedUser?.id || '', itemsToLoad), [
             authenticatedUser?.id,
             fetchRecentSearches,
+            itemsToLoad,
         ])
     )
 
-    const processedResults = processRecentSearches(recentSearches)
+    const processedResults = useMemo(() => (recentSearches ? processRecentSearches(recentSearches) : null), [
+        recentSearches,
+    ])
 
     const loadingDisplay = (
         <div className="d-flex justify-content-center align-items-center panel-container__empty-container">
@@ -119,32 +125,45 @@ export const RecentSearchesPanel: React.FunctionComponent<{
     )
 
     const contentDisplay = (
-        <table className="recent-searches-panel__results-table">
-            <thead className="recent-searches-panel__results-table-head">
-                <tr>
-                    <th>Count</th>
-                    <th>Search</th>
-                    <th>Date</th>
-                </tr>
-            </thead>
-            <tbody className="recent-searches-panel__results-table-body">
-                {processedResults?.map(recentSearch => (
-                    <tr key={recentSearch.timestamp}>
-                        <td className="recent-searches-panel__results-count-cell">
-                            <span className="recent-searches-panel__results-count">{recentSearch.count}</span>
-                        </td>
-                        <td>
-                            <Link to={recentSearch.url} className="text-monospace">
-                                {recentSearch.searchText}
-                            </Link>
-                        </td>
-                        <td>
-                            <Timestamp noAbout={true} date={recentSearch.timestamp} />
-                        </td>
+        <>
+            <table className="recent-searches-panel__results-table">
+                <thead className="recent-searches-panel__results-table-head">
+                    <tr>
+                        <th>Count</th>
+                        <th>Search</th>
+                        <th>Date</th>
                     </tr>
-                ))}
-            </tbody>
-        </table>
+                </thead>
+                <tbody className="recent-searches-panel__results-table-body">
+                    {processedResults?.map((recentSearch, index) => (
+                        <tr key={index}>
+                            <td className="recent-searches-panel__results-count-cell">
+                                <span className="recent-searches-panel__results-count">{recentSearch.count}</span>
+                            </td>
+                            <td>
+                                <Link to={recentSearch.url} className="text-monospace">
+                                    {recentSearch.searchText}
+                                </Link>
+                            </td>
+                            <td>
+                                <Timestamp noAbout={true} date={recentSearch.timestamp} />
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+            {recentSearches?.pageInfo.hasNextPage && (
+                <div className="text-center">
+                    <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => setItmesToLoad(current => current + pageSize)}
+                    >
+                        Show more
+                    </button>
+                </div>
+            )}
+        </>
     )
 
     return (

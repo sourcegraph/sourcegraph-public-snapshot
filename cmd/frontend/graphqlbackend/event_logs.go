@@ -42,12 +42,28 @@ func (r *userEventLogsConnectionResolver) Nodes(ctx context.Context) ([]*userEve
 }
 
 func (r *userEventLogsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	count, err := db.EventLogs.CountByUserID(ctx, r.opt.UserID)
+	var count int
+	var err error
+
+	if r.opt.EventName != nil {
+		count, err = db.EventLogs.CountByUserIDAndEventName(ctx, r.opt.UserID, *r.opt.EventName)
+	} else {
+		count, err = db.EventLogs.CountByUserID(ctx, r.opt.UserID)
+	}
+
 	return int32(count), err
 }
 
 func (r *userEventLogsConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	count, err := db.EventLogs.CountByUserID(ctx, r.opt.UserID)
+	var count int
+	var err error
+
+	if r.opt.EventName != nil {
+		count, err = db.EventLogs.CountByUserIDAndEventName(ctx, r.opt.UserID, *r.opt.EventName)
+	} else {
+		count, err = db.EventLogs.CountByUserID(ctx, r.opt.UserID)
+	}
+
 	if err != nil {
 		return nil, err
 	}
