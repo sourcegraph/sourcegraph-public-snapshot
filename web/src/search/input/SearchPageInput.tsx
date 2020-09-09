@@ -67,15 +67,9 @@ interface Props
     availableVersionContexts: VersionContext[] | undefined
     /** Whether globbing is enabled for filters. */
     globbing: boolean
-    /** Whether to display the interactive mode input centered on the page, as on the search homepage. */
-    interactiveModeHomepageMode?: boolean
     /** A query fragment to appear at the beginning of the input. */
     queryPrefix?: string
     autoFocus?: boolean
-
-    // For NavLinks
-    authRequired?: boolean
-    showCampaigns: boolean
 }
 
 export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) => {
@@ -250,7 +244,6 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                     onNavbarQueryChange={setUserQueryState}
                     toggleSearchMode={props.toggleSearchMode}
                     lowProfile={false}
-                    homepageMode={props.interactiveModeHomepageMode}
                 />
             ) : (
                 <>

@@ -5,12 +5,13 @@ exports[`GlobalNavbar default 1`] = `
   className="global-navbar global-navbar--bg border-bottom py-1"
 >
   <a
-    className="global-navbar__logo-link global-navbar__logo-animated"
+    className="global-navbar__logo-link"
     to="/search"
   >
-    <img
+    <BrandLogo
       className="global-navbar__logo"
-      src="/.assets/img/sourcegraph-mark.svg"
+      isLightTheme={true}
+      variant="symbol"
     />
   </a>
   <div
@@ -105,40 +106,20 @@ exports[`GlobalNavbar low-profile 1`] = `
 </div>
 `;
 
-exports[`GlobalNavbar low-profile-with-logo 1`] = `
-<div
-  className="global-navbar  py-1"
->
-  <div
-    className="nav-item flex-1"
-  >
-    <a
-      to="/search"
-    >
-      <img
-        className="global-navbar__logo-with-name pl-2"
-        src="/.assets/img/sourcegraph-light-head-logo.svg"
-      />
-    </a>
-  </div>
-  <div
-    className="flex-1"
-  />
-</div>
-`;
-
 exports[`GlobalNavbar no-search-input 1`] = `
 <div
   className="global-navbar global-navbar--bg border-bottom py-1"
 >
-  <div
-    className="global-navbar__logo-link global-navbar__logo-animated"
+  <a
+    className="global-navbar__logo-link"
+    to="/search"
   >
-    <img
+    <BrandLogo
       className="global-navbar__logo"
-      src="/.assets/img/sourcegraph-mark.svg"
+      isLightTheme={true}
+      variant="symbol"
     />
-  </div>
+  </a>
   <div
     className="nav-item flex-1"
   >
