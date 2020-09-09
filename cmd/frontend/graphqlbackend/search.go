@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"math"
 	"regexp"
 	regexpsyntax "regexp/syntax"
@@ -351,43 +350,27 @@ type regexPath struct {
 }
 
 func resolveRepoGroups(settings *schema.Settings) (map[string][]*types.Repo, error, []string) {
-	log.Printf("### HERE")
 	if mockResolveRepoGroups != nil {
 		return mockResolveRepoGroups()
 	}
-
 	groups := map[string][]*types.Repo{}
 	var patterns []string
 
-	log.Printf("# setting.SearchRepositoryGroups: %d", len(settings.SearchRepositoryGroups))
-
 	for name, repoPaths := range settings.SearchRepositoryGroups {
-		log.Printf("### HERE 0")
-		repos := make([]*types.Repo, len(repoPaths))
+		repos := make([]*types.Repo, 0, len(repoPaths))
 
-		for i, repoPath := range repoPaths {
-			log.Printf("### repoPath: %v", repoPath)
-
+		for _, repoPath := range repoPaths {
 			if repoPathString, ok := repoPath.(string); ok {
-				patterns = append(patterns, "^"+regexp.QuoteMeta(repoPathString+"$"))
-				repos[i] = &types.Repo{Name: api.RepoName(repoPathString)}
-			} else {
-				// https://golang.org/pkg/fmt/#hdr-Printing
-				log.Printf("# %T", repoPath)
-				log.Printf("# %v", repoPath)
-				log.Printf("# %+v", repoPath)
-				log.Printf("# %#v", repoPath)
-				var repoPathRegex regexPath
-				//json.Unmarshal(repoPath, &repoPathRegex)
-				//repoPathRegex, ok := repoPath.(regexPath)
-				path := repoPathRegex.regex
-				repos[i] = &types.Repo{Name: api.RepoName(path)}
+				patterns = append(patterns, repoPathString)
+				repos = append(repos, &types.Repo{Name: api.RepoName(repoPathString)})
+			} else if repoPathRegex, ok := repoPath.(map[string]interface{}); ok {
+				var stringRegex string
+				stringRegex = repoPathRegex["regex"].(string)
+				patterns = append(patterns, stringRegex)
 			}
 		}
 		groups[name] = repos
 	}
-	log.Printf("END")
-
 	return groups, nil, patterns
 }
 
@@ -787,17 +770,17 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedReposit
 	// groups and the set of repos specified with repo:. (If none are specified
 	// with repo:, then include all from the group.)
 	if groupNames := op.repoGroupFilters; len(groupNames) > 0 {
-		_, err, patterns := resolveRepoGroups(op.userSettings)
+		groups, err, patterns := resolveRepoGroups(op.userSettings)
 		if err != nil {
 			return resolvedRepositories{}, err
 		}
-		log.Printf("# patterns: %v", patterns)
-		//var patterns []string
-		//for _, groupName := range groupNames {
-		//	for _, repo := range groups[groupName] {
-		//		patterns = append(patterns, "^"+regexp.QuoteMeta(string(repo.Name))+"$")
-		//	}
-		//}
+		var regexPatterns []string
+		for _, groupName := range groupNames {
+			for _, repo := range groups[groupName] {
+				regexPatterns = append(patterns, "^"+regexp.QuoteMeta(string(repo.Name))+"$")
+			}
+		}
+		patterns = append(patterns, regexPatterns...)
 		tr.LazyPrintf("repogroups: adding %d repos to include pattern", len(patterns))
 		includePatterns = append(includePatterns, unionRegExps(patterns))
 
