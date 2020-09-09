@@ -172,12 +172,7 @@ func migrateWithinTransaction(ctx context.Context, dumpID int, filename string, 
 		}
 	}()
 
-	return migrate.Migrate(
-		context.Background(),
-		dumpID,
-		filename,
-		tx,
-	)
+	return migrate.Migrate(ctx, dumpID, filename, tx)
 }
 
 func makeDBFilename(dumpID int) string {
