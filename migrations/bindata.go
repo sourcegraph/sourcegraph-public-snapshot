@@ -130,6 +130,8 @@
 // 1528395713_add_trigger_to_delete_orphan_repos.up.sql (861B)
 // 1528395714_worker_num_failures.down.sql (1.573kB)
 // 1528395714_worker_num_failures.up.sql (1.704kB)
+// 1528395715_repo_name_index_take_2.down.sql (51B)
+// 1528395715_repo_name_index_take_2.up.sql (127B)
 
 package migrations
 
@@ -2798,6 +2800,46 @@ func _1528395714_worker_num_failuresUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395715_repo_name_index_take_2DownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x4a\x2d\xc8\x8f\xcf\x4b\xcc\x4d\x8d\xcf\x4c\xa9\xb0\xe6\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x46\xe0\x5c\x8d\x33\x00\x00\x00")
+
+func _1528395715_repo_name_index_take_2DownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395715_repo_name_index_take_2DownSql,
+		"1528395715_repo_name_index_take_2.down.sql",
+	)
+}
+
+func _1528395715_repo_name_index_take_2DownSql() (*asset, error) {
+	bytes, err := _1528395715_repo_name_index_take_2DownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395715_repo_name_index_take_2.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xfb, 0x14, 0x37, 0x15, 0xdb, 0x54, 0xca, 0x17, 0x23, 0xbc, 0x96, 0xcc, 0x62, 0x41, 0x46, 0x8d, 0xc0, 0xf1, 0xfe, 0xb5, 0x6e, 0x24, 0x3f, 0xcd, 0xdd, 0x22, 0x18, 0xd4, 0x21, 0xc6, 0xa9, 0x56}}
+	return a, nil
+}
+
+var __1528395715_repo_name_index_take_2UpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x14\xcc\x31\x0a\xc3\x20\x14\x80\xe1\xdd\x53\x3c\x32\x25\x4b\x0e\x10\xa7\xd6\xda\xf0\x20\x51\xa8\x16\xb2\x89\x49\x1f\x21\x60\xab\x88\xa5\x39\x7e\x71\xfd\xf9\xf9\xae\x72\x44\xc5\x99\x78\xc8\x8b\x95\x80\xea\x26\x17\xc0\x3b\x28\x6d\x41\x2e\x68\xac\x81\x4c\x29\xba\x8f\x7f\x93\x3b\x5e\x27\x68\x05\xe9\xbb\x86\x63\xeb\x6b\x87\xa7\x41\x35\xc2\x5a\x32\x11\xb4\x21\xfe\x28\xb7\x75\x1d\x86\x42\x67\xe9\x40\xe8\x69\xaa\x6e\xda\xdd\xe6\x8b\x0f\x71\xef\x1b\xd1\x74\x9c\x09\x3d\xcf\x68\x39\xfb\x07\x00\x00\xff\xff\xa3\x96\x28\x66\x7f\x00\x00\x00")
+
+func _1528395715_repo_name_index_take_2UpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395715_repo_name_index_take_2UpSql,
+		"1528395715_repo_name_index_take_2.up.sql",
+	)
+}
+
+func _1528395715_repo_name_index_take_2UpSql() (*asset, error) {
+	bytes, err := _1528395715_repo_name_index_take_2UpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395715_repo_name_index_take_2.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xa7, 0x4f, 0xf9, 0xfd, 0xc0, 0x14, 0x0, 0x11, 0xc1, 0x75, 0x2c, 0x19, 0x32, 0xd9, 0x30, 0x63, 0x26, 0xd3, 0xfa, 0xa1, 0xdf, 0xc, 0x4b, 0xb3, 0x34, 0xb4, 0xb8, 0x7a, 0xd9, 0x29, 0x35, 0x92}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3019,6 +3061,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395713_add_trigger_to_delete_orphan_repos.up.sql":                         _1528395713_add_trigger_to_delete_orphan_reposUpSql,
 	"1528395714_worker_num_failures.down.sql":                                      _1528395714_worker_num_failuresDownSql,
 	"1528395714_worker_num_failures.up.sql":                                        _1528395714_worker_num_failuresUpSql,
+	"1528395715_repo_name_index_take_2.down.sql":                                   _1528395715_repo_name_index_take_2DownSql,
+	"1528395715_repo_name_index_take_2.up.sql":                                     _1528395715_repo_name_index_take_2UpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3195,6 +3239,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395713_add_trigger_to_delete_orphan_repos.up.sql":                         {_1528395713_add_trigger_to_delete_orphan_reposUpSql, map[string]*bintree{}},
 	"1528395714_worker_num_failures.down.sql":                                      {_1528395714_worker_num_failuresDownSql, map[string]*bintree{}},
 	"1528395714_worker_num_failures.up.sql":                                        {_1528395714_worker_num_failuresUpSql, map[string]*bintree{}},
+	"1528395715_repo_name_index_take_2.down.sql":                                   {_1528395715_repo_name_index_take_2DownSql, map[string]*bintree{}},
+	"1528395715_repo_name_index_take_2.up.sql":                                     {_1528395715_repo_name_index_take_2UpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
