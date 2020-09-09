@@ -371,7 +371,8 @@ func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Contex
 		}
 
 		// Check that the session is still valid
-		if info.LastActive.Before(usr.InvalidatedSessionsAt) {
+		// For the reasoning behind adding one second, see security issue #93
+		if info.LastActive.Before(usr.InvalidatedSessionsAt.Add(time.Second * 1)) {
 			_ = deleteSession(w, r) // Delete the now invalid session
 			return r.Context()
 		}
