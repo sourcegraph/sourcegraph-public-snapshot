@@ -21,7 +21,7 @@ exports[`PanelContainer content state 1`] = `
   title="Test Panel"
 >
   <div
-    className="panel-container"
+    className="panel-container d-flex flex-column"
   >
     <div
       className="panel-container__header d-flex border-bottom mb-2"
@@ -32,8 +32,12 @@ exports[`PanelContainer content state 1`] = `
         Test Panel
       </h3>
     </div>
-    <div>
-      Content
+    <div
+      className="panel-container__content"
+    >
+      <div>
+        Content
+      </div>
     </div>
   </div>
 </PanelContainer>
@@ -60,7 +64,7 @@ exports[`PanelContainer empty state 1`] = `
   title="Test Panel"
 >
   <div
-    className="panel-container"
+    className="panel-container d-flex flex-column"
   >
     <div
       className="panel-container__header d-flex border-bottom mb-2"
@@ -71,8 +75,12 @@ exports[`PanelContainer empty state 1`] = `
         Test Panel
       </h3>
     </div>
-    <div>
-      Empty
+    <div
+      className="panel-container__content"
+    >
+      <div>
+        Empty
+      </div>
     </div>
   </div>
 </PanelContainer>
@@ -99,7 +107,7 @@ exports[`PanelContainer loading state 1`] = `
   title="Test Panel"
 >
   <div
-    className="panel-container"
+    className="panel-container d-flex flex-column"
   >
     <div
       className="panel-container__header d-flex border-bottom mb-2"
@@ -110,8 +118,12 @@ exports[`PanelContainer loading state 1`] = `
         Test Panel
       </h3>
     </div>
-    <div>
-      Loading
+    <div
+      className="panel-container__content"
+    >
+      <div>
+        Loading
+      </div>
     </div>
   </div>
 </PanelContainer>
@@ -145,7 +157,7 @@ exports[`PanelContainer with action buttons 1`] = `
   title="Test Panel"
 >
   <div
-    className="panel-container"
+    className="panel-container d-flex flex-column"
   >
     <div
       className="panel-container__header d-flex border-bottom mb-2"
@@ -161,8 +173,12 @@ exports[`PanelContainer with action buttons 1`] = `
         Button
       </button>
     </div>
-    <div>
-      Content
+    <div
+      className="panel-container__content"
+    >
+      <div>
+        Content
+      </div>
     </div>
   </div>
 </PanelContainer>

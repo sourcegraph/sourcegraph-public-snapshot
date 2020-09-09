@@ -140,7 +140,7 @@ export const RecentSearchesPanel: React.FunctionComponent<{
                 <div className="text-center">
                     <button
                         type="button"
-                        className="btn btn-secondary"
+                        className="btn btn-secondary test-recent-searches-panel-show-more"
                         onClick={() => setItmesToLoad(current => current + pageSize)}
                     >
                         Show more
