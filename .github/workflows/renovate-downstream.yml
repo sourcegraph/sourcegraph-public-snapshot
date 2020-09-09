@@ -7,7 +7,7 @@ jobs:
   renovate:
     runs-on: ubuntu-latest
     # Run on commit status success on branch main
-    if: ${{ github.ref == 'refs/heads/main' && github.event.status.state == 'success' }}
+    if: ${{ github.ref == 'refs/heads/main' && github.event.state == 'success' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
