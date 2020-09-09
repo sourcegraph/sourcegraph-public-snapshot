@@ -132,6 +132,8 @@
 // 1528395714_worker_num_failures.up.sql (1.704kB)
 // 1528395715_repo_name_index_take_2.down.sql (51B)
 // 1528395715_repo_name_index_take_2.up.sql (127B)
+// 1528395716_add_git_commit_author.down.sql (62B)
+// 1528395716_add_git_commit_author.up.sql (362B)
 
 package migrations
 
@@ -2840,6 +2842,46 @@ func _1528395715_repo_name_index_take_2UpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395716_add_git_commit_authorDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\xd2\xd5\x55\xf0\xcb\x2f\xc9\xc8\xcc\x4b\x57\xc8\x4b\x4d\x4d\x49\x4d\xd1\x51\xc8\xcb\xcf\xd3\x4d\x49\x2d\x2e\x29\x2a\x4d\x2e\xc9\x2c\x4b\x55\xc8\x2f\x48\x2d\x4a\x2c\xc9\xcc\xcf\xe3\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x58\x72\x8a\x01\x3e\x00\x00\x00")
+
+func _1528395716_add_git_commit_authorDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395716_add_git_commit_authorDownSql,
+		"1528395716_add_git_commit_author.down.sql",
+	)
+}
+
+func _1528395716_add_git_commit_authorDownSql() (*asset, error) {
+	bytes, err := _1528395716_add_git_commit_authorDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395716_add_git_commit_author.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x50, 0x99, 0xc6, 0x3c, 0x73, 0x61, 0xb5, 0x22, 0xbf, 0x89, 0x69, 0x28, 0x29, 0x6c, 0xc6, 0x1b, 0x96, 0xa0, 0xee, 0x16, 0xd3, 0x9d, 0x28, 0x4, 0x41, 0x9a, 0xa4, 0xae, 0x88, 0x1c, 0xda, 0x6b}}
+	return a, nil
+}
+
+var __1528395716_add_git_commit_authorUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x5c\x8e\x5f\x4b\xc3\x30\x14\xc5\xdf\xf3\x29\x2e\x7d\xe9\x0a\xab\xec\xb9\xc5\xe2\xd4\xa0\x7b\xd8\x14\x57\xf1\xb1\xdc\xa6\x77\x6d\x47\x93\x94\xfc\x11\xc4\xf9\xdd\x25\xeb\xe8\xc4\xf3\x92\x43\xce\x49\xce\xef\x9e\x3f\x6d\x76\x39\x4b\x53\x58\x37\x0d\x34\x74\x40\x3f\x38\xf8\xc4\xc1\x93\x85\x83\x36\xd0\xf6\x0e\x84\x96\xb2\x77\x80\xde\x75\xda\xc0\x42\xa1\x24\x40\xd5\x00\x49\xec\x87\x84\xbd\xbf\x3e\xae\x4b\x0e\xa2\x43\xd5\x92\x25\x57\xd9\x91\x84\x65\x7b\x5e\x42\x70\x70\x3b\x1d\xa7\x13\x1c\xad\x56\x55\xed\xfb\xa1\xa9\x74\x7d\x24\xe1\x16\x0c\x2e\x8a\xa7\x11\x1b\x2f\xe7\xab\x3f\x6d\x34\x06\xbf\xae\xe5\xa0\xf0\x67\x5a\xcc\xcf\xd2\x62\x15\x16\xe2\xef\x68\xc2\xdc\xa1\xa4\x28\x83\x68\xaf\xbd\x11\xd4\x1a\x1c\xbb\x68\x09\x97\x90\x07\xf0\x90\x0a\x94\x23\xf6\xad\xb2\x77\xf6\xda\xbb\x11\x5a\x46\x3f\xf1\xbc\x96\x9c\x5d\x92\x65\x01\xa8\x66\x1f\xcf\xfc\x8d\x9f\xe1\xea\x89\xab\x1a\x48\xb5\xae\x5b\xfc\x23\x4a\xa0\x80\x55\xce\x1e\x5e\xb6\xdb\x4d\x99\xb3\xdf\x00\x00\x00\xff\xff\x7f\xc5\x59\x30\x6a\x01\x00\x00")
+
+func _1528395716_add_git_commit_authorUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395716_add_git_commit_authorUpSql,
+		"1528395716_add_git_commit_author.up.sql",
+	)
+}
+
+func _1528395716_add_git_commit_authorUpSql() (*asset, error) {
+	bytes, err := _1528395716_add_git_commit_authorUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395716_add_git_commit_author.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xa, 0xeb, 0xc6, 0xc6, 0xdc, 0x34, 0x81, 0x95, 0x11, 0x57, 0xb8, 0x10, 0x60, 0xe3, 0x16, 0x70, 0xd, 0xc9, 0x9b, 0x8b, 0x60, 0xb7, 0xe6, 0xe8, 0x94, 0x1c, 0x89, 0xe3, 0xc, 0xb6, 0x39, 0x1f}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3063,6 +3105,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395714_worker_num_failures.up.sql":                                        _1528395714_worker_num_failuresUpSql,
 	"1528395715_repo_name_index_take_2.down.sql":                                   _1528395715_repo_name_index_take_2DownSql,
 	"1528395715_repo_name_index_take_2.up.sql":                                     _1528395715_repo_name_index_take_2UpSql,
+	"1528395716_add_git_commit_author.down.sql":                                    _1528395716_add_git_commit_authorDownSql,
+	"1528395716_add_git_commit_author.up.sql":                                      _1528395716_add_git_commit_authorUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3241,6 +3285,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395714_worker_num_failures.up.sql":                                        {_1528395714_worker_num_failuresUpSql, map[string]*bintree{}},
 	"1528395715_repo_name_index_take_2.down.sql":                                   {_1528395715_repo_name_index_take_2DownSql, map[string]*bintree{}},
 	"1528395715_repo_name_index_take_2.up.sql":                                     {_1528395715_repo_name_index_take_2UpSql, map[string]*bintree{}},
+	"1528395716_add_git_commit_author.down.sql":                                    {_1528395716_add_git_commit_authorDownSql, map[string]*bintree{}},
+	"1528395716_add_git_commit_author.up.sql":                                      {_1528395716_add_git_commit_authorUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

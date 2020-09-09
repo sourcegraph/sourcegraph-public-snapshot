@@ -998,7 +998,9 @@ func TestChangesetSpecUnmarshalValidate(t *testing.T) {
 				"published": false,
 				"commits": [{
 				  "message": "commit message",
-				  "diff": "the diff"
+				  "diff": "the diff",
+				  "authorName": "Mary McButtons",
+				  "authorEmail": "mary@example.com"
 				}]
 			}`,
 		},
@@ -1012,7 +1014,9 @@ func TestChangesetSpecUnmarshalValidate(t *testing.T) {
 				"title": "my title",
 				"published": false,
 				"commits": [{
-				  "diff": "the diff"
+				  "diff": "the diff",
+				  "authorName": "Mary McButtons",
+				  "authorEmail": "mary@example.com"
 				}]
 			}`,
 			err: "4 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* baseRev is required\n\t* body is required\n\t* commits.0: message is required\n\n",
@@ -1037,7 +1041,9 @@ func TestChangesetSpecUnmarshalValidate(t *testing.T) {
 				"published": false,
 				"commits": [{
 				  "message": "commit message",
-				  "diff": "the diff"
+				  "diff": "the diff",
+				  "authorName": "Mary McButtons",
+				  "authorEmail": "mary@example.com"
 				}]
 			}`,
 			err: ErrHeadBaseMismatch.Error(),
@@ -1056,11 +1062,15 @@ func TestChangesetSpecUnmarshalValidate(t *testing.T) {
 				"commits": [
 				  {
 				    "message": "commit message",
-				    "diff": "the diff"
+					"diff": "the diff",
+					"authorName": "Mary McButtons",
+					"authorEmail": "mary@example.com"
 				  },
                   {
 				    "message": "commit message2",
-				    "diff": "the diff2"
+					"diff": "the diff2",
+					"authorName": "Mary McButtons",
+					"authorEmail": "mary@example.com"
 				  }
 				]
 			}`,

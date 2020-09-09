@@ -409,6 +409,8 @@ type ExcludedGitoliteRepo struct {
 
 // ExpandedGitCommitDescription description: The Git commit to create with the changes.
 type ExpandedGitCommitDescription struct {
+	// Author description: The author of the Git commit.
+	Author *GitCommitAuthor `json:"author,omitempty"`
 	// Message description: The Git commit message.
 	Message string `json:"message"`
 }
@@ -460,8 +462,20 @@ type ExternalIdentity struct {
 	Type           string `json:"type"`
 }
 
+// GitCommitAuthor description: The author of the Git commit.
+type GitCommitAuthor struct {
+	// Email description: The Git commit author email.
+	Email string `json:"email"`
+	// Name description: The Git commit author name.
+	Name string `json:"name"`
+}
+
 // GitCommitDescription description: The Git commit to create with the changes.
 type GitCommitDescription struct {
+	// AuthorEmail description: The Git commit author email.
+	AuthorEmail string `json:"authorEmail"`
+	// AuthorName description: The Git commit author name.
+	AuthorName string `json:"authorName"`
 	// Diff description: The commit diff (in unified diff format).
 	Diff string `json:"diff"`
 	// Message description: The Git commit message.
