@@ -12,7 +12,7 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 interface Props extends Pick<PatternTypeProps, 'patternType'> {
     authenticatedUser: AuthenticatedUser | null
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
-    fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult>
+    fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult | null>
 }
 
 export const EnterpriseHomePanels: React.FunctionComponent<Props> = (props: Props) => (

@@ -169,7 +169,7 @@ export interface OnboardingTourProps {
 export interface EnterpriseHomePanelsProps {
     showEnterpriseHomePanels: boolean
     fetchSavedSearches: () => Observable<ISavedSearch[]>
-    fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult>
+    fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult | null>
 }
 
 /**

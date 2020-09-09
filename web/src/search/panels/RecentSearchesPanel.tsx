@@ -21,7 +21,7 @@ interface RecentSearch {
 export const RecentSearchesPanel: React.FunctionComponent<{
     className?: string
     authenticatedUser: AuthenticatedUser | null
-    fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult>
+    fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult | null>
 }> = ({ className, authenticatedUser, fetchRecentSearches }) => {
     const pageSize = 20
 
