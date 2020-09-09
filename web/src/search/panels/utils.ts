@@ -1,5 +1,5 @@
 import { Observable, of } from 'rxjs'
-import { ISavedSearch, Namespace, IOrg } from '../../../../shared/src/graphql/schema'
+import { ISavedSearch, Namespace, IOrg, IUser } from '../../../../shared/src/graphql/schema'
 import { AuthenticatedUser } from '../../auth'
 
 export const authUser: AuthenticatedUser = {
@@ -32,7 +32,7 @@ export const org: IOrg = {
     createdAt: '2020-01-01',
     members: {
         __typename: 'UserConnection',
-        nodes: [authUser],
+        nodes: [authUser] as IUser[],
         totalCount: 1,
         pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
     },
