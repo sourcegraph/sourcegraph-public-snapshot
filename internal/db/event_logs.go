@@ -43,6 +43,14 @@ func (*eventLogs) Insert(ctx context.Context, e *Event) error {
 		argument = json.RawMessage([]byte(`{}`))
 	}
 
+	if secretPkg.ConfiguredToEncrypt() {
+		a, err := secretPkg.EncryptBytes(argument)
+		if err != nil {
+			return err
+		}
+		argument = json.RawMessage(a)
+	}
+
 	_, err := dbconn.Global.ExecContext(
 		ctx,
 		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp) VALUES($1, $2, $3, $4, $5, $6, $7, $8)",
@@ -75,6 +83,15 @@ func (*eventLogs) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*typ
 		if err != nil {
 			return nil, err
 		}
+
+		if secretPkg.ConfiguredToEncrypt() {
+			a, err := secretPkg.DecryptBytes([]byte(r.Argument))
+			if err != nil {
+				return nil, err
+			}
+			r.Argument = string(a)
+		}
+
 		events = append(events, &r)
 	}
 	if err = rows.Err(); err != nil {
