@@ -52,11 +52,38 @@ func (s *userExternalAccounts) LookupUserAndSave(ctx context.Context, spec extsv
 		return Mocks.ExternalAccounts.LookupUserAndSave(spec, data)
 	}
 
+	var (
+		denc  *json.RawMessage
+		adenc *json.RawMessage
+	)
+
+	if secretPkg.ConfiguredToEncrypt() {
+		d, err := secretPkg.EncryptBytes(*data.Data)
+		if err != nil {
+			return userID, err
+		}
+
+		ad, err := secretPkg.EncryptBytes(*data.AuthData)
+		if err != nil {
+			return userID, err
+		}
+
+		dtmp := json.RawMessage(d)
+		denc = &dtmp
+
+		adtmp := json.RawMessage(ad)
+		adenc = &adtmp
+
+	} else {
+		adenc = data.AuthData
+		denc = data.Data
+	}
+
 	err = dbconn.Global.QueryRowContext(ctx, `
 UPDATE user_external_accounts SET auth_data=$5, account_data=$6, updated_at=now()
 WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND deleted_at IS NULL
 RETURNING user_id
-`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.Data).Scan(&userID)
+`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, adenc, denc).Scan(&userID)
 	if err == sql.ErrNoRows {
 		err = userExternalAccountNotFoundError{[]interface{}{spec}}
 	}
@@ -116,11 +143,38 @@ WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND d
 		return s.insert(ctx, tx, userID, spec, data)
 	}
 
+	var (
+		denc  *json.RawMessage
+		adenc *json.RawMessage
+	)
+
+	if secretPkg.ConfiguredToEncrypt() {
+		d, err := secretPkg.EncryptBytes(*data.Data)
+		if err != nil {
+			return err
+		}
+
+		ad, err := secretPkg.EncryptBytes(*data.AuthData)
+		if err != nil {
+			return err
+		}
+
+		dtmp := json.RawMessage(d)
+		denc = &dtmp
+
+		adtmp := json.RawMessage(ad)
+		adenc = &adtmp
+
+	} else {
+		adenc = data.AuthData
+		denc = data.Data
+	}
+
 	// Update the external account (it exists).
 	res, err := tx.ExecContext(ctx, `
 UPDATE user_external_accounts SET auth_data=$6, account_data=$7, updated_at=now()
 WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND user_id=$5 AND deleted_at IS NULL
-`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, userID, data.AuthData, data.Data)
+`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, userID, adenc, denc)
 	if err != nil {
 		return err
 	}
