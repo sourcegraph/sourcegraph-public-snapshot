@@ -99,6 +99,10 @@ const config = {
       exclude: [storybookDirectory],
       use: ['style-loader', 'css-loader'],
     })
+    config.module.rules.unshift({
+      test: /\.ya?ml$/,
+      use: ['raw-loader'],
+    })
 
     Object.assign(config.entry, {
       'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',

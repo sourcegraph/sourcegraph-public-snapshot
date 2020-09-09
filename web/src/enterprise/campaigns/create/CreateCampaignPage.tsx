@@ -1,41 +1,35 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { PageTitle } from '../../../components/PageTitle'
 import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 import { PageHeader } from '../../../components/PageHeader'
 import { CampaignsIcon } from '../icons'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
+import emptySample from './samples/empty.yml'
+import combySample from './samples/comby.yml'
+import goImportsSample from './samples/go-imports.yml'
 
-const campaignSpec = `name: hello-world
-description: Add Hello World to READMEs
+interface Sample {
+    name: string
+    file: string
+}
 
-# Find all repositories that contain a README.md file.
-on:
-  - repositoriesMatchingQuery: file:README.md
+const samples: Sample[] = [
+    { name: 'Empty', file: emptySample },
+    { name: 'Modify code using comby', file: combySample },
+    { name: 'Update go imports', file: goImportsSample },
+]
 
-# In each repository, run this command. Each repository's resulting diff is captured.
-steps:
-  - run: echo Hello World | tee -a $(find -name README.md)
-    container: alpine:3
-
-# Describe the changeset (e.g., GitHub pull request) you want for each repository.
-changesetTemplate:
-  title: Hello World
-  body: My first campaign!
-  branch: hello-world # Push the commit to this branch.
-  commit:
-    message: Append Hello World to all README.md files
-  published: false`
-
-const helloWorldDownloadUrl = 'data:text/plain;charset=utf-8,' + encodeURIComponent(campaignSpec)
-
-const sourcePreviewCommand =
-    'src campaign preview -f hello-world.campaign.yaml -namespace sourcegraph-username-or-organisation'
+const sourcePreviewCommand = 'src campaign preview -f hello-world.campaign.yaml -namespace {USERNAME/ORG}'
 
 export interface CreateCampaignPageProps extends BreadcrumbSetters {
     // Nothing for now, but using it so once this changes we get type errors in the routing files.
 }
 
 export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps> = ({ useBreadcrumb }) => {
+    const [selectedSample, setSelectedSample] = useState<Sample>(samples[0])
+    const downloadUrl = useMemo(() => 'data:text/plain;charset=utf-8,' + encodeURIComponent(selectedSample.file), [
+        selectedSample,
+    ])
     useBreadcrumb(useMemo(() => ({ element: <>Create campaign</>, key: 'createCampaignPage' }), []))
     return (
         <>
@@ -66,7 +60,7 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                     <p className="m-0 lead">This campaign specification adds "Hello World" to all README.md files:</p>
                     <a
                         download="hello-world.campaign.yaml"
-                        href={helloWorldDownloadUrl}
+                        href={downloadUrl}
                         className="text-right btn btn-secondary text-nowrap"
                         data-tooltip="Download hello-world.campaign.yaml"
                     >
@@ -74,7 +68,7 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                     </a>
                 </div>
                 <div className="bg-light rounded p-2 mb-3">
-                    <pre className="m-0">{campaignSpec}</pre>
+                    <pre className="m-0">{selectedSample}</pre>
                 </div>
                 <p className="lead">
                     Use Sourcegraph's CLI tool, <code>src</code>, to execute the steps in the campaign spec and upload
