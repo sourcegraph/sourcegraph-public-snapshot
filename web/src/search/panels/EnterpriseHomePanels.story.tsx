@@ -2,9 +2,18 @@ import React from 'react'
 import { EnterpriseHomePanels } from './EnterpriseHomePanels'
 import { storiesOf } from '@storybook/react'
 import { WebStory } from '../../components/WebStory'
-import { IOrg, SearchPatternType } from '../../../../shared/src/graphql/schema'
+import {
+    IOrg,
+    SearchPatternType,
+    ISavedSearch,
+    Namespace,
+    IUser,
+    IUserConnection,
+    IConfiguration,
+} from '../../../../shared/src/graphql/schema'
 import { AuthenticatedUser } from '../../auth'
-import sinon from 'sinon'
+import { of, Observable } from 'rxjs'
+import { NOOP_SETTINGS_CASCADE } from '../../../../shared/src/util/searchTestHelpers'
 
 const { add } = storiesOf('web/search/panels/EnterpriseHomePanels', module).addParameters({
     design: {
@@ -36,10 +45,70 @@ const authUser: AuthenticatedUser = {
     databaseID: 0,
 }
 
+const org: IOrg = {
+    __typename: 'Org',
+    id: '1',
+    name: 'test-org',
+    displayName: 'test org',
+    createdAt: '2020-01-01',
+    members: {
+        __typename: 'UserConnection',
+        nodes: [authUser as IUser],
+        totalCount: 1,
+        pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
+    },
+    latestSettings: null,
+    settingsCascade: {
+        __typename: 'SettingsCascade',
+        subjects: [],
+        final: '',
+        merged: { __typename: 'Configuration', contents: '', messages: [] },
+    },
+    configurationCascade: {
+        __typename: 'ConfigurationCascade',
+        subjects: [],
+        merged: { __typename: 'Configuration', contents: '', messages: [] },
+    },
+    viewerPendingInvitation: null,
+    viewerCanAdminister: true,
+    viewerIsMember: true,
+    url: '/organizations/test-org',
+    settingsURL: '/organizations/test-org/settings',
+    namespaceName: 'test-org',
+    campaigns: {
+        __typename: 'CampaignConnection',
+        nodes: [],
+        totalCount: 0,
+        pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
+    },
+}
+
 const props = {
     authenticatedUser: authUser,
     patternType: SearchPatternType.literal,
-    fetchSavedSearches: sinon.spy(),
+    fetchSavedSearches: (): Observable<ISavedSearch[]> =>
+        of([
+            {
+                __typename: 'SavedSearch',
+                id: 'test',
+                description: 'test',
+                query: 'test',
+                notify: false,
+                notifySlack: false,
+                namespace: authUser as Namespace,
+                slackWebhookURL: null,
+            },
+            {
+                __typename: 'SavedSearch',
+                id: 'test-org',
+                description: 'org test',
+                query: 'org test',
+                notify: false,
+                notifySlack: false,
+                namespace: org,
+                slackWebhookURL: null,
+            },
+        ]),
 }
 
 add('Panels', () => <WebStory>{() => <EnterpriseHomePanels {...props} />}</WebStory>)
