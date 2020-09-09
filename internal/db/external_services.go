@@ -358,10 +358,21 @@ func (e *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf
 	es.CreatedAt = time.Now().UTC().Truncate(time.Microsecond)
 	es.UpdatedAt = es.CreatedAt
 
+	var cfg string
+	if secretPkg.ConfiguredToEncrypt() {
+		c, err := secretPkg.EncryptBytes([]byte(es.Config))
+		if err != nil {
+			return err
+		}
+		cfg = string(c)
+	} else {
+		cfg = es.Config
+	}
+
 	return dbconn.Global.QueryRowContext(
 		ctx,
 		"INSERT INTO external_services(kind, display_name, config, created_at, updated_at, namespace_user_id) VALUES($1, $2, $3, $4, $5, $6) RETURNING id",
-		es.Kind, es.DisplayName, es.Config, es.CreatedAt, es.UpdatedAt, es.NamespaceUserID,
+		es.Kind, es.DisplayName, cfg, es.CreatedAt, es.UpdatedAt, es.NamespaceUserID,
 	).Scan(&es.ID)
 }
 
@@ -395,6 +406,15 @@ func (e *ExternalServicesStore) Update(ctx context.Context, ps []schema.AuthProv
 			HasNamespace:  externalService.NamespaceUserID != nil,
 		}); err != nil {
 			return err
+		}
+
+		if secretPkg.ConfiguredToEncrypt() {
+			c, err := secretPkg.EncryptBytes([]byte(*update.Config))
+			if err != nil {
+				return err
+			}
+			cfg := string(c)
+			update.Config = &cfg
 		}
 	}
 
@@ -543,6 +563,7 @@ func (*ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, lim
 			nextSyncAt     sql.NullTime
 			namepaceUserID sql.NullInt32
 		)
+
 		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namepaceUserID); err != nil {
 			return nil, err
 		}
@@ -558,6 +579,17 @@ func (*ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, lim
 		if namepaceUserID.Valid {
 			h.NamespaceUserID = &namepaceUserID.Int32
 		}
+
+		cfg := h.Config
+		if secretPkg.ConfiguredToEncrypt() {
+			c, err := secretPkg.DecryptBytes([]byte(cfg))
+			if err != nil {
+				return nil, err
+			}
+			cfg = string(c)
+		}
+		h.Config = cfg
+
 		results = append(results, &h)
 	}
 	if err = rows.Err(); err != nil {
