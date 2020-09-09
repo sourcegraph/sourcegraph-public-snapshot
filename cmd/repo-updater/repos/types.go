@@ -575,6 +575,8 @@ type Repo struct {
 	Archived bool
 	// Private is whether the repository is private.
 	Private bool
+	// Unrestricted is whether access to the repository is unrestricted.
+	Unrestricted bool
 	// Cloned is whether the repository is cloned.
 	Cloned bool
 	// CreatedAt is when this repository was created on Sourcegraph.

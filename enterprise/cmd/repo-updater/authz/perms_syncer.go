@@ -251,23 +251,33 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	}
 
 	repo := rs[0]
-	if !repo.Private {
+	if !repo.Private && repo.Unrestricted {
 		return nil
 	}
 
-	// Loop over repository's sources and see if matching any authz provider's URN.
 	var provider authz.Provider
-	providers := s.providersByURNs()
-	for urn := range repo.Sources {
-		p, ok := providers[urn]
-		if ok {
-			provider = p
-			break
+
+	// No need to check authz provider for a non-private repository,
+	// we ended up here only because `repo.Unrestricted` is "false" and should be "true".
+	if !repo.Private {
+		// Loop over repository's sources and see if matching any authz provider's URN.
+		providers := s.providersByURNs()
+		for urn := range repo.Sources {
+			p, ok := providers[urn]
+			if ok {
+				provider = p
+				break
+			}
 		}
 	}
 
 	if provider == nil {
 		log15.Debug("PermsSyncer.syncRepoPerms.noProvider", "repoID", repo.ID)
+
+		repo.Unrestricted = true
+		if err := s.reposStore.UpsertRepos(ctx, repo); err != nil {
+			return errors.Wrapf(err, "upsert repo %d", repo.ID)
+		}
 
 		// We have no authz provider configured for this private repository.
 		// However, we need to upsert the dummy record in order to prevent
@@ -617,9 +627,8 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			return
 		}
 
-		// Skip if permissions user mapping is enabled or no authz provider is configured
-		if globals.PermissionsUserMapping().Enabled ||
-			len(s.providersByServiceID()) == 0 {
+		// Skip if permissions user mapping is enabled
+		if globals.PermissionsUserMapping().Enabled {
 			continue
 		}
 
