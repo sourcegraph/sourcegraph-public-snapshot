@@ -62,11 +62,11 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
             )}
         </div>
         <div>
-            <strong className="mr-2">
+            <span className="mr-2">
                 <Link to={node.repository.url} target="_blank" rel="noopener noreferrer">
                     {node.repository.name}
                 </Link>
-            </strong>
+            </span>
             {node.publicationState === ChangesetPublicationState.PUBLISHED && (
                 <ChangesetLastSynced changeset={node} viewerCanAdminister={viewerCanAdminister} />
             )}
