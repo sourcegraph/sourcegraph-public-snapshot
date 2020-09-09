@@ -43,8 +43,14 @@ type ChangesetTemplate struct {
 	Published bool                         `json:"published" yaml:"published"`
 }
 
+type GitCommitAuthor struct {
+	Name  string `json:"name" yaml:"name"`
+	Email string `json:"email" yaml:"email"`
+}
+
 type ExpandedGitCommitDescription struct {
-	Message string `json:"message,omitempty" yaml:"message"`
+	Message string           `json:"message,omitempty" yaml:"message"`
+	Author  *GitCommitAuthor `json:"author,omitempty" yaml:"author"`
 }
 
 type ImportChangeset struct {

@@ -26,6 +26,8 @@ type CreatedChangeset struct {
 }
 
 type GitCommitDescription struct {
-	Message string `json:"message"`
-	Diff    string `json:"diff"`
+	Message     string `json:"message"`
+	Diff        string `json:"diff"`
+	AuthorName  string `json:"authorName"`
+	AuthorEmail string `json:"authorEmail"`
 }

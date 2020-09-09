@@ -11,6 +11,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ## Unreleased changes
 
+- Campaigns specs now include an optional `author` property. (If not included, `src campaigns` generates default values for author name and email.) `src campaigns` now includes the name and email in all changeset specs that it generates.
+
 ### Changed
 
 - The default branch for the `src-cli` project has been changed to `main`. [#262](https://github.com/sourcegraph/src-cli/pull/262)

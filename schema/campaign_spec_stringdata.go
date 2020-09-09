@@ -37,9 +37,6 @@ const CampaignSpecJSON = `{
                 "type": "string",
                 "description": "A Sourcegraph search query that matches a set of repositories (and branches). If the query matches files, symbols, or some other object inside a repository, the object's repository is included.",
                 "examples": ["file:README.md"]
-              },
-              "changesetTemplate": {
-                "$ref": "#/definitions/changesetTemplate"
               }
             }
           },
@@ -118,24 +115,13 @@ const CampaignSpecJSON = `{
       }
     },
     "changesetTemplate": {
-      "$ref": "#/definitions/changesetTemplate"
-    }
-  },
-  "definitions": {
-    "changesetTemplate": {
       "type": "object",
       "description": "A template describing how to create (and update) changesets with the file changes produced by the command steps.",
       "additionalProperties": false,
       "required": ["title", "branch", "commit", "published"],
       "properties": {
-        "title": {
-          "type": "string",
-          "description": "The title of the changeset."
-        },
-        "body": {
-          "type": "string",
-          "description": "The body (description) of the changeset."
-        },
+        "title": { "type": "string", "description": "The title of the changeset." },
+        "body": { "type": "string", "description": "The body (description) of the changeset." },
         "branch": {
           "type": "string",
           "description": "The name of the Git branch to create or update on each repository with the changes."
@@ -150,6 +136,24 @@ const CampaignSpecJSON = `{
             "message": {
               "type": "string",
               "description": "The Git commit message."
+            },
+            "author": {
+              "title": "GitCommitAuthor",
+              "type": "object",
+              "description": "The author of the Git commit.",
+              "additionalProperties": false,
+              "required": ["name", "email"],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "The Git commit author name."
+                },
+                "email": {
+                  "type": "string",
+                  "format": "email",
+                  "description": "The Git commit author email."
+                }
+              }
             }
           }
         },

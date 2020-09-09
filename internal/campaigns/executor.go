@@ -255,6 +255,18 @@ func reachedTimeout(cmdCtx context.Context, err error) bool {
 }
 
 func createChangesetSpec(task *Task, diff string) *ChangesetSpec {
+	var authorName string
+	var authorEmail string
+
+	if task.Template.Commit.Author == nil {
+		// user did not provide author info, so use defaults
+		authorName = "Sourcegraph"
+		authorEmail = "campaigns@sourcegraph.com"
+	} else {
+		authorName = task.Template.Commit.Author.Name
+		authorEmail = task.Template.Commit.Author.Email
+	}
+
 	return &ChangesetSpec{
 		BaseRepository: task.Repository.ID,
 		CreatedChangeset: &CreatedChangeset{
@@ -266,8 +278,10 @@ func createChangesetSpec(task *Task, diff string) *ChangesetSpec {
 			Body:           task.Template.Body,
 			Commits: []GitCommitDescription{
 				{
-					Message: task.Template.Commit.Message,
-					Diff:    string(diff),
+					Message:     task.Template.Commit.Message,
+					AuthorName:  authorName,
+					AuthorEmail: authorEmail,
+					Diff:        string(diff),
 				},
 			},
 			Published: task.Template.Published,
