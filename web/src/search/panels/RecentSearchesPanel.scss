@@ -1,6 +1,24 @@
 .recent-searches-panel {
     &__results-table {
         width: 100%;
+
+        &-row {
+            border-bottom: solid 0.25rem transparent;
+        }
+
+        &-date-col {
+            width: 6rem;
+        }
+
+        &-count-col {
+            width: 3rem;
+        }
+
+        &-count {
+            width: 1.5rem;
+            height: 1.25rem;
+            pointer-events: none;
+        }
     }
 
     &__examples-list {

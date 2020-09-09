@@ -127,25 +127,33 @@ export const RecentSearchesPanel: React.FunctionComponent<{
     const contentDisplay = (
         <>
             <table className="recent-searches-panel__results-table">
-                <thead className="recent-searches-panel__results-table-head">
-                    <tr>
-                        <th>Count</th>
-                        <th>Search</th>
-                        <th>Date</th>
+                <thead>
+                    <tr className="recent-searches-panel__results-table-row">
+                        <th>
+                            <small>Count</small>
+                        </th>
+                        <th>
+                            <small>Search</small>
+                        </th>
+                        <th>
+                            <small>Date</small>
+                        </th>
                     </tr>
                 </thead>
                 <tbody className="recent-searches-panel__results-table-body">
                     {processedResults?.map((recentSearch, index) => (
-                        <tr key={index}>
-                            <td className="recent-searches-panel__results-count-cell">
-                                <span className="recent-searches-panel__results-count">{recentSearch.count}</span>
+                        <tr key={index} className="recent-searches-panel__results-table-row">
+                            <td className="recent-searches-panel__results-table-count-col">
+                                <span className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center">
+                                    {recentSearch.count}
+                                </span>
                             </td>
                             <td>
                                 <Link to={recentSearch.url} className="text-monospace">
                                     {recentSearch.searchText}
                                 </Link>
                             </td>
-                            <td>
+                            <td className="recent-searches-panel__results-table-date-col">
                                 <Timestamp noAbout={true} date={recentSearch.timestamp} />
                             </td>
                         </tr>
