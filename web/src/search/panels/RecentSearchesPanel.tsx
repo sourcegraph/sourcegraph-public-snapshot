@@ -1,50 +1,21 @@
 import classNames from 'classnames'
-import React, { useState, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { AuthenticatedUser } from '../../auth'
-import { Link } from '../../../../shared/src/components/Link'
-import { PanelContainer } from './PanelContainer'
-import { Timestamp } from '../../components/time/Timestamp'
-import { EventLogResult } from '../backend'
-import { Observable } from 'rxjs'
-import { useObservable } from '../../../../shared/src/util/useObservable'
-import { SearchPatternType } from '../../graphql-operations'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
+import { EventLogResult } from '../backend'
+import { Link } from '../../../../shared/src/components/Link'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { Observable } from 'rxjs'
+import { PanelContainer } from './PanelContainer'
+import { SearchPatternType } from '../../graphql-operations'
+import { Timestamp } from '../../components/time/Timestamp'
+import { useObservable } from '../../../../shared/src/util/useObservable'
 
 interface RecentSearch {
     count: number
     searchText: string
     timestamp: string
     url: string
-}
-
-const processRecentSearches = (eventLogResult?: EventLogResult): RecentSearch[] | null => {
-    if (!eventLogResult) {
-        return null
-    }
-
-    const recentSearches: RecentSearch[] = []
-
-    for (const node of eventLogResult.nodes) {
-        if (node.argument) {
-            const parsedArguments = JSON.parse(node.argument)
-            const searchText: string = parsedArguments?.code_search?.query_data?.combined
-
-            if (recentSearches.length > 0 && recentSearches[recentSearches.length - 1].searchText === searchText) {
-                recentSearches[recentSearches.length - 1].count += 1
-            } else {
-                const parsedUrl = new URL(node.url)
-                recentSearches.push({
-                    count: 1,
-                    url: parsedUrl.pathname + parsedUrl.search, // Strip domain from URL so clicking on it doesn't reload page
-                    searchText,
-                    timestamp: node.timestamp,
-                })
-            }
-        }
-    }
-
-    return recentSearches
 }
 
 export const RecentSearchesPanel: React.FunctionComponent<{
@@ -62,10 +33,15 @@ export const RecentSearchesPanel: React.FunctionComponent<{
             itemsToLoad,
         ])
     )
+    const [processedResults, setProcessedResults] = useState<RecentSearch[] | null>(null)
 
-    const processedResults = useMemo(() => (recentSearches ? processRecentSearches(recentSearches) : null), [
-        recentSearches,
-    ])
+    // Only update processed results when results are valid to prevent
+    // flashing loading screen when "Show more" button is clicked
+    useEffect(() => {
+        if (recentSearches) {
+            setProcessedResults(processRecentSearches(recentSearches))
+        }
+    }, [recentSearches])
 
     const loadingDisplay = (
         <div className="d-flex justify-content-center align-items-center panel-container__empty-container">
@@ -184,4 +160,33 @@ export const RecentSearchesPanel: React.FunctionComponent<{
             emptyContent={emptyDisplay}
         />
     )
+}
+
+function processRecentSearches(eventLogResult?: EventLogResult): RecentSearch[] | null {
+    if (!eventLogResult) {
+        return null
+    }
+
+    const recentSearches: RecentSearch[] = []
+
+    for (const node of eventLogResult.nodes) {
+        if (node.argument) {
+            const parsedArguments = JSON.parse(node.argument)
+            const searchText: string = parsedArguments?.code_search?.query_data?.combined
+
+            if (recentSearches.length > 0 && recentSearches[recentSearches.length - 1].searchText === searchText) {
+                recentSearches[recentSearches.length - 1].count += 1
+            } else {
+                const parsedUrl = new URL(node.url)
+                recentSearches.push({
+                    count: 1,
+                    url: parsedUrl.pathname + parsedUrl.search, // Strip domain from URL so clicking on it doesn't reload page
+                    searchText,
+                    timestamp: node.timestamp,
+                })
+            }
+        }
+    }
+
+    return recentSearches
 }
