@@ -29,18 +29,18 @@ const iconClassNames = 'm-0 mx-4 text-nowrap d-flex flex-column align-items-cent
 export const ChangesetSpecActionPublish: React.FunctionComponent<{}> = () => (
     <div className={iconClassNames}>
         <ClipboardCheckOutlineIcon data-tooltip="This changeset will be published on the code host when the spec is applied." />
-        <span className="text-muted">Publish</span>
+        <span className="text-muted">Will publish</span>
     </div>
 )
 export const ChangesetSpecActionNoPublish: React.FunctionComponent<{}> = () => (
     <div className={iconClassNames}>
         <ClipboardAlertOutlineIcon data-tooltip="This changeset will NOT be published on the code host when the spec is applied." />
-        <span className="text-muted">Not publish</span>
+        <span className="text-muted">Won't publish</span>
     </div>
 )
 export const ChangesetSpecActionImport: React.FunctionComponent<{}> = () => (
     <div className={iconClassNames}>
         <ClipboardArrowUpOutlineIcon data-tooltip="This changeset will be imported from the code host." />
-        <span className="text-muted">Import</span>
+        <span className="text-muted">Will import</span>
     </div>
 )
