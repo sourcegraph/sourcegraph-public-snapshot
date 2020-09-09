@@ -42,7 +42,7 @@ As part of this service you will receive a number of benefits from our team, inc
 ### Monthly upgrades and maintenance
 
 - Automatic monthly [upgrades](../updates.md)) and maintenance.
-- Regular reassessment of resource utilization based on your organizations' unique usage to determine if costs can be reduced without impact to service. Additionally, you will automatically benefit from any committed use cloud provider discounts we receive.
+- Regular reassessment of resource utilization based on your organization's unique usage to determine if costs can be reduced without impact to service. Additionally, you will automatically benefit from any committed use cloud provider discounts we receive.
 
 ### Health monitoring, support, and SLAs
 
