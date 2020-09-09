@@ -16,6 +16,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+
 	"github.com/google/zoekt/ignore"
 
 	"github.com/inconshreveable/log15"
@@ -230,8 +232,8 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 	// Write tr to zw. Return the first error encountered, but clean up if
 	// we encounter an error.
 	go func() {
-		// clean up
 		var err error
+		// clean up
 		defer func() {
 			done(err)
 			// CloseWithError is guaranteed to return a nil error
@@ -239,25 +241,13 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 			r.Close()
 		}()
 
-		// get ignore.Matcher
 		var ig *ignore.Matcher
-		var buf bytes.Buffer
-		tee := io.TeeReader(r, &buf)
-		ig, err = newIgnoreMatcher(tar.NewReader(tee))
+		ig, err = newIgnoreMatcher(ctx, repo, commit)
 		if err != nil {
 			return
 		}
-		// this check should never fail, because newIgnoreMatcher should always
-		// exhaust tee. However if tee is not exhausted we would write an
-		// incomplete archive to disk in the next step, which is worse than failing.
-		_, err = tar.NewReader(tee).Next()
-		if err != io.EOF {
-			err = fmt.Errorf("failed to exhaust tee when getting ignore.Matcher")
-			return
-		}
-		// for buf to contain the entire tar,
-		// newIgnoreMatcher has to exhaust tee
-		tr := tar.NewReader(&buf)
+
+		tr := tar.NewReader(r)
 		zw := zip.NewWriter(pw)
 		err = copySearchable(tr, zw, largeFilePatterns, ig)
 		if err1 := zw.Close(); err == nil {
@@ -268,31 +258,17 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 	return pr, nil
 }
 
-// newIgnoreMatcher creates an ignore.Matcher from a tar-archive tr.
-// Usually we could return early once we have found and parsed an
-// ignore-file. However, we have to exhaust tr because newIgnoreMatcher
-// is called in the context of an io.TeeReader. newIgnoreMatcher is
-// guaranteed to return a non-nil *ignore.Matcher if err!=nil.
-func newIgnoreMatcher(tr *tar.Reader) (*ignore.Matcher, error) {
-	ig := &ignore.Matcher{}
-	for {
-		hdr, err := tr.Next()
-		if err == io.EOF { // exhausted
-			return ig, nil
+// newIgnoreMatcher calls gitserver to retrieve the ignore-file.
+// If the file doesn't exist we return an empty ignore.Matcher.
+func newIgnoreMatcher(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (*ignore.Matcher, error) {
+	ignoreFile, err := git.ReadFile(ctx, repo, commit, ignore.IgnoreFile, 0)
+	if err != nil {
+		if strings.Contains(err.Error(), "file does not exist") {
+			return &ignore.Matcher{}, nil
 		}
-		if err != nil {
-			if err == tar.ErrHeader {
-				return nil, temporaryError{error: err}
-			}
-			return nil, err
-		}
-		if hdr.Name == ignore.IgnoreFile {
-			ig, err = ignore.ParseIgnoreFile(tr)
-			if err != nil {
-				return nil, err
-			}
-		}
+		return nil, err
 	}
+	return ignore.ParseIgnoreFile(bytes.NewReader(ignoreFile))
 }
 
 // copySearchable copies searchable files from tr to zw. A searchable file is
@@ -322,8 +298,7 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string, 
 			continue
 		}
 
-		// files matching an ignore-pattern are skipped and
-		// not written to the cache
+		// Ignore files matching an ignore-pattern
 		if ig.Match(hdr.Name) {
 			continue
 		}

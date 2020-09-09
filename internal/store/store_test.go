@@ -8,16 +8,16 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"strings"
+	"reflect"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/google/zoekt/ignore"
-
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestPrepareZip(t *testing.T) {
@@ -172,71 +172,28 @@ func emptyTar(t *testing.T) io.ReadCloser {
 	return ioutil.NopCloser(bytes.NewReader(buf.Bytes()))
 }
 
-func writeArchive(w io.Writer, files map[string]string) (err error) {
-	tw := tar.NewWriter(w)
-	for name, body := range files {
-		hdr := &tar.Header{
-			Name: name,
-			Mode: 0600,
-			Size: int64(len(body)),
-		}
-		if err := tw.WriteHeader(hdr); err != nil {
-			return err
-		}
-		if _, err := tw.Write([]byte(body)); err != nil {
-			return err
-		}
+func TestNewIgnoreMatcher(t *testing.T) {
+	git.Mocks.ReadFile = func(commit api.CommitID, name string) ([]byte, error) {
+		return []byte("foo/"), nil
 	}
-	if err := tw.Close(); err != nil {
-		return err
+	ig, err := newIgnoreMatcher(context.Background(), gitserver.Repo{}, "")
+	if err != nil {
+		t.Error(err)
 	}
-	return nil
+	if !ig.Match("foo/bar.go") {
+		t.Errorf("ignore.Matcher should have matched")
+	}
 }
 
-func TestNewIgnoreMatcher(t *testing.T) {
-	// create a tar with 4 files + ignore-file
-	n := 4
-	files := map[string]string{}
-	for i := 0; i < n; i++ {
-		s := fmt.Sprintf("%d", i)
-		files["F"+s] = strings.Repeat("a", 10)
+func TestMissingIgnoreFile(t *testing.T) {
+	git.Mocks.ReadFile = func(commit api.CommitID, name string) ([]byte, error) {
+		return nil, fmt.Errorf("err open .sourcegraph/ignore: file does not exist")
 	}
-	files[ignore.IgnoreFile] = "dir/"
-	archive := bytes.Buffer{}
-	err := writeArchive(&archive, files)
+	ig, err := newIgnoreMatcher(context.Background(), gitserver.Repo{}, "")
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
-
-	// we use an io.TeeReader just like in the prod code to
-	// make sure that newIgnoreMatcher really exhausts tee
-	var buf bytes.Buffer
-	tee := io.TeeReader(&archive, &buf)
-	ig, err := newIgnoreMatcher(tar.NewReader(tee))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if !ig.Match("dir/foo.txt") {
-		t.Fatal("ig should have matched dir/foo.txt")
-	}
-
-	_, err = tar.NewReader(tee).Next()
-	if err != io.EOF {
-		t.Fatal("tee should have been exhausted")
-	}
-
-	// buf should contain the entire archive
-	i := 0
-	tr := tar.NewReader(&buf)
-	for {
-		_, err := tr.Next()
-		if err == io.EOF {
-			break
-		}
-		i++
-	}
-	if i != n+1 { // +1 for the ignore-file
-		t.Fatal("buf does not contain entire archive")
+	if !reflect.DeepEqual(ig, &ignore.Matcher{}) {
+		t.Error("newIgnoreMatchers should have returned &ignore.Matcher{} if the ignore-file is missing")
 	}
 }
