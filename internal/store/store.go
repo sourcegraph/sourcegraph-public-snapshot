@@ -247,7 +247,14 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 		if err != nil {
 			return
 		}
-
+		// this check should never fail, because newIgnoreMatcher should always
+		// exhaust tee. However if tee is not exhausted we would write an
+		// incomplete archive to disk in the next step, which is worse than failing.
+		_, err = tar.NewReader(tee).Next()
+		if err != io.EOF {
+			err = fmt.Errorf("failed to exhaust tee when getting ignore.Matcher")
+			return
+		}
 		// for buf to contain the entire tar,
 		// newIgnoreMatcher has to exhaust tee
 		tr := tar.NewReader(&buf)
