@@ -16,12 +16,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-
 	"github.com/google/zoekt/ignore"
-
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
+	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
@@ -29,10 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-
-	"github.com/opentracing/opentracing-go/ext"
-	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // maxFileSize is the limit on file size in bytes. Only files smaller
