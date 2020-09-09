@@ -132,6 +132,8 @@
 // 1528395714_worker_num_failures.up.sql (1.704kB)
 // 1528395715_replicate_permissions_object_ids_to_intarray.down.sql (337B)
 // 1528395715_replicate_permissions_object_ids_to_intarray.up.sql (411B)
+// 1528395716_create_repo_unrestricted_column.down.sql (70B)
+// 1528395716_create_repo_unrestricted_column.up.sql (240B)
 
 package migrations
 
@@ -2840,6 +2842,46 @@ func _1528395715_replicate_permissions_object_ids_to_intarrayUpSql() (*asset, er
 	return a, nil
 }
 
+var __1528395716_create_repo_unrestricted_columnDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\x57\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\xcd\x2b\x4a\x2d\x2e\x29\xca\x4c\x2e\x49\x4d\xb1\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xf3\x55\xba\x84\x46\x00\x00\x00")
+
+func _1528395716_create_repo_unrestricted_columnDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395716_create_repo_unrestricted_columnDownSql,
+		"1528395716_create_repo_unrestricted_column.down.sql",
+	)
+}
+
+func _1528395716_create_repo_unrestricted_columnDownSql() (*asset, error) {
+	bytes, err := _1528395716_create_repo_unrestricted_columnDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395716_create_repo_unrestricted_column.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x76, 0x55, 0x34, 0xb9, 0x43, 0x9d, 0x95, 0xf7, 0xe6, 0xbe, 0x3f, 0xdb, 0xf0, 0x36, 0x59, 0x0, 0xba, 0xf7, 0xf0, 0x6, 0x9b, 0xc3, 0x75, 0xd6, 0x6d, 0xe7, 0x6b, 0x6a, 0x3a, 0xed, 0x1c, 0x5f}}
+	return a, nil
+}
+
+var __1528395716_create_repo_unrestricted_columnUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x8e\xb1\xca\x02\x31\x10\x84\xfb\x7d\x8a\x7d\x8f\xf0\x17\x9b\xcb\xe6\x27\xb0\x49\xc4\x6c\xc0\x56\x34\xc5\x35\x7a\xc4\xe8\xf3\xcb\xc9\x35\x07\x36\xb6\xc3\x7c\xf3\x8d\xe5\xff\x90\x0c\x00\x89\xf2\x11\x95\xac\x30\xf6\xb6\xdc\x91\x9c\xc3\x29\x4b\x8d\x09\x83\xc7\x94\x15\xf9\x14\x8a\x16\x7c\xde\x7a\x7b\x8c\x3e\x5f\x46\xbb\xa2\xcd\x59\x98\x92\x81\x7a\x70\xa4\x1b\x5a\x58\xf7\xad\x3f\x5c\xfa\xfc\x3a\x8f\x66\xbe\x78\x3e\xc1\x66\xda\x51\xeb\x8c\x63\x4f\x55\x14\x3d\x49\xe1\x9f\xe9\xf5\x75\xaa\x22\x06\x60\xca\x31\x06\x35\xf0\x0e\x00\x00\xff\xff\x74\x0a\x6c\x4f\xf0\x00\x00\x00")
+
+func _1528395716_create_repo_unrestricted_columnUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395716_create_repo_unrestricted_columnUpSql,
+		"1528395716_create_repo_unrestricted_column.up.sql",
+	)
+}
+
+func _1528395716_create_repo_unrestricted_columnUpSql() (*asset, error) {
+	bytes, err := _1528395716_create_repo_unrestricted_columnUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395716_create_repo_unrestricted_column.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x21, 0xf4, 0x22, 0x11, 0x74, 0xd9, 0x8, 0x4e, 0x46, 0xc1, 0xea, 0xc0, 0x68, 0x30, 0x32, 0xda, 0x25, 0xba, 0x83, 0xb3, 0xa5, 0x85, 0xeb, 0x86, 0x83, 0xb, 0x99, 0x31, 0x90, 0x3f, 0xe, 0xf2}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3063,6 +3105,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395714_worker_num_failures.up.sql":                                        _1528395714_worker_num_failuresUpSql,
 	"1528395715_replicate_permissions_object_ids_to_intarray.down.sql":             _1528395715_replicate_permissions_object_ids_to_intarrayDownSql,
 	"1528395715_replicate_permissions_object_ids_to_intarray.up.sql":               _1528395715_replicate_permissions_object_ids_to_intarrayUpSql,
+	"1528395716_create_repo_unrestricted_column.down.sql":                          _1528395716_create_repo_unrestricted_columnDownSql,
+	"1528395716_create_repo_unrestricted_column.up.sql":                            _1528395716_create_repo_unrestricted_columnUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3241,6 +3285,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395714_worker_num_failures.up.sql":                                        {_1528395714_worker_num_failuresUpSql, map[string]*bintree{}},
 	"1528395715_replicate_permissions_object_ids_to_intarray.down.sql":             {_1528395715_replicate_permissions_object_ids_to_intarrayDownSql, map[string]*bintree{}},
 	"1528395715_replicate_permissions_object_ids_to_intarray.up.sql":               {_1528395715_replicate_permissions_object_ids_to_intarrayUpSql, map[string]*bintree{}},
+	"1528395716_create_repo_unrestricted_column.down.sql":                          {_1528395716_create_repo_unrestricted_columnDownSql, map[string]*bintree{}},
+	"1528395716_create_repo_unrestricted_column.up.sql":                            {_1528395716_create_repo_unrestricted_columnUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

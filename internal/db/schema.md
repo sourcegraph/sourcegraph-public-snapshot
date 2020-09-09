@@ -863,6 +863,7 @@ Referenced by:
  metadata              | jsonb                    | not null default '{}'::jsonb
  private               | boolean                  | not null default false
  cloned                | boolean                  | not null default false
+ unrestricted          | boolean                  | not null default false
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_external_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id)
