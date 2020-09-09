@@ -1,6 +1,7 @@
 package db
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -602,14 +603,7 @@ type paginatedQuery func(cursor, limit int64) *sqlf.Query
 
 // EncryptTable implements the TableEncryption Interface to provide key rotation the event_logs table
 func (l *eventLogs) EncryptTable(ctx context.Context) error {
-	var (
-		e             Event
-		id            int
-		secretColumns = []string{"argument"}
-	)
-	resultMap := make(map[int][]byte)
-
-	query := sqlf.Sprintf("SELECT id,%s FROM event_logs", secretColumns)
+	query := sqlf.Sprintf("SELECT id,argument FROM event_logs")
 
 	tx, err := dbconn.Global.BeginTx(ctx, nil)
 	if err != nil {
@@ -633,44 +627,44 @@ func (l *eventLogs) EncryptTable(ctx context.Context) error {
 	defer rows.Close()
 
 	for rows.Next() {
-
+		var (
+			e        Event
+			id       int
+			argument []byte
+		)
 		err := rows.Scan(&id, &e.Argument)
 		if err != nil {
 			return err
 		}
 
-		ciphertext, err := secretPkg.RotateEncryption(e.Argument)
-		resultMap[id] = ciphertext
+		if secretPkg.ConfiguredToRotate() {
+			argument, err = secretPkg.RotateEncryption(e.Argument)
+			if err != nil {
+			}
+
+			if bytes.Equal(argument, e.Argument) {
+				continue
+			} else {
+				argument, err = secretPkg.EncryptBytes(e.Argument)
+				if err != nil {
+					return err
+				}
+				if bytes.Equal(argument, e.Argument) {
+					continue
+				}
+			}
+			// update Query
+			updateQ := sqlf.Sprintf("UPDATE event_logs SET argument=%s WHERE id=%d", argument, id)
+			_, err = tx.ExecContext(ctx, updateQ.Query(sqlf.PostgresBindVar), updateQ.Args())
+			return err
+		}
 	}
 	err = rows.Err()
 	if err != nil {
 		return err
 	}
-	// prepare update query
-	result, err := json.Marshal(resultMap)
-	//DEBUG
-	fmt.Println(result)
-	query = sqlf.Sprintf(jsonRecordSetFunc, result)
-
-	resp, err := tx.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args())
-	if err != nil {
-		return err
-	}
-	fmt.Println(resp)
-
 	return nil
 }
-
-const jsonRecordSetFunc = `
-SELECT id, arg
-FROM jsonb_to_recordset(
-'[{
-"id": "35",
-"arg": "asdfeeeeedfasdzcxvzsd"
- }]')
-AS x( id int,
-	  arg text
-);`
 
 func (l *eventLogs) aggregatedEvents(ctx context.Context, now time.Time) (events []types.AggregatedEvent, err error) {
 	query := sqlf.Sprintf(aggregatedEventsQuery, now, now, now, now)

@@ -330,6 +330,16 @@ func (*userExternalAccounts) EncryptTable(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err != nil {
+			rollErr := tx.Rollback()
+			if rollErr != nil {
+				err = multierror.Append(err, rollErr)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
 
 	rows, err := tx.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args())
 	if err != nil {
@@ -382,11 +392,14 @@ func (*userExternalAccounts) EncryptTable(ctx context.Context) error {
 
 		// now, time for an update!
 		updateQ := sqlf.Sprintf(
-			`UPDATE user_external_accounts
-			SET auth_data=%s, account_data=%s
-			WHERE id=%d
-		`, &a.ID, a.AuthData, a.AccountData)
+			"UPDATE user_external_accounts "+
+				"SET auth_data=%s, account_data=%s "+
+				"WHERE id=%d", a.AuthData, a.AccountData, &a.ID)
 		_, err = tx.ExecContext(ctx, updateQ.Query(sqlf.PostgresBindVar), updateQ.Args())
+		return err
+	}
+	err = rows.Err()
+	if err != nil {
 		return err
 	}
 
