@@ -27,7 +27,7 @@ As part of this service you will receive a number of benefits from our team, inc
 - Advising if managed instances are right for your organization.
 - Initial resource estimations based on your organization & code size.
 - Putting forward a transparent deployment & cost estimate plan.
-- Your own example.sourcegraph.com domain with fully managed [DNS & HTTPS](../http_https_configuration.md).
+- Your own `example.sourcegraph.com` domain with fully managed [DNS & HTTPS](../http_https_configuration.md).
 - Hardware provisioning, software installation, and kernel configuration done for you.
 - Direct assistance in:
   - [Adding repositories from all of your code hosts to Sourcegraph](../external_service/index.md)
