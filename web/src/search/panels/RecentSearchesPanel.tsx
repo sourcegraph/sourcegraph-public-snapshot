@@ -7,6 +7,9 @@ import { Timestamp } from '../../components/time/Timestamp'
 import { EventLogResult } from '../backend'
 import { Observable } from 'rxjs'
 import { useObservable } from '../../../../shared/src/util/useObservable'
+import { SearchPatternType } from '../../graphql-operations'
+import { buildSearchURLQuery } from '../../../../shared/src/util/url'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 interface RecentSearch {
     count: number
@@ -58,8 +61,62 @@ export const RecentSearchesPanel: React.FunctionComponent<{
 
     const processedResults = processRecentSearches(recentSearches)
 
-    const loadingDisplay = <div>Loading</div>
-    const emptyDisplay = <div>Empty</div>
+    const loadingDisplay = (
+        <div className="d-flex justify-content-center align-items-center panel-container__empty-container">
+            <div className="icon-inline">
+                <LoadingSpinner />
+            </div>
+            Loading recent searches
+        </div>
+    )
+    const emptyDisplay = (
+        <div className="panel-container__empty-container">
+            <small className="mb-2">
+                Your recent searches will be displayed here. Here are a few searches to get you started:
+            </small>
+
+            <ul className="recent-searches-panel__examples-list">
+                <li className="recent-searches-panel__examples-list-item">
+                    <Link
+                        to={
+                            '/search?' +
+                            buildSearchURLQuery(
+                                'lang:c if(:[eval_match]) { :[statement_match] }',
+                                SearchPatternType.structural,
+                                false
+                            )
+                        }
+                        className="text-monospace"
+                    >
+                        lang:c if(:[eval_match]) {'{'} :[statement_match] {'}'}
+                    </Link>
+                </li>
+                <li className="recent-searches-panel__examples-list-item">
+                    <Link
+                        to={
+                            '/search?' +
+                            buildSearchURLQuery(
+                                'lang:java type:diff after:"1 week ago"',
+                                SearchPatternType.literal,
+                                false
+                            )
+                        }
+                        className="text-monospace"
+                    >
+                        lang:java type:diff after:"1 week ago"
+                    </Link>
+                </li>
+                <li className="recent-searches-panel__examples-list-item">
+                    <Link
+                        to={'/search?' + buildSearchURLQuery('lang:java', SearchPatternType.literal, false)}
+                        className="text-monospace"
+                    >
+                        lang:java
+                    </Link>
+                </li>
+            </ul>
+        </div>
+    )
 
     const contentDisplay = (
         <table className="recent-searches-panel__results-table">
@@ -77,7 +134,9 @@ export const RecentSearchesPanel: React.FunctionComponent<{
                             <span className="recent-searches-panel__results-count">{recentSearch.count}</span>
                         </td>
                         <td>
-                            <Link to={recentSearch.url}>{recentSearch.searchText}</Link>
+                            <Link to={recentSearch.url} className="text-monospace">
+                                {recentSearch.searchText}
+                            </Link>
                         </td>
                         <td>
                             <Timestamp noAbout={true} date={recentSearch.timestamp} />

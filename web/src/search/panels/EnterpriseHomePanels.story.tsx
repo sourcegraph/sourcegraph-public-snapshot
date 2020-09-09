@@ -1,8 +1,9 @@
 import React from 'react'
 import { EnterpriseHomePanels } from './EnterpriseHomePanels'
+import { of } from 'rxjs'
+import { SearchPatternType } from '../../graphql-operations'
 import { storiesOf } from '@storybook/react'
 import { WebStory } from '../../components/WebStory'
-import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { authUser, _fetchSavedSearches } from './utils'
 
 const { add } = storiesOf('web/search/panels/EnterpriseHomePanels', module).addParameters({
@@ -17,6 +18,15 @@ const props = {
     authenticatedUser: authUser,
     patternType: SearchPatternType.literal,
     fetchSavedSearches: _fetchSavedSearches,
+    fetchRecentSearches: () =>
+        of({
+            totalCount: 2,
+            nodes: [],
+            pageInfo: {
+                endCursor: null,
+                hasNextPage: false,
+            },
+        }),
 }
 
 add('Panels', () => <WebStory>{() => <EnterpriseHomePanels {...props} />}</WebStory>)
