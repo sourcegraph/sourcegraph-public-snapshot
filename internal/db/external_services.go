@@ -595,6 +595,17 @@ func (*ExternalServicesStore) EncryptTable(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err != nil {
+			rollErr := tx.Rollback()
+			if rollErr != nil {
+				err = multierror.Append(err, rollErr)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+
 	rows, err := tx.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args())
 	if err != nil {
 		return err
@@ -602,7 +613,7 @@ func (*ExternalServicesStore) EncryptTable(ctx context.Context) error {
 	defer rows.Close()
 
 	for rows.Next() {
-		var es *types.ExternalService
+		var es types.ExternalService
 		err := rows.Scan(&es.ID, &es.Config)
 		if err != nil {
 			return err
@@ -637,7 +648,10 @@ func (*ExternalServicesStore) EncryptTable(ctx context.Context) error {
 		_, err = tx.ExecContext(ctx, updateQ.Query(sqlf.PostgresBindVar), updateQ.Args())
 		return err
 	}
-
+	err = rows.Err()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
