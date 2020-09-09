@@ -19,7 +19,7 @@ type batchWriter struct {
 
 const MaxNumSqliteParameters = 32767
 
-func NewBatchInserter(db dbutil.DB, tableName string, columnNames ...string) *batchWriter {
+func NewBatchInserter(ctx context.Context, db dbutil.DB, tableName string, columnNames ...string) (*batchWriter, error) {
 	numColumns := len(columnNames)
 	maxBatchSize := (MaxNumSqliteParameters / numColumns) * numColumns
 
@@ -47,7 +47,7 @@ func NewBatchInserter(db dbutil.DB, tableName string, columnNames ...string) *ba
 		batch:             make([]interface{}, 0, maxBatchSize),
 		queryPrefix:       queryPrefix,
 		queryPlaceholders: queryPlaceholders,
-	}
+	}, nil
 }
 
 func (w *batchWriter) Insert(ctx context.Context, values ...interface{}) error {

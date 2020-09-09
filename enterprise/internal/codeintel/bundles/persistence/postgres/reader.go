@@ -30,10 +30,26 @@ func NewStore(dumpID int) persistence.Store {
 	}
 }
 
-// TODO
-func (r *reader) Transact(ctx context.Context) (persistence.Store, error) { return r, nil }
-func (r *reader) Done(err error) error                                    { return err }
-func (r *reader) CreateTables(ctx context.Context) error                  { return nil }
+func (r *reader) Transact(ctx context.Context) (persistence.Store, error) {
+	tx, err := r.Store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &reader{
+		Store:      tx,
+		dumpID:     r.dumpID,
+		serializer: r.serializer,
+	}, nil
+}
+
+func (r *reader) Done(err error) error {
+	return r.Store.Done(err)
+}
+
+func (r *reader) CreateTables(ctx context.Context) error {
+	return nil
+}
 
 func (r *reader) ReadMeta(ctx context.Context) (_ types.MetaData, err error) {
 	var numResultChunks int

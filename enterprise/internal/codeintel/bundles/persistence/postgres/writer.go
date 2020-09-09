@@ -2,34 +2,53 @@ package postgres
 
 import (
 	"context"
-	"runtime"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/sqlite/util"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 )
 
-// NumWriterRoutines is the number of goroutines launched to write database records.
-var NumWriterRoutines = runtime.NumCPU() * 2
+// var (
+// 	NumWriterRoutines = runtime.NumCPU() * 2
+// 	factory           = NewBatchInserter
+// )
 
-func (w *reader) WriteMeta(ctx context.Context, meta types.MetaData) error {
-	inserter := NewBatchInserter(w.Handle().DB(), "lsif_data_metadata", "dump_id", "num_result_chunks")
+var (
+	NumWriterRoutines = 1
+	factory           = NewCopyInserter
+)
+
+func (w *reader) WriteMeta(ctx context.Context, meta types.MetaData) (err error) {
+	inserter, err := factory(ctx, w.Handle().DB(), "lsif_data_metadata", "dump_id", "num_result_chunks")
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if flushErr := inserter.Flush(ctx); flushErr != nil {
+			err = multierror.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
+		}
+	}()
 
 	if err := inserter.Insert(ctx, w.dumpID, meta.NumResultChunks); err != nil {
 		return err
 	}
 
-	if err := inserter.Flush(ctx); err != nil {
-		return errors.Wrap(err, "inserter.Flush")
-	}
-
 	return nil
 }
 
-func (w *reader) WriteDocuments(ctx context.Context, documents chan persistence.KeyedDocumentData) error {
+func (w *reader) WriteDocuments(ctx context.Context, documents chan persistence.KeyedDocumentData) (err error) {
 	return util.InvokeN(NumWriterRoutines, func() error {
-		inserter := NewBatchInserter(w.Handle().DB(), "lsif_data_documents", "dump_id", "path", "data")
+		inserter, err := factory(ctx, w.Handle().DB(), "lsif_data_documents", "dump_id", "path", "data")
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if flushErr := inserter.Flush(ctx); flushErr != nil {
+				err = multierror.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
+			}
+		}()
 
 		for v := range documents {
 			data, err := w.serializer.MarshalDocumentData(v.Document)
@@ -42,17 +61,21 @@ func (w *reader) WriteDocuments(ctx context.Context, documents chan persistence.
 			}
 		}
 
-		if err := inserter.Flush(ctx); err != nil {
-			return errors.Wrap(err, "inserter.Flush")
-		}
-
 		return nil
 	})
 }
 
-func (w *reader) WriteResultChunks(ctx context.Context, resultChunks chan persistence.IndexedResultChunkData) error {
+func (w *reader) WriteResultChunks(ctx context.Context, resultChunks chan persistence.IndexedResultChunkData) (err error) {
 	return util.InvokeN(NumWriterRoutines, func() error {
-		inserter := NewBatchInserter(w.Handle().DB(), "lsif_data_result_chunks", "dump_id", "idx", "data")
+		inserter, err := factory(ctx, w.Handle().DB(), "lsif_data_result_chunks", "dump_id", "idx", "data")
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if flushErr := inserter.Flush(ctx); flushErr != nil {
+				err = multierror.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
+			}
+		}()
 
 		for v := range resultChunks {
 			data, err := w.serializer.MarshalResultChunkData(v.ResultChunk)
@@ -65,17 +88,21 @@ func (w *reader) WriteResultChunks(ctx context.Context, resultChunks chan persis
 			}
 		}
 
-		if err := inserter.Flush(ctx); err != nil {
-			return errors.Wrap(err, "inserter.Flush")
-		}
-
 		return nil
 	})
 }
 
-func (w *reader) WriteDefinitions(ctx context.Context, monikerLocations chan types.MonikerLocations) error {
+func (w *reader) WriteDefinitions(ctx context.Context, monikerLocations chan types.MonikerLocations) (err error) {
 	return util.InvokeN(NumWriterRoutines, func() error {
-		inserter := NewBatchInserter(w.Handle().DB(), "lsif_data_definitions", "dump_id", "scheme", "identifier", "data")
+		inserter, err := factory(ctx, w.Handle().DB(), "lsif_data_definitions", "dump_id", "scheme", "identifier", "data")
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if flushErr := inserter.Flush(ctx); flushErr != nil {
+				err = multierror.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
+			}
+		}()
 
 		for v := range monikerLocations {
 			data, err := w.serializer.MarshalLocations(v.Locations)
@@ -88,17 +115,21 @@ func (w *reader) WriteDefinitions(ctx context.Context, monikerLocations chan typ
 			}
 		}
 
-		if err := inserter.Flush(ctx); err != nil {
-			return errors.Wrap(err, "inserter.Flush")
-		}
-
 		return nil
 	})
 }
 
-func (w *reader) WriteReferences(ctx context.Context, monikerLocations chan types.MonikerLocations) error {
+func (w *reader) WriteReferences(ctx context.Context, monikerLocations chan types.MonikerLocations) (err error) {
 	return util.InvokeN(NumWriterRoutines, func() error {
-		inserter := NewBatchInserter(w.Handle().DB(), "lsif_data_references", "dump_id", "scheme", "identifier", "data")
+		inserter, err := factory(ctx, w.Handle().DB(), "lsif_data_references", "dump_id", "scheme", "identifier", "data")
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if flushErr := inserter.Flush(ctx); flushErr != nil {
+				err = multierror.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
+			}
+		}()
 
 		for v := range monikerLocations {
 			data, err := w.serializer.MarshalLocations(v.Locations)
@@ -109,10 +140,6 @@ func (w *reader) WriteReferences(ctx context.Context, monikerLocations chan type
 			if err := inserter.Insert(ctx, w.dumpID, v.Scheme, v.Identifier, data); err != nil {
 				return err
 			}
-		}
-
-		if err := inserter.Flush(ctx); err != nil {
-			return errors.Wrap(err, "inserter.Flush")
 		}
 
 		return nil

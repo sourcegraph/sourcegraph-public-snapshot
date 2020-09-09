@@ -230,7 +230,7 @@ func (h *handler) write(ctx context.Context, id int, dirname string, groupedBund
 		return errors.Wrap(err, "store.WriteReferences")
 	}
 
-	return err
+	return nil
 }
 
 // TODO(efritz) - refactor/simplify this after last change
