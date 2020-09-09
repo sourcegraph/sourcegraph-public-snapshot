@@ -263,7 +263,7 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 }
 
 // copySearchable copies searchable files from tr to zw. A searchable file is
-// any file that is under size limit, non-binary, and not matching an ignore-pattern.
+// any file that is under size limit, non-binary, and not matching the filter.
 func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string, filter FilterFunc) error {
 	// 32*1024 is the same size used by io.Copy
 	buf := make([]byte, 32*1024)

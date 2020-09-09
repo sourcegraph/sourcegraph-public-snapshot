@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
+// NewFilter is a wrapper around newIgnoreMatcher.
 func NewFilter(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (store.FilterFunc, error) {
 	ig, err := newIgnoreMatcher(ctx, repo, commit)
 	if err != nil {
