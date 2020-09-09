@@ -1,0 +1,13 @@
+.campaign-spec-tab {
+    &___specfile {
+        background-color: $gray-14;
+    }
+}
+
+.theme-light {
+    .campaign-spec-tab {
+        &___specfile {
+            background-color: $gray-03;
+        }
+    }
+}
