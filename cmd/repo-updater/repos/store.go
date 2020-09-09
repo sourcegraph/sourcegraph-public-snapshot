@@ -675,7 +675,7 @@ func listReposQuery(args StoreListReposArgs) (paginatedQuery, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "marshalling name args")
 		}
-		preds = append(preds, sqlf.Sprintf("name IN (SELECT jsonb_array_elements_text(%s) AS id)", encodedNames))
+		preds = append(preds, sqlf.Sprintf("name = ANY(ARRAY(SELECT jsonb_array_elements_text(%s))::citext[])", encodedNames))
 	}
 
 	if len(args.IDs) > 0 {
