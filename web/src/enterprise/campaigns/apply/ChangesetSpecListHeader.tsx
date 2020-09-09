@@ -7,8 +7,8 @@ export interface ChangesetSpecListHeaderProps {
 export const ChangesetSpecListHeader: React.FunctionComponent<ChangesetSpecListHeaderProps> = () => (
     <>
         <span />
-        <h5 className="text-uppercase text-center text-nowrap text-muted">Action</h5>
-        <h5 className="text-uppercase text-nowrap text-muted">Changeset information</h5>
-        <h5 className="text-uppercase text-right text-nowrap text-muted">Changes</h5>
+        <h5 className="text-uppercase text-center text-nowrap">Action</h5>
+        <h5 className="text-uppercase text-nowrap">Changeset information</h5>
+        <h5 className="text-uppercase text-right text-nowrap">Changes</h5>
     </>
 )
