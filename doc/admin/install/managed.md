@@ -10,7 +10,7 @@ The Sourcegraph team will provision and manage a Sourcegraph deployment for you 
 
 ### Costs
 
-You will pay for our regular [pricing](https://about.sourcegraph.com/pricing), the cloud infrastructure costs, and a relatively small management fee. Our Distribution engineering team will provide a transparent deployment plan and cost estimates.
+Please [contact us](https://about.sourcegraph.com/contact/sales) to discuss [pricing](https://about.sourcegraph.com/pricing) and to start a trial.
 
 ### Limitations
 
