@@ -14,7 +14,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - The site configuration `search.limits`. This allows configuring the maximum timeout (defaults to 1 minute). Also allows configuring the maximum repositories to search in different scenarios. [#13448](https://github.com/sourcegraph/sourcegraph/pull/13448)
-- Site admins now have a button to log out users from the all users view. Note that this currently does not apply to OAuth authentication, which will be addressed in a future PR. [#13647](https://github.com/sourcegraph/sourcegraph/pull/13647)
+- Site admins now have a button to log out users from the all users view. [#13647](https://github.com/sourcegraph/sourcegraph/pull/13647)
 - After changing their password, a user will be signed out from all devices, and will be required to sign in with the new password.
 - Sourcegraph watches the [advanced config files](https://docs.sourcegraph.com/admin/config/advanced_config_file) and automatically applies the changes to Sourcegraph's configuration when they change. For example this allows Sourcegraph to notice when Kubernetes updates ConfigMap for the configuration. [#13646](https://github.com/sourcegraph/sourcegraph/pull/13646)
 
@@ -37,7 +37,7 @@ All notable changes to Sourcegraph are documented in this file.
 - User satisfaction/NPS surveys will now correctly provide a range from 0–10, rather than 0–9. [#13163](https://github.com/sourcegraph/sourcegraph/pull/13163)
 - Fixed a bug where we returned repositories with invalid revisions in the search results. Now, if a user specifies an invalid revision, we show an alert. [#13271](https://github.com/sourcegraph/sourcegraph/pull/13271)
 - Previously it wasn't possible to search for certain patterns containing `:` because they would not be considered valid filters. We made these checks less strict. [#10920](https://github.com/sourcegraph/sourcegraph/pull/10920)
-- Logging out of a user's account will now invalidate all user sessions, not just the session that was signed out of. Resetting or changing the user's password will also invalidate all sesions, requiring the user to sign in with their new password. Note that this currently does not apply to OAuth authentication, which will be addressed in a future PR. [#13647](https://github.com/sourcegraph/sourcegraph/pull/13647)
+- Logging out of a user's account will now invalidate all user sessions, not just the session that was signed out of. Resetting or changing the user's password will also invalidate all sesions, requiring the user to sign in with their new password. [#13647](https://github.com/sourcegraph/sourcegraph/pull/13647)
 
 ### Removed
 
