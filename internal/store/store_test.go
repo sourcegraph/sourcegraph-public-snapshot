@@ -218,7 +218,12 @@ func TestNewIgnoreMatcher(t *testing.T) {
 	}
 
 	if !ig.Match("dir/foo.txt") {
-		t.Fatal("ig should haved matched dir/foo.txt")
+		t.Fatal("ig should have matched dir/foo.txt")
+	}
+
+	_, err = tar.NewReader(tee).Next()
+	if err != io.EOF {
+		t.Fatal("tee should have been exhausted")
 	}
 
 	// buf should contain the entire archive
@@ -232,6 +237,6 @@ func TestNewIgnoreMatcher(t *testing.T) {
 		i++
 	}
 	if i != n+1 { // +1 for the ignore-file
-		t.Fatal("newIgnoreMatcher did no exhaust tee")
+		t.Fatal("buf does not contain entire archive")
 	}
 }
