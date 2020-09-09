@@ -12,11 +12,9 @@ The Sourcegraph team will provision and manage a Sourcegraph deployment for you 
 
 Please [contact us](https://about.sourcegraph.com/contact/sales) to discuss [pricing](https://about.sourcegraph.com/pricing) and to start a trial.
 
-### Limitations
+### Scaling
 
-Managed instances are currently restricted to single-machine Docker Compose deployments, we do not offer managed multi-machine cluster instances at this time. That said, this deployment type can scale quite far on a single machine and is usually sufficient for most medium to large organizations.
-
-If you require a cluster deployment, or Sourcegraph on your own infrastructure, please [contact us](https://about.sourcegraph.com/contact/sales) to discuss options.
+Managed instances support most small to large enterprises well, but due to technical limitations cannot support extra-large organizations requiring a cluster deployment. Please [contact us](https://about.sourcegraph.com/contact/sales) to discuss options.
 
 ## Service
 
