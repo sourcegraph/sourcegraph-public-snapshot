@@ -115,7 +115,7 @@ func (e encryptor) DecryptBytes(ciphertext []byte) (plaintext []byte, err error)
 		return nil, &EncryptionError{errors.New("no valid keys available")}
 	}
 
-	return gcmDecrypt(e.primaryKey, ciphertext)
+	return gcmDecrypt(ciphertext, e.primaryKey)
 }
 
 func (e encryptor) EncryptWithKey(plaintext, key []byte) ([]byte, error) {
@@ -127,7 +127,7 @@ func (e encryptor) EncryptWithKey(plaintext, key []byte) ([]byte, error) {
 // it using the secondaryKey.
 func (e encryptor) RotateEncryption(ciphertext []byte) ([]byte, error) {
 	if !e.ConfiguredToRotate() {
-		return nil, &EncryptionError{errors.New("key rotatation not configured")}
+		return nil, &EncryptionError{errors.New("key rotation not configured")}
 	}
 	plaintext, err := gcmDecrypt(ciphertext, e.primaryKey)
 	if err != nil { // perhaps it's already encrypted?
