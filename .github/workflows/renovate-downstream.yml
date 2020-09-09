@@ -3,11 +3,18 @@ on:
   status
 
 jobs:
+  log:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log
+        run: |
+          echo "${{ toJson(github.event) }}"
+
   # This job should trigger rennovate to run on the repositories defined in renovate-downstream.json
   renovate:
     runs-on: ubuntu-latest
     # Run on commit status success on branch main
-    if: ${{ github.ref == "refs/heads/main" && github.event.state == "success" }}
+    if: ${{ github.ref == 'refs/heads/main' && github.event.state == 'success' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
