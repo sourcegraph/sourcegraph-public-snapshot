@@ -171,6 +171,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                     listComponent="div"
                     listClassName="campaign-changesets__grid mb-3"
                     headComponent={CampaignChangesetsHeader}
+                    noSummaryIfAllNodesVisible={true}
                 />
                 {hoverState?.hoverOverlayProps && (
                     <WebHoverOverlay
