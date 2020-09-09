@@ -1679,3 +1679,61 @@ func (s *PermsStore) observe(ctx context.Context, family, title string) (context
 		tr.Finish()
 	}
 }
+
+// MigrateBinaryToIntarray performs migration on permissions tables which
+// replicates data previously stored as binary (`BYTEA`) to intarray (`INT[]`).
+func (s *PermsStore) MigrateBinaryToIntarray(ctx context.Context) error {
+	migrations := []struct {
+		table        string
+		idColumn     string
+		binaryColumn string
+	}{
+		{table: "user_permissions", idColumn: "user_id", binaryColumn: "object_ids"},
+		{table: "repo_permissions", idColumn: "repo_id", binaryColumn: "user_ids"},
+		{table: "user_pending_permissions", idColumn: "id", binaryColumn: "object_ids"},
+		{table: "repo_pending_permissions", idColumn: "repo_id", binaryColumn: "user_ids"},
+	}
+	for _, m := range migrations {
+		// NOTE: `batchLoadIDs` expects scanning three values, since our WHERE condition is
+		// to find "*_ints" columns with empty value, we could use '{}' as the placeholder.
+		q := sqlf.Sprintf(fmt.Sprintf(`
+SELECT %[1]s, %[2]s, '{}'::INT[]
+FROM %[3]s
+WHERE ICOUNT(%[2]s_ints) = 0
+`, m.idColumn, m.binaryColumn, m.table))
+		loaded, err := s.batchLoadIDs(ctx, q)
+		if err != nil {
+			return errors.Wrapf(err, "load %q", m.table)
+		}
+
+		if len(loaded) == 0 {
+			continue // Skip if no rows need to be migrated
+		}
+
+		format := fmt.Sprintf(`
+-- source: enterprise/internal/db/perms_store.go:MigrateBinaryToIntarray
+UPDATE %[1]s
+SET %[2]s_ints = update.ints
+FROM (VALUES %[4]s) AS update (id, ints)
+WHERE %[1]s.%[3]s = update.id
+`, m.table, m.binaryColumn, m.idColumn, "%s")
+
+		items := make([]*sqlf.Query, 0, len(loaded))
+		for id, bm := range loaded {
+			items = append(items, sqlf.Sprintf("(%s::INT, %s::INT[])",
+				id,
+				pq.Array(bm.ToArray()),
+			))
+		}
+
+		q = sqlf.Sprintf(
+			format,
+			sqlf.Join(items, ","),
+		)
+		if err = s.execute(ctx, q); err != nil {
+			return errors.Wrapf(err, "migrate %q", m.table)
+		}
+	}
+
+	return nil
+}
