@@ -7,7 +7,9 @@ import { createLocation, createMemoryHistory } from 'history'
 import { NOOP_SETTINGS_CASCADE } from '../../../shared/src/util/searchTestHelpers'
 import { SearchPatternType } from '../graphql-operations'
 
-const PROPS: GlobalNavbar['props'] = {
+jest.mock('../search/input/SearchNavbarItem', () => ({ SearchNavbarItem: 'SearchNavbarItem' }))
+
+const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     authenticatedUser: null,
     extensionsController: {} as any,
     location: createLocation('/'),
