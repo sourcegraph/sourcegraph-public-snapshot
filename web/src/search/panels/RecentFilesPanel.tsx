@@ -56,7 +56,7 @@ export const RecentFilesPanel: React.FunctionComponent<{
             <small className="mb-1">File</small>
             <dl className="list-group-flush">
                 {processedResults?.map((recentFile, index) => (
-                    <dd key={index} className="text-monospace">
+                    <dd key={index} className="text-monospace test-recent-files-item">
                         <Link to={recentFile.url}>
                             {recentFile.repoName} › {recentFile.filePath}
                         </Link>
@@ -67,7 +67,7 @@ export const RecentFilesPanel: React.FunctionComponent<{
                 <div className="text-center">
                     <button
                         type="button"
-                        className="btn btn-secondary test-recent-searches-panel-show-more"
+                        className="btn btn-secondary test-recent-files-panel-show-more"
                         onClick={() => setItmesToLoad(current => current + pageSize)}
                     >
                         Show more

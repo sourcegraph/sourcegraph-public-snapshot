@@ -1,0 +1,138 @@
+import React from 'react'
+import { mount } from 'enzyme'
+import { RecentFilesPanel } from './RecentFilesPanel'
+import { of } from 'rxjs'
+
+describe('RecentFilesPanel', () => {
+    test('duplicate files are only shown once', () => {
+        const recentFiles = {
+            nodes: [
+                {
+                    argument: '{"filePath": "go.mod", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+                    timestamp: '2020-09-10T22:55:30Z',
+                    url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/go.mod',
+                },
+                {
+                    argument: '{"filePath": ".eslintrc.js", "repoName": "github.com/sourcegraph/sourcegraph"}',
+                    timestamp: '2020-09-10T22:55:18Z',
+                    url: 'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/.eslintrc.js',
+                },
+                {
+                    argument: '{"filePath": "go.mod", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+                    timestamp: '2020-09-10T22:55:06Z',
+                    url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/go.mod',
+                },
+            ],
+            pageInfo: {
+                endCursor: null,
+                hasNextPage: false,
+            },
+            totalCount: 3,
+        }
+
+        const props = {
+            authenticatedUser: null,
+            fetchRecentFiles: () => of(recentFiles),
+        }
+
+        const component = mount(<RecentFilesPanel {...props} />)
+        const listItems = component.find('.test-recent-files-item')
+        expect(listItems.length).toStrictEqual(2)
+        expect(listItems.at(0).text()).toStrictEqual('ghe.sgdev.org/sourcegraph/gorilla-mux › go.mod')
+        expect(listItems.at(1).text()).toStrictEqual('github.com/sourcegraph/sourcegraph › .eslintrc.js')
+    })
+
+    test('files with missing data are not rendered', () => {
+        const recentFiles = {
+            nodes: [
+                {
+                    argument: '{"filePath": ".eslintrc.js", "repoName": "github.com/sourcegraph/sourcegraph"}',
+                    timestamp: '2020-09-10T22:55:18Z',
+                    url: 'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/.eslintrc.js',
+                },
+                {
+                    argument: '{}',
+                    timestamp: '2020-09-10T22:55:06Z',
+                    url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/go.mod',
+                },
+            ],
+            pageInfo: {
+                endCursor: null,
+                hasNextPage: false,
+            },
+            totalCount: 2,
+        }
+
+        const props = {
+            authenticatedUser: null,
+            fetchRecentFiles: () => of(recentFiles),
+        }
+
+        const component = mount(<RecentFilesPanel {...props} />)
+        const listItems = component.find('.test-recent-files-item')
+        expect(listItems.length).toStrictEqual(1)
+        expect(listItems.at(0).text()).toStrictEqual('github.com/sourcegraph/sourcegraph › .eslintrc.js')
+    })
+
+    test('Show More button shown when more items can be loaded', () => {
+        const recentFiles = {
+            nodes: [
+                {
+                    argument: '{"filePath": ".eslintrc.js", "repoName": "github.com/sourcegraph/sourcegraph"}',
+                    timestamp: '2020-09-10T22:55:18Z',
+                    url: 'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/.eslintrc.js',
+                },
+                {
+                    argument: '{}',
+                    timestamp: '2020-09-10T22:55:06Z',
+                    url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/go.mod',
+                },
+            ],
+            pageInfo: {
+                endCursor: null,
+                hasNextPage: true,
+            },
+            totalCount: 2,
+        }
+
+        const props = {
+            authenticatedUser: null,
+            fetchRecentFiles: () => of(recentFiles),
+        }
+
+        const component = mount(<RecentFilesPanel {...props} />)
+        const showMoreButton = component.find('.test-recent-files-panel-show-more')
+        expect(showMoreButton.length).toStrictEqual(1)
+    })
+
+    test('Show More button not shown when more items cannot be loaded', () => {
+        const recentFiles = {
+            nodes: [
+                {
+                    argument: '{"filePath": ".eslintrc.js", "repoName": "github.com/sourcegraph/sourcegraph"}',
+                    timestamp: '2020-09-10T22:55:18Z',
+                    url: 'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/.eslintrc.js',
+                },
+                {
+                    argument: '{}',
+                    timestamp: '2020-09-10T22:55:06Z',
+                    url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/go.mod',
+                },
+            ],
+            pageInfo: {
+                endCursor: null,
+                hasNextPage: false,
+            },
+            totalCount: 2,
+        }
+
+        const props = {
+            authenticatedUser: null,
+            fetchRecentFiles: () => of(recentFiles),
+        }
+
+        const component = mount(<RecentFilesPanel {...props} />)
+        const showMoreButton = component.find('.test-recent-files-panel-show-more')
+        expect(showMoreButton.length).toStrictEqual(0)
+    })
+})
