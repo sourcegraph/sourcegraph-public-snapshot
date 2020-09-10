@@ -95,7 +95,7 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                         </a>
                     </div>
                 </ul>
-                <div className="create-campaign-page___specfile rounded p-3 mb-4">
+                <div className="create-campaign-page__specfile rounded p-3 mb-4">
                     <pre className="m-0" dangerouslySetInnerHTML={highlightedSample} />
                 </div>
                 <h2>STEP 2: Preview the campaign with Sourcegraph CLI</h2>
@@ -107,7 +107,7 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                     .
                 </p>
                 <p className="lead">Use Sourcegraph src-cli to preview your campaign:</p>
-                <div className="create-campaign-page___specfile rounded p-3 mb-3">
+                <div className="create-campaign-page__specfile rounded p-3 mb-3">
                     <pre className="m-0">{sourcePreviewCommand}</pre>
                 </div>
             </div>
