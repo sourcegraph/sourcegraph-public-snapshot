@@ -232,3 +232,80 @@ A test like this ought to exercise your data access module, regardless of the de
 Here's an example of how you could [structure such tests](https://github.com/sourcegraph/sourcegraph/blob/da3743ece358fbe6709f07e95d5fd97bd554e047/cmd/repo-updater/repos/integration_test.go#L17).
 
 If you're uncertain about using triggers as part of your work, do some research before committing to a solution and don't hesitate to discuss it with your peers.
+
+## Investigating postgres performance in production
+
+Instead of using the production postgres instance, one should create a clone of that database, to be able to investigate and hack on indexes, queries and other performance work without risking production going down, or us using data.
+To create such an instance, the following commands will help you get your own clone of the database:
+
+### Create a new instance in Google Cloud
+
+Make sure the instance is:
+
+- having a recognizable name
+- running debian 10
+- uses a fresh boot disk, and an additional **SSD** disk from most recent snapshot
+- Use a machine type that's similar to what we provision in k8s, 7CPU, 32GB (Check in prod if in doubt this changed).
+
+This is a convenience script to do the above without using the Cloud Console. (It uses a hardcoded snapshot from 2020-09-10, you need to replace that, at least).
+
+```shell
+gcloud beta compute --project=sourcegraph-dev instances create erik-keegan-test-pg --zone=us-central1-f --machine-type=e2-standard-8 --network=default --network-tier=PREMIUM --maintenance-policy=MIGRATE --service-account=527047051561-compute@developer.gserviceaccount.com --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append --image=debian-10-buster-v20200902 --image-project=debian-cloud --boot-disk-size=30GB --boot-disk-type=pd-standard --boot-disk-device-name=erik-keegan-test-pg --create-disk="mode=rw,size=200,type=projects/sourcegraph-dev/zones/us-central1-f/diskTypes/pd-ssd,name=erik-keegan-pg-test-data,description=Made from backup--pgsql-prod---cloud--2020-09-10--11-00,device-name=erik-keegan-pg-test-data" --no-shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring --reservation-affinity=any
+```
+
+### Connect to the instance
+
+```shell
+gcloud compute ssh --zone "us-central1-f" "erik-keegan-test-pg" --project "sourcegraph-dev"
+```
+
+### Become root
+
+```shell
+sudo -i
+```
+
+### Install Postgres 11 (matches prod)
+
+```shell
+apt update && apt install -y wget
+wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+RELEASE=$(lsb_release -cs)
+echo "deb http://apt.postgresql.org/pub/repos/apt/ ${RELEASE}"-pgdg main | sudo tee  /etc/apt/sources.list.d/pgdg.list
+apt update
+apt -y install postgresql-11
+# Stop the db server, we want to run from our data/config directory.
+systemctl stop postgresql
+```
+
+### Mount the snapshot of the DB to /mnt/pgdata
+
+```shell
+mkdir /mnt/pgdata
+mount /dev/sdb /mnt/pgdata
+chown -R postgres /mnt/pgdata
+```
+
+### Set up US locale
+
+```shell
+# Select en_US.UTF-8, and set as default.
+sudo dpkg-reconfigure locales
+```
+
+### Start up the server
+
+```shell
+sudo -u postgres /usr/lib/postgresql/11/bin/postgres -D /mnt/pgdata/pgdata-11
+```
+
+### Using a separate shell, connect to the instance
+
+```shell
+/usr/lib/postgresql/11/bin/psql -U sg
+```
+
+### FINAL NOTE: Don't forget to shut down and delete :)
+
+- Delete the instance itself (and it's boot disk, happens automatically)
+- Delete the newly created disk from the snapshot
