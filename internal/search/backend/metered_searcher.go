@@ -6,9 +6,12 @@ import (
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
+	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -62,6 +65,16 @@ func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.Sea
 			log.Int64("opts.max_wall_time_ms", opts.MaxWallTime.Milliseconds()),
 			log.Int("opts.max_doc_display_count", opts.MaxDocDisplayCount),
 		)
+	}
+
+	if opts != nil && ot.ShouldTrace(ctx) {
+		// Replace any existing spanContext with a new one, given we've done additional tracing
+		spanContext := make(map[string]string)
+		if err := ot.GetTracer(ctx).Inject(opentracing.SpanFromContext(ctx).Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err == nil {
+			opts.SpanContext = spanContext
+		} else {
+			log15.Warn("meteredSearcher: Error injecting new span context into map: %s", err)
+		}
 	}
 
 	zsr, err := m.Searcher.Search(ctx, q, opts)
