@@ -1,5 +1,6 @@
 import React from 'react'
 import { ThemeProps } from '../../../../shared/src/theme'
+import classNames from 'classnames'
 
 interface Props extends ThemeProps, Exclude<React.ImgHTMLAttributes<HTMLImageElement>, 'src'> {
     /**
@@ -13,12 +14,8 @@ interface Props extends ThemeProps, Exclude<React.ImgHTMLAttributes<HTMLImageEle
      */
     assetsRoot?: typeof window.context.assetsRoot
 
-    /**
-     * A url for a custom logo. This is passed in from parent components for changing the logo for individual pages.
-     * For changing the instance-wide default logo use the `branding` prop.
-     */
-    customIcon?: string
-    customText?: string
+    /** Whether to show the full logo (with text) or only the symbol icon. */
+    variant: 'logo' | 'symbol'
 }
 
 /**
@@ -29,16 +26,22 @@ export const BrandLogo: React.FunctionComponent<Props> = ({
     isLightTheme,
     branding = window.context?.branding,
     assetsRoot = window.context?.assetsRoot || '',
+    variant,
+    className = '',
     ...props
 }) => {
-    const sourcegraphLogoUrl = `${assetsRoot}/img/sourcegraph${isLightTheme ? '-light' : ''}-head-logo.svg?v2`
-    const customBrandingLogoUrl = branding?.[isLightTheme ? 'light' : 'dark']?.logo
-    return props.customIcon && props.customText ? (
-        <div className="d-flex align-items-center mt-6">
-            <img {...props} src={props.customIcon} />
-            <span className="h3 font-weight-normal">{props.customText}</span>
-        </div>
-    ) : (
-        <img {...props} src={props.customIcon || customBrandingLogoUrl || sourcegraphLogoUrl} />
+    const sourcegraphLogoUrl =
+        variant === 'symbol'
+            ? `${assetsRoot}/img/sourcegraph-mark.svg`
+            : `${assetsRoot}/img/sourcegraph${isLightTheme ? '-light' : ''}-head-logo.svg?v2`
+    const customBrandingLogoUrl = branding?.[isLightTheme ? 'light' : 'dark']?.[variant]
+    return (
+        <img
+            {...props}
+            className={classNames('brand-logo', className, {
+                'brand-logo--spin': variant === 'symbol' && !branding?.disableSymbolSpin,
+            })}
+            src={customBrandingLogoUrl || sourcegraphLogoUrl}
+        />
     )
 }

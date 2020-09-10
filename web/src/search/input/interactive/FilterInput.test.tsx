@@ -20,7 +20,6 @@ const defaultProps = {
     filterType: FilterType.repo as Exclude<FilterType, FilterType.patterntype>,
     editable: true,
     negated: false,
-    isHomepage: false,
     globbing: true,
     onSubmit: sinon.spy(),
     onFilterEdited: sinon.spy(),

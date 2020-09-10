@@ -25,7 +25,6 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     themePreference: ThemePreference.Light,
     onThemePreferenceChange: () => undefined,
     authenticatedUser: null,
-    showCampaigns: false,
     setVersionContext: () => undefined,
     availableVersionContexts: [],
     globbing: false,
