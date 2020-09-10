@@ -247,8 +247,7 @@ func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	runE2E := c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.branch == "main"
 
 	var async bool
-
-	if c.branch == "master" {
+	if c.branch == "main" {
 		async = true
 	} else {
 		async = false
