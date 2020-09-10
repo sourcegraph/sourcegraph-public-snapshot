@@ -2,6 +2,8 @@ package secrets
 
 import (
 	"bytes"
+	"crypto/rand"
+	"reflect"
 	"testing"
 )
 
@@ -295,4 +297,62 @@ func Test_gatherKeys(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_encryptor_RotateEncryption(t *testing.T) {
+	tests := []struct {
+		name         string
+		primaryKey   []byte
+		secondaryKey []byte
+		plaintext    []byte
+		wantErr      bool
+	}{
+		{
+			"base",
+			mockGenRandomKey(),
+			mockGenRandomKey(),
+			[]byte("this is a special string"),
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := encryptor{
+				primaryKey:   tt.primaryKey,
+				secondaryKey: tt.secondaryKey,
+			}
+			// pretend we originally use secondaryKey
+			ciphertext, err := gcmEncrypt(tt.plaintext, tt.secondaryKey)
+			if err != nil {
+				t.Errorf("RotateEncryption() unable to Encrypt %v", err)
+				return
+			}
+			// rotate to use new primary key
+			got, err := e.RotateEncryption(ciphertext)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("RotateEncryption() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			// we should always Encrypt with the primary key
+			got, err = gcmDecrypt(got, tt.primaryKey)
+			if err != nil {
+				t.Errorf("RotateEncryption() unable to Decrypt with primary key %v", err)
+				return
+			}
+
+			if !reflect.DeepEqual(got, tt.plaintext) {
+				t.Errorf("RotateEncryption() got = %v, want %v", got, tt.plaintext)
+			}
+		})
+	}
+}
+
+// mockGenRandomKey does not return an error
+func mockGenRandomKey() []byte {
+	b := make([]byte, validKeyLength)
+	_, err := rand.Read(b)
+	if err != nil {
+		panic(err)
+	}
+	return b
 }
