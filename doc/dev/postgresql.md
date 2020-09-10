@@ -242,7 +242,7 @@ To create such an instance, the following commands will help you get your own cl
 
 Make sure the instance:
 
-- having a recognizable name
+- has a recognizable name
 - running debian 10
 - uses a fresh boot disk, and an additional **SSD** disk from most recent snapshot
 - Use a machine type that's similar to what we provision in k8s, 7CPU, 32GB (Check in prod if in doubt this changed).
