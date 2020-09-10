@@ -244,7 +244,7 @@ func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	// Run e2e tests for release branches
 	// We do not run e2e tests on other branches until we can make them reliable.
 	// See RFC 137: https://docs.google.com/document/d/14f7lwfToeT6t_vxnGsCuXqf3QcB5GRZ2Zoy6kYqBAIQ/edit
-	runE2E := c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.branch == "master"
+	runE2E := c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.branch == "main"
 
 	var async bool
 
