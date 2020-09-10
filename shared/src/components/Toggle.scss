@@ -1,3 +1,5 @@
+$toggle-width: 2rem;
+
 .toggle {
     background: none;
     border: none;
@@ -5,7 +7,7 @@
     outline: none !important;
     padding: 0;
     position: relative;
-    width: 2rem;
+    width: $toggle-width;
 
     &__bar,
     &__bar-shadow {
@@ -21,7 +23,7 @@
         opacity: 0.2;
         background-color: var(--text-muted);
         transition: all 0.3s;
-        transition-property: background-color opacity;
+        transition-property: opacity;
 
         &--on {
             background-color: var(--primary);

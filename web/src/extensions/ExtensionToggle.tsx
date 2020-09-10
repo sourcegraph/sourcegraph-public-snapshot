@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react'
 import { EMPTY, from, Observable } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { Toggle } from '../../../shared/src/components/Toggle'
+import { ToggleBig } from '../../../shared/src/components/ToggleBig'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { eventLogger } from '../tracking/eventLogger'
@@ -15,7 +16,55 @@ interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettin
     className?: string
     /** Additional logic to run on toggle */
     onToggleChange?: (enabled: boolean) => void
+    /** Render big toggle */
+    big?: boolean
+    userCannotToggle?: boolean
+    onHover?: (value: boolean) => void
 }
+
+type ExtensionToggleState = 'enabled' | 'disabled' | 'askingForPermission'
+
+type ExtensionToggleAction =
+    | {
+          type: 'enable'
+          isExtensionAdded: boolean
+      }
+    | { type: 'disable' }
+    | { type: 'permissionGiven' }
+    | { type: 'permissionDenied' }
+
+function extensionToggleReducer(state: ExtensionToggleState, action: ExtensionToggleAction): ExtensionToggleState {
+    switch (state) {
+        case 'enabled':
+            if (action.type === 'disable') {
+                return 'disabled'
+            }
+
+        case 'disabled':
+            if (action.type === 'enable') {
+                return action.isExtensionAdded ? 'enabled' : 'askingForPermission'
+            }
+
+        case 'askingForPermission':
+            if (action.type === 'permissionGiven') {
+                return 'enabled'
+            }
+
+            if (action.type === 'permissionDenied') {
+                return 'disabled'
+            }
+    }
+    // state is unchanged for unexpected actions
+    return state
+}
+
+/**
+ * TODO: Refactor to using reducer bc can no longer block
+ * thread with dialog (new modal)
+ *
+ * might not be able to use effect + reducer combo here,
+ * but take the gist of state/flow from reducer
+ */
 
 export const ExtensionToggle: React.FunctionComponent<Props> = ({
     settingsCascade,
@@ -24,8 +73,13 @@ export const ExtensionToggle: React.FunctionComponent<Props> = ({
     enabled,
     className,
     onToggleChange,
+    big,
+    userCannotToggle,
+    onHover,
 }) => {
     const [optimisticEnabled, setOptimisticEnabled] = useState(enabled)
+    const [askingForPermission, setAskingForPermission] = useState<{ enabled: boolean } | false>(false)
+
     const [nextToggle] = useEventObservable(
         useCallback(
             (toggles: Observable<boolean>) =>
@@ -70,15 +124,50 @@ export const ExtensionToggle: React.FunctionComponent<Props> = ({
         )
     )
 
+    // core logic
+    function toggle(enabled: boolean) {
+        eventLogger.log('ExtensionToggled', { extension_id: extensionID })
+
+        if (onToggleChange) {
+            onToggleChange(enabled)
+        }
+        setOptimisticEnabled(enabled)
+    }
+
+    const denyPermission = useCallback(() => {
+        // noop
+        setOptimisticEnabled(false)
+        setAskingForPermission(false)
+    }, [])
+
+    const givePermission = useCallback(() => {
+        // noop
+        setOptimisticEnabled(true)
+        setAskingForPermission(false)
+    }, [])
+
     const title = optimisticEnabled ? 'Click to disable' : 'Click to enable'
 
-    return (
+    const props = {}
+
+    return big ? (
+        <ToggleBig
+            value={optimisticEnabled}
+            onToggle={nextToggle}
+            title={title}
+            className={className}
+            dataTest={`extension-toggle-${extensionID}`}
+            disabled={userCannotToggle}
+            onHover={onHover}
+        />
+    ) : (
         <Toggle
             value={optimisticEnabled}
             onToggle={nextToggle}
             title={title}
             className={className}
             dataTest={`extension-toggle-${extensionID}`}
+            disabled={userCannotToggle}
         />
     )
 }

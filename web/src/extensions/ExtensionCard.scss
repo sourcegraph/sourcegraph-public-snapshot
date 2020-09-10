@@ -1,7 +1,6 @@
-.extension-card {
-    flex: 1;
-    position: relative;
+@import '../../../shared/src/components/Toggle.scss';
 
+.extension-card {
     &__icon {
         width: 3rem;
         height: 3rem;
@@ -17,11 +16,32 @@
         background-color: rgba(36, 110, 51, 0.2);
     }
 
+    &__shadow {
+        /* Position the pseudo-element. */
+        content: ' ';
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+
+        /* Create the box shadow at expanded size. */
+        box-shadow: 0 0 0 6px rgba(36, 110, 51, 0.2);
+
+        /* Hidden by default. */
+        opacity: 0;
+        transition: opacity 500ms;
+    }
+
+    &__shadow--show {
+        opacity: 1;
+    }
+
     &__disabled-feedback {
         position: absolute;
         top: -1.625rem;
-        // feedback is centered on top of toggle, so right is pr (0.5rem) + 50% of toggle width (1.0625rem)
-        right: 1.5625rem;
+        // feedback is centered on top of toggle, so right is pr (0.5rem) + 50% of toggle width
+        right: 0.5rem + ($toggle-width / 2);
         transform: translateX(50%);
         z-index: 1;
     }
@@ -32,5 +52,21 @@
         &--enabled {
             background-color: rgba(199, 233, 205, 0.2);
         }
+
+        // &__shadow {
+        //     /* Position the pseudo-element. */
+        //     content: ' ';
+        //     position: absolute;
+        //     top: 0;
+        //     right: 0;
+        //     bottom: 0;
+        //     left: 0;
+
+        //     box-shadow: 0 10px 50px 0 rgba(199, 233, 205, 0.2);
+
+        //     /* Hidden by default. */
+        //     opacity: 0;
+        //     transition: opacity 500ms;
+        // }
     }
 }

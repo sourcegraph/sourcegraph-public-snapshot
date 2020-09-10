@@ -1,3 +1,5 @@
+@import '../../../../shared/src/components/ToggleBig.scss';
+
 .extension-area-header {
     padding-top: 0.5rem;
 
@@ -6,5 +8,25 @@
         width: 8rem;
         height: 8rem;
         object-fit: contain;
+    }
+
+    &__feedback {
+        &--disabled {
+        }
+
+        &--enabled {
+        }
+
+        &--unauthenticated {
+        }
+    }
+
+    &__disabled-feedback {
+        position: absolute;
+        top: -1.625rem;
+        // feedback is centered on top of toggle, so right is pr (0.5rem) + 50% of toggle width
+        right: 0.5rem + ($toggle-big-width / 2);
+        transform: translateX(50%);
+        z-index: 1;
     }
 }

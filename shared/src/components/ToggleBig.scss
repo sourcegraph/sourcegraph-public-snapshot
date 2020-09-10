@@ -1,3 +1,5 @@
+$toggle-big-width: 6.625rem;
+
 .toggle-big {
     background: none;
     border: none;
@@ -5,7 +7,7 @@
     outline: none !important;
     padding: 0;
     position: relative;
-    width: 6.625rem;
+    width: $toggle-big-width;
 
     &:disabled {
         cursor: not-allowed;

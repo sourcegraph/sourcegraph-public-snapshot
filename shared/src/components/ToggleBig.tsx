@@ -26,6 +26,9 @@ interface Props {
     disabled?: boolean
     tabIndex?: number
     className?: string
+
+    /** Data attribute for testing */
+    dataTest?: string
 }
 
 /** A big toggle switch input component. */
@@ -38,6 +41,7 @@ export const ToggleBig: React.FunctionComponent<Props> = ({
     tabIndex,
     onToggle,
     onHover,
+    dataTest,
 }) => {
     function onClick(): void {
         if (!disabled && onToggle) {
@@ -64,6 +68,7 @@ export const ToggleBig: React.FunctionComponent<Props> = ({
             disabled={!!disabled}
             role="switch"
             aria-checked={value}
+            data-test={dataTest}
         >
             <span
                 className={classnames('toggle-big__bar', {

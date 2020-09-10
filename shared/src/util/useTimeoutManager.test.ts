@@ -1,8 +1,8 @@
 import { renderHook } from '@testing-library/react-hooks'
 import * as sinon from 'sinon'
-import { useTimeout } from './useTimeout'
+import { useTimeoutManager } from './useTimeoutManager'
 
-describe('useTimeout()', () => {
+describe('useTimeoutManager()', () => {
     let clock: sinon.SinonFakeTimers
     beforeAll(() => {
         clock = sinon.useFakeTimers()
@@ -17,8 +17,8 @@ describe('useTimeout()', () => {
             // noop
         })
 
-        const { result } = renderHook(() => useTimeout())
-        result.current(callback, 2000)
+        const { result } = renderHook(() => useTimeoutManager())
+        result.current.setTimeout(callback, 2000)
         sinon.assert.notCalled(callback)
         clock.tick(2000)
         sinon.assert.calledOnce(callback)
@@ -32,10 +32,10 @@ describe('useTimeout()', () => {
             // noop
         })
 
-        const { result } = renderHook(() => useTimeout())
-        result.current(callbackOne, 1000)
+        const { result } = renderHook(() => useTimeoutManager())
+        result.current.setTimeout(callbackOne, 1000)
         clock.tick(500)
-        result.current(callbackTwo, 1000)
+        result.current.setTimeout(callbackTwo, 1000)
         clock.tick(500)
         sinon.assert.notCalled(callbackOne)
         sinon.assert.notCalled(callbackTwo)
@@ -49,10 +49,23 @@ describe('useTimeout()', () => {
             // noop
         })
 
-        const { result, unmount } = renderHook(() => useTimeout())
-        result.current(callback, 1000)
+        const { result, unmount } = renderHook(() => useTimeoutManager())
+        result.current.setTimeout(callback, 1000)
         unmount()
         clock.tick(1000)
+        sinon.assert.notCalled(callback)
+    })
+
+    it('should cancel timeout after calling `cancelTimeout`', () => {
+        const callback = sinon.spy(() => {
+            // noop
+        })
+
+        const { result } = renderHook(() => useTimeoutManager())
+        result.current.setTimeout(callback, 1000)
+        clock.tick(500)
+        result.current.cancelTimeout()
+        clock.tick(500)
         sinon.assert.notCalled(callback)
     })
 })

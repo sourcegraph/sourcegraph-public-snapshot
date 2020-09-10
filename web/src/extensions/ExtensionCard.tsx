@@ -15,7 +15,7 @@ import { isEncodedImage } from '../../../shared/src/util/icon'
 import { Link } from 'react-router-dom'
 import { DefaultIconEnabled, DefaultIcon } from './icons'
 import { ThemeProps } from '../../../shared/src/theme'
-import { useTimeout } from '../../../shared/src/util/useTimeout'
+import { useTimeoutManager } from '../../../shared/src/util/useTimeoutManager'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'>, ThemeProps {
     node: Pick<
@@ -36,7 +36,7 @@ const stopPropagation: React.MouseEventHandler<HTMLElement> = event => {
 }
 
 /** ms after which to remove visual feedback */
-const FEEDBACK_DELAY = 5000
+const FEEDBACK_DELAY = 50000
 
 /** Displays an extension as a card. */
 export const ExtensionCard = React.memo<Props>(function ExtensionCard({
@@ -78,23 +78,50 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
      * Clear the timeout when the component unmounts or the extension is toggled again.
      */
     const [change, setChange] = React.useState<'enabled' | 'disabled' | null>(null)
-    const setFeedbackTimeout = useTimeout()
+    const feedbackManager = useTimeoutManager()
+
+    // Add class that triggers box shadow animation .5s after enabled, and remove it 1s later
+    const [showShadow, setShowShadow] = React.useState(false)
+    const startAnimationManager = useTimeoutManager()
+    const endAnimationManager = useTimeoutManager()
 
     const onToggleChange = React.useCallback(
         (enabled: boolean): void => {
-            setChange(enabled ? 'enabled' : 'disabled')
-            setFeedbackTimeout(() => setChange(null), FEEDBACK_DELAY)
+            if (enabled) {
+                setChange('enabled')
+                startAnimationManager.setTimeout(() => {
+                    setShowShadow(true)
+                }, 500)
+                endAnimationManager.setTimeout(() => {
+                    setShowShadow(false)
+                }, 1500)
+            } else {
+                setChange('disabled')
+                setShowShadow(false)
+                startAnimationManager.cancelTimeout()
+                endAnimationManager.cancelTimeout()
+            }
+            feedbackManager.setTimeout(() => {
+                setChange(null)
+            }, FEEDBACK_DELAY)
         },
-        [setFeedbackTimeout]
+        [feedbackManager, startAnimationManager, endAnimationManager]
     )
 
     return (
         <div className="d-flex">
             <div
-                className={classNames('extension-card card', {
+                className={classNames('extension-card card position-relative flex-1', {
                     'alert alert-success p-0 m-0 extension-card--enabled': change === 'enabled',
                 })}
             >
+                {/* Visual feedback: shadow when extension is enabled */}
+                <div
+                    className={classNames('extension-card__shadow rounded', {
+                        'extension-card__shadow--show': showShadow,
+                    })}
+                />
+
                 <div
                     className="card-body extension-card__body d-flex position-relative"
                     // Prevent toggle clicks from propagating to the stretched-link (and
@@ -184,6 +211,7 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
                             />
                         ))}
                 </div>
+
                 {/* Visual feedback: alert when extension is disabled */}
                 {change === 'disabled' && (
                     <div className="alert alert-secondary px-2 py-1 extension-card__disabled-feedback">
