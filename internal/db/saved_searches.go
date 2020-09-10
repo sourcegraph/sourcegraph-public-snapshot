@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 
+	secretPkg "github.com/sourcegraph/sourcegraph/internal/secrets"
+
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 
@@ -82,6 +84,15 @@ func (s *savedSearches) ListAll(ctx context.Context) (savedSearches []api.SavedQ
 		} else if sq.Config.OrgID != nil {
 			sq.Spec.Subject.Org = sq.Config.OrgID
 		}
+		if secretPkg.ConfiguredToEncrypt() {
+			// TODO base 64 decode
+			plaintext, err := secretPkg.DecryptBytes([]byte(sq.Config.Query))
+			if err != nil {
+				return nil, errors.Wrap(err, "saved_searches: unable to decrypt")
+			}
+			sq.Config.Query = string(plaintext)
+		}
+
 		savedSearches = append(savedSearches, sq)
 	}
 	return savedSearches, nil
@@ -125,6 +136,15 @@ func (s *savedSearches) GetByID(ctx context.Context, id int32) (*api.SavedQueryS
 	} else if sq.Config.OrgID != nil {
 		sq.Spec.Subject.Org = sq.Config.OrgID
 	}
+	if secretPkg.ConfiguredToEncrypt() {
+		// TODO base64 decode
+		plaintext, err := secretPkg.DecryptBytes([]byte(sq.Config.Query))
+		if err != nil {
+			return nil, errors.Wrap(err, "saved_searches: unable to decrypt")
+		}
+		sq.Config.Query = string(plaintext)
+	}
+
 	return &sq, err
 }
 
@@ -177,6 +197,14 @@ func (s *savedSearches) ListSavedSearchesByUserID(ctx context.Context, userID in
 		var ss types.SavedSearch
 		if err := rows.Scan(&ss.ID, &ss.Description, &ss.Query, &ss.Notify, &ss.NotifySlack, &ss.UserID, &ss.OrgID, &ss.SlackWebhookURL); err != nil {
 			return nil, errors.Wrap(err, "Scan(2)")
+		}
+		if secretPkg.ConfiguredToEncrypt() {
+			// TODO base64 decode
+			plaintext, err := secretPkg.DecryptBytes([]byte(ss.Query))
+			if err != nil {
+				return nil, errors.Wrap(err, "saved_searches: unable to decrypt")
+			}
+			ss.Query = string(plaintext)
 		}
 		savedSearches = append(savedSearches, &ss)
 	}
@@ -239,6 +267,15 @@ func (s *savedSearches) Create(ctx context.Context, newSavedSearch *types.SavedS
 		tr.Finish()
 	}()
 
+	if secretPkg.ConfiguredToEncrypt() {
+		// TODO Base64 encode
+		ciphertext, err := secretPkg.EncryptBytes([]byte(newSavedSearch.Query))
+		if err != nil {
+			return nil, errors.Wrap(err, "saved search: failed to encrypt")
+		}
+		newSavedSearch.Query = string(ciphertext)
+	}
+
 	savedQuery = &types.SavedSearch{
 		Description: newSavedSearch.Description,
 		Query:       newSavedSearch.Query,
@@ -284,6 +321,15 @@ func (s *savedSearches) Update(ctx context.Context, savedSearch *types.SavedSear
 		tr.SetError(err)
 		tr.Finish()
 	}()
+
+	if secretPkg.ConfiguredToEncrypt() {
+		// TODO Base64 encode
+		ciphertext, err := secretPkg.EncryptBytes([]byte(savedSearch.Query))
+		if err != nil {
+			return nil, errors.Wrap(err, "saved search: failed to encrypt")
+		}
+		savedSearch.Query = string(ciphertext)
+	}
 
 	savedQuery = &types.SavedSearch{
 		Description:     savedSearch.Description,
