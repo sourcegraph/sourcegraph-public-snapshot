@@ -89,6 +89,7 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
         (enabled: boolean): void => {
             if (enabled) {
                 setChange('enabled')
+                // not using transition-delay so the shadow will immediately disappear on disable
                 startAnimationManager.setTimeout(() => {
                     setShowShadow(true)
                 }, 300)
