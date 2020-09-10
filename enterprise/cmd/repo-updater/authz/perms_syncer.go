@@ -234,9 +234,8 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 }
 
 // syncRepoPerms processes permissions syncing request in repository-centric way.
-// It discards requests that are made for non-private repositories based on the
-// value of "repo.private" column. When noPerms is true, the method will use partial
-// results to update permissions tables when error occurs.
+// When `noPerms` is true, the method will use partial results to update permissions
+// tables even when error occurs.
 func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPerms bool) (err error) {
 	ctx, save := s.observe(ctx, "PermsSyncer.syncRepoPerms", "")
 	defer save(requestTypeRepo, int32(repoID), &err)
@@ -249,16 +248,13 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	} else if len(rs) == 0 {
 		return nil
 	}
-
 	repo := rs[0]
-	if !repo.Private && repo.Unrestricted {
-		return nil
-	}
 
 	var provider authz.Provider
 
 	// No need to check authz provider for a non-private repository,
-	// we ended up here only because `repo.Unrestricted` is "false" and should be "true".
+	// because we only want to ensure `repo.Unrestricted` is "true"
+	// and permissions bits do not look stale to the scheduler.
 	if !repo.Private {
 		// Loop over repository's sources and see if matching any authz provider's URN.
 		providers := s.providersByURNs()
@@ -272,23 +268,25 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	}
 
 	if provider == nil {
-		log15.Debug("PermsSyncer.syncRepoPerms.noProvider", "repoID", repo.ID)
+		log15.Debug("PermsSyncer.syncRepoPerms.noProvider",
+			"repoID", repo.ID,
+			"private", repo.Private,
+			"unrestricted", repo.Unrestricted)
 
-		// NOTE: Not using transaction here because right now it is not easy to
-		// run transaction that involves two stores. Being partially succeed here
-		// is OK because:
-		// 	1. We're setting repository to be unrestricted and the permissions bits
-		//		no longer important.
-		//	2. Eventually, the syncer will try to sync and run down to here again
-		//		because of the permissions staleness.
-		repo.Unrestricted = true
-		if err := s.reposStore.UpsertRepos(ctx, repo); err != nil {
-			return errors.Wrapf(err, "upsert repo %d", repo.ID)
+		if !repo.Unrestricted {
+			// NOTE: Not using transaction here because it is not easy to start transaction
+			// that involves two stores. Being partially succeeded here is OK because:
+			// 	1. We're setting repository to be unrestricted and the permissions bits
+			//		no longer important.
+			//	2. Eventually, the syncer will try to sync and run down to here again
+			//		because of the permissions staleness.
+			repo.Unrestricted = true
+			if err := s.reposStore.UpsertRepos(ctx, repo); err != nil {
+				return errors.Wrapf(err, "upsert repo %d", repo.ID)
+			}
 		}
 
-		// We have no authz provider configured for this private repository.
-		// However, we need to upsert the dummy record in order to prevent
-		// scheduler keep scheduling this repository.
+		// Upsert the record in order to prevent the scheduler keep scheduling this repository.
 		return errors.Wrap(s.permsStore.SetRepoPermissions(ctx, &authz.RepoPermissions{
 			RepoID:  int32(repoID),
 			Perm:    authz.Read, // Note: We currently only support read for repository permissions.
