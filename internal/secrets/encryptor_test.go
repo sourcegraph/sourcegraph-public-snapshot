@@ -300,7 +300,6 @@ func Test_gatherKeys(t *testing.T) {
 }
 
 func Test_encryptor_RotateEncryption(t *testing.T) {
-
 	tests := []struct {
 		name         string
 		primaryKey   []byte
