@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import { isExtensionEnabled } from '../../../../shared/src/extensions/extension'
 import { ExtensionManifest } from '../../../../shared/src/schema/extensionSchema'
@@ -20,7 +20,7 @@ export type ExtensionAreaHeaderContext = Pick<ExtensionAreaHeaderProps, 'extensi
 export interface ExtensionAreaHeaderNavItem extends NavItemWithIconDescriptor<ExtensionAreaHeaderContext> {}
 
 /** ms after which to remove visual feedback */
-const FEEDBACK_DELAY = 50000
+const FEEDBACK_DELAY = 5000
 
 /**
  * Header for the extension area.
@@ -30,14 +30,18 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
 ) => {
     const manifest: ExtensionManifest | undefined =
         props.extension.manifest && !isErrorLike(props.extension.manifest) ? props.extension.manifest : undefined
-    let iconURL: URL | undefined
-    try {
-        if (manifest?.icon) {
-            iconURL = new URL(manifest.icon)
+
+    const iconURL = useMemo(() => {
+        let iconURL: URL | undefined
+        try {
+            if (manifest?.icon) {
+                iconURL = new URL(manifest.icon)
+            }
+        } catch {
+            // noop
         }
-    } catch {
-        // noop
-    }
+        return iconURL
+    }, [manifest])
 
     const isWorkInProgress = props.extension.registryExtension?.isWorkInProgress
 
