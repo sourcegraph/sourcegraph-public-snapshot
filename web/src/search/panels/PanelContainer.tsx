@@ -29,7 +29,7 @@ export const PanelContainer: React.FunctionComponent<Props> = ({
             {actionButtons}
         </div>
 
-        <div className="panel-container__content">
+        <div className="panel-container__content h-100">
             {state === 'loading' && loadingDisplay}
             {state === 'populated' && contentDisplay}
             {state === 'empty' && emptyDisplay}

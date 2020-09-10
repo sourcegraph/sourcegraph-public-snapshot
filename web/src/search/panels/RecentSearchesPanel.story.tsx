@@ -31,8 +31,8 @@ const props = {
 
 add('Populated', () => <WebStory>{() => <RecentSearchesPanel {...props} />}</WebStory>)
 
+add('Loading', () => <WebStory>{() => <RecentSearchesPanel {...props} fetchRecentSearches={() => NEVER} />}</WebStory>)
+
 add('Empty', () => (
     <WebStory>{() => <RecentSearchesPanel {...props} fetchRecentSearches={() => of(emptyRecentSearches)} />}</WebStory>
 ))
-
-add('Loading', () => <WebStory>{() => <RecentSearchesPanel {...props} fetchRecentSearches={() => NEVER} />}</WebStory>)

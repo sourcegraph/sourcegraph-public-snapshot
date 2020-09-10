@@ -19,7 +19,7 @@ const props = {
     fetchSavedSearches: _fetchSavedSearches,
 }
 
-add('Saved search panel content', () => (
+add('Populated', () => (
     <WebStory>
         {() => (
             <div style={{ maxWidth: '32rem' }}>
@@ -29,7 +29,7 @@ add('Saved search panel content', () => (
     </WebStory>
 ))
 
-add('Saved search panel loading', () => (
+add('Loading', () => (
     <WebStory>
         {() => (
             <div style={{ maxWidth: '32rem' }}>
@@ -39,7 +39,7 @@ add('Saved search panel loading', () => (
     </WebStory>
 ))
 
-add('Saved search panel empty', () => (
+add('Empty', () => (
     <WebStory>
         {() => (
             <div style={{ maxWidth: '32rem' }}>

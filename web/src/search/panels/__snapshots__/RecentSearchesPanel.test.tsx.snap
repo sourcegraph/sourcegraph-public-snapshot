@@ -185,7 +185,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
         </h3>
       </div>
       <div
-        className="panel-container__content"
+        className="panel-container__content h-100"
       >
         <table
           className="recent-searches-panel__results-table"
@@ -550,7 +550,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
         </h3>
       </div>
       <div
-        className="panel-container__content"
+        className="panel-container__content h-100"
       >
         <table
           className="recent-searches-panel__results-table"
@@ -929,7 +929,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
         </h3>
       </div>
       <div
-        className="panel-container__content"
+        className="panel-container__content h-100"
       >
         <table
           className="recent-searches-panel__results-table"

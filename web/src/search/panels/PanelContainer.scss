@@ -25,6 +25,7 @@
         padding: 3rem;
         justify-content: center;
         background: $color-bg-2;
+        height: 100%;
 
         .theme-light & {
             background: $color-light-bg-2;
@@ -34,20 +35,5 @@
     &__content {
         overflow-y: auto;
         overflow-x: hidden;
-        height: 100%;
-    }
-
-    &__empty-container {
-        display: flex;
-        flex-direction: column;
-        text-align: center;
-        padding: 3rem;
-        justify-content: center;
-        background: $color-bg-2;
-        height: 100%;
-
-        .theme-light & {
-            background: $color-light-bg-2;
-        }
     }
 }

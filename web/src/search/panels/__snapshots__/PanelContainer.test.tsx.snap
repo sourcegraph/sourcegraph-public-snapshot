@@ -33,7 +33,7 @@ exports[`PanelContainer content state 1`] = `
       </h3>
     </div>
     <div
-      className="panel-container__content"
+      className="panel-container__content h-100"
     >
       <div>
         Content
@@ -76,7 +76,7 @@ exports[`PanelContainer empty state 1`] = `
       </h3>
     </div>
     <div
-      className="panel-container__content"
+      className="panel-container__content h-100"
     >
       <div>
         Empty
@@ -119,7 +119,7 @@ exports[`PanelContainer loading state 1`] = `
       </h3>
     </div>
     <div
-      className="panel-container__content"
+      className="panel-container__content h-100"
     >
       <div>
         Loading
@@ -174,7 +174,7 @@ exports[`PanelContainer with action buttons 1`] = `
       </button>
     </div>
     <div
-      className="panel-container__content"
+      className="panel-container__content h-100"
     >
       <div>
         Content
