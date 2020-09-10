@@ -87,6 +87,18 @@ func TraceFromContext(ctx context.Context) *Trace {
 	return tr
 }
 
+// CopyContext copies the tracing-related context items from one context to another and returns that
+// context.
+func CopyContext(ctx context.Context, from context.Context) context.Context {
+	if tr := TraceFromContext(from); tr != nil {
+		ctx = ContextWithTrace(ctx, tr)
+	}
+	if shouldTrace := ot.ShouldTrace(from); shouldTrace {
+		ctx = ot.WithShouldTrace(ctx, shouldTrace)
+	}
+	return ctx
+}
+
 // Trace is a combined version of golang.org/x/net/trace.Trace and
 // opentracing.Span. Use New to construct one.
 type Trace struct {

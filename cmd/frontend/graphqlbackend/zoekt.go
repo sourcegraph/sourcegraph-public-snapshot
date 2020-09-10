@@ -479,9 +479,7 @@ func contextWithoutDeadline(cOld context.Context) (context.Context, context.Canc
 	cNew, cancel := context.WithCancel(context.Background())
 
 	// Set trace context so we still get spans propagated
-	if tr := trace.TraceFromContext(cOld); tr != nil {
-		cNew = trace.ContextWithTrace(cNew, tr)
-	}
+	cNew = trace.CopyContext(cNew, cOld)
 
 	go func() {
 		select {
