@@ -80,7 +80,7 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
     const [change, setChange] = React.useState<'enabled' | 'disabled' | null>(null)
     const feedbackManager = useTimeoutManager()
 
-    // Add class that triggers box shadow animation .5s after enabled, and remove it 1s later
+    // Add class that triggers box shadow animation .3s after enabled, and remove it 1s later
     const [showShadow, setShowShadow] = React.useState(false)
     const startAnimationManager = useTimeoutManager()
     const endAnimationManager = useTimeoutManager()
@@ -91,10 +91,10 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
                 setChange('enabled')
                 startAnimationManager.setTimeout(() => {
                     setShowShadow(true)
-                }, 500)
+                }, 300)
                 endAnimationManager.setTimeout(() => {
                     setShowShadow(false)
-                }, 1500)
+                }, 1300)
             } else {
                 setChange('disabled')
                 setShowShadow(false)
