@@ -65,16 +65,17 @@ func (t Tracer) New(ctx context.Context, family, title string, tags ...Tag) (*Tr
 	for _, t := range tags {
 		tr.LazyPrintf("%s: %s", t.Key, t.Value)
 	}
-	return trace, ContextWithTrace(ctx, trace)
+	return trace, contextWithTrace(ctx, trace)
 }
 
 type traceContextKey string
 
 const traceKey = traceContextKey("trace")
 
-// ContextWithTrace returns a new context.Context that holds a reference to
-// trace's SpanContext.
-func ContextWithTrace(ctx context.Context, tr *Trace) context.Context {
+// contextWithTrace returns a new context.Context that holds a reference to trace's
+// SpanContext. External callers should likely use CopyContext, as this properly propagates all
+// tracing context from one context to another.
+func contextWithTrace(ctx context.Context, tr *Trace) context.Context {
 	ctx = opentracing.ContextWithSpan(ctx, tr.span)
 	ctx = context.WithValue(ctx, traceKey, tr)
 	return ctx
@@ -85,6 +86,18 @@ func ContextWithTrace(ctx context.Context, tr *Trace) context.Context {
 func TraceFromContext(ctx context.Context) *Trace {
 	tr, _ := ctx.Value(traceKey).(*Trace)
 	return tr
+}
+
+// CopyContext copies the tracing-related context items from one context to another and returns that
+// context.
+func CopyContext(ctx context.Context, from context.Context) context.Context {
+	if tr := TraceFromContext(from); tr != nil {
+		ctx = contextWithTrace(ctx, tr)
+	}
+	if shouldTrace := ot.ShouldTrace(from); shouldTrace {
+		ctx = ot.WithShouldTrace(ctx, shouldTrace)
+	}
+	return ctx
 }
 
 // Trace is a combined version of golang.org/x/net/trace.Trace and
