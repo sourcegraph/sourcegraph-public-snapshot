@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/secrets"
+
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
@@ -332,7 +334,7 @@ func (s DBStore) UpsertExternalServices(ctx context.Context, svcs ...*ExternalSe
 		return nil
 	}
 
-	q := upsertExternalServicesQuery(svcs)
+	q, _ := upsertExternalServicesQuery(svcs)
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return err
@@ -348,9 +350,18 @@ func (s DBStore) UpsertExternalServices(ctx context.Context, svcs ...*ExternalSe
 	return err
 }
 
-func upsertExternalServicesQuery(svcs []*ExternalService) *sqlf.Query {
+func upsertExternalServicesQuery(svcs []*ExternalService) (*sqlf.Query, error) {
 	vals := make([]*sqlf.Query, 0, len(svcs))
 	for _, s := range svcs {
+		if secrets.ConfiguredToEncrypt() {
+			// TODO base64 encode
+			cfg, err := secrets.EncryptBytes([]byte(s.Config))
+			if err != nil {
+				return nil, errors.Wrap(err, "upsert ext svc: unable to encrypt")
+			}
+			s.Config = string(cfg)
+		}
+
 		vals = append(vals, sqlf.Sprintf(
 			upsertExternalServicesQueryValueFmtstr,
 			s.ID,
@@ -369,7 +380,7 @@ func upsertExternalServicesQuery(svcs []*ExternalService) *sqlf.Query {
 	return sqlf.Sprintf(
 		upsertExternalServicesQueryFmtstr,
 		sqlf.Join(vals, ",\n"),
-	)
+	), nil
 }
 
 const upsertExternalServicesQueryValueFmtstr = `
@@ -768,6 +779,13 @@ func (s DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes ma
 		srcs := make([]source, 0, len(sources))
 		for rid, infoList := range sources {
 			for _, info := range infoList {
+				if secrets.ConfiguredToEncrypt() {
+					encryptedURL, err := secrets.EncryptBytes([]byte(info.CloneURL))
+					if err != nil {
+						return nil, errors.Wrap(err, "upsert sources: unable to encrypt")
+					}
+					info.CloneURL = string(encryptedURL)
+				}
 				srcs = append(srcs, source{
 					ExternalServiceID: info.ExternalServiceID(),
 					RepoID:            int64(rid),
@@ -1332,6 +1350,15 @@ func scanRepo(r *Repo, s scanner) error {
 		}
 		for _, src := range srcs {
 			urn := extsvc.URN(src.Kind, src.ID)
+			if secrets.ConfiguredToEncrypt() {
+				// TODO base64 decode
+				decryptedURL, err := secrets.DecryptBytes([]byte(src.CloneURL))
+				if err != nil {
+					return errors.Wrap(err, "scanRepo: decrypt cloneURL failed")
+				}
+				src.CloneURL = string(decryptedURL)
+			}
+
 			r.Sources[urn] = &SourceInfo{
 				ID:       urn,
 				CloneURL: src.CloneURL,
@@ -1358,6 +1385,14 @@ func scanRepo(r *Repo, s scanner) error {
 		r.Metadata = new(gitolite.Repo)
 	default:
 		return nil
+	}
+
+	if secrets.ConfiguredToEncrypt() {
+		// TODO base64 decode
+		metadata, err = secrets.DecryptBytes(metadata)
+		if err != nil {
+			return errors.Wrap(err, "scanRepo: decrypt metadata failed")
+		}
 	}
 
 	if err = json.Unmarshal(metadata, r.Metadata); err != nil {
