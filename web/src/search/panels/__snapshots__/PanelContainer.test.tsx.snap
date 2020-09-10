@@ -24,7 +24,7 @@ exports[`PanelContainer content state 1`] = `
     className="panel-container"
   >
     <div
-      className="panel-container__header d-flex border-bottom"
+      className="panel-container__header d-flex border-bottom mb-2"
     >
       <h3
         className="panel-container__header-text"
@@ -63,7 +63,7 @@ exports[`PanelContainer empty state 1`] = `
     className="panel-container"
   >
     <div
-      className="panel-container__header d-flex border-bottom"
+      className="panel-container__header d-flex border-bottom mb-2"
     >
       <h3
         className="panel-container__header-text"
@@ -102,7 +102,7 @@ exports[`PanelContainer loading state 1`] = `
     className="panel-container"
   >
     <div
-      className="panel-container__header d-flex border-bottom"
+      className="panel-container__header d-flex border-bottom mb-2"
     >
       <h3
         className="panel-container__header-text"
@@ -148,7 +148,7 @@ exports[`PanelContainer with action buttons 1`] = `
     className="panel-container"
   >
     <div
-      className="panel-container__header d-flex border-bottom"
+      className="panel-container__header d-flex border-bottom mb-2"
     >
       <h3
         className="panel-container__header-text"
