@@ -23,14 +23,16 @@ export const PanelContainer: React.FunctionComponent<Props> = ({
     actionButtons,
     className,
 }) => (
-    <div className={classNames(className, 'panel-container')}>
+    <div className={classNames(className, 'panel-container', 'd-flex', 'flex-column')}>
         <div className="panel-container__header d-flex border-bottom mb-2">
             <h3 className="panel-container__header-text">{title}</h3>
             {actionButtons}
         </div>
 
-        {state === 'loading' && loadingDisplay}
-        {state === 'populated' && contentDisplay}
-        {state === 'empty' && emptyDisplay}
+        <div className="panel-container__content h-100">
+            {state === 'loading' && loadingDisplay}
+            {state === 'populated' && contentDisplay}
+            {state === 'empty' && emptyDisplay}
+        </div>
     </div>
 )

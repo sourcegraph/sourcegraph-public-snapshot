@@ -1,6 +1,6 @@
 import { Observable, of, combineLatest, defer, from } from 'rxjs'
 import { catchError, map, switchMap, publishReplay, refCount } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql, requestGraphQL } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
@@ -10,7 +10,11 @@ import { Remote } from 'comlink'
 import { FlatExtHostAPI } from '../../../shared/src/api/contract'
 import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
 import { DeployType } from '../jscontext'
-import { SearchPatternType } from '../graphql-operations'
+import {
+    SearchPatternType,
+    RecentSearchesPanelDataVariables,
+    RecentSearchesPanelDataResult,
+} from '../graphql-operations'
 
 export function search(
     query: string,
@@ -519,5 +523,53 @@ export function shouldDisplayPerformanceWarning(deployType: DeployType): Observa
     ).pipe(
         map(dataOrThrowErrors),
         map(data => (data.repositories.nodes || []).length > manyReposWarningLimit)
+    )
+}
+
+export interface EventLogResult {
+    totalCount: number
+    nodes: { argument: string | null; timestamp: string; url: string }[]
+    pageInfo: { endCursor: string | null; hasNextPage: boolean }
+}
+
+export function fetchRecentSearches(userId: GQL.ID, first: number): Observable<EventLogResult | null> {
+    if (!userId) {
+        return of(null)
+    }
+
+    const result = requestGraphQL<RecentSearchesPanelDataResult, RecentSearchesPanelDataVariables>({
+        request: gql`
+            query RecentSearchesPanelData($userId: ID!, $first: Int) {
+                node(id: $userId) {
+                    ... on User {
+                        recentSearches: eventLogs(first: $first, eventName: "SearchResultsQueried") {
+                            nodes {
+                                argument
+                                timestamp
+                                url
+                            }
+                            pageInfo {
+                                endCursor
+                                hasNextPage
+                            }
+                            totalCount
+                        }
+                    }
+                }
+            }
+        `,
+        variables: { userId, first: first ?? null },
+    })
+
+    return result.pipe(
+        map(dataOrThrowErrors),
+        map(
+            (data: RecentSearchesPanelDataResult): EventLogResult => {
+                if (!data.node) {
+                    throw new Error('User not found')
+                }
+                return data.node.recentSearches
+            }
+        )
     )
 }
