@@ -1,8 +1,12 @@
 package db
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+
+	"github.com/hashicorp/go-multierror"
+	secretPkg "github.com/sourcegraph/sourcegraph/internal/secrets"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -82,6 +86,14 @@ func (s *savedSearches) ListAll(ctx context.Context) (savedSearches []api.SavedQ
 		} else if sq.Config.OrgID != nil {
 			sq.Spec.Subject.Org = sq.Config.OrgID
 		}
+		if secretPkg.ConfiguredToEncrypt() {
+			plaintext, err := secretPkg.DecodeAndDecryptBytes([]byte(sq.Config.Query))
+			if err != nil {
+				return nil, errors.Wrap(err, "saved_searches: unable to decrypt")
+			}
+			sq.Config.Query = string(plaintext)
+		}
+
 		savedSearches = append(savedSearches, sq)
 	}
 	return savedSearches, nil
@@ -125,6 +137,15 @@ func (s *savedSearches) GetByID(ctx context.Context, id int32) (*api.SavedQueryS
 	} else if sq.Config.OrgID != nil {
 		sq.Spec.Subject.Org = sq.Config.OrgID
 	}
+	if secretPkg.ConfiguredToEncrypt() {
+		// TODO base64 decode
+		plaintext, err := secretPkg.DecodeAndDecryptBytes([]byte(sq.Config.Query))
+		if err != nil {
+			return nil, errors.Wrap(err, "saved_searches: unable to decrypt")
+		}
+		sq.Config.Query = string(plaintext)
+	}
+
 	return &sq, err
 }
 
@@ -178,6 +199,14 @@ func (s *savedSearches) ListSavedSearchesByUserID(ctx context.Context, userID in
 		if err := rows.Scan(&ss.ID, &ss.Description, &ss.Query, &ss.Notify, &ss.NotifySlack, &ss.UserID, &ss.OrgID, &ss.SlackWebhookURL); err != nil {
 			return nil, errors.Wrap(err, "Scan(2)")
 		}
+		if secretPkg.ConfiguredToEncrypt() {
+			// TODO base64 decode
+			plaintext, err := secretPkg.DecodeAndDecryptBytes([]byte(ss.Query))
+			if err != nil {
+				return nil, errors.Wrap(err, "saved_searches: unable to decrypt")
+			}
+			ss.Query = string(plaintext)
+		}
 		savedSearches = append(savedSearches, &ss)
 	}
 	return savedSearches, nil
@@ -213,6 +242,15 @@ func (s *savedSearches) ListSavedSearchesByOrgID(ctx context.Context, orgID int3
 		if err := rows.Scan(&ss.ID, &ss.Description, &ss.Query, &ss.Notify, &ss.NotifySlack, &ss.UserID, &ss.OrgID, &ss.SlackWebhookURL); err != nil {
 			return nil, errors.Wrap(err, "Scan")
 		}
+
+		if secretPkg.ConfiguredToEncrypt() {
+			plaintext, err := secretPkg.DecodeAndDecryptBytes([]byte(ss.Query))
+			if err != nil {
+				return nil, err
+			}
+			ss.Query = string(plaintext)
+		}
+
 		savedSearches = append(savedSearches, &ss)
 	}
 	return savedSearches, nil
@@ -238,6 +276,14 @@ func (s *savedSearches) Create(ctx context.Context, newSavedSearch *types.SavedS
 		tr.SetError(err)
 		tr.Finish()
 	}()
+
+	if secretPkg.ConfiguredToEncrypt() {
+		ciphertext, err := secretPkg.EncodeAndEncryptBytes([]byte(newSavedSearch.Query))
+		if err != nil {
+			return nil, errors.Wrap(err, "saved search: failed to encrypt")
+		}
+		newSavedSearch.Query = string(ciphertext)
+	}
 
 	savedQuery = &types.SavedSearch{
 		Description: newSavedSearch.Description,
@@ -285,6 +331,15 @@ func (s *savedSearches) Update(ctx context.Context, savedSearch *types.SavedSear
 		tr.Finish()
 	}()
 
+	if secretPkg.ConfiguredToEncrypt() {
+		// TODO Base64 encode
+		ciphertext, err := secretPkg.EncodeAndEncryptBytes([]byte(savedSearch.Query))
+		if err != nil {
+			return nil, errors.Wrap(err, "saved search: failed to encrypt")
+		}
+		savedSearch.Query = string(ciphertext)
+	}
+
 	savedQuery = &types.SavedSearch{
 		Description:     savedSearch.Description,
 		Query:           savedSearch.Query,
@@ -329,6 +384,71 @@ func (s *savedSearches) Delete(ctx context.Context, id int32) (err error) {
 		tr.Finish()
 	}()
 	_, err = dbconn.Global.ExecContext(ctx, `DELETE FROM saved_searches WHERE ID=$1`, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (*savedSearches) EncryptTable(ctx context.Context) error {
+	if !secretPkg.ConfiguredToEncrypt() {
+		return nil
+	}
+
+	q := sqlf.Sprintf("SELECT id,query from saved_searches where query like %s%%", secretPkg.KeyHash())
+	tx, err := dbconn.Global.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			rollErr := tx.Rollback()
+			if rollErr != nil {
+				err = multierror.Append(err, rollErr)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+
+	rows, err := tx.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args())
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var sq types.SavedSearch
+		err := rows.Scan(&sq.ID, &sq.Query)
+		if err != nil {
+			return err
+		}
+
+		var cryptBytes []byte
+		byteQuery := []byte(sq.Query)
+		if secretPkg.ConfiguredToRotate() {
+			cryptBytes, err = secretPkg.RotateEncryption(byteQuery)
+			if err != nil {
+				return err
+			}
+			if bytes.Equal(byteQuery, cryptBytes) {
+				continue
+			}
+		} else {
+			cryptBytes, err = secretPkg.EncodeAndEncryptBytes(byteQuery)
+			if err != nil {
+				return err
+			}
+			if bytes.Equal(byteQuery, cryptBytes) {
+				continue
+			}
+		}
+
+		updateQ := sqlf.Sprintf("UPDATE saved_searches SET query=%s WHERE id=%d", cryptBytes, sq.ID)
+		_, err = tx.ExecContext(ctx, updateQ.Query(sqlf.PostgresBindVar), updateQ.Args())
+		return err
+	}
+	err = rows.Err()
 	if err != nil {
 		return err
 	}
