@@ -35,6 +35,12 @@ const SettingsSchemaJSON = `{
           "default": false,
           "!go": { "pointer": true }
         },
+        "searchStreaming": {
+          "description": "Enables experimental streaming support.",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
+        },
         "showBadgeAttachments": {
           "description": "Enables the UI indicators for code intelligence precision.",
           "type": "boolean",
@@ -105,12 +111,6 @@ const SettingsSchemaJSON = `{
     },
     "search.globbing": {
       "description": "Enables globbing for supported field values",
-      "type": "boolean",
-      "default": false,
-      "!go": { "pointer": true }
-    },
-    "search.streaming": {
-      "description": "Enables experimental streaming support.",
       "type": "boolean",
       "default": false,
       "!go": { "pointer": true }
