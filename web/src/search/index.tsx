@@ -170,6 +170,7 @@ export interface EnterpriseHomePanelsProps {
     showEnterpriseHomePanels: boolean
     fetchSavedSearches: () => Observable<ISavedSearch[]>
     fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult | null>
+    fetchRecentFiles: (userId: string, first: number) => Observable<EventLogResult | null>
 }
 
 /**

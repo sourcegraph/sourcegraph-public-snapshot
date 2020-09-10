@@ -13,6 +13,7 @@ interface Props extends Pick<PatternTypeProps, 'patternType'> {
     authenticatedUser: AuthenticatedUser | null
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
     fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult | null>
+    fetchRecentFiles: (userId: string, first: number) => Observable<EventLogResult | null>
 }
 
 export const EnterpriseHomePanels: React.FunctionComponent<Props> = (props: Props) => (

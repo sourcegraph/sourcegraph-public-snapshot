@@ -225,3 +225,6 @@ export const _fetchRecentSearches = (): Observable<EventLogResult | null> =>
         },
         totalCount: 436,
     })
+
+export const _fetchRecentFiles = (): Observable<EventLogResult | null> =>
+    of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } })
