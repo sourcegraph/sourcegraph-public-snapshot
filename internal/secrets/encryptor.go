@@ -37,9 +37,9 @@ type encryptor struct {
 	secondaryKey []byte
 }
 
-// EncryptBytes is the general purpose encryption function used to
+// gcmEncrypt is the general purpose encryption function used to
 // return the encrypted versions of bytes.
-// EncryptBytes uses 256-bit AES-GCM. This both hides the content of
+// gcmEncrypt uses 256-bit AES-GCM. This both hides the content of
 // the data and provides a check that it hasn't been altered. Output takes the form
 // `nonce|ciphertext|tag` where '|' indicates concatenation. It is a modified version of
 // https://github.com/gtank/cryptopasta/blob/1f550f6f2f69009f6ae57347c188e0a67cd4e500/encrypt.go#L37
@@ -63,6 +63,10 @@ func gcmEncrypt(plaintext, key []byte) ([]byte, error) {
 	return gcm.Seal(nonce, nonce, plaintext, nil), nil
 }
 
+// gcmDecrypt decrypts data using 256-bit AES-GCM. This both hides the content of
+// the data and provides a check that it hasn't been altered. Expects input form
+// `nonce|ciphertext|tag` where '|' indicates concatenation. It is a modified version of
+// https://github.com/gtank/cryptopasta/blob/1f550f6f2f69009f6ae57347c188e0a67cd4e500/encrypt.go#L60
 func gcmDecrypt(ciphertext, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -111,11 +115,18 @@ func (e encryptor) EncryptBytes(plaintext []byte) (ciphertext []byte, err error)
 // DecryptBytes decrypts the plaintext using the primaryKey of the encryptor.
 // This relies on AES-GCM.
 func (e encryptor) DecryptBytes(ciphertext []byte) (plaintext []byte, err error) {
-	if len(e.primaryKey) < validKeyLength {
+	if len(e.primaryKey) < validKeyLength && len(e.secondaryKey) < validKeyLength {
 		return nil, &EncryptionError{errors.New("no valid keys available")}
 	}
 
-	return gcmDecrypt(ciphertext, e.primaryKey)
+	if plaintext, err = gcmDecrypt(ciphertext, e.primaryKey); err == nil {
+		return plaintext, nil
+	}
+	if plaintext, err = gcmDecrypt(ciphertext, e.secondaryKey); err == nil {
+		return plaintext, nil
+	}
+	return nil, &EncryptionError{err}
+
 }
 
 func (e encryptor) EncryptWithKey(plaintext, key []byte) ([]byte, error) {
