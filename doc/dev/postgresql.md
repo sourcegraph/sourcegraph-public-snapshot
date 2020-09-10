@@ -240,7 +240,7 @@ To create such an instance, the following commands will help you get your own cl
 
 ### Create a new instance in Google Cloud
 
-Make sure the instance is:
+Make sure the instance:
 
 - having a recognizable name
 - running debian 10
