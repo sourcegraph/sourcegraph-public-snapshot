@@ -14,6 +14,8 @@
 *.js @sourcegraph/web
 *.ts @sourcegraph/web
 *.tsx @sourcegraph/web
+/cmd @slimsag
+/internal @slimsag
 /enterprise/cmd/frontend @slimsag
 /enterprise/cmd/server @slimsag
 /cmd/frontend/shared @slimsag
@@ -82,8 +84,6 @@
 /prettier.config.js @sourcegraph/web
 /.editorconfig @sourcegraph/web
 /jest.config.js @sourcegraph/web
-/cmd @slimsag
-/internal @slimsag
 
 # Web
 /shared @sourcegraph/web

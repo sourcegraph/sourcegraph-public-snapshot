@@ -20,11 +20,17 @@ type EncryptionError struct {
 
 // Encryptor is an interface that provides encryption & decryption primitives
 type Encryptor interface {
+	// ConfiguredToEncrypt returns true if the encryptor is able to encrypt
 	ConfiguredToEncrypt() bool
+	// ConfiguredToRotate returns if primary and secondary keys are valid keys
 	ConfiguredToRotate() bool
+	// DecryptBytes decrypts a ciphertext with the keys available to the encryptor
 	DecryptBytes(b []byte) ([]byte, error)
+	// EncryptBytes encrypts a plaintext with the primary key
 	EncryptBytes(b []byte) ([]byte, error)
-	EncryptWithKey(b, k []byte) ([]byte, error)
+	// EncryptWithKey encrypts plaintext with the given key
+	EncryptWithKey(b, key []byte) ([]byte, error)
+	// RotateEncryption decrypts given byte array and then re-encrypts with the primary key
 	RotateEncryption(b []byte) ([]byte, error)
 }
 
@@ -37,9 +43,9 @@ type encryptor struct {
 	secondaryKey []byte
 }
 
-// EncryptBytes is the general purpose encryption function used to
+// gcmEncrypt is the general purpose encryption function used to
 // return the encrypted versions of bytes.
-// EncryptBytes uses 256-bit AES-GCM. This both hides the content of
+// gcmEncrypt uses 256-bit AES-GCM. This both hides the content of
 // the data and provides a check that it hasn't been altered. Output takes the form
 // `nonce|ciphertext|tag` where '|' indicates concatenation. It is a modified version of
 // https://github.com/gtank/cryptopasta/blob/1f550f6f2f69009f6ae57347c188e0a67cd4e500/encrypt.go#L37
@@ -63,6 +69,10 @@ func gcmEncrypt(plaintext, key []byte) ([]byte, error) {
 	return gcm.Seal(nonce, nonce, plaintext, nil), nil
 }
 
+// gcmDecrypt decrypts data using 256-bit AES-GCM. This both hides the content of
+// the data and provides a check that it hasn't been altered. Expects input form
+// `nonce|ciphertext|tag` where '|' indicates concatenation. It is a modified version of
+// https://github.com/gtank/cryptopasta/blob/1f550f6f2f69009f6ae57347c188e0a67cd4e500/encrypt.go#L60
 func gcmDecrypt(ciphertext, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -111,11 +121,18 @@ func (e encryptor) EncryptBytes(plaintext []byte) (ciphertext []byte, err error)
 // DecryptBytes decrypts the plaintext using the primaryKey of the encryptor.
 // This relies on AES-GCM.
 func (e encryptor) DecryptBytes(ciphertext []byte) (plaintext []byte, err error) {
-	if len(e.primaryKey) < validKeyLength {
+	if len(e.primaryKey) < validKeyLength && len(e.secondaryKey) < validKeyLength {
 		return nil, &EncryptionError{errors.New("no valid keys available")}
 	}
 
-	return gcmDecrypt(ciphertext, e.primaryKey)
+	if plaintext, err = gcmDecrypt(ciphertext, e.primaryKey); err == nil {
+		return plaintext, nil
+	}
+	if plaintext, err = gcmDecrypt(ciphertext, e.secondaryKey); err == nil {
+		return plaintext, nil
+	}
+	return nil, &EncryptionError{err}
+
 }
 
 func (e encryptor) EncryptWithKey(plaintext, key []byte) ([]byte, error) {
@@ -129,16 +146,17 @@ func (e encryptor) RotateEncryption(ciphertext []byte) ([]byte, error) {
 	if !e.ConfiguredToRotate() {
 		return nil, &EncryptionError{errors.New("key rotation not configured")}
 	}
-	plaintext, err := gcmDecrypt(ciphertext, e.primaryKey)
-	if err != nil { // perhaps it's already encrypted?
-		_, err = gcmDecrypt(ciphertext, e.secondaryKey)
-		if err == nil {
-			return ciphertext, nil
+	// try previous key first
+	plaintext, err := gcmDecrypt(ciphertext, e.secondaryKey)
+	if err != nil {
+		_, err = gcmDecrypt(ciphertext, e.primaryKey)
+		if err != nil {
+			return nil, err
 		}
-		return ciphertext, err
+		return ciphertext, nil
 	}
 
-	return e.EncryptWithKey(plaintext, e.secondaryKey)
+	return e.EncryptWithKey(plaintext, e.primaryKey)
 }
 
 // noOpEncryptor always returns original content and does no encryption or decryption.
@@ -164,7 +182,7 @@ func (noOpEncryptor) RotateEncryption(b []byte) ([]byte, error) {
 	return b, nil
 }
 
-func (noOpEncryptor) EncryptWithKey(b, k []byte) ([]byte, error) {
+func (noOpEncryptor) EncryptWithKey(b, key []byte) ([]byte, error) {
 	return b, nil
 }
 

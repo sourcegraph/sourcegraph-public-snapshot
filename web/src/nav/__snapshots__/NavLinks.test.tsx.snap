@@ -1390,16 +1390,6 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
     </a>
   </li>
   <li
-    class="nav-item"
-  >
-    <a
-      class="nav-link"
-      href="/extensions"
-    >
-      Extensions
-    </a>
-  </li>
-  <li
     class="nav-item mx-1"
   >
     <a
@@ -1414,22 +1404,11 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
   >
     <a
       class="nav-link"
-      href="https://about.sourcegraph.com"
+      href="/help"
       rel="noopener"
       target="_blank"
     >
-      About 
-      <svg
-        class="mdi-icon icon-inline"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
-        />
-      </svg>
+      Docs
     </a>
   </li>
   <li
@@ -1437,22 +1416,11 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
   >
     <a
       class="nav-link"
-      href="/help"
+      href="https://about.sourcegraph.com"
       rel="noopener"
       target="_blank"
     >
-      Help 
-      <svg
-        class="mdi-icon icon-inline"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
-        />
-      </svg>
+      About
     </a>
   </li>
   <li
@@ -1532,16 +1500,6 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
     </a>
   </li>
   <li
-    class="nav-item"
-  >
-    <a
-      class="nav-link"
-      href="/extensions"
-    >
-      Extensions
-    </a>
-  </li>
-  <li
     class="nav-item mx-1"
   >
     <a
@@ -1556,22 +1514,11 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
   >
     <a
       class="nav-link"
-      href="https://about.sourcegraph.com"
+      href="/help"
       rel="noopener"
       target="_blank"
     >
-      About 
-      <svg
-        class="mdi-icon icon-inline"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
-        />
-      </svg>
+      Docs
     </a>
   </li>
   <li
@@ -1579,22 +1526,11 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
   >
     <a
       class="nav-link"
-      href="/help"
+      href="https://about.sourcegraph.com"
       rel="noopener"
       target="_blank"
     >
-      Help 
-      <svg
-        class="mdi-icon icon-inline"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
-        />
-      </svg>
+      About
     </a>
   </li>
   <li
@@ -1705,16 +1641,6 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
     </a>
   </li>
   <li
-    class="nav-item"
-  >
-    <a
-      class="nav-link"
-      href="/extensions"
-    >
-      Extensions
-    </a>
-  </li>
-  <li
     class="nav-item mx-1"
   >
     <a
@@ -1733,18 +1659,7 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
       rel="noopener"
       target="_blank"
     >
-      Help 
-      <svg
-        class="mdi-icon icon-inline"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
-        />
-      </svg>
+      Docs
     </a>
   </li>
   <li
@@ -1845,16 +1760,6 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
     </a>
   </li>
   <li
-    class="nav-item"
-  >
-    <a
-      class="nav-link"
-      href="/extensions"
-    >
-      Extensions
-    </a>
-  </li>
-  <li
     class="nav-item mx-1"
   >
     <a
@@ -1873,18 +1778,7 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
       rel="noopener"
       target="_blank"
     >
-      Help 
-      <svg
-        class="mdi-icon icon-inline"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
-        />
-      </svg>
+      Docs
     </a>
   </li>
   <li
