@@ -17,10 +17,8 @@ export const SavedSearchesPanel: React.FunctionComponent<{
     fetchSavedSearches: () => Observable<ISavedSearch[]>
     className?: string
     /** For testing only */
-    displayState?: 'loading' | 'empty' | 'populated'
-    /** For testing only */
     mySearchesMode?: boolean
-}> = ({ patternType, authenticatedUser, fetchSavedSearches, className, displayState, mySearchesMode }) => {
+}> = ({ patternType, authenticatedUser, fetchSavedSearches, className, mySearchesMode }) => {
     const savedSearches = useObservable(useMemo(() => fetchSavedSearches(), [fetchSavedSearches]))
     const [showAllSearches, setShowAllSearches] = useState(true)
 
@@ -132,7 +130,7 @@ export const SavedSearchesPanel: React.FunctionComponent<{
         <PanelContainer
             className={classNames(className, 'saved-searches-panel')}
             title="Saved searches"
-            state={displayState || (savedSearches ? (savedSearches.length > 0 ? 'populated' : 'empty') : 'loading')}
+            state={savedSearches ? (savedSearches.length > 0 ? 'populated' : 'empty') : 'loading'}
             loadingContent={loadingDisplay}
             populatedContent={contentDisplay}
             emptyContent={emptyDisplay}

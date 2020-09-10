@@ -4,6 +4,7 @@ import { WebStory } from '../../components/WebStory'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { authUser, _fetchSavedSearches } from './utils'
 import { SavedSearchesPanel } from './SavedSearchesPanel'
+import { NEVER, of } from 'rxjs'
 
 const { add } = storiesOf('web/search/panels/SavedSearchPanel', module).addParameters({
     design: {
@@ -32,7 +33,7 @@ add('Saved search panel loading', () => (
     <WebStory>
         {() => (
             <div style={{ maxWidth: '32rem' }}>
-                <SavedSearchesPanel {...props} displayState="loading" />
+                <SavedSearchesPanel {...props} fetchSavedSearches={() => NEVER} />
             </div>
         )}
     </WebStory>
@@ -42,7 +43,7 @@ add('Saved search panel empty', () => (
     <WebStory>
         {() => (
             <div style={{ maxWidth: '32rem' }}>
-                <SavedSearchesPanel {...props} displayState="empty" />
+                <SavedSearchesPanel {...props} fetchSavedSearches={() => of([])} />
             </div>
         )}
     </WebStory>
