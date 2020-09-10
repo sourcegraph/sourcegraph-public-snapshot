@@ -7,12 +7,13 @@ UPDATE users SET invalidated_sessions_at = created_at;
 
 -- Create a procedure that invalidates sessions for the user that can be used for our trigger
 -- Invalidates if the password is updated
+-- For the reasoning behind adding one second, see security issue #93
 CREATE OR REPLACE FUNCTION invalidate_session_for_userid_on_password_change() RETURNS trigger
 LANGUAGE plpgsql
     AS $$
     BEGIN
         IF OLD.passwd != NEW.passwd THEN
-            NEW.invalidated_sessions_at = now();
+            NEW.invalidated_sessions_at = now() + (1 * interval '1 second');
             RETURN NEW;
         END IF;
     RETURN NEW;
