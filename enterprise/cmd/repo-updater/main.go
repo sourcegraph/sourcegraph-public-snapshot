@@ -91,7 +91,7 @@ func enterpriseInit(
 		}
 	}()
 
-	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
+	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB methods for now.
 	dbconn.Global = db
 	permsStore := edb.NewPermsStore(db, clock)
 	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, clock, ratelimit.DefaultRegistry)

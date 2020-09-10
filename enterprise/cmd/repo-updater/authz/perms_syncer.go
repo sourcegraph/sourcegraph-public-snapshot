@@ -18,6 +18,7 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -158,18 +159,63 @@ func (s *PermsSyncer) providersByURNs() map[string]authz.Provider {
 	return providers
 }
 
-// syncUserPerms processes permissions syncing request in user-centric way. When noPerms is true,
-// the method will use partial results to update permissions tables when error occurs.
+// syncUserPerms processes permissions syncing request in user-centric way. When `noPerms` is true,
+// the method will use partial results to update permissions tables even when error occurs.
 func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms bool) (err error) {
 	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms", "")
 	defer save(requestTypeUser, userID, &err)
 
-	accts, err := s.permsStore.ListExternalAccounts(ctx, userID)
+	user, err := db.Users.GetByID(ctx, userID)
+	if err != nil {
+		return errors.Wrap(err, "get user")
+	}
+
+	accts, err := s.permsStore.ListExternalAccounts(ctx, user.ID)
 	if err != nil {
 		return errors.Wrap(err, "list external accounts")
 	}
 
+	serviceToAccounts := make(map[string]*extsvc.Account)
+	for _, acct := range accts {
+		serviceToAccounts[acct.ServiceType+":"+acct.ServiceID] = acct
+	}
+
 	providers := s.providersByServiceID()
+
+	// Check if the user has an external account for every authz provider respectively,
+	// and try to fetch the account when not.
+	for _, provider := range providers {
+		_, ok := serviceToAccounts[provider.ServiceType()+":"+provider.ServiceID()]
+		if ok {
+			continue
+		}
+
+		acct, err := provider.FetchAccount(ctx, user, accts)
+		if err != nil {
+			log15.Warn("Could not fetch account from authz provider",
+				"userID", user.ID,
+				"authzProvider", provider.ServiceID(),
+				"error", err)
+			continue
+		}
+
+		// Not an operation failure but the authz provider is unable to determine
+		// the external account for the current user.
+		if acct == nil {
+			continue
+		}
+
+		err = db.ExternalAccounts.AssociateUserAndSave(ctx, user.ID, acct.AccountSpec, acct.AccountData)
+		if err != nil {
+			log15.Warn("Could not associate external account to user",
+				"userID", user.ID,
+				"authzProvider", provider.ServiceID(),
+				"error", err)
+			continue
+		}
+
+		accts = append(accts, acct)
+	}
 
 	var repoSpecs []api.ExternalRepoSpec
 	for _, acct := range accts {
@@ -189,7 +235,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			if !noPerms {
 				return errors.Wrap(err, "fetch user permissions")
 			}
-			log15.Debug("PermsSyncer.syncUserPerms.proceedWithPartialResults", "userID", userID, "err", err)
+			log15.Debug("PermsSyncer.syncUserPerms.proceedWithPartialResults", "userID", user.ID, "error", err)
 		}
 
 		for i := range extIDs {
@@ -215,7 +261,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 	// Save permissions to database
 	p := &authz.UserPermissions{
-		UserID: userID,
+		UserID: user.ID,
 		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
 		Type:   authz.PermRepos,
 		IDs:    roaring.NewBitmap(),
@@ -229,7 +275,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return errors.Wrap(err, "set user permissions")
 	}
 
-	log15.Debug("PermsSyncer.syncUserPerms.synced", "userID", userID)
+	log15.Debug("PermsSyncer.syncUserPerms.synced", "userID", user.ID)
 	return nil
 }
 
