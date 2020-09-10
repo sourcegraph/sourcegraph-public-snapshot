@@ -1,5 +1,6 @@
-import WarningIcon from 'mdi-react/WarningIcon'
 import * as React from 'react'
+import WarningIcon from 'mdi-react/WarningIcon'
+import classNames from 'classnames'
 import { ConfiguredRegistryExtension } from '../../../shared/src/extensions/extension'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
@@ -14,6 +15,7 @@ import { isEncodedImage } from '../../../shared/src/util/icon'
 import { Link } from 'react-router-dom'
 import { DefaultIconEnabled, DefaultIcon } from './icons'
 import { ThemeProps } from '../../../shared/src/theme'
+import { useTimeout } from '../../../shared/src/util/useTimeout'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'>, ThemeProps {
     node: Pick<
@@ -76,21 +78,23 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
      * Clear the timeout when the component unmounts or the extension is toggled again.
      */
     const [change, setChange] = React.useState<'enabled' | 'disabled' | null>(null)
-    const timeoutReference = React.useRef<number | undefined>()
+    const setFeedbackTimeout = useTimeout()
 
-    React.useEffect(() => () => clearTimeout(timeoutReference.current), [])
-
-    const onToggleChange = React.useCallback((enabled: boolean): void => {
-        if (timeoutReference.current) {
-            clearTimeout(timeoutReference.current)
-        }
-        setChange(enabled ? 'enabled' : 'disabled')
-        timeoutReference.current = window.setTimeout(() => setChange(null), FEEDBACK_DELAY)
-    }, [])
+    const onToggleChange = React.useCallback(
+        (enabled: boolean): void => {
+            setChange(enabled ? 'enabled' : 'disabled')
+            setFeedbackTimeout(() => setChange(null), FEEDBACK_DELAY)
+        },
+        [setFeedbackTimeout]
+    )
 
     return (
         <div className="d-flex">
-            <div className={`extension-card card ${change === 'enabled' ? 'alert alert-success p-0 m-0' : ''}`}>
+            <div
+                className={classNames('extension-card card', {
+                    'alert alert-success p-0 m-0 extension-card--enabled': change === 'enabled',
+                })}
+            >
                 <div
                     className="card-body extension-card__body d-flex position-relative"
                     // Prevent toggle clicks from propagating to the stretched-link (and
@@ -111,9 +115,8 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
                     </div>
                     {/* Item 2: Text */}
                     {change === 'enabled' ? (
-                        <span className="extension-card__enabled-feedback mr-1">
-                            <span className="alert-success font-weight-bold">{name}</span> is now enabled in code search
-                            results.{' '}
+                        <span className="mr-1">
+                            <span className="font-weight-bold">{name}</span> is now enabled in code search results.{' '}
                             <Link to={`/extensions/${extension.id}`} className="extension-card__link alert-link">
                                 See how it works
                             </Link>

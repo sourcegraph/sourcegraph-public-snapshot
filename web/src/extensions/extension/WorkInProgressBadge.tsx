@@ -7,7 +7,7 @@ export const WorkInProgressBadge: React.FunctionComponent<{ viewerCanAdminister:
     viewerCanAdminister,
 }) => (
     <span
-        className="badge badge-danger mr-2"
+        className="badge badge-warning text-white mr-2"
         data-tooltip={
             viewerCanAdminister
                 ? 'Remove "WIP" from the title when this extension is ready for use.'

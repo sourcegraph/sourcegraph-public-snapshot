@@ -12,8 +12,9 @@
         background: unset;
     }
 
-    &__enabled-feedback {
+    &--enabled {
         line-height: 1.4375rem;
+        background-color: rgba(36, 110, 51, 0.2);
     }
 
     &__disabled-feedback {
@@ -23,5 +24,13 @@
         right: 1.5625rem;
         transform: translateX(50%);
         z-index: 1;
+    }
+}
+
+.theme-light {
+    .extension-card {
+        &--enabled {
+            background-color: rgba(199, 233, 205, 0.2);
+        }
     }
 }
