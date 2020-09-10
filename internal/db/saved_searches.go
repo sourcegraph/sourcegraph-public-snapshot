@@ -87,8 +87,7 @@ func (s *savedSearches) ListAll(ctx context.Context) (savedSearches []api.SavedQ
 			sq.Spec.Subject.Org = sq.Config.OrgID
 		}
 		if secretPkg.ConfiguredToEncrypt() {
-			// TODO base 64 decode
-			plaintext, err := secretPkg.DecryptBytes([]byte(sq.Config.Query))
+			plaintext, err := secretPkg.DecodeAndDecryptBytes([]byte(sq.Config.Query))
 			if err != nil {
 				return nil, errors.Wrap(err, "saved_searches: unable to decrypt")
 			}
@@ -140,7 +139,7 @@ func (s *savedSearches) GetByID(ctx context.Context, id int32) (*api.SavedQueryS
 	}
 	if secretPkg.ConfiguredToEncrypt() {
 		// TODO base64 decode
-		plaintext, err := secretPkg.DecryptBytes([]byte(sq.Config.Query))
+		plaintext, err := secretPkg.DecodeAndDecryptBytes([]byte(sq.Config.Query))
 		if err != nil {
 			return nil, errors.Wrap(err, "saved_searches: unable to decrypt")
 		}
@@ -202,7 +201,7 @@ func (s *savedSearches) ListSavedSearchesByUserID(ctx context.Context, userID in
 		}
 		if secretPkg.ConfiguredToEncrypt() {
 			// TODO base64 decode
-			plaintext, err := secretPkg.DecryptBytes([]byte(ss.Query))
+			plaintext, err := secretPkg.DecodeAndDecryptBytes([]byte(ss.Query))
 			if err != nil {
 				return nil, errors.Wrap(err, "saved_searches: unable to decrypt")
 			}
@@ -245,7 +244,7 @@ func (s *savedSearches) ListSavedSearchesByOrgID(ctx context.Context, orgID int3
 		}
 
 		if secretPkg.ConfiguredToEncrypt() {
-			plaintext, err := secretPkg.DecryptBytes([]byte(ss.Query))
+			plaintext, err := secretPkg.DecodeAndDecryptBytes([]byte(ss.Query))
 			if err != nil {
 				return nil, err
 			}
@@ -279,8 +278,7 @@ func (s *savedSearches) Create(ctx context.Context, newSavedSearch *types.SavedS
 	}()
 
 	if secretPkg.ConfiguredToEncrypt() {
-		// TODO Base64 encode
-		ciphertext, err := secretPkg.EncryptBytes([]byte(newSavedSearch.Query))
+		ciphertext, err := secretPkg.EncodeAndEncryptBytes([]byte(newSavedSearch.Query))
 		if err != nil {
 			return nil, errors.Wrap(err, "saved search: failed to encrypt")
 		}
@@ -335,7 +333,7 @@ func (s *savedSearches) Update(ctx context.Context, savedSearch *types.SavedSear
 
 	if secretPkg.ConfiguredToEncrypt() {
 		// TODO Base64 encode
-		ciphertext, err := secretPkg.EncryptBytes([]byte(savedSearch.Query))
+		ciphertext, err := secretPkg.EncodeAndEncryptBytes([]byte(savedSearch.Query))
 		if err != nil {
 			return nil, errors.Wrap(err, "saved search: failed to encrypt")
 		}
@@ -397,7 +395,7 @@ func (*savedSearches) EncryptTable(ctx context.Context) error {
 		return nil
 	}
 
-	q := sqlf.Sprintf("SELECT id,query from saved_searches")
+	q := sqlf.Sprintf("SELECT id,query from saved_searches where query like %s%%", secretPkg.KeyHash())
 	tx, err := dbconn.Global.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -437,7 +435,7 @@ func (*savedSearches) EncryptTable(ctx context.Context) error {
 				continue
 			}
 		} else {
-			cryptBytes, err = secretPkg.EncryptBytes(byteQuery)
+			cryptBytes, err = secretPkg.EncodeAndEncryptBytes(byteQuery)
 			if err != nil {
 				return err
 			}

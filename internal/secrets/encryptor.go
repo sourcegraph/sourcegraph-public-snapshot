@@ -6,6 +6,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/base64"
 	"io"
 
 	"github.com/pkg/errors"
@@ -144,9 +145,13 @@ func (e encryptor) EncryptBytes(plaintext []byte) (ciphertext []byte, err error)
 	return gcmEncrypt(plaintext, e.primaryKey)
 }
 
-func (e encryptor) EncodeAndEncryptBytes(plaintext []byte) (ciperhtext []byte, err error) {
+func (e encryptor) EncodeAndEncryptBytes(plaintext []byte) (b []byte, err error) {
 	crypt := bytes.Join([][]byte{e.KeyHash(), plaintext}, []byte(separator))
-	return e.EncryptBytes(crypt)
+	enc, err := e.EncryptBytes(crypt)
+	if err != nil {
+		return nil, err
+	}
+	return []byte(base64.StdEncoding.EncodeToString(enc)), nil
 }
 
 // DecryptBytes decrypts the plaintext using the primaryKey of the encryptor.
@@ -166,8 +171,14 @@ func (e encryptor) DecryptBytes(ciphertext []byte) (plaintext []byte, err error)
 
 }
 
-func (e encryptor) DecodeAndDecryptBytes(ciphertext []byte) (ciperhtext []byte, err error) {
-	res, err := e.DecryptBytes(ciphertext)
+func (e encryptor) DecodeAndDecryptBytes(ciphertext []byte) (b []byte, err error) {
+	base64Text := string(ciphertext)
+
+	cipher, err := base64.StdEncoding.DecodeString(base64Text)
+	if err != nil {
+		return nil, err
+	}
+	res, err := e.DecryptBytes(cipher)
 	if err != nil {
 		return nil, err
 	}
@@ -282,7 +293,7 @@ func DecodeAndDecryptBytes(ciphertext []byte) ([]byte, error) {
 }
 
 func EncodeAndEncryptBytes(ciphertext []byte) ([]byte, error) {
-	return defaultEncryptor.DecodeAndDecryptBytes(ciphertext)
+	return defaultEncryptor.EncodeAndEncryptBytes(ciphertext)
 }
 
 func KeyHash() []byte {
