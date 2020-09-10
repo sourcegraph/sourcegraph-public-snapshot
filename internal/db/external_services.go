@@ -362,8 +362,9 @@ func (e *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf
 	if secretPkg.ConfiguredToEncrypt() {
 		c, err := secretPkg.EncryptBytes([]byte(es.Config))
 		if err != nil {
-			return err
+			return errors.Wrap(err, "external service create: failed to encrypt")
 		}
+		// TODO: Base64 encode
 		cfg = string(c)
 	} else {
 		cfg = es.Config
@@ -411,8 +412,9 @@ func (e *ExternalServicesStore) Update(ctx context.Context, ps []schema.AuthProv
 		if secretPkg.ConfiguredToEncrypt() {
 			c, err := secretPkg.EncryptBytes([]byte(*update.Config))
 			if err != nil {
-				return err
+				return errors.Wrap(err, "external service update: failed to encrypt")
 			}
+			// TODO base64 encode
 			cfg := string(c)
 			update.Config = &cfg
 		}
@@ -582,9 +584,10 @@ func (*ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, lim
 
 		cfg := h.Config
 		if secretPkg.ConfiguredToEncrypt() {
+			// TODO base64 decode
 			c, err := secretPkg.DecryptBytes([]byte(cfg))
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, "external service create: failed to decrypt")
 			}
 			cfg = string(c)
 		}
@@ -653,6 +656,7 @@ func (*ExternalServicesStore) EncryptTable(ctx context.Context) error {
 
 		var cfg []byte
 		if secretPkg.ConfiguredToRotate() {
+			// TODO: base64 decode
 			cfg, err = secretPkg.RotateEncryption([]byte(es.Config))
 			if err != nil {
 				return err
