@@ -67,7 +67,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
     const onHover = useCallback(() => {
         setShowCta(true)
         ctaTimeoutManager.setTimeout(() => setShowCta(false), FEEDBACK_DELAY)
-    }, [setCTATimeout])
+    }, [ctaTimeoutManager])
 
     return (
         <div className={`extension-area-header ${props.className || ''}`}>
