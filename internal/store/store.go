@@ -241,16 +241,13 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 			r.Close()
 		}()
 
-		var filter FilterFunc
+		filter := func(hdr *tar.Header) bool { return false } // default: don't filter
 		if s.FilterTar != nil {
 			filter, err = s.FilterTar(ctx, repo, commit)
 			if err != nil {
 				return
 			}
-		} else { // don't filter
-			filter = func(hdr *tar.Header) bool { return false }
 		}
-
 		tr := tar.NewReader(r)
 		zw := zip.NewWriter(pw)
 		err = copySearchable(tr, zw, largeFilePatterns, filter)

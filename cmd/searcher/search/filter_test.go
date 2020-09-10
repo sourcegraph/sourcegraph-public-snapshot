@@ -17,6 +17,7 @@ func TestNewIgnoreMatcher(t *testing.T) {
 		return []byte("foo/"), nil
 	}
 	defer func() { git.Mocks.ReadFile = nil }()
+
 	ig, err := newIgnoreMatcher(context.Background(), gitserver.Repo{}, "")
 	if err != nil {
 		t.Error(err)
@@ -31,6 +32,7 @@ func TestMissingIgnoreFile(t *testing.T) {
 		return nil, fmt.Errorf("err open .sourcegraph/ignore: file does not exist")
 	}
 	defer func() { git.Mocks.ReadFile = nil }()
+
 	ig, err := newIgnoreMatcher(context.Background(), gitserver.Repo{}, "")
 	if err != nil {
 		t.Error(err)
