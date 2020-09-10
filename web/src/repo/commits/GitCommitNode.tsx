@@ -10,6 +10,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { GitCommitNodeByline } from './GitCommitNodeByline'
 import { GitCommitFields } from '../../graphql-operations'
 import { Link } from '../../../../shared/src/components/Link'
+import { useTimeoutManager } from '../../../../shared/src/util/useTimeoutManager'
 
 export interface GitCommitNodeProps {
     node: GitCommitFields
@@ -45,6 +46,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
 }) => {
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(false)
     const [flashCopiedToClipboardMessage, setFlashCopiedToClipboardMessage] = useState<boolean>(false)
+    const flashCopiedTimeoutManager = useTimeoutManager()
 
     const toggleShowCommitMessageBody = useCallback((): void => {
         eventLogger.log('CommitBodyToggled')
@@ -56,11 +58,16 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
         copy(node.oid)
         setFlashCopiedToClipboardMessage(true)
         Tooltip.forceUpdate()
-        setTimeout(() => {
+        flashCopiedTimeoutManager.setTimeout(() => {
             setFlashCopiedToClipboardMessage(false)
             Tooltip.forceUpdate()
         }, 1500)
-    }, [node.oid])
+    }, [node.oid, flashCopiedTimeoutManager])
+
+    const onMouseLeave = useCallback(() => {
+        flashCopiedTimeoutManager.cancelTimeout()
+        setFlashCopiedToClipboardMessage(false)
+    }, [flashCopiedTimeoutManager])
 
     const bylineElement = (
         <GitCommitNodeByline
@@ -118,6 +125,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                                         type="button"
                                         className="btn btn-secondary"
                                         onClick={copyToClipboard}
+                                        onMouseLeave={onMouseLeave}
                                         data-tooltip={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
                                     >
                                         <ContentCopyIcon className="icon-inline small" />
