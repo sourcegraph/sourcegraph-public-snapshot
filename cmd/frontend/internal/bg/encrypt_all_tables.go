@@ -15,7 +15,17 @@ func EncryptAllTables(ctx context.Context) {
 
 	// err = db.ExternalAccounts.EncryptTable(ctx)
 	// if err != nil {
-	// 	log15.Error(`encrypt.all-tables: unable to user_external_accounts. Please report this issue.`, "error", err)
+	// 	log15.Error(`encrypt.all-tables: unable to encrypt user_external_accounts. Please report this issue.`, "error", err)
+	// }
+
+	// err = db.SavedSearches.EncryptTable(ctx)
+	// if err != nil {
+	// 	log15.Error(`encrypt.all-tables: unable to encrypt saved_searches. Please report this issue.`, "error", err)
+	// }
+
+	// err = db.EventLogs.EncryptTable(ctx)
+	// if err != nil {
+	// 	log15.Error(`encrypt.all-tables: unable to encrypt event_logs. Please report this issue.`, "error", err)
 	// }
 
 }
