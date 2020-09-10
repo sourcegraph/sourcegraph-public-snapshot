@@ -2015,6 +2015,117 @@ func testPermsStore_FallbackToOldFormat(db *sql.DB) func(t *testing.T) {
 	}
 }
 
+func testPermsStore_MigrateBinaryToIntarray(db *sql.DB) func(t *testing.T) {
+	return func(t *testing.T) {
+		s := NewPermsStore(db, time.Now)
+		ctx := context.Background()
+
+		defer cleanupPermsTables(t, s)
+
+		// Set up test permissions
+		rps := []*authz.RepoPermissions{
+			{
+				RepoID:  1,
+				Perm:    authz.Read,
+				UserIDs: toBitmap(11, 22),
+			},
+			{
+				RepoID:  2,
+				Perm:    authz.Read,
+				UserIDs: toBitmap(11, 33),
+			},
+			{
+				RepoID:  3,
+				Perm:    authz.Read,
+				UserIDs: toBitmap(22, 44),
+			},
+		}
+		for _, rp := range rps {
+			if err := s.SetRepoPermissions(ctx, rp); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		accounts := &extsvc.Accounts{
+			ServiceType: authz.SourcegraphServiceType,
+			ServiceID:   authz.SourcegraphServiceID,
+			AccountIDs:  []string{"alice", "bob"},
+		}
+		rp := &authz.RepoPermissions{
+			RepoID: 1,
+			Perm:   authz.Read,
+		}
+		if err := s.SetRepoPendingPermissions(ctx, accounts, rp); err != nil {
+			t.Fatal(err)
+		}
+
+		// Reset "*_ints" columns
+		q := sqlf.Sprintf(`
+UPDATE user_permissions SET object_ids_ints = '{}';
+UPDATE repo_permissions SET user_ids_ints = '{}';
+UPDATE user_pending_permissions SET object_ids_ints = '{}';
+UPDATE repo_pending_permissions SET user_ids_ints = '{}';
+`)
+		if err := s.execute(ctx, q); err != nil {
+			t.Fatal(err)
+		}
+
+		if err := s.MigrateBinaryToIntarray(ctx, 2); err != nil {
+			t.Fatal(err)
+		}
+
+		// Query and check rows in permissions tables.
+		err := checkRegularPermsTable(s, `SELECT user_id, object_ids, object_ids_ints FROM user_permissions`,
+			map[int32][]uint32{
+				11: {1, 2},
+				22: {1, 3},
+				33: {2},
+				44: {3},
+			},
+		)
+		if err != nil {
+			t.Fatal("user_permissions:", err)
+		}
+
+		err = checkRegularPermsTable(s, `SELECT repo_id, user_ids, user_ids_ints FROM repo_permissions`,
+			map[int32][]uint32{
+				1: {11, 22},
+				2: {11, 33},
+				3: {22, 44},
+			},
+		)
+		if err != nil {
+			t.Fatal("repo_permissions:", err)
+		}
+
+		alice := extsvc.AccountSpec{
+			ServiceType: authz.SourcegraphServiceType,
+			ServiceID:   authz.SourcegraphServiceID,
+			AccountID:   "alice",
+		}
+		bob := extsvc.AccountSpec{
+			ServiceType: authz.SourcegraphServiceType,
+			ServiceID:   authz.SourcegraphServiceID,
+			AccountID:   "bob",
+		}
+
+		idToSpecs, err := checkUserPendingPermsTable(ctx, s, map[extsvc.AccountSpec][]uint32{
+			alice: {1},
+			bob:   {1},
+		})
+		if err != nil {
+			t.Fatal("user_pending_permissions:", err)
+		}
+
+		err = checkRepoPendingPermsTable(ctx, s, idToSpecs, map[int32][]extsvc.AccountSpec{
+			1: {alice, bob},
+		})
+		if err != nil {
+			t.Fatal("repo_pending_permissions:", err)
+		}
+	}
+}
+
 func cleanupUsersTable(t *testing.T, s *PermsStore) {
 	if t.Failed() {
 		return

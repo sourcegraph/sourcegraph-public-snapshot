@@ -5,6 +5,8 @@ import { replaceRange } from '../../../shared/src/util/strings'
 import { discreteValueAliases } from '../../../shared/src/search/parser/filters'
 import { VersionContext } from '../schema/site.schema'
 import { SearchPatternType } from '../../../shared/src/graphql-operations'
+import { Observable } from 'rxjs'
+import { ISavedSearch } from '../../../shared/src/graphql/schema'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -165,6 +167,7 @@ export interface OnboardingTourProps {
 
 export interface EnterpriseHomePanelsProps {
     showEnterpriseHomePanels: boolean
+    fetchSavedSearches: () => Observable<ISavedSearch[]>
 }
 
 /**

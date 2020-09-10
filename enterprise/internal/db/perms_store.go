@@ -1679,3 +1679,113 @@ func (s *PermsStore) observe(ctx context.Context, family, title string) (context
 		tr.Finish()
 	}
 }
+
+// MigrateBinaryToIntarray performs migration on permissions tables which
+// replicates data previously stored as binary (`BYTEA`) to intarray (`INT[]`).
+func (s *PermsStore) MigrateBinaryToIntarray(ctx context.Context, batchSize int) error {
+	migrations := []struct {
+		batchQuery  string
+		batchUpdate string
+	}{
+		{
+			batchQuery: `
+				SELECT user_id, object_ids, object_ids_ints
+				FROM user_permissions
+				WHERE user_id > %s AND ICOUNT(object_ids_ints) = 0
+				ORDER BY user_id ASC
+				LIMIT %s
+			`,
+			batchUpdate: `
+				UPDATE user_permissions
+				SET object_ids_ints = update.ints
+				FROM (VALUES %s) AS update (id, ints)
+				WHERE user_permissions.user_id = update.id
+			`,
+		},
+		{
+			batchQuery: `
+				SELECT repo_id, user_ids, user_ids_ints
+				FROM repo_permissions
+				WHERE repo_id > %s AND ICOUNT(user_ids_ints) = 0
+				ORDER BY repo_id ASC
+				LIMIT %s
+			`,
+			batchUpdate: `
+				UPDATE repo_permissions
+				SET user_ids_ints = update.ints
+				FROM (VALUES %s) AS update (id, ints)
+				WHERE repo_permissions.repo_id = update.id
+			`,
+		},
+		{
+			batchQuery: `
+				SELECT id, object_ids, object_ids_ints
+				FROM user_pending_permissions
+				WHERE id > %s AND ICOUNT(object_ids_ints) = 0
+				ORDER BY id ASC
+				LIMIT %s
+			`,
+			batchUpdate: `
+				UPDATE user_pending_permissions
+				SET object_ids_ints = update.ints
+				FROM (VALUES %s) AS update (id, ints)
+				WHERE user_pending_permissions.id = update.id
+			`,
+		},
+		{
+			batchQuery: `
+				SELECT repo_id, user_ids, user_ids_ints
+				FROM repo_pending_permissions
+				WHERE repo_id > %s AND ICOUNT(user_ids_ints) = 0
+				ORDER BY repo_id ASC
+				LIMIT %s
+			`,
+			batchUpdate: `
+				UPDATE repo_pending_permissions
+				SET user_ids_ints = update.ints
+				FROM (VALUES %s) AS update (id, ints)
+				WHERE repo_pending_permissions.repo_id = update.id
+			`,
+		},
+	}
+	for _, m := range migrations {
+		var cursor int32
+		for {
+			q := sqlf.Sprintf(m.batchQuery, cursor, batchSize)
+			loaded, err := s.batchLoadIDs(ctx, q)
+			if err != nil {
+				return errors.Wrap(err, "batch load")
+			}
+
+			if len(loaded) == 0 {
+				break // Exit if no more rows need to be migrated
+			}
+
+			items := make([]*sqlf.Query, 0, len(loaded))
+			for id, bm := range loaded {
+				items = append(items, sqlf.Sprintf("(%s::INT, %s::INT[])",
+					id,
+					pq.Array(bm.ToArray()),
+				))
+
+				if id > cursor {
+					cursor = id
+				}
+			}
+
+			q = sqlf.Sprintf(
+				m.batchUpdate,
+				sqlf.Join(items, ","),
+			)
+			if err = s.execute(ctx, q); err != nil {
+				return errors.Wrap(err, "batch update")
+			}
+
+			if len(loaded) < batchSize {
+				break // Exit when less results than expected, this is our last batch
+			}
+		}
+	}
+
+	return nil
+}

@@ -1,10 +1,5 @@
 .add-filter-row {
     display: flex;
-    padding: 0.25rem 0.5rem 0 0.5rem;
-    &--homepage {
-        padding: 0.5rem 0.5rem;
-        padding-left: 0;
-    }
 
     &__button {
         &:not(:first-child) {

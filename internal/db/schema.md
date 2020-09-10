@@ -872,6 +872,7 @@ Indexes:
     "repo_cloned" btree (cloned)
     "repo_fork" btree (fork)
     "repo_metadata_gin_idx" gin (metadata)
+    "repo_name_idx" btree (lower(name::text) COLLATE "C")
     "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
     "repo_private" btree (private)
     "repo_sources_gin_idx" gin (sources)
