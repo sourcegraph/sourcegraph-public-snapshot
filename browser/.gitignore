@@ -20,3 +20,5 @@ yarn-error.log
 update.xml
 npm-debug.log.*
 /.gtm/
+
+code-intel-extensions
