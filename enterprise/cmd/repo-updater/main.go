@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/authz"
 	frontendAuthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
-	frontendDB "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
 	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	ossDB "github.com/sourcegraph/sourcegraph/internal/db"
@@ -93,9 +93,15 @@ func enterpriseInit(
 
 	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
 	dbconn.Global = db
-	permsStore := frontendDB.NewPermsStore(db, clock)
+	permsStore := edb.NewPermsStore(db, clock)
 	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, clock, ratelimit.DefaultRegistry)
-	go startBackgroundPermsSync(ctx, permsSyncer)
+	go func() {
+		if err := permsStore.MigrateBinaryToIntarray(ctx, 1000); err != nil {
+			log15.Error("MigrateBinaryToIntarray", "error", err)
+		}
+
+		startBackgroundPermsSync(ctx, permsSyncer)
+	}()
 	debugDumpers = append(debugDumpers, permsSyncer)
 	if server != nil {
 		server.PermsSyncer = permsSyncer
