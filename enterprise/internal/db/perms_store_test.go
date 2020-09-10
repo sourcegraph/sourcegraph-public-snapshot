@@ -14,10 +14,12 @@ import (
 	"github.com/gitchander/permutation"
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
+	"golang.org/x/sync/errgroup"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"golang.org/x/sync/errgroup"
 )
 
 func cleanupPermsTables(t *testing.T, s *PermsStore) {
@@ -33,7 +35,7 @@ func cleanupPermsTables(t *testing.T, s *PermsStore) {
 
 func bitmapToArray(bm *roaring.Bitmap) []int {
 	if bm == nil {
-		return nil
+		return []int{}
 	}
 
 	uint32s := bm.ToArray()
@@ -148,7 +150,7 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 			if err := s.LoadUserPermissions(context.Background(), up1); err != nil {
 				t.Fatal(err)
 			}
-			equal(t, "IDs", 0, len(bitmapToArray(up1.IDs)))
+			equal(t, "IDs", []int{}, bitmapToArray(up1.IDs))
 			equal(t, "UpdatedAt", now, up1.UpdatedAt.UnixNano())
 
 			if !up1.SyncedAt.IsZero() {
@@ -214,7 +216,7 @@ func testPermsStore_LoadRepoPermissions(db *sql.DB) func(*testing.T) {
 			if err != authz.ErrPermsNotFound {
 				t.Fatalf("err: want %q but got %q", authz.ErrPermsNotFound, err)
 			}
-			equal(t, "rp.UserIDs", 0, len(bitmapToArray(rp.UserIDs)))
+			equal(t, "rp.UserIDs", []int{}, bitmapToArray(rp.UserIDs))
 		})
 
 		t.Run("found matching", func(t *testing.T) {
@@ -257,25 +259,36 @@ func checkRegularPermsTable(s *PermsStore, sql string, expects map[int32][]uint3
 
 	for rows.Next() {
 		var id int32
-		var ids []byte
-		if err = rows.Scan(&id, &ids); err != nil {
+		var binary []byte
+		var ids []int64
+		if err = rows.Scan(&id, &binary, pq.Array(&ids)); err != nil {
 			return err
 		}
 
 		bm := roaring.NewBitmap()
-		if err = bm.UnmarshalBinary(ids); err != nil {
+		if err = bm.UnmarshalBinary(binary); err != nil {
 			return err
 		}
+		binaryIDs := bm.ToArray()
 
-		objIDs := bitmapToArray(bm)
-		if expects[id] == nil {
-			return fmt.Errorf("unexpected row in table: (id: %v) -> (ids: %v)", id, objIDs)
+		intIDs := make([]uint32, 0, len(ids))
+		for _, id := range ids {
+			intIDs = append(intIDs, uint32(id))
 		}
 
-		have := fmt.Sprintf("%v", objIDs)
+		if expects[id] == nil {
+			return fmt.Errorf("unexpected row in table: (id: %v) -> (ids: %v)", id, intIDs)
+		}
 		want := fmt.Sprintf("%v", expects[id])
+
+		have := fmt.Sprintf("%v", binaryIDs)
 		if have != want {
-			return fmt.Errorf("key %v: want %q but got %q", id, want, have)
+			return fmt.Errorf("binaryIDs - key %v: want %q but got %q", id, want, have)
+		}
+
+		have = fmt.Sprintf("%v", intIDs)
+		if have != want {
+			return fmt.Errorf("intIDs - key %v: want %q but got %q", id, want, have)
 		}
 
 		delete(expects, id)
@@ -455,12 +468,12 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 					}
 				}
 
-				err := checkRegularPermsTable(s, `SELECT user_id, object_ids FROM user_permissions`, test.expectUserPerms)
+				err := checkRegularPermsTable(s, `SELECT user_id, object_ids, object_ids_ints FROM user_permissions`, test.expectUserPerms)
 				if err != nil {
 					t.Fatal("user_permissions:", err)
 				}
 
-				err = checkRegularPermsTable(s, `SELECT repo_id, user_ids FROM repo_permissions`, test.expectRepoPerms)
+				err = checkRegularPermsTable(s, `SELECT repo_id, user_ids, user_ids_ints FROM repo_permissions`, test.expectRepoPerms)
 				if err != nil {
 					t.Fatal("repo_permissions:", err)
 				}
@@ -631,12 +644,12 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 					}
 				}
 
-				err := checkRegularPermsTable(s, `SELECT user_id, object_ids FROM user_permissions`, test.expectUserPerms)
+				err := checkRegularPermsTable(s, `SELECT user_id, object_ids, object_ids_ints FROM user_permissions`, test.expectUserPerms)
 				if err != nil {
 					t.Fatal("user_permissions:", err)
 				}
 
-				err = checkRegularPermsTable(s, `SELECT repo_id, user_ids FROM repo_permissions`, test.expectRepoPerms)
+				err = checkRegularPermsTable(s, `SELECT repo_id, user_ids, user_ids_ints FROM repo_permissions`, test.expectRepoPerms)
 				if err != nil {
 					t.Fatal("repo_permissions:", err)
 				}
@@ -823,7 +836,7 @@ func checkUserPendingPermsTable(
 	idToSpecs map[int32]extsvc.AccountSpec,
 	err error,
 ) {
-	q := `SELECT id, service_type, service_id, bind_id, object_ids FROM user_pending_permissions`
+	q := `SELECT id, service_type, service_id, bind_id, object_ids, object_ids_ints FROM user_pending_permissions`
 	rows, err := s.db.QueryContext(ctx, q)
 	if err != nil {
 		return nil, err
@@ -834,26 +847,37 @@ func checkUserPendingPermsTable(
 	for rows.Next() {
 		var id int32
 		var spec extsvc.AccountSpec
-		var ids []byte
-		if err := rows.Scan(&id, &spec.ServiceType, &spec.ServiceID, &spec.AccountID, &ids); err != nil {
+		var binary []byte
+		var ids []int64
+		if err := rows.Scan(&id, &spec.ServiceType, &spec.ServiceID, &spec.AccountID, &binary, pq.Array(&ids)); err != nil {
 			return nil, err
 		}
 		idToSpecs[id] = spec
 
 		bm := roaring.NewBitmap()
-		if err = bm.UnmarshalBinary(ids); err != nil {
+		if err = bm.UnmarshalBinary(binary); err != nil {
 			return nil, err
 		}
+		binaryIDs := bm.ToArray()
 
-		repoIDs := bitmapToArray(bm)
-		if expects[spec] == nil {
-			return nil, fmt.Errorf("unexpected row in table: (spec: %v) -> (ids: %v)", spec, repoIDs)
+		intIDs := make([]uint32, 0, len(ids))
+		for _, id := range ids {
+			intIDs = append(intIDs, uint32(id))
 		}
 
-		have := fmt.Sprintf("%v", repoIDs)
+		if expects[spec] == nil {
+			return nil, fmt.Errorf("unexpected row in table: (spec: %v) -> (ids: %v)", spec, intIDs)
+		}
 		want := fmt.Sprintf("%v", expects[spec])
+
+		have := fmt.Sprintf("%v", binaryIDs)
 		if have != want {
-			return nil, fmt.Errorf("spec %q: want %q but got %q", spec, want, have)
+			return nil, fmt.Errorf("binaryIDs - spec %q: want %q but got %q", spec, want, have)
+		}
+
+		have = fmt.Sprintf("%v", intIDs)
+		if have != want {
+			return nil, fmt.Errorf("intIDs - spec %q: want %q but got %q", spec, want, have)
 		}
 		delete(expects, spec)
 	}
@@ -875,31 +899,37 @@ func checkRepoPendingPermsTable(
 	idToSpecs map[int32]extsvc.AccountSpec,
 	expects map[int32][]extsvc.AccountSpec,
 ) error {
-	rows, err := s.db.QueryContext(ctx, `SELECT repo_id, user_ids FROM repo_pending_permissions`)
+	rows, err := s.db.QueryContext(ctx, `SELECT repo_id, user_ids, user_ids_ints FROM repo_pending_permissions`)
 	if err != nil {
 		return err
 	}
 
 	for rows.Next() {
 		var id int32
-		var ids []byte
-		if err := rows.Scan(&id, &ids); err != nil {
+		var binary []byte
+		var ids []int64
+		if err := rows.Scan(&id, &binary, pq.Array(&ids)); err != nil {
 			return err
 		}
 
 		bm := roaring.NewBitmap()
-		if err = bm.UnmarshalBinary(ids); err != nil {
+		if err = bm.UnmarshalBinary(binary); err != nil {
 			return err
 		}
+		binaryIDs := bm.ToArray()
 
-		userIDs := bitmapToArray(bm)
-		if expects[id] == nil {
-			return fmt.Errorf("unexpected row in table: (id: %v) -> (ids: %v)", id, userIDs)
+		intIDs := make([]int, 0, len(ids))
+		for _, id := range ids {
+			intIDs = append(intIDs, int(id))
 		}
-		sort.Ints(userIDs)
 
-		haveSpecs := make([]extsvc.AccountSpec, 0, len(userIDs))
-		for _, userID := range userIDs {
+		if expects[id] == nil {
+			return fmt.Errorf("unexpected row in table: (id: %v) -> (ids: %v)", id, intIDs)
+		}
+		want := fmt.Sprintf("%v", expects[id])
+
+		haveSpecs := make([]extsvc.AccountSpec, 0, len(binaryIDs))
+		for _, userID := range binaryIDs {
 			spec, ok := idToSpecs[int32(userID)]
 			if !ok {
 				continue
@@ -909,9 +939,23 @@ func checkRepoPendingPermsTable(
 		}
 
 		have := fmt.Sprintf("%v", haveSpecs)
-		want := fmt.Sprintf("%v", expects[id])
 		if have != want {
-			return fmt.Errorf("id %d: want %q but got %q", id, want, have)
+			return fmt.Errorf("binaryIDs - id %d: want %q but got %q", id, want, have)
+		}
+
+		haveSpecs = make([]extsvc.AccountSpec, 0, len(intIDs))
+		for _, userID := range intIDs {
+			spec, ok := idToSpecs[int32(userID)]
+			if !ok {
+				continue
+			}
+
+			haveSpecs = append(haveSpecs, spec)
+		}
+
+		have = fmt.Sprintf("%v", haveSpecs)
+		if have != want {
+			return fmt.Errorf("intIDs - id %d: want %q but got %q", id, want, have)
 		}
 		delete(expects, id)
 	}
@@ -1576,12 +1620,12 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 					}
 				}
 
-				err := checkRegularPermsTable(s, `SELECT user_id, object_ids FROM user_permissions`, test.expectUserPerms)
+				err := checkRegularPermsTable(s, `SELECT user_id, object_ids, object_ids_ints FROM user_permissions`, test.expectUserPerms)
 				if err != nil {
 					t.Fatal("user_permissions:", err)
 				}
 
-				err = checkRegularPermsTable(s, `SELECT repo_id, user_ids FROM repo_permissions`, test.expectRepoPerms)
+				err = checkRegularPermsTable(s, `SELECT repo_id, user_ids, user_ids_ints FROM repo_permissions`, test.expectRepoPerms)
 				if err != nil {
 					t.Fatal("repo_permissions:", err)
 				}
@@ -1864,6 +1908,110 @@ func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(*testing.T) {
 		}()
 
 		wg.Wait()
+	}
+}
+
+func testPermsStore_FallbackToOldFormat(db *sql.DB) func(t *testing.T) {
+	return func(t *testing.T) {
+		s := NewPermsStore(db, time.Now)
+		ctx := context.Background()
+
+		t.Run("batchLoadUserPendingPermissions", func(t *testing.T) {
+			defer cleanupPermsTables(t, s)
+
+			accounts := &extsvc.Accounts{
+				ServiceType: authz.SourcegraphServiceType,
+				ServiceID:   authz.SourcegraphServiceID,
+				AccountIDs:  []string{"alice"},
+			}
+			rp := &authz.RepoPermissions{
+				RepoID: 1,
+				Perm:   authz.Read,
+			}
+			if err := s.SetRepoPendingPermissions(ctx, accounts, rp); err != nil {
+				t.Fatal(err)
+			}
+
+			// Reset "object_ids_ints" columns
+			q := sqlf.Sprintf(`UPDATE user_pending_permissions SET object_ids_ints = '{}'`)
+			if err := s.execute(ctx, q); err != nil {
+				t.Fatal(err)
+			}
+
+			alice := &authz.UserPendingPermissions{
+				ServiceType: authz.SourcegraphServiceType,
+				ServiceID:   authz.SourcegraphServiceID,
+				BindID:      "alice",
+				Perm:        authz.Read,
+				Type:        authz.PermRepos,
+			}
+			if err := s.LoadUserPendingPermissions(ctx, alice); err != nil {
+				t.Fatal(err)
+			}
+			equal(t, "IDs", []int{1}, bitmapToArray(alice.IDs))
+
+			q = loadUserPendingPermissionsByIDBatchQuery([]uint32{uint32(alice.ID)}, alice.Perm, alice.Type, "")
+			loaded, err := s.batchLoadIDs(ctx, q)
+			if err != nil {
+				t.Fatal(err)
+			}
+			equal(t, "loaded", []int{1}, bitmapToArray(loaded[alice.ID]))
+		})
+
+		t.Run("batchLoadIDs", func(t *testing.T) {
+			defer cleanupPermsTables(t, s)
+
+			rp := &authz.RepoPermissions{
+				RepoID:  1,
+				Perm:    authz.Read,
+				UserIDs: toBitmap(2),
+			}
+			if err := s.SetRepoPermissions(ctx, rp); err != nil {
+				t.Fatal(err)
+			}
+
+			// Reset "object_ids_ints" columns
+			q := sqlf.Sprintf(`UPDATE user_permissions SET object_ids_ints = '{}'`)
+			if err := s.execute(ctx, q); err != nil {
+				t.Fatal(err)
+			}
+
+			q = loadUserPermissionsBatchQuery([]uint32{uint32(2)}, rp.Perm, authz.PermRepos, "")
+			loaded, err := s.batchLoadIDs(ctx, q)
+			if err != nil {
+				t.Fatal(err)
+			}
+			equal(t, "loaded", []int{1}, bitmapToArray(loaded[2]))
+		})
+
+		t.Run("ListPendingUsers", func(t *testing.T) {
+			defer cleanupPermsTables(t, s)
+
+			accounts := &extsvc.Accounts{
+				ServiceType: authz.SourcegraphServiceType,
+				ServiceID:   authz.SourcegraphServiceID,
+				AccountIDs:  []string{"alice"},
+			}
+			rp := &authz.RepoPermissions{
+				RepoID: 1,
+				Perm:   authz.Read,
+			}
+			if err := s.SetRepoPendingPermissions(ctx, accounts, rp); err != nil {
+				t.Fatal(err)
+			}
+
+			// Reset "object_ids_ints" columns
+			q := sqlf.Sprintf(`UPDATE user_pending_permissions SET object_ids_ints = '{}'`)
+			if err := s.execute(ctx, q); err != nil {
+				t.Fatal(err)
+			}
+
+			bindIDs, err := s.ListPendingUsers(ctx, accounts.ServiceType, accounts.ServiceID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			equal(t, "bindIDs", []string{"alice"}, bindIDs)
+		})
 	}
 }
 

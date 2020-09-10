@@ -134,6 +134,8 @@
 // 1528395715_repo_name_index_take_2.up.sql (127B)
 // 1528395716_add_git_commit_author.down.sql (62B)
 // 1528395716_add_git_commit_author.up.sql (362B)
+// 1528395717_replicate_permissions_object_ids_to_intarray.down.sql (337B)
+// 1528395717_replicate_permissions_object_ids_to_intarray.up.sql (411B)
 
 package migrations
 
@@ -2882,6 +2884,46 @@ func _1528395716_add_git_commit_authorUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395717_replicate_permissions_object_ids_to_intarrayDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\x8f\x2f\x48\x2d\xca\xcd\x2c\x2e\xce\xcc\xcf\x2b\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x2d\x4e\x2d\x8a\xcf\x4c\x29\x8e\xcf\xcc\x2b\x29\xb6\x46\x31\x01\x2c\x45\xd8\x84\xfc\xa4\xac\xd4\xe4\x12\x1c\x66\x40\x5d\x91\x97\x92\x99\x97\x4e\x15\xd7\x10\x6b\x12\x86\xab\xb8\xc0\xea\x5c\x23\x42\x5c\xfd\x82\x3d\xfd\x91\x95\x66\xe6\x95\x24\x16\x15\x25\x56\x5a\x73\x71\x39\xfb\xfb\xfa\x7a\x86\x58\x73\x01\x02\x00\x00\xff\xff\xd4\x00\xa1\x0b\x51\x01\x00\x00")
+
+func _1528395717_replicate_permissions_object_ids_to_intarrayDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395717_replicate_permissions_object_ids_to_intarrayDownSql,
+		"1528395717_replicate_permissions_object_ids_to_intarray.down.sql",
+	)
+}
+
+func _1528395717_replicate_permissions_object_ids_to_intarrayDownSql() (*asset, error) {
+	bytes, err := _1528395717_replicate_permissions_object_ids_to_intarrayDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395717_replicate_permissions_object_ids_to_intarray.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x36, 0xf, 0xf4, 0xaf, 0xf0, 0x91, 0x96, 0xbc, 0x3c, 0x31, 0xe3, 0x52, 0x6b, 0xca, 0x98, 0x5c, 0x5e, 0xf3, 0xe9, 0x2f, 0x68, 0x91, 0x11, 0x43, 0x13, 0xee, 0x19, 0xdb, 0x62, 0x5b, 0x50, 0x2d}}
+	return a, nil
+}
+
+var __1528395717_replicate_permissions_object_ids_to_intarrayUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xb4\xce\x41\x8a\x83\x30\x14\x80\xe1\x7d\x4e\xf1\x76\x1e\x22\xab\xa8\xcf\x21\x10\x5f\x40\x9f\x20\x0c\x83\x38\x35\x94\x14\x1a\x25\xb1\x8b\x52\x7a\xf7\x82\x74\xd3\x45\x0b\x2d\xf4\x00\xff\xc7\x9f\xe3\x8f\x26\x29\x44\xd1\xa0\x62\x04\xec\x19\xa9\xd5\x96\x40\x57\x40\x96\x01\x7b\xdd\x72\x0b\x3e\xac\x63\x8c\xe3\x59\x0a\xa1\x0c\x63\x03\xac\x72\x83\x10\xdd\x32\x0f\x8b\x8b\x47\x9f\x92\x9f\x43\x02\x55\x96\x50\x58\xd3\xd5\x04\xa7\xe4\xe2\xe0\xa7\x34\xf8\xb0\x26\xd0\xc4\xbf\x7f\x9b\x48\x9d\x31\x50\x62\xa5\x3a\xc3\x90\x5d\xae\x99\x7c\x20\xb7\xec\x09\x39\xff\x1f\xdc\x6e\xfd\x00\xbd\x7f\x86\xc9\x87\xfd\x77\x7e\x5f\xd2\x6f\x7d\x8b\xc2\xd6\xb5\x66\x29\x6e\x01\x00\x00\xff\xff\x1b\x8d\x30\xf9\x9b\x01\x00\x00")
+
+func _1528395717_replicate_permissions_object_ids_to_intarrayUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395717_replicate_permissions_object_ids_to_intarrayUpSql,
+		"1528395717_replicate_permissions_object_ids_to_intarray.up.sql",
+	)
+}
+
+func _1528395717_replicate_permissions_object_ids_to_intarrayUpSql() (*asset, error) {
+	bytes, err := _1528395717_replicate_permissions_object_ids_to_intarrayUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395717_replicate_permissions_object_ids_to_intarray.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x33, 0xbd, 0x7a, 0xdb, 0x4d, 0x1a, 0x19, 0x8b, 0x1a, 0xe9, 0x7b, 0xc, 0xe2, 0x5b, 0xb1, 0xd6, 0x23, 0x2e, 0x70, 0xe8, 0xba, 0x7f, 0xff, 0x4f, 0x27, 0x5e, 0xde, 0xa1, 0xdb, 0x66, 0xdd, 0xb3}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3107,6 +3149,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395715_repo_name_index_take_2.up.sql":                                     _1528395715_repo_name_index_take_2UpSql,
 	"1528395716_add_git_commit_author.down.sql":                                    _1528395716_add_git_commit_authorDownSql,
 	"1528395716_add_git_commit_author.up.sql":                                      _1528395716_add_git_commit_authorUpSql,
+	"1528395717_replicate_permissions_object_ids_to_intarray.down.sql":             _1528395717_replicate_permissions_object_ids_to_intarrayDownSql,
+	"1528395717_replicate_permissions_object_ids_to_intarray.up.sql":               _1528395717_replicate_permissions_object_ids_to_intarrayUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3287,6 +3331,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395715_repo_name_index_take_2.up.sql":                                     {_1528395715_repo_name_index_take_2UpSql, map[string]*bintree{}},
 	"1528395716_add_git_commit_author.down.sql":                                    {_1528395716_add_git_commit_authorDownSql, map[string]*bintree{}},
 	"1528395716_add_git_commit_author.up.sql":                                      {_1528395716_add_git_commit_authorUpSql, map[string]*bintree{}},
+	"1528395717_replicate_permissions_object_ids_to_intarray.down.sql":             {_1528395717_replicate_permissions_object_ids_to_intarrayDownSql, map[string]*bintree{}},
+	"1528395717_replicate_permissions_object_ids_to_intarray.up.sql":               {_1528395717_replicate_permissions_object_ids_to_intarrayUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
