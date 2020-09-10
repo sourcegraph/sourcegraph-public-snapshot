@@ -300,6 +300,9 @@ func (svc *Service) ResolveRepositories(ctx context.Context, spec *CampaignSpec)
 
 		for _, repo := range repos {
 			if _, ok := seen[repo.ID]; !ok {
+				if repo.DefaultBranch == nil {
+					continue
+				}
 				switch st := strings.ToLower(repo.ExternalRepository.ServiceType); st {
 				case "github", "gitlab", "bitbucketserver":
 
