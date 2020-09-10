@@ -5,8 +5,11 @@ exports[`ExtensionCard renders 1`] = `
   className="d-flex"
 >
   <div
-    className="extension-card card "
+    className="extension-card card position-relative flex-1"
   >
+    <div
+      className="extension-card__shadow rounded"
+    />
     <div
       className="card-body extension-card__body d-flex position-relative"
       onClick={[Function]}

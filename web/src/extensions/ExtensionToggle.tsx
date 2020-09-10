@@ -9,7 +9,6 @@ import {
 } from '../../../shared/src/settings/settings'
 import { eventLogger } from '../tracking/eventLogger'
 import { isExtensionAdded } from './extension/extension'
-import { ModalContainer } from '../components/ModalContainer'
 import { ExtensionPermissionModal } from './ExtensionPermissionModal'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
@@ -99,15 +98,10 @@ export const ExtensionToggle: React.FunctionComponent<Props> = ({
         <>
             {big ? <ToggleBig {...props} /> : <Toggle {...props} />}
             {askingForPermission && (
-                <ModalContainer
-                    onClose={denyPermission}
-                    component={
-                        <ExtensionPermissionModal
-                            extensionID={extensionID}
-                            givePermission={givePermission}
-                            denyPermission={denyPermission}
-                        />
-                    }
+                <ExtensionPermissionModal
+                    extensionID={extensionID}
+                    givePermission={givePermission}
+                    denyPermission={denyPermission}
                 />
             )}
         </>
