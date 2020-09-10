@@ -12,6 +12,7 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { fetchFileExternalLinks } from '../backend'
 import { RevisionSpec, FileSpec } from '../../../../shared/src/util/url'
+import { ExternalLinkFields } from '../../graphql-operations'
 
 interface Props extends RevisionSpec, Partial<FileSpec> {
     repo?: GQL.IRepository | null
@@ -20,7 +21,7 @@ interface Props extends RevisionSpec, Partial<FileSpec> {
     position?: Position
     range?: Range
 
-    externalLinks?: GQL.IExternalLink[]
+    externalLinks?: ExternalLinkFields[]
 }
 
 interface State {
@@ -28,7 +29,7 @@ interface State {
      * The external links for the current file/dir, or undefined while loading, null while not
      * needed (because not viewing a file/dir), or an error.
      */
-    fileExternalLinksOrError?: GQL.IExternalLink[] | null | ErrorLike
+    fileExternalLinksOrError?: ExternalLinkFields[] | null | ErrorLike
 }
 
 /**
@@ -89,7 +90,7 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
             return null
         }
 
-        let externalURLs: GQL.IExternalLink[]
+        let externalURLs: ExternalLinkFields[]
         if (this.props.externalLinks && this.props.externalLinks.length > 0) {
             externalURLs = this.props.externalLinks
         } else if (
