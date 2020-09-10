@@ -20,7 +20,7 @@ describe('SearchPage', () => {
         const enterpriseHomePanels = container.querySelectorAll('.test-saved-search-entery')
         expect(enterpriseHomePanels.length).toBe(2)
     })
-    it('should show all one search on "my searches tab"', () => {
+    it('should show one search on "my searches tab"', () => {
         container = render(<SavedSearchesPanel {...defaultProps} mySearchesMode={true} />).container
         const enterpriseHomePanels = container.querySelectorAll('.test-saved-search-entery')
         expect(enterpriseHomePanels.length).toBe(1)
