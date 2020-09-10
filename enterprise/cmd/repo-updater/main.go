@@ -96,7 +96,7 @@ func enterpriseInit(
 	permsStore := edb.NewPermsStore(db, clock)
 	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, clock, ratelimit.DefaultRegistry)
 	go func() {
-		if err := permsStore.MigrateBinaryToIntarray(ctx); err != nil {
+		if err := permsStore.MigrateBinaryToIntarray(ctx, 1000); err != nil {
 			log15.Error("MigrateBinaryToIntarray", "error", err)
 		}
 

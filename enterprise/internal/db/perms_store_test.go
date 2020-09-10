@@ -2020,14 +2020,30 @@ func testPermsStore_MigrateBinaryToIntarray(db *sql.DB) func(t *testing.T) {
 		s := NewPermsStore(db, time.Now)
 		ctx := context.Background()
 
+		defer cleanupPermsTables(t, s)
+
 		// Set up test permissions
-		rp := &authz.RepoPermissions{
-			RepoID:  1,
-			Perm:    authz.Read,
-			UserIDs: toBitmap(11, 22),
+		rps := []*authz.RepoPermissions{
+			{
+				RepoID:  1,
+				Perm:    authz.Read,
+				UserIDs: toBitmap(11, 22),
+			},
+			{
+				RepoID:  2,
+				Perm:    authz.Read,
+				UserIDs: toBitmap(11, 33),
+			},
+			{
+				RepoID:  3,
+				Perm:    authz.Read,
+				UserIDs: toBitmap(22, 44),
+			},
 		}
-		if err := s.SetRepoPermissions(ctx, rp); err != nil {
-			t.Fatal(err)
+		for _, rp := range rps {
+			if err := s.SetRepoPermissions(ctx, rp); err != nil {
+				t.Fatal(err)
+			}
 		}
 
 		accounts := &extsvc.Accounts{
@@ -2035,7 +2051,7 @@ func testPermsStore_MigrateBinaryToIntarray(db *sql.DB) func(t *testing.T) {
 			ServiceID:   authz.SourcegraphServiceID,
 			AccountIDs:  []string{"alice", "bob"},
 		}
-		rp = &authz.RepoPermissions{
+		rp := &authz.RepoPermissions{
 			RepoID: 1,
 			Perm:   authz.Read,
 		}
@@ -2054,15 +2070,17 @@ UPDATE repo_pending_permissions SET user_ids_ints = '{}';
 			t.Fatal(err)
 		}
 
-		if err := s.MigrateBinaryToIntarray(ctx); err != nil {
+		if err := s.MigrateBinaryToIntarray(ctx, 2); err != nil {
 			t.Fatal(err)
 		}
 
 		// Query and check rows in permissions tables.
 		err := checkRegularPermsTable(s, `SELECT user_id, object_ids, object_ids_ints FROM user_permissions`,
 			map[int32][]uint32{
-				11: {1},
-				22: {1},
+				11: {1, 2},
+				22: {1, 3},
+				33: {2},
+				44: {3},
 			},
 		)
 		if err != nil {
@@ -2072,6 +2090,8 @@ UPDATE repo_pending_permissions SET user_ids_ints = '{}';
 		err = checkRegularPermsTable(s, `SELECT repo_id, user_ids, user_ids_ints FROM repo_permissions`,
 			map[int32][]uint32{
 				1: {11, 22},
+				2: {11, 33},
+				3: {22, 44},
 			},
 		)
 		if err != nil {
