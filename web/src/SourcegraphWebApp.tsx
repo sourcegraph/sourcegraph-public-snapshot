@@ -167,6 +167,11 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      */
     previousVersionContext: string | null
 
+    /**
+     * Whether the experimental search streaming API should be used.
+     */
+    searchStreaming: boolean
+
     showRepogroupHomepage: boolean
 
     showOnboardingTour: boolean
@@ -255,6 +260,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             versionContext: resolvedVersionContext,
             availableVersionContexts,
             previousVersionContext,
+            searchStreaming: false,
             showRepogroupHomepage: false,
             showOnboardingTour: false,
             showEnterpriseHomePanels: false,
