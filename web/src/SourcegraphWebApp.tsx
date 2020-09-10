@@ -6,8 +6,8 @@ import * as React from 'react'
 import { hot } from 'react-hot-loader/root'
 import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
-import { combineLatest, from, fromEventPattern, Subscription } from 'rxjs'
-import { startWith } from 'rxjs/operators'
+import { combineLatest, from, fromEventPattern, Subscription, fromEvent, of } from 'rxjs'
+import { startWith, switchMap } from 'rxjs/operators'
 import { setLinkComponent } from '../../shared/src/components/Link'
 import {
     Controller as ExtensionsController,
@@ -69,6 +69,7 @@ import {
     experimentalFeaturesFromSettings,
 } from './util/settings'
 import { SearchPatternType } from '../../shared/src/graphql-operations'
+import { HTTPStatusError } from '../../shared/src/backend/fetch'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     exploreSections: readonly ExploreSectionDescriptor[]
@@ -298,6 +299,26 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             ).subscribe(event => {
                 this.setState({ systemIsLightTheme: !event.matches })
             })
+        )
+
+        /**
+         * Listens for uncaught 401 errors when a user when a user was previously authenticated.
+         *
+         * Don't subscribe to this event when there wasn't an authenticated user,
+         * as it could lead to an infinite loop of 401 -> reload -> 401
+         */
+        this.subscriptions.add(
+            authenticatedUser
+                .pipe(
+                    switchMap(authenticatedUser =>
+                        authenticatedUser ? fromEvent<ErrorEvent>(window, 'error') : of(null)
+                    )
+                )
+                .subscribe(event => {
+                    if (event?.error instanceof HTTPStatusError && event.error.status === 401) {
+                        location.reload()
+                    }
+                })
         )
 
         // Send initial versionContext to extensions
