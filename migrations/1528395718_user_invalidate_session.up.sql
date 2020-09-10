@@ -6,12 +6,12 @@ ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS invalidated_sessions_at tim
 UPDATE users SET invalidated_sessions_at = created_at;
 
 -- Create a procedure that invalidates sessions for the user that can be used for our trigger
--- Invalidates if anything password related is updated in the user table
-CREATE OR REPLACE FUNCTION invalidate_session_for_userid_on_password_change_or_reset() RETURNS trigger
+-- Invalidates if the password is updated
+CREATE OR REPLACE FUNCTION invalidate_session_for_userid_on_password_change() RETURNS trigger
 LANGUAGE plpgsql
     AS $$
     BEGIN
-        IF (OLD.passwd != NEW.passwd OR OLD.passwd_reset_code != NEW.passwd_reset_code OR OLD.passwd_reset_time != NEW.passwd_reset_time) THEN
+        IF OLD.passwd != NEW.passwd THEN
             NEW.invalidated_sessions_at = now();
             RETURN NEW;
         END IF;
@@ -20,10 +20,10 @@ LANGUAGE plpgsql
 $$;
 
 -- Need to drop and create, since we can't create if not exstis
-DROP TRIGGER IF EXISTS trig_invalidate_session_on_password_change_or_reset ON users;
+DROP TRIGGER IF EXISTS trig_invalidate_session_on_password_change ON users;
 -- Create a trigger to to invalidate sessions if the user's password is ever changed
-CREATE TRIGGER trig_invalidate_session_on_password_change_or_reset
-    BEFORE UPDATE OF passwd, passwd_reset_code, passwd_reset_time ON users 
-    FOR EACH ROW EXECUTE PROCEDURE invalidate_session_for_userid_on_password_change_or_reset();
+CREATE TRIGGER trig_invalidate_session_on_password_change
+    BEFORE UPDATE OF passwd ON users 
+    FOR EACH ROW EXECUTE PROCEDURE invalidate_session_for_userid_on_password_change();
 
 COMMIT;
