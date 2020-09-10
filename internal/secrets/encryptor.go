@@ -20,11 +20,17 @@ type EncryptionError struct {
 
 // Encryptor is an interface that provides encryption & decryption primitives
 type Encryptor interface {
+	// ConfiguredToEncrypt returns true if the encryptor is able to encrypt
 	ConfiguredToEncrypt() bool
+	// ConfiguredToRotate returns if primary and secondary keys are valid keys
 	ConfiguredToRotate() bool
+	// DecryptBytes decrypts a ciphertext with the keys available to the encryptor
 	DecryptBytes(b []byte) ([]byte, error)
+	// EncryptBytes encrypts a plaintext with the primary key
 	EncryptBytes(b []byte) ([]byte, error)
-	EncryptWithKey(b, k []byte) ([]byte, error)
+	// EncryptWithKey encrypts plaintext with the given key
+	EncryptWithKey(b, key []byte) ([]byte, error)
+	// RotateEncryption decrypts given byte array and then re-encrypts with the primary key
 	RotateEncryption(b []byte) ([]byte, error)
 }
 
@@ -140,16 +146,17 @@ func (e encryptor) RotateEncryption(ciphertext []byte) ([]byte, error) {
 	if !e.ConfiguredToRotate() {
 		return nil, &EncryptionError{errors.New("key rotation not configured")}
 	}
-	plaintext, err := gcmDecrypt(ciphertext, e.primaryKey)
-	if err != nil { // perhaps it's already encrypted?
-		_, err = gcmDecrypt(ciphertext, e.secondaryKey)
-		if err == nil {
-			return ciphertext, nil
+	// try previous key first
+	plaintext, err := gcmDecrypt(ciphertext, e.secondaryKey)
+	if err != nil {
+		_, err = gcmDecrypt(ciphertext, e.primaryKey)
+		if err != nil {
+			return ciphertext, err
 		}
-		return ciphertext, err
+		return ciphertext, nil
 	}
 
-	return e.EncryptWithKey(plaintext, e.secondaryKey)
+	return e.EncryptWithKey(plaintext, e.primaryKey)
 }
 
 // noOpEncryptor always returns original content and does no encryption or decryption.
@@ -175,7 +182,7 @@ func (noOpEncryptor) RotateEncryption(b []byte) ([]byte, error) {
 	return b, nil
 }
 
-func (noOpEncryptor) EncryptWithKey(b, k []byte) ([]byte, error) {
+func (noOpEncryptor) EncryptWithKey(b, key []byte) ([]byte, error) {
 	return b, nil
 }
 
