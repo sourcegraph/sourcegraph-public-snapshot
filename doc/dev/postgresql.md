@@ -256,7 +256,7 @@ gcloud beta compute --project=sourcegraph-dev instances create erik-keegan-test-
 ### Connect to the instance
 
 ```shell
-gcloud compute ssh --zone "us-central1-f" "erik-keegan-test-pg" --project "sourcegraph-dev"
+gcloud compute ssh --zone "us-central1-f" "$SOMENAME" --project "sourcegraph-server"
 ```
 
 ### Become root
