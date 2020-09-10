@@ -4,7 +4,7 @@ import { SearchPatternType } from '../../graphql-operations'
 import { SavedSearchesPanel } from './SavedSearchesPanel'
 import { _fetchSavedSearches, authUser } from './utils'
 
-describe('SearchPage', () => {
+describe('SavedSearchesPanel', () => {
     afterAll(cleanup)
 
     let container: HTMLElement
