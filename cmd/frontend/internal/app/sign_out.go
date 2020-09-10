@@ -28,10 +28,14 @@ func RegisterSSOSignOutHandler(f func(w http.ResponseWriter, r *http.Request) []
 }
 
 func serveSignOut(w http.ResponseWriter, r *http.Request) {
+	// Invalidate all user sessions first
+	// This way, any other signout failures should not leave a valid session
+	if err := session.InvalidateSessionCurrentUser(r); err != nil {
+		log15.Error("Error in signout.", "err", err)
+	}
 	if err := session.SetActor(w, r, nil, 0); err != nil {
 		log15.Error("Error in signout.", "err", err)
 	}
-
 	var signoutURLs []SignOutURL
 	if ssoSignOutHandler != nil {
 		signoutURLs = ssoSignOutHandler(w, r)
