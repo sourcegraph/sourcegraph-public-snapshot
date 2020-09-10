@@ -71,7 +71,9 @@ func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.Sea
 		// Replace any existing spanContext with a new one, given we've done additional tracing
 		spanContext := make(map[string]string)
 		if err := ot.GetTracer(ctx).Inject(opentracing.SpanFromContext(ctx).Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err == nil {
-			opts.SpanContext = spanContext
+			newOpts := *opts
+			newOpts.SpanContext = spanContext
+			opts = &newOpts
 		} else {
 			log15.Warn("meteredSearcher: Error injecting new span context into map: %s", err)
 		}
