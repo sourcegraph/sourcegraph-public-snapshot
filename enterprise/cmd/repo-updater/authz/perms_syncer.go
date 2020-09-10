@@ -274,6 +274,13 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	if provider == nil {
 		log15.Debug("PermsSyncer.syncRepoPerms.noProvider", "repoID", repo.ID)
 
+		// NOTE: Not using transaction here because right now it is not easy to
+		// run transaction that involves two stores. Being partially succeed here
+		// is OK because:
+		// 	1. We're setting repository to be unrestricted and the permissions bits
+		//		no longer important.
+		//	2. Eventually, the syncer will try to sync and run down to here again
+		//		because of the permissions staleness.
 		repo.Unrestricted = true
 		if err := s.reposStore.UpsertRepos(ctx, repo); err != nil {
 			return errors.Wrapf(err, "upsert repo %d", repo.ID)
