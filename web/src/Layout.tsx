@@ -129,6 +129,7 @@ export interface LayoutProps
     globbing: boolean
     isSourcegraphDotCom: boolean
     showCampaigns: boolean
+    fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
     children?: never
 }
 
@@ -141,8 +142,11 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const repogroupPages = ['/refactor-python2-to-3', '/kubernetes', '/golang', '/react-hooks', '/android', '/stanford']
     const isRepogroupPage = repogroupPages.includes(props.location.pathname)
 
+    // TODO add a component layer as the parent of the Layout component rendering "top-level" routes that do not render the navbar,
+    // so that Layout can always render the navbar.
     const needsSiteInit = window.context.needsSiteInit
     const isSiteInit = props.location.pathname === '/site-admin/init'
+    const isSignInOrUp = props.location.pathname === '/sign-in' || props.location.pathname === '/sign-up'
 
     const hideGlobalSearchInput: boolean =
         props.location.pathname === '/stats' || props.location.pathname === '/search/query-builder'
@@ -175,7 +179,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 <IntegrationsToast history={props.history} />
             )}
             {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
-            {!isSiteInit && (
+            {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
                     isSearchRelatedPage={isSearchRelatedPage}

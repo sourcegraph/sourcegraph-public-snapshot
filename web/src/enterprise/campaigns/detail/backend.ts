@@ -203,7 +203,7 @@ export const queryChangesets = ({
                 $reviewState: ChangesetReviewState
                 $checkState: ChangesetCheckState
                 $publicationState: ChangesetPublicationState
-                $reconcilerState: ChangesetReconcilerState
+                $reconcilerState: [ChangesetReconcilerState!]
                 $onlyPublishedByThisCampaign: Boolean
             ) {
                 node(id: $campaign) {

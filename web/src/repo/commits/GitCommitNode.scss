@@ -4,17 +4,6 @@
         padding-top: 0.5rem;
     }
 
-    &__row {
-        width: 100%;
-    }
-
-    &__main {
-        display: flex;
-        flex-wrap: wrap-reverse;
-        align-items: flex-start;
-        justify-content: space-between;
-    }
-
     &__signature {
         flex: 1 1;
         min-width: 24rem;

@@ -37,6 +37,7 @@ require (
 	github.com/fatih/color v1.9.0
 	github.com/felixge/fgprof v0.9.0
 	github.com/felixge/httpsnoop v1.0.1
+	github.com/fsnotify/fsnotify v1.4.9
 	github.com/gchaincl/sqlhooks v1.3.0
 	github.com/getsentry/raven-go v0.2.0
 	github.com/ghodss/yaml v1.0.0
@@ -198,7 +199,7 @@ replace (
 )
 
 // We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200813180605-1373c3986c6d
+replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200908080019-f95cecffc54f
 
 replace github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
 

@@ -111,7 +111,7 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
     />
   </span>
   <div
-    className="external-changeset-node__diffstat"
+    className="d-flex justify-content-center"
   >
     <Memo(DiffStat)
       added={100}

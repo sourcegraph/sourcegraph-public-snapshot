@@ -24,7 +24,6 @@ import { Settings } from '../schema/settings.schema'
 import CompassOutlineIcon from 'mdi-react/CompassOutlineIcon'
 import { InsightsNavItem } from '../insights/InsightsNavLink'
 import { AuthenticatedUser } from '../auth'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
 interface Props
@@ -88,11 +87,6 @@ export class NavLinks extends React.PureComponent<Props> {
                 )}
                 {!this.props.authenticatedUser && (
                     <>
-                        <li className="nav-item">
-                            <Link to="/extensions" className="nav-link">
-                                Extensions
-                            </Link>
-                        </li>
                         {this.props.location.pathname !== '/sign-in' && (
                             <li className="nav-item mx-1">
                                 <Link className="nav-link btn btn-primary" to="/sign-in">
@@ -100,6 +94,11 @@ export class NavLinks extends React.PureComponent<Props> {
                                 </Link>
                             </li>
                         )}
+                        <li className="nav-item">
+                            <Link to="/help" className="nav-link" target="_blank" rel="noopener">
+                                Docs
+                            </Link>
+                        </li>
                         {this.props.showDotComMarketing && (
                             <li className="nav-item">
                                 <a
@@ -108,15 +107,10 @@ export class NavLinks extends React.PureComponent<Props> {
                                     target="_blank"
                                     rel="noopener"
                                 >
-                                    About <OpenInNewIcon className="icon-inline" />
+                                    About
                                 </a>
                             </li>
                         )}
-                        <li className="nav-item">
-                            <Link to="/help" className="nav-link" target="_blank" rel="noopener">
-                                Help <OpenInNewIcon className="icon-inline" />
-                            </Link>
-                        </li>
                     </>
                 )}
                 {!this.props.isSourcegraphDotCom && this.props.authenticatedUser?.siteAdmin && (

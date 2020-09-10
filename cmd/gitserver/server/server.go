@@ -579,6 +579,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 			isSlowFetch := fetchDuration > 10*time.Second
 			if honey.Enabled() || traceLogs || isSlow || isSlowFetch {
 				ev := honey.Event("gitserver-exec")
+				ev.SampleRate = honeySampleRate
 				ev.AddField("repo", req.Repo)
 				ev.AddField("remote_url", req.URL)
 				ev.AddField("cmd", cmd)
@@ -1064,6 +1065,20 @@ func init() {
 	prometheus.MustRegister(lsRemoteQueue)
 	prometheus.MustRegister(repoClonedCounter)
 }
+
+// Send 1 in 16 events to honeycomb. This is hardcoded since we only use this
+// for Sourcegraph.com.
+//
+// 2020-05-29 1 in 4. We are currently at the top tier for honeycomb (before
+// enterprise) and using double our quota. This gives us room to grow. If you
+// find we keep bumping this / missing data we care about we can look into
+// more dynamic ways to sample in our application code.
+//
+// 2020-07-20 1 in 16. Again hitting very high usage. Likely due to recent
+// scaling up of the indexed search cluster. Will require more investigation,
+// but we should probably segment user request path traffic vs internal batch
+// traffic.
+const honeySampleRate = 16
 
 var headBranchPattern = lazyregexp.New(`HEAD branch: (.+?)\n`)
 

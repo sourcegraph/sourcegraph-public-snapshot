@@ -64,7 +64,7 @@ const ChangesetSpecSchemaJSON = `{
             "type": "object",
             "description": "The Git commit to create with the changes.",
             "additionalProperties": false,
-            "required": ["message", "diff"],
+            "required": ["message", "diff", "authorName", "authorEmail"],
             "properties": {
               "message": {
                 "type": "string",
@@ -73,6 +73,15 @@ const ChangesetSpecSchemaJSON = `{
               "diff": {
                 "type": "string",
                 "description": "The commit diff (in unified diff format)."
+              },
+              "authorName": {
+                "type": "string",
+                "description": "The Git commit author name."
+              },
+              "authorEmail": {
+                "type": "string",
+                "format": "email",
+                "description": "The Git commit author email."
               }
             }
           }

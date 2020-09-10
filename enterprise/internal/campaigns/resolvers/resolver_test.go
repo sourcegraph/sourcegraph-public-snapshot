@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
@@ -594,10 +595,10 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		"PUBLISHED",
 		"INVALID",
 	}
-	reconcilerStates := []campaigns.ReconcilerState{
-		"PROCESSING",
-		campaigns.ReconcilerStateProcessing,
-		"INVALID",
+	reconcilerStates := [][]campaigns.ReconcilerState{
+		{"PROCESSING"},
+		{campaigns.ReconcilerStateProcessing},
+		{"INVALID"},
 	}
 	wantExternalStates := []campaigns.ChangesetExternalState{"OPEN", "INVALID"}
 	wantReviewStates := []campaigns.ChangesetReviewState{"APPROVED", "INVALID"}
@@ -649,7 +650,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			},
 			wantSafe: true,
 			wantParsed: ee.ListChangesetsOpts{
-				ReconcilerState: &reconcilerStates[1],
+				ReconcilerStates: reconcilerStates[1],
 			},
 		},
 		// Setting invalid reconciler state fails.
@@ -716,24 +717,26 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			},
 		},
 	}
-	for _, tc := range tcs {
-		haveParsed, haveSafe, err := listChangesetOptsFromArgs(tc.args, campaignID)
-		if tc.wantErr == "" && err != nil {
-			t.Fatal(err)
-		}
-		haveErr := fmt.Sprintf("%v", err)
-		wantErr := tc.wantErr
-		if wantErr == "" {
-			wantErr = "<nil>"
-		}
-		if have, want := haveErr, wantErr; have != want {
-			t.Errorf("wrong error returned. have=%q want=%q", have, want)
-		}
-		if diff := cmp.Diff(haveParsed, tc.wantParsed); diff != "" {
-			t.Errorf("wrong args returned. diff=%s", diff)
-		}
-		if have, want := haveSafe, tc.wantSafe; have != want {
-			t.Errorf("wrong safe value returned. have=%t want=%t", have, want)
-		}
+	for i, tc := range tcs {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			haveParsed, haveSafe, err := listChangesetOptsFromArgs(tc.args, campaignID)
+			if tc.wantErr == "" && err != nil {
+				t.Fatal(err)
+			}
+			haveErr := fmt.Sprintf("%v", err)
+			wantErr := tc.wantErr
+			if wantErr == "" {
+				wantErr = "<nil>"
+			}
+			if have, want := haveErr, wantErr; have != want {
+				t.Errorf("wrong error returned. have=%q want=%q", have, want)
+			}
+			if diff := cmp.Diff(haveParsed, tc.wantParsed); diff != "" {
+				t.Errorf("wrong args returned. diff=%s", diff)
+			}
+			if have, want := haveSafe, tc.wantSafe; have != want {
+				t.Errorf("wrong safe value returned. have=%t want=%t", have, want)
+			}
+		})
 	}
 }

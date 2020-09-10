@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/google/uuid"
@@ -36,6 +37,7 @@ type HandlerOptions struct {
 	UseFirecracker        bool
 	FirecrackerNumCPUs    int
 	FirecrackerMemory     string
+	ImageArchivePath      string
 }
 
 // Handle clones the target code into a temporary directory, invokes the target indexer in a fresh
@@ -68,6 +70,30 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 	if h.options.UseFirecracker {
 		mountPoint = "/repo-dir"
 
+		images := []string{
+			"lsif-go",
+			"src-cli",
+		}
+
+		copyfiles := []string{}
+		for _, image := range images {
+			tarfile := filepath.Join(h.options.ImageArchivePath, fmt.Sprintf("%s.tar", image))
+			copyfiles = append(copyfiles, "--copy-files", fmt.Sprintf("%s:%s", tarfile, fmt.Sprintf("/%s.tar", image)))
+
+			if _, err := os.Stat(tarfile); err == nil {
+				continue
+			} else if !os.IsNotExist(err) {
+				return err
+			}
+
+			if err := h.commander.Run(ctx, "docker", "pull", fmt.Sprintf("sourcegraph/%s:latest", image)); err != nil {
+				return errors.Wrap(err, fmt.Sprintf("failed to pull sourcegraph/%s:latest", image))
+			}
+			if err := h.commander.Run(ctx, "docker", "save", "-o", tarfile, fmt.Sprintf("sourcegraph/%s:latest", image)); err != nil {
+				return errors.Wrap(err, fmt.Sprintf("failed to save sourcegraph/%s:latest", image))
+			}
+		}
+
 		args := []string{
 			"ignite", "run",
 			"--runtime", "docker",
@@ -75,10 +101,14 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 			"--cpus", fmt.Sprintf("%d", h.options.FirecrackerNumCPUs),
 			"--memory", h.options.FirecrackerMemory,
 			"--copy-files", fmt.Sprintf("%s:%s", repoDir, mountPoint),
+		}
+		args = append(args, copyfiles...)
+		args = append(
+			args,
 			"--ssh",
 			"--name", name.String(),
 			sanitizeImage(h.options.FirecrackerImage),
-		}
+		)
 		if err := h.commander.Run(ctx, args[0], args[1:]...); err != nil {
 			return errors.Wrap(err, "failed to start firecracker vm")
 		}
@@ -103,6 +133,12 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 				log15.Warn("failed to remove firecracker vm", "name", name.String(), "err", err)
 			}
 		}()
+
+		for _, image := range images {
+			if err := h.commander.Run(ctx, "ignite", "exec", name.String(), "--", "docker", "load", "-i", fmt.Sprintf("/%s.tar", image)); err != nil {
+				return errors.Wrap(err, fmt.Sprintf("failed to load sourcegraph/%s:latest", image))
+			}
+		}
 	}
 
 	indexArgs := []string{
@@ -113,7 +149,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		"-w", "/data",
 		"sourcegraph/lsif-go:latest",
 		"lsif-go",
-		"--noProgress",
+		"--no-animation",
 	}
 	if h.options.UseFirecracker {
 		indexArgs = append([]string{"ignite", "exec", name.String(), "--"}, indexArgs...)

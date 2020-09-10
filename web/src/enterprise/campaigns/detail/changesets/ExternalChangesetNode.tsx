@@ -66,7 +66,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
             <ExternalChangesetInfoCell node={node} viewerCanAdminister={viewerCanAdminister} />
             <span>{node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} />}</span>
             <span>{node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} />}</span>
-            <div className="external-changeset-node__diffstat">
+            <div className="d-flex justify-content-center">
                 {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} separateLines={true} />}
             </div>
             {isExpanded && (
