@@ -151,7 +151,7 @@ func (e encryptor) RotateEncryption(ciphertext []byte) ([]byte, error) {
 	if err != nil {
 		_, err = gcmDecrypt(ciphertext, e.primaryKey)
 		if err != nil {
-			return ciphertext, err
+			return nil, err
 		}
 		return ciphertext, nil
 	}
