@@ -16,9 +16,7 @@ export const SavedSearchesPanel: React.FunctionComponent<{
     authenticatedUser: AuthenticatedUser | null
     fetchSavedSearches: () => Observable<ISavedSearch[]>
     className?: string
-    /** For testing only */
-    mySearchesMode?: boolean
-}> = ({ patternType, authenticatedUser, fetchSavedSearches, className, mySearchesMode }) => {
+}> = ({ patternType, authenticatedUser, fetchSavedSearches, className }) => {
     const savedSearches = useObservable(useMemo(() => fetchSavedSearches(), [fetchSavedSearches]))
     const [showAllSearches, setShowAllSearches] = useState(true)
 
@@ -53,11 +51,9 @@ export const SavedSearchesPanel: React.FunctionComponent<{
                 </div>
                 <dl className="list-group-flush">
                     {savedSearches
-                        ?.filter(search =>
-                            showAllSearches && !mySearchesMode ? true : search.namespace.id === authenticatedUser?.id
-                        )
+                        ?.filter(search => (showAllSearches ? true : search.namespace.id === authenticatedUser?.id))
                         .map(search => (
-                            <dd key={search.id} className="text-monospace test-saved-search-entery">
+                            <dd key={search.id} className="text-monospace test-saved-search-entry">
                                 <div className="d-flex justify-content-between">
                                     <Link
                                         to={'/search?' + buildSearchURLQuery(search.query, patternType, false)}
@@ -108,18 +104,24 @@ export const SavedSearchesPanel: React.FunctionComponent<{
                 <button
                     type="button"
                     onClick={() => setShowAllSearches(false)}
-                    className={classNames('btn btn-outline-secondary panel-container__action-button', {
-                        active: !showAllSearches,
-                    })}
+                    className={classNames(
+                        'btn btn-outline-secondary panel-container__action-button test-saved-search-panel-my-searches',
+                        {
+                            active: !showAllSearches,
+                        }
+                    )}
                 >
                     My searches
                 </button>
                 <button
                     type="button"
                     onClick={() => setShowAllSearches(true)}
-                    className={classNames('btn btn-outline-secondary panel-container__action-button', {
-                        active: showAllSearches,
-                    })}
+                    className={classNames(
+                        'btn btn-outline-secondary panel-container__action-button test-saved-search-panel-all-searches',
+                        {
+                            active: showAllSearches,
+                        }
+                    )}
                 >
                     All searches
                 </button>
