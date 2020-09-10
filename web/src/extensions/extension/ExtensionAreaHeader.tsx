@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react'
-import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
+import { NavLink, RouteComponentProps } from 'react-router-dom'
 import { isExtensionEnabled } from '../../../../shared/src/extensions/extension'
 import { ExtensionManifest } from '../../../../shared/src/schema/extensionSchema'
 import { isErrorLike } from '../../../../shared/src/util/errors'
@@ -105,8 +105,12 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                     </div>
                                 </div>
                             </div>
-
                             <div className="d-flex align-items-center justify-content-center mt-3 mb-2 position-relative">
+                                {change && (
+                                    <div className="alert alert-secondary px-2 py-1 extension-area-header__disabled-feedback">
+                                        <strong>{name}</strong> is {change}
+                                    </div>
+                                )}
                                 {props.authenticatedUser && (
                                     <ExtensionToggle
                                         enabled={isExtensionEnabled(props.settingsCascade.final, props.extension.id)}
@@ -119,30 +123,6 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                         onHover={onHover}
                                     />
                                 )}
-                                {change && (
-                                    <div className="alert alert-secondary px-2 py-1 extension-area-header__disabled-feedback">
-                                        <strong>{name}</strong> is {change}
-                                    </div>
-                                )}
-
-                                {/*
-                                {!props.authenticatedUser && (
-                                    <div className="d-flex align-items-center">
-                                        <Link to="/sign-in" className="btn btn-primary mr-2">
-                                            Sign in to{' '}
-                                            {isExtensionEnabled(props.settingsCascade.final, props.extension.id)
-                                                ? 'configure'
-                                                : 'enable'}
-                                        </Link>
-                                        <small className="text-muted">
-                                            An account is required to{' '}
-                                            {isExtensionEnabled(props.settingsCascade.final, props.extension.id)
-                                                ? ''
-                                                : 'enable and'}{' '}
-                                            configure extensions.
-                                        </small>
-                                    </div>
-                                )} */}
                             </div>
                         </div>
                         <div className="mt-3">
@@ -169,4 +149,25 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
             </div>
         </div>
     )
+}
+
+{
+    /*
+                                {!props.authenticatedUser && (
+                                    <div className="d-flex align-items-center">
+                                        <Link to="/sign-in" className="btn btn-primary mr-2">
+                                            Sign in to{' '}
+                                            {isExtensionEnabled(props.settingsCascade.final, props.extension.id)
+                                                ? 'configure'
+                                                : 'enable'}
+                                        </Link>
+                                        <small className="text-muted">
+                                            An account is required to{' '}
+                                            {isExtensionEnabled(props.settingsCascade.final, props.extension.id)
+                                                ? ''
+                                                : 'enable and'}{' '}
+                                            configure extensions.
+                                        </small>
+                                    </div>
+                                )} */
 }

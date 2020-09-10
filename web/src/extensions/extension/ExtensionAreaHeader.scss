@@ -22,11 +22,11 @@
     }
 
     &__disabled-feedback {
-        position: absolute;
-        top: -1.625rem;
+        top: 0rem;
         // feedback is centered on top of toggle, so right is pr (0.5rem) + 50% of toggle width
         right: 0.5rem + ($toggle-big-width / 2);
         transform: translateX(50%);
         z-index: 1;
+        width: max-content;
     }
 }
