@@ -11,6 +11,7 @@ import { FlatExtHostAPI } from '../../../shared/src/api/contract'
 import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
 import { DeployType } from '../jscontext'
 import { SearchPatternType, EventLogsDataResult, EventLogsDataVariables } from '../graphql-operations'
+import * as SearchStream from './stream'
 
 export function search(
     query: string,
@@ -188,6 +189,22 @@ export function search(
             )
         )
     )
+}
+
+export function searchStream(
+    query: string,
+    version: string,
+    patternType: SearchPatternType,
+    versionContext: string | undefined,
+    extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
+): Observable<GQL.ISearchResults | ErrorLike> {
+    const transformedQuery = from(extensionHostPromise).pipe(
+        switchMap(extensionHost => wrapRemoteObservable(extensionHost.transformSearchQuery(query)))
+    )
+
+    return transformedQuery
+        .pipe(switchMap(query => SearchStream.search(query, version, patternType, versionContext)))
+        .pipe(SearchStream.switchToGQLISearchResults())
 }
 
 /**
