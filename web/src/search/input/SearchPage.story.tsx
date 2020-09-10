@@ -1,7 +1,6 @@
 import React from 'react'
 import { createMemoryHistory } from 'history'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
-import { of } from 'rxjs'
 import { SearchPage, SearchPageProps } from './SearchPage'
 import { SearchPatternType } from '../../graphql-operations'
 import { Services } from '../../../../shared/src/api/client/services'
@@ -9,7 +8,7 @@ import { storiesOf } from '@storybook/react'
 import { ThemePreference } from '../../theme'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { WebStory } from '../../components/WebStory'
-import { _fetchSavedSearches } from '../panels/utils'
+import { _fetchSavedSearches, _fetchRecentSearches } from '../panels/utils'
 
 const history = createMemoryHistory()
 const defaultProps = (props: ThemeProps): SearchPageProps => ({
@@ -48,7 +47,7 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     showOnboardingTour: false,
     isLightTheme: props.isLightTheme,
     fetchSavedSearches: _fetchSavedSearches,
-    fetchRecentSearches: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),
+    fetchRecentSearches: _fetchRecentSearches,
 })
 
 const { add } = storiesOf('web/search/input/SearchPage', module).addParameters({

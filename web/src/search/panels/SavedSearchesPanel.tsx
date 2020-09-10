@@ -44,12 +44,12 @@ export const SavedSearchesPanel: React.FunctionComponent<{
 
     const contentDisplay = (
         <>
-            <div>
+            <div className="d-flex flex-column h-100">
                 <div className="d-flex justify-content-between mb-1">
                     <small>Search</small>
                     <small>Edit</small>
                 </div>
-                <dl className="list-group-flush">
+                <dl className="list-group-flush flex-grow-1">
                     {savedSearches
                         ?.filter(search => (showAllSearches ? true : search.namespace.id === authenticatedUser?.id))
                         .map(search => (

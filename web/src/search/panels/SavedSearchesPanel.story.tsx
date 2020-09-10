@@ -6,7 +6,7 @@ import { authUser, _fetchSavedSearches } from './utils'
 import { SavedSearchesPanel } from './SavedSearchesPanel'
 import { NEVER, of } from 'rxjs'
 
-const { add } = storiesOf('web/search/panels/SavedSearchPanel', module).addParameters({
+const { add } = storiesOf('web/search/panels/SavedSearchesPanel', module).addParameters({
     design: {
         type: 'figma',
         url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
