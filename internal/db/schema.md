@@ -894,12 +894,13 @@ Triggers:
 
 # Table "public.repo_pending_permissions"
 ```
-   Column   |           Type           | Modifiers 
-------------+--------------------------+-----------
- repo_id    | integer                  | not null
- permission | text                     | not null
- user_ids   | bytea                    | not null
- updated_at | timestamp with time zone | not null
+    Column     |           Type           |            Modifiers             
+---------------+--------------------------+----------------------------------
+ repo_id       | integer                  | not null
+ permission    | text                     | not null
+ user_ids      | bytea                    | not null
+ updated_at    | timestamp with time zone | not null
+ user_ids_ints | integer[]                | not null default '{}'::integer[]
 Indexes:
     "repo_pending_permissions_perm_unique" UNIQUE CONSTRAINT, btree (repo_id, permission)
 
@@ -907,13 +908,14 @@ Indexes:
 
 # Table "public.repo_permissions"
 ```
-   Column   |           Type           | Modifiers 
-------------+--------------------------+-----------
- repo_id    | integer                  | not null
- permission | text                     | not null
- user_ids   | bytea                    | not null
- updated_at | timestamp with time zone | not null
- synced_at  | timestamp with time zone | 
+    Column     |           Type           |            Modifiers             
+---------------+--------------------------+----------------------------------
+ repo_id       | integer                  | not null
+ permission    | text                     | not null
+ user_ids      | bytea                    | not null
+ updated_at    | timestamp with time zone | not null
+ synced_at     | timestamp with time zone | 
+ user_ids_ints | integer[]                | not null default '{}'::integer[]
 Indexes:
     "repo_permissions_perm_unique" UNIQUE CONSTRAINT, btree (repo_id, permission)
 
@@ -1078,16 +1080,17 @@ Foreign-key constraints:
 
 # Table "public.user_pending_permissions"
 ```
-    Column    |           Type           |                               Modifiers                               
---------------+--------------------------+-----------------------------------------------------------------------
- id           | integer                  | not null default nextval('user_pending_permissions_id_seq'::regclass)
- bind_id      | text                     | not null
- permission   | text                     | not null
- object_type  | text                     | not null
- object_ids   | bytea                    | not null
- updated_at   | timestamp with time zone | not null
- service_type | text                     | not null
- service_id   | text                     | not null
+     Column      |           Type           |                               Modifiers                               
+-----------------+--------------------------+-----------------------------------------------------------------------
+ id              | integer                  | not null default nextval('user_pending_permissions_id_seq'::regclass)
+ bind_id         | text                     | not null
+ permission      | text                     | not null
+ object_type     | text                     | not null
+ object_ids      | bytea                    | not null
+ updated_at      | timestamp with time zone | not null
+ service_type    | text                     | not null
+ service_id      | text                     | not null
+ object_ids_ints | integer[]                | not null default '{}'::integer[]
 Indexes:
     "user_pending_permissions_service_perm_object_unique" UNIQUE CONSTRAINT, btree (service_type, service_id, permission, object_type, bind_id)
 
@@ -1095,14 +1098,15 @@ Indexes:
 
 # Table "public.user_permissions"
 ```
-   Column    |           Type           | Modifiers 
--------------+--------------------------+-----------
- user_id     | integer                  | not null
- permission  | text                     | not null
- object_type | text                     | not null
- object_ids  | bytea                    | not null
- updated_at  | timestamp with time zone | not null
- synced_at   | timestamp with time zone | 
+     Column      |           Type           |            Modifiers             
+-----------------+--------------------------+----------------------------------
+ user_id         | integer                  | not null
+ permission      | text                     | not null
+ object_type     | text                     | not null
+ object_ids      | bytea                    | not null
+ updated_at      | timestamp with time zone | not null
+ synced_at       | timestamp with time zone | 
+ object_ids_ints | integer[]                | not null default '{}'::integer[]
 Indexes:
     "user_permissions_perm_object_unique" UNIQUE CONSTRAINT, btree (user_id, permission, object_type)
 

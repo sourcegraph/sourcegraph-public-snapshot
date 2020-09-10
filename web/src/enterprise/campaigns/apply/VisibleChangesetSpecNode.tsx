@@ -90,7 +90,7 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
                     </div>
                 </div>
             </div>
-            <div>
+            <div className="d-flex justify-content-center">
                 {node.description.__typename === 'GitBranchChangesetDescription' && (
                     <DiffStat {...node.description.diffStat} expandedCounts={true} separateLines={true} />
                 )}

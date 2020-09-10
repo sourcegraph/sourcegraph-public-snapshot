@@ -5,4 +5,27 @@
             flex-grow: 1;
         }
     }
+
+    &__action-button-group {
+        margin-bottom: 0.125rem;
+        font-size: 12px;
+    }
+
+    &__action-button {
+        font-size: 12px;
+        line-height: 16px;
+    }
+
+    &__empty-container {
+        display: flex;
+        flex-direction: column;
+        text-align: center;
+        padding: 3rem;
+        justify-content: center;
+        background: $color-bg-2;
+
+        .theme-light & {
+            background: $color-light-bg-2;
+        }
+    }
 }

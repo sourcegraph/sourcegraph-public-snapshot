@@ -8,6 +8,7 @@ import { storiesOf } from '@storybook/react'
 import { ThemePreference } from '../../theme'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { WebStory } from '../../components/WebStory'
+import { _fetchSavedSearches } from '../panels/utils'
 
 const history = createMemoryHistory()
 const defaultProps = (props: ThemeProps): SearchPageProps => ({
@@ -45,6 +46,7 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     showEnterpriseHomePanels: false,
     showOnboardingTour: false,
     isLightTheme: props.isLightTheme,
+    fetchSavedSearches: _fetchSavedSearches,
 })
 
 const { add } = storiesOf('web/search/input/SearchPage', module).addParameters({

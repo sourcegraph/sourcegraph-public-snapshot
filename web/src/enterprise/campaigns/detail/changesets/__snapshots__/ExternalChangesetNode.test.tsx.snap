@@ -110,7 +110,9 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
       reviewState="PENDING"
     />
   </span>
-  <div>
+  <div
+    className="d-flex justify-content-center"
+  >
     <Memo(DiffStat)
       added={100}
       changed={200}
