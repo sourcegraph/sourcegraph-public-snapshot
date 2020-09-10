@@ -3,6 +3,7 @@ package secrets
 import (
 	"bytes"
 	"crypto/rand"
+	"crypto/sha256"
 	"reflect"
 	"testing"
 )
@@ -67,6 +68,86 @@ func TestEncryptingAndDecrypting(t *testing.T) {
 			t.Fatal("unable to decrypt and get the original bytes")
 		}
 	})
+}
+
+func TestEncodeAndEncryptDecrypt(t *testing.T) {
+	primaryKey, err := generateRandomAESKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	secondaryKey, err := generateRandomAESKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("using primary key", func(t *testing.T) {
+		e := newEncryptor(primaryKey, nil)
+
+		encrypted, err := e.EncodeAndEncryptBytes(messageToEncrypt)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		decrypted, err := e.DecodeAndDecryptBytes(encrypted)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !bytes.Equal(decrypted, messageToEncrypt) {
+			t.Fatal("unable to decrypt and get the original bytes")
+		}
+	})
+
+	t.Run("using secondary key", func(t *testing.T) {
+		// Only load secondary key to encrypt
+		e := newEncryptor(secondaryKey, nil)
+		encrypted, err := e.EncodeAndEncryptBytes(messageToEncrypt)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Then load both keys to decrypt
+		e = newEncryptor(primaryKey, secondaryKey)
+		decrypted, err := e.DecodeAndDecryptBytes(encrypted)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !bytes.Equal(decrypted, messageToEncrypt) {
+			t.Fatal("unable to decrypt and get the original bytes")
+		}
+	})
+}
+
+func TestKeyHash(t *testing.T) {
+	primaryKey, err := generateRandomAESKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	secondaryKey, err := generateRandomAESKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	e := newEncryptor(primaryKey, secondaryKey)
+
+	encryptorHash := e.KeyHash()
+
+	pkh := sha256.Sum256(primaryKey)
+	primaryKeyHash := pkh[0:6]
+	skh := sha256.Sum256(secondaryKey)
+	secondaryKeyHash := skh[0:6]
+
+	// SHOULD NOT equal secondaryKey hash
+	if bytes.Equal(encryptorHash, secondaryKeyHash) {
+		t.Errorf("expected Encryptor KeyHash() !=  secondary key, got: %s secondarykey: %s", encryptorHash, secondaryKeyHash)
+	}
+	// SHOULD equal primaryKey hash
+	if !bytes.Equal(encryptorHash, primaryKeyHash) {
+		t.Errorf("expected Encryptor Keyhash() ==  primary key, got: %s primarykey: %s", encryptorHash, primaryKeyHash)
+	}
 }
 
 func TestNoOpEncryptor(t *testing.T) {

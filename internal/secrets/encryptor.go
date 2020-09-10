@@ -121,16 +121,19 @@ func newEncryptor(primaryKey, secondaryKey []byte) Encryptor {
 	}
 }
 
+// KeyHash returns the private keyHash variable.
 func (e encryptor) KeyHash() []byte {
 	return e.keyHash
 }
 
-// ConfiguredToEncrypt returns the statue of our encryptor, whether or not
+// ConfiguredToEncrypt returns the status of our encryptor, whether or not
 // it has a key specified, and can thus encrypt.
 func (e encryptor) ConfiguredToEncrypt() bool {
 	return len(e.primaryKey) == validKeyLength
 }
 
+// ConfiguredToRotate returns the status of our encryptor. If it contains two keys it
+// is configured to rotate.
 func (e encryptor) ConfiguredToRotate() bool {
 	return len(e.primaryKey) == validKeyLength && len(e.secondaryKey) == validKeyLength
 }
@@ -141,10 +144,10 @@ func (e encryptor) EncryptBytes(plaintext []byte) (ciphertext []byte, err error)
 	if len(e.primaryKey) < validKeyLength {
 		return nil, &EncryptionError{errors.New("primary key is unavailable")}
 	}
-
 	return gcmEncrypt(plaintext, e.primaryKey)
 }
 
+// EncodeAndEncryptBytes returns a byte array that encodes the ciphertext base64
 func (e encryptor) EncodeAndEncryptBytes(plaintext []byte) (b []byte, err error) {
 	crypt := bytes.Join([][]byte{e.KeyHash(), plaintext}, []byte(separator))
 	enc, err := e.EncryptBytes(crypt)
@@ -168,9 +171,9 @@ func (e encryptor) DecryptBytes(ciphertext []byte) (plaintext []byte, err error)
 		return plaintext, nil
 	}
 	return nil, &EncryptionError{err}
-
 }
 
+// DecodeAndDecryptBytes decodes a base64 encoded encrypted byte array
 func (e encryptor) DecodeAndDecryptBytes(ciphertext []byte) (b []byte, err error) {
 	base64Text := string(ciphertext)
 
@@ -190,6 +193,7 @@ func (e encryptor) DecodeAndDecryptBytes(ciphertext []byte) (b []byte, err error
 	return ba[1], nil
 }
 
+// EncryptWithKey encrypts the plaintext byte array with a specific key
 func (e encryptor) EncryptWithKey(plaintext, key []byte) ([]byte, error) {
 	return gcmEncrypt(plaintext, key)
 }
@@ -280,22 +284,29 @@ func DecryptBytes(ciphertext []byte) ([]byte, error) {
 	return defaultEncryptor.DecryptBytes(ciphertext)
 }
 
+// EncryptWithKey encrypts the plaintext byte array with a specific key
 func EncryptWithKey(ciphertext, key []byte) ([]byte, error) {
 	return defaultEncryptor.EncryptWithKey(ciphertext, key)
 }
 
+// RotateEncryption rotates the encryption on a ciphertext by
+// decrypting the byte array using the primaryKey, and then reencrypting
+// it using the secondaryKey.
 func RotateEncryption(ciphertext []byte) ([]byte, error) {
 	return defaultEncryptor.RotateEncryption(ciphertext)
 }
 
+// DecodeAndDecryptBytes decodes a base64 encoded encrypted byte array
 func DecodeAndDecryptBytes(ciphertext []byte) ([]byte, error) {
 	return defaultEncryptor.DecodeAndDecryptBytes(ciphertext)
 }
 
+// EncodeAndEncryptBytes returns a byte array that encodes the ciphertext base64
 func EncodeAndEncryptBytes(ciphertext []byte) ([]byte, error) {
 	return defaultEncryptor.EncodeAndEncryptBytes(ciphertext)
 }
 
+// KeyHash returns the private keyHash variable.
 func KeyHash() []byte {
 	return defaultEncryptor.KeyHash()
 }
