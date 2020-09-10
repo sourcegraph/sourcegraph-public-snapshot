@@ -1,0 +1,1 @@
+repo:github.com/sourcegraph/sourcegraph file:search.go globbing
