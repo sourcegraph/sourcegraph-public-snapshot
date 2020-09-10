@@ -1956,9 +1956,35 @@ func (d *ChangesetSpecDescription) CommitMessage() (string, error) {
 	return d.Commits[0].Message, nil
 }
 
+// AuthorName returns the author name of the first GitCommitDescription in Commits. If the
+// ChangesetSpecDescription doesn't have Commits it returns ErrNoCommits.
+//
+// We currently only support a single commit in Commits. Once we support more,
+// this method will need to be revisited.
+func (d *ChangesetSpecDescription) AuthorName() (string, error) {
+	if len(d.Commits) == 0 {
+		return "", ErrNoCommits
+	}
+	return d.Commits[0].AuthorName, nil
+}
+
+// AuthorEmail returns the author email of the first GitCommitDescription in Commits. If the
+// ChangesetSpecDescription doesn't have Commits it returns ErrNoCommits.
+//
+// We currently only support a single commit in Commits. Once we support more,
+// this method will need to be revisited.
+func (d *ChangesetSpecDescription) AuthorEmail() (string, error) {
+	if len(d.Commits) == 0 {
+		return "", ErrNoCommits
+	}
+	return d.Commits[0].AuthorEmail, nil
+}
+
 type GitCommitDescription struct {
-	Message string `json:"message,omitempty"`
-	Diff    string `json:"diff,omitempty"`
+	Message     string `json:"message,omitempty"`
+	Diff        string `json:"diff,omitempty"`
+	AuthorName  string `json:"authorName,omitempty"`
+	AuthorEmail string `json:"authorEmail,omitempty"`
 }
 
 // unmarshalValidate validates the input, which can be YAML or JSON, against

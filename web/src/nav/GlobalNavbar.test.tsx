@@ -7,7 +7,10 @@ import { createLocation, createMemoryHistory } from 'history'
 import { NOOP_SETTINGS_CASCADE } from '../../../shared/src/util/searchTestHelpers'
 import { SearchPatternType } from '../graphql-operations'
 
-const PROPS: GlobalNavbar['props'] = {
+jest.mock('../search/input/SearchNavbarItem', () => ({ SearchNavbarItem: 'SearchNavbarItem' }))
+jest.mock('../components/branding/BrandLogo', () => ({ BrandLogo: 'BrandLogo' }))
+
+const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     authenticatedUser: null,
     extensionsController: {} as any,
     location: createLocation('/'),
@@ -41,6 +44,7 @@ const PROPS: GlobalNavbar['props'] = {
     variant: 'default',
     globbing: false,
     showOnboardingTour: false,
+    branding: undefined,
 }
 
 describe('GlobalNavbar', () => {
@@ -51,9 +55,6 @@ describe('GlobalNavbar', () => {
 
     test('low-profile', () =>
         expect(renderer.create(<GlobalNavbar {...PROPS} variant="low-profile" />).toJSON()).toMatchSnapshot())
-
-    test('low-profile-with-logo', () =>
-        expect(renderer.create(<GlobalNavbar {...PROPS} variant="low-profile-with-logo" />).toJSON()).toMatchSnapshot())
 
     test('no-search-input', () =>
         expect(renderer.create(<GlobalNavbar {...PROPS} variant="no-search-input" />).toJSON()).toMatchSnapshot())
