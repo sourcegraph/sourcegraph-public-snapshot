@@ -1101,9 +1101,9 @@ type Campaign implements Node {
         """
         after: String
         """
-        Only include changesets with the given reconciler state.
+        Only include changesets with any of the given reconciler states.
         """
-        reconcilerState: ChangesetReconcilerState
+        reconcilerState: [ChangesetReconcilerState!]
         """
         Only include changesets with the given publication state.
         """

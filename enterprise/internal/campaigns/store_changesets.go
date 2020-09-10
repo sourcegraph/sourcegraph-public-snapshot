@@ -196,7 +196,7 @@ type CountChangesetsOpts struct {
 	ExternalState       *campaigns.ChangesetExternalState
 	ExternalReviewState *campaigns.ChangesetReviewState
 	ExternalCheckState  *campaigns.ChangesetCheckState
-	ReconcilerState     *campaigns.ReconcilerState
+	ReconcilerStates    []campaigns.ReconcilerState
 	OwnedByCampaignID   int64
 }
 
@@ -230,9 +230,12 @@ func countChangesetsQuery(opts *CountChangesetsOpts) *sqlf.Query {
 	if opts.ExternalCheckState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.external_check_state = %s", *opts.ExternalCheckState))
 	}
-	if opts.ReconcilerState != nil {
-		state := (*opts.ReconcilerState).ToDB()
-		preds = append(preds, sqlf.Sprintf("changesets.reconciler_state = %s", state))
+	if len(opts.ReconcilerStates) != 0 {
+		states := make([]*sqlf.Query, len(opts.ReconcilerStates))
+		for i, reconcilerState := range opts.ReconcilerStates {
+			states[i] = sqlf.Sprintf("%s", reconcilerState.ToDB())
+		}
+		preds = append(preds, sqlf.Sprintf("changesets.reconciler_state IN (%s)", sqlf.Join(states, ",")))
 	}
 	if opts.OwnedByCampaignID != 0 {
 		preds = append(preds, sqlf.Sprintf("changesets.owned_by_campaign_id = %s", opts.OwnedByCampaignID))
@@ -382,7 +385,7 @@ type ListChangesetsOpts struct {
 	IDs                  []int64
 	WithoutDeleted       bool
 	PublicationState     *campaigns.ChangesetPublicationState
-	ReconcilerState      *campaigns.ReconcilerState
+	ReconcilerStates     []campaigns.ReconcilerState
 	ExternalState        *campaigns.ChangesetExternalState
 	ExternalReviewState  *campaigns.ChangesetReviewState
 	ExternalCheckState   *campaigns.ChangesetCheckState
@@ -447,8 +450,12 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	if opts.PublicationState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.publication_state = %s", *opts.PublicationState))
 	}
-	if opts.ReconcilerState != nil {
-		preds = append(preds, sqlf.Sprintf("changesets.reconciler_state = %s", (*opts.ReconcilerState).ToDB()))
+	if len(opts.ReconcilerStates) != 0 {
+		states := make([]*sqlf.Query, len(opts.ReconcilerStates))
+		for i, reconcilerState := range opts.ReconcilerStates {
+			states[i] = sqlf.Sprintf("%s", reconcilerState.ToDB())
+		}
+		preds = append(preds, sqlf.Sprintf("changesets.reconciler_state IN (%s)", sqlf.Join(states, ",")))
 	}
 	if opts.ExternalState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.external_state = %s", *opts.ExternalState))
