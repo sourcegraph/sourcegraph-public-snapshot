@@ -149,84 +149,74 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 	})
 
 	t.Run("List", func(t *testing.T) {
-		t.Run("By ChangesetID", func(t *testing.T) {
-			for i := 1; i <= len(campaigns); i++ {
-				opts := ListCampaignsOpts{ChangesetID: int64(i)}
+		for i := 1; i <= len(campaigns); i++ {
+			opts := ListCampaignsOpts{ChangesetID: int64(i)}
 
-				ts, next, err := s.ListCampaigns(ctx, opts)
-				if err != nil {
-					t.Fatal(err)
+			ts, next, err := s.ListCampaigns(ctx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := next, int64(0); have != want {
+				t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+			}
+
+			have, want := ts, campaigns[i-1:i]
+			if len(have) != len(want) {
+				t.Fatalf("listed %d campaigns, want: %d", len(have), len(want))
+			}
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatalf("opts: %+v, diff: %s", opts, diff)
+			}
+		}
+
+		for i := 1; i <= len(campaigns); i++ {
+			cs, next, err := s.ListCampaigns(ctx, ListCampaignsOpts{Limit: i})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			{
+				have, want := next, int64(0)
+				if i < len(campaigns) {
+					want = campaigns[i].ID
 				}
 
-				if have, want := next, int64(0); have != want {
-					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+				if have != want {
+					t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
 				}
+			}
 
-				have, want := ts, campaigns[i-1:i]
+			{
+				have, want := cs, campaigns[:i]
 				if len(have) != len(want) {
 					t.Fatalf("listed %d campaigns, want: %d", len(have), len(want))
 				}
 
 				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+					t.Fatal(diff)
 				}
 			}
-		})
-
-		// The campaigns store returns the campaigns in reversed order.
-		reversedCampaigns := make([]*cmpgn.Campaign, len(campaigns))
-		for i, c := range campaigns {
-			reversedCampaigns[len(campaigns)-i-1] = c
 		}
 
-		t.Run("With Limit", func(t *testing.T) {
-			for i := 1; i <= len(reversedCampaigns); i++ {
-				cs, next, err := s.ListCampaigns(ctx, ListCampaignsOpts{LimitOpts: LimitOpts{Limit: i}})
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				{
-					have, want := next, int64(0)
-					if i < len(reversedCampaigns) {
-						want = reversedCampaigns[i].ID
-					}
-
-					if have != want {
-						t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
-					}
-				}
-
-				{
-					have, want := cs, reversedCampaigns[:i]
-					if len(have) != len(want) {
-						t.Fatalf("listed %d campaigns, want: %d", len(have), len(want))
-					}
-
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
-					}
-				}
-			}
-		})
-
-		t.Run("With Cursor", func(t *testing.T) {
+		{
 			var cursor int64
-			for i := 1; i <= len(reversedCampaigns); i++ {
-				opts := ListCampaignsOpts{Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
+			for i := 1; i <= len(campaigns); i++ {
+				opts := ListCampaignsOpts{Cursor: cursor, Limit: 1}
 				have, next, err := s.ListCampaigns(ctx, opts)
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				want := reversedCampaigns[i-1 : i]
+				want := campaigns[i-1 : i]
 				if diff := cmp.Diff(have, want); diff != "" {
 					t.Fatalf("opts: %+v, diff: %s", opts, diff)
 				}
 
 				cursor = next
 			}
-		})
+		}
 
 		filterTests := []struct {
 			name  string
@@ -236,12 +226,12 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 			{
 				name:  "Any",
 				state: cmpgn.CampaignStateAny,
-				want:  reversedCampaigns,
+				want:  campaigns,
 			},
 			{
 				name:  "Closed",
 				state: cmpgn.CampaignStateClosed,
-				want:  reversedCampaigns[:len(reversedCampaigns)-1],
+				want:  campaigns[1:],
 			},
 			{
 				name:  "Open",

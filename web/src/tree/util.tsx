@@ -1,12 +1,14 @@
-import { TreeEntryFields } from '../graphql-operations'
+import * as GQL from '../../../shared/src/graphql/schema'
 
 /** TreeEntryInfo is the information we need to render an entry in the file tree */
 export interface TreeEntryInfo {
     path: string
     name: string
     isDirectory: boolean
+    commit: GQL.IGitCommit
+    repository: GQL.IRepository
     url: string
-    submodule: TreeEntryFields['submodule']
+    submodule: GQL.ISubmodule | null
     isSingleChild: boolean
 }
 

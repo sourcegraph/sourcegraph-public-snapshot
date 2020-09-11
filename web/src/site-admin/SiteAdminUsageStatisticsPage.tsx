@@ -12,7 +12,6 @@ import { eventLogger } from '../tracking/eventLogger'
 import { fetchSiteUsageStatistics, fetchUserUsageStatistics } from './backend'
 import { ErrorAlert } from '../components/alerts'
 import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
-import { UserActivePeriod } from '../../../shared/src/graphql-operations'
 
 interface ChartData {
     label: string
@@ -161,25 +160,25 @@ export const USER_ACTIVITY_FILTERS: FilteredConnectionFilter[] = [
         label: 'All users',
         id: 'all',
         tooltip: 'Show all users',
-        args: { activePeriod: UserActivePeriod.ALL_TIME },
+        args: { activePeriod: GQL.UserActivePeriod.ALL_TIME },
     },
     {
         label: 'Active today',
         id: 'today',
         tooltip: 'Show users active since this morning at 00:00 UTC',
-        args: { activePeriod: UserActivePeriod.TODAY },
+        args: { activePeriod: GQL.UserActivePeriod.TODAY },
     },
     {
         label: 'Active this week',
         id: 'week',
         tooltip: 'Show users active since Monday at 00:00 UTC',
-        args: { activePeriod: UserActivePeriod.THIS_WEEK },
+        args: { activePeriod: GQL.UserActivePeriod.THIS_WEEK },
     },
     {
         label: 'Active this month',
         id: 'month',
         tooltip: 'Show users active since the first day of the month at 00:00 UTC',
-        args: { activePeriod: UserActivePeriod.THIS_MONTH },
+        args: { activePeriod: GQL.UserActivePeriod.THIS_MONTH },
     },
 ]
 

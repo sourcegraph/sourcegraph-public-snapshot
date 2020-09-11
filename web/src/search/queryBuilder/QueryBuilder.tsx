@@ -3,7 +3,7 @@ import * as React from 'react'
 import { InfoDropdown } from '../input/InfoDropdown'
 import { QueryBuilderInputRow } from './QueryBuilderInputRow'
 import { PatternTypeProps } from '..'
-import { SearchPatternType } from '../../graphql-operations'
+import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 
 export interface QueryBuilderProps extends Pick<PatternTypeProps, 'patternType'> {
     /**

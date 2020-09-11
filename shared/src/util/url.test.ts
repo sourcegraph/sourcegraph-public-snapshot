@@ -11,7 +11,7 @@ import {
     appendSubtreeQueryParameter,
     RepoFile,
 } from './url'
-import { SearchPatternType } from '../graphql-operations'
+import { SearchPatternType } from '../graphql/schema'
 
 /**
  * Asserts deep object equality using node's assert.deepEqual, except it (1) ignores differences in the

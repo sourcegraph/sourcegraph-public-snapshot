@@ -7,7 +7,6 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { GitReferenceNode, queryGitReferences as queryGitReferencesFromBackend } from '../GitReference'
 import { RepositoryReleasesAreaPageProps } from './RepositoryReleasesArea'
 import { Observable } from 'rxjs'
-import { GitRefType } from '../../graphql-operations'
 
 interface Props extends RepositoryReleasesAreaPageProps {
     history: H.History
@@ -16,7 +15,7 @@ interface Props extends RepositoryReleasesAreaPageProps {
         repo: GQL.ID
         first?: number
         query?: string
-        type: GitRefType
+        type: GQL.GitRefType
         withBehindAhead?: boolean
     }) => Observable<GQL.IGitRefConnection>
 }
@@ -34,7 +33,7 @@ export const RepositoryReleasesTagsPage: React.FunctionComponent<Props> = ({
 
     const queryTags = useCallback(
         (args: FilteredConnectionQueryArgs): Observable<GQL.IGitRefConnection> =>
-            queryGitReferences({ ...args, repo: repo.id, type: GitRefType.GIT_TAG }),
+            queryGitReferences({ ...args, repo: repo.id, type: GQL.GitRefType.GIT_TAG }),
         [repo.id, queryGitReferences]
     )
 

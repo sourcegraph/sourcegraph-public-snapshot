@@ -832,9 +832,9 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _gitserver: 50+ running git commands (signals load) for 2m0s_
+- _gitserver: 50+ running git commands (signals load)_
 
-- _gitserver: 100+ running git commands (signals load) for 5m0s_
+- _gitserver: 100+ running git commands (signals load)_
 
 **Possible solutions:**
 
@@ -1005,22 +1005,6 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```json
 "observability.silenceAlerts": [
   "warning_gitserver_fs_inodes_used"
-]
-```
-
-## gitserver: fs_io_operations
-
-**Descriptions:**
-
-- _gitserver: 5000+ filesystem reads and writes rate by instance over 1h_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_gitserver_fs_io_operations"
 ]
 ```
 
@@ -2875,128 +2859,6 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
-## repo-updater: perms_syncer_perms
-
-**Descriptions:**
-
-- _repo-updater: 259200s+ time gap between least and most up to date permissions for 5m0s_
-
-**Possible solutions:**
-
-- Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_perms_syncer_perms"
-]
-```
-
-## repo-updater: perms_syncer_stale_perms
-
-**Descriptions:**
-
-- _repo-updater: 100+ number of entities with stale permissions for 5m0s_
-
-**Possible solutions:**
-
-- Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_perms_syncer_stale_perms"
-]
-```
-
-## repo-updater: perms_syncer_no_perms
-
-**Descriptions:**
-
-- _repo-updater: 100+ number of entities with no permissions for 5m0s_
-
-**Possible solutions:**
-
-- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
-- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_perms_syncer_no_perms"
-]
-```
-
-## repo-updater: perms_syncer_sync_duration
-
-**Descriptions:**
-
-- _repo-updater: 30s+ 95th permissions sync duration for 5m0s_
-
-**Possible solutions:**
-
-- Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_perms_syncer_sync_duration"
-]
-```
-
-## repo-updater: perms_syncer_queue_size
-
-**Descriptions:**
-
-- _repo-updater: 100+ permissions sync queued items for 5m0s_
-
-**Possible solutions:**
-
-- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
-- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_perms_syncer_queue_size"
-]
-```
-
-## repo-updater: authz_filter_duration
-
-**Descriptions:**
-
-- _repo-updater: 1s+ 95th authorization duration for 1m0s_
-
-**Possible solutions:**
-
-- Check if database is overloaded.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "critical_repo-updater_authz_filter_duration"
-]
-```
-
-## repo-updater: perms_syncer_sync_errors
-
-**Descriptions:**
-
-- _repo-updater: 1+ permissions sync error rate for 1m0s_
-
-**Possible solutions:**
-
-- Check the network connectivity the Sourcegraph and the code host.
-- Check if API rate limit quota is exhausted on the code host.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "critical_repo-updater_perms_syncer_sync_errors"
-]
-```
-
 ## repo-updater: container_cpu_usage
 
 **Descriptions:**
@@ -4034,22 +3896,6 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
-## zoekt-indexserver: fs_io_operations
-
-**Descriptions:**
-
-- _zoekt-indexserver: 5000+ filesystem reads and writes rate by instance over 1h_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-indexserver_fs_io_operations"
-]
-```
-
 ## zoekt-indexserver: provisioning_container_cpu_usage_long_term
 
 **Descriptions:**
@@ -4231,22 +4077,6 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```json
 "observability.silenceAlerts": [
   "warning_zoekt-webserver_fs_inodes_used"
-]
-```
-
-## zoekt-webserver: fs_io_operations
-
-**Descriptions:**
-
-- _zoekt-webserver: 5000+ filesystem reads and writes by instance rate over 1h_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-webserver_fs_io_operations"
 ]
 ```
 

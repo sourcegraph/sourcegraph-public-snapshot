@@ -1,5 +1,5 @@
 import { parseSearchURL, resolveVersionContext } from '.'
-import { SearchPatternType } from '../graphql-operations'
+import { SearchPatternType } from '../../../shared/src/graphql/schema'
 
 describe('search/index', () => {
     test('parseSearchURL', () => {

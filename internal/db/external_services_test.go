@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
@@ -89,21 +88,9 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 		wantErr      string
 	}{
 		{
-			name:    "0 errors - GitHub.com",
+			name:    "0 errors",
 			kind:    extsvc.KindGitHub,
 			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-			wantErr: "<nil>",
-		},
-		{
-			name:    "0 errors - GitLab.com",
-			kind:    extsvc.KindGitLab,
-			config:  `{"url": "https://github.com", "projectQuery": ["none"], "token": "abc"}`,
-			wantErr: "<nil>",
-		},
-		{
-			name:    "0 errors - Bitbucket.org",
-			kind:    extsvc.KindBitbucketCloud,
-			config:  `{"url": "https://bitbucket.org", "username": "ceo", "appPassword": "abc"}`,
 			wantErr: "<nil>",
 		},
 		{
@@ -152,13 +139,6 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 				}
 			},
 			wantErr: "1 error occurred:\n\t* existing external service, \"GITHUB 1\", already has a rate limit set\n\n",
-		},
-		{
-			name:         "prevent code hosts that are not allowed",
-			kind:         extsvc.KindGitHub,
-			config:       `{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`,
-			hasNamespace: true,
-			wantErr:      `users are only allowed to add external service for https://github.com/, https://gitlab.com/ and https://bitbucket.org/`,
 		},
 		{
 			name:         "prevent disallowed fields",
@@ -281,59 +261,23 @@ func TestExternalServicesStore_Delete(t *testing.T) {
 		DisplayName: "GITHUB #1",
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
-	err := ExternalServices.Create(ctx, confGet, es)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Create two repositories to test trigger of soft-deleting external service:
-	//  - ID=1 is expected to be deleted along with deletion of the external service.
-	//  - ID=2 remains untouched because it is not associated with the external service.
-	_, err = dbconn.Global.ExecContext(ctx, `
-INSERT INTO repo (id, name, description, language, fork)
-VALUES (1, 'github.com/user/repo', '', '', FALSE);
-INSERT INTO repo (id, name, description, language, fork)
-VALUES (2, 'github.com/user/repo2', '', '', FALSE);
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Insert a row to `external_service_repos` table to test the trigger.
-	q := sqlf.Sprintf(`
-INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
-VALUES (%d, 1, '')
-`, es.ID)
-	_, err = dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	err := (&ExternalServicesStore{}).Create(ctx, confGet, es)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Delete this external service
-	err = ExternalServices.Delete(ctx, es.ID)
+	err = (&ExternalServicesStore{}).Delete(ctx, es.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Delete again should get externalServiceNotFoundError
-	err = ExternalServices.Delete(ctx, es.ID)
+	err = (&ExternalServicesStore{}).Delete(ctx, es.ID)
 	gotErr := fmt.Sprintf("%v", err)
 	wantErr := fmt.Sprintf("external service not found: %v", es.ID)
 	if gotErr != wantErr {
 		t.Errorf("error: want %q but got %q", wantErr, gotErr)
-	}
-
-	// Should only get back the repo with ID=2
-	repos, err := Repos.GetByIDs(ctx, 1, 2)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	want := []*types.Repo{
-		{ID: 2, Name: "github.com/user/repo2"},
-	}
-	if diff := cmp.Diff(want, repos); diff != "" {
-		t.Fatalf("Repos mismatch (-want +got):\n%s", diff)
 	}
 }
 

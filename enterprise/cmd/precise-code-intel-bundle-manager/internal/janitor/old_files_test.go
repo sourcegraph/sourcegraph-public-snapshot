@@ -1,7 +1,6 @@
 package janitor
 
 import (
-	"context"
 	"path/filepath"
 	"testing"
 	"time"
@@ -32,7 +31,7 @@ func TestRemoveOldUploadFiles(t *testing.T) {
 		metrics:      NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.removeOldUploadFiles(context.Background()); err != nil {
+	if err := j.removeOldUploadFiles(); err != nil {
 		t.Fatalf("unexpected error cleaning failed uploads: %s", err)
 	}
 
@@ -69,7 +68,7 @@ func TestRemoveOldUploadPartFiles(t *testing.T) {
 		metrics:          NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.removeOldUploadPartFiles(context.Background()); err != nil {
+	if err := j.removeOldUploadPartFiles(); err != nil {
 		t.Fatalf("unexpected error cleaning old upload part files: %s", err)
 	}
 
@@ -106,7 +105,7 @@ func TestRemoveOldDatabasePartFiles(t *testing.T) {
 		metrics:            NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.removeOldDatabasePartFiles(context.Background()); err != nil {
+	if err := j.removeOldDatabasePartFiles(); err != nil {
 		t.Fatalf("unexpected error cleaning old db part files: %s", err)
 	}
 

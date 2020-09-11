@@ -10,12 +10,11 @@ import { Remote } from 'comlink'
 import { FlatExtHostAPI } from '../../../shared/src/api/contract'
 import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
 import { DeployType } from '../jscontext'
-import { SearchPatternType } from '../graphql-operations'
 
 export function search(
     query: string,
     version: string,
-    patternType: SearchPatternType,
+    patternType: GQL.SearchPatternType,
     versionContext: string | undefined,
     extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
 ): Observable<GQL.ISearchResults | ErrorLike> {

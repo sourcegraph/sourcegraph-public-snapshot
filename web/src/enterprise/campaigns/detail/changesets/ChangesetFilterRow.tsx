@@ -65,9 +65,7 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
         } else {
             searchParameters.delete('check_state')
         }
-        if (location.search !== searchParameters.toString()) {
-            history.replace({ ...location, search: searchParameters.toString() })
-        }
+        history.replace({ ...location, search: searchParameters.toString() })
         // Update the filters in the parent component.
         onFiltersChange({
             ...(uiState

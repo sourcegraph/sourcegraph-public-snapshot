@@ -1,4 +1,5 @@
 import * as React from 'react'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import { LanguageIcon } from '../../../../shared/src/components/languageIcons'
 import { dirname, basename } from '../../util/path'
 import FilterIcon from 'mdi-react/FilterIcon'
@@ -10,7 +11,6 @@ import { escapeRegExp } from 'lodash'
 import { FilterType } from '../../../../shared/src/search/interactive/util'
 import { SearchSuggestion } from '../../../../shared/src/search/suggestions'
 import { appendSubtreeQueryParameter } from '../../../../shared/src/util/url'
-import { SymbolKind } from '../../../../shared/src/graphql-operations'
 
 export const filterAliases: Record<string, FilterSuggestionTypes> = {
     r: FilterType.repo,
@@ -58,7 +58,7 @@ export interface Suggestion {
     /** Label informing what will happen when suggestion is selected */
     label?: string
     /** For suggestions of type `symbol` */
-    symbolKind?: SymbolKind
+    symbolKind?: GQL.SymbolKind
     /** If the suggestion was loaded from the fuzzy-search */
     fromFuzzySearch?: true
 }

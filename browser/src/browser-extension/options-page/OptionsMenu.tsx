@@ -1,6 +1,13 @@
+import { lowerCase, upperFirst } from 'lodash'
 import * as React from 'react'
+
 import { OptionsHeader, OptionsHeaderProps } from './OptionsHeader'
 import { ServerUrlForm, ServerUrlFormProps } from './ServerUrlForm'
+
+interface ConfigurableFeatureFlag {
+    key: string
+    value: boolean
+}
 
 export interface OptionsMenuProps
     extends OptionsHeaderProps,
@@ -9,10 +16,10 @@ export interface OptionsMenuProps
     onURLChange: ServerUrlFormProps['onChange']
     onURLSubmit: ServerUrlFormProps['onSubmit']
 
-    showOptionFlags?: boolean
+    isSettingsOpen?: boolean
     isActivated: boolean
-    onChangeOptionFlag: (key: string, value: boolean) => void
-    optionFlags?: { key: string; label: string; value: boolean }[]
+    toggleFeatureFlag: (key: string) => void
+    featureFlags?: ConfigurableFeatureFlag[]
     currentTabStatus?: {
         host: string
         protocol: string
@@ -20,11 +27,9 @@ export interface OptionsMenuProps
     }
 }
 
-/**
- * Determine if the options menu is being showed as a popup panel (opened via
- * the toolbar icon) or as a full page (opened via the options URL on a page of
- * its own)
- */
+const buildFeatureFlagToggleHandler = (key: string, handler: OptionsMenuProps['toggleFeatureFlag']) => () =>
+    handler(key)
+
 const isFullPage = (): boolean => !new URLSearchParams(window.location.search).get('popup')
 
 const buildRequestPermissionsHandler = (
@@ -44,10 +49,10 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
     sourcegraphURL,
     onURLChange,
     onURLSubmit,
-    showOptionFlags,
+    isSettingsOpen,
     isActivated,
-    onChangeOptionFlag,
-    optionFlags: options,
+    toggleFeatureFlag,
+    featureFlags,
     status,
     requestPermissions,
     currentTabStatus,
@@ -104,21 +109,21 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
                 .
             </p>
         </div>
-        {showOptionFlags && options && (
+        {isSettingsOpen && featureFlags && (
             <div className="options-menu__section">
                 <label>Configuration</label>
                 <div>
-                    {options.map(({ label, key, value }) => (
+                    {featureFlags.map(({ key, value }) => (
                         <div className="form-check" key={key}>
                             <label className="form-check-label">
                                 <input
                                     id={key}
-                                    onChange={event => onChangeOptionFlag(key, event.target.checked)}
+                                    onChange={buildFeatureFlagToggleHandler(key, toggleFeatureFlag)}
                                     className="form-check-input"
                                     type="checkbox"
                                     checked={value}
                                 />{' '}
-                                {label}
+                                {upperFirst(lowerCase(key))}
                             </label>
                         </div>
                     ))}

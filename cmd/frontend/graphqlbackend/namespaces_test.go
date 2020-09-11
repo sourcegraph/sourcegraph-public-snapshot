@@ -2,10 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 
-	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -79,20 +78,16 @@ func TestNamespace(t *testing.T) {
 
 	t.Run("invalid", func(t *testing.T) {
 		resetMocks()
-
-		invalidID := "aW52YWxpZDoz"
-		wantErr := InvalidNamespaceIDErr{id: graphql.ID(invalidID)}
-
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
-				Query: fmt.Sprintf(`
+				Query: `
 				{
-					namespace(id: %q) {
+					namespace(id: "aW52YWxpZDoz") {
 						__typename
 					}
 				}
-			`, invalidID),
+			`,
 				ExpectedResult: `
 				{
 					"namespace": null
@@ -100,9 +95,9 @@ func TestNamespace(t *testing.T) {
 			`,
 				ExpectedErrors: []*gqlerrors.QueryError{
 					{
-						Message:       wantErr.Error(),
+						Message:       "invalid ID for namespace",
 						Path:          []interface{}{"namespace"},
-						ResolverError: wantErr,
+						ResolverError: errors.New("invalid ID for namespace"),
 					},
 				},
 			},

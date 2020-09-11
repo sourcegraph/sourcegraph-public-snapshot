@@ -3,7 +3,7 @@ import { MemoryRouter } from 'react-router'
 import renderer from 'react-test-renderer'
 import { ScopePage } from './ScopePage'
 import * as H from 'history'
-import { SearchPatternType } from '../graphql-operations'
+import { SearchPatternType } from '../../../shared/src/graphql/schema'
 
 jest.mock('./input/QueryInput', () => ({ QueryInput: 'QueryInput' }))
 jest.mock('./input/SearchButton', () => ({ SearchButton: 'SearchButton' }))

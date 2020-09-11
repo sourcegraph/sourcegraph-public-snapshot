@@ -7,9 +7,11 @@ import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxj
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/errors'
+import { queryGraphQL } from '../../backend/graphql'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { NamespaceProps } from '../../namespaces'
@@ -22,40 +24,32 @@ import { ErrorMessage } from '../../components/alerts'
 import * as H from 'history'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../../auth'
-import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { OrganizationResult, OrganizationVariables, OrgAreaOrganizationFields } from '../../graphql-operations'
-import { Link } from '../../../../shared/src/components/Link'
-import { requestGraphQL } from '../../backend/graphql'
 
-function queryOrganization(args: { name: string }): Observable<OrgAreaOrganizationFields> {
-    return requestGraphQL<OrganizationResult, OrganizationVariables>(
+function queryOrganization(args: { name: string }): Observable<GQL.IOrg> {
+    return queryGraphQL(
         gql`
             query Organization($name: String!) {
                 organization(name: $name) {
-                    ...OrgAreaOrganizationFields
-                }
-            }
-
-            fragment OrgAreaOrganizationFields on Org {
-                __typename
-                id
-                name
-                displayName
-                url
-                settingsURL
-                viewerPendingInvitation {
+                    __typename
                     id
-                    sender {
-                        username
-                        displayName
-                        avatarURL
-                        createdAt
+                    name
+                    displayName
+                    url
+                    settingsURL
+                    viewerPendingInvitation {
+                        id
+                        sender {
+                            username
+                            displayName
+                            avatarURL
+                            createdAt
+                        }
+                        respondURL
                     }
-                    respondURL
+                    viewerIsMember
+                    viewerCanAdminister
+                    createdAt
                 }
-                viewerIsMember
-                viewerCanAdminister
-                createdAt
             }
         `,
         args
@@ -82,8 +76,6 @@ interface Props
         SettingsCascadeProps,
         ThemeProps,
         TelemetryProps,
-        BreadcrumbsProps,
-        BreadcrumbSetters,
         ExtensionsControllerProps,
         Omit<PatternTypeProps, 'setPatternType'> {
     orgAreaRoutes: readonly OrgAreaRoute[]
@@ -97,11 +89,11 @@ interface Props
     isSourcegraphDotCom: boolean
 }
 
-interface State extends BreadcrumbSetters {
+interface State {
     /**
      * The fetched org or an error if an error occurred; undefined while loading.
      */
-    orgOrError?: OrgAreaOrganizationFields | ErrorLike
+    orgOrError?: GQL.IOrg | ErrorLike
 }
 
 /**
@@ -114,11 +106,9 @@ export interface OrgAreaPageProps
         ThemeProps,
         TelemetryProps,
         NamespaceProps,
-        BreadcrumbsProps,
-        BreadcrumbSetters,
         Omit<PatternTypeProps, 'setPatternType'> {
     /** The org that is the subject of the page. */
-    org: OrgAreaOrganizationFields
+    org: GQL.IOrg
 
     /** Called when the organization is updated and must be reloaded. */
     onOrganizationUpdate: () => void
@@ -133,19 +123,11 @@ export interface OrgAreaPageProps
  * An organization's public profile area.
  */
 export class OrgArea extends React.Component<Props> {
-    public state: State
+    public state: State = {}
 
     private componentUpdates = new Subject<Props>()
     private refreshRequests = new Subject<void>()
     private subscriptions = new Subscription()
-
-    constructor(props: Props) {
-        super(props)
-        this.state = {
-            setBreadcrumb: props.setBreadcrumb,
-            useBreadcrumb: props.useBreadcrumb,
-        }
-    }
 
     public componentDidMount(): void {
         // Changes to the route-matched org name.
@@ -171,22 +153,7 @@ export class OrgArea extends React.Component<Props> {
                     })
                 )
                 .subscribe(
-                    stateUpdate => {
-                        if (stateUpdate.orgOrError && !isErrorLike(stateUpdate.orgOrError)) {
-                            const childBreadcrumbSetters = this.props.setBreadcrumb({
-                                key: 'OrgArea',
-                                element: <Link to={stateUpdate.orgOrError.url}>{stateUpdate.orgOrError.name}</Link>,
-                            })
-                            this.subscriptions.add(childBreadcrumbSetters)
-                            this.setState({
-                                useBreadcrumb: childBreadcrumbSetters.useBreadcrumb,
-                                setBreadcrumb: childBreadcrumbSetters.setBreadcrumb,
-                                orgOrError: stateUpdate.orgOrError,
-                            })
-                        } else {
-                            this.setState(stateUpdate)
-                        }
-                    },
+                    stateUpdate => this.setState(stateUpdate),
                     error => console.error(error)
                 )
         )
@@ -228,9 +195,6 @@ export class OrgArea extends React.Component<Props> {
             patternType: this.props.patternType,
             telemetryService: this.props.telemetryService,
             isSourcegraphDotCom: this.props.isSourcegraphDotCom,
-            breadcrumbs: this.props.breadcrumbs,
-            setBreadcrumb: this.state.setBreadcrumb,
-            useBreadcrumb: this.state.useBreadcrumb,
         }
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {

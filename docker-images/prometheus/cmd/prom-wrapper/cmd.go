@@ -34,11 +34,6 @@ func NewAlertmanagerCmd(configPath string) *exec.Cmd {
 	cmd := exec.Command("/alertmanager.sh",
 		fmt.Sprintf("--config.file=%s", configPath),
 		fmt.Sprintf("--web.route-prefix=/%s", alertmanagerPathPrefix))
-	// disable clustering unless otherwise configured - it is enabled by default, but
-	// can cause alertmanager to fail to start up in some environments: https://github.com/sourcegraph/sourcegraph/issues/13079
-	if alertmanagerEnableCluster != "true" {
-		cmd.Args = append(cmd.Args, "--cluster.listen-address=")
-	}
 	cmd.Env = os.Environ()
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout

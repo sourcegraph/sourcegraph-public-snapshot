@@ -2,8 +2,8 @@
 
 exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
 <Fragment>
-  <PageHeader
-    actions={
+  <CampaignHeader
+    actionSection={
       <AnchorLink
         className="btn btn-primary"
         to="//create"
@@ -14,28 +14,7 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
          New campaign
       </AnchorLink>
     }
-    icon={
-      Object {
-        "$$typeof": Symbol(react.memo),
-        "compare": null,
-        "type": [Function],
-      }
-    }
-    title={
-      <span
-        className="test-campaign-list-page"
-      >
-        Campaigns
-         
-        <sup>
-          <span
-            className="badge badge-merged text-uppercase"
-          >
-            Beta
-          </span>
-        </sup>
-      </span>
-    }
+    className="mb-3 test-campaign-list-page"
   />
   <CampaignsListBetaNotice />
   <FilteredConnection
@@ -44,6 +23,12 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
     defaultFirst={15}
     filters={
       Array [
+        Object {
+          "args": Object {},
+          "id": "all",
+          "label": "All",
+          "tooltip": "Show all campaigns",
+        },
         Object {
           "args": Object {
             "state": "OPEN",
@@ -59,12 +44,6 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
           "id": "closed",
           "label": "Closed",
           "tooltip": "Show only campaigns that are closed",
-        },
-        Object {
-          "args": Object {},
-          "id": "all",
-          "label": "All",
-          "tooltip": "Show all campaigns",
         },
       ]
     }
@@ -83,14 +62,12 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
     noun="campaign"
     pluralNoun="campaigns"
     queryConnection={[Function]}
-    setBreadcrumb={[Function]}
     telemetryService={
       Object {
         "log": [Function],
         "logViewEvent": [Function],
       }
     }
-    useBreadcrumb={[Function]}
     useURLQuery={true}
   />
 </Fragment>
@@ -98,8 +75,8 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
 
 exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
 <Fragment>
-  <PageHeader
-    actions={
+  <CampaignHeader
+    actionSection={
       <AnchorLink
         className="btn btn-primary"
         to="//create"
@@ -110,28 +87,7 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
          New campaign
       </AnchorLink>
     }
-    icon={
-      Object {
-        "$$typeof": Symbol(react.memo),
-        "compare": null,
-        "type": [Function],
-      }
-    }
-    title={
-      <span
-        className="test-campaign-list-page"
-      >
-        Campaigns
-         
-        <sup>
-          <span
-            className="badge badge-merged text-uppercase"
-          >
-            Beta
-          </span>
-        </sup>
-      </span>
-    }
+    className="mb-3 test-campaign-list-page"
   />
   <CampaignsListBetaNotice />
   <FilteredConnection
@@ -140,6 +96,12 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
     defaultFirst={15}
     filters={
       Array [
+        Object {
+          "args": Object {},
+          "id": "all",
+          "label": "All",
+          "tooltip": "Show all campaigns",
+        },
         Object {
           "args": Object {
             "state": "OPEN",
@@ -155,12 +117,6 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
           "id": "closed",
           "label": "Closed",
           "tooltip": "Show only campaigns that are closed",
-        },
-        Object {
-          "args": Object {},
-          "id": "all",
-          "label": "All",
-          "tooltip": "Show all campaigns",
         },
       ]
     }
@@ -179,14 +135,12 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
     noun="campaign"
     pluralNoun="campaigns"
     queryConnection={[Function]}
-    setBreadcrumb={[Function]}
     telemetryService={
       Object {
         "log": [Function],
         "logViewEvent": [Function],
       }
     }
-    useBreadcrumb={[Function]}
     useURLQuery={true}
   />
 </Fragment>
@@ -194,8 +148,8 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
 
 exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
 <Fragment>
-  <PageHeader
-    actions={
+  <CampaignHeader
+    actionSection={
       <AnchorLink
         className="btn btn-primary"
         to="//create"
@@ -206,28 +160,7 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
          New campaign
       </AnchorLink>
     }
-    icon={
-      Object {
-        "$$typeof": Symbol(react.memo),
-        "compare": null,
-        "type": [Function],
-      }
-    }
-    title={
-      <span
-        className="test-campaign-list-page"
-      >
-        Campaigns
-         
-        <sup>
-          <span
-            className="badge badge-merged text-uppercase"
-          >
-            Beta
-          </span>
-        </sup>
-      </span>
-    }
+    className="mb-3 test-campaign-list-page"
   />
   <CampaignsListBetaNotice />
   <FilteredConnection
@@ -236,6 +169,12 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
     defaultFirst={15}
     filters={
       Array [
+        Object {
+          "args": Object {},
+          "id": "all",
+          "label": "All",
+          "tooltip": "Show all campaigns",
+        },
         Object {
           "args": Object {
             "state": "OPEN",
@@ -251,12 +190,6 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
           "id": "closed",
           "label": "Closed",
           "tooltip": "Show only campaigns that are closed",
-        },
-        Object {
-          "args": Object {},
-          "id": "all",
-          "label": "All",
-          "tooltip": "Show all campaigns",
         },
       ]
     }
@@ -275,14 +208,12 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
     noun="campaign"
     pluralNoun="campaigns"
     queryConnection={[Function]}
-    setBreadcrumb={[Function]}
     telemetryService={
       Object {
         "log": [Function],
         "logViewEvent": [Function],
       }
     }
-    useBreadcrumb={[Function]}
     useURLQuery={true}
   />
 </Fragment>
@@ -290,8 +221,8 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
 
 exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
 <Fragment>
-  <PageHeader
-    actions={
+  <CampaignHeader
+    actionSection={
       <AnchorLink
         className="btn btn-primary"
         to="//create"
@@ -302,28 +233,7 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
          New campaign
       </AnchorLink>
     }
-    icon={
-      Object {
-        "$$typeof": Symbol(react.memo),
-        "compare": null,
-        "type": [Function],
-      }
-    }
-    title={
-      <span
-        className="test-campaign-list-page"
-      >
-        Campaigns
-         
-        <sup>
-          <span
-            className="badge badge-merged text-uppercase"
-          >
-            Beta
-          </span>
-        </sup>
-      </span>
-    }
+    className="mb-3 test-campaign-list-page"
   />
   <CampaignsListBetaNotice />
   <FilteredConnection
@@ -332,6 +242,12 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
     defaultFirst={15}
     filters={
       Array [
+        Object {
+          "args": Object {},
+          "id": "all",
+          "label": "All",
+          "tooltip": "Show all campaigns",
+        },
         Object {
           "args": Object {
             "state": "OPEN",
@@ -347,12 +263,6 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
           "id": "closed",
           "label": "Closed",
           "tooltip": "Show only campaigns that are closed",
-        },
-        Object {
-          "args": Object {},
-          "id": "all",
-          "label": "All",
-          "tooltip": "Show all campaigns",
         },
       ]
     }
@@ -371,14 +281,12 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
     noun="campaign"
     pluralNoun="campaigns"
     queryConnection={[Function]}
-    setBreadcrumb={[Function]}
     telemetryService={
       Object {
         "log": [Function],
         "logViewEvent": [Function],
       }
     }
-    useBreadcrumb={[Function]}
     useURLQuery={true}
   />
 </Fragment>

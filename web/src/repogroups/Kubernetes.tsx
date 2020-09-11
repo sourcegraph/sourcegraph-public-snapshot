@@ -1,6 +1,6 @@
 import { RepogroupMetadata } from './types'
+import { SearchPatternType } from '../../../shared/src/graphql/schema'
 import * as React from 'react'
-import { SearchPatternType } from '../graphql-operations'
 
 export const kubernetes: RepogroupMetadata = {
     title: 'Kubernetes',

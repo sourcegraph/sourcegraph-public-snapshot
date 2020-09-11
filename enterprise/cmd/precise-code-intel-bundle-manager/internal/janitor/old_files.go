@@ -1,7 +1,6 @@
 package janitor
 
 import (
-	"context"
 	"io/ioutil"
 	"path/filepath"
 	"time"
@@ -15,7 +14,7 @@ import (
 // process. These files can also be cleaned up by removeOrphanedBundleFiles when the
 // upload is properly in an errored state, but we keep this cleanup routine here as
 // well for good measure.
-func (j *Janitor) removeOldUploadFiles(ctx context.Context) error {
+func (j *Janitor) removeOldUploadFiles() error {
 	return j.removeOldFiles(paths.UploadsDir(j.bundleDir), j.maxUploadAge, func(path string, age time.Duration) {
 		log15.Debug("Removed old upload file", "path", path, "age", age)
 		j.metrics.UploadFilesRemoved.Inc()
@@ -24,7 +23,7 @@ func (j *Janitor) removeOldUploadFiles(ctx context.Context) error {
 
 // removeOldUploadPartFiles removes all upload part files that are older than the configured max
 // upload part age. These files are left on disk if an upload does not complete within a CI run.
-func (j *Janitor) removeOldUploadPartFiles(ctx context.Context) error {
+func (j *Janitor) removeOldUploadPartFiles() error {
 	return j.removeOldFiles(paths.UploadPartsDir(j.bundleDir), j.maxUploadPartAge, func(path string, age time.Duration) {
 		log15.Debug("Removed old upload part file", "path", path, "age", age)
 		j.metrics.PartFilesRemoved.Inc()
@@ -34,7 +33,7 @@ func (j *Janitor) removeOldUploadPartFiles(ctx context.Context) error {
 // removeOldDatabasePartFiles removes all database part files that are older than the configured
 // max database part age. These files are left on disk if a worker does not successfully complete
 // all requests of a SendDB command.
-func (j *Janitor) removeOldDatabasePartFiles(ctx context.Context) error {
+func (j *Janitor) removeOldDatabasePartFiles() error {
 	return j.removeOldFiles(paths.DBPartsDir(j.bundleDir), j.maxDatabasePartAge, func(path string, age time.Duration) {
 		log15.Debug("Removed old database part file", "path", path, "age", age)
 		j.metrics.PartFilesRemoved.Inc()

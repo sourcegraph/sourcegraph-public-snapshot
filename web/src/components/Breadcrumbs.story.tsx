@@ -21,7 +21,7 @@ add(
                 },
                 {
                     depth: 1,
-                    breadcrumb: { key: 'repo_area', element: <a href="#">Repositories</a> },
+                    breadcrumb: { key: 'home', element: <a href="#">Repositories</a> },
                 },
                 {
                     depth: 2,

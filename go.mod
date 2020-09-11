@@ -37,7 +37,6 @@ require (
 	github.com/fatih/color v1.9.0
 	github.com/felixge/fgprof v0.9.0
 	github.com/felixge/httpsnoop v1.0.1
-	github.com/fsnotify/fsnotify v1.4.9
 	github.com/gchaincl/sqlhooks v1.3.0
 	github.com/getsentry/raven-go v0.2.0
 	github.com/ghodss/yaml v1.0.0
@@ -138,7 +137,7 @@ require (
 	github.com/sourcegraph/codeintelutils v0.0.0-20200706141440-54ddac67b5b6
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
 	github.com/sourcegraph/go-diff v0.5.3
-	github.com/sourcegraph/go-jsonschema v0.0.0-20200907102109-d14e9f2f3a28
+	github.com/sourcegraph/go-jsonschema v0.0.0-20200429204646-54904d837db8
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
 	github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d
 	github.com/sourcegraph/gosyntect v0.0.0-20200429204402-842ed26129d0
@@ -148,6 +147,7 @@ require (
 	github.com/src-d/enry/v2 v2.1.0
 	github.com/stretchr/testify v1.6.1 // indirect
 	github.com/stripe/stripe-go v70.15.0+incompatible
+	github.com/teivah/onecontext v0.0.0-20200513185103-40f981bfd775
 	github.com/temoto/robotstxt v1.1.1
 	github.com/tidwall/gjson v1.6.0
 	github.com/tinylib/msgp v1.1.2 // indirect
@@ -198,7 +198,7 @@ replace (
 )
 
 // We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200908080019-f95cecffc54f
+replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200813180605-1373c3986c6d
 
 replace github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
 

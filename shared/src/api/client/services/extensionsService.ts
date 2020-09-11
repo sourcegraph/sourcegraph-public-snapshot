@@ -93,18 +93,12 @@ export class ExtensionsService implements IExtensionsService {
             this.sideloadedExtension,
         ]).pipe(
             map(([settings, configuredExtensions, sideloadedExtension]) => {
-                let enabled = configuredExtensions.filter(extension => isExtensionEnabled(settings.final, extension.id))
-
+                const enabled = [
+                    ...configuredExtensions.filter(extension => isExtensionEnabled(settings.final, extension.id)),
+                ]
                 if (sideloadedExtension) {
-                    if (!isErrorLike(sideloadedExtension.manifest) && sideloadedExtension.manifest?.publisher) {
-                        // Disable extension with the same ID while this extension is sideloaded
-                        const constructedID = `${sideloadedExtension.manifest.publisher}/${sideloadedExtension.id}`
-                        enabled = enabled.filter(extension => extension.id !== constructedID)
-                    }
-
                     enabled.push(sideloadedExtension)
                 }
-
                 return enabled
             })
         )

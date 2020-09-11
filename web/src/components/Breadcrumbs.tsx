@@ -143,13 +143,3 @@ export const Breadcrumbs: React.FC<{ breadcrumbs: BreadcrumbAtDepth[] }> = ({ br
             })}
     </nav>
 )
-
-/**
- * To be used in unit tests, it minimally fulfills the BreadcrumbSetters interface.
- */
-export const NOOP_BREADCRUMB_SETTERS: BreadcrumbSetters = {
-    setBreadcrumb: () => ({ ...NOOP_BREADCRUMB_SETTERS, unsubscribe: () => undefined }),
-    useBreadcrumb: () => ({
-        ...NOOP_BREADCRUMB_SETTERS,
-    }),
-}

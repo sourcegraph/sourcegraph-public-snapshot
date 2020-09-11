@@ -1,47 +1,28 @@
-<style>
-table td:first-child {
-  width: 8em;
-  min-width: 8em;
-  max-width: 8em;
-}
-table td:nth-child(2) {
-  width: 10em;
-  min-width: 10em;
-  max-width: 10em;
-}
-table td {
-    border: none;
-}
-table tr:nth-child(2n) {
-  background-color: transparent;
-}
-
-</style>
-
 # Structural search
 
 Structural search lets you match richer syntax patterns specifically in code
 and structured data formats like JSON. It can be awkward or difficult to match
 code blocks or nested expressions with regular expressions. To meet this
 challenge we've introduced a new and easier way to search code that operates
-more closely on a program's parse tree. We use [Comby syntax](https://comby.dev/docs/syntax-reference)
-for structural matching. Below you'll find examples and notes for this
-language-aware search functionality.
+more closely on a program's parse tree. We use [Comby
+syntax](https://comby.dev/#match-syntax) for structural matching. Below you'll
+find examples and notes for this new search functionality.
 
-## Example
+### Example
 
 The `fmt.Sprintf` function is a popular print function in Go. Here is a pattern
 that matches all the arguments in `fmt.Sprintf` calls in our code:
 
 ```go
-fmt.Sprintf(...)
+fmt.Sprint(:[args])
 ```
 
-[See it live on Sourcegraph's code ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+fmt.Sprintf%28...%29&patternType=structural)
+[See it live on Sourcegraph's code](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24++fmt.Sprintf%28:%5Bargs%5D%29&patternType=structural)
 
-The `...` part is special syntax that matches all characters inside the
-_balanced_ parentheses `(...)`. Let's look at two interesting variants of
-matches in our codebase. Here's one:
+The `:[args]` part is a hole with a descriptive name `args` that matches
+code.  The important part is that this pattern understands that the parentheses
+`(` `)` are balanced, and avoids character escaping and lookahead assertions
+that come up in regular expressions. Let's look at two interesting variants of matches in our codebase. Here is the first:
 
 ```go
 fmt.Sprintf("must be authenticated as an admin (%s)", isSiteAdminErr.Error())
@@ -49,10 +30,9 @@ fmt.Sprintf("must be authenticated as an admin (%s)", isSiteAdminErr.Error())
 
 Note that to match this code we didn't have to do any special thinking about
 handling the parentheses `(%s)` that happen _inside_ the first string argument,
-or the nested parentheses that form part of `Error()`. Unlike regular
-expressions, no "overmatching" can happen and the match will always respect
-balanced parentheses. With regular expressions, taking care to match the closing
-parentheses for this call could, in general, really complicate matters.
+or the nested parentheses that form part of `Error()`. Taking care to match the
+closing parentheses for the call could, in general, really complicate regular
+expressions.
 
 Here is a second match:
 
@@ -65,58 +45,70 @@ fmt.Sprintf(
 	)
 ```
 
-Here we didn't have to do any special thinking about matching contents that
-spread over multiple lines. The `...` syntax by default matches across newlines
-inside delimiters. Structural search supports various balanced syntax like `()`,
-`[]`, and `{}` in a language-aware way. This allows to match large, logical
-blocks or expressions without the limitations of typical line-based regular
-expression patterns.
+In this case, we didn't have to do any special thinking about handling multiple
+lines. The hole `:[args]` by default matches across newlines, but it stops
+inside balanced parentheses. This lets us match large, logical blocks or
+expressions without the limitations of typical line-based regular expression
+patterns. For [more examples](#examples), see below. Next, we cover
+reference notes to consider when using structural search.
 
-## Syntax reference
+### Current functionality and restrictions
 
-The syntax `...` above is an alias for a canonical syntax `:[hole]`, where
-`hole` is a descriptive identifier for the matched content. Identifiers are
-useful when expressing that matched content should be equal (see the [`return
-:[v], :[v]`](#match-equivalent-expressions) example below). See additional
-syntax below
+Structural search behaves differently to plain text search in key ways. We are
+continually improving functionality of this new feature, so please note the
+following:
 
-| Syntax                  | Alias                            | Description                                                                                                                                                                                                                                                                                             |
-|-------------------------|----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `...`                   | `:[hole]`<br>`:[_]`              | match zero or more characters in a lazy fashion. When `:[hole]` is inside delimiters, as in `{:[h1], :[h2]}` or `(:[h])`, holes match within that group or code block, including newlines. Holes outside of delimiters stop matching at a newline, or the start of a code block, whichever comes first. |
-| `:[~regexp]`            | `:[hole~regexp]`                 | match an arbitrary [regular expression](https://golang.org/s/re2syntax) `regexp`. A descriptive identifier like `hole` is optional. Avoid regular expressions that match special syntax like `)` or `.*`, otherwise your pattern may fail to match balanced blocks.                                     |
-| `:[[_]]`<br>`:[[hole]]` | `:[~\w+]`<br>`:[hole~\w+]`       | match one or more alphanumeric characters and underscore.                                                                                                                                                                                                                                               |
-| `:[hole\n]`             | `:[~.*\n]`<br>`:[hole~.*\n]`     | match zero or more characters up to a newline, including the newline.                                                                                                                                                                                                                                   |
-| `:[ ]`<br>`:[ hole]`    | `:[~[ \t]+]`<br>`:[hole~[ \t]+]` | match only whitespace characters, excluding newlines.                                                                                                                                                                                                                                                   |
-| `:[hole.]`              | `[_.]`                           | match one or more alphanumeric characters and punctuation like `.`, `;`, and `-` that do not affect balanced syntax. Language dependent.                                                                                                                                                                |
+- **Only indexed repos.** Structural search can currently only be performed on _indexed_ repositories. See [configuration](#configuration) for more details if you host your own Sourcegraph installation. Our service hosted at [sourcegraph.com](https://sourcegraph.com/search) indexes approximately 10,000 of the most popular repositories on GitHub. Other repositories are currently unsupported.
 
-**Rules.** [Comby supports rules](https://comby.dev/docs/advanced-usage) to
-express equality constraints or pattern-based matching. Comby rules are not
-officially supported in Sourcegraph yet. We are in the process of making that
-happen and are taking care to address stable performance and usability. That
-said, you can explore rule functionality with an experimental `rule:` parameter.
-For example:
+- **The `lang` keyword is semantically significant.** Adding the `lang` [keyword](queries.md) informs the parser about language-specific syntax for comments, strings, and code. This makes structural search more accurate for that language. For example, `patterntype:structural 'fmt.Sprintf(:[args])' lang:go`. If `lang` is omitted, we perform a best-effort to infer the language based on matching file extensions, or fall back to a generic structural matcher.
 
-[`buildSearchURLQuery(:[first], ...) rule:'where match :[first] { | " query: string" -> true }'` ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:.ts+buildSearchURLQuery%28:%5Bfirst%5D%2C+...%29+rule:%27where+match+:%5Bfirst%5D+%7B+%7C+%22+query:+string%22+-%3E+true+%7D%27&patternType=structural)
+- **Enclosing patterns with quotes.** Prior to version 3.17, we recommended you enclose a pattern with quotes, in case the pattern conflicts with other query syntax. As of version 3.17, quotes should no longer be included, unless the intent is to match actual quotes. To avoid syntax conflicts in version 3.17 and onwards, use the `content:` parameter.
 
-### More examples
+- **Saved search are not supported.** It is not currently possible to save structural searches.
 
-Below you'll find more examples. Also see our [blog post](https://about.sourcegraph.com/blog/going-beyond-regular-expressions-with-structural-code-search) for additional examples.
+- **Matching blocks in indentation-sensitive languages.** It's not currently possible to match blocks of code that are identation-sensitive. This is a feature planned for future work.
+
+### Syntax reference
+
+Here is a summary of syntax for structural matching, which is based on [Comby syntax](https://comby.dev/docs/syntax-reference).
+
+- `:[hole]` matches zero or more characters (including whitespace, and across
+newlines) in a lazy fashion. When `:[hole]` is used inside delimiters, as in
+`{:[h1], :[h2]}` or `(:[h])`, those delimiters set a boundary for what the hole
+can match, and the hole will then only match patterns within those delimiters.
+Holes can be used outside of delimiters as well.
+
+- `:[[hole]]` matches one or more alphanumeric characters and `_`.
+
+- `:[hole.]` (with a period at the end) matches one or more alphanumeric characters and punctuation (like `.`, `;`, and `-`).
+
+- `:[hole\n]` (with a `\n` at the end) matches one or more characters up to a newline, including the newline.
+
+- `:[ ]` (with a space) matches only whitespace characters, excluding newlines. To assign the matched whitespace to variable, put the variable name after the space, like :`[ hole]`.
+
+
+**Rules.** [Comby supports rules](https://comby.dev/#advanced-usage) to express equality constraints or pattern-based matching. Comby rules are not officially supported in Sourcegraph yet. We are in the process of making that happen and are taking care to address stable performance and usability. That said, you can explore rule functionality with an experimental `rule:` parameter. For [example](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%22buildSearchURLQuery%28:%5Barg%5D%2C+:%5B_%5D%29%22+rule:%27where+:%5Barg%5D+%3D%3D+%22navbarQuery%22%27&patternType=structural), `"buildSearchURLQuery(:[arg], :[_])" rule:'where :[arg] == "navbarQuery"'`.
+
+### Examples
+
+Here are some more examples. Also see our [blog post](https://about.sourcegraph.com/blog/going-beyond-regular-expressions-with-structural-code-search) for further examples.
 
 #### Match stringy data
 
-Taking the original `fmt.Sprintf(...)` example, let's modify the original
-pattern slightly to match only if the first argument is a string. We do this by
-adding string quotes around `...`. Adding quotes communicates _structural
-context_ and changes how the hole behaves: it will match the contents of a
-single string delimited by `"`. It _won't_ match multiple strings like `"foo", "bar"`.
+Taking our [original example](#example), let's modify the original pattern
+slightly to match only if the first argument is a string. We do this by adding
+string quotes around a hole called `format`. Adding quotes communicates
+_structural context_ and changes how the hole behaves: it will match the
+contents of a single string delimited `"`. It _won't_ match multiple strings
+like `"foo", "bar"`. We match remaining arguments with the hole called `args`.
 
 ```go
-fmt.Sprintf("...", ...)
+fmt.Sprintf(":[format]", :[args])
 ```
 
-[See it live on Sourcegraph's code ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+fmt.Sprintf%28%22...%22%2C+...%29&patternType=structural)
+[See it live on Sourcegraph's code](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+fmt.Sprintf%28%22:%5Bformat%5D%22%2C+:%5Bargs%5D%29&patternType=structural)
 
-Some matched examples are:
+We've matched some examples, like:
 
 ```go
 fmt.Sprintf("external service not found: %v", e.id)
@@ -126,63 +118,50 @@ fmt.Sprintf("external service not found: %v", e.id)
 fmt.Sprintf("%s/campaigns/%s", externalURL, string(campaignID))
 ```
 
+
 Holes stop matching based on the first fragment of syntax that comes after it,
 similar to lazy regular expression matching. So, we could write:
 
 ```go
-fmt.Sprintf(:[first], :[second], ...)
+fmt.Sprintf(:[first], :[second], :[rest])
 ```
 
-to match all functions with three or more arguments, matching the the `first` and `second` arguments based on the contextual position around the commas.
+to match all functions with three or more arguments, matching the the first and second arguments based on the contextual position around the commas.
 
 #### Match equivalent expressions
 
 Using the same identifier in multiple holes adds a constraint that both of the matched values must be syntactically equal. So, the pattern:
 
 ```go
-return :[v], :[v]
+return :[v.], :[v.]
 ```
 
 will match code where a pair of identifier-like syntax in the `return` statement are the same. For example, `return true, true`, `return nil, nil`, or `return 0, 0`.
 
-[See it live on Sourcegraph's code ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+lang:go+return+:%5Bv%5D%2C+:%5Bv%5D&patternType=structural)
+[See it live on Sourcegraph's code](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+lang:go+return+:%5Bv.%5D%2C+:%5Bv.%5D&patternType=structural)
 
 #### Match JSON
 
-Structural search also works on structured data, like JSON. Use patterns to declaratively describe pieces of data to match. For example the pattern:
+Structural search also works on structured data, like JSON. Patterns can declaratively describe pieces of data to match. For example the pattern:
 
 ```json
-"exclude": [...]
+"exclude": [:[items]]
 ```
 
-matches all parts of a JSON document that have a member `"exclude"` where the value is an array of items.
+matches all parts of a JSON document that have a member `"exclude"`, where the value is a list of items.
 
-[See it live on Sourcegraph's code ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24++%22exclude%22:+%5B...%5D+lang:json+file:tsconfig.json&patternType=structural)
+[See it live on Sourcegraph's code](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24++%22exclude%22:+%5B:%5Bitems%5D%5D+lang:json+file:tsconfig.json&patternType=structural)
 
-### Current functionality and configuration
+### Configuration
 
-Structural search behaves differently to plain text search in key ways. We are
-continually improving functionality of this new feature, so please note the
-following:
+**Indexed repositories.** Structural search only works for indexed repositories. To see whether a repository on your instance is indexed, visit `https://<sourcegraph-host>.com/repo-org/repo-name/-/settings/index`.
 
-- **Only indexed repos.** Structural search can currently only be performed on
-  _indexed_ repositories. See [configuration](../../admin/search.md) for more
-  details if you host your own Sourcegraph installation. Our service hosted at
-  [sourcegraph.com](https://sourcegraph.com/search) indexes approximately 200,000
-  of the most popular repositories on GitHub. Other repositories are currently
-  unsupported. To see whether a repository on your instance is indexed, visit
-  `https://<sourcegraph-host>.com/repo-org/repo-name/-/settings/index`.
+**Disabling structural search.** Disable structural search on your instace by adding the following to the site configuration:
 
-- **The** `lang` **keyword is semantically significant.** Adding the `lang`
-  [keyword](queries.md) informs the parser about language-specific syntax for
-  comments, strings, and code. This makes structural search more accurate for
-  that language. For example, `fmt.Sprintf(...) lang:go`. If `lang` is omitted,
-  we perform a best-effort to infer the language based on matching file
-  extensions, or fall back to a generic structural matcher.
-
-- **Saved search are not supported.** It is not currently possible to save
-  structural searches.
-
-- **Matching blocks in indentation-sensitive languages.** It's not currently
-  possible to match blocks of code that are identation-sensitive. This is a
-  feature planned for future work.
+```json
+{
+  "experimentalFeatures": {
+      "structuralSearch": "disabled"
+  }
+}
+```

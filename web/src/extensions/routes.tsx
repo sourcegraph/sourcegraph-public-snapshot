@@ -8,7 +8,7 @@ export const extensionsAreaRoutes: readonly ExtensionsAreaRoute[] = [
     {
         path: '',
         exact: true,
-        render: lazyComponent(() => import('./ExtensionRegistry'), 'ExtensionRegistry'),
+        render: lazyComponent(() => import('./ExtensionsOverviewPage'), 'ExtensionsOverviewPage'),
     },
     {
         path: '/:extensionID(.*)/-/',

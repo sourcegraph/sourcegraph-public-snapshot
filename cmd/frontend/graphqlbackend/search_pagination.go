@@ -132,7 +132,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
 
-	resolved, alertResult, err := r.determineRepos(ctx, tr, start)
+	repos, missingRepoRevs, _, alertResult, err := r.determineRepos(ctx, tr, start)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	}
 	args := search.TextParameters{
 		PatternInfo:     p,
-		Repos:           resolved.repoRevs,
+		Repos:           repos,
 		Query:           r.query,
 		UseFullDeadline: false,
 		Zoekt:           r.zoekt,
@@ -170,13 +170,13 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 
 	// Since we're searching a subset of the repositories this query would
 	// search overall, we must sort the repositories deterministically.
-	for _, repoRev := range resolved.repoRevs {
+	for _, repoRev := range repos {
 		sort.Slice(repoRev.Revs, func(i, j int) bool {
 			return repoRev.Revs[i].Less(repoRev.Revs[j])
 		})
 	}
-	sort.Slice(resolved.repoRevs, func(i, j int) bool {
-		return repoIsLess(resolved.repoRevs[i].Repo, resolved.repoRevs[j].Repo)
+	sort.Slice(repos, func(i, j int) bool {
+		return repoIsLess(repos[i].Repo, repos[j].Repo)
 	})
 
 	common := searchResultsCommon{maxResultsCount: r.maxResults()}
@@ -198,8 +198,8 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	// Alert is a potential alert shown to the user.
 	var alert *searchAlert
 
-	if len(resolved.missingRepoRevs) > 0 {
-		alert = alertForMissingRepoRevs(r.patternType, resolved.missingRepoRevs)
+	if len(missingRepoRevs) > 0 {
+		alert = alertForMissingRepoRevs(r.patternType, missingRepoRevs)
 	}
 
 	log15.Info("next cursor for paginated search request",

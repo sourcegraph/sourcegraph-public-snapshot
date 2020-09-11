@@ -109,9 +109,8 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":puppeteer::electric_plug:",
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
 			bk.Env("ENTERPRISE", "1"),
-			bk.Env("PERCY_ON", "true"),
 			bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-run.sh build-web"),
-			bk.Cmd("yarn percy exec -- yarn run cover-integration"),
+			bk.Cmd("yarn run cover-integration"),
 			bk.Cmd("yarn nyc report -r json"),
 			bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F integration"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
@@ -165,24 +164,6 @@ func addGoBuild(pipeline *bk.Pipeline) {
 func addDockerfileLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":docker:",
 		bk.Cmd("./dev/ci/docker-lint.sh"))
-}
-
-// Adds backend integration tests step.
-func addBackendIntegrationTests(c Config) func(*bk.Pipeline) {
-	return func(pipeline *bk.Pipeline) {
-		if !c.isMasterDryRun && c.branch != "master" && c.branch != "main" {
-			return
-		}
-
-		pipeline.AddStep(":chains:",
-			bk.Cmd("pushd enterprise"),
-			bk.Cmd("./cmd/server/pre-build.sh"),
-			bk.Cmd("./cmd/server/build.sh"),
-			bk.Cmd("popd"),
-			bk.Cmd("./dev/ci/backend-integration.sh"),
-			bk.Cmd(`docker image rm -f "$IMAGE"`),
-		)
-	}
 }
 
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
@@ -367,28 +348,45 @@ func addCandidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		baseImage := "sourcegraph/" + strings.ReplaceAll(app, "/", "-")
-		gcrImage := fmt.Sprintf("us.gcr.io/sourcegraph-dev/%s", strings.TrimPrefix(baseImage, "sourcegraph/"))
-		dockerHubImage := fmt.Sprintf("index.docker.io/%s", baseImage)
 
-		var images []string
+		cmds := []bk.StepOpt{
+			bk.Cmd(fmt.Sprintf(`echo "Tagging final %s image..."`, app)),
+			bk.Cmd("yes | gcloud auth configure-docker"),
+		}
+
+		gcrImage := fmt.Sprintf("us.gcr.io/sourcegraph-dev/%s", strings.TrimPrefix(baseImage, "sourcegraph/"))
+
+		candidateImage := fmt.Sprintf("%s:%s", gcrImage, candidateImageTag(c))
+		cmds = append(cmds,
+			bk.Cmd(fmt.Sprintf("docker pull %s", candidateImage)),
+			bk.Cmd(fmt.Sprintf("docker tag %s %s:%s", candidateImage, baseImage, c.version)),
+		)
+
+		dockerHubImage := fmt.Sprintf("index.docker.io/%s", baseImage)
 		for _, image := range []string{dockerHubImage, gcrImage} {
 			if app != "server" || c.taggedRelease || c.patch || c.patchNoTest {
-				images = append(images, fmt.Sprintf("%s:%s", image, c.version))
+				cmds = append(cmds,
+					bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s", baseImage, c.version, image, c.version)),
+					bk.Cmd(fmt.Sprintf("docker push %s:%s", image, c.version)),
+				)
 			}
 
 			if app == "server" && c.releaseBranch {
-				images = append(images, fmt.Sprintf("%s:%s-insiders", image, c.branch))
+				cmds = append(cmds,
+					bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s-insiders", baseImage, c.version, image, c.branch)),
+					bk.Cmd(fmt.Sprintf("docker push %s:%s-insiders", image, c.branch)),
+				)
 			}
 
 			if insiders {
-				images = append(images, fmt.Sprintf("%s:insiders", image))
+				cmds = append(cmds,
+					bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:insiders", baseImage, c.version, image)),
+					bk.Cmd(fmt.Sprintf("docker push %s:insiders", image)),
+				)
 			}
 		}
 
-		candidateImage := fmt.Sprintf("%s:%s", gcrImage, candidateImageTag(c))
-		cmd := fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(images, " "))
-
-		pipeline.AddStep(":docker: :white_check_mark:", bk.Cmd(cmd))
+		pipeline.AddStep(":docker: :white_check_mark:", cmds...)
 	}
 }
 

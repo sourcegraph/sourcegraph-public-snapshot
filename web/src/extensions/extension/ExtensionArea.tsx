@@ -21,7 +21,6 @@ import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorMessage } from '../../components/alerts'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../../auth'
-import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 
 export const registryExtensionFragment = gql`
     fragment RegistryExtensionFields on RegistryExtension {
@@ -68,8 +67,7 @@ export interface ExtensionAreaProps
     extends ExtensionsAreaRouteContext,
         RouteComponentProps<{ extensionID: string }>,
         ThemeProps,
-        TelemetryProps,
-        BreadcrumbSetters {
+        TelemetryProps {
     routes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
 }
@@ -125,18 +123,6 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
         const globalExtensionsSettingsChanges = this.componentUpdates.pipe(
             map(({ platformContext }) => platformContext),
             distinctUntilChanged()
-        )
-
-        // Set breadcrumb
-        const { extensionID } = this.props.match.params
-
-        const [publisher, name] = extensionID.split('/')
-
-        this.subscriptions.add(
-            this.props.setBreadcrumb({
-                key: extensionID,
-                element: `${name} by ${publisher}`,
-            })
         )
 
         // Fetch extension.

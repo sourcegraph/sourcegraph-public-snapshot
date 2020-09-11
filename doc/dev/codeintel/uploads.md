@@ -4,8 +4,8 @@ An LSIF indexer produces a file containing the definition, reference, hover, and
 
 The sequence of actions required to to upload and convert this data is shown below (click to enlarge).
 
-<a href="diagrams/upload.svg" target="_blank">
-  <img src="diagrams/upload.svg">
+<a href="/dev/codeintel/diagrams/upload.svg" target="_blank">
+  <img src="/dev/codeintel/diagrams/upload.svg">
 </a>
 
 ## Uploading

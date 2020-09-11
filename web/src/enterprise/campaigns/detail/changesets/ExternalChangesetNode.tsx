@@ -1,4 +1,5 @@
 import { ThemeProps } from '../../../../../../shared/src/theme'
+import { Observer } from 'rxjs'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '../../../../../../shared/src/util/url'
 import { HoverMerged } from '../../../../../../shared/src/api/client/types/hover'
@@ -21,6 +22,7 @@ import { ExternalChangesetInfoCell } from './ExternalChangesetInfoCell'
 export interface ExternalChangesetNodeProps extends ThemeProps {
     node: ExternalChangesetFields
     viewerCanAdminister: boolean
+    campaignUpdates?: Pick<Observer<void>, 'next'>
     history: H.History
     location: H.Location
     extensionInfo?: {
@@ -33,6 +35,7 @@ export interface ExternalChangesetNodeProps extends ThemeProps {
 export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNodeProps> = ({
     node,
     viewerCanAdminister,
+    campaignUpdates,
     isLightTheme,
     history,
     location,
@@ -63,10 +66,16 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                 )}
             </button>
             <ChangesetStatusCell changeset={node} />
-            <ExternalChangesetInfoCell node={node} viewerCanAdminister={viewerCanAdminister} />
+            <ExternalChangesetInfoCell
+                node={node}
+                viewerCanAdminister={viewerCanAdminister}
+                campaignUpdates={campaignUpdates}
+            />
             <span>{node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} />}</span>
             <span>{node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} />}</span>
-            <div>{node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} separateLines={true} />}</div>
+            <div className="external-changeset-node__diffstat">
+                {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} />}
+            </div>
             {isExpanded && (
                 <div className="external-changeset-node__expanded-section">
                     {node.error && <ErrorAlert error={node.error} history={history} />}
@@ -79,7 +88,6 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                         repositoryName={node.repository.name}
                         extensionInfo={extensionInfo}
                         queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
-                        updateOnChange={node.updatedAt}
                     />
                 </div>
             )}

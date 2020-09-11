@@ -1,6 +1,6 @@
 import { getDiagnostics } from './diagnostics'
 import { parseSearchQuery, ParseSuccess, Sequence } from './parser'
-import { SearchPatternType } from '../../graphql-operations'
+import { SearchPatternType } from '../../graphql/schema'
 
 describe('getDiagnostics()', () => {
     test('do not raise invalid filter type', () => {

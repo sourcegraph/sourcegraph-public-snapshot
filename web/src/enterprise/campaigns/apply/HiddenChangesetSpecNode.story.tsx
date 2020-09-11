@@ -1,13 +1,25 @@
 import { storiesOf } from '@storybook/react'
+import { radios } from '@storybook/addon-knobs'
 import React from 'react'
+import webStyles from '../../../enterprise.scss'
+import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { HiddenChangesetSpecNode } from './HiddenChangesetSpecNode'
 import { addDays } from 'date-fns'
-import { HiddenChangesetSpecFields, ChangesetSpecType } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { ChangesetSpecType } from '../../../../../shared/src/graphql/schema'
+import { HiddenChangesetSpecFields } from '../../../graphql-operations'
 
-const { add } = storiesOf('web/campaigns/apply/HiddenChangesetSpecNode', module).addDecorator(story => (
-    <div className="p-3 container web-content changeset-spec-list__grid">{story()}</div>
-))
+const { add } = storiesOf('web/campaigns/apply/HiddenChangesetSpecNode', module).addDecorator(story => {
+    const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
+    document.body.classList.toggle('theme-light', theme === 'light')
+    document.body.classList.toggle('theme-dark', theme === 'dark')
+    return (
+        <>
+            <Tooltip />
+            <style>{webStyles}</style>
+            <div className="p-3 container web-content changeset-spec-list__grid">{story()}</div>
+        </>
+    )
+})
 
 export const hiddenChangesetSpecStories: Record<string, HiddenChangesetSpecFields> = {
     'Import changeset': {
@@ -25,9 +37,5 @@ export const hiddenChangesetSpecStories: Record<string, HiddenChangesetSpecField
 }
 
 for (const storyName of Object.keys(hiddenChangesetSpecStories)) {
-    add(storyName, () => (
-        <EnterpriseWebStory>
-            {props => <HiddenChangesetSpecNode {...props} node={hiddenChangesetSpecStories[storyName]} />}
-        </EnterpriseWebStory>
-    ))
+    add(storyName, () => <HiddenChangesetSpecNode node={hiddenChangesetSpecStories[storyName]} />)
 }

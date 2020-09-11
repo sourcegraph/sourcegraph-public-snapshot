@@ -48,7 +48,7 @@ func TestUpdate(t *testing.T) {
 		metrics:         NewSchedulerMetrics(metrics.TestRegisterer),
 	}
 
-	if err := scheduler.Handle(context.Background()); err != nil {
+	if err := scheduler.update(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 

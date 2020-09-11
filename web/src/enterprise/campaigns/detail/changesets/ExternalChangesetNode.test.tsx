@@ -1,6 +1,7 @@
 import * as H from 'history'
 import React from 'react'
 import { ExternalChangesetNode } from './ExternalChangesetNode'
+import { Subject } from 'rxjs'
 import { shallow } from 'enzyme'
 import {
     ChangesetReviewState,
@@ -56,8 +57,8 @@ describe('ExternalChangesetNode', () => {
                         createdAt: new Date('2020-01-01').toISOString(),
                         updatedAt: new Date('2020-01-01').toISOString(),
                         nextSyncAt: null,
-                        currentSpec: { id: 'spec-rand-id-1' },
                     }}
+                    campaignUpdates={new Subject<void>()}
                 />
             )
         ).toMatchSnapshot()

@@ -1,6 +1,9 @@
+import * as H from 'history'
 import { storiesOf } from '@storybook/react'
-import { boolean } from '@storybook/addon-knobs'
+import { radios, boolean } from '@storybook/addon-knobs'
 import React from 'react'
+import webStyles from '../../../enterprise.scss'
+import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { CampaignApplyPage } from './CampaignApplyPage'
 import { of, Observable } from 'rxjs'
 import { CampaignSpecChangesetSpecsResult, ChangesetSpecFields, CampaignSpecFields } from '../../../graphql-operations'
@@ -8,11 +11,21 @@ import { visibleChangesetSpecStories } from './VisibleChangesetSpecNode.story'
 import { hiddenChangesetSpecStories } from './HiddenChangesetSpecNode.story'
 import { fetchCampaignSpecById } from './backend'
 import { addDays, subDays } from 'date-fns'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/apply/CampaignApplyPage', module).addDecorator(story => (
-    <div className="p-3 container web-content">{story()}</div>
-))
+let isLightTheme = true
+const { add } = storiesOf('web/campaigns/apply/CampaignApplyPage', module).addDecorator(story => {
+    const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
+    document.body.classList.toggle('theme-light', theme === 'light')
+    document.body.classList.toggle('theme-dark', theme === 'dark')
+    isLightTheme = theme === 'light'
+    return (
+        <>
+            <Tooltip />
+            <style>{webStyles}</style>
+            <div className="p-3 container web-content">{story()}</div>
+        </>
+    )
+})
 
 const nodes: ChangesetSpecFields[] = [
     ...Object.values(visibleChangesetSpecStories),
@@ -23,6 +36,7 @@ const campaignSpec: CampaignSpecFields = {
     appliesToCampaign: null,
     createdAt: subDays(new Date(), 5).toISOString(),
     creator: {
+        avatarURL: 'http://test.test/avatar',
         url: '/users/alice',
         username: 'alice',
     },
@@ -71,30 +85,32 @@ const queryChangesetSpecs = (): Observable<
 const queryEmptyFileDiffs = () =>
     of({ fileDiffs: { totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] } })
 
-add('Create', () => (
-    <EnterpriseWebStory>
-        {props => (
-            <CampaignApplyPage
-                {...props}
-                specID="123123"
-                fetchCampaignSpecById={fetchCampaignSpecCreate}
-                queryChangesetSpecs={queryChangesetSpecs}
-                queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-            />
-        )}
-    </EnterpriseWebStory>
-))
+add('Create', () => {
+    const history = H.createMemoryHistory()
+    return (
+        <CampaignApplyPage
+            specID="123123"
+            fetchCampaignSpecById={fetchCampaignSpecCreate}
+            queryChangesetSpecs={queryChangesetSpecs}
+            queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+            history={history}
+            location={history.location}
+            isLightTheme={isLightTheme}
+        />
+    )
+})
 
-add('Update', () => (
-    <EnterpriseWebStory>
-        {props => (
-            <CampaignApplyPage
-                {...props}
-                specID="123123"
-                fetchCampaignSpecById={fetchCampaignSpecUpdate}
-                queryChangesetSpecs={queryChangesetSpecs}
-                queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-            />
-        )}
-    </EnterpriseWebStory>
-))
+add('Update', () => {
+    const history = H.createMemoryHistory()
+    return (
+        <CampaignApplyPage
+            specID="123123"
+            fetchCampaignSpecById={fetchCampaignSpecUpdate}
+            queryChangesetSpecs={queryChangesetSpecs}
+            queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+            history={history}
+            location={history.location}
+            isLightTheme={isLightTheme}
+        />
+    )
+})

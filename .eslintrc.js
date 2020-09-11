@@ -60,7 +60,6 @@ const config = {
         ],
       },
     ],
-    'react/jsx-no-target-blank': ['error', { allowReferrer: true }],
   },
   overrides: [
     {

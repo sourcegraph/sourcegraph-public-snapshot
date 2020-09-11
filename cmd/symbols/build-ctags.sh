@@ -5,10 +5,10 @@
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -eu
 
-# If CTAGS_COMMAND is set to a custom executable, we don't need to build the
-# image. See ./universal-ctags-dev.
-if [[ "${CTAGS_COMMAND}" != "cmd/symbols/universal-ctags-dev" ]]; then
-  echo "CTAGS_COMMAND set to custom executable. Building of Docker image not necessary."
+# If CTAGS_COMMAND is set, we don't need to build the image. See
+# ./universal-ctags-dev.
+if [[ -n "${CTAGS_COMMAND}" ]]; then
+  echo "CTAGS_COMMAND set. Building of Docker image not necessary."
   exit 0
 fi
 

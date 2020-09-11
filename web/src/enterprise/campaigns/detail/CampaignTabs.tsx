@@ -5,6 +5,7 @@ import { ThemeProps } from '../../../../../shared/src/theme'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { CampaignFields } from '../../../graphql-operations'
+import { Subject } from 'rxjs'
 import {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
@@ -15,13 +16,12 @@ import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
 import { CampaignBurndownChart } from './BurndownChart'
 import { CampaignChangesets } from './changesets/CampaignChangesets'
-import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import { CampaignSpecTab } from './CampaignSpecTab'
 
-type SelectedTab = 'changesets' | 'chart' | 'spec'
+type SelectedTab = 'changesets' | 'chart'
 
 export interface CampaignTabsProps extends ExtensionsControllerProps, ThemeProps, PlatformContextProps, TelemetryProps {
     campaign: CampaignFields
+    campaignUpdates: Subject<void>
     history: H.History
     location: H.Location
     /** For testing only. */
@@ -40,55 +40,25 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
     platformContext,
     telemetryService,
     campaign,
+    campaignUpdates,
     queryChangesets,
     queryChangesetCountsOverTime,
     queryExternalChangesetWithFileDiffs,
 }) => {
-    const [selectedTab, setSelectedTab] = useState<SelectedTab>(() => {
-        const urlParameters = new URLSearchParams(location.search)
-        if (urlParameters.get('tab') === 'chart') {
-            return 'chart'
-        }
-        if (urlParameters.get('tab') === 'spec') {
-            return 'spec'
-        }
-        return 'changesets'
-    })
+    const [selectedTab, setSelectedTab] = useState<SelectedTab>('changesets')
     const onSelectChangesets = useCallback<React.MouseEventHandler>(
         event => {
             event.preventDefault()
             setSelectedTab('changesets')
-            const urlParameters = new URLSearchParams(location.search)
-            urlParameters.delete('tab')
-            if (location.search !== urlParameters.toString()) {
-                history.replace({ ...location, search: urlParameters.toString() })
-            }
         },
-        [history, location]
+        [setSelectedTab]
     )
     const onSelectChart = useCallback<React.MouseEventHandler>(
         event => {
             event.preventDefault()
             setSelectedTab('chart')
-            const urlParameters = new URLSearchParams(location.search)
-            urlParameters.set('tab', 'chart')
-            if (location.search !== urlParameters.toString()) {
-                history.replace({ ...location, search: urlParameters.toString() })
-            }
         },
-        [history, location]
-    )
-    const onSelectSpec = useCallback<React.MouseEventHandler>(
-        event => {
-            event.preventDefault()
-            setSelectedTab('spec')
-            const urlParameters = new URLSearchParams(location.search)
-            urlParameters.set('tab', 'spec')
-            if (location.search !== urlParameters.toString()) {
-                history.replace({ ...location, search: urlParameters.toString() })
-            }
-        },
-        [history, location]
+        [setSelectedTab]
     )
     return (
         <>
@@ -111,15 +81,6 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
                         <ChartLineVariantIcon className="icon-inline text-muted mr-1" /> Burndown chart
                     </a>
                 </li>
-                <li className="nav-item test-campaigns-spec-tab">
-                    <a
-                        href=""
-                        onClick={onSelectSpec}
-                        className={classNames('nav-link', selectedTab === 'spec' && 'active')}
-                    >
-                        <FileDocumentIcon className="icon-inline text-muted mr-1" /> Campaign spec
-                    </a>
-                </li>
             </ul>
             {selectedTab === 'chart' && (
                 <CampaignBurndownChart
@@ -132,6 +93,8 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
                 <CampaignChangesets
                     campaignID={campaign.id}
                     viewerCanAdminister={campaign.viewerCanAdminister}
+                    changesetUpdates={campaignUpdates}
+                    campaignUpdates={campaignUpdates}
                     history={history}
                     location={location}
                     isLightTheme={isLightTheme}
@@ -141,9 +104,6 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
                     queryChangesets={queryChangesets}
                     queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                 />
-            )}
-            {selectedTab === 'spec' && (
-                <CampaignSpecTab campaignName={campaign.name} originalInput={campaign.currentSpec.originalInput} />
             )}
         </>
     )

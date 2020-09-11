@@ -8,7 +8,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 var ErrPermsNotFound = errors.New("permissions not found")
@@ -126,7 +125,7 @@ func (p *UserPermissions) AuthorizedRepos(repos []*types.Repo) []RepoPerms {
 func (p *UserPermissions) TracingFields() []otlog.Field {
 	fs := []otlog.Field{
 		otlog.Int32("UserPermissions.UserID", p.UserID),
-		trace.Stringer("UserPermissions.Perm", p.Perm),
+		otlog.String("UserPermissions.Perm", string(p.Perm)),
 		otlog.String("UserPermissions.Type", string(p.Type)),
 	}
 
@@ -159,7 +158,7 @@ func (p *RepoPermissions) Expired(ttl time.Duration, now time.Time) bool {
 func (p *RepoPermissions) TracingFields() []otlog.Field {
 	fs := []otlog.Field{
 		otlog.Int32("RepoPermissions.RepoID", p.RepoID),
-		trace.Stringer("RepoPermissions.Perm", p.Perm),
+		otlog.String("RepoPermissions.Perm", string(p.Perm)),
 	}
 
 	if p.UserIDs != nil {
@@ -210,7 +209,7 @@ func (p *UserPendingPermissions) TracingFields() []otlog.Field {
 		otlog.String("UserPendingPermissions.ServiceType", p.ServiceType),
 		otlog.String("UserPendingPermissions.ServiceID", p.ServiceID),
 		otlog.String("UserPendingPermissions.BindID", p.BindID),
-		trace.Stringer("UserPendingPermissions.Perm", p.Perm),
+		otlog.String("UserPendingPermissions.Perm", string(p.Perm)),
 		otlog.String("UserPendingPermissions.Type", string(p.Type)),
 	}
 

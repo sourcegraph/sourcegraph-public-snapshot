@@ -80,7 +80,7 @@ import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platfo
 import { toTextDocumentIdentifier, toTextDocumentPositionParameters } from '../../backend/extension-api-conversion'
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
 import { resolveRevision, retryWhenCloneInProgressError } from '../../repo/backend'
-import { EventLogger, ConditionalTelemetryService } from '../../tracking/eventLogger'
+import { EventLogger } from '../../tracking/eventLogger'
 import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
 import { featureFlags } from '../../util/featureFlags'
 import { bitbucketServerCodeHost } from '../bitbucket/codeHost'
@@ -108,8 +108,6 @@ import { asError } from '../../../../../shared/src/util/errors'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
 import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
-import { isFirefox, observeSourcegraphURL } from '../../util/context'
-import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
 
 registerHighlightContributions()
 
@@ -1064,24 +1062,8 @@ export function injectCodeIntelligenceToCodeHost(
         isExtension
     )
     const { requestGraphQL } = platformContext
+    const telemetryService = new EventLogger(isExtension, requestGraphQL)
     subscriptions.add(extensionsController)
-
-    const overrideSendTelemetry = observeSourcegraphURL(isExtension).pipe(
-        map(sourcegraphUrl => shouldOverrideSendTelemetry(isFirefox(), isExtension, sourcegraphUrl))
-    )
-
-    const observeSendTelemetry = combineLatest([overrideSendTelemetry, observeOptionFlag('sendTelemetry')]).pipe(
-        map(([override, sendTelemetry]) => {
-            if (override) {
-                return true
-            }
-            return sendTelemetry
-        })
-    )
-
-    const innerTelemetryService = new EventLogger(isExtension, requestGraphQL)
-    const telemetryService = new ConditionalTelemetryService(innerTelemetryService, observeSendTelemetry)
-    subscriptions.add(telemetryService)
 
     let codeHostSubscription: Subscription
     // In the browser extension, observe whether the `disableExtension` storage flag is set.

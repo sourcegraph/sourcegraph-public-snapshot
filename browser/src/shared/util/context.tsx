@@ -55,8 +55,3 @@ export function getExtensionVersion(): string {
 export function isFirefox(): boolean {
     return window.navigator.userAgent.includes('Firefox')
 }
-
-export function isDefaultSourcegraphUrl(url: string): boolean {
-    // TODO: Can this be improved by normalizing the url first?
-    return url === DEFAULT_SOURCEGRAPH_URL
-}

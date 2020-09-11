@@ -4,21 +4,23 @@ import {
     ChangesetExternalState,
     ChangesetPublicationState,
 } from '../../../../graphql-operations'
+import { Observer } from 'rxjs'
 import { LinkOrSpan } from '../../../../../../shared/src/components/LinkOrSpan'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import { ChangesetLabel } from './ChangesetLabel'
 import { Link } from '../../../../../../shared/src/components/Link'
 import { ChangesetLastSynced } from './ChangesetLastSynced'
-import { ChangesetReconcilerState } from '../../../../../../shared/src/graphql/schema'
 
 export interface ExternalChangesetInfoCellProps {
     node: ExternalChangesetFields
     viewerCanAdminister: boolean
+    campaignUpdates?: Pick<Observer<void>, 'next'>
 }
 
 export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangesetInfoCellProps> = ({
     node,
     viewerCanAdminister,
+    campaignUpdates,
 }) => (
     <div className="d-flex flex-column">
         <div className="m-0 mb-2">
@@ -33,18 +35,8 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
                     target="_blank"
                     rel="noopener noreferrer"
                 >
-                    {isImporting(node) && (
-                        <>
-                            Importing changeset
-                            {node.externalID && <> #{node.externalID} </>}
-                        </>
-                    )}
-                    {!isImporting(node) && (
-                        <>
-                            {node.title}
-                            {node.externalID && <> (#{node.externalID}) </>}
-                        </>
-                    )}
+                    {node.title}
+                    {node.externalID && <> (#{node.externalID}) </>}
                     {node.externalURL && node.externalState !== ChangesetExternalState.DELETED && (
                         <>
                             {' '}
@@ -68,15 +60,12 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
                 </Link>
             </strong>
             {node.publicationState === ChangesetPublicationState.PUBLISHED && (
-                <ChangesetLastSynced changeset={node} viewerCanAdminister={viewerCanAdminister} />
+                <ChangesetLastSynced
+                    changeset={node}
+                    viewerCanAdminister={viewerCanAdminister}
+                    campaignUpdates={campaignUpdates}
+                />
             )}
         </div>
     </div>
 )
-
-function isImporting(node: ExternalChangesetFields): boolean {
-    return (
-        [ChangesetReconcilerState.QUEUED, ChangesetReconcilerState.PROCESSING].includes(node.reconcilerState) &&
-        !node.title
-    )
-}

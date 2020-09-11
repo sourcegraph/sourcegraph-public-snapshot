@@ -2,13 +2,13 @@ package commitupdater
 
 import (
 	"context"
+	"errors"
 	"time"
 
+	"github.com/efritz/glock"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commits"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
 // Updater periodically re-calculates the commit and upload visibility graph for repositories
@@ -17,39 +17,72 @@ import (
 // for the same repository and should not repeat the work since the last calculation performed
 // will always be the one we want.
 type Updater struct {
-	store   store.Store
-	updater commits.Updater
+	store    store.Store
+	updater  commits.Updater
+	options  UpdaterOptions
+	clock    glock.Clock
+	ctx      context.Context // root context passed to the updater
+	cancel   func()          // cancels the root context
+	finished chan struct{}   // signals that Start has finished
 }
-
-var _ goroutine.Handler = &Updater{}
 
 type UpdaterOptions struct {
 	Interval time.Duration
 }
 
-func NewUpdater(store store.Store, updater commits.Updater, options UpdaterOptions) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), options.Interval, &Updater{
-		store:   store,
-		updater: updater,
-	})
+func NewUpdater(store store.Store, updater commits.Updater, options UpdaterOptions) *Updater {
+	return newUpdater(store, updater, options, glock.NewRealClock())
 }
 
-// Handle checks for dirty repositories and invokes the underlying updater on each one.
-func (u *Updater) Handle(ctx context.Context) error {
-	repositoryIDs, err := u.store.DirtyRepositories(ctx)
-	if err != nil {
-		return errors.Wrap(err, "store.DirtyRepositories")
-	}
+func newUpdater(store store.Store, updater commits.Updater, options UpdaterOptions, clock glock.Clock) *Updater {
+	ctx, cancel := context.WithCancel(context.Background())
 
-	for repositoryID, dirtyFlag := range repositoryIDs {
-		if err := u.updater.TryUpdate(ctx, repositoryID, dirtyFlag); err != nil {
-			return errors.Wrap(err, "updater.TryUpdate")
+	return &Updater{
+		store:    store,
+		updater:  updater,
+		options:  options,
+		clock:    clock,
+		ctx:      ctx,
+		cancel:   cancel,
+		finished: make(chan struct{}),
+	}
+}
+
+// Start begins periodically checking for dirty repositories and invoking the underlying
+// updater on each one.
+func (u *Updater) Start() {
+	defer close(u.finished)
+
+loop:
+	for {
+		repositoryIDs, err := u.store.DirtyRepositories(u.ctx)
+		if err != nil {
+			log15.Error("Failed to retrieve dirty repositories", "err", err)
+		}
+
+		for repositoryID, dirtyFlag := range repositoryIDs {
+			if err := u.updater.TryUpdate(u.ctx, repositoryID, dirtyFlag); err != nil {
+				// If the error is due to the loop being shut down, just break
+				for ex := err; ex != nil; ex = errors.Unwrap(ex) {
+					if err == u.ctx.Err() {
+						break loop
+					}
+				}
+
+				log15.Error("Failed to update repository commit graph", "err", err)
+			}
+		}
+
+		select {
+		case <-u.clock.After(u.options.Interval):
+		case <-u.ctx.Done():
+			return
 		}
 	}
-
-	return nil
 }
 
-func (u *Updater) HandleError(err error) {
-	log15.Error("Failed to run update process", "err", err)
+// Stop will cause the update loop to exit after the current iteration.
+func (u *Updater) Stop() {
+	u.cancel()
+	<-u.finished
 }

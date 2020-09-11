@@ -1,5 +1,6 @@
 import * as GQL from '../../../../shared/src/graphql/schema'
 import React, { FunctionComponent, useCallback, useEffect, useState, useMemo } from 'react'
+import { eventLogger } from '../../tracking/eventLogger'
 import {
     FilteredConnection,
     FilteredConnectionQueryArgs,
@@ -15,8 +16,6 @@ import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../components/alerts'
 import { Subject } from 'rxjs'
 import * as H from 'history'
-import { LSIFUploadState } from '../../../../shared/src/graphql-operations'
-import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
 const Header: FunctionComponent<{}> = () => (
     <thead>
@@ -95,13 +94,13 @@ const UploadNode: FunctionComponent<UploadNodeProps> = ({ node, onDelete, histor
             </td>
             <td>
                 <Link to={`./uploads/${node.id}`}>
-                    {node.state === LSIFUploadState.UPLOADING ? (
+                    {node.state === GQL.LSIFUploadState.UPLOADING ? (
                         <span>Uploading</span>
-                    ) : node.state === LSIFUploadState.PROCESSING ? (
+                    ) : node.state === GQL.LSIFUploadState.PROCESSING ? (
                         <span>Processing</span>
-                    ) : node.state === LSIFUploadState.COMPLETED ? (
+                    ) : node.state === GQL.LSIFUploadState.COMPLETED ? (
                         <span className="text-success">Completed</span>
-                    ) : node.state === LSIFUploadState.ERRORED ? (
+                    ) : node.state === GQL.LSIFUploadState.ERRORED ? (
                         <span className="text-danger">Failed to process</span>
                     ) : (
                         <span>Waiting to process (#{node.placeInQueue} in line)</span>
@@ -138,7 +137,7 @@ const UploadNode: FunctionComponent<UploadNodeProps> = ({ node, onDelete, histor
     )
 }
 
-export interface CodeIntelUploadsPageProps extends RouteComponentProps<{}>, TelemetryProps {
+interface Props extends RouteComponentProps<{}> {
     repo?: GQL.IRepository
     fetchLsifUploads?: typeof defaultFetchLsifUploads
 
@@ -149,14 +148,13 @@ export interface CodeIntelUploadsPageProps extends RouteComponentProps<{}>, Tele
 /**
  * The repository settings code intel uploads page.
  */
-export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> = ({
+export const CodeIntelUploadsPage: FunctionComponent<Props> = ({
     repo,
     fetchLsifUploads = defaultFetchLsifUploads,
     now,
-    telemetryService,
     ...props
 }) => {
-    useEffect(() => telemetryService.logViewEvent('CodeIntelUploads'), [telemetryService])
+    useEffect(() => eventLogger.logViewEvent('CodeIntelUploads'), [])
 
     const filters: FilteredConnectionFilter[] = [
         {
@@ -175,19 +173,19 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
             label: 'Completed',
             id: 'completed',
             tooltip: 'Show completed uploads only',
-            args: { state: LSIFUploadState.COMPLETED },
+            args: { state: GQL.LSIFUploadState.COMPLETED },
         },
         {
             label: 'Errored',
             id: 'errored',
             tooltip: 'Show errored uploads only',
-            args: { state: LSIFUploadState.ERRORED },
+            args: { state: GQL.LSIFUploadState.ERRORED },
         },
         {
             label: 'Queued',
             id: 'queued',
             tooltip: 'Show queued uploads only',
-            args: { state: LSIFUploadState.QUEUED },
+            args: { state: GQL.LSIFUploadState.QUEUED },
         },
     ]
 

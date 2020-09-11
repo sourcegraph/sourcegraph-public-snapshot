@@ -4,12 +4,11 @@ import { FILTERS, resolveFilter } from './filters'
 import { Sequence, toMonacoRange } from './parser'
 import { Omit } from 'utility-types'
 import { Observable } from 'rxjs'
-import { IRepository, IFile, ISymbol, ILanguage, IRepoGroup } from '../../graphql/schema'
+import { IRepository, IFile, ISymbol, ILanguage, IRepoGroup, SymbolKind } from '../../graphql/schema'
 import { SearchSuggestion } from '../suggestions'
 import { isDefined } from '../../util/types'
 import { FilterType, isNegatableFilter } from '../interactive/util'
 import { first } from 'rxjs/operators'
-import { SymbolKind } from '../../graphql-operations'
 
 export const repositoryCompletionItemKind = Monaco.languages.CompletionItemKind.Color
 const filterCompletionItemKind = Monaco.languages.CompletionItemKind.Customcolor

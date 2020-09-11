@@ -99,13 +99,6 @@ func (s *FakeChangesetSource) LoadChangesets(ctx context.Context, cs ...*repos.C
 	if s.Err != nil {
 		return s.Err
 	}
-
-	for _, c := range cs {
-		if err := c.SetMetadata(s.FakeMetadata); err != nil {
-			return err
-		}
-	}
-
 	s.LoadedChangesets = append(s.LoadedChangesets, cs...)
 	return nil
 }

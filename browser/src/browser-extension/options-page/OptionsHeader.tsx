@@ -7,7 +7,7 @@ export interface OptionsHeaderProps {
     version: string
     assetsDir?: string
     isActivated: boolean
-    onClickExpandOptionsMenu: (event: React.MouseEvent<HTMLButtonElement>) => void
+    onSettingsClick: (event: React.MouseEvent<HTMLButtonElement>) => void
     onToggleActivationClick: (value: boolean) => void
 }
 
@@ -16,7 +16,7 @@ export const OptionsHeader: React.FunctionComponent<OptionsHeaderProps> = ({
     version,
     assetsDir,
     isActivated,
-    onClickExpandOptionsMenu,
+    onSettingsClick,
     onToggleActivationClick,
 }: OptionsHeaderProps) => (
     <div className={`options-header ${className || ''}`}>
@@ -25,7 +25,7 @@ export const OptionsHeader: React.FunctionComponent<OptionsHeaderProps> = ({
             <div className="options-header__version">v{version}</div>
         </div>
         <div className="options-header__right">
-            <button type="button" className="options-header__settings btn btn-icon" onClick={onClickExpandOptionsMenu}>
+            <button type="button" className="options-header__settings btn btn-icon" onClick={onSettingsClick}>
                 <SettingsOutlineIcon className="icon-inline" />
             </button>
             <Toggle

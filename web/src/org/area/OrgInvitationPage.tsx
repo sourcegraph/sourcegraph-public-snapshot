@@ -19,7 +19,6 @@ import { OrgAvatar } from '../OrgAvatar'
 import { OrgAreaPageProps } from './OrgArea'
 import { ErrorAlert } from '../../components/alerts'
 import * as H from 'history'
-import { OrganizationInvitationResponseType } from '../../../../shared/src/graphql-operations'
 
 interface Props extends OrgAreaPageProps {
     authenticatedUser: AuthenticatedUser
@@ -44,7 +43,7 @@ export const OrgInvitationPage = withAuthenticatedUser(
         public state: State = {}
 
         private componentUpdates = new Subject<Props>()
-        private responses = new Subject<OrganizationInvitationResponseType>()
+        private responses = new Subject<GQL.OrganizationInvitationResponseType>()
         private subscriptions = new Subscription()
 
         public componentDidMount(): void {
@@ -180,12 +179,12 @@ export const OrgInvitationPage = withAuthenticatedUser(
 
         private onAcceptInvitation: React.MouseEventHandler<HTMLButtonElement> = event => {
             event.preventDefault()
-            this.responses.next(OrganizationInvitationResponseType.ACCEPT)
+            this.responses.next(GQL.OrganizationInvitationResponseType.ACCEPT)
         }
 
         private onDeclineInvitation: React.MouseEventHandler<HTMLButtonElement> = event => {
             event.preventDefault()
-            this.responses.next(OrganizationInvitationResponseType.REJECT)
+            this.responses.next(GQL.OrganizationInvitationResponseType.REJECT)
         }
 
         private respondToOrganizationInvitation = (

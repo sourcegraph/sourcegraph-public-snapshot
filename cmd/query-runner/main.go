@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
@@ -37,7 +36,6 @@ func main() {
 	env.HandleHelpFlag()
 	logging.Init()
 	tracer.Init()
-	trace.Init(true)
 
 	go func() {
 		c := make(chan os.Signal, 1)

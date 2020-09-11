@@ -7,6 +7,7 @@ import (
 	"os"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
@@ -14,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"golang.org/x/time/rate"
 )
 
 func TestMain(m *testing.M) {
@@ -42,14 +42,14 @@ func TestUpdate(t *testing.T) {
 		return fmt.Sprintf("c%d", repositoryID), nil
 	})
 
-	updater := &Updater{
-		store:           mockStore,
-		gitserverClient: mockGitserverClient,
-		metrics:         NewUpdaterMetrics(metrics.TestRegisterer),
-		limiter:         rate.NewLimiter(MaxGitserverRequestsPerSecond, 1),
-	}
+	updater := NewUpdater(
+		mockStore,
+		mockGitserverClient,
+		time.Second,
+		NewUpdaterMetrics(metrics.TestRegisterer),
+	)
 
-	if err := updater.Handle(context.Background()); err != nil {
+	if err := updater.update(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 

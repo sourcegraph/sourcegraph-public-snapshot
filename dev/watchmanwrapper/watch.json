@@ -5,7 +5,7 @@
   {
     "expression": [
       "allof",
-      ["not", ["anyof", ["match", ".*"], ["suffix", "_test.go"], ["dirname", "dev"]]],
+      ["not", ["anyof", ["match", ".*"], ["suffix", "_test.go"]]],
       [
         "anyof",
         ["suffix", "go"],

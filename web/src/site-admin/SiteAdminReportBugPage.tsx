@@ -13,12 +13,12 @@ import phabricatorSchemaJSON from '../../../schema/phabricator.schema.json'
 import settingsSchemaJSON from '../../../schema/settings.schema.json'
 import siteSchemaJSON from '../../../schema/site.schema.json'
 import { PageTitle } from '../components/PageTitle'
+import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { useObservable } from '../../../shared/src/util/useObservable'
 import { mapValues, values } from 'lodash'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { ThemeProps } from '../../../shared/src/theme'
-import { ExternalServiceKind } from '../../../shared/src/graphql-operations'
 
 /**
  * Minimal shape of a JSON Schema. These values are treated as opaque, so more specific types are

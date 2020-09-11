@@ -14,12 +14,13 @@ import {
     CopyQueryButtonProps,
     OnboardingTourProps,
 } from '../search'
-import { eventLogger } from '../tracking/eventLogger'
+import { EventLoggerProps, eventLogger } from '../tracking/eventLogger'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { VersionContextProps } from '../../../shared/src/search/util'
 import { VersionContext } from '../schema/site.schema'
 import { submitSearch } from '../search/helpers'
+import * as GQL from '../../../shared/src/graphql/schema'
 import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
@@ -29,18 +30,16 @@ import { SearchPageInput } from '../search/input/SearchPageInput'
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { PrivateCodeCta } from '../search/input/PrivateCodeCta'
 import { AuthenticatedUser } from '../auth'
-import { SearchPatternType } from '../graphql-operations'
-import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
 export interface RepogroupPageProps
     extends SettingsCascadeProps<Settings>,
         ThemeProps,
         ThemePreferenceProps,
         ActivationProps,
-        TelemetryProps,
         PatternTypeProps,
         CaseSensitivityProps,
         KeyboardShortcutsProps,
+        EventLoggerProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         InteractiveSearchProps,
@@ -58,6 +57,9 @@ export interface RepogroupPageProps
     authRequired?: boolean
     showCampaigns: boolean
 
+    /** Controls focusing the query input on the page. Query inputs are autofocused by default. */
+    autoFocus?: boolean
+
     // Repogroup page metadata
     repogroupMetadata: RepogroupMetadata
 
@@ -66,10 +68,7 @@ export interface RepogroupPageProps
 }
 
 export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props: RepogroupPageProps) => {
-    useEffect(() => props.telemetryService.logViewEvent(`Repogroup:${props.repogroupMetadata.name}`), [
-        props.repogroupMetadata.name,
-        props.telemetryService,
-    ])
+    useEffect(() => eventLogger.logViewEvent(`Repogroup:${props.repogroupMetadata.name}`))
 
     const repogroupQuery = `repogroup:${props.repogroupMetadata.name}`
 
@@ -83,7 +82,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
     // Find the repositories for this specific repogroup.
     const repogroupRepoList = repogroups?.[props.repogroupMetadata.name]
 
-    const onSubmitExample = (query: string, patternType: SearchPatternType) => (
+    const onSubmitExample = (query: string, patternType: GQL.SearchPatternType) => (
         event?: React.MouseEvent<HTMLButtonElement>
     ): void => {
         eventLogger.log('RepositoryGroupSuggestionClicked')

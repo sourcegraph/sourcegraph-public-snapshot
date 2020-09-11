@@ -23,22 +23,12 @@ func TestWrite(t *testing.T) {
 	ctx := context.Background()
 	filename := filepath.Join(tempDir, "test.db")
 
-	cache, err := cache.NewDataCache(1)
+	writer, err := NewWriter(context.Background(), filename)
 	if err != nil {
-		t.Fatalf("unexpected error creating cache: %s", err)
+		t.Fatalf("unexpected error while opening writer: %s", err)
 	}
 
-	store, err := NewStore(context.Background(), filename, cache)
-	if err != nil {
-		t.Fatalf("unexpected error while opening store: %s", err)
-	}
-	defer store.Close(nil)
-
-	if err := store.CreateTables(context.Background()); err != nil {
-		t.Fatalf("unexpected error while creating tables: %s", err)
-	}
-
-	if err := store.WriteMeta(ctx, types.MetaData{NumResultChunks: 7}); err != nil {
+	if err := writer.WriteMeta(ctx, types.MetaData{NumResultChunks: 7}); err != nil {
 		t.Fatalf("unexpected error while writing: %s", err)
 	}
 
@@ -68,7 +58,7 @@ func TestWrite(t *testing.T) {
 	}
 	close(documentCh)
 
-	if err := store.WriteDocuments(ctx, documentCh); err != nil {
+	if err := writer.WriteDocuments(ctx, documentCh); err != nil {
 		t.Fatalf("unexpected error while writing documents: %s", err)
 	}
 
@@ -104,7 +94,7 @@ func TestWrite(t *testing.T) {
 	}
 	close(resultChunkCh)
 
-	if err := store.WriteResultChunks(ctx, resultChunkCh); err != nil {
+	if err := writer.WriteResultChunks(ctx, resultChunkCh); err != nil {
 		t.Fatalf("unexpected error while writing result chunks: %s", err)
 	}
 
@@ -122,7 +112,7 @@ func TestWrite(t *testing.T) {
 	}
 	close(definitionsCh)
 
-	if err := store.WriteDefinitions(ctx, definitionsCh); err != nil {
+	if err := writer.WriteDefinitions(ctx, definitionsCh); err != nil {
 		t.Fatalf("unexpected error while writing definitions: %s", err)
 	}
 
@@ -140,15 +130,26 @@ func TestWrite(t *testing.T) {
 	}
 	close(referencesCh)
 
-	if err := store.WriteReferences(ctx, referencesCh); err != nil {
+	if err := writer.WriteReferences(ctx, referencesCh); err != nil {
 		t.Fatalf("unexpected error while writing references: %s", err)
 	}
 
-	if err := store.Done(nil); err != nil {
-		t.Fatalf("unexpected error closing transaction: %s", err)
+	if err := writer.Close(nil); err != nil {
+		t.Fatalf("unexpected error closing writer: %s", err)
 	}
 
-	meta, err := store.ReadMeta(ctx)
+	cache, err := cache.NewDataCache(1)
+	if err != nil {
+		t.Fatalf("unexpected error creating cache: %s", err)
+	}
+
+	reader, err := NewReader(context.Background(), filename, cache)
+	if err != nil {
+		t.Fatalf("unexpected error opening database: %s", err)
+	}
+	defer reader.Close()
+
+	meta, err := reader.ReadMeta(ctx)
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
 	}
@@ -156,7 +157,7 @@ func TestWrite(t *testing.T) {
 		t.Errorf("unexpected num result chunks. want=%d have=%d", 7, meta.NumResultChunks)
 	}
 
-	documentData, _, err := store.ReadDocument(ctx, "foo.go")
+	documentData, _, err := reader.ReadDocument(ctx, "foo.go")
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
 	}
@@ -164,7 +165,7 @@ func TestWrite(t *testing.T) {
 		t.Errorf("unexpected document data (-want +got):\n%s", diff)
 	}
 
-	resultChunkData, _, err := store.ReadResultChunk(ctx, 7)
+	resultChunkData, _, err := reader.ReadResultChunk(ctx, 7)
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
 	}
@@ -172,7 +173,7 @@ func TestWrite(t *testing.T) {
 		t.Errorf("unexpected result chunk data (-want +got):\n%s", diff)
 	}
 
-	definitions, _, err := store.ReadDefinitions(ctx, "scheme A", "ident A", 0, 100)
+	definitions, _, err := reader.ReadDefinitions(ctx, "scheme A", "ident A", 0, 100)
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
 	}
@@ -180,7 +181,7 @@ func TestWrite(t *testing.T) {
 		t.Errorf("unexpected definitions (-want +got):\n%s", diff)
 	}
 
-	references, _, err := store.ReadReferences(ctx, "scheme C", "ident C", 0, 100)
+	references, _, err := reader.ReadReferences(ctx, "scheme C", "ident C", 0, 100)
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
 	}

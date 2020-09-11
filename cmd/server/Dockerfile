@@ -29,15 +29,13 @@ RUN apk update && apk add --no-cache \
     # https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/postgresql.md#version-requirements
     'bash=5.0.17-r0' \
     'redis=5.0.9-r0' \
-    # Gitserver requires Git protocol v2 https://github.com/sourcegraph/sourcegraph/issues/13168
-    'git>=2.18' \
     'nginx=1.18.0-r0' openssh-client pcre sqlite-libs su-exec 'nodejs-current=14.5.0-r0'
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)
 # have been appropriately set in cmd/server/shared/shared.go.
 # hadolint ignore=DL3022
-COPY --from=comby/comby:0.18.3@sha256:7e53df70c648737b638dc131a4afab65c192c520e8928397b9c7190f9943b077 /usr/local/bin/comby /usr/local/bin/comby
+COPY --from=comby/comby:0.18.1@sha256:cb075442dbf87e2031c2d58ce18dc07cd17c018d7a18c95c6aded8a2da0361f3 /usr/local/bin/comby /usr/local/bin/comby
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/syntect_server:ff37f90@sha256:aa93514b7bc3aaf7a4e9c92e5ff52ee5052db6fb101255a69f054e5b8cdb46ff /syntect_server /usr/local/bin/
 
@@ -45,6 +43,15 @@ COPY --from=sourcegraph/syntect_server:ff37f90@sha256:aa93514b7bc3aaf7a4e9c92e5f
 # hadolint ignore=DL3022,DL3003,DL3018,DL3019,SC2035
 RUN wget https://storage.googleapis.com/apktmp/postgres-11-5-for-alpine-3-12-4cc8106a5e.tar.gz && \
     tar -xzf postgres-11-5-for-alpine-3-12-4cc8106a5e.tar.gz && \
+    cd target/main/x86_64/ && \
+    apk add --allow-untrusted *.apk && \
+    cd ../../../ && \
+    rm -rf target/
+
+# install git edge
+# hadolint ignore=DL3022,DL3003,DL3018,DL3019,SC2035
+RUN wget https://storage.googleapis.com/apktmp/git-edge-for-alpine-3-12-0bd5f13f2f.tar.gz  && \
+    tar -xzf git-edge-for-alpine-3-12-0bd5f13f2f.tar.gz && \
     cd target/main/x86_64/ && \
     apk add --allow-untrusted *.apk && \
     cd ../../../ && \

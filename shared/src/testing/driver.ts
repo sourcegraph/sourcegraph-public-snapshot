@@ -14,7 +14,7 @@ import puppeteer, {
 } from 'puppeteer'
 import { Key } from 'ts-key-enum'
 import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
-import { IMutation, IQuery, IRepository } from '../graphql/schema'
+import { IMutation, IQuery, ExternalServiceKind, IRepository } from '../graphql/schema'
 import { readEnvironmentBoolean, retry } from './utils'
 import { formatPuppeteerConsoleMessage } from './console'
 import * as path from 'path'
@@ -28,7 +28,6 @@ import puppeteerFirefox from 'puppeteer-firefox'
 import webExt from 'web-ext'
 import { isDefined } from '../util/types'
 import { getConfig } from './config'
-import { ExternalServiceKind } from '../graphql-operations'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.

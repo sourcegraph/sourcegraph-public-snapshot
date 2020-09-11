@@ -8,22 +8,23 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 type Scheduler struct {
 	store                       store.Store
 	gitserverClient             gitserver.Client
+	interval                    time.Duration
 	batchSize                   int
 	minimumTimeSinceLastEnqueue time.Duration
 	minimumSearchCount          int
 	minimumSearchRatio          float64
 	minimumPreciseCount         int
 	metrics                     SchedulerMetrics
+	ctx                         context.Context
+	cancel                      func()
+	finished                    chan (struct{})
 }
-
-var _ goroutine.Handler = &Scheduler{}
 
 func NewScheduler(
 	store store.Store,
@@ -35,20 +36,48 @@ func NewScheduler(
 	minimumSearchRatio float64,
 	minimumPreciseCount int,
 	metrics SchedulerMetrics,
-) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &Scheduler{
+) *Scheduler {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	return &Scheduler{
 		store:                       store,
 		gitserverClient:             gitserverClient,
+		interval:                    interval,
 		batchSize:                   batchSize,
 		minimumTimeSinceLastEnqueue: minimumTimeSinceLastEnqueue,
 		minimumSearchCount:          minimumSearchCount,
 		minimumSearchRatio:          minimumSearchRatio,
 		minimumPreciseCount:         minimumPreciseCount,
 		metrics:                     metrics,
-	})
+		ctx:                         ctx,
+		cancel:                      cancel,
+		finished:                    make(chan struct{}),
+	}
 }
 
-func (s *Scheduler) Handle(ctx context.Context) error {
+func (s *Scheduler) Start() {
+	defer close(s.finished)
+
+	for {
+		if err := s.update(s.ctx); err != nil {
+			s.metrics.Errors.Inc()
+			log15.Error("Failed to update indexable repositories", "err", err)
+		}
+
+		select {
+		case <-time.After(s.interval):
+		case <-s.ctx.Done():
+			return
+		}
+	}
+}
+
+func (s *Scheduler) Stop() {
+	s.cancel()
+	<-s.finished
+}
+
+func (s *Scheduler) update(ctx context.Context) error {
 	indexableRepositories, err := s.store.IndexableRepositories(ctx, store.IndexableRepositoryQueryOptions{
 		Limit:                       s.batchSize,
 		MinimumTimeSinceLastEnqueue: s.minimumTimeSinceLastEnqueue,
@@ -71,11 +100,6 @@ func (s *Scheduler) Handle(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func (s *Scheduler) HandleError(err error) {
-	s.metrics.Errors.Inc()
-	log15.Error("Failed to update indexable repositories", "err", err)
 }
 
 func (s *Scheduler) queueIndex(ctx context.Context, indexableRepository store.IndexableRepository) (err error) {

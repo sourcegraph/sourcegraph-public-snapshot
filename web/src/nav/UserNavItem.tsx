@@ -8,9 +8,8 @@ import { ThemeProps } from '../../../shared/src/theme'
 import { UserAvatar } from '../user/UserAvatar'
 import { ThemePreferenceProps, ThemePreference } from '../theme'
 import { AuthenticatedUser } from '../auth'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
-export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps {
+interface Props extends ThemeProps, ThemePreferenceProps {
     location: H.Location
     authenticatedUser: Pick<
         AuthenticatedUser,
@@ -28,14 +27,14 @@ interface State {
  * Displays the user's avatar and/or username in the navbar and exposes a dropdown menu with more options for
  * authenticated viewers.
  */
-export class UserNavItem extends React.PureComponent<UserNavItemProps, State> {
+export class UserNavItem extends React.PureComponent<Props, State> {
     private supportsSystemTheme = Boolean(
         window.matchMedia?.('not all and (prefers-color-scheme), (prefers-color-scheme)').matches
     )
 
     public state: State = { isOpen: false }
 
-    public componentDidUpdate(previousProps: UserNavItemProps): void {
+    public componentDidUpdate(previousProps: Props): void {
         // Close dropdown after clicking on a dropdown item.
         if (this.state.isOpen && this.props.location !== previousProps.location) {
             /* eslint react/no-did-update-set-state: warn */
@@ -120,9 +119,16 @@ export class UserNavItem extends React.PureComponent<UserNavItemProps, State> {
                             Site admin
                         </Link>
                     )}
-                    <Link to="/help" className="dropdown-item" target="_blank" rel="noopener">
-                        Help <OpenInNewIcon className="icon-inline" />
-                    </Link>
+                    {this.props.showDotComMarketing ? (
+                        // eslint-disable-next-line react/jsx-no-target-blank
+                        <a href="https://docs.sourcegraph.com" target="_blank" className="dropdown-item">
+                            Help
+                        </a>
+                    ) : (
+                        <Link to="/help" className="dropdown-item">
+                            Help
+                        </Link>
+                    )}
                     {this.props.authenticatedUser.session?.canSignOut && (
                         <a href="/-/sign-out" className="dropdown-item">
                             Sign out
@@ -131,13 +137,9 @@ export class UserNavItem extends React.PureComponent<UserNavItemProps, State> {
                     {this.props.showDotComMarketing && (
                         <>
                             <DropdownItem divider={true} />
-                            <a
-                                href="https://about.sourcegraph.com"
-                                target="_blank"
-                                rel="noopener"
-                                className="dropdown-item"
-                            >
-                                About Sourcegraph <OpenInNewIcon className="icon-inline" />
+                            {/* eslint-disable-next-line react/jsx-no-target-blank */}
+                            <a href="https://about.sourcegraph.com" target="_blank" className="dropdown-item">
+                                About Sourcegraph
                             </a>
                         </>
                     )}

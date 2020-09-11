@@ -66,7 +66,6 @@ describe('Settings', () => {
                         emails: [{ email: 'test@sourcegraph.test', verified: true }],
                         organizations: { nodes: [] },
                         permissionsInfo: null,
-                        tags: [],
                     },
                 }),
             })

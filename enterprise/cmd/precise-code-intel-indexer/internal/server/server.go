@@ -11,7 +11,6 @@ import (
 	"github.com/inconshreveable/log15"
 	indexmanager "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/index_manager"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
@@ -22,8 +21,6 @@ type Server struct {
 	server       *http.Server
 	once         sync.Once
 }
-
-var _ goroutine.BackgroundRoutine = &Server{}
 
 func New(indexManager indexmanager.Manager) *Server {
 	host := ""

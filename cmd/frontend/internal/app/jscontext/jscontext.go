@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/gorilla/csrf"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -75,8 +74,6 @@ type JSContext struct {
 	AllowSignup bool `json:"allowSignup"`
 
 	ResetPasswordEnabled bool `json:"resetPasswordEnabled"`
-
-	ExternalServicesUserModeEnabled bool `json:"externalServicesUserModeEnabled"`
 
 	AuthProviders []authProviderInfo `json:"authProviders"`
 
@@ -167,8 +164,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		ResetPasswordEnabled: userpasswd.ResetPasswordEnabled(),
 
-		ExternalServicesUserModeEnabled: conf.ExternalServiceUserMode(),
-
 		AllowSignup: conf.AuthAllowSignup(),
 
 		AuthProviders: authProviders,
@@ -190,8 +185,9 @@ func publicSiteConfiguration() schema.SiteConfiguration {
 		updateChannel = "release"
 	}
 	return schema.SiteConfiguration{
-		AuthPublic:    c.AuthPublic,
-		UpdateChannel: updateChannel,
+		AuthPublic:                c.AuthPublic,
+		PermissionsBackgroundSync: c.PermissionsBackgroundSync,
+		UpdateChannel:             updateChannel,
 	}
 }
 

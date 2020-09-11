@@ -1,13 +1,8 @@
 package repos
 
 import (
-	"context"
-
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 var (
@@ -66,68 +61,3 @@ var (
 		Help: "The number of repositories that are managed by the scheduler.",
 	})
 )
-
-func MustRegisterMetrics(db dbutil.DB) {
-	scanCount := func(sql string) (float64, error) {
-		row := db.QueryRowContext(context.Background(), sql)
-		var count int64
-		err := row.Scan(&count)
-		if err != nil {
-			return 0, err
-		}
-
-		return float64(count), nil
-	}
-
-	promauto.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_repoupdater_user_external_services_total",
-		Help: "The total number of external services added by users",
-	}, func() float64 {
-		count, err := scanCount(`
--- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_user_external_services_total
-SELECT COUNT(*) FROM external_services
-WHERE namespace_user_id IS NOT NULL
-`)
-		if err != nil {
-			log15.Error("Failed to get total user external services", "err", err)
-			return 0
-		}
-		return count
-	})
-
-	promauto.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_repoupdater_user_repos_total",
-		Help: "The total number of repositories added by users",
-	}, func() float64 {
-		count, err := scanCount(`
--- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_user_repos_total
-SELECT COUNT(*) FROM external_service_repos
-WHERE external_service_id IN (
-		SELECT DISTINCT(id) FROM external_services
-		WHERE namespace_user_id IS NOT NULL
-	)
-`)
-		if err != nil {
-			log15.Error("Failed to get total user repositories", "err", err)
-			return 0
-		}
-		return count
-	})
-
-	promauto.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_repoupdater_user_with_external_services_total",
-		Help: "The total number of users who have added external services",
-	}, func() float64 {
-		count, err := scanCount(`
--- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_user_with_external_services_total
-SELECT COUNT(DISTINCT(namespace_user_id)) AS total
-FROM external_services
-WHERE namespace_user_id IS NOT NULL
-`)
-		if err != nil {
-			log15.Error("Failed to get total users with external services", "err", err)
-			return 0
-		}
-		return count
-	})
-}

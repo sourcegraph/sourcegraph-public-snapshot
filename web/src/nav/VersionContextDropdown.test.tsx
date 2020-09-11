@@ -3,7 +3,7 @@ import React from 'react'
 import { mount } from 'enzyme'
 import { VersionContextDropdown, VersionContextDropdownProps } from './VersionContextDropdown'
 import sinon from 'sinon'
-import { SearchPatternType } from '../graphql-operations'
+import { SearchPatternType } from '../../../shared/src/graphql/schema'
 
 const commonProps: VersionContextDropdownProps = {
     setVersionContext: sinon.spy((_versionContext: string | undefined) => {}),

@@ -169,6 +169,7 @@ func (h Webhook) upsertChangesetEvent(
 	// event we are currently handling
 	events, _, err := tx.ListChangesetEvents(ctx, ListChangesetEventsOpts{
 		ChangesetIDs: []int64{cs.ID},
+		Limit:        -1,
 	})
 	SetDerivedState(ctx, cs, events)
 	if err := tx.UpdateChangeset(ctx, cs); err != nil {

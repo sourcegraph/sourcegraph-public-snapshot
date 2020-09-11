@@ -16,14 +16,6 @@
       "description": "The Sourcegraph user or organization name publishing the extension.",
       "type": "string"
     },
-    "icon": {
-      "description": "The icon URL for this extension (data: URIs are OK).",
-      "type": "string"
-    },
-    "iconDark": {
-      "description": "A dark-mode-friendly icon URL for this extension (data: URIs are OK).",
-      "type": "string"
-    },
     "url": {
       "description": "A URL to a file containing the bundled JavaScript source code of this extension.",
       "type": "string",
@@ -56,13 +48,13 @@
       "items": {
         "type": "string",
         "enum": [
-          "Reports and stats",
-          "External services",
+          "Programming languages",
           "Linters",
-          "Code editors",
-          "Code Analysis",
+          "Code analysis",
+          "External services",
+          "Reports and stats",
           "Other",
-          "Programming languages"
+          "Demos"
         ]
       }
     },

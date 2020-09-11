@@ -97,10 +97,10 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		effectiveRepoFieldValues = effectiveRepoFieldValues[:i]
 
 		if len(effectiveRepoFieldValues) > 0 {
-			resolved, err := r.resolveRepositories(ctx, effectiveRepoFieldValues)
+			repoRevs, _, _, _, err := r.resolveRepositories(ctx, effectiveRepoFieldValues)
 
-			resolvers := make([]*searchSuggestionResolver, 0, len(resolved.repoRevs))
-			for _, rev := range resolved.repoRevs {
+			resolvers := make([]*searchSuggestionResolver, 0, len(repoRevs))
+			for _, rev := range repoRevs {
 				resolvers = append(resolvers, newSearchSuggestionResolver(
 					&RepositoryResolver{repo: rev.Repo},
 					math.MaxInt32,
@@ -204,7 +204,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			return mockShowSymbolMatches()
 		}
 
-		resolved, err := r.resolveRepositories(ctx, nil)
+		repoRevs, _, _, _, err := r.resolveRepositories(ctx, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -219,7 +219,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 		fileMatches, _, err := searchSymbols(ctx, &search.TextParameters{
 			PatternInfo:  p,
-			Repos:        resolved.repoRevs,
+			Repos:        repoRevs,
 			Query:        r.query,
 			Zoekt:        r.zoekt,
 			SearcherURLs: r.searcherURLs,

@@ -1,7 +1,7 @@
 import React from 'react'
 import { CampaignChangesets } from './CampaignChangesets'
 import * as H from 'history'
-import { of } from 'rxjs'
+import { of, Subject } from 'rxjs'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../../shared/src/telemetry/telemetryService'
 import { mount } from 'enzyme'
 import {
@@ -42,6 +42,8 @@ describe('CampaignChangesets', () => {
                     history={history}
                     location={history.location}
                     isLightTheme={true}
+                    campaignUpdates={new Subject<void>()}
+                    changesetUpdates={new Subject<void>()}
                     extensionsController={undefined as any}
                     platformContext={undefined as any}
                     telemetryService={NOOP_TELEMETRY_SERVICE}

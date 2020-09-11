@@ -21,7 +21,6 @@ import { PerformanceWarningAlert } from '../../site/PerformanceWarningAlert'
 import { PatternTypeProps } from '..'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { AuthenticatedUser } from '../../auth'
-import { SearchPatternType } from '../../graphql-operations'
 
 interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
@@ -61,7 +60,7 @@ interface SearchResultsInfoBarProps
  * informs them that this may be the case to avoid confusion.
  */
 const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInfoBarProps> = props =>
-    props.patternType === SearchPatternType.literal && props.query && props.query.includes('"') ? (
+    props.patternType === GQL.SearchPatternType.literal && props.query && props.query.includes('"') ? (
         <div
             className={`search-results-info-bar__notice${
                 props.results.results.length === 0 ? ' search-results-info-bar__notice--no-results' : ''

@@ -25,12 +25,12 @@ import TimetableIcon from 'mdi-react/TimetableIcon'
 import WebIcon from 'mdi-react/WebIcon'
 import WrenchIcon from 'mdi-react/WrenchIcon'
 import * as React from 'react'
-import { SymbolKind } from '../graphql-operations'
+import * as GQL from '../graphql/schema'
 
 /**
  * Returns the icon component for a given symbol kind
  */
-const getSymbolIconComponent = (kind: SymbolKind): MdiReactIconComponentType => {
+const getSymbolIconComponent = (kind: GQL.SymbolKind): MdiReactIconComponentType => {
     switch (kind) {
         case 'FILE':
             return FileDocumentIcon
@@ -91,7 +91,7 @@ const getSymbolIconComponent = (kind: SymbolKind): MdiReactIconComponentType => 
 }
 
 interface SymbolIconProps {
-    kind: SymbolKind
+    kind: GQL.SymbolKind
     className?: string
 }
 

@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/go-diff/diff"
 )
 
 const TestRawCampaignSpec = `{
@@ -53,8 +52,6 @@ changesetTemplate:
     message: Append Hello World to all README.md files
   published: false
 `
-
-var ChangesetSpecDiffStat = &diff.Stat{Added: 1, Changed: 2, Deleted: 1}
 
 func NewRawChangesetSpecGitBranch(repo graphql.ID, baseRev string) string {
 	diff := `diff --git INSTALL.md INSTALL.md

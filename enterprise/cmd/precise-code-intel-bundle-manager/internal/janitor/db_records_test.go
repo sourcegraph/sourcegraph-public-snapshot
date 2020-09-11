@@ -1,7 +1,6 @@
 package janitor
 
 import (
-	"context"
 	"fmt"
 	"path/filepath"
 	"sort"
@@ -34,7 +33,7 @@ func TestRemoveCompletedRecordsWithoutBundleFile(t *testing.T) {
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.removeCompletedRecordsWithoutBundleFile(context.Background()); err != nil {
+	if err := j.removeCompletedRecordsWithoutBundleFile(); err != nil {
 		t.Fatalf("unexpected error removing completed uploads without bundle files: %s", err)
 	}
 
@@ -69,7 +68,7 @@ func TestRemoveOldUploadingRecords(t *testing.T) {
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.removeOldUploadingRecords(context.Background()); err != nil {
+	if err := j.removeOldUploadingRecords(); err != nil {
 		t.Fatalf("unexpected error removing old records that have not finished uploading: %s", err)
 	}
 

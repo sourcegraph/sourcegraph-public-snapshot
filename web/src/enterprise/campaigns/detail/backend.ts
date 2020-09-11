@@ -1,11 +1,13 @@
 import { map } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql, requestGraphQL } from '../../../../../shared/src/graphql/graphql'
 import { Observable } from 'rxjs'
 import { diffStatFields, fileDiffFields } from '../../../backend/diff'
 import {
     CampaignFields,
+    CampaignByIDResult,
     CampaignChangesetsVariables,
     CampaignChangesetsResult,
+    CampaignByIDVariables,
     ExternalChangesetFileDiffsResult,
     ExternalChangesetFileDiffsVariables,
     ExternalChangesetFileDiffsFields,
@@ -17,20 +19,7 @@ import {
     ChangesetCountsOverTimeResult,
     DeleteCampaignResult,
     DeleteCampaignVariables,
-    CampaignByNamespaceResult,
-    CampaignByNamespaceVariables,
 } from '../../../graphql-operations'
-import { requestGraphQL } from '../../../backend/graphql'
-
-const changesetStatsFragment = gql`
-    fragment ChangesetStatsFields on ChangesetConnectionStats {
-        total
-        closed
-        merged
-        open
-        unpublished
-    }
-`
 
 const campaignFragment = gql`
     fragment CampaignFields on Campaign {
@@ -43,41 +32,29 @@ const campaignFragment = gql`
             url
         }
         description
-
-        createdAt
         initialApplier {
             username
             url
         }
-
-        lastAppliedAt
-        lastApplier {
-            username
-            url
-        }
-
+        createdAt
         updatedAt
         closedAt
         viewerCanAdminister
-
         changesets {
             stats {
-                ...ChangesetStatsFields
+                total
+                closed
+                merged
+                open
+                unpublished
             }
         }
-
         diffStat {
             ...DiffStatFields
-        }
-
-        currentSpec {
-            originalInput
         }
     }
 
     ${diffStatFields}
-
-    ${changesetStatsFragment}
 `
 
 const changesetLabelFragment = gql`
@@ -88,27 +65,30 @@ const changesetLabelFragment = gql`
     }
 `
 
-export const fetchCampaignByNamespace = (
-    namespaceID: Scalars['ID'],
-    campaign: CampaignFields['name']
-): Observable<CampaignFields | null> =>
-    requestGraphQL<CampaignByNamespaceResult, CampaignByNamespaceVariables>(
-        gql`
-            query CampaignByNamespace($namespaceID: ID!, $campaign: String!) {
-                campaign(namespace: $namespaceID, name: $campaign) {
-                    ...CampaignFields
+export const fetchCampaignById = (campaign: Scalars['ID']): Observable<CampaignFields | null> =>
+    requestGraphQL<CampaignByIDResult, CampaignByIDVariables>({
+        request: gql`
+            query CampaignByID($campaign: ID!) {
+                node(id: $campaign) {
+                    __typename
+                    ... on Campaign {
+                        ...CampaignFields
+                    }
                 }
             }
             ${campaignFragment}
         `,
-        { namespaceID, campaign }
-    ).pipe(
+        variables: { campaign },
+    }).pipe(
         map(dataOrThrowErrors),
-        map(({ campaign }) => {
-            if (!campaign) {
+        map(({ node }) => {
+            if (!node) {
                 return null
             }
-            return campaign
+            if (node.__typename !== 'Campaign') {
+                throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
+            }
+            return node
         })
     )
 
@@ -154,9 +134,6 @@ export const externalChangesetFieldsFragment = gql`
         createdAt
         updatedAt
         nextSyncAt
-        currentSpec {
-            id
-        }
     }
 
     ${diffStatFields}
@@ -193,8 +170,8 @@ export const queryChangesets = ({
 }: CampaignChangesetsVariables): Observable<
     (CampaignChangesetsResult['node'] & { __typename: 'Campaign' })['changesets']
 > =>
-    requestGraphQL<CampaignChangesetsResult, CampaignChangesetsVariables>(
-        gql`
+    requestGraphQL<CampaignChangesetsResult, CampaignChangesetsVariables>({
+        request: gql`
             query CampaignChangesets(
                 $campaign: ID!
                 $first: Int
@@ -234,7 +211,7 @@ export const queryChangesets = ({
 
             ${changesetFieldsFragment}
         `,
-        {
+        variables: {
             campaign,
             first,
             after,
@@ -244,8 +221,8 @@ export const queryChangesets = ({
             publicationState,
             reconcilerState,
             onlyPublishedByThisCampaign,
-        }
-    ).pipe(
+        },
+    }).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
             if (!node) {
@@ -259,16 +236,16 @@ export const queryChangesets = ({
     )
 
 export async function syncChangeset(changeset: Scalars['ID']): Promise<void> {
-    const result = await requestGraphQL<SyncChangesetResult, SyncChangesetVariables>(
-        gql`
+    const result = await requestGraphQL<SyncChangesetResult, SyncChangesetVariables>({
+        request: gql`
             mutation SyncChangeset($changeset: ID!) {
                 syncChangeset(changeset: $changeset) {
                     alwaysNil
                 }
             }
         `,
-        { changeset }
-    ).toPromise()
+        variables: { changeset },
+    }).toPromise()
     dataOrThrowErrors(result)
 }
 
@@ -343,8 +320,8 @@ export const queryExternalChangesetWithFileDiffs = ({
     after,
     isLightTheme,
 }: ExternalChangesetFileDiffsVariables): Observable<ExternalChangesetFileDiffsFields> =>
-    requestGraphQL<ExternalChangesetFileDiffsResult, ExternalChangesetFileDiffsVariables>(
-        gql`
+    requestGraphQL<ExternalChangesetFileDiffsResult, ExternalChangesetFileDiffsVariables>({
+        request: gql`
             query ExternalChangesetFileDiffs(
                 $externalChangeset: ID!
                 $first: Int
@@ -359,8 +336,8 @@ export const queryExternalChangesetWithFileDiffs = ({
 
             ${externalChangesetFileDiffsFields}
         `,
-        { externalChangeset, first, after, isLightTheme }
-    ).pipe(
+        variables: { externalChangeset, first, after, isLightTheme },
+    }).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
             if (!node) {
@@ -388,8 +365,8 @@ const changesetCountsOverTimeFragment = gql`
 export const queryChangesetCountsOverTime = ({
     campaign,
 }: ChangesetCountsOverTimeVariables): Observable<ChangesetCountsOverTimeFields[]> =>
-    requestGraphQL<ChangesetCountsOverTimeResult, ChangesetCountsOverTimeVariables>(
-        gql`
+    requestGraphQL<ChangesetCountsOverTimeResult, ChangesetCountsOverTimeVariables>({
+        request: gql`
             query ChangesetCountsOverTime($campaign: ID!) {
                 node(id: $campaign) {
                     __typename
@@ -403,8 +380,8 @@ export const queryChangesetCountsOverTime = ({
 
             ${changesetCountsOverTimeFragment}
         `,
-        { campaign }
-    ).pipe(
+        variables: { campaign },
+    }).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
             if (!node) {
@@ -418,15 +395,15 @@ export const queryChangesetCountsOverTime = ({
     )
 
 export async function deleteCampaign(campaign: Scalars['ID']): Promise<void> {
-    const result = await requestGraphQL<DeleteCampaignResult, DeleteCampaignVariables>(
-        gql`
+    const result = await requestGraphQL<DeleteCampaignResult, DeleteCampaignVariables>({
+        request: gql`
             mutation DeleteCampaign($campaign: ID!) {
                 deleteCampaign(campaign: $campaign) {
                     alwaysNil
                 }
             }
         `,
-        { campaign }
-    ).toPromise()
+        variables: { campaign },
+    }).toPromise()
     dataOrThrowErrors(result)
 }

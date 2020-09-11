@@ -11,6 +11,7 @@ import React from 'react'
 import { render } from 'react-dom'
 import '../enterprise.scss'
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
+import { enterpriseExploreSections } from './explore/exploreSections'
 import { enterpriseExtensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
 import { enterpriseExtensionAreaRoutes } from './extensions/extension/routes'
 import { enterpriseExtensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
@@ -34,6 +35,7 @@ import { enterpriseRepoSettingsSidebarGroups } from './repo/settings/sidebaritem
 window.addEventListener('DOMContentLoaded', () => {
     render(
         <SourcegraphWebApp
+            exploreSections={enterpriseExploreSections}
             extensionAreaRoutes={enterpriseExtensionAreaRoutes}
             extensionAreaHeaderNavItems={enterpriseExtensionAreaHeaderNavItems}
             extensionsAreaRoutes={enterpriseExtensionsAreaRoutes}

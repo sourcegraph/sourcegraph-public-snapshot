@@ -1,10 +1,12 @@
 import { storiesOf } from '@storybook/react'
-import { boolean } from '@storybook/addon-knobs'
+import { radios, boolean } from '@storybook/addon-knobs'
 import React from 'react'
 import { FileDiffNode } from './FileDiffNode'
+import { createMemoryHistory } from 'history'
+import webStyles from '../../SourcegraphWebApp.scss'
 import { DEMO_HUNKS } from './FileDiffHunks.story'
+import { MemoryRouter } from 'react-router'
 import { FileDiffFields } from '../../graphql-operations'
-import { WebStory } from '../WebStory'
 
 export const FILE_DIFF_NODES: FileDiffFields[] = [
     {
@@ -182,25 +184,31 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
     },
 ]
 
-const { add } = storiesOf('web/diffs/FileDiffNode', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const { add } = storiesOf('web/FileDiffNode', module).addDecorator(story => {
+    const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
+    document.body.classList.toggle('theme-light', theme === 'light')
+    document.body.classList.toggle('theme-dark', theme === 'dark')
+    return (
+        <>
+            <style>{webStyles}</style>
+            <div className="p-3 container">{story()}</div>
+        </>
+    )
+})
 
 add('All file node states overview', () => (
-    <WebStory>
-        {webProps => (
-            <>
-                {FILE_DIFF_NODES.map((node, index) => (
-                    <FileDiffNode
-                        {...webProps}
-                        key={index}
-                        persistLines={boolean('persistLines', false)}
-                        lineNumbers={boolean('lineNumbers', true)}
-                        node={node}
-                        className="abcdef"
-                    />
-                ))}
-            </>
-        )}
-    </WebStory>
+    <MemoryRouter>
+        {FILE_DIFF_NODES.map((node, index) => (
+            <FileDiffNode
+                key={index}
+                persistLines={boolean('persistLines', false)}
+                lineNumbers={boolean('lineNumbers', true)}
+                isLightTheme={true}
+                node={node}
+                className="abcdef"
+                location={createMemoryHistory().location}
+                history={createMemoryHistory()}
+            />
+        ))}
+    </MemoryRouter>
 ))

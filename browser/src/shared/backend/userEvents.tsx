@@ -2,7 +2,6 @@ import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { DEFAULT_SOURCEGRAPH_URL } from '../util/context'
-import { UserEvent, EventSource } from '../../graphql-operations'
 
 /**
  * Log a user action on the associated self-hosted Sourcegraph instance (allows site admins on a private
@@ -11,7 +10,7 @@ import { UserEvent, EventSource } from '../../graphql-operations'
  * @deprecated Use logEvent
  */
 export const logUserEvent = (
-    event: UserEvent,
+    event: GQL.UserEvent,
     uid: string,
     url: string,
     requestGraphQL: PlatformContext['requestGraphQL']
@@ -68,7 +67,7 @@ export const logEvent = (
         `,
         variables: {
             ...event,
-            source: EventSource.CODEHOSTINTEGRATION,
+            source: GQL.EventSource.CODEHOSTINTEGRATION,
             argument: event.argument && JSON.stringify(event.argument),
         },
         mightContainPrivateInfo: false,

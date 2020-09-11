@@ -69,7 +69,7 @@ LSIF dump successfully uploaded for processing.
 View processing status at <link to your Sourcegraph instance LSIF status>.
 ```
 
-## Automate code indexing
+### 5. Automate code indexing
 
 Now that you have successfully enabled code intelligence for your repository, you can automate source code indexing to ensure precise code intelligence stays up to date with the most recent code changes in the repository. See our [continuous integration guide](adding_lsif_to_workflows.md) to setup automation.
 

@@ -6,15 +6,12 @@ import (
 	"regexp/syntax"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
-
-var matchHoleRegexp = lazyregexp.New(splitOnHolesPattern())
 
 func splitOnHolesPattern() string {
 	word := `\w+`
@@ -33,103 +30,9 @@ func splitOnHolesPattern() string {
 	}, "|")
 }
 
-var matchRegexpPattern = lazyregexp.New(`(\w+)?~(.*)`)
+var matchHoleRegexp = lazyregexp.New(splitOnHolesPattern())
 
-type Term interface {
-	term()
-	String() string
-}
-
-type Literal string
-type RegexpPattern string
-
-func (Literal) term() {}
-func (t Literal) String() string {
-	return string(t)
-}
-
-func (RegexpPattern) term() {}
-func (t RegexpPattern) String() string {
-	return string(t)
-}
-
-// templateToRegexp parses a comby pattern to a list of Terms where a Term is
-// either a literal or a regular expression extracted from hole syntax.
-func templateToRegexp(buf []byte) []Term {
-	// uses `open` to track whether [] are balanced when parsing hole syntax
-	// and uses `inside` to track whether [] are balanced inside holes that
-	// contain regular expressions
-	var open, inside, advance int
-	var r rune
-	var currentLiteral, currentHole []rune
-	var result []Term
-
-	next := func() rune {
-		r, advance := utf8.DecodeRune(buf)
-		buf = buf[advance:]
-		return r
-	}
-
-	for len(buf) > 0 {
-		r = next()
-		switch r {
-		case ':':
-			if len(buf[advance:]) > 0 {
-				r = next()
-				if r == '[' {
-					open++
-					result = append(result, Literal(currentLiteral))
-					currentLiteral = []rune{}
-					continue
-				}
-				currentLiteral = append(currentLiteral, ':', r)
-				continue
-			}
-			currentLiteral = append(currentLiteral, ':')
-		case '\\':
-			if len(buf[advance:]) > 0 && open > 0 {
-				// assume this is an escape sequence for a regex hole
-				r = next()
-				currentHole = append(currentHole, '\\', r)
-				continue
-			}
-			currentLiteral = append(currentLiteral, '\\')
-		case '[':
-			if open > 0 {
-				inside++
-				continue
-			}
-			currentLiteral = append(currentLiteral, r)
-		case ']':
-			if open > 0 && inside > 0 {
-				inside--
-				continue
-			}
-			if open > 0 {
-				if matchRegexpPattern.MatchString(string(currentHole)) {
-					extractedRegexp := matchRegexpPattern.ReplaceAllString(string(currentHole), `$2`)
-					currentHole = []rune{}
-					result = append(result, RegexpPattern(extractedRegexp))
-				}
-				open--
-				continue
-			}
-			currentLiteral = append(currentLiteral, r)
-		default:
-			if open > 0 {
-				currentHole = append(currentHole, r)
-			} else {
-				currentLiteral = append(currentLiteral, r)
-			}
-		}
-	}
-	result = append(result, Literal(currentLiteral))
-	return result
-}
-
-var onMatchWhitespace = lazyregexp.New(`[\s]+`)
-
-// StructuralPatToRegexpQuery converts a comby pattern to an approximate regular
+// StructuralPatToRegexpQuery converts a comby pattern to a Zoekt regular
 // expression query. It converts whitespace in the pattern so that content
 // across newlines can be matched in the index. As an incomplete approximation,
 // we use the regex pattern .*? to scan ahead. A shortcircuit option returns a
@@ -138,36 +41,34 @@ var onMatchWhitespace = lazyregexp.New(`[\s]+`)
 //
 // Example:
 // "ParseInt(:[args]) if err != nil" -> "ParseInt(.*)\s+if\s+err!=\s+nil"
-func StructuralPatToRegexpQuery(pattern string, shortcircuit bool) string {
+func StructuralPatToRegexpQuery(pattern string, shortcircuit bool) (zoektquery.Q, error) {
+	substrings := matchHoleRegexp.Split(pattern, -1)
+	var children []zoektquery.Q
 	var pieces []string
-
-	terms := templateToRegexp([]byte(pattern))
-	for _, term := range terms {
-		if term.String() == "" {
-			continue
-		}
-		switch v := term.(type) {
-		case Literal:
-			piece := regexp.QuoteMeta(v.String())
-			piece = onMatchWhitespace.ReplaceAllLiteralString(piece, `[\s]+`)
-			pieces = append(pieces, piece)
-		case RegexpPattern:
-			pieces = append(pieces, v.String())
-		default:
-			panic("Unreachable")
-		}
+	for _, s := range substrings {
+		piece := regexp.QuoteMeta(s)
+		onMatchWhitespace := lazyregexp.New(`[\s]+`)
+		piece = onMatchWhitespace.ReplaceAllLiteralString(piece, `[\s]+`)
+		pieces = append(pieces, piece)
 	}
 
 	if len(pieces) == 0 {
-		// Match anything.
-		return "(.|\\s)*?"
+		return &zoektquery.Const{Value: true}, nil
 	}
-
+	var rs string
 	if shortcircuit {
 		// As a shortcircuit, do not match across newlines of structural search pieces.
-		return "(" + strings.Join(pieces, ").*?(") + ")"
+		rs = "(" + strings.Join(pieces, ").*?(") + ")"
+	} else {
+		rs = "(" + strings.Join(pieces, ")(.|\\s)*?(") + ")"
 	}
-	return "(" + strings.Join(pieces, ")(.|\\s)*?(") + ")"
+	re, _ := syntax.Parse(rs, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+	children = append(children, &zoektquery.Regexp{
+		Regexp:        re,
+		CaseSensitive: true,
+		Content:       true,
+	})
+	return &zoektquery.And{Children: children}, nil
 }
 
 func HandleFilePathPatterns(query *search.TextPatternInfo) (zoektquery.Q, error) {
@@ -215,23 +116,13 @@ func HandleFilePathPatterns(query *search.TextPatternInfo) (zoektquery.Q, error)
 }
 
 func buildQuery(args *search.TextParameters, repos *indexedRepoRevs, filePathPatterns zoektquery.Q, shortcircuit bool) (zoektquery.Q, error) {
-	regexString := StructuralPatToRegexpQuery(args.PatternInfo.Pattern, shortcircuit)
-	if len(regexString) == 0 {
-		return &zoektquery.Const{Value: true}, nil
-	}
-	re, err := syntax.Parse(regexString, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+	q, err := StructuralPatToRegexpQuery(args.PatternInfo.Pattern, shortcircuit)
 	if err != nil {
 		return nil, err
 	}
-	return zoektquery.NewAnd(
-		&zoektquery.RepoBranches{Set: repos.repoBranches},
-		filePathPatterns,
-		&zoektquery.Regexp{
-			Regexp:        re,
-			CaseSensitive: true,
-			Content:       true,
-		},
-	), nil
+	q = zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, filePathPatterns, q)
+	q = zoektquery.Simplify(q)
+	return q, nil
 }
 
 // zoektSearchHEADOnlyFiles searches repositories using zoekt, returning only the file paths containing
@@ -288,9 +179,6 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 	// manually specified, run a more complete and expensive search.
 	if resp.FileCount < 10 || args.PatternInfo.FileMatchLimit != defaultMaxSearchResults {
 		q, err = buildQuery(args, repos, filePathPatterns, false)
-		if err != nil {
-			return nil, false, nil, err
-		}
 		resp, err = args.Zoekt.Client.Search(ctx, q, &searchOpts)
 		if err != nil {
 			return nil, false, nil, err

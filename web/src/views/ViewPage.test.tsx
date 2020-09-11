@@ -2,10 +2,10 @@ import React from 'react'
 import { create, act } from 'react-test-renderer'
 import { ViewPage } from './ViewPage'
 import * as H from 'history'
+import { SearchPatternType } from '../../../shared/src/graphql/schema'
 import { Controller } from '../../../shared/src/extensions/controller'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { of } from 'rxjs'
-import { SearchPatternType } from '../../../shared/src/graphql-operations'
 
 jest.mock('@sourcegraph/react-loading-spinner', () => ({ LoadingSpinner: 'LoadingSpinner' }))
 jest.mock('./QueryInputInViewContent', () => ({ QueryInputInViewContent: 'QueryInputInViewContent' }))

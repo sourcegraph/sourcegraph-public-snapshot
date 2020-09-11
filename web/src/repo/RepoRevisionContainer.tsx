@@ -20,6 +20,7 @@ import { HeroPage } from '../components/HeroPage'
 import { ChromeExtensionToast } from '../marketing/BrowserExtensionToast'
 import { IS_CHROME } from '../marketing/util'
 import { ThemeProps } from '../../../shared/src/theme'
+import { EventLoggerProps } from '../tracking/eventLogger'
 import { RouteDescriptor } from '../util/contributions'
 import { CopyLinkAction } from './actions/CopyLinkAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
@@ -38,7 +39,6 @@ import { RevisionSpec } from '../../../shared/src/util/url'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { AuthenticatedUser } from '../auth'
-import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
 /** Props passed to sub-routes of {@link RepoRevisionContainer}. */
 export interface RepoRevisionContainerContext
@@ -47,7 +47,7 @@ export interface RepoRevisionContainerContext
         ExtensionsControllerProps,
         PlatformContextProps,
         ThemeProps,
-        TelemetryProps,
+        EventLoggerProps,
         ActivationProps,
         Pick<
             RepoContainerContext,
@@ -76,7 +76,7 @@ interface RepoRevisionContainerProps
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         PlatformContextProps,
-        TelemetryProps,
+        EventLoggerProps,
         ExtensionsControllerProps,
         ThemeProps,
         ActivationProps,

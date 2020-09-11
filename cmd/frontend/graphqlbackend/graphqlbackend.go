@@ -117,6 +117,11 @@ VARIABLES
 }
 
 func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldName string, trivial bool, args map[string]interface{}) (context.Context, trace.TraceFieldFinishFunc) {
+	var finish trace.TraceFieldFinishFunc
+	if ot.ShouldTrace(ctx) {
+		ctx, finish = trace.OpenTracingTracer{}.TraceField(ctx, label, typeName, fieldName, trivial, args)
+	}
+
 	start := time.Now()
 	return ctx, func(err *gqlerrors.QueryError) {
 		isErrStr := strconv.FormatBool(err != nil)
@@ -132,6 +137,9 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 		if origin != "unknown" && (fieldName == "search" || fieldName == "lsif") {
 			isExact := strconv.FormatBool(fieldName == "lsif")
 			codeIntelSearchHistogram.WithLabelValues(isExact, isErrStr).Observe(time.Since(start).Seconds())
+		}
+		if finish != nil {
+			finish(err)
 		}
 	}
 }
@@ -348,7 +356,6 @@ func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz A
 		Schema,
 		resolver,
 		graphql.Tracer(prometheusTracer{}),
-		graphql.UseStringDescriptions(),
 	)
 }
 

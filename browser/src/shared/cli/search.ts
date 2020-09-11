@@ -3,12 +3,12 @@ import { PlatformContext } from '../../../../shared/src/platform/context'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { createSuggestionFetcher } from '../backend/search'
 import { observeSourcegraphURL, getAssetsURL, DEFAULT_SOURCEGRAPH_URL } from '../util/context'
+import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { createPlatformContext } from '../platform/context'
 import { from } from 'rxjs'
 import { isDefined, isNot } from '../../../../shared/src/util/types'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { Settings } from '../../../../shared/src/settings/settings'
-import { SearchPatternType } from '../../graphql-operations'
 
 const isURL = /^https?:\/\//
 const IS_EXTENSION = true // This feature is only supported in browser extension

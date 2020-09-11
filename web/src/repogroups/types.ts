@@ -1,4 +1,4 @@
-import { SearchPatternType } from '../graphql-operations'
+import * as GQL from '../../../shared/src/graphql/schema'
 
 export interface ExampleQuery {
     title: string
@@ -7,7 +7,7 @@ export interface ExampleQuery {
     exampleQuery: JSX.Element
     /** The raw query string. */
     rawQuery: string
-    patternType: SearchPatternType
+    patternType: GQL.SearchPatternType
 }
 
 export interface RepogroupMetadata {

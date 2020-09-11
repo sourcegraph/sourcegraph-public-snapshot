@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func testStore(t *testing.T, filename string) persistence.Store {
+func testReader(t *testing.T, filename string) persistence.Reader {
 	tempDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		t.Fatalf("unexpected error creating temp dir: %s", err)
@@ -37,12 +37,12 @@ func testStore(t *testing.T, filename string) persistence.Store {
 		t.Fatalf("unexpected error creating cache: %s", err)
 	}
 
-	store, err := OpenStore(context.Background(), dest, cache)
+	reader, err := NewReader(context.Background(), dest, cache)
 	if err != nil {
-		t.Fatalf("unexpected error opening store: %s", err)
+		t.Fatalf("unexpected error opening database: %s", err)
 	}
-	t.Cleanup(func() { _ = store.Close(nil) })
+	t.Cleanup(func() { _ = reader.Close() })
 
 	// Wrap in observed, as that's how it's used in production
-	return persistence.NewObserved(store, &observation.TestContext)
+	return persistence.NewObserved(reader, &observation.TestContext)
 }

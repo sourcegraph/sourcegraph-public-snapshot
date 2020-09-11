@@ -1,3 +1,4 @@
+import { Observer } from 'rxjs'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import * as H from 'history'
 import React, { useState, useCallback } from 'react'
@@ -22,6 +23,7 @@ export interface ExternalChangesetCloseNodeProps extends ThemeProps {
     node: ExternalChangesetFields
     willClose: boolean
     viewerCanAdminister: boolean
+    campaignUpdates?: Pick<Observer<void>, 'next'>
     history: H.History
     location: H.Location
     extensionInfo?: {
@@ -35,6 +37,7 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<ExternalChanges
     node,
     willClose,
     viewerCanAdminister,
+    campaignUpdates,
     isLightTheme,
     history,
     location,
@@ -65,10 +68,16 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<ExternalChanges
                 )}
             </button>
             {willClose ? <ChangesetCloseActionClose /> : <ChangesetCloseActionKept />}
-            <ExternalChangesetInfoCell node={node} viewerCanAdminister={viewerCanAdminister} />
+            <ExternalChangesetInfoCell
+                node={node}
+                viewerCanAdminister={viewerCanAdminister}
+                campaignUpdates={campaignUpdates}
+            />
             <span>{node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} />}</span>
             <span>{node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} />}</span>
-            <div>{node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} separateLines={true} />}</div>
+            <div className="external-changeset-close-node__diffstat">
+                {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} />}
+            </div>
             {isExpanded && (
                 <div className="external-changeset-close-node__expanded-section">
                     {node.error && <ErrorAlert error={node.error} history={history} />}

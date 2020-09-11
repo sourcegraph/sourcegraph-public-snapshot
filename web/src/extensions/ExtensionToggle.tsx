@@ -1,42 +1,41 @@
-import React, { useCallback, useState } from 'react'
-import { EMPTY, from, Observable } from 'rxjs'
+import { last } from 'lodash'
+import * as React from 'react'
+import { EMPTY, from, Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { Toggle } from '../../../shared/src/components/Toggle'
+import { ConfiguredRegistryExtension, isExtensionEnabled } from '../../../shared/src/extensions/extension'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
-import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
+import { SettingsCascade, SettingsCascadeOrError, SettingsCascadeProps } from '../../../shared/src/settings/settings'
+import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { eventLogger } from '../tracking/eventLogger'
 import { isExtensionAdded } from './extension/extension'
-import { useEventObservable } from '../../../shared/src/util/useObservable'
+import { property } from '../../../shared/src/util/types'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
-    /** The id of the extension that this element is for. */
-    extensionID: string
-    enabled: boolean
+    /** The extension that this element is for. */
+    extension: Pick<ConfiguredRegistryExtension, 'id'>
+
     className?: string
-    /** Additional logic to run on toggle */
-    onToggleChange?: (enabled: boolean) => void
 }
 
-export const ExtensionToggle: React.FunctionComponent<Props> = ({
-    settingsCascade,
-    platformContext,
-    extensionID,
-    enabled,
-    className,
-    onToggleChange,
-}) => {
-    const [optimisticEnabled, setOptimisticEnabled] = useState(enabled)
-    const [nextToggle] = useEventObservable(
-        useCallback(
-            (toggles: Observable<boolean>) =>
-                toggles.pipe(
+/**
+ * Displays a toggle button for an extension.
+ */
+export class ExtensionToggle extends React.PureComponent<Props> {
+    private toggles = new Subject<boolean>()
+    private subscriptions = new Subscription()
+
+    public componentDidMount(): void {
+        this.subscriptions.add(
+            this.toggles
+                .pipe(
                     switchMap(enabled => {
-                        if (settingsCascade.subjects === null) {
+                        if (this.props.settingsCascade.subjects === null) {
                             return EMPTY
                         }
 
                         // Only operate on the highest precedence settings, for simplicity.
-                        const subjects = settingsCascade.subjects
+                        const subjects = this.props.settingsCascade.subjects
                         if (subjects.length === 0) {
                             return EMPTY
                         }
@@ -46,41 +45,61 @@ export const ExtensionToggle: React.FunctionComponent<Props> = ({
                         }
 
                         if (
-                            !isExtensionAdded(settingsCascade.final, extensionID) &&
-                            !confirmAddExtension(extensionID)
+                            !isExtensionAdded(this.props.settingsCascade.final, this.props.extension.id) &&
+                            !confirmAddExtension(this.props.extension.id)
                         ) {
                             return EMPTY
                         }
 
-                        eventLogger.log('ExtensionToggled', { extension_id: extensionID })
+                        eventLogger.log('ExtensionToggled', { extension_id: this.props.extension.id })
 
-                        if (onToggleChange) {
-                            onToggleChange(enabled)
-                        }
-                        setOptimisticEnabled(enabled)
                         return from(
-                            platformContext.updateSettings(highestPrecedenceSubject.subject.id, {
-                                path: ['extensions', extensionID],
+                            this.props.platformContext.updateSettings(highestPrecedenceSubject.subject.id, {
+                                path: ['extensions', this.props.extension.id],
                                 value: enabled,
                             })
                         )
                     })
-                ),
-            [extensionID, platformContext, settingsCascade, onToggleChange]
+                )
+                .subscribe()
         )
-    )
+    }
 
-    const title = optimisticEnabled ? 'Click to disable' : 'Click to enable'
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
+    }
 
-    return (
-        <Toggle
-            value={optimisticEnabled}
-            onToggle={nextToggle}
-            title={title}
-            className={className}
-            dataTest={`extension-toggle-${extensionID}`}
-        />
-    )
+    public render(): JSX.Element | null {
+        const cascade = extractErrors(this.props.settingsCascade)
+        const highestPrecedenceSubjectWithExtensionAdded = isErrorLike(cascade)
+            ? undefined
+            : last(cascade.subjects.filter(subject => isExtensionAdded(subject.settings, this.props.extension.id)))
+
+        let title: string
+        if (highestPrecedenceSubjectWithExtensionAdded) {
+            // Describe highest-precedence subject where this extension is enabled.
+            title = `${
+                isExtensionEnabled(highestPrecedenceSubjectWithExtensionAdded.settings, this.props.extension.id)
+                    ? 'Enabled'
+                    : 'Disabled'
+            } in ${highestPrecedenceSubjectWithExtensionAdded.subject.__typename.toLowerCase()} settings`
+        } else {
+            title = 'Click to enable'
+        }
+
+        return (
+            <Toggle
+                value={isExtensionEnabled(this.props.settingsCascade.final, this.props.extension.id)}
+                onToggle={this.onToggle}
+                title={title}
+                className={this.props.className}
+            />
+        )
+    }
+
+    private onToggle = (enabled: boolean): void => {
+        this.toggles.next(enabled)
+    }
 }
 
 /**
@@ -90,4 +109,19 @@ function confirmAddExtension(extensionID: string): boolean {
     return confirm(
         `Add Sourcegraph extension ${extensionID}?\n\nIt can:\n- Read repositories and files you view using Sourcegraph\n- Read and change your Sourcegraph settings`
     )
+}
+
+/** Converts a SettingsCascadeOrError to a SettingsCascade, returning the first error it finds. */
+function extractErrors(settingsCascade: SettingsCascadeOrError): SettingsCascade | ErrorLike {
+    if (settingsCascade.subjects === null) {
+        return new Error('Subjects was null')
+    }
+    if (settingsCascade.final === null || isErrorLike(settingsCascade.final)) {
+        return new Error(`Merged was ${String(settingsCascade.final)}`)
+    }
+    const found = settingsCascade.subjects.find(property('settings', isErrorLike))
+    if (found) {
+        return new Error(`One of the subjects was ${found.settings.message}`)
+    }
+    return settingsCascade as SettingsCascade
 }

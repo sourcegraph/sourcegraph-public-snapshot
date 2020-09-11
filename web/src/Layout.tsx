@@ -14,6 +14,7 @@ import { parseHash } from '../../shared/src/util/url'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { GlobalContributions } from './contributions'
+import { ExploreSectionDescriptor } from './explore/ExploreArea'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
@@ -38,10 +39,10 @@ import {
     CopyQueryButtonProps,
     RepogroupHomepageProps,
     OnboardingTourProps,
-    EnterpriseHomePanelsProps,
 } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
+import { EventLogger, EventLoggerProps } from './tracking/eventLogger'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
@@ -61,8 +62,6 @@ import { Remote } from 'comlink'
 import { FlatExtHostAPI } from '../../shared/src/api/contract'
 import { useBreadcrumbs } from './components/Breadcrumbs'
 import { AuthenticatedUser } from './auth'
-import { SearchPatternType } from './graphql-operations'
-import { TelemetryProps } from '../../shared/src/telemetry/telemetryService'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -71,7 +70,7 @@ export interface LayoutProps
         ExtensionsControllerProps,
         KeyboardShortcutsProps,
         ThemeProps,
-        TelemetryProps,
+        EventLoggerProps,
         ThemePreferenceProps,
         ActivationProps,
         PatternTypeProps,
@@ -80,8 +79,8 @@ export interface LayoutProps
         CopyQueryButtonProps,
         VersionContextProps,
         RepogroupHomepageProps,
-        OnboardingTourProps,
-        EnterpriseHomePanelsProps {
+        OnboardingTourProps {
+    exploreSections: readonly ExploreSectionDescriptor[]
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes: readonly ExtensionsAreaRoute[]
@@ -110,6 +109,8 @@ export interface LayoutProps
      */
     viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
 
+    telemetryService: EventLogger
+
     // Search
     navbarSearchQueryState: QueryState
     onNavbarQueryChange: (queryState: QueryState) => void
@@ -117,7 +118,7 @@ export interface LayoutProps
     searchRequest: (
         query: QueryState['query'],
         version: string,
-        patternType: SearchPatternType,
+        patternType: GQL.SearchPatternType,
         versionContext: string | undefined,
         extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
     ) => Observable<GQL.ISearchResults | ErrorLike>
@@ -139,11 +140,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const repogroupPages = ['/refactor-python2-to-3', '/kubernetes', '/golang', '/react-hooks', '/android', '/stanford']
     const isRepogroupPage = repogroupPages.includes(props.location.pathname)
 
-    // TODO add a component layer as the parent of the Layout component rendering "top-level" routes that do not render the navbar,
-    // so that Layout can always render the navbar.
     const needsSiteInit = window.context.needsSiteInit
     const isSiteInit = props.location.pathname === '/site-admin/init'
-    const isSignInOrUp = props.location.pathname === '/sign-in' || props.location.pathname === '/sign-up'
 
     const hideGlobalSearchInput: boolean =
         props.location.pathname === '/stats' || props.location.pathname === '/search/query-builder'
@@ -176,7 +174,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 <IntegrationsToast history={props.history} />
             )}
             {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
-            {!isSiteInit && !isSignInOrUp && (
+            {!isSiteInit && (
                 <GlobalNavbar
                     {...props}
                     isSearchRelatedPage={isSearchRelatedPage}

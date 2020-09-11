@@ -12,17 +12,22 @@ import {
     CampaignsByOrgVariables,
 } from '../../../graphql-operations'
 import { CampaignsListBetaNotice } from './CampaignsListBetaNotice'
+import { CampaignHeader } from '../detail/CampaignHeader'
 import PlusIcon from 'mdi-react/PlusIcon'
 import { Link } from '../../../../../shared/src/components/Link'
-import { PageHeader } from '../../../components/PageHeader'
-import { CampaignsIcon } from '../icons'
 
-export interface CampaignListPageProps extends TelemetryProps, Pick<RouteComponentProps, 'history' | 'location'> {
+interface Props extends TelemetryProps, Pick<RouteComponentProps, 'history' | 'location'> {
     displayNamespace?: boolean
     queryCampaigns?: typeof _queryCampaigns
 }
 
 const FILTERS: FilteredConnectionFilter[] = [
+    {
+        label: 'All',
+        id: 'all',
+        tooltip: 'Show all campaigns',
+        args: {},
+    },
     {
         label: 'Open',
         id: 'open',
@@ -35,18 +40,12 @@ const FILTERS: FilteredConnectionFilter[] = [
         tooltip: 'Show only campaigns that are closed',
         args: { state: CampaignState.CLOSED },
     },
-    {
-        label: 'All',
-        id: 'all',
-        tooltip: 'Show all campaigns',
-        args: {},
-    },
 ]
 
 /**
  * A list of all campaigns on the Sourcegraph instance.
  */
-export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = ({
+export const CampaignListPage: React.FunctionComponent<Props> = ({
     queryCampaigns = _queryCampaigns,
     displayNamespace = true,
     location,
@@ -55,17 +54,9 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
     useEffect(() => props.telemetryService.logViewEvent('CampaignsListPage'), [props.telemetryService])
     return (
         <>
-            <PageHeader
-                icon={CampaignsIcon}
-                title={
-                    <span className="test-campaign-list-page">
-                        Campaigns{' '}
-                        <sup>
-                            <span className="badge badge-merged text-uppercase">Beta</span>
-                        </sup>
-                    </span>
-                }
-                actions={
+            <CampaignHeader
+                className="mb-3 test-campaign-list-page"
+                actionSection={
                     <Link to={`${location.pathname}/create`} className="btn btn-primary">
                         <PlusIcon className="icon-inline" /> New campaign
                     </Link>
@@ -92,7 +83,7 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
     )
 }
 
-export interface UserCampaignListPageProps extends CampaignListPageProps {
+export interface UserCampaignListPageProps extends Props {
     userID: Scalars['ID']
 }
 
@@ -115,7 +106,7 @@ export const UserCampaignListPage: React.FunctionComponent<UserCampaignListPageP
     return <CampaignListPage {...props} displayNamespace={false} queryCampaigns={queryConnection} />
 }
 
-export interface OrgCampaignListPageProps extends CampaignListPageProps {
+export interface OrgCampaignListPageProps extends Props {
     orgID: Scalars['ID']
 }
 

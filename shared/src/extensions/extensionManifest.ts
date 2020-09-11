@@ -18,7 +18,6 @@ export type ExtensionManifest = Pick<
     | 'icon'
     | 'activationEvents'
     | 'contributes'
-    | 'publisher'
 >
 
 /**

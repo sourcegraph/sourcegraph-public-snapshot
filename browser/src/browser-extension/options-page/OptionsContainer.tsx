@@ -8,7 +8,6 @@ import { getExtensionVersion } from '../../shared/util/context'
 import { OptionsMenu, OptionsMenuProps } from './OptionsMenu'
 import { ConnectionErrors } from './ServerUrlForm'
 import { isHTTPAuthError } from '../../../../shared/src/backend/fetch'
-import { OptionFlagWithValue } from '../../shared/util/optionFlags'
 
 export interface OptionsContainerProps {
     sourcegraphURL: string
@@ -19,8 +18,8 @@ export interface OptionsContainerProps {
     requestPermissions: (url: string) => void
     setSourcegraphURL: (url: string) => Promise<void>
     toggleExtensionDisabled: (isActivated: boolean) => Promise<void>
-    onChangeOptionFlag: (key: string, value: boolean) => void
-    optionFlags: OptionFlagWithValue[]
+    toggleFeatureFlag: (key: string) => void
+    featureFlags: { key: string; value: boolean }[]
 }
 
 interface OptionsContainerState
@@ -29,7 +28,7 @@ interface OptionsContainerState
         | 'status'
         | 'sourcegraphURL'
         | 'connectionError'
-        | 'showOptionFlags'
+        | 'isSettingsOpen'
         | 'isActivated'
         | 'urlHasPermissions'
         | 'currentTabStatus'
@@ -53,7 +52,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
             isActivated: props.isActivated,
             urlHasPermissions: false,
             connectionError: undefined,
-            showOptionFlags: false,
+            isSettingsOpen: false,
         }
 
         const fetchingSite: Observable<string | ErrorLike> = this.urlUpdates.pipe(
@@ -137,9 +136,9 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                 onURLChange={this.handleURLChange}
                 onURLSubmit={this.handleURLSubmit}
                 isActivated={this.props.isActivated}
-                onChangeOptionFlag={this.props.onChangeOptionFlag}
-                optionFlags={this.props.optionFlags}
-                onClickExpandOptionsMenu={this.handleClickExpandOptionsMenu}
+                toggleFeatureFlag={this.props.toggleFeatureFlag}
+                featureFlags={this.props.featureFlags}
+                onSettingsClick={this.handleSettingsClick}
                 onToggleActivationClick={this.handleToggleActivationClick}
                 requestPermissions={this.props.requestPermissions}
             />
@@ -154,9 +153,9 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
         await this.props.setSourcegraphURL(this.state.sourcegraphURL)
     }
 
-    private handleClickExpandOptionsMenu = (): void => {
+    private handleSettingsClick = (): void => {
         this.setState(state => ({
-            showOptionFlags: !state.showOptionFlags,
+            isSettingsOpen: !state.isSettingsOpen,
         }))
     }
 

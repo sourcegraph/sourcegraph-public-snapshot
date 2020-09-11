@@ -30,7 +30,6 @@ If you have planned unavailability this iteration (e.g., vacation), you can note
 - 👩 Customer issue
 - 🐛 Bug
 - 🧶 Technical debt
-- 🎩 Quality of life
 - 🛠️ [Roadmap](https://docs.google.com/document/d/1cBsE9801DcBF9chZyMnxRdolqM_1c2pPyGQz15QAvYI/edit#heading=h.5nwl5fv52ess)
 - 🕵️ [Spike](https://en.wikipedia.org/wiki/Spike_(software_development))
 - 🔒 Security issue

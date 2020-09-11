@@ -129,8 +129,6 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 				TotalCount: tc.wantTotalCount,
 				PageInfo: apitest.PageInfo{
 					HasNextPage: tc.wantHasNextPage,
-					// This test doesn't check on the cursors, the below test does that.
-					EndCursor: response.Node.Events.PageInfo.EndCursor,
 				},
 				Nodes: tc.wantNodes,
 			}
@@ -140,47 +138,16 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 			}
 		})
 	}
-
-	var endCursor *string
-	for i := range nodes {
-		input := map[string]interface{}{"changeset": changesetAPIID, "first": 1}
-		if endCursor != nil {
-			input["after"] = *endCursor
-		}
-		wantHasNextPage := i != len(nodes)-1
-
-		var response struct{ Node apitest.Changeset }
-		apitest.MustExec(ctx, t, s, input, &response, queryChangesetEventConnection)
-
-		events := response.Node.Events
-		if diff := cmp.Diff(1, len(events.Nodes)); diff != "" {
-			t.Fatalf("unexpected number of nodes (-want +got):\n%s", diff)
-		}
-
-		if diff := cmp.Diff(len(nodes), events.TotalCount); diff != "" {
-			t.Fatalf("unexpected total count (-want +got):\n%s", diff)
-		}
-
-		if diff := cmp.Diff(wantHasNextPage, events.PageInfo.HasNextPage); diff != "" {
-			t.Fatalf("unexpected hasNextPage (-want +got):\n%s", diff)
-		}
-
-		endCursor = events.PageInfo.EndCursor
-		if want, have := wantHasNextPage, endCursor != nil; have != want {
-			t.Fatalf("unexpected endCursor existence. want=%t, have=%t", want, have)
-		}
-	}
 }
 
 const queryChangesetEventConnection = `
-query($changeset: ID!, $first: Int, $after: String){
+query($changeset: ID!, $first: Int){
   node(id: $changeset) {
     ... on ExternalChangeset {
-      events(first: $first, after: $after) {
+      events(first: $first) {
         totalCount
         pageInfo {
           hasNextPage
-          endCursor
         }
         nodes {
          id

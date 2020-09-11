@@ -33,7 +33,7 @@ query Blob($repoName: String!, $revision: String!, $filePath: String!) {
 			} `json:"repository"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", "", gqlQuery, variables, &resp)
+	err := c.GraphQL("", gqlQuery, variables, &resp)
 	if err != nil {
 		return "", errors.Wrap(err, "request GraphQL")
 	}

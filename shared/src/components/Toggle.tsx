@@ -19,9 +19,6 @@ interface Props {
     disabled?: boolean
     tabIndex?: number
     className?: string
-
-    /** Data attribute for testing */
-    dataTest?: string
 }
 
 /** A toggle switch input component. */

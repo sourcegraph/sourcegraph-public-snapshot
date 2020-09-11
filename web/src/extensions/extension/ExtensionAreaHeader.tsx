@@ -1,5 +1,7 @@
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
+import { Path } from '../../../../shared/src/components/Path'
 import { isExtensionEnabled } from '../../../../shared/src/extensions/extension'
 import { ExtensionManifest } from '../../../../shared/src/schema/extensionSchema'
 import { isErrorLike } from '../../../../shared/src/util/errors'
@@ -39,8 +41,6 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
 
     const isWorkInProgress = props.extension.registryExtension?.isWorkInProgress
 
-    const [, name] = props.extension.id.split('/')
-
     return (
         <div className={`extension-area-header ${props.className || ''}`}>
             <div className="container">
@@ -55,7 +55,19 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                         <img className="extension-area-header__icon mr-2" src={manifest.icon} />
                                     )}
                                 <div>
-                                    <h2 className="d-flex align-items-center mb-0 font-weight-normal">{name}</h2>
+                                    <h2 className="d-flex align-items-center mb-0 font-weight-normal">
+                                        <Link to="/extensions" className="extensions-nav-link">
+                                            Extensions
+                                        </Link>
+                                        <ChevronRightIcon className="icon-inline extension-area-header__icon-chevron" />{' '}
+                                        <Path
+                                            path={
+                                                props.extension.registryExtension
+                                                    ? props.extension.registryExtension.extensionIDWithoutRegistry
+                                                    : props.extension.id
+                                            }
+                                        />
+                                    </h2>
                                     {manifest && (manifest.description || isWorkInProgress) && (
                                         <p className="mt-1 mb-0">
                                             {isWorkInProgress && (
@@ -75,8 +87,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                         <div className="d-flex align-items-center mt-3 mb-2">
                             {props.authenticatedUser && (
                                 <ExtensionToggle
-                                    enabled={isExtensionEnabled(props.settingsCascade.final, props.extension.id)}
-                                    extensionID={props.extension.id}
+                                    extension={props.extension}
                                     settingsCascade={props.settingsCascade}
                                     platformContext={props.platformContext}
                                     className="mr-2"

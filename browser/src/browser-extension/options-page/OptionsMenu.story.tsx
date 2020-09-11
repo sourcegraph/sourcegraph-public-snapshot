@@ -18,12 +18,12 @@ storiesOf('browser/Options/OptionsMenu', module)
             sourcegraphURL="https://sourcegraph.com"
             onURLChange={action('Sourcegraph URL changed')}
             onURLSubmit={action('New Sourcegraph URL submitted')}
-            onClickExpandOptionsMenu={action('Expand clicked')}
+            onSettingsClick={action('Settings clicked')}
             onToggleActivationClick={action('Toggle activation clicked')}
-            optionFlags={[]}
-            showOptionFlags={false}
+            featureFlags={[]}
+            isSettingsOpen={false}
             isActivated={true}
-            onChangeOptionFlag={action('Option flag changed')}
+            toggleFeatureFlag={action('Feature flag toggled')}
             requestPermissions={() => undefined}
             urlHasPermissions={true}
         />
@@ -35,14 +35,14 @@ storiesOf('browser/Options/OptionsMenu', module)
             sourcegraphURL="https://sourcegraph.com"
             onURLChange={action('Sourcegraph URL changed')}
             onURLSubmit={action('New Sourcegraph URL submitted')}
-            onClickExpandOptionsMenu={action('Expand clicked')}
+            onSettingsClick={action('Settings clicked')}
             onToggleActivationClick={action('Toggle activation clicked')}
-            showOptionFlags={true}
+            isSettingsOpen={true}
             isActivated={true}
-            onChangeOptionFlag={action('Option flag changed')}
-            optionFlags={[
-                { label: 'Test setting 1', key: 'testSetting1', value: true },
-                { label: 'Test setting 2', key: 'testSetting2', value: false },
+            toggleFeatureFlag={action('Feature flag toggled')}
+            featureFlags={[
+                { key: 'Test setting 1', value: true },
+                { key: 'Test setting 2', value: false },
             ]}
             requestPermissions={() => undefined}
             urlHasPermissions={true}

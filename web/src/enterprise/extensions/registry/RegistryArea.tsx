@@ -7,7 +7,6 @@ import { HeroPage } from '../../../components/HeroPage'
 import { ExtensionsAreaRouteContext } from '../../../extensions/ExtensionsArea'
 import { RegistryNewExtensionPage } from './RegistryNewExtensionPage'
 import { AuthenticatedUser } from '../../../auth'
-import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -16,7 +15,7 @@ interface Props extends RouteComponentProps<{}>, ExtensionsAreaRouteContext {}
 /**
  * Properties passed to all page components in the registry area.
  */
-export interface RegistryAreaPageProps extends PlatformContextProps, BreadcrumbSetters {
+export interface RegistryAreaPageProps extends PlatformContextProps {
     /** The currently authenticated user. */
     authenticatedUser: AuthenticatedUser | null
 }
@@ -44,8 +43,6 @@ export class RegistryArea extends React.Component<Props> {
         const transferProps: RegistryAreaPageProps = {
             authenticatedUser: this.props.authenticatedUser,
             platformContext: this.props.platformContext,
-            useBreadcrumb: this.props.useBreadcrumb,
-            setBreadcrumb: this.props.setBreadcrumb,
         }
 
         return (

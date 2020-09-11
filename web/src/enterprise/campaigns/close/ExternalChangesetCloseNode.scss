@@ -3,4 +3,8 @@
         // Make it full width in the current row.
         grid-column: 1 / -1;
     }
+    &__diffstat {
+        justify-self: end;
+        align-self: start;
+    }
 }

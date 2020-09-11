@@ -33,7 +33,6 @@ describe('ExtensionCard', () => {
                             settingsCascade={{ final: null, subjects: null }}
                             platformContext={NOOP_PLATFORM_CONTEXT}
                             enabled={false}
-                            isLightTheme={false}
                         />
                     </MemoryRouter>
                 )

@@ -56,7 +56,7 @@ func (svc *Service) MigratePreSpecCampaigns(ctx context.Context) (err error) {
 	}()
 
 	// We also need a service instance that uses the transaction we just began.
-	txSvc := svc.WithStore(store)
+	txSvc := NewServiceWithClock(store, svc.cf, svc.clock)
 
 	// We're going to need the old campaigns in a few places, so let's just get
 	// them ready up front.

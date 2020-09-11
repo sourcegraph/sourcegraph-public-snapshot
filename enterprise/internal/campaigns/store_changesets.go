@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
@@ -52,8 +53,6 @@ var changesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.finished_at"),
 	sqlf.Sprintf("changesets.process_after"),
 	sqlf.Sprintf("changesets.num_resets"),
-	sqlf.Sprintf("changesets.unsynced"),
-	sqlf.Sprintf("changesets.closing"),
 }
 
 // changesetInsertColumns is the list of changeset columns that are modified in
@@ -88,11 +87,29 @@ var changesetInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("finished_at"),
 	sqlf.Sprintf("process_after"),
 	sqlf.Sprintf("num_resets"),
-	sqlf.Sprintf("unsynced"),
-	sqlf.Sprintf("closing"),
 }
 
-func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Changeset) (*sqlf.Query, error) {
+// CreateChangeset creates the given Changeset.
+func (s *Store) CreateChangeset(ctx context.Context, c *campaigns.Changeset) error {
+	q, err := s.createChangesetQuery(c)
+	if err != nil {
+		return err
+	}
+
+	return s.query(ctx, q, func(sc scanner) error { return scanChangeset(c, sc) })
+}
+
+var createChangesetQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:CreateChangeset
+INSERT INTO changesets (%s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+ON CONFLICT ON CONSTRAINT
+changesets_repo_external_id_unique
+DO NOTHING
+RETURNING %s
+`
+
+func (s *Store) createChangesetQuery(c *campaigns.Changeset) (*sqlf.Query, error) {
 	metadata, err := jsonbColumn(c.Metadata)
 	if err != nil {
 		return nil, err
@@ -108,7 +125,16 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Chang
 		return nil, err
 	}
 
-	vars := []interface{}{
+	if c.CreatedAt.IsZero() {
+		c.CreatedAt = s.now()
+	}
+
+	if c.UpdatedAt.IsZero() {
+		c.UpdatedAt = c.CreatedAt
+	}
+
+	return sqlf.Sprintf(
+		createChangesetQueryFmtstr,
 		sqlf.Join(changesetInsertColumns, ", "),
 		c.RepoID,
 		c.CreatedAt,
@@ -139,43 +165,9 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Chang
 		nullTimeColumn(c.FinishedAt),
 		nullTimeColumn(c.ProcessAfter),
 		c.NumResets,
-		c.Unsynced,
-		c.Closing,
-	}
-
-	if includeID {
-		vars = append(vars, c.ID)
-	}
-
-	vars = append(vars, sqlf.Join(changesetColumns, ", "))
-
-	return sqlf.Sprintf(q, vars...), nil
+		sqlf.Join(changesetColumns, ", "),
+	), nil
 }
-
-// CreateChangeset creates the given Changeset.
-func (s *Store) CreateChangeset(ctx context.Context, c *campaigns.Changeset) error {
-	if c.CreatedAt.IsZero() {
-		c.CreatedAt = s.now()
-	}
-
-	if c.UpdatedAt.IsZero() {
-		c.UpdatedAt = c.CreatedAt
-	}
-
-	q, err := s.changesetWriteQuery(createChangesetQueryFmtstr, false, c)
-	if err != nil {
-		return err
-	}
-
-	return s.query(ctx, q, func(sc scanner) error { return scanChangeset(c, sc) })
-}
-
-var createChangesetQueryFmtstr = `
--- source: enterprise/internal/campaigns/store.go:CreateChangeset
-INSERT INTO changesets (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-RETURNING %s
-`
 
 // DeleteChangeset deletes the Changeset with the given ID.
 func (s *Store) DeleteChangeset(ctx context.Context, id int64) error {
@@ -373,8 +365,8 @@ func listChangesetSyncData(opts ListChangesetSyncDataOpts) *sqlf.Query {
 // ListChangesetsOpts captures the query options needed for
 // listing changesets.
 type ListChangesetsOpts struct {
-	LimitOpts
 	Cursor               int64
+	Limit                int
 	CampaignID           int64
 	IDs                  []int64
 	WithoutDeleted       bool
@@ -391,7 +383,7 @@ type ListChangesetsOpts struct {
 func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs campaigns.Changesets, next int64, err error) {
 	q := listChangesetsQuery(&opts)
 
-	cs = make([]*campaigns.Changeset, 0, opts.DBLimit())
+	cs = make([]*campaigns.Changeset, 0, opts.Limit)
 	err = s.query(ctx, q, func(sc scanner) (err error) {
 		var c campaigns.Changeset
 		if err = scanChangeset(&c, sc); err != nil {
@@ -401,7 +393,7 @@ func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs
 		return nil
 	})
 
-	if opts.Limit != 0 && len(cs) == opts.DBLimit() {
+	if opts.Limit != 0 && len(cs) == opts.Limit {
 		next = cs[len(cs)-1].ID
 		cs = cs[:len(cs)-1]
 	}
@@ -417,7 +409,19 @@ WHERE %s
 ORDER BY id ASC
 `
 
+const defaultListLimit = 50
+
 func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
+	if opts.Limit == 0 {
+		opts.Limit = defaultListLimit
+	}
+	opts.Limit++
+
+	var limitClause string
+	if opts.Limit > 0 {
+		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
+	}
+
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("changesets.id >= %s", opts.Cursor),
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
@@ -465,7 +469,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		listChangesetsQueryFmtstr+opts.LimitOpts.ToDB(),
+		listChangesetsQueryFmtstr+limitClause,
 		sqlf.Join(changesetColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
@@ -473,9 +477,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 
 // UpdateChangeset updates the given Changeset.
 func (s *Store) UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) error {
-	cs.UpdatedAt = s.now()
-
-	q, err := s.changesetWriteQuery(updateChangesetQueryFmtstr, true, cs)
+	q, err := s.updateChangesetQuery(cs)
 	if err != nil {
 		return err
 	}
@@ -486,13 +488,69 @@ func (s *Store) UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) er
 }
 
 var updateChangesetQueryFmtstr = `
--- source: enterprise/internal/campaigns/store_changesets.go:UpdateChangeset
+-- source: enterprise/internal/campaigns/store_changeset_specs.go:UpdateChangeset
 UPDATE changesets
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   %s
 `
+
+func (s *Store) updateChangesetQuery(c *campaigns.Changeset) (*sqlf.Query, error) {
+	metadata, err := jsonbColumn(c.Metadata)
+	if err != nil {
+		return nil, err
+	}
+
+	campaignIDs, err := jsonSetColumn(c.CampaignIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	syncState, err := json.Marshal(c.SyncState)
+	if err != nil {
+		return nil, err
+	}
+
+	c.UpdatedAt = s.now()
+
+	return sqlf.Sprintf(
+		updateChangesetQueryFmtstr,
+		sqlf.Join(changesetInsertColumns, ", "),
+		c.RepoID,
+		c.CreatedAt,
+		c.UpdatedAt,
+		metadata,
+		campaignIDs,
+		nullStringColumn(c.ExternalID),
+		c.ExternalServiceType,
+		nullStringColumn(c.ExternalBranch),
+		nullTimeColumn(c.ExternalDeletedAt),
+		nullTimeColumn(c.ExternalUpdatedAt),
+		nullStringColumn(string(c.ExternalState)),
+		nullStringColumn(string(c.ExternalReviewState)),
+		nullStringColumn(string(c.ExternalCheckState)),
+		c.CreatedByCampaign,
+		c.AddedToCampaign,
+		c.DiffStatAdded,
+		c.DiffStatChanged,
+		c.DiffStatDeleted,
+		syncState,
+		nullInt64Column(c.OwnedByCampaignID),
+		nullInt64Column(c.CurrentSpecID),
+		nullInt64Column(c.PreviousSpecID),
+		c.PublicationState,
+		c.ReconcilerState.ToDB(),
+		c.FailureMessage,
+		nullTimeColumn(c.StartedAt),
+		nullTimeColumn(c.FinishedAt),
+		nullTimeColumn(c.ProcessAfter),
+		c.NumResets,
+		// ID
+		c.ID,
+		sqlf.Join(changesetColumns, ", "),
+	), nil
+}
 
 // GetChangesetExternalIDs allows us to find the external ids for pull requests based on
 // a slice of head refs. We need this in order to match incoming webhooks to pull requests as
@@ -521,86 +579,6 @@ func (s *Store) GetChangesetExternalIDs(ctx context.Context, spec api.ExternalRe
 	q := sqlf.Sprintf(queryFmtString, spec.ServiceType, sqlf.Join(inClause, ","), spec.ID, spec.ServiceType, spec.ServiceID)
 	return basestore.ScanStrings(s.Store.Query(ctx, q))
 }
-
-// canceledChangesetFailureMessage is set on changesets as the FailureMessage
-// by CancelQueuedCampaignChangesets which is called at the beginning of
-// ApplyCampaign to stop enqueued changesets being processed while we're
-// applying the new campaign spec.
-var canceledChangesetFailureMessage = "Canceled"
-
-func (s *Store) CancelQueuedCampaignChangesets(ctx context.Context, campaignID int64) error {
-	// Note that we don't cancel queued "syncing" changesets, since their
-	// owned_by_campaign_id is not set. That's on purpose. It's okay if they're
-	// being processed after this, since they only pull data and not create
-	// changesets on the code hosts.
-	q := sqlf.Sprintf(
-		cancelQueuedCampaignChangesetsFmtstr,
-		campaignID,
-		reconcilerMaxNumResets,
-		canceledChangesetFailureMessage,
-		reconcilerMaxNumResets,
-	)
-	return s.Store.Exec(ctx, q)
-}
-
-const cancelQueuedCampaignChangesetsFmtstr = `
--- source: enterprise/internal/campaigns/store_changesets.go:CancelQueuedCampaignChangesets
-WITH changeset_ids AS (
-  SELECT id FROM changesets
-  WHERE
-    owned_by_campaign_id = %s
-  AND
-    (reconciler_state = 'queued' OR
-	 reconciler_state = 'processing' OR
-	 (reconciler_state = 'errored' AND num_resets < %d))
-  FOR UPDATE
-)
-UPDATE
-  changesets
-SET
-  reconciler_state = 'errored',
-  failure_message = %s,
-  num_resets = %d
-WHERE id IN (SELECT id FROM changeset_ids);
-`
-
-// EnqueueChangesetsToClose updates all changesets that are owned by the given
-// campaign to set their reconciler status to 'queued' and the Closing boolean
-// to true.
-//
-// It does not update the changesets that are fully processed and already
-// closed/merged.
-//
-// This method will *block* if some of the changesets are currently being processed.
-func (s *Store) EnqueueChangesetsToClose(ctx context.Context, campaignID int64) error {
-	q := sqlf.Sprintf(
-		enqueueChangesetsToCloseFmtstr,
-		campaignID,
-		campaigns.ChangesetExternalStateClosed,
-		campaigns.ChangesetExternalStateMerged,
-	)
-	return s.Store.Exec(ctx, q)
-}
-
-const enqueueChangesetsToCloseFmtstr = `
--- source: enterprise/internal/campaigns/store_changesets.go:EnqueueChangesetsToClose
-UPDATE
-  changesets
-SET
-  reconciler_state = 'queued',
-  failure_message = NULL,
-  num_resets = 0,
-  closing = TRUE
-WHERE
-  owned_by_campaign_id = %d
-AND
-  NOT (
-    reconciler_state = 'completed'
-	AND
-	(external_state = %s OR external_state = %s)
-  )
-;
-`
 
 func scanFirstChangeset(rows *sql.Rows, err error) (*campaigns.Changeset, bool, error) {
 	changesets, err := scanChangesets(rows, err)
@@ -668,8 +646,6 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		&dbutil.NullTime{Time: &t.FinishedAt},
 		&dbutil.NullTime{Time: &t.ProcessAfter},
 		&t.NumResets,
-		&t.Unsynced,
-		&t.Closing,
 	)
 	if err != nil {
 		return errors.Wrap(err, "scanning changeset")

@@ -10,7 +10,6 @@ import (
 
 func (r *UserResolver) EventLogs(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
-	EventName *string // return only event logs matching the event name
 }) (*userEventLogsConnectionResolver, error) {
 	// 🚨 SECURITY: Event logs can only be viewed by the user or site admin.
 	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
@@ -19,7 +18,6 @@ func (r *UserResolver) EventLogs(ctx context.Context, args *struct {
 	var opt db.EventLogsListOptions
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	opt.UserID = r.user.ID
-	opt.EventName = args.EventName
 	return &userEventLogsConnectionResolver{opt: opt}, nil
 }
 

@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -14,9 +13,6 @@ import (
 )
 
 type MockedChangesetSyncState struct {
-	// DiffStat is the diff.Stat of the mocked "git diff" call to gitserver.
-	DiffStat *diff.Stat
-
 	execReader      func([]string) (io.ReadCloser, error)
 	mockRepoLookup  func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
 	resolveRevision func(string, git.ResolveRevisionOptions) (api.CommitID, error)
@@ -29,9 +25,6 @@ type MockedChangesetSyncState struct {
 // state.Unmock() must called to clean up, usually via defer.
 func MockChangesetSyncState(repo *protocol.RepoInfo) *MockedChangesetSyncState {
 	state := &MockedChangesetSyncState{
-		// This diff.Stat matches the testGitHubDiff below
-		DiffStat: &diff.Stat{Added: 1, Changed: 1, Deleted: 3},
-
 		execReader:      git.Mocks.ExecReader,
 		mockRepoLookup:  repoupdater.MockRepoLookup,
 		resolveRevision: git.Mocks.ResolveRevision,

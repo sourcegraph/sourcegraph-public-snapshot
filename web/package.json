@@ -27,8 +27,7 @@
     "eslint": "eslint --cache '**/*.[tj]s?(x)'",
     "stylelint": "stylelint 'src/**/*.scss'",
     "bundlesize": "GITHUB_TOKEN= bundlesize",
-    "browserslist": "browserslist",
-    "analyze-bundle": "NODE_ENV=production ENTERPRISE=1 WEBPACK_ANALYZER=1 yarn build"
+    "browserslist": "browserslist"
   },
   "bundlesize": [
     {

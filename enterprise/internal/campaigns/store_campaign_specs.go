@@ -3,6 +3,7 @@ package campaigns
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"github.com/dineshappavoo/basex"
@@ -211,15 +212,15 @@ func getCampaignSpecQuery(opts *GetCampaignSpecOpts) *sqlf.Query {
 // ListCampaignSpecsOpts captures the query options needed for
 // listing code mods.
 type ListCampaignSpecsOpts struct {
-	LimitOpts
 	Cursor int64
+	Limit  int
 }
 
 // ListCampaignSpecs lists CampaignSpecs with the given filters.
 func (s *Store) ListCampaignSpecs(ctx context.Context, opts ListCampaignSpecsOpts) (cs []*campaigns.CampaignSpec, next int64, err error) {
 	q := listCampaignSpecsQuery(&opts)
 
-	cs = make([]*campaigns.CampaignSpec, 0, opts.DBLimit())
+	cs = make([]*campaigns.CampaignSpec, 0, opts.Limit)
 	err = s.query(ctx, q, func(sc scanner) error {
 		var c campaigns.CampaignSpec
 		if err := scanCampaignSpec(&c, sc); err != nil {
@@ -229,7 +230,7 @@ func (s *Store) ListCampaignSpecs(ctx context.Context, opts ListCampaignSpecsOpt
 		return nil
 	})
 
-	if opts.Limit != 0 && len(cs) == opts.DBLimit() {
+	if opts.Limit != 0 && len(cs) == opts.Limit {
 		next = cs[len(cs)-1].ID
 		cs = cs[:len(cs)-1]
 	}
@@ -245,12 +246,22 @@ ORDER BY id ASC
 `
 
 func listCampaignSpecsQuery(opts *ListCampaignSpecsOpts) *sqlf.Query {
+	if opts.Limit == 0 {
+		opts.Limit = defaultListLimit
+	}
+	opts.Limit++
+
+	var limitClause string
+	if opts.Limit > 0 {
+		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
+	}
+
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("id >= %s", opts.Cursor),
 	}
 
 	return sqlf.Sprintf(
-		listCampaignSpecsQueryFmtstr+opts.LimitOpts.ToDB(),
+		listCampaignSpecsQueryFmtstr+limitClause,
 		sqlf.Join(campaignSpecColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)

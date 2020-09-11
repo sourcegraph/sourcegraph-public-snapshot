@@ -105,7 +105,7 @@ func TestPermissionLevels(t *testing.T) {
 	cleanUpCampaigns := func(t *testing.T, s *ee.Store) {
 		t.Helper()
 
-		campaigns, next, err := s.ListCampaigns(ctx, ee.ListCampaignsOpts{LimitOpts: ee.LimitOpts{Limit: 1000}})
+		campaigns, next, err := s.ListCampaigns(ctx, ee.ListCampaignsOpts{Limit: 1000})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -163,7 +163,7 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					graphqlID := string(marshalCampaignID(tc.campaign))
+					graphqlID := string(campaigns.MarshalCampaignID(tc.campaign))
 
 					var res struct{ Node apitest.Campaign }
 
@@ -283,7 +283,7 @@ func TestPermissionLevels(t *testing.T) {
 					actorCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
 					expectedIDs := make(map[string]bool, len(tc.wantCampaigns))
 					for _, c := range tc.wantCampaigns {
-						graphqlID := string(marshalCampaignID(c))
+						graphqlID := string(campaigns.MarshalCampaignID(c))
 						expectedIDs[graphqlID] = true
 					}
 
@@ -401,7 +401,7 @@ func TestPermissionLevels(t *testing.T) {
 						}
 
 						mutation := m.mutationFunc(
-							string(marshalCampaignID(campaignID)),
+							string(campaigns.MarshalCampaignID(campaignID)),
 							string(marshalChangesetID(changeset.ID)),
 							string(marshalCampaignSpecRandID(campaignSpecRandID)),
 						)
@@ -611,7 +611,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
 		input := map[string]interface{}{
-			"campaign": string(marshalCampaignID(campaign.ID)),
+			"campaign": string(campaigns.MarshalCampaignID(campaign.ID)),
 		}
 		testCampaignResponse(t, s, userCtx, input, wantCampaignResponse{
 			changesetTypes:  map[string]int{"ExternalChangeset": 2},
@@ -663,7 +663,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		// should not be returned, since that would leak information about the
 		// hidden changesets.
 		input = map[string]interface{}{
-			"campaign":   string(marshalCampaignID(campaign.ID)),
+			"campaign":   string(campaigns.MarshalCampaignID(campaign.ID)),
 			"checkState": string(campaigns.ChangesetCheckStatePassed),
 		}
 		wantCheckStateResponse := want
@@ -676,7 +676,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		testCampaignResponse(t, s, userCtx, input, wantCheckStateResponse)
 
 		input = map[string]interface{}{
-			"campaign":    string(marshalCampaignID(campaign.ID)),
+			"campaign":    string(campaigns.MarshalCampaignID(campaign.ID)),
 			"reviewState": string(campaigns.ChangesetReviewStateChangesRequested),
 		}
 		wantReviewStateResponse := wantCheckStateResponse

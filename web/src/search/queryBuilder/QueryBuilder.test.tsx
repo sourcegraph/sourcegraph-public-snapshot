@@ -2,7 +2,7 @@ import React from 'react'
 import { cleanup, fireEvent, getByDisplayValue, queryByTestId, render, waitFor } from '@testing-library/react'
 import sinon from 'sinon'
 import { QueryBuilder } from './QueryBuilder'
-import { SearchPatternType } from '../../graphql-operations'
+import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 
 describe('QueryBuilder', () => {
     afterAll(cleanup)

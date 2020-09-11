@@ -9,5 +9,5 @@ func campaignsApplyURL(n graphqlbackend.Namespace, c graphqlbackend.CampaignSpec
 }
 
 func campaignURL(n graphqlbackend.Namespace, c graphqlbackend.CampaignResolver) string {
-	return n.URL() + "/campaigns/" + string(c.Name())
+	return n.URL() + "/campaigns/" + string(c.ID())
 }

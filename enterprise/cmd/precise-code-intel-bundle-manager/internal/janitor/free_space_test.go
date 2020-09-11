@@ -46,7 +46,7 @@ func TestEvictBundlesStopsAfterFreeingDesiredSpace(t *testing.T) {
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.evictBundles(context.Background(), 100); err != nil {
+	if err := j.evictBundles(100); err != nil {
 		t.Fatalf("unexpected error evicting bundles: %s", err)
 	}
 
@@ -102,7 +102,7 @@ func TestEvictBundlesStopsWithNoPrunableDatabases(t *testing.T) {
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.evictBundles(context.Background(), 100); err != nil {
+	if err := j.evictBundles(100); err != nil {
 		t.Fatalf("unexpected error evicting bundles: %s", err)
 	}
 
@@ -136,7 +136,7 @@ func TestEvictBundlesNoBundleFile(t *testing.T) {
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.evictBundles(context.Background(), 100); err != nil {
+	if err := j.evictBundles(100); err != nil {
 		t.Fatalf("unexpected error evicting bundles: %s", err)
 	}
 }

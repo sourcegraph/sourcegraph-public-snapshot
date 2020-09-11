@@ -1,3 +1,4 @@
+import * as H from 'history'
 import { storiesOf } from '@storybook/react'
 import { RepogroupPage, RepogroupPageProps } from './RepogroupPage'
 import React from 'react'
@@ -5,23 +6,33 @@ import { python2To3Metadata } from './Python2To3'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { NEVER } from 'rxjs'
 import { NOOP_SETTINGS_CASCADE } from '../../../shared/src/util/searchTestHelpers'
+import sinon from 'sinon'
 import { ThemePreference } from '../theme'
 import { NOOP_TELEMETRY_SERVICE } from '../../../shared/src/telemetry/telemetryService'
 import { ActionItemComponentProps } from '../../../shared/src/actions/ActionItem'
+import { EventLogger } from '../tracking/eventLogger'
 import { Services } from '../../../shared/src/api/client/services'
+import { MemoryRouter } from 'react-router'
+import webStyles from '../SourcegraphWebApp.scss'
 import { AuthenticatedUser } from '../auth'
-import { SearchPatternType } from '../graphql-operations'
-import { WebStory } from '../components/WebStory'
-import { subtypeOf } from '../../../shared/src/util/types'
-import { action } from '@storybook/addon-actions'
 
-const { add } = storiesOf('web/RepogroupPage', module).addParameters({
-    design: {
-        type: 'figma',
-        url: 'https://www.figma.com/file/Xc4M24VTQq8itU0Lgb1Wwm/RFC-159-Visual-Design?node-id=66%3A611',
-    },
-    chromatic: { viewports: [769, 1200] },
-})
+const { add } = storiesOf('web/RepogroupPage', module)
+    .addParameters({
+        percy: { widths: [993] },
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/Xc4M24VTQq8itU0Lgb1Wwm/RFC-159-Visual-Design?node-id=66%3A611',
+        },
+        chromatic: { viewports: [769, 993, 1200] },
+    })
+    .addDecorator(story => (
+        <>
+            <style>{webStyles}</style>
+            <div className="theme-light">{story()}</div>
+        </>
+    ))
+
+const history = H.createMemoryHistory()
 
 const EXTENSIONS_CONTROLLER: ActionItemComponentProps['extensionsController'] = {
     executeCommand: () => new Promise(resolve => setTimeout(resolve, 750)),
@@ -54,7 +65,7 @@ const authUser: AuthenticatedUser = {
     databaseID: 0,
 }
 
-const commonProps = subtypeOf<Partial<RepogroupPageProps>>()({
+const commonProps: RepogroupPageProps = {
     settingsCascade: {
         ...NOOP_SETTINGS_CASCADE,
         subjects: [],
@@ -69,42 +80,53 @@ const commonProps = subtypeOf<Partial<RepogroupPageProps>>()({
             },
         },
     },
-    onThemePreferenceChange: action('onThemePreferenceChange'),
-    patternType: SearchPatternType.literal,
-    setPatternType: action('setPatternType'),
+    isLightTheme: true,
+    themePreference: ThemePreference.Light,
+    onThemePreferenceChange: sinon.spy(() => {}),
+    patternType: GQL.SearchPatternType.literal,
+    setPatternType: sinon.spy(() => {}),
     caseSensitive: false,
     copyQueryButton: false,
     extensionsController: { ...EXTENSIONS_CONTROLLER, services: {} as Services },
     platformContext: PLATFORM_CONTEXT,
     filtersInQuery: {},
+    history,
     interactiveSearchMode: false,
     keyboardShortcuts: [],
-    onFiltersInQueryChange: action('onFiltersInQueryChange'),
-    setCaseSensitivity: action('setCaseSensitivity'),
+    onFiltersInQueryChange: sinon.spy(() => {}),
+    setCaseSensitivity: sinon.spy(() => {}),
     splitSearchModes: true,
-    telemetryService: NOOP_TELEMETRY_SERVICE,
-    toggleSearchMode: action('toggleSearchMode'),
+    telemetryService: ({
+        ...NOOP_TELEMETRY_SERVICE,
+        logViewEvent: () => {},
+        logToConsole: () => {},
+        getAnonUserID: sinon.spy(() => 'test'),
+        hasStrippedQueryParameters: false,
+    } as unknown) as EventLogger,
+    toggleSearchMode: sinon.spy(() => {}),
     versionContext: undefined,
     activation: undefined,
+    location: history.location,
     isSourcegraphDotCom: true,
-    setVersionContext: action('setVersionContext'),
+    setVersionContext: sinon.spy(() => {}),
     availableVersionContexts: [],
     authRequired: false,
     showCampaigns: false,
     authenticatedUser: authUser,
     repogroupMetadata: python2To3Metadata,
+    autoFocus: false,
     globbing: false,
     showOnboardingTour: false,
-})
+}
 
-add('Refactor Python 2 to 3', () => (
-    <WebStory>
-        {webProps => (
-            <RepogroupPage
-                {...webProps}
-                {...commonProps}
-                themePreference={webProps.isLightTheme ? ThemePreference.Light : ThemePreference.Dark}
-            />
-        )}
-    </WebStory>
+add('Repogroup page with smart search field', () => (
+    <MemoryRouter>
+        <RepogroupPage {...commonProps} />
+    </MemoryRouter>
+))
+
+add('Repogroup page without smart search field', () => (
+    <MemoryRouter>
+        <RepogroupPage {...commonProps} />
+    </MemoryRouter>
 ))

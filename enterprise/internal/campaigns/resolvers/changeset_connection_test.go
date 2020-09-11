@@ -114,7 +114,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	campaignAPIID := string(marshalCampaignID(campaign.ID))
+	campaignAPIID := string(campaigns.MarshalCampaignID(campaign.ID))
 	nodes := []apitest.Changeset{
 		{
 			Typename:   "ExternalChangeset",

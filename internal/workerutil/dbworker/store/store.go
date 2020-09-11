@@ -33,7 +33,7 @@ type Store interface {
 
 	// DequeueWithIndependentTransactionContext is like Dequeue, but will use a context.Background() for the underlying
 	// transaction context. This method allows the transaction to lexically outlive the code in which it was created. This
-	// is useful if a longer-running transaction is managed explicitly between multiple goroutines.
+	// is useful if a longer-running transaction is managed explicitly bewteen multiple goroutines.
 	DequeueWithIndependentTransactionContext(ctx context.Context, conditions []*sqlf.Query) (workerutil.Record, Store, bool, error)
 
 	// Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
@@ -95,11 +95,11 @@ type StoreOptions struct {
 	// ViewName is an optional name of a view on top of the table containing work records to query when
 	// selecting a candidate and when selecting the record after it has been locked. If this value is
 	// not supplied, `TableName` will be used. The value supplied may also indicate a table alias, which
-	// can be referenced in `OrderByExpression`, `ColumnExpressions`, and the conditions supplied to
+	// can be referenced in `OrderByExpression`, `ColumnExpressions`, and the conditions suplied to
 	// `Dequeue`.
 	//
 	// The target of this column must be a view on top of the configured table with the same column
-	// requirements as the base table described above.
+	// requirements as the base table descried above.
 	//
 	// Example use case:
 	// The processor for LSIF uploads supplies `lsif_uploads_with_repository_name`, a view on top of the
@@ -131,14 +131,6 @@ type StoreOptions struct {
 	// be moved into the errored state rather than queued on its next reset to prevent an infinite retry
 	// cycle of the same input.
 	MaxNumResets int
-
-	// RetryAfter determines whether the store dequeues jobs that have errored
-	// more than RetryAfter ago.
-	// If RetryAfter is a non-zero duration, the store dequeues records where
-	// - the state is 'errored'
-	// - the failed attempts counter hasn't reached MaxNumResets
-	// - the finished_at timestamp was more than RetryAfter ago
-	RetryAfter time.Duration
 }
 
 // RecordScanFn is a function that interprets row values as a particular record. This function should
@@ -190,15 +182,6 @@ var columnNames = []string{
 	"num_resets",
 }
 
-// DefaultColumnExpressions returns a slice of expressions for the default column name we expect.
-func DefaultColumnExpressions() []*sqlf.Query {
-	expressions := make([]*sqlf.Query, len(columnNames))
-	for i := range columnNames {
-		expressions[i] = sqlf.Sprintf(columnNames[i])
-	}
-	return expressions
-}
-
 func (s *store) Transact(ctx context.Context) (*store, error) {
 	txBase, err := s.Store.Transact(ctx)
 	if err != nil {
@@ -222,7 +205,7 @@ func (s *store) Dequeue(ctx context.Context, conditions []*sqlf.Query) (record w
 
 // DequeueWithIndependentTransactionContext is like Dequeue, but will use a context.Background() for the underlying
 // transaction context. This method allows the transaction to lexically outlive the code in which it was created. This
-// is useful if a longer-running transaction is managed explicitly between multiple goroutines.
+// is useful if a longer-running transaction is managed explicitly bewteen multiple goroutines.
 func (s *store) DequeueWithIndependentTransactionContext(ctx context.Context, conditions []*sqlf.Query) (workerutil.Record, Store, bool, error) {
 	return s.dequeue(ctx, conditions, true)
 }
@@ -240,9 +223,6 @@ func (s *store) dequeue(ctx context.Context, conditions []*sqlf.Query, independe
 	query := s.formatQuery(
 		selectCandidateQuery,
 		quote(s.options.ViewName),
-		int(s.options.RetryAfter/time.Second),
-		int(s.options.RetryAfter/time.Second),
-		s.options.MaxNumResets,
 		makeConditionSuffix(conditions),
 		s.options.OrderByExpression,
 		quote(s.options.TableName),
@@ -291,6 +271,7 @@ func (s *store) dequeue(ctx context.Context, conditions []*sqlf.Query, independe
 			// by selecting another identifier - this one will be skipped on a second attempt as
 			// it is now locked.
 			continue
+
 		}
 
 		// The record is now locked in this transaction. As `TableName` and `ViewName` may have distinct
@@ -319,17 +300,8 @@ const selectCandidateQuery = `
 WITH candidate AS (
 	SELECT {id} FROM %s
 	WHERE
-		(
-			(
-				{state} = 'queued' AND
-				({process_after} IS NULL OR {process_after} <= NOW())
-			) OR (
-				%s > 0 AND
-				{state} = 'errored' AND
-				NOW() - {finished_at} > (%s * '1 second'::interval) AND
-				{num_resets} < %s
-			)
-		)
+		{state} = 'queued' AND
+		({process_after} IS NULL OR {process_after} <= NOW())
 		%s
 	ORDER BY %s
 	FOR UPDATE SKIP LOCKED
@@ -338,9 +310,7 @@ WITH candidate AS (
 UPDATE %s
 SET
 	{state} = 'processing',
-	{started_at} = NOW(),
-	{finished_at} = NULL,
-	{num_resets} = (CASE WHEN ({state} = 'errored') THEN ({num_resets} + 1) ELSE {num_resets} END)
+	{started_at} = NOW()
 WHERE {id} IN (SELECT {id} FROM candidate)
 RETURNING {id}
 `

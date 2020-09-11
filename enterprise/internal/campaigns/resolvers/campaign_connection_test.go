@@ -81,13 +81,12 @@ func TestCampaignConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Campaigns are returned in reverse order.
 	nodes := []apitest.Campaign{
 		{
-			ID: string(marshalCampaignID(campaign2.ID)),
+			ID: string(campaigns.MarshalCampaignID(campaign1.ID)),
 		},
 		{
-			ID: string(marshalCampaignID(campaign1.ID)),
+			ID: string(campaigns.MarshalCampaignID(campaign2.ID)),
 		},
 	}
 
@@ -238,7 +237,7 @@ func TestCampaignsListing(t *testing.T) {
 			Campaigns: apitest.CampaignConnection{
 				TotalCount: 1,
 				Nodes: []apitest.Campaign{
-					{ID: string(marshalCampaignID(campaign.ID))},
+					{ID: string(campaigns.MarshalCampaignID(campaign.ID))},
 				},
 			},
 		}
@@ -271,7 +270,7 @@ func TestCampaignsListing(t *testing.T) {
 			Campaigns: apitest.CampaignConnection{
 				TotalCount: 1,
 				Nodes: []apitest.Campaign{
-					{ID: string(marshalCampaignID(campaign.ID))},
+					{ID: string(campaigns.MarshalCampaignID(campaign.ID))},
 				},
 			},
 		}

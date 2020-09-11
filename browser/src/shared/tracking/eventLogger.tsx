@@ -1,61 +1,16 @@
 import { noop } from 'lodash'
-import { Observable, ReplaySubject, Subscription } from 'rxjs'
+import { Observable, ReplaySubject } from 'rxjs'
 import { take } from 'rxjs/operators'
 import * as uuid from 'uuid'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { TelemetryService } from '../../../../shared/src/telemetry/telemetryService'
 import { storage } from '../../browser-extension/web-extension-api/storage'
 import { isInPage } from '../context'
 import { logUserEvent, logEvent } from '../backend/userEvents'
 import { observeSourcegraphURL, getPlatformName } from '../util/context'
-import { UserEvent } from '../../graphql-operations'
 
 const uidKey = 'sourcegraphAnonymousUid'
-
-/**
- * Telemetry Service which only logs when the enable flag is set. Accepts an
- * observable that emits the enabled value.
- *
- * This was implemented as a wrapper around TelemetryService in order to avoid
- * modifying EventLogger, but the enabled flag could be rolled into EventLogger.
- *
- * TODO: Potential to be improved by buffering log events until the first emit
- * of the enabled value.
- */
-export class ConditionalTelemetryService implements TelemetryService {
-    /** Log events are passed on to the inner TelemetryService */
-    private innerTelemetryService: TelemetryService
-    private subscription = new Subscription()
-
-    /**
-     * The enabled state set by an observable, provided upon instantiation
-     */
-    private isEnabled = false
-
-    constructor(innerTelemetryService: TelemetryService, isEnabled: Observable<boolean>) {
-        this.subscription.add(
-            isEnabled.subscribe(value => {
-                this.isEnabled = value
-            })
-        )
-        this.innerTelemetryService = innerTelemetryService
-    }
-
-    public log(eventName: string, eventProperties?: any): void {
-        if (this.isEnabled) {
-            this.innerTelemetryService.log(eventName, eventProperties)
-        }
-    }
-    public logViewEvent(eventName: string): void {
-        if (this.isEnabled) {
-            this.innerTelemetryService.logViewEvent(eventName)
-        }
-    }
-
-    public unsubscribe(): void {
-        return this.subscription.unsubscribe()
-    }
-}
 
 export class EventLogger implements TelemetryService {
     private uid: string | null = null
@@ -116,7 +71,11 @@ export class EventLogger implements TelemetryService {
      * Log a user action on the associated self-hosted Sourcegraph instance (allows site admins on a private
      * Sourcegraph instance to see a count of unique users on a daily, weekly, and monthly basis).
      */
-    public async logCodeIntelligenceEvent(event: string, userEvent: UserEvent, eventProperties?: any): Promise<void> {
+    public async logCodeIntelligenceEvent(
+        event: string,
+        userEvent: GQL.UserEvent,
+        eventProperties?: any
+    ): Promise<void> {
         const anonUserId = await this.getAnonUserID()
         const sourcegraphURL = await this.sourcegraphURLs.pipe(take(1)).toPromise()
         logUserEvent(userEvent, anonUserId, sourcegraphURL, this.requestGraphQL)
@@ -143,10 +102,10 @@ export class EventLogger implements TelemetryService {
             case 'goToDefinition':
             case 'goToDefinition.preloaded':
             case 'hover':
-                await this.logCodeIntelligenceEvent(eventName, UserEvent.CODEINTELINTEGRATION, eventProperties)
+                await this.logCodeIntelligenceEvent(eventName, GQL.UserEvent.CODEINTELINTEGRATION, eventProperties)
                 break
             case 'findReferences':
-                await this.logCodeIntelligenceEvent(eventName, UserEvent.CODEINTELINTEGRATIONREFS, eventProperties)
+                await this.logCodeIntelligenceEvent(eventName, GQL.UserEvent.CODEINTELINTEGRATIONREFS, eventProperties)
                 break
         }
     }

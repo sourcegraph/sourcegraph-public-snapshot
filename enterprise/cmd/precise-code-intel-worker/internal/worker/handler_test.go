@@ -64,7 +64,7 @@ func TestHandle(t *testing.T) {
 
 	requeued, err := handler.handle(context.Background(), mockStore, upload)
 	if err != nil {
-		t.Fatalf("unexpected error handling upload: %s", err)
+		t.Fatalf("unexpected error handlling upload: %s", err)
 	} else if requeued {
 		t.Errorf("unexpected requeue")
 	}
@@ -79,7 +79,7 @@ func TestHandle(t *testing.T) {
 	if len(mockStore.UpdatePackagesFunc.History()) != 1 {
 		t.Errorf("unexpected number of UpdatePackages calls. want=%d have=%d", 1, len(mockStore.UpdatePackagesFunc.History()))
 	} else if diff := cmp.Diff(expectedPackages, mockStore.UpdatePackagesFunc.History()[0].Arg1); diff != "" {
-		t.Errorf("unexpected UpdatePackagesFunc args (-want +got):\n%s", diff)
+		t.Errorf("unexpected UpdatePackagesFuncargs (-want +got):\n%s", diff)
 	}
 
 	filter, err := bloomfilter.CreateFilter([]string{"ident A"})

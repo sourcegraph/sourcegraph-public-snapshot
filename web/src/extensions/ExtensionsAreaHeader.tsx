@@ -2,8 +2,6 @@ import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 import { ActionButtonDescriptor } from '../util/contributions'
 import { ExtensionsAreaRouteContext } from './ExtensionsArea'
-import { PageHeader } from '../components/PageHeader'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 
 export interface ExtensionsAreaHeaderProps extends ExtensionsAreaRouteContext, RouteComponentProps<{}> {
     isPrimaryHeader: boolean
@@ -24,8 +22,8 @@ export const ExtensionsAreaHeader: React.FunctionComponent<ExtensionsAreaHeaderP
 ) => (
     <div className="container">
         {props.isPrimaryHeader && (
-            <div className="navbar navbar-expand px-0 pt-4 pb-2">
-                <PageHeader title="Extensions" icon={PuzzleOutlineIcon} />
+            <div className="navbar navbar-expand px-0">
+                <h2 className="mb-0">Extensions</h2>
                 <div className="spacer" />
                 <ul className="navbar-nav nav">
                     {props.actionButtons.map(

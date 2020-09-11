@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import FormatLetterCaseIcon from 'mdi-react/FormatLetterCaseIcon'
 import { PatternTypeProps, CaseSensitivityProps, InteractiveSearchProps, CopyQueryButtonProps } from '../..'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
+import { SearchPatternType } from '../../../../../shared/src/graphql/schema'
 import { isEmpty } from 'lodash'
 import { submitSearch } from '../../helpers'
 import { QueryInputToggle } from './QueryInputToggle'
@@ -13,7 +14,6 @@ import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
 import { generateFiltersQuery } from '../../../../../shared/src/util/url'
 import { CopyQueryButton } from './CopyQueryButton'
 import { VersionContextProps } from '../../../../../shared/src/search/util'
-import { SearchPatternType } from '../../../graphql-operations'
 
 export interface TogglesProps
     extends PatternTypeProps,

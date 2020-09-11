@@ -20,7 +20,6 @@ import {
     ResolvedRevisionSpec,
 } from '../../../shared/src/util/url'
 import { queryGraphQL } from '../backend/graphql'
-import { TreeFields } from '../graphql-operations'
 
 /**
  * Fetch the repository.
@@ -245,7 +244,7 @@ export const fetchFileExternalLinks = memoizeObservable(
 )
 
 export const fetchTreeEntries = memoizeObservable(
-    (args: AbsoluteRepoFile & { first?: number }): Observable<TreeFields> =>
+    (args: AbsoluteRepoFile & { first?: number }): Observable<GQL.IGitTree> =>
         queryGraphQL(
             gql`
                 query TreeEntries(
@@ -258,28 +257,22 @@ export const fetchTreeEntries = memoizeObservable(
                     repository(name: $repoName) {
                         commit(rev: $commitID, inputRevspec: $revision) {
                             tree(path: $filePath) {
-                                ...TreeFields
+                                isRoot
+                                url
+                                entries(first: $first, recursiveSingleChild: true) {
+                                    name
+                                    path
+                                    isDirectory
+                                    url
+                                    submodule {
+                                        url
+                                        commit
+                                    }
+                                    isSingleChild
+                                }
                             }
                         }
                     }
-                }
-                fragment TreeFields on GitTree {
-                    isRoot
-                    url
-                    entries(first: $first, recursiveSingleChild: true) {
-                        ...TreeEntryFields
-                    }
-                }
-                fragment TreeEntryFields on TreeEntry {
-                    name
-                    path
-                    isDirectory
-                    url
-                    submodule {
-                        url
-                        commit
-                    }
-                    isSingleChild
                 }
             `,
             args
