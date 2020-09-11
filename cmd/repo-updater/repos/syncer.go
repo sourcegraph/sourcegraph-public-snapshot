@@ -187,9 +187,9 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 		return errors.Wrap(err, "syncer.sync.sourced")
 	}
 
-	var serviceRepos Repos
+	var storedServiceRepos Repos
 	// Fetch repos from our DB related to externalServiceID
-	if serviceRepos, err = store.ListRepos(ctx, StoreListReposArgs{ExternalServiceID: externalServiceID}); err != nil {
+	if storedServiceRepos, err = store.ListRepos(ctx, StoreListReposArgs{ExternalServiceID: externalServiceID}); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.list-repos")
 	}
 
@@ -210,11 +210,35 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	})
 
 	// Add the conflicts to the list of repos fetched from the db.
-	// NewDiff modifies the serviceRepos slice so we clone it before passing it
-	serviceReposAndConflicting := append(serviceRepos.Clone(), conflicting...)
+	// NewDiff modifies the storedServiceRepos slice so we clone it before passing it
+	storedServiceReposAndConflicting := append(storedServiceRepos.Clone(), conflicting...)
+
+	// Our stored repo could have multiple sources in its Sources map. Our sourced repo will only every have
+	// one repo in its Sources map. In order for our diff code to operate we should add the other sources to
+	// the sourced repo.
+	storedByID := make(map[api.RepoID]*Repo, len(storedServiceRepos))
+	for _, r := range storedServiceRepos {
+		storedByID[r.ID] = r
+	}
+	sourcedByID := make(map[api.RepoID]*Repo, len(sourced))
+	for _, r := range sourced {
+		sourcedByID[r.ID] = r
+	}
+	for _, r := range sourced {
+		stored, ok := storedByID[r.ID]
+		if !ok {
+			continue
+		}
+		for _, source := range stored.Sources {
+			if _, exists := r.Sources[source.ID]; exists {
+				continue
+			}
+			r.Sources[source.ID] = source
+		}
+	}
 
 	// Find the diff associated with only the currently syncing external service.
-	diff = newDiff(svc, sourced, serviceRepos)
+	diff = newDiff(svc, sourced, storedServiceRepos)
 	resolveNameConflicts(&diff, conflicting)
 	upserts := s.upserts(diff)
 
@@ -223,7 +247,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	// The trigger 'trig_soft_delete_orphan_repo_by_external_service_repo' will run
 	// and remove any repos that no longer have any rows in the external_service_repos
 	// table.
-	sdiff := s.sourcesUpserts(&diff, serviceReposAndConflicting)
+	sdiff := s.sourcesUpserts(&diff, storedServiceReposAndConflicting)
 	if err = store.UpsertSources(ctx, nil, nil, sdiff.Deleted); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.delete-sources")
 	}
@@ -237,7 +261,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	// Only modify added and modified relationships in external_service_repos, deleted was
 	// handled above
 	// Recalculate sdiff so that we have foreign keys
-	sdiff = s.sourcesUpserts(&diff, serviceReposAndConflicting)
+	sdiff = s.sourcesUpserts(&diff, storedServiceReposAndConflicting)
 	if err = store.UpsertSources(ctx, sdiff.Added, sdiff.Modified, nil); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.upsert-sources")
 	}
