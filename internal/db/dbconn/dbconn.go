@@ -63,8 +63,8 @@ func ConnectToDB(dataSource string) error {
 	return nil
 }
 
-func MigrateDB(db *sql.DB, dataSource string) error {
-	m, err := dbutil.NewMigrate(db, dataSource)
+func MigrateDB(db *sql.DB) error {
+	m, err := dbutil.NewMigrate(db, "frontend") // TODO(efritz) - frontend specific
 	if err != nil {
 		return err
 	}

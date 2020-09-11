@@ -22,7 +22,8 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/migrations"
+	codeintelMigrations "github.com/sourcegraph/sourcegraph/migrations/codeintel"
+	frontendMigrations "github.com/sourcegraph/sourcegraph/migrations/frontend"
 )
 
 // Transaction calls f within a transaction, rolling back if any error is
@@ -112,18 +113,24 @@ func NewDB(dsn, app string) (*sql.DB, error) {
 	return db, nil
 }
 
-func NewMigrationSourceLoader(dataSource string) *bindata.AssetSource {
-	return bindata.Resource(migrations.AssetNames(), migrations.Asset)
+var sourceLoaders = map[string]*bindata.AssetSource{
+	"frontend":  bindata.Resource(frontendMigrations.AssetNames(), frontendMigrations.Asset),
+	"codeintel": bindata.Resource(codeintelMigrations.AssetNames(), codeintelMigrations.Asset),
 }
 
-func NewMigrate(db *sql.DB, dataSource string) (*migrate.Migrate, error) {
+func NewMigrate(db *sql.DB, databaseName string) (*migrate.Migrate, error) {
 	var cfg postgres.Config
 	driver, err := postgres.WithInstance(db, &cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	d, err := bindata.WithInstance(NewMigrationSourceLoader(dataSource))
+	sourceLoader, ok := sourceLoaders[databaseName]
+	if !ok {
+		return nil, fmt.Errorf("unknown database '%s'", databaseName)
+	}
+
+	d, err := bindata.WithInstance(sourceLoader)
 	if err != nil {
 		return nil, err
 	}

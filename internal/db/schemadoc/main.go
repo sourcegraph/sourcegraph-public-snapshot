@@ -98,7 +98,7 @@ func generate(log *log.Logger) (string, error) {
 		return "", fmt.Errorf("ConnectToDB: %w", err)
 	}
 
-	if err := dbconn.MigrateDB(dbconn.Global, dataSource); err != nil {
+	if err := dbconn.MigrateDB(dbconn.Global); err != nil {
 		return "", fmt.Errorf("MigrateDB: %w", err)
 	}
 

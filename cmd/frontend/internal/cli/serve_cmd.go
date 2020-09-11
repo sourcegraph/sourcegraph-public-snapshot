@@ -108,7 +108,7 @@ func InitDB() error {
 			return nil
 		}
 
-		if err := dbconn.MigrateDB(dbconn.Global, ""); err != nil {
+		if err := dbconn.MigrateDB(dbconn.Global); err != nil {
 			return err
 		}
 

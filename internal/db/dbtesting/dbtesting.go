@@ -145,5 +145,5 @@ func initTest(nameSuffix string) error {
 		return err
 	}
 
-	return dbconn.MigrateDB(dbconn.Global, "dbname="+dbname)
+	return dbconn.MigrateDB(dbconn.Global)
 }

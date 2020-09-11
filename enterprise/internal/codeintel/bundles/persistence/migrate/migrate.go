@@ -2,7 +2,6 @@ package migrate
 
 import (
 	"context"
-	"sync"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"

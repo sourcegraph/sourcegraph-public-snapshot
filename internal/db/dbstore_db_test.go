@@ -17,7 +17,7 @@ func TestMigrations(t *testing.T) {
 	// Setup a global test database
 	dbtesting.SetupGlobalTestDB(t)
 
-	m, err := dbutil.NewMigrate(dbconn.Global, "")
+	m, err := dbutil.NewMigrate(dbconn.Global, "frontend") // TODO(efritz) - frontend specific
 	if err != nil {
 		t.Errorf("error constructing migrations: %s", err)
 	}
