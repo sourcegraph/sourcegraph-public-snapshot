@@ -230,7 +230,7 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 	if s.FilterTar != nil {
 		filter, err = s.FilterTar(ctx, repo, commit)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error while calling FilterTar: %w", err)
 		}
 	}
 
