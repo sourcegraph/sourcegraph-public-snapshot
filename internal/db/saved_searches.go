@@ -441,7 +441,7 @@ func (*savedSearches) EncryptTable(ctx context.Context) error {
 			}
 		}
 
-		updateQ := sqlf.Sprintf("UPDATE saved_searches SET query=%s WHERE id=%d", cryptBytes, sq.ID)
+		updateQ := sqlf.Sprintf("UPDATE saved_searches SET query = %s WHERE id=%d", cryptBytes, sq.ID)
 		_, err = tx.ExecContext(ctx, updateQ.Query(sqlf.PostgresBindVar), updateQ.Args())
 		return err
 	}
