@@ -266,7 +266,7 @@ func TestCleanupOldLocks(t *testing.T) {
 	s.cleanupRepos()
 
 	assertPaths(t, root,
-		"stats.json",
+		"repos-stats.json",
 
 		"github.com/foo/empty/.git/HEAD",
 		"github.com/foo/empty/.git/info/attributes",
