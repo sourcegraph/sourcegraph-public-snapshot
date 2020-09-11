@@ -86,7 +86,7 @@ fi
 migrate -database "postgres://${PGHOST}:${PGPORT}/${PGDATABASE}?sslmode=disable&x-migrations-table=${migrations_table}" -path . goto "${VERSION}"
 
 # Dump the database into a temporary file that we need to post-process
-pg_dump -s --no-owner --no-comments --clean --if-exists --exclude-table='*schema_migrations' -f tmp_squashed.sql
+pg_dump --schema-only --no-owner --no-comments --exclude-table='*schema_migrations' -f tmp_squashed.sql
 
 # Remove settings header from pg_dump output
 sed -i '' -e 's/^SET .*$//g' tmp_squashed.sql
@@ -129,7 +129,13 @@ printf "\nCOMMIT;\n" >>"./${VERSION}_squashed_migrations.up.sql"
 rm tmp_squashed.sql
 
 cat >"./${VERSION}_squashed_migrations.down.sql" <<EOL
--- empty migration
+DROP SCHEMA IF EXISTS public CASCADE;
+CREATE SCHEMA public;
+
+CREATE TABLE IF NOT EXISTS ${migrations_table} (
+    version bigint NOT NULL PRIMARY KEY,
+    dirty boolean NOT NULL
+);
 EOL
 
 echo ""
