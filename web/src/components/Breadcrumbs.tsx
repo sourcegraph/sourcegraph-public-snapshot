@@ -111,7 +111,6 @@ export const useBreadcrumbs = (): BreadcrumbsProps & BreadcrumbSetters => {
         /** Shared logic between plain function and hook */
         function internalSetBreadcrumb(breadcrumb: NullableBreadcrumb): () => void {
             const entry: BreadcrumbAtDepth = { depth, breadcrumb }
-            console.log(breadcrumb)
             setBreadcrumbsByDepth(breadcrumbs => [...breadcrumbs, entry])
             // cleanup
             return () => {
