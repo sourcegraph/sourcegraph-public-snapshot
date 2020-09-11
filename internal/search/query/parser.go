@@ -285,7 +285,7 @@ func (p *parser) parseNegatedLeafNode() (Node, error) {
 		return nil, err
 	}
 	if !ok {
-		pattern := p.ParsePattern()
+		pattern := p.ParsePatternRegexp()
 		pattern.Negated = true
 		pattern.Annotation.Range = newRange(start, p.pos)
 		return pattern, nil
@@ -546,10 +546,10 @@ func (p *parser) ParseFieldValue() (string, error) {
 	return value, nil
 }
 
-// ParsePattern parses a leaf node Pattern that corresponds to a search pattern.
+// ParsePatternRegexp parses a leaf node Pattern that corresponds to a search pattern.
 // Note that ParsePattern may be called multiple times (a query can have
 // multiple Patterns concatenated together).
-func (p *parser) ParsePattern() Pattern {
+func (p *parser) ParsePatternRegexp() Pattern {
 	start := p.pos
 	// If we can parse a well-delimited value, that takes precedence.
 	if value, delimiter, ok := p.TryParseDelimiter(); ok {
@@ -756,7 +756,7 @@ loop:
 			if ok {
 				nodes = append(nodes, parameter)
 			} else {
-				pattern := p.ParsePattern()
+				pattern := p.ParsePatternRegexp()
 				nodes = append(nodes, pattern)
 			}
 		}
