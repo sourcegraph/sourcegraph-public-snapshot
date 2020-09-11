@@ -13,12 +13,18 @@ import (
 	frontend "github.com/sourcegraph/sourcegraph/migrations/frontend"
 )
 
+// DO NOT HAND EDIT
+// These constants are updated automatically by the ./dev/squash_migrations.sh script.
+
+const frontendFirstMigration = 1528395702
+const codeintelFirstMigration = 1000000001
+
 var databases = map[string]struct {
 	FirstMigration int
 	AssetNames     []string
 }{
-	"frontend":  {1528395650, frontend.AssetNames()},
-	"codeintel": {1000000001, codeintel.AssetNames()},
+	"frontend":  {frontendFirstMigration, frontend.AssetNames()},
+	"codeintel": {codeintelFirstMigration, codeintel.AssetNames()},
 }
 
 func TestIDConstraints(t *testing.T) {
