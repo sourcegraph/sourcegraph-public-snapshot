@@ -4,6 +4,7 @@
     {{if (or (not .Content) .ContentVersion)}}
         <meta name="robots" content="noindex">
     {{end}}
+    {{with .Content}}<link ref="canonical" href="https://docs.sourcegraph.com/{{.Path}}">{{end}}
 {{end}}
 
 {{define "versionSelector"}}
