@@ -12,7 +12,7 @@ if [ ! -d "$1" ]; then
   echo "Unknown database '$1'"
   exit 1
 fi
-pushd "$1"
+pushd "$1" >/dev/null || exit 1
 
 # This simulates what "migrate create -ext sql -digits 10 -seq" does.
 awkcmd=$(

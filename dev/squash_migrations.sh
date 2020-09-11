@@ -13,8 +13,8 @@ hash migrate 2>/dev/null || {
   fi
 }
 
-if [ -z "$1" ]; then
-  echo "USAGE: $0 <tag>"
+if [ -z "$2" ]; then
+  echo "USAGE: $0 <db_name> <tag>"
   echo ""
   echo "This tool will squash all migrations up to and including the last migration defined"
   echo "in the given tag branch. The input to this tool should be three minor releases before"
@@ -24,12 +24,36 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
+if [ ! -d "$1" ]; then
+  echo "Unknown database '$1'"
+  exit 1
+fi
+pushd "$1" >/dev/null || exit 1
+
+migrations_table='schema_migrations'
+if [ "$1" != "frontend" ]; then
+  migrations_table="$1_${migrations_table}"
+fi
+
+target='./'
+if [ -z "$(git ls-tree -r --name-only "$2" "./")" ]; then
+  if [ "$1" != "frontend" ]; then
+    echo "database does not exist at this version - nothing to squash"
+    exit 0
+  fi
+
+  target='../'
+fi
+
 # Find the last migration defined in the given tag
-VERSION=$(git ls-tree -r --name-only "$1" ./ |
-  cut -d'_' -f1 |
-  grep -v "[^0-9]" |
-  sort |
-  tail -n1)
+VERSION=$(
+  git ls-tree -r --name-only "$2" "${target}" |
+    cut -d'_' -f1 |
+    cut -d'/' -f2 |
+    grep -v "[^0-9]" |
+    sort |
+    tail -n1
+)
 
 if [ -z "${VERSION}" ]; then
   echo "failed to retrieve migration version"
@@ -59,7 +83,7 @@ if [ "${SERVER_VERSION}" != 9.6 ]; then
 fi
 
 # First, apply migrations up to the version we want to squash
-migrate -database "postgres://${PGHOST}:${PGPORT}/${PGDATABASE}?sslmode=disable" -path . goto "${VERSION}"
+migrate -database "postgres://${PGHOST}:${PGPORT}/${PGDATABASE}?sslmode=disable&x-migrations-table=${migrations_table}" -path . goto "${VERSION}"
 
 # Dump the database into a temporary file that we need to post-process
 pg_dump -s --no-owner --no-comments --clean --if-exists -f tmp_squashed.sql
@@ -112,7 +136,7 @@ cat >"./${VERSION}_squashed_migrations.down.sql" <<EOL
 DROP SCHEMA IF EXISTS public CASCADE;
 CREATE SCHEMA public;
 
-CREATE TABLE IF NOT EXISTS schema_migrations (
+CREATE TABLE IF NOT EXISTS ${migrations_table} (
     version bigint NOT NULL PRIMARY KEY,
     dirty boolean NOT NULL
 );
