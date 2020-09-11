@@ -445,9 +445,5 @@ func (*savedSearches) EncryptTable(ctx context.Context) error {
 		_, err = tx.ExecContext(ctx, updateQ.Query(sqlf.PostgresBindVar), updateQ.Args())
 		return err
 	}
-	err = rows.Err()
-	if err != nil {
-		return err
-	}
-	return nil
+	return rows.Err()
 }
