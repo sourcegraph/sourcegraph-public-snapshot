@@ -378,21 +378,38 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 		span.Finish()
 	}()
 
-	// return s.readerCache.WithReader(ctx, filename, func(reader persistence.Reader) error {
 	store := postgres.NewStore(int(idFromRequest(r)))
-	db, err := database.OpenDatabase(ctx, filename, persistence.NewObserved(store, s.observationContext))
-	if err != nil {
-		return pkgerrors.Wrap(err, "database.OpenDatabase")
-	}
-
-	payload, err := handler(ctx, db)
-	if err != nil {
+	if _, ok, err := store.ReadMeta(ctx); err != nil {
 		return err
+	} else if ok {
+		db, err := database.OpenDatabase(ctx, filename, persistence.NewObserved(store, s.observationContext))
+		if err != nil {
+			return pkgerrors.Wrap(err, "database.OpenDatabase")
+		}
+
+		payload, err := handler(ctx, db)
+		if err != nil {
+			return err
+		}
+
+		writeJSON(w, payload)
+		return nil
 	}
 
-	writeJSON(w, payload)
-	return nil
-	// })
+	return s.storeCache.WithStore(ctx, filename, func(store persistence.Store) error {
+		db, err := database.OpenDatabase(ctx, filename, persistence.NewObserved(store, s.observationContext))
+		if err != nil {
+			return pkgerrors.Wrap(err, "database.OpenDatabase")
+		}
+
+		payload, err := handler(ctx, db)
+		if err != nil {
+			return err
+		}
+
+		writeJSON(w, payload)
+		return nil
+	})
 }
 
 // limitTransferRate applies a transfer limit to the given writer.
