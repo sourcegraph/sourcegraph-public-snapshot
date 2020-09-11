@@ -216,24 +216,25 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	// Our stored repo could have multiple sources in its Sources map. Our sourced repo will only every have
 	// one repo in its Sources map. In order for our diff code to operate we should add the other sources to
 	// the sourced repo.
-	storedByID := make(map[api.RepoID]*Repo, len(storedServiceRepos))
+	storedByURI := make(map[string]*Repo, len(storedServiceRepos))
 	for _, r := range storedServiceRepos {
-		storedByID[r.ID] = r
+		storedByURI[r.URI] = r
 	}
-	sourcedByID := make(map[api.RepoID]*Repo, len(sourced))
+	sourcedByURI := make(map[string]*Repo, len(sourced))
 	for _, r := range sourced {
-		sourcedByID[r.ID] = r
+		sourcedByURI[r.URI] = r
 	}
 	for _, r := range sourced {
-		stored, ok := storedByID[r.ID]
+		stored, ok := storedByURI[r.URI]
 		if !ok {
 			continue
 		}
-		for _, source := range stored.Sources {
-			if _, exists := r.Sources[source.ID]; exists {
+		for urn, source := range stored.Sources {
+			if _, exists := r.Sources[urn]; exists {
+				// Don't replace, only add
 				continue
 			}
-			r.Sources[source.ID] = source
+			r.Sources[urn] = source
 		}
 	}
 

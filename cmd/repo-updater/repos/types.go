@@ -587,6 +587,7 @@ type Repo struct {
 	// service itself).
 	ExternalRepo api.ExternalRepoSpec
 	// Sources identifies all the repo sources this Repo belongs to.
+	// The key is a URN created by extsvc.URN
 	Sources map[string]*SourceInfo
 	// Metadata contains the raw source code host JSON metadata.
 	Metadata interface{}
