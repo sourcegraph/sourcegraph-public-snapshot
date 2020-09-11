@@ -86,13 +86,13 @@ fi
 migrate -database "postgres://${PGHOST}:${PGPORT}/${PGDATABASE}?sslmode=disable&x-migrations-table=${migrations_table}" -path . goto "${VERSION}"
 
 # Dump the database into a temporary file that we need to post-process
-pg_dump -s --no-owner --no-comments --clean --if-exists -f tmp_squashed.sql
+pg_dump -s --no-owner --no-comments -f tmp_squashed.sql
 
 # Remove settings header from pg_dump output
 sed -i '' -e 's/^SET .*$//g' tmp_squashed.sql
 sed -i '' -e 's/^SELECT pg_catalog.set_config.*$//g' tmp_squashed.sql
 
-# Do not drop extensions if they already exists. This causes some
+# Do not drop extensions if they already exist. This causes some
 # weird problems with the back-compat tests as the extensions are
 # not dropped in the correct order to honor dependencies.
 sed -i '' -e 's/^DROP EXTENSION .*$//g' tmp_squashed.sql
