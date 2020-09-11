@@ -214,6 +214,7 @@ exports[`CampaignChangesets renders 1`] = `
     <FilteredConnection
       className="mt-2"
       defaultFirst={15}
+      emptyElement={<EmptyChangesetListElement />}
       headComponent={[Function]}
       hideSearch={true}
       history="[History]"
@@ -277,6 +278,7 @@ exports[`CampaignChangesets renders 1`] = `
             }
           }
           connectionQuery=""
+          emptyElement={<EmptyChangesetListElement />}
           first={15}
           headComponent={[Function]}
           listClassName="campaign-changesets__grid mb-3"

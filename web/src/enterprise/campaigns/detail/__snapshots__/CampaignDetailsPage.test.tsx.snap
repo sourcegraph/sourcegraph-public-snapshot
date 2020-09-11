@@ -721,6 +721,7 @@ description: somestring",
         <FilteredConnection
           className="mt-2"
           defaultFirst={15}
+          emptyElement={<EmptyChangesetListElement />}
           headComponent={[Function]}
           hideSearch={true}
           history="[History]"
@@ -1501,6 +1502,7 @@ description: somestring",
         <FilteredConnection
           className="mt-2"
           defaultFirst={15}
+          emptyElement={<EmptyChangesetListElement />}
           headComponent={[Function]}
           hideSearch={true}
           history="[History]"
