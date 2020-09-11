@@ -1220,6 +1220,11 @@ func TestParseAndOrLiteral(t *testing.T) {
 			Want:       `(concat "a:b" "\"patterntype:regexp\"")`,
 			WantLabels: "Literal",
 		},
+		{
+			Input:      `not literal.*pattern`,
+			Want:       `"NOT literal.*pattern"`,
+			WantLabels: "Literal",
+		},
 		// Whitespace is removed. content: exists for preserving whitespace.
 		{
 			Input:      `lang:go func  main`,

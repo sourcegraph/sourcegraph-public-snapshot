@@ -895,7 +895,7 @@ loop:
 				nodes = append(nodes, parameter)
 				break loop
 			}
-			pattern := p.ParsePatternRegexp()
+			pattern := p.ParsePatternLiteral()
 			pattern.Negated = true
 			pattern.Annotation.Range = newRange(start, p.pos)
 			nodes = append(nodes, pattern)
