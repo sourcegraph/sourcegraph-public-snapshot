@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 
 	"github.com/inconshreveable/log15"
@@ -46,6 +47,9 @@ func main() {
 		disableJanitor      = mustParseBool(rawDisableJanitor, "PRECISE_CODE_INTEL_DISABLE_JANITOR")
 	)
 
+	// Test connection
+	db := mustInitializeCodeIntelDatabase()
+
 	storeCache, err := sqlitereader.NewStoreCache(readerDataCacheSize)
 	if err != nil {
 		log.Fatalf("failed to initialize reader cache: %s", err)
@@ -59,7 +63,7 @@ func main() {
 		log.Fatalf("failed to migrate paths: %s", err)
 	}
 
-	if err := readers.Migrate(bundleDir, storeCache); err != nil {
+	if err := readers.Migrate(bundleDir, storeCache, db); err != nil {
 		log.Fatalf("failed to migrate readers: %s", err)
 	}
 
@@ -68,9 +72,6 @@ func main() {
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
-
-	// Test connection
-	mustInitializeCodeIntelDatabase()
 
 	store := store.NewObserved(mustInitializeStore(), observationContext)
 	metrics.MustRegisterDiskMonitor(bundleDir)
@@ -108,7 +109,7 @@ func mustInitializeStore() store.Store {
 	return store.NewWithHandle(basestore.NewHandleWithDB(dbconn.Global))
 }
 
-func mustInitializeCodeIntelDatabase() {
+func mustInitializeCodeIntelDatabase() *sql.DB{
 	postgresDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN
 	conf.Watch(func() {
 		if newDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN; postgresDSN != newDSN {
@@ -124,4 +125,6 @@ func mustInitializeCodeIntelDatabase() {
 	if err := dbconn.MigrateDB(db, "codeintel"); err != nil {
 		log.Fatalf("failed to migrate database: %s", err)
 	}
+
+	return db
 }

@@ -1,4 +1,4 @@
-package migrate
+package readers
 
 import (
 	"database/sql"
