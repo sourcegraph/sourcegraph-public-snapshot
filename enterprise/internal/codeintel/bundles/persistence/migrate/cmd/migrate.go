@@ -44,7 +44,7 @@ func mainErr() error {
 		return err
 	}
 
-	db, err := sql.Open("postgres", "postgres://sg:sg@localhost:5432")
+	db, err := sql.Open("postgres", "postgres://sg:sg@127.0.0.1:5432")
 	if err != nil {
 		return err
 	}
