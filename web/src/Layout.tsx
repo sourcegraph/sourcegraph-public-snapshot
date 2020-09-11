@@ -185,7 +185,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
-                    authRequired={Boolean(authRequired)}
+                    authRequired={!!authRequired}
                     isSearchRelatedPage={isSearchRelatedPage}
                     variant={
                         hideGlobalSearchInput
