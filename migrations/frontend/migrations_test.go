@@ -11,7 +11,7 @@ import (
 
 // DO NOT HAND EDIT
 // THis constant is updated automatically by the ./dev/squash_migrations.sh script.
-const FirstMigration = 1528395702
+const FirstMigration = 1528395650
 
 func TestIDConstraints(t *testing.T) {
 	ups, err := filepath.Glob("*.up.sql")
