@@ -2,12 +2,14 @@ package migrate
 
 import (
 	"context"
+	"runtime"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/postgres"
 	sqlitestore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/sqlite/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/sqlite/util"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
@@ -42,162 +44,101 @@ func Migrate(ctx context.Context, dumpID int, filename string, to dbutil.DB) (er
 }
 
 func migrateMeta(ctx context.Context, from *sqlitestore.Store, to dbutil.DB, dumpID int) (err error) {
-	numResultChunks, _, err := sqlitestore.ScanFirstInt(from.Query(ctx, sqlf.Sprintf("SELECT num_result_chunks FROM meta LIMIT 1")))
+	values, err := sqlitestore.ScanInts(from.Query(ctx, sqlf.Sprintf("SELECT num_result_chunks FROM meta")))
 	if err != nil {
 		return err
 	}
 
-	inserter, err := postgres.NewBatchInserter(ctx, to, "lsif_data_metadata", "dump_id", "num_result_chunks")
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if flushErr := inserter.Flush(ctx); flushErr != nil {
-			err = multierror.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
+	return withBatchInserter(ctx, to, "lsif_data_metadata", []string{"dump_id", "num_result_chunks"}, func(inserter *postgres.BatchInserter) error {
+		for _, value := range values {
+			if err := inserter.Insert(ctx, dumpID, value); err != nil {
+				return err
+			}
 		}
-	}()
 
-	if err := inserter.Insert(ctx, dumpID, numResultChunks); err != nil {
-		return err
-	}
-
-	return nil
+		return nil
+	})
 }
 
 func migrateDocuments(ctx context.Context, from *sqlitestore.Store, to dbutil.DB, dumpID int) (err error) {
-	rows, err := from.Query(ctx, sqlf.Sprintf("SELECT path, data FROM documents"))
+	documents, err := scanDocuments(from.Query(ctx, sqlf.Sprintf("SELECT path, data FROM documents")))
 	if err != nil {
 		return err
 	}
-	defer func() {
-		err = sqlitestore.CloseRows(rows, err)
-	}()
 
-	inserter, err := postgres.NewBatchInserter(ctx, to, "lsif_data_documents", "dump_id", "path", "data")
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if flushErr := inserter.Flush(ctx); flushErr != nil {
-			err = multierror.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
-		}
-	}()
-
-	for rows.Next() {
-		var path string
-		var data []byte
-		if err := rows.Scan(&path, &data); err != nil {
-			return err
+	return withBatchInserter(ctx, to, "lsif_data_documents", []string{"dump_id", "path", "data"}, func(inserter *postgres.BatchInserter) error {
+		for document := range documents {
+			if err := inserter.Insert(ctx, dumpID, document.path, document.data); err != nil {
+				return err
+			}
 		}
 
-		if err := inserter.Insert(ctx, dumpID, path, data); err != nil {
-			return err
-		}
-	}
-
-	return nil
+		return nil
+	})
 }
 
 func migrateResultChunks(ctx context.Context, from *sqlitestore.Store, to dbutil.DB, dumpID int) (err error) {
-	rows, err := from.Query(ctx, sqlf.Sprintf("SELECT id, data FROM result_chunks"))
+	resultChunks, err := scanResultChunks(from.Query(ctx, sqlf.Sprintf("SELECT id, data FROM result_chunks")))
 	if err != nil {
 		return err
 	}
-	defer func() {
-		err = sqlitestore.CloseRows(rows, err)
-	}()
 
-	inserter, err := postgres.NewBatchInserter(ctx, to, "lsif_data_result_chunks", "dump_id", "idx", "data")
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if flushErr := inserter.Flush(ctx); flushErr != nil {
-			err = multierror.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
-		}
-	}()
-
-	for rows.Next() {
-		var index int
-		var data []byte
-		if err := rows.Scan(&index, &data); err != nil {
-			return err
+	return withBatchInserter(ctx, to, "lsif_data_result_chunks", []string{"dump_id", "idx", "data"}, func(inserter *postgres.BatchInserter) error {
+		for resultChunk := range resultChunks {
+			if err := inserter.Insert(ctx, dumpID, resultChunk.index, resultChunk.data); err != nil {
+				return err
+			}
 		}
 
-		if err := inserter.Insert(ctx, dumpID, index, data); err != nil {
-			return err
-		}
-	}
-
-	return nil
+		return nil
+	})
 }
 
 func migrateDefinitions(ctx context.Context, from *sqlitestore.Store, to dbutil.DB, dumpID int) (err error) {
-	rows, err := from.Query(ctx, sqlf.Sprintf("SELECT scheme, identifier, data FROM definitions"))
+	locations, err := scanLocations(from.Query(ctx, sqlf.Sprintf("SELECT scheme, identifier, data FROM definitions")))
 	if err != nil {
 		return err
 	}
-	defer func() {
-		err = sqlitestore.CloseRows(rows, err)
-	}()
 
-	inserter, err := postgres.NewBatchInserter(ctx, to, "lsif_data_definitions", "dump_id", "scheme", "identifier", "data")
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if flushErr := inserter.Flush(ctx); flushErr != nil {
-			err = multierror.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
-		}
-	}()
-
-	for rows.Next() {
-		var scheme string
-		var identifier string
-		var data []byte
-		if err := rows.Scan(&scheme, &identifier, &data); err != nil {
-			return err
+	return withBatchInserter(ctx, to, "lsif_data_definitions", []string{"dump_id", "scheme", "identifier", "data"}, func(inserter *postgres.BatchInserter) error {
+		for location := range locations {
+			if err := inserter.Insert(ctx, dumpID, location.scheme, location.identifier, location.data); err != nil {
+				return err
+			}
 		}
 
-		if err := inserter.Insert(ctx, dumpID, scheme, identifier, data); err != nil {
-			return err
-		}
-	}
-
-	return nil
+		return nil
+	})
 }
 
 func migrateReferences(ctx context.Context, from *sqlitestore.Store, to dbutil.DB, dumpID int) (err error) {
-	rows, err := from.Query(ctx, sqlf.Sprintf(`SELECT scheme, identifier, data FROM "references"`))
+	locations, err := scanLocations(from.Query(ctx, sqlf.Sprintf("SELECT scheme, identifier, data FROM references")))
 	if err != nil {
 		return err
 	}
-	defer func() {
-		err = sqlitestore.CloseRows(rows, err)
-	}()
 
-	inserter, err := postgres.NewBatchInserter(ctx, to, "lsif_data_references", "dump_id", "scheme", "identifier", "data")
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if flushErr := inserter.Flush(ctx); flushErr != nil {
-			err = multierror.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
-		}
-	}()
-
-	for rows.Next() {
-		var scheme string
-		var identifier string
-		var data []byte
-		if err := rows.Scan(&scheme, &identifier, &data); err != nil {
-			return err
+	return withBatchInserter(ctx, to, "lsif_data_references", []string{"dump_id", "scheme", "identifier", "data"}, func(inserter *postgres.BatchInserter) error {
+		for location := range locations {
+			if err := inserter.Insert(ctx, dumpID, location.scheme, location.identifier, location.data); err != nil {
+				return err
+			}
 		}
 
-		if err := inserter.Insert(ctx, dumpID, scheme, identifier, data); err != nil {
-			return err
-		}
-	}
+		return nil
+	})
+}
 
-	return nil
+var numWriterRoutines = runtime.GOMAXPROCS(0)
+
+func withBatchInserter(ctx context.Context, db dbutil.DB, tableName string, columns []string, f func(inserter *postgres.BatchInserter) error) (err error) {
+	return util.InvokeN(numWriterRoutines, func() (err error) {
+		inserter := postgres.NewBatchInserter(ctx, db, tableName, columns...)
+		defer func() {
+			if flushErr := inserter.Flush(ctx); flushErr != nil {
+				err = multierror.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
+			}
+		}()
+
+		return f(inserter)
+	})
 }

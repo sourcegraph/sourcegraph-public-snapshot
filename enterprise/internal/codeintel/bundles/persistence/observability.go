@@ -115,7 +115,7 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 }
 
 // ReadMeta calls into the inner Store and registers the observed results.
-func (s *ObservedStore) ReadMeta(ctx context.Context) (_ types.MetaData, err error) {
+func (s *ObservedStore) ReadMeta(ctx context.Context) (_ types.MetaData, _ bool, err error) {
 	ctx, endObservation := s.readMetaOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 	return s.store.ReadMeta(ctx)

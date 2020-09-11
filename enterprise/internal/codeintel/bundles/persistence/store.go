@@ -24,7 +24,7 @@ type Store interface {
 	CreateTables(ctx context.Context) error
 	Close(err error) error
 
-	ReadMeta(ctx context.Context) (types.MetaData, error)
+	ReadMeta(ctx context.Context) (types.MetaData, bool, error)
 	PathsWithPrefix(ctx context.Context, prefix string) ([]string, error)
 	ReadDocument(ctx context.Context, path string) (types.DocumentData, bool, error)
 	ReadResultChunk(ctx context.Context, id int) (types.ResultChunkData, bool, error)

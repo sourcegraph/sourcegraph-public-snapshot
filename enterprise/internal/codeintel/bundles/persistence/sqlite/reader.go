@@ -59,20 +59,20 @@ func OpenStore(ctx context.Context, filename string, cache cache.DataCache) (_ p
 	}, nil
 }
 
-func (r *sqliteStore) ReadMeta(ctx context.Context) (types.MetaData, error) {
+func (r *sqliteStore) ReadMeta(ctx context.Context) (types.MetaData, bool, error) {
 	numResultChunks, exists, err := store.ScanFirstInt(r.store.Query(ctx, sqlf.Sprintf(
 		`SELECT num_result_chunks FROM meta LIMIT 1`,
 	)))
 	if err != nil {
-		return types.MetaData{}, err
+		return types.MetaData{}, false, err
 	}
 	if !exists {
-		return types.MetaData{}, ErrNoMetadata
+		return types.MetaData{}, false, ErrNoMetadata
 	}
 
 	return types.MetaData{
 		NumResultChunks: numResultChunks,
-	}, nil
+	}, true, nil
 }
 
 func (r *sqliteStore) PathsWithPrefix(ctx context.Context, prefix string) ([]string, error) {

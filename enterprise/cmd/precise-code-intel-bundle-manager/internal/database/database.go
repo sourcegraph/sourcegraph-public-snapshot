@@ -81,7 +81,7 @@ type DocumentPathRangeID struct {
 
 // OpenDatabase opens a handle to the bundle file at the given path.
 func OpenDatabase(ctx context.Context, filename string, store persistence.Store) (Database, error) {
-	meta, err := store.ReadMeta(ctx)
+	meta, _, err := store.ReadMeta(ctx)
 	if err != nil {
 		return nil, pkgerrors.Wrap(err, "store.ReadMeta")
 	}

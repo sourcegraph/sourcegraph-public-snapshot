@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
-type batchWriter struct {
+type BatchInserter struct {
 	db                dbutil.DB
 	numColumns        int
 	maxBatchSize      int
@@ -17,49 +17,32 @@ type batchWriter struct {
 	queryPlaceholders []string
 }
 
-const MaxNumPostgresParameters = 32767
-
-func NewBatchInserter(ctx context.Context, db dbutil.DB, tableName string, columnNames ...string) (*batchWriter, error) {
+func NewBatchInserter(ctx context.Context, db dbutil.DB, tableName string, columnNames ...string) *BatchInserter {
 	numColumns := len(columnNames)
-	maxBatchSize := (MaxNumPostgresParameters / numColumns) * numColumns
+	maxBatchSize := getMaxBatchSize(numColumns)
+	queryPrefix := makeQueryPrefix(tableName, columnNames)
+	queryPlaceholders := makeQueryPlaceholders(numColumns)
 
-	quotedColumnNames := make([]string, numColumns)
-	for i, columnName := range columnNames {
-		quotedColumnNames[i] = fmt.Sprintf(`"%s"`, columnName)
-	}
-
-	queryPrefix := fmt.Sprintf(`INSERT INTO "%s" (%s) VALUES `, tableName, strings.Join(quotedColumnNames, ","))
-
-	queryPlaceholders := make([]string, 0, maxBatchSize/numColumns)
-	for i := 0; i < MaxNumPostgresParameters; i += numColumns {
-		var placeholders []string
-		for j := 0; j < numColumns; j++ {
-			placeholders = append(placeholders, fmt.Sprintf("$%d", i+j+1))
-		}
-
-		queryPlaceholders = append(queryPlaceholders, fmt.Sprintf("(%s)", strings.Join(placeholders, ",")))
-	}
-
-	return &batchWriter{
+	return &BatchInserter{
 		db:                db,
 		numColumns:        numColumns,
 		maxBatchSize:      maxBatchSize,
 		batch:             make([]interface{}, 0, maxBatchSize),
 		queryPrefix:       queryPrefix,
 		queryPlaceholders: queryPlaceholders,
-	}, nil
+	}
 }
 
-func (w *batchWriter) Insert(ctx context.Context, values ...interface{}) error {
-	if len(values) != w.numColumns {
-		return fmt.Errorf("expected %d values, got %d", w.numColumns, len(values))
+func (i *BatchInserter) Insert(ctx context.Context, values ...interface{}) error {
+	if len(values) != i.numColumns {
+		return fmt.Errorf("expected %d values, got %d", i.numColumns, len(values))
 	}
 
-	w.batch = append(w.batch, values...)
+	i.batch = append(i.batch, values...)
 
-	if len(w.batch) >= w.maxBatchSize {
+	if len(i.batch) >= i.maxBatchSize {
 		// Flush full batch
-		return w.Flush(ctx)
+		return i.Flush(ctx)
 	}
 
 	return nil
@@ -67,14 +50,14 @@ func (w *batchWriter) Insert(ctx context.Context, values ...interface{}) error {
 
 // Flush ensures that all queued rows are inserted. This method must be invoked at the end
 // of insertion to ensure that all records are flushed to the underlying Execable.
-func (w *batchWriter) Flush(ctx context.Context) error {
-	if batch := w.pop(); len(batch) > 0 {
+func (i *BatchInserter) Flush(ctx context.Context) error {
+	if batch := i.pop(); len(batch) != 0 {
 		// Create a query with enough placeholders to match the current batch size. This should
 		// generally be the full queryPlaceholders slice, except for the last call to Flush which
 		// may be a partial batch.
-		query := w.queryPrefix + strings.Join(w.queryPlaceholders[:len(batch)/w.numColumns], ",")
+		query := i.queryPrefix + strings.Join(i.queryPlaceholders[:len(batch)/i.numColumns], ",")
 
-		if _, err := w.db.ExecContext(ctx, query, batch...); err != nil {
+		if _, err := i.db.ExecContext(ctx, query, batch...); err != nil {
 			return err
 		}
 	}
@@ -82,12 +65,43 @@ func (w *batchWriter) Flush(ctx context.Context) error {
 	return nil
 }
 
-func (w *batchWriter) pop() (batch []interface{}) {
-	if len(w.batch) < w.maxBatchSize {
-		batch, w.batch = w.batch, w.batch[:0]
+func (i *BatchInserter) pop() (batch []interface{}) {
+	if len(i.batch) < i.maxBatchSize {
+		batch, i.batch = i.batch, i.batch[:0]
 		return batch
 	}
 
-	batch, w.batch = w.batch[:w.maxBatchSize], w.batch[w.maxBatchSize:]
+	batch, i.batch = i.batch[:i.maxBatchSize], i.batch[i.maxBatchSize:]
 	return batch
+}
+
+const maxNumPostgresParameters = 32767
+
+func getMaxBatchSize(numColumns int) int {
+	return (maxNumPostgresParameters / numColumns) * numColumns
+}
+
+func makeQueryPrefix(tableName string, columnNames []string) string {
+	quotedColumnNames := make([]string, 0, len(columnNames))
+	for _, columnName := range columnNames {
+		quotedColumnNames = append(quotedColumnNames, fmt.Sprintf(`"%s"`, columnName))
+	}
+
+	return fmt.Sprintf(`INSERT INTO "%s" (%s) VALUES `, tableName, strings.Join(quotedColumnNames, ","))
+}
+
+func makeQueryPlaceholders(numColumns int) []string {
+	maxBatchSize := getMaxBatchSize(numColumns)
+
+	queryPlaceholders := make([]string, 0, maxBatchSize/numColumns)
+	for i := 0; i < maxNumPostgresParameters; i += numColumns {
+		placeholders := make([]string, 0, numColumns)
+		for j := 0; j < numColumns; j++ {
+			placeholders = append(placeholders, fmt.Sprintf("$%d", i+j+1))
+		}
+
+		queryPlaceholders = append(queryPlaceholders, fmt.Sprintf("(%s)", strings.Join(placeholders, ",")))
+	}
+
+	return queryPlaceholders
 }
