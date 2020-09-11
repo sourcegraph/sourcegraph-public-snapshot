@@ -1,7 +1,7 @@
 name: Renovate downstream
 on:
-  status
-  workflow_dispatch
+  status:
+  workflow_dispatch:
 
 jobs:
   # This job should trigger rennovate to run on the repositories defined in renovate-downstream.json
