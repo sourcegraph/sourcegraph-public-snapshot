@@ -6,15 +6,14 @@ import (
 	"database/sql"
 
 	"github.com/hashicorp/go-multierror"
-	secretPkg "github.com/sourcegraph/sourcegraph/internal/secrets"
-
-	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-
 	"github.com/keegancsmith/sqlf"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	secretPkg "github.com/sourcegraph/sourcegraph/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -138,7 +137,6 @@ func (s *savedSearches) GetByID(ctx context.Context, id int32) (*api.SavedQueryS
 		sq.Spec.Subject.Org = sq.Config.OrgID
 	}
 	if secretPkg.ConfiguredToEncrypt() {
-		// TODO base64 decode
 		plaintext, err := secretPkg.DecodeAndDecryptBytes([]byte(sq.Config.Query))
 		if err != nil {
 			return nil, errors.Wrap(err, "saved_searches: unable to decrypt")
@@ -332,7 +330,6 @@ func (s *savedSearches) Update(ctx context.Context, savedSearch *types.SavedSear
 	}()
 
 	if secretPkg.ConfiguredToEncrypt() {
-		// TODO Base64 encode
 		ciphertext, err := secretPkg.EncodeAndEncryptBytes([]byte(savedSearch.Query))
 		if err != nil {
 			return nil, errors.Wrap(err, "saved search: failed to encrypt")
