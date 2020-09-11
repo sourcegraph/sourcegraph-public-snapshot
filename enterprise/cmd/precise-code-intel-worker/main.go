@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/inconshreveable/log15"
@@ -80,6 +81,8 @@ func main() {
 }
 
 func mustInitializeStore() store.Store {
+	fmt.Printf("\n%s\n%s\n\n", conf.Get().ServiceConnections.PostgresDSN, conf.Get().ServiceConnections.CodeIntelPostgresDSN)
+
 	postgresDSN := conf.Get().ServiceConnections.PostgresDSN
 	conf.Watch(func() {
 		if newDSN := conf.Get().ServiceConnections.PostgresDSN; postgresDSN != newDSN {

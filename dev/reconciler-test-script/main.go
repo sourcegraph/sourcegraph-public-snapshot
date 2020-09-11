@@ -283,7 +283,7 @@ index 52ada66..0aaaf37 100644
 func deleteEverything() {
 	ctx := context.Background()
 
-	dsn := dbutil.PostgresDSN("sourcegraph", os.Getenv)
+	dsn := dbutil.PostgresDSN("", "sourcegraph", os.Getenv)
 	db, err := dbutil.NewDB(dsn, "campaigns-reconciler")
 	if err != nil {
 		log.Fatalf("failed to initialize db store: %v", err)
@@ -307,7 +307,7 @@ func deleteEverything() {
 }
 
 func getRepositoryID(name string) string {
-	dsn := dbutil.PostgresDSN("sourcegraph", os.Getenv)
+	dsn := dbutil.PostgresDSN("", "sourcegraph", os.Getenv)
 	s, err := basestore.New(dsn, "campaigns-reconciler")
 	if err != nil {
 		log.Fatalf("failed to initialize db store: %v", err)

@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	// Register driver
@@ -351,9 +352,18 @@ func (n *NullJSONRawMessage) Value() (driver.Value, error) {
 	return n.Raw, nil
 }
 
-func PostgresDSN(currentUser string, getenv func(string) string) string {
+func PostgresDSN(service, currentUser string, getenv func(string) string) string {
+	prefix := ""
+	if service != "" {
+		prefix = fmt.Sprintf("%s_", strings.ToUpper(service))
+	}
+
+	env := func(name string) string {
+		return getenv(prefix + name)
+	}
+
 	// PGDATASOURCE is a sourcegraph specific variable for just setting the DSN
-	if dsn := getenv("PGDATASOURCE"); dsn != "" {
+	if dsn := env("PGDATASOURCE"); dsn != "" {
 		return dsn
 	}
 
@@ -369,29 +379,29 @@ func PostgresDSN(currentUser string, getenv func(string) string) string {
 	if currentUser != "" {
 		username = currentUser
 	}
-	if user := getenv("PGUSER"); user != "" {
+	if user := env("PGUSER"); user != "" {
 		username = user
 	}
 
-	if password := getenv("PGPASSWORD"); password != "" {
+	if password := env("PGPASSWORD"); password != "" {
 		dsn.User = url.UserPassword(username, password)
 	} else {
 		dsn.User = url.User(username)
 	}
 
-	if host := getenv("PGHOST"); host != "" {
+	if host := env("PGHOST"); host != "" {
 		dsn.Host = host
 	}
 
-	if port := getenv("PGPORT"); port != "" {
+	if port := env("PGPORT"); port != "" {
 		dsn.Host += ":" + port
 	}
 
-	if db := getenv("PGDATABASE"); db != "" {
+	if db := env("PGDATABASE"); db != "" {
 		dsn.Path = db
 	}
 
-	if sslmode := getenv("PGSSLMODE"); sslmode != "" {
+	if sslmode := env("PGSSLMODE"); sslmode != "" {
 		qry := dsn.Query()
 		qry.Set("sslmode", sslmode)
 		dsn.RawQuery = qry.Encode()

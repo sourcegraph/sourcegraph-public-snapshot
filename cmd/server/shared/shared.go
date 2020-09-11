@@ -127,7 +127,7 @@ func Main() {
 		log.Fatal("Failed to setup nginx:", err)
 	}
 
-	postgresExporterLine := fmt.Sprintf(`postgres_exporter: env DATA_SOURCE_NAME="%s" postgres_exporter --log.level=%s`, dbutil.PostgresDSN("postgres", os.Getenv), convertLogLevel(os.Getenv("SRC_LOG_LEVEL")))
+	postgresExporterLine := fmt.Sprintf(`postgres_exporter: env DATA_SOURCE_NAME="%s" postgres_exporter --log.level=%s`, dbutil.PostgresDSN("", "postgres", os.Getenv), convertLogLevel(os.Getenv("SRC_LOG_LEVEL")))
 
 	procfile := []string{
 		nginx,
