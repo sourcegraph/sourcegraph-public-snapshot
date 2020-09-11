@@ -26,7 +26,10 @@ interface LinkBreadcrumb {
     /** A unique key for the breadcrumb. */
     key: string
 
-    /** Specification for links */
+    /**
+     * Specification for links. When this breadcrumb is the last breadcrumb and
+     * the URL hash is empty, the label is rendered as plain text instead of a link.
+     */
     link: { label: string; to: string }
 
     /**
@@ -169,7 +172,7 @@ export const Breadcrumbs: React.FC<{ breadcrumbs: BreadcrumbAtDepth[] }> = ({ br
                             <span className="font-weight-semibold">{divider}</span>
                             {isElementBreadcrumb(breadcrumb) ? (
                                 breadcrumb.element
-                            ) : // When this is the last breadcrumb and the hash is empty, render as plain text
+                            ) : // When the last breadcrumb is a link and the hash is empty, render as plain text
                             index === validBreadcrumbs.length - 1 && !location.hash ? (
                                 breadcrumb.link.label
                             ) : (
