@@ -392,7 +392,7 @@ func (*savedSearches) EncryptTable(ctx context.Context) error {
 		return nil
 	}
 
-	q := sqlf.Sprintf("SELECT id,query from saved_searches where query like %s%%", secretPkg.KeyHash())
+	q := sqlf.Sprintf("SELECT id, query from saved_searches where query like %s%%", secretPkg.KeyHash())
 	tx, err := dbconn.Global.BeginTx(ctx, nil)
 	if err != nil {
 		return err
