@@ -61,6 +61,7 @@ export const ChangesetSpecList: React.FunctionComponent<Props> = ({
             listClassName="changeset-spec-list__grid mb-3"
             headComponent={ChangesetSpecListHeader}
             cursorPaging={true}
+            noSummaryIfAllNodesVisible={true}
         />
     )
 }

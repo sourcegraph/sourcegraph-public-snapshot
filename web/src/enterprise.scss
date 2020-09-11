@@ -4,19 +4,16 @@
 
 // Enterprise styles
 @import './enterprise/campaigns/apply/ChangesetSpecList';
-@import './enterprise/campaigns/apply/ChangesetSpecListHeader';
 @import './enterprise/campaigns/apply/ChangesetSpecNode';
 @import './enterprise/campaigns/apply/VisibleChangesetSpecNode';
 @import './enterprise/campaigns/close/CampaignCloseChangesetsList';
-@import './enterprise/campaigns/close/CampaignCloseHeader';
 @import './enterprise/campaigns/close/ChangesetCloseAction';
 @import './enterprise/campaigns/close/ChangesetCloseNode';
 @import './enterprise/campaigns/close/ExternalChangesetCloseNode';
 @import './enterprise/campaigns/detail/changesets/CampaignChangesets';
-@import './enterprise/campaigns/detail/changesets/CampaignChangesetsHeader';
 @import './enterprise/campaigns/detail/changesets/ChangesetLabel';
 @import './enterprise/campaigns/detail/changesets/ChangesetNode';
-@import './enterprise/campaigns/detail/changesets/ChangesetStatusCell';
+@import './enterprise/campaigns/detail/CampaignSpecTab';
 @import './enterprise/campaigns/detail/CampaignStatsCard';
 @import './enterprise/campaigns/list/CampaignListPage';
 @import './enterprise/campaigns/list/CampaignNode';

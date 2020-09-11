@@ -52,13 +52,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
         />
       }
       className="test-campaign-details-page"
-      icon={
-        Object {
-          "$$typeof": Symbol(react.memo),
-          "compare": null,
-          "type": [Function],
-        }
-      }
+      icon={[Function]}
       title={
         <React.Fragment>
           <AnchorLink
@@ -68,14 +62,6 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
           </AnchorLink>
            / 
           n
-           
-          <sup>
-            <span
-              className="badge badge-merged text-uppercase"
-            >
-              Beta
-            </span>
-          </sup>
         </React.Fragment>
       }
     >
@@ -85,9 +71,21 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
         <h1
           className="flex-grow-1"
         >
-          <Memo(ImageAutoAdjustIcon)
+          <CampaignsIconWithBetaBadge
             className="icon-inline page-header__icon"
-          />
+          >
+            <Memo(ImageAutoAdjustIcon)
+              className="icon-inline page-header__icon"
+            />
+             
+            <sup>
+              <span
+                className="badge badge-merged text-uppercase"
+              >
+                Beta
+              </span>
+            </sup>
+          </CampaignsIconWithBetaBadge>
            
           <AnchorLink
             to="/users/alice/campaigns"
@@ -100,14 +98,6 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
           </AnchorLink>
            / 
           n
-           
-          <sup>
-            <span
-              className="badge badge-merged text-uppercase"
-            >
-              Beta
-            </span>
-          </sup>
         </h1>
         <CampaignDetailsActionSection
           campaignClosed={false}
@@ -394,7 +384,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
       className=""
     >
       <div
-        className="pb-3"
+        className="px-4 pb-3"
       >
         <Markdown
           dangerousInnerHTML="<p>d</p>
@@ -541,11 +531,10 @@ description: somestring",
           onFiltersChange={[Function]}
         >
           <div
-            className="form-inline m-0"
+            className="form-inline m-0 my-2"
           >
-            <ChangesetFilter
+            <ChangesetUIStateFilter
               className="mr-2"
-              label="Status"
               onChange={[Function]}
               values={
                 Array [
@@ -559,59 +548,75 @@ description: somestring",
                 ]
               }
             >
-              <select
-                className="form-control mr-2"
-                onChange={[Function]}
+              <div
+                className="btn-group flex-wrap mr-2"
+                role="group"
               >
-                <option
-                  value=""
+                <button
+                  className="btn btn-outline-secondary active"
+                  onClick={[Function]}
+                  type="button"
                 >
-                  Status
-                </option>
-                <option
+                  All
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="UNPUBLISHED"
-                  value="UNPUBLISHED"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Unpublished
-                </option>
-                <option
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="ERRORED"
-                  value="ERRORED"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Errored
-                </option>
-                <option
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="PROCESSING"
-                  value="PROCESSING"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Processing
-                </option>
-                <option
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="OPEN"
-                  value="OPEN"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Open
-                </option>
-                <option
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="CLOSED"
-                  value="CLOSED"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Closed
-                </option>
-                <option
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="MERGED"
-                  value="MERGED"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Merged
-                </option>
-                <option
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="DELETED"
-                  value="DELETED"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Deleted
-                </option>
-              </select>
-            </ChangesetFilter>
+                </button>
+              </div>
+            </ChangesetUIStateFilter>
             <ChangesetFilter
               className="mr-2"
               label="Check state"
@@ -722,6 +727,7 @@ description: somestring",
           listClassName="campaign-changesets__grid mb-3"
           listComponent="div"
           location="[Location path=/]"
+          noSummaryIfAllNodesVisible={true}
           nodeComponent={[Function]}
           nodeComponentProps={
             Object {
@@ -826,13 +832,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
         />
       }
       className="test-campaign-details-page"
-      icon={
-        Object {
-          "$$typeof": Symbol(react.memo),
-          "compare": null,
-          "type": [Function],
-        }
-      }
+      icon={[Function]}
       title={
         <React.Fragment>
           <AnchorLink
@@ -842,14 +842,6 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
           </AnchorLink>
            / 
           n
-           
-          <sup>
-            <span
-              className="badge badge-merged text-uppercase"
-            >
-              Beta
-            </span>
-          </sup>
         </React.Fragment>
       }
     >
@@ -859,9 +851,21 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
         <h1
           className="flex-grow-1"
         >
-          <Memo(ImageAutoAdjustIcon)
+          <CampaignsIconWithBetaBadge
             className="icon-inline page-header__icon"
-          />
+          >
+            <Memo(ImageAutoAdjustIcon)
+              className="icon-inline page-header__icon"
+            />
+             
+            <sup>
+              <span
+                className="badge badge-merged text-uppercase"
+              >
+                Beta
+              </span>
+            </sup>
+          </CampaignsIconWithBetaBadge>
            
           <AnchorLink
             to="/users/alice/campaigns"
@@ -874,14 +878,6 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
           </AnchorLink>
            / 
           n
-           
-          <sup>
-            <span
-              className="badge badge-merged text-uppercase"
-            >
-              Beta
-            </span>
-          </sup>
         </h1>
         <CampaignDetailsActionSection
           campaignClosed={false}
@@ -1168,7 +1164,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
       className=""
     >
       <div
-        className="pb-3"
+        className="px-4 pb-3"
       >
         <Markdown
           dangerousInnerHTML="<p>d</p>
@@ -1315,11 +1311,10 @@ description: somestring",
           onFiltersChange={[Function]}
         >
           <div
-            className="form-inline m-0"
+            className="form-inline m-0 my-2"
           >
-            <ChangesetFilter
+            <ChangesetUIStateFilter
               className="mr-2"
-              label="Status"
               onChange={[Function]}
               values={
                 Array [
@@ -1333,59 +1328,75 @@ description: somestring",
                 ]
               }
             >
-              <select
-                className="form-control mr-2"
-                onChange={[Function]}
+              <div
+                className="btn-group flex-wrap mr-2"
+                role="group"
               >
-                <option
-                  value=""
+                <button
+                  className="btn btn-outline-secondary active"
+                  onClick={[Function]}
+                  type="button"
                 >
-                  Status
-                </option>
-                <option
+                  All
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="UNPUBLISHED"
-                  value="UNPUBLISHED"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Unpublished
-                </option>
-                <option
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="ERRORED"
-                  value="ERRORED"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Errored
-                </option>
-                <option
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="PROCESSING"
-                  value="PROCESSING"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Processing
-                </option>
-                <option
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="OPEN"
-                  value="OPEN"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Open
-                </option>
-                <option
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="CLOSED"
-                  value="CLOSED"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Closed
-                </option>
-                <option
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="MERGED"
-                  value="MERGED"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Merged
-                </option>
-                <option
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="DELETED"
-                  value="DELETED"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Deleted
-                </option>
-              </select>
-            </ChangesetFilter>
+                </button>
+              </div>
+            </ChangesetUIStateFilter>
             <ChangesetFilter
               className="mr-2"
               label="Check state"
@@ -1496,6 +1507,7 @@ description: somestring",
           listClassName="campaign-changesets__grid mb-3"
           listComponent="div"
           location="[Location path=/]"
+          noSummaryIfAllNodesVisible={true}
           nodeComponent={[Function]}
           nodeComponentProps={
             Object {
