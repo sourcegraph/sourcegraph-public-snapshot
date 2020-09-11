@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"reflect"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
@@ -172,6 +172,7 @@ func TestSerializeBasic(t *testing.T) {
 		"search_usage": null,
 		"growth_statistics": null,
 		"saved_searches": null,
+		"repositories": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
@@ -226,6 +227,7 @@ func TestSerializeFromQuery(t *testing.T) {
 		"search_usage": null,
 		"growth_statistics": null,
 		"saved_searches": null,
+		"repositories": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
@@ -282,6 +284,7 @@ func TestSerializeAutomationUsage(t *testing.T) {
 		"search_usage": null,
 		"growth_statistics": null,
 		"saved_searches": null,
+		"repositories": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
@@ -362,6 +365,7 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		"search_usage": null,
 		"growth_statistics": null,
 		"saved_searches": null,
+		"repositories": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
@@ -387,7 +391,7 @@ func compareJSON(t *testing.T, actual []byte, expected string) {
 		t.Fatalf("unexpected error %s", err)
 	}
 
-	if !reflect.DeepEqual(o1, o2) {
-		t.Fatalf("expected json=%s, got json=%s", expected, actual)
+	if diff := cmp.Diff(o2, o1); diff != "" {
+		t.Fatalf("mismatch (-want +got):\n%s", diff)
 	}
 }
