@@ -267,39 +267,6 @@ func (p *parser) skipSpaces() error {
 	return nil
 }
 
-// parseNegatedLeafNode parses `NOT field:value` or `NOT pattern` and
-// translates it to `-field:value` or as negated pattern respectively.
-func (p *parser) parseNegatedLeafNode() (Node, error) {
-	start := p.pos
-	_ = p.expect(NOT)
-
-	err := p.skipSpaces()
-	if err != nil {
-		return Parameter{}, err
-	}
-
-	// try parsing as parameter. If it doesn't work we treat NOT's operand
-	// as pattern.
-	parameter, ok, err := p.ParseParameter()
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		pattern := p.ParsePatternRegexp()
-		pattern.Negated = true
-		pattern.Annotation.Range = newRange(start, p.pos)
-		return pattern, nil
-	}
-	// we don't support NOT -field:value
-	if parameter.Negated {
-		return nil, fmt.Errorf("unexpected NOT before \"-%s:%s\". Remove NOT and try again",
-			parameter.Field, parameter.Value)
-	}
-	parameter.Negated = true
-	parameter.Annotation.Range = newRange(start, p.pos)
-	return parameter, nil
-}
-
 // ScanAnyPatternLiteral consumes all characters up to a whitespace character
 // and returns the string and how much it consumed.
 func ScanAnyPatternLiteral(buf []byte) (scanned string, count int) {
@@ -911,11 +878,27 @@ loop:
 			// Caller advances.
 			break loop
 		case p.matchUnaryKeyword(NOT):
-			parameter, err := p.parseNegatedLeafNode()
+			start := p.pos
+			_ = p.expect(NOT)
+			err := p.skipSpaces()
 			if err != nil {
 				return nil, err
 			}
-			nodes = append(nodes, parameter)
+			if parameter, ok, _ := p.ParseParameter(); ok {
+				// we don't support NOT -field:value
+				if parameter.Negated {
+					return nil, fmt.Errorf("unexpected NOT before \"-%s:%s\". Remove NOT and try again",
+						parameter.Field, parameter.Value)
+				}
+				parameter.Negated = true
+				parameter.Annotation.Range = newRange(start, p.pos)
+				nodes = append(nodes, parameter)
+				break loop
+			}
+			pattern := p.ParsePatternRegexp()
+			pattern.Negated = true
+			pattern.Annotation.Range = newRange(start, p.pos)
+			nodes = append(nodes, pattern)
 		default:
 			parameter, ok, err := p.ParseParameter()
 			if err != nil {
@@ -999,11 +982,27 @@ loop:
 			// Caller advances.
 			break loop
 		case p.matchUnaryKeyword(NOT):
-			parameter, err := p.parseNegatedLeafNode()
+			start := p.pos
+			_ = p.expect(NOT)
+			err := p.skipSpaces()
 			if err != nil {
 				return nil, err
 			}
-			nodes = append(nodes, parameter)
+			if parameter, ok, _ := p.ParseParameter(); ok {
+				// we don't support NOT -field:value
+				if parameter.Negated {
+					return nil, fmt.Errorf("unexpected NOT before \"-%s:%s\". Remove NOT and try again",
+						parameter.Field, parameter.Value)
+				}
+				parameter.Negated = true
+				parameter.Annotation.Range = newRange(start, p.pos)
+				nodes = append(nodes, parameter)
+				break loop
+			}
+			pattern := p.ParsePatternRegexp()
+			pattern.Negated = true
+			pattern.Annotation.Range = newRange(start, p.pos)
+			nodes = append(nodes, pattern)
 		default:
 			parameter, ok, err := p.ParseParameter()
 			if err != nil {
