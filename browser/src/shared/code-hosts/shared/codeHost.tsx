@@ -302,6 +302,7 @@ export interface CodeIntelligenceProps extends TelemetryProps {
         | 'requestGraphQL'
         | 'settings'
         | 'refreshSettings'
+        | 'sourcegraphURL'
     >
     codeHost: CodeHost
     extensionsController: Controller

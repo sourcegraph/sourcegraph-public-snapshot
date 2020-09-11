@@ -29,7 +29,7 @@ interface InteractiveModeProps
     extends SettingsCascadeProps,
         KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         ThemeProps,
         ThemePreferenceProps,
         TelemetryProps,
