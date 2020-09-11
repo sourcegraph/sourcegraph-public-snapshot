@@ -16,6 +16,10 @@
         background: unset;
     }
 
+    &__toggle {
+        z-index: 1;
+    }
+
     &__body:hover {
         text-decoration: none;
     }
