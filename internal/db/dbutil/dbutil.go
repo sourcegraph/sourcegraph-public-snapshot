@@ -114,24 +114,34 @@ func NewDB(dsn, app string) (*sql.DB, error) {
 	return db, nil
 }
 
-var sourceLoaders = map[string]*bindata.AssetSource{
-	"frontend":  bindata.Resource(frontendMigrations.AssetNames(), frontendMigrations.Asset),
-	"codeintel": bindata.Resource(codeintelMigrations.AssetNames(), codeintelMigrations.Asset),
+var databases = map[string]struct {
+	MigrationsTable string
+	Resource        *bindata.AssetSource
+}{
+	"frontend": {
+		MigrationsTable: "schema_migrations",
+		Resource:        bindata.Resource(frontendMigrations.AssetNames(), frontendMigrations.Asset),
+	},
+	"codeintel": {
+		MigrationsTable: "codeintel_schema_migrations",
+		Resource:        bindata.Resource(codeintelMigrations.AssetNames(), codeintelMigrations.Asset),
+	},
 }
 
 func NewMigrate(db *sql.DB, databaseName string) (*migrate.Migrate, error) {
-	var cfg postgres.Config
-	driver, err := postgres.WithInstance(db, &cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	sourceLoader, ok := sourceLoaders[databaseName]
+	schemaData, ok := databases[databaseName]
 	if !ok {
 		return nil, fmt.Errorf("unknown database '%s'", databaseName)
 	}
 
-	d, err := bindata.WithInstance(sourceLoader)
+	driver, err := postgres.WithInstance(db, &postgres.Config{
+		MigrationsTable: schemaData.MigrationsTable,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	d, err := bindata.WithInstance(schemaData.Resource)
 	if err != nil {
 		return nil, err
 	}

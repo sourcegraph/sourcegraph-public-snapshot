@@ -33,6 +33,7 @@ var (
 	Global *sql.DB
 
 	defaultDataSource      = env.Get("PGDATASOURCE", "", "Default dataSource to pass to Postgres. See https://godoc.org/github.com/lib/pq for more information.")
+	codeIntelDataSource    = env.Get("CODEINTEL_PGDATASOURCE", "", "Code intelligence dataSource to pass to Postgres. See https://godoc.org/github.com/lib/pq for more information.")
 	defaultApplicationName = env.Get("PGAPPLICATIONNAME", "sourcegraph", "The value of application_name appended to dataSource")
 )
 
@@ -41,30 +42,35 @@ var (
 // Note: github.com/lib/pq parses the environment as well. This function will
 // also use the value of PGDATASOURCE if supplied and dataSource is the empty
 // string.
-func ConnectToDB(dataSource string) error {
+func ConnectToDB(dataSource string) (err error) {
+	Global, err = NewConnectToDB(dataSource)
+	// TODO - make sure this happens with other connections as well
+	registerPrometheusCollector(Global, "_app")
+	return err
+}
+
+// TODO - rename me
+func NewConnectToDB(dataSource string) (*sql.DB, error) {
 	// Force PostgreSQL session timezone to UTC.
 	if v, ok := os.LookupEnv("PGTZ"); ok && v != "UTC" && v != "utc" {
 		log15.Warn("Ignoring PGTZ environment variable; using PGTZ=UTC.", "ignoredPGTZ", v)
 	}
 	if err := os.Setenv("PGTZ", "UTC"); err != nil {
-		return errors.Wrap(err, "Error setting PGTZ=UTC")
+		return nil, errors.Wrap(err, "Error setting PGTZ=UTC")
 	}
 
 	connectionString := buildConnectionString(dataSource)
 
-	var err error
-	Global, err = openDBWithStartupWait(connectionString)
+	db, err := openDBWithStartupWait(connectionString)
 	if err != nil {
-		return errors.Wrap(err, "DB not available")
+		return nil, errors.Wrap(err, "DB not available")
 	}
-	registerPrometheusCollector(Global, "_app")
-	configureConnectionPool(Global)
-
-	return nil
+	configureConnectionPool(db)
+	return db, nil
 }
 
-func MigrateDB(db *sql.DB) error {
-	m, err := dbutil.NewMigrate(db, "frontend") // TODO(efritz) - frontend specific
+func MigrateDB(db *sql.DB, databaseName string) error {
+	m, err := dbutil.NewMigrate(db, databaseName)
 	if err != nil {
 		return err
 	}

@@ -17,16 +17,18 @@ func TestMigrations(t *testing.T) {
 	// Setup a global test database
 	dbtesting.SetupGlobalTestDB(t)
 
-	m, err := dbutil.NewMigrate(dbconn.Global, "frontend") // TODO(efritz) - frontend specific
-	if err != nil {
-		t.Errorf("error constructing migrations: %s", err)
-	}
-	// Run all down migrations then up migrations again to ensure there are no SQL errors.
-	if err := m.Down(); err != nil {
-		t.Errorf("error running down migrations: %s", err)
-	}
-	if err := dbutil.DoMigrate(m); err != nil {
-		t.Errorf("error running up migrations: %s", err)
+	for _, databaseName := range []string{"frontend", "codeintel"} {
+		m, err := dbutil.NewMigrate(dbconn.Global, databaseName)
+		if err != nil {
+			t.Errorf("error constructing migrations: %s", err)
+		}
+		// Run all down migrations then up migrations again to ensure there are no SQL errors.
+		if err := m.Down(); err != nil {
+			t.Errorf("error running down migrations: %s", err)
+		}
+		if err := dbutil.DoMigrate(m); err != nil {
+			t.Errorf("error running up migrations: %s", err)
+		}
 	}
 }
 

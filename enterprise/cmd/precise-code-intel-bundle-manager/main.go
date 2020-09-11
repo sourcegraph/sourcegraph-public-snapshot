@@ -69,6 +69,9 @@ func main() {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
+	// Test connection
+	mustInitializeCodeIntelDatabase()
+
 	store := store.NewObserved(mustInitializeStore(), observationContext)
 	metrics.MustRegisterDiskMonitor(bundleDir)
 
@@ -94,7 +97,7 @@ func mustInitializeStore() store.Store {
 	postgresDSN := conf.Get().ServiceConnections.PostgresDSN
 	conf.Watch(func() {
 		if newDSN := conf.Get().ServiceConnections.PostgresDSN; postgresDSN != newDSN {
-			log.Fatalf("detected repository DSN change, restarting to take effect: %s", newDSN)
+			log.Fatalf("detected database DSN change, restarting to take effect: %s", newDSN)
 		}
 	})
 
@@ -103,4 +106,22 @@ func mustInitializeStore() store.Store {
 	}
 
 	return store.NewWithHandle(basestore.NewHandleWithDB(dbconn.Global))
+}
+
+func mustInitializeCodeIntelDatabase() {
+	postgresDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN
+	conf.Watch(func() {
+		if newDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN; postgresDSN != newDSN {
+			log.Fatalf("detected database DSN change, restarting to take effect: %s", newDSN)
+		}
+	})
+
+	db, err := dbconn.NewConnectToDB(postgresDSN)
+	if err != nil {
+		log.Fatalf("failed to connect to database: %s", err)
+	}
+
+	if err := dbconn.MigrateDB(db, "codeintel"); err != nil {
+		log.Fatalf("failed to migrate database: %s", err)
+	}
 }

@@ -145,5 +145,11 @@ func initTest(nameSuffix string) error {
 		return err
 	}
 
-	return dbconn.MigrateDB(dbconn.Global)
+	for _, databaseName := range []string{"frontend", "codeintel"} {
+		if err := dbconn.MigrateDB(dbconn.Global, databaseName); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

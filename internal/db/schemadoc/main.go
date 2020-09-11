@@ -98,8 +98,12 @@ func generate(log *log.Logger) (string, error) {
 		return "", fmt.Errorf("ConnectToDB: %w", err)
 	}
 
-	if err := dbconn.MigrateDB(dbconn.Global); err != nil {
-		return "", fmt.Errorf("MigrateDB: %w", err)
+	// Migrate the codeintel db on top of the frontend one so we capture
+	// the schema of both databases.
+	for _, databaseName := range []string{"frontend", "codeintel"} {
+		if err := dbconn.MigrateDB(dbconn.Global, databaseName); err != nil {
+			return "", fmt.Errorf("MigrateDB: %w", err)
+		}
 	}
 
 	db, err := dbconn.Open(dataSource)
