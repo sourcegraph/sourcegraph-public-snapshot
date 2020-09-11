@@ -17,7 +17,7 @@ func TestMigrations(t *testing.T) {
 	// Setup a global test database
 	dbtesting.SetupGlobalTestDB(t)
 
-	for _, databaseName := range []string{"frontend", "codeintel"} {
+	for _, databaseName := range dbutil.DatabaseNames {
 		m, err := dbutil.NewMigrate(dbconn.Global, databaseName)
 		if err != nil {
 			t.Errorf("error constructing migrations: %s", err)

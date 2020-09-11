@@ -15,6 +15,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 // MockHashPassword if non-nil is used instead of db.hashPassword. This is useful
@@ -145,7 +146,7 @@ func initTest(nameSuffix string) error {
 		return err
 	}
 
-	for _, databaseName := range []string{"frontend", "codeintel"} {
+	for _, databaseName := range dbutil.DatabaseNames {
 		if err := dbconn.MigrateDB(dbconn.Global, databaseName); err != nil {
 			return err
 		}

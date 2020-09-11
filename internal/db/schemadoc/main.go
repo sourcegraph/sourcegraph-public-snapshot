@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 
 	_ "github.com/lib/pq"
@@ -100,7 +101,7 @@ func generate(log *log.Logger) (string, error) {
 
 	// Migrate the codeintel db on top of the frontend one so we capture
 	// the schema of both databases.
-	for _, databaseName := range []string{"frontend", "codeintel"} {
+	for _, databaseName := range dbutil.DatabaseNames {
 		if err := dbconn.MigrateDB(dbconn.Global, databaseName); err != nil {
 			return "", fmt.Errorf("MigrateDB: %w", err)
 		}

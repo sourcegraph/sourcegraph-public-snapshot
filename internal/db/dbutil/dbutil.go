@@ -128,6 +128,15 @@ var databases = map[string]struct {
 	},
 }
 
+var DatabaseNames = func() []string {
+	var names []string
+	for databaseName := range databases {
+		names = append(names, databaseName)
+	}
+
+	return names
+}()
+
 func NewMigrate(db *sql.DB, databaseName string) (*migrate.Migrate, error) {
 	schemaData, ok := databases[databaseName]
 	if !ok {
@@ -362,10 +371,9 @@ func (n *NullJSONRawMessage) Value() (driver.Value, error) {
 	return n.Raw, nil
 }
 
-func PostgresDSN(service, currentUser string, getenv func(string) string) string {
-	prefix := ""
-	if service != "" {
-		prefix = fmt.Sprintf("%s_", strings.ToUpper(service))
+func PostgresDSN(prefix, currentUser string, getenv func(string) string) string {
+	if prefix != "" {
+		prefix = fmt.Sprintf("%s_", strings.ToUpper(prefix))
 	}
 
 	env := func(name string) string {
