@@ -50,3 +50,5 @@ To enable/disable an extension for all organization members, add it to the `exte
 ### For all users
 
 On a self-hosted Sourcegraph instance, add the same JSON above to global settings (in **Site admin > Global settings**).
+
+https://sourcegraphstatic.com/docs/images/extensions/all-users-global-settings.png
