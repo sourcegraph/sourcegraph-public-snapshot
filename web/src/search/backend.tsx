@@ -574,6 +574,6 @@ export function fetchRecentSearches(userId: GQL.ID, first: number): Observable<E
     return fetchEvents(userId, first, 'SearchResultsQueried')
 }
 
-export function fetchRecentFiles(userId: GQL.ID, first: number): Observable<EventLogResult | null> {
+export function fetchRecentFileViews(userId: GQL.ID, first: number): Observable<EventLogResult | null> {
     return fetchEvents(userId, first, 'ViewBlob')
 }

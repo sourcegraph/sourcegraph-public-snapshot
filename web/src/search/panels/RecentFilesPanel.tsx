@@ -12,15 +12,15 @@ import { Link } from '../../../../shared/src/components/Link'
 export const RecentFilesPanel: React.FunctionComponent<{
     className?: string
     authenticatedUser: AuthenticatedUser | null
-    fetchRecentFiles: (userId: string, first: number) => Observable<EventLogResult | null>
-}> = ({ className, authenticatedUser, fetchRecentFiles }) => {
+    fetchRecentFileViews: (userId: string, first: number) => Observable<EventLogResult | null>
+}> = ({ className, authenticatedUser, fetchRecentFileViews }) => {
     const pageSize = 20
 
     const [itemsToLoad, setItmesToLoad] = useState(pageSize)
     const recentFiles = useObservable(
-        useMemo(() => fetchRecentFiles(authenticatedUser?.id || '', itemsToLoad), [
+        useMemo(() => fetchRecentFileViews(authenticatedUser?.id || '', itemsToLoad), [
             authenticatedUser?.id,
-            fetchRecentFiles,
+            fetchRecentFileViews,
             itemsToLoad,
         ])
     )

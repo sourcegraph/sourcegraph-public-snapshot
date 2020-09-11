@@ -33,7 +33,7 @@ export class EventLogger implements TelemetryService {
         pageTitle = `View${pageTitle}`
 
         const props = pageViewQueryParameters(window.location.href)
-        serverAdmin.trackPageView(pageTitle, true, eventProperties)
+        serverAdmin.trackPageView(pageTitle, logAsActiveUser, eventProperties)
         this.logToConsole(pageTitle, props)
 
         // Use flag to ensure URL query params are only stripped once

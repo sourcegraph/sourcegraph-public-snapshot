@@ -32,7 +32,7 @@ describe('RecentFilesPanel', () => {
 
         const props = {
             authenticatedUser: null,
-            fetchRecentFiles: () => of(recentFiles),
+            fetchRecentFileViews: () => of(recentFiles),
         }
 
         const component = mount(<RecentFilesPanel {...props} />)
@@ -65,7 +65,7 @@ describe('RecentFilesPanel', () => {
 
         const props = {
             authenticatedUser: null,
-            fetchRecentFiles: () => of(recentFiles),
+            fetchRecentFileViews: () => of(recentFiles),
         }
 
         const component = mount(<RecentFilesPanel {...props} />)
@@ -97,7 +97,7 @@ describe('RecentFilesPanel', () => {
 
         const props = {
             authenticatedUser: null,
-            fetchRecentFiles: () => of(recentFiles),
+            fetchRecentFileViews: () => of(recentFiles),
         }
 
         const component = mount(<RecentFilesPanel {...props} />)
@@ -128,7 +128,7 @@ describe('RecentFilesPanel', () => {
 
         const props = {
             authenticatedUser: null,
-            fetchRecentFiles: () => of(recentFiles),
+            fetchRecentFileViews: () => of(recentFiles),
         }
 
         const component = mount(<RecentFilesPanel {...props} />)

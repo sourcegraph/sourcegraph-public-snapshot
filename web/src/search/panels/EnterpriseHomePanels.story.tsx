@@ -3,7 +3,7 @@ import { EnterpriseHomePanels } from './EnterpriseHomePanels'
 import { SearchPatternType } from '../../graphql-operations'
 import { storiesOf } from '@storybook/react'
 import { WebStory } from '../../components/WebStory'
-import { authUser, _fetchSavedSearches, _fetchRecentSearches, _fetchRecentFiles } from './utils'
+import { authUser, _fetchSavedSearches, _fetchRecentSearches, _fetchRecentFileViews } from './utils'
 
 const { add } = storiesOf('web/search/panels/EnterpriseHomePanels', module).addParameters({
     design: {
@@ -18,7 +18,7 @@ const props = {
     patternType: SearchPatternType.literal,
     fetchSavedSearches: _fetchSavedSearches,
     fetchRecentSearches: _fetchRecentSearches,
-    fetchRecentFiles: _fetchRecentFiles,
+    fetchRecentFileViews: _fetchRecentFileViews,
 }
 
 add('Panels', () => <WebStory>{() => <EnterpriseHomePanels {...props} />}</WebStory>)

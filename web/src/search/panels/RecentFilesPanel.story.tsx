@@ -3,7 +3,7 @@ import { of, NEVER } from 'rxjs'
 import { RecentFilesPanel } from './RecentFilesPanel'
 import { storiesOf } from '@storybook/react'
 import { WebStory } from '../../components/WebStory'
-import { _fetchRecentFiles } from './utils'
+import { _fetchRecentFileViews } from './utils'
 
 const { add } = storiesOf('web/search/panels/RecentFilesPanel', module)
     .addParameters({
@@ -26,13 +26,13 @@ const emptyRecentFiles = {
 
 const props = {
     authenticatedUser: null,
-    fetchRecentFiles: _fetchRecentFiles,
+    fetchRecentFileViews: _fetchRecentFileViews,
 }
 
 add('Populated', () => <WebStory>{() => <RecentFilesPanel {...props} />}</WebStory>)
 
-add('Loading', () => <WebStory>{() => <RecentFilesPanel {...props} fetchRecentFiles={() => NEVER} />}</WebStory>)
+add('Loading', () => <WebStory>{() => <RecentFilesPanel {...props} fetchRecentFileViews={() => NEVER} />}</WebStory>)
 
 add('Empty', () => (
-    <WebStory>{() => <RecentFilesPanel {...props} fetchRecentFiles={() => of(emptyRecentFiles)} />}</WebStory>
+    <WebStory>{() => <RecentFilesPanel {...props} fetchRecentFileViews={() => of(emptyRecentFiles)} />}</WebStory>
 ))
