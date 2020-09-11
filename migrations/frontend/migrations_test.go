@@ -1,7 +1,6 @@
 package migrations
 
 import (
-	"fmt"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -41,7 +40,7 @@ func TestIDConstraints(t *testing.T) {
 }
 
 func TestNeedsGenerate(t *testing.T) {
-	want, err := filepath.Glob(fmt.Sprintf("*.sql"))
+	want, err := filepath.Glob("*.sql")
 	if err != nil {
 		t.Fatal(err)
 	}
