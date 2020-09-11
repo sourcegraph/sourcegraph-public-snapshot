@@ -44,11 +44,11 @@ func TestNeedsGenerate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	got := AssetNames()
 
-	assetNames := AssetNames()
 	sort.Strings(want)
-	sort.Strings(assetNames)
-	if !reflect.DeepEqual(assetNames, want) {
+	sort.Strings(got)
+	if !reflect.DeepEqual(got, want) {
 		t.Fatal("bindata out of datea Please run:\n  go generate github.com/sourcegraph/sourcegraph/migrations/...")
 	}
 }
