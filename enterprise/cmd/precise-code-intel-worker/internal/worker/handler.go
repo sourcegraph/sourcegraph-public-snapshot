@@ -2,9 +2,6 @@ package worker
 
 import (
 	"context"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"sync/atomic"
 	"time"
 
@@ -15,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/postgres"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
@@ -34,6 +32,7 @@ type handler struct {
 	metrics             metrics.WorkerMetrics
 	enableBudget        bool
 	budgetRemaining     int64
+	createStore         func(id int) persistence.Store
 }
 
 var _ dbworker.Handler = &handler{}
@@ -97,17 +96,6 @@ func (h *handler) handle(ctx context.Context, store store.Store, upload store.Up
 		return true, nil
 	}
 
-	// Create scratch directory that we can clean on completion/failure
-	tempDir, err := ioutil.TempDir("", "")
-	if err != nil {
-		return false, err
-	}
-	defer func() {
-		if cleanupErr := os.RemoveAll(tempDir); cleanupErr != nil {
-			log15.Warn("Failed to remove temporary directory", "path", tempDir, "err", cleanupErr)
-		}
-	}()
-
 	// Pull raw uploaded data from bundle manager
 	r, err := h.bundleManagerClient.GetUpload(ctx, upload.ID)
 	if err != nil {
@@ -135,7 +123,7 @@ func (h *handler) handle(ctx context.Context, store store.Store, upload store.Up
 		return false, errors.Wrap(err, "correlation.Correlate")
 	}
 
-	if err := h.write(ctx, upload.ID, tempDir, groupedBundleData); err != nil {
+	if err := h.write(ctx, upload.ID, groupedBundleData); err != nil {
 		return false, err
 	}
 
@@ -160,11 +148,7 @@ func (h *handler) handle(ctx context.Context, store store.Store, upload store.Up
 		return false, err
 	}
 
-	// Send converted database file to bundle manager
-	if err := h.sendDB(ctx, upload.ID, filepath.Join(tempDir, "sqlite.db")); err != nil {
-		return false, err
-	}
-
+	// TODO - delete upload file on bundle manager
 	return false, nil
 }
 
@@ -190,18 +174,16 @@ func (h *handler) isRepoCurrentlyCloning(ctx context.Context, repoID int, commit
 	return false, nil
 }
 
-// write commits the correlated data to disk.
-func (h *handler) write(ctx context.Context, id int, dirname string, groupedBundleData *correlation.GroupedBundleData) (err error) {
+// write commits the correlated data to the database.
+func (h *handler) write(ctx context.Context, id int, groupedBundleData *correlation.GroupedBundleData) (err error) {
 	ctx, endOperation := h.metrics.WriteOperation.With(ctx, &err, observation.Args{})
 	defer endOperation(1, observation.Args{})
 
-	f, err := os.OpenFile(filepath.Join(dirname, "sqlite.db"), os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		return err
+	// TODO - mock better
+	if h.createStore == nil {
+		h.createStore = postgres.NewStore
 	}
-	f.Close()
-
-	store := postgres.NewStore(id)
+	store := h.createStore(id) // TODO - need to pass it the correct handle
 
 	store, err = store.Transact(ctx)
 	if err != nil {
@@ -211,9 +193,6 @@ func (h *handler) write(ctx context.Context, id int, dirname string, groupedBund
 		err = store.Done(err)
 	}()
 
-	if err := store.CreateTables(ctx); err != nil {
-		return errors.Wrap(err, "store.CreateTables")
-	}
 	if err := store.WriteMeta(ctx, groupedBundleData.Meta); err != nil {
 		return errors.Wrap(err, "store.WriteMeta")
 	}
@@ -267,17 +246,6 @@ func (h *handler) updateXrepoData(ctx context.Context, store store.Store, upload
 	// of uploads for the same repo re-calculate nearly identical data multiple times.
 	if err := store.MarkRepositoryAsDirty(ctx, upload.RepositoryID); err != nil {
 		return errors.Wrap(err, "store.MarkRepositoryDirty")
-	}
-
-	return nil
-}
-
-func (h *handler) sendDB(ctx context.Context, uploadID int, tempDir string) (err error) {
-	ctx, endOperation := h.metrics.SendDBOperation.With(ctx, &err, observation.Args{})
-	defer endOperation(1, observation.Args{})
-
-	if err := h.bundleManagerClient.SendDB(ctx, uploadID, tempDir); err != nil {
-		return errors.Wrap(err, "bundleManager.SendDB")
 	}
 
 	return nil

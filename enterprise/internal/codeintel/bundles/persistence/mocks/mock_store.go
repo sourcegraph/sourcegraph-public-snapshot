@@ -96,8 +96,8 @@ func NewMockStore() *MockStore {
 			},
 		},
 		ReadMetaFunc: &StoreReadMetaFunc{
-			defaultHook: func(context.Context) (types.MetaData, error) {
-				return types.MetaData{}, nil
+			defaultHook: func(context.Context) (types.MetaData, bool, error) {
+				return types.MetaData{}, false, nil
 			},
 		},
 		ReadReferencesFunc: &StoreReadReferencesFunc{
@@ -845,23 +845,23 @@ func (c StoreReadDocumentFuncCall) Results() []interface{} {
 // StoreReadMetaFunc describes the behavior when the ReadMeta method of the
 // parent MockStore instance is invoked.
 type StoreReadMetaFunc struct {
-	defaultHook func(context.Context) (types.MetaData, error)
-	hooks       []func(context.Context) (types.MetaData, error)
+	defaultHook func(context.Context) (types.MetaData, bool, error)
+	hooks       []func(context.Context) (types.MetaData, bool, error)
 	history     []StoreReadMetaFuncCall
 	mutex       sync.Mutex
 }
 
 // ReadMeta delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockStore) ReadMeta(v0 context.Context) (types.MetaData, error) {
-	r0, r1 := m.ReadMetaFunc.nextHook()(v0)
-	m.ReadMetaFunc.appendCall(StoreReadMetaFuncCall{v0, r0, r1})
-	return r0, r1
+func (m *MockStore) ReadMeta(v0 context.Context) (types.MetaData, bool, error) {
+	r0, r1, r2 := m.ReadMetaFunc.nextHook()(v0)
+	m.ReadMetaFunc.appendCall(StoreReadMetaFuncCall{v0, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the ReadMeta method of
 // the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreReadMetaFunc) SetDefaultHook(hook func(context.Context) (types.MetaData, error)) {
+func (f *StoreReadMetaFunc) SetDefaultHook(hook func(context.Context) (types.MetaData, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -869,7 +869,7 @@ func (f *StoreReadMetaFunc) SetDefaultHook(hook func(context.Context) (types.Met
 // ReadMeta method of the parent MockStore instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *StoreReadMetaFunc) PushHook(hook func(context.Context) (types.MetaData, error)) {
+func (f *StoreReadMetaFunc) PushHook(hook func(context.Context) (types.MetaData, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -877,21 +877,21 @@ func (f *StoreReadMetaFunc) PushHook(hook func(context.Context) (types.MetaData,
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *StoreReadMetaFunc) SetDefaultReturn(r0 types.MetaData, r1 error) {
-	f.SetDefaultHook(func(context.Context) (types.MetaData, error) {
-		return r0, r1
+func (f *StoreReadMetaFunc) SetDefaultReturn(r0 types.MetaData, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context) (types.MetaData, bool, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *StoreReadMetaFunc) PushReturn(r0 types.MetaData, r1 error) {
-	f.PushHook(func(context.Context) (types.MetaData, error) {
-		return r0, r1
+func (f *StoreReadMetaFunc) PushReturn(r0 types.MetaData, r1 bool, r2 error) {
+	f.PushHook(func(context.Context) (types.MetaData, bool, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *StoreReadMetaFunc) nextHook() func(context.Context) (types.MetaData, error) {
+func (f *StoreReadMetaFunc) nextHook() func(context.Context) (types.MetaData, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -932,7 +932,10 @@ type StoreReadMetaFuncCall struct {
 	Result0 types.MetaData
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -944,7 +947,7 @@ func (c StoreReadMetaFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreReadMetaFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // StoreReadReferencesFunc describes the behavior when the ReadReferences
