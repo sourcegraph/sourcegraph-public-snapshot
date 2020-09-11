@@ -74,7 +74,7 @@ func migrateBundleToPostgres(ctx context.Context, dumpID int, filename string, t
 }
 
 func migrateMeta(ctx context.Context, from *sqlitestore.Store, to dbutil.DB, dumpID int) (err error) {
-	values, err := sqlitestore.ScanInts(from.Query(ctx, sqlf.Sprintf("SELECT num_result_chunks FROM meta")))
+	values, err := sqlitestore.ScanInts(from.Query(ctx, sqlf.Sprintf(`SELECT num_result_chunks FROM meta`)))
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func migrateMeta(ctx context.Context, from *sqlitestore.Store, to dbutil.DB, dum
 }
 
 func migrateDocuments(ctx context.Context, from *sqlitestore.Store, to dbutil.DB, dumpID int) (err error) {
-	documents, err := scanDocuments(from.Query(ctx, sqlf.Sprintf("SELECT path, data FROM documents")))
+	documents, err := scanDocuments(from.Query(ctx, sqlf.Sprintf(`SELECT path, data FROM documents`)))
 	if err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func migrateDocuments(ctx context.Context, from *sqlitestore.Store, to dbutil.DB
 }
 
 func migrateResultChunks(ctx context.Context, from *sqlitestore.Store, to dbutil.DB, dumpID int) (err error) {
-	resultChunks, err := scanResultChunks(from.Query(ctx, sqlf.Sprintf("SELECT id, data FROM result_chunks")))
+	resultChunks, err := scanResultChunks(from.Query(ctx, sqlf.Sprintf(`SELECT id, data FROM result_chunks`)))
 	if err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func migrateResultChunks(ctx context.Context, from *sqlitestore.Store, to dbutil
 }
 
 func migrateDefinitions(ctx context.Context, from *sqlitestore.Store, to dbutil.DB, dumpID int) (err error) {
-	locations, err := scanLocations(from.Query(ctx, sqlf.Sprintf("SELECT scheme, identifier, data FROM definitions")))
+	locations, err := scanLocations(from.Query(ctx, sqlf.Sprintf(`SELECT scheme, identifier, data FROM definitions`)))
 	if err != nil {
 		return err
 	}
@@ -142,7 +142,7 @@ func migrateDefinitions(ctx context.Context, from *sqlitestore.Store, to dbutil.
 }
 
 func migrateReferences(ctx context.Context, from *sqlitestore.Store, to dbutil.DB, dumpID int) (err error) {
-	locations, err := scanLocations(from.Query(ctx, sqlf.Sprintf("SELECT scheme, identifier, data FROM references")))
+	locations, err := scanLocations(from.Query(ctx, sqlf.Sprintf(`SELECT scheme, identifier, data FROM "references"`)))
 	if err != nil {
 		return err
 	}
