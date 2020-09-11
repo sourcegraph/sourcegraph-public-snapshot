@@ -226,6 +226,14 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 		return nil, err
 	}
 
+	filter := func(hdr *tar.Header) bool { return false } // default: don't filter
+	if s.FilterTar != nil {
+		filter, err = s.FilterTar(ctx, repo, commit)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	pr, pw := io.Pipe()
 
 	// After this point we are not allowed to return an error. Instead we can
@@ -235,28 +243,16 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 	// Write tr to zw. Return the first error encountered, but clean up if
 	// we encounter an error.
 	go func() {
-		var err error
-		// clean up
-		defer func() {
-			done(err)
-			// CloseWithError is guaranteed to return a nil error
-			_ = pw.CloseWithError(errors.Wrapf(err, "failed to fetch %s@%s", repo, commit))
-			r.Close()
-		}()
-
-		filter := func(hdr *tar.Header) bool { return false } // default: don't filter
-		if s.FilterTar != nil {
-			filter, err = s.FilterTar(ctx, repo, commit)
-			if err != nil {
-				return
-			}
-		}
+		defer r.Close()
 		tr := tar.NewReader(r)
 		zw := zip.NewWriter(pw)
 		err = copySearchable(tr, zw, largeFilePatterns, filter)
 		if err1 := zw.Close(); err == nil {
 			err = err1
 		}
+		done(err)
+		// CloseWithError is guaranteed to return a nil error
+		_ = pw.CloseWithError(errors.Wrapf(err, "failed to fetch %s@%s", repo, commit))
 	}()
 
 	return pr, nil
