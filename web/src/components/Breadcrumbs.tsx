@@ -4,8 +4,11 @@ import { Link } from '../../../shared/src/components/Link'
 import { sortBy } from 'lodash'
 import { Unsubscribable } from 'sourcegraph'
 import { isDefined } from '../../../shared/src/util/types'
+import { useLocation } from 'react-router'
 
-export interface Breadcrumb {
+export type Breadcrumb = ElementBreadcrumb | LinkBreadcrumb
+
+interface ElementBreadcrumb {
     /** A unique key for the breadcrumb. */
     key: string
 
@@ -17,6 +20,25 @@ export interface Breadcrumb {
      * By default a chevron icon `>` is used.
      */
     divider?: React.ReactNode
+}
+
+interface LinkBreadcrumb {
+    /** A unique key for the breadcrumb. */
+    key: string
+
+    /** Specification for links */
+    link: { label: string; to: string }
+
+    /**
+     * Optionally a custom divider displayed before the element.
+     * By default a chevron icon `>` is used.
+     */
+    divider?: React.ReactNode
+}
+
+/** Type guard to differentiate arbitrary elements and links */
+function isElementBreadcrumb(breadcrumb: Breadcrumb): breadcrumb is ElementBreadcrumb {
+    return (breadcrumb as ElementBreadcrumb).element !== undefined
 }
 
 /**
@@ -38,7 +60,8 @@ export interface BreadcrumbSetters {
     /**
      * Hook for function components to register a breadcrumb.
      *
-     * @param breadcrumb The breadcrumb to register. If a falsy value is passed the breadcrumb will not be included. **NOTE: The argument MUST be wrapped in `useMemo()`**.
+     * @param breadcrumb The breadcrumb to register. If a falsy value is passed the breadcrumb will not be included. You can
+     * pass an arbitrary element or a link config object for simpler breadcrumbs. **NOTE: The argument MUST be wrapped in `useMemo()`**.
      * @returns Another breadcrumb setters object to pass down to child components to register child breadcrumbs.
      */
     useBreadcrumb: (breadcrumb: NullableBreadcrumb) => BreadcrumbSetters
@@ -46,7 +69,8 @@ export interface BreadcrumbSetters {
     /**
      * Imperative method for class components to register a breadcrumb.
      *
-     * @param breadcrumb The breadcrumb to register. If a falsy value is passed the breadcrumb will not be included.
+     * @param breadcrumb The breadcrumb to register. If a falsy value is passed the breadcrumb will not be included. You can
+     * pass an arbitrary element or a link config object for simpler breadcrumbs.
      * @returns Another breadcrumb setters object to pass down to child components to register child breadcrumbs,
      * with a method to remove the breadcrumb again. The object should be added to a [subscription
      * bag](https://about.sourcegraph.com/handbook/engineering/languages/typescript#subscription-bag).
@@ -87,7 +111,7 @@ export const useBreadcrumbs = (): BreadcrumbsProps & BreadcrumbSetters => {
         /** Shared logic between plain function and hook */
         function internalSetBreadcrumb(breadcrumb: NullableBreadcrumb): () => void {
             const entry: BreadcrumbAtDepth = { depth, breadcrumb }
-
+            console.log(breadcrumb)
             setBreadcrumbsByDepth(breadcrumbs => [...breadcrumbs, entry])
             // cleanup
             return () => {
@@ -126,23 +150,38 @@ export const useBreadcrumbs = (): BreadcrumbsProps & BreadcrumbSetters => {
 /**
  * Renders breadcrumbs by depth.
  */
-export const Breadcrumbs: React.FC<{ breadcrumbs: BreadcrumbAtDepth[] }> = ({ breadcrumbs }) => (
-    <nav className="d-flex p-2" aria-label="Breadcrumbs">
-        {sortBy(breadcrumbs, 'depth')
-            .map(({ breadcrumb }) => breadcrumb)
-            .filter(isDefined)
-            .map(breadcrumb => {
-                const divider =
-                    breadcrumb.divider === undefined ? <ChevronRightIcon className="icon-inline" /> : breadcrumb.divider
-                return (
-                    <span key={breadcrumb.key} className="text-muted d-flex align-items-center test-breadcrumb">
-                        <span className="font-weight-semibold">{divider}</span>
-                        {breadcrumb.element}
-                    </span>
-                )
-            })}
-    </nav>
-)
+export const Breadcrumbs: React.FC<{ breadcrumbs: BreadcrumbAtDepth[] }> = ({ breadcrumbs }) => {
+    const location = useLocation()
+
+    return (
+        <nav className="d-flex p-2" aria-label="Breadcrumbs">
+            {sortBy(breadcrumbs, 'depth')
+                .map(({ breadcrumb }) => breadcrumb)
+                .filter(isDefined)
+                .map((breadcrumb, index, validBreadcrumbs) => {
+                    const divider =
+                        breadcrumb.divider === undefined ? (
+                            <ChevronRightIcon className="icon-inline" />
+                        ) : (
+                            breadcrumb.divider
+                        )
+                    return (
+                        <span key={breadcrumb.key} className="text-muted d-flex align-items-center test-breadcrumb">
+                            <span className="font-weight-semibold">{divider}</span>
+                            {isElementBreadcrumb(breadcrumb) ? (
+                                breadcrumb.element
+                            ) : // When this is the last breadcrumb and the hash is empty, render as plain text
+                            index === validBreadcrumbs.length - 1 && !location.hash ? (
+                                breadcrumb.link.label
+                            ) : (
+                                <Link to={breadcrumb.link.to}>{breadcrumb.link.label}</Link>
+                            )}
+                        </span>
+                    )
+                })}
+        </nav>
+    )
+}
 
 /**
  * To be used in unit tests, it minimally fulfills the BreadcrumbSetters interface.
