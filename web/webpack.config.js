@@ -166,7 +166,7 @@ const config = {
             loader: 'postcss-loader',
             options: {
               config: {
-                path: __dirname,
+                path: path.resolve(__dirname, '..'),
               },
             },
           },
