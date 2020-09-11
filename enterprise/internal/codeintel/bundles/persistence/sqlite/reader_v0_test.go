@@ -11,7 +11,7 @@ import (
 const v0TestFile = "./testdata/lsif-go@ad3507cb.lsif.db"
 
 func TestReadMetaV0(t *testing.T) {
-	meta, err := testStore(t, v0TestFile).ReadMeta(context.Background())
+	meta, _, err := testStore(t, v0TestFile).ReadMeta(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error reading meta: %s", err)
 	}

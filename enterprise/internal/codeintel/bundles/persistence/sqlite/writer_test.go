@@ -148,7 +148,7 @@ func TestWrite(t *testing.T) {
 		t.Fatalf("unexpected error closing transaction: %s", err)
 	}
 
-	meta, err := store.ReadMeta(ctx)
+	meta, _, err := store.ReadMeta(ctx)
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
 	}

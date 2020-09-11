@@ -3,6 +3,7 @@ package dbtesting
 
 import (
 	"database/sql"
+	"fmt"
 	"hash/fnv"
 	"io"
 	"log"
@@ -88,7 +89,12 @@ func emptyDBPreserveSchema(t testing.TB, d *sql.DB) {
 		t.Fatalf("Table schema_migrations not found: %v", err)
 	}
 
-	rows, err := d.Query("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND table_name != 'schema_migrations'")
+	var conds []string
+	for _, migrationTable := range dbutil.MigrationTables {
+		conds = append(conds, fmt.Sprintf("table_name != '%s'", migrationTable))
+	}
+
+	rows, err := d.Query("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND " + strings.Join(conds, " AND "))
 	if err != nil {
 		t.Fatal(err)
 	}

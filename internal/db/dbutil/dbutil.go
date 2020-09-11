@@ -137,6 +137,15 @@ var DatabaseNames = func() []string {
 	return names
 }()
 
+var MigrationTables = func() []string {
+	var migrationTables []string
+	for _, db := range databases {
+		migrationTables = append(migrationTables, db.MigrationsTable)
+	}
+
+	return migrationTables
+}()
+
 func NewMigrate(db *sql.DB, databaseName string) (*migrate.Migrate, error) {
 	schemaData, ok := databases[databaseName]
 	if !ok {

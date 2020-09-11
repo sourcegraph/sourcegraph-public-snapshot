@@ -14,13 +14,13 @@ import (
 func TestStoreCache(t *testing.T) {
 	opener := func(filename string) (persistence.Store, error) {
 		store := persistencemocks.NewMockStore()
-		store.ReadMetaFunc.SetDefaultReturn(types.MetaData{NumResultChunks: 4}, nil)
+		store.ReadMetaFunc.SetDefaultReturn(types.MetaData{NumResultChunks: 4}, true, nil)
 		return store, nil
 	}
 
 	var meta types.MetaData
 	handler := func(store persistence.Store) (err error) {
-		meta, err = store.ReadMeta(context.Background())
+		meta, _, err = store.ReadMeta(context.Background())
 		return err
 	}
 
@@ -94,7 +94,7 @@ func TestStoreCacheConcurrentRequests(t *testing.T) {
 		<-wait
 
 		store := persistencemocks.NewMockStore()
-		store.ReadMetaFunc.SetDefaultReturn(types.MetaData{NumResultChunks: 4}, nil)
+		store.ReadMetaFunc.SetDefaultReturn(types.MetaData{NumResultChunks: 4}, true, nil)
 		return store, nil
 	}
 
@@ -104,7 +104,7 @@ func TestStoreCacheConcurrentRequests(t *testing.T) {
 	values := make(chan types.MetaData, 10) // values from ReadMeta within handler
 
 	handler := func(store persistence.Store) error {
-		meta, err := store.ReadMeta(context.Background())
+		meta, _, err := store.ReadMeta(context.Background())
 		values <- meta
 		return err
 	}
