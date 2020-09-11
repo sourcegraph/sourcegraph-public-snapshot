@@ -109,7 +109,7 @@ func mustInitializeStore() store.Store {
 	return store.NewWithHandle(basestore.NewHandleWithDB(dbconn.Global))
 }
 
-func mustInitializeCodeIntelDatabase() *sql.DB{
+func mustInitializeCodeIntelDatabase() *sql.DB {
 	postgresDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN
 	conf.Watch(func() {
 		if newDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN; postgresDSN != newDSN {
