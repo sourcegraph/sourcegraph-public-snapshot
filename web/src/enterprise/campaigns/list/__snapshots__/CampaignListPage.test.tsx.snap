@@ -73,6 +73,7 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
     listClassName="campaign-list-page__grid mb-3"
     listComponent="div"
     location="[Location path=/]"
+    noSummaryIfAllNodesVisible={true}
     nodeComponent={[Function]}
     nodeComponentProps={
       Object {
@@ -169,6 +170,7 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
     listClassName="campaign-list-page__grid mb-3"
     listComponent="div"
     location="[Location path=/]"
+    noSummaryIfAllNodesVisible={true}
     nodeComponent={[Function]}
     nodeComponentProps={
       Object {
@@ -265,6 +267,7 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
     listClassName="campaign-list-page__grid mb-3"
     listComponent="div"
     location="[Location path=/]"
+    noSummaryIfAllNodesVisible={true}
     nodeComponent={[Function]}
     nodeComponentProps={
       Object {
@@ -361,6 +364,7 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
     listClassName="campaign-list-page__grid mb-3"
     listComponent="div"
     location="[Location path=/]"
+    noSummaryIfAllNodesVisible={true}
     nodeComponent={[Function]}
     nodeComponentProps={
       Object {

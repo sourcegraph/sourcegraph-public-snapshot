@@ -84,10 +84,9 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [uiState, reviewState, checkState])
     return (
-        <div className="form-inline m-0">
-            <ChangesetFilter<ChangesetUIState>
+        <div className="form-inline m-0 my-2">
+            <ChangesetUIStateFilter
                 values={Object.values(ChangesetUIState)}
-                label="Status"
                 selected={uiState}
                 onChange={setUIState}
                 className="mr-2"
@@ -138,6 +137,40 @@ export const ChangesetFilter = <T extends string>({
             ))}
         </select>
     </>
+)
+
+export interface ChangesetUIStateFilterProps {
+    values: ChangesetUIState[]
+    selected: ChangesetUIState | undefined
+    onChange: (value: ChangesetUIState | undefined) => void
+    className?: string
+}
+
+export const ChangesetUIStateFilter: React.FunctionComponent<ChangesetUIStateFilterProps> = ({
+    values,
+    selected,
+    onChange,
+    className,
+}) => (
+    <div className={classNames('btn-group flex-wrap', className)} role="group">
+        <button
+            type="button"
+            className={classNames('btn btn-outline-secondary', selected === undefined && 'active')}
+            onClick={() => onChange(undefined)}
+        >
+            All
+        </button>
+        {values.map(value => (
+            <button
+                type="button"
+                className={classNames('btn btn-outline-secondary', selected === value && 'active')}
+                onClick={() => onChange(value)}
+                key={value}
+            >
+                {upperFirst(lowerCase(value))}
+            </button>
+        ))}
+    </div>
 )
 
 function changesetUIStateToChangesetFilters(

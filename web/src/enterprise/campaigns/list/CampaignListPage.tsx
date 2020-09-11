@@ -87,6 +87,7 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
                 listClassName="campaign-list-page__grid mb-3"
                 className="mb-3"
                 cursorPaging={true}
+                noSummaryIfAllNodesVisible={true}
             />
         </>
     )

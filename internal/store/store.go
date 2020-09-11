@@ -18,6 +18,9 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
+	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
@@ -25,10 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-
-	"github.com/opentracing/opentracing-go/ext"
-	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 // maxFileSize is the limit on file size in bytes. Only files smaller
@@ -57,6 +56,9 @@ type Store struct {
 	// determine if the error is a bad request (eg invalid repo).
 	FetchTar func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error)
 
+	// FilterTar returns a FilterFunc that filters out files we don't want to write to disk
+	FilterTar func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (FilterFunc, error)
+
 	// Path is the directory to store the cache
 	Path string
 
@@ -78,6 +80,11 @@ type Store struct {
 	// ZipCache provides efficient access to repo zip files.
 	ZipCache ZipCache
 }
+
+// FilterFunc filters tar files based on their header.
+// Tar files for which FilterFunc evaluates to true
+// are not stored in the target zip.
+type FilterFunc func(hdr *tar.Header) bool
 
 // Start initializes state and starts background goroutines. It can be called
 // more than once. It is optional to call, but starting it earlier avoids a
@@ -219,6 +226,14 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 		return nil, err
 	}
 
+	filter := func(hdr *tar.Header) bool { return false } // default: don't filter
+	if s.FilterTar != nil {
+		filter, err = s.FilterTar(ctx, repo, commit)
+		if err != nil {
+			return nil, fmt.Errorf("error while calling FilterTar: %w", err)
+		}
+	}
+
 	pr, pw := io.Pipe()
 
 	// After this point we are not allowed to return an error. Instead we can
@@ -231,7 +246,7 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 		defer r.Close()
 		tr := tar.NewReader(r)
 		zw := zip.NewWriter(pw)
-		err := copySearchable(tr, zw, largeFilePatterns)
+		err := copySearchable(tr, zw, largeFilePatterns, filter)
 		if err1 := zw.Close(); err == nil {
 			err = err1
 		}
@@ -244,9 +259,8 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 }
 
 // copySearchable copies searchable files from tr to zw. A searchable file is
-// any file that is a candidate for being searched (under size limit and
-// non-binary).
-func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string) error {
+// any file that is under size limit, non-binary, and not matching the filter.
+func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string, filter FilterFunc) error {
 	// 32*1024 is the same size used by io.Copy
 	buf := make([]byte, 32*1024)
 	for {
@@ -267,6 +281,11 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string) 
 
 		// We only care about files
 		if hdr.Typeflag != tar.TypeReg && hdr.Typeflag != tar.TypeRegA {
+			continue
+		}
+
+		// ignore files if they match the filter
+		if filter(hdr) {
 			continue
 		}
 

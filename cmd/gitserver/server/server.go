@@ -231,6 +231,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/is-repo-cloneable", s.handleIsRepoCloneable)
 	mux.HandleFunc("/is-repo-cloned", s.handleIsRepoCloned)
 	mux.HandleFunc("/repos", s.handleRepoInfo)
+	mux.HandleFunc("/repos-stats", s.handleReposStats)
 	mux.HandleFunc("/repo-clone-progress", s.handleRepoCloneProgress)
 	mux.HandleFunc("/delete", s.handleRepoDelete)
 	mux.HandleFunc("/repo-update", s.handleRepoUpdate)

@@ -154,6 +154,7 @@ export const CampaignCloseChangesetsList: React.FunctionComponent<Props> = ({
                 listComponent="div"
                 listClassName="campaign-close-changesets-list__grid mb-3"
                 headComponent={CampaignCloseHeader}
+                noSummaryIfAllNodesVisible={true}
             />
             {hoverState?.hoverOverlayProps && (
                 <WebHoverOverlay
