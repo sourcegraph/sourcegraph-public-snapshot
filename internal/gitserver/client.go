@@ -811,7 +811,7 @@ func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol
 // be nil.
 //
 // Note: If the statistics for a gitserver have not been computed, the
-// UpdatedAt field will zero. This can happen for new gitservers.
+// UpdatedAt field will be zero. This can happen for new gitservers.
 func (c *Client) ReposStats(ctx context.Context) (map[string]*protocol.ReposStats, error) {
 	stats := map[string]*protocol.ReposStats{}
 	var allErr error

@@ -72,7 +72,7 @@ func TestCleanup_computeStats(t *testing.T) {
 	}
 
 	if got.UpdatedAt.Before(want.UpdatedAt) {
-		t.Fatal("want should of been computed after we called cleanupRepos")
+		t.Fatal("want should have been computed after we called cleanupRepos")
 	}
 	if got.UpdatedAt.After(time.Now()) {
 		t.Fatal("want.UpdatedAt is in the future")
