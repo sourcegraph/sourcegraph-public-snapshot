@@ -364,9 +364,11 @@ func resolveRepoGroups(settings *schema.Settings) (groups map[string][]*types.Re
 				patterns = append(patterns, "^"+regexp.QuoteMeta(path)+"$")
 				repos = append(repos, &types.Repo{Name: api.RepoName(path)})
 			case map[string]interface{}:
-				var stringRegex string
-				stringRegex = path["regex"].(string)
-				patterns = append(patterns, stringRegex)
+				if stringRegex, ok := path["regex"].(string); ok {
+					patterns = append(patterns, stringRegex)
+				} else {
+					log15.Warn("ignoring repo group object because regex not specfied", "regex-string", path["regex"])
+				}
 			default:
 				return nil, nil, fmt.Errorf("Unrecognized repoPath type: %T", repoPath)
 			}
