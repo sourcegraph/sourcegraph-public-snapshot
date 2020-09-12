@@ -1,4 +1,4 @@
-.global-navbar {
+.global-navbar2 {
     flex: 0 0 auto;
     max-height: 80%;
     display: flex;
@@ -17,8 +17,8 @@
     }
 
     &__logo {
-        height: 1.5rem;
-        width: 1.5rem;
+        height: 1.125rem;
+        width: 1.125rem;
     }
 
     &__search-box-container {
@@ -38,7 +38,7 @@
 }
 
 .theme-light {
-    .global-navbar {
+    .global-navbar2 {
         &--bg {
             background-color: $color-light-bg-2;
         }

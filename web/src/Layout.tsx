@@ -23,7 +23,8 @@ import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
 import { KeyboardShortcutsHelp } from './keyboardShortcuts/KeyboardShortcutsHelp'
 import { IntegrationsToast } from './marketing/IntegrationsToast'
-import { GlobalNavbar } from './nav/GlobalNavbar'
+import { GlobalNavbar as GlobalNavbar1 } from './nav/GlobalNavbar'
+import { GlobalNavbar2 } from './nav/globalNavbar2/GlobalNavbar2'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import { fetchHighlightedFileLines } from './repo/backend'
@@ -161,6 +162,9 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
         return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
     }
+
+    // Enable with: `localStorage.GlobalNavbar2=true;location.reload()`
+    const GlobalNavbar = localStorage.getItem('GlobalNavbar2') !== null ? GlobalNavbar2 : GlobalNavbar1
 
     const context = {
         ...props,
