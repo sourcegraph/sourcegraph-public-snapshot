@@ -349,12 +349,11 @@ type regexPath struct {
 	regex string
 }
 
-func resolveRepoGroups(settings *schema.Settings) (map[string][]*types.Repo, []string, error) {
+func resolveRepoGroups(settings *schema.Settings) (groups map[string][]*types.Repo, patterns []string, err error) {
 	if mockResolveRepoGroups != nil {
 		return mockResolveRepoGroups()
 	}
-	groups := map[string][]*types.Repo{}
-	var patterns []string
+	groups = map[string][]*types.Repo{}
 
 	for name, repoPaths := range settings.SearchRepositoryGroups {
 		repos := make([]*types.Repo, 0, len(repoPaths))
