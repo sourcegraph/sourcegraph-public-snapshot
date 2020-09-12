@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react'
 import { PageTitle } from '../../../components/PageTitle'
-import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 import { PageHeader } from '../../../components/PageHeader'
 import { CampaignsIcon } from '../icons'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
@@ -25,8 +24,6 @@ changesetTemplate:
   commit:
     message: Append Hello World to all README.md files
   published: false`
-
-const helloWorldDownloadUrl = 'data:text/plain;charset=utf-8,' + encodeURIComponent(campaignSpec)
 
 const sourcePreviewCommand =
     'src campaign preview -f hello-world.campaign.yaml -namespace sourcegraph-username-or-organisation'
@@ -62,17 +59,7 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                     changesets.
                 </p>
                 <h2>Quick start</h2>
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                    <p className="m-0 lead">This campaign specification adds "Hello World" to all README.md files:</p>
-                    <a
-                        download="hello-world.campaign.yaml"
-                        href={helloWorldDownloadUrl}
-                        className="text-right btn btn-secondary text-nowrap"
-                        data-tooltip="Download hello-world.campaign.yaml"
-                    >
-                        <FileDownloadIcon className="icon-inline" /> Download yaml
-                    </a>
-                </div>
+                <p className="m-0 lead">This campaign specification adds "Hello World" to all README.md files:</p>
                 <div className="bg-light rounded p-2 mb-3">
                     <pre className="m-0">{campaignSpec}</pre>
                 </div>
