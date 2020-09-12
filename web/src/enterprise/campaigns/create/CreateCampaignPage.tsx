@@ -49,15 +49,6 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                 }
             />
             <div className="container pt-3">
-                <h2>New to campaigns?</h2>
-                <p className="lead">
-                    Read the{' '}
-                    <a href="https://docs.sourcegraph.com/user/campaigns" rel="noopener noreferrer" target="_blank">
-                        campaigns documentation page
-                    </a>{' '}
-                    to learn how to create campaign specifications, using Sourcegraph's CLI tool src-cli and publishing
-                    changesets.
-                </p>
                 <h2>Quick start</h2>
                 <p className="m-0 lead">This campaign specification adds "Hello World" to all README.md files:</p>
                 <div className="bg-light rounded p-2 mb-3">
