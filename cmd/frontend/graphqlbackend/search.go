@@ -355,11 +355,11 @@ func resolveRepoGroups(settings *schema.Settings) (groups map[string][]*types.Re
 	}
 	groups = map[string][]*types.Repo{}
 
-	for name, repoPaths := range settings.SearchRepositoryGroups {
-		repos := make([]*types.Repo, 0, len(repoPaths))
+	for name, repoSpecs := range settings.SearchRepositoryGroups {
+		repos := make([]*types.Repo, 0, len(repoSpecs))
 
-		for _, repoPath := range repoPaths {
-			switch path := repoPath.(type) {
+		for _, repoSpec := range repoSpecs {
+			switch path := repoSpec.(type) {
 			case string:
 				patterns = append(patterns, "^"+regexp.QuoteMeta(path)+"$")
 				repos = append(repos, &types.Repo{Name: api.RepoName(path)})
@@ -370,7 +370,7 @@ func resolveRepoGroups(settings *schema.Settings) (groups map[string][]*types.Re
 					log15.Warn("ignoring repo group object because regex not specfied", "regex-string", path["regex"])
 				}
 			default:
-				return nil, nil, fmt.Errorf("Unrecognized repoPath type: %T", repoPath)
+				log15.Warn("ignoring repo group object of unrecognized type", "object", repoSpec, "type", fmt.Sprintf("%T", repoSpec))
 			}
 		}
 		groups[name] = repos
