@@ -18,7 +18,7 @@ ALPINE_MATCHES=$(git grep -e '\salpine\:' --and --not -e '^\s*//' --and --not -e
   ':(exclude)docker-images/alpine' \
   ':(exclude)doc/dev/campaigns_design.md' \
   ':(exclude)doc/user/campaigns/' \
-  ':(exclude)web/src/enterprise/campaigns/create/CreateCampaignPage.tsx' \
+  ':(exclude)web/src/enterprise/campaigns/create/exampleCampaignSpecs.ts' \
   ':(exclude)vendor')
 set -e
 

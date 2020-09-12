@@ -3,30 +3,10 @@ import { PageTitle } from '../../../components/PageTitle'
 import { PageHeader } from '../../../components/PageHeader'
 import { CampaignsIcon } from '../icons'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
+import { Tabs, TabList, Tab, TabPanels, TabPanel } from '@reach/tabs'
+import { exampleCampaignSpecs } from './exampleCampaignSpecs'
 
-const campaignSpec = `name: hello-world
-description: Add Hello World to READMEs
-
-# Find all repositories that contain a README.md file.
-on:
-  - repositoriesMatchingQuery: file:README.md
-
-# In each repository, run this command. Each repository's resulting diff is captured.
-steps:
-  - run: echo Hello World | tee -a $(find -name README.md)
-    container: alpine:3
-
-# Describe the changeset (e.g., GitHub pull request) you want for each repository.
-changesetTemplate:
-  title: Hello World
-  body: My first campaign!
-  branch: hello-world # Push the commit to this branch.
-  commit:
-    message: Append Hello World to all README.md files
-  published: false`
-
-const sourcePreviewCommand =
-    'src campaign preview -f hello-world.campaign.yaml -namespace sourcegraph-username-or-organisation'
+const sourcePreviewCommand = 'src campaign preview -f hello-world.campaign.yaml -namespace sqs'
 
 export interface CreateCampaignPageProps extends BreadcrumbSetters {
     // Nothing for now, but using it so once this changes we get type errors in the routing files.
@@ -49,23 +29,58 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                 }
             />
             <div className="container pt-3">
-                <h2>Quick start</h2>
-                <p className="m-0 lead">This campaign specification adds "Hello World" to all README.md files:</p>
-                <div className="bg-light rounded p-2 mb-3">
-                    <pre className="m-0">{campaignSpec}</pre>
-                </div>
-                <p className="lead">
-                    Use Sourcegraph's CLI tool, <code>src</code>, to execute the steps in the campaign spec and upload
-                    it, ready to be previewed and applied:
-                </p>
-                <div className="bg-light rounded p-3 mb-3">
-                    <pre className="m-0">{sourcePreviewCommand}</pre>
-                </div>
-                <p className="lead">
-                    Download <code>src</code> at{' '}
-                    <a href="https://github.com/sourcegraph/src-cli" rel="noopener noreferrer" target="_blank">
-                        github.com/sourcegraph/src-cli
+                <h2>1. Write a campaign spec YAML file</h2>
+                <p>
+                    The campaign spec (
+                    <a
+                        href="https://docs.sourcegraph.com/user/campaigns#campaign-specs"
+                        rel="noopener noreferrer"
+                        target="_blank"
+                    >
+                        syntax reference
                     </a>
+                    ) describes what the campaign does. You'll provide it when previewing, creating, and updating
+                    campaigns. We recommend committing it to source control.
+                </p>
+                <Tabs>
+                    <TabList className="align-items-center">
+                        <span className="font-weight-bold text-muted px-1">Examples:</span>
+                        {exampleCampaignSpecs.map(({ name }) => (
+                            <Tab key={name}>{name}</Tab>
+                        ))}
+                    </TabList>
+                    <TabPanels>
+                        {exampleCampaignSpecs.map(({ yaml }) => (
+                            <TabPanel key={name}>
+                                <div className="border p-2 mb-3">
+                                    <pre className="m-0">{yaml}</pre>
+                                </div>
+                            </TabPanel>
+                        ))}
+                    </TabPanels>
+                </Tabs>
+                <h2 className="mt-4">2. Preview the campaign</h2>
+                <p>
+                    Use the{' '}
+                    <a href="https://github.com/sourcegraph/src-cli" rel="noopener noreferrer" target="_blank">
+                        Sourcegraph CLI (src)
+                    </a>{' '}
+                    to preview the commits and changesets that your campaign will make:
+                </p>
+                <pre>
+                    <code>{sourcePreviewCommand}</code>
+                </pre>
+                <p>
+                    Follow the URL printed in your terminal to see the preview and (when you're ready) create the
+                    campaign.
+                </p>
+                <hr className="mt-5" />
+                <p className="mt-2 text-muted">
+                    Want more help? See{' '}
+                    <a href="/help/user/campaigns" rel="noopener noreferrer" target="_blank">
+                        campaigns documentation
+                    </a>
+                    .
                 </p>
             </div>
         </>
