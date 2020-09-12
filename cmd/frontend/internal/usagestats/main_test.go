@@ -2,7 +2,6 @@ package usagestats
 
 import (
 	"flag"
-	"fmt"
 	"os"
 	"testing"
 
@@ -20,10 +19,6 @@ func TestMain(m *testing.M) {
 	if !testing.Verbose() {
 		log15.Root().SetHandler(log15.DiscardHandler())
 	}
-	err := secretsPkg.Init()
-	if err != nil {
-		fmt.Println("Failed to init secrets package:", err)
-		os.Exit(1)
-	}
+	secretsPkg.MustInit()
 	os.Exit(m.Run())
 }

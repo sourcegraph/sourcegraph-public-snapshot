@@ -46,6 +46,13 @@ func Init() error {
 	return initErr
 }
 
+func MustInit() {
+	err := Init()
+	if err != nil {
+		panic(err)
+	}
+}
+
 // defaultEncryptor is configured during init, if no keys are provided it will implement noOpEncryptor
 var defaultEncryptor Encryptor
 
