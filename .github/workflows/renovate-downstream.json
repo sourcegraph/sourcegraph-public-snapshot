@@ -13,5 +13,6 @@
   "force": {
     "schedule": null
   },
-  "logLevel": "debug"
+  "logLevel": "debug",
+  "printConfig": true
 }
