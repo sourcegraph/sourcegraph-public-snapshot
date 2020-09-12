@@ -779,8 +779,8 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedReposit
 		tr.LazyPrintf("repogroups: adding %d repos to include pattern", len(patterns))
 		includePatterns = append(includePatterns, unionRegExps(patterns))
 
-		// Ensure we don't omit any repos explicitly included via a repo group.
-		// TODO(beyang): this is undersizing maxRepoListSize now
+		// Ensure we don't omit any repos explicitly included via a repo group. (Each explicitly
+		// listed repo generates at least one pattern.)
 		if len(patterns) > maxRepoListSize {
 			maxRepoListSize = len(patterns)
 		}
