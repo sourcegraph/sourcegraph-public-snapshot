@@ -2,7 +2,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { matchPath, Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, filter } from 'rxjs/operators'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
@@ -272,15 +272,25 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
             useBreadcrumb: this.state.useBreadcrumb,
             setBreadcrumb: this.state.setBreadcrumb,
         }
+
+        const routeMatch = this.props.userAreaRoutes.find(({ path, exact }) =>
+            matchPath(this.props.location.pathname, { path: this.props.match.url + path, exact })
+        )?.path
+
+        // Hide header for campaigns pages.
+        const hideHeader = routeMatch === '/campaigns'
+
         return (
             <div className="user-area w-100">
-                <UserAreaHeader
-                    {...this.props}
-                    {...context}
-                    navItems={this.props.userAreaHeaderNavItems}
-                    className="border-bottom mt-4"
-                />
-                <div className="container mt-3">
+                {!hideHeader && (
+                    <UserAreaHeader
+                        {...this.props}
+                        {...context}
+                        navItems={this.props.userAreaHeaderNavItems}
+                        className="border-bottom mt-4 mb-3"
+                    />
+                )}
+                <div className="container">
                     <ErrorBoundary location={this.props.location}>
                         <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                             <Switch>
