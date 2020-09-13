@@ -23,7 +23,7 @@ export const CampaignSpecTab: React.FunctionComponent<CampaignSpecTabProps> = ({
                     className="text-right btn btn-secondary text-nowrap"
                     data-tooltip="Download campaign-spec.yaml"
                 >
-                    <FileDownloadIcon className="icon-inline" /> Download yaml
+                    <FileDownloadIcon className="icon-inline" /> Download YAML
                 </a>
             </div>
             <div className="mb-3 col-md-12 col-lg-10 offset-lg-1">
