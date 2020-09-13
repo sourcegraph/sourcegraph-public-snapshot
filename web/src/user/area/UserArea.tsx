@@ -274,8 +274,10 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
             matchPath(this.props.location.pathname, { path: this.props.match.url + path, exact })
         )?.path
 
-        // Hide header for campaigns pages.
-        const hideHeader = routeMatch === '/campaigns'
+        // Hide header and use full-width container for campaigns pages.
+        const isCampaigns = routeMatch === '/campaigns'
+        const hideHeader = isCampaigns
+        const containerClassName = isCampaigns ? '' : 'container'
 
         return (
             <div className="user-area w-100">
@@ -287,7 +289,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                         className="border-bottom mt-4 mb-3"
                     />
                 )}
-                <div className="container">
+                <div className={containerClassName}>
                     <ErrorBoundary location={this.props.location}>
                         <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                             <Switch>
