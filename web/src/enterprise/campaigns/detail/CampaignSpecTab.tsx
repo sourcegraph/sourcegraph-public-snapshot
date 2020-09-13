@@ -14,8 +14,8 @@ export const CampaignSpecTab: React.FunctionComponent<CampaignSpecTabProps> = ({
     ])
     const highlightedInput = useMemo(() => ({ __html: highlightCodeSafe(originalInput, 'yaml') }), [originalInput])
     return (
-        <div className="row mt-4">
-            <div className="col-md-12 col-lg-10 offset-lg-1 d-flex justify-content-between align-items-center mb-2 test-campaigns-spec">
+        <div className="mt-4">
+            <div className="d-flex justify-content-between align-items-center mb-2 test-campaigns-spec">
                 <p className="m-0">This campaign was created by applying the following campaign spec:</p>
                 <a
                     download={`${campaignName}.spec.yaml`}
@@ -26,7 +26,7 @@ export const CampaignSpecTab: React.FunctionComponent<CampaignSpecTabProps> = ({
                     <FileDownloadIcon className="icon-inline" /> Download YAML
                 </a>
             </div>
-            <div className="mb-3 col-md-12 col-lg-10 offset-lg-1">
+            <div className="mb-3">
                 <div className="campaign-spec-tab__specfile rounded p-3">
                     <pre className="m-0" dangerouslySetInnerHTML={highlightedInput} />
                 </div>
