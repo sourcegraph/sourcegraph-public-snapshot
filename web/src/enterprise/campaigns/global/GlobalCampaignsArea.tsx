@@ -131,27 +131,33 @@ export const UserCampaignsArea = withAuthenticatedUser<
     return (
         <div className="w-100 web-content">
             <Breadcrumbs breadcrumbs={outerProps.breadcrumbs} />
-            <div className="container">
-                <Switch>
-                    {/* eslint-disable react/jsx-no-bind */}
-                    <Route
-                        path={`${match.url}/apply/:specID`}
-                        render={({ match, ...props }: RouteComponentProps<{ specID: string }>) => (
+            <Switch>
+                {/* eslint-disable react/jsx-no-bind */}
+                <Route
+                    path={`${match.url}/apply/:specID`}
+                    render={({ match, ...props }: RouteComponentProps<{ specID: string }>) => (
+                        <div className="container">
                             <CampaignApplyPage
                                 {...outerProps}
                                 {...props}
                                 {...breadcrumbSetters}
                                 specID={match.params.specID}
                             />
-                        )}
-                    />
-                    <Route
-                        path={`${match.url}/create`}
-                        render={props => <CreateCampaignPage {...outerProps} {...props} {...breadcrumbSetters} />}
-                    />
-                    <Route
-                        path={`${match.url}/:campaignName/close`}
-                        render={({ match, ...props }: RouteComponentProps<{ campaignName: string }>) => (
+                        </div>
+                    )}
+                />
+                <Route
+                    path={`${match.url}/create`}
+                    render={props => (
+                        <div className="container">
+                            <CreateCampaignPage {...outerProps} {...props} {...breadcrumbSetters} />
+                        </div>
+                    )}
+                />
+                <Route
+                    path={`${match.url}/:campaignName/close`}
+                    render={({ match, ...props }: RouteComponentProps<{ campaignName: string }>) => (
+                        <div className="container">
                             <CampaignClosePage
                                 {...outerProps}
                                 {...props}
@@ -159,29 +165,31 @@ export const UserCampaignsArea = withAuthenticatedUser<
                                 namespaceID={userID}
                                 campaignName={match.params.campaignName}
                             />
-                        )}
-                    />
-                    <Route
-                        path={`${match.url}/:campaignName`}
-                        render={({ match, ...props }: RouteComponentProps<{ campaignName: string }>) => (
-                            <CampaignDetailsPage
-                                {...outerProps}
-                                {...props}
-                                {...breadcrumbSetters}
-                                namespaceID={userID}
-                                campaignName={match.params.campaignName}
-                            />
-                        )}
-                    />
-                    <Route
-                        path={match.url}
-                        render={props => (
+                        </div>
+                    )}
+                />
+                <Route
+                    path={`${match.url}/:campaignName`}
+                    render={({ match, ...props }: RouteComponentProps<{ campaignName: string }>) => (
+                        <CampaignDetailsPage
+                            {...outerProps}
+                            {...props}
+                            {...breadcrumbSetters}
+                            namespaceID={userID}
+                            campaignName={match.params.campaignName}
+                        />
+                    )}
+                />
+                <Route
+                    path={match.url}
+                    render={props => (
+                        <div className="container">
                             <UserCampaignListPage {...outerProps} {...props} {...breadcrumbSetters} userID={userID} />
-                        )}
-                    />
-                    {/* eslint-enable react/jsx-no-bind */}
-                </Switch>
-            </div>
+                        </div>
+                    )}
+                />
+                {/* eslint-enable react/jsx-no-bind */}
+            </Switch>
         </div>
     )
 })
