@@ -1,3 +1,7 @@
+:root {
+    --global-menu-width: 250px;
+}
+
 .layout {
     display: flex;
     width: 100%;
@@ -12,5 +16,30 @@
         overflow: auto;
         -webkit-overflow-scrolling: touch;
         width: 100%;
+    }
+
+    &__global-menu {
+        width: var(--global-menu-width);
+        // margin-right: map-get($spacers, 4) !important;
+        background-color: #445;
+        border-right: solid 1px var(--border-color);
+
+        &--hide {
+            display: none;
+        }
+        &--show {
+            animation: slide-in 0.2s ease-in;
+        }
+    }
+}
+
+@keyframes slide-in {
+    0% {
+        // opacity: 0;
+        transform: translateX(calc(-1 * var(--global-menu-width)));
+    }
+    100% {
+        // opacity: 1;
+        transform: translateX(0);
     }
 }

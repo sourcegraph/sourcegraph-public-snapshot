@@ -1,5 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import React, { Suspense } from 'react'
+import React, { Suspense, useState } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
 import { ActivationProps } from '../../shared/src/components/activation/Activation'
@@ -66,6 +66,7 @@ import { AuthenticatedUser, authRequired as authRequiredObservable } from './aut
 import { SearchPatternType } from './graphql-operations'
 import { TelemetryProps } from '../../shared/src/telemetry/telemetryService'
 import { useObservable } from '../../shared/src/util/useObservable'
+import { GlobalMenu } from './nav/globalNavbar2/menu/GlobalMenu'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -166,6 +167,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     // Enable with: `localStorage.GlobalNavbar2=true;location.reload()`
     const GlobalNavbar = localStorage.getItem('GlobalNavbar2') !== null ? GlobalNavbar2 : GlobalNavbar1
 
+    const [showGlobalMenu, setShowGlobalMenu] = useState(false)
+
     const context = {
         ...props,
         ...breadcrumbProps,
@@ -201,32 +204,38 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                             : 'default'
                     }
                     hideNavLinks={false}
+                    setShowGlobalMenu={setShowGlobalMenu}
                 />
             )}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
-            <ErrorBoundary location={props.location}>
-                <Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
-                    <Switch>
-                        {/* eslint-disable react/jsx-no-bind */}
-                        {props.routes.map(
-                            ({ render, condition = () => true, ...route }) =>
-                                condition(context) && (
-                                    <Route
-                                        {...route}
-                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        component={undefined}
-                                        render={routeComponentProps => (
-                                            <div className="layout__app-router-container">
-                                                {render({ ...context, ...routeComponentProps })}
-                                            </div>
-                                        )}
-                                    />
-                                )
-                        )}
-                        {/* eslint-enable react/jsx-no-bind */}
-                    </Switch>
-                </Suspense>
-            </ErrorBoundary>
+            <div className="layout__app-router-container">
+                <GlobalMenu
+                    className={`layout__global-menu ${
+                        showGlobalMenu ? 'layout__global-menu--show' : 'layout__global-menu--hide'
+                    }`}
+                />
+                <ErrorBoundary location={props.location}>
+                    <Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                        <Switch>
+                            {/* eslint-disable react/jsx-no-bind */}
+                            {props.routes.map(
+                                ({ render, condition = () => true, ...route }) =>
+                                    condition(context) && (
+                                        <Route
+                                            {...route}
+                                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                            component={undefined}
+                                            render={routeComponentProps =>
+                                                render({ ...context, ...routeComponentProps })
+                                            }
+                                        />
+                                    )
+                            )}
+                            {/* eslint-enable react/jsx-no-bind */}
+                        </Switch>
+                    </Suspense>
+                </ErrorBoundary>
+            </div>
             {parseHash(props.location.hash).viewState && props.location.pathname !== '/sign-in' && (
                 <ResizablePanel
                     {...props}

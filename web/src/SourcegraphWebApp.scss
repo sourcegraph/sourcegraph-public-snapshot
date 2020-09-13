@@ -236,13 +236,16 @@ body,
 
 // Show a focus ring when performing keyboard navigation. Uses the polyfill at
 // https://github.com/WICG/focus-visible because few browsers support :focus-visible.
-:focus:not(:focus-visible) {
+//
+// TODO(sqs): interferes with @reach/menu-button styling
+/* :focus:not(:focus-visible) {
     outline: none;
 }
 :focus-visible {
     outline: 0;
     box-shadow: $btn-focus-box-shadow;
 }
+ */
 
 // Hide the given element from Percy.
 .percy-hide,
@@ -312,6 +315,7 @@ body,
 
 :root {
     // Skip Reach UI styles. See https://reacttraining.com/reach-ui/styling/.
-    --reach-menu-button: 1;
     --reach-accordion: 1;
 }
+
+@import '~@reach/menu-button/styles.css';

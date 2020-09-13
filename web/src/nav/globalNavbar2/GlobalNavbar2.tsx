@@ -81,6 +81,8 @@ interface Props
 
     /** For testing only. Used because reactstrap's Popover is incompatible with react-test-renderer. */
     hideNavLinks: boolean
+
+    setShowGlobalMenu: (value: boolean) => void
 }
 
 export const GlobalNavbar2: React.FunctionComponent<Props> = ({
@@ -102,6 +104,7 @@ export const GlobalNavbar2: React.FunctionComponent<Props> = ({
     branding = window.context?.branding,
     location,
     history,
+    setShowGlobalMenu,
     ...props
 }) => {
     const query = useMemo(() => parseSearchURLQuery(location.search || ''), [location.search])
@@ -140,29 +143,26 @@ export const GlobalNavbar2: React.FunctionComponent<Props> = ({
         }
     }, [interactiveSearchMode, isSearchRelatedPage, location, onFiltersInQueryChange, onNavbarQueryChange, query])
 
-    const logo = (
-        <LinkOrSpan to={authRequired ? undefined : '/search'} className="global-navbar2__logo-link">
-            <BrandLogo
-                branding={branding}
-                isLightTheme={isLightTheme}
-                variant="symbol"
-                className="global-navbar2__logo"
-            />
-        </LinkOrSpan>
-    )
-    const navLinks = !authRequired && !hideNavLinks && (
-        <NavLinks
-            showDotComMarketing={showDotComMarketing}
-            location={location}
-            history={history}
-            isLightTheme={isLightTheme}
-            {...props}
-        />
-    )
-
     return (
         <div className="global-navbar2">
-            <GlobalMenuPopoverButton logoClassName="global-navbar2__logo" isLightTheme={isLightTheme} />
+            <GlobalMenuPopoverButton
+                logoClassName="global-navbar2__logo"
+                isLightTheme={isLightTheme}
+                setShowGlobalMenu={setShowGlobalMenu}
+            />
+            <div className="d-flex w-100" style={{ maxWidth: '600px' }}>
+                <SearchNavbarItem
+                    {...props}
+                    navbarSearchState={navbarSearchQueryState}
+                    onChange={onNavbarQueryChange}
+                    location={location}
+                    history={history}
+                    versionContext={versionContext}
+                    isLightTheme={isLightTheme}
+                    patternType={patternType}
+                    caseSensitive={caseSensitive}
+                />
+            </div>
         </div>
     )
 }
