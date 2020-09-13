@@ -55,7 +55,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
           />
         }
         className="test-campaign-details-page"
-        icon={[Function]}
+        icon="CampaignsIconWithBetaBadge"
         title={
           <React.Fragment>
             <AnchorLink
@@ -76,19 +76,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
           >
             <CampaignsIconWithBetaBadge
               className="icon-inline page-header__icon"
-            >
-              <Memo(ImageAutoAdjustIcon)
-                className="icon-inline page-header__icon"
-              />
-               
-              <sup>
-                <span
-                  className="badge badge-merged text-uppercase"
-                >
-                  Beta
-                </span>
-              </sup>
-            </CampaignsIconWithBetaBadge>
+            />
              
             <AnchorLink
               to="/users/alice/campaigns"
@@ -807,7 +795,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
           />
         }
         className="test-campaign-details-page"
-        icon={[Function]}
+        icon="CampaignsIconWithBetaBadge"
         title={
           <React.Fragment>
             <AnchorLink
@@ -828,19 +816,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
           >
             <CampaignsIconWithBetaBadge
               className="icon-inline page-header__icon"
-            >
-              <Memo(ImageAutoAdjustIcon)
-                className="icon-inline page-header__icon"
-              />
-               
-              <sup>
-                <span
-                  className="badge badge-merged text-uppercase"
-                >
-                  Beta
-                </span>
-              </sup>
-            </CampaignsIconWithBetaBadge>
+            />
              
             <AnchorLink
               to="/users/alice/campaigns"
