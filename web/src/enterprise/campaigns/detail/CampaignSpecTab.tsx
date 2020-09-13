@@ -18,10 +18,10 @@ export const CampaignSpecTab: React.FunctionComponent<CampaignSpecTabProps> = ({
             <div className="d-flex justify-content-between align-items-center mb-2 test-campaigns-spec">
                 <p className="m-0">This campaign was created by applying the following campaign spec:</p>
                 <a
-                    download={`${campaignName}.spec.yaml`}
+                    download={`${campaignName}.campaign.yaml`}
                     href={downloadUrl}
                     className="text-right btn btn-secondary text-nowrap"
-                    data-tooltip="Download campaign-spec.yaml"
+                    data-tooltip={`Download ${campaignName}.campaign.yaml`}
                 >
                     <FileDownloadIcon className="icon-inline" /> Download YAML
                 </a>
