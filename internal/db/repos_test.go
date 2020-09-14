@@ -18,6 +18,8 @@ func TestParseIncludePattern(t *testing.T) {
 		exact  []string
 		like   []string
 		regexp string
+
+		pattern []*sqlf.Query // only tested if non-nil
 	}{
 		`^$`:              {exact: []string{""}},
 		`(^$)`:            {exact: []string{""}},
@@ -65,6 +67,11 @@ func TestParseIncludePattern(t *testing.T) {
 		// Avoid DoS when there are too many possible matches to enumerate.
 		`^(a|b)(c|d)(e|f)(g|h)(i|j)(k|l)(m|n)$`: {regexp: `^(a|b)(c|d)(e|f)(g|h)(i|j)(k|l)(m|n)$`},
 		`^[0-a]$`:                               {regexp: `^[0-a]$`},
+		`sourcegraph|^github\.com/foo/bar$`: {
+			like:    []string{`%sourcegraph%`},
+			exact:   []string{"github.com/foo/bar"},
+			pattern: []*sqlf.Query{sqlf.Sprintf(`(name IN (%s) OR lower(name) LIKE %s)`, "github.com/foo/bar", "%sourcegraph%")},
+		},
 	}
 	for pattern, want := range tests {
 		exact, like, regexp, err := parseIncludePattern(pattern)
@@ -82,9 +89,16 @@ func TestParseIncludePattern(t *testing.T) {
 		}
 		if qs, err := parsePattern(pattern); err != nil {
 			t.Fatal(pattern, err)
-		} else if testing.Verbose() {
-			q := sqlf.Join(qs, "AND")
-			t.Log(pattern, q.Query(sqlf.PostgresBindVar), q.Args())
+		} else {
+			if testing.Verbose() {
+				q := sqlf.Join(qs, "AND")
+				t.Log(pattern, q.Query(sqlf.PostgresBindVar), q.Args())
+			}
+			if want.pattern != nil {
+				if !reflect.DeepEqual(want.pattern, qs) {
+					t.Errorf("got pattern %#v, want %#v for %s", qs[0], want.pattern[0], pattern)
+				}
+			}
 		}
 	}
 }
