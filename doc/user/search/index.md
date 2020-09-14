@@ -169,7 +169,7 @@ By default, files larger than 1 MB are excluded from search results. Use the [se
 ### Exclude files and directories
 
 You can exclude files and directories from search by adding the file _.sourcegraph/ignore_ to
-the root of your repository. Sourcegraph interprets each line in the _ignore_ file as globbing
+the root directory of your repository. Sourcegraph interprets each line in the _ignore_ file as globbing
 pattern. Files or directories matching those patterns will not show up in the search results.
  
 The _ignore_ file is tied to a commit. This means, if you committed an _ignore_ file to a 
