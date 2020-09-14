@@ -378,7 +378,7 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 		span.Finish()
 	}()
 
-	store := postgres.NewStore(int(idFromRequest(r)))
+	store := postgres.NewStore(s.codeIntelDB, int(idFromRequest(r)))
 	if _, ok, err := store.ReadMeta(ctx); err != nil {
 		return err
 	} else if ok {

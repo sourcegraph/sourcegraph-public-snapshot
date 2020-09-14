@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"runtime"
 
 	"github.com/hashicorp/go-multierror"
@@ -13,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/sqlite/util"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
 type store struct {
@@ -24,9 +24,9 @@ type store struct {
 
 var _ persistence.Store = &store{}
 
-func NewStore(dumpID int) persistence.Store {
+func NewStore(db *sql.DB, dumpID int) persistence.Store {
 	return &store{
-		Store:      basestore.NewWithHandle(basestore.NewHandleWithDB(dbconn.Global)), // TODO - take db connection as parameter
+		Store:      basestore.NewWithHandle(basestore.NewHandleWithDB(db)),
 		dumpID:     dumpID,
 		serializer: gobserializer.New(),
 	}

@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"database/sql"
 	"sync/atomic"
 	"time"
 
@@ -27,6 +28,7 @@ import (
 
 type handler struct {
 	store               store.Store
+	codeIntelDB         *sql.DB
 	bundleManagerClient bundles.BundleManagerClient
 	gitserverClient     gitserver.Client
 	metrics             metrics.WorkerMetrics
@@ -181,9 +183,11 @@ func (h *handler) write(ctx context.Context, id int, groupedBundleData *correlat
 
 	// TODO - mock better
 	if h.createStore == nil {
-		h.createStore = postgres.NewStore
+		h.createStore = func(id int) persistence.Store {
+			return postgres.NewStore(h.codeIntelDB, id)
+		}
 	}
-	store := h.createStore(id) // TODO - need to pass it the correct handle
+	store := h.createStore(id)
 
 	store, err = store.Transact(ctx)
 	if err != nil {

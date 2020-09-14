@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
@@ -15,6 +16,7 @@ import (
 
 func NewWorker(
 	s store.Store,
+	codeIntelDB *sql.DB,
 	bundleManagerClient bundles.BundleManagerClient,
 	gitserverClient gitserver.Client,
 	pollInterval time.Duration,
@@ -26,6 +28,7 @@ func NewWorker(
 
 	handler := &handler{
 		store:               s,
+		codeIntelDB:         codeIntelDB,
 		bundleManagerClient: bundleManagerClient,
 		gitserverClient:     gitserverClient,
 		metrics:             metrics,

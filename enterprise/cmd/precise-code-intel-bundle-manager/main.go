@@ -47,8 +47,7 @@ func main() {
 		disableJanitor      = mustParseBool(rawDisableJanitor, "PRECISE_CODE_INTEL_DISABLE_JANITOR")
 	)
 
-	// Test connection
-	db := mustInitializeCodeIntelDatabase()
+	codeIntelDB := mustInitializeCodeIntelDatabase()
 
 	storeCache, err := sqlitereader.NewStoreCache(readerDataCacheSize)
 	if err != nil {
@@ -63,7 +62,7 @@ func main() {
 		log.Fatalf("failed to migrate paths: %s", err)
 	}
 
-	if err := readers.Migrate(bundleDir, storeCache, db); err != nil {
+	if err := readers.Migrate(bundleDir, storeCache, codeIntelDB); err != nil {
 		log.Fatalf("failed to migrate readers: %s", err)
 	}
 
@@ -76,7 +75,7 @@ func main() {
 	store := store.NewObserved(mustInitializeStore(), observationContext)
 	metrics.MustRegisterDiskMonitor(bundleDir)
 
-	server := server.New(bundleDir, storeCache, observationContext)
+	server := server.New(bundleDir, storeCache, codeIntelDB, observationContext)
 	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
 	janitor := janitor.New(store, bundleDir, desiredPercentFree, janitorInterval, maxUploadAge, maxUploadPartAge, maxDatabasePartAge, janitorMetrics)
 

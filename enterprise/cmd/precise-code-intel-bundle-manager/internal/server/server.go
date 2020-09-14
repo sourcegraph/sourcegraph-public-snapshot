@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"database/sql"
 	"net"
 	"net/http"
 	"os"
@@ -21,6 +22,7 @@ const Port = 3187
 type Server struct {
 	bundleDir          string
 	storeCache         cache.StoreCache
+	codeIntelDB        *sql.DB
 	observationContext *observation.Context
 	server             *http.Server
 	once               sync.Once
@@ -31,6 +33,7 @@ var _ goroutine.BackgroundRoutine = &Server{}
 func New(
 	bundleDir string,
 	storeCache cache.StoreCache,
+	codeIntelDB *sql.DB,
 	observationContext *observation.Context,
 ) *Server {
 	host := ""
@@ -41,6 +44,7 @@ func New(
 	s := &Server{
 		bundleDir:          bundleDir,
 		storeCache:         storeCache,
+		codeIntelDB:        codeIntelDB,
 		observationContext: observationContext,
 	}
 
