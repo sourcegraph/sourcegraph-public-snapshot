@@ -305,8 +305,8 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 					repos.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
 				)},
 				now: clock.Now,
-				diff: repos.Diff{Modified: repos.Repos{tc.repo.With(
-					repos.Opt.RepoModifiedAt(clock.Time(1)),
+				diff: repos.Diff{Unmodified: repos.Repos{tc.repo.With(
+					repos.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
 				)}},
 				svcs: []*repos.ExternalService{tc.svc},
 				err:  "<nil>",
