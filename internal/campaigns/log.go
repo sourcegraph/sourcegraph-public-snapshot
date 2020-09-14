@@ -70,7 +70,7 @@ type TaskLogger struct {
 func newTaskLogger(task *Task, keep bool) (*TaskLogger, error) {
 	prefix := "changeset-" + task.Repository.Slug()
 
-	f, err := ioutil.TempFile(tempDirPrefix, prefix+".log")
+	f, err := ioutil.TempFile(tempDirPrefix, prefix+".*.log")
 	if err != nil {
 		return nil, errors.Wrapf(err, "creating temporary file with prefix %q", prefix)
 	}
