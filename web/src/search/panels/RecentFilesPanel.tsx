@@ -110,7 +110,7 @@ function processRecentFiles(eventLogResult?: EventLogResult): RecentFile[] | nul
             let filePath = parsedArguments?.filePath as string
 
             if (!repoName || !filePath) {
-                [repoName, filePath] = extractFileInfoFromUrl(node.url)
+                ;({ repoName, filePath } = extractFileInfoFromUrl(node.url))
             }
 
             if (
@@ -132,14 +132,14 @@ function processRecentFiles(eventLogResult?: EventLogResult): RecentFile[] | nul
     return recentFiles
 }
 
-function extractFileInfoFromUrl(url: string): [repoName: string, filePath: string] {
+function extractFileInfoFromUrl(url: string): { repoName: string; filePath: string } {
     const parsedUrl = new URL(url)
 
     // Remove first character as it's a '/'
     const [repoName, filePath] = parsedUrl.pathname.slice(1).split('/-/blob/')
     if (!repoName || !filePath) {
-        return ['', '']
+        return { repoName: '', filePath: '' }
     }
 
-    return [repoName, filePath]
+    return { repoName, filePath }
 }
