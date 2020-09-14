@@ -4,7 +4,7 @@ import { Link } from '../../../shared/src/components/Link'
 import { sortBy } from 'lodash'
 import { Unsubscribable } from 'sourcegraph'
 import { isDefined } from '../../../shared/src/util/types'
-import { useLocation } from 'react-router'
+import * as H from 'history'
 
 export type Breadcrumb = ElementBreadcrumb | LinkBreadcrumb
 
@@ -152,38 +152,33 @@ export const useBreadcrumbs = (): BreadcrumbsProps & BreadcrumbSetters => {
 /**
  * Renders breadcrumbs by depth.
  */
-export const Breadcrumbs: React.FC<{ breadcrumbs: BreadcrumbAtDepth[] }> = ({ breadcrumbs }) => {
-    const location = useLocation()
-
-    return (
-        <nav className="d-flex p-2" aria-label="Breadcrumbs">
-            {sortBy(breadcrumbs, 'depth')
-                .map(({ breadcrumb }) => breadcrumb)
-                .filter(isDefined)
-                .map((breadcrumb, index, validBreadcrumbs) => {
-                    const divider =
-                        breadcrumb.divider === undefined ? (
-                            <ChevronRightIcon className="icon-inline" />
+export const Breadcrumbs: React.FC<{ breadcrumbs: BreadcrumbAtDepth[]; location: H.Location }> = ({
+    breadcrumbs,
+    location,
+}) => (
+    <nav className="d-flex p-2" aria-label="Breadcrumbs">
+        {sortBy(breadcrumbs, 'depth')
+            .map(({ breadcrumb }) => breadcrumb)
+            .filter(isDefined)
+            .map((breadcrumb, index, validBreadcrumbs) => {
+                const divider =
+                    breadcrumb.divider === undefined ? <ChevronRightIcon className="icon-inline" /> : breadcrumb.divider
+                return (
+                    <span key={breadcrumb.key} className="text-muted d-flex align-items-center test-breadcrumb">
+                        <span className="font-weight-semibold">{divider}</span>
+                        {isElementBreadcrumb(breadcrumb) ? (
+                            breadcrumb.element
+                        ) : // When the last breadcrumb is a link and the hash is empty, render as plain text
+                        index === validBreadcrumbs.length - 1 && !location.hash ? (
+                            breadcrumb.link.label
                         ) : (
-                            breadcrumb.divider
-                        )
-                    return (
-                        <span key={breadcrumb.key} className="text-muted d-flex align-items-center test-breadcrumb">
-                            <span className="font-weight-semibold">{divider}</span>
-                            {isElementBreadcrumb(breadcrumb) ? (
-                                breadcrumb.element
-                            ) : // When the last breadcrumb is a link and the hash is empty, render as plain text
-                            index === validBreadcrumbs.length - 1 && !location.hash ? (
-                                breadcrumb.link.label
-                            ) : (
-                                <Link to={breadcrumb.link.to}>{breadcrumb.link.label}</Link>
-                            )}
-                        </span>
-                    )
-                })}
-        </nav>
-    )
-}
+                            <Link to={breadcrumb.link.to}>{breadcrumb.link.label}</Link>
+                        )}
+                    </span>
+                )
+            })}
+    </nav>
+)
 
 /**
  * To be used in unit tests, it minimally fulfills the BreadcrumbSetters interface.

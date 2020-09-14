@@ -11,8 +11,9 @@ add(
     'Example',
     () => (
         <WebStory>
-            {() => (
+            {webProps => (
                 <Breadcrumbs
+                    {...webProps}
                     breadcrumbs={[
                         {
                             depth: 0,
