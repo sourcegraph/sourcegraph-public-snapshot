@@ -1,8 +1,10 @@
 package db
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 
 	"github.com/hashicorp/go-multierror"
@@ -11,6 +13,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	secretPkg "github.com/sourcegraph/sourcegraph/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -49,11 +52,16 @@ func (s *userExternalAccounts) LookupUserAndSave(ctx context.Context, spec extsv
 		return Mocks.ExternalAccounts.LookupUserAndSave(spec, data)
 	}
 
+	var esData, esAuthData secretPkg.EncryptedStringValue
+	encAuth := string(*data.AuthData)
+	encData := string(*data.Data)
+	esAuthData = secretPkg.EncryptedStringValue(encAuth)
+	esData = secretPkg.EncryptedStringValue(encData)
 	err = dbconn.Global.QueryRowContext(ctx, `
 UPDATE user_external_accounts SET auth_data=$5, account_data=$6, updated_at=now()
 WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND deleted_at IS NULL
 RETURNING user_id
-`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.Data).Scan(&userID)
+`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, esAuthData, esData).Scan(&userID)
 	if err == sql.ErrNoRows {
 		err = userExternalAccountNotFoundError{[]interface{}{spec}}
 	}
@@ -93,6 +101,7 @@ func (s *userExternalAccounts) AssociateUserAndSave(ctx context.Context, userID 
 	// Find whether the account exists and, if so, which user ID the account is associated with.
 	var exists bool
 	var existingID, associatedUserID int32
+
 	err = tx.QueryRowContext(ctx, `
 SELECT id, user_id FROM user_external_accounts
 WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND deleted_at IS NULL
@@ -113,11 +122,16 @@ WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND d
 		return s.insert(ctx, tx, userID, spec, data)
 	}
 
+	var esData, esAuthData secretPkg.EncryptedStringValue
+	encAuth := string(*data.AuthData)
+	encData := string(*data.Data)
+	esAuthData = secretPkg.EncryptedStringValue(encAuth)
+	esData = secretPkg.EncryptedStringValue(encData)
 	// Update the external account (it exists).
 	res, err := tx.ExecContext(ctx, `
 UPDATE user_external_accounts SET auth_data=$6, account_data=$7, updated_at=now()
 WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND user_id=$5 AND deleted_at IS NULL
-`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, userID, data.AuthData, data.Data)
+`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, userID, esAuthData, esData)
 	if err != nil {
 		return err
 	}
@@ -167,10 +181,14 @@ func (s *userExternalAccounts) CreateUserAndSave(ctx context.Context, newUser Ne
 }
 
 func (s *userExternalAccounts) insert(ctx context.Context, tx *sql.Tx, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error {
+	esData := secretPkg.EncryptedStringValue(string(*data.Data))
+	esAuthData := secretPkg.EncryptedStringValue(string(*data.AuthData))
+
 	_, err := tx.ExecContext(ctx, `
 INSERT INTO user_external_accounts(user_id, service_type, service_id, client_id, account_id, auth_data, account_data)
 VALUES($1, $2, $3, $4, $5, $6, $7)
-`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.Data)
+`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, esAuthData, esData)
+
 	return err
 }
 
@@ -297,10 +315,16 @@ func (*userExternalAccounts) listBySQL(ctx context.Context, querySuffix *sqlf.Qu
 	var results []*extsvc.Account
 	defer rows.Close()
 	for rows.Next() {
+		var esData, esAuthData secretPkg.EncryptedStringValue
 		var o extsvc.Account
-		if err := rows.Scan(&o.ID, &o.UserID, &o.ServiceType, &o.ServiceID, &o.ClientID, &o.AccountID, &o.AuthData, &o.Data, &o.CreatedAt, &o.UpdatedAt); err != nil {
+		if err := rows.Scan(&o.ID, &o.UserID, &o.ServiceType, &o.ServiceID, &o.ClientID, &o.AccountID, &esAuthData, &esData, &o.CreatedAt, &o.UpdatedAt); err != nil {
 			return nil, err
 		}
+
+		encAuth := json.RawMessage([]byte(esAuthData))
+		encData := json.RawMessage([]byte(esData))
+		o.AuthData = &encAuth
+		o.Data = &encData
 		results = append(results, &o)
 	}
 	return results, rows.Err()
@@ -316,6 +340,92 @@ func (*userExternalAccounts) listSQL(opt ExternalAccountsListOptions) (conds []*
 		conds = append(conds, sqlf.Sprintf("(service_type=%s AND service_id=%s AND client_id=%s)", opt.ServiceType, opt.ServiceID, opt.ClientID))
 	}
 	return conds
+}
+
+func (*userExternalAccounts) EncryptTable(ctx context.Context) error {
+	if !secretPkg.ConfiguredToEncrypt() {
+		return nil
+	}
+
+	q := sqlf.Sprintf("SELECT id,auth_data,account_data from user_external_accounts")
+	tx, err := dbconn.Global.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			rollErr := tx.Rollback()
+			if rollErr != nil {
+				err = multierror.Append(err, rollErr)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+
+	rows, err := tx.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args())
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var a extsvc.Account
+		err := rows.Scan(&a.ID, &a.AuthData, &a.AccountData)
+		if err != nil {
+			return err
+		}
+
+		var (
+			authData   []byte
+			authConfig []byte
+		)
+		if secretPkg.ConfiguredToRotate() {
+			authData, err = secretPkg.RotateEncryption(*a.AuthData)
+			if err != nil {
+				return err
+			}
+
+			authConfig, err = secretPkg.RotateEncryption(*a.Data)
+			if err != nil {
+				return err
+			}
+
+			// if the values are the same after rotation, there's nothing to do here
+			if bytes.Equal(authConfig, *a.AuthData) && bytes.Equal(authData, *a.Data) {
+				continue
+			}
+
+		} else {
+			authData, err = secretPkg.EncryptBytes(*a.AuthData)
+			if err != nil {
+				return err
+			}
+
+			authConfig, err = secretPkg.EncryptBytes(*a.Data)
+			if err != nil {
+				return err
+			}
+
+			if bytes.Equal(authConfig, *a.AuthData) && bytes.Equal(authData, *a.Data) {
+				continue
+			}
+		}
+
+		// now, time for an update!
+		updateQ := sqlf.Sprintf(
+			"UPDATE user_external_accounts "+
+				"SET auth_data=%s, account_data=%s "+
+				"WHERE id=%d", a.AuthData, a.AccountData, &a.ID)
+		_, err = tx.ExecContext(ctx, updateQ.Query(sqlf.PostgresBindVar), updateQ.Args())
+		return err
+	}
+	err = rows.Err()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // MockExternalAccounts mocks the Stores.ExternalAccounts DB store.
