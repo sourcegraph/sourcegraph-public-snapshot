@@ -163,13 +163,14 @@ export const Breadcrumbs: React.FC<{ breadcrumbs: BreadcrumbAtDepth[]; location:
             .map((breadcrumb, index, validBreadcrumbs) => {
                 const divider =
                     breadcrumb.divider === undefined ? <ChevronRightIcon className="icon-inline" /> : breadcrumb.divider
+                // When the last breadcrumbs is a link and the hash is empty (to allow user to reset hash),
+                // render link breadcrumbs as plain text
                 return (
                     <span key={breadcrumb.key} className="text-muted d-flex align-items-center test-breadcrumb">
                         <span className="font-weight-semibold">{divider}</span>
                         {isElementBreadcrumb(breadcrumb) ? (
                             breadcrumb.element
-                        ) : // When the last breadcrumb is a link and the hash is empty, render as plain text
-                        index === validBreadcrumbs.length - 1 && !location.hash ? (
+                        ) : index === validBreadcrumbs.length - 1 && !location.hash ? (
                             breadcrumb.link.label
                         ) : (
                             <Link to={breadcrumb.link.to}>{breadcrumb.link.label}</Link>
