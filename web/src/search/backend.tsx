@@ -10,11 +10,7 @@ import { Remote } from 'comlink'
 import { FlatExtHostAPI } from '../../../shared/src/api/contract'
 import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
 import { DeployType } from '../jscontext'
-import {
-    SearchPatternType,
-    RecentSearchesPanelDataVariables,
-    RecentSearchesPanelDataResult,
-} from '../graphql-operations'
+import { SearchPatternType, EventLogsDataResult, EventLogsDataVariables } from '../graphql-operations'
 
 export function search(
     query: string,
@@ -532,17 +528,17 @@ export interface EventLogResult {
     pageInfo: { endCursor: string | null; hasNextPage: boolean }
 }
 
-export function fetchRecentSearches(userId: GQL.ID, first: number): Observable<EventLogResult | null> {
+function fetchEvents(userId: GQL.ID, first: number, eventName: string): Observable<EventLogResult | null> {
     if (!userId) {
         return of(null)
     }
 
-    const result = requestGraphQL<RecentSearchesPanelDataResult, RecentSearchesPanelDataVariables>({
+    const result = requestGraphQL<EventLogsDataResult, EventLogsDataVariables>({
         request: gql`
-            query RecentSearchesPanelData($userId: ID!, $first: Int) {
+            query EventLogsData($userId: ID!, $first: Int, $eventName: String!) {
                 node(id: $userId) {
                     ... on User {
-                        recentSearches: eventLogs(first: $first, eventName: "SearchResultsQueried") {
+                        eventLogs(first: $first, eventName: $eventName) {
                             nodes {
                                 argument
                                 timestamp
@@ -558,18 +554,26 @@ export function fetchRecentSearches(userId: GQL.ID, first: number): Observable<E
                 }
             }
         `,
-        variables: { userId, first: first ?? null },
+        variables: { userId, first: first ?? null, eventName },
     })
 
     return result.pipe(
         map(dataOrThrowErrors),
         map(
-            (data: RecentSearchesPanelDataResult): EventLogResult => {
+            (data: EventLogsDataResult): EventLogResult => {
                 if (!data.node) {
                     throw new Error('User not found')
                 }
-                return data.node.recentSearches
+                return data.node.eventLogs
             }
         )
     )
+}
+
+export function fetchRecentSearches(userId: GQL.ID, first: number): Observable<EventLogResult | null> {
+    return fetchEvents(userId, first, 'SearchResultsQueried')
+}
+
+export function fetchRecentFileViews(userId: GQL.ID, first: number): Observable<EventLogResult | null> {
+    return fetchEvents(userId, first, 'ViewBlob')
 }

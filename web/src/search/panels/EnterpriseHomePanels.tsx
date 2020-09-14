@@ -13,6 +13,7 @@ interface Props extends Pick<PatternTypeProps, 'patternType'> {
     authenticatedUser: AuthenticatedUser | null
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
     fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult | null>
+    fetchRecentFileViews: (userId: string, first: number) => Observable<EventLogResult | null>
 }
 
 export const EnterpriseHomePanels: React.FunctionComponent<Props> = (props: Props) => (
@@ -22,8 +23,8 @@ export const EnterpriseHomePanels: React.FunctionComponent<Props> = (props: Prop
             <RecentSearchesPanel {...props} className="enterprise-home-panels__panel col-lg-8" />
         </div>
         <div className="row">
-            <RecentFilesPanel className="enterprise-home-panels__panel col-md-7" />
-            <SavedSearchesPanel {...props} className="enterprise-home-panels__panel col-md-5" />
+            <RecentFilesPanel {...props} className="enterprise-home-panels__panel col-lg-7" />
+            <SavedSearchesPanel {...props} className="enterprise-home-panels__panel col-lg-5" />
         </div>
     </div>
 )

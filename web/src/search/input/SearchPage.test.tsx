@@ -56,6 +56,7 @@ describe('SearchPage', () => {
         isLightTheme: true,
         fetchSavedSearches: () => of([]),
         fetchRecentSearches: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),
+        fetchRecentFileViews: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),
     }
 
     it('should not show enterprise home panels if on Sourcegraph.com', () => {

@@ -18,7 +18,7 @@ class ServerAdminWrapper {
         })
     }
 
-    public trackPageView(eventAction: string, logAsActiveUser: boolean = true): void {
+    public trackPageView(eventAction: string, logAsActiveUser: boolean = true, eventProperties?: any): void {
         if (logAsActiveUser) {
             logUserEvent(UserEvent.PAGEVIEW)
         }
@@ -27,7 +27,7 @@ class ServerAdminWrapper {
                 logUserEvent(UserEvent.STAGECODE)
             }
         }
-        logEvent(eventAction)
+        logEvent(eventAction, eventProperties)
     }
 
     public trackAction(eventAction: string, eventProperties?: any): void {
