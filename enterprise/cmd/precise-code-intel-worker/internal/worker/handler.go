@@ -2,7 +2,6 @@ package worker
 
 import (
 	"context"
-	"database/sql"
 	"sync/atomic"
 	"time"
 
@@ -14,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/postgres"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
@@ -28,7 +26,6 @@ import (
 
 type handler struct {
 	store               store.Store
-	codeIntelDB         *sql.DB
 	bundleManagerClient bundles.BundleManagerClient
 	gitserverClient     gitserver.Client
 	metrics             metrics.WorkerMetrics
@@ -182,14 +179,7 @@ func (h *handler) write(ctx context.Context, id int, groupedBundleData *correlat
 	ctx, endOperation := h.metrics.WriteOperation.With(ctx, &err, observation.Args{})
 	defer endOperation(1, observation.Args{})
 
-	// TODO - mock better
-	if h.createStore == nil {
-		h.createStore = func(id int) persistence.Store {
-			return postgres.NewStore(h.codeIntelDB, id)
-		}
-	}
 	store := h.createStore(id)
-
 	store, err = store.Transact(ctx)
 	if err != nil {
 		return err
