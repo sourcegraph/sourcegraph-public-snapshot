@@ -25,6 +25,7 @@ import { ChangesetFields, Scalars } from '../../../../graphql-operations'
 import { getLSPTextDocumentPositionParameters } from '../../utils'
 import { CampaignChangesetsHeader } from './CampaignChangesetsHeader'
 import { ChangesetFilters, ChangesetFilterRow } from './ChangesetFilterRow'
+import { EmptyChangesetListElement } from './EmptyChangesetListElement'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
     campaignID: Scalars['ID']
@@ -171,6 +172,8 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                     listComponent="div"
                     listClassName="campaign-changesets__grid mb-3"
                     headComponent={CampaignChangesetsHeader}
+                    // Only show the empty element, if no filters are selected.
+                    emptyElement={filtersSelected(changesetFilters) ? undefined : <EmptyChangesetListElement />}
                     noSummaryIfAllNodesVisible={true}
                 />
                 {hoverState?.hoverOverlayProps && (
@@ -187,5 +190,18 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                 )}
             </div>
         </>
+    )
+}
+
+/**
+ * Returns true, if any filter is selected.
+ */
+function filtersSelected(filters: ChangesetFilters): boolean {
+    return (
+        filters.checkState !== null ||
+        filters.externalState !== null ||
+        filters.publicationState !== null ||
+        filters.reconcilerState !== null ||
+        filters.reviewState !== null
     )
 }
