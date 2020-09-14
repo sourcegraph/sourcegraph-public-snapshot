@@ -117,7 +117,6 @@ describe('Search onboarding', () => {
             await driver.page.waitForSelector('.test-tour-step-6')
             await percySnapshot(driver.page, 'Search tour language path: review search syntax')
             await driver.page.click('.test-search-help-dropdown-button-icon')
-            await driver.page.waitForSelector('.test-tour-step-5')
         })
 
         it('displays all steps in the repo onboarding flow', async () => {
