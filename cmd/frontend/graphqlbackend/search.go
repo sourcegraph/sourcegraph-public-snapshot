@@ -344,11 +344,6 @@ func decodedViewerFinalSettings(ctx context.Context) (*schema.Settings, error) {
 
 var mockResolveRepoGroups func() (map[string][]*types.Repo, []string, error)
 
-type regexPath struct {
-	name  string
-	regex string
-}
-
 func resolveRepoGroups(settings *schema.Settings) (groups map[string][]*types.Repo, patterns []string, err error) {
 	if mockResolveRepoGroups != nil {
 		return mockResolveRepoGroups()
