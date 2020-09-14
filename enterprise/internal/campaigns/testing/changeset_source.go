@@ -51,6 +51,10 @@ func (s *FakeChangesetSource) CreateChangeset(ctx context.Context, c *repos.Chan
 		return s.ChangesetExists, s.Err
 	}
 
+	if c.Repo == nil {
+		return false, NoReposErr
+	}
+
 	if c.HeadRef != s.WantHeadRef {
 		return s.ChangesetExists, fmt.Errorf("wrong HeadRef. want=%s, have=%s", s.WantHeadRef, c.HeadRef)
 	}
@@ -71,6 +75,9 @@ func (s *FakeChangesetSource) UpdateChangeset(ctx context.Context, c *repos.Chan
 
 	if s.Err != nil {
 		return s.Err
+	}
+	if c.Repo == nil {
+		return NoReposErr
 	}
 
 	if c.BaseRef != s.WantBaseRef {
@@ -101,6 +108,10 @@ func (s *FakeChangesetSource) LoadChangesets(ctx context.Context, cs ...*repos.C
 	}
 
 	for _, c := range cs {
+		if c.Repo == nil {
+			return NoReposErr
+		}
+
 		if err := c.SetMetadata(s.FakeMetadata); err != nil {
 			return err
 		}
@@ -109,12 +120,20 @@ func (s *FakeChangesetSource) LoadChangesets(ctx context.Context, cs ...*repos.C
 	s.LoadedChangesets = append(s.LoadedChangesets, cs...)
 	return nil
 }
+
+var NoReposErr = errors.New("no repository set on repos.Changeset")
+
 func (s *FakeChangesetSource) CloseChangeset(ctx context.Context, c *repos.Changeset) error {
 	s.CloseChangesetCalled = true
 
 	if s.Err != nil {
 		return s.Err
 	}
+
+	if c.Repo == nil {
+		return NoReposErr
+	}
+
 	s.ClosedChangesets = append(s.ClosedChangesets, c)
 	return nil
 }

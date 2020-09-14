@@ -280,7 +280,7 @@ func (r *reconciler) closeChangeset(ctx context.Context, tx *Store, ch *campaign
 		return err
 	}
 
-	cs := &repos.Changeset{Changeset: ch}
+	cs := &repos.Changeset{Changeset: ch, Repo: repo}
 
 	if err := ccs.CloseChangeset(ctx, cs); err != nil {
 		return errors.Wrap(err, "creating changeset")
