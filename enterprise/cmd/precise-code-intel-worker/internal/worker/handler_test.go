@@ -128,12 +128,9 @@ func TestHandle(t *testing.T) {
 		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockStore.MarkRepositoryAsDirtyFunc.History()[0].Arg1)
 	}
 
-	// TODO - replace with real call to delete stuff
-	// if len(bundleManagerClient.SendDBFunc.History()) != 1 {
-	// 	t.Errorf("unexpected number of SendDB calls. want=%d have=%d", 1, len(bundleManagerClient.SendDBFunc.History()))
-	// } else if bundleManagerClient.SendDBFunc.History()[0].Arg1 != 42 {
-	// 	t.Errorf("unexpected SendDBFunc args. want=%d have=%d", 42, bundleManagerClient.SendDBFunc.History()[0].Arg1)
-	// }
+	if len(bundleManagerClient.DeleteUploadFunc.History()) != 1 {
+		t.Errorf("unexpected number of DeleteUpload calls. want=%d have=%d", 1, len(bundleManagerClient.DeleteUploadFunc.History()))
+	}
 }
 
 func TestHandleError(t *testing.T) {
@@ -186,8 +183,8 @@ func TestHandleError(t *testing.T) {
 		t.Errorf("unexpected number of Done calls. want=%d have=%d", 1, len(mockStore.DoneFunc.History()))
 	}
 
-	if len(bundleManagerClient.DeleteUploadFunc.History()) != 1 {
-		t.Errorf("unexpected number of DeleteUpload calls. want=%d have=%d", 1, len(bundleManagerClient.DeleteUploadFunc.History()))
+	if len(bundleManagerClient.DeleteUploadFunc.History()) != 0 {
+		t.Errorf("unexpected number of DeleteUpload calls. want=%d have=%d", 0, len(bundleManagerClient.DeleteUploadFunc.History()))
 	}
 }
 

@@ -104,8 +104,10 @@ func (h *handler) handle(ctx context.Context, store store.Store, upload store.Up
 		return false, errors.Wrap(err, "bundleManager.GetUpload")
 	}
 	defer func() {
-		if err != nil {
-			// Remove upload file on error instead of waiting for it to expire
+		if err == nil {
+			// Remove upload file after processing - we don't need it anymore. On failure we
+			// may want to retry, so we should keep the upload data around for a bit. The bundle
+			// manager will clean up old uploads periodically.
 			if deleteErr := h.bundleManagerClient.DeleteUpload(ctx, upload.ID); deleteErr != nil {
 				log15.Warn("Failed to delete upload file", "err", err)
 			}
@@ -150,7 +152,6 @@ func (h *handler) handle(ctx context.Context, store store.Store, upload store.Up
 		return false, err
 	}
 
-	// TODO - delete upload file on bundle manager
 	return false, nil
 }
 
