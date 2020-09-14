@@ -88,6 +88,18 @@ func (r *repositoryTextSearchIndexStatus) IndexShardsCount() int32 {
 	return int32(r.entry.Stats.Shards + 1)
 }
 
+func (r *repositoryTextSearchIndexStatus) NewLinesCount() int32 {
+	return int32(r.entry.Stats.NewLinesCount)
+}
+
+func (r *repositoryTextSearchIndexStatus) DefaultBranchNewLinesCount() int32 {
+	return int32(r.entry.Stats.DefaultBranchNewLinesCount)
+}
+
+func (r *repositoryTextSearchIndexStatus) OtherBranchesNewLinesCount() int32 {
+	return int32(r.entry.Stats.OtherBranchesNewLinesCount)
+}
+
 func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*repositoryTextSearchIndexedRef, error) {
 	// We assume that the default branch for enabled repositories is always configured to be indexed.
 	//
