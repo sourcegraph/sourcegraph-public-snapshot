@@ -33,7 +33,7 @@ const plugins = [`${SHARED_FOLDER}/dev/extractGraphQlOperationCodegenPlugin.js`,
  * @param {{ watch?: boolean }} [options]
  */
 async function generateGraphQlOperations({ watch } = {}) {
-  allGenerateOperations = {
+  const allGenerateOperations = {
     './browser/src/graphql-operations.ts': {
       documents: BROWSER_DOCUMENTS_GLOB,
       config: {

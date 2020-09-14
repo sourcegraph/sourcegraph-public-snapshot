@@ -12,7 +12,6 @@ const { format, resolveConfig } = require('prettier')
 const { generateGraphQlOperations } = require('./dev/generateGraphQlOperations')
 const isInputNewer = require('./dev/isInputNewer')
 
-
 const GRAPHQL_SCHEMA_PATH = path.join(__dirname, '../cmd/frontend/graphqlbackend/schema.graphql')
 
 /**
@@ -23,8 +22,10 @@ const GRAPHQL_SCHEMA_PATH = path.join(__dirname, '../cmd/frontend/graphqlbackend
  */
 async function graphQlSchema() {
   const outfile = __dirname + '/src/graphql/schema.ts'
-  if (!await isInputNewer([GRAPHQL_SCHEMA_PATH], outfile)) {
-    console.log(`skipping generation of src/graphql/schema.ts, because input ../cmd/frontend/graphqlbackend/schema.graphql was older`)
+  if (!(await isInputNewer([GRAPHQL_SCHEMA_PATH], outfile))) {
+    console.log(
+      'skipping generation of src/graphql/schema.ts, because input ../cmd/frontend/graphqlbackend/schema.graphql was older'
+    )
     return
   }
 
@@ -111,7 +112,7 @@ async function schema() {
     ['json-schema-draft-07', 'settings', 'site'].map(async file => {
       const inputFile = path.join(schemaDirectory, `${file}.schema.json`)
       const outputFile = path.join(outputDirectory, `${file}.schema.d.ts`)
-      if (!await isInputNewer([inputFile], outputFile)) {
+      if (!(await isInputNewer([inputFile], outputFile))) {
         console.log(`skipping generation of ${file}.schema.d.ts, because input ${file}.schema.json was older`)
         return
       }
