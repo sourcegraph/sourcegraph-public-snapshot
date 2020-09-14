@@ -43,9 +43,7 @@ var (
 // also use the value of PGDATASOURCE if supplied and dataSource is the empty
 // string.
 func SetupGlobalConnection(dataSource string) (err error) {
-	Global, err = New(dataSource)
-	// TODO - make sure this happens with other connections as well
-	registerPrometheusCollector(Global, "_app")
+	Global, err = New(dataSource, "_app")
 	return err
 }
 
@@ -54,7 +52,7 @@ func SetupGlobalConnection(dataSource string) (err error) {
 // Note: github.com/lib/pq parses the environment as well. This function will
 // also use the value of PGDATASOURCE if supplied and dataSource is the empty
 // string.
-func New(dataSource string) (*sql.DB, error) {
+func New(dataSource, dbNameSuffix string) (*sql.DB, error) {
 	// Force PostgreSQL session timezone to UTC.
 	if v, ok := os.LookupEnv("PGTZ"); ok && v != "UTC" && v != "utc" {
 		log15.Warn("Ignoring PGTZ environment variable; using PGTZ=UTC.", "ignoredPGTZ", v)
@@ -70,6 +68,7 @@ func New(dataSource string) (*sql.DB, error) {
 		return nil, errors.Wrap(err, "DB not available")
 	}
 	configureConnectionPool(db)
+	registerPrometheusCollector(Global, dbNameSuffix)
 	return db, nil
 }
 
