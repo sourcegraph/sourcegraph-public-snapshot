@@ -5,7 +5,7 @@ import { Observable } from 'rxjs'
 import { AuthenticatedUser } from '../../auth'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { parseSearchURLQuery } from '..'
-import { parseSearchQuery } from '../../../../shared/src/search/parser/parser'
+import { parseSearchQuery, Literal } from '../../../../shared/src/search/parser/parser'
 import { EventLogResult } from '../backend'
 import { Link } from '../../../../shared/src/components/Link'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -78,13 +78,15 @@ export const RepositoriesPanel: React.FunctionComponent<{
                 </dd>
             ))}
             {searchEventLogs?.pageInfo.hasNextPage && (
-                <button
-                    type="button"
-                    className="btn btn-secondary test-repositories-panel-show-more"
-                    onClick={() => setItemsToLoad(current => current + pageSize)}
-                >
-                    Show more
-                </button>
+                <div className="text-center">
+                    <button
+                        type="button"
+                        className="btn btn-secondary test-repositories-panel-show-more"
+                        onClick={() => setItemsToLoad(current => current + pageSize)}
+                    >
+                        Show more
+                    </button>
+                </div>
             )}
         </div>
     )
@@ -121,14 +123,13 @@ function processRepositories(eventLogResult: EventLogResult): string[] | null {
                 ) {
                     if (
                         member.token.filterValue?.token.type === 'literal' &&
-                        recentlySearchedRepos[recentlySearchedRepos.length - 1] !== member.token.filterValue.token.value
+                        !recentlySearchedRepos.includes(member.token.filterValue.token.value)
                     ) {
                         recentlySearchedRepos.push(member.token.filterValue.token.value)
                     }
                     if (
                         member.token.filterValue?.token.type === 'quoted' &&
-                        recentlySearchedRepos[recentlySearchedRepos.length - 1] !==
-                            member.token.filterValue.token.quotedValue
+                        !recentlySearchedRepos.includes(member.token.filterValue.token.quotedValue)
                     ) {
                         recentlySearchedRepos.push(member.token.filterValue.token.quotedValue)
                     }
