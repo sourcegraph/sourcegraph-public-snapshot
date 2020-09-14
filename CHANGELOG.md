@@ -11,7 +11,20 @@ All notable changes to `src-cli` are documented in this file.
 
 ## Unreleased changes
 
+### Added
+
 - Campaigns specs now include an optional `author` property. (If not included, `src campaigns` generates default values for author name and email.) `src campaigns` now includes the name and email in all changeset specs that it generates.
+
+### Changed
+
+- Repositories without a default branch are skipped when applying/previewing a campaign spec. [#312](https://github.com/sourcegraph/src-cli/pull/312)
+- Log files produced when applying/previewing a campaign spec now have the `.log` file extension for easier opening. [#315](https://github.com/sourcegraph/src-cli/pull/315)
+
+### Fixed
+
+- Empty changeset specs without a diff are no longer uploaded as part of a campaign spec. [#313](https://github.com/sourcegraph/src-cli/pull/313)
+
+## 3.19.0
 
 ### Changed
 
