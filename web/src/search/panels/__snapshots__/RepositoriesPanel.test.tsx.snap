@@ -325,13 +325,17 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
             </span>
           </AnchorLink>
         </dd>
-        <button
-          className="btn btn-secondary test-repositories-panel-show-more"
-          onClick={[Function]}
-          type="button"
+        <div
+          className="text-center"
         >
-          Show more
-        </button>
+          <button
+            className="btn btn-secondary test-repositories-panel-show-more"
+            onClick={[Function]}
+            type="button"
+          >
+            Show more
+          </button>
+        </div>
       </div>
     }
     state="populated"
@@ -429,13 +433,17 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
               </a>
             </AnchorLink>
           </dd>
-          <button
-            className="btn btn-secondary test-repositories-panel-show-more"
-            onClick={[Function]}
-            type="button"
+          <div
+            className="text-center"
           >
-            Show more
-          </button>
+            <button
+              className="btn btn-secondary test-repositories-panel-show-more"
+              onClick={[Function]}
+              type="button"
+            >
+              Show more
+            </button>
+          </div>
         </div>
       </div>
     </div>
