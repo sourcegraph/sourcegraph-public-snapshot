@@ -17,7 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Site admins now have a button to log out users from the all users view. [#13647](https://github.com/sourcegraph/sourcegraph/pull/13647)
 - After changing their password, a user will be signed out from all devices, and will be required to sign in with the new password.
 - Sourcegraph watches the [advanced config files](https://docs.sourcegraph.com/admin/config/advanced_config_file) and automatically applies the changes to Sourcegraph's configuration when they change. For example this allows Sourcegraph to notice when Kubernetes updates ConfigMap for the configuration. [#13646](https://github.com/sourcegraph/sourcegraph/pull/13646)
-- Experimental: New homepage UI for Sourcegraph Server which shows the user their recent searches, repositories, files, and saved searches. It can be enabled with `experimentalFeatures.showEnterpriseHomePanels`.
+- Experimental: New homepage UI for Sourcegraph Server which shows the user their recent searches, repositories, files, and saved searches. It can be enabled with `experimentalFeatures.showEnterpriseHomePanels`. [#13407](https://github.com/sourcegraph/sourcegraph/issues/13407)
 
 ### Changed
 
