@@ -1,6 +1,8 @@
 import React from 'react'
+import { _fetchRecentFileViews, _fetchRecentSearches, _fetchSavedSearches } from '../panels/utils'
 import { createMemoryHistory } from 'history'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import { parseISO } from 'date-fns/esm'
 import { SearchPage, SearchPageProps } from './SearchPage'
 import { SearchPatternType } from '../../graphql-operations'
 import { Services } from '../../../../shared/src/api/client/services'
@@ -8,7 +10,6 @@ import { storiesOf } from '@storybook/react'
 import { ThemePreference } from '../../theme'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { WebStory } from '../../components/WebStory'
-import { _fetchSavedSearches, _fetchRecentSearches, _fetchRecentFileViews } from '../panels/utils'
 
 const history = createMemoryHistory()
 const defaultProps = (props: ThemeProps): SearchPageProps => ({
@@ -49,6 +50,7 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     fetchSavedSearches: _fetchSavedSearches,
     fetchRecentSearches: _fetchRecentSearches,
     fetchRecentFileViews: _fetchRecentFileViews,
+    now: () => parseISO('2020-09-16T23:15:01Z'),
 })
 
 const { add } = storiesOf('web/search/input/SearchPage', module).addParameters({

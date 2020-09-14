@@ -14,6 +14,9 @@ interface Props extends Pick<PatternTypeProps, 'patternType'> {
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
     fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult | null>
     fetchRecentFileViews: (userId: string, first: number) => Observable<EventLogResult | null>
+
+    /** Function that returns current time (for stability in visual tests). */
+    now?: () => Date
 }
 
 export const EnterpriseHomePanels: React.FunctionComponent<Props> = (props: Props) => (
