@@ -68,7 +68,7 @@ func New(dataSource, dbNameSuffix string) (*sql.DB, error) {
 		return nil, errors.Wrap(err, "DB not available")
 	}
 	configureConnectionPool(db)
-	registerPrometheusCollector(Global, dbNameSuffix)
+	registerPrometheusCollector(db, dbNameSuffix)
 	return db, nil
 }
 
