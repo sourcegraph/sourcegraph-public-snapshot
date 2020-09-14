@@ -12,6 +12,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 const port = "8080"
@@ -84,7 +85,11 @@ func main() {
 
 	log15.Root().SetHandler(log15.MultiHandler(
 		log15.StreamHandler(os.Stderr, log15.LogfmtFormat()),
-		log15.Must.FileHandler(filepath.Join(logDir, "log.txt"), log15.JsonFormat())))
+		log15.StreamHandler(&lumberjack.Logger{
+			Filename: filepath.Join(logDir, "search_blitz.log"),
+			MaxSize:  10, // Megabyte
+			MaxAge:   90, // days
+		}, log15.JsonFormat())))
 
 	ctx, cleanup := SignalSensitiveContext()
 	defer cleanup()
