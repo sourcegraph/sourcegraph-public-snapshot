@@ -30,7 +30,7 @@ interface Props
     extends SettingsCascadeProps<Settings>,
         KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         ThemeProps,
         ThemePreferenceProps,
         TelemetryProps,

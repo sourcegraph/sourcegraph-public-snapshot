@@ -30,15 +30,11 @@ exports[`CampaignNode campaign without description 1`] = `
   <span
     className="campaign-node__separator"
   />
-  <h2
-    className="m-0 campaign-node__badge"
+  <span
+    className="badge badge-success text-uppercase w-100"
   >
-    <span
-      className="badge badge-success text-uppercase w-100"
-    >
-      Open
-    </span>
-  </h2>
+    Open
+  </span>
   <div
     className="campaign-node__content"
   >
@@ -212,15 +208,11 @@ exports[`CampaignNode closed campaign 1`] = `
   <span
     className="campaign-node__separator"
   />
-  <h2
-    className="m-0 campaign-node__badge"
+  <span
+    className="badge badge-danger text-uppercase w-100"
   >
-    <span
-      className="badge badge-danger text-uppercase w-100"
-    >
-      Closed
-    </span>
-  </h2>
+    Closed
+  </span>
   <div
     className="campaign-node__content"
   >
@@ -402,15 +394,11 @@ exports[`CampaignNode open campaign 1`] = `
   <span
     className="campaign-node__separator"
   />
-  <h2
-    className="m-0 campaign-node__badge"
+  <span
+    className="badge badge-success text-uppercase w-100"
   >
-    <span
-      className="badge badge-success text-uppercase w-100"
-    >
-      Open
-    </span>
-  </h2>
+    Open
+  </span>
   <div
     className="campaign-node__content"
   >
@@ -592,15 +580,11 @@ exports[`CampaignNode open campaign on user page 1`] = `
   <span
     className="campaign-node__separator"
   />
-  <h2
-    className="m-0 campaign-node__badge"
+  <span
+    className="badge badge-success text-uppercase w-100"
   >
-    <span
-      className="badge badge-success text-uppercase w-100"
-    >
-      Open
-    </span>
-  </h2>
+    Open
+  </span>
   <div
     className="campaign-node__content"
   >
