@@ -20,3 +20,5 @@ steps:
     - docker image rm -f "$IMAGE"
   timeout_in_minutes: 20
   label: ':docker::arrow_right::chromium:'
+  agents:
+    queue: 'baremetal'
