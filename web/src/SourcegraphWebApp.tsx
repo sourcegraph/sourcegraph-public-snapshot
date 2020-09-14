@@ -37,7 +37,7 @@ import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import { LayoutRouteProps } from './routes'
-import { search, fetchSavedSearches, fetchRecentSearches, fetchRecentFiles } from './search/backend'
+import { search, fetchSavedSearches, fetchRecentSearches, fetchRecentFileViews } from './search/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { ThemePreference } from './theme'
@@ -420,7 +420,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     globbing={this.state.globbing}
                                     fetchSavedSearches={fetchSavedSearches}
                                     fetchRecentSearches={fetchRecentSearches}
-                                    fetchRecentFiles={fetchRecentFiles}
+                                    fetchRecentFileViews={fetchRecentFileViews}
                                 />
                             )}
                         />

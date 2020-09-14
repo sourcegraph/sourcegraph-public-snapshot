@@ -42,7 +42,7 @@ describe('RecentFilesPanel', () => {
         expect(listItems.at(1).text()).toStrictEqual('github.com/sourcegraph/sourcegraph › .eslintrc.js')
     })
 
-    test('files with missing data are not rendered', () => {
+    test('files with missing data can extract it from the URL if available', () => {
         const recentFiles = {
             nodes: [
                 {
@@ -54,6 +54,11 @@ describe('RecentFilesPanel', () => {
                     argument: '{}',
                     timestamp: '2020-09-10T22:55:06Z',
                     url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/go.mod',
+                },
+                {
+                    argument: '{}',
+                    timestamp: '2020-09-10T22:55:06Z',
+                    url: 'https://sourcegraph.test:3443/bitbucket.sgdev.org/SOURCEGRAPH/jsonrpc2',
                 },
             ],
             pageInfo: {
@@ -70,8 +75,9 @@ describe('RecentFilesPanel', () => {
 
         const component = mount(<RecentFilesPanel {...props} />)
         const listItems = component.find('.test-recent-files-item')
-        expect(listItems.length).toStrictEqual(1)
+        expect(listItems.length).toStrictEqual(2)
         expect(listItems.at(0).text()).toStrictEqual('github.com/sourcegraph/sourcegraph › .eslintrc.js')
+        expect(listItems.at(1).text()).toStrictEqual('ghe.sgdev.org/sourcegraph/gorilla-mux › go.mod')
     })
 
     test('Show More button shown when more items can be loaded', () => {

@@ -226,7 +226,7 @@ export const _fetchRecentSearches = (): Observable<EventLogResult | null> =>
         totalCount: 436,
     })
 
-export const _fetchRecentFiles = (): Observable<EventLogResult | null> =>
+export const _fetchRecentFileViews = (): Observable<EventLogResult | null> =>
     of({
         nodes: [
             {
