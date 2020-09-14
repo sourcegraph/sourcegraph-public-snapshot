@@ -148,7 +148,7 @@ func initTest(nameSuffix string) error {
 		}
 	}
 
-	if err := dbconn.ConnectToDB("dbname=" + dbname); err != nil {
+	if err := dbconn.SetupGlobalConnection("dbname=" + dbname); err != nil {
 		return err
 	}
 

@@ -95,8 +95,8 @@ func generate(log *log.Logger) (string, error) {
 		return "", fmt.Errorf("createdb: %s: %w", out, err)
 	}
 
-	if err := dbconn.ConnectToDB(dataSource); err != nil {
-		return "", fmt.Errorf("ConnectToDB: %w", err)
+	if err := dbconn.SetupGlobalConnection(dataSource); err != nil {
+		return "", fmt.Errorf("SetupGlobalConnection: %w", err)
 	}
 
 	// Migrate the codeintel db on top of the frontend one so we capture

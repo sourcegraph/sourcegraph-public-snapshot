@@ -91,7 +91,7 @@ func mustInitializeStore() store.Store {
 		}
 	})
 
-	if err := dbconn.ConnectToDB(postgresDSN); err != nil {
+	if err := dbconn.SetupGlobalConnection(postgresDSN); err != nil {
 		log.Fatalf("failed to connect to database: %s", err)
 	}
 
@@ -106,7 +106,7 @@ func mustInitializeCodeIntelDatabase() *sql.DB {
 		}
 	})
 
-	db, err := dbconn.NewConnectToDB(postgresDSN)
+	db, err := dbconn.New(postgresDSN)
 	if err != nil {
 		log.Fatalf("failed to connect to database: %s", err)
 	}

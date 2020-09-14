@@ -3,6 +3,7 @@ package readers
 import (
 	"context"
 	"database/sql"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -11,22 +12,29 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/cache"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/postgres"
 	sqlitestore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/sqlite/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/sqlite/util"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 func migrateToPostgres(bundleDir string, storeCache cache.StoreCache, db *sql.DB, bundleFilenames []string) error {
-	// TODO - filter out what already exists
-	// TODO - move bundle files to another directory for explicit deletion
+	ctx := context.Background()
 
-	log15.Info(
-		"Migrating bundle data to Postgres in background",
-		"numBundles", len(bundleFilenames),
-	)
+	bundleIDs, err := basestore.ScanInts(db.QueryContext(ctx, `SELECT dump_id FROM lsif_data_metadata`))
+	if err != nil {
+		return err
+	}
 
+	bundleIDMap := map[int]struct{}{}
+	for _, bundleID := range bundleIDs {
+		bundleIDMap[bundleID] = struct{}{}
+	}
+
+	updateIDs := map[string]int{}
 	for _, filename := range bundleFilenames {
 		bundleID, err := strconv.Atoi(filepath.Base(filepath.Dir(filename)))
 		if err != nil {
@@ -34,7 +42,24 @@ func migrateToPostgres(bundleDir string, storeCache cache.StoreCache, db *sql.DB
 			continue
 		}
 
-		if err := migrateBundleToPostgres(context.Background(), bundleID, filename, db); err != nil {
+		if _, ok := bundleIDMap[bundleID]; ok {
+			continue
+		}
+
+		updateIDs[filename] = bundleID
+	}
+
+	if len(updateIDs) == 0 {
+		return nil
+	}
+
+	log15.Info(
+		"Migrating bundle data to Postgres in background",
+		"numBundles", len(updateIDs),
+	)
+
+	for filename, bundleID := range updateIDs {
+		if err := migrateBundleToPostgres(ctx, bundleDir, bundleID, filename, db); err != nil {
 			log15.Error("Failed to migrate bundle", "err", err, "filename", filename)
 		}
 	}
@@ -43,7 +68,7 @@ func migrateToPostgres(bundleDir string, storeCache cache.StoreCache, db *sql.DB
 	return nil
 }
 
-func migrateBundleToPostgres(ctx context.Context, dumpID int, filename string, to dbutil.DB) (err error) {
+func migrateBundleToPostgres(ctx context.Context, bundleDir string, dumpID int, filename string, to dbutil.DB) (err error) {
 	from, closer, err := sqlitestore.Open(filename)
 	if err != nil {
 		return err
@@ -51,6 +76,14 @@ func migrateBundleToPostgres(ctx context.Context, dumpID int, filename string, t
 	defer func() {
 		if closeErr := closer(); closeErr != nil {
 			err = multierror.Append(err, closeErr)
+		}
+
+		if err == nil {
+			path := paths.DBDir(bundleDir, int64(dumpID))
+
+			if err := os.Rename(path, paths.DBBackupDir(bundleDir, int64(dumpID))); err != nil {
+				log15.Error("Failed to move bundle to backup directory", "err", err, "path", path)
+			}
 		}
 	}()
 

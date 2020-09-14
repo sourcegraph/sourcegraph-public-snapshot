@@ -29,27 +29,32 @@ import (
 
 var (
 	// Global is the global DB connection.
-	// Only use this after a call to ConnectToDB.
+	// Only use this after a call to SetupGlobalConnection.
 	Global *sql.DB
 
 	defaultDataSource      = env.Get("PGDATASOURCE", "", "Default dataSource to pass to Postgres. See https://godoc.org/github.com/lib/pq for more information.")
 	defaultApplicationName = env.Get("PGAPPLICATIONNAME", "sourcegraph", "The value of application_name appended to dataSource")
 )
 
-// ConnectToDB connects to the given DB and stores the handle globally.
+// SetupGlobalConnection connects to the given data source and stores the handle
+// globally.
 //
 // Note: github.com/lib/pq parses the environment as well. This function will
 // also use the value of PGDATASOURCE if supplied and dataSource is the empty
 // string.
-func ConnectToDB(dataSource string) (err error) {
-	Global, err = NewConnectToDB(dataSource)
+func SetupGlobalConnection(dataSource string) (err error) {
+	Global, err = New(dataSource)
 	// TODO - make sure this happens with other connections as well
 	registerPrometheusCollector(Global, "_app")
 	return err
 }
 
-// TODO - rename me
-func NewConnectToDB(dataSource string) (*sql.DB, error) {
+// New connects to the given data source and returns the handle.
+//
+// Note: github.com/lib/pq parses the environment as well. This function will
+// also use the value of PGDATASOURCE if supplied and dataSource is the empty
+// string.
+func New(dataSource string) (*sql.DB, error) {
 	// Force PostgreSQL session timezone to UTC.
 	if v, ok := os.LookupEnv("PGTZ"); ok && v != "UTC" && v != "utc" {
 		log15.Warn("Ignoring PGTZ environment variable; using PGTZ=UTC.", "ignoredPGTZ", v)
