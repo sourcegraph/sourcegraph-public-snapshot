@@ -1,6 +1,7 @@
 package oauth
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"strings"
@@ -9,7 +10,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"golang.org/x/oauth2"
 )
 
 func NewHandler(serviceType, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
@@ -17,6 +20,7 @@ func NewHandler(serviceType, authPrefix string, isAPIHandler bool, next http.Han
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Delegate to the auth flow handler
 		if !isAPIHandler && strings.HasPrefix(r.URL.Path, authPrefix+"/") {
+			r = withOAuthExternalHTTPClient(r)
 			oauthFlowHandler.ServeHTTP(w, r)
 			return
 		}
@@ -72,6 +76,14 @@ func newOAuthFlowHandler(serviceType string) http.Handler {
 		p.Callback.ServeHTTP(w, req)
 	}))
 	return mux
+}
+
+// withOAuthExternalHTTPClient updates client such that the
+// golang.org/x/oauth2 package will use our http client which is configured
+// with proxy and TLS settings/etc.
+func withOAuthExternalHTTPClient(r *http.Request) *http.Request {
+	ctx := context.WithValue(r.Context(), oauth2.HTTPClient, httpcli.ExternalHTTPClient())
+	return r.WithContext(ctx)
 }
 
 func getExactlyOneOAuthProvider() *Provider {
