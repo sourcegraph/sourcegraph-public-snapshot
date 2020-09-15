@@ -22,7 +22,7 @@ export const ExtensionPermissionModal: React.FunctionComponent<{
                     <p className="m-0">- read and change your Sourcegraph settings</p>
                     <div className="d-flex justify-content-end pt-5">
                         <button type="button" className="btn btn-outline-secondary mr-2" onClick={denyPermission}>
-                            No
+                            Cancel
                         </button>
                         <button type="button" className="btn btn-primary" onClick={givePermission}>
                             Yes, add {extensionName || extensionID}!
