@@ -21,6 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Experimental: New homepage UI for Sourcegraph Server which shows the user their recent searches, repositories, files, and saved searches. It can be enabled with `experimentalFeatures.showEnterpriseHomePanels`. [#13407](https://github.com/sourcegraph/sourcegraph/issues/13407)
 - To define repository groups (`search.repositoryGroups` in global, org, or user settings), you can now specify regular expressions in addition to single repository names. [#13730](https://github.com/sourcegraph/sourcegraph/pull/13730)
 - Files and directories can now be excluded from search by adding the file _.sourcegraph/ignore_ to the root directory of a repository. Each line in the _ignore_ file is interpreted as a globbing pattern. [#13690](https://github.com/sourcegraph/sourcegraph/pull/13690)
+- Structural search syntax now allows regular expressions in patterns. Additionally, `...` can now be used in place of `:[_]`. See the [documentation](https://docs.sourcegraph.com/@main/user/search/structural) for example syntax. [#13809](https://github.com/sourcegraph/sourcegraph/pull/13809)
 
 ### Changed
 
