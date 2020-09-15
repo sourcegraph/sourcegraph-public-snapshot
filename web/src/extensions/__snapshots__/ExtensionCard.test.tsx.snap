@@ -32,14 +32,11 @@ exports[`ExtensionCard renders 1`] = `
             className="mb-0 mr-1 text-truncate flex-1"
           >
             <a
+              className="font-weight-bold extension-card__link"
               href="/extensions/x/y"
               onClick={[Function]}
             >
-              <h4
-                className="d-inline"
-              >
-                y
-              </h4>
+              y
             </a>
             <span>
                by 
