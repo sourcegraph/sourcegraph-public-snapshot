@@ -232,16 +232,6 @@ type CodeIntelEventCategoryStatistics struct {
 type CodeIntelEventStatistics struct {
 	UsersCount     int32
 	EventsCount    *int32
-	EventLatencies *CodeIntelEventLatencies
-}
-
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type CodeIntelEventLatencies struct {
-	P50 float64
-	P90 float64
-	P99 float64
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
