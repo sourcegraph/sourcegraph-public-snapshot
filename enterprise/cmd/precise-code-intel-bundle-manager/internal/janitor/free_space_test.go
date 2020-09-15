@@ -27,7 +27,7 @@ func TestEvictBundlesStopsAfterFreeingDesiredSpace(t *testing.T) {
 	}
 
 	for id, size := range sizes {
-		path := filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d", id), "sqlite.db")
+		path := filepath.Join(bundleDir, "dbs", strconv.Itoa(id), "sqlite.db")
 		if err := makeFileWithSize(path, size); err != nil {
 			t.Fatalf("unexpected error creating file %s: %s", path, err)
 		}
@@ -77,7 +77,7 @@ func TestEvictBundlesStopsWithNoPrunableDatabases(t *testing.T) {
 	}
 
 	for id, size := range sizes {
-		path := filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d", id), "sqlite.db")
+		path := filepath.Join(bundleDir, "dbs", strconv.Itoa(id), "sqlite.db")
 		if err := makeFileWithSize(path, size); err != nil {
 			t.Fatalf("unexpected error creating file %s: %s", path, err)
 		}

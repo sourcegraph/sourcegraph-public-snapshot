@@ -44,7 +44,7 @@ func encodeIntCursor(val *int32) *graphqlutil.PageInfo {
 		return encodeCursor(nil)
 	}
 
-	str := fmt.Sprintf("%d", *val)
+	str := strconv.Itoa(*val)
 	return encodeCursor(&str)
 }
 

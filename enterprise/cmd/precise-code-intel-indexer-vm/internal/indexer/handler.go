@@ -98,7 +98,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 			"ignite", "run",
 			"--runtime", "docker",
 			"--network-plugin", "docker-bridge",
-			"--cpus", fmt.Sprintf("%d", h.options.FirecrackerNumCPUs),
+			"--cpus", strconv.Itoa(h.options.FirecrackerNumCPUs),
 			"--memory", h.options.FirecrackerMemory,
 			"--copy-files", fmt.Sprintf("%s:%s", repoDir, mountPoint),
 		}
@@ -143,7 +143,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 
 	indexArgs := []string{
 		"docker", "run", "--rm",
-		"--cpus", fmt.Sprintf("%d", h.options.FirecrackerNumCPUs),
+		"--cpus", strconv.Itoa(h.options.FirecrackerNumCPUs),
 		"--memory", h.options.FirecrackerMemory,
 		"-v", fmt.Sprintf("%s:/data", mountPoint),
 		"-w", "/data",
@@ -160,7 +160,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 
 	uploadArgs := []string{
 		"docker", "run", "--rm",
-		"--cpus", fmt.Sprintf("%d", h.options.FirecrackerNumCPUs),
+		"--cpus", strconv.Itoa(h.options.FirecrackerNumCPUs),
 		"--memory", h.options.FirecrackerMemory,
 		"-v", fmt.Sprintf("%s:/data", mountPoint),
 		"-w", "/data",

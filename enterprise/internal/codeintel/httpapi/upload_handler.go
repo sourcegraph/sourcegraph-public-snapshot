@@ -238,7 +238,7 @@ func (h *UploadHandler) handleEnqueueSinglePayload(r *http.Request, uploadArgs U
 	)
 
 	// older versions of src-cli expect a string
-	return enqueuePayload{fmt.Sprintf("%d", id)}, nil
+	return enqueuePayload{strconv.Itoa(id)}, nil
 }
 
 // handleEnqueueMultipartSetup handles the first request in a multipart upload. This creates a
@@ -268,7 +268,7 @@ func (h *UploadHandler) handleEnqueueMultipartSetup(r *http.Request, uploadArgs 
 	)
 
 	// older versions of src-cli expect a string
-	return enqueuePayload{fmt.Sprintf("%d", id)}, nil
+	return enqueuePayload{strconv.Itoa(id)}, nil
 }
 
 // handleEnqueueMultipartUpload handles a partial upload in a multipart upload. This proxies the

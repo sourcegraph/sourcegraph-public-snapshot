@@ -20,7 +20,7 @@ func (r printableRank) String() string {
 	if r.value == nil {
 		return "nil"
 	}
-	return fmt.Sprintf("%d", *r.value)
+	return strconv.Itoa(*r.value)
 }
 
 type printableTime struct{ value *time.Time }
