@@ -42,6 +42,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed a bug where we returned repositories with invalid revisions in the search results. Now, if a user specifies an invalid revision, we show an alert. [#13271](https://github.com/sourcegraph/sourcegraph/pull/13271)
 - Previously it wasn't possible to search for certain patterns containing `:` because they would not be considered valid filters. We made these checks less strict. [#10920](https://github.com/sourcegraph/sourcegraph/pull/10920)
 - Logging out of a user's account will now invalidate all user sessions, not just the session that was signed out of. Resetting or changing the user's password will also invalidate all sesions, requiring the user to sign in with their new password. [#13647](https://github.com/sourcegraph/sourcegraph/pull/13647)
+- URL information will no longer be leaked by the HTTP referer header. This prevents the user's password reset code from being leaked. [#13804]https://github.com/sourcegraph/sourcegraph/pull/13804
 - GitLab oauth2 login will respect `tls.external` site setting. [#13814](https://github.com/sourcegraph/sourcegraph/pull/13814)
 
 ### Removed
