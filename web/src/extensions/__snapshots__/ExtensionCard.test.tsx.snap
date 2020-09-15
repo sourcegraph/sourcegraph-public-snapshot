@@ -5,7 +5,7 @@ exports[`ExtensionCard renders 1`] = `
   className="d-flex"
 >
   <div
-    className="extension-card card position-relative flex-1"
+    className="extension-card card position-relative flex-1 text-muted"
   >
     <div
       className="extension-card__shadow rounded"
@@ -35,13 +35,13 @@ exports[`ExtensionCard renders 1`] = `
               href="/extensions/x/y"
               onClick={[Function]}
             >
-              <strong>
+              <h4
+                className="d-inline"
+              >
                 y
-              </strong>
+              </h4>
             </a>
-            <span
-              className="text-muted"
-            >
+            <span>
                by 
               x
             </span>
@@ -51,7 +51,7 @@ exports[`ExtensionCard renders 1`] = `
           className="mt-1"
         >
           <div
-            className="text-muted text-truncate"
+            className="text-truncate"
           >
             d
           </div>

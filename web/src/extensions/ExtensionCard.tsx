@@ -114,6 +114,7 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
             <div
                 className={classNames('extension-card card position-relative flex-1', {
                     'alert alert-success p-0 m-0 extension-card--enabled': change === 'enabled',
+                    'text-muted': change !== 'enabled',
                 })}
             >
                 {/* Visual feedback: shadow when extension is enabled */}
@@ -142,56 +143,51 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
                         ) : null}
                     </div>
                     {/* Item 2: Text */}
-                    {change === 'enabled' ? (
-                        <span className="mr-1">
-                            <span className="font-weight-bold">{name}</span> is now enabled in code search results.{' '}
-                            <Link to={`/extensions/${extension.id}`} className="extension-card__link alert-link">
-                                See how it works
-                            </Link>
-                        </span>
-                    ) : (
-                        <div className="text-truncate w-100">
-                            <div className="d-flex align-items-center">
-                                <span className="mb-0 mr-1 text-truncate flex-1">
-                                    <Link
-                                        to={`/extensions/${
-                                            extension.registryExtension
-                                                ? extension.registryExtension.extensionIDWithoutRegistry
-                                                : extension.id
-                                        }`}
+                    <div className="text-truncate w-100">
+                        <div className="d-flex align-items-center">
+                            <span className="mb-0 mr-1 text-truncate flex-1">
+                                <Link
+                                    to={`/extensions/${
+                                        extension.registryExtension
+                                            ? extension.registryExtension.extensionIDWithoutRegistry
+                                            : extension.id
+                                    }`}
+                                >
+                                    <h4
+                                        className={classNames('d-inline', {
+                                            'alert-link': change === 'enabled',
+                                        })}
                                     >
-                                        <strong>{name}</strong>
-                                    </Link>
-                                    <span className="text-muted"> by {publisher}</span>
-                                </span>
+                                        {name}
+                                    </h4>
+                                </Link>
+                                <span> by {publisher}</span>
+                            </span>
 
-                                {extension.registryExtension?.isWorkInProgress && (
-                                    <WorkInProgressBadge
-                                        viewerCanAdminister={extension.registryExtension.viewerCanAdminister}
-                                    />
-                                )}
-                            </div>
-                            <div className="mt-1">
-                                {extension.manifest ? (
-                                    isErrorLike(extension.manifest) ? (
-                                        <span className="text-danger small" title={extension.manifest.message}>
-                                            <WarningIcon className="icon-inline" /> Invalid manifest
-                                        </span>
-                                    ) : (
-                                        extension.manifest.description && (
-                                            <div className="text-muted text-truncate">
-                                                {extension.manifest.description}
-                                            </div>
-                                        )
-                                    )
-                                ) : (
-                                    <span className="text-warning small">
-                                        <WarningIcon className="icon-inline" /> No manifest
-                                    </span>
-                                )}
-                            </div>
+                            {extension.registryExtension?.isWorkInProgress && (
+                                <WorkInProgressBadge
+                                    viewerCanAdminister={extension.registryExtension.viewerCanAdminister}
+                                />
+                            )}
                         </div>
-                    )}
+                        <div className="mt-1">
+                            {extension.manifest ? (
+                                isErrorLike(extension.manifest) ? (
+                                    <span className="text-danger small" title={extension.manifest.message}>
+                                        <WarningIcon className="icon-inline" /> Invalid manifest
+                                    </span>
+                                ) : (
+                                    extension.manifest.description && (
+                                        <div className="text-truncate">{extension.manifest.description}</div>
+                                    )
+                                )
+                            ) : (
+                                <span className="text-warning small">
+                                    <WarningIcon className="icon-inline" /> No manifest
+                                </span>
+                            )}
+                        </div>
+                    </div>
                     {/* Item 3: Toggle */}
                     {subject &&
                         (subject.viewerCanAdminister ? (
