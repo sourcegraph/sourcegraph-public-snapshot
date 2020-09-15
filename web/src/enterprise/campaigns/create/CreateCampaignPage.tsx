@@ -7,6 +7,7 @@ import { AuthenticatedUser } from '../../../auth'
 import helloWorldSample from './samples/empty.campaign.yaml'
 import combySample from './samples/comby.campaign.yaml'
 import goImportsSample from './samples/go-imports.campaign.yaml'
+import minimalSample from './samples/minimal.campaign.yaml'
 import classNames from 'classnames'
 import { highlightCodeSafe } from '../../../../../shared/src/util/markdown'
 
@@ -42,6 +43,7 @@ const samples: Sample[] = [
     { name: 'hello-world.campaign.yaml', file: helloWorldSample },
     { name: 'modify-with-comby.campaign.yaml', file: combySample },
     { name: 'update-go-imports.campaign.yaml', file: goImportsSample },
+    { name: 'minimal.campaign.yaml', file: minimalSample },
 ]
 
 export interface CreateCampaignPageProps extends BreadcrumbSetters {
@@ -86,7 +88,7 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                     campaigns. We recommend committing it to source control.
                 </p>
                 <h4>Examples:</h4>
-                <ul className="nav nav-tabs">
+                <ul className="nav nav-pills mb-2">
                     {samples.map(sample => (
                         <SampleTabHeader
                             key={sample.name}
@@ -96,7 +98,7 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                         />
                     ))}
                 </ul>
-                <div className="p-3 mb-4 pt-0 border border-top-0">
+                <div className="p-3 mb-4 border">
                     <pre className="m-0" dangerouslySetInnerHTML={highlightedSample} />
                 </div>
                 <h2>2: Preview the campaign with Sourcegraph CLI</h2>
