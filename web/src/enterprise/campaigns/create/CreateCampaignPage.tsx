@@ -39,9 +39,9 @@ interface Sample {
 }
 
 const samples: Sample[] = [
-    { name: 'Hello world', file: helloWorldSample },
-    { name: 'Modify code using comby', file: combySample },
-    { name: 'Update go imports', file: goImportsSample },
+    { name: 'hello-world.campaign.yaml', file: helloWorldSample },
+    { name: 'modify-with-comby.campaign.yaml', file: combySample },
+    { name: 'update-go-imports.campaign.yaml', file: goImportsSample },
 ]
 
 export interface CreateCampaignPageProps extends BreadcrumbSetters {
