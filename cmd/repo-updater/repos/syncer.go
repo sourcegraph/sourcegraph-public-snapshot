@@ -3,7 +3,9 @@ package repos
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"github.com/google/go-cmp/cmp"
 	"sort"
 	"strconv"
 	"strings"
@@ -677,6 +679,24 @@ func newDiff(svc *ExternalService, sourced, stored []*Repo) (diff Diff) {
 
 			diff.Deleted = append(diff.Deleted, old)
 		} else if old.Update(src) {
+
+			// TODO: Temp logging
+			if svc != nil && svc.ID == 8 {
+				penc := func(x interface{}) string {
+					data, _ := json.MarshalIndent(x, "", "  ")
+					return string(data)
+				}
+
+				oldString := penc(old)
+				newString := penc(src)
+
+				if diff := cmp.Diff(oldString, newString); diff != "" {
+					fmt.Println(old.URI)
+					fmt.Println(diff)
+				}
+			}
+			// TODO: Remove temp logging
+
 			diff.Modified = append(diff.Modified, old)
 		} else {
 			diff.Unmodified = append(diff.Unmodified, old)
