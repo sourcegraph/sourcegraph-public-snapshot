@@ -180,11 +180,11 @@ func TestReadConfig(t *testing.T) {
 				}
 				*configPath = filePath
 			}
-      
+
 			if err := os.Setenv("SRC_HEADER_FOO", test.envFooHeader); err != nil {
 				t.Fatal(err)
 			}
-      
+
 			config, err := readConfig()
 			if diff := cmp.Diff(test.want, config); diff != "" {
 				t.Errorf("config: %v", diff)
