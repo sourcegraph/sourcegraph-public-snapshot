@@ -1,4 +1,4 @@
-package secrets
+package secret
 
 import (
 	"database/sql/driver"
@@ -19,7 +19,6 @@ func (v *EncryptedStringValue) Value() (driver.Value, error) {
 }
 
 func (v *EncryptedStringValue) Scan(src interface{}) error {
-
 	var source []byte
 
 	switch src.(type) {
@@ -29,8 +28,6 @@ func (v *EncryptedStringValue) Scan(src interface{}) error {
 			return fmt.Errorf("expected base64 encoded string: %v", err)
 		}
 		source = s
-	case []byte:
-		source = src.([]byte)
 	default:
 		return errors.New("incompatible type for EncryptedStringValue")
 	}
@@ -41,4 +38,8 @@ func (v *EncryptedStringValue) Scan(src interface{}) error {
 	}
 	*v = EncryptedStringValue(plaintext)
 	return nil
+}
+
+func (v *EncryptedStringValue) String() string {
+	return string(*v)
 }

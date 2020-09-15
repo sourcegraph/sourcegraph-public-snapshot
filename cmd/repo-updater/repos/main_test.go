@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"testing"
 
-	secretsPkg "github.com/sourcegraph/sourcegraph/internal/secrets"
+	"github.com/sourcegraph/sourcegraph/internal/secret"
 
 	"github.com/inconshreveable/log15"
 )
@@ -25,6 +25,6 @@ func TestMain(m *testing.M) {
 	if !testing.Verbose() {
 		log15.Root().SetHandler(log15.DiscardHandler())
 	}
-	secretsPkg.MustInit()
+	secret.MustInit()
 	os.Exit(m.Run())
 }

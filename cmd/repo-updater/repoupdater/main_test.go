@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/inconshreveable/log15"
-	secretsPkg "github.com/sourcegraph/sourcegraph/internal/secrets"
+	"github.com/sourcegraph/sourcegraph/internal/secret"
 )
 
 func TestMain(m *testing.M) {
@@ -14,6 +14,6 @@ func TestMain(m *testing.M) {
 	if !testing.Verbose() {
 		log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
 	}
-	secretsPkg.MustInit()
+	secret.MustInit()
 	os.Exit(m.Run())
 }

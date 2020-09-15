@@ -11,4 +11,4 @@ being used for encryption
 The secondaryKey is only required when key rotation is desired and is not required to perform encryption.
 
 */
-package secrets
+package secret

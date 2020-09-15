@@ -13,7 +13,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	secretPkg "github.com/sourcegraph/sourcegraph/internal/secrets"
+	"github.com/sourcegraph/sourcegraph/internal/secret"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -52,11 +52,11 @@ func (s *userExternalAccounts) LookupUserAndSave(ctx context.Context, spec extsv
 		return Mocks.ExternalAccounts.LookupUserAndSave(spec, data)
 	}
 
-	var esData, esAuthData secretPkg.EncryptedStringValue
+	var esData, esAuthData secret.EncryptedStringValue
 	encAuth := string(*data.AuthData)
 	encData := string(*data.Data)
-	esAuthData = secretPkg.EncryptedStringValue(encAuth)
-	esData = secretPkg.EncryptedStringValue(encData)
+	esAuthData = secret.EncryptedStringValue(encAuth)
+	esData = secret.EncryptedStringValue(encData)
 	err = dbconn.Global.QueryRowContext(ctx, `
 UPDATE user_external_accounts SET auth_data=$5, account_data=$6, updated_at=now()
 WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND deleted_at IS NULL
@@ -122,11 +122,11 @@ WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND d
 		return s.insert(ctx, tx, userID, spec, data)
 	}
 
-	var esData, esAuthData secretPkg.EncryptedStringValue
+	var esData, esAuthData secret.EncryptedStringValue
 	encAuth := string(*data.AuthData)
 	encData := string(*data.Data)
-	esAuthData = secretPkg.EncryptedStringValue(encAuth)
-	esData = secretPkg.EncryptedStringValue(encData)
+	esAuthData = secret.EncryptedStringValue(encAuth)
+	esData = secret.EncryptedStringValue(encData)
 	// Update the external account (it exists).
 	res, err := tx.ExecContext(ctx, `
 UPDATE user_external_accounts SET auth_data=$6, account_data=$7, updated_at=now()
@@ -181,8 +181,8 @@ func (s *userExternalAccounts) CreateUserAndSave(ctx context.Context, newUser Ne
 }
 
 func (s *userExternalAccounts) insert(ctx context.Context, tx *sql.Tx, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error {
-	esData := secretPkg.EncryptedStringValue(string(*data.Data))
-	esAuthData := secretPkg.EncryptedStringValue(string(*data.AuthData))
+	esData := secret.EncryptedStringValue(string(*data.Data))
+	esAuthData := secret.EncryptedStringValue(string(*data.AuthData))
 
 	_, err := tx.ExecContext(ctx, `
 INSERT INTO user_external_accounts(user_id, service_type, service_id, client_id, account_id, auth_data, account_data)
@@ -315,7 +315,7 @@ func (*userExternalAccounts) listBySQL(ctx context.Context, querySuffix *sqlf.Qu
 	var results []*extsvc.Account
 	defer rows.Close()
 	for rows.Next() {
-		var esData, esAuthData secretPkg.EncryptedStringValue
+		var esData, esAuthData secret.EncryptedStringValue
 		var o extsvc.Account
 		if err := rows.Scan(&o.ID, &o.UserID, &o.ServiceType, &o.ServiceID, &o.ClientID, &o.AccountID, &esAuthData, &esData, &o.CreatedAt, &o.UpdatedAt); err != nil {
 			return nil, err
@@ -343,7 +343,7 @@ func (*userExternalAccounts) listSQL(opt ExternalAccountsListOptions) (conds []*
 }
 
 func (*userExternalAccounts) EncryptTable(ctx context.Context) error {
-	if !secretPkg.ConfiguredToEncrypt() {
+	if !secret.ConfiguredToEncrypt() {
 		return nil
 	}
 
@@ -380,13 +380,13 @@ func (*userExternalAccounts) EncryptTable(ctx context.Context) error {
 			authData   []byte
 			authConfig []byte
 		)
-		if secretPkg.ConfiguredToRotate() {
-			authData, err = secretPkg.RotateEncryption(*a.AuthData)
+		if secret.ConfiguredToRotate() {
+			authData, err = secret.RotateEncryption(*a.AuthData)
 			if err != nil {
 				return err
 			}
 
-			authConfig, err = secretPkg.RotateEncryption(*a.Data)
+			authConfig, err = secret.RotateEncryption(*a.Data)
 			if err != nil {
 				return err
 			}
@@ -397,12 +397,12 @@ func (*userExternalAccounts) EncryptTable(ctx context.Context) error {
 			}
 
 		} else {
-			authData, err = secretPkg.EncryptBytes(*a.AuthData)
+			authData, err = secret.EncryptBytes(*a.AuthData)
 			if err != nil {
 				return err
 			}
 
-			authConfig, err = secretPkg.EncryptBytes(*a.Data)
+			authConfig, err = secret.EncryptBytes(*a.Data)
 			if err != nil {
 				return err
 			}

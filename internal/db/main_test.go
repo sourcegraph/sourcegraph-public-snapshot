@@ -7,7 +7,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	secretsPkg "github.com/sourcegraph/sourcegraph/internal/secrets"
+	"github.com/sourcegraph/sourcegraph/internal/secret"
 )
 
 func TestMain(m *testing.M) {
@@ -16,6 +16,6 @@ func TestMain(m *testing.M) {
 		log15.Root().SetHandler(log15.DiscardHandler())
 	}
 
-	secretsPkg.MustInit()
+	secret.MustInit()
 	os.Exit(m.Run())
 }
