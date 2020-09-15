@@ -210,7 +210,7 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
                 {/* Visual feedback: alert when extension is disabled */}
                 {change === 'disabled' && (
                     <div className="alert alert-secondary px-2 py-1 extension-card__disabled-feedback">
-                        <strong>{name}</strong> is off
+                        <span className="font-weight-semibold">{name}</span> is off
                     </div>
                 )}
             </div>
