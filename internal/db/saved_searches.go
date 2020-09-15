@@ -1,11 +1,9 @@
 package db
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -349,65 +347,4 @@ func (s *savedSearches) Delete(ctx context.Context, id int32) (err error) {
 		return err
 	}
 	return nil
-}
-
-func (*savedSearches) EncryptTable(ctx context.Context) error {
-	if !secret.ConfiguredToEncrypt() {
-		return nil
-	}
-
-	q := sqlf.Sprintf("SELECT id, query from saved_searches where query like %s%%", secret.KeyHash())
-	tx, err := dbconn.Global.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err != nil {
-			rollErr := tx.Rollback()
-			if rollErr != nil {
-				err = multierror.Append(err, rollErr)
-			}
-			return
-		}
-		err = tx.Commit()
-	}()
-
-	rows, err := tx.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args())
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var sq types.SavedSearch
-		err := rows.Scan(&sq.ID, &sq.Query)
-		if err != nil {
-			return err
-		}
-
-		var cryptBytes []byte
-		byteQuery := []byte(sq.Query)
-		if secret.ConfiguredToRotate() {
-			cryptBytes, err = secret.RotateEncryption(byteQuery)
-			if err != nil {
-				return err
-			}
-			if bytes.Equal(byteQuery, cryptBytes) {
-				continue
-			}
-		} else {
-			cryptBytes, err = secret.EncodeAndEncryptBytes(byteQuery)
-			if err != nil {
-				return err
-			}
-			if bytes.Equal(byteQuery, cryptBytes) {
-				continue
-			}
-		}
-
-		updateQ := sqlf.Sprintf("UPDATE saved_searches SET query = %s WHERE id=%d", cryptBytes, sq.ID)
-		_, err = tx.ExecContext(ctx, updateQ.Query(sqlf.PostgresBindVar), updateQ.Args())
-		return err
-	}
-	return rows.Err()
 }

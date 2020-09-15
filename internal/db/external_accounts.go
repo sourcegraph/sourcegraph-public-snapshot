@@ -1,7 +1,6 @@
 package db
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -340,92 +339,6 @@ func (*userExternalAccounts) listSQL(opt ExternalAccountsListOptions) (conds []*
 		conds = append(conds, sqlf.Sprintf("(service_type=%s AND service_id=%s AND client_id=%s)", opt.ServiceType, opt.ServiceID, opt.ClientID))
 	}
 	return conds
-}
-
-func (*userExternalAccounts) EncryptTable(ctx context.Context) error {
-	if !secret.ConfiguredToEncrypt() {
-		return nil
-	}
-
-	q := sqlf.Sprintf("SELECT id,auth_data,account_data from user_external_accounts")
-	tx, err := dbconn.Global.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err != nil {
-			rollErr := tx.Rollback()
-			if rollErr != nil {
-				err = multierror.Append(err, rollErr)
-			}
-			return
-		}
-		err = tx.Commit()
-	}()
-
-	rows, err := tx.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args())
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var a extsvc.Account
-		err := rows.Scan(&a.ID, &a.AuthData, &a.AccountData)
-		if err != nil {
-			return err
-		}
-
-		var (
-			authData   []byte
-			authConfig []byte
-		)
-		if secret.ConfiguredToRotate() {
-			authData, err = secret.RotateEncryption(*a.AuthData)
-			if err != nil {
-				return err
-			}
-
-			authConfig, err = secret.RotateEncryption(*a.Data)
-			if err != nil {
-				return err
-			}
-
-			// if the values are the same after rotation, there's nothing to do here
-			if bytes.Equal(authConfig, *a.AuthData) && bytes.Equal(authData, *a.Data) {
-				continue
-			}
-
-		} else {
-			authData, err = secret.EncryptBytes(*a.AuthData)
-			if err != nil {
-				return err
-			}
-
-			authConfig, err = secret.EncryptBytes(*a.Data)
-			if err != nil {
-				return err
-			}
-
-			if bytes.Equal(authConfig, *a.AuthData) && bytes.Equal(authData, *a.Data) {
-				continue
-			}
-		}
-
-		// now, time for an update!
-		updateQ := sqlf.Sprintf(
-			"UPDATE user_external_accounts "+
-				"SET auth_data=%s, account_data=%s "+
-				"WHERE id=%d", a.AuthData, a.AccountData, &a.ID)
-		_, err = tx.ExecContext(ctx, updateQ.Query(sqlf.PostgresBindVar), updateQ.Args())
-		return err
-	}
-	err = rows.Err()
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // MockExternalAccounts mocks the Stores.ExternalAccounts DB store.
