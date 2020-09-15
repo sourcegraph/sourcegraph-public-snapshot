@@ -249,9 +249,9 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 				"url":           r.URL.String(),
 				"routename":     routeName,
 				"userAgent":     r.UserAgent(),
-				"user":          fmt.Sprintf("%d", userID),
+				"user":          strconv.Itoa(userID),
 				"xForwardedFor": r.Header.Get("X-Forwarded-For"),
-				"written":       fmt.Sprintf("%d", m.Written),
+				"written":       strconv.Itoa(m.Written),
 				"duration":      m.Duration.String(),
 				"graphql_error": strconv.FormatBool(gqlErr),
 			})

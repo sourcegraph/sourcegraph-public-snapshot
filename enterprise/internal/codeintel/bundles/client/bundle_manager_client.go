@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/efritz/glock"
@@ -228,7 +229,7 @@ func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int) (
 // error.
 func (c *bundleManagerClientImpl) getUploadChunk(ctx context.Context, w io.Writer, url *url.URL, seek int64) (int64, error) {
 	q := url.Query()
-	q.Set("seek", fmt.Sprintf("%d", seek))
+	q.Set("seek", strconv.Itoa(seek))
 	url.RawQuery = q.Encode()
 
 	body, err := c.do(ctx, "GET", url, nil)
@@ -291,7 +292,7 @@ func (c *bundleManagerClientImpl) sendPart(ctx context.Context, bundleID int, fi
 func (c *bundleManagerClientImpl) Exists(ctx context.Context, bundleIDs []int) (target map[int]bool, _ error) {
 	var bundleIDStrings []string
 	for _, bundleID := range bundleIDs {
-		bundleIDStrings = append(bundleIDStrings, fmt.Sprintf("%d", bundleID))
+		bundleIDStrings = append(bundleIDStrings, strconv.Itoa(bundleID))
 	}
 
 	url, err := makeURL(c.bundleManagerURL, "exists", map[string]interface{}{
