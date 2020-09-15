@@ -73,7 +73,7 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                     </>
                 }
             />
-            <div className="col-md-12 col-lg-10 offset-lg-1 pt-3">
+            <div className="pt-3">
                 <h2>1: Write a campaign spec YAML file</h2>
                 <p>
                     The campaign spec (
