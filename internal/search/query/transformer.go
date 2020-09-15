@@ -584,8 +584,11 @@ func escapeParens(s string) string {
 // escapeParensHeuristic escapes certain parentheses in search patterns (see escapeParens).
 func escapeParensHeuristic(nodes []Node) []Node {
 	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
+		if !annotation.Labels.isSet(Quoted) {
+			value = escapeParens(value)
+		}
 		return Pattern{
-			Value:      escapeParens(value),
+			Value:      value,
 			Negated:    negated,
 			Annotation: annotation,
 		}
