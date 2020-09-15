@@ -1,9 +1,10 @@
 import React from 'react'
+import { _fetchRecentFileViews, _fetchRecentSearches, _fetchSavedSearches, authUser } from './utils'
 import { EnterpriseHomePanels } from './EnterpriseHomePanels'
+import { parseISO } from 'date-fns'
 import { SearchPatternType } from '../../graphql-operations'
 import { storiesOf } from '@storybook/react'
 import { WebStory } from '../../components/WebStory'
-import { authUser, _fetchSavedSearches, _fetchRecentSearches, _fetchRecentFileViews } from './utils'
 
 const { add } = storiesOf('web/search/panels/EnterpriseHomePanels', module).addParameters({
     design: {
@@ -19,6 +20,7 @@ const props = {
     fetchSavedSearches: _fetchSavedSearches,
     fetchRecentSearches: _fetchRecentSearches,
     fetchRecentFileViews: _fetchRecentFileViews,
+    now: () => parseISO('2020-09-16T23:15:01Z'),
 }
 
 add('Panels', () => <WebStory>{() => <EnterpriseHomePanels {...props} />}</WebStory>)

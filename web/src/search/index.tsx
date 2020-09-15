@@ -171,6 +171,9 @@ export interface EnterpriseHomePanelsProps {
     fetchSavedSearches: () => Observable<ISavedSearch[]>
     fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult | null>
     fetchRecentFileViews: (userId: string, first: number) => Observable<EventLogResult | null>
+
+    /** Function that returns current time (for stability in visual tests). */
+    now?: () => Date
 }
 
 /**
