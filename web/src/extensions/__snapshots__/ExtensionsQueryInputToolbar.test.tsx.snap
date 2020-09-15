@@ -39,19 +39,11 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
     </button>
     <button
       className="btn btn-sm mr-2 btn-outline-secondary"
-      data-test-extension-category="Code Analysis"
+      data-test-extension-category="Code analysis"
       onClick={[Function]}
       type="button"
     >
-      Code Analysis
-    </button>
-    <button
-      className="btn btn-sm mr-2 btn-outline-secondary"
-      data-test-extension-category="Other"
-      onClick={[Function]}
-      type="button"
-    >
-      Other
+      Code analysis
     </button>
     <button
       className="btn btn-sm mr-2 btn-outline-secondary"
@@ -60,6 +52,14 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
       type="button"
     >
       Programming languages
+    </button>
+    <button
+      className="btn btn-sm mr-2 btn-outline-secondary"
+      data-test-extension-category="Other"
+      onClick={[Function]}
+      type="button"
+    >
+      Other
     </button>
   </div>
   <div
@@ -155,19 +155,11 @@ exports[`ExtensionsQueryInputToolbar shows category in query as selected 1`] = `
     </button>
     <button
       className="btn btn-sm mr-2 btn-outline-secondary"
-      data-test-extension-category="Code Analysis"
+      data-test-extension-category="Code analysis"
       onClick={[Function]}
       type="button"
     >
-      Code Analysis
-    </button>
-    <button
-      className="btn btn-sm mr-2 btn-outline-secondary"
-      data-test-extension-category="Other"
-      onClick={[Function]}
-      type="button"
-    >
-      Other
+      Code analysis
     </button>
     <button
       className="btn btn-sm mr-2 btn-outline-secondary"
@@ -176,6 +168,14 @@ exports[`ExtensionsQueryInputToolbar shows category in query as selected 1`] = `
       type="button"
     >
       Programming languages
+    </button>
+    <button
+      className="btn btn-sm mr-2 btn-outline-secondary"
+      data-test-extension-category="Other"
+      onClick={[Function]}
+      type="button"
+    >
+      Other
     </button>
   </div>
   <div

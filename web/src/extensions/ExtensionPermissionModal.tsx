@@ -13,6 +13,7 @@ export const ExtensionPermissionModal: React.FunctionComponent<{
 
     return (
         <ModalContainer
+            className="justify-content-center"
             component={
                 <div className="extension-permission-modal p-4">
                     <h3>Add {extensionName || extensionID} Sourcegraph extension?</h3>
