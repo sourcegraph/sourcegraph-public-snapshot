@@ -95,17 +95,25 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({
 
     if (changesetCountsOverTime.length <= 1) {
         return (
-            <p>
-                <em>Burndown chart will be shown when there is more than 1 day of data.</em>
-            </p>
+            <div className="col-md-8 offset-md-2 col-sm-12 card mt-5">
+                <div className="card-body p-5">
+                    <h2 className="text-center mb-4">The burndown chart requires 2 days of data</h2>
+                    <p>
+                        Come back in a few days and we'll be able to show you data on how your campaign is progressing!
+                    </p>
+                </div>
+            </div>
         )
     }
     const hasEntries = changesetCountsOverTime.some(counts => counts.total > 0)
     if (!hasEntries) {
         return (
-            <p>
-                <em>Burndown chart will be shown when data is available.</em>
-            </p>
+            <div className="col-md-8 offset-md-2 col-sm-12 card mt-5">
+                <div className="card-body p-5">
+                    <h2 className="text-center mb-4">Burndown chart is not available</h2>
+                    <p>The burndown chart will be shown when data is available.</p>
+                </div>
+            </div>
         )
     }
     return (

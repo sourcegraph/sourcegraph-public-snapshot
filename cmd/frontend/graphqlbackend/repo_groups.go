@@ -21,7 +21,7 @@ func (r *schemaResolver) RepoGroups(ctx context.Context) ([]*repoGroup, error) {
 		return nil, err
 	}
 
-	groupsByName, err := resolveRepoGroups(settings)
+	groupsByName, _, err := resolveRepoGroups(settings)
 	if err != nil {
 		return nil, err
 	}

@@ -16,7 +16,7 @@ interface SignInPageProps {
 }
 
 export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
-    useEffect(() => eventLogger.logViewEvent('SignIn', false))
+    useEffect(() => eventLogger.logViewEvent('SignIn', null, false))
 
     if (props.authenticatedUser) {
         const returnTo = getReturnTo(props.location)

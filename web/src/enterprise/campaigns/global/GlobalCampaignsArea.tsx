@@ -15,7 +15,6 @@ import { CreateCampaignPageProps } from '../create/CreateCampaignPage'
 import { CampaignDetailsPageProps } from '../detail/CampaignDetailsPage'
 import { CampaignClosePageProps } from '../close/CampaignClosePage'
 import { CampaignsDotComPageProps } from './marketing/CampaignsDotComPage'
-import { Link } from '../../../../../shared/src/components/Link'
 
 const CampaignListPage = lazyComponent<CampaignListPageProps, 'CampaignListPage'>(
     () => import('../list/CampaignListPage'),
@@ -81,14 +80,14 @@ export const AuthenticatedCampaignsArea = withAuthenticatedUser<AuthenticatedPro
         useMemo(
             () => ({
                 key: 'CampaignsArea',
-                element: <Link to={match.url}>Campaigns</Link>,
+                link: { to: match.url, label: 'Campaigns' },
             }),
             [match.url]
         )
     )
     return (
         <div className="w-100 web-content">
-            <Breadcrumbs breadcrumbs={outerProps.breadcrumbs} />
+            <Breadcrumbs breadcrumbs={outerProps.breadcrumbs} location={outerProps.location} />
             <div className="container">
                 {/* eslint-disable react/jsx-no-bind */}
                 <Switch>
@@ -120,7 +119,7 @@ export const UserCampaignsArea = withAuthenticatedUser<
         useMemo(
             () => ({
                 key: 'CampaignsArea',
-                element: <Link to={match.url}>Campaigns</Link>,
+                link: { to: match.url, label: 'Campaigns' },
             }),
             [match.url]
         )
@@ -130,7 +129,7 @@ export const UserCampaignsArea = withAuthenticatedUser<
     }
     return (
         <div className="w-100 web-content">
-            <Breadcrumbs breadcrumbs={outerProps.breadcrumbs} />
+            <Breadcrumbs breadcrumbs={outerProps.breadcrumbs} location={outerProps.location} />
             <div className="container">
                 <Switch>
                     {/* eslint-disable react/jsx-no-bind */}
@@ -196,7 +195,7 @@ export const OrgCampaignsArea = withAuthenticatedUser<OrgCampaignsAreaProps & { 
             useMemo(
                 () => ({
                     key: 'CampaignsArea',
-                    element: <Link to={match.url}>Campaigns</Link>,
+                    link: { to: match.url, label: 'Campaigns' },
                 }),
                 [match.url]
             )
@@ -206,7 +205,7 @@ export const OrgCampaignsArea = withAuthenticatedUser<OrgCampaignsAreaProps & { 
         }
         return (
             <div className="w-100 web-content">
-                <Breadcrumbs breadcrumbs={outerProps.breadcrumbs} />
+                <Breadcrumbs breadcrumbs={outerProps.breadcrumbs} location={outerProps.location} />
                 <div className="container">
                     <Switch>
                         {/* eslint-disable react/jsx-no-bind */}
