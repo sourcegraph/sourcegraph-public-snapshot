@@ -86,7 +86,7 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                     campaigns. We recommend committing it to source control.
                 </p>
                 <h4>Examples:</h4>
-                <ul className="nav nav-tabs mb-2">
+                <ul className="nav nav-tabs">
                     {samples.map(sample => (
                         <SampleTabHeader
                             key={sample.name}
@@ -96,7 +96,7 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                         />
                     ))}
                 </ul>
-                <div className="create-campaign-page__specfile rounded p-3 mb-4">
+                <div className="p-3 mb-4 pt-0 border border-top-0">
                     <pre className="m-0" dangerouslySetInnerHTML={highlightedSample} />
                 </div>
                 <h2>STEP 2: Preview the campaign with Sourcegraph CLI</h2>
