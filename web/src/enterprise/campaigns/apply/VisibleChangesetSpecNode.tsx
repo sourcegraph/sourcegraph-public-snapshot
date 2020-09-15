@@ -75,58 +75,59 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
                             <span>{node.description.title}</span>
                         )}
                     </h3>
-                    <div>
-                        <strong className="mr-2">
-                            <Link to={node.description.baseRepository.url} target="_blank" rel="noopener noreferrer">
-                                {node.description.baseRepository.name}
-                            </Link>{' '}
-                            {node.description.__typename === 'GitBranchChangesetDescription' && (
-                                <>
-                                    <span className="badge badge-primary">{node.description.baseRef}</span> &larr;{' '}
-                                    <span className="badge badge-primary">{node.description.headRef}</span>
-                                </>
-                            )}
-                        </strong>
+                    <div className="mr-2">
+                        <Link to={node.description.baseRepository.url} target="_blank" rel="noopener noreferrer">
+                            {node.description.baseRepository.name}
+                        </Link>{' '}
+                        {node.description.__typename === 'GitBranchChangesetDescription' && (
+                            <>
+                                <span className="badge badge-primary">{node.description.baseRef}</span> &larr;{' '}
+                                <span className="badge badge-primary">{node.description.headRef}</span>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
-            <div>
+            <div className="d-flex justify-content-center">
                 {node.description.__typename === 'GitBranchChangesetDescription' && (
                     <DiffStat {...node.description.diffStat} expandedCounts={true} separateLines={true} />
                 )}
             </div>
             {isExpanded && (
-                <div className="visible-changeset-spec-node__expanded-section">
-                    {node.description.__typename === 'GitBranchChangesetDescription' && (
-                        <FileDiffConnection
-                            listClassName="list-group list-group-flush"
-                            noun="changed file"
-                            pluralNoun="changed files"
-                            queryConnection={queryFileDiffs}
-                            nodeComponent={FileDiffNode}
-                            nodeComponentProps={{
-                                history,
-                                location,
-                                isLightTheme,
-                                persistLines: true,
-                                lineNumbers: true,
-                            }}
-                            defaultFirst={15}
-                            hideSearch={true}
-                            noSummaryIfAllNodesVisible={true}
-                            history={history}
-                            location={location}
-                            useURLQuery={false}
-                            cursorPaging={true}
-                        />
-                    )}
-                    {node.description.__typename === 'ExistingChangesetReference' && (
-                        <div className="alert alert-info mb-0">
-                            When run, the changeset with ID {node.description.externalID} will be imported from{' '}
-                            {node.description.baseRepository.name}.
-                        </div>
-                    )}
-                </div>
+                <>
+                    <div />
+                    <div className="visible-changeset-spec-node__expanded-section">
+                        {node.description.__typename === 'GitBranchChangesetDescription' && (
+                            <FileDiffConnection
+                                listClassName="list-group list-group-flush"
+                                noun="changed file"
+                                pluralNoun="changed files"
+                                queryConnection={queryFileDiffs}
+                                nodeComponent={FileDiffNode}
+                                nodeComponentProps={{
+                                    history,
+                                    location,
+                                    isLightTheme,
+                                    persistLines: true,
+                                    lineNumbers: true,
+                                }}
+                                defaultFirst={15}
+                                hideSearch={true}
+                                noSummaryIfAllNodesVisible={true}
+                                history={history}
+                                location={location}
+                                useURLQuery={false}
+                                cursorPaging={true}
+                            />
+                        )}
+                        {node.description.__typename === 'ExistingChangesetReference' && (
+                            <div className="alert alert-info mb-0">
+                                When run, the changeset with ID {node.description.externalID} will be imported from{' '}
+                                {node.description.baseRepository.name}.
+                            </div>
+                        )}
+                    </div>
+                </>
             )}
         </>
     )

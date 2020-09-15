@@ -45,7 +45,7 @@ export interface SearchPageProps
         KeyboardShortcutsProps,
         TelemetryProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         InteractiveSearchProps,
         CopyQueryButtonProps,
         VersionContextProps,
@@ -319,7 +319,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                 </>
             )}
 
-            {!props.isSourcegraphDotCom && props.showEnterpriseHomePanels && <EnterpriseHomePanels />}
+            {!props.isSourcegraphDotCom && props.showEnterpriseHomePanels && <EnterpriseHomePanels {...props} />}
         </div>
     )
 }

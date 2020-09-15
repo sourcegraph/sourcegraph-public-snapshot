@@ -9,8 +9,7 @@ interface Person extends Pick<GQL.IPerson, 'email' | 'displayName'> {
 /**
  * Formats a person name to: "username (Display Name)" or "Display Name"
  */
-export const formatPersonName = ({ user, displayName }: GQL.IPerson | Person): string =>
-    user ? user.username : displayName
+export const formatPersonName = ({ user, displayName }: Person): string => (user ? user.username : displayName)
 
 /**
  * A person's name, with a link to their Sourcegraph user profile if an associated user account is
@@ -18,7 +17,7 @@ export const formatPersonName = ({ user, displayName }: GQL.IPerson | Person): s
  */
 export const PersonLink: React.FunctionComponent<{
     /** The person to link to. */
-    person: GQL.IPerson | Person
+    person: Person
 
     /** A class name that is always applied. */
     className?: string

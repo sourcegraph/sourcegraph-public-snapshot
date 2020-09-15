@@ -1,0 +1,21 @@
+name: sprintf-to-itoa
+description: Run `comby` to replace `fmt.Sprintf("%d", integer)` calls with `strconv.Iota`
+
+# Find all repositories that contain the `fmt.Sprintf` statement using structural search
+on:
+  - repositoriesMatchingQuery: lang:go fmt.Sprintf("%d", :[v]) patterntype:structural
+
+steps:
+  - run: comby -in-place 'fmt.Sprintf("%d", :[v])' 'strconv.Itoa(:[v])' .go -matcher .go -exclude-dir .,vendor
+    container: comby/comby
+  - run: gofmt -w ./
+    container: golang:1.15-alpine
+
+# Describe the changeset (e.g., GitHub pull request) you want for each repository.
+changesetTemplate:
+  title: Replace equivalent fmt.Sprintf calls with strconv.Itoa
+  body: This campaign replaces `fmt.Sprintf("%d", integer)` calls with semantically equivalent `strconv.Itoa` calls
+  branch: campaigns/sprintf-to-itoa # Push the commit to this branch.
+  commit:
+    message: Replacing fmt.Sprintf with strconv.Iota
+  published: false

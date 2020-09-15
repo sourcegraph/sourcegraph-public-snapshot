@@ -455,6 +455,12 @@ type Mutation {
     # restarting the site.
     setUserIsSiteAdmin(userID: ID!, siteAdmin: Boolean!): EmptyResponse
     """
+    Invalidates all sessions belonging to a user.
+
+    Only site admins may perform this mutation.
+    """
+    invalidateSessionsByID(userID: ID!): EmptyResponse
+    """
     Reloads the site by restarting the server. This is not supported for all deployment
     types. This may cause downtime.
 
@@ -1108,9 +1114,9 @@ type Campaign implements Node {
         """
         after: String
         """
-        Only include changesets with the given reconciler state.
+        Only include changesets with any of the given reconciler states.
         """
-        reconcilerState: ChangesetReconcilerState
+        reconcilerState: [ChangesetReconcilerState!]
         """
         Only include changesets with the given publication state.
         """
@@ -3541,6 +3547,21 @@ type RepositoryTextSearchIndexStatus {
     The number of index shards.
     """
     indexShardsCount: Int!
+
+    """
+    EXPERIMENTAL: The number of newlines appearing in the index.
+    """
+    newLinesCount: Int!
+
+    """
+    EXPERIMENTAL: The number of newlines in the default branch.
+    """
+    defaultBranchNewLinesCount: Int!
+
+    """
+    EXPERIMENTAL: The number of newlines in the other branches.
+    """
+    otherBranchesNewLinesCount: Int!
 }
 
 """

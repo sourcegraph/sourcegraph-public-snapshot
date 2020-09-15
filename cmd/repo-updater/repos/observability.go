@@ -644,6 +644,7 @@ func (o *ObservedStore) trace(ctx context.Context, family string) (*trace.Trace,
 	if txctx == nil {
 		txctx = ctx
 	}
-	tr, _ := o.tracer.New(txctx, family, "")
-	return tr, trace.ContextWithTrace(ctx, tr)
+	tr, txctx := o.tracer.New(txctx, family, "")
+	ctx = trace.CopyContext(ctx, txctx)
+	return tr, ctx
 }

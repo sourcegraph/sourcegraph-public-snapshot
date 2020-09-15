@@ -1,6 +1,7 @@
 @import './actions/ActionItem';
 @import './actions/ActionsNavItems';
 @import './commandPalette/CommandList';
+@import './commandPalette/EmptyCommandList.scss';
 @import './components/completion/CompletionWidget';
 @import './components/CodeExcerpt';
 @import './components/activation/ActivationChecklist';
@@ -10,6 +11,7 @@
 @import './components/Resizable';
 @import './components/ResultContainer';
 @import './components/Toggle';
+@import './components/ToggleBig';
 @import './components/Tabs';
 @import './extensions/ExtensionStatus';
 @import './hover/HoverOverlay';

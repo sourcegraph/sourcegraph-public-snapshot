@@ -14,7 +14,13 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - The site configuration `search.limits`. This allows configuring the maximum timeout (defaults to 1 minute). Also allows configuring the maximum repositories to search in different scenarios. [#13448](https://github.com/sourcegraph/sourcegraph/pull/13448)
+- Site admins now have a button to log out users from the all users view. [#13647](https://github.com/sourcegraph/sourcegraph/pull/13647)
+- After changing their password, a user will be signed out from all devices, and will be required to sign in with the new password.
 - Sourcegraph watches the [advanced config files](https://docs.sourcegraph.com/admin/config/advanced_config_file) and automatically applies the changes to Sourcegraph's configuration when they change. For example this allows Sourcegraph to notice when Kubernetes updates ConfigMap for the configuration. [#13646](https://github.com/sourcegraph/sourcegraph/pull/13646)
+- The total size of all git repositories and the lines of code for indexed branches will be sent back in pings. [#13764](https://github.com/sourcegraph/sourcegraph/pull/13764)
+- Experimental: New homepage UI for Sourcegraph Server which shows the user their recent searches, repositories, files, and saved searches. It can be enabled with `experimentalFeatures.showEnterpriseHomePanels`. [#13407](https://github.com/sourcegraph/sourcegraph/issues/13407)
+- To define repository groups (`search.repositoryGroups` in global, org, or user settings), you can now specify regular expressions in addition to single repository names. [#13730](https://github.com/sourcegraph/sourcegraph/pull/13730)
+- Files and directories can now be excluded from search by adding the file _.sourcegraph/ignore_ to the root directory of a repository. Each line in the _ignore_ file is interpreted as a globbing pattern. [#13690](https://github.com/sourcegraph/sourcegraph/pull/13690)
 
 ### Changed
 
@@ -35,6 +41,7 @@ All notable changes to Sourcegraph are documented in this file.
 - User satisfaction/NPS surveys will now correctly provide a range from 0–10, rather than 0–9. [#13163](https://github.com/sourcegraph/sourcegraph/pull/13163)
 - Fixed a bug where we returned repositories with invalid revisions in the search results. Now, if a user specifies an invalid revision, we show an alert. [#13271](https://github.com/sourcegraph/sourcegraph/pull/13271)
 - Previously it wasn't possible to search for certain patterns containing `:` because they would not be considered valid filters. We made these checks less strict. [#10920](https://github.com/sourcegraph/sourcegraph/pull/10920)
+- Logging out of a user's account will now invalidate all user sessions, not just the session that was signed out of. Resetting or changing the user's password will also invalidate all sesions, requiring the user to sign in with their new password. [#13647](https://github.com/sourcegraph/sourcegraph/pull/13647)
 
 ### Removed
 

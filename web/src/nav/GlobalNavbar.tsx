@@ -4,7 +4,7 @@ import { ActivationProps } from '../../../shared/src/components/activation/Activ
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { authRequired as authRequiredObservable, AuthenticatedUser } from '../auth'
+import { AuthenticatedUser } from '../auth'
 import {
     parseSearchURLQuery,
     PatternTypeProps,
@@ -29,7 +29,6 @@ import { VersionContextDropdown } from './VersionContextDropdown'
 import { VersionContextProps } from '../../../shared/src/search/util'
 import { VersionContext } from '../schema/site.schema'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
-import { useObservable } from '../../../shared/src/util/useObservable'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
 
@@ -51,6 +50,7 @@ interface Props
     history: H.History
     location: H.Location<{ query: string }>
     authenticatedUser: AuthenticatedUser | null
+    authRequired: boolean
     navbarSearchQueryState: QueryState
     onNavbarQueryChange: (queryState: QueryState) => void
     isSourcegraphDotCom: boolean
@@ -83,6 +83,7 @@ interface Props
 }
 
 export const GlobalNavbar: React.FunctionComponent<Props> = ({
+    authRequired,
     isSearchRelatedPage,
     splitSearchModes,
     interactiveSearchMode,
@@ -102,8 +103,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     history,
     ...props
 }) => {
-    const authRequired = useObservable(authRequiredObservable)
-
     const query = useMemo(() => parseSearchURLQuery(location.search || ''), [location.search])
 
     useEffect(() => {

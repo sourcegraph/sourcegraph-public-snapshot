@@ -61,9 +61,10 @@ import { Settings } from './schema/settings.schema'
 import { Remote } from 'comlink'
 import { FlatExtHostAPI } from '../../shared/src/api/contract'
 import { useBreadcrumbs } from './components/Breadcrumbs'
-import { AuthenticatedUser } from './auth'
+import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
 import { SearchPatternType } from './graphql-operations'
 import { TelemetryProps } from '../../shared/src/telemetry/telemetryService'
+import { useObservable } from '../../shared/src/util/useObservable'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -129,6 +130,7 @@ export interface LayoutProps
     globbing: boolean
     isSourcegraphDotCom: boolean
     showCampaigns: boolean
+    fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
     children?: never
 }
 
@@ -146,6 +148,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const needsSiteInit = window.context.needsSiteInit
     const isSiteInit = props.location.pathname === '/site-admin/init'
     const isSignInOrUp = props.location.pathname === '/sign-in' || props.location.pathname === '/sign-up'
+
+    const authRequired = useObservable(authRequiredObservable)
 
     const hideGlobalSearchInput: boolean =
         props.location.pathname === '/stats' || props.location.pathname === '/search/query-builder'
@@ -181,6 +185,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
+                    authRequired={!!authRequired}
                     isSearchRelatedPage={isSearchRelatedPage}
                     variant={
                         hideGlobalSearchInput

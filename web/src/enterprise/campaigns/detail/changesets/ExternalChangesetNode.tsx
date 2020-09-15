@@ -66,22 +66,27 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
             <ExternalChangesetInfoCell node={node} viewerCanAdminister={viewerCanAdminister} />
             <span>{node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} />}</span>
             <span>{node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} />}</span>
-            <div>{node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} separateLines={true} />}</div>
+            <div className="d-flex justify-content-center">
+                {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} separateLines={true} />}
+            </div>
             {isExpanded && (
-                <div className="external-changeset-node__expanded-section">
-                    {node.error && <ErrorAlert error={node.error} history={history} />}
-                    <ChangesetFileDiff
-                        changesetID={node.id}
-                        isLightTheme={isLightTheme}
-                        history={history}
-                        location={location}
-                        repositoryID={node.repository.id}
-                        repositoryName={node.repository.name}
-                        extensionInfo={extensionInfo}
-                        queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
-                        updateOnChange={node.updatedAt}
-                    />
-                </div>
+                <>
+                    <div />
+                    <div className="external-changeset-node__expanded-section">
+                        {node.error && <ErrorAlert error={node.error} history={history} />}
+                        <ChangesetFileDiff
+                            changesetID={node.id}
+                            isLightTheme={isLightTheme}
+                            history={history}
+                            location={location}
+                            repositoryID={node.repository.id}
+                            repositoryName={node.repository.name}
+                            extensionInfo={extensionInfo}
+                            queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
+                            updateOnChange={node.updatedAt}
+                        />
+                    </div>
+                </>
             )}
         </>
     )

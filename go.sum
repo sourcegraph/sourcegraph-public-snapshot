@@ -1177,8 +1177,6 @@ github.com/sourcegraph/go-diff v0.5.1 h1:gO6i5zugwzo1RVTvgvfwCOSVegNuvnNi6bAD1QC
 github.com/sourcegraph/go-diff v0.5.1/go.mod h1:j2dHj3m8aZgQO8lMTcTnBcXkRRRqi34cd2MNlA9u1mE=
 github.com/sourcegraph/go-diff v0.5.3 h1:lhIKJ2nXLZZ+AfbHpYxTn0pXpNTTui0DX7DO3xeb1Zs=
 github.com/sourcegraph/go-diff v0.5.3/go.mod h1:v9JDtjCE4HHHCZGId75rg8gkKKa98RVjBcBGsVmMmak=
-github.com/sourcegraph/go-jsonschema v0.0.0-20200429204646-54904d837db8 h1:JejvI1dKnisDo1eVpgsVaS2eocfHsLS89cF4c5sL/ss=
-github.com/sourcegraph/go-jsonschema v0.0.0-20200429204646-54904d837db8/go.mod h1:SJwWIH9fe2RW2FouXEXM4Cm4ZczlewF2xNQAL2VaU1M=
 github.com/sourcegraph/go-jsonschema v0.0.0-20200907102109-d14e9f2f3a28 h1:V0lV1kvLC6Znybs6pQbaNpBNhoUbAIneg2QsGjwurBI=
 github.com/sourcegraph/go-jsonschema v0.0.0-20200907102109-d14e9f2f3a28/go.mod h1:SJwWIH9fe2RW2FouXEXM4Cm4ZczlewF2xNQAL2VaU1M=
 github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible h1:EX1bSaIbVia2U/Pt/2Z62y8wJS4Z4iNiK5VCeUKuBx8=
@@ -1203,6 +1201,12 @@ github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
 github.com/sourcegraph/zoekt v0.0.0-20200908080019-f95cecffc54f h1:Utx9Yq9NlgWURzjFVdEl9dtutgiM2uyevi+VPnsZI0w=
 github.com/sourcegraph/zoekt v0.0.0-20200908080019-f95cecffc54f/go.mod h1:Cj/TaflDEk8QLJnV9mJP5hVswI9bEePpod/d9iLR4Kk=
+github.com/sourcegraph/zoekt v0.0.0-20200911123057-422d5b68c06e h1:arEEamCq+/vT8iayW5jDeR6RRu2r0MNj9bhrY15YvAU=
+github.com/sourcegraph/zoekt v0.0.0-20200911123057-422d5b68c06e/go.mod h1:Cj/TaflDEk8QLJnV9mJP5hVswI9bEePpod/d9iLR4Kk=
+github.com/sourcegraph/zoekt v0.0.0-20200911142020-36f86e63516f h1:JgRyqVKhF2UQB/YrLHkk9B4gjrBTjz3Pq0PQrfJ4XD4=
+github.com/sourcegraph/zoekt v0.0.0-20200911142020-36f86e63516f/go.mod h1:Cj/TaflDEk8QLJnV9mJP5hVswI9bEePpod/d9iLR4Kk=
+github.com/sourcegraph/zoekt v0.0.0-20200914142346-dad3e87a4b8f h1:mvXDW0kvLnRwXgIc3+mzw/lB4EoDL3Mb3dGmZZ/SlUk=
+github.com/sourcegraph/zoekt v0.0.0-20200914142346-dad3e87a4b8f/go.mod h1:Cj/TaflDEk8QLJnV9mJP5hVswI9bEePpod/d9iLR4Kk=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72 h1:qLC7fQah7D6K1B0ujays3HV9gkFtllcxhzImRR7ArPQ=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spaolacci/murmur3 v1.1.0 h1:7c1g84S4BPRrfL5Xrdp6fOJ206sU9y293DDHaoy0bLI=

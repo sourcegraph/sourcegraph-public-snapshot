@@ -280,7 +280,7 @@ func (r *reconciler) closeChangeset(ctx context.Context, tx *Store, ch *campaign
 		return err
 	}
 
-	cs := &repos.Changeset{Changeset: ch}
+	cs := &repos.Changeset{Changeset: ch, Repo: repo}
 
 	if err := ccs.CloseChangeset(ctx, cs); err != nil {
 		return errors.Wrap(err, "creating changeset")
@@ -340,6 +340,16 @@ func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec) (protocol.
 		return opts, err
 	}
 
+	commitAuthorName, err := desc.AuthorName()
+	if err != nil {
+		return opts, err
+	}
+
+	commitAuthorEmail, err := desc.AuthorEmail()
+	if err != nil {
+		return opts, err
+	}
+
 	opts = protocol.CreateCommitFromPatchRequest{
 		Repo:       api.RepoName(repo.Name),
 		BaseCommit: api.CommitID(desc.BaseRev),
@@ -356,8 +366,8 @@ func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec) (protocol.
 
 		CommitInfo: protocol.PatchCommitInfo{
 			Message:     commitMessage,
-			AuthorName:  "Sourcegraph",
-			AuthorEmail: "campaigns@sourcegraph.com",
+			AuthorName:  commitAuthorName,
+			AuthorEmail: commitAuthorEmail,
 			Date:        spec.CreatedAt,
 		},
 		// We use unified diffs, not git diffs, which means they're missing the
