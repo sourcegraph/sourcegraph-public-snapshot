@@ -145,6 +145,7 @@ type ExecutorOpts struct {
 	ClearCache    bool
 	KeepLogs      bool
 	VerboseLogger bool
+	TempDir       string
 }
 
 func (svc *Service) NewExecutor(opts ExecutorOpts, update ExecutorUpdateCallback) Executor {

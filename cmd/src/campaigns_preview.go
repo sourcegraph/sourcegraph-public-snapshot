@@ -25,7 +25,7 @@ Examples:
 `
 
 	flagSet := flag.NewFlagSet("preview", flag.ExitOnError)
-	flags := newCampaignsApplyFlags(flagSet, campaignsDefaultCacheDir())
+	flags := newCampaignsApplyFlags(flagSet, campaignsDefaultCacheDir(), campaignsDefaultTempDirPrefix())
 
 	handler := func(args []string) error {
 		if err := flagSet.Parse(args); err != nil {

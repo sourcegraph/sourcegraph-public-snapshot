@@ -27,6 +27,7 @@ type campaignsApplyFlags struct {
 	api              *api.Flags
 	apply            bool
 	cacheDir         string
+	tempDir          string
 	clearCache       bool
 	file             string
 	keep             bool
@@ -35,7 +36,7 @@ type campaignsApplyFlags struct {
 	timeout          time.Duration
 }
 
-func newCampaignsApplyFlags(flagSet *flag.FlagSet, cacheDir string) *campaignsApplyFlags {
+func newCampaignsApplyFlags(flagSet *flag.FlagSet, cacheDir, tempDir string) *campaignsApplyFlags {
 	caf := &campaignsApplyFlags{
 		api: api.NewFlags(flagSet),
 	}
@@ -55,6 +56,10 @@ func newCampaignsApplyFlags(flagSet *flag.FlagSet, cacheDir string) *campaignsAp
 	flagSet.BoolVar(
 		&caf.clearCache, "clear-cache", false,
 		"If true, clears the cache and executes all steps anew.",
+	)
+	flagSet.StringVar(
+		&caf.tempDir, "tmp", tempDir,
+		"Directory for storing temporary data, such as repository archives when executing campaign specs or log files. Default is /tmp. Can also be set with environment variable SRC_CAMPAIGNS_TMP_DIR; if both are set, this flag will be used and not the environment variable.",
 	)
 	flagSet.StringVar(
 		&caf.file, "f", "",
@@ -99,6 +104,25 @@ func campaignsDefaultCacheDir() string {
 	return path.Join(uc, "sourcegraph", "campaigns")
 }
 
+// campaignsDefaultTempDirPrefix returns the prefix to be passed to ioutil.TempFile. If the
+// environment variable SRC_CAMPAIGNS_TMP_DIR is set, that is used as the
+// prefix. Otherwise we use "/tmp".
+func campaignsDefaultTempDirPrefix() string {
+	p := os.Getenv("SRC_CAMPAIGNS_TMP_DIR")
+	if p != "" {
+		return p
+	}
+	// On macOS, we use an explicit prefix for our temp directories, because
+	// otherwise Go would use $TMPDIR, which is set to `/var/folders` per
+	// default on macOS. But Docker for Mac doesn't have `/var/folders` in its
+	// default set of shared folders, but it does have `/tmp` in there.
+	if runtime.GOOS == "darwin" {
+		return "/tmp"
+
+	}
+	return os.TempDir()
+}
+
 func campaignsOpenFileFlag(flag *string) (io.ReadCloser, error) {
 	if flag == nil || *flag == "" || *flag == "-" {
 		return os.Stdin, nil
@@ -134,6 +158,7 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 		ClearCache: flags.clearCache,
 		KeepLogs:   flags.keep,
 		Timeout:    flags.timeout,
+		TempDir:    flags.tempDir,
 	}
 	if flags.parallelism <= 0 {
 		opts.Parallelism = runtime.GOMAXPROCS(0)

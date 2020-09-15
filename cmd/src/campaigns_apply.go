@@ -25,7 +25,7 @@ Examples:
 `
 
 	flagSet := flag.NewFlagSet("apply", flag.ExitOnError)
-	flags := newCampaignsApplyFlags(flagSet, campaignsDefaultCacheDir())
+	flags := newCampaignsApplyFlags(flagSet, campaignsDefaultCacheDir(), campaignsDefaultTempDirPrefix())
 
 	doApply := func(ctx context.Context, out *output.Output, svc *campaigns.Service, flags *campaignsApplyFlags) error {
 		id, _, err := campaignsExecute(ctx, out, svc, flags)

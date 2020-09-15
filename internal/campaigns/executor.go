@@ -50,10 +50,11 @@ type ExecutorUpdateCallback func(*Task, TaskStatus)
 type executor struct {
 	ExecutorOpts
 
-	cache  ExecutionCache
-	client api.Client
-	logger *LogManager
-	tasks  sync.Map
+	cache   ExecutionCache
+	client  api.Client
+	logger  *LogManager
+	tasks   sync.Map
+	tempDir string
 
 	par           *parallel.Run
 	doneEnqueuing chan struct{}
@@ -70,7 +71,8 @@ func newExecutor(opts ExecutorOpts, client api.Client, update ExecutorUpdateCall
 		cache:         opts.Cache,
 		client:        client,
 		doneEnqueuing: make(chan struct{}),
-		logger:        NewLogManager(opts.KeepLogs),
+		logger:        NewLogManager(opts.TempDir, opts.KeepLogs),
+		tempDir:       opts.TempDir,
 		par:           parallel.NewRun(opts.Parallelism),
 		update:        update,
 	}
@@ -195,7 +197,7 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 	defer cancel()
 
 	// Actually execute the steps.
-	diff, err := runSteps(runCtx, x.client, task.Repository, task.Steps, log)
+	diff, err := runSteps(runCtx, x.client, task.Repository, task.Steps, log, x.tempDir)
 	if err != nil {
 		if reachedTimeout(runCtx, err) {
 			err = &errTimeoutReached{timeout: x.Timeout}

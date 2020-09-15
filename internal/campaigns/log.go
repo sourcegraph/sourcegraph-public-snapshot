@@ -14,17 +14,18 @@ import (
 )
 
 type LogManager struct {
+	dir      string
 	keepLogs bool
 
 	tasks sync.Map
 }
 
-func NewLogManager(keepLogs bool) *LogManager {
-	return &LogManager{keepLogs: keepLogs}
+func NewLogManager(dir string, keepLogs bool) *LogManager {
+	return &LogManager{dir: dir, keepLogs: keepLogs}
 }
 
 func (lm *LogManager) AddTask(task *Task) (*TaskLogger, error) {
-	tl, err := newTaskLogger(task, lm.keepLogs)
+	tl, err := newTaskLogger(task, lm.keepLogs, lm.dir)
 	if err != nil {
 		return nil, err
 	}
@@ -67,10 +68,10 @@ type TaskLogger struct {
 	keep    bool
 }
 
-func newTaskLogger(task *Task, keep bool) (*TaskLogger, error) {
+func newTaskLogger(task *Task, keep bool, dir string) (*TaskLogger, error) {
 	prefix := "changeset-" + task.Repository.Slug()
 
-	f, err := ioutil.TempFile(tempDirPrefix, prefix+".*.log")
+	f, err := ioutil.TempFile(dir, prefix+".*.log")
 	if err != nil {
 		return nil, errors.Wrapf(err, "creating temporary file with prefix %q", prefix)
 	}

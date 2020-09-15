@@ -22,15 +22,15 @@ import (
 	"github.com/sourcegraph/src-cli/internal/campaigns/graphql"
 )
 
-func runSteps(ctx context.Context, client api.Client, repo *graphql.Repository, steps []Step, logger *TaskLogger) ([]byte, error) {
-	zipFile, err := fetchRepositoryArchive(ctx, client, repo)
+func runSteps(ctx context.Context, client api.Client, repo *graphql.Repository, steps []Step, logger *TaskLogger, tempDir string) ([]byte, error) {
+	zipFile, err := fetchRepositoryArchive(ctx, client, repo, tempDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "Fetching ZIP archive failed")
 	}
 	defer os.Remove(zipFile.Name())
 
 	prefix := "changeset-" + repo.Slug()
-	volumeDir, err := unzipToTempDir(ctx, zipFile.Name(), prefix)
+	volumeDir, err := unzipToTempDir(ctx, zipFile.Name(), tempDir, prefix)
 	if err != nil {
 		return nil, errors.Wrap(err, "Unzipping the ZIP archive failed")
 	}
@@ -72,7 +72,7 @@ func runSteps(ctx context.Context, client api.Client, repo *graphql.Repository, 
 	for i, step := range steps {
 		logger.Logf("[Step %d] docker run %s", i+1, step.image)
 
-		cidFile, err := ioutil.TempFile(tempDirPrefix, prefix+"-container-id")
+		cidFile, err := ioutil.TempFile(tempDir, prefix+"-container-id")
 		if err != nil {
 			return nil, errors.Wrap(err, "Creating a CID file failed")
 		}
@@ -95,7 +95,7 @@ func runSteps(ctx context.Context, client api.Client, repo *graphql.Repository, 
 
 		// Set up a temporary file on the host filesystem to contain the
 		// script.
-		fp, err := ioutil.TempFile(tempDirPrefix, "")
+		fp, err := ioutil.TempFile(tempDir, "")
 		if err != nil {
 			return nil, errors.Wrap(err, "creating temporary file")
 		}
@@ -158,21 +158,15 @@ func runSteps(ctx context.Context, client api.Client, repo *graphql.Repository, 
 	return diffOut, err
 }
 
-// We use an explicit prefix for our temp directories, because otherwise Go
-// would use $TMPDIR, which is set to `/var/folders` per default on macOS. But
-// Docker for Mac doesn't have `/var/folders` in its default set of shared
-// folders, but it does have `/tmp` in there.
-const tempDirPrefix = "/tmp"
-
-func unzipToTempDir(ctx context.Context, zipFile, prefix string) (string, error) {
-	volumeDir, err := ioutil.TempDir(tempDirPrefix, prefix)
+func unzipToTempDir(ctx context.Context, zipFile, tempDir, tempFilePrefix string) (string, error) {
+	volumeDir, err := ioutil.TempDir(tempDir, tempFilePrefix)
 	if err != nil {
 		return "", err
 	}
 	return volumeDir, unzip(zipFile, volumeDir)
 }
 
-func fetchRepositoryArchive(ctx context.Context, client api.Client, repo *graphql.Repository) (*os.File, error) {
+func fetchRepositoryArchive(ctx context.Context, client api.Client, repo *graphql.Repository, tempDir string) (*os.File, error) {
 	req, err := client.NewHTTPRequest(ctx, "GET", repositoryZipArchivePath(repo), nil)
 	if err != nil {
 		return nil, err
@@ -188,7 +182,7 @@ func fetchRepositoryArchive(ctx context.Context, client api.Client, repo *graphq
 		return nil, fmt.Errorf("unable to fetch archive (HTTP %d from %s)", resp.StatusCode, req.URL.String())
 	}
 
-	f, err := ioutil.TempFile(tempDirPrefix, strings.Replace(repo.Name, "/", "-", -1)+".zip")
+	f, err := ioutil.TempFile(tempDir, strings.Replace(repo.Name, "/", "-", -1)+".zip")
 	if err != nil {
 		return nil, err
 	}
