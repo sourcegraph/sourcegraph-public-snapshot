@@ -24,7 +24,6 @@ import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryServic
 import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { OrganizationResult, OrganizationVariables, OrgAreaOrganizationFields } from '../../graphql-operations'
-import { Link } from '../../../../shared/src/components/Link'
 import { requestGraphQL } from '../../backend/graphql'
 
 function queryOrganization(args: { name: string }): Observable<OrgAreaOrganizationFields> {
@@ -175,7 +174,7 @@ export class OrgArea extends React.Component<Props> {
                         if (stateUpdate.orgOrError && !isErrorLike(stateUpdate.orgOrError)) {
                             const childBreadcrumbSetters = this.props.setBreadcrumb({
                                 key: 'OrgArea',
-                                element: <Link to={stateUpdate.orgOrError.url}>{stateUpdate.orgOrError.name}</Link>,
+                                link: { to: stateUpdate.orgOrError.url, label: stateUpdate.orgOrError.name },
                             })
                             this.subscriptions.add(childBreadcrumbSetters)
                             this.setState({
