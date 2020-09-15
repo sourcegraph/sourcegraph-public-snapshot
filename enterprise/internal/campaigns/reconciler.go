@@ -280,7 +280,7 @@ func (r *reconciler) closeChangeset(ctx context.Context, tx *Store, ch *campaign
 		return err
 	}
 
-	cs := &repos.Changeset{Changeset: ch}
+	cs := &repos.Changeset{Changeset: ch, Repo: repo}
 
 	if err := ccs.CloseChangeset(ctx, cs); err != nil {
 		return errors.Wrap(err, "creating changeset")
@@ -598,6 +598,32 @@ func CompareChangesetSpecs(previous, current *campaigns.ChangesetSpec) (*changes
 		delta.commitMessageChanged = true
 	}
 
+	// AuthorName
+	currentAuthorName, err := current.Spec.AuthorName()
+	if err != nil {
+		return nil, nil
+	}
+	previousAuthorName, err := previous.Spec.AuthorName()
+	if err != nil {
+		return nil, err
+	}
+	if previousAuthorName != currentAuthorName {
+		delta.authorNameChanged = true
+	}
+
+	// AuthorEmail
+	currentAuthorEmail, err := current.Spec.AuthorEmail()
+	if err != nil {
+		return nil, nil
+	}
+	previousAuthorEmail, err := previous.Spec.AuthorEmail()
+	if err != nil {
+		return nil, err
+	}
+	if previousAuthorEmail != currentAuthorEmail {
+		delta.authorEmailChanged = true
+	}
+
 	return delta, nil
 }
 
@@ -607,12 +633,14 @@ type changesetSpecDelta struct {
 	baseRefChanged       bool
 	diffChanged          bool
 	commitMessageChanged bool
+	authorNameChanged    bool
+	authorEmailChanged   bool
 }
 
 func (d *changesetSpecDelta) String() string { return fmt.Sprintf("%#v", d) }
 
 func (d *changesetSpecDelta) NeedCommitUpdate() bool {
-	return d.diffChanged || d.commitMessageChanged
+	return d.diffChanged || d.commitMessageChanged || d.authorNameChanged || d.authorEmailChanged
 }
 
 func (d *changesetSpecDelta) NeedCodeHostUpdate() bool {

@@ -3,7 +3,7 @@ package sqlite
 import (
 	"context"
 	"errors"
-	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
@@ -103,7 +103,7 @@ func (r *sqliteStore) ReadDocument(ctx context.Context, path string) (types.Docu
 }
 
 func (r *sqliteStore) ReadResultChunk(ctx context.Context, id int) (types.ResultChunkData, bool, error) {
-	key := r.makeCacheKey("result-chunk", fmt.Sprintf("%d", id))
+	key := r.makeCacheKey("result-chunk", strconv.Itoa(id))
 	if resultChunkData, ok := r.getFromCache(key).(types.ResultChunkData); ok {
 		return resultChunkData, true, nil
 	}

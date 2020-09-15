@@ -519,39 +519,73 @@ func substituteConcat(nodes []Node, separator string) []Node {
 	return new
 }
 
-// TrailingParensToLiteral is a heuristic used in the context of regular
-// expression search. It checks whether any pattern is annotated with a label
-// HeusticDanglingParens. This label implies that the regular expression is not
-// well-formed, for example, "foo.*bar(" or "foo(.*bar". As a special case for
-// usability we escape a trailing parenthesis and treat it literally. Any other
-// forms are ignored, and will likely not pass validation.
-func TrailingParensToLiteral(nodes []Node) []Node {
-	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
-		if annotation.Labels.isSet(HeuristicDanglingParens) && strings.HasSuffix(value, "(") {
-			value = strings.TrimSuffix(value, "(")
-			value += `\(`
+// escapeParens is a heuristic used in the context of regular expression search.
+// It escapes two kinds of patterns:
+//
+// 1. Any occurrence of () is converted to \(\).
+// In regex () implies the empty string, which is meaningless as a search
+// query and probably not what the user intended.
+//
+// 2. If the pattern ends with a trailing and unescaped (, it is escaped.
+// Normally, a pattern like foo.*bar( would be an invalid regexp, and we would
+// show no results. But, it is a common and convenient syntax to search for, so
+// we convert thsi pattern to interpret a trailing parenthesis literally.
+//
+// Any other forms are ignored, for example, foo.*(bar is unchanged. In the
+// parser pipeline, such unchanged and invalid patterns are rejected by the
+// validate function.
+func escapeParens(s string) string {
+	var i int
+	for i := 0; i < len(s); i++ {
+		if s[i] == '(' || s[i] == '\\' {
+			break
 		}
-		return Pattern{
-			Value:      value,
-			Negated:    negated,
-			Annotation: annotation,
+	}
+
+	// No special characters found, so return original string.
+	if i >= len(s) {
+		return s
+	}
+
+	var result []byte
+	for i < len(s) {
+		switch s[i] {
+		case '\\':
+			if i+1 < len(s) {
+				result = append(result, '\\', s[i+1])
+				i += 2 // Next char.
+				continue
+			}
+			i++
+			result = append(result, '\\')
+		case '(':
+			if i+1 == len(s) {
+				// Escape a trailing and unescaped ( => \(.
+				result = append(result, '\\', '(')
+				i++
+				continue
+			}
+			if i+1 < len(s) && s[i+1] == ')' {
+				// Escape () => \(\).
+				result = append(result, '\\', '(', '\\', ')')
+				i += 2 // Next char.
+				continue
+			}
+			result = append(result, s[i])
+			i++
+		default:
+			result = append(result, s[i])
+			i++
 		}
-	})
+	}
+	return string(result)
 }
 
-// EmptyGroupsToLiteral is a heuristic used in the context of regular expression
-// search. It labels any pattern containing "()" as a literal pattern since in
-// regex it implies the empty string, which is meaningless as a search query and
-// probably not what the user intended.
-func EmptyGroupsToLiteral(nodes []Node) []Node {
+// escapeParensHeuristic escapes certain parentheses in search patterns (see escapeParens).
+func escapeParensHeuristic(nodes []Node) []Node {
 	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
-		if ok, _ := regexp.MatchString(`\(\)`, value); ok {
-			annotation.Labels.set(HeuristicParensAsPatterns)
-			annotation.Labels.set(Literal)
-			annotation.Labels.unset(Regexp)
-		}
 		return Pattern{
-			Value:      value,
+			Value:      escapeParens(value),
 			Negated:    negated,
 			Annotation: annotation,
 		}

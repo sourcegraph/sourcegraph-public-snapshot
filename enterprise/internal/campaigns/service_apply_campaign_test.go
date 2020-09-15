@@ -807,10 +807,12 @@ type testSpecOpts struct {
 	// set.
 	published bool
 
-	title         string
-	body          string
-	commitMessage string
-	commitDiff    string
+	title             string
+	body              string
+	commitMessage     string
+	commitDiff        string
+	commitAuthorEmail string
+	commitAuthorName  string
 }
 
 var testChangsetSpecDiffStat = &diff.Stat{Added: 10, Changed: 5, Deleted: 2}
@@ -839,8 +841,10 @@ func createChangesetSpec(
 
 			Commits: []campaigns.GitCommitDescription{
 				{
-					Message: opts.commitMessage,
-					Diff:    opts.commitDiff,
+					Message:     opts.commitMessage,
+					Diff:        opts.commitDiff,
+					AuthorEmail: opts.commitAuthorEmail,
+					AuthorName:  opts.commitAuthorName,
 				},
 			},
 		},

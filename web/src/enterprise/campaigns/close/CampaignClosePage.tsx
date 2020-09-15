@@ -20,7 +20,6 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { HeroPage } from '../../../components/HeroPage'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
-import { Link } from '../../../../../shared/src/components/Link'
 import { CampaignInfoByline } from '../detail/CampaignInfoByline'
 import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 
@@ -92,7 +91,7 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
             () =>
                 campaign
                     ? {
-                          element: <Link to={campaign.url}>{campaign.name}</Link>,
+                          link: { to: campaign.url, label: campaign.name },
                           key: 'CampaignClosePage',
                       }
                     : null,
