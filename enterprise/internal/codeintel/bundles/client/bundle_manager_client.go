@@ -229,7 +229,7 @@ func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int) (
 // error.
 func (c *bundleManagerClientImpl) getUploadChunk(ctx context.Context, w io.Writer, url *url.URL, seek int64) (int64, error) {
 	q := url.Query()
-	q.Set("seek", strconv.Itoa(seek))
+	q.Set("seek", strconv.FormatInt(seek, 10))
 	url.RawQuery = q.Encode()
 
 	body, err := c.do(ctx, "GET", url, nil)

@@ -59,12 +59,12 @@ func DBsDir(bundleDir string) string {
 
 // DBDir returns the path of the directory containing files for a given bundle identifier.
 func DBDir(bundleDir string, id int64) string {
-	return filepath.Join(bundleDir, dbsDir, strconv.Itoa(id))
+	return filepath.Join(bundleDir, dbsDir, strconv.FormatInt(id, 10))
 }
 
 // SQLiteDBFilename returns the path of the SQLite db for the given bundle identifier.
 func SQLiteDBFilename(bundleDir string, id int64) string {
-	return filepath.Join(bundleDir, dbsDir, strconv.Itoa(id), "sqlite.db")
+	return filepath.Join(bundleDir, dbsDir, strconv.FormatInt(id, 10), "sqlite.db")
 }
 
 // DBPartsDir returns the path of the directory containing db part files.
