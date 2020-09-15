@@ -17,10 +17,6 @@ declare module '*.scss' {
     const cssModule: string
     export default cssModule
 }
-declare module '*.yml' {
-    const ymlModule: string
-    export default ymlModule
-}
 declare module '*.yaml' {
     const yamlModule: string
     export default yamlModule
