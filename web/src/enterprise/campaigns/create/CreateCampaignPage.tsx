@@ -85,6 +85,7 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                     ) describes what the campaign does. You'll provide it when previewing, creating, and updating
                     campaigns. We recommend committing it to source control.
                 </p>
+                <h4>Examples:</h4>
                 <ul className="nav nav-tabs mb-2">
                     {samples.map(sample => (
                         <SampleTabHeader
