@@ -1,6 +1,7 @@
 package oauth
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"strings"
@@ -9,14 +10,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"golang.org/x/oauth2"
 )
 
 func NewHandler(serviceType, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
-	oauthFlowHandler := http.StripPrefix(authPrefix, NewOAuthFlowHandler(serviceType))
+	oauthFlowHandler := http.StripPrefix(authPrefix, newOAuthFlowHandler(serviceType))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Delegate to the auth flow handler
 		if !isAPIHandler && strings.HasPrefix(r.URL.Path, authPrefix+"/") {
+			r = withOAuthExternalHTTPClient(r)
 			oauthFlowHandler.ServeHTTP(w, r)
 			return
 		}
@@ -44,7 +48,7 @@ func NewHandler(serviceType, authPrefix string, isAPIHandler bool, next http.Han
 	})
 }
 
-func NewOAuthFlowHandler(serviceType string) http.Handler {
+func newOAuthFlowHandler(serviceType string) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/login", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		id := req.URL.Query().Get("pc")
@@ -74,6 +78,14 @@ func NewOAuthFlowHandler(serviceType string) http.Handler {
 	return mux
 }
 
+// withOAuthExternalHTTPClient updates client such that the
+// golang.org/x/oauth2 package will use our http client which is configured
+// with proxy and TLS settings/etc.
+func withOAuthExternalHTTPClient(r *http.Request) *http.Request {
+	ctx := context.WithValue(r.Context(), oauth2.HTTPClient, httpcli.ExternalHTTPClient())
+	return r.WithContext(ctx)
+}
+
 func getExactlyOneOAuthProvider() *Provider {
 	ps := providers.Providers()
 	if len(ps) != 1 {
@@ -83,7 +95,7 @@ func getExactlyOneOAuthProvider() *Provider {
 	if !ok {
 		return nil
 	}
-	if !IsOAuth(p.Config()) {
+	if !isOAuth(p.Config()) {
 		return nil
 	}
 	return p
@@ -95,7 +107,7 @@ func AddIsOAuth(f func(p schema.AuthProviders) bool) {
 	isOAuths = append(isOAuths, f)
 }
 
-func IsOAuth(p schema.AuthProviders) bool {
+func isOAuth(p schema.AuthProviders) bool {
 	for _, f := range isOAuths {
 		if f(p) {
 			return true
