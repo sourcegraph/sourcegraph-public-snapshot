@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/secret"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
@@ -39,6 +40,8 @@ func (*eventLogs) Insert(ctx context.Context, e *Event) error {
 		argument = json.RawMessage([]byte(`{}`))
 	}
 
+	esArg := secret.JSONValue(argument)
+
 	_, err := dbconn.Global.ExecContext(
 		ctx,
 		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp) VALUES($1, $2, $3, $4, $5, $6, $7, $8)",
@@ -47,7 +50,7 @@ func (*eventLogs) Insert(ctx context.Context, e *Event) error {
 		e.UserID,
 		e.AnonymousUserID,
 		e.Source,
-		argument,
+		esArg,
 		version.Version(),
 		e.Timestamp.UTC(),
 	)
@@ -67,10 +70,12 @@ func (*eventLogs) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*typ
 	events := []*types.Event{}
 	for rows.Next() {
 		r := types.Event{}
-		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.UserID, &r.AnonymousUserID, &r.Source, &r.Argument, &r.Version, &r.Timestamp)
+		var esArg secret.JSONValue
+		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.UserID, &r.AnonymousUserID, &r.Source, &esArg, &r.Version, &r.Timestamp)
 		if err != nil {
 			return nil, err
 		}
+		r.Argument = string(esArg)
 		events = append(events, &r)
 	}
 	if err = rows.Err(); err != nil {
