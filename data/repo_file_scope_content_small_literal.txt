@@ -1,0 +1,8 @@
+repo:^github\.com/ElemeFE/element$ file:^src/directives repeat-click
+repo:^github\.com/apache/incubator-tvm$ file:^python/tvm/autotvm ApplyGraphBest
+repo:^github\.com/cockroachdb/cockroach-gen$ file:^pkg/ccl/importccl/read_import_csv\.go p.record
+repo:^github\.com/domoticz/domoticz$ file:^main/WebServer\.cpp gettransfer
+repo:^github\.com/ianstormtaylor/slate$ file:^packages/slate-react/src getfragment
+repo:^github\.com/kubernetes/kubernetes$ file:^cluster/gce/gci Installing
+repo:^github\.com/pichillilorenzo/flutter_inappwebview$ file:^lib/src/in_app_webview_controller\.dart addJavaScriptHandler
+repo:^github\.com/testdrivenio/fastapi-crud-async$ file:^src/app async
