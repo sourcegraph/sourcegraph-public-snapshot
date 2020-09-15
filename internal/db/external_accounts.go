@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 
 	"github.com/hashicorp/go-multierror"
@@ -51,11 +50,13 @@ func (s *userExternalAccounts) LookupUserAndSave(ctx context.Context, spec extsv
 		return Mocks.ExternalAccounts.LookupUserAndSave(spec, data)
 	}
 
-	var esData, esAuthData secret.EncryptedStringValue
-	encAuth := string(*data.AuthData)
-	encData := string(*data.Data)
-	esAuthData = secret.EncryptedStringValue(encAuth)
-	esData = secret.EncryptedStringValue(encData)
+	var esAuthData, esData secret.JSONValue
+	if data.AuthData != nil {
+		esAuthData = secret.JSONValue(*data.AuthData)
+	}
+	if data.Data != nil {
+		esData = secret.JSONValue(*data.Data)
+	}
 	err = dbconn.Global.QueryRowContext(ctx, `
 UPDATE user_external_accounts SET auth_data=$5, account_data=$6, updated_at=now()
 WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND deleted_at IS NULL
@@ -121,11 +122,13 @@ WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND d
 		return s.insert(ctx, tx, userID, spec, data)
 	}
 
-	var esData, esAuthData secret.EncryptedStringValue
-	encAuth := string(*data.AuthData)
-	encData := string(*data.Data)
-	esAuthData = secret.EncryptedStringValue(encAuth)
-	esData = secret.EncryptedStringValue(encData)
+	var esAuthData, esData secret.JSONValue
+	if data.AuthData != nil {
+		esAuthData = secret.JSONValue(*data.AuthData)
+	}
+	if data.Data != nil {
+		esData = secret.JSONValue(*data.Data)
+	}
 	// Update the external account (it exists).
 	res, err := tx.ExecContext(ctx, `
 UPDATE user_external_accounts SET auth_data=$6, account_data=$7, updated_at=now()
@@ -180,9 +183,13 @@ func (s *userExternalAccounts) CreateUserAndSave(ctx context.Context, newUser Ne
 }
 
 func (s *userExternalAccounts) insert(ctx context.Context, tx *sql.Tx, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error {
-	esData := secret.EncryptedStringValue(string(*data.Data))
-	esAuthData := secret.EncryptedStringValue(string(*data.AuthData))
-
+	var esAuthData, esData secret.JSONValue
+	if data.AuthData != nil {
+		esAuthData = secret.JSONValue(*data.AuthData)
+	}
+	if data.Data != nil {
+		esData = secret.JSONValue(*data.Data)
+	}
 	_, err := tx.ExecContext(ctx, `
 INSERT INTO user_external_accounts(user_id, service_type, service_id, client_id, account_id, auth_data, account_data)
 VALUES($1, $2, $3, $4, $5, $6, $7)
@@ -314,16 +321,16 @@ func (*userExternalAccounts) listBySQL(ctx context.Context, querySuffix *sqlf.Qu
 	var results []*extsvc.Account
 	defer rows.Close()
 	for rows.Next() {
-		var esData, esAuthData secret.EncryptedStringValue
 		var o extsvc.Account
+		var esAuthData, esData secret.JSONValue
 		if err := rows.Scan(&o.ID, &o.UserID, &o.ServiceType, &o.ServiceID, &o.ClientID, &o.AccountID, &esAuthData, &esData, &o.CreatedAt, &o.UpdatedAt); err != nil {
 			return nil, err
 		}
 
-		encAuth := json.RawMessage([]byte(esAuthData))
-		encData := json.RawMessage([]byte(esData))
-		o.AuthData = &encAuth
-		o.Data = &encData
+		authData := esAuthData.RawMessage()
+		data := esData.RawMessage()
+		o.AuthData = &authData
+		o.Data = &data
 		results = append(results, &o)
 	}
 	return results, rows.Err()

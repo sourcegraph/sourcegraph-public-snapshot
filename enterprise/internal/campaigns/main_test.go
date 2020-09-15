@@ -17,5 +17,4 @@ func TestMain(m *testing.M) {
 	}
 	secret.MustInit()
 	os.Exit(m.Run())
-
 }

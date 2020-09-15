@@ -5,9 +5,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/secret"
-
 	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/internal/secret"
 )
 
 func TestMain(m *testing.M) {

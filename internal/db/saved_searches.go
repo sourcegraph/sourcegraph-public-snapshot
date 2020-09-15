@@ -66,7 +66,7 @@ func (s *savedSearches) ListAll(ctx context.Context) (savedSearches []api.SavedQ
 
 	for rows.Next() {
 		var sq api.SavedQuerySpecAndConfig
-		var es secret.EncryptedStringValue
+		var es secret.StringValue
 		if err := rows.Scan(
 			&sq.Config.Key,
 			&sq.Config.Description,
@@ -101,7 +101,7 @@ func (s *savedSearches) GetByID(ctx context.Context, id int32) (*api.SavedQueryS
 		return Mocks.SavedSearches.GetByID(ctx, id)
 	}
 	var sq api.SavedQuerySpecAndConfig
-	var es secret.EncryptedStringValue
+	var es secret.StringValue
 	err := dbconn.Global.QueryRowContext(ctx, `SELECT
 		id,
 		description,
@@ -181,7 +181,7 @@ func (s *savedSearches) ListSavedSearchesByUserID(ctx context.Context, userID in
 	}
 	for rows.Next() {
 		var ss types.SavedSearch
-		var es secret.EncryptedStringValue
+		var es secret.StringValue
 		if err := rows.Scan(&ss.ID, &ss.Description, &es, &ss.Notify, &ss.NotifySlack, &ss.UserID, &ss.OrgID, &ss.SlackWebhookURL); err != nil {
 			return nil, errors.Wrap(err, "Scan(2)")
 		}
@@ -218,7 +218,7 @@ func (s *savedSearches) ListSavedSearchesByOrgID(ctx context.Context, orgID int3
 	}
 	for rows.Next() {
 		var ss types.SavedSearch
-		var es secret.EncryptedStringValue
+		var es secret.StringValue
 		if err := rows.Scan(&ss.ID, &ss.Description, &es, &ss.Notify, &ss.NotifySlack, &ss.UserID, &ss.OrgID, &ss.SlackWebhookURL); err != nil {
 			return nil, errors.Wrap(err, "Scan")
 		}
@@ -258,7 +258,7 @@ func (s *savedSearches) Create(ctx context.Context, newSavedSearch *types.SavedS
 		UserID:      newSavedSearch.UserID,
 		OrgID:       newSavedSearch.OrgID,
 	}
-	var es secret.EncryptedStringValue
+	var es secret.StringValue
 
 	err = dbconn.Global.QueryRowContext(ctx, `INSERT INTO saved_searches(
 			description,
@@ -308,11 +308,11 @@ func (s *savedSearches) Update(ctx context.Context, savedSearch *types.SavedSear
 		SlackWebhookURL: savedSearch.SlackWebhookURL,
 	}
 
+	esQuery := secret.StringValue(savedSearch.Query)
 	fieldUpdates := []*sqlf.Query{
 		sqlf.Sprintf("updated_at=now()"),
 		sqlf.Sprintf("description=%s", savedSearch.Description),
-		// TODO Add support for String() interface to EncryptedStringValue
-		sqlf.Sprintf("query=%s", savedSearch.Query),
+		sqlf.Sprintf("query=%s", esQuery),
 		sqlf.Sprintf("notify_owner=%t", savedSearch.Notify),
 		sqlf.Sprintf("notify_slack=%t", savedSearch.NotifySlack),
 		sqlf.Sprintf("user_id=%v", savedSearch.UserID),
