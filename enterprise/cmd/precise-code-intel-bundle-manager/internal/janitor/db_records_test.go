@@ -2,9 +2,9 @@ package janitor
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"testing"
 	"time"
 
@@ -18,7 +18,7 @@ func TestRemoveCompletedRecordsWithoutBundleFile(t *testing.T) {
 	bundleDir := testRoot(t)
 
 	for _, id := range []int{1, 3, 5, 7, 9} {
-		path := filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d", id), "sqlite.db")
+		path := filepath.Join(bundleDir, "dbs", strconv.Itoa(id), "sqlite.db")
 		if err := makeFile(path, time.Now().Local()); err != nil {
 			t.Fatalf("unexpected error creating file %s: %s", path, err)
 		}
