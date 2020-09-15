@@ -19,11 +19,16 @@ export interface TimeoutManager {
  * as `window.setTimeout`, and a `cancelTimeout` method
  */
 export function useTimeoutManager(): TimeoutManager {
-    const timeoutIDReference = useRef<number | undefined>()
+    const timeoutIDReference = useRef<{ timeoutID: number | undefined }>({ timeoutID: undefined })
 
     // eslint-disable-next-line arrow-body-style
     useEffect(() => {
-        return () => clearTimeout(timeoutIDReference.current)
+        /**
+         * https://reactjs.org/blog/2020/08/10/react-v17-rc.html#potential-issues
+         *
+         */
+        const current = timeoutIDReference.current
+        return () => clearTimeout(current.timeoutID)
     }, [])
 
     return useMemo(
@@ -33,11 +38,11 @@ export function useTimeoutManager(): TimeoutManager {
                     this.cancelTimeout()
                 }
 
-                timeoutIDReference.current = window.setTimeout(callback, timeout, ...args)
+                timeoutIDReference.current.timeoutID = window.setTimeout(callback, timeout, ...args)
             },
             cancelTimeout() {
-                clearTimeout(timeoutIDReference.current)
-                timeoutIDReference.current = undefined
+                clearTimeout(timeoutIDReference.current.timeoutID)
+                timeoutIDReference.current.timeoutID = undefined
             },
         }),
         []
