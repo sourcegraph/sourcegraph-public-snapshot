@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { NavLink, RouteComponentProps } from 'react-router-dom'
 import { isExtensionEnabled } from '../../../../shared/src/extensions/extension'
 import { ExtensionManifest } from '../../../../shared/src/schema/extensionSchema'
@@ -70,18 +70,18 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
     const ctaTimeoutManager = useTimeoutManager()
 
     const onHover = useCallback(() => {
-        if (!showCta) {
+        if (!props.authenticatedUser && !showCta) {
             setShowCta(true)
             ctaTimeoutManager.setTimeout(() => setShowCta(false), FEEDBACK_DELAY * 2)
         }
-    }, [ctaTimeoutManager, showCta])
+    }, [ctaTimeoutManager, showCta, props.authenticatedUser])
 
     return (
         <div className={`extension-area-header ${props.className || ''}`}>
-            <div className="container">
+            <div className="container ">
                 {props.extension && (
                     <>
-                        <div className="d-flex justify-content-between">
+                        <div className="extension-area-header__wrapper">
                             <div className="mb-3">
                                 <div className="d-flex align-items-start">
                                     {manifest?.icon &&
@@ -91,7 +91,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                             <img className="extension-area-header__icon mr-2" src={manifest.icon} />
                                         )}
                                     <div>
-                                        <h2 className="d-flex align-items-center mb-0 font-weight-normal">{name}</h2>
+                                        <h1 className="d-flex align-items-center mb-0 font-weight-normal">{name}</h1>
                                         {manifest && (manifest.description || isWorkInProgress) && (
                                             <p className="mt-1 mb-0">
                                                 {isWorkInProgress && (
@@ -108,38 +108,33 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                     </div>
                                 </div>
                             </div>
-                            <div className="d-flex align-items-center justify-content-center mt-3 mb-2 position-relative">
+                            <div className="d-flex flex-column align-items-center justify-content-end mt-3 mb-2 position-relative">
                                 {change && (
                                     <div
-                                        className={classNames(
-                                            'alert px-2 py-1 extension-area-header__disabled-feedback',
-                                            {
-                                                'alert-secondary': change === 'disabled',
-                                                'alert-success': change === 'enabled',
-                                            }
-                                        )}
+                                        className={classNames('alert px-2 py-1 mb-0 extension-area-header__alert', {
+                                            'alert-secondary': change === 'disabled',
+                                            'alert-success': change === 'enabled',
+                                        })}
                                     >
-                                        <strong>{name}</strong> is {change}
+                                        <span className="font-weight-semibold">{name}</span> is {change}
                                     </div>
                                 )}
                                 {showCta && (
-                                    <div className="alert alert-secondary px-2 py-1 extension-area-header__disabled-feedback">
+                                    <div className="alert alert-secondary mb-0 px-2 py-1 extension-area-header__alert">
                                         Register now! TODO
                                     </div>
                                 )}
-                                {props.authenticatedUser && (
-                                    <ExtensionToggle
-                                        enabled={isExtensionEnabled(props.settingsCascade.final, props.extension.id)}
-                                        extensionID={props.extension.id}
-                                        settingsCascade={props.settingsCascade}
-                                        platformContext={props.platformContext}
-                                        className="mr-2"
-                                        onToggleChange={onToggleChange}
-                                        big={true}
-                                        onHover={onHover}
-                                        userCannotToggle={true}
-                                    />
-                                )}
+
+                                <ExtensionToggle
+                                    enabled={isExtensionEnabled(props.settingsCascade.final, props.extension.id)}
+                                    extensionID={props.extension.id}
+                                    settingsCascade={props.settingsCascade}
+                                    platformContext={props.platformContext}
+                                    onToggleChange={onToggleChange}
+                                    big={true}
+                                    onHover={onHover}
+                                    userCannotToggle={!props.authenticatedUser}
+                                />
                             </div>
                         </div>
                         <div className="mt-3">
