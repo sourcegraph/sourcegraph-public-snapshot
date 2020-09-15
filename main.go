@@ -47,7 +47,7 @@ OUTER:
 					if err != nil {
 						log15.Error(err.Error())
 					}
-					log15.Info("metrics", "group", group, "query", query, "duration(ms)", m.took)
+					log15.Info("metrics", "group", group, "query", query, "duration_ms", m.took)
 					durationSearchHistogram.WithLabelValues(group).Observe(float64(m.took))
 				}(ctx, query)
 			}
