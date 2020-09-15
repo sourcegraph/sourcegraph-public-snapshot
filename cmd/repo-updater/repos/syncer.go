@@ -664,7 +664,13 @@ func newDiff(svc *ExternalService, sourced, stored []*Repo) (diff Diff) {
 	seenID := make(map[api.ExternalRepoSpec]bool, len(stored))
 
 	for _, old := range stored {
+		var srcClone *Repo
+		oldClone := old.Clone()
+
 		src := byID[old.ExternalRepo]
+		if src != nil {
+			srcClone = src.Clone()
+		}
 
 		// if the repo hasn't been found in the sourced repo list
 		// we add it to the Deleted slice and, if the service is provided
@@ -687,8 +693,8 @@ func newDiff(svc *ExternalService, sourced, stored []*Repo) (diff Diff) {
 					return string(data)
 				}
 
-				oldString := penc(old)
-				newString := penc(src)
+				oldString := penc(oldClone)
+				newString := penc(srcClone)
 
 				if diff := cmp.Diff(oldString, newString); diff != "" {
 					fmt.Println(old.URI)
