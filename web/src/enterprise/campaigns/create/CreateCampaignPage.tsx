@@ -3,6 +3,7 @@ import { PageTitle } from '../../../components/PageTitle'
 import { PageHeader } from '../../../components/PageHeader'
 import { CampaignsIcon } from '../icons'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
+import { AuthenticatedUser } from '../../../auth'
 import helloWorldSample from './samples/empty.campaign.yaml'
 import combySample from './samples/comby.campaign.yaml'
 import goImportsSample from './samples/go-imports.campaign.yaml'
@@ -38,16 +39,19 @@ interface Sample {
 }
 
 const samples: Sample[] = [
-    { name: 'Empty', file: emptySample },
+    { name: 'Hello world', file: helloWorldSample },
     { name: 'Modify code using comby', file: combySample },
     { name: 'Update go imports', file: goImportsSample },
 ]
 
 export interface CreateCampaignPageProps extends BreadcrumbSetters {
-    // Nothing for now, but using it so once this changes we get type errors in the routing files.
+    authenticatedUser: AuthenticatedUser | null
 }
 
-export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps> = ({ useBreadcrumb }) => {
+export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps> = ({
+    authenticatedUser,
+    useBreadcrumb,
+}) => {
     const [selectedSample, setSelectedSample] = useState<Sample>(samples[0])
     const highlightedSample = useMemo(() => ({ __html: highlightCodeSafe(selectedSample.file, 'yaml') }), [
         selectedSample.file,
@@ -104,7 +108,8 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                 </p>
                 <pre className="">
                     <code>
-                        src campaign preview -f FILENAME -namespace NAMESPACE
+                        src campaign preview -f FILENAME -namespace{' '}
+                        {authenticatedUser ? authenticatedUser.username : 'NAMESPACE'}
                     </code>
                 </pre>
                 <p>
