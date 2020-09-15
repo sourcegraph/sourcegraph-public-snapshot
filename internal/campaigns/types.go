@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/LawnGnome/campaign-schema/override"
+	cschema "github.com/LawnGnome/campaign-schema/schema"
 	"github.com/ghodss/yaml"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/hashicorp/go-multierror"
@@ -1714,7 +1716,7 @@ func (cs *CampaignSpec) Clone() *CampaignSpec {
 // UnmarshalValidate unmarshals the RawSpec into Spec and validates it against
 // the CampaignSpec schema and does additional semantic validation.
 func (cs *CampaignSpec) UnmarshalValidate() error {
-	return unmarshalValidate(schema.CampaignSpecSchemaJSON, []byte(cs.RawSpec), &cs.Spec)
+	return unmarshalValidate(cschema.CampaignSpecJSON, []byte(cs.RawSpec), &cs.Spec)
 }
 
 // CampaignSpecTTL specifies the TTL of CampaignSpecs that haven't been applied
@@ -1728,11 +1730,12 @@ func (cs *CampaignSpec) ExpiresAt() time.Time {
 }
 
 type CampaignSpecFields struct {
-	Name              string             `json:"name"`
-	Description       string             `json:"description"`
-	On                []CampaignSpecOn   `json:"on"`
-	Steps             []CampaignSpecStep `json:"steps"`
-	ChangesetTemplate ChangesetTemplate  `json:"changesetTemplate"`
+	Name              string                    `json:"name"`
+	Description       string                    `json:"description"`
+	On                []CampaignSpecOn          `json:"on"`
+	Steps             []CampaignSpecStep        `json:"steps"`
+	ImportChangeset   []CampaignImportChangeset `json:"importChangesets"`
+	ChangesetTemplate *ChangesetTemplate        `json:"changesetTemplate"`
 }
 
 type CampaignSpecOn struct {
@@ -1746,18 +1749,23 @@ type CampaignSpecStep struct {
 	Env       map[string]string `json:"env"`
 }
 
+type CampaignImportChangeset struct {
+	Repository  string        `json:"repository"`
+	ExternalIDs []interface{} `json:"externalIDs"`
+}
+
 // FIXME: the Title and Published fields should be unmarshalled properly to
 // handle the new oneOf types in the campaign spec schema.
 type ChangesetTemplate struct {
-	Title     interface{}    `json:"title"`
-	Body      string         `json:"body"`
-	Branch    string         `json:"branch"`
-	Commit    CommitTemplate `json:"commit"`
-	Published interface{}    `json:"published"`
+	Title     override.String `json:"title"`
+	Body      override.String `json:"body"`
+	Branch    override.String `json:"branch"`
+	Commit    CommitTemplate  `json:"commit"`
+	Published interface{}     `json:"published"`
 }
 
 type CommitTemplate struct {
-	Message string `json:"message"`
+	Message override.String `json:"message"`
 }
 
 func NewChangesetSpecFromRaw(rawSpec string) (*ChangesetSpec, error) {

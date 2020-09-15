@@ -129,17 +129,18 @@ const CampaignSpecSchemaJSON = `{
             },
             {
               "type": "object",
-              "required": ["default", "only"],
+              "required": ["default"],
               "additionalProperties": false,
               "properties": {
                 "default": {
                   "type": "string",
-                  "description": "The title to use for all changesets that do not match any of the rules in the only array."
+                  "description": "The title to use for all changesets that do not match any of the rules in the except array."
                 },
-                "only": {
+                "except": {
                   "type": "array",
                   "items": {
                     "type": "object",
+                    "title": "TitleExcept",
                     "required": ["match", "value"],
                     "additionalProperties": false,
                     "properties": {
@@ -159,12 +160,82 @@ const CampaignSpecSchemaJSON = `{
           ]
         },
         "body": {
-          "type": "string",
-          "description": "The body (description) of the changeset."
+          "description": "The body (description) of the changeset.",
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "The body to use for the entire campaign."
+            },
+            {
+              "type": "object",
+              "required": ["default"],
+              "additionalProperties": false,
+              "properties": {
+                "default": {
+                  "type": "string",
+                  "description": "The body to use for all changesets that do not match any of the rules in the except array."
+                },
+                "except": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "title": "BodyExcept",
+                    "required": ["match", "value"],
+                    "additionalProperties": false,
+                    "properties": {
+                      "match": {
+                        "type": "string",
+                        "description": "The repository name to match. Glob wildcards are supported."
+                      },
+                      "value": {
+                        "type": "string",
+                        "description": "The body to use for changesets that match this rule."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
         },
         "branch": {
-          "type": "string",
-          "description": "The name of the Git branch to create or update on each repository with the changes."
+          "description": "The name of the Git branch to create or update on each repository with the changes.",
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "The branch name to use for the entire campaign."
+            },
+            {
+              "type": "object",
+              "required": ["default"],
+              "additionalProperties": false,
+              "properties": {
+                "default": {
+                  "type": "string",
+                  "description": "The branch name to use for all changesets that do not match any of the rules in the except array."
+                },
+                "except": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "title": "BranchExcept",
+                    "required": ["match", "value"],
+                    "additionalProperties": false,
+                    "properties": {
+                      "match": {
+                        "type": "string",
+                        "description": "The repository name to match. Glob wildcards are supported."
+                      },
+                      "value": {
+                        "type": "string",
+                        "description": "The branch name to use for changesets that match this rule."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
         },
         "commit": {
           "title": "ExpandedGitCommitDescription",
@@ -174,8 +245,43 @@ const CampaignSpecSchemaJSON = `{
           "required": ["message"],
           "properties": {
             "message": {
-              "type": "string",
-              "description": "The Git commit message."
+              "description": "The Git commit message.",
+              "oneOf": [
+                {
+                  "type": "string",
+                  "description": "The commit message to use for the entire campaign."
+                },
+                {
+                  "type": "object",
+                  "required": ["default"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "default": {
+                      "type": "string",
+                      "description": "The commit message to use for all changesets that do not match any of the rules in the except array."
+                    },
+                    "except": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "title": "GitCommitMessageExcept",
+                        "required": ["match", "value"],
+                        "additionalProperties": false,
+                        "properties": {
+                          "match": {
+                            "type": "string",
+                            "description": "The repository name to match. Glob wildcards are supported."
+                          },
+                          "value": {
+                            "type": "string",
+                            "description": "The commit message to use for changesets that match this rule."
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
             },
             "author": {
               "title": "GitCommitAuthor",
@@ -185,13 +291,85 @@ const CampaignSpecSchemaJSON = `{
               "required": ["name", "email"],
               "properties": {
                 "name": {
-                  "type": "string",
-                  "description": "The Git commit author name."
+                  "description": "The Git commit author name.",
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "description": "The author name to use for the entire campaign."
+                    },
+                    {
+                      "type": "object",
+                      "required": ["default"],
+                      "additionalProperties": false,
+                      "properties": {
+                        "default": {
+                          "type": "string",
+                          "description": "The author name to use for all changesets that do not match any of the rules in the except array."
+                        },
+                        "except": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "title": "GitCommitAuthorExcept",
+                            "required": ["match", "value"],
+                            "additionalProperties": false,
+                            "properties": {
+                              "match": {
+                                "type": "string",
+                                "description": "The repository name to match. Glob wildcards are supported."
+                              },
+                              "value": {
+                                "type": "string",
+                                "description": "The author name to use for changesets that match this rule."
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
                 },
                 "email": {
-                  "type": "string",
-                  "format": "email",
-                  "description": "The Git commit author email."
+                  "description": "The Git commit author email.",
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "format": "email",
+                      "description": "The author email to use for the entire campaign."
+                    },
+                    {
+                      "type": "object",
+                      "required": ["default"],
+                      "additionalProperties": false,
+                      "properties": {
+                        "default": {
+                          "type": "string",
+                          "format": "email",
+                          "description": "The author email to use for all changesets that do not match any of the rules in the except array."
+                        },
+                        "except": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "title": "GitCommitEmailExcept",
+                            "required": ["match", "value"],
+                            "additionalProperties": false,
+                            "properties": {
+                              "match": {
+                                "type": "string",
+                                "description": "The repository name to match. Glob wildcards are supported."
+                              },
+                              "value": {
+                                "type": "string",
+                                "format": "email",
+                                "description": "The author email to use for changesets that match this rule."
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             }

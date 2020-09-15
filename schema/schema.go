@@ -273,6 +273,28 @@ type BitbucketServerRateLimit struct {
 type BitbucketServerUsernameIdentity struct {
 	Type string `json:"type"`
 }
+type Body struct {
+	// Default description: The body to use for all changesets that do not match any of the rules in the except array.
+	Default string        `json:"default"`
+	Except  []*BodyExcept `json:"except,omitempty"`
+}
+type BodyExcept struct {
+	// Match description: The repository name to match. Glob wildcards are supported.
+	Match string `json:"match"`
+	// Value description: The body to use for changesets that match this rule.
+	Value string `json:"value"`
+}
+type Branch struct {
+	// Default description: The branch name to use for all changesets that do not match any of the rules in the except array.
+	Default string          `json:"default"`
+	Except  []*BranchExcept `json:"except,omitempty"`
+}
+type BranchExcept struct {
+	// Match description: The repository name to match. Glob wildcards are supported.
+	Match string `json:"match"`
+	// Value description: The branch name to use for changesets that match this rule.
+	Value string `json:"value"`
+}
 type BrandAssets struct {
 	// Logo description: The URL to the image used on the homepage. This will replace the Sourcegraph logo on the homepage. Maximum width: 320px. We recommend using the following file formats: SVG, PNG
 	Logo string `json:"logo,omitempty"`
@@ -322,9 +344,9 @@ type CampaignSpec struct {
 // ChangesetTemplate description: A template describing how to create (and update) changesets with the file changes produced by the command steps.
 type ChangesetTemplate struct {
 	// Body description: The body (description) of the changeset.
-	Body string `json:"body,omitempty"`
+	Body interface{} `json:"body,omitempty"`
 	// Branch description: The name of the Git branch to create or update on each repository with the changes.
-	Branch string `json:"branch"`
+	Branch interface{} `json:"branch"`
 	// Commit description: The Git commit to create with the changes.
 	Commit ExpandedGitCommitDescription `json:"commit"`
 	// Published description: Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the campaign, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host.
@@ -359,6 +381,11 @@ type DebugLog struct {
 type Dotcom struct {
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
 	SlackLicenseExpirationWebhook string `json:"slackLicenseExpirationWebhook,omitempty"`
+}
+type Email struct {
+	// Default description: The author email to use for all changesets that do not match any of the rules in the except array.
+	Default string                  `json:"default"`
+	Except  []*GitCommitEmailExcept `json:"except,omitempty"`
 }
 type ExcludedAWSCodeCommitRepo struct {
 	// Id description: The ID of an AWS Code Commit repository (as returned by the AWS API) to exclude from mirroring. Use this to exclude the repository, even if renamed, or to differentiate between repositories with the same name in multiple regions.
@@ -412,7 +439,7 @@ type ExpandedGitCommitDescription struct {
 	// Author description: The author of the Git commit.
 	Author *GitCommitAuthor `json:"author,omitempty"`
 	// Message description: The Git commit message.
-	Message string `json:"message"`
+	Message interface{} `json:"message"`
 }
 
 // ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
@@ -465,9 +492,15 @@ type ExternalIdentity struct {
 // GitCommitAuthor description: The author of the Git commit.
 type GitCommitAuthor struct {
 	// Email description: The Git commit author email.
-	Email string `json:"email"`
+	Email interface{} `json:"email"`
 	// Name description: The Git commit author name.
-	Name string `json:"name"`
+	Name interface{} `json:"name"`
+}
+type GitCommitAuthorExcept struct {
+	// Match description: The repository name to match. Glob wildcards are supported.
+	Match string `json:"match"`
+	// Value description: The author name to use for changesets that match this rule.
+	Value string `json:"value"`
 }
 
 // GitCommitDescription description: The Git commit to create with the changes.
@@ -480,6 +513,18 @@ type GitCommitDescription struct {
 	Diff string `json:"diff"`
 	// Message description: The Git commit message.
 	Message string `json:"message"`
+}
+type GitCommitEmailExcept struct {
+	// Match description: The repository name to match. Glob wildcards are supported.
+	Match string `json:"match"`
+	// Value description: The author email to use for changesets that match this rule.
+	Value string `json:"value"`
+}
+type GitCommitMessageExcept struct {
+	// Match description: The repository name to match. Glob wildcards are supported.
+	Match string `json:"match"`
+	// Value description: The commit message to use for changesets that match this rule.
+	Value string `json:"value"`
 }
 
 // GitHubAuthProvider description: Configures the GitHub (or GitHub Enterprise) OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitHub instance: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/. When a user signs into Sourcegraph or links their GitHub account to their existing Sourcegraph account, GitHub will prompt the user for the repo scope.
@@ -729,6 +774,16 @@ type Log struct {
 	// Sentry description: Configuration for Sentry
 	Sentry *Sentry `json:"sentry,omitempty"`
 }
+type Message struct {
+	// Default description: The commit message to use for all changesets that do not match any of the rules in the except array.
+	Default string                    `json:"default"`
+	Except  []*GitCommitMessageExcept `json:"except,omitempty"`
+}
+type Name struct {
+	// Default description: The author name to use for all changesets that do not match any of the rules in the except array.
+	Default string                   `json:"default"`
+	Except  []*GitCommitAuthorExcept `json:"except,omitempty"`
+}
 type Notice struct {
 	// Dismissible description: Whether this notice can be dismissed (closed) by the user.
 	Dismissible bool `json:"dismissible,omitempty"`
@@ -868,12 +923,6 @@ type OnRepository struct {
 	Branch string `json:"branch,omitempty"`
 	// Repository description: The name of the repository (as it is known to Sourcegraph).
 	Repository string `json:"repository"`
-}
-type Only struct {
-	// Match description: The repository name to match. Glob wildcards are supported.
-	Match string `json:"match"`
-	// Value description: The title to use for changesets that match this rule.
-	Value string `json:"value"`
 }
 
 // OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.
@@ -1257,9 +1306,15 @@ type Step struct {
 	Run string `json:"run"`
 }
 type Title struct {
-	// Default description: The title to use for all changesets that do not match any of the rules in the only array.
-	Default string  `json:"default"`
-	Only    []*Only `json:"only"`
+	// Default description: The title to use for all changesets that do not match any of the rules in the except array.
+	Default string         `json:"default"`
+	Except  []*TitleExcept `json:"except,omitempty"`
+}
+type TitleExcept struct {
+	// Match description: The repository name to match. Glob wildcards are supported.
+	Match string `json:"match"`
+	// Value description: The title to use for changesets that match this rule.
+	Value string `json:"value"`
 }
 
 // TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.

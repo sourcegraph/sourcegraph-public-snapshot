@@ -5,6 +5,7 @@ go 1.14
 require (
 	cloud.google.com/go/bigquery v1.6.0 // indirect
 	cloud.google.com/go/pubsub v1.3.1
+	github.com/LawnGnome/campaign-schema v0.0.0-20200915044008-fb956c216a65
 	github.com/Masterminds/semver v1.5.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
