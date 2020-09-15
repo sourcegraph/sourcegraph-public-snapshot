@@ -14,6 +14,9 @@ import (
 type StringValue string
 
 func (v *StringValue) Value() (driver.Value, error) {
+	if !ConfiguredToEncrypt() {
+		return []byte(*v), nil
+	}
 	if v == nil { // prefer all columns to be NON-NULL, but check in case
 		return nil, nil
 	}
@@ -26,10 +29,16 @@ func (v *StringValue) Value() (driver.Value, error) {
 }
 
 func (v *StringValue) Scan(src interface{}) error {
+
 	var source []byte
 
 	switch src := src.(type) {
 	case string: // expect a base64 encoded string
+		if !ConfiguredToEncrypt() {
+			*v = StringValue(src)
+			return nil
+		}
+
 		s, err := base64.StdEncoding.DecodeString(src)
 		if err != nil {
 			if _, ok := err.(base64.CorruptInputError); ok {
@@ -63,6 +72,10 @@ func (v *JSONValue) Value() (driver.Value, error) {
 		return `""`, nil
 	}
 
+	if !ConfiguredToEncrypt() {
+		return `"` + string([]byte(*v)) + `"`, nil
+	}
+
 	ciphertext, err := defaultEncryptor.EncryptBytes([]byte(*v))
 	if err != nil {
 		return nil, err
@@ -74,10 +87,16 @@ func (v *JSONValue) Scan(src interface{}) error {
 	var source []byte
 	switch src := src.(type) {
 	case string:
+
 		// In case it's an empty JSON
 		src = strings.Trim(src, `"{}`)
 		if src == "" {
 			*v = JSONValue(`""`)
+			return nil
+		}
+
+		if !ConfiguredToEncrypt() {
+			*v = JSONValue(src)
 			return nil
 		}
 
