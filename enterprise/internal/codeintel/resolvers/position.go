@@ -101,7 +101,7 @@ func (p *positionAdjuster) readHunksCached(ctx context.Context, repo *types.Repo
 		return p.readHunks(ctx, repo, sourceCommit, targetCommit, path)
 	}
 
-	key := makeKey(strconv.Itoa(repo.ID), sourceCommit, targetCommit, path)
+	key := makeKey(strconv.FormatInt(int64(repo.ID), 10), sourceCommit, targetCommit, path)
 	if hunks, ok := p.hunkCache.Get(key); ok {
 		if hunks == nil {
 			return nil, nil

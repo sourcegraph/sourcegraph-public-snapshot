@@ -43,7 +43,7 @@ func encodeIntCursor(val *int32) *graphqlutil.PageInfo {
 		return encodeCursor(nil)
 	}
 
-	str := strconv.Itoa(*val)
+	str := strconv.FormatInt(int64(*val), 10)
 	return encodeCursor(&str)
 }
 
