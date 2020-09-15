@@ -134,6 +134,13 @@ export class SiteAdminPingsPage extends React.Component<Props, State> {
                             <li>Count of saved search views</li>
                         </ul>
                     </li>
+                    <li>
+                        Aggregated repository statistics
+                        <ul>
+                            <li>Total size of git repositories stored in bytes</li>
+                            <li>Total number of lines of code stored in text search index</li>
+                        </ul>
+                    </li>
                 </ul>
                 {updatesDisabled ? (
                     <p>All telemetry is disabled.</p>
