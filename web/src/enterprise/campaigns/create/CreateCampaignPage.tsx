@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react'
 import { PageTitle } from '../../../components/PageTitle'
-import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 import { PageHeader } from '../../../components/PageHeader'
 import { CampaignsIcon } from '../icons'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
@@ -44,17 +43,12 @@ const samples: Sample[] = [
     { name: 'Update go imports', file: goImportsSample },
 ]
 
-const sourcePreviewCommand = 'src campaign preview -f my-campaign-spec.campaign.yaml -namespace {USERNAME/ORG}'
-
 export interface CreateCampaignPageProps extends BreadcrumbSetters {
     // Nothing for now, but using it so once this changes we get type errors in the routing files.
 }
 
 export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps> = ({ useBreadcrumb }) => {
     const [selectedSample, setSelectedSample] = useState<Sample>(samples[0])
-    const downloadUrl = useMemo(() => 'data:text/plain;charset=utf-8,' + encodeURIComponent(selectedSample.file), [
-        selectedSample,
-    ])
     const highlightedSample = useMemo(() => ({ __html: highlightCodeSafe(selectedSample.file, 'yaml') }), [
         selectedSample.file,
     ])
@@ -75,6 +69,18 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
             />
             <div className="col-md-12 col-lg-10 offset-lg-1 pt-3">
                 <h2>STEP 1: Write a campaign spec YAML file</h2>
+                <p>
+                    The campaign spec (
+                    <a
+                        href="https://docs.sourcegraph.com/user/campaigns#campaign-specs"
+                        rel="noopener noreferrer"
+                        target="_blank"
+                    >
+                        syntax reference
+                    </a>
+                    ) describes what the campaign does. You'll provide it when previewing, creating, and updating
+                    campaigns. We recommend committing it to source control.
+                </p>
                 <ul className="nav nav-tabs mb-2">
                     {samples.map(sample => (
                         <SampleTabHeader
@@ -84,32 +90,35 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                             setSelectedSample={setSelectedSample}
                         />
                     ))}
-                    <div className="flex-grow-1 mb-1 d-flex justify-content-end">
-                        <a
-                            download="campaign-spec.yaml"
-                            href={downloadUrl}
-                            className="text-right btn btn-secondary text-nowrap"
-                            data-tooltip="Download campaign-spec.yaml"
-                        >
-                            <FileDownloadIcon className="icon-inline" /> Download yaml
-                        </a>
-                    </div>
                 </ul>
                 <div className="create-campaign-page__specfile rounded p-3 mb-4">
                     <pre className="m-0" dangerouslySetInnerHTML={highlightedSample} />
                 </div>
                 <h2>STEP 2: Preview the campaign with Sourcegraph CLI</h2>
-                <p className="lead">
-                    Download Sourcegraph's cli tool, src-cli at{' '}
-                    <a href="https://github.com/sourcegraph/src-cli" target="_blank" rel="noopener noreferrer">
-                        github.com/sourcegraph/src-cli
+                <p>
+                    Use the{' '}
+                    <a href="https://github.com/sourcegraph/src-cli" rel="noopener noreferrer" target="_blank">
+                        Sourcegraph CLI (src)
+                    </a>{' '}
+                    to preview the commits and changesets that your campaign will make:
+                </p>
+                <pre className="">
+                    <code>
+                        src campaign preview -f FILENAME -namespace NAMESPACE
+                    </code>
+                </pre>
+                <p>
+                    Follow the URL printed in your terminal to see the preview and (when you're ready) create the
+                    campaign.
+                </p>
+                <hr className="mt-5" />
+                <p className="mt-2 text-muted">
+                    Want more help? See{' '}
+                    <a href="/help/user/campaigns" rel="noopener noreferrer" target="_blank">
+                        campaigns documentation
                     </a>
                     .
                 </p>
-                <p className="lead">Use Sourcegraph src-cli to preview your campaign:</p>
-                <div className="create-campaign-page__specfile rounded p-3 mb-3">
-                    <pre className="m-0">{sourcePreviewCommand}</pre>
-                </div>
             </div>
         </>
     )
