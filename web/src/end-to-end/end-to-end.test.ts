@@ -1521,7 +1521,7 @@ describe('e2e test suite', () => {
             ).toBe(1)
         })
 
-        test('Interactive search mode filter buttons', async () => {
+        test.skip('Interactive search mode filter buttons', async () => {
             await driver.page.waitForSelector('.test-search-mode-toggle', { visible: true })
             await driver.page.click('.test-search-mode-toggle')
             await driver.page.click('.test-search-mode-toggle__interactive-mode')
@@ -1617,7 +1617,7 @@ describe('e2e test suite', () => {
             assert.strictEqual(await filterInputValue(), 'repo:^github\\.com/sourcegraph/jsonrpc2$')
         })
 
-        test('Interactive search mode filter dropdown and finite-option filter inputs', async () => {
+        test.skip('Interactive search mode filter dropdown and finite-option filter inputs', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.test-query-input', { visible: true })
             await driver.page.waitForSelector('.test-filter-dropdown')
