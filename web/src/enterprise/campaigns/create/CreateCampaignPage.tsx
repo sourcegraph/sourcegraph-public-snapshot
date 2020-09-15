@@ -110,7 +110,7 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                 <pre className="">
                     <code>
                         src campaign preview -namespace {authenticatedUser ? authenticatedUser.username : 'NAMESPACE'}{' '}
-                        -f FILENAME
+                        -f {selectedSample.name}
                     </code>
                 </pre>
                 <p>
