@@ -45,7 +45,7 @@ const samples: Sample[] = [
 ]
 
 export interface CreateCampaignPageProps extends BreadcrumbSetters {
-    authenticatedUser: AuthenticatedUser | null
+    authenticatedUser: Pick<AuthenticatedUser, 'username'> | null
 }
 
 export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps> = ({
