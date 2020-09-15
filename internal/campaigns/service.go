@@ -165,12 +165,7 @@ func (svc *Service) SetDockerImages(ctx context.Context, spec *CampaignSpec, pro
 	return nil
 }
 
-func (svc *Service) ExecuteCampaignSpec(ctx context.Context, x Executor, spec *CampaignSpec, progress func([]*TaskStatus)) ([]*ChangesetSpec, error) {
-	repos, err := svc.ResolveRepositories(ctx, spec)
-	if err != nil {
-		return nil, errors.Wrap(err, "resolving repositories")
-	}
-
+func (svc *Service) ExecuteCampaignSpec(ctx context.Context, repos []*graphql.Repository, x Executor, spec *CampaignSpec, progress func([]*TaskStatus)) ([]*ChangesetSpec, error) {
 	statuses := make([]*TaskStatus, 0, len(repos))
 	for _, repo := range repos {
 		ts := x.AddTask(repo, spec.Steps, spec.ChangesetTemplate)
@@ -290,7 +285,7 @@ func (svc *Service) ResolveNamespace(ctx context.Context, namespace string) (str
 func (svc *Service) ResolveRepositories(ctx context.Context, spec *CampaignSpec) ([]*graphql.Repository, error) {
 	final := []*graphql.Repository{}
 	seen := map[string]struct{}{}
-	unsupported := unsupportedRepoSet{}
+	unsupported := UnsupportedRepoSet{}
 
 	// TODO: this could be trivially parallelised in the future.
 	for _, on := range spec.On {
@@ -304,21 +299,23 @@ func (svc *Service) ResolveRepositories(ctx context.Context, spec *CampaignSpec)
 				if repo.DefaultBranch == nil {
 					continue
 				}
+				seen[repo.ID] = struct{}{}
 				switch st := strings.ToLower(repo.ExternalRepository.ServiceType); st {
 				case "github", "gitlab", "bitbucketserver":
-
 				default:
 					unsupported.appendRepo(repo)
+					if !svc.allowUnsupported {
+						continue
+					}
 				}
 
-				seen[repo.ID] = struct{}{}
 				final = append(final, repo)
 			}
 		}
 	}
 
 	if unsupported.hasUnsupported() && !svc.allowUnsupported {
-		return nil, unsupported
+		return final, unsupported
 	}
 
 	return final, nil
