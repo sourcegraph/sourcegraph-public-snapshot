@@ -74,7 +74,7 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                 }
             />
             <div className="pt-3">
-                <h2>1: Write a campaign spec YAML file</h2>
+                <h2>1. Write a campaign spec YAML file</h2>
                 <p>
                     The campaign spec (
                     <a
@@ -101,7 +101,7 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                 <div className="p-3 mb-4 border">
                     <pre className="m-0" dangerouslySetInnerHTML={highlightedSample} />
                 </div>
-                <h2>2: Preview the campaign with Sourcegraph CLI</h2>
+                <h2>2. Preview the campaign with Sourcegraph CLI</h2>
                 <p>
                     Use the{' '}
                     <a href="https://github.com/sourcegraph/src-cli" rel="noopener noreferrer" target="_blank">
