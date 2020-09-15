@@ -11,6 +11,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## Unreleased
 
+## 3.20.0
+
 ### Added
 
 - The site configuration `search.limits`. This allows configuring the maximum timeout (defaults to 1 minute). Also allows configuring the maximum repositories to search in different scenarios. [#13448](https://github.com/sourcegraph/sourcegraph/pull/13448)
