@@ -152,14 +152,12 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
                                             ? extension.registryExtension.extensionIDWithoutRegistry
                                             : extension.id
                                     }`}
+                                    className={classNames(
+                                        'font-weight-bold',
+                                        change === 'enabled' ? 'alert-link' : 'extension-card__link'
+                                    )}
                                 >
-                                    <h4
-                                        className={classNames('d-inline', {
-                                            'alert-link': change === 'enabled',
-                                        })}
-                                    >
-                                        {name}
-                                    </h4>
+                                    {name}
                                 </Link>
                                 <span> by {publisher}</span>
                             </span>

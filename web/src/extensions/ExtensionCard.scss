@@ -32,6 +32,10 @@
         opacity: 1;
     }
 
+    &__link {
+        color: var(--body-color);
+    }
+
     &__disabled-feedback {
         position: absolute;
         top: -1.625rem;
@@ -50,6 +54,10 @@
 
         &__shadow {
             box-shadow: 0 0 0 6px rgba(199, 233, 205, 0.7);
+        }
+
+        &__link {
+            color: $gray-14;
         }
     }
 }
