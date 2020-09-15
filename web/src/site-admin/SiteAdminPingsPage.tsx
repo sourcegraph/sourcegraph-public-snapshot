@@ -93,6 +93,9 @@ export class SiteAdminPingsPage extends React.Component<Props, State> {
                         </ul>
                     </li>
                     <li>
+                    Aggregate daily, weekly, and monthly latencies (in ms) of search queries
+                    </li>
+                    <li>
                         Aggregate daily, weekly, and monthly counts of:
                         <ul>
                             <li>Code intelligence events (e.g., hover tooltips)</li>
