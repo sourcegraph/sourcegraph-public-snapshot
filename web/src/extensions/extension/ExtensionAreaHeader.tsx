@@ -9,6 +9,7 @@ import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { WorkInProgressBadge } from './WorkInProgressBadge'
 import { isEncodedImage } from '../../../../shared/src/util/icon'
 import { useTimeoutManager } from '../../../../shared/src/util/useTimeoutManager'
+import classNames from 'classnames'
 
 interface ExtensionAreaHeaderProps extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
     navItems: readonly ExtensionAreaHeaderNavItem[]
@@ -107,8 +108,21 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                             </div>
                             <div className="d-flex align-items-center justify-content-center mt-3 mb-2 position-relative">
                                 {change && (
-                                    <div className="alert alert-secondary px-2 py-1 extension-area-header__disabled-feedback">
+                                    <div
+                                        className={classNames(
+                                            'alert px-2 py-1 extension-area-header__disabled-feedback',
+                                            {
+                                                'alert-secondary': change === 'disabled',
+                                                'alert-success': change === 'enabled',
+                                            }
+                                        )}
+                                    >
                                         <strong>{name}</strong> is {change}
+                                    </div>
+                                )}
+                                {showCta && (
+                                    <div className="alert alert-secondary px-2 py-1 extension-area-header__disabled-feedback">
+                                        Register now! TODO
                                     </div>
                                 )}
                                 {props.authenticatedUser && (
@@ -121,6 +135,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                         onToggleChange={onToggleChange}
                                         big={true}
                                         onHover={onHover}
+                                        userCannotToggle={true}
                                     />
                                 )}
                             </div>
