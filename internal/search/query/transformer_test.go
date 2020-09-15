@@ -316,6 +316,16 @@ func TestConvertEmptyGroupsToLiteral(t *testing.T) {
 			want:       `"search\\("`,
 			wantLabels: Regexp | HeuristicDanglingParens,
 		},
+		{
+			input:      `"search("`,
+			want:       `"search("`,
+			wantLabels: Quoted | Literal,
+		},
+		{
+			input:      `"search()"`,
+			want:       `"search()"`,
+			wantLabels: Quoted | Literal,
+		},
 	}
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
