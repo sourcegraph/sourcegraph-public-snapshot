@@ -18,7 +18,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -106,7 +105,7 @@ func getTotalReposCount(ctx context.Context) (_ int, err error) {
 
 func getUsersActiveTodayCount(ctx context.Context) (_ int, err error) {
 	defer recordOperation("getUsersActiveTodayCount")(&err)
-	return usagestatsdeprecated.GetUsersActiveTodayCount(ctx)
+	return usagestats.GetUsersActiveTodayCount(ctx)
 }
 
 func getInitialSiteAdminEmail(ctx context.Context) (_ string, err error) {
