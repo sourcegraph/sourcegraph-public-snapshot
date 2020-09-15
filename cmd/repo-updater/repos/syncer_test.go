@@ -296,7 +296,9 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				err:  "<nil>",
 			},
 			testCase{
-				name: tc.repo.Name + "/deleted repo source",
+				// It's expected that there could be multiple stored sources but only one will ever be returned
+				// by the code host as it can't know about others.
+				name: tc.repo.Name + "/source already stored",
 				sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone()),
 				),
