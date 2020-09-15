@@ -132,8 +132,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                     </ul>
                 </li>
                 <li>
-                    Aggregate daily, weekly, and monthly latencies (in ms) of code intelligence events (e.g., hover
-                    tooltips) and search queries
+                    Aggregate daily, weekly, and monthly latencies (in ms) of search queries
                 </li>
                 <li>
                     Aggregate daily, weekly, and monthly counts of:
