@@ -13,7 +13,7 @@ import (
 )
 
 func NewHandler(serviceType, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
-	oauthFlowHandler := http.StripPrefix(authPrefix, NewOAuthFlowHandler(serviceType))
+	oauthFlowHandler := http.StripPrefix(authPrefix, newOAuthFlowHandler(serviceType))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Delegate to the auth flow handler
 		if !isAPIHandler && strings.HasPrefix(r.URL.Path, authPrefix+"/") {
@@ -44,7 +44,7 @@ func NewHandler(serviceType, authPrefix string, isAPIHandler bool, next http.Han
 	})
 }
 
-func NewOAuthFlowHandler(serviceType string) http.Handler {
+func newOAuthFlowHandler(serviceType string) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/login", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		id := req.URL.Query().Get("pc")
@@ -83,7 +83,7 @@ func getExactlyOneOAuthProvider() *Provider {
 	if !ok {
 		return nil
 	}
-	if !IsOAuth(p.Config()) {
+	if !isOAuth(p.Config()) {
 		return nil
 	}
 	return p
@@ -95,7 +95,7 @@ func AddIsOAuth(f func(p schema.AuthProviders) bool) {
 	isOAuths = append(isOAuths, f)
 }
 
-func IsOAuth(p schema.AuthProviders) bool {
+func isOAuth(p schema.AuthProviders) bool {
 	for _, f := range isOAuths {
 		if f(p) {
 			return true
