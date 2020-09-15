@@ -1,13 +1,5 @@
 .create-campaign-page {
     &__specfile {
-        background-color: $gray-18;
-    }
-}
-
-.theme-light {
-    .create-campaign-page {
-        &__specfile {
-            background-color: $gray-01;
-        }
+        background-color: $code-bg;
     }
 }
