@@ -46,6 +46,15 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
     showMoreExtensions,
     ...props
 }) => {
+    /** Categories, but with 'Programming Languages' at the end */
+    const ORDERED_EXTENSION_CATEGORIES: ExtensionCategory[] = React.useMemo(
+        () => [
+            ...EXTENSION_CATEGORIES.filter(category => category !== 'Programming languages'),
+            'Programming languages',
+        ],
+        []
+    )
+
     if (!data || data === LOADING) {
         return <LoadingSpinner className="icon-inline" />
     }
@@ -75,7 +84,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
     const renderLanguages =
         (selectedCategories.length === 0 && showMoreExtensions) || selectedCategories.includes('Programming languages')
 
-    const filteredCategoryIDs = EXTENSION_CATEGORIES.filter(category => {
+    const filteredCategoryIDs = ORDERED_EXTENSION_CATEGORIES.filter(category => {
         if (category === 'Programming languages') {
             return renderLanguages
         }

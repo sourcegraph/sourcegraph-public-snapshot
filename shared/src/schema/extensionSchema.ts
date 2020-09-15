@@ -23,9 +23,9 @@ export const EXTENSION_CATEGORIES = array([
     'External services',
     'Linters',
     'Code editors',
-    'Code Analysis',
-    'Other',
+    'Code analysis',
     'Programming languages',
+    'Other',
 ])
 
 /**
