@@ -291,3 +291,8 @@ func RotateEncryption(ciphertext string) (string, error) {
 func PrimaryKeyHash() string {
 	return defaultEncryptor.PrimaryKeyHash()
 }
+
+// SecondaryKeyHash returns hash of the secondary key to be used for filtering.
+func SecondaryKeyHash() string {
+	return defaultEncryptor.SecondaryKeyHash()
+}
