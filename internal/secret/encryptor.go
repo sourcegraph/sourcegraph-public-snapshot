@@ -1,13 +1,14 @@
 package secret
 
 import (
-	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"io"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -28,18 +29,16 @@ type Encryptor interface {
 	ConfiguredToEncrypt() bool
 	// ConfiguredToRotate returns if primary and secondary keys are valid keys
 	ConfiguredToRotate() bool
-	// DecodeAndDecryptBytes returns the decrypted ciphertext, after removing the hashed prefix
-	DecodeAndDecryptBytes(b []byte) ([]byte, error)
 	// Decrypts a cipher, attempting all keys
-	DecryptBytes(b []byte) ([]byte, error)
-	// EncryptBytes encrypts a plaintext with the primary key
-	EncryptBytes(b []byte) ([]byte, error)
-	// EncodeAndEncryptBytes returns the encrypted plaintext, prefixed by a slice containing the hash of the encryption key
-	EncodeAndEncryptBytes(b []byte) ([]byte, error)
+	Decrypt(b string) (string, error)
+	// Encrypt encrypts a plaintext with the primary key
+	Encrypt(b string) (string, error)
 	// EncryptBytes encrypts a plaintext with the primary key
 	EncryptWithKey(b, key []byte) ([]byte, error)
-	// Return the keyHash from the encryptor object, to be used when filtering encoding
-	KeyHash() []byte
+	// Return hash of the primary key to be used when filtering encoding
+	PrimaryKeyHash() string
+	// Return hash of secondary key to be used in decrypting
+	SecondaryKeyHash() string
 	// RotateEncryption decrypts given byte array and then re-encrypts with the primary key
 	RotateEncryption(b []byte) ([]byte, error)
 }
@@ -51,18 +50,21 @@ type encryptor struct {
 	// secondaryKey is used during key rotation to provide decryption during key rotations.
 	// It was the primary key that was used for encryption before the key rotation.
 	secondaryKey []byte
-	// keyHash is used during encoding, to ensure
-	keyHash []byte
+	// primaryKeyHash is prepended to base64-encoded ciphertext with `separator`.
+	primaryKeyHash string
+	// secondaryKeyHash is the previously hash that was prepened to ciphertext with `seperator`
+	secondaryKeyHash string
 }
 
-// sliceHashKey returns the first 6 bytes of the primary key, in a sha256 hash
-func sliceHashKey(k []byte) []byte {
+// sliceKeyHash returns a string which is the first 6 bytes of given key's SHA256 checksum in hexadecimal.
+func sliceKeyHash(k []byte) string {
 	if k == nil {
-		return nil
+		return ""
 	}
 
-	sum := sha256.Sum256(k)
-	return sum[0:6]
+	h := sha256.New()
+	h.Write(k)
+	return hex.EncodeToString(h.Sum(nil))[:6]
 }
 
 // gcmEncrypt is the general purpose encryption function used to
@@ -115,15 +117,21 @@ func gcmDecrypt(ciphertext, key []byte) ([]byte, error) {
 
 func newEncryptor(primaryKey, secondaryKey []byte) Encryptor {
 	return encryptor{
-		primaryKey:   primaryKey,
-		secondaryKey: secondaryKey,
-		keyHash:      sliceHashKey(primaryKey),
+		primaryKey:       primaryKey,
+		secondaryKey:     secondaryKey,
+		primaryKeyHash:   sliceKeyHash(primaryKey),
+		secondaryKeyHash: sliceKeyHash(secondaryKey),
 	}
 }
 
-// KeyHash returns the private keyHash variable.
-func (e encryptor) KeyHash() []byte {
-	return e.keyHash
+// PrimaryKeyHash returns the keyHash for the primary key.
+func (e encryptor) PrimaryKeyHash() string {
+	return e.primaryKeyHash
+}
+
+// SecondaryKeyHash returns the keyHash for the secondary key.
+func (e encryptor) SecondaryKeyHash() string {
+	return e.secondaryKeyHash
 }
 
 // ConfiguredToEncrypt returns the status of our encryptor, whether or not
@@ -138,59 +146,52 @@ func (e encryptor) ConfiguredToRotate() bool {
 	return len(e.primaryKey) == validKeyLength && len(e.secondaryKey) == validKeyLength
 }
 
-// EncryptBytes encrypts the plaintext using the primaryKey of the encryptor. This
+// Encrypt encrypts the plaintext using the primaryKey of the encryptor. This
 // relies on the AES-GCM encryption defined in encrypt, within this package.
-func (e encryptor) EncryptBytes(plaintext []byte) (ciphertext []byte, err error) {
+func (e encryptor) Encrypt(plaintext string) (ciphertext string, err error) {
 	if len(e.primaryKey) < validKeyLength {
-		return nil, &EncryptionError{errors.New("primary key is unavailable")}
+		return "", &EncryptionError{errors.New("primary key is unavailable")}
 	}
-	return gcmEncrypt(plaintext, e.primaryKey)
-}
 
-// EncodeAndEncryptBytes returns a byte array that encodes the ciphertext base64
-func (e encryptor) EncodeAndEncryptBytes(plaintext []byte) (b []byte, err error) {
-	crypt := bytes.Join([][]byte{e.KeyHash(), plaintext}, []byte(separator))
-	enc, err := e.EncryptBytes(crypt)
+	cipherbytes, err := gcmEncrypt([]byte(plaintext), e.primaryKey)
 	if err != nil {
-		return nil, err
+		return "", &EncryptionError{errors.Errorf("unable to encrypt: %v", err)}
 	}
-	return []byte(base64.StdEncoding.EncodeToString(enc)), nil
+
+	ciphertext = base64.StdEncoding.EncodeToString(cipherbytes)
+	return e.PrimaryKeyHash() + separator + ciphertext, nil
 }
 
-// DecryptBytes decrypts the plaintext using the primaryKey of the encryptor.
+// Decrypt decrypts the plaintext using the primaryKey of the encryptor.
 // This relies on AES-GCM.
-func (e encryptor) DecryptBytes(ciphertext []byte) (plaintext []byte, err error) {
+func (e encryptor) Decrypt(ciphertext string) (plaintext string, err error) {
 	if len(e.primaryKey) < validKeyLength && len(e.secondaryKey) < validKeyLength {
-		return nil, &EncryptionError{errors.New("no valid keys available")}
+		return "", &EncryptionError{errors.New("no valid keys available")}
 	}
 
-	if plaintext, err = gcmDecrypt(ciphertext, e.primaryKey); err == nil {
-		return plaintext, nil
-	}
-	if plaintext, err = gcmDecrypt(ciphertext, e.secondaryKey); err == nil {
-		return plaintext, nil
-	}
-	return nil, &EncryptionError{err}
-}
+	var keyToDecrypt []byte
 
-// DecodeAndDecryptBytes decodes a base64 encoded encrypted byte array
-func (e encryptor) DecodeAndDecryptBytes(ciphertext []byte) (b []byte, err error) {
-	base64Text := string(ciphertext)
+	// Check the keyHash prefix to determine if we can decrypt it or whether it is encrypted at all.
+	if strings.HasPrefix(ciphertext, e.PrimaryKeyHash()+separator) {
+		ciphertext = ciphertext[len(e.PrimaryKeyHash()+separator):]
+		keyToDecrypt = e.primaryKey
+	} else if strings.HasPrefix(ciphertext, e.SecondaryKeyHash()+separator) {
+		ciphertext = ciphertext[len(e.SecondaryKeyHash()+separator):]
+		keyToDecrypt = e.secondaryKey
+	} else {
+		return ciphertext, nil
+	}
 
-	cipher, err := base64.StdEncoding.DecodeString(base64Text)
+	decodedCiphertext, err := base64.StdEncoding.DecodeString(ciphertext)
 	if err != nil {
-		return nil, err
-	}
-	res, err := e.DecryptBytes(cipher)
-	if err != nil {
-		return nil, err
+		return "", &EncryptionError{err}
 	}
 
-	ba := bytes.Split(res, []byte(separator))
-	if len(ba) != 2 {
-		return nil, &EncryptionError{errors.New("ciphertext was not encoded")}
+	plainbytes, err := gcmDecrypt([]byte(decodedCiphertext), keyToDecrypt)
+	if err != nil {
+		return "", &EncryptionError{err}
 	}
-	return ba[1], nil
+	return string(plainbytes), nil
 }
 
 // EncryptWithKey encrypts the plaintext byte array with a specific key
@@ -221,23 +222,20 @@ func (e encryptor) RotateEncryption(ciphertext []byte) ([]byte, error) {
 // noOpEncryptor always returns original content and does no encryption or decryption.
 type noOpEncryptor struct{}
 
-func (noOpEncryptor) KeyHash() []byte {
-	return []byte{}
-}
-func (noOpEncryptor) EncryptBytes(b []byte) ([]byte, error) {
-	return b, nil
+func (noOpEncryptor) PrimaryKeyHash() string {
+	return ""
 }
 
-func (noOpEncryptor) DecryptBytes(b []byte) ([]byte, error) {
-	return b, nil
+func (noOpEncryptor) SecondaryKeyHash() string {
+	return ""
 }
 
-func (noOpEncryptor) DecodeAndDecryptBytes(b []byte) ([]byte, error) {
-	return b, nil
+func (noOpEncryptor) Encrypt(s string) (string, error) {
+	return s, nil
 }
 
-func (noOpEncryptor) EncodeAndEncryptBytes(b []byte) ([]byte, error) {
-	return b, nil
+func (noOpEncryptor) Decrypt(s string) (string, error) {
+	return s, nil
 }
 
 func (noOpEncryptor) ConfiguredToEncrypt() bool {
@@ -270,18 +268,18 @@ func ConfiguredToRotate() bool {
 	return defaultEncryptor.ConfiguredToRotate()
 }
 
-// EncryptBytes encrypts the plaintext and returns the encrypted value.
+// Encrypt encrypts the plaintext and returns the encrypted value.
 // An error is returned when encryption fails. It returns the original
 // content if encryption is not configured.
-func EncryptBytes(plaintext []byte) ([]byte, error) {
-	return defaultEncryptor.EncryptBytes(plaintext)
+func Encrypt(plaintext string) (string, error) {
+	return defaultEncryptor.Encrypt(plaintext)
 }
 
-// DecryptBytes decrypts the ciphertext and returns the decrypted value.
+// Decrypt decrypts the ciphertext and returns the decrypted value.
 // An error is returned when decryption fails. It returns the original
 // content if encryption is not configured.
-func DecryptBytes(ciphertext []byte) ([]byte, error) {
-	return defaultEncryptor.DecryptBytes(ciphertext)
+func Decrypt(ciphertext string) (string, error) {
+	return defaultEncryptor.Decrypt(ciphertext)
 }
 
 // EncryptWithKey encrypts the plaintext byte array with a specific key
@@ -296,17 +294,7 @@ func RotateEncryption(ciphertext []byte) ([]byte, error) {
 	return defaultEncryptor.RotateEncryption(ciphertext)
 }
 
-// DecodeAndDecryptBytes decodes a base64 encoded encrypted byte array
-func DecodeAndDecryptBytes(ciphertext []byte) ([]byte, error) {
-	return defaultEncryptor.DecodeAndDecryptBytes(ciphertext)
-}
-
-// EncodeAndEncryptBytes returns a byte array that encodes the ciphertext base64
-func EncodeAndEncryptBytes(ciphertext []byte) ([]byte, error) {
-	return defaultEncryptor.EncodeAndEncryptBytes(ciphertext)
-}
-
 // KeyHash returns the private keyHash variable.
-func KeyHash() []byte {
-	return defaultEncryptor.KeyHash()
+func KeyHash() string {
+	return defaultEncryptor.PrimaryKeyHash()
 }
