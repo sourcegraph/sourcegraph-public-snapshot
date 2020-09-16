@@ -19,7 +19,7 @@ Sourcegraph is a self-hosted code search and intelligence tool that helps develo
 - Sourcegraph's [query syntax](../../user/code_search/queries.md), user interface, and [integrations](../../integration/index.md) are superior and easier to use.
 - Sourcegraph's [code intelligence](../../user/code_intelligence/index.md), has better language support (hover tooltips, definitions, references, implementations, etc.) and is based on the Language Server Protocol standard.
 - The [Sourcegraph API](../../api/graphql/index.md) is more powerful, better documented, and easier to use than OpenGrok's API.
-- Sourcegraph scales to more repositories/users and supports Kubernetes-based clustered/high-availability deployments better (with the [cluster deployment option](../install/cluster.md)).
+- Sourcegraph scales to more repositories/users and supports Kubernetes-based clustered/high-availability deployments better (with the [cluster deployment option](../install/kubernetes/index.md)).
 
 Both Sourcegraph and OpenGrok are self-hosted, and your code never touches Sourcegraph's (or Oracle's) servers.
 
@@ -51,7 +51,7 @@ The following sections guide you through the migration process.
 You can deploy Sourcegraph in 2 ways:
 
 - [Single Docker container](../install/docker/index.md): single-server deployment from the `sourcegraph/server` Docker image
-- [Kubernetes cluster](../install/cluster.md): cluster deployment using Kubernetes for 1,000s of repositories/users
+- [Kubernetes cluster](../install/kubernetes/index.md): cluster deployment using Kubernetes for 1,000s of repositories/users
 
 The fastest way to try it is to run Sourcegraph Server locally [with the quickstart instructions](../index.md).
 

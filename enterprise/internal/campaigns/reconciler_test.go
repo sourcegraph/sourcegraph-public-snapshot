@@ -309,6 +309,45 @@ func TestReconcilerProcess(t *testing.T) {
 				// failureMessage should be nil
 			},
 		},
+		"update published changeset commit author": {
+			currentSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+
+				// Everything the same, except author changed
+				commitAuthorName:  "Fernando the fish",
+				commitAuthorEmail: "fernando@deep.sea",
+			},
+			previousSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+
+				// Old author data
+				commitAuthorName:  "Larry the Llama",
+				commitAuthorEmail: "larry@winamp.com",
+			},
+			changeset: testChangesetOpts{
+				publicationState:  campaigns.ChangesetPublicationStatePublished,
+				externalID:        "12345",
+				externalBranch:    "head-ref-on-github",
+				externalState:     campaigns.ChangesetExternalStateOpen,
+				createdByCampaign: true,
+			},
+			sourcerMetadata: githubPR,
+
+			// We don't want an update on the code host, only a new commit pushed.
+			wantGitserverCommit: true,
+			// And we want the changeset to be synced after pushing the commit.
+			wantLoadFromCodeHost: true,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalState:    campaigns.ChangesetExternalStateOpen,
+				externalID:       githubPR.ID,
+				externalBranch:   githubPR.HeadRefName,
+				diffStat:         state.DiffStat,
+			},
+		},
 		"reprocess published changeset without changes": {
 			// ChangesetSpec is already published and has no previous spec.
 			// Simply a reprocessing of the same changeset.
@@ -628,7 +667,7 @@ type testChangesetOpts struct {
 
 	reconcilerState campaigns.ReconcilerState
 	failureMessage  string
-	numResets       int64
+	numFailures     int64
 
 	createdByCampaign bool
 	ownedByCampaign   int64
@@ -668,7 +707,7 @@ func createChangeset(
 		Closing:  opts.closing,
 
 		ReconcilerState: opts.reconcilerState,
-		NumResets:       opts.numResets,
+		NumFailures:     opts.numFailures,
 	}
 
 	if opts.failureMessage != "" {

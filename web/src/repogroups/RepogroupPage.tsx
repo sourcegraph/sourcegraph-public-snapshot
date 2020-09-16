@@ -42,7 +42,7 @@ export interface RepogroupPageProps
         CaseSensitivityProps,
         KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         InteractiveSearchProps,
         CopyQueryButtonProps,
         VersionContextProps,
@@ -53,10 +53,6 @@ export interface RepogroupPageProps
     isSourcegraphDotCom: boolean
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
-
-    // For NavLinks
-    authRequired?: boolean
-    showCampaigns: boolean
 
     // Repogroup page metadata
     repogroupMetadata: RepogroupMetadata
@@ -107,12 +103,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                 </span>
             </div>
             <div className="repogroup-page__container">
-                <SearchPageInput
-                    {...props}
-                    queryPrefix={repogroupQuery}
-                    source="repogroupPage"
-                    interactiveModeHomepageMode={true}
-                />
+                <SearchPageInput {...props} queryPrefix={repogroupQuery} source="repogroupPage" />
             </div>
             <div className="row">
                 <div className="repogroup-page__column col-xs-12 col-lg-7">

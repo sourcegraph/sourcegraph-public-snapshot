@@ -9,6 +9,7 @@ import {
     ChangesetExternalState,
     ChangesetPublicationState,
     ChangesetFields,
+    CampaignChangesetsResult,
 } from '../../../graphql-operations'
 import { Subject } from 'rxjs'
 import { FilteredConnectionQueryArgs, FilteredConnection } from '../../../components/FilteredConnection'
@@ -23,12 +24,14 @@ import { getLSPTextDocumentPositionParameters } from '../utils'
 import { getHoverActions } from '../../../../../shared/src/hover/actions'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { ChangesetCloseNodeProps, ChangesetCloseNode } from './ChangesetCloseNode'
-import { CampaignCloseHeader } from './CampaignCloseHeader'
 import { WebHoverOverlay } from '../../../components/shared'
 import {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
 } from '../detail/backend'
+import { ErrorLike } from '../../../../../shared/src/util/errors'
+import { CampaignCloseHeaderWillCloseChangesets, CampaignCloseHeaderWillKeepChangesets } from './CampaignCloseHeader'
+import { CampaignCloseChangesetsListEmptyElement } from './CampaignCloseChangesetsListEmptyElement'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
     campaignID: Scalars['ID']
@@ -36,6 +39,9 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
     history: H.History
     location: H.Location
     willClose: boolean
+    onUpdate?: (
+        connection?: (CampaignChangesetsResult['node'] & { __typename: 'Campaign' })['changesets'] | ErrorLike
+    ) => void
 
     /** For testing only. */
     queryChangesets?: typeof _queryChangesets
@@ -56,6 +62,7 @@ export const CampaignCloseChangesetsList: React.FunctionComponent<Props> = ({
     platformContext,
     telemetryService,
     willClose,
+    onUpdate,
     queryChangesets = _queryChangesets,
     queryExternalChangesetWithFileDiffs,
 }) => {
@@ -131,7 +138,11 @@ export const CampaignCloseChangesetsList: React.FunctionComponent<Props> = ({
 
     return (
         <div className="list-group position-relative" ref={nextContainerElement}>
-            <FilteredConnection<ChangesetFields, Omit<ChangesetCloseNodeProps, 'node'>>
+            <FilteredConnection<
+                ChangesetFields,
+                Omit<ChangesetCloseNodeProps, 'node'>,
+                (CampaignChangesetsResult['node'] & { __typename: 'Campaign' })['changesets']
+            >
                 className="mt-2"
                 nodeComponent={ChangesetCloseNode}
                 nodeComponentProps={{
@@ -153,7 +164,12 @@ export const CampaignCloseChangesetsList: React.FunctionComponent<Props> = ({
                 useURLQuery={true}
                 listComponent="div"
                 listClassName="campaign-close-changesets-list__grid mb-3"
-                headComponent={CampaignCloseHeader}
+                headComponent={
+                    willClose ? CampaignCloseHeaderWillCloseChangesets : CampaignCloseHeaderWillKeepChangesets
+                }
+                noSummaryIfAllNodesVisible={true}
+                onUpdate={onUpdate}
+                emptyElement={<CampaignCloseChangesetsListEmptyElement />}
             />
             {hoverState?.hoverOverlayProps && (
                 <WebHoverOverlay

@@ -147,7 +147,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list-popover-button btn btn-link "
+      class="command-list__popover-button btn btn-link "
       id="command-list-popover-button-7"
       role="button"
     >
@@ -159,7 +159,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
         width="24"
       >
         <path
-          d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+          d="M20,19V7H4V19H20M20,3A2,2 0 0,1 22,5V19A2,2 0 0,1 20,21H4A2,2 0 0,1 2,19V5C2,3.89 2.9,3 4,3H20M13,17V15H18V17H13M9.58,13L5.57,9H8.4L11.7,12.3C12.09,12.69 12.09,13.33 11.7,13.72L8.42,17H5.59L9.58,13Z"
         />
       </svg>
       <svg
@@ -488,7 +488,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list-popover-button btn btn-link "
+      class="command-list__popover-button btn btn-link "
       id="command-list-popover-button-8"
       role="button"
     >
@@ -500,7 +500,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
         width="24"
       >
         <path
-          d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+          d="M20,19V7H4V19H20M20,3A2,2 0 0,1 22,5V19A2,2 0 0,1 20,21H4A2,2 0 0,1 2,19V5C2,3.89 2.9,3 4,3H20M13,17V15H18V17H13M9.58,13L5.57,9H8.4L11.7,12.3C12.09,12.69 12.09,13.33 11.7,13.72L8.42,17H5.59L9.58,13Z"
         />
       </svg>
       <svg
@@ -839,7 +839,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list-popover-button btn btn-link "
+      class="command-list__popover-button btn btn-link "
       id="command-list-popover-button-5"
       role="button"
     >
@@ -851,7 +851,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
         width="24"
       >
         <path
-          d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+          d="M20,19V7H4V19H20M20,3A2,2 0 0,1 22,5V19A2,2 0 0,1 20,21H4A2,2 0 0,1 2,19V5C2,3.89 2.9,3 4,3H20M13,17V15H18V17H13M9.58,13L5.57,9H8.4L11.7,12.3C12.09,12.69 12.09,13.33 11.7,13.72L8.42,17H5.59L9.58,13Z"
         />
       </svg>
       <svg
@@ -1157,7 +1157,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list-popover-button btn btn-link "
+      class="command-list__popover-button btn btn-link "
       id="command-list-popover-button-6"
       role="button"
     >
@@ -1169,7 +1169,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
         width="24"
       >
         <path
-          d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+          d="M20,19V7H4V19H20M20,3A2,2 0 0,1 22,5V19A2,2 0 0,1 20,21H4A2,2 0 0,1 2,19V5C2,3.89 2.9,3 4,3H20M13,17V15H18V17H13M9.58,13L5.57,9H8.4L11.7,12.3C12.09,12.69 12.09,13.33 11.7,13.72L8.42,17H5.59L9.58,13Z"
         />
       </svg>
       <svg
@@ -1390,16 +1390,6 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
     </a>
   </li>
   <li
-    class="nav-item"
-  >
-    <a
-      class="nav-link"
-      href="/extensions"
-    >
-      Extensions
-    </a>
-  </li>
-  <li
     class="nav-item mx-1"
   >
     <a
@@ -1414,22 +1404,11 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
   >
     <a
       class="nav-link"
-      href="https://about.sourcegraph.com"
+      href="/help"
       rel="noopener"
       target="_blank"
     >
-      About 
-      <svg
-        class="mdi-icon icon-inline"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
-        />
-      </svg>
+      Docs
     </a>
   </li>
   <li
@@ -1437,29 +1416,18 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
   >
     <a
       class="nav-link"
-      href="/help"
+      href="https://about.sourcegraph.com"
       rel="noopener"
       target="_blank"
     >
-      Help 
-      <svg
-        class="mdi-icon icon-inline"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
-        />
-      </svg>
+      About
     </a>
   </li>
   <li
     class="nav-item"
   >
     <span
-      class="command-list-popover-button btn btn-link "
+      class="command-list__popover-button btn btn-link "
       id="command-list-popover-button-3"
       role="button"
     >
@@ -1471,7 +1439,7 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
         width="24"
       >
         <path
-          d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+          d="M20,19V7H4V19H20M20,3A2,2 0 0,1 22,5V19A2,2 0 0,1 20,21H4A2,2 0 0,1 2,19V5C2,3.89 2.9,3 4,3H20M13,17V15H18V17H13M9.58,13L5.57,9H8.4L11.7,12.3C12.09,12.69 12.09,13.33 11.7,13.72L8.42,17H5.59L9.58,13Z"
         />
       </svg>
       <svg
@@ -1532,16 +1500,6 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
     </a>
   </li>
   <li
-    class="nav-item"
-  >
-    <a
-      class="nav-link"
-      href="/extensions"
-    >
-      Extensions
-    </a>
-  </li>
-  <li
     class="nav-item mx-1"
   >
     <a
@@ -1556,22 +1514,11 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
   >
     <a
       class="nav-link"
-      href="https://about.sourcegraph.com"
+      href="/help"
       rel="noopener"
       target="_blank"
     >
-      About 
-      <svg
-        class="mdi-icon icon-inline"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
-        />
-      </svg>
+      Docs
     </a>
   </li>
   <li
@@ -1579,29 +1526,18 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
   >
     <a
       class="nav-link"
-      href="/help"
+      href="https://about.sourcegraph.com"
       rel="noopener"
       target="_blank"
     >
-      Help 
-      <svg
-        class="mdi-icon icon-inline"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
-        />
-      </svg>
+      About
     </a>
   </li>
   <li
     class="nav-item"
   >
     <span
-      class="command-list-popover-button btn btn-link "
+      class="command-list__popover-button btn btn-link "
       id="command-list-popover-button-4"
       role="button"
     >
@@ -1613,7 +1549,7 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
         width="24"
       >
         <path
-          d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+          d="M20,19V7H4V19H20M20,3A2,2 0 0,1 22,5V19A2,2 0 0,1 20,21H4A2,2 0 0,1 2,19V5C2,3.89 2.9,3 4,3H20M13,17V15H18V17H13M9.58,13L5.57,9H8.4L11.7,12.3C12.09,12.69 12.09,13.33 11.7,13.72L8.42,17H5.59L9.58,13Z"
         />
       </svg>
       <svg
@@ -1705,16 +1641,6 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
     </a>
   </li>
   <li
-    class="nav-item"
-  >
-    <a
-      class="nav-link"
-      href="/extensions"
-    >
-      Extensions
-    </a>
-  </li>
-  <li
     class="nav-item mx-1"
   >
     <a
@@ -1733,25 +1659,14 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
       rel="noopener"
       target="_blank"
     >
-      Help 
-      <svg
-        class="mdi-icon icon-inline"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
-        />
-      </svg>
+      Docs
     </a>
   </li>
   <li
     class="nav-item"
   >
     <span
-      class="command-list-popover-button btn btn-link "
+      class="command-list__popover-button btn btn-link "
       id="command-list-popover-button-1"
       role="button"
     >
@@ -1763,7 +1678,7 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
         width="24"
       >
         <path
-          d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+          d="M20,19V7H4V19H20M20,3A2,2 0 0,1 22,5V19A2,2 0 0,1 20,21H4A2,2 0 0,1 2,19V5C2,3.89 2.9,3 4,3H20M13,17V15H18V17H13M9.58,13L5.57,9H8.4L11.7,12.3C12.09,12.69 12.09,13.33 11.7,13.72L8.42,17H5.59L9.58,13Z"
         />
       </svg>
       <svg
@@ -1845,16 +1760,6 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
     </a>
   </li>
   <li
-    class="nav-item"
-  >
-    <a
-      class="nav-link"
-      href="/extensions"
-    >
-      Extensions
-    </a>
-  </li>
-  <li
     class="nav-item mx-1"
   >
     <a
@@ -1873,25 +1778,14 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
       rel="noopener"
       target="_blank"
     >
-      Help 
-      <svg
-        class="mdi-icon icon-inline"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
-        />
-      </svg>
+      Docs
     </a>
   </li>
   <li
     class="nav-item"
   >
     <span
-      class="command-list-popover-button btn btn-link "
+      class="command-list__popover-button btn btn-link "
       id="command-list-popover-button-2"
       role="button"
     >
@@ -1903,7 +1797,7 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
         width="24"
       >
         <path
-          d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+          d="M20,19V7H4V19H20M20,3A2,2 0 0,1 22,5V19A2,2 0 0,1 20,21H4A2,2 0 0,1 2,19V5C2,3.89 2.9,3 4,3H20M13,17V15H18V17H13M9.58,13L5.57,9H8.4L11.7,12.3C12.09,12.69 12.09,13.33 11.7,13.72L8.42,17H5.59L9.58,13Z"
         />
       </svg>
       <svg

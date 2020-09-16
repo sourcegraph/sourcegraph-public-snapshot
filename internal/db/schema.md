@@ -194,6 +194,7 @@ Referenced by:
  num_resets            | integer                  | not null default 0
  unsynced              | boolean                  | not null default false
  closing               | boolean                  | not null default false
+ num_failures          | integer                  | not null default 0
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -430,6 +431,7 @@ Triggers:
  process_after       | timestamp with time zone | 
  num_resets          | integer                  | not null default 0
  external_service_id | bigint                   | 
+ num_failures        | integer                  | not null default 0
 Foreign-key constraints:
     "external_services_id_fk" FOREIGN KEY (external_service_id) REFERENCES external_services(id)
 
@@ -519,6 +521,7 @@ Indexes:
  repository_id   | integer                  | not null
  process_after   | timestamp with time zone | 
  num_resets      | integer                  | not null default 0
+ num_failures    | integer                  | not null default 0
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
 Check constraints:
@@ -593,6 +596,7 @@ Foreign-key constraints:
  process_after   | timestamp with time zone | 
  num_resets      | integer                  | not null default 0
  upload_size     | bigint                   | 
+ num_failures    | integer                  | not null default 0
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::lsif_upload_state
@@ -867,6 +871,7 @@ Indexes:
     "repo_cloned" btree (cloned)
     "repo_fork" btree (fork)
     "repo_metadata_gin_idx" gin (metadata)
+    "repo_name_idx" btree (lower(name::text) COLLATE "C")
     "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
     "repo_private" btree (private)
     "repo_sources_gin_idx" gin (sources)
@@ -889,12 +894,13 @@ Triggers:
 
 # Table "public.repo_pending_permissions"
 ```
-   Column   |           Type           | Modifiers 
-------------+--------------------------+-----------
- repo_id    | integer                  | not null
- permission | text                     | not null
- user_ids   | bytea                    | not null
- updated_at | timestamp with time zone | not null
+    Column     |           Type           |            Modifiers             
+---------------+--------------------------+----------------------------------
+ repo_id       | integer                  | not null
+ permission    | text                     | not null
+ user_ids      | bytea                    | not null
+ updated_at    | timestamp with time zone | not null
+ user_ids_ints | integer[]                | not null default '{}'::integer[]
 Indexes:
     "repo_pending_permissions_perm_unique" UNIQUE CONSTRAINT, btree (repo_id, permission)
 
@@ -902,13 +908,14 @@ Indexes:
 
 # Table "public.repo_permissions"
 ```
-   Column   |           Type           | Modifiers 
-------------+--------------------------+-----------
- repo_id    | integer                  | not null
- permission | text                     | not null
- user_ids   | bytea                    | not null
- updated_at | timestamp with time zone | not null
- synced_at  | timestamp with time zone | 
+    Column     |           Type           |            Modifiers             
+---------------+--------------------------+----------------------------------
+ repo_id       | integer                  | not null
+ permission    | text                     | not null
+ user_ids      | bytea                    | not null
+ updated_at    | timestamp with time zone | not null
+ synced_at     | timestamp with time zone | 
+ user_ids_ints | integer[]                | not null default '{}'::integer[]
 Indexes:
     "repo_permissions_perm_unique" UNIQUE CONSTRAINT, btree (repo_id, permission)
 
@@ -1073,16 +1080,17 @@ Foreign-key constraints:
 
 # Table "public.user_pending_permissions"
 ```
-    Column    |           Type           |                               Modifiers                               
---------------+--------------------------+-----------------------------------------------------------------------
- id           | integer                  | not null default nextval('user_pending_permissions_id_seq'::regclass)
- bind_id      | text                     | not null
- permission   | text                     | not null
- object_type  | text                     | not null
- object_ids   | bytea                    | not null
- updated_at   | timestamp with time zone | not null
- service_type | text                     | not null
- service_id   | text                     | not null
+     Column      |           Type           |                               Modifiers                               
+-----------------+--------------------------+-----------------------------------------------------------------------
+ id              | integer                  | not null default nextval('user_pending_permissions_id_seq'::regclass)
+ bind_id         | text                     | not null
+ permission      | text                     | not null
+ object_type     | text                     | not null
+ object_ids      | bytea                    | not null
+ updated_at      | timestamp with time zone | not null
+ service_type    | text                     | not null
+ service_id      | text                     | not null
+ object_ids_ints | integer[]                | not null default '{}'::integer[]
 Indexes:
     "user_pending_permissions_service_perm_object_unique" UNIQUE CONSTRAINT, btree (service_type, service_id, permission, object_type, bind_id)
 
@@ -1090,14 +1098,15 @@ Indexes:
 
 # Table "public.user_permissions"
 ```
-   Column    |           Type           | Modifiers 
--------------+--------------------------+-----------
- user_id     | integer                  | not null
- permission  | text                     | not null
- object_type | text                     | not null
- object_ids  | bytea                    | not null
- updated_at  | timestamp with time zone | not null
- synced_at   | timestamp with time zone | 
+     Column      |           Type           |            Modifiers             
+-----------------+--------------------------+----------------------------------
+ user_id         | integer                  | not null
+ permission      | text                     | not null
+ object_type     | text                     | not null
+ object_ids      | bytea                    | not null
+ updated_at      | timestamp with time zone | not null
+ synced_at       | timestamp with time zone | 
+ object_ids_ints | integer[]                | not null default '{}'::integer[]
 Indexes:
     "user_permissions_perm_object_unique" UNIQUE CONSTRAINT, btree (user_id, permission, object_type)
 
@@ -1105,24 +1114,25 @@ Indexes:
 
 # Table "public.users"
 ```
-       Column        |           Type           |                     Modifiers                      
----------------------+--------------------------+----------------------------------------------------
- id                  | integer                  | not null default nextval('users_id_seq'::regclass)
- username            | citext                   | not null
- display_name        | text                     | 
- avatar_url          | text                     | 
- created_at          | timestamp with time zone | not null default now()
- updated_at          | timestamp with time zone | not null default now()
- deleted_at          | timestamp with time zone | 
- invite_quota        | integer                  | not null default 15
- passwd              | text                     | 
- passwd_reset_code   | text                     | 
- passwd_reset_time   | timestamp with time zone | 
- site_admin          | boolean                  | not null default false
- page_views          | integer                  | not null default 0
- search_queries      | integer                  | not null default 0
- tags                | text[]                   | default '{}'::text[]
- billing_customer_id | text                     | 
+         Column          |           Type           |                     Modifiers                      
+-------------------------+--------------------------+----------------------------------------------------
+ id                      | integer                  | not null default nextval('users_id_seq'::regclass)
+ username                | citext                   | not null
+ display_name            | text                     | 
+ avatar_url              | text                     | 
+ created_at              | timestamp with time zone | not null default now()
+ updated_at              | timestamp with time zone | not null default now()
+ deleted_at              | timestamp with time zone | 
+ invite_quota            | integer                  | not null default 15
+ passwd                  | text                     | 
+ passwd_reset_code       | text                     | 
+ passwd_reset_time       | timestamp with time zone | 
+ site_admin              | boolean                  | not null default false
+ page_views              | integer                  | not null default 0
+ search_queries          | integer                  | not null default 0
+ tags                    | text[]                   | default '{}'::text[]
+ billing_customer_id     | text                     | 
+ invalidated_sessions_at | timestamp with time zone | not null default now()
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_billing_customer_id" UNIQUE, btree (billing_customer_id) WHERE deleted_at IS NULL
@@ -1157,6 +1167,7 @@ Referenced by:
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 Triggers:
+    trig_invalidate_session_on_password_change BEFORE UPDATE OF passwd ON users FOR EACH ROW EXECUTE PROCEDURE invalidate_session_for_userid_on_password_change()
     trig_soft_delete_user_reference_on_external_service AFTER UPDATE OF deleted_at ON users FOR EACH ROW EXECUTE PROCEDURE soft_delete_user_reference_on_external_service()
 
 ```

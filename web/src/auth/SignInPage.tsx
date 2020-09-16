@@ -16,7 +16,7 @@ interface SignInPageProps {
 }
 
 export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
-    useEffect(() => eventLogger.logViewEvent('SignIn', false))
+    useEffect(() => eventLogger.logViewEvent('SignIn', null, false))
 
     if (props.authenticatedUser) {
         const returnTo = getReturnTo(props.location)
@@ -32,13 +32,19 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
                 body={
                     window.context.authProviders && window.context.authProviders.length > 0 ? (
                         <div className="mb-4">
+                            {/*
+                            Use index as key because display name may not be unique. This is OK
+                            here because this list will not be updated during this component's lifetime.
+                             */}
                             {window.context.authProviders.map((provider, index) =>
                                 provider.isBuiltin ? (
+                                    /* eslint-disable react/no-array-index-key */
                                     <UsernamePasswordSignInForm key={index} {...props} />
                                 ) : (
-                                    <div className="mb-2">
-                                        <a key={index} href={provider.authenticationURL} className="btn btn-secondary">
-                                            Sign in with {provider.displayName}
+                                    /* eslint-disable react/no-array-index-key */
+                                    <div className="mb-2" key={index}>
+                                        <a href={provider.authenticationURL} className="btn btn-secondary">
+                                            Continue with {provider.displayName}
                                         </a>
                                     </div>
                                 )

@@ -78,6 +78,7 @@
 /admin/monitoring/slack_alert_channel /admin/observability/alerting#set-up-alerts-in-grafana 308
 /admin/monitoring_and_tracing /admin/observability 308
 /admin/auth/saml_with_microsoft_adfs /admin/auth/saml/microsoft_adfs 308
+/admin/install/cluster.md /admin/install/index.md 308
 /user/search /user/code_search 308
 /user/search/examples /user/code_search/examples 308
 /user/search/language /user/code_search/language 308

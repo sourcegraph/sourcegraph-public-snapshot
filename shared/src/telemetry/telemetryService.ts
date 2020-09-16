@@ -19,7 +19,7 @@ export interface TelemetryService {
     /**
      * Log a pageview event (by sending it to the server).
      */
-    logViewEvent(eventName: string): void
+    logViewEvent(eventName: string, eventProperties?: any): void
 }
 
 /**

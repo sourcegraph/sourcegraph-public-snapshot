@@ -33,16 +33,8 @@ export const CampaignNode: React.FunctionComponent<CampaignNodeProps> = ({
 }) => (
     <>
         <span className="campaign-node__separator" />
-        {!node.closedAt && (
-            <h2 className="m-0 campaign-node__badge">
-                <span className="badge badge-success text-uppercase w-100">Open</span>
-            </h2>
-        )}
-        {node.closedAt && (
-            <h2 className="m-0 campaign-node__badge">
-                <span className="badge badge-danger text-uppercase w-100">Closed</span>
-            </h2>
-        )}
+        {!node.closedAt && <span className="badge badge-success text-uppercase w-100">Open</span>}
+        {node.closedAt && <span className="badge badge-danger text-uppercase w-100">Closed</span>}
         <div className="campaign-node__content">
             <div className="m-0 d-flex align-items-baseline">
                 <h3 className="m-0 d-inline-block">

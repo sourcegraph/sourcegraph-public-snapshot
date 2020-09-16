@@ -72,8 +72,6 @@ interface Props extends Pick<InteractiveSearchProps, 'filtersInQuery'> {
      */
     negated?: boolean
 
-    isHomepage: boolean
-
     /**
      * Whether globbing is enabled for filters.
      */
@@ -398,12 +396,9 @@ export class FilterInput extends React.Component<Props, State> {
         const isEditableAndText = this.props.editable && isText
         return (
             <div
-                className={`${classNames(
-                    'filter-input',
-                    `test-filter-input-${this.props.mapKey}`,
-                    { 'filter-input--active-homepage': isEditableAndText && this.props.isHomepage },
-                    { 'filter-input--active': isEditableAndText && !this.props.isHomepage }
-                )}`}
+                className={`${classNames('filter-input', `test-filter-input-${this.props.mapKey}`, {
+                    'filter-input--active': isEditableAndText,
+                })}`}
                 onBlur={this.onInputBlur}
                 tabIndex={0}
             >

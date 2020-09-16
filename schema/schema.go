@@ -409,6 +409,8 @@ type ExcludedGitoliteRepo struct {
 
 // ExpandedGitCommitDescription description: The Git commit to create with the changes.
 type ExpandedGitCommitDescription struct {
+	// Author description: The author of the Git commit.
+	Author *GitCommitAuthor `json:"author,omitempty"`
 	// Message description: The Git commit message.
 	Message string `json:"message"`
 }
@@ -460,8 +462,20 @@ type ExternalIdentity struct {
 	Type           string `json:"type"`
 }
 
+// GitCommitAuthor description: The author of the Git commit.
+type GitCommitAuthor struct {
+	// Email description: The Git commit author email.
+	Email string `json:"email"`
+	// Name description: The Git commit author name.
+	Name string `json:"name"`
+}
+
 // GitCommitDescription description: The Git commit to create with the changes.
 type GitCommitDescription struct {
+	// AuthorEmail description: The Git commit author email.
+	AuthorEmail string `json:"authorEmail"`
+	// AuthorName description: The Git commit author name.
+	AuthorName string `json:"authorName"`
 	// Diff description: The commit diff (in unified diff format).
 	Diff string `json:"diff"`
 	// Message description: The Git commit message.
@@ -1071,8 +1085,8 @@ type Settings struct {
 	SearchIncludeForks *bool `json:"search.includeForks,omitempty"`
 	// SearchMigrateParser description: If false, disables the new and/or-compatible parser for all search queries. It is a flag to aid transition to the new parser.
 	SearchMigrateParser *bool `json:"search.migrateParser,omitempty"`
-	// SearchRepositoryGroups description: Named groups of repositories that can be referenced in a search query using the repogroup: operator.
-	SearchRepositoryGroups map[string][]string `json:"search.repositoryGroups,omitempty"`
+	// SearchRepositoryGroups description: Named groups of repositories that can be referenced in a search query using the `repogroup:` operator. The list can contain string literals (to include single repositories) and JSON objects with a "regex" field (to include all repositories matching the regular expression).
+	SearchRepositoryGroups map[string][]interface{} `json:"search.repositoryGroups,omitempty"`
 	// SearchSavedQueries description: DEPRECATED: Saved search queries
 	SearchSavedQueries []*SearchSavedQueries `json:"search.savedQueries,omitempty"`
 	// SearchScopes description: Predefined search scopes
@@ -1089,6 +1103,8 @@ type SettingsExperimentalFeatures struct {
 	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
 	// SearchStats description: Enables a new page that shows language statistics about the results for a search query.
 	SearchStats *bool `json:"searchStats,omitempty"`
+	// SearchStreaming description: Enables experimental streaming support.
+	SearchStreaming *bool `json:"searchStreaming,omitempty"`
 	// ShowBadgeAttachments description: Enables the UI indicators for code intelligence precision.
 	ShowBadgeAttachments *bool `json:"showBadgeAttachments,omitempty"`
 	// ShowEnterpriseHomePanels description: Enabled the homepage panels in the Enterprise homepage

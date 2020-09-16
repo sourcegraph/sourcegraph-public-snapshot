@@ -1,11 +1,10 @@
 import * as H from 'history'
-import * as React from 'react'
-import { Subscription } from 'rxjs'
+import React, { useEffect, useMemo } from 'react'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { authRequired, AuthenticatedUser } from '../auth'
+import { AuthenticatedUser } from '../auth'
 import {
     parseSearchURLQuery,
     PatternTypeProps,
@@ -30,6 +29,8 @@ import { VersionContextDropdown } from './VersionContextDropdown'
 import { VersionContextProps } from '../../../shared/src/search/util'
 import { VersionContext } from '../schema/site.schema'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { BrandLogo } from '../components/branding/BrandLogo'
+import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
 
 interface Props
     extends SettingsCascadeProps,
@@ -49,6 +50,7 @@ interface Props
     history: H.History
     location: H.Location<{ query: string }>
     authenticatedUser: AuthenticatedUser | null
+    authRequired: boolean
     navbarSearchQueryState: QueryState
     onNavbarQueryChange: (queryState: QueryState) => void
     isSourcegraphDotCom: boolean
@@ -74,190 +76,165 @@ interface Props
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
 
+    branding?: typeof window.context.branding
+
     /** For testing only. Used because reactstrap's Popover is incompatible with react-test-renderer. */
     hideNavLinks: boolean
 }
 
-interface State {
-    authRequired?: boolean
-}
+export const GlobalNavbar: React.FunctionComponent<Props> = ({
+    authRequired,
+    isSearchRelatedPage,
+    splitSearchModes,
+    interactiveSearchMode,
+    navbarSearchQueryState,
+    versionContext,
+    setVersionContext,
+    availableVersionContexts,
+    caseSensitive,
+    patternType,
+    onNavbarQueryChange,
+    onFiltersInQueryChange,
+    hideNavLinks,
+    variant,
+    isLightTheme,
+    branding = window.context?.branding,
+    location,
+    history,
+    ...props
+}) => {
+    const query = useMemo(() => parseSearchURLQuery(location.search || ''), [location.search])
 
-export class GlobalNavbar extends React.PureComponent<Props, State> {
-    public state: State = {}
-
-    private subscriptions = new Subscription()
-
-    constructor(props: Props) {
-        super(props)
-
+    useEffect(() => {
         // In interactive search mode, the InteractiveModeInput component will handle updating the inputs.
-        if (!props.interactiveSearchMode) {
-            // Reads initial state from the props (i.e. URL parameters).
-            const query = parseSearchURLQuery(props.location.search || '')
+        if (!interactiveSearchMode) {
             if (query) {
-                props.onNavbarQueryChange({ query, cursorPosition: query.length })
+                onNavbarQueryChange({ query, cursorPosition: query.length })
             } else {
                 // If we have no component state, then we may have gotten unmounted during a route change.
-                const query = props.location.state ? props.location.state.query : ''
-                props.onNavbarQueryChange({
+                const query = location.state?.query ?? ''
+
+                onNavbarQueryChange({
                     query,
                     cursorPosition: query.length,
                 })
             }
         }
-    }
 
-    public componentDidMount(): void {
-        this.subscriptions.add(authRequired.subscribe(authRequired => this.setState({ authRequired })))
-    }
-
-    public componentDidUpdate(previousProps: Props): void {
-        if (previousProps.location !== this.props.location) {
-            if (!this.props.isSearchRelatedPage) {
+        if (query) {
+            if (!isSearchRelatedPage) {
                 // On a non-search related page or non-repo page, we clear the query in
                 // the main query input and interactive mode UI to avoid misleading users
                 // that the query is relevant in any way on those pages.
-                this.props.onNavbarQueryChange({ query: '', cursorPosition: 0 })
-                this.props.onFiltersInQueryChange({})
+                onNavbarQueryChange({ query: '', cursorPosition: 0 })
+                onFiltersInQueryChange({})
+            }
+
+            if (interactiveSearchMode) {
+                let filtersInQuery: FiltersToTypeAndValue = {}
+                const { filtersInQuery: newFiltersInQuery, navbarQuery } = convertPlainTextToInteractiveQuery(query)
+                filtersInQuery = { ...filtersInQuery, ...newFiltersInQuery }
+                onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
+                onFiltersInQueryChange(filtersInQuery)
             }
         }
+    }, [interactiveSearchMode, isSearchRelatedPage, location, onFiltersInQueryChange, onNavbarQueryChange, query])
 
-        if (previousProps.location.search !== this.props.location.search) {
-            const query = parseSearchURLQuery(this.props.location.search || '')
-            if (query) {
-                if (this.props.interactiveSearchMode) {
-                    let filtersInQuery: FiltersToTypeAndValue = {}
-                    const { filtersInQuery: newFiltersInQuery, navbarQuery } = convertPlainTextToInteractiveQuery(query)
-                    filtersInQuery = { ...filtersInQuery, ...newFiltersInQuery }
-                    this.props.onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
+    const logo = (
+        <LinkOrSpan to={authRequired ? undefined : '/search'} className="global-navbar__logo-link">
+            <BrandLogo
+                branding={branding}
+                isLightTheme={isLightTheme}
+                variant="symbol"
+                className="global-navbar__logo"
+            />
+        </LinkOrSpan>
+    )
+    const navLinks = !authRequired && !hideNavLinks && (
+        <NavLinks
+            showDotComMarketing={showDotComMarketing}
+            location={location}
+            history={history}
+            isLightTheme={isLightTheme}
+            {...props}
+        />
+    )
 
-                    this.props.onFiltersInQueryChange(filtersInQuery)
-                } else {
-                    this.props.onNavbarQueryChange({ query, cursorPosition: query.length })
-                }
-            }
-        }
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    public render(): JSX.Element | null {
-        let logoSource = '/.assets/img/sourcegraph-mark.svg'
-        let logoLinkClassName = 'global-navbar__logo-link global-navbar__logo-animated'
-        const logoWithNameSource = '/.assets/img/sourcegraph-head-logo.svg'
-        const logoWithNameLightSource = '/.assets/img/sourcegraph-light-head-logo.svg'
-
-        const branding = window.context ? window.context.branding : null
-        if (branding) {
-            if (this.props.isLightTheme) {
-                if (branding.light?.symbol) {
-                    logoSource = branding.light.symbol
-                }
-            } else if (branding.dark?.symbol) {
-                logoSource = branding.dark.symbol
-            }
-            if (branding.disableSymbolSpin) {
-                logoLinkClassName = 'global-navbar__logo-link'
-            }
-        }
-
-        const logo = <img className="global-navbar__logo" src={logoSource} />
-        const logoWithNameLink = (
-            <Link to="/search">
-                <img
-                    className="global-navbar__logo-with-name pl-2"
-                    src={this.props.isLightTheme ? logoWithNameLightSource : logoWithNameSource}
-                />
-            </Link>
-        )
-
-        const logoLink = !this.state.authRequired ? (
-            <Link to="/search" className={logoLinkClassName}>
-                {logo}
-            </Link>
-        ) : (
-            <div className={logoLinkClassName}>{logo}</div>
-        )
-        const navLinks = !this.state.authRequired && !this.props.hideNavLinks && (
-            <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />
-        )
-
-        return (
-            <div
-                className={`global-navbar ${
-                    this.props.variant === 'low-profile' || this.props.variant === 'low-profile-with-logo'
-                        ? ''
-                        : 'global-navbar--bg border-bottom'
-                } py-1`}
-            >
-                {this.props.variant === 'low-profile' || this.props.variant === 'low-profile-with-logo' ? (
-                    <>
-                        {this.props.variant === 'low-profile-with-logo' && (
-                            <div className="nav-item flex-1">{logoWithNameLink}</div>
-                        )}
+    return (
+        <div
+            className={`global-navbar ${
+                variant === 'low-profile' || variant === 'low-profile-with-logo'
+                    ? ''
+                    : 'global-navbar--bg border-bottom'
+            } py-1`}
+        >
+            {variant === 'low-profile' || variant === 'low-profile-with-logo' ? (
+                <>
+                    {variant === 'low-profile-with-logo' && logo}
+                    <div className="flex-1" />
+                    {navLinks}
+                </>
+            ) : variant === 'no-search-input' ? (
+                <>
+                    {logo}
+                    <div className="nav-item flex-1">
+                        <Link to="/search" className="nav-link">
+                            Search
+                        </Link>
+                    </div>
+                    {navLinks}
+                </>
+            ) : (
+                <>
+                    {logo}
+                    {authRequired ? (
                         <div className="flex-1" />
-                        {!this.state.authRequired && !this.props.hideNavLinks && (
-                            <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />
-                        )}
-                    </>
-                ) : this.props.variant === 'no-search-input' ? (
-                    <>
-                        {logoLink}
-                        <div className="nav-item flex-1">
-                            <Link to="/search" className="nav-link">
-                                Search
-                            </Link>
+                    ) : splitSearchModes && interactiveSearchMode ? (
+                        <InteractiveModeInput
+                            {...props}
+                            navbarSearchState={navbarSearchQueryState}
+                            onNavbarQueryChange={onNavbarQueryChange}
+                            lowProfile={!isSearchRelatedPage}
+                            versionContext={versionContext}
+                            location={location}
+                            history={history}
+                            setVersionContext={setVersionContext}
+                            availableVersionContexts={availableVersionContexts}
+                            isLightTheme={isLightTheme}
+                            patternType={patternType}
+                            caseSensitive={caseSensitive}
+                            onFiltersInQueryChange={onFiltersInQueryChange}
+                        />
+                    ) : (
+                        <div className="global-navbar__search-box-container d-none d-sm-flex flex-row">
+                            {splitSearchModes && (
+                                <SearchModeToggle {...props} interactiveSearchMode={interactiveSearchMode} />
+                            )}
+                            <VersionContextDropdown
+                                history={history}
+                                navbarSearchQuery={navbarSearchQueryState.query}
+                                caseSensitive={caseSensitive}
+                                patternType={patternType}
+                                versionContext={versionContext}
+                                setVersionContext={setVersionContext}
+                                availableVersionContexts={availableVersionContexts}
+                            />
+                            <SearchNavbarItem
+                                {...props}
+                                navbarSearchState={navbarSearchQueryState}
+                                onChange={onNavbarQueryChange}
+                                location={location}
+                                history={history}
+                                versionContext={versionContext}
+                                isLightTheme={isLightTheme}
+                                patternType={patternType}
+                                caseSensitive={caseSensitive}
+                            />
                         </div>
-                        {navLinks}
-                    </>
-                ) : (
-                    <>
-                        {this.props.splitSearchModes && this.props.interactiveSearchMode ? (
-                            !this.state.authRequired && (
-                                <InteractiveModeInput
-                                    {...this.props}
-                                    authRequired={this.state.authRequired}
-                                    navbarSearchState={this.props.navbarSearchQueryState}
-                                    onNavbarQueryChange={this.props.onNavbarQueryChange}
-                                    lowProfile={!this.props.isSearchRelatedPage}
-                                    versionContext={this.props.versionContext}
-                                />
-                            )
-                        ) : (
-                            <>
-                                {logoLink}
-                                {!this.state.authRequired && (
-                                    <div className="global-navbar__search-box-container d-none d-sm-flex flex-row">
-                                        {this.props.splitSearchModes && (
-                                            <SearchModeToggle
-                                                {...this.props}
-                                                interactiveSearchMode={this.props.interactiveSearchMode}
-                                            />
-                                        )}
-                                        <VersionContextDropdown
-                                            history={this.props.history}
-                                            navbarSearchQuery={this.props.navbarSearchQueryState.query}
-                                            caseSensitive={this.props.caseSensitive}
-                                            patternType={this.props.patternType}
-                                            versionContext={this.props.versionContext}
-                                            setVersionContext={this.props.setVersionContext}
-                                            availableVersionContexts={this.props.availableVersionContexts}
-                                        />
-                                        <SearchNavbarItem
-                                            {...this.props}
-                                            navbarSearchState={this.props.navbarSearchQueryState}
-                                            onChange={this.props.onNavbarQueryChange}
-                                        />
-                                    </div>
-                                )}
-                                {navLinks}
-                            </>
-                        )}
-                    </>
-                )}
-            </div>
-        )
-    }
+                    )}
+                    {navLinks}
+                </>
+            )}
+        </div>
+    )
 }

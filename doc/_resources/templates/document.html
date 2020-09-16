@@ -1,9 +1,10 @@
 {{define "title"}}{{with .Content}}{{.Doc.Title}}{{else}}Error{{end}}{{end}}
 
 {{define "head"}}
-{{if (or (not .Content) .ContentVersion)}}
-<meta name="robots" content="noindex">
-{{end}}
+    {{if (or (not .Content) .ContentVersion)}}
+        <meta name="robots" content="noindex">
+    {{end}}
+    {{with .Content}}<link ref="canonical" href="https://docs.sourcegraph.com/{{.Path}}">{{end}}
 {{end}}
 
 {{define "versionSelector"}}
@@ -53,28 +54,28 @@
             <input type="button" class="content-nav-mobile-state large-hidden medium-hidden" />
             <span class="content-nav-mobile-button"></span>
             <span class="breadcrumb-links">
-                {{with .Content}}
-                {{if eq (len .Breadcrumbs ) 0}}<a href="#">docs</a>{{end}}
-                {{range .Breadcrumbs}}
-                <a href="{{.URL}}" {{if .IsActive}} class="active" {{end}}>
-                    {{if eq .Label "Documentation"}}
-                    docs
-                    {{else}}
-                    {{.Label}}
+                    {{with .Content}}
+                        {{if eq (len .Breadcrumbs ) 0}}<a href="#">docs</a>{{end}}
+                            {{range .Breadcrumbs}}
+                                <a href="{{.URL}}" {{if .IsActive}} class="active" {{end}}>
+                                  {{if eq .Label "Documentation"}}
+                                  docs
+                                  {{else}}
+                                  {{.Label}}
+                                  {{end}}
+                                </a>
+                                {{if not .IsActive}}/{{end}}
+                                {{end}}
+                                &nbsp;
+                            {{else}}
+                        {{if .ContentVersionNotFoundError}}
+                            Version not found
+                        {{else if .ContentPageNotFoundError}}
+                            Page not found
+                        {{else}}
+                            Error
+                        {{end}}
                     {{end}}
-                </a>
-                {{if not .IsActive}}/{{end}}
-                {{end}}
-                &nbsp;
-                {{else}}
-                {{if .ContentVersionNotFoundError}}
-                Version not found
-                {{else if .ContentPageNotFoundError}}
-                Page not found
-                {{else}}
-                Error
-                {{end}}
-                {{end}}
             </span>
         </nav>
         <div id="content-nav" class="content-nav">
@@ -444,44 +445,43 @@
 
 {{/* Define Page (Right Hand) Nav */}}
 {{define "index"}}
-{{if gt (len .Doc.Tree) 0}}
-{{with (or (and (eq (len .Doc.Tree) 1) (index .Doc.Tree 0).Children) .Doc.Tree)}}
-<h3 class="page-nav-title">On this page:</h3>
-<ul>{{template "doc_nav_nested" .}}</ul>
-{{end}}
-{{end}}
-<a class="nav-edit-button btn btn-outline-secondary btn-sm" target="blank"
-    href="https://github.com/sourcegraph/sourcegraph/edit/main/doc/{{.FilePath}}">Edit this page on GitHub</a>
+    {{if gt (len .Doc.Tree) 0}}
+        {{with (or (and (eq (len .Doc.Tree) 1) (index .Doc.Tree 0).Children) .Doc.Tree)}}
+            <h3 class="page-nav-title">On this page:</h3>
+            <ul>{{template "doc_nav_nested" .}}</ul>
+        {{end}}
+    {{end}}
+    <a class="nav-edit-button btn btn-outline-secondary btn-sm" target="blank" href="https://github.com/sourcegraph/sourcegraph/edit/main/doc/{{.FilePath}}">Edit this page on GitHub</a>
 {{end}}
 
 {{define "doc_nav"}}
-{{range .}}
-<li>
-    <a href="{{.URL}}">{{.Title}}</a>
-</li>
-{{end}}
+    {{range .}}
+        <li>
+            <a href="{{.URL}}">{{.Title}}</a>
+        </li>
+    {{end}}
 {{end}}
 
 {{define "doc_nav_nested"}}
-{{range .}}
-<li>
-    <a href="{{.URL}}">{{.Title}}</a>
-    {{with .Children}}
-    <ul>
-        {{template "doc_nav" .}}
-    </ul>
+    {{range .}}
+        <li>
+            <a href="{{.URL}}">{{.Title}}</a>
+            {{with .Children}}
+                <ul>
+                    {{template "doc_nav" .}}
+                </ul>
+            {{end}}
+        </li>
     {{end}}
-</li>
-{{end}}
 {{end}}
 
 {{define "afterBody"}}
-<script src="{{asset "docs.js"}}?16"></script>
-{{with .Content}}
-<script>sgdocs.init(breadcrumbs = {{ .Breadcrumbs }});</script>
-{{else}}
-<script>
-    sgdocs.init(breadcrumbs = null);
-</script>
-{{end}}
+    <script src="{{asset "docs.js"}}?16"></script>
+    {{with .Content}}
+        <script>sgdocs.init(breadcrumbs = {{ .Breadcrumbs }});</script>
+    {{else}}
+        <script>
+            sgdocs.init(breadcrumbs = null);
+        </script>
+    {{end}}
 {{end}}

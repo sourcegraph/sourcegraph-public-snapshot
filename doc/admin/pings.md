@@ -50,3 +50,6 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
   - Count of notifications triggered
   - Count of notifications clicked
   - Count of saved search views
+- Aggregated repository statistics
+  - Total size of git repositories stored in bytes
+  - Total number of lines of code stored in text search index

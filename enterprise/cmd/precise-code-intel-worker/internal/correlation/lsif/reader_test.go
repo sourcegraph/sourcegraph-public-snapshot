@@ -3,7 +3,6 @@ package lsif
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"strconv"
 	"testing"
 
@@ -13,7 +12,7 @@ import (
 func TestReadLines(t *testing.T) {
 	var content []byte
 	for i := 0; i < 10000; i++ {
-		content = append(content, fmt.Sprintf("%d", i)...)
+		content = append(content, strconv.Itoa(i)...)
 		content = append(content, '\n')
 	}
 
