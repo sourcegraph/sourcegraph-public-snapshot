@@ -1,5 +1,4 @@
 import * as H from 'history'
-import KeyIcon from 'mdi-react/KeyIcon'
 import React, { useEffect } from 'react'
 import { Redirect } from 'react-router-dom'
 import { HeroPage } from '../components/HeroPage'
@@ -8,6 +7,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { getReturnTo } from './SignInSignUpCommon'
 import { UsernamePasswordSignInForm } from './UsernamePasswordSignInForm'
 import { AuthenticatedUser } from '../auth'
+import { SourcegraphIcon } from './icons'
 
 interface SignInPageProps {
     location: H.Location
@@ -27,7 +27,9 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
         <div className="signin-signup-page sign-in-page">
             <PageTitle title="Sign in" />
             <HeroPage
-                icon={KeyIcon}
+                icon={SourcegraphIcon}
+                iconLinkTo={window.context.sourcegraphDotComMode ? '/search' : undefined}
+                iconClassName="bg-transparent"
                 title={
                     window.context.sourcegraphDotComMode
                         ? 'Sign in to Sourcegraph Cloud'

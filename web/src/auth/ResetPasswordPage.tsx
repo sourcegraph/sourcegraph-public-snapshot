@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import KeyIcon from 'mdi-react/KeyIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
@@ -11,6 +10,7 @@ import { PasswordInput } from './SignInSignUpCommon'
 import { ErrorAlert } from '../components/alerts'
 import * as H from 'history'
 import { AuthenticatedUser } from '../auth'
+import { SourcegraphIcon } from './icons'
 
 interface ResetPasswordInitFormState {
     /** The user's email input value. */
@@ -250,7 +250,13 @@ export class ResetPasswordPage extends React.PureComponent<ResetPasswordPageProp
         return (
             <>
                 <PageTitle title="Reset password" />
-                <HeroPage icon={KeyIcon} title="Reset password" cta={body} />
+                <HeroPage
+                    icon={SourcegraphIcon}
+                    iconLinkTo={window.context.sourcegraphDotComMode ? '/search' : undefined}
+                    iconClassName="bg-transparent"
+                    title="Reset password"
+                    cta={body}
+                />
             </>
         )
     }
