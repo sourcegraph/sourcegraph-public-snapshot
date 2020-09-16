@@ -147,7 +147,10 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     // so that Layout can always render the navbar.
     const needsSiteInit = window.context.needsSiteInit
     const isSiteInit = props.location.pathname === '/site-admin/init'
-    const isSignInOrUp = props.location.pathname === '/sign-in' || props.location.pathname === '/sign-up'
+    const isSignInOrUp =
+        props.location.pathname === '/sign-in' ||
+        props.location.pathname === '/sign-up' ||
+        props.location.pathname === '/password-reset'
 
     const authRequired = useObservable(authRequiredObservable)
 
