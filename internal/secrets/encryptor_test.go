@@ -3,8 +3,9 @@ package secrets
 import (
 	"bytes"
 	"crypto/rand"
-	"reflect"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 var messageToEncrypt = "I Madam. I made radio, So I dared. Am I mad? Am I?"
@@ -38,7 +39,7 @@ func TestEncryptingAndDecrypting(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		decrypted, err := e.Decrypt(encrypted)
+		decrypted, _, err := e.Decrypt(encrypted)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -58,7 +59,7 @@ func TestEncryptingAndDecrypting(t *testing.T) {
 
 		// Then load both keys to decrypt
 		e = newEncryptor(primaryKey, secondaryKey)
-		decrypted, err := e.Decrypt(encrypted)
+		decrypted, _, err := e.Decrypt(encrypted)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -123,7 +124,7 @@ func TestBadKeysFailToDecrypt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	decrypted, err := e.Decrypt(encrypted)
+	decrypted, _, err := e.Decrypt(encrypted)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,10 +135,13 @@ func TestBadKeysFailToDecrypt(t *testing.T) {
 	}
 	e2 := newEncryptor(notTheSameKey, nil)
 
-	decryptedAgain, err := e2.Decrypt(encrypted)
+	decryptedAgain, failed, err := e2.Decrypt(encrypted)
 	// Not the same key will have different keyHash and effectively makes the decryption no-op.
 	if err != nil {
 		t.Fatal(err)
+	}
+	if !failed {
+		t.Fatal("!failed")
 	}
 	if decrypted == decryptedAgain {
 		t.Fatal("Should not have been able to Decrypt string with an invalid secret key")
@@ -229,7 +233,7 @@ func TestKeyMigration(t *testing.T) {
 
 	// now rotate keys to use Key B
 	encryptorB := newEncryptor(keyB, keyA)
-	decryptedMessage, err := encryptorB.Decrypt(encryptedMessage)
+	decryptedMessage, _, err := encryptorB.Decrypt(encryptedMessage)
 	if err != nil {
 		t.Fatalf("unable to Decrypt string: %v", err)
 	}
@@ -253,7 +257,7 @@ func TestEncryptAndDecryptBytesIfPossible(t *testing.T) {
 		t.Fatalf("Encryption failed")
 	}
 
-	decString, err := e.Decrypt(encString)
+	decString, _, err := e.Decrypt(encString)
 	if err != nil {
 		t.Fatalf("Failed to Decrypt")
 	}
@@ -271,7 +275,7 @@ func TestEncryptAndDecryptBytesIfPossible(t *testing.T) {
 	if encString != messageToEncrypt {
 		t.Fatalf("Received encrypted string, expected unencrypted")
 	}
-	decString, err = e.Decrypt(encString)
+	decString, _, err = e.Decrypt(encString)
 	if err != nil {
 		t.Fatalf("Received error when code path should be nil, but got %v", err)
 	}
@@ -332,44 +336,43 @@ func Test_encryptor_RotateEncryption(t *testing.T) {
 		name         string
 		primaryKey   []byte
 		secondaryKey []byte
-		plaintext    []byte
+		plaintext    string
 		wantErr      bool
 	}{
 		{
 			"base",
 			mockGenRandomKey(),
 			mockGenRandomKey(),
-			[]byte("this is a special string"),
+			"this is a special string",
 			false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			e := encryptor{
-				primaryKey:   tt.primaryKey,
-				secondaryKey: tt.secondaryKey,
-			}
+			e := newEncryptor(tt.primaryKey, tt.secondaryKey)
+
 			// pretend we originally use secondaryKey
-			ciphertext, err := gcmEncrypt(tt.plaintext, tt.secondaryKey)
+			e2 := newEncryptor(tt.secondaryKey, nil)
+			ciphertext, err := e2.Encrypt(tt.plaintext)
 			if err != nil {
-				t.Errorf("RotateEncryption() unable to Encrypt %v", err)
-				return
+				t.Fatal(err)
 			}
+
 			// rotate to use new primary key
 			got, err := e.RotateEncryption(ciphertext)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("RotateEncryption() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			// we should always Encrypt with the primary key
-			got, err = gcmDecrypt(got, tt.primaryKey)
-			if err != nil {
-				t.Errorf("RotateEncryption() unable to Decrypt with primary key %v", err)
-				return
+				t.Fatalf("RotateEncryption() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if !reflect.DeepEqual(got, tt.plaintext) {
-				t.Errorf("RotateEncryption() got = %v, want %v", got, tt.plaintext)
+			// we should always Encrypt with the primary key
+			e3 := newEncryptor(tt.primaryKey, nil)
+			got, _, err = e3.Decrypt(got)
+			if err != nil {
+				t.Fatalf("RotateEncryption() unable to Decrypt with primary key %v", err)
+			}
+
+			if diff := cmp.Diff(tt.plaintext, got); diff != "" {
+				t.Fatalf("Mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}

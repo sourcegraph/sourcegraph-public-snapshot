@@ -15,7 +15,7 @@ import (
 
 const (
 	validKeyLength = 32 // 32 bytes is the required length for AES-256.
-	separator      = ":"
+	separator      = "$"
 )
 
 // EncryptionError is an error about encryption or decryption.
@@ -29,18 +29,16 @@ type encryptorInterface interface {
 	ConfiguredToEncrypt() bool
 	// ConfiguredToRotate returns if primary and secondary keys are valid keys
 	ConfiguredToRotate() bool
-	// Decrypts a cipher, attempting all keys
-	Decrypt(b string) (string, error)
+	// Decrypts a ciphertext and attempting all keys
+	Decrypt(ciphertext string) (string, bool, error)
 	// Encrypt encrypts a plaintext with the primary key
-	Encrypt(b string) (string, error)
-	// EncryptBytes encrypts a plaintext with the primary key
-	EncryptWithKey(b, key []byte) ([]byte, error)
+	Encrypt(plaintext string) (string, error)
 	// Return hash of the primary key to be used when filtering encoding
 	PrimaryKeyHash() string
 	// Return hash of secondary key to be used in decrypting
 	SecondaryKeyHash() string
-	// RotateEncryption decrypts given byte array and then re-encrypts with the primary key
-	RotateEncryption(b []byte) ([]byte, error)
+	// RotateEncryption decrypts given ciphertext and then re-encrypts with the primary key
+	RotateEncryption(ciphertext string) (string, error)
 }
 
 // encryptor performs encryption and decryption.
@@ -52,7 +50,7 @@ type encryptor struct {
 	secondaryKey []byte
 	// primaryKeyHash is prepended to base64-encoded ciphertext with `separator`.
 	primaryKeyHash string
-	// secondaryKeyHash is the previously hash that was prepened to ciphertext with `seperator`
+	// secondaryKeyHash is the previously hash that was prepended to ciphertext with `seperator`
 	secondaryKeyHash string
 }
 
@@ -163,15 +161,23 @@ func (e encryptor) Encrypt(plaintext string) (ciphertext string, err error) {
 }
 
 // Decrypt decrypts the plaintext using the primaryKey of the encryptor.
-// This relies on AES-GCM.
-func (e encryptor) Decrypt(ciphertext string) (plaintext string, err error) {
+// This relies on AES-GCM. The `failed` indicates if attempts have been made
+// to decrypt but failed with both primary and secondary keys.
+func (e encryptor) Decrypt(ciphertext string) (plaintext string, failed bool, err error) {
 	if len(e.primaryKey) < validKeyLength && len(e.secondaryKey) < validKeyLength {
-		return "", &EncryptionError{errors.New("no valid keys available")}
+		return "", false, &EncryptionError{errors.New("no valid keys available")}
+	}
+
+	// If the ciphertext does not contain the separator, or has a new line,
+	// it is definitely not encrypted.
+	if !strings.Contains(ciphertext, separator) ||
+		strings.Contains(ciphertext, "\n") {
+		return ciphertext, false, nil
 	}
 
 	var keyToDecrypt []byte
 
-	// Check the keyHash prefix to determine if we can decrypt it or whether it is encrypted at all.
+	// Use the keyHash prefix to determine if we can decrypt it or whether it is encrypted at all.
 	if strings.HasPrefix(ciphertext, e.PrimaryKeyHash()+separator) {
 		ciphertext = ciphertext[len(e.PrimaryKeyHash()+separator):]
 		keyToDecrypt = e.primaryKey
@@ -179,44 +185,41 @@ func (e encryptor) Decrypt(ciphertext string) (plaintext string, err error) {
 		ciphertext = ciphertext[len(e.SecondaryKeyHash()+separator):]
 		keyToDecrypt = e.secondaryKey
 	} else {
-		return ciphertext, nil
+		return ciphertext, true, nil
 	}
 
 	decodedCiphertext, err := base64.StdEncoding.DecodeString(ciphertext)
 	if err != nil {
-		return "", &EncryptionError{err}
+		return "", true, &EncryptionError{err}
 	}
 
-	plainbytes, err := gcmDecrypt([]byte(decodedCiphertext), keyToDecrypt)
+	plainbytes, err := gcmDecrypt(decodedCiphertext, keyToDecrypt)
 	if err != nil {
-		return "", &EncryptionError{err}
+		return "", true, &EncryptionError{err}
 	}
-	return string(plainbytes), nil
-}
-
-// EncryptWithKey encrypts the plaintext byte array with a specific key
-func (e encryptor) EncryptWithKey(plaintext, key []byte) ([]byte, error) {
-	return gcmEncrypt(plaintext, key)
+	return string(plainbytes), false, nil
 }
 
 // RotateEncryption rotates the encryption on a ciphertext by
 // decrypting the byte array using the primaryKey, and then reencrypting
 // it using the secondaryKey.
-func (e encryptor) RotateEncryption(ciphertext []byte) ([]byte, error) {
+func (e encryptor) RotateEncryption(ciphertext string) (string, error) {
 	if !e.ConfiguredToRotate() {
-		return nil, &EncryptionError{errors.New("key rotation not configured")}
+		return "", &EncryptionError{errors.New("key rotation not configured")}
 	}
-	// try previous key first
-	plaintext, err := gcmDecrypt(ciphertext, e.secondaryKey)
+
+	plaintext, failed, err := e.Decrypt(ciphertext)
 	if err != nil {
-		_, err = gcmDecrypt(ciphertext, e.primaryKey)
-		if err != nil {
-			return nil, err
-		}
+		return "", err
+	}
+
+	// Decryption couldn't be done, better to just return as-is so we don't encrypt it again
+	// which makes the situation worse.
+	if failed {
 		return ciphertext, nil
 	}
 
-	return e.EncryptWithKey(plaintext, e.primaryKey)
+	return e.Encrypt(plaintext)
 }
 
 // noOpEncryptor always returns original content and does no encryption or decryption.
@@ -234,8 +237,8 @@ func (noOpEncryptor) Encrypt(s string) (string, error) {
 	return s, nil
 }
 
-func (noOpEncryptor) Decrypt(s string) (string, error) {
-	return s, nil
+func (noOpEncryptor) Decrypt(s string) (string, bool, error) {
+	return s, false, nil
 }
 
 func (noOpEncryptor) ConfiguredToEncrypt() bool {
@@ -246,12 +249,8 @@ func (noOpEncryptor) ConfiguredToRotate() bool {
 	return false
 }
 
-func (noOpEncryptor) RotateEncryption(b []byte) ([]byte, error) {
-	return b, nil
-}
-
-func (noOpEncryptor) EncryptWithKey(b, key []byte) ([]byte, error) {
-	return b, nil
+func (noOpEncryptor) RotateEncryption(s string) (string, error) {
+	return s, nil
 }
 
 // ConfiguredToEncrypt returns a boolean indicating whether this type of
@@ -278,23 +277,17 @@ func Encrypt(plaintext string) (string, error) {
 // Decrypt decrypts the ciphertext and returns the decrypted value.
 // An error is returned when decryption fails. It returns the original
 // content if encryption is not configured.
-func Decrypt(ciphertext string) (string, error) {
+func Decrypt(ciphertext string) (string, bool, error) {
 	return defaultEncryptor.Decrypt(ciphertext)
 }
 
-// EncryptWithKey encrypts the plaintext byte array with a specific key
-func EncryptWithKey(ciphertext, key []byte) ([]byte, error) {
-	return defaultEncryptor.EncryptWithKey(ciphertext, key)
-}
-
-// RotateEncryption rotates the encryption on a ciphertext by
-// decrypting the byte array using the primaryKey, and then reencrypting
-// it using the secondaryKey.
-func RotateEncryption(ciphertext []byte) ([]byte, error) {
+// RotateEncryption rotates the encryption on a ciphertext by decrypting
+// the ciphertext and then re-encrypting it using the primary key.
+func RotateEncryption(ciphertext string) (string, error) {
 	return defaultEncryptor.RotateEncryption(ciphertext)
 }
 
-// KeyHash returns the private keyHash variable.
-func KeyHash() string {
+// PrimaryKeyHash returns hash of the primary key to be used for filtering.
+func PrimaryKeyHash() string {
 	return defaultEncryptor.PrimaryKeyHash()
 }
