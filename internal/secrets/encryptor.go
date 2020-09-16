@@ -160,7 +160,7 @@ func (e encryptor) Encrypt(plaintext string) (ciphertext string, err error) {
 	return e.PrimaryKeyHash() + separator + ciphertext, nil
 }
 
-// Decrypt decrypts the plaintext using the primaryKey of the encryptor.
+// Decrypt decrypts base64 encoded ciphertext using the primaryKey of the encryptor
 // This relies on AES-GCM. The `failed` indicates if attempts have been made
 // to decrypt but failed with both primary and secondary keys.
 func (e encryptor) Decrypt(ciphertext string) (plaintext string, failed bool, err error) {
