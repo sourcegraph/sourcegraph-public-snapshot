@@ -145,7 +145,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
-							Owner:             ObservableOwnerSearch,
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -156,7 +156,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayBeNaN:      true, // ratio denominator could be 0
 							Warning:           Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Percentage),
-							Owner:             ObservableOwnerSearch,
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
