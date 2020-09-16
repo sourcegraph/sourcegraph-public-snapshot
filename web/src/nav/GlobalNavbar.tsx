@@ -112,7 +112,8 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                 onNavbarQueryChange({ query, cursorPosition: query.length })
             } else {
                 // If we have no component state, then we may have gotten unmounted during a route change.
-                const query = location.state ? location.state.query : ''
+                const query = location.state?.query || ''
+
                 onNavbarQueryChange({
                     query,
                     cursorPosition: query.length,
