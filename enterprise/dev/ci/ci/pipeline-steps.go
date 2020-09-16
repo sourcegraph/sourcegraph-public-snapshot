@@ -297,24 +297,19 @@ func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 			for _, dockerImage := range allDockerImages {
 				addDockerImage(c, dockerImage, false)(pipeline)
 			}
-			pipeline.AddWait()
 		case c.releaseBranch:
 			addDockerImage(c, "server", false)(pipeline)
-			pipeline.AddWait()
 		case c.isMasterDryRun: // replicates `master` build but does not deploy
 			for _, dockerImage := range allDockerImages {
 				addDockerImage(c, dockerImage, false)(pipeline)
 			}
-			pipeline.AddWait()
 		case c.branch == "master" || c.branch == "main":
 			for _, dockerImage := range allDockerImages {
 				addDockerImage(c, dockerImage, true)(pipeline)
 			}
-			pipeline.AddWait()
 
 		case strings.HasPrefix(c.branch, "docker-images-patch/"):
 			addDockerImage(c, c.branch[20:], false)(pipeline)
-			pipeline.AddWait()
 		}
 	}
 }

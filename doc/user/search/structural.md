@@ -66,28 +66,30 @@ fmt.Sprintf(
 ```
 
 Here we didn't have to do any special thinking about matching contents that
-spread over multiple lines. The `...` syntax by default matches across newlines
-inside delimiters. Structural search supports various balanced syntax like `()`,
-`[]`, and `{}` in a language-aware way. This allows to match large, logical
-blocks or expressions without the limitations of typical line-based regular
-expression patterns.
+spread over multiple lines. The `...` syntax by default matches across newlines.
+Structural search supports various balanced syntax like `()`, `[]`, and `{}` in
+a language-aware way. This allows to match large, logical blocks or expressions
+without the limitations of typical line-based regular expression patterns.
 
 ## Syntax reference
 
 The syntax `...` above is an alias for a canonical syntax `:[hole]`, where
 `hole` is a descriptive identifier for the matched content. Identifiers are
 useful when expressing that matched content should be equal (see the [`return
-:[v], :[v]`](#match-equivalent-expressions) example below). See additional
+:[v.], :[v.]`](#match-equivalent-expressions) example below). See additional
 syntax below
 
-| Syntax                  | Alias                            | Description                                                                                                                                                                                                                                                                                             |
-|-------------------------|----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `...`                   | `:[hole]`<br>`:[_]`              | match zero or more characters in a lazy fashion. When `:[hole]` is inside delimiters, as in `{:[h1], :[h2]}` or `(:[h])`, holes match within that group or code block, including newlines. Holes outside of delimiters stop matching at a newline, or the start of a code block, whichever comes first. |
-| `:[~regexp]`            | `:[hole~regexp]`                 | match an arbitrary [regular expression](https://golang.org/s/re2syntax) `regexp`. A descriptive identifier like `hole` is optional. Avoid regular expressions that match special syntax like `)` or `.*`, otherwise your pattern may fail to match balanced blocks.                                     |
-| `:[[_]]`<br>`:[[hole]]` | `:[~\w+]`<br>`:[hole~\w+]`       | match one or more alphanumeric characters and underscore.                                                                                                                                                                                                                                               |
-| `:[hole\n]`             | `:[~.*\n]`<br>`:[hole~.*\n]`     | match zero or more characters up to a newline, including the newline.                                                                                                                                                                                                                                   |
-| `:[ ]`<br>`:[ hole]`    | `:[~[ \t]+]`<br>`:[hole~[ \t]+]` | match only whitespace characters, excluding newlines.                                                                                                                                                                                                                                                   |
-| `:[hole.]`              | `[_.]`                           | match one or more alphanumeric characters and punctuation like `.`, `;`, and `-` that do not affect balanced syntax. Language dependent.                                                                                                                                                                |
+| Syntax                  | Alias                            | Description                                                                                                                                                                                                                                                         |
+|-------------------------|----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `...`                   | `:[hole]`<br>`:[_]`              | match zero or more characters in a lazy fashion. When `:[hole]` is inside delimiters, as in `{:[h1], :[h2]}` or `(:[h])`, holes match within that group or code block, including newlines.                                                                          |
+| `:[~regexp]`            | `:[hole~regexp]`                 | match an arbitrary [regular expression](https://golang.org/s/re2syntax) `regexp`. A descriptive identifier like `hole` is optional. Avoid regular expressions that match special syntax like `)` or `.*`, otherwise your pattern may fail to match balanced blocks. |
+| `:[[_]]`<br>`:[[hole]]` | `:[~\w+]`<br>`:[hole~\w+]`       | match one or more alphanumeric characters and underscore.                                                                                                                                                                                                           |
+| `:[hole\n]`             | `:[~.*\n]`<br>`:[hole~.*\n]`     | match zero or more characters up to a newline, including the newline.                                                                                                                                                                                               |
+| `:[ ]`<br>`:[ hole]`    | `:[~[ \t]+]`<br>`:[hole~[ \t]+]` | match only whitespace characters, excluding newlines.                                                                                                                                                                                                               |
+| `:[hole.]`              | `[_.]`                           | match one or more alphanumeric characters and punctuation like `.`, `;`, and `-` that do not affect balanced syntax. Language dependent.                                                                                                                            |
+
+Note: to match the string `...` literally, use regular expression patterns like
+`:[~[.]{3}]` or `:[~\.\.\.]`.
 
 **Rules.** [Comby supports rules](https://comby.dev/docs/advanced-usage) to
 express equality constraints or pattern-based matching. Comby rules are not
@@ -140,12 +142,12 @@ to match all functions with three or more arguments, matching the the `first` an
 Using the same identifier in multiple holes adds a constraint that both of the matched values must be syntactically equal. So, the pattern:
 
 ```go
-return :[v], :[v]
+return :[v.], :[v.]
 ```
 
 will match code where a pair of identifier-like syntax in the `return` statement are the same. For example, `return true, true`, `return nil, nil`, or `return 0, 0`.
 
-[See it live on Sourcegraph's code ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+lang:go+return+:%5Bv%5D%2C+:%5Bv%5D&patternType=structural)
+[See it live on Sourcegraph's code ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+lang:go+return+:%5Bv.%5D%2C+:%5Bv.%5D&patternType=structural)
 
 #### Match JSON
 

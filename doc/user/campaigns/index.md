@@ -139,6 +139,8 @@ In the Sourcegraph web UI you'll see a progress indicator for the changesets tha
 
 To publish a changeset, you need admin access to the campaign and write access to the changeset's repository (on the code host). For more information, see [Code host interactions in campaigns](managing_access.md#code-host-interactions-in-campaigns). [Forking the repository](#known-issues) is not yet supported.
 
+> NOTE: Set the Git commit author details with the [`changesetTemplate.commit.author`](campaign_spec_yaml_reference.md#changesettemplate-commit-author) fields in the campaign spec.
+
 ## Tracking campaign progress and changeset statuses
 
 A campaign tracks all of its changesets for updates to:

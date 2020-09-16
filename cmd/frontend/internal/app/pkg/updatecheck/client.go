@@ -328,7 +328,7 @@ func check() {
 		req.Header.Set("Content-Type", "application/json")
 		req = req.WithContext(ctx)
 
-		resp, err := httpcli.ExternalHTTPClient().Do(req)
+		resp, err := httpcli.ExternalDoer().Do(req)
 		if err != nil {
 			return "", err
 		}

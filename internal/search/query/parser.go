@@ -1227,7 +1227,7 @@ func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 		query = substituteConcat(query, " ")
 		query = ellipsesForHoles(query)
 	case SearchTypeRegex:
-		query = Map(query, EmptyGroupsToLiteral, TrailingParensToLiteral)
+		query = escapeParensHeuristic(query)
 	}
 
 	if options.Globbing {
