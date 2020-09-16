@@ -121,3 +121,7 @@ func (v *JSONValue) Scan(src interface{}) error {
 func (v *JSONValue) RawMessage() json.RawMessage {
 	return json.RawMessage(*v)
 }
+
+func (v *JSONValue) String() string {
+	return string(*v)
+}

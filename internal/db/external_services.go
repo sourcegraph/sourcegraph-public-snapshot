@@ -354,7 +354,6 @@ func (e *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf
 	}); err != nil {
 		return err
 	}
-	encConfig := secret.StringValue(es.Config)
 
 	es.CreatedAt = time.Now().UTC().Truncate(time.Microsecond)
 	es.UpdatedAt = es.CreatedAt
@@ -362,7 +361,7 @@ func (e *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf
 	return dbconn.Global.QueryRowContext(
 		ctx,
 		"INSERT INTO external_services(kind, display_name, config, created_at, updated_at, namespace_user_id) VALUES($1, $2, $3, $4, $5, $6) RETURNING id",
-		es.Kind, es.DisplayName, encConfig, es.CreatedAt, es.UpdatedAt, es.NamespaceUserID,
+		es.Kind, es.DisplayName, secret.StringValue(es.Config), es.CreatedAt, es.UpdatedAt, es.NamespaceUserID,
 	).Scan(&es.ID)
 }
 
@@ -397,11 +396,11 @@ func (e *ExternalServicesStore) Update(ctx context.Context, ps []schema.AuthProv
 		}); err != nil {
 			return err
 		}
-	}
 
-	esv := secret.StringValue(*update.Config)
-	encConfig := esv.String()
-	update.Config = &encConfig
+		esConfig := secret.StringValue(*update.Config)
+		config := esConfig.String()
+		update.Config = &config
+	}
 
 	execUpdate := func(ctx context.Context, tx *sql.Tx, update *sqlf.Query) error {
 		q := sqlf.Sprintf("UPDATE external_services SET %s, updated_at=now() WHERE id=%d AND deleted_at IS NULL", update, id)
@@ -543,16 +542,16 @@ func (*ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, lim
 	for rows.Next() {
 		var (
 			h              types.ExternalService
+			esConfig       secret.StringValue
 			deletedAt      sql.NullTime
 			lastSyncAt     sql.NullTime
 			nextSyncAt     sql.NullTime
 			namepaceUserID sql.NullInt32
 		)
-		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namepaceUserID); err != nil {
+		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &esConfig, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namepaceUserID); err != nil {
 			return nil, err
 		}
-		encConfig := secret.StringValue(h.Config)
-		h.Config = encConfig.String()
+		h.Config = esConfig.String()
 
 		if deletedAt.Valid {
 			h.DeletedAt = &deletedAt.Time
