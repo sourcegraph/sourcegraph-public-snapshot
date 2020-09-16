@@ -13,6 +13,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Dump event
+        continue-on-error: true
+        env:
+          EVENT_CONTEXT: ${{ toJson(github) }}
+        run: |
+          echo "$EVENT_CONTEXT"
+
       # retrieve first pull request attached to this commit
       - name: Get pull request
         id: pull_request
