@@ -50,7 +50,7 @@ export class UserNavItem extends React.PureComponent<UserNavItemProps, State> {
             <ButtonDropdown isOpen={this.state.isOpen} toggle={this.toggleIsOpen} className="py-0">
                 <DropdownToggle
                     caret={true}
-                    className="bg-transparent d-flex align-items-center test-user-nav-item-toggle"
+                    className="btn bg-transparent d-flex align-items-center test-user-nav-item-toggle"
                     nav={true}
                 >
                     {this.props.authenticatedUser.avatarURL ? (

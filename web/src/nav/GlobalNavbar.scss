@@ -7,9 +7,6 @@
     display: flex;
     align-items: flex-start;
     width: 100%;
-    &--bg {
-        background-color: $color-bg-2;
-    }
 
     &__logo-link {
         outline: 0;
@@ -36,14 +33,6 @@
     &:hover {
         .toggle-container__copy-query-button {
             opacity: 1;
-        }
-    }
-}
-
-.theme-light {
-    .global-navbar {
-        &--bg {
-            background-color: $color-light-bg-2;
         }
     }
 }

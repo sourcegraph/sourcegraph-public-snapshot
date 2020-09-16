@@ -5,7 +5,7 @@
 
 // Gray (blueish) palette
 $white: #ffffff;
-$gray-01: #f2f4f8;
+$gray-01: #f8f9fa;
 $gray-02: #e4e9f1;
 $gray-03: #d7ddea;
 $gray-04: #cad2e2;
@@ -118,7 +118,7 @@ $body-bg-color-dark: #04070e;
     --body-color: #{$body-color-light};
     --body-bg: #{$body-bg-color-light};
     --text-muted: #{$color-light-text-2};
-    --link-color: #{$gray-13};
+    --link-color: #1966d3;
     --link-active-color: #{$gray-18};
     --link-hover-color: #{$gray-21};
     --color-border: #{$color-light-border};
@@ -129,7 +129,7 @@ $body-bg-color-dark: #04070e;
     --body-color: #{$body-color-dark};
     --body-bg: #{$body-bg-color-dark};
     --text-muted: #{$color-text-1};
-    --link-color: #{$gray-07};
+    --link-color: #3585f5;
     --link-active-color: #{$gray-02};
     --link-hover-color: #{$white};
 }

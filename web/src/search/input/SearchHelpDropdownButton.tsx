@@ -16,7 +16,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent = () => {
             <DropdownToggle
                 tag="span"
                 caret={false}
-                className="px-2 btn btn-link d-flex align-items-center cursor-pointer"
+                className="px-2 btn bg-transparent border-0 d-flex align-items-center cursor-pointer"
                 aria-label="Quick help for search"
             >
                 <HelpCircleOutlineIcon

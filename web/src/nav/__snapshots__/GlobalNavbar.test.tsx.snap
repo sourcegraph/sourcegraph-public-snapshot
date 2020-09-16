@@ -2,7 +2,7 @@
 
 exports[`GlobalNavbar default 1`] = `
 <div
-  className="global-navbar global-navbar--bg border-bottom py-1"
+  className="global-navbar border-bottom py-2"
 >
   <a
     className="global-navbar__logo-link"
@@ -98,7 +98,7 @@ exports[`GlobalNavbar default 1`] = `
 
 exports[`GlobalNavbar low-profile 1`] = `
 <div
-  className="global-navbar  py-1"
+  className="global-navbar  py-2"
 >
   <div
     className="flex-1"
@@ -108,7 +108,7 @@ exports[`GlobalNavbar low-profile 1`] = `
 
 exports[`GlobalNavbar no-search-input 1`] = `
 <div
-  className="global-navbar global-navbar--bg border-bottom py-1"
+  className="global-navbar border-bottom py-2"
 >
   <a
     className="global-navbar__logo-link"

@@ -209,6 +209,10 @@ body,
     }
 }
 
+.text-body {
+    color: var(--body-color);
+}
+
 .spacer {
     flex: 1;
 }

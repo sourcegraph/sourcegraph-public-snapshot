@@ -162,10 +162,8 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     return (
         <div
             className={`global-navbar ${
-                variant === 'low-profile' || variant === 'low-profile-with-logo'
-                    ? ''
-                    : 'global-navbar--bg border-bottom'
-            } py-1`}
+                variant === 'low-profile' || variant === 'low-profile-with-logo' ? '' : 'border-bottom'
+            } py-2`}
         >
             {variant === 'low-profile' || variant === 'low-profile-with-logo' ? (
                 <>

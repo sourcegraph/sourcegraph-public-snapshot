@@ -103,7 +103,6 @@ export class NavLinks extends React.PureComponent<Props> {
                 <li className="nav-item">
                     <WebCommandListPopoverButton
                         {...this.props}
-                        buttonClassName="nav-link btn btn-link"
                         menu={ContributableMenu.CommandPalette}
                         keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
                     />
