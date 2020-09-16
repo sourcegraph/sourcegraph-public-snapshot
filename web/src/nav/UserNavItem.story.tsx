@@ -53,6 +53,8 @@ add(
                     }}
                     themePreference={webProps.isLightTheme ? ThemePreference.Light : ThemePreference.Dark}
                     onThemePreferenceChange={onThemePreferenceChange}
+                    showCampaigns={true}
+                    showCodeInsights={true}
                     showDotComMarketing={boolean('showDotComMarketing', true)}
                 />
             )}

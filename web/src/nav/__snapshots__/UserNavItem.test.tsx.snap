@@ -38,6 +38,8 @@ exports[`UserNavItem simple 1`] = `
       isLightTheme={true}
       location="[Location path=/]"
       onThemePreferenceChange={[Function]}
+      showCampaigns={true}
+      showCodeInsights={true}
       showDotComMarketing={true}
       themePreference="light"
     >
@@ -150,6 +152,24 @@ exports[`UserNavItem simple 1`] = `
                   </Link>
                   <Link
                     className="dropdown-item"
+                    to="/campaigns"
+                  >
+                    <LinkAnchor
+                      className="dropdown-item"
+                      href="/campaigns"
+                      navigate={[Function]}
+                    >
+                      <a
+                        className="dropdown-item"
+                        href="/campaigns"
+                        onClick={[Function]}
+                      >
+                        Campaigns
+                      </a>
+                    </LinkAnchor>
+                  </Link>
+                  <Link
+                    className="dropdown-item"
                     to="/extensions"
                   >
                     <LinkAnchor
@@ -181,6 +201,24 @@ exports[`UserNavItem simple 1`] = `
                         onClick={[Function]}
                       >
                         Saved searches
+                      </a>
+                    </LinkAnchor>
+                  </Link>
+                  <Link
+                    className="dropdown-item"
+                    to="/insights"
+                  >
+                    <LinkAnchor
+                      className="dropdown-item"
+                      href="/insights"
+                      navigate={[Function]}
+                    >
+                      <a
+                        className="dropdown-item"
+                        href="/insights"
+                        onClick={[Function]}
+                      >
+                        Insights
                       </a>
                     </LinkAnchor>
                   </Link>

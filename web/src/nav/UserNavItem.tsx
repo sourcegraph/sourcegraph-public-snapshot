@@ -16,6 +16,8 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps {
         AuthenticatedUser,
         'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session'
     >
+    showCampaigns: boolean
+    showCodeInsights: boolean
     showDotComMarketing: boolean
     keyboardShortcutForSwitchTheme?: KeyboardShortcut
 }
@@ -65,12 +67,22 @@ export class UserNavItem extends React.PureComponent<UserNavItemProps, State> {
                     <Link to={this.props.authenticatedUser.settingsURL!} className="dropdown-item">
                         Settings
                     </Link>
+                    {this.props.showCampaigns && (
+                        <Link to="/campaigns" className="dropdown-item">
+                            Campaigns
+                        </Link>
+                    )}
                     <Link to="/extensions" className="dropdown-item">
                         Extensions
                     </Link>
                     <Link to={`/users/${this.props.authenticatedUser.username}/searches`} className="dropdown-item">
                         Saved searches
                     </Link>
+                    {this.props.showCodeInsights && (
+                        <Link to="/insights" className="dropdown-item">
+                            Insights
+                        </Link>
+                    )}
                     <DropdownItem divider={true} />
                     <div className="px-2 py-1">
                         <div className="d-flex align-items-center">
