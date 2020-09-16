@@ -1,9 +1,26 @@
 # Precise code intelligence
 
 Precise code intelligence relies on [LSIF](https://github.com/Microsoft/language-server-protocol/blob/master/indexFormat/specification.md) 
-(Language Server Index Format) data to deliver precomputed code intelligence. It provides fast and highly accurate code intelligence but needs to be periodically generated and uploaded to your Sourcegraph instance. Precise code intelligence is an opt-in feature: repositories for which you have not uploaded LSIF data will continue to use the basic search based code intelligence.
+(Language Server Index Format) data to deliver precomputed code intelligence. It provides fast and highly accurate code intelligence but needs to be periodically generated and uploaded to your Sourcegraph instance. The LSIF data is used by Sourcegraph instances to power code intelligence requests (such as hovers, definitions, and references). Precise code intelligence is an opt-in feature: repositories for which you have not uploaded LSIF data will continue to use the basic search based code intelligence.
 
 > NOTE: Precise code intelligence using LSIF is supported in Sourcegraph 3.8 and up.
+
+## What languages are supported?
+
+These are the languages that are currently supported on [LSIF.dev](https://lsif.dev):
+
+  - [C++](https://github.com/sourcegraph/lsif-cpp)
+  - [Dart](https://github.com/sourcegraph/lsif-dart)
+  - [Go](https://github.com/sourcegraph/lsif-go)
+  - [Haskell](https://github.com/mpickering/hie-lsif)
+  - [Java](https://github.com/sourcegraph/lsif-java)
+  - [Javascript/Typescript](https://github.com/sourcegraph/lsif-node)
+  - [Jsonnet](https://github.com/sourcegraph/lsif-jsonnet)
+  - [Python](https://github.com/sourcegraph/lsif-py)
+  - [OCaml](https://github.com/rvantonder/lsif-ocaml)
+  - [Scala](https://github.com/sourcegraph/lsif-semanticdb)
+
+Are you using a language that isn't supported? Check out our [Writing an indexer](https://docs.sourcegraph.com/user/code_intelligence/writing_an_indexer) section.
 
 ## Getting started
 
@@ -13,10 +30,11 @@ First navigate to your [global settings](https://sourcegraph.example.com/site-ad
   "codeIntel.lsif": true
 ```
 
-Then select a language specific guide from the list below to generate and upload LSIF files for your repository. The LSIF data is used by Sourcegraph instances to power code intelligence requests (such as hovers, definitions, and references). If you don't see a guide for the language you need below, follow our general [quickstart guide](lsif_quickstart.md) to setup precise code intelligence.
+Then select one of the language specific guides from the list below to generate and upload LSIF files for your repository. If you don't see a guide for the language you need below, follow our general guide to setup precise code intelligence.
 
 - [Go](languages/go.md)
 - [Javascript / Typescript](languages/typescript_and_javascript.md)
+- [General guide](lsif_quickstart.md) (for supported languages that aren't above)
 
 After completing the initial setup, follow the [continuous integration guide](adding_lsif_to_workflows.md#lsif-in-continuous-integration) to automate indexing of code changes as part of your CI/CD practice.
 
