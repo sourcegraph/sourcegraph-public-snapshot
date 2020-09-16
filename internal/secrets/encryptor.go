@@ -48,7 +48,7 @@ type encryptor struct {
 	// secondaryKey is used during key rotation to provide decryption during key rotations.
 	// It was the primary key that was used for encryption before the key rotation.
 	secondaryKey []byte
-	// primaryKeyHash is prepended to base64-encoded ciphertext with `separator`.
+	// primaryKeyHash contains a partial hash of the active encryption key
 	primaryKeyHash string
 	// secondaryKeyHash contains a partial hash of the previously used encryption key
 	secondaryKeyHash string
