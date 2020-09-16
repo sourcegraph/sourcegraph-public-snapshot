@@ -157,7 +157,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	var diff Diff
 
 	log15.Debug("Syncing external service", "serviceID", externalServiceID)
-	ctx, save := s.observe(ctx, "Syncer.SyncExternalService", "")
+	ctx, save := s.observe(ctx, externalServiceID, "Syncer.SyncExternalService", "")
 	defer save(&diff, &err)
 	defer s.setOrResetLastSyncErr(externalServiceID, &err)
 
@@ -272,7 +272,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	interval := calcSyncInterval(now, svc.LastSyncAt, minSyncInterval, diff)
 	log15.Info("Synced external service", "id", externalServiceID, "backoff duration", interval)
 	syncBackoffDuration.With(prometheus.Labels{
-		"id": strconv.FormatInt(svc.ID, 10),
+		"external_service_id": strconv.FormatInt(svc.ID, 10),
 	}).Set(interval.Seconds())
 	svc.NextSyncAt = now.Add(interval)
 	svc.LastSyncAt = now
@@ -375,7 +375,7 @@ func calcSyncInterval(now time.Time, lastSync time.Time, minSyncInterval time.Du
 func (s *Syncer) SyncSubset(ctx context.Context, store Store, sourcedSubset ...*Repo) (err error) {
 	var diff Diff
 
-	ctx, save := s.observe(ctx, "Syncer.SyncSubset", strings.Join(Repos(sourcedSubset).Names(), " "))
+	ctx, save := s.observe(ctx, 0, "Syncer.SyncSubset", strings.Join(Repos(sourcedSubset).Names(), " "))
 	defer save(&diff, &err)
 
 	if len(sourcedSubset) == 0 {
@@ -400,7 +400,7 @@ func (s *Syncer) SyncSubset(ctx context.Context, store Store, sourcedSubset ...*
 func (s *Syncer) insertIfNew(ctx context.Context, store Store, sourcedRepo *Repo) (err error) {
 	var diff Diff
 
-	ctx, save := s.observe(ctx, "Syncer.InsertIfNew", sourcedRepo.Name)
+	ctx, save := s.observe(ctx, 0, "Syncer.InsertIfNew", sourcedRepo.Name)
 	defer save(&diff, &err)
 
 	diff, err = s.syncSubset(ctx, store, true, sourcedRepo)
@@ -780,7 +780,7 @@ func (s *Syncer) SyncErrors() []error {
 	return sorted
 }
 
-func (s *Syncer) observe(ctx context.Context, family, title string) (context.Context, func(*Diff, *error)) {
+func (s *Syncer) observe(ctx context.Context, extsvcID int64, family, title string) (context.Context, func(*Diff, *error)) {
 	began := s.Now()
 	tr, ctx := trace.New(ctx, family, title)
 
@@ -813,7 +813,7 @@ func (s *Syncer) observe(ctx context.Context, family, title string) (context.Con
 		lastSync.WithLabelValues().Set(float64(now.Unix()))
 
 		success := err == nil || *err == nil
-		syncDuration.WithLabelValues(strconv.FormatBool(success)).Observe(took)
+		syncDuration.WithLabelValues(strconv.FormatBool(success), strconv.FormatInt(extsvcID, 10), family).Observe(took)
 
 		if !success {
 			tr.SetError(*err)

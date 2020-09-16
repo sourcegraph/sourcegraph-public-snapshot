@@ -34,12 +34,12 @@ var (
 	syncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name: "src_repoupdater_syncer_sync_duration_seconds",
 		Help: "Time spent syncing",
-	}, []string{"success"})
+	}, []string{"success", "external_service_id", "family"})
 
 	syncBackoffDuration = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_repoupdater_syncer_sync_backoff_duration_seconds",
 		Help: "Backoff duration after a sync",
-	}, []string{"id"})
+	}, []string{"external_service_id"})
 
 	purgeSuccess = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_repoupdater_purge_success",
