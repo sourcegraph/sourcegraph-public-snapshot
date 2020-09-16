@@ -23,7 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hubspot"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/pubsub/pubsubutil"
+	"github.com/sourcegraph/sourcegraph/internal/pubsub"
 )
 
 // pubSubPingsTopicID is the topic ID of the topic that forwards messages to Pings' pub/sub subscribers.
@@ -304,11 +304,11 @@ func logPing(r *http.Request, pr *pingRequest, hasUpdate bool) {
 		errorCounter.Inc()
 		log15.Warn("logPing.Marshal: failed to Marshal payload", "error", err)
 	} else {
-		if pubsubutil.Enabled() {
-			err := pubsubutil.Publish(pubSubPingsTopicID, string(message))
+		if pubsub.Enabled() {
+			err := pubsub.Publish(pubSubPingsTopicID, string(message))
 			if err != nil {
 				errorCounter.Inc()
-				log15.Warn("pubsubutil.Publish: failed to Publish", "message", message, "error", err)
+				log15.Warn("pubsub.Publish: failed to Publish", "message", message, "error", err)
 			}
 		}
 	}

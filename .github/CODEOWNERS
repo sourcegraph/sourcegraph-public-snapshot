@@ -32,8 +32,8 @@
 /cmd/frontend/internal/inventory @slimsag
 /cmd/frontend/internal/cli/middleware @beyang @slimsag
 /cmd/frontend/internal/cli @slimsag
-/cmd/frontend/internal/pkg/markdown @slimsag
-/cmd/frontend/internal/pkg/handlerutil @slimsag
+/cmd/frontend/internal/markdown @slimsag
+/cmd/frontend/internal/handlerutil @slimsag
 /cmd/frontend/internal/httpapi @slimsag
 /cmd/frontend/types @slimsag
 /cmd/frontend/hooks @slimsag
@@ -96,11 +96,11 @@
 /shared/src/components/activation/ @sourcegraph/web
 
 # Tracking
-/cmd/frontend/internal/app/pkg/updatecheck/ @dadlerj
+/cmd/frontend/internal/app/updatecheck/ @dadlerj
 /web/src/tracking/ @dadlerj
 **/tracking @dadlerj
 /cmd/frontend/internal/usagestats @dadlerj
-/cmd/frontend/internal/pkg/usagestatsdeprecated @dadlerj
+/cmd/frontend/internal/usagestatsdeprecated @dadlerj
 /internal/eventlogger @dadlerj
 
 # Auth
@@ -150,7 +150,7 @@
 
 # Search
 */search/**/* @sourcegraph/search
-/cmd/frontend/internal/pkg/search @sourcegraph/search
+/cmd/frontend/internal/search @sourcegraph/search
 /cmd/frontend/graphqlbackend/*search* @sourcegraph/search
 /cmd/frontend/graphqlbackend/*zoekt* @sourcegraph/search
 /cmd/query-runner/ @sourcegraph/search
@@ -163,7 +163,7 @@
 /cmd/frontend/graphqlbackend/*symbols* @sourcegraph/code-intel
 /enterprise/cmd/frontend/internal/symbols @sourcegraph/code-intel
 /cmd/symbols/.ctags.d/ @sourcegraph/code-intel
-/cmd/symbols/internal/pkg/ctags/ @sourcegraph/code-intel
+/cmd/symbols/internal/ctags/ @sourcegraph/code-intel
 /shared/src/languages* @sourcegraph/code-intel
 
 # Saved searches
