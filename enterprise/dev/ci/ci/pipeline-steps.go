@@ -188,21 +188,21 @@ func addBackendIntegrationTests(c Config) func(*bk.Pipeline) {
 }
 
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
-	for _, browser := range []string{"chrome", "firefox"} {
-		// Run e2e tests
-		pipeline.AddStep(fmt.Sprintf(":%s:", browser),
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
-			bk.Env("BROWSER", browser),
-			bk.Env("LOG_BROWSER_CONSOLE", "true"),
-			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
-			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("pushd browser"),
-			bk.Cmd("yarn -s run build"),
-			bk.Cmd("yarn -s mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts"),
-			bk.Cmd("popd"),
-			bk.ArtifactPaths("./puppeteer/*.png"))
-	}
+	// TODO run this on firefox as well when our add-on is unblocked
+	browser := "chrome"
+	// Run e2e tests
+	pipeline.AddStep(fmt.Sprintf(":%s:", browser),
+		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+		bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
+		bk.Env("BROWSER", browser),
+		bk.Env("LOG_BROWSER_CONSOLE", "true"),
+		bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("pushd browser"),
+		bk.Cmd("yarn -s run build"),
+		bk.Cmd("yarn -s mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts"),
+		bk.Cmd("popd"),
+		bk.ArtifactPaths("./puppeteer/*.png"))
 }
 
 // Release the browser extension.
@@ -219,12 +219,13 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 		bk.Cmd("yarn release:chrome"),
 		bk.Cmd("popd"))
 
+	// TODO uncomment this when our add-on will be unblocked
 	// Build and self sign the FF extension and upload it to ...
-	pipeline.AddStep(":rocket::firefox:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd browser"),
-		bk.Cmd("yarn release:ff"),
-		bk.Cmd("popd"))
+	// pipeline.AddStep(":rocket::firefox:",
+	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+	// 	bk.Cmd("pushd browser"),
+	// 	bk.Cmd("yarn release:ff"),
+	// 	bk.Cmd("popd"))
 
 	// Release to npm
 	pipeline.AddStep(":rocket::npm:",
