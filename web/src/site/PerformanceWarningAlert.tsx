@@ -19,7 +19,7 @@ export const PerformanceWarningAlert: React.FunctionComponent = () => (
             with 100+ repositories&nbsp;
             <Link
                 className="site-alert__link"
-                to="https://docs.sourcegraph.com/admin/install/cluster"
+                to="https://docs.sourcegraph.com/admin/install"
                 onClick={onClickCTA}
             >
                 deploy to a cluster
