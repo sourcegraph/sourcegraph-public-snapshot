@@ -229,7 +229,7 @@ export function createStructuralSearchTourTooltip(tour: Shepherd.Tour): HTMLElem
     listItem.className = 'p-0 my-4'
     list.append(listItem)
     const exampleButton = document.createElement('a')
-    exampleButton.href = 'https://docs.sourcegraph.com/user/search/structural'
+    exampleButton.href = 'https://docs.sourcegraph.com/user/code_search/structural'
     exampleButton.target = '_blank'
     exampleButton.rel = 'noopener'
     exampleButton.className = 'btn btn-link test-tour-language-example p-0'

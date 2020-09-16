@@ -359,7 +359,7 @@ export class QueryBuilder extends React.Component<QueryBuilderProps, QueryBuilde
                     />
                 </div>
                 <div className="query-builder__docs-link">
-                    <a target="blank" href={`${documentationUrlPrefix}/user/search/queries`}>
+                    <a target="blank" href={`${documentationUrlPrefix}/user/code_search/queries`}>
                         View all search options in docs <ExternalLinkIcon className="icon-inline small" />
                     </a>
                 </div>

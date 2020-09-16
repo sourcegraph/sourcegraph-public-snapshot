@@ -1,6 +1,6 @@
 # Refactor Go code using Comby
 
-This campaign uses Sourcegraph's [structural search](../../search/structural.md) and [Comby](https://comby.dev/) to rewrite Go statements from
+This campaign uses Sourcegraph's [structural search](../../code_search/structural.md) and [Comby](https://comby.dev/) to rewrite Go statements from
 
 ```go
 fmt.Sprintf("%d", number)
