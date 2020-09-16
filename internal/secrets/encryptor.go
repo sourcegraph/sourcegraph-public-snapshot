@@ -61,7 +61,7 @@ func sliceKeyHash(k []byte) string {
 	}
 
 	h := sha256.New()
-	h.Write(k)
+	_, _ = h.Write(k)
 	return hex.EncodeToString(h.Sum(nil))[:6]
 }
 
