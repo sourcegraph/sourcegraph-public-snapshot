@@ -1521,7 +1521,7 @@ describe('e2e test suite', () => {
             ).toBe(1)
         })
 
-        test.skip('Interactive search mode filter buttons', async () => {
+        test('Interactive search mode filter buttons', async () => {
             await driver.page.waitForSelector('.test-search-mode-toggle', { visible: true })
             await driver.page.click('.test-search-mode-toggle')
             await driver.page.click('.test-search-mode-toggle__interactive-mode')
@@ -1546,8 +1546,8 @@ describe('e2e test suite', () => {
             await driver.assertWindowLocation('/search?q=repo:%22gorilla%22&patternType=literal')
 
             // Edit the filter
-            await driver.page.waitForSelector('.filter-input')
-            await driver.page.click('.filter-input')
+            await driver.page.waitForSelector('.filter-input__button-text')
+            await driver.page.click('.filter-input__button-text')
             await driver.page.waitForSelector('.filter-input__input-field')
             await driver.page.keyboard.type('/mux')
             // Press enter to lock in filter
@@ -1617,8 +1617,13 @@ describe('e2e test suite', () => {
             assert.strictEqual(await filterInputValue(), 'repo:^github\\.com/sourcegraph/jsonrpc2$')
         })
 
-        test.skip('Interactive search mode filter dropdown and finite-option filter inputs', async () => {
+        test('Interactive search mode filter dropdown and finite-option filter inputs', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/search')
+            // Enable interactive search
+            await driver.page.waitForSelector('.test-search-mode-toggle', { visible: true })
+            await driver.page.click('.test-search-mode-toggle')
+            await driver.page.click('.test-search-mode-toggle__interactive-mode')
+            // Execute search with filter
             await driver.page.waitForSelector('.test-query-input', { visible: true })
             await driver.page.waitForSelector('.test-filter-dropdown')
             await driver.page.type('.test-query-input', 'test')
