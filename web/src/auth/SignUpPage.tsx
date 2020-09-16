@@ -36,7 +36,9 @@ export class SignUpPage extends React.Component<SignUpPageProps> {
                 <HeroPage
                     icon={UserIcon}
                     title={
-                        window.context.sourcegraphDotComMode ? 'Sign up for Sourcegraph.com' : 'Sign up for Sourcegraph'
+                        window.context.sourcegraphDotComMode
+                            ? 'Sign up for Sourcegraph Cloud'
+                            : 'Sign up for Sourcegraph Server'
                     }
                     body={
                         <>

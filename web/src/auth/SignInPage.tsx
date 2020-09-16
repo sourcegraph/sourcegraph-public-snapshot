@@ -28,7 +28,11 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
             <PageTitle title="Sign in" />
             <HeroPage
                 icon={KeyIcon}
-                title="Sign into Sourcegraph"
+                title={
+                    window.context.sourcegraphDotComMode
+                        ? 'Sign in to Sourcegraph Cloud'
+                        : 'Sign in to Sourcegraph Server'
+                }
                 body={
                     window.context.authProviders && window.context.authProviders.length > 0 ? (
                         <div className="mb-4">
