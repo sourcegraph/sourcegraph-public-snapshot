@@ -375,7 +375,6 @@ func mockGenRandomKey() []byte {
 	return b
 }
 
-//
 func Test_Decrypt_Plaintext(t *testing.T) {
 
 	tests := []struct {
@@ -389,7 +388,6 @@ func Test_Decrypt_Plaintext(t *testing.T) {
 		wantErr       bool
 	}{
 
-		// TODO: Add test cases.
 		{
 			"base",
 			mockGenRandomKey(),

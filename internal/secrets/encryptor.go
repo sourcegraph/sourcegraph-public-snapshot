@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	validKeyLength = 32 // 32 bytes is the required length for AES-256.
+	validKeyLength = 32  // 32 bytes is the required length for AES-256.
 	separator      = "$" // used specifically because $ is not part of base64
 )
 
