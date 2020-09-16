@@ -97,8 +97,36 @@ func TestKeyHash(t *testing.T) {
 		t.Errorf("expected PrimaryKeyHash() %q == PrimaryKeyHash() %q", encryptorHash, primaryKeyHash)
 	}
 }
+func TestNoopEncryptor(t *testing.T) {
 
-func TestNoOpEncryptor(t *testing.T) {
+	// now test when we cannot Encrypt
+	t.Run("test no-op encryptor", func(t *testing.T) {
+		e := noOpEncryptor{}
+		encString, err := e.Encrypt(messageToEncrypt)
+		if err != nil {
+			t.Fatalf("Received error when code path should be nil, but got %v", err)
+		}
+		if encString != messageToEncrypt {
+			t.Fatalf("Received encrypted string, expected unencrypted")
+		}
+		decString, _, err := e.Decrypt(encString)
+		if err != nil {
+			t.Fatalf("Received error when code path should be nil, but got %v", err)
+		}
+		if decString != messageToEncrypt {
+			t.Fatalf("Received encrypted string, expected unencrypted")
+		}
+	})
+
+}
+func TestNoOpEncryptor_KeyHash(t *testing.T) {
+	e := noOpEncryptor{}
+	if e.PrimaryKeyHash() != "" && e.SecondaryKeyHash() != "" {
+		t.Fatal("noop encryptor shouldn't have key hashes")
+	}
+}
+
+func TestNoOpEncryptor_Encrypt(t *testing.T) {
 	e := noOpEncryptor{}
 
 	encrypted, err := e.Encrypt(messageToEncrypt)
@@ -243,47 +271,6 @@ func TestKeyMigration(t *testing.T) {
 	}
 }
 
-func TestEncryptAndDecryptBytesIfPossible(t *testing.T) {
-	initialKey, err := generateRandomAESKey()
-	if err != nil {
-		t.Fatal(err)
-	}
-	e := newEncryptor(initialKey, nil)
-	encString, err := e.Encrypt(messageToEncrypt)
-	if err != nil {
-		t.Fatalf("Failed to EncryptBytes")
-	}
-	if encString == messageToEncrypt {
-		t.Fatalf("Encryption failed")
-	}
-
-	decString, _, err := e.Decrypt(encString)
-	if err != nil {
-		t.Fatalf("Failed to Decrypt")
-	}
-	if decString != messageToEncrypt {
-		t.Fatalf("Decryption failed")
-	}
-
-	// now test when we cannot Encrypt
-
-	e = noOpEncryptor{}
-	encString, err = e.Encrypt(messageToEncrypt)
-	if err != nil {
-		t.Fatalf("Received error when code path should be nil, but got %v", err)
-	}
-	if encString != messageToEncrypt {
-		t.Fatalf("Received encrypted string, expected unencrypted")
-	}
-	decString, _, err = e.Decrypt(encString)
-	if err != nil {
-		t.Fatalf("Received error when code path should be nil, but got %v", err)
-	}
-	if decString != messageToEncrypt {
-		t.Fatalf("Received encrypted string, expected unencrypted")
-	}
-}
-
 func Test_gatherKeys(t *testing.T) {
 	tests := []struct {
 		name             string
@@ -386,4 +373,99 @@ func mockGenRandomKey() []byte {
 		panic(err)
 	}
 	return b
+}
+
+//
+func Test_Decrypt_Plaintext(t *testing.T) {
+
+	tests := []struct {
+		name          string
+		primaryKey    []byte
+		secondaryKey  []byte
+		encryptInTest bool
+		ciphertext    string
+		wantPlaintext string
+		wantFailed    bool
+		wantErr       bool
+	}{
+
+		// TODO: Add test cases.
+		{
+			"base",
+			mockGenRandomKey(),
+			mockGenRandomKey(),
+			true,
+			"VerySpecialString",
+			"VerySpecialString",
+			false,
+			false,
+		},
+		{
+			"unencrypted ciphertext",
+			mockGenRandomKey(),
+			mockGenRandomKey(),
+			false,
+			"Non-encrypted string",
+			"Non-encrypted string",
+			false,
+			false,
+		},
+		{
+			// this occurs when a token contains the `separator`
+			"unencrypted ciphertext with separator",
+			mockGenRandomKey(),
+			mockGenRandomKey(),
+			false,
+			"VeryBadString" + separator,
+			"VeryBadString" + separator,
+			true,
+			false,
+		},
+		{
+			"single key",
+			mockGenRandomKey(),
+			nil,
+			false,
+			messageToEncrypt,
+			messageToEncrypt,
+			false,
+			false,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			var e encryptorInterface
+			if tt.primaryKey != nil && tt.secondaryKey != nil {
+				e = newEncryptor(tt.primaryKey, tt.secondaryKey)
+			} else if tt.primaryKey != nil {
+				e = newEncryptor(tt.primaryKey, nil)
+			} else if tt.secondaryKey != nil {
+				e = newEncryptor(tt.secondaryKey, nil)
+			} else {
+				t.Fatal("must have a non-nil key")
+			}
+
+			var err error
+			if tt.encryptInTest {
+				tt.ciphertext, err = e.Encrypt(tt.ciphertext)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			gotPlaintext, gotFailed, err := e.Decrypt(tt.ciphertext)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Decrypt() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotPlaintext != tt.wantPlaintext {
+				t.Errorf("Decrypt() gotPlaintext = %q, want %q", gotPlaintext, tt.wantPlaintext)
+			}
+			if gotFailed != tt.wantFailed {
+				t.Errorf("Decrypt() gotFailed = %v, want %v", gotFailed, tt.wantFailed)
+			}
+		})
+	}
 }
