@@ -17,6 +17,8 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, Exte
         AuthenticatedUser,
         'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session'
     >
+    showCampaigns: boolean
+    showCodeInsights: boolean
     showDotComMarketing: boolean
     keyboardShortcutForSwitchTheme?: KeyboardShortcut
     testIsOpen?: boolean
@@ -128,12 +130,22 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                 <Link to={props.authenticatedUser.settingsURL!} className="dropdown-item">
                     Settings
                 </Link>
+                {props.showCampaigns && (
+                    <Link to="/campaigns" className="dropdown-item">
+                        Campaigns
+                    </Link>
+                )}
                 <Link to="/extensions" className="dropdown-item">
                     Extensions
                 </Link>
                 <Link to={`/users/${props.authenticatedUser.username}/searches`} className="dropdown-item">
                     Saved searches
                 </Link>
+                {props.showCodeInsights && (
+                    <Link to="/insights" className="dropdown-item">
+                        Insights
+                    </Link>
+                )}
                 <DropdownItem divider={true} />
                 <div className="px-2 py-1">
                     <div className="d-flex align-items-center">
