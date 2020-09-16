@@ -6,6 +6,6 @@
 # precedence.
 
 # We are experimenting with not using CODEOWNERS until the end of October.
-# More context: TODO ADD LINK TO PR
+# More context: https://github.com/sourcegraph/sourcegraph/pull/13838
 CODEOWNERS @nicksnyder
 .github/CODEOWNERS @nicksnyder
