@@ -145,7 +145,7 @@ func (e encryptor) ConfiguredToRotate() bool {
 }
 
 // Encrypt encrypts the plaintext using the primaryKey of the encryptor. This
-// relies on the AES-GCM encryption defined in encrypt, within this package.
+// relies on the AES-GCM encryption defined in encrypt, within this package, and returns a base64 encoded string
 func (e encryptor) Encrypt(plaintext string) (ciphertext string, err error) {
 	if len(e.primaryKey) < validKeyLength {
 		return "", &EncryptionError{errors.New("primary key is unavailable")}
