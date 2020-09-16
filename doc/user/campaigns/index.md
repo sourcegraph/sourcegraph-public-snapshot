@@ -16,7 +16,7 @@ People usually use campaigns to make the following kinds of changes:
 - Patching critical security issues.
 - Standardizing build, configuration, and deployment files.
 
-<!-- TODO(sqs): Add video here, similar to https://www.youtube.com/aqcCrqRB17w (which will need to be updated for the new campaign flow). -->
+> Watch the [**🎥 campaigns demo video**](https://www.youtube.com/watch?v=EfKwKFzOs3E).
 
 ## Supported code hosts and changeset types
 
