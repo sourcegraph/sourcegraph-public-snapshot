@@ -23,8 +23,8 @@ type EncryptionError struct {
 	error
 }
 
-// Encryptor is an interface that provides encryption & decryption primitives
-type Encryptor interface {
+// encryptorInterface is an interface that provides encryption & decryption primitives.
+type encryptorInterface interface {
 	// ConfiguredToEncrypt returns true if the encryptor is able to encrypt
 	ConfiguredToEncrypt() bool
 	// ConfiguredToRotate returns if primary and secondary keys are valid keys
@@ -115,7 +115,7 @@ func gcmDecrypt(ciphertext, key []byte) ([]byte, error) {
 	return gcm.Open(nil, ciphertext[:gcm.NonceSize()], ciphertext[gcm.NonceSize():], nil)
 }
 
-func newEncryptor(primaryKey, secondaryKey []byte) Encryptor {
+func newEncryptor(primaryKey, secondaryKey []byte) encryptorInterface {
 	return encryptor{
 		primaryKey:       primaryKey,
 		secondaryKey:     secondaryKey,
