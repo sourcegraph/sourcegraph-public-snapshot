@@ -1,3 +1,4 @@
+name: codenotify
 on: [pull_request]
 
 jobs:
