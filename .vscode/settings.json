@@ -40,7 +40,7 @@
   "typescript.preferences.importModuleSpecifier": "relative",
   "typescript.format.semicolons": "remove",
   "typescript.tsc.autoDetect": "off",
-  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.tsdk": "/home/tj/sourcegraph/node_modules/typescript/lib",
   "eslint.packageManager": "yarn",
   "eslint.lintTask.enable": false,
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
