@@ -44,6 +44,8 @@ describe('UserNavItem', () => {
                         themePreference={ThemePreference.Light}
                         location={history.location}
                         authenticatedUser={USER}
+                        showCampaigns={true}
+                        showCodeInsights={true}
                         showDotComMarketing={true}
                     />
                 </MemoryRouter>

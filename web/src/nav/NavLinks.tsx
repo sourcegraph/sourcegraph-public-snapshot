@@ -12,7 +12,6 @@ import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/s
 import { ThemeProps } from '../../../shared/src/theme'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
-import { CampaignsNavItem } from '../enterprise/campaigns/global/nav/CampaignsNavItem'
 import { ThemePreferenceProps } from '../theme'
 import {
     KeyboardShortcutsProps,
@@ -21,8 +20,6 @@ import {
 } from '../keyboardShortcuts/keyboardShortcuts'
 import { isErrorLike } from '../../../shared/src/util/errors'
 import { Settings } from '../schema/settings.schema'
-import CompassOutlineIcon from 'mdi-react/CompassOutlineIcon'
-import { InsightsNavItem } from '../insights/InsightsNavLink'
 import { AuthenticatedUser } from '../auth'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
@@ -65,24 +62,6 @@ export class NavLinks extends React.PureComponent<Props> {
                 {this.props.activation && (
                     <li className="nav-item">
                         <ActivationDropdown activation={this.props.activation} history={this.props.history} />
-                    </li>
-                )}
-                {(!this.props.showDotComMarketing || !!this.props.authenticatedUser) && (
-                    <li className="nav-item">
-                        <Link to="/explore" className="nav-link">
-                            <CompassOutlineIcon className="icon-inline" /> Explore
-                        </Link>
-                    </li>
-                )}
-                {!isErrorLike(this.props.settingsCascade.final) &&
-                    this.props.settingsCascade.final?.experimentalFeatures?.codeInsights && (
-                        <li className="nav-item">
-                            <InsightsNavItem />
-                        </li>
-                    )}
-                {this.props.showCampaigns && (
-                    <li className="nav-item">
-                        <CampaignsNavItem />
                     </li>
                 )}
                 {!this.props.authenticatedUser && (
@@ -135,6 +114,11 @@ export class NavLinks extends React.PureComponent<Props> {
                             {...this.props}
                             authenticatedUser={this.props.authenticatedUser}
                             showDotComMarketing={this.props.showDotComMarketing}
+                            showCampaigns={this.props.showCampaigns}
+                            showCodeInsights={
+                                !isErrorLike(this.props.settingsCascade.final) &&
+                                Boolean(this.props.settingsCascade.final?.experimentalFeatures?.codeInsights)
+                            }
                             keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
                         />
                     </li>
