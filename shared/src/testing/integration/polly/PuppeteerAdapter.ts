@@ -30,6 +30,8 @@ const puppeteerToCDPPatterns: Record<Puppeteer.ResourceType, keyof typeof patter
     xhr: 'XHR',
 }
 
+const debug = true
+
 /**
  * A Puppeteer adapter for Polly that supports all request resource types.
  *
@@ -92,7 +94,6 @@ export class PuppeteerAdapter extends PollyAdapter {
      * Called when connecting to a Puppeteer page. Sets up request and response interceptors.
      */
     public onConnect(): void {
-        console.log('onConnect')
         // Fulfill requests without sending them to the server
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         intercept(
@@ -100,24 +101,37 @@ export class PuppeteerAdapter extends PollyAdapter {
             this.requestResourceTypes.map(type => patterns[puppeteerToCDPPatterns[type]]('*')).flat(),
             {
                 onInterception: ({ request }, controls) => {
-                    console.log('onInterception', request.url)
+                    if (debug) {
+                        console.log('onInterception', request.url)
+                    }
+
                     this.controlCallbacks.set(request, controls)
+
+                    // Polly adapters (apparently by convention) use a
+                    // `requestArguments` property on the request passed to
+                    // handleRequest, and this lets us attach values that we
+                    // want available later
                     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                     // @ts-ignore
-                    this.handleRequest(request)
+                    this.handleRequest({ ...request, requestArguments: { request } })
                     const controlPromise = new Promise<void>(resolve => {
                         this.controlPromises.set(request, resolve)
                     })
-                    // Resolves when respondToRequest is called
-                    // or when passthroughRequest is called
-                    // This is needed because puppeteer interceptor will await the Promise returned by
-                    // onInterception, then determine whether it should fulfill, abort, or intercept the response
-                    // of the original requests based on which (if any) of the control callbacks were called in onInterception
+                    // Resolves when respondToRequest is called or when
+                    // passthroughRequest is called.
+                    // This is needed because
+                    // puppeteer interceptor will await the Promise returned by
+                    // onInterception, then determine whether it should fulfill,
+                    // abort, or intercept the response of the original requests
+                    // based on which (if any) of the control callbacks were
+                    // called in onInterception
                     // https://sourcegraph.com/github.com/jsoverson/puppeteer-interceptor@1ba312fcdfa82a329a48dd613d726a8a966e5be5/-/blob/src/index.ts#L78-160
                     return controlPromise
                 },
                 onResponseReceived: ({ request, response }) => {
-                    console.log('onResponseReceived', request.url)
+                    if (debug) {
+                        console.log('onResponseReceived', request.url)
+                    }
                     const pollyResponse = {
                         statusCode: response.statusCode,
                         headers: Object.fromEntries(
@@ -144,11 +158,14 @@ export class PuppeteerAdapter extends PollyAdapter {
      * return a Promise of the Response for that request, which will be passed to
      * request.respond().
      */
-    public async passthroughRequest(pollyRequest: PollyRequest): Promise<PollyResponse> {
-        console.log('passthrough request', pollyRequest.url)
+    public async passthroughRequest(pollyRequest: PollyRequest & PollyRequestArguments): Promise<PollyResponse> {
+        if (debug) {
+            console.log('passthroughRequest', pollyRequest.url)
+        }
         const {
             requestArguments: { request },
-        } = (pollyRequest as unknown) as PollyRequestArguments
+        } = pollyRequest
+        // const request = (pollyRequest as unknown) as Protocol.Network.Request
         this.controlPromises.get(request)?.()
         return new Promise<PollyResponse>(resolve => {
             this.passthroughCallbacks.set(request, resolve)
@@ -158,21 +175,19 @@ export class PuppeteerAdapter extends PollyAdapter {
     /**
      * Responds to an intercepted request with the given response.
      *
-     * If an error happened when retreiving the response, abort the request.
+     * If an error happened when retrieving the response, abort the request.
      */
-    public respondToRequest(
-        {
-            requestArguments: { request },
-            response: { statusCode: status, headers, body },
-        }: { requestArguments: { request: Protocol.Network.Request }; response: PollyResponse },
-        error?: unknown
-    ): void {
-        console.log('respondToRequest', request.url)
+    public respondToRequest(pollyResponse: PollyResponse & PollyRequestArguments, error?: unknown): void {
+        const { requestArguments, statusCode, headers, body } = pollyResponse
+        const { request } = requestArguments
+        if (debug) {
+            console.log('respondToRequest', request.url)
+        }
         if (error) {
             // TODO figure out if we can pass a more precise reason
             this.controlCallbacks.get(request)?.abort('Failed')
         } else {
-            this.controlCallbacks.get(request)?.fulfill(status, {
+            this.controlCallbacks.get(request)?.fulfill(statusCode, {
                 responseHeaders: Object.entries(headers).map(([name, value]) => ({ name, value })),
                 body,
             })
@@ -186,16 +201,20 @@ export class PuppeteerAdapter extends PollyAdapter {
      * Adds an entry to pendingRequests, that will call the provided promise.resolve function
      * when a response for this request is received.
      */
-    public onRequest({
-        requestArguments: { request },
-        promise,
-    }: {
-        requestArguments: { request: Protocol.Network.Request }
-        promise: {
-            resolve: (response: PollyResponse) => void
+    public onRequest(
+        pollyRequest: PollyRequest &
+            PollyRequestArguments & {
+                promise: {
+                    resolve: (response: PollyResponse) => void
+                }
+            }
+    ): void {
+        const { requestArguments, promise } = pollyRequest
+        if (debug) {
+            console.log('onRequest', pollyRequest.url)
         }
-    }): void {
-        console.log('onRequest', request.url)
+
+        const { request } = requestArguments
         const respond = (response: PollyResponse): void => {
             promise.resolve(response)
         }
