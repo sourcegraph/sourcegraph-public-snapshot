@@ -50,7 +50,7 @@ type encryptor struct {
 	secondaryKey []byte
 	// primaryKeyHash is prepended to base64-encoded ciphertext with `separator`.
 	primaryKeyHash string
-	// secondaryKeyHash is the previous hash that was prepended to ciphertext with `separator`
+	// secondaryKeyHash contains a partial hash of the previously used encryption key
 	secondaryKeyHash string
 }
 
