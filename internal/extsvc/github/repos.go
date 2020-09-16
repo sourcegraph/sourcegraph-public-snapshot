@@ -26,14 +26,16 @@ func SplitRepositoryNameWithOwner(nameWithOwner string) (owner, repo string, err
 
 // Repository is a GitHub repository.
 type Repository struct {
-	ID               string // ID of repository (GitHub GraphQL ID, not GitHub database ID)
-	DatabaseID       int64  // The integer database id
-	NameWithOwner    string // full name of repository ("owner/name")
-	Description      string // description of repository
-	URL              string // the web URL of this repository ("https://github.com/foo/bar")
-	IsPrivate        bool   // whether the repository is private
-	IsFork           bool   // whether the repository is a fork of another repository
-	IsArchived       bool   // whether the repository is archived on the code host
+	ID            string // ID of repository (GitHub GraphQL ID, not GitHub database ID)
+	DatabaseID    int64  // The integer database id
+	NameWithOwner string // full name of repository ("owner/name")
+	Description   string // description of repository
+	URL           string // the web URL of this repository ("https://github.com/foo/bar")
+	IsPrivate     bool   // whether the repository is private
+	IsFork        bool   // whether the repository is a fork of another repository
+	IsArchived    bool   // whether the repository is archived on the code host
+	// This field will always be blank on repos stored in our database because the value will be different
+	// depending on which token was used to fetch it
 	ViewerPermission string // ADMIN, WRITE, READ, or empty if unknown. Only the graphql api populates this. https://developer.github.com/v4/enum/repositorypermission/
 }
 

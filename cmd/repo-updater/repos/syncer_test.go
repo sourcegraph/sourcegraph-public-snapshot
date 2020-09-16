@@ -519,7 +519,10 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				}
 				switch typ {
 				case extsvc.TypeGitHub:
-					update = &github.Repository{IsArchived: true}
+					update = &github.Repository{
+						IsArchived:       true,
+						ViewerPermission: "ADMIN",
+					}
 				case extsvc.TypeGitLab:
 					update = &gitlab.Project{Archived: true}
 				case extsvc.TypeBitbucketServer:
@@ -534,6 +537,14 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 					panic(fmt.Sprintf("test must be extended with new external service kind: %q", strings.ToLower(tc.repo.ExternalRepo.ServiceType)))
 				}
 
+				expected := update
+				// Special case for GitHub, see Repo.Update method
+				if typ == extsvc.TypeGitHub {
+					expected = &github.Repository{
+						IsArchived: true,
+					}
+				}
+
 				return testCase{
 					name: tc.repo.Name + "/metadata update",
 					sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil,
@@ -545,7 +556,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 					now:    clock.Now,
 					diff: repos.Diff{Modified: repos.Repos{tc.repo.With(
 						repos.Opt.RepoModifiedAt(clock.Time(1)),
-						repos.Opt.RepoMetadata(update),
+						repos.Opt.RepoMetadata(expected),
 					)}},
 					svcs: []*repos.ExternalService{tc.svc},
 					err:  "<nil>",

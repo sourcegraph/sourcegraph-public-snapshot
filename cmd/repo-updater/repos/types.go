@@ -679,6 +679,20 @@ func (r *Repo) Update(n *Repo) (modified bool) {
 		r.Sources, modified = n.Sources, true
 	}
 
+	// As a special case, we clear out the value of ViewerPermission for GitHub repos as
+	// the value is dependent on the token used to fetch it. We don't want to store this in the DB as it will
+	// flip flop as we fetch the same repo from different external services.
+	switch x := n.Metadata.(type) {
+	case *github.Repository:
+		cp := *x
+		cp.ViewerPermission = ""
+		n = n.With(func(clone *Repo) {
+			// Repo.Clone does not currently clone metadata for any types as they could contain hard to clone
+			// items such as maps. However, we know that copying github.Repository is safe as it only contains values.
+			clone.Metadata = &cp
+		})
+	}
+
 	if !reflect.DeepEqual(r.Metadata, n.Metadata) {
 		r.Metadata, modified = n.Metadata, true
 	}
