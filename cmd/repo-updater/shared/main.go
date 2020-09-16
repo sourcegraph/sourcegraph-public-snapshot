@@ -173,9 +173,10 @@ func Main(enterpriseInit EnterpriseInit) {
 	gps := repos.NewGitolitePhabricatorMetadataSyncer(store)
 
 	syncer := &repos.Syncer{
-		Sourcer: src,
-		Logger:  log15.Root(),
-		Now:     clock,
+		Sourcer:    src,
+		Logger:     log15.Root(),
+		Now:        clock,
+		Registerer: prometheus.DefaultRegisterer,
 	}
 
 	syncer.Synced = make(chan repos.Diff)
@@ -183,9 +184,8 @@ func Main(enterpriseInit EnterpriseInit) {
 	go watchSyncer(ctx, syncer, scheduler, gps)
 	go func() {
 		log.Fatal(syncer.Run(ctx, db, store, repos.RunOptions{
-			EnqueueInterval:      repos.GetUpdateInterval,
-			IsCloud:              envvar.SourcegraphDotComMode(),
-			PrometheusRegisterer: prometheus.DefaultRegisterer,
+			EnqueueInterval: repos.GetUpdateInterval,
+			IsCloud:         envvar.SourcegraphDotComMode(),
 		}))
 	}()
 	server.Syncer = syncer

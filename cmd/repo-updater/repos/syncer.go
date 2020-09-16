@@ -38,6 +38,8 @@ type Syncer struct {
 	// Now is time.Now. Can be set by tests to get deterministic output.
 	Now func() time.Time
 
+	Registerer prometheus.Registerer
+
 	// syncErrors contains the last error returned by the Sourcer in each
 	// Sync per external service. It's reset with each service Sync and if the sync produced no error, it's
 	// set to nil.
@@ -49,11 +51,10 @@ type Syncer struct {
 
 // RunOptions contains options customizing Run behaviour.
 type RunOptions struct {
-	EnqueueInterval      func() time.Duration  // Defaults to 1 minute
-	IsCloud              bool                  // Defaults to false
-	MinSyncInterval      time.Duration         // Defaults to 1 minute
-	DequeueInterval      time.Duration         // Default to 10 seconds
-	PrometheusRegisterer prometheus.Registerer // if non-nil, metrics will be collected
+	EnqueueInterval func() time.Duration // Defaults to 1 minute
+	IsCloud         bool                 // Defaults to false
+	MinSyncInterval time.Duration        // Defaults to 1 minute
+	DequeueInterval time.Duration        // Default to 10 seconds
 }
 
 // Run runs the Sync at the specified interval.
@@ -78,7 +79,7 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOpti
 	}, SyncWorkerOptions{
 		WorkerInterval:       opts.DequeueInterval,
 		NumHandlers:          3,
-		PrometheusRegisterer: opts.PrometheusRegisterer,
+		PrometheusRegisterer: s.Registerer,
 	})
 
 	go worker.Start()
@@ -270,6 +271,9 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	now := s.Now()
 	interval := calcSyncInterval(now, svc.LastSyncAt, minSyncInterval, diff)
 	log15.Info("Synced external service", "id", externalServiceID, "backoff duration", interval)
+	syncBackoffDuration.With(prometheus.Labels{
+		"id": strconv.FormatInt(svc.ID, 10),
+	}).Set(interval.Seconds())
 	svc.NextSyncAt = now.Add(interval)
 	svc.LastSyncAt = now
 

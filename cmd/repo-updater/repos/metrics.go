@@ -36,6 +36,11 @@ var (
 		Help: "Time spent syncing",
 	}, []string{"success"})
 
+	syncBackoffDuration = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "src_repoupdater_syncer_sync_backoff_duration_seconds",
+		Help: "Backoff duration after a sync",
+	}, []string{"id"})
+
 	purgeSuccess = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_repoupdater_purge_success",
 		Help: "Incremented each time we remove a repository clone.",
