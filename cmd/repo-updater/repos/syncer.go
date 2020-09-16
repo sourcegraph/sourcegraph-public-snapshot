@@ -3,9 +3,7 @@ package repos
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
-	"github.com/google/go-cmp/cmp"
 	"sort"
 	"strconv"
 	"strings"
@@ -664,13 +662,7 @@ func newDiff(svc *ExternalService, sourced, stored []*Repo) (diff Diff) {
 	seenID := make(map[api.ExternalRepoSpec]bool, len(stored))
 
 	for _, old := range stored {
-		var srcClone *Repo
-		oldClone := old.Clone()
-
 		src := byID[old.ExternalRepo]
-		if src != nil {
-			srcClone = src.Clone()
-		}
 
 		// if the repo hasn't been found in the sourced repo list
 		// we add it to the Deleted slice and, if the service is provided
@@ -685,24 +677,6 @@ func newDiff(svc *ExternalService, sourced, stored []*Repo) (diff Diff) {
 
 			diff.Deleted = append(diff.Deleted, old)
 		} else if old.Update(src) {
-
-			// TODO: Temp logging
-			if svc != nil && svc.ID == 8 {
-				penc := func(x interface{}) string {
-					data, _ := json.MarshalIndent(x, "", "  ")
-					return string(data)
-				}
-
-				oldString := penc(oldClone)
-				newString := penc(srcClone)
-
-				if diff := cmp.Diff(oldString, newString); diff != "" {
-					fmt.Println(old.URI)
-					fmt.Println(diff)
-				}
-			}
-			// TODO: Remove temp logging
-
 			diff.Modified = append(diff.Modified, old)
 		} else {
 			diff.Unmodified = append(diff.Unmodified, old)
