@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-var messageToEncrypt = []byte("I Madam. I made radio, So I dared. Am I mad? Am I?")
+var messageToEncrypt = "I Madam. I made radio, So I dared. Am I mad? Am I?"
 
 func TestGenerateRandomAESKey(t *testing.T) {
 	key, err := generateRandomAESKey()
@@ -33,17 +33,17 @@ func TestEncryptingAndDecrypting(t *testing.T) {
 	t.Run("using primary key", func(t *testing.T) {
 		e := newEncryptor(primaryKey, nil)
 
-		encrypted, err := e.EncryptBytes(messageToEncrypt)
+		encrypted, err := e.Encrypt(messageToEncrypt)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		decrypted, err := e.DecryptBytes(encrypted)
+		decrypted, err := e.Decrypt(encrypted)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if !bytes.Equal(decrypted, messageToEncrypt) {
+		if decrypted != messageToEncrypt {
 			t.Fatal("unable to decrypt and get the original bytes")
 		}
 	})
@@ -51,33 +51,61 @@ func TestEncryptingAndDecrypting(t *testing.T) {
 	t.Run("using secondary key", func(t *testing.T) {
 		// Only load secondary key to encrypt
 		e := newEncryptor(secondaryKey, nil)
-		encrypted, err := e.EncryptBytes(messageToEncrypt)
+		encrypted, err := e.Encrypt(messageToEncrypt)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Then load both keys to decrypt
 		e = newEncryptor(primaryKey, secondaryKey)
-		decrypted, err := e.DecryptBytes(encrypted)
+		decrypted, err := e.Decrypt(encrypted)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if !bytes.Equal(decrypted, messageToEncrypt) {
+		if decrypted != messageToEncrypt {
 			t.Fatal("unable to decrypt and get the original bytes")
 		}
 	})
 }
 
-func TestNoOpEncryptor(t *testing.T) {
-	e := noOpEncryptor{}
-
-	encrypted, err := e.EncryptBytes(messageToEncrypt)
+func TestKeyHash(t *testing.T) {
+	primaryKey, err := generateRandomAESKey()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if !bytes.Equal(encrypted, messageToEncrypt) {
+	secondaryKey, err := generateRandomAESKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	e := newEncryptor(primaryKey, secondaryKey)
+
+	encryptorHash := e.PrimaryKeyHash()
+
+	primaryKeyHash := sliceKeyHash(primaryKey)
+	secondaryKeyHash := sliceKeyHash(secondaryKey)
+
+	// SHOULD NOT equal secondaryKey hash
+	if encryptorHash == secondaryKeyHash {
+		t.Errorf("expected PrimaryKeyHash() %q != secondaryKeyHash %q", encryptorHash, secondaryKeyHash)
+	}
+	// SHOULD equal primaryKey hash
+	if encryptorHash != primaryKeyHash {
+		t.Errorf("expected PrimaryKeyHash() %q == PrimaryKeyHash() %q", encryptorHash, primaryKeyHash)
+	}
+}
+
+func TestNoOpEncryptor(t *testing.T) {
+	e := noOpEncryptor{}
+
+	encrypted, err := e.Encrypt(messageToEncrypt)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if encrypted != messageToEncrypt {
 		t.Fatal("encrypted bytes is not same as the original")
 	}
 }
@@ -90,12 +118,12 @@ func TestBadKeysFailToDecrypt(t *testing.T) {
 
 	e := newEncryptor(key, nil)
 
-	encrypted, err := e.EncryptBytes(messageToEncrypt)
+	encrypted, err := e.Encrypt(messageToEncrypt)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	decrypted, err := e.DecryptBytes(encrypted)
+	decrypted, err := e.Decrypt(encrypted)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,15 +132,15 @@ func TestBadKeysFailToDecrypt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	e = newEncryptor(notTheSameKey, nil)
+	e2 := newEncryptor(notTheSameKey, nil)
 
-	decryptedAgain, err := e.DecryptBytes(encrypted)
-	if err == nil {
-		t.Fatal("Should not have been able to Decrypt string with an invalid secret key.")
+	decryptedAgain, err := e2.Decrypt(encrypted)
+	// Not the same key will have different keyHash and effectively makes the decryption no-op.
+	if err != nil {
+		t.Fatal(err)
 	}
-
-	if bytes.Equal(decrypted, decryptedAgain) {
-		t.Fatal("Should not have been able to Decrypt string with an invalid secret key.")
+	if decrypted == decryptedAgain {
+		t.Fatal("Should not have been able to Decrypt string with an invalid secret key")
 	}
 }
 
@@ -133,7 +161,7 @@ func TestDifferentOutputs(t *testing.T) {
 
 	var crypts []string
 	for _, m := range messages {
-		encrypted, err := e.EncryptBytes([]byte(m))
+		encrypted, err := e.Encrypt(m)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -142,7 +170,7 @@ func TestDifferentOutputs(t *testing.T) {
 
 	for _, c := range crypts {
 		if !isInSliceOnce(c, crypts) {
-			t.Fatalf("Duplicate encryption string: %v.", c)
+			t.Fatalf("Duplicate encryption string: %v", c)
 		}
 	}
 }
@@ -167,16 +195,16 @@ func TestSampleNoRepeats(t *testing.T) {
 
 	var crypts []string
 	for i := 0; i < 10000; i++ {
-		encrypted, err := e.EncryptBytes(messageToEncrypt)
+		encrypted, err := e.Encrypt(messageToEncrypt)
 		if err != nil {
 			t.Fatal(err)
 		}
-		crypts = append(crypts, string(encrypted))
+		crypts = append(crypts, encrypted)
 	}
 
 	for _, item := range crypts {
 		if isInSliceOnce(item, crypts) == false {
-			t.Fatalf("Duplicate encrypted string found.")
+			t.Fatalf("Duplicate encrypted string found")
 		}
 	}
 }
@@ -194,19 +222,19 @@ func TestKeyMigration(t *testing.T) {
 	encryptorA := newEncryptor(keyA, nil)
 
 	message := "encrypted with Key A"
-	encryptedMessage, err := encryptorA.EncryptBytes([]byte(message))
+	encryptedMessage, err := encryptorA.Encrypt(message)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// now rotate keys to use Key B
 	encryptorB := newEncryptor(keyB, keyA)
-	decryptedMessage, err := encryptorB.DecryptBytes(encryptedMessage)
+	decryptedMessage, err := encryptorB.Decrypt(encryptedMessage)
 	if err != nil {
 		t.Fatalf("unable to Decrypt string: %v", err)
 	}
 
-	if string(decryptedMessage) != message {
+	if decryptedMessage != message {
 		t.Fatalf("messages do not match")
 	}
 }
@@ -217,38 +245,38 @@ func TestEncryptAndDecryptBytesIfPossible(t *testing.T) {
 		t.Fatal(err)
 	}
 	e := newEncryptor(initialKey, nil)
-	encString, err := e.EncryptBytes(messageToEncrypt)
+	encString, err := e.Encrypt(messageToEncrypt)
 	if err != nil {
 		t.Fatalf("Failed to EncryptBytes")
 	}
-	if bytes.Equal(encString, messageToEncrypt) {
-		t.Fatalf("Encryption failed.")
+	if encString == messageToEncrypt {
+		t.Fatalf("Encryption failed")
 	}
 
-	decString, err := e.DecryptBytes(encString)
+	decString, err := e.Decrypt(encString)
 	if err != nil {
 		t.Fatalf("Failed to Decrypt")
 	}
-	if !bytes.Equal(decString, messageToEncrypt) {
-		t.Fatalf("Decryption failed.")
+	if decString != messageToEncrypt {
+		t.Fatalf("Decryption failed")
 	}
 
-	// now test when we cannot EncryptBytes
+	// now test when we cannot Encrypt
 
 	e = noOpEncryptor{}
-	encString, err = e.EncryptBytes(messageToEncrypt)
+	encString, err = e.Encrypt(messageToEncrypt)
 	if err != nil {
-		t.Fatalf("Received error when code path should be nil. %v", err)
+		t.Fatalf("Received error when code path should be nil, but got %v", err)
 	}
-	if !bytes.Equal(encString, messageToEncrypt) {
-		t.Fatalf("Received encrypted string, expected unencrypted.")
+	if encString != messageToEncrypt {
+		t.Fatalf("Received encrypted string, expected unencrypted")
 	}
-	decString, err = e.DecryptBytes(encString)
+	decString, err = e.Decrypt(encString)
 	if err != nil {
-		t.Fatalf("Received error when code path should be nil. %v", err)
+		t.Fatalf("Received error when code path should be nil, but got %v", err)
 	}
-	if !bytes.Equal(decString, messageToEncrypt) {
-		t.Fatalf("Received encrypted string, expected unencrypted.")
+	if decString != messageToEncrypt {
+		t.Fatalf("Received encrypted string, expected unencrypted")
 	}
 }
 
