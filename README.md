@@ -63,26 +63,36 @@ chmod +x /usr/local/bin/src
 
 See [Sourcegraph CLI for Windows](WINDOWS.md).
 
-## Setup with your Sourcegraph instance
+## Log into your Sourcegraph instance
 
-### Via environment variables
+Run <code><strong>src login <i>SOURCEGRAPH-URL</i></strong></code> to authenticate `src` to access your Sourcegraph instance with your user credentials.
 
-Point `src` to your instance and access token using environment variables:
+<blockquote>
+
+**Examples**
+`src login https://sourcegraph.example.com`
+`src login https://sourcegraph.com`
+
+</blockquote>
+
+`src` consults the following environment variables:
+
+- `SRC_ENDPOINT`: the URL to your Sourcegraph instance (such as `https://sourcegraph.example.com`)
+- `SRC_ACCESS_TOKEN`: your Sourcegraph access token (on your Sourcegraph instance, click your user menu in the top right, then select **Settings > Access tokens** to create one)
+
+For convenience, you can export these environment variables in your shell profile. You can also inline them in a single command with:
 
 ```sh
-SRC_ENDPOINT=https://sourcegraph.example.com SRC_ACCESS_TOKEN="secret" src search 'foobar'
+SRC_ENDPOINT=https://sourcegraph.example.com SRC_ACCESS_TOKEN=my-token src search 'foo'
 ```
 
-Sourcegraph behind a custom auth proxy? See [auth proxy configuration](./AUTH_PROXY.md) docs.
-
-### Where to get an access token
-
-Visit your Sourcegraph instance (or https://sourcegraph.com), click your username in the top right to open the user menu, select **Settings**, and then select **Access tokens** in the left hand menu.
+Is your Sourcegraph instance behind a custom auth proxy? See [auth proxy configuration](./AUTH_PROXY.md) docs.
 
 ## Usage
 
 `src` provides different subcommands to interact with different parts of Sourcegraph:
 
+ - `src login` - authenticate to a Sourcegraph instance with your user credentials
  - `src search` - perform searches and get results in your terminal or as JSON
  - `src actions` - run [campaign actions](https://docs.sourcegraph.com/user/campaigns/actions) to generate patch sets
  - `src api` - run Sourcegraph GraphQL API requests

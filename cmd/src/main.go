@@ -75,6 +75,8 @@ type config struct {
 	Endpoint          string            `json:"endpoint"`
 	AccessToken       string            `json:"accessToken"`
 	AdditionalHeaders map[string]string `json:"additionalHeaders"`
+
+	ConfigFilePath string
 }
 
 // apiClient returns an api.Client built from the configuration.
@@ -88,19 +90,28 @@ func (c *config) apiClient(flags *api.Flags, out io.Writer) api.Client {
 	})
 }
 
+var testHomeDir string // used by tests to mock the user's $HOME
+
 // readConfig reads the config file from the given path.
 func readConfig() (*config, error) {
 	cfgPath := *configPath
 	userSpecified := *configPath != ""
 
-	u, err := user.Current()
-	if err != nil {
-		return nil, err
+	var homeDir string
+	if testHomeDir != "" {
+		homeDir = testHomeDir
+	} else {
+		u, err := user.Current()
+		if err != nil {
+			return nil, err
+		}
+		homeDir = u.HomeDir
 	}
+
 	if !userSpecified {
-		cfgPath = filepath.Join(u.HomeDir, "src-config.json")
+		cfgPath = filepath.Join(homeDir, "src-config.json")
 	} else if strings.HasPrefix(cfgPath, "~/") {
-		cfgPath = filepath.Join(u.HomeDir, cfgPath[2:])
+		cfgPath = filepath.Join(homeDir, cfgPath[2:])
 	}
 	data, err := ioutil.ReadFile(os.ExpandEnv(cfgPath))
 	if err != nil && (!os.IsNotExist(err) || userSpecified) {
@@ -108,6 +119,7 @@ func readConfig() (*config, error) {
 	}
 	var cfg config
 	if err == nil {
+		cfg.ConfigFilePath = cfgPath
 		if err := json.Unmarshal(data, &cfg); err != nil {
 			return nil, err
 		}
@@ -145,9 +157,13 @@ func readConfig() (*config, error) {
 		cfg.Endpoint = *endpoint
 	}
 
-	cfg.Endpoint = strings.TrimSuffix(cfg.Endpoint, "/")
+	cfg.Endpoint = cleanEndpoint(cfg.Endpoint)
 
 	return &cfg, nil
+}
+
+func cleanEndpoint(urlStr string) string {
+	return strings.TrimSuffix(urlStr, "/")
 }
 
 var errConfigMerge = errors.New("when using a configuration file, zero or all environment variables must be set")

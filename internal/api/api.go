@@ -187,7 +187,7 @@ func (r *request) do(ctx context.Context, result interface{}) (bool, error) {
 	if resp.StatusCode != http.StatusOK {
 		if resp.StatusCode == http.StatusUnauthorized && isatty.IsCygwinTerminal(os.Stdout.Fd()) {
 			fmt.Println("You may need to specify or update your access token to use this endpoint.")
-			fmt.Println("See https://github.com/sourcegraph/src-cli#authentication")
+			fmt.Println("See https://github.com/sourcegraph/src-cli#readme")
 			fmt.Println("")
 		}
 		body, err := ioutil.ReadAll(resp.Body)
