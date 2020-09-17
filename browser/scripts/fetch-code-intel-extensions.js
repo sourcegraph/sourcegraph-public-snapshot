@@ -2,7 +2,8 @@ const shelljs = require('shelljs')
 const path = require('path')
 const signale = require('signale')
 const bundledCodeIntelExtensionsConfig = require('../bundled-code-intel-extensions.json')
-const temporarySourceDirectory = path.join(process.cwd(), 'code-intel-extensions')
+const temporarySourceDirectory = path.join(process.cwd(), 'code-intel-extensions22')
+shelljs.set('-e')
 
 /**
  * Revision of the github.com/sourcegraph/code-intel-extensions repo to build
@@ -19,22 +20,18 @@ signale.await('Fetching code-intel-extensions')
 // Clean old directory before re-fetching
 shelljs.rm('-rf', temporarySourceDirectory)
 
-shelljs.mkdir('-p', temporarySourceDirectory)
-
 // Get code-intel-extensions source snapshot and build
 shelljs.exec(
   `curl -OLs https://github.com/sourcegraph/code-intel-extensions/archive/${codeIntelExtensionsRepoRevision}.zip`
 )
 
-// Prepare code-intel-extensions for build:
-// - Clean: remove old directories
-shelljs.rm('-rf', 'code-intel-extensions')
+// - Clean: remove old unzipped directory in case of an interrupted process.
 shelljs.rm('-rf', `code-intel-extensions-${codeIntelExtensionsRepoRevision}`)
 
 // - Unzip it, which creates a new directory: code-intel-extensions-{rev}
 shelljs.exec(`unzip -q ${codeIntelExtensionsRepoRevision}.zip`)
 
 // - Rename directory to remove revision suffix
-shelljs.mv(`code-intel-extensions-${codeIntelExtensionsRepoRevision}`, 'code-intel-extensions')
+shelljs.mv(`code-intel-extensions-${codeIntelExtensionsRepoRevision}`, temporarySourceDirectory)
 
-shelljs.rm('-f', `"${codeIntelExtensionsRepoRevision}.zip"`)
+shelljs.rm(`${codeIntelExtensionsRepoRevision}.zip`)
