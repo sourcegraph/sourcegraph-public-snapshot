@@ -54,7 +54,9 @@ type encryptor struct {
 	secondaryKeyHash string
 }
 
-// sliceKeyHash returns a string which is the first 6 bytes of given key's SHA256 checksum in hexadecimal.
+// sliceKeyHash returns a string which is the first 6 bytes of given key's SHA2-256 checksum in hexadecimal.
+// This checksum was chosen due to the (current) lack of SHA2 collisions, and is used to
+// indicate without leaking, how something has encrypted. The inspiration for this is /etc/shadow.
 func sliceKeyHash(k []byte) string {
 	if k == nil {
 		return ""
