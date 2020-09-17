@@ -369,10 +369,8 @@ func calcSyncInterval(now time.Time, lastSync time.Time, minSyncInterval time.Du
 	return interval
 }
 
-// SyncSubset runs the syncer on a subset of the stored repositories. It will
-// only sync the repositories with the same name or external service spec as
-// sourcedSubset repositories.
-func (s *Syncer) SyncSubset(ctx context.Context, store Store, sourcedRepo *Repo) (err error) {
+// SyncSingleRepo runs the syncer on a single repository.
+func (s *Syncer) SyncSingleRepo(ctx context.Context, store Store, sourcedRepo *Repo) (err error) {
 	var diff Diff
 
 	ctx, save := s.observe(ctx, 0, "Syncer.SyncSubset", sourcedRepo.Name)
@@ -387,7 +385,7 @@ func (s *Syncer) SyncSubset(ctx context.Context, store Store, sourcedRepo *Repo)
 		store = txs
 	}
 
-	diff, err = s.syncSubset(ctx, store, false, sourcedRepo)
+	diff, err = s.syncSingleRepo(ctx, store, false, sourcedRepo)
 	return err
 }
 
@@ -399,11 +397,11 @@ func (s *Syncer) insertIfNew(ctx context.Context, store Store, sourcedRepo *Repo
 	ctx, save := s.observe(ctx, 0, "Syncer.InsertIfNew", sourcedRepo.Name)
 	defer save(&diff, &err)
 
-	diff, err = s.syncSubset(ctx, store, true, sourcedRepo)
+	diff, err = s.syncSingleRepo(ctx, store, true, sourcedRepo)
 	return err
 }
 
-func (s *Syncer) syncSubset(ctx context.Context, store Store, insertOnly bool, sourcedRepo *Repo) (diff Diff, err error) {
+func (s *Syncer) syncSingleRepo(ctx context.Context, store Store, insertOnly bool, sourcedRepo *Repo) (diff Diff, err error) {
 	var storedSubset Repos
 	args := StoreListReposArgs{
 		Names:         []string{sourcedRepo.Name},

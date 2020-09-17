@@ -529,7 +529,7 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 		}, nil
 	}
 
-	err = s.Syncer.SyncSubset(ctx, s.Store, repo)
+	err = s.Syncer.SyncSingleRepo(ctx, s.Store, repo)
 	if err != nil {
 		return nil, err
 	}
