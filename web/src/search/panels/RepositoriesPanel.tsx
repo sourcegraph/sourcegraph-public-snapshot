@@ -26,14 +26,14 @@ export const RepositoriesPanel: React.FunctionComponent<{
     const emptyDisplay = (
         <div className="panel-container__empty-container">
             <small className="mb-2">
-                <p className="mb-1">Recently searched repositories will be displayed here.</p>
-                <p className="mb-1">
+                <p className="text-muted mb-1">Recently searched repositories will be displayed here.</p>
+                <p className="text-muted mb-1">
                     Search in repositories with the <strong>repo:</strong> filter:
                 </p>
                 <p className="mb-1 text-monospace">
                     <span className="search-keyword">repo:</span>sourcegraph/sourcegraph
                 </p>
-                <p className="mb-1">Add the code host to scope to a single repository:</p>
+                <p className="text-muted mb-1">Add the code host to scope to a single repository:</p>
                 <p className="mb-1 text-monospace">
                     <span className="search-keyword">repo:</span>^git\.local/my/repo$
                 </p>
