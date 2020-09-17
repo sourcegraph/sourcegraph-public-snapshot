@@ -92,59 +92,63 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
     )
     return (
         <>
-            <ul className="nav nav-tabs mb-2">
-                <li className="nav-item">
-                    <a
-                        href=""
-                        onClick={onSelectChangesets}
-                        className={classNames('nav-link', selectedTab === 'changesets' && 'active')}
-                    >
-                        <SourceBranchIcon className="icon-inline text-muted mr-1" /> Changesets
-                    </a>
-                </li>
-                <li className="nav-item test-campaigns-chart-tab">
-                    <a
-                        href=""
-                        onClick={onSelectChart}
-                        className={classNames('nav-link', selectedTab === 'chart' && 'active')}
-                    >
-                        <ChartLineVariantIcon className="icon-inline text-muted mr-1" /> Burndown chart
-                    </a>
-                </li>
-                <li className="nav-item test-campaigns-spec-tab">
-                    <a
-                        href=""
-                        onClick={onSelectSpec}
-                        className={classNames('nav-link', selectedTab === 'spec' && 'active')}
-                    >
-                        <FileDocumentIcon className="icon-inline text-muted mr-1" /> Campaign spec
-                    </a>
-                </li>
-            </ul>
-            {selectedTab === 'chart' && (
-                <CampaignBurndownChart
-                    campaignID={campaign.id}
-                    queryChangesetCountsOverTime={queryChangesetCountsOverTime}
-                    history={history}
-                />
-            )}
-            {selectedTab === 'changesets' && (
-                <CampaignChangesets
-                    campaignID={campaign.id}
-                    viewerCanAdminister={campaign.viewerCanAdminister}
-                    history={history}
-                    location={location}
-                    isLightTheme={isLightTheme}
-                    extensionsController={extensionsController}
-                    platformContext={platformContext}
-                    telemetryService={telemetryService}
-                    queryChangesets={queryChangesets}
-                    queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
-                />
-            )}
-            {selectedTab === 'spec' && (
-                <CampaignSpecTab campaignName={campaign.name} originalInput={campaign.currentSpec.originalInput} />
-            )}
+            <div className="nav-tabs mb-2">
+                <nav className="container d-flex flex-wrap mb-0">
+                    <div className="nav-item">
+                        <a
+                            href=""
+                            onClick={onSelectChangesets}
+                            className={classNames('nav-link', selectedTab === 'changesets' && 'active')}
+                        >
+                            <SourceBranchIcon className="icon-inline text-muted mr-1" /> Changesets
+                        </a>
+                    </div>
+                    <div className="nav-item test-campaigns-chart-tab">
+                        <a
+                            href=""
+                            onClick={onSelectChart}
+                            className={classNames('nav-link', selectedTab === 'chart' && 'active')}
+                        >
+                            <ChartLineVariantIcon className="icon-inline text-muted mr-1" /> Burndown chart
+                        </a>
+                    </div>
+                    <div className="nav-item test-campaigns-spec-tab">
+                        <a
+                            href=""
+                            onClick={onSelectSpec}
+                            className={classNames('nav-link', selectedTab === 'spec' && 'active')}
+                        >
+                            <FileDocumentIcon className="icon-inline text-muted mr-1" /> Spec
+                        </a>
+                    </div>
+                </nav>
+            </div>
+            <div className="container">
+                {selectedTab === 'chart' && (
+                    <CampaignBurndownChart
+                        campaignID={campaign.id}
+                        queryChangesetCountsOverTime={queryChangesetCountsOverTime}
+                        history={history}
+                    />
+                )}
+                {selectedTab === 'changesets' && (
+                    <CampaignChangesets
+                        campaignID={campaign.id}
+                        viewerCanAdminister={campaign.viewerCanAdminister}
+                        history={history}
+                        location={location}
+                        isLightTheme={isLightTheme}
+                        extensionsController={extensionsController}
+                        platformContext={platformContext}
+                        telemetryService={telemetryService}
+                        queryChangesets={queryChangesets}
+                        queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
+                    />
+                )}
+                {selectedTab === 'spec' && (
+                    <CampaignSpecTab campaign={campaign} originalInput={campaign.currentSpec.originalInput} />
+                )}
+            </div>
         </>
     )
 }

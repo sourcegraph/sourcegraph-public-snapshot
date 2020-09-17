@@ -16,7 +16,7 @@ People usually use campaigns to make the following kinds of changes:
 - Patching critical security issues.
 - Standardizing build, configuration, and deployment files.
 
-<!-- TODO(sqs): Add video here, similar to https://www.youtube.com/aqcCrqRB17w (which will need to be updated for the new campaign flow). -->
+> Watch the [**🎥 campaigns demo video**](https://www.youtube.com/watch?v=EfKwKFzOs3E).
 
 ## Supported code hosts and changeset types
 
@@ -138,6 +138,8 @@ Then run the `src campaign preview` command again, or `src campaign apply` to im
 In the Sourcegraph web UI you'll see a progress indicator for the changesets that are being published. Any errors will be shown, and you can retry publishing after you've resolved the problem by running `src campaign apply` again. You don't need to worry about it creating multiple branches or pull requests when you retry, because it uses the same branch name.
 
 To publish a changeset, you need admin access to the campaign and write access to the changeset's repository (on the code host). For more information, see [Code host interactions in campaigns](managing_access.md#code-host-interactions-in-campaigns). [Forking the repository](#known-issues) is not yet supported.
+
+> NOTE: Set the Git commit author details with the [`changesetTemplate.commit.author`](campaign_spec_yaml_reference.md#changesettemplate-commit-author) fields in the campaign spec.
 
 ## Tracking campaign progress and changeset statuses
 

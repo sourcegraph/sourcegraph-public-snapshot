@@ -11,7 +11,7 @@ You'll learn how to:
 - Write the script to make changes to each repository
 - Publish and monitor the status of your proposed changes
 
-For more detailed information, see "[Campaigns](index.md)" in Sourcegraph documentation.
+For more detailed information, see "[Campaigns](index.md)" in Sourcegraph documentation and watch the [campaigns demo video](https://www.youtube.com/watch?v=EfKwKFzOs3E).
 
 ## What is a campaign?
 

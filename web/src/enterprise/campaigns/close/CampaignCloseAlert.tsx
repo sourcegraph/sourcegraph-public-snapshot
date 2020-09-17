@@ -50,7 +50,7 @@ export const CampaignCloseAlert: React.FunctionComponent<CampaignCloseAlertProps
     }, [history, closeChangesets, closeCampaign, campaignID, campaignURL])
     return (
         <>
-            <div className="card shadow mb-3">
+            <div className="card mb-3">
                 <div className="card-body p-3">
                     <p>
                         <strong>

@@ -1,5 +1,4 @@
 import * as H from 'history'
-import UserIcon from 'mdi-react/UserIcon'
 import * as React from 'react'
 import { Link, Redirect } from 'react-router-dom'
 import { HeroPage } from '../components/HeroPage'
@@ -8,6 +7,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { getReturnTo } from './SignInSignUpCommon'
 import { SignUpArgs, SignUpForm } from './SignUpForm'
 import { AuthenticatedUser } from '../auth'
+import { SourcegraphIcon } from './icons'
 
 interface SignUpPageProps {
     location: H.Location
@@ -34,9 +34,13 @@ export class SignUpPage extends React.Component<SignUpPageProps> {
             <div className="signin-signup-page sign-up-page">
                 <PageTitle title="Sign up" />
                 <HeroPage
-                    icon={UserIcon}
+                    icon={SourcegraphIcon}
+                    iconLinkTo={window.context.sourcegraphDotComMode ? '/search' : undefined}
+                    iconClassName="bg-transparent"
                     title={
-                        window.context.sourcegraphDotComMode ? 'Sign up for Sourcegraph.com' : 'Sign up for Sourcegraph'
+                        window.context.sourcegraphDotComMode
+                            ? 'Sign up for Sourcegraph Cloud'
+                            : 'Sign up for Sourcegraph Server'
                     }
                     body={
                         <>

@@ -41,7 +41,7 @@ export function testSingleFilePage({
                 getDriver().page.click('.code-view-toolbar .open-on-sourcegraph'),
             ])
             expect(getDriver().page.url()).toBe(
-                `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go`
+                `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go?utm_source=chrome-extension`
             )
         })
 
