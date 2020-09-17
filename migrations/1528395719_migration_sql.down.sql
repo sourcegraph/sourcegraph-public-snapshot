@@ -7,8 +7,6 @@ CREATE TABLE IF NOT EXISTS saved_queries
     exec_duration_ns BIGINT NOT NULL
 );
 
-ALTER TABLE saved_queries OWNER TO sourcegraph;
-
 CREATE UNIQUE INDEX saved_queries_query_unique
     ON saved_queries (query);
 
