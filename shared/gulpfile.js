@@ -5,11 +5,12 @@ const { DEFAULT_OPTIONS, DEFAULT_TYPE_MAP } = require('@gql2ts/language-typescri
 const { buildSchema, introspectionFromSchema } = require('graphql')
 const gulp = require('gulp')
 const { compile: compileJSONSchema } = require('json-schema-to-typescript')
-const { readFile, writeFile, mkdir } = require('mz/fs')
+const { readFile, writeFile, stat, mkdir } = require('mz/fs')
 const path = require('path')
 const { format, resolveConfig } = require('prettier')
 
 const { generateGraphQlOperations } = require('./dev/generateGraphQlOperations')
+const isInputNewer = require('./dev/isInputNewer')
 
 const GRAPHQL_SCHEMA_PATH = path.join(__dirname, '../cmd/frontend/graphqlbackend/schema.graphql')
 
@@ -20,6 +21,14 @@ const GRAPHQL_SCHEMA_PATH = path.join(__dirname, '../cmd/frontend/graphqlbackend
  * @returns {Promise<void>}
  */
 async function graphQlSchema() {
+  const outfile = __dirname + '/src/graphql/schema.ts'
+  if (!(await isInputNewer([GRAPHQL_SCHEMA_PATH], outfile))) {
+    console.log(
+      'skipping generation of src/graphql/schema.ts, because input ../cmd/frontend/graphqlbackend/schema.graphql was older'
+    )
+    return
+  }
+
   const schemaString = await readFile(GRAPHQL_SCHEMA_PATH, 'utf8')
   const schema = buildSchema(schemaString)
 
@@ -54,7 +63,7 @@ async function graphQlSchema() {
         postProcessor: code => format(code, { ...formatOptions, parser: 'typescript' }),
       }
     )
-  await writeFile(__dirname + '/src/graphql/schema.ts', typings)
+  await writeFile(outfile, typings)
 }
 
 /**
@@ -101,7 +110,14 @@ async function schema() {
   const schemaDirectory = path.join(__dirname, '..', 'schema')
   await Promise.all(
     ['json-schema-draft-07', 'settings', 'site'].map(async file => {
-      let schema = await readFile(path.join(schemaDirectory, `${file}.schema.json`), 'utf8')
+      const inputFile = path.join(schemaDirectory, `${file}.schema.json`)
+      const outputFile = path.join(outputDirectory, `${file}.schema.d.ts`)
+      if (!(await isInputNewer([inputFile], outputFile))) {
+        console.log(`skipping generation of ${file}.schema.d.ts, because input ${file}.schema.json was older`)
+        return
+      }
+
+      let schema = await readFile(inputFile, 'utf8')
       // HACK: Rewrite absolute $refs to be relative. They need to be absolute for Monaco to resolve them
       // when the schema is in a oneOf (to be merged with extension schemas).
       schema = schema.replace(
@@ -120,7 +136,7 @@ async function schema() {
           }),
         },
       })
-      await writeFile(path.join(outputDirectory, `${file}.schema.d.ts`), types)
+      await writeFile(outputFile, types)
     })
   )
 }
