@@ -84,7 +84,7 @@ export const SavedSearchesPanel: React.FunctionComponent<{
     )
     const actionButtons = (
         <div className="panel-container__action-button-group">
-            <div className="btn-group">
+            <div className="btn-group btn-group-sm">
                 {authenticatedUser && (
                     <Link
                         to={`/users/${authenticatedUser.username}/searches/add`}
@@ -94,7 +94,7 @@ export const SavedSearchesPanel: React.FunctionComponent<{
                     </Link>
                 )}
             </div>
-            <div className="btn-group">
+            <div className="btn-group btn-group-sm">
                 <button
                     type="button"
                     onClick={() => setShowAllSearches(false)}
