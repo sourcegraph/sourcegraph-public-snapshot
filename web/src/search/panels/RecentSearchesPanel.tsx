@@ -48,7 +48,7 @@ export const RecentSearchesPanel: React.FunctionComponent<{
 
     const loadingDisplay = <LoadingModal text="Loading recent searches" />
     const emptyDisplay = (
-        <div className="panel-container__empty-container">
+        <div className="panel-container__empty-container text-muted">
             <small className="mb-2">
                 Your recent searches will be displayed here. Here are a few searches to get you started:
             </small>

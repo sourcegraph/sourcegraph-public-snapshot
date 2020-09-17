@@ -24,16 +24,16 @@ export const RepositoriesPanel: React.FunctionComponent<{
     const loadingDisplay = <LoadingModal text="Loading recently searched repositories" />
 
     const emptyDisplay = (
-        <div className="panel-container__empty-container">
+        <div className="panel-container__empty-container text-muted">
             <small className="mb-2">
-                <p className="text-muted mb-1">Recently searched repositories will be displayed here.</p>
-                <p className="text-muted mb-1">
+                <p className="mb-1">Recently searched repositories will be displayed here.</p>
+                <p className="mb-1">
                     Search in repositories with the <strong>repo:</strong> filter:
                 </p>
                 <p className="mb-1 text-monospace">
                     <span className="search-keyword">repo:</span>sourcegraph/sourcegraph
                 </p>
-                <p className="text-muted mb-1">Add the code host to scope to a single repository:</p>
+                <p className="mb-1">Add the code host to scope to a single repository:</p>
                 <p className="mb-1 text-monospace">
                     <span className="search-keyword">repo:</span>^git\.local/my/repo$
                 </p>

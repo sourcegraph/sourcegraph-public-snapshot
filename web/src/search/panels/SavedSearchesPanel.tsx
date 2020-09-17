@@ -22,7 +22,7 @@ export const SavedSearchesPanel: React.FunctionComponent<{
     const [showAllSearches, setShowAllSearches] = useState(true)
 
     const emptyDisplay = (
-        <div className="panel-container__empty-container">
+        <div className="panel-container__empty-container text-muted">
             <small>
                 Use saved searches to alert you to uses of a favorite api, or changes to code you need to monitor.
             </small>

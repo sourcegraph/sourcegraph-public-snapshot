@@ -39,7 +39,7 @@ export const RecentFilesPanel: React.FunctionComponent<{
     const loadingDisplay = <LoadingModal text="Loading recent files" />
 
     const emptyDisplay = (
-        <div className="panel-container__empty-container align-items-center">
+        <div className="panel-container__empty-container align-items-center text-muted">
             <FileCodeIcon className="mb-2" size="2rem" />
             <small className="mb-2">This panel will display your most recently viewed files.</small>
         </div>
