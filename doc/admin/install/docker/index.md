@@ -66,7 +66,7 @@ Add `-e DISABLE_OBSERVABILITY=true` to your docker run command
 
 ## Insiders build
 
-To test new development builds of Sourcegraph (triggered by commits to master), change the tag to `insiders` in the `docker run` command.
+To test new development builds of Sourcegraph (triggered by commits to `main`), change the tag to `insiders` in the `docker run` command.
 
 > WARNING: `insiders` builds may be unstable, so back up Sourcegraph's data and config (usually `~/.sourcegraph`) beforehand.
 
