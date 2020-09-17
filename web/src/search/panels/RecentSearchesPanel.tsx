@@ -4,13 +4,13 @@ import { AuthenticatedUser } from '../../auth'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { EventLogResult } from '../backend'
 import { Link } from '../../../../shared/src/components/Link'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Observable } from 'rxjs'
 import { PanelContainer } from './PanelContainer'
 import { SearchPatternType } from '../../graphql-operations'
 import { Timestamp } from '../../components/time/Timestamp'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { LoadingModal } from './LoadingModal'
+import { ShowMoreButton } from './ShowMoreButton'
 
 interface RecentSearch {
     count: number
@@ -28,7 +28,7 @@ export const RecentSearchesPanel: React.FunctionComponent<{
 }> = ({ className, authenticatedUser, fetchRecentSearches, now }) => {
     const pageSize = 20
 
-    const [itemsToLoad, setItmesToLoad] = useState(pageSize)
+    const [itemsToLoad, setItemsToLoad] = useState(pageSize)
     const recentSearches = useObservable(
         useMemo(() => fetchRecentSearches(authenticatedUser?.id || '', itemsToLoad), [
             authenticatedUser?.id,
@@ -96,6 +96,10 @@ export const RecentSearchesPanel: React.FunctionComponent<{
         </div>
     )
 
+    function setItems(): void {
+        setItemsToLoad(current => current + pageSize)
+    }
+
     const contentDisplay = (
         <>
             <table className="recent-searches-panel__results-table">
@@ -133,15 +137,7 @@ export const RecentSearchesPanel: React.FunctionComponent<{
                 </tbody>
             </table>
             {recentSearches?.pageInfo.hasNextPage && (
-                <div className="text-center">
-                    <button
-                        type="button"
-                        className="btn btn-secondary test-recent-searches-panel-show-more"
-                        onClick={() => setItmesToLoad(current => current + pageSize)}
-                    >
-                        Show more
-                    </button>
-                </div>
+                <ShowMoreButton onClick={setItems} className="test-recent-searches-panel-show-more" />
             )}
         </>
     )

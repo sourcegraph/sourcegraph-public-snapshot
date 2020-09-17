@@ -12,6 +12,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { FilterType } from '../../../../shared/src/search/interactive/util'
 import { FILTERS } from '../../../../shared/src/search/parser/filters'
 import { LoadingModal } from './LoadingModal'
+import { ShowMoreButton } from './ShowMoreButton'
 
 export const RepositoriesPanel: React.FunctionComponent<{
     authenticatedUser: AuthenticatedUser | null
@@ -58,13 +59,17 @@ export const RepositoriesPanel: React.FunctionComponent<{
         }
     }, [searchEventLogs])
 
+    function setItems(): void {
+        setItemsToLoad(current => current + pageSize)
+    }
+
     const contentDisplay = (
         <div>
             <div className="d-flex mb-1">
                 <small>Search</small>
             </div>
             {repoFilterValues?.map((repoFilterValue, index) => (
-                <dd key={`${repoFilterValue}-${index}`} className="text-monospace">
+                <dd key={`${repoFilterValue}-${index}`} className="text-monospace text-break">
                     <Link to={`/search?q=repo:${repoFilterValue}`}>
                         <span className="search-keyword">repo:</span>
                         <span className="repositories-panel__search-value">{repoFilterValue}</span>
@@ -72,15 +77,7 @@ export const RepositoriesPanel: React.FunctionComponent<{
                 </dd>
             ))}
             {searchEventLogs?.pageInfo.hasNextPage && (
-                <div className="text-center">
-                    <button
-                        type="button"
-                        className="btn btn-secondary test-repositories-panel-show-more"
-                        onClick={() => setItemsToLoad(current => current + pageSize)}
-                    >
-                        Show more
-                    </button>
-                </div>
+                <ShowMoreButton className="test-repositories-panel-show-more" onClick={setItems} />
             )}
         </div>
     )

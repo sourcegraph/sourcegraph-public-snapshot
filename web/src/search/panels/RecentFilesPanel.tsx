@@ -3,12 +3,12 @@ import FileCodeIcon from 'mdi-react/FileCodeIcon'
 import React, { useEffect, useMemo, useState } from 'react'
 import { AuthenticatedUser } from '../../auth'
 import { EventLogResult } from '../backend'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Observable } from 'rxjs'
 import { PanelContainer } from './PanelContainer'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { Link } from '../../../../shared/src/components/Link'
 import { LoadingModal } from './LoadingModal'
+import { ShowMoreButton } from './ShowMoreButton'
 
 export const RecentFilesPanel: React.FunctionComponent<{
     className?: string
@@ -17,7 +17,7 @@ export const RecentFilesPanel: React.FunctionComponent<{
 }> = ({ className, authenticatedUser, fetchRecentFileViews }) => {
     const pageSize = 20
 
-    const [itemsToLoad, setItmesToLoad] = useState(pageSize)
+    const [itemsToLoad, setItemsToLoad] = useState(pageSize)
     const recentFiles = useObservable(
         useMemo(() => fetchRecentFileViews(authenticatedUser?.id || '', itemsToLoad), [
             authenticatedUser?.id,
@@ -45,6 +45,10 @@ export const RecentFilesPanel: React.FunctionComponent<{
         </div>
     )
 
+    function setItems(): void {
+        setItemsToLoad(current => current + pageSize)
+    }
+
     const contentDisplay = (
         <div>
             <small className="mb-1">File</small>
@@ -58,15 +62,7 @@ export const RecentFilesPanel: React.FunctionComponent<{
                 ))}
             </dl>
             {recentFiles?.pageInfo.hasNextPage && (
-                <div className="text-center">
-                    <button
-                        type="button"
-                        className="btn btn-secondary test-recent-files-panel-show-more"
-                        onClick={() => setItmesToLoad(current => current + pageSize)}
-                    >
-                        Show more
-                    </button>
-                </div>
+                <ShowMoreButton onClick={setItems} className="test-recent-files-panel-show-more" />
             )}
         </div>
     )
