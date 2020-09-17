@@ -369,27 +369,27 @@ func calcSyncInterval(now time.Time, lastSync time.Time, minSyncInterval time.Du
 	return interval
 }
 
-// SyncSingleRepo runs the syncer on a single repository.
-func (s *Syncer) SyncSingleRepo(ctx context.Context, store Store, sourcedRepo *Repo) (err error) {
+// SyncRepo runs the syncer on a single repository.
+func (s *Syncer) SyncRepo(ctx context.Context, store Store, sourcedRepo *Repo) (err error) {
 	var diff Diff
 
-	ctx, save := s.observe(ctx, 0, "Syncer.SyncSubset", sourcedRepo.Name)
+	ctx, save := s.observe(ctx, 0, "Syncer.SyncRepo", sourcedRepo.Name)
 	defer save(&diff, &err)
 
 	if tr, ok := store.(Transactor); ok {
 		var txs TxStore
 		if txs, err = tr.Transact(ctx); err != nil {
-			return errors.Wrap(err, "Syncer.SyncSubset.transact")
+			return errors.Wrap(err, "Syncer.SyncRepo.transact")
 		}
 		defer txs.Done(&err)
 		store = txs
 	}
 
-	diff, err = s.syncSingleRepo(ctx, store, false, sourcedRepo)
+	diff, err = s.syncRepo(ctx, store, false, sourcedRepo)
 	return err
 }
 
-// insertIfNew is a specialization of SyncSubset. It will insert sourcedRepo
+// insertIfNew is a specialization of SyncRepo. It will insert sourcedRepo
 // if there are no related repositories, otherwise does nothing.
 func (s *Syncer) insertIfNew(ctx context.Context, store Store, sourcedRepo *Repo) (err error) {
 	var diff Diff
@@ -397,11 +397,11 @@ func (s *Syncer) insertIfNew(ctx context.Context, store Store, sourcedRepo *Repo
 	ctx, save := s.observe(ctx, 0, "Syncer.InsertIfNew", sourcedRepo.Name)
 	defer save(&diff, &err)
 
-	diff, err = s.syncSingleRepo(ctx, store, true, sourcedRepo)
+	diff, err = s.syncRepo(ctx, store, true, sourcedRepo)
 	return err
 }
 
-func (s *Syncer) syncSingleRepo(ctx context.Context, store Store, insertOnly bool, sourcedRepo *Repo) (diff Diff, err error) {
+func (s *Syncer) syncRepo(ctx context.Context, store Store, insertOnly bool, sourcedRepo *Repo) (diff Diff, err error) {
 	var storedSubset Repos
 	args := StoreListReposArgs{
 		Names:         []string{sourcedRepo.Name},
@@ -409,7 +409,7 @@ func (s *Syncer) syncSingleRepo(ctx context.Context, store Store, insertOnly boo
 		UseOr:         true,
 	}
 	if storedSubset, err = store.ListRepos(ctx, args); err != nil {
-		return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.list-repos")
+		return Diff{}, errors.Wrap(err, "syncer.syncrepo.store.list-repos")
 	}
 
 	if insertOnly && len(storedSubset) > 0 {
@@ -435,14 +435,14 @@ func (s *Syncer) syncSingleRepo(ctx context.Context, store Store, insertOnly boo
 	// table.
 	sdiff := s.sourcesUpserts(&diff, storedCopy)
 	if err = store.UpsertSources(ctx, nil, nil, sdiff.Deleted); err != nil {
-		return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.delete-sources")
+		return Diff{}, errors.Wrap(err, "syncer.syncrepo.store.delete-sources")
 	}
 
 	// Next, insert or modify existing repos. This is needed so that the next call
 	// to UpsertSources has valid repo ids
 	upserts := s.upserts(diff)
 	if err = store.UpsertRepos(ctx, upserts...); err != nil {
-		return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.upsert-repos")
+		return Diff{}, errors.Wrap(err, "syncer.syncrepo.store.upsert-repos")
 	}
 
 	// Only modify added and modified relationships in external_service_repos, deleted was
@@ -450,7 +450,7 @@ func (s *Syncer) syncSingleRepo(ctx context.Context, store Store, insertOnly boo
 	// Recalculate sdiff so that we have foreign keys
 	sdiff = s.sourcesUpserts(&diff, storedCopy)
 	if err = store.UpsertSources(ctx, sdiff.Added, sdiff.Modified, nil); err != nil {
-		return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.upsert-sources")
+		return Diff{}, errors.Wrap(err, "syncer.syncrepo.store.upsert-sources")
 	}
 
 	if s.SubsetSynced != nil {
@@ -705,10 +705,10 @@ func (s *Syncer) sourced(ctx context.Context, svcs []*ExternalService, observe .
 }
 
 func (s *Syncer) makeNewRepoInserter(ctx context.Context, store Store) (func(*Repo), error) {
-	// syncSubset requires querying the store for related repositories, and
+	// syncRepo requires querying the store for related repositories, and
 	// will do nothing if `insertOnly` is set and there are any related repositories. Most
 	// repositories will already have related repos, so to avoid that cost we
-	// ask the store for all repositories and only do syncSubset if it might
+	// ask the store for all repositories and only do syncRepo if it might
 	// be an insert.
 	ids, err := store.ListExternalRepoSpecs(ctx)
 	if err != nil {

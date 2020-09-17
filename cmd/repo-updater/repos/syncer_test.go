@@ -635,7 +635,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 	}
 }
 
-func testSyncSingleRepo(t *testing.T, s repos.Store) func(*testing.T) {
+func testSyncRepo(t *testing.T, s repos.Store) func(*testing.T) {
 	clock := repos.NewFakeClock(time.Now(), time.Second)
 
 	servicesPerKind := createExternalServices(t, s)
@@ -743,7 +743,7 @@ func testSyncSingleRepo(t *testing.T, s repos.Store) func(*testing.T) {
 				syncer := &repos.Syncer{
 					Now: clock.Now,
 				}
-				err := syncer.SyncSingleRepo(ctx, st, tc.sourced.Clone())
+				err := syncer.SyncRepo(ctx, st, tc.sourced.Clone())
 				if err != nil {
 					t.Fatal(err)
 				}
