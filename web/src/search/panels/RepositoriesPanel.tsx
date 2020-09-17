@@ -11,6 +11,7 @@ import { Link } from '../../../../shared/src/components/Link'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { FilterType } from '../../../../shared/src/search/interactive/util'
 import { FILTERS } from '../../../../shared/src/search/parser/filters'
+import { LoadingModal } from './LoadingModal'
 
 export const RepositoriesPanel: React.FunctionComponent<{
     authenticatedUser: AuthenticatedUser | null
@@ -20,14 +21,7 @@ export const RepositoriesPanel: React.FunctionComponent<{
     const pageSize = 20
     const [itemsToLoad, setItemsToLoad] = useState(pageSize)
 
-    const loadingDisplay = (
-        <div className="d-flex justify-content-center align-items-center panel-container__empty-container">
-            <div className="icon-inline">
-                <LoadingSpinner />
-            </div>
-            Loading recently searched repositories
-        </div>
-    )
+    const loadingDisplay = <LoadingModal text="Loading recently searched repositories" />
 
     const emptyDisplay = (
         <div className="panel-container__empty-container">

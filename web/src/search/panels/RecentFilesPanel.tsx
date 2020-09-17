@@ -8,6 +8,7 @@ import { Observable } from 'rxjs'
 import { PanelContainer } from './PanelContainer'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { Link } from '../../../../shared/src/components/Link'
+import { LoadingModal } from './LoadingModal'
 
 export const RecentFilesPanel: React.FunctionComponent<{
     className?: string
@@ -35,14 +36,7 @@ export const RecentFilesPanel: React.FunctionComponent<{
         }
     }, [recentFiles])
 
-    const loadingDisplay = (
-        <div className="d-flex justify-content-center align-items-center panel-container__empty-container">
-            <div className="icon-inline">
-                <LoadingSpinner />
-            </div>
-            Loading recent files
-        </div>
-    )
+    const loadingDisplay = <LoadingModal text="Loading recent files" />
 
     const emptyDisplay = (
         <div className="panel-container__empty-container align-items-center">

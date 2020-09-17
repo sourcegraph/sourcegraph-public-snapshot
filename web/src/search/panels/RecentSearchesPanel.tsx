@@ -10,6 +10,7 @@ import { PanelContainer } from './PanelContainer'
 import { SearchPatternType } from '../../graphql-operations'
 import { Timestamp } from '../../components/time/Timestamp'
 import { useObservable } from '../../../../shared/src/util/useObservable'
+import { LoadingModal } from './LoadingModal'
 
 interface RecentSearch {
     count: number
@@ -45,14 +46,7 @@ export const RecentSearchesPanel: React.FunctionComponent<{
         }
     }, [recentSearches])
 
-    const loadingDisplay = (
-        <div className="d-flex justify-content-center align-items-center panel-container__empty-container">
-            <div className="icon-inline">
-                <LoadingSpinner />
-            </div>
-            Loading recent searches
-        </div>
-    )
+    const loadingDisplay = <LoadingModal text="Loading recent searches" />
     const emptyDisplay = (
         <div className="panel-container__empty-container">
             <small className="mb-2">

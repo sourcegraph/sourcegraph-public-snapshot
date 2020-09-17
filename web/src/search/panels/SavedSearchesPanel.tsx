@@ -10,6 +10,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import PencilOutlineIcon from 'mdi-react/PencilOutlineIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 import { Observable } from 'rxjs'
+import { LoadingModal } from './LoadingModal'
 
 export const SavedSearchesPanel: React.FunctionComponent<{
     patternType: SearchPatternType
@@ -33,14 +34,7 @@ export const SavedSearchesPanel: React.FunctionComponent<{
             )}
         </div>
     )
-    const loadingDisplay = (
-        <div className="d-flex justify-content-center align-items-center panel-container__empty-container">
-            <div className="icon-inline">
-                <LoadingSpinner />
-            </div>
-            Loading saved searches
-        </div>
-    )
+    const loadingDisplay = <LoadingModal text="Loading saved searches" />
 
     const contentDisplay = (
         <>
