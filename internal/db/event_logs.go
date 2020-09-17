@@ -35,9 +35,9 @@ type Event struct {
 }
 
 func (*eventLogs) Insert(ctx context.Context, e *Event) error {
-	argument := e.Argument
-	if argument == nil {
-		argument = json.RawMessage([]byte(`{}`))
+	var esArgument secret.JSONValue
+	if e.Argument != nil {
+		esArgument = secret.JSONValue(e.Argument)
 	}
 
 	_, err := dbconn.Global.ExecContext(
@@ -48,7 +48,7 @@ func (*eventLogs) Insert(ctx context.Context, e *Event) error {
 		e.UserID,
 		e.AnonymousUserID,
 		e.Source,
-		secret.JSONValue(argument),
+		esArgument,
 		version.Version(),
 		e.Timestamp.UTC(),
 	)

@@ -2,10 +2,11 @@ package db
 
 import (
 	"context"
-	"reflect"
+	"encoding/json"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
@@ -55,7 +56,14 @@ func TestExternalAccounts_AssociateUserAndSave(t *testing.T) {
 		ClientID:    "xc",
 		AccountID:   "xd",
 	}
-	if err := ExternalAccounts.AssociateUserAndSave(ctx, user.ID, spec, extsvc.AccountData{}); err != nil {
+
+	authData := json.RawMessage(`"authData"`)
+	data := json.RawMessage(`"data"`)
+	accountData := extsvc.AccountData{
+		AuthData: &authData,
+		Data:     &data,
+	}
+	if err := ExternalAccounts.AssociateUserAndSave(ctx, user.ID, spec, accountData); err != nil {
 		t.Fatal(err)
 	}
 
@@ -69,8 +77,14 @@ func TestExternalAccounts_AssociateUserAndSave(t *testing.T) {
 	account := *accounts[0]
 	simplifyExternalAccount(&account)
 	account.ID = 0
-	if want := (extsvc.Account{UserID: user.ID, AccountSpec: spec}); !reflect.DeepEqual(account, want) {
-		t.Errorf("got %+v, want %+v", account, want)
+
+	want := extsvc.Account{
+		UserID:      user.ID,
+		AccountSpec: spec,
+		AccountData: accountData,
+	}
+	if diff := cmp.Diff(want, account); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 }
 
@@ -87,7 +101,14 @@ func TestExternalAccounts_CreateUserAndSave(t *testing.T) {
 		ClientID:    "xc",
 		AccountID:   "xd",
 	}
-	userID, err := ExternalAccounts.CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
+
+	authData := json.RawMessage(`"authData"`)
+	data := json.RawMessage(`"data"`)
+	accountData := extsvc.AccountData{
+		AuthData: &authData,
+		Data:     &data,
+	}
+	userID, err := ExternalAccounts.CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, accountData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,8 +131,14 @@ func TestExternalAccounts_CreateUserAndSave(t *testing.T) {
 	account := *accounts[0]
 	simplifyExternalAccount(&account)
 	account.ID = 0
-	if want := (extsvc.Account{UserID: userID, AccountSpec: spec}); !reflect.DeepEqual(account, want) {
-		t.Errorf("got %+v, want %+v", account, want)
+
+	want := extsvc.Account{
+		UserID:      userID,
+		AccountSpec: spec,
+		AccountData: accountData,
+	}
+	if diff := cmp.Diff(want, account); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 }
 

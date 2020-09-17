@@ -257,7 +257,7 @@ func (s *savedSearches) Create(ctx context.Context, newSavedSearch *types.SavedS
 		UserID:      newSavedSearch.UserID,
 		OrgID:       newSavedSearch.OrgID,
 	}
-	var es secret.StringValue
+	es := secret.StringValue(savedQuery.Query)
 
 	err = dbconn.Global.QueryRowContext(ctx, `INSERT INTO saved_searches(
 			description,

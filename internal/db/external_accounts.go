@@ -192,7 +192,7 @@ func (s *userExternalAccounts) insert(ctx context.Context, tx *sql.Tx, userID in
 	_, err := tx.ExecContext(ctx, `
 INSERT INTO user_external_accounts(user_id, service_type, service_id, client_id, account_id, auth_data, account_data)
 VALUES($1, $2, $3, $4, $5, $6, $7)
-`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, esAuthData, esData)
+`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, &esAuthData, &esData)
 
 	return err
 }

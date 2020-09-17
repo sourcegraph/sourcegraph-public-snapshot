@@ -1,6 +1,7 @@
 package secret
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 	"strings"
@@ -8,15 +9,16 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	_ driver.Valuer = StringValue("")
+	_ sql.Scanner   = (*StringValue)(nil)
+)
+
 // StringValue implements driver.Valuer and sql.Scanner for string type secret.
 type StringValue string
 
-func (v *StringValue) Value() (driver.Value, error) {
-	if v == nil { // prefer all columns to be NON-NULL, but check in case
-		return nil, nil
-	}
-
-	return Encrypt(string(*v))
+func (v StringValue) Value() (driver.Value, error) {
+	return Encrypt(string(v))
 }
 
 func (v *StringValue) Scan(src interface{}) (err error) {
@@ -40,29 +42,43 @@ func (v *StringValue) String() string {
 	return string(*v)
 }
 
+var (
+	_ driver.Valuer = JSONValue("")
+	_ sql.Scanner   = (*JSONValue)(nil)
+)
+
 // JSONValue implements driver.Valuer and sql.Scanner for JSON type secret.
 type JSONValue json.RawMessage
 
-func (v *JSONValue) Value() (driver.Value, error) {
-	if v == nil { // prefer all columns to be NON-NULL, but check in case
+func (v JSONValue) Value() (driver.Value, error) {
+	if len(v) == 0 {
 		return `""`, nil
+	} else if !ConfiguredToEncrypt() {
+		return string(v), nil
 	}
 
-	return Encrypt(string(*v))
+	ciphertext, err := Encrypt(string(v))
+	if err != nil {
+		return nil, err
+	}
+	return `"` + ciphertext + `"`, nil
 }
 
 func (v *JSONValue) Scan(src interface{}) (err error) {
 	var plaintext string
 	switch src := src.(type) {
-	case string:
-		// In case it's an empty JSON
-		src = strings.Trim(src, `"{}`)
-		if src == "" {
-			plaintext = `""`
+	case []byte:
+		ciphertext := string(src)
+
+		// In case it's not configured to encrypt or an empty JSON
+		if !ConfiguredToEncrypt() ||
+			ciphertext == `""` || ciphertext == `{}` {
+			plaintext = ciphertext
 			break
 		}
 
-		plaintext, err = Decrypt(src)
+		ciphertext = strings.Trim(string(src), `"`)
+		plaintext, err = Decrypt(ciphertext)
 		if err != nil {
 			return err
 		}
