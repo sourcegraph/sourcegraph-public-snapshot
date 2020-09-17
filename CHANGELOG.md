@@ -21,7 +21,7 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
-- The new `src login` subcommand helps you authenticate `src` to access your Sourcegraph instance with your user credentials.
+- The new `src login` subcommand helps you authenticate `src` to access your Sourcegraph instance with your user credentials. [#317](https://github.com/sourcegraph/src-cli/pull/312)
 
 ## 3.20.0
 
