@@ -65,7 +65,7 @@ When you view a campaign, you can see a list of patches and changesets. For each
 When you perform any campaign operation that involves repositories or code host interaction, your current repository permissions are taken into account.
 
 - Creating, updating, or publishing a campaign; or publishing a single changeset: You must have access to view the repositories and the configured token must have the rights to push a branch and create the changesets on your code host (e.g., push branches to and open pull requests on the GitHub repositories).
-- Adding existing changesets to a campaign: You must have read access to the existing changesets' repository.
+- Adding existing changesets to a campaign: You must have read access to the existing changeset's repository.
 - Closing or deleting a campaign: If you choose to also close associated changesets on the code host, you must have access to do so on the code host. If you do not have access to close a changeset on the code host, the changeset will remain in its current state. A person with repository permissions for the remaining changesets can view them and manually close them.
 
 Your repository permissions can change at any time:

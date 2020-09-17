@@ -135,7 +135,7 @@ changesetTemplate:
 
 Then run the `src campaign preview` command again, or `src campaign apply` to immediately publish the changesets.
 
-In the Sourcegraph web UI you'll see a progress indicator for the changesets that are being published. Any errors will be shown, and you can retry publishing after you've resolved the problem by running `src campaign apply` again. You don't need to worry about it creating multiple branches or pull requests when you retry, because it uses the same branch name.
+In the Sourcegraph web UI you'll see a progress indicator for the changesets that are being published. Any errors will be shown, and you can retry publishing after you've resolved the problem by running `src campaign apply` again. You don't need to worry about multiple branches or pull requests being created when you retry, because the same branch name will be used.
 
 To publish a changeset, you need admin access to the campaign and write access to the changeset's repository (on the code host). For more information, see [Code host interactions in campaigns](managing_access.md#code-host-interactions-in-campaigns). [Forking the repository](#known-issues) is not yet supported.
 
@@ -162,7 +162,7 @@ If you lack read access to a repository, you can only see [limited information a
 ## Updating a campaign
 
 Campaigns are identified by their name. It must be unique within a single namespace (your user account on Sourcegraph, or an organization you are a member of).
-Updating a campaign works by targetting an **existing** campaign in the namespace by specifying the name in the spec. If the name matches an existing campaign, it will update the campaign. (Otherwise, a new campaign will be created.)
+Updating a campaign works by targeting an **existing** campaign in the namespace by specifying the name in the spec. If the name matches an existing campaign, it will update the campaign. (Otherwise, a new campaign will be created.)
 
 You can edit a the campaign's description, and any other part of its campaign spec at any time.
 
@@ -266,4 +266,4 @@ To learn about the internals of campaigns, see [Campaigns](../../dev/campaigns_d
 - Forking a repository and creating a pull request on the fork is not yet supported. Because of this limitation, you need write access to each repository that your campaign will change (in order to push a branch to it).
 - Campaign steps are run locally (in the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli)). Sourcegraph does not yet support executing campaign steps (which can be arbitrary commands) on the server. For this reason, the APIs for creating and updating a campaign require you to upload all of the changeset specs (which are produced by executing the campaign spec locally). {#server-execution}
 - It is not yet possible for multiple users to edit the same campaign that was created under an organization.
-- It is currently not yet possible to reuse a branch in a repository across multiple campaigns.
+- It is not yet possible to reuse a branch in a repository across multiple campaigns.
