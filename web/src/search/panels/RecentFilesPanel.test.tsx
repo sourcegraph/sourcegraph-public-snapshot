@@ -108,7 +108,9 @@ describe('RecentFilesPanel', () => {
 
         const component = mount(<RecentFilesPanel {...props} />)
         const showMoreButton = component.find('.test-recent-files-panel-show-more')
-        expect(showMoreButton.length).toStrictEqual(1)
+        // Because of how Enzyme renders the DOM, classes passed down through components will appear on multiple elements. In this case, only 1
+        // show more button appears, but it appears twice in the rendered tree.
+        expect(showMoreButton.length).toStrictEqual(2)
     })
 
     test('Show More button not shown when more items cannot be loaded', () => {
