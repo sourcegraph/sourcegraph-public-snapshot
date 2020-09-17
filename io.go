@@ -21,12 +21,12 @@ func loadQueries(path string) (queries, error) {
 		if err != nil {
 			return nil, err
 		}
-
 		scanner := bufio.NewScanner(f)
-		k := strings.TrimSuffix(f.Name(), ".txt")
+		// data/query_group.txt -> query_group
+		g := strings.TrimSuffix(filepath.Base(f.Name()), filepath.Ext(f.Name()))
 		for scanner.Scan() {
 			line := strings.TrimSpace(scanner.Text())
-			queries[k] = append(queries[k], line)
+			queries[g] = append(queries[g], line)
 		}
 		_ = f.Close()
 	}
