@@ -1,6 +1,6 @@
-// Package pubsubutil is a lightweight wrapper around pubsub which initializes
+// Package pubsub is a lightweight wrapper around pubsub which initializes
 // pubsub based on environment variables.
-package pubsubutil
+package pubsub
 
 import (
 	"context"
