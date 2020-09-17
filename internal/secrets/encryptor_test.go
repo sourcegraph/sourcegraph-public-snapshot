@@ -15,8 +15,8 @@ func TestGenerateRandomAESKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(key) != validKeyLength {
-		t.Fatalf("Exepected key length of %d received %d", validKeyLength, len(key))
+	if len(key) != requiredKeyLength {
+		t.Fatalf("Exepected key length of %d received %d", requiredKeyLength, len(key))
 	}
 }
 
@@ -367,7 +367,7 @@ func Test_encryptor_RotateEncryption(t *testing.T) {
 
 // mockGenRandomKey does not return an error
 func mockGenRandomKey() []byte {
-	b := make([]byte, validKeyLength)
+	b := make([]byte, requiredKeyLength)
 	_, err := rand.Read(b)
 	if err != nil {
 		panic(err)

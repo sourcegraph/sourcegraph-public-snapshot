@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	validKeyLength = 32  // 32 bytes is the required length for AES-256.
-	separator      = "$" // used specifically because $ is not part of base64
+	requiredKeyLength = 32  // 32 bytes is the required length for AES-256.
+	separator         = "$" // used specifically because $ is not part of base64
 )
 
 // EncryptionError is an error about encryption or decryption.
@@ -135,19 +135,19 @@ func (e encryptor) SecondaryKeyHash() string {
 // ConfiguredToEncrypt returns the status of our encryptor, whether or not
 // it has a key specified, and can thus encrypt.
 func (e encryptor) ConfiguredToEncrypt() bool {
-	return len(e.primaryKey) == validKeyLength
+	return len(e.primaryKey) == requiredKeyLength
 }
 
 // ConfiguredToRotate returns the status of our encryptor. If it contains two keys it
 // is configured to rotate.
 func (e encryptor) ConfiguredToRotate() bool {
-	return len(e.primaryKey) == validKeyLength && len(e.secondaryKey) == validKeyLength
+	return len(e.primaryKey) == requiredKeyLength && len(e.secondaryKey) == requiredKeyLength
 }
 
 // Encrypt encrypts the plaintext using the primaryKey of the encryptor. This
 // relies on the AES-GCM encryption defined in encrypt, within this package.
 func (e encryptor) Encrypt(plaintext string) (ciphertext string, err error) {
-	if len(e.primaryKey) < validKeyLength {
+	if len(e.primaryKey) < requiredKeyLength {
 		return "", &EncryptionError{errors.New("primary key is unavailable")}
 	}
 
@@ -164,7 +164,7 @@ func (e encryptor) Encrypt(plaintext string) (ciphertext string, err error) {
 // This relies on AES-GCM. The `failed` indicates if attempts have been made
 // to decrypt but failed with both primary and secondary keys.
 func (e encryptor) Decrypt(ciphertext string) (plaintext string, failed bool, err error) {
-	if len(e.primaryKey) < validKeyLength && len(e.secondaryKey) < validKeyLength {
+	if len(e.primaryKey) < requiredKeyLength && len(e.secondaryKey) < requiredKeyLength {
 		return "", false, &EncryptionError{errors.New("no valid keys available")}
 	}
 
