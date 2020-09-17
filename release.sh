@@ -7,6 +7,7 @@ if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
   exit 1
 fi
 
-# Push a new tag, this will trigger the goreleaser workflow in .github/workflows/goreleaser.yml
+# Create a new tag and push it, this will trigger the goreleaser workflow in .github/workflows/goreleaser.yml
 git tag "${VERSION}" -a -m "release v${VERSION}"
-git push -f --tags
+# We use `--atomic` so that we push the tag and the commit if the commit was or wasn't pushed before
+git push --atomic origin main "${VERSION}"

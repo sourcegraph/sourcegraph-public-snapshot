@@ -2,13 +2,13 @@ name: Goreleaser
 
 on:
   push:
-    tags-ignore:
-      - latest
+    tags:
+      - '*'
+      - '!latest'
 
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Checkout
         uses: actions/checkout@v2
