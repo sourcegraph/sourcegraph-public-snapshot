@@ -620,7 +620,7 @@ func TestSearch(t *testing.T) {
 			{
 				// TODO: No alert even for the original query
 				// 	repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^README\.md (bar and (foo or x\) ()) patterntype:literal
-				name:       `Confusing grouping raises alert`,
+				name:       `No result for confusing grouping`,
 				query:      `repo:^github\.com/sgtest/go-diff file:^README\.md (bar and (foo or x\) ()) patterntype:literal`,
 				zeroResult: true,
 			},
