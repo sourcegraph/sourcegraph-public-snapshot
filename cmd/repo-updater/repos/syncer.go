@@ -784,6 +784,8 @@ func (s *Syncer) observe(ctx context.Context, extsvcID int64, family, title stri
 	began := s.Now()
 	tr, ctx := trace.New(ctx, family, title)
 
+	serviceIDString := strconv.FormatInt(extsvcID, 10)
+
 	return ctx, func(d *Diff, err *error) {
 		now := s.Now()
 		took := s.Now().Sub(began).Seconds()
@@ -805,19 +807,19 @@ func (s *Syncer) observe(ctx context.Context, extsvcID int64, family, title stri
 					s.Logger.Debug(family, "diff."+state, repos.NamesSummary())
 				}
 			}
-			syncedTotal.WithLabelValues(state).Add(float64(len(repos)))
+			syncedTotal.WithLabelValues(state, serviceIDString, family).Add(float64(len(repos)))
 		}
 
 		tr.LogFields(fields...)
 
-		lastSync.WithLabelValues().Set(float64(now.Unix()))
+		lastSync.WithLabelValues(serviceIDString, family).Set(float64(now.Unix()))
 
 		success := err == nil || *err == nil
-		syncDuration.WithLabelValues(strconv.FormatBool(success), strconv.FormatInt(extsvcID, 10), family).Observe(took)
+		syncDuration.WithLabelValues(strconv.FormatBool(success), serviceIDString, family).Observe(took)
 
 		if !success {
 			tr.SetError(*err)
-			syncErrors.WithLabelValues().Add(1)
+			syncErrors.WithLabelValues(tagExternalServiceID, family).Add(1)
 		}
 
 		tr.Finish()
