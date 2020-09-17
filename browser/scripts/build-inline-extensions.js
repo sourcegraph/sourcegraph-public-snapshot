@@ -14,13 +14,17 @@ if (codeIntelExtensionsDirectoryExists) {
   shelljs.exec('yarn run fetch-code-intel-extensions')
 }
 
-// Install dependencies and build the specified code intel extension
+// Install dependencies
 shelljs.exec('yarn --cwd code-intel-extensions install')
 
-// TODO: check if code-intel-extensions exists
-// TODO: for each extension, check if that particular directory exists
-// (and abort when yarn fails)
+// Build individual extensions
 for (const extensionName of extensionNames) {
+  const extensionDirectory = `${temporarySourceDirectory}/extensions/${extensionName}`
+  if (!shelljs.test('-d', extensionDirectory)) {
+    console.error(`Code intel extension "${extensionName}" was not found for bundling.`)
+    console.error(`Expected extension directory: ${extensionDirectory}`)
+    process.exit(1)
+  }
   shelljs.exec(`yarn --cwd ${temporarySourceDirectory}/extensions/${extensionName} run build`)
 }
 

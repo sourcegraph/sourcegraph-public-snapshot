@@ -33,7 +33,7 @@ const BUILDS_DIR = 'build'
  * To get a reproducible build, disable this and set a version manually in
  * `manifest.spec.json`.
  */
-const useUtcVersion = false
+const useUtcVersion = true
 
 export const WEBPACK_STATS_OPTIONS: Stats.ToStringOptions = {
     all: false,

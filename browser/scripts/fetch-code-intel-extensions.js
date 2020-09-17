@@ -16,7 +16,7 @@ const codeIntelExtensionsRepoRevision = bundledCodeIntelExtensionsConfig.revisio
 
 signale.await('Fetching code-intel-extensions')
 
-// Refetch
+// Clean old directory before re-fetching
 shelljs.rm('-rf', temporarySourceDirectory)
 
 shelljs.mkdir('-p', temporarySourceDirectory)
