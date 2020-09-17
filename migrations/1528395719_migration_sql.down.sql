@@ -1,5 +1,5 @@
 BEGIN;
-CREATE TABLE IF NOT EXISTS  saved_queries
+CREATE TABLE IF NOT EXISTS saved_queries
 (
     query text not null,
     last_executed timestamp with time zone not null,
