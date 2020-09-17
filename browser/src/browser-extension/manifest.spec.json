@@ -1,6 +1,6 @@
 {
   "$schema": "http://json.schemastore.org/webextension",
-  "version": "20.7.10.1753",
+  "version": "0.0.0",
   "name": "Sourcegraph",
   "manifest_version": 2,
   "description": "Adds code intelligence to GitHub: hovers, definitions, references. Supports 20+ languages and other popular code hosts, too.",
