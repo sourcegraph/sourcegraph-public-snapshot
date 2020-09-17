@@ -15,7 +15,7 @@ import (
 
 const (
 	requiredKeyLength = 32  // 32 bytes is the required length for AES-256.
-	separator         = "$" // used specifically because $ is not part of base64
+	separator         = "$" // Used specifically because $ is not part of base64
 )
 
 // EncryptionError is an error about encryption or decryption.
@@ -25,38 +25,47 @@ type EncryptionError struct {
 
 // encryptor is an interface that provides encryption & decryption primitives.
 type encryptor interface {
-	// ConfiguredToEncrypt returns true if the encryptor is able to encrypt
+	// ConfiguredToEncrypt returns true if the encryptor is configured to encrypt.
 	ConfiguredToEncrypt() bool
-	// ConfiguredToRotate returns if primary and secondary keys are valid keys
+	// ConfiguredToRotate returns true if primary and secondary keys are both configured and valid keys.
 	ConfiguredToRotate() bool
-	// Decrypts a ciphertext and attempting all keys
+	// Decrypt decrypts a ciphertext and attempting all keys.
 	Decrypt(ciphertext string) (string, error)
-	// Encrypt encrypts a plaintext with the primary key
+	// Encrypt encrypts a plaintext with the primary key.
 	Encrypt(plaintext string) (string, error)
-	// Return hash of the primary key to be used when filtering encoding
+	// PrimaryKeyHash returns the hash of the primary key to be used for filtering.
 	PrimaryKeyHash() string
-	// Return hash of secondary key to be used in decrypting
+	// SecondaryKeyHash returns the hash of secondary key to be used for filtering.
 	SecondaryKeyHash() string
-	// RotateEncryption decrypts given ciphertext and then re-encrypts with the primary key
+	// RotateEncryption decrypts given ciphertext and then re-encrypts with the primary key.
 	RotateEncryption(ciphertext string) (string, error)
 }
 
-// aesGCMEncodedEncryptor performs encryption and decryption.
+// aesGCMEncodedEncryptor is an encryptor that uses AES-GCM for encryption and decryption,
+// and base64 to encode encrypted result.
 type aesGCMEncodedEncryptor struct {
-	// primaryKey is always used for encryption
+	// primaryKey is always used for encryption.
 	primaryKey []byte
-	// secondaryKey is used during key rotation to provide decryption during key rotations.
-	// It was the primary key that was used for encryption before the key rotation.
+	// secondaryKey was the primary key that was used for encryption previously.
 	secondaryKey []byte
-	// primaryKeyHash contains a partial hash of the active encryption key
+	// primaryKeyHash contains a partial hash of the active encryption key (i.e. primary key).
 	primaryKeyHash string
-	// secondaryKeyHash contains a partial hash of the previously used encryption key
+	// secondaryKeyHash contains a partial hash of the previously used encryption key (i.e. secondary key).
 	secondaryKeyHash string
 }
 
+func newAESGCMEncodedEncryptor(primaryKey, secondaryKey []byte) encryptor {
+	return aesGCMEncodedEncryptor{
+		primaryKey:       primaryKey,
+		secondaryKey:     secondaryKey,
+		primaryKeyHash:   sliceKeyHash(primaryKey),
+		secondaryKeyHash: sliceKeyHash(secondaryKey),
+	}
+}
+
 // sliceKeyHash returns a string which is the first 6 bytes of given key's SHA2-256 checksum in hexadecimal.
-// This checksum was chosen due to the (current) lack of SHA2 collisions, and is used to
-// indicate without leaking, how something has encrypted. The inspiration for this is /etc/shadow.
+// This checksum was chosen due to the (current) lack of SHA2 collisions, and is used to indicate without
+// leaking, how something has encrypted. The inspiration for this is /etc/shadow.
 func sliceKeyHash(k []byte) string {
 	if k == nil {
 		return ""
@@ -67,11 +76,10 @@ func sliceKeyHash(k []byte) string {
 	return hex.EncodeToString(h.Sum(nil))[:6]
 }
 
-// gcmEncrypt is the general purpose encryption function used to
-// return the encrypted versions of bytes.
-// gcmEncrypt uses 256-bit AES-GCM. This both hides the content of
-// the data and provides a check that it hasn't been altered. Output takes the form
-// `nonce|ciphertext|tag` where '|' indicates concatenation. It is a modified version of
+// gcmEncrypt is the general purpose encryption function used to return the encrypted versions of bytes.
+// gcmEncrypt uses 256-bit AES-GCM. This both hides the content of the data and provides a check that it
+// hasn't been altered. Output takes the form `nonce|ciphertext|tag` where '|' indicates concatenation.
+// It is a modified version of
 // https://github.com/gtank/cryptopasta/blob/1f550f6f2f69009f6ae57347c188e0a67cd4e500/encrypt.go#L37
 func gcmEncrypt(plaintext, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
@@ -113,15 +121,6 @@ func gcmDecrypt(ciphertext, key []byte) ([]byte, error) {
 	}
 
 	return gcm.Open(nil, ciphertext[:gcm.NonceSize()], ciphertext[gcm.NonceSize():], nil)
-}
-
-func newAESGCMEncodedEncryptor(primaryKey, secondaryKey []byte) encryptor {
-	return aesGCMEncodedEncryptor{
-		primaryKey:       primaryKey,
-		secondaryKey:     secondaryKey,
-		primaryKeyHash:   sliceKeyHash(primaryKey),
-		secondaryKeyHash: sliceKeyHash(secondaryKey),
-	}
 }
 
 // PrimaryKeyHash returns the keyHash for the primary key.
@@ -206,9 +205,8 @@ func (e aesGCMEncodedEncryptor) Decrypt(ciphertext string) (plaintext string, er
 	return string(plainbytes), nil
 }
 
-// RotateEncryption rotates the encryption on a ciphertext by
-// decrypting the byte array using the primaryKey, and then reencrypting
-// it using the secondaryKey.
+// RotateEncryption rotates the encryption on a ciphertext by decrypting the ciphertext
+// using the primaryKey, and then reencrypting it using the secondaryKey.
 func (e aesGCMEncodedEncryptor) RotateEncryption(ciphertext string) (string, error) {
 	if !e.ConfiguredToRotate() {
 		return "", &EncryptionError{errors.New("key rotation not configured")}
