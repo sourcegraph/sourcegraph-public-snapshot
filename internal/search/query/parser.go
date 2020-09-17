@@ -893,7 +893,7 @@ loop:
 				parameter.Negated = true
 				parameter.Annotation.Range = newRange(start, p.pos)
 				nodes = append(nodes, parameter)
-				break loop
+				continue
 			}
 			pattern := p.ParsePatternLiteral()
 			pattern.Negated = true
@@ -997,7 +997,7 @@ loop:
 				parameter.Negated = true
 				parameter.Annotation.Range = newRange(start, p.pos)
 				nodes = append(nodes, parameter)
-				break loop
+				continue
 			}
 			pattern := p.ParsePatternRegexp()
 			pattern.Negated = true
