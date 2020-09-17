@@ -372,15 +372,11 @@ func calcSyncInterval(now time.Time, lastSync time.Time, minSyncInterval time.Du
 // SyncSubset runs the syncer on a subset of the stored repositories. It will
 // only sync the repositories with the same name or external service spec as
 // sourcedSubset repositories.
-func (s *Syncer) SyncSubset(ctx context.Context, store Store, sourcedSubset ...*Repo) (err error) {
+func (s *Syncer) SyncSubset(ctx context.Context, store Store, sourcedRepo *Repo) (err error) {
 	var diff Diff
 
-	ctx, save := s.observe(ctx, 0, "Syncer.SyncSubset", strings.Join(Repos(sourcedSubset).Names(), " "))
+	ctx, save := s.observe(ctx, 0, "Syncer.SyncSubset", sourcedRepo.Name)
 	defer save(&diff, &err)
-
-	if len(sourcedSubset) == 0 {
-		return nil
-	}
 
 	if tr, ok := store.(Transactor); ok {
 		var txs TxStore
@@ -391,7 +387,7 @@ func (s *Syncer) SyncSubset(ctx context.Context, store Store, sourcedSubset ...*
 		store = txs
 	}
 
-	diff, err = s.syncSubset(ctx, store, false, sourcedSubset...)
+	diff, err = s.syncSubset(ctx, store, false, sourcedRepo)
 	return err
 }
 
@@ -407,15 +403,11 @@ func (s *Syncer) insertIfNew(ctx context.Context, store Store, sourcedRepo *Repo
 	return err
 }
 
-func (s *Syncer) syncSubset(ctx context.Context, store Store, insertOnly bool, sourcedSubset ...*Repo) (diff Diff, err error) {
-	if insertOnly && len(sourcedSubset) != 1 {
-		return Diff{}, errors.Errorf("syncer.syncsubset.insertOnly can only handle one sourced repo, given %d repos", len(sourcedSubset))
-	}
-
+func (s *Syncer) syncSubset(ctx context.Context, store Store, insertOnly bool, sourcedRepo *Repo) (diff Diff, err error) {
 	var storedSubset Repos
 	args := StoreListReposArgs{
-		Names:         Repos(sourcedSubset).Names(),
-		ExternalRepos: Repos(sourcedSubset).ExternalRepos(),
+		Names:         []string{sourcedRepo.Name},
+		ExternalRepos: []api.ExternalRepoSpec{sourcedRepo.ExternalRepo},
 		UseOr:         true,
 	}
 	if storedSubset, err = store.ListRepos(ctx, args); err != nil {
@@ -429,7 +421,7 @@ func (s *Syncer) syncSubset(ctx context.Context, store Store, insertOnly bool, s
 	// NewDiff modifies the stored slice so we clone it before passing it
 	storedCopy := storedSubset.Clone()
 
-	diff = NewDiff(sourcedSubset, storedSubset)
+	diff = NewDiff([]*Repo{sourcedRepo}, storedSubset)
 
 	// We trust that if we determine that a repo needs to be deleted it should be deleted
 	// from all external services. By setting sources to nil this is forced when we call
