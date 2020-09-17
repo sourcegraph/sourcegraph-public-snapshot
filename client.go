@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	envToken = "SOURCEGRAPH_TOKEN"
+	envToken    = "SOURCEGRAPH_TOKEN"
 	envEndpoint = "SOURCEGRAPH_ENDPOINT"
 )
 
@@ -41,12 +41,12 @@ func newClient() (*client, error) {
 
 func (s *client) search(ctx context.Context, queryString string) (*result, *metrics, error) {
 	var body bytes.Buffer
-	m :=&metrics{}
+	m := &metrics{}
 	if err := json.NewEncoder(&body).Encode(map[string]interface{}{
 		"query":     graphQLQuery,
 		"variables": map[string]string{"query": queryString},
 	}); err != nil {
-		return nil, nil,  err
+		return nil, nil, err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", s.url(), ioutil.NopCloser(&body))
@@ -69,7 +69,7 @@ func (s *client) search(ctx context.Context, queryString string) (*result, *metr
 	case 200:
 		break
 	default:
-		return nil, nil,fmt.Errorf("Unexpected status code", resp.StatusCode)
+		return nil, nil, fmt.Errorf("Unexpected status code", resp.StatusCode)
 	}
 
 	// Decode the response.
