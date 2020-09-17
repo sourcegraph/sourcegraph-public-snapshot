@@ -239,7 +239,7 @@ All actions on the code host (such as pushing a branch or opening a changeset) a
 
 ## Site admin configuration for campaigns
 
-Using campaigns requires a [code host connection](../../admin/external_service/index.md) to a supported code host (currently GitHub and Bitbucket Server).
+Using campaigns requires a [code host connection](../../admin/external_service/index.md) to a supported code host (currently GitHub, Bitbucket Server, and GitLab).
 
 Site admins can also:
 
