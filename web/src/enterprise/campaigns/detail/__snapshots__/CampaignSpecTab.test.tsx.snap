@@ -1,0 +1,163 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CampaignSpecTab last apply was an update (after creation) 1`] = `
+<CampaignSpecTab
+  campaign={
+    Object {
+      "createdAt": "2020-01-01T15:00:00Z",
+      "lastAppliedAt": "2020-02-03T16:07:08Z",
+      "lastApplier": Object {
+        "url": "https://example.com/alice",
+        "username": "alice",
+      },
+      "name": "c",
+    }
+  }
+  originalInput="x"
+>
+  <div
+    className="mt-4"
+  >
+    <div
+      className="d-flex justify-content-between align-items-center mb-2 test-campaigns-spec"
+    >
+      <p
+        className="m-0"
+      >
+        <AnchorLink
+          to="https://example.com/alice"
+        >
+          <a
+            href="https://example.com/alice"
+          >
+            alice
+          </a>
+        </AnchorLink>
+         
+        updated
+         this campaign
+         
+        <Timestamp
+          date="2020-02-03T16:07:08Z"
+        >
+          <span
+            className="timestamp"
+            data-tooltip="2020-02-03T16:07:08Z"
+          >
+            in about 14 years
+          </span>
+        </Timestamp>
+         by applying the following campaign spec:
+      </p>
+      <a
+        className="text-right btn btn-secondary text-nowrap"
+        data-tooltip="Download c.campaign.yaml"
+        download="c.campaign.yaml"
+        href="data:text/plain;charset=utf-8,x"
+      >
+        <FileDownloadIcon
+          className="icon-inline"
+        />
+         Download YAML
+      </a>
+    </div>
+    <div
+      className="mb-3"
+    >
+      <div
+        className="campaign-spec-tab__specfile rounded p-3"
+      >
+        <pre
+          className="m-0"
+          dangerouslySetInnerHTML={
+            Object {
+              "__html": "code",
+            }
+          }
+        />
+      </div>
+    </div>
+  </div>
+</CampaignSpecTab>
+`;
+
+exports[`CampaignSpecTab last apply was the (initial) creation 1`] = `
+<CampaignSpecTab
+  campaign={
+    Object {
+      "createdAt": "2020-01-01T15:00:00Z",
+      "lastAppliedAt": "2020-01-01T15:00:00Z",
+      "lastApplier": Object {
+        "url": "https://example.com/alice",
+        "username": "alice",
+      },
+      "name": "c",
+    }
+  }
+  originalInput="x"
+>
+  <div
+    className="mt-4"
+  >
+    <div
+      className="d-flex justify-content-between align-items-center mb-2 test-campaigns-spec"
+    >
+      <p
+        className="m-0"
+      >
+        <AnchorLink
+          to="https://example.com/alice"
+        >
+          <a
+            href="https://example.com/alice"
+          >
+            alice
+          </a>
+        </AnchorLink>
+         
+        created
+         this campaign
+         
+        <Timestamp
+          date="2020-01-01T15:00:00Z"
+        >
+          <span
+            className="timestamp"
+            data-tooltip="2020-01-01T15:00:00Z"
+          >
+            in almost 14 years
+          </span>
+        </Timestamp>
+         by applying the following campaign spec:
+      </p>
+      <a
+        className="text-right btn btn-secondary text-nowrap"
+        data-tooltip="Download c.campaign.yaml"
+        download="c.campaign.yaml"
+        href="data:text/plain;charset=utf-8,x"
+      >
+        <FileDownloadIcon
+          className="icon-inline"
+        />
+         Download YAML
+      </a>
+    </div>
+    <div
+      className="mb-3"
+    >
+      <div
+        className="campaign-spec-tab__specfile rounded p-3"
+      >
+        <pre
+          className="m-0"
+          dangerouslySetInnerHTML={
+            Object {
+              "__html": "code",
+            }
+          }
+        />
+      </div>
+    </div>
+  </div>
+</CampaignSpecTab>
+`;

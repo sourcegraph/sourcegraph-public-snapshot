@@ -24,11 +24,10 @@ exports[`CampaignChangesets renders 1`] = `
       onFiltersChange={[Function]}
     >
       <div
-        className="form-inline m-0"
+        className="form-inline m-0 my-2"
       >
-        <ChangesetFilter
+        <ChangesetUIStateFilter
           className="mr-2"
-          label="Status"
           onChange={[Function]}
           values={
             Array [
@@ -42,59 +41,75 @@ exports[`CampaignChangesets renders 1`] = `
             ]
           }
         >
-          <select
-            className="form-control mr-2"
-            onChange={[Function]}
+          <div
+            className="btn-group flex-wrap mr-2"
+            role="group"
           >
-            <option
-              value=""
+            <button
+              className="btn btn-outline-secondary active"
+              onClick={[Function]}
+              type="button"
             >
-              Status
-            </option>
-            <option
+              All
+            </button>
+            <button
+              className="btn btn-outline-secondary"
               key="UNPUBLISHED"
-              value="UNPUBLISHED"
+              onClick={[Function]}
+              type="button"
             >
               Unpublished
-            </option>
-            <option
+            </button>
+            <button
+              className="btn btn-outline-secondary"
               key="ERRORED"
-              value="ERRORED"
+              onClick={[Function]}
+              type="button"
             >
               Errored
-            </option>
-            <option
+            </button>
+            <button
+              className="btn btn-outline-secondary"
               key="PROCESSING"
-              value="PROCESSING"
+              onClick={[Function]}
+              type="button"
             >
               Processing
-            </option>
-            <option
+            </button>
+            <button
+              className="btn btn-outline-secondary"
               key="OPEN"
-              value="OPEN"
+              onClick={[Function]}
+              type="button"
             >
               Open
-            </option>
-            <option
+            </button>
+            <button
+              className="btn btn-outline-secondary"
               key="CLOSED"
-              value="CLOSED"
+              onClick={[Function]}
+              type="button"
             >
               Closed
-            </option>
-            <option
+            </button>
+            <button
+              className="btn btn-outline-secondary"
               key="MERGED"
-              value="MERGED"
+              onClick={[Function]}
+              type="button"
             >
               Merged
-            </option>
-            <option
+            </button>
+            <button
+              className="btn btn-outline-secondary"
               key="DELETED"
-              value="DELETED"
+              onClick={[Function]}
+              type="button"
             >
               Deleted
-            </option>
-          </select>
-        </ChangesetFilter>
+            </button>
+          </div>
+        </ChangesetUIStateFilter>
         <ChangesetFilter
           className="mr-2"
           label="Check state"
@@ -199,12 +214,14 @@ exports[`CampaignChangesets renders 1`] = `
     <FilteredConnection
       className="mt-2"
       defaultFirst={15}
+      emptyElement={<EmptyChangesetListElement />}
       headComponent={[Function]}
       hideSearch={true}
       history="[History]"
       listClassName="campaign-changesets__grid mb-3"
       listComponent="div"
       location="[Location path=/]"
+      noSummaryIfAllNodesVisible={true}
       nodeComponent={[Function]}
       nodeComponentProps={
         Object {
@@ -261,12 +278,14 @@ exports[`CampaignChangesets renders 1`] = `
             }
           }
           connectionQuery=""
+          emptyElement={<EmptyChangesetListElement />}
           first={15}
           headComponent={[Function]}
           listClassName="campaign-changesets__grid mb-3"
           listComponent="div"
           loading={false}
           location="[Location path=/]"
+          noSummaryIfAllNodesVisible={true}
           nodeComponent={[Function]}
           nodeComponentProps={
             Object {
@@ -317,40 +336,29 @@ exports[`CampaignChangesets renders 1`] = `
               }
               totalCount={1}
             >
-              <div
-                className="campaign-changesets-header__title mb-2"
-              >
-                <strong>
-                  Displaying 
-                  1
-                   of 
-                  1
-                   changesets
-                </strong>
-              </div>
               <span />
               <h5
-                className="text-uppercase text-center text-nowrap text-muted"
+                className="text-uppercase text-center text-nowrap"
               >
                 Status
               </h5>
               <h5
-                className="text-uppercase text-nowrap text-muted"
+                className="text-uppercase text-nowrap"
               >
                 Changeset information
               </h5>
               <h5
-                className="text-uppercase text-center text-nowrap text-muted"
+                className="text-uppercase text-center text-nowrap"
               >
                 Check state
               </h5>
               <h5
-                className="text-uppercase text-center text-nowrap text-muted"
+                className="text-uppercase text-center text-nowrap"
               >
                 Review state
               </h5>
               <h5
-                className="text-uppercase text-right text-nowrap text-muted"
+                className="text-uppercase text-center text-nowrap"
               >
                 Changes
               </h5>
@@ -529,20 +537,6 @@ exports[`CampaignChangesets renders 1`] = `
               </HiddenExternalChangesetNode>
             </ChangesetNode>
           </div>
-          <p
-            className="filtered-connection__summary"
-          >
-            <small>
-              <span>
-                1
-                 
-                changeset
-                 
-                total
-              </span>
-               
-            </small>
-          </p>
         </ConnectionNodes>
       </div>
     </FilteredConnection>

@@ -2,9 +2,6 @@
     &__content {
         min-width: 0;
     }
-    &__badge {
-        justify-self: stretch;
-    }
     &__separator {
         // Make it full width in the current row.
         grid-column: 1 / -1;

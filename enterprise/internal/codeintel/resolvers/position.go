@@ -3,8 +3,8 @@ package resolvers
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io/ioutil"
+	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/go-diff/diff"
@@ -101,7 +101,7 @@ func (p *positionAdjuster) readHunksCached(ctx context.Context, repo *types.Repo
 		return p.readHunks(ctx, repo, sourceCommit, targetCommit, path)
 	}
 
-	key := makeKey(fmt.Sprintf("%d", repo.ID), sourceCommit, targetCommit, path)
+	key := makeKey(strconv.FormatInt(int64(repo.ID), 10), sourceCommit, targetCommit, path)
 	if hunks, ok := p.hunkCache.Get(key); ok {
 		if hunks == nil {
 			return nil, nil

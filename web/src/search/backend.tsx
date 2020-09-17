@@ -1,6 +1,6 @@
 import { Observable, of, combineLatest, defer, from } from 'rxjs'
 import { catchError, map, switchMap, publishReplay, refCount } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql, requestGraphQL } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
@@ -10,7 +10,7 @@ import { Remote } from 'comlink'
 import { FlatExtHostAPI } from '../../../shared/src/api/contract'
 import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
 import { DeployType } from '../jscontext'
-import { SearchPatternType } from '../graphql-operations'
+import { SearchPatternType, EventLogsDataResult, EventLogsDataVariables } from '../graphql-operations'
 
 export function search(
     query: string,
@@ -520,4 +520,60 @@ export function shouldDisplayPerformanceWarning(deployType: DeployType): Observa
         map(dataOrThrowErrors),
         map(data => (data.repositories.nodes || []).length > manyReposWarningLimit)
     )
+}
+
+export interface EventLogResult {
+    totalCount: number
+    nodes: { argument: string | null; timestamp: string; url: string }[]
+    pageInfo: { endCursor: string | null; hasNextPage: boolean }
+}
+
+function fetchEvents(userId: GQL.ID, first: number, eventName: string): Observable<EventLogResult | null> {
+    if (!userId) {
+        return of(null)
+    }
+
+    const result = requestGraphQL<EventLogsDataResult, EventLogsDataVariables>({
+        request: gql`
+            query EventLogsData($userId: ID!, $first: Int, $eventName: String!) {
+                node(id: $userId) {
+                    ... on User {
+                        eventLogs(first: $first, eventName: $eventName) {
+                            nodes {
+                                argument
+                                timestamp
+                                url
+                            }
+                            pageInfo {
+                                endCursor
+                                hasNextPage
+                            }
+                            totalCount
+                        }
+                    }
+                }
+            }
+        `,
+        variables: { userId, first: first ?? null, eventName },
+    })
+
+    return result.pipe(
+        map(dataOrThrowErrors),
+        map(
+            (data: EventLogsDataResult): EventLogResult => {
+                if (!data.node) {
+                    throw new Error('User not found')
+                }
+                return data.node.eventLogs
+            }
+        )
+    )
+}
+
+export function fetchRecentSearches(userId: GQL.ID, first: number): Observable<EventLogResult | null> {
+    return fetchEvents(userId, first, 'SearchResultsQueried')
+}
+
+export function fetchRecentFileViews(userId: GQL.ID, first: number): Observable<EventLogResult | null> {
+    return fetchEvents(userId, first, 'ViewBlob')
 }

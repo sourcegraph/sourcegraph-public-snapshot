@@ -144,6 +144,16 @@ func getAndMarshalSavedSearchesJSON(ctx context.Context) (_ json.RawMessage, err
 	return json.Marshal(savedSearches)
 }
 
+func getAndMarshalRepositoriesJSON(ctx context.Context) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalRepositoriesJSON")(&err)
+
+	repos, err := usagestats.GetRepositories(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(repos)
+}
+
 func getAndMarshalAggregatedUsageJSON(ctx context.Context) (_ json.RawMessage, _ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalAggregatedUsageJSON")(&err)
 
@@ -181,6 +191,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		CampaignsUsage:      []byte("{}"),
 		GrowthStatistics:    []byte("{}"),
 		SavedSearches:       []byte("{}"),
+		Repositories:        []byte("{}"),
 	}
 
 	totalUsers, err := getTotalUsersCount(ctx)
@@ -230,6 +241,11 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		r.SavedSearches, err = getAndMarshalSavedSearchesJSON(ctx)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalSavedSearchesJSON failed", "error", err)
+		}
+
+		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalRepositoriesJSON failed", "error", err)
 		}
 
 		r.ExternalServices, err = externalServiceKinds(ctx)
@@ -312,7 +328,7 @@ func check() {
 		req.Header.Set("Content-Type", "application/json")
 		req = req.WithContext(ctx)
 
-		resp, err := httpcli.ExternalHTTPClient().Do(req)
+		resp, err := httpcli.ExternalDoer().Do(req)
 		if err != nil {
 			return "", err
 		}

@@ -16,7 +16,7 @@ describe('NavLinks', () => {
     const NOOP_EXTENSIONS_CONTROLLER: ExtensionsControllerProps<
         'executeCommand' | 'services'
     >['extensionsController'] = { executeCommand: () => Promise.resolve(), services: {} as any }
-    const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined, settings: NEVER }
+    const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined, settings: NEVER, sourcegraphURL: '' }
     const KEYBOARD_SHORTCUTS: KeyboardShortcutsProps['keyboardShortcuts'] = []
     const SETTINGS_CASCADE: SettingsCascadeProps['settingsCascade'] = { final: null, subjects: null }
     const USER: AuthenticatedUser = {

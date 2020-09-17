@@ -54,7 +54,7 @@ func MustInit() {
 }
 
 // defaultEncryptor is configured during init, if no keys are provided it will implement noOpEncryptor
-var defaultEncryptor encryptorInterface
+var defaultEncryptor encryptor
 
 func initDefaultEncryptor() error {
 	var encryptionKey []byte
@@ -78,8 +78,8 @@ func initDefaultEncryptor() error {
 		if readErr != nil {
 			return errors.Wrapf(readErr, "couldn't read file %s", sourcegraphSecretfileEnvvar)
 		}
-		if len(contents) < validKeyLength {
-			return errors.Errorf("key length of %d characters is required", validKeyLength)
+		if len(contents) < requiredKeyLength {
+			return errors.Errorf("key length of %d characters is required", requiredKeyLength)
 		}
 		encryptionKey = contents
 
@@ -88,22 +88,22 @@ func initDefaultEncryptor() error {
 			return err
 		}
 
-		defaultEncryptor = newEncryptor(primaryKey, secondaryKey)
+		defaultEncryptor = newAESGCMEncodedEncryptor(primaryKey, secondaryKey)
 		return nil
 	}
 
 	envCryptKey, cryptOK := os.LookupEnv(sourcegraphCryptEnvvar)
 	// environment is second order
 	if cryptOK {
-		if len(envCryptKey) != validKeyLength {
-			return errors.Errorf("encryption key must be %d characters", validKeyLength)
+		if len(envCryptKey) != requiredKeyLength {
+			return errors.Errorf("encryption key must be %d characters", requiredKeyLength)
 		}
 		primaryKey, secondaryKey, err := gatherKeys(encryptionKey)
 		if err != nil {
 			return err
 		}
 
-		defaultEncryptor = newEncryptor(primaryKey, secondaryKey)
+		defaultEncryptor = newAESGCMEncodedEncryptor(primaryKey, secondaryKey)
 		return nil
 	}
 
@@ -134,7 +134,7 @@ func initDefaultEncryptor() error {
 			return err
 		}
 
-		defaultEncryptor = newEncryptor(newKey, nil)
+		defaultEncryptor = newAESGCMEncodedEncryptor(newKey, nil)
 		return nil
 	}
 
@@ -157,7 +157,7 @@ func initDefaultEncryptor() error {
 
 // generateRandomAESKey generates a random key that can be used for AES-256 encryption.
 func generateRandomAESKey() ([]byte, error) {
-	b := make([]byte, validKeyLength)
+	b := make([]byte, requiredKeyLength)
 	_, err := rand.Read(b)
 	if err != nil {
 		return nil, err

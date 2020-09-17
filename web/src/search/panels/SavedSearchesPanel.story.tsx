@@ -6,7 +6,7 @@ import { authUser, _fetchSavedSearches } from './utils'
 import { SavedSearchesPanel } from './SavedSearchesPanel'
 import { NEVER, of } from 'rxjs'
 
-const { add } = storiesOf('web/search/panels/SavedSearchPanel', module).addParameters({
+const { add } = storiesOf('web/search/panels/SavedSearchesPanel', module).addParameters({
     design: {
         type: 'figma',
         url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
@@ -19,7 +19,7 @@ const props = {
     fetchSavedSearches: _fetchSavedSearches,
 }
 
-add('Saved search panel content', () => (
+add('Populated', () => (
     <WebStory>
         {() => (
             <div style={{ maxWidth: '32rem' }}>
@@ -29,7 +29,7 @@ add('Saved search panel content', () => (
     </WebStory>
 ))
 
-add('Saved search panel loading', () => (
+add('Loading', () => (
     <WebStory>
         {() => (
             <div style={{ maxWidth: '32rem' }}>
@@ -39,7 +39,7 @@ add('Saved search panel loading', () => (
     </WebStory>
 ))
 
-add('Saved search panel empty', () => (
+add('Empty', () => (
     <WebStory>
         {() => (
             <div style={{ maxWidth: '32rem' }}>

@@ -1114,24 +1114,25 @@ Indexes:
 
 # Table "public.users"
 ```
-       Column        |           Type           |                     Modifiers                      
----------------------+--------------------------+----------------------------------------------------
- id                  | integer                  | not null default nextval('users_id_seq'::regclass)
- username            | citext                   | not null
- display_name        | text                     | 
- avatar_url          | text                     | 
- created_at          | timestamp with time zone | not null default now()
- updated_at          | timestamp with time zone | not null default now()
- deleted_at          | timestamp with time zone | 
- invite_quota        | integer                  | not null default 15
- passwd              | text                     | 
- passwd_reset_code   | text                     | 
- passwd_reset_time   | timestamp with time zone | 
- site_admin          | boolean                  | not null default false
- page_views          | integer                  | not null default 0
- search_queries      | integer                  | not null default 0
- tags                | text[]                   | default '{}'::text[]
- billing_customer_id | text                     | 
+         Column          |           Type           |                     Modifiers                      
+-------------------------+--------------------------+----------------------------------------------------
+ id                      | integer                  | not null default nextval('users_id_seq'::regclass)
+ username                | citext                   | not null
+ display_name            | text                     | 
+ avatar_url              | text                     | 
+ created_at              | timestamp with time zone | not null default now()
+ updated_at              | timestamp with time zone | not null default now()
+ deleted_at              | timestamp with time zone | 
+ invite_quota            | integer                  | not null default 15
+ passwd                  | text                     | 
+ passwd_reset_code       | text                     | 
+ passwd_reset_time       | timestamp with time zone | 
+ site_admin              | boolean                  | not null default false
+ page_views              | integer                  | not null default 0
+ search_queries          | integer                  | not null default 0
+ tags                    | text[]                   | default '{}'::text[]
+ billing_customer_id     | text                     | 
+ invalidated_sessions_at | timestamp with time zone | not null default now()
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_billing_customer_id" UNIQUE, btree (billing_customer_id) WHERE deleted_at IS NULL
@@ -1166,6 +1167,7 @@ Referenced by:
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 Triggers:
+    trig_invalidate_session_on_password_change BEFORE UPDATE OF passwd ON users FOR EACH ROW EXECUTE PROCEDURE invalidate_session_for_userid_on_password_change()
     trig_soft_delete_user_reference_on_external_service AFTER UPDATE OF deleted_at ON users FOR EACH ROW EXECUTE PROCEDURE soft_delete_user_reference_on_external_service()
 
 ```

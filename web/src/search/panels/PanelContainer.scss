@@ -1,7 +1,9 @@
 .panel-container {
+    margin-bottom: 1rem;
+
     &__header {
         &-text {
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.5rem;
             flex-grow: 1;
         }
     }
@@ -23,9 +25,15 @@
         padding: 3rem;
         justify-content: center;
         background: $color-bg-2;
+        height: 100%;
 
         .theme-light & {
             background: $color-light-bg-2;
         }
+    }
+
+    &__content {
+        overflow-y: auto;
+        overflow-x: hidden;
     }
 }

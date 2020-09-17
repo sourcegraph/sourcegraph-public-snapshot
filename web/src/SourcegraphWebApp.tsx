@@ -6,8 +6,8 @@ import * as React from 'react'
 import { hot } from 'react-hot-loader/root'
 import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
-import { combineLatest, from, fromEventPattern, Subscription } from 'rxjs'
-import { startWith } from 'rxjs/operators'
+import { combineLatest, from, fromEventPattern, Subscription, fromEvent, of } from 'rxjs'
+import { startWith, switchMap } from 'rxjs/operators'
 import { setLinkComponent } from '../../shared/src/components/Link'
 import {
     Controller as ExtensionsController,
@@ -37,7 +37,7 @@ import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import { LayoutRouteProps } from './routes'
-import { search, fetchSavedSearches } from './search/backend'
+import { search, fetchSavedSearches, fetchRecentSearches, fetchRecentFileViews } from './search/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { ThemePreference } from './theme'
@@ -69,6 +69,7 @@ import {
     experimentalFeaturesFromSettings,
 } from './util/settings'
 import { SearchPatternType } from '../../shared/src/graphql-operations'
+import { HTTPStatusError } from '../../shared/src/backend/fetch'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     exploreSections: readonly ExploreSectionDescriptor[]
@@ -300,6 +301,26 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             })
         )
 
+        /**
+         * Listens for uncaught 401 errors when a user when a user was previously authenticated.
+         *
+         * Don't subscribe to this event when there wasn't an authenticated user,
+         * as it could lead to an infinite loop of 401 -> reload -> 401
+         */
+        this.subscriptions.add(
+            authenticatedUser
+                .pipe(
+                    switchMap(authenticatedUser =>
+                        authenticatedUser ? fromEvent<ErrorEvent>(window, 'error') : of(null)
+                    )
+                )
+                .subscribe(event => {
+                    if (event?.error instanceof HTTPStatusError && event.error.status === 401) {
+                        location.reload()
+                    }
+                })
+        )
+
         // Send initial versionContext to extensions
         this.extensionsController.services.workspace.versionContext.next(this.state.versionContext)
     }
@@ -419,6 +440,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
                                     globbing={this.state.globbing}
                                     fetchSavedSearches={fetchSavedSearches}
+                                    fetchRecentSearches={fetchRecentSearches}
+                                    fetchRecentFileViews={fetchRecentFileViews}
                                 />
                             )}
                         />

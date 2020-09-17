@@ -147,10 +147,21 @@ func (db *databaseImpl) Ranges(ctx context.Context, path string, startLine, endL
 			return nil, err
 		}
 
+		// Return only references that are in the same file. Otherwise this set
+		// gets very big and such results are of limited use to consumers such as
+		// the code intel extensions, which only use references for highlighting
+		// uses of an identifier within the same file.
+		fileLocalReferences := make([]bundles.Location, 0, len(locations[r.ReferenceResultID]))
+		for _, r := range locations[r.ReferenceResultID] {
+			if r.Path == path {
+				fileLocalReferences = append(fileLocalReferences, r)
+			}
+		}
+
 		codeintelRanges = append(codeintelRanges, bundles.CodeIntelligenceRange{
 			Range:       newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter),
 			Definitions: locations[r.DefinitionResultID],
-			References:  locations[r.ReferenceResultID],
+			References:  fileLocalReferences,
 			HoverText:   hoverText,
 		})
 	}

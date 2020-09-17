@@ -12,6 +12,7 @@ jest.mock('../components/branding/BrandLogo', () => ({ BrandLogo: 'BrandLogo' })
 
 const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     authenticatedUser: null,
+    authRequired: false,
     extensionsController: {} as any,
     location: createLocation('/'),
     history: createMemoryHistory(),
