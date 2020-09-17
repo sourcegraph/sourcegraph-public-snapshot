@@ -17,11 +17,7 @@ export const PerformanceWarningAlert: React.FunctionComponent = () => (
         <div>
             Search performance and accuracy are limited on single-node Docker deployments. We recommend that instances
             with 100+ repositories&nbsp;
-            <Link
-                className="site-alert__link"
-                to="https://docs.sourcegraph.com/admin/install"
-                onClick={onClickCTA}
-            >
+            <Link className="site-alert__link" to="https://docs.sourcegraph.com/admin/install" onClick={onClickCTA}>
                 deploy to a cluster
             </Link>
             &nbsp;for optimal performance.&nbsp;
