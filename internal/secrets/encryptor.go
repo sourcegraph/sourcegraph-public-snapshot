@@ -23,8 +23,8 @@ type EncryptionError struct {
 	error
 }
 
-// encryptorInterface is an interface that provides encryption & decryption primitives.
-type encryptorInterface interface {
+// encryptor is an interface that provides encryption & decryption primitives.
+type encryptor interface {
 	// ConfiguredToEncrypt returns true if the encryptor is able to encrypt
 	ConfiguredToEncrypt() bool
 	// ConfiguredToRotate returns if primary and secondary keys are valid keys
@@ -41,8 +41,8 @@ type encryptorInterface interface {
 	RotateEncryption(ciphertext string) (string, error)
 }
 
-// encryptor performs encryption and decryption.
-type encryptor struct {
+// aesGCMEncodedEncryptor performs encryption and decryption.
+type aesGCMEncodedEncryptor struct {
 	// primaryKey is always used for encryption
 	primaryKey []byte
 	// secondaryKey is used during key rotation to provide decryption during key rotations.
@@ -115,8 +115,8 @@ func gcmDecrypt(ciphertext, key []byte) ([]byte, error) {
 	return gcm.Open(nil, ciphertext[:gcm.NonceSize()], ciphertext[gcm.NonceSize():], nil)
 }
 
-func newEncryptor(primaryKey, secondaryKey []byte) encryptorInterface {
-	return encryptor{
+func newAESGCMEncodedEncryptor(primaryKey, secondaryKey []byte) encryptor {
+	return aesGCMEncodedEncryptor{
 		primaryKey:       primaryKey,
 		secondaryKey:     secondaryKey,
 		primaryKeyHash:   sliceKeyHash(primaryKey),
@@ -125,30 +125,30 @@ func newEncryptor(primaryKey, secondaryKey []byte) encryptorInterface {
 }
 
 // PrimaryKeyHash returns the keyHash for the primary key.
-func (e encryptor) PrimaryKeyHash() string {
+func (e aesGCMEncodedEncryptor) PrimaryKeyHash() string {
 	return e.primaryKeyHash
 }
 
 // SecondaryKeyHash returns the keyHash for the secondary key.
-func (e encryptor) SecondaryKeyHash() string {
+func (e aesGCMEncodedEncryptor) SecondaryKeyHash() string {
 	return e.secondaryKeyHash
 }
 
 // ConfiguredToEncrypt returns the status of our encryptor, whether or not
 // it has a key specified, and can thus encrypt.
-func (e encryptor) ConfiguredToEncrypt() bool {
+func (e aesGCMEncodedEncryptor) ConfiguredToEncrypt() bool {
 	return len(e.primaryKey) == requiredKeyLength
 }
 
 // ConfiguredToRotate returns the status of our encryptor. If it contains two keys it
 // is configured to rotate.
-func (e encryptor) ConfiguredToRotate() bool {
+func (e aesGCMEncodedEncryptor) ConfiguredToRotate() bool {
 	return len(e.primaryKey) == requiredKeyLength && len(e.secondaryKey) == requiredKeyLength
 }
 
 // Encrypt encrypts the plaintext using the primaryKey of the encryptor. This
 // relies on the AES-GCM encryption defined in encrypt, within this package, and returns a base64 encoded string
-func (e encryptor) Encrypt(plaintext string) (ciphertext string, err error) {
+func (e aesGCMEncodedEncryptor) Encrypt(plaintext string) (ciphertext string, err error) {
 	if len(e.primaryKey) < requiredKeyLength {
 		return "", &EncryptionError{errors.New("primary key is unavailable")}
 	}
@@ -165,7 +165,7 @@ func (e encryptor) Encrypt(plaintext string) (ciphertext string, err error) {
 // Decrypt decrypts base64 encoded ciphertext using the primaryKey of the encryptor
 // This relies on AES-GCM. The `failed` indicates if attempts have been made
 // to decrypt but failed with both primary and secondary keys.
-func (e encryptor) Decrypt(ciphertext string) (plaintext string, failed bool, err error) {
+func (e aesGCMEncodedEncryptor) Decrypt(ciphertext string) (plaintext string, failed bool, err error) {
 	if len(e.primaryKey) < requiredKeyLength && len(e.secondaryKey) < requiredKeyLength {
 		return "", false, &EncryptionError{errors.New("no valid keys available")}
 	}
@@ -205,7 +205,7 @@ func (e encryptor) Decrypt(ciphertext string) (plaintext string, failed bool, er
 // RotateEncryption rotates the encryption on a ciphertext by
 // decrypting the byte array using the primaryKey, and then reencrypting
 // it using the secondaryKey.
-func (e encryptor) RotateEncryption(ciphertext string) (string, error) {
+func (e aesGCMEncodedEncryptor) RotateEncryption(ciphertext string) (string, error) {
 	if !e.ConfiguredToRotate() {
 		return "", &EncryptionError{errors.New("key rotation not configured")}
 	}

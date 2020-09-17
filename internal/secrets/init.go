@@ -47,7 +47,7 @@ func Init() error {
 }
 
 // defaultEncryptor is configured during init, if no keys are provided it will implement noOpEncryptor
-var defaultEncryptor encryptorInterface
+var defaultEncryptor encryptor
 
 func initDefaultEncryptor() error {
 	var encryptionKey []byte
@@ -81,7 +81,7 @@ func initDefaultEncryptor() error {
 			return err
 		}
 
-		defaultEncryptor = newEncryptor(primaryKey, secondaryKey)
+		defaultEncryptor = newAESGCMEncodedEncryptor(primaryKey, secondaryKey)
 		return nil
 	}
 
@@ -96,7 +96,7 @@ func initDefaultEncryptor() error {
 			return err
 		}
 
-		defaultEncryptor = newEncryptor(primaryKey, secondaryKey)
+		defaultEncryptor = newAESGCMEncodedEncryptor(primaryKey, secondaryKey)
 		return nil
 	}
 
@@ -127,7 +127,7 @@ func initDefaultEncryptor() error {
 			return err
 		}
 
-		defaultEncryptor = newEncryptor(newKey, nil)
+		defaultEncryptor = newAESGCMEncodedEncryptor(newKey, nil)
 		return nil
 	}
 

@@ -32,7 +32,7 @@ func TestEncryptingAndDecrypting(t *testing.T) {
 	}
 
 	t.Run("using primary key", func(t *testing.T) {
-		e := newEncryptor(primaryKey, nil)
+		e := newAESGCMEncodedEncryptor(primaryKey, nil)
 
 		encrypted, err := e.Encrypt(messageToEncrypt)
 		if err != nil {
@@ -51,14 +51,14 @@ func TestEncryptingAndDecrypting(t *testing.T) {
 
 	t.Run("using secondary key", func(t *testing.T) {
 		// Only load secondary key to encrypt
-		e := newEncryptor(secondaryKey, nil)
+		e := newAESGCMEncodedEncryptor(secondaryKey, nil)
 		encrypted, err := e.Encrypt(messageToEncrypt)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Then load both keys to decrypt
-		e = newEncryptor(primaryKey, secondaryKey)
+		e = newAESGCMEncodedEncryptor(primaryKey, secondaryKey)
 		decrypted, _, err := e.Decrypt(encrypted)
 		if err != nil {
 			t.Fatal(err)
@@ -81,7 +81,7 @@ func TestKeyHash(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	e := newEncryptor(primaryKey, secondaryKey)
+	e := newAESGCMEncodedEncryptor(primaryKey, secondaryKey)
 
 	encryptorHash := e.PrimaryKeyHash()
 
@@ -145,7 +145,7 @@ func TestBadKeysFailToDecrypt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	e := newEncryptor(key, nil)
+	e := newAESGCMEncodedEncryptor(key, nil)
 
 	encrypted, err := e.Encrypt(messageToEncrypt)
 	if err != nil {
@@ -161,7 +161,7 @@ func TestBadKeysFailToDecrypt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	e2 := newEncryptor(notTheSameKey, nil)
+	e2 := newAESGCMEncodedEncryptor(notTheSameKey, nil)
 
 	decryptedAgain, failed, err := e2.Decrypt(encrypted)
 	// Not the same key will have different keyHash and effectively makes the decryption no-op.
@@ -182,7 +182,7 @@ func TestDifferentOutputs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	e := newEncryptor(key, nil)
+	e := newAESGCMEncodedEncryptor(key, nil)
 	messages := []string{
 		"This may or may",
 		"This is not the same as that",
@@ -223,7 +223,7 @@ func TestSampleNoRepeats(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	e := newEncryptor(key, nil)
+	e := newAESGCMEncodedEncryptor(key, nil)
 
 	var crypts []string
 	for i := 0; i < 10000; i++ {
@@ -251,7 +251,7 @@ func TestKeyMigration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	encryptorA := newEncryptor(keyA, nil)
+	encryptorA := newAESGCMEncodedEncryptor(keyA, nil)
 
 	message := "encrypted with Key A"
 	encryptedMessage, err := encryptorA.Encrypt(message)
@@ -260,7 +260,7 @@ func TestKeyMigration(t *testing.T) {
 	}
 
 	// now rotate keys to use Key B
-	encryptorB := newEncryptor(keyB, keyA)
+	encryptorB := newAESGCMEncodedEncryptor(keyB, keyA)
 	decryptedMessage, _, err := encryptorB.Decrypt(encryptedMessage)
 	if err != nil {
 		t.Fatalf("unable to Decrypt string: %v", err)
@@ -336,10 +336,10 @@ func Test_encryptor_RotateEncryption(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			e := newEncryptor(tt.primaryKey, tt.secondaryKey)
+			e := newAESGCMEncodedEncryptor(tt.primaryKey, tt.secondaryKey)
 
 			// pretend we originally use secondaryKey
-			e2 := newEncryptor(tt.secondaryKey, nil)
+			e2 := newAESGCMEncodedEncryptor(tt.secondaryKey, nil)
 			ciphertext, err := e2.Encrypt(tt.plaintext)
 			if err != nil {
 				t.Fatal(err)
@@ -352,7 +352,7 @@ func Test_encryptor_RotateEncryption(t *testing.T) {
 			}
 
 			// we should always Encrypt with the primary key
-			e3 := newEncryptor(tt.primaryKey, nil)
+			e3 := newAESGCMEncodedEncryptor(tt.primaryKey, nil)
 			got, _, err = e3.Decrypt(got)
 			if err != nil {
 				t.Fatalf("RotateEncryption() unable to Decrypt with primary key %v", err)
@@ -434,13 +434,13 @@ func Test_Decrypt_Plaintext(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			var e encryptorInterface
+			var e encryptor
 			if tt.primaryKey != nil && tt.secondaryKey != nil {
-				e = newEncryptor(tt.primaryKey, tt.secondaryKey)
+				e = newAESGCMEncodedEncryptor(tt.primaryKey, tt.secondaryKey)
 			} else if tt.primaryKey != nil {
-				e = newEncryptor(tt.primaryKey, nil)
+				e = newAESGCMEncodedEncryptor(tt.primaryKey, nil)
 			} else if tt.secondaryKey != nil {
-				e = newEncryptor(tt.secondaryKey, nil)
+				e = newAESGCMEncodedEncryptor(tt.secondaryKey, nil)
 			} else {
 				t.Fatal("must have a non-nil key")
 			}
