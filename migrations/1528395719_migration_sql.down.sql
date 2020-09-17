@@ -1,15 +1,15 @@
 BEGIN;
 CREATE TABLE IF NOT EXISTS saved_queries
 (
-    query text not null,
-    last_executed timestamp with time zone not null,
-    latest_result timestamp with time zone not null,
-    exec_duration_ns bigint not null
+    query TEXT NOT NULL,
+    last_executed TIMESTAMP WITH TIME ZONE NOT NULL,
+    latest_result TIMESTAMP WITH TIME ZONE NOT NULL,
+    exec_duration_ns BIGINT NOT NULL
 );
 
-alter table saved_queries owner to sourcegraph;
+ALTER TABLE saved_queries OWNER TO sourcegraph;
 
-create unique index saved_queries_query_unique
-    on saved_queries (query);
+CREATE UNIQUE INDEX saved_queries_query_unique
+    ON saved_queries (query);
 
 COMMIT;
