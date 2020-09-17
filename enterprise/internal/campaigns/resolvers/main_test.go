@@ -26,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/secret"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -41,7 +40,6 @@ func TestMain(m *testing.M) {
 	if !testing.Verbose() {
 		log15.Root().SetHandler(log15.DiscardHandler())
 	}
-	secret.MustInit()
 	os.Exit(m.Run())
 }
 

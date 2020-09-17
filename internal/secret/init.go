@@ -46,15 +46,8 @@ func Init() error {
 	return initErr
 }
 
-func MustInit() {
-	err := Init()
-	if err != nil {
-		panic(err)
-	}
-}
-
-// defaultEncryptor is configured during init, if no keys are provided it will implement noOpEncryptor
-var defaultEncryptor encryptor
+// defaultEncryptor is configured during init, if no keys are provided it will implement noOpEncryptor.
+var defaultEncryptor encryptor = noOpEncryptor{}
 
 func initDefaultEncryptor() error {
 	var encryptionKey []byte
@@ -145,7 +138,6 @@ func initDefaultEncryptor() error {
 	}
 
 	log15.Warn("no encryption option enabled")
-	defaultEncryptor = noOpEncryptor{}
 	return nil
 
 	// TODO: Enable this once docs are in place for
