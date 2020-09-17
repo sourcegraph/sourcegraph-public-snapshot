@@ -35,57 +35,67 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <Form className="signin-signup-form signin-form test-signin-form" onSubmit={this.handleSubmit}>
+            <>
+                <Form
+                    className="signin-signup-form signin-form test-signin-form border rounded p-4 mt-4 mb-3"
+                    onSubmit={this.handleSubmit}
+                >
+                    {this.state.error && (
+                        <ErrorAlert
+                            className="my-2"
+                            error={this.state.error}
+                            icon={false}
+                            history={this.props.history}
+                        />
+                    )}
+                    <div className="form-group">
+                        <input
+                            className="form-control signin-signup-form__input"
+                            type="text"
+                            placeholder="Username or email"
+                            onChange={this.onEmailFieldChange}
+                            required={true}
+                            value={this.state.email}
+                            disabled={this.state.loading}
+                            autoCapitalize="off"
+                            autoFocus={true}
+                            autoComplete="username email"
+                        />
+                    </div>
+                    <div className="form-group">
+                        <PasswordInput
+                            className="signin-signup-form__input"
+                            onChange={this.onPasswordFieldChange}
+                            value={this.state.password}
+                            required={true}
+                            disabled={this.state.loading}
+                            autoComplete="current-password"
+                        />
+                    </div>
+                    <div className="form-group">
+                        <button className="btn btn-primary btn-block" type="submit" disabled={this.state.loading}>
+                            Sign in
+                        </button>
+                        {window.context.resetPasswordEnabled && (
+                            <small className="form-text text-muted">
+                                <Link to="/password-reset">Forgot password?</Link>
+                            </small>
+                        )}
+                    </div>
+                    {this.state.loading && (
+                        <div className="w-100 text-center mb-2">
+                            <LoadingSpinner className="icon-inline" />
+                        </div>
+                    )}
+                </Form>
                 {window.context.allowSignup ? (
                     <p>
-                        <Link to={`/sign-up${this.props.location.search}`}>Don't have an account? Sign up.</Link>
+                        <Link to={`/sign-up${this.props.location.search}`}>New to Sourcegraph? Sign up.</Link>
                     </p>
                 ) : (
                     <p className="text-muted">To create an account, contact the site admin.</p>
                 )}
-                {this.state.error && (
-                    <ErrorAlert className="my-2" error={this.state.error} icon={false} history={this.props.history} />
-                )}
-                <div className="form-group">
-                    <input
-                        className="form-control signin-signup-form__input"
-                        type="text"
-                        placeholder="Username or email"
-                        onChange={this.onEmailFieldChange}
-                        required={true}
-                        value={this.state.email}
-                        disabled={this.state.loading}
-                        autoCapitalize="off"
-                        autoFocus={true}
-                        autoComplete="username email"
-                    />
-                </div>
-                <div className="form-group">
-                    <PasswordInput
-                        className="signin-signup-form__input"
-                        onChange={this.onPasswordFieldChange}
-                        value={this.state.password}
-                        required={true}
-                        disabled={this.state.loading}
-                        autoComplete="current-password"
-                    />
-                </div>
-                <div className="form-group">
-                    <button className="btn btn-primary btn-block" type="submit" disabled={this.state.loading}>
-                        Sign in
-                    </button>
-                    {window.context.resetPasswordEnabled && (
-                        <small className="form-text text-muted">
-                            <Link to="/password-reset">Forgot password?</Link>
-                        </small>
-                    )}
-                </div>
-                {this.state.loading && (
-                    <div className="w-100 text-center mb-2">
-                        <LoadingSpinner className="icon-inline" />
-                    </div>
-                )}
-            </Form>
+            </>
         )
     }
 
