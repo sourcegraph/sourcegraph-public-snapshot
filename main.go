@@ -55,7 +55,7 @@ OUTER:
 		select {
 		case <-ctx.Done():
 			break OUTER
-		case <-time.After(600 * time.Second):
+		case <-time.After(300 * time.Second):
 		}
 	}
 }
