@@ -5,6 +5,15 @@ const toDirectory = path.join(process.cwd(), 'build')
 const temporarySourceDirectory = path.join(process.cwd(), 'code-intel-extensions')
 const signale = require('signale')
 
+// Check if code-intel-extensions has already been fetched
+const codeIntelExtensionsDirectoryExists = shelljs.test('-d', temporarySourceDirectory)
+if (codeIntelExtensionsDirectoryExists) {
+  console.log('Found existing code-intel-extensions.')
+} else {
+  console.log('Did not find an existing code-intel-extensions. Running fetch-code-intel-extensions')
+  shelljs.exec('yarn run fetch-code-intel-extensions')
+}
+
 // Install dependencies and build the specified code intel extension
 shelljs.exec('yarn --cwd code-intel-extensions install')
 
@@ -14,7 +23,6 @@ shelljs.exec('yarn --cwd code-intel-extensions install')
 for (const extensionName of extensionNames) {
   shelljs.exec(`yarn --cwd ${temporarySourceDirectory}/extensions/${extensionName} run build`)
 }
-// shelljs.popd()
 
 for (const extensionName of extensionNames) {
   // Copy extension manifest (package.json) and bundle (extension.js)

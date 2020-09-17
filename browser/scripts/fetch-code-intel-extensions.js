@@ -1,29 +1,27 @@
 const shelljs = require('shelljs')
 const path = require('path')
-// eslint-disable-next-line id-length
-const os = require('os')
 const signale = require('signale')
 const bundledCodeIntelExtensionsConfig = require('../bundled-code-intel-extensions.json')
-const temporarySourceDirectory = path.join('./', 'code-intel-extensions')
-const toDirectory = path.join(process.cwd(), 'build')
+const temporarySourceDirectory = path.join(process.cwd(), 'code-intel-extensions')
 
 /**
  * Revision of the github.com/sourcegraph/code-intel-extensions repo to build
  * from.
  *
  * We freeze it at a particular revision because the XPI needs to be
- * reproducible. The particular revision was chosen as the latest commit on
- * master at the time of writing and should be updated accordingly.
+ * reproducible. The revision should be updated whenever a new version of the
+ * browser extension is being built for release.
  */
 const codeIntelExtensionsRepoRevision = bundledCodeIntelExtensionsConfig.revision
-const extensionNames = bundledCodeIntelExtensionsConfig.extensions
 
-signale.await('Building Sourcegraph extensions for Firefox add-on')
+signale.await('Fetching code-intel-extensions')
+
+// Refetch
+shelljs.rm('-rf', temporarySourceDirectory)
 
 shelljs.mkdir('-p', temporarySourceDirectory)
 
 // Get code-intel-extensions source snapshot and build
-// shelljs.pushd(temporarySourceDirectory)
 shelljs.exec(
   `curl -OLs https://github.com/sourcegraph/code-intel-extensions/archive/${codeIntelExtensionsRepoRevision}.zip`
 )
