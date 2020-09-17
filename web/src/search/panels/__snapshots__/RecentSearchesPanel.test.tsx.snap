@@ -9,7 +9,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
     className="recent-searches-panel"
     emptyContent={
       <div
-        className="panel-container__empty-container"
+        className="panel-container__empty-container text-muted"
       >
         <small
           className="mb-2"
@@ -56,16 +56,9 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
       </div>
     }
     loadingContent={
-      <div
-        className="d-flex justify-content-center align-items-center panel-container__empty-container"
-      >
-        <div
-          className="icon-inline"
-        >
-          <LoadingSpinner />
-        </div>
-        Loading recent searches
-      </div>
+      <LoadingModal
+        text="Loading recent searches"
+      />
     }
     populatedContent={
       <React.Fragment>
@@ -156,17 +149,10 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
             </tr>
           </tbody>
         </table>
-        <div
-          className="text-center"
-        >
-          <button
-            className="btn btn-secondary test-recent-searches-panel-show-more"
-            onClick={[Function]}
-            type="button"
-          >
-            Show more
-          </button>
-        </div>
+        <ShowMoreButton
+          className="test-recent-searches-panel-show-more"
+          onClick={[Function]}
+        />
       </React.Fragment>
     }
     state="populated"
@@ -300,17 +286,22 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
             </tr>
           </tbody>
         </table>
-        <div
-          className="text-center"
+        <ShowMoreButton
+          className="test-recent-searches-panel-show-more"
+          onClick={[Function]}
         >
-          <button
-            className="btn btn-secondary test-recent-searches-panel-show-more"
-            onClick={[Function]}
-            type="button"
+          <div
+            className="text-center py-3"
           >
-            Show more
-          </button>
-        </div>
+            <button
+              className="btn btn-link test-recent-searches-panel-show-more"
+              onClick={[Function]}
+              type="button"
+            >
+              Show more
+            </button>
+          </div>
+        </ShowMoreButton>
       </div>
     </div>
   </PanelContainer>
@@ -327,7 +318,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
     className="recent-searches-panel"
     emptyContent={
       <div
-        className="panel-container__empty-container"
+        className="panel-container__empty-container text-muted"
       >
         <small
           className="mb-2"
@@ -374,16 +365,9 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
       </div>
     }
     loadingContent={
-      <div
-        className="d-flex justify-content-center align-items-center panel-container__empty-container"
-      >
-        <div
-          className="icon-inline"
-        >
-          <LoadingSpinner />
-        </div>
-        Loading recent searches
-      </div>
+      <LoadingModal
+        text="Loading recent searches"
+      />
     }
     populatedContent={
       <React.Fragment>
@@ -764,7 +748,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
     className="recent-searches-panel"
     emptyContent={
       <div
-        className="panel-container__empty-container"
+        className="panel-container__empty-container text-muted"
       >
         <small
           className="mb-2"
@@ -811,16 +795,9 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
       </div>
     }
     loadingContent={
-      <div
-        className="d-flex justify-content-center align-items-center panel-container__empty-container"
-      >
-        <div
-          className="icon-inline"
-        >
-          <LoadingSpinner />
-        </div>
-        Loading recent searches
-      </div>
+      <LoadingModal
+        text="Loading recent searches"
+      />
     }
     populatedContent={
       <React.Fragment>
