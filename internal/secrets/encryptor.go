@@ -48,9 +48,9 @@ type encryptor struct {
 	// secondaryKey is used during key rotation to provide decryption during key rotations.
 	// It was the primary key that was used for encryption before the key rotation.
 	secondaryKey []byte
-	// primaryKeyHash is prepended to base64-encoded ciphertext with `separator`.
+	// primaryKeyHash contains a partial hash of the active encryption key
 	primaryKeyHash string
-	// secondaryKeyHash is the previous hash that was prepended to ciphertext with `separator`
+	// secondaryKeyHash contains a partial hash of the previously used encryption key
 	secondaryKeyHash string
 }
 
@@ -145,7 +145,7 @@ func (e encryptor) ConfiguredToRotate() bool {
 }
 
 // Encrypt encrypts the plaintext using the primaryKey of the encryptor. This
-// relies on the AES-GCM encryption defined in encrypt, within this package.
+// relies on the AES-GCM encryption defined in encrypt, within this package, and returns a base64 encoded string
 func (e encryptor) Encrypt(plaintext string) (ciphertext string, err error) {
 	if len(e.primaryKey) < requiredKeyLength {
 		return "", &EncryptionError{errors.New("primary key is unavailable")}
