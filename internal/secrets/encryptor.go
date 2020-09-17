@@ -30,7 +30,7 @@ type encryptor interface {
 	// ConfiguredToRotate returns if primary and secondary keys are valid keys
 	ConfiguredToRotate() bool
 	// Decrypts a ciphertext and attempting all keys
-	Decrypt(ciphertext string) (string, bool, error)
+	Decrypt(ciphertext string) (string, error)
 	// Encrypt encrypts a plaintext with the primary key
 	Encrypt(plaintext string) (string, error)
 	// Return hash of the primary key to be used when filtering encoding
@@ -162,19 +162,23 @@ func (e aesGCMEncodedEncryptor) Encrypt(plaintext string) (ciphertext string, er
 	return e.PrimaryKeyHash() + separator + ciphertext, nil
 }
 
+var ErrDecryptAttemptedButFailed = &EncryptionError{
+	errors.New("decrypt attempted but failed with both primary and secondary keys"),
+}
+
 // Decrypt decrypts base64 encoded ciphertext using the primaryKey of the encryptor
-// This relies on AES-GCM. The `failed` indicates if attempts have been made
-// to decrypt but failed with both primary and secondary keys.
-func (e aesGCMEncodedEncryptor) Decrypt(ciphertext string) (plaintext string, failed bool, err error) {
+// This relies on AES-GCM. The `ErrDecryptAttemptedButFailed` is returned when attempts
+// have been made to decrypt but failed with both primary and secondary keys.
+func (e aesGCMEncodedEncryptor) Decrypt(ciphertext string) (plaintext string, err error) {
 	if len(e.primaryKey) < requiredKeyLength && len(e.secondaryKey) < requiredKeyLength {
-		return "", false, &EncryptionError{errors.New("no valid keys available")}
+		return "", &EncryptionError{errors.New("no valid keys available")}
 	}
 
 	// If the ciphertext does not contain the separator, or has a new line,
 	// it is definitely not encrypted.
 	if !strings.Contains(ciphertext, separator) ||
 		strings.Contains(ciphertext, "\n") {
-		return ciphertext, false, nil
+		return ciphertext, nil
 	}
 
 	var keyToDecrypt []byte
@@ -187,19 +191,19 @@ func (e aesGCMEncodedEncryptor) Decrypt(ciphertext string) (plaintext string, fa
 		ciphertext = ciphertext[len(e.SecondaryKeyHash()+separator):]
 		keyToDecrypt = e.secondaryKey
 	} else {
-		return ciphertext, true, nil
+		return "", ErrDecryptAttemptedButFailed
 	}
 
 	decodedCiphertext, err := base64.StdEncoding.DecodeString(ciphertext)
 	if err != nil {
-		return "", true, &EncryptionError{err}
+		return "", &EncryptionError{err}
 	}
 
 	plainbytes, err := gcmDecrypt(decodedCiphertext, keyToDecrypt)
 	if err != nil {
-		return "", true, &EncryptionError{err}
+		return "", &EncryptionError{err}
 	}
-	return string(plainbytes), false, nil
+	return string(plainbytes), nil
 }
 
 // RotateEncryption rotates the encryption on a ciphertext by
@@ -210,15 +214,9 @@ func (e aesGCMEncodedEncryptor) RotateEncryption(ciphertext string) (string, err
 		return "", &EncryptionError{errors.New("key rotation not configured")}
 	}
 
-	plaintext, failed, err := e.Decrypt(ciphertext)
+	plaintext, err := e.Decrypt(ciphertext)
 	if err != nil {
 		return "", err
-	}
-
-	// Decryption couldn't be done, better to just return as-is so we don't encrypt it again
-	// which makes the situation worse.
-	if failed {
-		return ciphertext, nil
 	}
 
 	return e.Encrypt(plaintext)
@@ -239,8 +237,8 @@ func (noOpEncryptor) Encrypt(s string) (string, error) {
 	return s, nil
 }
 
-func (noOpEncryptor) Decrypt(s string) (string, bool, error) {
-	return s, false, nil
+func (noOpEncryptor) Decrypt(s string) (string, error) {
+	return s, nil
 }
 
 func (noOpEncryptor) ConfiguredToEncrypt() bool {
@@ -279,7 +277,7 @@ func Encrypt(plaintext string) (string, error) {
 // Decrypt decrypts the ciphertext and returns the decrypted value.
 // An error is returned when decryption fails. It returns the original
 // content if encryption is not configured.
-func Decrypt(ciphertext string) (string, bool, error) {
+func Decrypt(ciphertext string) (string, error) {
 	return defaultEncryptor.Decrypt(ciphertext)
 }
 
