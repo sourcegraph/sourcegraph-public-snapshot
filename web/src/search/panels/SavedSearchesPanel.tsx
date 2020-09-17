@@ -27,7 +27,10 @@ export const SavedSearchesPanel: React.FunctionComponent<{
                 Use saved searches to alert you to uses of a favorite api, or changes to code you need to monitor.
             </small>
             {authenticatedUser && (
-                <Link to={`/users/${authenticatedUser.username}/searches/add`} className="btn btn-secondary mt-2">
+                <Link
+                    to={`/users/${authenticatedUser.username}/searches/add`}
+                    className="btn btn-secondary mt-2 align-self-center"
+                >
                     <PlusIcon className="icon-inline" />
                     Create a saved search
                 </Link>
