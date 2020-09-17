@@ -989,16 +989,6 @@ type PhabricatorConnection struct {
 	// Url description: URL of a Phabricator instance, such as https://phabricator.example.com
 	Url string `json:"url,omitempty"`
 }
-
-// PublishedExcept description: Only repositories that do NOT match patterns in this array will be published.
-type PublishedExcept struct {
-	Except []string `json:"except"`
-}
-
-// PublishedOnly description: Only repositories that match patterns in this array will be published.
-type PublishedOnly struct {
-	Only []string `json:"only"`
-}
 type QuickLink struct {
 	// Description description: A description for this quick link
 	Description string `json:"description,omitempty"`

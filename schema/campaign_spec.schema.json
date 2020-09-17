@@ -378,33 +378,14 @@
               "description": "A single flag to control the publishing state for the entire campaign."
             },
             {
-              "type": "object",
-              "title": "PublishedOnly",
-              "description": "Only repositories that match patterns in this array will be published.",
-              "additionalProperties": false,
-              "required": ["only"],
-              "properties": {
-                "only": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                }
-              }
-            },
-            {
-              "type": "object",
-              "title": "PublishedExcept",
-              "description": "Only repositories that do NOT match patterns in this array will be published.",
-              "additionalProperties": false,
-              "required": ["except"],
-              "properties": {
-                "except": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                }
+              "type": "array",
+              "description": "A list of repository patterns to match. In the event multiple patterns match, the last matching pattern in the list will be used.",
+              "items": {
+                "type": "object",
+                "description": "An object with one field: the key is the glob pattern to match against repository names; the value will be used as the published flag for matching repositories.",
+                "additionalProperties": { "type": "boolean" },
+                "minProperties": 1,
+                "maxProperties": 1
               }
             }
           ]
