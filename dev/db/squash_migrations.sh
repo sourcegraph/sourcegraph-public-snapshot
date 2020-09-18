@@ -26,6 +26,9 @@ fi
 
 target='./'
 if [ -z "$(git ls-tree -r --name-only "$1" "./")" ]; then
+  # If we're squashing migrations no a tagged version where the
+  # migrations/frontend directory does not exist, scan the files
+  # in the parent directory where they were located previously.
   target='../'
 fi
 
