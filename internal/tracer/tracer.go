@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"strings"
 	"sync"
 
 	"github.com/inconshreveable/log15"
@@ -165,7 +166,7 @@ func newTracer(opts *jaegerOpts) (opentracing.Tracer, func(span opentracing.Span
 	}
 
 	// We proxy jaeger so we can construct URLs to traces.
-	jaegerURL := opts.ExternalURL + "/-/debug/jaeger/trace/"
+	jaegerURL := strings.TrimSuffix(opts.ExternalURL, "/") + "/-/debug/jaeger/trace/"
 
 	spanURL := func(span opentracing.Span) string {
 		if span == nil {

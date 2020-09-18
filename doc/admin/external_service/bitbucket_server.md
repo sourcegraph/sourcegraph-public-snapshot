@@ -11,6 +11,16 @@ To connect Bitbucket Server to Sourcegraph:
 
 Also consider installing the [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) which enables native code intelligence for every Bitbucket user when browsing code and reviewing pull requests, allows for faster permission syncing between Sourcegraph and Bitbucket Server and adds support for webhooks to Bitbucket Server.
 
+## Access token permissions
+
+Sourcegraph requires a Bitbucket Server personal access token with **read** permissions to sync repositories.
+
+When using [campaigns](../../user/campaigns/index.md) the access token needs **write** permissions on the project and repository level. See "[Code host interactions in campaigns](../../user/campaigns/managing_access.md#code-host-interactions-in-campaigns)" for details.
+
+You can create a personal access token at `https://[your-bitbucket-hostname]/plugins/servlet/access-tokens/add`. Also set the corresponding `username` field.
+
+For Bitbucket Server instances that don't support personal access tokens (Bitbucket Server version 5.4 and older), specify user-password credentials in the `username` and `password` fields.
+
 ## Repository syncing
 
 There are four fields for configuring which repositories are mirrored:
