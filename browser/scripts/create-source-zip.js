@@ -5,14 +5,15 @@ const signale = require('signale')
  * Purpose of this script: create a source code zip that can be used shared and
  * used to produce a build of the browser extensions.
  *
- * This makes it possible to provide the complete source code to the maintainers of
- * extension registries, in the cases where providing the source code is a
+ * This makes it possible to provide the complete source code to the maintainers
+ * of extension registries, in the cases where providing the source code is a
  * pre-requisite to getting approval for publishing.
  *
  * This script fetches a fresh copy of the repository, identified by commit ID.
- * This is done instead of using packaging the contents of the current working copy
- * repository, and the reason is to avoid including any build artifacts that may
- * be present. By pinning it to a commit, it become
+ * This is done instead of using packaging the contents of the current working
+ * copy repository, and the reason is to avoid including any build artifacts
+ * that may be present. By pinning it to a commit, it's possible to use this
+ * script across any branch and commit.
  *
  */
 
