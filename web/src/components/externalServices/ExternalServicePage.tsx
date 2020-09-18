@@ -139,6 +139,7 @@ export const ExternalServicePage: React.FunctionComponent<Props> = ({
                     input={externalService}
                     editorActions={externalServiceCategory.editorActions}
                     jsonSchema={externalServiceCategory.jsonSchema}
+                    simpleForm={externalServiceCategory.simpleForm}
                     error={error}
                     warning={externalService.warning}
                     mode="edit"

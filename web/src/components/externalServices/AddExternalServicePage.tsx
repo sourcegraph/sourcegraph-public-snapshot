@@ -130,6 +130,7 @@ export const AddExternalServicePage: React.FunctionComponent<Props> = ({
                         input={getExternalServiceInput()}
                         editorActions={externalService.editorActions}
                         jsonSchema={externalService.jsonSchema}
+                        simpleForm={externalService.simpleForm}
                         mode="create"
                         onSubmit={onSubmit}
                         onChange={onChange}

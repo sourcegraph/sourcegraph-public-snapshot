@@ -17,6 +17,7 @@ import phabricatorSchemaJSON from '../../../../schema/phabricator.schema.json'
 import { PhabricatorIcon } from '../../../../shared/src/components/icons'
 import { EditorAction } from '../../site-admin/configHelpers'
 import { ExternalServiceKind } from '../../graphql-operations'
+import { githubSimpleForm } from './github/githubSimpleForm'
 
 /**
  * Metadata associated with adding a given external service.
@@ -63,6 +64,29 @@ export interface AddExternalServiceOptions {
      * Default external service configuration
      */
     defaultConfig: string
+
+    /**
+     * An optional simple form that can be used for the most common configurations (instead of the
+     * more expressive JSON editor).
+     */
+    simpleForm?: SimpleExternalServiceForm
+}
+
+/**
+ * A simple form that handles the most common configurations for an external service.
+ */
+export interface SimpleExternalServiceForm {
+    /**
+     * Called to determine whether the current configuration JSONC value can be represented in the
+     * simple form. If the configuration contains any options that can't be displayed and edited
+     * (bidirectionally), it must return false.
+     */
+    supportsConfig: (config: string) => boolean
+
+    /**
+     * The simple form component.
+     */
+    component: React.FunctionComponent<{}>
 }
 
 const defaultFormattingOptions: FormattingOptions = {
@@ -508,6 +532,7 @@ const GITHUB_DOTCOM: AddExternalServiceOptions = {
   "token": "<access token>",
   "orgs": []
 }`,
+    simpleForm: githubSimpleForm,
 }
 const GITHUB_ENTERPRISE: AddExternalServiceOptions = {
     ...GITHUB_DOTCOM,

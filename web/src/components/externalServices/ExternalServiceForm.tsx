@@ -1,6 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
-import React, { useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { ErrorLike } from '../../../../shared/src/util/errors'
 import { Form } from '../Form'
@@ -10,7 +10,10 @@ import { ErrorAlert, ErrorMessage } from '../alerts'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { ThemeProps } from '../../../../shared/src/theme'
 
-interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions'>, ThemeProps, TelemetryProps {
+interface Props
+    extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions' | 'simpleForm'>,
+        ThemeProps,
+        TelemetryProps {
     history: H.History
     input: GQL.IAddExternalServiceInput
     error?: ErrorLike
@@ -33,6 +36,7 @@ export const ExternalServiceForm: React.FunctionComponent<Props> = ({
     telemetryService,
     jsonSchema,
     editorActions,
+    simpleForm,
     input,
     error,
     warning,
@@ -57,6 +61,10 @@ export const ExternalServiceForm: React.FunctionComponent<Props> = ({
         },
         [input, onChange]
     )
+
+    const [isShowingSimpleForm, setIsShowingSimpleForm] = useState(Boolean(simpleForm?.supportsConfig(input.config)))
+    const toggleIsShowingSimpleForm = useCallback(() => setIsShowingSimpleForm(previous => !previous), [])
+
     return (
         <Form className="external-service-form" onSubmit={onSubmit}>
             {error && <ErrorAlert error={error} history={history} />}
@@ -68,9 +76,7 @@ export const ExternalServiceForm: React.FunctionComponent<Props> = ({
             )}
             {hideDisplayNameField || (
                 <div className="form-group">
-                    <label className="font-weight-bold" htmlFor="test-external-service-form-display-name">
-                        Display name:
-                    </label>
+                    <label htmlFor="test-external-service-form-display-name">Display name</label>
                     <input
                         id="test-external-service-form-display-name"
                         type="text"
@@ -86,28 +92,49 @@ export const ExternalServiceForm: React.FunctionComponent<Props> = ({
                     />
                 </div>
             )}
-
-            <div className="form-group">
-                <DynamicallyImportedMonacoSettingsEditor
-                    // DynamicallyImportedMonacoSettingsEditor does not re-render the passed input.config
-                    // if it thinks the config is dirty. We want to always replace the config if the kind changes
-                    // so the editor is keyed on the kind.
-                    value={input.config}
-                    jsonSchema={jsonSchema}
-                    canEdit={false}
-                    loading={loading}
-                    height={350}
-                    isLightTheme={isLightTheme}
-                    onChange={onConfigChange}
-                    history={history}
-                    actions={editorActions}
-                    className="test-external-service-editor"
-                    telemetryService={telemetryService}
-                />
-                <p className="form-text text-muted">
-                    <small>Use Ctrl+Space for completion, and hover over JSON properties for documentation.</small>
-                </p>
-            </div>
+            {simpleForm && (
+                <>
+                    {isShowingSimpleForm && React.createElement(simpleForm.component, {})}
+                    <p>
+                        <button
+                            type="button"
+                            className="btn btn-link btn-sm px-0"
+                            onClick={toggleIsShowingSimpleForm}
+                            disabled={!simpleForm.supportsConfig(input.config)}
+                            title={
+                                simpleForm?.supportsConfig(input.config)
+                                    ? undefined
+                                    : 'The current configuration can only be displayed in the advanced JSON editor.'
+                            }
+                        >
+                            Show {isShowingSimpleForm ? 'advanced' : 'simple'} form
+                        </button>
+                    </p>
+                </>
+            )}
+            {!isShowingSimpleForm && (
+                <div className="form-group">
+                    <DynamicallyImportedMonacoSettingsEditor
+                        // DynamicallyImportedMonacoSettingsEditor does not re-render the passed input.config
+                        // if it thinks the config is dirty. We want to always replace the config if the kind changes
+                        // so the editor is keyed on the kind.
+                        value={input.config}
+                        jsonSchema={jsonSchema}
+                        canEdit={false}
+                        loading={loading}
+                        height={350}
+                        isLightTheme={isLightTheme}
+                        onChange={onConfigChange}
+                        history={history}
+                        actions={editorActions}
+                        className="test-external-service-editor"
+                        telemetryService={telemetryService}
+                    />
+                    <p className="form-text text-muted">
+                        <small>Use Ctrl+Space for completion, and hover over JSON properties for documentation.</small>
+                    </p>
+                </div>
+            )}
             <button
                 type="submit"
                 className={`btn btn-primary mb-3 ${
