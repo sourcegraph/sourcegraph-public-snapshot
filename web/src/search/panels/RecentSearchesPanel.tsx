@@ -96,7 +96,7 @@ export const RecentSearchesPanel: React.FunctionComponent<{
         </div>
     )
 
-    function setItems(): void {
+    function loadMoreItems(): void {
         setItemsToLoad(current => current + pageSize)
     }
 
