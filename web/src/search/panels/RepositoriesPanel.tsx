@@ -58,7 +58,7 @@ export const RepositoriesPanel: React.FunctionComponent<{
         }
     }, [searchEventLogs])
 
-    function setItems(): void {
+    function loadMoreItems(): void {
         setItemsToLoad(current => current + pageSize)
     }
 
