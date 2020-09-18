@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/migrations"
+	migrations "github.com/sourcegraph/sourcegraph/migrations/frontend"
 )
 
 const FirstMigration = 1528395684
@@ -48,6 +48,6 @@ func TestNeedsGenerate(t *testing.T) {
 	sort.Strings(want)
 	sort.Strings(got)
 	if !reflect.DeepEqual(got, want) {
-		t.Fatal("bindata out of date. Please run:\n  go generate github.com/sourcegraph/sourcegraph/migrations")
+		t.Fatal("bindata out of date. Please run:\n  go generate github.com/sourcegraph/sourcegraph/migrations/...")
 	}
 }
