@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../migrations"
+cd "$(dirname "${BASH_SOURCE[0]}")/../../migrations"
 
 hash migrate 2>/dev/null || {
   if [[ $(uname) == "Darwin" ]]; then
