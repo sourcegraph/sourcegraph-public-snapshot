@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd "$(dirname "${BASH_SOURCE[0]}")"/../../migrations
+cd "$(dirname "${BASH_SOURCE[0]}")"/../../migrations/frontend
 set -e
 
 if [ -z "$1" ]; then
