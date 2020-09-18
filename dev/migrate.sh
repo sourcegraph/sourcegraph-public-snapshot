@@ -13,4 +13,4 @@ hash migrate 2>/dev/null || {
   fi
 }
 
-migrate -database "postgres://${PGHOST}:${PGPORT}/${PGDATABASE}" -path ./migrations "$@"
+migrate -database "postgres://${PGHOST}:${PGPORT}/${PGDATABASE}" -path ./migrations/frontend "$@"
