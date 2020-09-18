@@ -102,7 +102,7 @@ export const RecentSearchesPanel: React.FunctionComponent<{
 
     const contentDisplay = (
         <>
-            <table className="recent-searches-panel__results-table">
+            <table className="recent-searches-panel__results-table mt-2">
                 <thead>
                     <tr className="recent-searches-panel__results-table-row">
                         <th>

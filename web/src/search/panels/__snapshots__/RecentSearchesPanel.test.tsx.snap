@@ -63,7 +63,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
     populatedContent={
       <React.Fragment>
         <table
-          className="recent-searches-panel__results-table"
+          className="recent-searches-panel__results-table mt-2"
         >
           <thead>
             <tr
@@ -162,7 +162,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
       className="recent-searches-panel panel-container d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom mb-2"
+        className="panel-container__header d-flex border-bottom"
       >
         <h3
           className="panel-container__header-text"
@@ -174,7 +174,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
         className="panel-container__content h-100"
       >
         <table
-          className="recent-searches-panel__results-table"
+          className="recent-searches-panel__results-table mt-2"
         >
           <thead>
             <tr
@@ -372,7 +372,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
     populatedContent={
       <React.Fragment>
         <table
-          className="recent-searches-panel__results-table"
+          className="recent-searches-panel__results-table mt-2"
         >
           <thead>
             <tr
@@ -525,7 +525,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
       className="recent-searches-panel panel-container d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom mb-2"
+        className="panel-container__header d-flex border-bottom"
       >
         <h3
           className="panel-container__header-text"
@@ -537,7 +537,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
         className="panel-container__content h-100"
       >
         <table
-          className="recent-searches-panel__results-table"
+          className="recent-searches-panel__results-table mt-2"
         >
           <thead>
             <tr
@@ -802,7 +802,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
     populatedContent={
       <React.Fragment>
         <table
-          className="recent-searches-panel__results-table"
+          className="recent-searches-panel__results-table mt-2"
         >
           <thead>
             <tr
@@ -897,7 +897,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
       className="recent-searches-panel panel-container d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom mb-2"
+        className="panel-container__header d-flex border-bottom"
       >
         <h3
           className="panel-container__header-text"
@@ -909,7 +909,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
         className="panel-container__content h-100"
       >
         <table
-          className="recent-searches-panel__results-table"
+          className="recent-searches-panel__results-table mt-2"
         >
           <thead>
             <tr

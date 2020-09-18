@@ -62,7 +62,9 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
       />
     }
     populatedContent={
-      <div>
+      <div
+        className="mt-2"
+      >
         <div
           className="d-flex mb-1"
         >
@@ -115,7 +117,7 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
       className="repositories-panel panel-container d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom mb-2"
+        className="panel-container__header d-flex border-bottom"
       >
         <h3
           className="panel-container__header-text"
@@ -126,7 +128,9 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
       <div
         className="panel-container__content h-100"
       >
-        <div>
+        <div
+          className="mt-2"
+        >
           <div
             className="d-flex mb-1"
           >
@@ -249,7 +253,9 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
       />
     }
     populatedContent={
-      <div>
+      <div
+        className="mt-2"
+      >
         <div
           className="d-flex mb-1"
         >
@@ -324,7 +330,7 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
       className="repositories-panel panel-container d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom mb-2"
+        className="panel-container__header d-flex border-bottom"
       >
         <h3
           className="panel-container__header-text"
@@ -335,7 +341,9 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
       <div
         className="panel-container__content h-100"
       >
-        <div>
+        <div
+          className="mt-2"
+        >
           <div
             className="d-flex mb-1"
           >
@@ -498,7 +506,9 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
       />
     }
     populatedContent={
-      <div>
+      <div
+        className="mt-2"
+      >
         <div
           className="d-flex mb-1"
         >
@@ -623,7 +633,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
       className="repositories-panel panel-container d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom mb-2"
+        className="panel-container__header d-flex border-bottom"
       >
         <h3
           className="panel-container__header-text"
@@ -634,7 +644,9 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
       <div
         className="panel-container__content h-100"
       >
-        <div>
+        <div
+          className="mt-2"
+        >
           <div
             className="d-flex mb-1"
           >
@@ -849,7 +861,9 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
       />
     }
     populatedContent={
-      <div>
+      <div
+        className="mt-2"
+      >
         <div
           className="d-flex mb-1"
         >
@@ -902,7 +916,7 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
       className="repositories-panel panel-container d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom mb-2"
+        className="panel-container__header d-flex border-bottom"
       >
         <h3
           className="panel-container__header-text"
@@ -913,7 +927,9 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
       <div
         className="panel-container__content h-100"
       >
-        <div>
+        <div
+          className="mt-2"
+        >
           <div
             className="d-flex mb-1"
           >

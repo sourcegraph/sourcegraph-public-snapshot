@@ -39,50 +39,48 @@ export const SavedSearchesPanel: React.FunctionComponent<{
     const loadingDisplay = <LoadingPanelView text="Loading saved searches" />
 
     const contentDisplay = (
-        <>
-            <div className="d-flex flex-column h-100">
-                <div className="d-flex justify-content-between mb-1">
-                    <small>Search</small>
-                    <small>Edit</small>
-                </div>
-                <dl className="list-group-flush flex-grow-1">
-                    {savedSearches
-                        ?.filter(search => (showAllSearches ? true : search.namespace.id === authenticatedUser?.id))
-                        .map(search => (
-                            <dd key={search.id} className="text-monospace test-saved-search-entry">
-                                <div className="d-flex justify-content-between">
-                                    <Link
-                                        to={'/search?' + buildSearchURLQuery(search.query, patternType, false)}
-                                        className="btn btn-link p-0"
-                                    >
-                                        {search.description}
-                                    </Link>
-                                    {authenticatedUser &&
-                                        (search.namespace.__typename === 'User' ? (
-                                            <Link to={`/users/${search.namespace.namespaceName}/searches/${search.id}`}>
-                                                <PencilOutlineIcon className="icon-inline" />
-                                            </Link>
-                                        ) : (
-                                            <Link
-                                                to={`/organizations/${search.namespace.namespaceName}/searches/${search.id}`}
-                                            >
-                                                <PencilOutlineIcon className="icon-inline" />
-                                            </Link>
-                                        ))}
-                                </div>
-                            </dd>
-                        ))}
-                </dl>
-                {authenticatedUser && (
-                    <Link
-                        to={`/users/${authenticatedUser.username}/searches`}
-                        className="btn btn-secondary w-100 text-left"
-                    >
-                        View saved searches
-                    </Link>
-                )}
+        <div className="d-flex flex-column h-100">
+            <div className="d-flex justify-content-between mb-1 mt-2">
+                <small>Search</small>
+                <small>Edit</small>
             </div>
-        </>
+            <dl className="list-group-flush flex-grow-1">
+                {savedSearches
+                    ?.filter(search => (showAllSearches ? true : search.namespace.id === authenticatedUser?.id))
+                    .map(search => (
+                        <dd key={search.id} className="text-monospace test-saved-search-entry">
+                            <div className="d-flex justify-content-between">
+                                <Link
+                                    to={'/search?' + buildSearchURLQuery(search.query, patternType, false)}
+                                    className="btn btn-link p-0"
+                                >
+                                    {search.description}
+                                </Link>
+                                {authenticatedUser &&
+                                    (search.namespace.__typename === 'User' ? (
+                                        <Link to={`/users/${search.namespace.namespaceName}/searches/${search.id}`}>
+                                            <PencilOutlineIcon className="icon-inline" />
+                                        </Link>
+                                    ) : (
+                                        <Link
+                                            to={`/organizations/${search.namespace.namespaceName}/searches/${search.id}`}
+                                        >
+                                            <PencilOutlineIcon className="icon-inline" />
+                                        </Link>
+                                    ))}
+                            </div>
+                        </dd>
+                    ))}
+            </dl>
+            {authenticatedUser && (
+                <Link
+                    to={`/users/${authenticatedUser.username}/searches`}
+                    className="btn btn-secondary w-100 text-left"
+                >
+                    View saved searches
+                </Link>
+            )}
+        </div>
     )
     const actionButtons = (
         <div className="panel-container__action-button-group">

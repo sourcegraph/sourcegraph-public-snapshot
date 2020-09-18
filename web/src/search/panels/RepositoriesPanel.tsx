@@ -63,7 +63,7 @@ export const RepositoriesPanel: React.FunctionComponent<{
     }
 
     const contentDisplay = (
-        <div>
+        <div className="mt-2">
             <div className="d-flex mb-1">
                 <small>Search</small>
             </div>

@@ -51,7 +51,9 @@ export const RecentFilesPanel: React.FunctionComponent<{
 
     const contentDisplay = (
         <div>
-            <small className="mb-1">File</small>
+            <div className="mb-1 mt-2">
+                <small>File</small>
+            </div>
             <dl className="list-group-flush">
                 {processedResults?.map((recentFile, index) => (
                     <dd key={index} className="text-monospace test-recent-files-item">
