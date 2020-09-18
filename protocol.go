@@ -36,5 +36,6 @@ type searchResultsAlert struct {
 }
 
 type metrics struct {
-	took int64
+	took  int64
+	trace string
 }

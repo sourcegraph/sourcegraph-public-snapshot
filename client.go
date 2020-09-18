@@ -55,6 +55,7 @@ func (s *client) search(ctx context.Context, queryString string) (*result, *metr
 	}
 
 	req.Header.Set("Authorization", "token "+s.token)
+	req.Header.Set("X-Sourcegraph-Should-Trace", "true")
 
 	start := time.Now()
 	resp, err := s.client.Do(req)
@@ -71,6 +72,8 @@ func (s *client) search(ctx context.Context, queryString string) (*result, *metr
 	default:
 		return nil, nil, fmt.Errorf("Unexpected status code", resp.StatusCode)
 	}
+
+	m.trace = resp.Header.Get("x-trace")
 
 	// Decode the response.
 	respDec := rawResult{Data: result{}}
