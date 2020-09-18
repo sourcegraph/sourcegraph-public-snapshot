@@ -106,16 +106,20 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     const query = useMemo(() => parseSearchURLQuery(location.search || ''), [location.search])
 
     useEffect(() => {
+        // On a non-search related page or non-repo page, we clear the query in
+        // the main query input and interactive mode UI to avoid misleading users
+        // that the query is relevant in any way on those pages.
+        if (!isSearchRelatedPage) {
+            onNavbarQueryChange({ query: '', cursorPosition: 0 })
+            onFiltersInQueryChange({})
+            return
+        }
+        // Do nothing if there is no query in the URL
         if (!query) {
             return
         }
-        if (!isSearchRelatedPage) {
-            // On a non-search related page or non-repo page, we clear the query in
-            // the main query input and interactive mode UI to avoid misleading users
-            // that the query is relevant in any way on those pages.
-            onNavbarQueryChange({ query: '', cursorPosition: 0 })
-            onFiltersInQueryChange({})
-        } else if (interactiveSearchMode) {
+        // If the URL contains a query, update the query state to reflect it
+        if (interactiveSearchMode) {
             let filtersInQuery: FiltersToTypeAndValue = {}
             const { filtersInQuery: newFiltersInQuery, navbarQuery } = convertPlainTextToInteractiveQuery(query)
             filtersInQuery = { ...filtersInQuery, ...newFiltersInQuery }
@@ -124,7 +128,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         } else {
             onNavbarQueryChange({ query, cursorPosition: query.length })
         }
-    }, [interactiveSearchMode, isSearchRelatedPage, onFiltersInQueryChange, onNavbarQueryChange, query])
+    }, [interactiveSearchMode, isSearchRelatedPage, onFiltersInQueryChange, onNavbarQueryChange, query, location])
 
     const logo = (
         <LinkOrSpan to={authRequired ? undefined : '/search'} className="global-navbar__logo-link">
