@@ -188,7 +188,7 @@ describe('RepositoriesPanel', () => {
             className: '',
             authenticatedUser: null,
             fetchRecentSearches: (_userId: string, first: number) =>
-                first === 20 ? of(recentSearches1) : of(recentSearches2),
+                first === 50 ? of(recentSearches1) : of(recentSearches2),
         }
 
         const component = mount(<RepositoriesPanel {...props} />)
