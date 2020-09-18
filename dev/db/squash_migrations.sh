@@ -31,11 +31,11 @@ fi
 
 # Find the last migration defined in the given tag
 VERSION=$(git ls-tree -r --name-only "$1" "${target}" |
-  cut -d'_' -f1 |
-  cut -d'/' -f2 |
-  grep -v "[^0-9]" |
-  sort |
-  tail -n1)
+  cut -d'_' -f1 |    # Keep only prefix
+  cut -d'/' -f2 |    # Remove any leading ../
+  grep -v "[^0-9]" | # Remove non-numeric remainders
+  sort |             # Sort by id prefix
+  tail -n1)          # Get latest migration
 
 if [ -z "${VERSION}" ]; then
   echo "failed to retrieve migration version"
