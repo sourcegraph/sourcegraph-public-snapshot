@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
@@ -12,6 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
+// TODO - rename
+// TODO - document
 func MigrateBundleToPostgres(ctx context.Context, dumpID int, filename string, to dbutil.DB) (err error) {
 	from, closer, err := sqlitestore.Open(filename)
 	if err != nil {
@@ -42,7 +45,7 @@ func MigrateBundleToPostgres(ctx context.Context, dumpID int, filename string, t
 	return nil
 }
 
-func migrateMeta(ctx context.Context, from *sqlitestore.Store, to dbutil.DB, dumpID int) (err error) {
+func migrateMeta(ctx context.Context, from *sqlitestore.Store, to dbutil.DB, dumpID int) error {
 	values, err := sqlitestore.ScanInts(from.Query(ctx, sqlf.Sprintf(`SELECT num_result_chunks FROM meta`)))
 	if err != nil {
 		return err
@@ -59,14 +62,38 @@ func migrateMeta(ctx context.Context, from *sqlitestore.Store, to dbutil.DB, dum
 	})
 }
 
-func migrateDocuments(ctx context.Context, from *sqlitestore.Store, to dbutil.DB, dumpID int) (err error) {
-	documents, err := scanDocuments(from.Query(ctx, sqlf.Sprintf(`SELECT path, data FROM documents`)))
-	if err != nil {
-		return err
-	}
+type document struct {
+	path string
+	data string
+	err  error
+}
+
+func migrateDocuments(ctx context.Context, from *sqlitestore.Store, to dbutil.DB, dumpID int) error {
+	ch := make(chan document)
+	go func() {
+		defer close(ch)
+
+		scan := func(rows *sql.Rows) error {
+			var value document
+			if err := rows.Scan(&value.path, &value.data); err != nil {
+				return err
+			}
+
+			ch <- value
+			return nil
+		}
+
+		if err := foreachRow(ctx, from, sqlf.Sprintf(`SELECT path, data FROM documents`), scan); err != nil {
+			ch <- document{err: err}
+		}
+	}()
 
 	return withBatchInserter(ctx, to, "lsif_data_documents", []string{"dump_id", "path", "data"}, func(inserter *BatchInserter) error {
-		for document := range documents {
+		for document := range ch {
+			if document.err != nil {
+				return document.err
+			}
+
 			if err := inserter.Insert(ctx, dumpID, document.path, document.data); err != nil {
 				return err
 			}
@@ -76,14 +103,38 @@ func migrateDocuments(ctx context.Context, from *sqlitestore.Store, to dbutil.DB
 	})
 }
 
-func migrateResultChunks(ctx context.Context, from *sqlitestore.Store, to dbutil.DB, dumpID int) (err error) {
-	resultChunks, err := scanResultChunks(from.Query(ctx, sqlf.Sprintf(`SELECT id, data FROM result_chunks`)))
-	if err != nil {
-		return err
-	}
+type resultChunk struct {
+	index int
+	data  string
+	err   error
+}
+
+func migrateResultChunks(ctx context.Context, from *sqlitestore.Store, to dbutil.DB, dumpID int) error {
+	ch := make(chan resultChunk)
+	go func() {
+		defer close(ch)
+
+		scan := func(rows *sql.Rows) error {
+			var value resultChunk
+			if err := rows.Scan(&value.index, &value.data); err != nil {
+				return err
+			}
+
+			ch <- value
+			return nil
+		}
+
+		if err := foreachRow(ctx, from, sqlf.Sprintf(`SELECT id, data FROM result_chunks`), scan); err != nil {
+			ch <- resultChunk{err: err}
+		}
+	}()
 
 	return withBatchInserter(ctx, to, "lsif_data_result_chunks", []string{"dump_id", "idx", "data"}, func(inserter *BatchInserter) error {
-		for resultChunk := range resultChunks {
+		for resultChunk := range ch {
+			if resultChunk.err != nil {
+				return resultChunk.err
+			}
+
 			if err := inserter.Insert(ctx, dumpID, resultChunk.index, resultChunk.data); err != nil {
 				return err
 			}
@@ -94,107 +145,11 @@ func migrateResultChunks(ctx context.Context, from *sqlitestore.Store, to dbutil
 }
 
 func migrateDefinitions(ctx context.Context, from *sqlitestore.Store, to dbutil.DB, dumpID int) (err error) {
-	locations, err := scanLocations(from.Query(ctx, sqlf.Sprintf(`SELECT scheme, identifier, data FROM definitions`)))
-	if err != nil {
-		return err
-	}
-
-	return withBatchInserter(ctx, to, "lsif_data_definitions", []string{"dump_id", "scheme", "identifier", "data"}, func(inserter *BatchInserter) error {
-		for location := range locations {
-			if err := inserter.Insert(ctx, dumpID, location.scheme, location.identifier, location.data); err != nil {
-				return err
-			}
-		}
-
-		return nil
-	})
+	return migrateDefinitionReferences(ctx, "definitions", from, to, dumpID)
 }
 
 func migrateReferences(ctx context.Context, from *sqlitestore.Store, to dbutil.DB, dumpID int) (err error) {
-	locations, err := scanLocations(from.Query(ctx, sqlf.Sprintf(`SELECT scheme, identifier, data FROM "references"`)))
-	if err != nil {
-		return err
-	}
-
-	return withBatchInserter(ctx, to, "lsif_data_references", []string{"dump_id", "scheme", "identifier", "data"}, func(inserter *BatchInserter) error {
-		for location := range locations {
-			if err := inserter.Insert(ctx, dumpID, location.scheme, location.identifier, location.data); err != nil {
-				return err
-			}
-		}
-
-		return nil
-	})
-}
-
-type document struct {
-	path string
-	data string
-	err  error
-}
-
-func scanDocuments(rows *sql.Rows, queryErr error) (<-chan document, error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-
-	ch := make(chan document)
-	go func() {
-		defer close(ch)
-
-		defer func() {
-			if err := basestore.CloseRows(rows, nil); err != nil {
-				ch <- document{err: err}
-			}
-		}()
-
-		for rows.Next() {
-			var value document
-			if err := rows.Scan(&value.path, &value.data); err != nil {
-				ch <- document{err: err}
-				return
-			}
-
-			ch <- value
-		}
-	}()
-
-	return ch, nil
-}
-
-type resultChunk struct {
-	index int
-	data  string
-	err   error
-}
-
-func scanResultChunks(rows *sql.Rows, queryErr error) (<-chan resultChunk, error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-
-	ch := make(chan resultChunk)
-	go func() {
-		defer close(ch)
-
-		defer func() {
-			if err := basestore.CloseRows(rows, nil); err != nil {
-				ch <- resultChunk{err: err}
-			}
-		}()
-
-		for rows.Next() {
-			var value resultChunk
-			if err := rows.Scan(&value.index, &value.data); err != nil {
-				ch <- resultChunk{err: err}
-				return
-			}
-
-			ch <- value
-		}
-	}()
-
-	return ch, nil
+	return migrateDefinitionReferences(ctx, "references", from, to, dumpID)
 }
 
 type location struct {
@@ -204,31 +159,59 @@ type location struct {
 	err        error
 }
 
-func scanLocations(rows *sql.Rows, queryErr error) (<-chan location, error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-
+func migrateDefinitionReferences(ctx context.Context, tableName string, from *sqlitestore.Store, to dbutil.DB, dumpID int) (err error) {
 	ch := make(chan location)
 	go func() {
 		defer close(ch)
 
-		defer func() {
-			if err := basestore.CloseRows(rows, nil); err != nil {
-				ch <- location{err: err}
-			}
-		}()
-
-		for rows.Next() {
+		scan := func(rows *sql.Rows) error {
 			var value location
 			if err := rows.Scan(&value.scheme, &value.identifier, &value.data); err != nil {
-				ch <- location{err: err}
-				return
+				return err
 			}
 
 			ch <- value
+			return nil
+		}
+
+		if err := foreachRow(ctx, from, sqlf.Sprintf(`SELECT scheme, identifier, data FROM "`+tableName+`"`), scan); err != nil {
+			ch <- location{err: err}
 		}
 	}()
 
-	return ch, nil
+	return withBatchInserter(ctx, to, fmt.Sprintf("lsif_data_%s", tableName), []string{"dump_id", "scheme", "identifier", "data"}, func(inserter *BatchInserter) error {
+		for location := range ch {
+			if location.err != nil {
+				return location.err
+			}
+
+			if err := inserter.Insert(ctx, dumpID, location.scheme, location.identifier, location.data); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
+
+// TODO - document
+func foreachRow(ctx context.Context, store *sqlitestore.Store, query *sqlf.Query, f func(rows *sql.Rows) error) (err error) {
+	rows, err := store.Query(ctx, query)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if closeErr := basestore.CloseRows(rows, nil); closeErr != nil {
+			err = multierror.Append(err, closeErr)
+		}
+	}()
+
+	for rows.Next() {
+		if err := f(rows); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

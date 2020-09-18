@@ -4,35 +4,39 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
+// TODO - document
 type BatchInserter struct {
-	db                dbutil.DB
-	numColumns        int
-	maxBatchSize      int
-	batch             []interface{}
-	queryPrefix       string
-	queryPlaceholders []string
+	db           dbutil.DB
+	numColumns   int
+	maxBatchSize int
+	batch        []interface{}
+	queryPrefix  string
+	querySuffix  string
 }
 
+// TODO - document
 func NewBatchInserter(ctx context.Context, db dbutil.DB, tableName string, columnNames ...string) *BatchInserter {
 	numColumns := len(columnNames)
 	maxBatchSize := getMaxBatchSize(numColumns)
 	queryPrefix := makeQueryPrefix(tableName, columnNames)
-	queryPlaceholders := makeQueryPlaceholders(numColumns)
+	querySuffix := makeQuerySuffix(numColumns)
 
 	return &BatchInserter{
-		db:                db,
-		numColumns:        numColumns,
-		maxBatchSize:      maxBatchSize,
-		batch:             make([]interface{}, 0, maxBatchSize),
-		queryPrefix:       queryPrefix,
-		queryPlaceholders: queryPlaceholders,
+		db:           db,
+		numColumns:   numColumns,
+		maxBatchSize: maxBatchSize,
+		batch:        make([]interface{}, 0, maxBatchSize),
+		queryPrefix:  queryPrefix,
+		querySuffix:  querySuffix,
 	}
 }
 
+// TODO - document
 func (i *BatchInserter) Insert(ctx context.Context, values ...interface{}) error {
 	if len(values) != i.numColumns {
 		return fmt.Errorf("expected %d values, got %d", i.numColumns, len(values))
@@ -52,12 +56,20 @@ func (i *BatchInserter) Insert(ctx context.Context, values ...interface{}) error
 // of insertion to ensure that all records are flushed to the underlying Execable.
 func (i *BatchInserter) Flush(ctx context.Context) error {
 	if batch := i.pop(); len(batch) != 0 {
-		// Create a query with enough placeholders to match the current batch size. This should
-		// generally be the full queryPlaceholders slice, except for the last call to Flush which
-		// may be a partial batch.
-		query := i.queryPrefix + strings.Join(i.queryPlaceholders[:len(batch)/i.numColumns], ",")
+		// ($xxxxx,$xxxxx,...)
+		//  ^^^^^^^ * n - 1 (extra comma) + 2 (parens)
+		rowSize := (7*i.numColumns + 1)
 
-		if _, err := i.db.ExecContext(ctx, query, batch...); err != nil {
+		// Determine number of rows being flushed
+		numRows := len(batch) / i.numColumns
+
+		// Account for commas separating rows
+		n := numRows*rowSize + (numRows - 1)
+
+		// Create a query with enough placeholders to match the current batch size. This should
+		// generally be the full querySuffix string, except for the last call to Flush which
+		// may be a partial batch.
+		if _, err := i.db.ExecContext(ctx, i.queryPrefix+i.querySuffix[:n], batch...); err != nil {
 			return err
 		}
 	}
@@ -65,6 +77,7 @@ func (i *BatchInserter) Flush(ctx context.Context) error {
 	return nil
 }
 
+// TODO - document
 func (i *BatchInserter) pop() (batch []interface{}) {
 	if len(i.batch) < i.maxBatchSize {
 		batch, i.batch = i.batch, i.batch[:0]
@@ -75,12 +88,15 @@ func (i *BatchInserter) pop() (batch []interface{}) {
 	return batch
 }
 
+// TODO - document
 const maxNumPostgresParameters = 32767
 
+// TODO - document
 func getMaxBatchSize(numColumns int) int {
 	return (maxNumPostgresParameters / numColumns) * numColumns
 }
 
+// TODO - document
 func makeQueryPrefix(tableName string, columnNames []string) string {
 	quotedColumnNames := make([]string, 0, len(columnNames))
 	for _, columnName := range columnNames {
@@ -90,18 +106,32 @@ func makeQueryPrefix(tableName string, columnNames []string) string {
 	return fmt.Sprintf(`INSERT INTO "%s" (%s) VALUES `, tableName, strings.Join(quotedColumnNames, ","))
 }
 
-func makeQueryPlaceholders(numColumns int) []string {
-	maxBatchSize := getMaxBatchSize(numColumns)
+// TODO - rename
+// TODO - document
+var m sync.Mutex
+var querySuffixCache = map[int]string{}
 
-	queryPlaceholders := make([]string, 0, maxBatchSize/numColumns)
-	for i := 0; i < maxNumPostgresParameters; i += numColumns {
-		placeholders := make([]string, 0, numColumns)
-		for j := 0; j < numColumns; j++ {
-			placeholders = append(placeholders, fmt.Sprintf("$%d", i+j+1))
-		}
-
-		queryPlaceholders = append(queryPlaceholders, fmt.Sprintf("(%s)", strings.Join(placeholders, ",")))
+// TODO - document
+func makeQuerySuffix(numColumns int) string {
+	m.Lock()
+	defer m.Unlock()
+	if cache, ok := querySuffixCache[numColumns]; ok {
+		return cache
 	}
 
-	return queryPlaceholders
+	// TODO - clean up logic here
+	qs := []byte{','}
+	for i := 0; i < maxNumPostgresParameters; i++ {
+		if i%numColumns == 0 {
+			qs[len(qs)-1] = ')'
+			qs = append(qs, ',', '(')
+		}
+		qs = append(qs, []byte(fmt.Sprintf("$%05d", i+1))...)
+		qs = append(qs, ',')
+	}
+	qs[len(qs)-1] = ')'
+
+	querySuffix := string(qs[2:])
+	querySuffixCache[numColumns] = querySuffix
+	return querySuffix
 }
