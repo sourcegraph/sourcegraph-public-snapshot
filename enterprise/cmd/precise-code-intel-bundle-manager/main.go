@@ -44,6 +44,8 @@ func main() {
 		disableJanitor      = mustParseBool(rawDisableJanitor, "PRECISE_CODE_INTEL_DISABLE_JANITOR")
 	)
 
+	codeIntelDB := // TODO
+
 	storeCache, err := sqlitereader.NewStoreCache(readerDataCacheSize)
 	if err != nil {
 		log.Fatalf("failed to initialize reader cache: %s", err)
@@ -57,7 +59,7 @@ func main() {
 		log.Fatalf("failed to migrate paths: %s", err)
 	}
 
-	if err := readers.Migrate(bundleDir, storeCache); err != nil {
+	if err := readers.Migrate(bundleDir, storeCache, codeIntelDB); err != nil {
 		log.Fatalf("failed to migrate readers: %s", err)
 	}
 
