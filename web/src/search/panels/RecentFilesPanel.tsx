@@ -45,7 +45,7 @@ export const RecentFilesPanel: React.FunctionComponent<{
         </div>
     )
 
-    function setItems(): void {
+    function loadMoreItems(): void {
         setItemsToLoad(current => current + pageSize)
     }
 
