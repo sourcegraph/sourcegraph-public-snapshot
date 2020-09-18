@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 
 	"github.com/inconshreveable/log15"
@@ -52,6 +53,8 @@ func main() {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
+	_ = mustInitializeCodeIntelDatabase()
+
 	store := store.NewObserved(mustInitializeStore(), observationContext)
 	MustRegisterQueueMonitor(observationContext.Registerer, store)
 	workerMetrics := metrics.NewWorkerMetrics(observationContext)
@@ -92,4 +95,20 @@ func mustInitializeStore() store.Store {
 	}
 
 	return store.NewWithHandle(basestore.NewHandleWithDB(dbconn.Global))
+}
+
+func mustInitializeCodeIntelDatabase() *sql.DB {
+	postgresDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN
+	conf.Watch(func() {
+		if newDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN; postgresDSN != newDSN {
+			log.Fatalf("detected database DSN change, restarting to take effect: %s", newDSN)
+		}
+	})
+
+	db, err := dbconn.New(postgresDSN, "_codeintel")
+	if err != nil {
+		log.Fatalf("failed to connect to database: %s", err)
+	}
+
+	return db
 }
