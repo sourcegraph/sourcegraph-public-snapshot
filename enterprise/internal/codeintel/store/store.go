@@ -80,6 +80,9 @@ type Store interface {
 	// that were removed for that repository.
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
 
+	// HardDeleteUploadByID deletes the upload record with the given identifier.
+	HardDeleteUploadByID(ctx context.Context, id int) error
+
 	// ResetStalled moves all unlocked uploads processing for more than `StalledUploadMaxAge` back to the queued state.
 	// In order to prevent input that continually crashes worker instances, uploads that have been reset more than
 	// UploadMaxNumResets times will be marked as errored. This method returns a list of updated and errored upload
