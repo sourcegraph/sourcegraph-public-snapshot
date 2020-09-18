@@ -52,6 +52,8 @@ func main() {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
+	codeIntelDB := // TODO
+
 	store := store.NewObserved(mustInitializeStore(), observationContext)
 	MustRegisterQueueMonitor(observationContext.Registerer, store)
 	workerMetrics := metrics.NewWorkerMetrics(observationContext)
@@ -67,6 +69,7 @@ func main() {
 	)
 	worker := worker.NewWorker(
 		store,
+		codeIntelDB,
 		bundles.New(bundleManagerURL),
 		gitserver.DefaultClient,
 		workerPollInterval,
