@@ -51,6 +51,12 @@ All interactions with the code host are performed by Sourcegraph with the token 
 - Updating a changeset
 - Closing a changeset
 
+See these code host specific pages for which permissions and scopes the tokens require:
+
+- [GitHub](../../admin/external_service/github.md#github-api-token-and-access)
+- [GitLab](../../admin/external_service/gitlab.md#access-token-scopes)
+- [Bitbucket Server](../../admin/external_service/gitlab.md#access-token-permissions)
+
 In the future you'll be able to perform all code host interactions with a separate access token or your personal code host account.
 
 ## Repository permissions for campaigns
