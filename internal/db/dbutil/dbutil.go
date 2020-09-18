@@ -23,7 +23,8 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	migrations "github.com/sourcegraph/sourcegraph/migrations/frontend"
+	codeintelMigrations "github.com/sourcegraph/sourcegraph/migrations/codeintel"
+	frontendMigrations "github.com/sourcegraph/sourcegraph/migrations/frontend"
 )
 
 // Transaction calls f within a transaction, rolling back if any error is
@@ -113,18 +114,52 @@ func NewDB(dsn, app string) (*sql.DB, error) {
 	return db, nil
 }
 
-func NewMigrationSourceLoader(dataSource string) *bindata.AssetSource {
-	return bindata.Resource(migrations.AssetNames(), migrations.Asset)
+var databases = map[string]struct {
+	MigrationsTable string
+	Resource        *bindata.AssetSource
+}{
+	"frontend": {
+		MigrationsTable: "schema_migrations",
+		Resource:        bindata.Resource(frontendMigrations.AssetNames(), frontendMigrations.Asset),
+	},
+	"codeintel": {
+		MigrationsTable: "codeintel_schema_migrations",
+		Resource:        bindata.Resource(codeintelMigrations.AssetNames(), codeintelMigrations.Asset),
+	},
 }
 
-func NewMigrate(db *sql.DB, dataSource string) (*migrate.Migrate, error) {
-	var cfg postgres.Config
-	driver, err := postgres.WithInstance(db, &cfg)
+var DatabaseNames = func() []string {
+	var names []string
+	for databaseName := range databases {
+		names = append(names, databaseName)
+	}
+
+	return names
+}()
+
+var MigrationTables = func() []string {
+	var migrationTables []string
+	for _, db := range databases {
+		migrationTables = append(migrationTables, db.MigrationsTable)
+	}
+
+	return migrationTables
+}()
+
+func NewMigrate(db *sql.DB, databaseName string) (*migrate.Migrate, error) {
+	schemaData, ok := databases[databaseName]
+	if !ok {
+		return nil, fmt.Errorf("unknown database '%s'", databaseName)
+	}
+
+	driver, err := postgres.WithInstance(db, &postgres.Config{
+		MigrationsTable: schemaData.MigrationsTable,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	d, err := bindata.WithInstance(NewMigrationSourceLoader(dataSource))
+	d, err := bindata.WithInstance(schemaData.Resource)
 	if err != nil {
 		return nil, err
 	}

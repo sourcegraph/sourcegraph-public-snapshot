@@ -72,8 +72,8 @@ func New(dataSource, dbNameSuffix string) (*sql.DB, error) {
 	return db, nil
 }
 
-func MigrateDB(db *sql.DB, dataSource string) error {
-	m, err := dbutil.NewMigrate(db, dataSource)
+func MigrateDB(db *sql.DB, databaseName string) error {
+	m, err := dbutil.NewMigrate(db, databaseName)
 	if err != nil {
 		return err
 	}
