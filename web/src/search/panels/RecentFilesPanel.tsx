@@ -62,7 +62,9 @@ export const RecentFilesPanel: React.FunctionComponent<{
                 ))}
             </dl>
             {recentFiles?.pageInfo.hasNextPage && (
-                <ShowMoreButton onClick={setItems} className="test-recent-files-panel-show-more" />
+                <div className="test-recent-files-show-more-container">
+                    <ShowMoreButton onClick={setItems} className="test-recent-files-panel-show-more" />
+                </div>
             )}
         </div>
     )
