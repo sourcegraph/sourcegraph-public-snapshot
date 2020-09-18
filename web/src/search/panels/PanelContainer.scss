@@ -10,13 +10,13 @@
     }
 
     &__action-button-group {
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.125rem;
         font-size: 12px;
     }
 
     &__action-button {
         font-size: 12px;
-        line-height: 16px;
+        line-height: 16px !important;
     }
 
     &__empty-container {
