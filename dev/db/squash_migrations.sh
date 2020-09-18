@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../../migrations"
+cd "$(dirname "${BASH_SOURCE[0]}")/../../migrations/frontend"
 
 hash migrate 2>/dev/null || {
   if [[ $(uname) == "Darwin" ]]; then
@@ -24,12 +24,21 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
+target='./'
+if [ -z "$(git ls-tree -r --name-only "$1" "./")" ]; then
+  # If we're squashing migrations no a tagged version where the
+  # migrations/frontend directory does not exist, scan the files
+  # in the parent directory where they were located previously.
+  target='../'
+fi
+
 # Find the last migration defined in the given tag
-VERSION=$(git ls-tree -r --name-only "$1" ./ |
-  cut -d'_' -f1 |
-  grep -v "[^0-9]" |
-  sort |
-  tail -n1)
+VERSION=$(git ls-tree -r --name-only "$1" "${target}" |
+  cut -d'_' -f1 |    # Keep only prefix
+  cut -d'/' -f2 |    # Remove any leading ../
+  grep -v "[^0-9]" | # Remove non-numeric remainders
+  sort |             # Sort by id prefix
+  tail -n1)          # Get latest migration
 
 if [ -z "${VERSION}" ]; then
   echo "failed to retrieve migration version"
