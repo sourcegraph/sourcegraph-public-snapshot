@@ -57,7 +57,7 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
       </div>
     }
     loadingContent={
-      <LoadingModal
+      <LoadingPanelView
         text="Loading recently searched repositories"
       />
     }
@@ -244,7 +244,7 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
       </div>
     }
     loadingContent={
-      <LoadingModal
+      <LoadingPanelView
         text="Loading recently searched repositories"
       />
     }
@@ -493,7 +493,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
       </div>
     }
     loadingContent={
-      <LoadingModal
+      <LoadingPanelView
         text="Loading recently searched repositories"
       />
     }
@@ -844,7 +844,7 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
       </div>
     }
     loadingContent={
-      <LoadingModal
+      <LoadingPanelView
         text="Loading recently searched repositories"
       />
     }
