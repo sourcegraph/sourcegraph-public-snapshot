@@ -10,7 +10,7 @@ import { EventLogResult } from '../backend'
 import { Link } from '../../../../shared/src/components/Link'
 import { FilterType } from '../../../../shared/src/search/interactive/util'
 import { FILTERS } from '../../../../shared/src/search/parser/filters'
-import { LoadingModal } from './LoadingModal'
+import { LoadingPanelView } from './LoadingPanelView'
 import { ShowMoreButton } from './ShowMoreButton'
 
 export const RepositoriesPanel: React.FunctionComponent<{
@@ -21,7 +21,7 @@ export const RepositoriesPanel: React.FunctionComponent<{
     const pageSize = 20
     const [itemsToLoad, setItemsToLoad] = useState(pageSize)
 
-    const loadingDisplay = <LoadingModal text="Loading recently searched repositories" />
+    const loadingDisplay = <LoadingPanelView text="Loading recently searched repositories" />
 
     const emptyDisplay = (
         <div className="panel-container__empty-container text-muted">
@@ -76,7 +76,7 @@ export const RepositoriesPanel: React.FunctionComponent<{
                 </dd>
             ))}
             {searchEventLogs?.pageInfo.hasNextPage && (
-                <ShowMoreButton className="test-repositories-panel-show-more" onClick={setItems} />
+                <ShowMoreButton className="test-repositories-panel-show-more" onClick={loadMoreItems} />
             )}
         </div>
     )

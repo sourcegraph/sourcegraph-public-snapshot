@@ -7,7 +7,7 @@ import { Observable } from 'rxjs'
 import { PanelContainer } from './PanelContainer'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { Link } from '../../../../shared/src/components/Link'
-import { LoadingModal } from './LoadingModal'
+import { LoadingPanelView } from './LoadingPanelView'
 import { ShowMoreButton } from './ShowMoreButton'
 
 export const RecentFilesPanel: React.FunctionComponent<{
@@ -36,7 +36,7 @@ export const RecentFilesPanel: React.FunctionComponent<{
         }
     }, [recentFiles])
 
-    const loadingDisplay = <LoadingModal text="Loading recent files" />
+    const loadingDisplay = <LoadingPanelView text="Loading recent files" />
 
     const emptyDisplay = (
         <div className="panel-container__empty-container align-items-center text-muted">
@@ -63,7 +63,7 @@ export const RecentFilesPanel: React.FunctionComponent<{
             </dl>
             {recentFiles?.pageInfo.hasNextPage && (
                 <div className="test-recent-files-show-more-container">
-                    <ShowMoreButton onClick={setItems} className="test-recent-files-panel-show-more" />
+                    <ShowMoreButton onClick={loadMoreItems} className="test-recent-files-panel-show-more" />
                 </div>
             )}
         </div>

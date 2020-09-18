@@ -9,7 +9,7 @@ import { AuthenticatedUser } from '../../auth'
 import PencilOutlineIcon from 'mdi-react/PencilOutlineIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 import { Observable } from 'rxjs'
-import { LoadingModal } from './LoadingModal'
+import { LoadingPanelView } from './LoadingPanelView'
 
 export const SavedSearchesPanel: React.FunctionComponent<{
     patternType: SearchPatternType
@@ -36,7 +36,7 @@ export const SavedSearchesPanel: React.FunctionComponent<{
             )}
         </div>
     )
-    const loadingDisplay = <LoadingModal text="Loading saved searches" />
+    const loadingDisplay = <LoadingPanelView text="Loading saved searches" />
 
     const contentDisplay = (
         <>

@@ -9,7 +9,7 @@ import { PanelContainer } from './PanelContainer'
 import { SearchPatternType } from '../../graphql-operations'
 import { Timestamp } from '../../components/time/Timestamp'
 import { useObservable } from '../../../../shared/src/util/useObservable'
-import { LoadingModal } from './LoadingModal'
+import { LoadingPanelView } from './LoadingPanelView'
 import { ShowMoreButton } from './ShowMoreButton'
 
 interface RecentSearch {
@@ -46,7 +46,7 @@ export const RecentSearchesPanel: React.FunctionComponent<{
         }
     }, [recentSearches])
 
-    const loadingDisplay = <LoadingModal text="Loading recent searches" />
+    const loadingDisplay = <LoadingPanelView text="Loading recent searches" />
     const emptyDisplay = (
         <div className="panel-container__empty-container text-muted">
             <small className="mb-2">
@@ -137,7 +137,7 @@ export const RecentSearchesPanel: React.FunctionComponent<{
                 </tbody>
             </table>
             {recentSearches?.pageInfo.hasNextPage && (
-                <ShowMoreButton onClick={setItems} className="test-recent-searches-panel-show-more" />
+                <ShowMoreButton onClick={loadMoreItems} className="test-recent-searches-panel-show-more" />
             )}
         </>
     )
