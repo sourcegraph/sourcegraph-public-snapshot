@@ -2274,6 +2274,16 @@ type Query {
     namespace(id: ID!): Namespace
 
     """
+    Look up a namespace by name, which is a username or organization name.
+    """
+    namespaceByName(
+        """
+        The name of the namespace.
+        """
+        name: String!
+    ): Namespace
+
+    """
     The repositories a user is authorized to access with the given permission.
     This isn’t defined in the User type because we store permissions for users
     that don’t yet exist (i.e. late binding). Only one of "username" or "email"
