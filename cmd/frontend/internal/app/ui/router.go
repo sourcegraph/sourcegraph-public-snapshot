@@ -71,6 +71,7 @@ const (
 
 	routeSearchQueryBuilder = "search.query-builder"
 	routeSearchStream       = "search.stream"
+	routeSearchConsole       = "search.console"
 
 	// Legacy redirects
 	routeLegacyLogin                   = "login"
@@ -113,6 +114,7 @@ func newRouter() *mux.Router {
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
 	r.Path("/search/query-builder").Methods("GET").Name(routeSearchQueryBuilder)
 	r.Path("/search/stream").Methods("GET").Name(routeSearchStream)
+	r.Path("/search/console").Methods("GET").Name(routeSearchConsole)
 	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
 	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
 	r.PathPrefix("/insights").Methods("GET").Name(routeInsights)
@@ -231,6 +233,7 @@ func initRouter() {
 		return brandNameSubtitle(mux.Vars(r)["username"])
 	})))
 	router.Get(routeSearchQueryBuilder).Handler(handler(serveBrandedPageString("Query builder")))
+	router.Get(routeSearchConsole).Handler(handler(serveBrandedPageString("Search console")))
 
 	// Legacy redirects
 	if envvar.SourcegraphDotComMode() {
