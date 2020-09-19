@@ -109,7 +109,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                         value={searchQueries.value}
                     />
                 </div>
-                <div className="flex-1 p-1">
+                <div className="flex-1 p-1 search-console-page__results">
                     {resultsOrError &&
                         (resultsOrError === 'loading' ? (
                             <LoadingSpinner />
