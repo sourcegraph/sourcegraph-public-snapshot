@@ -155,7 +155,9 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const authRequired = useObservable(authRequiredObservable)
 
     const hideGlobalSearchInput: boolean =
-        props.location.pathname === '/stats' || props.location.pathname === '/search/query-builder'
+        props.location.pathname === '/stats' ||
+        props.location.pathname === '/search/query-builder' ||
+        props.location.pathname === '/search/console'
 
     const breadcrumbProps = useBreadcrumbs()
 

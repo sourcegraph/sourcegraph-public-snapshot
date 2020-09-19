@@ -61,7 +61,7 @@ const toUnsubscribable = (disposable: Monaco.IDisposable): Unsubscribable => ({
  *
  * @returns Subscription
  */
-function addSouregraphSearchCodeIntelligence(
+export function addSouregraphSearchCodeIntelligence(
     monaco: typeof Monaco,
     searchQueries: Observable<string>,
     patternTypes: Observable<SearchPatternType>,
