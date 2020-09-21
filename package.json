@@ -17,7 +17,7 @@
     "all:stylelint": "yarn --cwd web run stylelint && yarn --cwd shared run stylelint && yarn --cwd browser run stylelint",
     "all:tsgql": "yarn --cwd web run tsgql validate -p . --exitOnWarn && yarn --cwd shared run tsgql validate -p . --exitOnWarn && yarn --cwd browser run tsgql validate -p . --exitOnWarn",
     "build-ts": "tsc -b .",
-    "graphql-lint": "graphql-schema-linter --old-implements-syntax --comment-descriptions cmd/frontend/graphqlbackend/schema.graphql",
+    "graphql-lint": "graphql-schema-linter cmd/frontend/graphqlbackend/schema.graphql",
     "build-web": "yarn --cwd web run build",
     "generate": "gulp generate",
     "watch-generate": "gulp watchGenerate",
