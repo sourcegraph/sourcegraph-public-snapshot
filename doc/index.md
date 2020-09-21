@@ -79,7 +79,7 @@ You can use Sourcegraph in 2 ways:
 - [Self-hosted](admin/install/index.md): Deploy and manage your own Sourcegraph instance.
 - [Sourcegraph Cloud](https://sourcegraph.com/search): For public code only. No signup or installation required.
 
-For self-hosted Sourcegraph instances, you run a Docker image or Kubernetes cluster on-premises or on your preferred cloud provider. There are [3 tiers](https://about.sourcegraph.com/pricing): Core, Team, and Enterprise. Team and Enterprise features require a [Sourcegraph subscription](https://about.sourcegraph.com/contact/sales).
+For self-hosted Sourcegraph instances, you run a Docker image or Kubernetes cluster on-premises or on your preferred cloud provider. There are [3 tiers](https://about.sourcegraph.com/pricing): Free, Team, and Enterprise. Team and Enterprise features require a [Sourcegraph subscription](https://about.sourcegraph.com/contact/sales).
 
 ## Other links
 
