@@ -13,8 +13,8 @@ export const PasswordInput: React.FunctionComponent<
             name="password"
             {...other}
             className={`form-control ${props.className || ''}`}
+            placeholder={props.placeholder || 'Password'}
             type="password"
-            placeholder={props.placeholder === undefined ? 'Password' : props.placeholder}
             required={true}
             ref={inputRef}
         />
@@ -27,7 +27,7 @@ export const EmailInput: React.FunctionComponent<React.InputHTMLAttributes<HTMLI
         {...props}
         className={`form-control ${props.className || ''}`}
         type="email"
-        placeholder="Email"
+        placeholder={props.placeholder || 'Email'}
         spellCheck={false}
         autoComplete="email"
     />
@@ -39,7 +39,7 @@ export const UsernameInput: React.FunctionComponent<React.InputHTMLAttributes<HT
         {...props}
         className={`form-control ${props.className || ''}`}
         type="text"
-        placeholder="Username"
+        placeholder={props.placeholder || 'Username'}
         spellCheck={false}
         pattern={VALID_USERNAME_REGEXP}
         maxLength={USERNAME_MAX_LENGTH}

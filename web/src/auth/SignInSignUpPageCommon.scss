@@ -14,10 +14,14 @@
     border-color: var(--color-border-2);
 }
 
-.signin-form {
-    width: 20rem;
+.signin-page {
+    &__container {
+        width: 20rem;
+    }
 }
 
-.signup-form {
-    width: 27.5rem;
+.signup-page {
+    &__container {
+        width: 27.5rem;
+    }
 }

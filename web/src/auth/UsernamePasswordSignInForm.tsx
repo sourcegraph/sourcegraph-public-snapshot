@@ -5,13 +5,12 @@ import { Link } from 'react-router-dom'
 import { Form } from '../components/Form'
 import { eventLogger } from '../tracking/eventLogger'
 import { getReturnTo, PasswordInput } from './SignInSignUpCommon'
-import { ErrorAlert } from '../components/alerts'
 import { asError } from '../../../shared/src/util/errors'
-import { stripURLParameters } from '../tracking/analyticsUtils'
 
 interface Props {
     location: H.Location
     history: H.History
+    setAuthError: (error: Error | null) => void
 }
 
 /**
@@ -23,15 +22,9 @@ interface Props {
  * outbound validation requests upon any input, and don't send another
  * request if the input doesn't pass local validation
  */
-export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({ location, history }) => {
+export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({ location, setAuthError }) => {
     const [usernameOrEmail, setUsernameOrEmail] = useState('')
     const [password, setPassword] = useState('')
-    const [authError, setAuthError] = useState<Error | null>(() => {
-        // Display 3rd party auth errors (redirect with param 'auth_error')
-        const authErrorMessage = new URLSearchParams(location.search).get('auth_error')
-        stripURLParameters(window.location.href, ['auth_error'])
-        return authErrorMessage ? new Error(authErrorMessage) : null
-    })
 
     // global loading... need separate loading trackers for async validation
     const [loading, setLoading] = useState(false)
@@ -86,13 +79,12 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({ loc
                     setAuthError(asError(error))
                 })
         },
-        [usernameOrEmail, loading, location, password]
+        [usernameOrEmail, loading, location, password, setAuthError]
     )
 
     return (
         <>
             <Form className="" onSubmit={handleSubmit}>
-                {authError && <ErrorAlert className="my-2" error={authError} icon={false} history={history} />}
                 <div className="form-group d-flex flex-column align-content-start">
                     <label className="align-self-start">Username or email</label>
                     <input
@@ -109,7 +101,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({ loc
                 </div>
                 <div className="form-group d-flex flex-column align-content-start">
                     <div className="d-flex justify-content-between">
-                        <label className="">Password</label>
+                        <label>Password</label>
                         {window.context.resetPasswordEnabled && (
                             <small className="form-text text-muted">
                                 <Link to="/password-reset">Forgot password?</Link>
@@ -123,6 +115,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({ loc
                         required={true}
                         disabled={loading}
                         autoComplete="current-password"
+                        placeholder=" "
                     />
                 </div>
                 <div className="form-group">
@@ -130,11 +123,6 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({ loc
                         {loading ? <LoadingSpinner className="icon-inline" /> : 'Sign in'}
                     </button>
                 </div>
-                {/* {loading && (
-                    <div className="w-100 text-center mb-2">
-                        <LoadingSpinner className="icon-inline" />
-                    </div>
-                )} */}
             </Form>
         </>
     )
