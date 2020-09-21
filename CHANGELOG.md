@@ -21,36 +21,37 @@ All notable changes to Sourcegraph are documented in this file.
 
 - The site configuration `search.limits`. This allows configuring the maximum timeout (defaults to 1 minute). Also allows configuring the maximum repositories to search in different scenarios. [#13448](https://github.com/sourcegraph/sourcegraph/pull/13448)
 - Site admins can now force a specific user to re-authenticate on their next request or visit. [#13647](https://github.com/sourcegraph/sourcegraph/pull/13647)
-- After changing their password, a user will be signed out from all devices, and will be required to sign in with the new password.
-- Sourcegraph watches the [advanced config files](https://docs.sourcegraph.com/admin/config/advanced_config_file) and automatically applies the changes to Sourcegraph's configuration when they change. For example this allows Sourcegraph to notice when Kubernetes updates ConfigMap for the configuration. [#13646](https://github.com/sourcegraph/sourcegraph/pull/13646)
-- The total size of all git repositories and the lines of code for indexed branches will be sent back in pings. [#13764](https://github.com/sourcegraph/sourcegraph/pull/13764)
-- Experimental: New homepage UI for Sourcegraph Server which shows the user their recent searches, repositories, files, and saved searches. It can be enabled with `experimentalFeatures.showEnterpriseHomePanels`. [#13407](https://github.com/sourcegraph/sourcegraph/issues/13407)
+- Site admins now have a button to log out users from the all users view. [#13647](https://github.com/sourcegraph/sourcegraph/pull/13647)
+- After a user's password changes, they will be signed out on all devices and must sign in again. [#13647](https://github.com/sourcegraph/sourcegraph/pull/13647)
+- Sourcegraph now watches its [configuration files](https://docs.sourcegraph.com/admin/config/advanced_config_file) and automatically applies the changes to Sourcegraph's configuration when they change. For example, this allows Sourcegraph to detect when a Kubernetes ConfigMap changes. [#13646](https://github.com/sourcegraph/sourcegraph/pull/13646)
+- The total size of all Git repositories and the lines of code for indexed branches will be sent back in pings. [#13764](https://github.com/sourcegraph/sourcegraph/pull/13764)
 - To define repository groups (`search.repositoryGroups` in global, org, or user settings), you can now specify regular expressions in addition to single repository names. [#13730](https://github.com/sourcegraph/sourcegraph/pull/13730)
-- Files and directories can now be excluded from search by adding the file _.sourcegraph/ignore_ to the root directory of a repository. Each line in the _ignore_ file is interpreted as a globbing pattern. [#13690](https://github.com/sourcegraph/sourcegraph/pull/13690)
-- Structural search syntax now allows regular expressions in patterns. Additionally, `...` can now be used in place of `:[_]`. See the [documentation](https://docs.sourcegraph.com/@main/user/search/structural) for example syntax. [#13809](https://github.com/sourcegraph/sourcegraph/pull/13809)
+- Files and directories can now be excluded from search by adding the file `.sourcegraph/ignore` to the root directory of a repository. Each line in the _ignore_ file is interpreted as a globbing pattern. [#13690](https://github.com/sourcegraph/sourcegraph/pull/13690)
+- Structural search syntax now allows regular expressions in patterns. Also, `...` can now be used in place of `:[_]`. See the [documentation](https://docs.sourcegraph.com/@main/user/search/structural) for example syntax. [#13809](https://github.com/sourcegraph/sourcegraph/pull/13809)
+- Experimental: A new homepage UI for Sourcegraph Server shows the user their recent searches, repositories, files, and saved searches. It can be enabled with `experimentalFeatures.showEnterpriseHomePanels`. [#13407](https://github.com/sourcegraph/sourcegraph/issues/13407)
 
 ### Changed
 
-- Introduced the new `external_service_repos` join table. Please note that the migration required to make this change could take a couple of minutes.
-- Campaigns are enabled by default for all users, with site admins having read/write access and users only read access. The new site configuration property `campaigns.enabled` can be used to disable campaigns for all users. The properties `campaigns.readAccess`, `automation.readAccess.enabled`, and `"experimentalFeatures": { "automation": "enabled" }}` are deprecated and no longer have any effect.
-- In 3.11 we removed the 50-repository limit for diff and commit search which contains `before:` or `after:` filters. However, for large collections of repositories the searches would still fail. We introduce a default limit of 10,000 repositories. This may affect your saved searches. You can configure this limit in your settings with the site configuration property `search.limits`. [#13386](https://github.com/sourcegraph/sourcegraph/pull/13386)
+- Campaigns are enabled by default for all users. Site admins may view and create campaigns; everyone else may only view campaigns. The new site configuration property `campaigns.enabled` can be used to disable campaigns for all users. The properties `campaigns.readAccess`, `automation.readAccess.enabled`, and `"experimentalFeatures": { "automation": "enabled" }}` are deprecated and no longer have any effect.
+- In version 3.11, we removed the 50-repository limit for diff and commit search which contains `before:` or `after:` filters. However, for large collections of repositories the searches would still fail. We introduce a default limit of 10,000 repositories. This may affect your saved searches. You can configure this limit in your settings with the site configuration property `search.limits`. [#13386](https://github.com/sourcegraph/sourcegraph/pull/13386)
 - The site configuration `maxReposToSearch` has been deprecated in favour of the property `maxRepos` on `search.limits`. [#13439](https://github.com/sourcegraph/sourcegraph/pull/13439)
-- Campaign URLs have changed to use the campaign name instead of its ID. The old URLs no longer work. [#13368](https://github.com/sourcegraph/sourcegraph/pull/13368)
 - Search queries are now processed by a new parser that will always be enabled going forward. There should be no material difference in behavior. In case of adverse effects, the previous parser can be reenabled by setting `"search.migrateParser": false` in settings. [#13435](https://github.com/sourcegraph/sourcegraph/pull/13435)
 - It is now possible to search for file content that excludes a term using the `NOT` operator. [#12412](https://github.com/sourcegraph/sourcegraph/pull/12412)
 - `NOT` is available as an alternative syntax of `-` on supported keywords `repo`, `file`, `content`, `lang`, and `repohasfile`. [#12412](https://github.com/sourcegraph/sourcegraph/pull/12412)
 - Negated content search is now also supported for unindexed repositories. Previously it was only supported for indexed repositories [#13359](https://github.com/sourcegraph/sourcegraph/pull/13359).
 - The experimental feature flag `andOrQuery` is deprecated. [#13435](https://github.com/sourcegraph/sourcegraph/pull/13435)
 - `rev:` is available as alternative syntax of `@` for searching revisions instead of the default branch [#13133](https://github.com/sourcegraph/sourcegraph/pull/13133)
+- Campaign URLs have changed to use the campaign name instead of an opaque ID. The old URLs no longer work. [#13368](https://github.com/sourcegraph/sourcegraph/pull/13368)
+- A new `external_service_repos` join table was added. The migration required to make this change may take a few minutes.
 
 ### Fixed
 
 - User satisfaction/NPS surveys will now correctly provide a range from 0–10, rather than 0–9. [#13163](https://github.com/sourcegraph/sourcegraph/pull/13163)
 - Fixed a bug where we returned repositories with invalid revisions in the search results. Now, if a user specifies an invalid revision, we show an alert. [#13271](https://github.com/sourcegraph/sourcegraph/pull/13271)
 - Previously it wasn't possible to search for certain patterns containing `:` because they would not be considered valid filters. We made these checks less strict. [#10920](https://github.com/sourcegraph/sourcegraph/pull/10920)
-- Logging out of a user's account will now invalidate all user sessions, not just the session that was signed out of. Resetting or changing the user's password will also invalidate all sesions, requiring the user to sign in with their new password. [#13647](https://github.com/sourcegraph/sourcegraph/pull/13647)
+- When a user signs out of their account, all of their sessions will be invalidated, not just the session where they signed out. [#13647](https://github.com/sourcegraph/sourcegraph/pull/13647)
 - URL information will no longer be leaked by the HTTP referer header. This prevents the user's password reset code from being leaked. [#13804](https://github.com/sourcegraph/sourcegraph/pull/13804)
-- GitLab oauth2 login will respect `tls.external` site setting. [#13814](https://github.com/sourcegraph/sourcegraph/pull/13814)
+- GitLab OAuth2 user authentication now respects `tls.external` site setting. [#13814](https://github.com/sourcegraph/sourcegraph/pull/13814)
 
 ### Removed
 
