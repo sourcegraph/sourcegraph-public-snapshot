@@ -667,7 +667,7 @@ func loadTrackingIssues(ctx context.Context, cli *graphql.Client, org string, is
 			defer wg.Done()
 
 			for issue := range ch {
-				if err := loadTrackingIssuesTemp(ctx, cli, org, []*TrackingIssue{issue}); err != nil {
+				if err := loadTrackingIssue(ctx, cli, org, issue); err != nil {
 					errs <- err
 				}
 			}
@@ -688,49 +688,30 @@ func loadTrackingIssues(ctx context.Context, cli *graphql.Client, org string, is
 	return err
 }
 
-func loadTrackingIssuesTemp(ctx context.Context, cli *graphql.Client, org string, issues []*TrackingIssue) error {
+func loadTrackingIssue(ctx context.Context, cli *graphql.Client, org string, issue *TrackingIssue) error {
 	var q bytes.Buffer
 	q.WriteString("query(\n")
 
 	type query struct {
-		issue  *TrackingIssue
-		count  int
 		cursor string
 		query  string
 	}
 
 	queries := map[string]*query{}
-	for _, issue := range issues {
-		if issue.Milestone == "" {
-			name := "tracking" + strconv.Itoa(issue.Number)
-			fmt.Fprintf(&q, "$%[1]sCount: Int!, $%[1]sCursor: String, $%[1]sQuery: String!,\n", name)
-			queries[name] = &query{
-				issue: issue,
-				count: 100,
-				query: listIssuesSearchQuery(org, "", issue.Labels, false),
-			}
-		} else {
-			milestoned := "tracking" + strconv.Itoa(issue.Number) + "Milestoned"
-			fmt.Fprintf(&q, "$%[1]sCount: Int!, $%[1]sCursor: String, $%[1]sQuery: String!,\n", milestoned)
+	if issue.Milestone == "" {
+		name := "tracking" + strconv.Itoa(issue.Number)
+		fmt.Fprintf(&q, "$%[1]sCount: Int!, $%[1]sCursor: String, $%[1]sQuery: String!\n", name)
+		queries[name] = &query{query: listIssuesSearchQuery(org, "", issue.Labels, false)}
+	} else {
+		milestoned := "tracking" + strconv.Itoa(issue.Number) + "Milestoned"
+		fmt.Fprintf(&q, "$%[1]sCount: Int!, $%[1]sCursor: String, $%[1]sQuery: String!,\n", milestoned)
+		queries[milestoned] = &query{query: listIssuesSearchQuery(org, issue.Milestone, issue.Labels, false)}
 
-			queries[milestoned] = &query{
-				issue: issue,
-				count: 100,
-				query: listIssuesSearchQuery(org, issue.Milestone, issue.Labels, false),
-			}
-
-			demilestoned := "tracking" + strconv.Itoa(issue.Number) + "Demilestoned"
-			fmt.Fprintf(&q, "$%[1]sCount: Int!, $%[1]sCursor: String, $%[1]sQuery: String!,\n", demilestoned)
-
-			queries[demilestoned] = &query{
-				issue: issue,
-				count: 100,
-				query: listIssuesSearchQuery(org, issue.Milestone, issue.Labels, true),
-			}
-		}
+		demilestoned := "tracking" + strconv.Itoa(issue.Number) + "Demilestoned"
+		fmt.Fprintf(&q, "$%[1]sCount: Int!, $%[1]sCursor: String, $%[1]sQuery: String!\n", demilestoned)
+		queries[demilestoned] = &query{query: listIssuesSearchQuery(org, issue.Milestone, issue.Labels, true)}
 	}
 
-	q.Truncate(q.Len() - 1) // Remove the trailing comma from the loop above.
 	q.WriteString(") {")
 
 	for query := range queries {
@@ -743,7 +724,7 @@ func loadTrackingIssuesTemp(ctx context.Context, cli *graphql.Client, org string
 		r := graphql.NewRequest(q.String())
 
 		for query, args := range queries {
-			r.Var(query+"Count", args.count)
+			r.Var(query+"Count", 100)
 			r.Var(query+"Query", args.query)
 			if args.cursor != "" {
 				r.Var(query+"Cursor", args.cursor)
@@ -764,13 +745,11 @@ func loadTrackingIssuesTemp(ctx context.Context, cli *graphql.Client, org string
 			if s.PageInfo.HasNextPage && len(s.Nodes) > 0 {
 				hasNextPage = true
 				q.cursor = s.PageInfo.EndCursor
-			} else {
-				q.count = 0
 			}
 
 			issues, prs := unmarshalSearchNodes(s.Nodes)
-			q.issue.Issues = append(q.issue.Issues, issues...)
-			q.issue.PRs = append(q.issue.PRs, prs...)
+			issue.Issues = append(issue.Issues, issues...)
+			issue.PRs = append(issue.PRs, prs...)
 		}
 
 		if !hasNextPage {
