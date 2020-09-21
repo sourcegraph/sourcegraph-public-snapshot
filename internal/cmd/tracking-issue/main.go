@@ -202,12 +202,34 @@ func (wl *Workload) Markdown(labelAllowlist []string) string {
 	fmt.Fprintf(&b, "\n"+beginAssigneeMarkerFmt+"\n", wl.Assignee)
 	fmt.Fprintf(&b, "@%s%s\n\n", wl.Assignee, days)
 
-	for _, issue := range wl.Issues {
+	indent := func(depth int) string {
+		return strings.Repeat(" ", depth*2)
+	}
+
+	var renderIssue func(issue *Issue, depth int)
+	renderIssue = func(issue *Issue, depth int) {
+		b.WriteString(indent(depth))
 		b.WriteString(issue.Markdown(labelAllowlist))
 
+		// Render children tracked _only_ by this issue
+		// (excluding the team tracking issue) as nested elements
+		for _, child := range issue.Children {
+			if len(child.Parents) == 1 {
+				renderIssue(child, depth+1)
+			}
+		}
+
 		for _, pr := range issue.LinkedPRs {
-			b.WriteString("  ") // Nested list
+			b.WriteString(indent(depth + 1)) // Nested list
 			b.WriteString(pr.Markdown())
+		}
+	}
+
+	for _, issue := range wl.Issues {
+		// Render any issue that belongs to zero or more than one
+		// tracking issue (excluding the team tracking issue).
+		if len(issue.Parents) != 1 {
+			renderIssue(issue, 0)
 		}
 	}
 
@@ -368,6 +390,12 @@ func (t *TrackingIssue) Workloads() Workloads {
 				pr.LinkedIssues = append(pr.LinkedIssues, issue)
 			}
 
+			tracked := issue.Tracked(t.Issues)
+			for _, child := range tracked {
+				issue.Children = append(issue.Children, child)
+				child.Parents = append(child.Parents, issue)
+			}
+
 			if t.Milestone == "" || issue.Milestone == t.Milestone {
 				estimate := Estimate(issue.Labels)
 				w.Days += Days(estimate)
@@ -399,6 +427,8 @@ type Issue struct {
 
 	Deprioritised bool           `json:"-"`
 	LinkedPRs     []*PullRequest `json:"-"`
+	Children      []*Issue       `json:"-"`
+	Parents       []*Issue       `json:"-"`
 }
 
 func (issue *Issue) Markdown(labelAllowlist []string) string {
@@ -479,6 +509,39 @@ func (issue *Issue) title() string {
 	}
 
 	return title
+}
+
+func (issue *Issue) Tracked(issues []*Issue) (tracked []*Issue) {
+	if !contains(issue.Labels, "tracking") {
+		return nil
+	}
+
+outer:
+	for _, other := range issues {
+		if other == issue {
+			continue
+		}
+
+		for _, label := range issue.Labels {
+			if label != "tracking" && !contains(other.Labels, label) {
+				continue outer
+			}
+		}
+
+		tracked = append(tracked, other)
+	}
+
+	return tracked
+}
+
+func contains(haystack []string, needle string) bool {
+	for _, candidate := range haystack {
+		if candidate == needle {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (issue *Issue) LinkedPullRequests(prs []*PullRequest) (linked []*PullRequest) {
