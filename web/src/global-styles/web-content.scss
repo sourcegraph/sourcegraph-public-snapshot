@@ -10,6 +10,7 @@
     }
     .theme-light & {
         --link-color: #1c7cd6;
+        --body-color: #{$gray-18};
     }
 
     h1,

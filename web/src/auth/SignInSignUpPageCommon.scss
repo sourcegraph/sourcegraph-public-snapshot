@@ -9,6 +9,15 @@
 }
 
 .signin-signup-form {
-    width: 22rem;
     max-width: calc(100vw - 2rem);
+    background-color: var(--body-bg-1);
+    border-color: var(--color-border-2);
+}
+
+.signin-form {
+    width: 20rem;
+}
+
+.signup-form {
+    width: 27.5rem;
 }

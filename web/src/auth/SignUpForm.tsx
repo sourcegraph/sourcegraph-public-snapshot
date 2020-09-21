@@ -56,6 +56,7 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
             <Form
                 className={classNames(
                     'signin-signup-form',
+                    'signup-form',
                     'test-signup-form',
                     'border rounded p-4',
                     this.props.className
@@ -156,6 +157,33 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
     }
 
     private onPasswordFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+        /**
+         *
+         * NOTE:
+         * check for statuses 200, 400, and 404
+         * 200: Username is taken
+         * 400: Username was not valid (NormalizeUsername threw error)
+         * 404: Username is available
+         */
+
+        const username = event.target.value
+
+        fetch(`/-/check-username-taken/${username}`)
+            .then(response => {
+                switch (response.status) {
+                    case 200:
+                        return
+
+                    case 404:
+                        return
+
+                    default:
+
+                    // probably 400 or 500
+                }
+            })
+            .catch(error => this.setState({ error: asError(error) }))
+
         this.setState({ password: event.target.value })
     }
 

@@ -1,150 +1,141 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
-import * as React from 'react'
+import React, { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Form } from '../components/Form'
 import { eventLogger } from '../tracking/eventLogger'
 import { getReturnTo, PasswordInput } from './SignInSignUpCommon'
 import { ErrorAlert } from '../components/alerts'
 import { asError } from '../../../shared/src/util/errors'
+import { stripURLParameters } from '../tracking/analyticsUtils'
 
 interface Props {
     location: H.Location
     history: H.History
 }
 
-interface State {
-    email: string
-    password: string
-    error?: Error
-    loading: boolean
-}
-
 /**
  * The form for signing in with a username and password.
+ *
+ *
+ * NOTES:
+ * Validation: make sure the inputs pass LOCAL validation first. cancel
+ * outbound validation requests upon any input, and don't send another
+ * request if the input doesn't pass local validation
  */
-export class UsernamePasswordSignInForm extends React.Component<Props, State> {
-    constructor(props: Props) {
-        super(props)
-        this.state = {
-            email: '',
-            password: '',
-            loading: false,
-        }
-    }
+export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({ location, history }) => {
+    const [usernameOrEmail, setUsernameOrEmail] = useState('')
+    const [password, setPassword] = useState('')
+    const [authError, setAuthError] = useState<Error | null>(() => {
+        // Display 3rd party auth errors (redirect with param 'auth_error')
+        const authErrorMessage = new URLSearchParams(location.search).get('auth_error')
+        stripURLParameters(window.location.href, ['auth_error'])
+        return authErrorMessage ? new Error(authErrorMessage) : null
+    })
 
-    public render(): JSX.Element | null {
-        return (
-            <>
-                <Form
-                    className="signin-signup-form signin-form test-signin-form border rounded p-4 mt-4 mb-3"
-                    onSubmit={this.handleSubmit}
-                >
-                    {this.state.error && (
-                        <ErrorAlert
-                            className="my-2"
-                            error={this.state.error}
-                            icon={false}
-                            history={this.props.history}
-                        />
-                    )}
-                    <div className="form-group">
-                        <input
-                            className="form-control signin-signup-form__input"
-                            type="text"
-                            placeholder="Username or email"
-                            onChange={this.onEmailFieldChange}
-                            required={true}
-                            value={this.state.email}
-                            disabled={this.state.loading}
-                            autoCapitalize="off"
-                            autoFocus={true}
-                            autoComplete="username email"
-                        />
-                    </div>
-                    <div className="form-group">
-                        <PasswordInput
-                            className="signin-signup-form__input"
-                            onChange={this.onPasswordFieldChange}
-                            value={this.state.password}
-                            required={true}
-                            disabled={this.state.loading}
-                            autoComplete="current-password"
-                        />
-                    </div>
-                    <div className="form-group">
-                        <button className="btn btn-primary btn-block" type="submit" disabled={this.state.loading}>
-                            Sign in
-                        </button>
+    // global loading... need separate loading trackers for async validation
+    const [loading, setLoading] = useState(false)
+
+    const onUsernameOrEmailFieldChange = useCallback((event: React.ChangeEvent<HTMLInputElement>): void => {
+        setUsernameOrEmail(event.target.value)
+    }, [])
+
+    const onPasswordFieldChange = useCallback((event: React.ChangeEvent<HTMLInputElement>): void => {
+        setPassword(event.target.value)
+    }, [])
+
+    const handleSubmit = useCallback(
+        (event: React.FormEvent<HTMLFormElement>): void => {
+            event.preventDefault()
+            if (loading) {
+                return
+            }
+
+            setLoading(true)
+            eventLogger.log('InitiateSignIn')
+            fetch('/-/sign-in', {
+                credentials: 'same-origin',
+                method: 'POST',
+                headers: {
+                    ...window.context.xhrHeaders,
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: usernameOrEmail,
+                    password,
+                }),
+            })
+                .then(response => {
+                    if (response.status === 200) {
+                        if (new URLSearchParams(location.search).get('close') === 'true') {
+                            window.close()
+                        } else {
+                            const returnTo = getReturnTo(location)
+                            window.location.replace(returnTo)
+                        }
+                    } else if (response.status === 401) {
+                        throw new Error('User or password was incorrect')
+                    } else {
+                        throw new Error('Unknown Error')
+                    }
+                })
+                .catch(error => {
+                    console.error('Auth error:', error)
+                    setLoading(false)
+                    setAuthError(asError(error))
+                })
+        },
+        [usernameOrEmail, loading, location, password]
+    )
+
+    return (
+        <>
+            <Form className="" onSubmit={handleSubmit}>
+                {authError && <ErrorAlert className="my-2" error={authError} icon={false} history={history} />}
+                <div className="form-group d-flex flex-column align-content-start">
+                    <label className="align-self-start">Username or email</label>
+                    <input
+                        className="form-control signin-signup-form__input"
+                        type="text"
+                        onChange={onUsernameOrEmailFieldChange}
+                        required={true}
+                        value={usernameOrEmail}
+                        disabled={loading}
+                        autoCapitalize="off"
+                        autoFocus={true}
+                        autoComplete="username email"
+                    />
+                </div>
+                <div className="form-group d-flex flex-column align-content-start">
+                    <div className="d-flex justify-content-between">
+                        <label className="">Password</label>
                         {window.context.resetPasswordEnabled && (
                             <small className="form-text text-muted">
                                 <Link to="/password-reset">Forgot password?</Link>
                             </small>
                         )}
                     </div>
-                    {this.state.loading && (
-                        <div className="w-100 text-center mb-2">
-                            <LoadingSpinner className="icon-inline" />
-                        </div>
-                    )}
-                </Form>
-                {window.context.allowSignup ? (
-                    <p>
-                        <Link to={`/sign-up${this.props.location.search}`}>New to Sourcegraph? Sign up.</Link>
-                    </p>
-                ) : (
-                    <p className="text-muted">To create an account, contact the site admin.</p>
-                )}
-            </>
-        )
-    }
-
-    private onEmailFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ email: event.target.value })
-    }
-
-    private onPasswordFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ password: event.target.value })
-    }
-
-    private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
-        event.preventDefault()
-        if (this.state.loading) {
-            return
-        }
-
-        this.setState({ loading: true })
-        eventLogger.log('InitiateSignIn')
-        fetch('/-/sign-in', {
-            credentials: 'same-origin',
-            method: 'POST',
-            headers: {
-                ...window.context.xhrHeaders,
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                email: this.state.email,
-                password: this.state.password,
-            }),
-        })
-            .then(response => {
-                if (response.status === 200) {
-                    if (new URLSearchParams(this.props.location.search).get('close') === 'true') {
-                        window.close()
-                    } else {
-                        const returnTo = getReturnTo(this.props.location)
-                        window.location.replace(returnTo)
-                    }
-                } else if (response.status === 401) {
-                    throw new Error('User or password was incorrect')
-                } else {
-                    throw new Error('Unknown Error')
-                }
-            })
-            .catch(error => {
-                console.error('Auth error:', error)
-                this.setState({ loading: false, error: asError(error) })
-            })
-    }
+                    <PasswordInput
+                        className="signin-signup-form__input"
+                        onChange={onPasswordFieldChange}
+                        value={password}
+                        required={true}
+                        disabled={loading}
+                        autoComplete="current-password"
+                    />
+                </div>
+                <div className="form-group">
+                    <button className="btn btn-primary btn-block" type="submit" disabled={loading}>
+                        {loading ? <LoadingSpinner className="icon-inline" /> : 'Sign in'}
+                    </button>
+                </div>
+                {/* {loading && (
+                    <div className="w-100 text-center mb-2">
+                        <LoadingSpinner className="icon-inline" />
+                    </div>
+                )} */}
+            </Form>
+        </>
+    )
 }
