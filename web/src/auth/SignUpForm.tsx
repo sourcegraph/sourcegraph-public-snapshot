@@ -35,14 +35,14 @@ interface SignUpFormProps {
 /**
  * TODO: Better naming
  */
-interface SignUpFormValidator<T = string> {
+interface SignUpFormValidator {
     /**
      * Optional array of synchronous input validators.
      *
      * If there's no problem with the input, void return. Else,
      * return with the reason the input is invalid.
      */
-    synchronousValidators?: ((value: T) => string | undefined)[]
+    synchronousValidators?: ((value: string) => string | undefined)[]
 
     /**
      * Optional array of asynchronous input validators.
@@ -50,7 +50,7 @@ interface SignUpFormValidator<T = string> {
      * If there's no problem with the input, void return. Else,
      * return with the reason the input is invalid.
      */
-    asynchronousValidators?: ((value: T) => Promise<string | undefined>)[]
+    asynchronousValidators?: ((value: string) => Promise<string | undefined>)[]
 }
 
 /** Lazily construct this in SignUpForm */
@@ -61,10 +61,27 @@ const signUpFormValidators: { [name: string]: SignUpFormValidator } = {
     },
     username: {
         synchronousValidators: [],
-        asynchronousValidators: [],
+        asynchronousValidators: [
+            async (username: string) =>
+                fetch(`/-/is-username-taken/${username}`)
+                    .then(response => {
+                        switch (response.status) {
+                            case 200:
+                                return `The username '${username}' is taken.`
+                            case 404:
+                                return
+
+                            default:
+                                return 'Unknown error'
+                        }
+                    })
+                    .catch(() => 'Unknown error'),
+        ],
     },
     password: {
-        synchronousValidators: [],
+        synchronousValidators: [
+            password => (password.length < 12 ? 'Your password must be at least 12 characters long' : undefined),
+        ],
     },
 }
 
@@ -74,11 +91,11 @@ const signUpFormValidators: { [name: string]: SignUpFormValidator } = {
  * @param name
  * @param formValidator
  */
-function validateFormInput<T>(value: T, name: string, formValidator: SignUpFormValidator<T>) {
+function validateFormInput(value: string, name: string, formValidator: SignUpFormValidator<string>) {
     const { synchronousValidators, asynchronousValidators } = formValidator
 
     if (synchronousValidators) {
-        // looping over validators here because we only need the first reason of invalidity
+        // looping over validators here because we only need the first reason it's invalid
         for (const validator of synchronousValidators) {
             const reason = validator(value)
             if (reason) {

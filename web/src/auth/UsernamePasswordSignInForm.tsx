@@ -15,18 +15,10 @@ interface Props {
 
 /**
  * The form for signing in with a username and password.
- *
- *
- * NOTES:
- * Validation: make sure the inputs pass LOCAL validation first. cancel
- * outbound validation requests upon any input, and don't send another
- * request if the input doesn't pass local validation
  */
 export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({ location, setAuthError }) => {
     const [usernameOrEmail, setUsernameOrEmail] = useState('')
     const [password, setPassword] = useState('')
-
-    // global loading... need separate loading trackers for async validation
     const [loading, setLoading] = useState(false)
 
     const onUsernameOrEmailFieldChange = useCallback((event: React.ChangeEvent<HTMLInputElement>): void => {
