@@ -116,6 +116,10 @@ function validateFormInput(value: string, name: string, formValidator: SignUpFor
         }
     }
 
+    // if the synchronous validators found a reason, cancel the previous async validation
+    // requests and don't make new ones
+    // (will be easier to express w/ RxJS)
+
     if (asynchronousValidators) {
         // wish I could promise.race but for rejected promises only
         Promise.all(asynchronousValidators.map(validator => validator(value)))
