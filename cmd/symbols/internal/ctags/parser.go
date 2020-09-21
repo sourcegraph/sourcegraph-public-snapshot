@@ -66,8 +66,6 @@ func New() (Parser, error) {
 	// this twice. Instead we pass in the arguments here.
 	args := []string{"--_interactive=" + opt, "--fields=*", fmt.Sprintf("--pattern-length-limit=%d", patternLengthLimit)}
 	args = append(args, ctagsArgs...)
-	// languages must be specified after the custom language regexes above
-	args = append(args, "--languages=Basic,C,C#,C++,Clojure,Cobol,CSS,CUDA,D,Elixir,elm,Erlang,Go,GraphQL,Groovy,haskell,Java,JavaScript,Jsonnet,kotlin,Lisp,Lua,MatLab,ObjectiveC,OCaml,Pascal,Perl,Perl6,PHP,Protobuf,Python,R,Ruby,Rust,scala,Scheme,Sh,swift,SystemVerilog,Tcl,Thrift,typescript,tsx,Verilog,VHDL,Vim")
 
 	cmd := exec.Command(ctagsCommand, args...)
 	in, err := cmd.StdinPipe()

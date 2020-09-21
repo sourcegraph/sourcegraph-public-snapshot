@@ -94,7 +94,54 @@ class A implements B extends C {
 				Path:       "com/sourcegraph/A.java",
 				Signature:  "()",
 			},
-		}}}
+		}}, {
+		path: "schema.graphql",
+		data: `
+schema {
+    query: Query
+    mutation: Mutation
+}
+"""
+An object with an ID.
+"""
+interface Node {
+    """
+    The ID of the node.
+    """
+    id: ID!
+}
+`,
+		want: []Entry{
+			{
+				Name:     "query",
+				Path:     "schema.graphql",
+				Line:     3,
+				Kind:     "field",
+				Language: "GraphQL",
+			},
+			{
+				Name:     "mutation",
+				Path:     "schema.graphql",
+				Line:     4,
+				Kind:     "field",
+				Language: "GraphQL",
+			},
+			{
+				Name:     "Node",
+				Path:     "schema.graphql",
+				Line:     9,
+				Kind:     "interface",
+				Language: "GraphQL",
+			},
+			{
+				Name:     "id",
+				Path:     "schema.graphql",
+				Line:     13,
+				Kind:     "field",
+				Language: "GraphQL",
+			},
+		},
+	}}
 
 	for _, tc := range cases {
 		got, err := p.Parse(tc.path, []byte(tc.data))
