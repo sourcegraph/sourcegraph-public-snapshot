@@ -10,11 +10,14 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/machinebox/graphql"
 	"golang.org/x/oauth2"
 )
@@ -647,14 +650,42 @@ type search struct {
 	Nodes []searchNode
 }
 
-func loadTrackingIssues(ctx context.Context, cli *graphql.Client, org string, issues []*TrackingIssue) error {
+func loadTrackingIssues(ctx context.Context, cli *graphql.Client, org string, issues []*TrackingIssue) (err error) {
+	ch := make(chan *TrackingIssue, len(issues))
 	for _, issue := range issues {
-		if err := loadTrackingIssuesTemp(ctx, cli, org, []*TrackingIssue{issue}); err != nil {
-			return err
+		ch <- issue
+	}
+	close(ch)
+
+	var wg sync.WaitGroup
+	errs := make(chan error, len(issues))
+
+	for i := 0; i < runtime.GOMAXPROCS(0); i++ {
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			for issue := range ch {
+				if err := loadTrackingIssuesTemp(ctx, cli, org, []*TrackingIssue{issue}); err != nil {
+					errs <- err
+				}
+			}
+		}()
+	}
+
+	wg.Wait()
+	close(errs)
+
+	for e := range errs {
+		if err == nil {
+			err = e
+		} else {
+			err = multierror.Append(err, e)
 		}
 	}
 
-	return nil
+	return err
 }
 
 func loadTrackingIssuesTemp(ctx context.Context, cli *graphql.Client, org string, issues []*TrackingIssue) error {
