@@ -1,3 +1,5 @@
+# Structural search
+
 <style>
 table td:first-child {
   width: 8em;
@@ -17,8 +19,6 @@ table tr:nth-child(2n) {
 }
 
 </style>
-
-# Structural search
 
 Structural search lets you match richer syntax patterns specifically in code
 and structured data formats like JSON. It can be awkward or difficult to match
