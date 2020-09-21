@@ -31,12 +31,12 @@ func handleGetProvider(ctx context.Context, w http.ResponseWriter, r *http.Reque
 	p = getProvider(id)
 	if p == nil {
 		log15.Error("No OpenID Connect auth provider found with ID.", "id", id)
-		http.Redirect(w, r, "Misconfigured OpenID Connect auth provider.", http.StatusFound)
+		http.Redirect(w, r, "/sign-in?auth_error=Misconfigured OpenID Connect auth provider.", http.StatusFound)
 		return nil, true
 	}
 	if p.config.Issuer == "" {
 		log15.Error("No issuer set for OpenID Connect auth provider (set the openidconnect auth provider's issuer property).", "id", p.ConfigID())
-		http.Redirect(w, r, "Misconfigured OpenID Connect auth provider.", http.StatusFound)
+		http.Redirect(w, r, "/sign-in?auth_error=Misconfigured OpenID Connect auth provider.", http.StatusFound)
 		return nil, true
 	}
 	if err := p.Refresh(ctx); err != nil {
