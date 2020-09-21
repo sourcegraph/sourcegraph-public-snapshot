@@ -263,7 +263,7 @@ func HandleCheckUsernameTaken(w http.ResponseWriter, r *http.Request) {
 func HandleCheckEmailTaken(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	email := vars["email"]
-	fmt.Fprintln(w, "hi")
+
 	_, err := db.Users.GetByVerifiedEmail(r.Context(), email)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)

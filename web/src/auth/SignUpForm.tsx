@@ -15,7 +15,7 @@ import { compact, head, size } from 'lodash'
 import { USERNAME_MAX_LENGTH, VALID_USERNAME_REGEXP } from '../user'
 import { Observable, of, timer, zip } from 'rxjs'
 import { useEventObservable } from '../../../shared/src/util/useObservable'
-import { catchError, debounce, debounceTime, map, share, switchMap, tap } from 'rxjs/operators'
+import { catchError, debounce, map, switchMap, tap } from 'rxjs/operators'
 import { typingDebounceTime } from '../search/input/QueryInput'
 import CheckIcon from 'mdi-react/CheckIcon'
 import { fromFetch } from 'rxjs/fetch'
@@ -81,10 +81,10 @@ type ValidationPipeline = (events: Observable<React.ChangeEvent<HTMLInputElement
  *
  * To be consumed by `useEventObservable`
  *
- * @param name
+ * @param name Name of input field, used for descriptive error messages
  * @param onInputChange Function to execute side-effects given the latest input value and loading state.
  * Typically used to set state in a React component.
- * @param formValidator
+ * @param fieldValidators
  */
 function createValidationPipeline(
     name: string,
@@ -100,13 +100,16 @@ function createValidationPipeline(
     return function validationPipeline(events): Observable<ValidationResult> {
         return events.pipe(
             map(event => event.target.value),
-            map(value =>
-                // sync validation. don't render spinner when there's a sync validation error (prevent jitter),
-                // don't make async validation requests (unnecessary, waste of resources)
-                ({ value, syncReason: head(compact(synchronousValidators.map(validator => validator(value)))) })
-            ),
-            tap(({ value, syncReason }) => onInputChange({ value, loading: !syncReason })),
-            debounce(({ syncReason }) => timer(syncReason ? 0 : typingDebounceTime)),
+            map(value => {
+                // When there's a sync validation error or no async validators,
+                // don't render spinner (prevent jitter), don't make async
+                // validation requests (unnecessary, waste of resources)
+
+                const syncReason = head(compact(synchronousValidators.map(validator => validator(value))))
+                return { value, syncReason, loading: !syncReason && asynchronousValidators.length > 0 }
+            }),
+            tap(({ value, loading }) => onInputChange({ value, loading })),
+            debounce(({ loading }) => timer(loading ? typingDebounceTime : 0)),
             switchMap(({ value, syncReason }) => {
                 if (syncReason) {
                     return of({ kind: 'INVALID' as const, reason: syncReason }).pipe(
@@ -114,12 +117,17 @@ function createValidationPipeline(
                     )
                 }
 
+                if (asynchronousValidators.length === 0) {
+                    return of({ kind: 'VALID' as const }).pipe(tap(() => onInputChange({ value, loading: false })))
+                }
+
                 return zip(...asynchronousValidators.map(validator => validator(value))).pipe(
                     map(values => head(values.filter(Boolean))),
                     map(reason => (reason ? { kind: 'INVALID' as const, reason } : { kind: 'VALID' as const })),
                     tap(() => onInputChange({ value, loading: false }))
                 )
-            })
+            }),
+            catchError(() => of({ kind: 'INVALID' as const, reason: `Unknown error validating ${name}` }))
         )
     }
 }
@@ -227,7 +235,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                     )}
                 </div>
                 {!emailState.loading && emailValidationResult?.kind === 'INVALID' && (
-                    <p>Email bad bc {emailValidationResult.reason}</p>
+                    <p>{emailValidationResult.reason}</p>
                 )}
             </div>
             <div className="form-group d-flex flex-column align-content-start">
@@ -258,7 +266,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                     )}
                 </div>
                 {!usernameState.loading && usernameValidationResult?.kind === 'INVALID' && (
-                    <p>Email bad bc {usernameValidationResult.reason}</p>
+                    <p>{usernameValidationResult.reason}</p>
                 )}
             </div>
             <div className="form-group d-flex flex-column align-content-start">
@@ -290,7 +298,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                     )}
                 </div>
                 {!passwordState.loading && passwordValidationResult?.kind === 'INVALID' ? (
-                    <span>Email bad bc {passwordValidationResult.reason}</span>
+                    <span>{passwordValidationResult.reason}</span>
                 ) : (
                     <span>At least 12 characters</span>
                 )}
