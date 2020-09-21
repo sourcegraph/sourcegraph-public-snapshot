@@ -57,7 +57,22 @@ interface SignUpFormValidator {
 const signUpFormValidators: { [name: string]: SignUpFormValidator } = {
     email: {
         synchronousValidators: [],
-        asynchronousValidators: [],
+        asynchronousValidators: [
+            async (email: string) =>
+                fetch(`/-/is-email-taken/${email}`)
+                    .then(response => {
+                        switch (response.status) {
+                            case 200:
+                                return `The email '${email}' is taken.`
+                            case 404:
+                                return
+
+                            default:
+                                return 'Unknown error'
+                        }
+                    })
+                    .catch(() => 'Unknown error'),
+        ],
     },
     username: {
         synchronousValidators: [],
@@ -91,7 +106,7 @@ const signUpFormValidators: { [name: string]: SignUpFormValidator } = {
  * @param name
  * @param formValidator
  */
-function validateFormInput(value: string, name: string, formValidator: SignUpFormValidator<string>) {
+function validateFormInput(value: string, name: string, formValidator: SignUpFormValidator) {
     const { synchronousValidators, asynchronousValidators } = formValidator
 
     if (synchronousValidators) {
