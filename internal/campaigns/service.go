@@ -175,6 +175,8 @@ func (svc *Service) ExecuteCampaignSpec(ctx context.Context, repos []*graphql.Re
 	done := make(chan struct{})
 	if progress != nil {
 		go func() {
+			progress(statuses)
+
 			ticker := time.NewTicker(1 * time.Second)
 			defer ticker.Stop()
 
