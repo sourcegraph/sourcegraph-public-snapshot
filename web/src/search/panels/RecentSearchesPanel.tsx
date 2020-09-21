@@ -130,7 +130,7 @@ export const RecentSearchesPanel: React.FunctionComponent<{
                                 </Link>
                             </td>
                             <td className="recent-searches-panel__results-table-date-col">
-                                <Timestamp noAbout={true} date={recentSearch.timestamp} now={now} />
+                                <Timestamp noAbout={true} date={recentSearch.timestamp} now={now} strict={true} />
                             </td>
                         </tr>
                     ))}

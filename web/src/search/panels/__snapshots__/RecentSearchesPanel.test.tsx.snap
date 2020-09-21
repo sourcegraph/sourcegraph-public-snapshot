@@ -115,6 +115,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
                   noAbout={true}
+                  strict={true}
                 />
               </td>
             </tr>
@@ -144,6 +145,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 <Timestamp
                   date="2020-09-04T18:44:39Z"
                   noAbout={true}
+                  strict={true}
                 />
               </td>
             </tr>
@@ -232,12 +234,13 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
                   noAbout={true}
+                  strict={true}
                 >
                   <span
                     className="timestamp"
                     data-tooltip="2020-09-08T17:36:52Z"
                   >
-                    in over 14 years
+                    in 15 years
                   </span>
                 </Timestamp>
               </td>
@@ -274,12 +277,13 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 <Timestamp
                   date="2020-09-04T18:44:39Z"
                   noAbout={true}
+                  strict={true}
                 >
                   <span
                     className="timestamp"
                     data-tooltip="2020-09-04T18:44:39Z"
                   >
-                    in over 14 years
+                    in 15 years
                   </span>
                 </Timestamp>
               </td>
@@ -424,6 +428,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
                   noAbout={true}
+                  strict={true}
                 />
               </td>
             </tr>
@@ -453,6 +458,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 <Timestamp
                   date="2020-09-04T18:44:39Z"
                   noAbout={true}
+                  strict={true}
                 />
               </td>
             </tr>
@@ -482,6 +488,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
                   noAbout={true}
+                  strict={true}
                 />
               </td>
             </tr>
@@ -511,6 +518,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 <Timestamp
                   date="2020-09-04T18:44:39Z"
                   noAbout={true}
+                  strict={true}
                 />
               </td>
             </tr>
@@ -595,12 +603,13 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
                   noAbout={true}
+                  strict={true}
                 >
                   <span
                     className="timestamp"
                     data-tooltip="2020-09-08T17:36:52Z"
                   >
-                    in over 14 years
+                    in 15 years
                   </span>
                 </Timestamp>
               </td>
@@ -637,12 +646,13 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 <Timestamp
                   date="2020-09-04T18:44:39Z"
                   noAbout={true}
+                  strict={true}
                 >
                   <span
                     className="timestamp"
                     data-tooltip="2020-09-04T18:44:39Z"
                   >
-                    in over 14 years
+                    in 15 years
                   </span>
                 </Timestamp>
               </td>
@@ -679,12 +689,13 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
                   noAbout={true}
+                  strict={true}
                 >
                   <span
                     className="timestamp"
                     data-tooltip="2020-09-08T17:36:52Z"
                   >
-                    in over 14 years
+                    in 15 years
                   </span>
                 </Timestamp>
               </td>
@@ -721,12 +732,13 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 <Timestamp
                   date="2020-09-04T18:44:39Z"
                   noAbout={true}
+                  strict={true}
                 >
                   <span
                     className="timestamp"
                     data-tooltip="2020-09-04T18:44:39Z"
                   >
-                    in over 14 years
+                    in 15 years
                   </span>
                 </Timestamp>
               </td>
@@ -854,6 +866,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
                   noAbout={true}
+                  strict={true}
                 />
               </td>
             </tr>
@@ -883,6 +896,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 <Timestamp
                   date="2020-09-04T18:44:39Z"
                   noAbout={true}
+                  strict={true}
                 />
               </td>
             </tr>
@@ -967,12 +981,13 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
                   noAbout={true}
+                  strict={true}
                 >
                   <span
                     className="timestamp"
                     data-tooltip="2020-09-08T17:36:52Z"
                   >
-                    in over 14 years
+                    in 15 years
                   </span>
                 </Timestamp>
               </td>
@@ -1009,12 +1024,13 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 <Timestamp
                   date="2020-09-04T18:44:39Z"
                   noAbout={true}
+                  strict={true}
                 >
                   <span
                     className="timestamp"
                     data-tooltip="2020-09-04T18:44:39Z"
                   >
-                    in over 14 years
+                    in 15 years
                   </span>
                 </Timestamp>
               </td>
