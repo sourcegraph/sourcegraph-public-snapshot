@@ -101,20 +101,49 @@ func run(token, org string, dry, verbose bool) (err error) {
 }
 
 func updateIssues(ctx context.Context, cli *graphql.Client, issues []*Issue) (err error) {
+	ch := make(chan *Issue, len(issues))
+	for _, issue := range issues {
+		ch <- issue
+	}
+	close(ch)
+
+	var wg sync.WaitGroup
+	errs := make(chan error, len(issues))
+
+	for i := 0; i < runtime.GOMAXPROCS(0); i++ {
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			for issue := range ch {
+				if err := updateIssue(ctx, cli, issue); err != nil {
+					errs <- err
+				}
+			}
+		}()
+	}
+
+	wg.Wait()
+	close(errs)
+
+	for e := range errs {
+		if err == nil {
+			err = e
+		} else {
+			err = multierror.Append(err, e)
+		}
+	}
+
+	return err
+}
+
+func updateIssue(ctx context.Context, cli *graphql.Client, issue *Issue) (err error) {
 	var q bytes.Buffer
 	q.WriteString("mutation(")
-
-	for _, issue := range issues {
-		fmt.Fprintf(&q, "$issue%dInput: UpdateIssueInput!,", issue.Number)
-	}
-
-	q.Truncate(q.Len() - 1)
+	fmt.Fprintf(&q, "$issue%dInput: UpdateIssueInput!", issue.Number)
 	q.WriteString(") {")
-
-	for _, issue := range issues {
-		fmt.Fprintf(&q, "issue%[1]d: updateIssue(input: $issue%[1]dInput) { issue { updatedAt } }\n", issue.Number)
-	}
-
+	fmt.Fprintf(&q, "issue%[1]d: updateIssue(input: $issue%[1]dInput) { issue { updatedAt } }\n", issue.Number)
 	q.WriteString("}")
 
 	r := graphql.NewRequest(q.String())
@@ -124,12 +153,10 @@ func updateIssues(ctx context.Context, cli *graphql.Client, issues []*Issue) (er
 		Body string `json:"body"`
 	}
 
-	for _, issue := range issues {
-		r.Var(fmt.Sprintf("issue%dInput", issue.Number), &UpdateIssueInput{
-			ID:   issue.ID,
-			Body: issue.Body,
-		})
-	}
+	r.Var(fmt.Sprintf("issue%dInput", issue.Number), &UpdateIssueInput{
+		ID:   issue.ID,
+		Body: issue.Body,
+	})
 
 	return cli.Run(ctx, r, nil)
 }
