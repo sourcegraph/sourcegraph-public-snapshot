@@ -29,10 +29,9 @@ Sourcegraph makes it faster and easier to perform these tasks, for you and every
 
 ## Who should use Sourcegraph?
 
-All developers, except:
+Sourcegraph would be most useful to developers who frequently search, read, or review code, ideally working with larger codebases or teams of 15 or more. 
 
-- Sourcegraph is more useful to developers working with larger codebases or teams (15+ developers).
-- If you rarely search, read, or review code, you probably won't find Sourcegraph useful. (But you should start reading and reviewing more code!)
+If these conditions do not apply, Sourcegraph may not be useful for you.
 
 ## Who else uses Sourcegraph?
 
