@@ -110,19 +110,15 @@ function createValidationPipeline(
             }),
             tap(({ value, loading }) => onInputChange({ value, loading })),
             debounce(({ loading }) => timer(loading ? typingDebounceTime : 0)),
-            switchMap(({ value, syncReason }) => {
-                if (syncReason) {
-                    return of({ kind: 'INVALID' as const, reason: syncReason }).pipe(
-                        tap(() => onInputChange({ value, loading: false }))
+            switchMap(({ value, syncReason, loading }) => {
+                if (!loading) {
+                    return of(
+                        syncReason ? { kind: 'INVALID' as const, reason: syncReason } : { kind: 'VALID' as const }
                     )
                 }
 
-                if (asynchronousValidators.length === 0) {
-                    return of({ kind: 'VALID' as const }).pipe(tap(() => onInputChange({ value, loading: false })))
-                }
-
                 return zip(...asynchronousValidators.map(validator => validator(value))).pipe(
-                    map(values => head(values.filter(Boolean))),
+                    map(values => head(compact(values))),
                     map(reason => (reason ? { kind: 'INVALID' as const, reason } : { kind: 'VALID' as const })),
                     tap(() => onInputChange({ value, loading: false }))
                 )
@@ -138,7 +134,11 @@ function createValidationPipeline(
 export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp, history, buttonLabel, className }) => {
     const [loading, setLoading] = useState(false)
     const [requestedTrial, setRequestedTrial] = useState(false)
-    const [error, setError] = useState<Error | null>(null)
+    const [error, setError] = useState<Error | null>(
+        new Error(
+            'This is a long error used to demonstrate the wrapping effect of the error alert component inside of this container'
+        )
+    )
 
     const [emailState, setEmailState] = useState({ value: '', loading: false })
     const [nextEmailFieldChange, emailValidationResult] = useEventObservable<
@@ -193,168 +193,184 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
     }, [])
 
     return (
-        <Form
-            className={classNames(
-                'signin-signup-form',
-                'signup-form',
-                'test-signup-form',
-                'border rounded p-4',
-                'text-left',
-                className
-            )}
-            onSubmit={handleSubmit}
-            noValidate={true}
-        >
-            {error && <ErrorAlert className="mb-3" error={error} history={history} />}
-            <div className="form-group d-flex flex-column align-content-start">
-                <label
-                    className={classNames('align-self-start', {
-                        'text-danger font-weight-bold': emailValidationResult?.kind === 'INVALID',
-                    })}
-                >
-                    Email
-                </label>
-                <div className="signin-signup-form__input-container">
-                    <EmailInput
-                        className={classNames('signin-signup-form__input', {
-                            'border-danger': emailValidationResult?.kind === 'INVALID',
-                        })}
-                        onChange={nextEmailFieldChange}
-                        required={true}
-                        value={emailState.value}
-                        disabled={loading}
-                        autoFocus={true}
-                        placeholder=" "
-                    />
-                    {emailState.loading ? (
-                        <LoadingSpinner className="signin-signup-form__icon" />
-                    ) : (
-                        emailValidationResult?.kind === 'VALID' && (
-                            <CheckIcon className="signin-signup-form__icon text-success" size={20} />
-                        )
-                    )}
-                </div>
-                {!emailState.loading && emailValidationResult?.kind === 'INVALID' && (
-                    <p>{emailValidationResult.reason}</p>
+        <>
+            {error && <ErrorAlert className="mt-4 mb-0" error={error} history={history} />}
+            <Form
+                className={classNames(
+                    'signin-signup-form',
+                    'signup-form',
+                    'test-signup-form',
+                    'border rounded p-4',
+                    'text-left',
+                    window.context.sourcegraphDotComMode || error ? 'mt-3' : 'mt-4',
+                    className
                 )}
-            </div>
-            <div className="form-group d-flex flex-column align-content-start">
-                <label
-                    className={classNames('align-self-start', {
-                        'text-danger font-weight-bold': usernameValidationResult?.kind === 'INVALID',
-                    })}
-                >
-                    Username
-                </label>
-                <div className="signin-signup-form__input-container">
-                    <UsernameInput
-                        className={classNames('signin-signup-form__input', {
-                            'border-danger': usernameValidationResult?.kind === 'INVALID',
+                onSubmit={handleSubmit}
+                noValidate={true}
+            >
+                <div className="form-group d-flex flex-column align-content-start">
+                    <label
+                        className={classNames('align-self-start', {
+                            'text-danger font-weight-bold':
+                                emailValidationResult?.kind === 'INVALID' && !emailState.loading,
                         })}
-                        onChange={nextUsernameFieldChange}
-                        value={usernameState.value}
-                        required={true}
-                        disabled={loading}
-                        placeholder=" "
-                    />
-                    {usernameState.loading ? (
-                        <LoadingSpinner className="signin-signup-form__icon" />
-                    ) : (
-                        usernameValidationResult?.kind === 'VALID' && (
-                            <CheckIcon className="signin-signup-form__icon text-success" size={20} />
-                        )
-                    )}
-                </div>
-                {!usernameState.loading && usernameValidationResult?.kind === 'INVALID' && (
-                    <p>{usernameValidationResult.reason}</p>
-                )}
-            </div>
-            <div className="form-group d-flex flex-column align-content-start">
-                <label
-                    className={classNames('align-self-start', {
-                        'text-danger font-weight-bold': passwordValidationResult?.kind === 'INVALID',
-                    })}
-                >
-                    Password
-                </label>
-                <div className="signin-signup-form__input-container">
-                    <PasswordInput
-                        className={classNames('signin-signup-form__input', {
-                            'border-danger': passwordValidationResult?.kind === 'INVALID',
-                        })}
-                        onChange={nextPasswordFieldChange}
-                        value={passwordState.value}
-                        required={true}
-                        disabled={loading}
-                        autoComplete="new-password"
-                        placeholder=" "
-                    />
-                    {passwordState.loading ? (
-                        <LoadingSpinner className="signin-signup-form__icon" />
-                    ) : (
-                        passwordValidationResult?.kind === 'VALID' && (
-                            <CheckIcon className="signin-signup-form__icon text-success" size={20} />
-                        )
-                    )}
-                </div>
-                {!passwordState.loading && passwordValidationResult?.kind === 'INVALID' ? (
-                    <span>{passwordValidationResult.reason}</span>
-                ) : (
-                    <span>At least 12 characters</span>
-                )}
-            </div>
-            {enterpriseTrial && (
-                <div className="form-group">
-                    <div className="form-check">
-                        <label className="form-check-label">
-                            <input className="form-check-input" type="checkbox" onChange={onRequestTrialFieldChange} />
-                            Try Sourcegraph Enterprise free for 30 days{' '}
-                            {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                            <a target="_blank" rel="noopener" href="https://about.sourcegraph.com/pricing">
-                                <HelpCircleOutlineIcon className="icon-inline" />
-                            </a>
-                        </label>
+                    >
+                        Email
+                    </label>
+                    <div className="signin-signup-form__input-container">
+                        <EmailInput
+                            className={classNames('signin-signup-form__input', {
+                                'border-danger': emailValidationResult?.kind === 'INVALID' && !emailState.loading,
+                            })}
+                            onChange={nextEmailFieldChange}
+                            required={true}
+                            value={emailState.value}
+                            disabled={loading}
+                            autoFocus={true}
+                            placeholder=" "
+                        />
+                        {emailState.loading ? (
+                            <LoadingSpinner className="signin-signup-form__icon" />
+                        ) : (
+                            emailValidationResult?.kind === 'VALID' && (
+                                <CheckIcon className="signin-signup-form__icon text-success" size={20} />
+                            )
+                        )}
                     </div>
+                    {!emailState.loading && emailValidationResult?.kind === 'INVALID' && (
+                        <span className="text-danger signin-signup-form__subtext mt-2">
+                            {emailValidationResult.reason}
+                        </span>
+                    )}
                 </div>
-            )}
-            <div className="form-group mb-0">
-                <button className="btn btn-primary btn-block" type="submit" disabled={disabled}>
-                    {loading ? <LoadingSpinner className="icon-inline" /> : buttonLabel || 'Sign up'}
-                </button>
-            </div>
-            {window.context.sourcegraphDotComMode && (
-                <>
-                    {size(window.context.authProviders) > 0 && <OrDivider className="my-4" />}
-                    {window.context.authProviders?.map((provider, index) => (
-                        // Use index as key because display name may not be unique. This is OK
-                        // here because this list will not be updated during this component's lifetime.
-                        /* eslint-disable react/no-array-index-key */
-                        <div className="mb-2" key={index}>
-                            <a href={provider.authenticationURL} className="btn btn-secondary btn-block">
-                                {provider.displayName === 'GitHub' && <GithubIcon className="icon-inline" />} Continue
-                                with {provider.displayName}
-                            </a>
+                <div className="form-group d-flex flex-column align-content-start">
+                    <label
+                        className={classNames('align-self-start', {
+                            'text-danger font-weight-bold':
+                                usernameValidationResult?.kind === 'INVALID' && !usernameState.loading,
+                        })}
+                    >
+                        Username
+                    </label>
+                    <div className="signin-signup-form__input-container">
+                        <UsernameInput
+                            className={classNames('signin-signup-form__input', {
+                                'border-danger': usernameValidationResult?.kind === 'INVALID' && !usernameState.loading,
+                            })}
+                            onChange={nextUsernameFieldChange}
+                            value={usernameState.value}
+                            required={true}
+                            disabled={loading}
+                            placeholder=" "
+                        />
+                        {usernameState.loading ? (
+                            <LoadingSpinner className="signin-signup-form__icon" />
+                        ) : (
+                            usernameValidationResult?.kind === 'VALID' && (
+                                <CheckIcon className="signin-signup-form__icon text-success" size={20} />
+                            )
+                        )}
+                    </div>
+                    {!usernameState.loading && usernameValidationResult?.kind === 'INVALID' && (
+                        <span className="text-danger signin-signup-form__subtext mt-2">
+                            {usernameValidationResult.reason}
+                        </span>
+                    )}
+                </div>
+                <div className="form-group d-flex flex-column align-content-start">
+                    <label
+                        className={classNames('align-self-start', {
+                            'text-danger font-weight-bold':
+                                passwordValidationResult?.kind === 'INVALID' && !passwordState.loading,
+                        })}
+                    >
+                        Password
+                    </label>
+                    <div className="signin-signup-form__input-container">
+                        <PasswordInput
+                            className={classNames('signin-signup-form__input', {
+                                'border-danger': passwordValidationResult?.kind === 'INVALID' && !passwordState.loading,
+                            })}
+                            onChange={nextPasswordFieldChange}
+                            value={passwordState.value}
+                            required={true}
+                            disabled={loading}
+                            autoComplete="new-password"
+                            placeholder=" "
+                        />
+                        {passwordState.loading ? (
+                            <LoadingSpinner className="signin-signup-form__icon" />
+                        ) : (
+                            passwordValidationResult?.kind === 'VALID' && (
+                                <CheckIcon className="signin-signup-form__icon text-success" size={20} />
+                            )
+                        )}
+                    </div>
+                    {!passwordState.loading && passwordValidationResult?.kind === 'INVALID' ? (
+                        <span className="text-danger signin-signup-form__subtext mt-2">
+                            {passwordValidationResult.reason}
+                        </span>
+                    ) : (
+                        <span className="signin-signup-form__subtext mt-2">At least 12 characters</span>
+                    )}
+                </div>
+                {enterpriseTrial && (
+                    <div className="form-group">
+                        <div className="form-check">
+                            <label className="form-check-label">
+                                <input
+                                    className="form-check-input"
+                                    type="checkbox"
+                                    onChange={onRequestTrialFieldChange}
+                                />
+                                Try Sourcegraph Enterprise free for 30 days{' '}
+                                {/* eslint-disable-next-line react/jsx-no-target-blank */}
+                                <a target="_blank" rel="noopener" href="https://about.sourcegraph.com/pricing">
+                                    <HelpCircleOutlineIcon className="icon-inline" />
+                                </a>
+                            </label>
                         </div>
-                    ))}
-                </>
-            )}
+                    </div>
+                )}
+                <div className="form-group mb-0">
+                    <button className="btn btn-primary btn-block" type="submit" disabled={disabled}>
+                        {loading ? <LoadingSpinner className="icon-inline" /> : buttonLabel || 'Sign up'}
+                    </button>
+                </div>
+                {window.context.sourcegraphDotComMode && (
+                    <>
+                        {size(window.context.authProviders) > 0 && <OrDivider className="my-4" />}
+                        {window.context.authProviders?.map((provider, index) => (
+                            // Use index as key because display name may not be unique. This is OK
+                            // here because this list will not be updated during this component's lifetime.
+                            /* eslint-disable react/no-array-index-key */
+                            <div className="mb-2" key={index}>
+                                <a href={provider.authenticationURL} className="btn btn-secondary btn-block">
+                                    {provider.displayName === 'GitHub' && <GithubIcon className="icon-inline" />}{' '}
+                                    Continue with {provider.displayName}
+                                </a>
+                            </div>
+                        ))}
+                    </>
+                )}
 
-            {signupTerms && (
-                <p className="mt-3 mb-0">
-                    <small className="form-text text-muted">
-                        By signing up, you agree to our {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                        <a href="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
-                            Terms of Service
-                        </a>{' '}
-                        and {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                        <a href="https://about.sourcegraph.com/privacy" target="_blank" rel="noopener">
-                            Privacy Policy
-                        </a>
-                        .
-                    </small>
-                </p>
-            )}
-        </Form>
+                {signupTerms && (
+                    <p className="mt-3 mb-0">
+                        <small className="form-text text-muted">
+                            By signing up, you agree to our {/* eslint-disable-next-line react/jsx-no-target-blank */}
+                            <a href="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
+                                Terms of Service
+                            </a>{' '}
+                            and {/* eslint-disable-next-line react/jsx-no-target-blank */}
+                            <a href="https://about.sourcegraph.com/privacy" target="_blank" rel="noopener">
+                                Privacy Policy
+                            </a>
+                            .
+                        </small>
+                    </p>
+                )}
+            </Form>
+        </>
     )
 }
 
@@ -362,13 +378,14 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
 
 function checkPasswordLength(password: string): string | void {
     if (password.length < 12) {
-        return 'Password should be'
+        return 'Password must contain at least 12 characters'
     }
 }
 
 function checkUsernameLength(username: string): string | void {
     if (username.length > USERNAME_MAX_LENGTH) {
-        return 'Username is'
+        console.log('username is long')
+        return `Username is longer than ${USERNAME_MAX_LENGTH} characters`
     }
 }
 
