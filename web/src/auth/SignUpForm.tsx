@@ -11,13 +11,14 @@ import classNames from 'classnames'
 import * as H from 'history'
 import { OrDivider } from './OrDivider'
 import GithubIcon from 'mdi-react/GithubIcon'
-import { size } from 'lodash'
+import { head, size } from 'lodash'
 import { USERNAME_MAX_LENGTH, VALID_USERNAME_REGEXP } from '../user'
-import { concat, Observable, of } from 'rxjs'
+import { Observable, of, forkJoin } from 'rxjs'
 import { useEventObservable } from '../../../shared/src/util/useObservable'
-import { debounceTime, map, share, switchMap, tap } from 'rxjs/operators'
+import { catchError, debounceTime, map, share, switchMap, tap } from 'rxjs/operators'
 import { typingDebounceTime } from '../search/input/QueryInput'
 import CheckIcon from 'mdi-react/CheckIcon'
+import { fromFetch } from 'rxjs/fetch'
 export interface SignUpArgs {
     email: string
     username: string
@@ -47,12 +48,13 @@ interface FieldValidators {
     synchronousValidators?: ((value: string) => string | void)[]
 
     /**
-     * Optional array of asynchronous input validators.
+     * Optional array of asynchronous input validators. These must return
+     * observables created with `fromFetch` for easy cancellation in `switchMap`.
      *
      * If there's no problem with the input, void return. Else,
      * return with the reason the input is invalid.
      */
-    asynchronousValidators?: ((value: string) => Promise<string | void>)[]
+    asynchronousValidators?: ((value: string) => Observable<string | undefined>)[]
 }
 
 /** Lazily construct this in SignUpForm */
@@ -135,9 +137,22 @@ function createValidationPipeline(
                 //     // Good behavior. 'Unknown error'
                 //     return {value, }
                 // })
+                // TODO: use fromFetch to cancel
+                // const reason = from(
+                //     Promise.all(asynchronousValidators.map(validator => validator(value)))
+                //         .then(values => head(values.filter(Boolean)))
+                //         .catch(() => `Unknown error validating ${name}`)
+                // )
 
-                // else, kick off async validation. if none of THESE are invalid either, return valid true
-                return concat(of({ kind: 'VALID' as const })).pipe(tap(() => onInputChange({ value, loading: false })))
+                return forkJoin(asynchronousValidators.map(validator => validator(value))).pipe(
+                    tap(values => console.log('VALUES!!', values)),
+                    map(values => head(values.filter(Boolean))),
+                    tap(reason => console.log('REASON!!', reason)),
+                    map(reason => (reason ? { kind: 'INVALID' as const, reason } : { kind: 'VALID' as const })),
+                    tap(() => onInputChange({ value, loading: false }))
+                )
+
+                // return concat(of({ kind: 'VALID' as const })).pipe(tap(() => onInputChange({ value, loading: false })))
             })
         )
     }
@@ -155,19 +170,19 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
     const [nextEmailFieldChange, emailValidationResult] = useEventObservable<
         React.ChangeEvent<HTMLInputElement>,
         ValidationResult
-    >(useMemo(() => createValidationPipeline('email', setEmailState, signUpFormValidators.email), []))
+    >(useMemo(() => createValidationPipeline('email', setEmailState, signUpFieldValidators.email), []))
 
     const [usernameState, setUsernameState] = useState({ value: '', loading: false })
     const [nextUsernameFieldChange, usernameValidationResult] = useEventObservable<
         React.ChangeEvent<HTMLInputElement>,
         ValidationResult
-    >(useMemo(() => createValidationPipeline('username', setUsernameState, signUpFormValidators.username), []))
+    >(useMemo(() => createValidationPipeline('username', setUsernameState, signUpFieldValidators.username), []))
 
     const [passwordState, setPasswordState] = useState({ value: '', loading: false })
     const [nextPasswordFieldChange, passwordValidationResult] = useEventObservable<
         React.ChangeEvent<HTMLInputElement>,
         ValidationResult
-    >(useMemo(() => createValidationPipeline('password', setPasswordState, signUpFormValidators.password), []))
+    >(useMemo(() => createValidationPipeline('password', setPasswordState, signUpFieldValidators.password), []))
 
     const canRegister =
         emailValidationResult?.kind === 'VALID' &&
@@ -421,38 +436,39 @@ function checkEmailPattern(email: string): string | void {
 
 // Asynchronous Validators
 
-async function isEmailUnique(email: string): Promise<string | void> {
-    try {
-        const response = await fetch(`/-/is-email-taken/${email}`)
-        switch (response.status) {
-            case 200:
-                return `The email '${email}' is taken.`
-            case 404:
-                // Email is unique
-                return
+function isEmailUnique(email: string): Observable<string | undefined> {
+    return fromFetch(`/-/check-email-taken/${email}`).pipe(
+        switchMap(response => {
+            switch (response.status) {
+                case 200:
+                    return of(`The email '${email}' is taken.`)
+                case 404:
+                    // Email is unique
+                    return of(undefined)
 
-            default:
-                return 'Unknown error'
-        }
-    } catch {
-        return 'Unknown error'
-    }
+                default:
+                    return of('Unknown error validating username')
+            }
+        }),
+        catchError(() => of('Unknown error validating email'))
+    )
 }
 
-async function isUsernameUnique(username: string): Promise<string | void> {
-    try {
-        const response = await fetch(`/-/is-username-taken/${username}`)
-        switch (response.status) {
-            case 200:
-                return `The email '${username}' is taken.`
-            case 404:
-                // Username is unique
-                return
+function isUsernameUnique(username: string): Observable<string | undefined> {
+    console.log('create isusernameunique obs')
+    return fromFetch(`/-/check-username-taken/${username}`).pipe(
+        switchMap(response => {
+            switch (response.status) {
+                case 200:
+                    return of(`The username '${username}' is taken.`)
+                case 404:
+                    // Username is unique
+                    return of(undefined)
 
-            default:
-                return 'Unknown error'
-        }
-    } catch {
-        return 'Unknown error'
-    }
+                default:
+                    return of('Unknown error validating username')
+            }
+        }),
+        catchError(() => of('Unknown error validating username'))
+    )
 }
