@@ -17,7 +17,9 @@ export const RepositoriesPanel: React.FunctionComponent<{
     fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult | null>
     className?: string
 }> = ({ authenticatedUser, fetchRecentSearches, className }) => {
-    const pageSize = 20
+    // Use a larger page size because not every search may have a `repo:` filter, and `repo:` filters could often
+    // be duplicated. Therefore, we fetch more searches to populate this panel.
+    const pageSize = 50
     const [itemsToLoad, setItemsToLoad] = useState(pageSize)
 
     const loadingDisplay = (

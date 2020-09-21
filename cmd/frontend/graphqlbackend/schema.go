@@ -634,7 +634,9 @@ type Mutation {
     """
     createChangesetSpec(
         """
-        The raw changeset spec (as JSON).
+        The raw changeset spec (as JSON). See
+        https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/changeset_spec.schema.json
+        for the JSON Schema that describes the structure of this input.
         """
         changesetSpec: String!
     ): ChangesetSpec!
@@ -654,7 +656,9 @@ type Mutation {
         namespace: ID!
 
         """
-        The campaign spec as YAML (or the equivalent JSON).
+        The campaign spec as YAML (or the equivalent JSON). See
+        https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/campaign_spec.schema.json
+        for the JSON Schema that describes the structure of this input.
         """
         campaignSpec: String!
 
@@ -2279,6 +2283,16 @@ type Query {
     Look up a namespace by ID.
     """
     namespace(id: ID!): Namespace
+
+    """
+    Look up a namespace by name, which is a username or organization name.
+    """
+    namespaceByName(
+        """
+        The name of the namespace.
+        """
+        name: String!
+    ): Namespace
 
     """
     The repositories a user is authorized to access with the given permission.

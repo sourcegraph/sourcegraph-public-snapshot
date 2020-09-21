@@ -23,7 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hubspot"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/pubsub/pubsubutil"
+	"github.com/sourcegraph/sourcegraph/internal/pubsub"
 )
 
 // pubSubPingsTopicID is the topic ID of the topic that forwards messages to Pings' pub/sub subscribers.
@@ -34,12 +34,12 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	//version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.19.2")
+	latestReleaseDockerServerImageBuild = newBuild("3.20.0")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.19.2")
+	latestReleaseKubernetesBuild = newBuild("3.20.0")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
@@ -304,11 +304,11 @@ func logPing(r *http.Request, pr *pingRequest, hasUpdate bool) {
 		errorCounter.Inc()
 		log15.Warn("logPing.Marshal: failed to Marshal payload", "error", err)
 	} else {
-		if pubsubutil.Enabled() {
-			err := pubsubutil.Publish(pubSubPingsTopicID, string(message))
+		if pubsub.Enabled() {
+			err := pubsub.Publish(pubSubPingsTopicID, string(message))
 			if err != nil {
 				errorCounter.Inc()
-				log15.Warn("pubsubutil.Publish: failed to Publish", "message", message, "error", err)
+				log15.Warn("pubsub.Publish: failed to Publish", "message", message, "error", err)
 			}
 		}
 	}

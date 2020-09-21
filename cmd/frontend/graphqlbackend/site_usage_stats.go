@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestatsdeprecated"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 

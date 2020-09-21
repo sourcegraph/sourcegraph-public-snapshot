@@ -28,7 +28,7 @@ export const CampaignsDotComPage: React.FunctionComponent<CampaignsDotComPagePro
                     className="percy-hide chromatic-ignore"
                     width="560"
                     height="315"
-                    src="https://www.youtube.com/embed/aqcCrqRB17w"
+                    src="https://www.youtube.com/embed/EfKwKFzOs3E"
                     frameBorder="0"
                     allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen={true}

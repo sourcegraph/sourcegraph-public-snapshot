@@ -24,6 +24,17 @@ type Browser = 'firefox' | 'chrome'
 
 const BUILDS_DIR = 'build'
 
+/*
+ * Use a UTC-timestamp-based as the version string, generated at build-time.
+ *
+ * If enabled, the version string will depend on the timestamp when building, so
+ * it will vary with every build. Uses the `utc-version` module.
+ *
+ * To get a reproducible build, disable this and set a version manually in
+ * `manifest.spec.json`.
+ */
+const useUtcVersion = true
+
 export const WEBPACK_STATS_OPTIONS: Stats.ToStringOptions = {
     all: false,
     timings: true,
@@ -106,7 +117,7 @@ function writeSchema(environment: BuildEnv, browser: Browser, writeDirectory: st
     fs.writeFileSync(`${writeDirectory}/schema.json`, JSON.stringify(schema, null, 4))
 }
 
-const version = utcVersion()
+const version = process.env.BROWSER_EXTENSION_VERSION || utcVersion()
 
 const shouldBuildWithInlineExtensions = (browser: Browser): boolean => browser === 'firefox'
 
@@ -137,7 +148,7 @@ function writeManifest(environment: BuildEnv, browser: Browser, writeDirectory: 
 
     delete manifest.$schema
 
-    if (environment === 'prod') {
+    if (environment === 'prod' && useUtcVersion) {
         manifest.version = version
     }
 

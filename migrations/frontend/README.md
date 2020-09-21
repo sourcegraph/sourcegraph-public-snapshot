@@ -18,7 +18,7 @@ are terminated.
 Run the following:
 
 ```
-./dev/add_migration.sh MIGRATION_NAME
+./dev/db/add_migration.sh MIGRATION_NAME
 ```
 
 There will be up/down `.sql` migration files created in this directory. Add
@@ -67,11 +67,11 @@ for private instances (although there will be exceptions due to feature velocity
 
 Up migrations happen automatically on server start-up after running the
 generate scripts. They can also be run manually using the migrate CLI:
-run `./dev/migrate.sh up` to move forward to the latest migration. Run
-`./dev/migrate.sh` for a full list of options.
+run `./dev/db/migrate.sh up` to move forward to the latest migration. Run
+`./dev/db/migrate.sh` for a full list of options.
 
-You can run `./dev/migrate.sh down 1` to rollback the previous migration. If a migration fails and
-you need to revert to a previous state `./dev/migrate.sh force` may be helpful. Alternatively use
+You can run `./dev/db/migrate.sh down 1` to rollback the previous migration. If a migration fails and
+you need to revert to a previous state `./dev/db/migrate.sh force` may be helpful. Alternatively use
 the `dropdb` and `createdb` commands to wipe your local DB and start from a clean state.
 
 **Note:** if you find that you need to run a down migration, that almost certainly means the

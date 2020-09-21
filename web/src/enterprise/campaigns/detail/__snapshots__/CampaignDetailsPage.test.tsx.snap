@@ -23,7 +23,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
     title="n"
   />
   <div
-    className="container"
+    className="container web-content"
   >
     <CampaignHeader
       actionSection={
@@ -465,7 +465,7 @@ description: somestring",
       </nav>
     </div>
     <div
-      className="container"
+      className="container web-content"
     >
       <CampaignChangesets
         campaignID="c"
@@ -763,7 +763,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
     title="n"
   />
   <div
-    className="container"
+    className="container web-content"
   >
     <CampaignHeader
       actionSection={
@@ -1205,7 +1205,7 @@ description: somestring",
       </nav>
     </div>
     <div
-      className="container"
+      className="container web-content"
     >
       <CampaignChangesets
         campaignID="c"
