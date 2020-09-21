@@ -1,7 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import React, { useCallback, useState } from 'react'
-import { from, Observable, Subscription } from 'rxjs'
 import { asError } from '../../../shared/src/util/errors'
 import { Form } from '../components/Form'
 import { eventLogger } from '../tracking/eventLogger'
@@ -13,9 +12,6 @@ import * as H from 'history'
 import { OrDivider } from './OrDivider'
 import GithubIcon from 'mdi-react/GithubIcon'
 import { size } from 'lodash'
-import { useEventObservable } from '../../../shared/src/util/useObservable'
-import { map, switchMap } from 'rxjs/operators'
-
 export interface SignUpArgs {
     email: string
     username: string
@@ -54,7 +50,7 @@ interface SignUpFormValidator {
 }
 
 /** Lazily construct this in SignUpForm */
-const signUpFormValidators: { [name: string]: SignUpFormValidator } = {
+const signUpFormValidators: { [name in 'email' | 'username' | 'password']: SignUpFormValidator } = {
     email: {
         synchronousValidators: [],
         asynchronousValidators: [
