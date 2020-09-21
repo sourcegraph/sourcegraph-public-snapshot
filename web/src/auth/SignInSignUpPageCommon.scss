@@ -12,6 +12,16 @@
     max-width: calc(100vw - 2rem);
     background-color: var(--body-bg-1);
     border-color: var(--color-border-2);
+
+    &__input-container {
+        position: relative;
+    }
+
+    &__icon {
+        position: absolute;
+        right: 0.4375rem;
+        top: 0.4375rem;
+    }
 }
 
 .signin-page {

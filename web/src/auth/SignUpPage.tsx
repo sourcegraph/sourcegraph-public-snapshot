@@ -44,8 +44,14 @@ export class SignUpPage extends React.Component<SignUpPageProps> {
                     }
                     body={
                         <div className="signup-page__container">
-                            <p className="pt-1 pb-3">Start searching public code now</p>
-                            <SignUpForm {...this.props} doSignUp={this.doSignUp} />
+                            {window.context.sourcegraphDotComMode && (
+                                <p className="pt-1 pb-2">Start searching public code now</p>
+                            )}
+                            <SignUpForm
+                                {...this.props}
+                                className={window.context.sourcegraphDotComMode ? 'mt-3' : 'mt-4'}
+                                doSignUp={this.doSignUp}
+                            />
                             <p className="mt-3">
                                 Already have an account?{' '}
                                 <Link to={`/sign-in${this.props.location.search}`}>Sign in.</Link>
