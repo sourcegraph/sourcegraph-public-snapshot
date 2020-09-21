@@ -13,7 +13,7 @@ import { OrDivider } from './OrDivider'
 import GithubIcon from 'mdi-react/GithubIcon'
 import { head, size } from 'lodash'
 import { USERNAME_MAX_LENGTH, VALID_USERNAME_REGEXP } from '../user'
-import { Observable, of, forkJoin } from 'rxjs'
+import { Observable, of, zip } from 'rxjs'
 import { useEventObservable } from '../../../shared/src/util/useObservable'
 import { catchError, debounceTime, map, share, switchMap, tap } from 'rxjs/operators'
 import { typingDebounceTime } from '../search/input/QueryInput'
@@ -109,10 +109,7 @@ function createValidationPipeline(
         return inputValues.pipe(
             debounceTime(typingDebounceTime),
             switchMap(value => {
-                console.log('vall', value)
-                // test synchronous validators first. if reason, return of(reason)
-                // looping over validators here because we only need the first reason it's invalid
-
+                // We only need the first reason that it's invalid
                 for (const validator of synchronousValidators) {
                     const reason = validator(value)
                     if (reason) {
@@ -122,37 +119,11 @@ function createValidationPipeline(
                     }
                 }
 
-                // const hi = Promise.all(asynchronousValidators.map(validator => validator(value)))
-                // .then(reasons => {
-                //     // just need the first reason
-                //     for (const reason of reasons) {
-                //         if (reason) {
-                //             // TODO
-                //             break
-                //         }
-                //     }
-                // })
-                // .catch(() => {
-                //     // noop
-                //     // Good behavior. 'Unknown error'
-                //     return {value, }
-                // })
-                // TODO: use fromFetch to cancel
-                // const reason = from(
-                //     Promise.all(asynchronousValidators.map(validator => validator(value)))
-                //         .then(values => head(values.filter(Boolean)))
-                //         .catch(() => `Unknown error validating ${name}`)
-                // )
-
-                return forkJoin(asynchronousValidators.map(validator => validator(value))).pipe(
-                    tap(values => console.log('VALUES!!', values)),
+                return zip(...asynchronousValidators.map(validator => validator(value))).pipe(
                     map(values => head(values.filter(Boolean))),
-                    tap(reason => console.log('REASON!!', reason)),
                     map(reason => (reason ? { kind: 'INVALID' as const, reason } : { kind: 'VALID' as const })),
                     tap(() => onInputChange({ value, loading: false }))
                 )
-
-                // return concat(of({ kind: 'VALID' as const })).pipe(tap(() => onInputChange({ value, loading: false })))
             })
         )
     }
@@ -455,7 +426,6 @@ function isEmailUnique(email: string): Observable<string | undefined> {
 }
 
 function isUsernameUnique(username: string): Observable<string | undefined> {
-    console.log('create isusernameunique obs')
     return fromFetch(`/-/check-username-taken/${username}`).pipe(
         switchMap(response => {
             switch (response.status) {
