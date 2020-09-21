@@ -490,7 +490,16 @@ func (issue *Issue) LinkedPullRequests(prs []*PullRequest) (linked []*PullReques
 		if hasMatch {
 			linked = append(linked, pr)
 		}
+
+		hasMatch, err = regexp.MatchString(fmt.Sprintf(`https://github.com/[^/]+/[^/]+/issues/%d([^\d]|$)`, issue.Number), pr.Body)
+		if err != nil {
+			panic(err)
+		}
+		if hasMatch {
+			linked = append(linked, pr)
+		}
 	}
+
 	return linked
 }
 
