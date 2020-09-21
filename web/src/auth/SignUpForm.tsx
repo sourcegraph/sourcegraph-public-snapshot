@@ -37,7 +37,7 @@ interface SignUpFormProps {
 /**
  * TODO: Better naming
  */
-interface SignUpFormValidator {
+interface FieldValidators {
     /**
      * Optional array of synchronous input validators.
      *
@@ -56,7 +56,7 @@ interface SignUpFormValidator {
 }
 
 /** Lazily construct this in SignUpForm */
-const signUpFormValidators: { [name in 'email' | 'username' | 'password']: SignUpFormValidator } = {
+const signUpFieldValidators: { [name in 'email' | 'username' | 'password']: FieldValidators } = {
     email: {
         synchronousValidators: [checkEmailFormat, checkEmailPattern],
         asynchronousValidators: [isEmailUnique],
@@ -80,14 +80,16 @@ type ValidationPipeline = (events: Observable<React.ChangeEvent<HTMLInputElement
  * To be consumed by `useEventObservable`
  *
  * @param name
+ * @param onInputChange Function to execute side-effects given the latest input value and loading state.
+ * Typically used to set state in a React component.
  * @param formValidator
  */
 function createValidationPipeline(
     name: string,
-    setInputState: (inputState: { value: string; loading: boolean }) => void,
-    formValidator: SignUpFormValidator
+    onInputChange: (inputState: { value: string; loading: boolean }) => void,
+    fieldValidators: FieldValidators
 ): ValidationPipeline {
-    const { synchronousValidators = [], asynchronousValidators = [] } = formValidator
+    const { synchronousValidators = [], asynchronousValidators = [] } = fieldValidators
 
     /**
      * Validation Pipeline takes an observable<string> and returns an observable
@@ -96,7 +98,7 @@ function createValidationPipeline(
     return function validationPipeline(events): Observable<ValidationResult> {
         const inputValues = events.pipe(
             map(event => event.target.value),
-            tap(value => setInputState({ value, loading: true })),
+            tap(value => onInputChange({ value, loading: true })),
             share()
         )
 
@@ -113,7 +115,7 @@ function createValidationPipeline(
                     const reason = validator(value)
                     if (reason) {
                         return of({ kind: 'INVALID' as const, reason }).pipe(
-                            tap(() => setInputState({ value, loading: false }))
+                            tap(() => onInputChange({ value, loading: false }))
                         )
                     }
                 }
@@ -135,7 +137,7 @@ function createValidationPipeline(
                 // })
 
                 // else, kick off async validation. if none of THESE are invalid either, return valid true
-                return concat(of({ kind: 'VALID' as const })).pipe(tap(() => setInputState({ value, loading: false })))
+                return concat(of({ kind: 'VALID' as const })).pipe(tap(() => onInputChange({ value, loading: false })))
             })
         )
     }
@@ -216,10 +218,18 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
         >
             {error && <ErrorAlert className="mb-3" error={error} history={history} />}
             <div className="form-group d-flex flex-column align-content-start">
-                <label className="align-self-start">Email</label>
+                <label
+                    className={classNames('align-self-start', {
+                        'text-danger font-weight-bold': emailValidationResult?.kind === 'INVALID',
+                    })}
+                >
+                    Email
+                </label>
                 <div className="signin-signup-form__input-container">
                     <EmailInput
-                        className="signin-signup-form__input"
+                        className={classNames('signin-signup-form__input', {
+                            'border-danger': emailValidationResult?.kind === 'INVALID',
+                        })}
                         onChange={nextEmailFieldChange}
                         required={true}
                         value={emailState.value}
@@ -231,7 +241,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                         <LoadingSpinner className="signin-signup-form__icon" />
                     ) : (
                         emailValidationResult?.kind === 'VALID' && (
-                            <CheckIcon className="signin-signup-form__icon" size={20} />
+                            <CheckIcon className="signin-signup-form__icon text-success" size={20} />
                         )
                     )}
                 </div>
@@ -240,10 +250,18 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                 )}
             </div>
             <div className="form-group d-flex flex-column align-content-start">
-                <label className="align-self-start">Username</label>
+                <label
+                    className={classNames('align-self-start', {
+                        'text-danger font-weight-bold': usernameValidationResult?.kind === 'INVALID',
+                    })}
+                >
+                    Username
+                </label>
                 <div className="signin-signup-form__input-container">
                     <UsernameInput
-                        className="signin-signup-form__input"
+                        className={classNames('signin-signup-form__input', {
+                            'border-danger': usernameValidationResult?.kind === 'INVALID',
+                        })}
                         onChange={nextUsernameFieldChange}
                         value={usernameState.value}
                         required={true}
@@ -254,7 +272,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                         <LoadingSpinner className="signin-signup-form__icon" />
                     ) : (
                         usernameValidationResult?.kind === 'VALID' && (
-                            <CheckIcon className="signin-signup-form__icon" size={20} />
+                            <CheckIcon className="signin-signup-form__icon text-success" size={20} />
                         )
                     )}
                 </div>
@@ -263,10 +281,18 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                 )}
             </div>
             <div className="form-group d-flex flex-column align-content-start">
-                <label className="align-self-start">Password</label>
+                <label
+                    className={classNames('align-self-start', {
+                        'text-danger font-weight-bold': passwordValidationResult?.kind === 'INVALID',
+                    })}
+                >
+                    Password
+                </label>
                 <div className="signin-signup-form__input-container">
                     <PasswordInput
-                        className="signin-signup-form__input"
+                        className={classNames('signin-signup-form__input', {
+                            'border-danger': passwordValidationResult?.kind === 'INVALID',
+                        })}
                         onChange={nextPasswordFieldChange}
                         value={passwordState.value}
                         required={true}
@@ -278,7 +304,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                         <LoadingSpinner className="signin-signup-form__icon" />
                     ) : (
                         passwordValidationResult?.kind === 'VALID' && (
-                            <CheckIcon className="signin-signup-form__icon" size={20} />
+                            <CheckIcon className="signin-signup-form__icon text-success" size={20} />
                         )
                     )}
                 </div>
