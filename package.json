@@ -222,7 +222,7 @@
     "p-retry": "^4.2.0",
     "postcss-focus-visible": "^5.0.0",
     "postcss-loader": "^3.0.0",
-    "prettier": "^2.0.5",
+    "prettier": "^2.1.2",
     "puppeteer": "5.2.1",
     "puppeteer-firefox": "^0.5.1",
     "raw-loader": "^4.0.1",
