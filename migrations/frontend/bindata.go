@@ -70,6 +70,8 @@
 // 1528395717_replicate_permissions_object_ids_to_intarray.up.sql (411B)
 // 1528395718_user_invalidate_session.down.sql (176B)
 // 1528395718_user_invalidate_session.up.sql (1.252kB)
+// 1528395719_migration_sql.down.sql (308B)
+// 1528395719_migration_sql.up.sql (53B)
 
 package migrations
 
@@ -1538,6 +1540,46 @@ func _1528395718_user_invalidate_sessionUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395719_migration_sqlDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x8f\x41\x4b\xc4\x40\x0c\x85\xef\xf3\x2b\xde\x71\x05\xff\x41\x4f\xad\xc6\x35\xd0\x66\xd4\xa6\x58\xbc\x0c\xc5\xe6\x50\x58\x2a\xdb\x99\x11\xf7\xdf\xcb\x0e\x88\x14\x2f\x9e\xc2\x23\xdf\x7b\xc9\x6b\xe8\xc8\x52\xb9\xbb\x17\xaa\x95\xa0\x75\xd3\x12\xf8\x01\xe2\x15\x34\x72\xaf\x3d\xe2\xf4\x69\x73\x38\x67\xdb\x16\x8b\xee\xe0\x00\xe0\xaa\x2e\x50\x1a\xb5\x90\x32\xb4\xed\x6d\x59\x9c\xa6\x98\x82\x7d\xd9\x7b\x4e\x36\x43\xb9\xa3\x5e\xeb\xee\x09\xaf\xac\x8f\x45\xe2\xcd\x0b\xfd\x31\x25\x8b\x29\x6c\x16\xf3\x29\xfd\xd7\x74\x3d\x12\xe6\xbc\x4d\x69\xf9\x58\xc3\x1a\xd1\xf0\x91\xe5\xf7\x1f\x77\x53\xb9\x9f\x5a\x83\xf0\xf3\x40\x60\xb9\xa7\x71\xdf\xa7\xcc\x4b\xc8\xeb\x72\xce\x56\x72\xbd\xec\x09\x1c\x0a\x52\xd2\x7c\xd7\xb1\x56\xee\x3b\x00\x00\xff\xff\x62\x12\x11\xd5\x34\x01\x00\x00")
+
+func _1528395719_migration_sqlDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395719_migration_sqlDownSql,
+		"1528395719_migration_sql.down.sql",
+	)
+}
+
+func _1528395719_migration_sqlDownSql() (*asset, error) {
+	bytes, err := _1528395719_migration_sqlDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395719_migration_sql.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x92, 0x58, 0x51, 0x35, 0xf9, 0x7d, 0x32, 0xa7, 0xc9, 0x1e, 0x67, 0x7a, 0x1a, 0x51, 0xd4, 0xc1, 0xb3, 0x96, 0x4b, 0xab, 0x70, 0x8c, 0xf3, 0x1, 0xb1, 0x94, 0xdf, 0xaa, 0x3d, 0x3b, 0x52, 0xfe}}
+	return a, nil
+}
+
+var __1528395719_migration_sqlUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x4e\x2c\x4b\x4d\x89\x2f\x2c\x4d\x2d\xca\x4c\x2d\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x5d\x21\xda\x6b\x35\x00\x00\x00")
+
+func _1528395719_migration_sqlUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395719_migration_sqlUpSql,
+		"1528395719_migration_sql.up.sql",
+	)
+}
+
+func _1528395719_migration_sqlUpSql() (*asset, error) {
+	bytes, err := _1528395719_migration_sqlUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395719_migration_sql.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x2, 0x2d, 0xcb, 0x52, 0xe8, 0x55, 0xd1, 0x57, 0x74, 0x6, 0x84, 0xc9, 0xe8, 0x39, 0xaa, 0x4e, 0xbe, 0x14, 0xf6, 0x9f, 0x77, 0x8, 0x9d, 0xd9, 0xc3, 0xd9, 0x8c, 0xa2, 0xf1, 0xe4, 0x45, 0xb9}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1699,6 +1741,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395717_replicate_permissions_object_ids_to_intarray.up.sql":               _1528395717_replicate_permissions_object_ids_to_intarrayUpSql,
 	"1528395718_user_invalidate_session.down.sql":                                  _1528395718_user_invalidate_sessionDownSql,
 	"1528395718_user_invalidate_session.up.sql":                                    _1528395718_user_invalidate_sessionUpSql,
+	"1528395719_migration_sql.down.sql":                                            _1528395719_migration_sqlDownSql,
+	"1528395719_migration_sql.up.sql":                                              _1528395719_migration_sqlUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -1815,6 +1859,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395717_replicate_permissions_object_ids_to_intarray.up.sql":               {_1528395717_replicate_permissions_object_ids_to_intarrayUpSql, map[string]*bintree{}},
 	"1528395718_user_invalidate_session.down.sql":                                  {_1528395718_user_invalidate_sessionDownSql, map[string]*bintree{}},
 	"1528395718_user_invalidate_session.up.sql":                                    {_1528395718_user_invalidate_sessionUpSql, map[string]*bintree{}},
+	"1528395719_migration_sql.down.sql":                                            {_1528395719_migration_sqlDownSql, map[string]*bintree{}},
+	"1528395719_migration_sql.up.sql":                                              {_1528395719_migration_sqlUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

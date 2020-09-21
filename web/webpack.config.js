@@ -12,7 +12,7 @@ const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
 logger.info('Using mode', mode)
 
-const devtool = mode === 'production' ? 'source-map' : 'cheap-module-eval-source-map'
+const devtool = mode === 'production' ? 'source-map' : 'eval-cheap-module-source-map'
 
 const shouldAnalyze = process.env.WEBPACK_ANALYZER === '1'
 if (shouldAnalyze) {

@@ -22,7 +22,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/migrations"
+	migrations "github.com/sourcegraph/sourcegraph/migrations/frontend"
 )
 
 // Transaction calls f within a transaction, rolling back if any error is

@@ -79,14 +79,16 @@ type SearchFileResults struct {
 	} `json:"results"`
 }
 
+type ProposedQuery struct {
+	Description string `json:"description"`
+	Query       string `json:"query"`
+}
+
 // SearchAlert is an alert specific to searches (i.e. not site alert).
 type SearchAlert struct {
-	Title           string `json:"title"`
-	Description     string `json:"description"`
-	ProposedQueries []struct {
-		Description string `json:"description"`
-		Query       string `json:"query"`
-	} `json:"proposedQueries"`
+	Title           string          `json:"title"`
+	Description     string          `json:"description"`
+	ProposedQueries []ProposedQuery `json:"proposedQueries"`
 }
 
 // SearchFiles searches files with given query. It returns the match count and
