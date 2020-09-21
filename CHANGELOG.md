@@ -17,6 +17,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- Log files created by `src campaigns [preview|apply]` are deleted again after successful execution. This was a regression and is not new behaviour. If steps failed to execute or the `-keep-logs` flag is set the log files are not cleaned up.
+
 ## 3.21.0
 
 ### Added

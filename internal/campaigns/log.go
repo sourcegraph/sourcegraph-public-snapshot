@@ -90,6 +90,11 @@ func (tl *TaskLogger) Close() error {
 	if tl.errored || tl.keep {
 		return nil
 	}
+
+	if err := os.Remove(tl.f.Name()); err != nil {
+		return errors.Wrapf(err, "cleaning up log file %s", tl.f.Name())
+	}
+
 	return nil
 }
 
