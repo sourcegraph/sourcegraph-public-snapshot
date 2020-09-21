@@ -648,6 +648,16 @@ type search struct {
 }
 
 func loadTrackingIssues(ctx context.Context, cli *graphql.Client, org string, issues []*TrackingIssue) error {
+	for _, issue := range issues {
+		if err := loadTrackingIssuesTemp(ctx, cli, org, []*TrackingIssue{issue}); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func loadTrackingIssuesTemp(ctx context.Context, cli *graphql.Client, org string, issues []*TrackingIssue) error {
 	var q bytes.Buffer
 	q.WriteString("query(\n")
 
