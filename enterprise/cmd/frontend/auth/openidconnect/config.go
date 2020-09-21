@@ -25,23 +25,23 @@ func getProvider(id string) *provider {
 	return p
 }
 
-func handleGetProvider(ctx context.Context, w http.ResponseWriter, id string) (p *provider, handled bool) {
+func handleGetProvider(ctx context.Context, w http.ResponseWriter, r *http.Request, id string) (p *provider, handled bool) {
 	handled = true // safer default
 
 	p = getProvider(id)
 	if p == nil {
 		log15.Error("No OpenID Connect auth provider found with ID.", "id", id)
-		http.Error(w, "Misconfigured OpenID Connect auth provider.", http.StatusInternalServerError)
+		http.Redirect(w, r, "Misconfigured OpenID Connect auth provider.", http.StatusFound)
 		return nil, true
 	}
 	if p.config.Issuer == "" {
 		log15.Error("No issuer set for OpenID Connect auth provider (set the openidconnect auth provider's issuer property).", "id", p.ConfigID())
-		http.Error(w, "Misconfigured OpenID Connect auth provider.", http.StatusInternalServerError)
+		http.Redirect(w, r, "Misconfigured OpenID Connect auth provider.", http.StatusFound)
 		return nil, true
 	}
 	if err := p.Refresh(ctx); err != nil {
 		log15.Error("Error refreshing OpenID Connect auth provider.", "id", p.ConfigID(), "error", err)
-		http.Error(w, "Unexpected error refreshing OpenID Connect authentication provider. This may be due to an incorrect issuer URL. Check the logs for more details.", http.StatusInternalServerError)
+		http.Redirect(w, r, "/sign-in?auth_error=Unexpected error refreshing OpenID Connect authentication provider. This may be due to an incorrect issuer URL. Check the logs for more details", http.StatusFound)
 		return nil, true
 	}
 	return p, false
