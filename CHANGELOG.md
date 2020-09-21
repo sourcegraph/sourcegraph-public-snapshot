@@ -11,6 +11,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## Unreleased
 
+### Added
+
+- The new GraphQL API query field `namespaceByName(name: String!)` makes it easier to look up the user or organization with the given name. Previously callers needed to try looking up the user and organization separately.
+
 ## 3.20.0
 
 ### Added
