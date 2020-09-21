@@ -134,11 +134,7 @@ function createValidationPipeline(
 export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp, history, buttonLabel, className }) => {
     const [loading, setLoading] = useState(false)
     const [requestedTrial, setRequestedTrial] = useState(false)
-    const [error, setError] = useState<Error | null>(
-        new Error(
-            'This is a long error used to demonstrate the wrapping effect of the error alert component inside of this container'
-        )
-    )
+    const [error, setError] = useState<Error | null>(null)
 
     const [emailState, setEmailState] = useState({ value: '', loading: false })
     const [nextEmailFieldChange, emailValidationResult] = useEventObservable<
@@ -238,9 +234,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                         )}
                     </div>
                     {!emailState.loading && emailValidationResult?.kind === 'INVALID' && (
-                        <span className="text-danger signin-signup-form__subtext mt-2">
-                            {emailValidationResult.reason}
-                        </span>
+                        <small className="text-danger mt-2">{emailValidationResult.reason}</small>
                     )}
                 </div>
                 <div className="form-group d-flex flex-column align-content-start">
@@ -272,9 +266,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                         )}
                     </div>
                     {!usernameState.loading && usernameValidationResult?.kind === 'INVALID' && (
-                        <span className="text-danger signin-signup-form__subtext mt-2">
-                            {usernameValidationResult.reason}
-                        </span>
+                        <small className="text-danger mt-2">{usernameValidationResult.reason}</small>
                     )}
                 </div>
                 <div className="form-group d-flex flex-column align-content-start">
@@ -307,11 +299,9 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                         )}
                     </div>
                     {!passwordState.loading && passwordValidationResult?.kind === 'INVALID' ? (
-                        <span className="text-danger signin-signup-form__subtext mt-2">
-                            {passwordValidationResult.reason}
-                        </span>
+                        <small className="text-danger mt-2">{passwordValidationResult.reason}</small>
                     ) : (
-                        <span className="signin-signup-form__subtext mt-2">At least 12 characters</span>
+                        <small className="mt-2">At least 12 characters</small>
                     )}
                 </div>
                 {enterpriseTrial && (
@@ -334,7 +324,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                 )}
                 <div className="form-group mb-0">
                     <button className="btn btn-primary btn-block" type="submit" disabled={disabled}>
-                        {loading ? <LoadingSpinner className="icon-inline" /> : buttonLabel || 'Sign up'}
+                        {loading ? <LoadingSpinner className="icon-inline" /> : buttonLabel || 'Register'}
                     </button>
                 </div>
                 {window.context.sourcegraphDotComMode && (

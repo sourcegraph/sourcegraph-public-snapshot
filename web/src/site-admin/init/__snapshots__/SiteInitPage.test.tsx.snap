@@ -22,34 +22,8 @@ exports[`SiteInitPage normal 1`] = `
       <p>
         Create an admin account to start using Sourcegraph.
       </p>
-      <div
-        className="alert alert-danger mt-4 mb-0"
-      >
-        <svg
-          className="mdi-icon icon icon-inline"
-          fill="currentColor"
-          height={24}
-          viewBox="0 0 24 24"
-          width={24}
-        >
-          <path
-            d="M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
-          />
-        </svg>
-         
-         
-        <span
-          className="markdown"
-          dangerouslySetInnerHTML={
-            Object {
-              "__html": "This is a long error used to demonstrate the wrapping effect of the error alert component inside of this container",
-            }
-          }
-          onClick={[Function]}
-        />
-      </div>
       <form
-        className="signin-signup-form signup-form test-signup-form border rounded p-4 text-left mt-3 w-100 "
+        className="signin-signup-form signup-form test-signup-form border rounded p-4 text-left mt-4 w-100 "
         noValidate={true}
         onInvalid={[Function]}
         onSubmit={[Function]}
@@ -131,11 +105,11 @@ exports[`SiteInitPage normal 1`] = `
               value=""
             />
           </div>
-          <span
-            className="signin-signup-form__subtext mt-2"
+          <small
+            className="mt-2"
           >
             At least 12 characters
-          </span>
+          </small>
         </div>
         <div
           className="form-group mb-0"

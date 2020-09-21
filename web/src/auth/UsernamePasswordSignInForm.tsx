@@ -76,7 +76,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({ loc
 
     return (
         <>
-            <Form className="" onSubmit={handleSubmit}>
+            <Form onSubmit={handleSubmit}>
                 <div className="form-group d-flex flex-column align-content-start">
                     <label className="align-self-start">Username or email</label>
                     <input
