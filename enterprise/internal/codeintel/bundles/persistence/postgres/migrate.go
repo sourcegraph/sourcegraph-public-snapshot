@@ -13,8 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
-// TODO - rename
-// TODO - document
+// MigrateBundleToPostgres reads the SQLite file at the given filename and inserts the same
+// data into the given Postgres handle. Every row inserted into Postgres will be inserted with
+// the given dump identifier.
 func MigrateBundleToPostgres(ctx context.Context, dumpID int, filename string, to dbutil.DB) (err error) {
 	from, closer, err := sqlitestore.Open(filename)
 	if err != nil {
@@ -194,7 +195,8 @@ func migrateDefinitionReferences(ctx context.Context, tableName string, from *sq
 	})
 }
 
-// TODO - document
+// foreachRow performs the given query on the SQLite store and invokes the given function with
+// each resulting row. The first error encountered will be returned.
 func foreachRow(ctx context.Context, store *sqlitestore.Store, query *sqlf.Query, f func(rows *sql.Rows) error) (err error) {
 	rows, err := store.Query(ctx, query)
 	if err != nil {

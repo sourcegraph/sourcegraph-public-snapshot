@@ -30,7 +30,7 @@ func TestBatchInserter(t *testing.T) {
 	}
 
 	var expectedValues [][]interface{}
-	for i := 0; i < maxNumPostgresParameters*2; i++ {
+	for i := 0; i < maxNumParameters*2; i++ {
 		expectedValues = append(expectedValues, []interface{}{i, i + 1, i + 2, i + 3, i + 4})
 	}
 

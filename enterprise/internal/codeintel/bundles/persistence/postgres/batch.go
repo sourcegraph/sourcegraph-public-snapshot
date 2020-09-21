@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
-// TODO - document
+// BatchInserter allows for bulk updates to a single Postgres table.
 type BatchInserter struct {
 	db           dbutil.DB
 	numColumns   int
@@ -19,7 +19,9 @@ type BatchInserter struct {
 	querySuffix  string
 }
 
-// TODO - document
+// NewBatchInserter creates a new batch inserter using the given database handle,
+// table name, and column names. For performance and atomicity, handle should be
+// a transaction.
 func NewBatchInserter(ctx context.Context, db dbutil.DB, tableName string, columnNames ...string) *BatchInserter {
 	numColumns := len(columnNames)
 	maxBatchSize := getMaxBatchSize(numColumns)
@@ -36,7 +38,7 @@ func NewBatchInserter(ctx context.Context, db dbutil.DB, tableName string, colum
 	}
 }
 
-// TODO - document
+// Insert submits a single row of values to be inserted on the next flush.
 func (i *BatchInserter) Insert(ctx context.Context, values ...interface{}) error {
 	if len(values) != i.numColumns {
 		return fmt.Errorf("expected %d values, got %d", i.numColumns, len(values))
@@ -77,7 +79,8 @@ func (i *BatchInserter) Flush(ctx context.Context) error {
 	return nil
 }
 
-// TODO - document
+// pop removes and returns as many values from the current batch that can be attached to a single
+// insert statement. The returned values are the oldest values submitted to the batch (in order).
 func (i *BatchInserter) pop() (batch []interface{}) {
 	if len(i.batch) < i.maxBatchSize {
 		batch, i.batch = i.batch, i.batch[:0]
@@ -88,15 +91,18 @@ func (i *BatchInserter) pop() (batch []interface{}) {
 	return batch
 }
 
-// TODO - document
-const maxNumPostgresParameters = 32767
+// maxNumPostgresParameters is the maximum number of placeholder variables allowed by Postgres
+// in a single insert statement.
+const maxNumParameters = 32767
 
-// TODO - document
+// getMaxBatchSize returns the number of rows that can be inserted into a single table with the
+// give number of columns via a single insert statement.
 func getMaxBatchSize(numColumns int) int {
-	return (maxNumPostgresParameters / numColumns) * numColumns
+	return (maxNumParameters / numColumns) * numColumns
 }
 
-// TODO - document
+// makeQueryPrefix creates the prefix of the batch insert statement (up to `VALUES `) using the
+// given table and column names.
 func makeQueryPrefix(tableName string, columnNames []string) string {
 	quotedColumnNames := make([]string, 0, len(columnNames))
 	for _, columnName := range columnNames {
@@ -106,31 +112,42 @@ func makeQueryPrefix(tableName string, columnNames []string) string {
 	return fmt.Sprintf(`INSERT INTO "%s" (%s) VALUES `, tableName, strings.Join(quotedColumnNames, ","))
 }
 
-// TODO - rename
-// TODO - document
-var m sync.Mutex
 var querySuffixCache = map[int]string{}
+var querySuffixCacheMutex sync.Mutex
 
-// TODO - document
+// makeQuerySuffix creates the suffix of the batch insert statement containing the placeholder
+// variables, e.g. `($1,$2,$3),($4,$5,$6),...`. The number of rows will be the maximum number of
+// _full_ rows that can be inserted in one insert statement.
+//
+// If a fewer number of rows should be inserted (due to flushing a partial batch), then the caller
+// slice the appropriate nubmer of rows from the beginning of the string. The suffix constructed
+// here is done so with this use case in mind (each placeholder is 5 digits), so finding the right
+// substring index is efficient.
+//
+// This method is memoized.
 func makeQuerySuffix(numColumns int) string {
-	m.Lock()
-	defer m.Unlock()
+	querySuffixCacheMutex.Lock()
+	defer querySuffixCacheMutex.Unlock()
 	if cache, ok := querySuffixCache[numColumns]; ok {
 		return cache
 	}
 
-	// TODO - clean up logic here
-	qs := []byte{','}
-	for i := 0; i < maxNumPostgresParameters; i++ {
+	qs := []byte{
+		',', // Start with trailing comma for processing uniformity
+	}
+	for i := 0; i < maxNumParameters; i++ {
 		if i%numColumns == 0 {
+			// Replace previous `,` with `),(`
 			qs[len(qs)-1] = ')'
 			qs = append(qs, ',', '(')
 		}
 		qs = append(qs, []byte(fmt.Sprintf("$%05d", i+1))...)
 		qs = append(qs, ',')
 	}
+	// Replace trailing `,` with `)`
 	qs[len(qs)-1] = ')'
 
+	// Chop off leading `),`
 	querySuffix := string(qs[2:])
 	querySuffixCache[numColumns] = querySuffix
 	return querySuffix
