@@ -123,7 +123,7 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
                     </div>
                 </nav>
             </div>
-            <div className="container">
+            <div className="container web-content">
                 {selectedTab === 'chart' && (
                     <CampaignBurndownChart
                         campaignID={campaign.id}
