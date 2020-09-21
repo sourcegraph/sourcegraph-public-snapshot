@@ -2,7 +2,6 @@
 package ctags
 
 var ctagsArgs = []string{
-	`--languages=Basic,C,C#,C++,Clojure,Cobol,CSS,CUDA,D,Elixir,elm,Erlang,Go,GraphQL,Groovy,haskell,Java,JavaScript,Jsonnet,kotlin,Lisp,Lua,MatLab,ObjectiveC,OCaml,Pascal,Perl,Perl6,PHP,Protobuf,Python,R,Ruby,Rust,scala,Scheme,Sh,swift,SystemVerilog,Tcl,Thrift,typescript,tsx,Verilog,VHDL,Vim`,
 	`--regex-clojure=/def ([A-Za-z0-9_!?+*<>=-]+)/\1/v,variable/`,
 	`--regex-clojure=/defmacro ([A-Za-z0-9_!?+*<>=-]+)/\1/m,macro/`,
 	`--regex-clojure=/defprotocol ([A-Za-z0-9_!?+*<>=-]+)/\1/p,protocol/`,

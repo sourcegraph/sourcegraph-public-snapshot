@@ -1,7 +1,6 @@
 package ctags
 
 import (
-	"os"
 	"os/exec"
 	"reflect"
 	"testing"
@@ -9,15 +8,12 @@ import (
 
 func TestParser(t *testing.T) {
 	// TODO(sqs): find a way to make it easy to run these tests in local dev (w/o needing to install universal-ctags) and CI
-	if _, err := exec.LookPath("universal-ctags"); err != nil {
+	if _, err := exec.LookPath(ctagsCommand); err != nil {
 		t.Skip("command not in PATH: universal-ctags")
 	}
 
 	p, err := New()
 	if err != nil {
-		if os.Getenv("CI") == "" {
-			t.Skipf("failed to start universal-ctags. Assuming it is due to our custom build of universal-ctags not being installed. Reason: %v", err)
-		}
 		t.Fatal(err)
 	}
 	defer p.Close()
