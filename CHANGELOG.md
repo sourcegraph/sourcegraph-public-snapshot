@@ -15,6 +15,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 - The new GraphQL API query field `namespaceByName(name: String!)` makes it easier to look up the user or organization with the given name. Previously callers needed to try looking up the user and organization separately.
 
+### Fixed
+
+- Fixed an issue causing the scoped query in the search field to be erased when viewing files. [#13954](https://github.com/sourcegraph/sourcegraph/pull/13954).
+
 ## 3.20.0
 
 ### Added
