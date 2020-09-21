@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
@@ -236,6 +238,39 @@ func HandleSignIn(w http.ResponseWriter, r *http.Request) {
 		httpLogAndError(w, "Could not create new user session", http.StatusInternalServerError)
 		return
 	}
+}
+
+// Check availability of username for signup form
+func HandleCheckUsernameTaken(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	username, err := auth.NormalizeUsername(vars["username"])
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	_, err = db.Users.GetByUsername(r.Context(), username)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// Check availability of email for signup form
+func HandleCheckEmailTaken(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	email := vars["email"]
+	fmt.Fprintln(w, "hi")
+	_, err := db.Users.GetByVerifiedEmail(r.Context(), email)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func httpLogAndError(w http.ResponseWriter, msg string, code int, errArgs ...interface{}) {

@@ -61,6 +61,9 @@ func NewHandler() http.Handler {
 	r.Get(router.ResetPasswordInit).Handler(trace.TraceRoute(http.HandlerFunc(userpasswd.HandleResetPasswordInit)))
 	r.Get(router.ResetPasswordCode).Handler(trace.TraceRoute(http.HandlerFunc(userpasswd.HandleResetPasswordCode)))
 
+	r.Get(router.CheckUsernameTaken).Handler(trace.TraceRoute(http.HandlerFunc(userpasswd.HandleCheckUsernameTaken)))
+	r.Get(router.CheckEmailTaken).Handler(trace.TraceRoute(http.HandlerFunc(userpasswd.HandleCheckEmailTaken)))
+
 	r.Get(router.RegistryExtensionBundle).Handler(trace.TraceRoute(gziphandler.GzipHandler(http.HandlerFunc(registry.HandleRegistryExtensionBundle))))
 
 	// Usage statistics ZIP download
