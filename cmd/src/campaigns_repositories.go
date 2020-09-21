@@ -59,7 +59,12 @@ Examples:
 			return err
 		}
 
-		tmpl, err := parseTemplate(campaignsRepositoriesTemplate)
+		queryTmpl, err := parseTemplate(campaignsRepositoriesTemplate)
+		if err != nil {
+			return err
+		}
+
+		totalTmpl, err := parseTemplate(campaignsRepositoriesTotalTemplate)
 		if err != nil {
 			return err
 		}
@@ -89,24 +94,19 @@ Examples:
 				finalMax = max
 			}
 
-			if *verbose {
-				if err := execTemplate(tmpl, campaignsRepositoryTemplateInput{
-					Max:                 max,
-					Query:               on.String(),
-					RepoCount:           len(repos),
-					Repos:               repos,
-					SourcegraphEndpoint: cfg.Endpoint,
-				}); err != nil {
-					return err
-				}
+			if err := execTemplate(queryTmpl, campaignsRepositoryTemplateInput{
+				Max:                 max,
+				Query:               on.String(),
+				RepoCount:           len(repos),
+				Repos:               repos,
+				SourcegraphEndpoint: cfg.Endpoint,
+			}); err != nil {
+				return err
 			}
 		}
 
-		return execTemplate(tmpl, campaignsRepositoryTemplateInput{
-			Max:                 finalMax,
-			RepoCount:           len(final),
-			Repos:               final,
-			SourcegraphEndpoint: cfg.Endpoint,
+		return execTemplate(totalTmpl, campaignsRepositoryTemplateInput{
+			RepoCount: len(final),
 		})
 	}
 
@@ -130,7 +130,7 @@ const campaignsRepositoriesTemplate = `
 {{- else -}}
     {{- color "success" -}}
 {{- end -}}
-{{- .RepoCount }} result{{ if ne .RepoCount 1 }}s{{ end }}{{- color "nc" -}}
+{{- .RepoCount }} repositor{{ if eq .RepoCount 1 }}y{{else}}ies{{ end }}{{- color "nc" -}}
 {{- if ne (len .Query) 0 -}}
     {{- " for " -}}{{- color "search-query"}}"{{.Query}}"{{ color "nc" -}}
 {{- end -}}
@@ -142,6 +142,18 @@ const campaignsRepositoriesTemplate = `
     {{- color "search-repository"}}{{$.SourcegraphEndpoint}}{{.URL}}{{color "nc" -}}
     {{- color "search-border"}}{{")\n"}}{{color "nc" -}}
 {{- end -}}
+`
+
+const campaignsRepositoriesTotalTemplate = `
+{{- color "logo" -}}✱{{- color "nc" -}}
+{{- " " -}}
+{{- if eq .RepoCount 0 -}}
+    {{- color "warning" -}}
+{{- else -}}
+    {{- color "success" -}}
+{{- end -}}
+{{- .RepoCount }} repositor{{ if eq .RepoCount 1 }}y{{else}}ies{{ end }} total
+{{- color "nc" -}}
 `
 
 type campaignsRepositoryTemplateInput struct {
