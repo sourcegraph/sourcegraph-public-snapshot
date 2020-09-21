@@ -11,11 +11,11 @@ import classNames from 'classnames'
 import * as H from 'history'
 import { OrDivider } from './OrDivider'
 import GithubIcon from 'mdi-react/GithubIcon'
-import { head, size } from 'lodash'
+import { compact, head, size } from 'lodash'
 import { USERNAME_MAX_LENGTH, VALID_USERNAME_REGEXP } from '../user'
-import { Observable, of, zip } from 'rxjs'
+import { Observable, of, timer, zip } from 'rxjs'
 import { useEventObservable } from '../../../shared/src/util/useObservable'
-import { catchError, debounceTime, map, share, switchMap, tap } from 'rxjs/operators'
+import { catchError, debounce, debounceTime, map, share, switchMap, tap } from 'rxjs/operators'
 import { typingDebounceTime } from '../search/input/QueryInput'
 import CheckIcon from 'mdi-react/CheckIcon'
 import { fromFetch } from 'rxjs/fetch'
@@ -98,25 +98,20 @@ function createValidationPipeline(
      * of Validation Result
      */
     return function validationPipeline(events): Observable<ValidationResult> {
-        const inputValues = events.pipe(
+        return events.pipe(
             map(event => event.target.value),
-            tap(value => onInputChange({ value, loading: true })),
-            share()
-        )
-
-        // merge synchronous and asynchronous validation. check sync before debounce?
-
-        return inputValues.pipe(
-            debounceTime(typingDebounceTime),
-            switchMap(value => {
-                // We only need the first reason that it's invalid
-                for (const validator of synchronousValidators) {
-                    const reason = validator(value)
-                    if (reason) {
-                        return of({ kind: 'INVALID' as const, reason }).pipe(
-                            tap(() => onInputChange({ value, loading: false }))
-                        )
-                    }
+            map(value =>
+                // sync validation. don't render spinner when there's a sync validation error (prevent jitter),
+                // don't make async validation requests (unnecessary, waste of resources)
+                ({ value, syncReason: head(compact(synchronousValidators.map(validator => validator(value)))) })
+            ),
+            tap(({ value, syncReason }) => onInputChange({ value, loading: !syncReason })),
+            debounce(({ syncReason }) => timer(syncReason ? 0 : typingDebounceTime)),
+            switchMap(({ value, syncReason }) => {
+                if (syncReason) {
+                    return of({ kind: 'INVALID' as const, reason: syncReason }).pipe(
+                        tap(() => onInputChange({ value, loading: false }))
+                    )
                 }
 
                 return zip(...asynchronousValidators.map(validator => validator(value))).pipe(
