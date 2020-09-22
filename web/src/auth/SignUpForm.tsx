@@ -116,7 +116,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
     const [requestedTrial, setRequestedTrial] = useState(false)
     const [error, setError] = useState<Error | null>(null)
 
-    const signUpFieldValidators: { [name in 'email' | 'username' | 'password']: FieldValidators } = useMemo(
+    const signUpFieldValidators: Record<'email' | 'username' | 'password', FieldValidators> } = useMemo(
         () => ({
             email: {
                 synchronousValidators: [checkEmailFormat, checkEmailPattern],
