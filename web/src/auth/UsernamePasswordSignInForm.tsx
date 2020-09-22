@@ -10,7 +10,7 @@ import { asError } from '../../../shared/src/util/errors'
 interface Props {
     location: H.Location
     history: H.History
-    setAuthError: (error: Error | null) => void
+    onAuthError: (error: Error | null) => void
 }
 
 /**
