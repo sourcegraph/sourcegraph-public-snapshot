@@ -11,7 +11,7 @@ Completed
 - [x] Create quick-start video for setting up Code Intelligence in CI/CD ([~#13049~](https://github.com/sourcegraph/sourcegraph/issues/13049)) 
 - [x] Research language usage among customers and projects ([~#12726~](https://github.com/sourcegraph/sourcegraph/issues/12726)) 
 - [x] Determine state of LSIF-java ([~#12306~](https://github.com/sourcegraph/sourcegraph/issues/12306)) 
-- [x] Code Intelligence 3.19 Tracking issue ([~#12132~](https://github.com/sourcegraph/sourcegraph/issues/12132)) 
+- [x] Code Intelligence 3.19 Tracking issue ([~#12132~](https://github.com/sourcegraph/sourcegraph/issues/12132)) __28.50d__ 
 - [x] Update left side navigation [#13188](https://github.com/sourcegraph/sourcegraph/pull/13188) :shipit:
 - [x] Edit of language guide page to improve phrasing [#13108](https://github.com/sourcegraph/sourcegraph/pull/13108) :shipit:
 - [x] Updated adding lsif to workflows docs [#13078](https://github.com/sourcegraph/sourcegraph/pull/13078) :shipit:
@@ -32,7 +32,7 @@ Completed
 - [x] RFC 199: Index queue client ([~#12665~](https://github.com/sourcegraph/sourcegraph/issues/12665); PRs: ~[#12688](https://github.com/sourcegraph/sourcegraph/pull/12688)~) 
 - [x] RFC 199: Index queue API ([~#12664~](https://github.com/sourcegraph/sourcegraph/issues/12664); PRs: ~[#12657](https://github.com/sourcegraph/sourcegraph/pull/12657)~) 
 - [x] Query definition and hover provider so we can correctly badge results ([~#12133~](https://github.com/sourcegraph/sourcegraph/issues/12133)) 
-- [x] Code Intelligence 3.19 Tracking issue ([~#12132~](https://github.com/sourcegraph/sourcegraph/issues/12132)) 
+- [x] Code Intelligence 3.19 Tracking issue ([~#12132~](https://github.com/sourcegraph/sourcegraph/issues/12132)) __28.50d__ 
 - [x] Implement better nearest commit queries ([~#12098~](https://github.com/sourcegraph/sourcegraph/issues/12098); PRs: ~[#12422](https://github.com/sourcegraph/sourcegraph/pull/12422)~, ~[#12411](https://github.com/sourcegraph/sourcegraph/pull/12411)~, ~[#12408](https://github.com/sourcegraph/sourcegraph/pull/12408)~, ~[#12406](https://github.com/sourcegraph/sourcegraph/pull/12406)~, ~[#12404](https://github.com/sourcegraph/sourcegraph/pull/12404)~, ~[#12402](https://github.com/sourcegraph/sourcegraph/pull/12402)~, ~[#12401](https://github.com/sourcegraph/sourcegraph/pull/12401)~) 
 - [x] Visible at tip calculation is racy ([~#12095~](https://github.com/sourcegraph/sourcegraph/issues/12095); PRs: ~[#12422](https://github.com/sourcegraph/sourcegraph/pull/12422)~) 🐛
 - [x] ~RFC 199: Deploy new indexer service~ ([~#12709~](https://github.com/sourcegraph/sourcegraph/issues/12709)) 
@@ -85,5 +85,5 @@ Completed
 - [ ] ~Programatically create regular data about code intel activity~ ([#11746](https://github.com/sourcegraph/sourcegraph/issues/11746)) 
 
 Completed
-- [x] Code Intelligence 3.19 Tracking issue ([~#12132~](https://github.com/sourcegraph/sourcegraph/issues/12132)) 
+- [x] Code Intelligence 3.19 Tracking issue ([~#12132~](https://github.com/sourcegraph/sourcegraph/issues/12132)) __28.50d__ 
 <!-- END ASSIGNEE -->
