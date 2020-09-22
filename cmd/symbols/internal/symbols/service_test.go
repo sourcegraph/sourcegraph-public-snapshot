@@ -169,10 +169,10 @@ func createTar(files map[string]string) (io.ReadCloser, error) {
 
 type mockParser []string
 
-func (m mockParser) Parse(name string, content []byte) ([]ctags.Entry, error) {
-	entries := make([]ctags.Entry, len(m))
+func (m mockParser) Parse(name string, content []byte) ([]*ctags.Entry, error) {
+	entries := make([]*ctags.Entry, len(m))
 	for i, name := range m {
-		entries[i] = ctags.Entry{Name: name, Path: "a.js"}
+		entries[i] = &ctags.Entry{Name: name, Path: "a.js"}
 	}
 	return entries, nil
 }

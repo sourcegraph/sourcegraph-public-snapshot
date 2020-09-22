@@ -23,7 +23,7 @@ func TestParser(t *testing.T) {
 	cases := []struct {
 		path string
 		data string
-		want []Entry
+		want []*Entry
 	}{{
 		path: "com/sourcegraph/A.java",
 		data: `
@@ -40,7 +40,7 @@ class A implements B extends C {
   }
 }
 `,
-		want: []Entry{
+		want: []*Entry{
 			{
 				Kind:     "package",
 				Language: "Java",
@@ -111,7 +111,7 @@ interface Node {
     id: ID!
 }
 `,
-		want: []Entry{
+		want: []*Entry{
 			{
 				Name:     "query",
 				Path:     "schema.graphql",
