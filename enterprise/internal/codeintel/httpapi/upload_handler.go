@@ -352,6 +352,8 @@ func ensureRepoAndCommitExist(ctx context.Context, w http.ResponseWriter, repoNa
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return nil, "", false
 		}
+
+		commitID = api.CommitID(commit)
 	}
 
 	return repo, string(commitID), true
