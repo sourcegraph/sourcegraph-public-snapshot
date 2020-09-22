@@ -45,8 +45,14 @@ func TestReconcilerProcess(t *testing.T) {
 	})
 	defer state.Unmock()
 
+	internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
+	defer func() { internalClient = api.InternalClient }()
+
 	githubPR := buildGithubPR(clock(), "OPEN")
 	closedGitHubPR := buildGithubPR(clock(), "CLOSED")
+
+	campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
+	campaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
 
 	type testCase struct {
 		changeset    testChangesetOpts
@@ -112,6 +118,7 @@ func TestReconcilerProcess(t *testing.T) {
 			},
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				ownedByCampaign:  campaign.ID,
 			},
 			sourcerMetadata: githubPR,
 
@@ -126,6 +133,7 @@ func TestReconcilerProcess(t *testing.T) {
 				title:            githubPR.Title,
 				body:             githubPR.Body,
 				diffStat:         state.DiffStat,
+				ownedByCampaign:  campaign.ID,
 			},
 		},
 		"retry publish changeset": {
@@ -139,6 +147,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				failureMessage:   "publication failed",
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				ownedByCampaign:  campaign.ID,
 			},
 			sourcerMetadata: githubPR,
 
@@ -156,6 +165,7 @@ func TestReconcilerProcess(t *testing.T) {
 				title:            githubPR.Title,
 				body:             githubPR.Body,
 				diffStat:         state.DiffStat,
+				ownedByCampaign:  campaign.ID,
 			},
 		},
 		"update published changeset metadata": {
@@ -178,6 +188,7 @@ func TestReconcilerProcess(t *testing.T) {
 				externalID:        "12345",
 				externalBranch:    "head-ref-on-github",
 				createdByCampaign: true,
+				ownedByCampaign:   campaign.ID,
 			},
 			sourcerMetadata: githubPR,
 
@@ -190,6 +201,7 @@ func TestReconcilerProcess(t *testing.T) {
 				externalBranch:   githubPR.HeadRefName,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				diffStat:         state.DiffStat,
+				ownedByCampaign:  campaign.ID,
 				// We update the title/body but want the title/body returned by the code host.
 				title: githubPR.Title,
 				body:  githubPR.Body,
@@ -216,6 +228,7 @@ func TestReconcilerProcess(t *testing.T) {
 				externalBranch:    githubPR.HeadRefName,
 				externalState:     campaigns.ChangesetExternalStateOpen,
 				createdByCampaign: true,
+				ownedByCampaign:   campaign.ID,
 				// Previous update failed:
 				failureMessage: "failed to update changeset metadata",
 			},
@@ -231,6 +244,7 @@ func TestReconcilerProcess(t *testing.T) {
 				title:            githubPR.Title,
 				body:             githubPR.Body,
 				diffStat:         state.DiffStat,
+				ownedByCampaign:  campaign.ID,
 				// failureMessage should be nil
 			},
 		},
@@ -548,6 +562,23 @@ func TestReconcilerProcess(t *testing.T) {
 				assertions.previousSpec = previousSpec.ID
 			}
 			reloadAndAssertChangeset(t, ctx, store, changeset, assertions)
+
+			// Assert that the body included a backlink if needed. We'll do
+			// more detailed unit tests of decorateChangesetBody elsewhere;
+			// we're just looking for a basic marker here that _something_
+			// happened.
+			var rcs *repos.Changeset
+			if tc.wantCreateOnHostCode && fakeSource.CreateChangesetCalled {
+				rcs = fakeSource.CreatedChangesets[0]
+			} else if tc.wantUpdateOnCodeHost && fakeSource.UpdateChangesetCalled {
+				rcs = fakeSource.UpdatedChangesets[0]
+			}
+
+			if rcs != nil {
+				if !strings.Contains(rcs.Body, "Created by Sourcegraph campaign") {
+					t.Errorf("did not find backlink in body: %q", rcs.Body)
+				}
+			}
 		})
 	}
 }
@@ -741,7 +772,7 @@ func TestDecorateChangesetBody(t *testing.T) {
 		t.Fatal("admin is not site admin")
 	}
 
-	rs, extSvc := createTestRepos(t, ctx, dbconn.Global, 1)
+	rs, _ := createTestRepos(t, ctx, dbconn.Global, 1)
 
 	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
 		Name: api.RepoName(rs[0].Name),
@@ -752,112 +783,12 @@ func TestDecorateChangesetBody(t *testing.T) {
 	internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
 	defer func() { internalClient = api.InternalClient }()
 
-	githubPR := buildGithubPR(clock(), "OPEN")
-	commonHeadRef := "refs/heads/main"
-
-	// Create an unpublished changeset.
+	// Create a changeset.
 	campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
 	campaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
-	changesetSpec := createChangesetSpec(t, ctx, store, testSpecOpts{
-		user:         admin.ID,
-		repo:         rs[0].ID,
-		campaignSpec: campaignSpec.ID,
-		headRef:      commonHeadRef,
-		published:    true,
-	})
 	cs := createChangeset(t, ctx, store, testChangesetOpts{
-		repo:             rs[0].ID,
-		publicationState: campaigns.ChangesetPublicationStateUnpublished,
-		campaign:         campaign.ID,
-		ownedByCampaign:  campaign.ID,
-		currentSpec:      changesetSpec.ID,
-		externalBranch:   git.AbbreviateRef(commonHeadRef),
-		externalID:       "123",
-	})
-
-	t.Run("integration", func(t *testing.T) {
-		// Setup gitserver dependency.
-		gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
-		if changesetSpec != nil {
-			gitClient.Response = changesetSpec.Spec.HeadRef
-		}
-
-		// Setup the sourcer that's used to create a Source with which to
-		// create/update a changeset.
-		fakeSource := &ct.FakeChangesetSource{
-			Svc:          extSvc,
-			Err:          nil,
-			FakeMetadata: githubPR,
-		}
-		if changesetSpec != nil {
-			fakeSource.WantHeadRef = changesetSpec.Spec.HeadRef
-			fakeSource.WantBaseRef = changesetSpec.Spec.BaseRef
-		}
-
-		sourcer := repos.NewFakeSourcer(nil, fakeSource)
-
-		// Run the reconciler
-		rec := reconciler{
-			noSleepBeforeSync: true,
-			gitserverClient:   gitClient,
-			sourcer:           sourcer,
-			store:             store,
-		}
-		if err := rec.process(ctx, store, cs); err != nil {
-			t.Fatalf("reconciler process failed: %s", err)
-		}
-
-		// Check that we created a changeset.
-		if !fakeSource.CreateChangesetCalled {
-			t.Error("CreateChangeset not called")
-		}
-		if len(fakeSource.CreatedChangesets) != 1 {
-			t.Errorf("unexpected created changesets: %+v", fakeSource.CreatedChangesets)
-		}
-
-		// Ensure that we decorated the body. This test is pretty basic: we'll
-		// more specifically test decorateChangesetBody in other subtests to
-		// verify its exact behaviour.
-		rcs := fakeSource.CreatedChangesets[0]
-		if !strings.Contains(rcs.Body, "Created by Sourcegraph campaign") {
-			t.Errorf("did not find backlink in body: %q", rcs.Body)
-		}
-
-		// Now we'll change the body and ensure that the new body is also
-		// decorated.
-		newSpec := createChangesetSpec(t, ctx, store, testSpecOpts{
-			user:         admin.ID,
-			repo:         rs[0].ID,
-			campaignSpec: campaignSpec.ID,
-			headRef:      commonHeadRef,
-			body:         "A changed spec.",
-			published:    true,
-		})
-		cs.PreviousSpecID = cs.CurrentSpecID
-		cs.CurrentSpecID = newSpec.ID
-		cs.ResetQueued()
-		if err := store.UpdateChangeset(ctx, cs); err != nil {
-			t.Fatalf("UpdateChangeset failed: %s", err)
-		}
-
-		// Let's reconcile!
-		if err := rec.process(ctx, store, cs); err != nil {
-			t.Fatalf("reconciler process failed: %s", err)
-		}
-
-		// Check that we updated a changeset.
-		if !fakeSource.UpdateChangesetCalled {
-			t.Error("UpdateChangeset not called")
-		}
-		if len(fakeSource.UpdatedChangesets) != 1 {
-			t.Errorf("unexpected updated changesets: %+v", fakeSource.UpdatedChangesets)
-		}
-
-		// Once again, ensure that we decorated the body.
-		rcs = fakeSource.UpdatedChangesets[0]
-		if !strings.Contains(rcs.Body, "Created by Sourcegraph campaign") {
-			t.Errorf("did not find backlink in body: %q", rcs.Body)
-		}
+		repo:            rs[0].ID,
+		ownedByCampaign: campaign.ID,
 	})
 
 	t.Run("owned", func(t *testing.T) {
