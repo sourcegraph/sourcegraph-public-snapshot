@@ -2,6 +2,8 @@
 
 **/CODENOTIFY @nicksnyder
 **/CODEOWNERS @nicksnyder
+.github/workflows/codenotify.yml
+
 cmd/frontend/graphqlbackend/campaigns.go @eseliger
 doc/user/campaigns/**/* @eseliger
 enterprise/internal/campaigns/**/* @eseliger
