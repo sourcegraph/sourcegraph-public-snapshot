@@ -2,3 +2,10 @@
 
 **/CODENOTIFY @nicksnyder
 **/CODEOWNERS @nicksnyder
+cmd/frontend/graphqlbackend/campaigns.go @eseliger
+doc/user/campaigns/**/* @eseliger
+enterprise/internal/campaigns/**/* @eseliger
+enterprise/cmd/frontend/internal/campaigns/**/* @eseliger
+internal/campaigns/**/* @eseliger
+web/src/enterprise/campaigns/**/* @eseliger
+web/src/integration/campaigns.test.ts @eseliger
