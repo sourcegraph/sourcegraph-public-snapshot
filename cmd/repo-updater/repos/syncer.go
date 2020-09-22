@@ -161,16 +161,6 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	defer save(&diff, &err)
 	defer s.setOrResetLastSyncErr(externalServiceID, &err)
 
-	var streamingInserter func(*Repo)
-	if s.SubsetSynced == nil {
-		streamingInserter = func(*Repo) {} //noop
-	} else {
-		streamingInserter, err = s.makeNewRepoInserter(ctx, store)
-		if err != nil {
-			return errors.Wrap(err, "syncer.sync.streaming")
-		}
-	}
-
 	ids := []int64{externalServiceID}
 	svcs, err := store.ListExternalServices(ctx, StoreListExternalServicesArgs{IDs: ids})
 	if err != nil {
@@ -182,6 +172,18 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	}
 	svc := svcs[0]
 
+	isUserOwned := svc.NamespaceUserID > 0
+
+	var streamingInserter func(*Repo)
+	if s.SubsetSynced == nil {
+		streamingInserter = func(*Repo) {} //noop
+	} else {
+		streamingInserter, err = s.makeNewRepoInserter(ctx, store, isUserOwned)
+		if err != nil {
+			return errors.Wrap(err, "syncer.sync.streaming")
+		}
+	}
+
 	// Fetch repos from the source
 	var sourced Repos
 	if sourced, err = s.sourced(ctx, svcs, streamingInserter); err != nil {
@@ -189,7 +191,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	}
 
 	// User added external services should only sync public code
-	if svc.NamespaceUserID > 0 {
+	if isUserOwned {
 		sourced = sourced.Filter(func(r *Repo) bool { return !r.Private })
 	}
 
@@ -390,23 +392,27 @@ func (s *Syncer) SyncRepo(ctx context.Context, store Store, sourcedRepo *Repo) (
 		store = txs
 	}
 
-	diff, err = s.syncRepo(ctx, store, false, sourcedRepo)
+	diff, err = s.syncRepo(ctx, store, false, true, sourcedRepo)
 	return err
 }
 
 // insertIfNew is a specialization of SyncRepo. It will insert sourcedRepo
 // if there are no related repositories, otherwise does nothing.
-func (s *Syncer) insertIfNew(ctx context.Context, store Store, sourcedRepo *Repo) (err error) {
+func (s *Syncer) insertIfNew(ctx context.Context, store Store, publicOnly bool, sourcedRepo *Repo) (err error) {
 	var diff Diff
 
 	ctx, save := s.observe(ctx, 0, "Syncer.InsertIfNew", sourcedRepo.Name)
 	defer save(&diff, &err)
 
-	diff, err = s.syncRepo(ctx, store, true, sourcedRepo)
+	diff, err = s.syncRepo(ctx, store, true, publicOnly, sourcedRepo)
 	return err
 }
 
-func (s *Syncer) syncRepo(ctx context.Context, store Store, insertOnly bool, sourcedRepo *Repo) (diff Diff, err error) {
+func (s *Syncer) syncRepo(ctx context.Context, store Store, insertOnly bool, publicOnly bool, sourcedRepo *Repo) (diff Diff, err error) {
+	if publicOnly && sourcedRepo.Private {
+		return Diff{}, nil
+	}
+
 	var storedSubset Repos
 	args := StoreListReposArgs{
 		Names:         []string{sourcedRepo.Name},
@@ -709,7 +715,7 @@ func (s *Syncer) sourced(ctx context.Context, svcs []*ExternalService, observe .
 	return listAll(ctx, srcs, observe...)
 }
 
-func (s *Syncer) makeNewRepoInserter(ctx context.Context, store Store) (func(*Repo), error) {
+func (s *Syncer) makeNewRepoInserter(ctx context.Context, store Store, publicOnly bool) (func(*Repo), error) {
 	// syncRepo requires querying the store for related repositories, and
 	// will do nothing if `insertOnly` is set and there are any related repositories. Most
 	// repositories will already have related repos, so to avoid that cost we
@@ -726,7 +732,7 @@ func (s *Syncer) makeNewRepoInserter(ctx context.Context, store Store) (func(*Re
 			return
 		}
 
-		err := s.insertIfNew(ctx, store, r)
+		err := s.insertIfNew(ctx, store, publicOnly, r)
 		if err != nil && s.Logger != nil {
 			// Best-effort, final syncer will handle this repo if this failed.
 			s.Logger.Warn("streaming insert failed", "external_id", r.ExternalRepo, "error", err)
