@@ -1513,7 +1513,7 @@ type aggregator struct {
 	fileMatches   map[string]*FileMatchResolver
 }
 
-func (a *aggregator) callRepoSearch(ctx context.Context, args *search.TextParameters, limit int32) {
+func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParameters, limit int32) {
 	repoResults, repoCommon, err := searchRepositories(ctx, args, limit)
 	// Timeouts are reported through searchResultsCommon so don't report an error for them
 	if err != nil && !isContextError(ctx, err) {
@@ -1532,7 +1532,7 @@ func (a *aggregator) callRepoSearch(ctx context.Context, args *search.TextParame
 		a.commonMu.Unlock()
 	}
 }
-func (a *aggregator) callSymbolSearch(ctx context.Context, args *search.TextParameters, limit int) {
+func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParameters, limit int) {
 	symbolFileMatches, symbolsCommon, err := searchSymbols(ctx, args, limit)
 	// Timeouts are reported through searchResultsCommon so don't report an error for them
 	if err != nil && !isContextError(ctx, err) {
@@ -1559,7 +1559,7 @@ func (a *aggregator) callSymbolSearch(ctx context.Context, args *search.TextPara
 		a.commonMu.Unlock()
 	}
 }
-func (a *aggregator) callFilePathSearch(ctx context.Context, args *search.TextParameters) {
+func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextParameters) {
 	fileResults, fileCommon, err := searchFilesInRepos(ctx, args)
 	// Timeouts are reported through searchResultsCommon so don't report an error for them
 	if err != nil && !isContextError(ctx, err) {
@@ -1604,7 +1604,7 @@ func (a *aggregator) callFilePathSearch(ctx context.Context, args *search.TextPa
 	}
 }
 
-func (a *aggregator) callDiffSearch(ctx context.Context, tp *search.TextParameters) {
+func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters) {
 	old := tp.PatternInfo
 	patternInfo := &search.CommitPatternInfo{
 		Pattern:                      old.Pattern,
@@ -1640,7 +1640,7 @@ func (a *aggregator) callDiffSearch(ctx context.Context, tp *search.TextParamete
 	}
 }
 
-func (a *aggregator) callCommitSearch(ctx context.Context, tp *search.TextParameters) {
+func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParameters) {
 	old := tp.PatternInfo
 	patternInfo := &search.CommitPatternInfo{
 		Pattern:                      old.Pattern,
@@ -1790,14 +1790,14 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				agg.callRepoSearch(ctx, &args, r.maxResults())
+				agg.doRepoSearch(ctx, &args, r.maxResults())
 			})
 		case "symbol":
 			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				agg.callSymbolSearch(ctx, &args, int(r.maxResults()))
+				agg.doSymbolSearch(ctx, &args, int(r.maxResults()))
 			})
 		case "file", "path":
 			if searchedFileContentsOrPaths {
@@ -1809,21 +1809,21 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				agg.callFilePathSearch(ctx, &args)
+				agg.doFilePathSearch(ctx, &args)
 			})
 		case "diff":
 			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				agg.callDiffSearch(ctx, &args)
+				agg.doDiffSearch(ctx, &args)
 			})
 		case "commit":
 			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				agg.callCommitSearch(ctx, &args)
+				agg.doCommitSearch(ctx, &args)
 			})
 		}
 	}
