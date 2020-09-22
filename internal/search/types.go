@@ -68,6 +68,13 @@ type SymbolsParameters struct {
 	First int
 }
 
+type Mode string
+
+var (
+	ZoektGlobalSearch = Mode("globalIndex")
+	SearcherOnly      = Mode("searcherOnly")
+)
+
 // TextParameters are the parameters passed to a search backend. It contains the Pattern
 // to search for, as well as the hydrated list of repository revisions to
 // search. It defines behavior for text search on repository names, file names, and file content.
@@ -79,6 +86,10 @@ type TextParameters struct {
 	// instead, but Query is useful for checking extra fields that are set and
 	// ignored by Pattern, such as index:no
 	Query query.QueryInfo
+
+	Mode Mode
+
+	RepoPromise chan []*RepositoryRevisions
 
 	// UseFullDeadline indicates that the search should try do as much work as
 	// it can within context.Deadline. If false the search should try and be
