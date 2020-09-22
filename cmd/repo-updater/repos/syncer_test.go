@@ -635,7 +635,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 	}
 }
 
-func testSyncSubset(t *testing.T, s repos.Store) func(*testing.T) {
+func testSyncRepo(t *testing.T, s repos.Store) func(*testing.T) {
 	clock := repos.NewFakeClock(time.Now(), time.Second)
 
 	servicesPerKind := createExternalServices(t, s)
@@ -669,27 +669,23 @@ func testSyncSubset(t *testing.T, s repos.Store) func(*testing.T) {
 
 	testCases := []struct {
 		name    string
-		sourced repos.Repos
+		sourced *repos.Repo
 		stored  repos.Repos
 		assert  repos.ReposAssertion
 	}{{
-		name:   "no sourced",
-		stored: repos.Repos{repo.With(repos.Opt.RepoCreatedAt(clock.Time(2)))},
-		assert: repos.Assert.ReposEqual(repo.With(repos.Opt.RepoCreatedAt(clock.Time(2)))),
-	}, {
 		name:    "insert",
-		sourced: repos.Repos{repo},
+		sourced: repo,
 		assert:  repos.Assert.ReposEqual(repo.With(repos.Opt.RepoCreatedAt(clock.Time(2)))),
 	}, {
 		name:    "update",
-		sourced: repos.Repos{repo},
+		sourced: repo,
 		stored:  repos.Repos{repo.With(repos.Opt.RepoCreatedAt(clock.Time(2)))},
 		assert: repos.Assert.ReposEqual(repo.With(
 			repos.Opt.RepoModifiedAt(clock.Time(2)),
 			repos.Opt.RepoCreatedAt(clock.Time(2)))),
 	}, {
 		name:    "update name",
-		sourced: repos.Repos{repo},
+		sourced: repo,
 		stored: repos.Repos{repo.With(
 			repos.Opt.RepoName("old/name"),
 			repos.Opt.RepoCreatedAt(clock.Time(2)))},
@@ -698,7 +694,7 @@ func testSyncSubset(t *testing.T, s repos.Store) func(*testing.T) {
 			repos.Opt.RepoCreatedAt(clock.Time(2)))),
 	}, {
 		name:    "delete conflicting name",
-		sourced: repos.Repos{repo},
+		sourced: repo,
 		stored: repos.Repos{repo.With(
 			repos.Opt.RepoExternalID("old id"),
 			repos.Opt.RepoCreatedAt(clock.Time(2)))},
@@ -706,7 +702,7 @@ func testSyncSubset(t *testing.T, s repos.Store) func(*testing.T) {
 			repos.Opt.RepoCreatedAt(clock.Time(2)))),
 	}, {
 		name:    "rename and delete conflicting name",
-		sourced: repos.Repos{repo},
+		sourced: repo,
 		stored: repos.Repos{
 			repo.With(
 				repos.Opt.RepoExternalID("old id"),
@@ -747,7 +743,7 @@ func testSyncSubset(t *testing.T, s repos.Store) func(*testing.T) {
 				syncer := &repos.Syncer{
 					Now: clock.Now,
 				}
-				err := syncer.SyncSubset(ctx, st, tc.sourced.Clone()...)
+				err := syncer.SyncRepo(ctx, st, tc.sourced.Clone())
 				if err != nil {
 					t.Fatal(err)
 				}
