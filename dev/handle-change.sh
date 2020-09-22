@@ -7,7 +7,6 @@ generate_graphql=false
 generate_dashboards=false
 generate_monitoring=false
 generate_schema=false
-generate_ctags=false
 cmdlist=()
 all_cmds=false
 failed=false
@@ -25,9 +24,6 @@ for i; do
       ;;
     schema/*.json)
       generate_schema=true
-      ;;
-    cmd/symbols/internal/ctags/ctags.d/*)
-      generate_ctags=true
       ;;
     cmd/*)
       cmd=${i#cmd/}
@@ -61,7 +57,6 @@ $generate_graphql && { go generate github.com/sourcegraph/sourcegraph/cmd/fronte
 $generate_dashboards && { docker-images/grafana/jsonnet/build.sh || failed=true; }
 $generate_monitoring && { pushd monitoring >/dev/null && DEV=true go generate && popd >/dev/null || failed=true; }
 $generate_schema && { go generate github.com/sourcegraph/sourcegraph/schema || failed=true; }
-$generate_ctags && { go generate github.com/sourcegraph/sourcegraph/cmd/symbols/internal/ctags || failed=true; }
 
 if $all_cmds; then
   if ! mapfile -t rebuilt < <(./dev/go-install.sh -v); then

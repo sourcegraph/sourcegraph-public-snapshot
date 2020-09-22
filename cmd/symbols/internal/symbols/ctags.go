@@ -1,4 +1,4 @@
-package ctags
+package symbols
 
 import (
 	"fmt"
@@ -6,12 +6,9 @@ import (
 	"os"
 	"strconv"
 
-	goctags "github.com/sourcegraph/go-ctags"
+	ctags "github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
-
-type Entry = goctags.Entry
-type Parser = goctags.Parser
 
 const debugLogs = false
 
@@ -25,7 +22,7 @@ var rawPatternLengthLimit = env.Get("CTAGS_PATTERN_LENGTH_LIMIT", "250", "the ma
 
 // New runs the ctags command from the CTAGS_COMMAND environment
 // variable, falling back to `universal-ctags`.
-func New() (Parser, error) {
+func NewParser() (ctags.Parser, error) {
 	patternLengthLimit, err := strconv.Atoi(rawPatternLengthLimit)
 	if err != nil {
 		return nil, fmt.Errorf("invalid pattern length limit: %s", rawPatternLengthLimit)
@@ -41,7 +38,7 @@ func New() (Parser, error) {
 		debug = log.New(os.Stderr, "DBUG ctags: ", log.LstdFlags)
 	}
 
-	return goctags.New(goctags.Options{
+	return ctags.New(ctags.Options{
 		Bin:                ctagsCommand,
 		PatternLengthLimit: patternLengthLimit,
 		Info:               info,
