@@ -7,11 +7,12 @@ import (
 )
 
 type Workload struct {
-	Assignee     string
-	Days         float64
-	Issues       []*Issue
-	PullRequests []*PullRequest
-	Labels       []string
+	Assignee      string
+	Days          float64
+	CompletedDays float64
+	Issues        []*Issue
+	PullRequests  []*PullRequest
+	Labels        []string
 }
 
 func (wl *Workload) AddIssue(newIssue *Issue) {
@@ -52,19 +53,47 @@ func (wl *Workload) Markdown(labelAllowlist []string) string {
 		}
 	}
 
-	for _, issue := range wl.Issues {
-		// Render any issue that belongs to zero or more than one
-		// tracking issue (excluding the team tracking issue).
-		if len(issue.Parents) != 1 {
-			renderIssue(issue, 0)
+	skipped := 0
+	renderIssuesAndPullRequests := func(closed bool) {
+		for _, issue := range wl.Issues {
+			// Render any issue that belongs to zero or more than one
+			// tracking issue (excluding the team tracking issue).
+			if len(issue.Parents) != 1 || closed {
+				if strings.EqualFold(issue.State, "closed") == closed {
+					if closed {
+						b.WriteString(indent(0))
+						b.WriteString(issue.Markdown(labelAllowlist))
+						continue
+					}
+
+					renderIssue(issue, 0)
+				} else {
+					skipped++
+				}
+			}
+		}
+
+		// Put all PRs that aren't linked to issues top-level
+		for _, pr := range wl.PullRequests {
+			if len(pr.LinkedIssues) == 0 || closed {
+				if strings.EqualFold(pr.State, "merged") == closed {
+					b.WriteString(pr.Markdown())
+				} else {
+					skipped++
+				}
+			}
 		}
 	}
 
-	// Put all PRs that aren't linked to issues top-level
-	for _, pr := range wl.PullRequests {
-		if len(pr.LinkedIssues) == 0 {
-			b.WriteString(pr.Markdown())
+	renderIssuesAndPullRequests(false)
+	if skipped > 0 {
+		days = ""
+		if wl.CompletedDays > 0 {
+			days = fmt.Sprintf(": __%.2fd__", wl.CompletedDays)
 		}
+
+		fmt.Fprintf(&b, "\nCompleted%s\n", days)
+		renderIssuesAndPullRequests(true)
 	}
 
 	fmt.Fprintf(&b, "%s\n", endAssigneeMarker)
