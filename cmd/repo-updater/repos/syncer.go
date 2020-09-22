@@ -153,7 +153,7 @@ func (s *Syncer) TriggerEnqueueSyncJobs() {
 }
 
 // SyncExternalService syncs repos using the supplied external service.
-func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalServiceID int64, minSyncInterval time.Duration) (err error) {
+func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServiceID int64, minSyncInterval time.Duration) (err error) {
 	var diff Diff
 
 	log15.Debug("Syncing external service", "serviceID", externalServiceID)
@@ -162,7 +162,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	defer s.setOrResetLastSyncErr(externalServiceID, &err)
 
 	ids := []int64{externalServiceID}
-	svcs, err := store.ListExternalServices(ctx, StoreListExternalServicesArgs{IDs: ids})
+	svcs, err := tx.ListExternalServices(ctx, StoreListExternalServicesArgs{IDs: ids})
 	if err != nil {
 		return errors.Wrap(err, "fetching external services")
 	}
@@ -178,7 +178,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	if s.SubsetSynced == nil {
 		streamingInserter = func(*Repo) {} //noop
 	} else {
-		streamingInserter, err = s.makeNewRepoInserter(ctx, store, isUserOwned)
+		streamingInserter, err = s.makeNewRepoInserter(ctx, tx, isUserOwned)
 		if err != nil {
 			return errors.Wrap(err, "syncer.sync.streaming")
 		}
@@ -197,14 +197,14 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 
 	var storedServiceRepos Repos
 	// Fetch repos from our DB related to externalServiceID
-	if storedServiceRepos, err = store.ListRepos(ctx, StoreListReposArgs{ExternalServiceID: externalServiceID}); err != nil {
+	if storedServiceRepos, err = tx.ListRepos(ctx, StoreListReposArgs{ExternalServiceID: externalServiceID}); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.list-repos")
 	}
 
 	// Now fetch any possible name conflicts.
 	// Repo names must be globally unique, if there's conflict we need to deterministically choose one.
 	var conflicting Repos
-	if conflicting, err = store.ListRepos(ctx, StoreListReposArgs{Names: sourced.Names()}); err != nil {
+	if conflicting, err = tx.ListRepos(ctx, StoreListReposArgs{Names: sourced.Names()}); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.list-repos")
 	}
 	conflicting = conflicting.Filter(func(r *Repo) bool {
@@ -257,13 +257,13 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	// and remove any repos that no longer have any rows in the external_service_repos
 	// table.
 	sdiff := s.sourcesUpserts(&diff, storedServiceReposAndConflicting)
-	if err = store.UpsertSources(ctx, nil, nil, sdiff.Deleted); err != nil {
+	if err = tx.UpsertSources(ctx, nil, nil, sdiff.Deleted); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.delete-sources")
 	}
 
 	// Next, insert or modify existing repos. This is needed so that the next call
 	// to UpsertSources has valid repo ids
-	if err = store.UpsertRepos(ctx, upserts...); err != nil {
+	if err = tx.UpsertRepos(ctx, upserts...); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.upsert-repos")
 	}
 
@@ -271,7 +271,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	// handled above
 	// Recalculate sdiff so that we have foreign keys
 	sdiff = s.sourcesUpserts(&diff, storedServiceReposAndConflicting)
-	if err = store.UpsertSources(ctx, sdiff.Added, sdiff.Modified, nil); err != nil {
+	if err = tx.UpsertSources(ctx, sdiff.Added, sdiff.Modified, nil); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.upsert-sources")
 	}
 
@@ -284,7 +284,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, store Store, externalS
 	svc.NextSyncAt = now.Add(interval)
 	svc.LastSyncAt = now
 
-	err = store.UpsertExternalServices(ctx, svc)
+	err = tx.UpsertExternalServices(ctx, svc)
 	if err != nil {
 		return errors.Wrap(err, "upserting external service")
 	}
