@@ -71,6 +71,7 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/Syncer/Run", testSyncRun(db)},
 		{"DBStore/Syncer/MultipleServices", testSyncer(db)},
 		{"DBStore/Syncer/OrphanedRepos", testOrphanedRepo(db)},
+		{"DBStore/Syncer/UserCannotAddPrivateCode", testUserCannotAddPrivateCode(db, userID)},
 		{"DBStore/Syncer/DeleteExternalService", testDeleteExternalService(db)},
 		{"DBStore/Syncer/NameConflictDiscardOld", testNameOnConflictDiscardOld(db)},
 		{"DBStore/Syncer/NameConflictDiscardNew", testNameOnConflictDiscardNew(db)},
