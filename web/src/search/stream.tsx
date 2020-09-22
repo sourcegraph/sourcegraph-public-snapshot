@@ -96,15 +96,12 @@ const toGQLSearchResults = (results: GQL.SearchResult[]): GQL.ISearchResults => 
 /**
  * Converts a stream of SearchEvents into an aggregated GQL.ISearchResult
  */
-export function switchToGQLISearchResults(): OperatorFunction<SearchEvent, GQL.ISearchResults> {
-    let allFileMatches: GQL.IFileMatch[] = []
-
-    return map<SearchEvent, GQL.ISearchResults>(fileMatches => {
-        allFileMatches = allFileMatches.concat(fileMatches.map(toGQLFileMatch))
-
-        return toGQLSearchResults(allFileMatches)
-    })
-}
+export const switchToGQLISearchResults: OperatorFunction<SearchEvent, GQL.ISearchResults> = searchEvents =>
+    searchEvents.pipe(
+        map(fileMatches => fileMatches.map(toGQLFileMatch)),
+        scan((allFileMatches, newFileMatches) => allFileMatches.concat(newFileMatches), []),
+        map(toGQLSearchResults)
+    )
 
 /**
  * Initiates a streaming search. This is a type safe wrapper around Sourcegraph's streaming search API (using Server Sent Events).
