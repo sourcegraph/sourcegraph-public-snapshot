@@ -30,7 +30,7 @@ func TestIntegration(t *testing.T) {
 	db := dbtest.NewDB(t, *dsn)
 
 	dbstore := repos.NewDBStore(db, sql.TxOptions{
-		Isolation: sql.LevelSerializable,
+		Isolation: sql.LevelReadCommitted,
 	})
 
 	lg := log15.New()

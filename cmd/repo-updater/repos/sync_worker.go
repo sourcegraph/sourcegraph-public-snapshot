@@ -3,8 +3,9 @@ package repos
 import (
 	"context"
 	"database/sql"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"

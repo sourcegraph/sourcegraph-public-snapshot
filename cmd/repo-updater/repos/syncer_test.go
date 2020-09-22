@@ -1497,11 +1497,11 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 
 			// Create two transactions
 			txStore := store.(repos.Transactor)
-
 			tx1, err := txStore.Transact(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
+
 			tx2, err := txStore.Transact(ctx)
 			if err != nil {
 				t.Fatal(err)

@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -74,6 +75,7 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOpti
 
 	// TODO: Make numHandlers configurable
 	worker, resetter := NewSyncWorker(pctx, db, &syncHandler{
+		db:              db,
 		syncer:          s,
 		store:           store,
 		minSyncInterval: opts.MinSyncInterval,
@@ -105,20 +107,38 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOpti
 }
 
 type syncHandler struct {
+	db              *sql.DB
 	syncer          *Syncer
 	store           Store
 	minSyncInterval time.Duration
 }
 
-func (s *syncHandler) Handle(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) error {
+func (s *syncHandler) Handle(ctx context.Context, _ dbworkerstore.Store, record workerutil.Record) (err error) {
 	sj, ok := record.(*SyncJob)
 	if !ok {
 		return fmt.Errorf("expected repos.SyncJob, got %T", record)
 	}
 
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{
+		Isolation: sql.LevelReadCommitted,
+	})
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			rollErr := tx.Rollback()
+			if rollErr != nil {
+				err = multierror.Append(err, rollErr)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+
 	store := s.store
 	if ws, ok := s.store.(WithStore); ok {
-		store = ws.With(tx.Handle().DB())
+		store = ws.With(tx)
 	}
 
 	return s.syncer.SyncExternalService(ctx, store, sj.ExternalServiceID, s.minSyncInterval)
