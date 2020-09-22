@@ -1404,6 +1404,148 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store repos.Store) func(t *
 	}
 }
 
+func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store repos.Store) func(t *testing.T) {
+		return func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			now := time.Now()
+
+			svc1 := &repos.ExternalService{
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "Github - Test1",
+				Config:      `{"url": "https://github.com"}`,
+				CreatedAt:   now,
+				UpdatedAt:   now,
+			}
+			svc2 := &repos.ExternalService{
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "Github - Test2",
+				Config:      `{"url": "https://github.com"}`,
+				CreatedAt:   now,
+				UpdatedAt:   now,
+			}
+
+			// setup services
+			if err := store.UpsertExternalServices(ctx, svc1, svc2); err != nil {
+				t.Fatal(err)
+			}
+
+			githubRepo := &repos.Repo{
+				Name:     "github.com/org/foo",
+				Metadata: &github.Repository{},
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "foo-external-12345",
+					ServiceID:   "https://github.com/",
+					ServiceType: extsvc.TypeGitHub,
+				},
+			}
+
+			// Add two services, both pointing at the same repo
+
+			// Sync first service
+			syncer := &repos.Syncer{
+				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+					s := repos.NewFakeSource(svc1, nil, githubRepo)
+					return repos.Sources{s}, nil
+				},
+				Now: time.Now,
+			}
+			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
+				t.Fatal(err)
+			}
+
+			// Sync second service
+			syncer = &repos.Syncer{
+				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+					s := repos.NewFakeSource(svc2, nil, githubRepo)
+					return repos.Sources{s}, nil
+				},
+				Now: time.Now,
+			}
+			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
+				t.Fatal(err)
+			}
+
+			// Confirm that there are two relationships
+			assertSourceCount(ctx, t, db, 2)
+
+			fromDB, err := store.ListRepos(ctx, repos.StoreListReposArgs{})
+			if len(fromDB) != 1 {
+				t.Fatalf("Expected 1 repo, got %d", len(fromDB))
+			}
+			beforeUpdate := fromDB[0]
+			if beforeUpdate.Description != "" {
+				t.Fatalf("Expected %q, got %q", "", beforeUpdate.Description)
+			}
+
+			// Create two transactions
+			txStore := store.(repos.Transactor)
+
+			tx1, err := txStore.Transact(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			tx2, err := txStore.Transact(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			newDescription := "This has changed"
+			updatedRepo := githubRepo.With(func(r *repos.Repo) {
+				r.Description = newDescription
+			})
+
+			// Start syncing using tx1
+			syncer = &repos.Syncer{
+				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+					s := repos.NewFakeSource(svc1, nil, updatedRepo)
+					return repos.Sources{s}, nil
+				},
+				Now: time.Now,
+			}
+			if err := syncer.SyncExternalService(ctx, tx1, svc1.ID, 10*time.Second); err != nil {
+				t.Fatal(err)
+			}
+
+			errChan := make(chan error)
+			go func() {
+				// Start syncing using tx2
+				syncer2 := &repos.Syncer{
+					Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+						s := repos.NewFakeSource(svc2, nil, updatedRepo.With(func(r *repos.Repo) {
+							r.Description = "foo"
+						}))
+						return repos.Sources{s}, nil
+					},
+					Now: time.Now,
+				}
+				err := syncer2.SyncExternalService(ctx, tx2, svc2.ID, 10*time.Second)
+				errChan <- err
+			}()
+
+			time.Sleep(1 * time.Second)
+			tx1.Done()
+
+			err = <-errChan
+			if err != nil {
+				t.Fatalf("Error in syncer2: %v", err)
+			}
+			tx2.Done()
+
+			fromDB, err = store.ListRepos(ctx, repos.StoreListReposArgs{})
+			if len(fromDB) != 1 {
+				t.Fatalf("Expected 1 repo, got %d", len(fromDB))
+			}
+			afterUpdate := fromDB[0]
+			if afterUpdate.Description != newDescription {
+				t.Fatalf("Expected %q, got %q", newDescription, afterUpdate.Description)
+			}
+		}
+	}
+}
+
 func testUserCannotAddPrivateCode(db *sql.DB, userID int32) func(t *testing.T, store repos.Store) func(t *testing.T) {
 	return func(t *testing.T, store repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
