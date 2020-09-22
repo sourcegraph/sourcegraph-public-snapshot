@@ -13,6 +13,7 @@ import { OrDivider } from './OrDivider'
 import { ErrorAlert } from '../components/alerts'
 import { stripURLParameters } from '../tracking/analyticsUtils'
 import classNames from 'classnames'
+import GithubIcon from 'mdi-react/GithubIcon'
 
 interface SignInPageProps {
     location: H.Location
@@ -67,6 +68,11 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
                         /* eslint-disable react/no-array-index-key */
                         <div className="mb-2" key={index}>
                             <a href={provider.authenticationURL} className="btn btn-secondary btn-block">
+                                {provider.displayName === 'GitHub' && (
+                                    <>
+                                        <GithubIcon className="icon-inline" />{' '}
+                                    </>
+                                )}
                                 Continue with {provider.displayName}
                             </a>
                         </div>

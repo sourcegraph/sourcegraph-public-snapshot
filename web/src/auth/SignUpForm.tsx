@@ -35,8 +35,9 @@ interface SignUpFormProps {
     buttonLabel?: string
     history: H.History
 }
+
 /**
- * TODO: Better naming
+ * Configuration used to create validation pipelines for `useEventObservable`
  */
 interface FieldValidators {
     /**
@@ -57,34 +58,17 @@ interface FieldValidators {
     asynchronousValidators?: ((value: string) => Observable<string | undefined>)[]
 }
 
-/** Lazily construct this in SignUpForm */
-const signUpFieldValidators: { [name in 'email' | 'username' | 'password']: FieldValidators } = {
-    email: {
-        synchronousValidators: [checkEmailFormat, checkEmailPattern],
-        asynchronousValidators: [isEmailUnique],
-    },
-    username: {
-        synchronousValidators: [checkUsernameLength, checkUsernamePattern],
-        asynchronousValidators: [isUsernameUnique],
-    },
-    password: {
-        synchronousValidators: [checkPasswordLength],
-    },
-}
-
 type ValidationResult = { kind: 'VALID' } | { kind: 'INVALID'; reason: string }
 type ValidationPipeline = (events: Observable<React.ChangeEvent<HTMLInputElement>>) => Observable<ValidationResult>
 
 /**
- * TODO: RxJS integration w/ React component. Create pipeline for
- * useEventObservable? Wrap in useMemo
+ * Returns an observable pipeline to be consumed by `useEventObservable`.
+ * Helps with management of sync + async validation.
  *
- * To be consumed by `useEventObservable`
- *
- * @param name Name of input field, used for descriptive error messages
+ * @param name Name of input field, used for descriptive error messages.
  * @param onInputChange Function to execute side-effects given the latest input value and loading state.
  * Typically used to set state in a React component.
- * @param fieldValidators
+ * @param fieldValidators Config object that declares sync + async validators
  */
 function createValidationPipeline(
     name: string,
@@ -93,10 +77,6 @@ function createValidationPipeline(
 ): ValidationPipeline {
     const { synchronousValidators = [], asynchronousValidators = [] } = fieldValidators
 
-    /**
-     * Validation Pipeline takes an observable<string> and returns an observable
-     * of Validation Result
-     */
     return function validationPipeline(events): Observable<ValidationResult> {
         return events.pipe(
             map(event => event.target.value),
@@ -128,31 +108,57 @@ function createValidationPipeline(
     }
 }
 
-/**
- *
- */
 export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp, history, buttonLabel, className }) => {
     const [loading, setLoading] = useState(false)
     const [requestedTrial, setRequestedTrial] = useState(false)
     const [error, setError] = useState<Error | null>(null)
 
+    const signUpFieldValidators: { [name in 'email' | 'username' | 'password']: FieldValidators } = useMemo(
+        () => ({
+            email: {
+                synchronousValidators: [checkEmailFormat, checkEmailPattern],
+                asynchronousValidators: [isEmailUnique],
+            },
+            username: {
+                synchronousValidators: [checkUsernameLength, checkUsernamePattern],
+                asynchronousValidators: [isUsernameUnique],
+            },
+            password: {
+                synchronousValidators: [checkPasswordLength],
+            },
+        }),
+        []
+    )
+
     const [emailState, setEmailState] = useState({ value: '', loading: false })
     const [nextEmailFieldChange, emailValidationResult] = useEventObservable<
         React.ChangeEvent<HTMLInputElement>,
         ValidationResult
-    >(useMemo(() => createValidationPipeline('email', setEmailState, signUpFieldValidators.email), []))
+    >(
+        useMemo(() => createValidationPipeline('email', setEmailState, signUpFieldValidators.email), [
+            signUpFieldValidators,
+        ])
+    )
 
     const [usernameState, setUsernameState] = useState({ value: '', loading: false })
     const [nextUsernameFieldChange, usernameValidationResult] = useEventObservable<
         React.ChangeEvent<HTMLInputElement>,
         ValidationResult
-    >(useMemo(() => createValidationPipeline('username', setUsernameState, signUpFieldValidators.username), []))
+    >(
+        useMemo(() => createValidationPipeline('username', setUsernameState, signUpFieldValidators.username), [
+            signUpFieldValidators,
+        ])
+    )
 
     const [passwordState, setPasswordState] = useState({ value: '', loading: false })
     const [nextPasswordFieldChange, passwordValidationResult] = useEventObservable<
         React.ChangeEvent<HTMLInputElement>,
         ValidationResult
-    >(useMemo(() => createValidationPipeline('password', setPasswordState, signUpFieldValidators.password), []))
+    >(
+        useMemo(() => createValidationPipeline('password', setPasswordState, signUpFieldValidators.password), [
+            signUpFieldValidators,
+        ])
+    )
 
     const canRegister =
         emailValidationResult?.kind === 'VALID' &&
@@ -160,7 +166,6 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
         passwordValidationResult?.kind === 'VALID'
 
     const disabled = loading || !canRegister
-    // const disabled = loading
 
     const handleSubmit = useCallback(
         (event: React.FormEvent<HTMLFormElement>): void => {
