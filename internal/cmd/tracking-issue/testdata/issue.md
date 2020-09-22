@@ -35,6 +35,7 @@
 - [ ] RFC 235: Add code intel postgres container ([#13883](https://github.com/sourcegraph/sourcegraph/issues/13883); PRs: [#13924](https://github.com/sourcegraph/sourcegraph/pull/13924), [#13904](https://github.com/sourcegraph/sourcegraph/pull/13904), [#13864](https://github.com/sourcegraph/sourcegraph/pull/13864)) __1d__ 
 - [ ] RFC 235: Tracking issue ([#13882](https://github.com/sourcegraph/sourcegraph/issues/13882)) __5.50d__ 
 - [ ] 🚚 LSIF-Go Delivery ([#13015](https://github.com/sourcegraph/sourcegraph/issues/13015)) __5d__ 
+- [ ] tracking-issue: Better nested tracking issue estimates [#14035](https://github.com/sourcegraph/sourcegraph/pull/14035) :shipit:
 - [ ] codeintel: RFC 235: Soft delete upload records [#13822](https://github.com/sourcegraph/sourcegraph/pull/13822) :shipit:
 
 Completed: __1.00d__
@@ -42,7 +43,15 @@ Completed: __1.00d__
 - [x] LSIF uploads fail with abbreviated OID ([~#13957~](https://github.com/sourcegraph/sourcegraph/issues/13957); PRs: ~[#14005](https://github.com/sourcegraph/sourcegraph/pull/14005)~) __0.5d__ 
 - [x] RFC 235: Add code intel postgres image ([~#13912~](https://github.com/sourcegraph/sourcegraph/issues/13912); PRs: ~[#13913](https://github.com/sourcegraph/sourcegraph/pull/13913)~) __0.5d__ 
 - [x] 504 Gateway Timeouts when mousing over after the page has loaded for a while ([~#12930~](https://github.com/sourcegraph/sourcegraph/issues/12930)) 🐛
+- [x] tracking-issue: Separate complete/incomplete work [#14034](https://github.com/sourcegraph/sourcegraph/pull/14034) :shipit:
+- [x] tracking-issue: List PRs for an issue inline [#14018](https://github.com/sourcegraph/sourcegraph/pull/14018) :shipit:
+- [x] tracking-issue: Break code up into files according to type/action [#14013](https://github.com/sourcegraph/sourcegraph/pull/14013) :shipit:
+- [x] tracking-issue: Parallelize writes [#14006](https://github.com/sourcegraph/sourcegraph/pull/14006) :shipit:
 - [x] codeintel: Resolve abbreviated OID [#14005](https://github.com/sourcegraph/sourcegraph/pull/14005) :shipit:
+- [x] tracking-issue: Nested tracking issues [#13998](https://github.com/sourcegraph/sourcegraph/pull/13998) :shipit:
+- [x] tracking-issue: Fix long-form linked issues [#13989](https://github.com/sourcegraph/sourcegraph/pull/13989) :shipit:
+- [x] tracking-issue: Fix timeout [#13986](https://github.com/sourcegraph/sourcegraph/pull/13986) :shipit:
+- [x] chore: Set exec bit on docker-images/codeintel-db/build.sh [#13955](https://github.com/sourcegraph/sourcegraph/pull/13955) :shipit:
 - [x] chore: Multiple database handles [#13952](https://github.com/sourcegraph/sourcegraph/pull/13952) :shipit:
 - [x] chore: Relocate frontend migrations [#13943](https://github.com/sourcegraph/sourcegraph/pull/13943) :shipit:
 - [x] chore: Co-locate dev scripts to interact with postgres [#13942](https://github.com/sourcegraph/sourcegraph/pull/13942) :shipit:

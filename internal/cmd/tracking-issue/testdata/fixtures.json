@@ -17,7 +17,6 @@
   "CreatedAt": "0001-01-01T00:00:00Z",
   "UpdatedAt": "0001-01-01T00:00:00Z",
   "ClosedAt": "0001-01-01T00:00:00Z",
-  "LinkedPRs": null,
   "Issues": [
    {
     "ID": "MDU6SXNzdWU3MDU5MjIyNDA=",
@@ -38,8 +37,7 @@
     "Author": "efritz",
     "CreatedAt": "2020-09-21T21:16:16Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "0001-01-01T00:00:00Z",
-    "LinkedPRs": null
+    "ClosedAt": "0001-01-01T00:00:00Z"
    },
    {
     "ID": "MDU6SXNzdWU3MDU5MjE1MTI=",
@@ -60,8 +58,7 @@
     "Author": "efritz",
     "CreatedAt": "2020-09-21T21:14:54Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "0001-01-01T00:00:00Z",
-    "LinkedPRs": null
+    "ClosedAt": "0001-01-01T00:00:00Z"
    },
    {
     "ID": "MDU6SXNzdWU3MDU5MjA1OTk=",
@@ -82,8 +79,7 @@
     "Author": "efritz",
     "CreatedAt": "2020-09-21T21:13:13Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "2020-09-21T22:57:52Z",
-    "LinkedPRs": null
+    "ClosedAt": "2020-09-21T22:57:52Z"
    },
    {
     "ID": "MDU6SXNzdWU3MDU5MjAwODI=",
@@ -104,13 +100,12 @@
     "Author": "efritz",
     "CreatedAt": "2020-09-21T21:12:19Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "0001-01-01T00:00:00Z",
-    "LinkedPRs": null
+    "ClosedAt": "0001-01-01T00:00:00Z"
    },
    {
     "ID": "MDU6SXNzdWU3MDU3MTAxNDA=",
     "Title": "WIP: Code Intelligence 3.21 Tracking issue",
-    "Body": "### Plan\r\n\r\n**Goal:** Get the top three most popular language indexers: lsif-go, lsif-java, lsif-clang stable by working directly on implementation with customers to identify and resolve any remaining issues that prevent the tool from being use in a wide release. This goal takes top priority for this milestone and each member of the team is leading the initiative on an indexer. \r\n\r\n**Goal:** Perform research spikes of features such as Bazel integration (to improve monorepos support) in order to find the best approach, and scope the development effort for adding new core capabilities to code intel platform.\r\n\r\n**Goal:** Improve the reliability and usability of code intel tools by triaging and resolving UI bugs and performance issues (i.e. the bundle manager process) for an improved developer experience.\r\n\r\n### Availability\r\n\r\nPeriod is from 2020-09-20 to 2020-10-20. Please write the days you won't be working and the number of working days for the period.\r\n\r\n* Aida: 10d\r\n* Eric: 19d (off 2020/09/28-30)\r\n* Noah: TODO\r\n* Garo: 10d (off 2020/10/05-09)\r\n\r\n### Tracked issues\r\n\r\n\u003c!-- BEGIN WORK --\u003e\n\u003c!-- BEGIN ASSIGNEE: aidaeology --\u003e\n@aidaeology: __5.00d__\n\n- [ ] 🚚 LSIF-Go Delivery ([#13015](https://github.com/sourcegraph/sourcegraph/issues/13015)) __5d__ \n\u003c!-- END ASSIGNEE --\u003e\n\n\u003c!-- BEGIN ASSIGNEE: efritz --\u003e\n@efritz: __11.00d__\n\n- [ ] Write architecture docs for precise code intel indexer ([#14010](https://github.com/sourcegraph/sourcegraph/issues/14010)) \n- [ ] Write announcement post for Postgres change ([#14009](https://github.com/sourcegraph/sourcegraph/issues/14009)) \n- [ ] Update RFC 236 ([#14007](https://github.com/sourcegraph/sourcegraph/issues/14007)) \n- [ ] RFC 235: Tracking issue ([#13882](https://github.com/sourcegraph/sourcegraph/issues/13882)) __5.50d__ \n  - [x] RFC 235: Add code intel postgres image ([~#13912~](https://github.com/sourcegraph/sourcegraph/issues/13912); PRs: ~[#13913](https://github.com/sourcegraph/sourcegraph/pull/13913)~) __0.5d__ \n  - [ ] RFC 235: Cleanup ([#13890](https://github.com/sourcegraph/sourcegraph/issues/13890)) __1d__ \n  - [ ] RFC 235: Update worker to write to Postgres ([#13889](https://github.com/sourcegraph/sourcegraph/issues/13889); PRs: [#13946](https://github.com/sourcegraph/sourcegraph/pull/13946), [#13923](https://github.com/sourcegraph/sourcegraph/pull/13923)) __0.5d__ \n  - [ ] RFC 235: Migrate SQLite data to Postgres ([#13888](https://github.com/sourcegraph/sourcegraph/issues/13888); PRs: [#13932](https://github.com/sourcegraph/sourcegraph/pull/13932), [#13923](https://github.com/sourcegraph/sourcegraph/pull/13923)) __0.5d__ \n  - [ ] RFC 235: Update bundle manager to read from Postgres ([#13886](https://github.com/sourcegraph/sourcegraph/issues/13886); PRs: [#13924](https://github.com/sourcegraph/sourcegraph/pull/13924), [#13923](https://github.com/sourcegraph/sourcegraph/pull/13923)) __0.5d__ \n  - [ ] RFC 235: Add migration infrastructure to codeintel database ([#13885](https://github.com/sourcegraph/sourcegraph/issues/13885); PRs: ~[#13943](https://github.com/sourcegraph/sourcegraph/pull/13943)~, [#13903](https://github.com/sourcegraph/sourcegraph/pull/13903)) __1d__ \n  - [ ] RFC 235: Configure connection to codeintel database ([#13884](https://github.com/sourcegraph/sourcegraph/issues/13884); PRs: ~[#13952](https://github.com/sourcegraph/sourcegraph/pull/13952)~, [#13864](https://github.com/sourcegraph/sourcegraph/pull/13864)) __0.5d__ \n  - [ ] RFC 235: Add code intel postgres container ([#13883](https://github.com/sourcegraph/sourcegraph/issues/13883); PRs: [#13924](https://github.com/sourcegraph/sourcegraph/pull/13924), [#13904](https://github.com/sourcegraph/sourcegraph/pull/13904), [#13864](https://github.com/sourcegraph/sourcegraph/pull/13864)) __1d__ \n- [ ] RFC 201: Tracking issue ([#13891](https://github.com/sourcegraph/sourcegraph/issues/13891)) \n  - [ ] RFC 201: Use auto-configurator ([#13898](https://github.com/sourcegraph/sourcegraph/issues/13898)) \n  - [ ] RFC 201: Write auto-configurator ([#13897](https://github.com/sourcegraph/sourcegraph/issues/13897)) \n  - [ ] RFC 201: Create index record based on configuration file ([#13896](https://github.com/sourcegraph/sourcegraph/issues/13896)) \n  - [ ] RFC 201: Update index scheduler to publish new payload ([#13895](https://github.com/sourcegraph/sourcegraph/issues/13895)) \n  - [ ] RFC 201: Update auto indexer execution ([#13894](https://github.com/sourcegraph/sourcegraph/issues/13894)) \n  - [ ] RFC 201: Write a JSONC index configuration format parser ([#13892](https://github.com/sourcegraph/sourcegraph/issues/13892)) \n- [ ] 🚚 LSIF-Go Delivery ([#13015](https://github.com/sourcegraph/sourcegraph/issues/13015)) __5d__ \n- [ ] codeintel: RFC 235: Soft delete upload records [#13822](https://github.com/sourcegraph/sourcegraph/pull/13822) :shipit:\n\nCompleted: __1.00d__\n- [x] RFC 235: Add code intel postgres image ([~#13912~](https://github.com/sourcegraph/sourcegraph/issues/13912); PRs: ~[#13913](https://github.com/sourcegraph/sourcegraph/pull/13913)~) __0.5d__ \n- [x] Fix retries in src-cli lsif upload ([~#14008~](https://github.com/sourcegraph/sourcegraph/issues/14008)) \n- [x] LSIF uploads fail with abbreviated OID ([~#13957~](https://github.com/sourcegraph/sourcegraph/issues/13957); PRs: ~[#14005](https://github.com/sourcegraph/sourcegraph/pull/14005)~) __0.5d__ \n- [x] 504 Gateway Timeouts when mousing over after the page has loaded for a while ([~#12930~](https://github.com/sourcegraph/sourcegraph/issues/12930)) 🐛\n- [x] codeintel: Resolve abbreviated OID [#14005](https://github.com/sourcegraph/sourcegraph/pull/14005) :shipit:\n- [x] chore: Multiple database handles [#13952](https://github.com/sourcegraph/sourcegraph/pull/13952) :shipit:\n- [x] chore: Relocate frontend migrations [#13943](https://github.com/sourcegraph/sourcegraph/pull/13943) :shipit:\n- [x] chore: Co-locate dev scripts to interact with postgres [#13942](https://github.com/sourcegraph/sourcegraph/pull/13942) :shipit:\n- [x] codeintel: RFC 235: Add code intel postgres image [#13913](https://github.com/sourcegraph/sourcegraph/pull/13913) :shipit:\n\u003c!-- END ASSIGNEE --\u003e\n\u003c!-- END WORK --\u003e\r\n\r\n#### Legend\r\n\r\n- 👩 Customer issue\r\n- 🐛 Bug\r\n- 🧶 Technical debt\r\n- 🎩 Quality of life\r\n- 🛠️ [Roadmap](https://docs.google.com/document/d/1cBsE9801DcBF9chZyMnxRdolqM_1c2pPyGQz15QAvYI/edit#heading=h.5nwl5fv52ess)\r\n- 🕵️ [Spike](https://en.wikipedia.org/wiki/Spike_(software_development))\r\n- 🔒 Security issue\r\n- :shipit: Pull Request\r\n",
+    "Body": "### Plan\r\n\r\n**Goal:** Get the top three most popular language indexers: lsif-go, lsif-java, lsif-clang stable by working directly on implementation with customers to identify and resolve any remaining issues that prevent the tool from being use in a wide release. This goal takes top priority for this milestone and each member of the team is leading the initiative on an indexer. \r\n\r\n**Goal:** Perform research spikes of features such as Bazel integration (to improve monorepos support) in order to find the best approach, and scope the development effort for adding new core capabilities to code intel platform.\r\n\r\n**Goal:** Improve the reliability and usability of code intel tools by triaging and resolving UI bugs and performance issues (i.e. the bundle manager process) for an improved developer experience.\r\n\r\n### Availability\r\n\r\nPeriod is from 2020-09-20 to 2020-10-20. Please write the days you won't be working and the number of working days for the period.\r\n\r\n* Aida: 10d\r\n* Eric: 19d (off 2020/09/28-30)\r\n* Noah: TODO\r\n* Garo: 10d (off 2020/10/05-09)\r\n\r\n### Tracked issues\r\n\r\n\u003c!-- BEGIN WORK --\u003e\n\u003c!-- BEGIN ASSIGNEE: aidaeology --\u003e\n@aidaeology: __5.00d__\n\n- [ ] 🚚 LSIF-Go Delivery ([#13015](https://github.com/sourcegraph/sourcegraph/issues/13015)) __5d__ \n\u003c!-- END ASSIGNEE --\u003e\n\n\u003c!-- BEGIN ASSIGNEE: efritz --\u003e\n@efritz: __11.00d__\n\n- [ ] Write architecture docs for precise code intel indexer ([#14010](https://github.com/sourcegraph/sourcegraph/issues/14010)) \n- [ ] Write announcement post for Postgres change ([#14009](https://github.com/sourcegraph/sourcegraph/issues/14009)) \n- [ ] Update RFC 236 ([#14007](https://github.com/sourcegraph/sourcegraph/issues/14007)) \n- [ ] RFC 235: Tracking issue ([#13882](https://github.com/sourcegraph/sourcegraph/issues/13882)) __5.50d__ \n  - [x] RFC 235: Add code intel postgres image ([~#13912~](https://github.com/sourcegraph/sourcegraph/issues/13912); PRs: ~[#13913](https://github.com/sourcegraph/sourcegraph/pull/13913)~) __0.5d__ \n  - [ ] RFC 235: Cleanup ([#13890](https://github.com/sourcegraph/sourcegraph/issues/13890)) __1d__ \n  - [ ] RFC 235: Update worker to write to Postgres ([#13889](https://github.com/sourcegraph/sourcegraph/issues/13889); PRs: [#13946](https://github.com/sourcegraph/sourcegraph/pull/13946), [#13923](https://github.com/sourcegraph/sourcegraph/pull/13923)) __0.5d__ \n  - [ ] RFC 235: Migrate SQLite data to Postgres ([#13888](https://github.com/sourcegraph/sourcegraph/issues/13888); PRs: [#13932](https://github.com/sourcegraph/sourcegraph/pull/13932), [#13923](https://github.com/sourcegraph/sourcegraph/pull/13923)) __0.5d__ \n  - [ ] RFC 235: Update bundle manager to read from Postgres ([#13886](https://github.com/sourcegraph/sourcegraph/issues/13886); PRs: [#13924](https://github.com/sourcegraph/sourcegraph/pull/13924), [#13923](https://github.com/sourcegraph/sourcegraph/pull/13923)) __0.5d__ \n  - [ ] RFC 235: Add migration infrastructure to codeintel database ([#13885](https://github.com/sourcegraph/sourcegraph/issues/13885); PRs: ~[#13943](https://github.com/sourcegraph/sourcegraph/pull/13943)~, [#13903](https://github.com/sourcegraph/sourcegraph/pull/13903)) __1d__ \n  - [ ] RFC 235: Configure connection to codeintel database ([#13884](https://github.com/sourcegraph/sourcegraph/issues/13884); PRs: ~[#13952](https://github.com/sourcegraph/sourcegraph/pull/13952)~, [#13864](https://github.com/sourcegraph/sourcegraph/pull/13864)) __0.5d__ \n  - [ ] RFC 235: Add code intel postgres container ([#13883](https://github.com/sourcegraph/sourcegraph/issues/13883); PRs: [#13924](https://github.com/sourcegraph/sourcegraph/pull/13924), [#13904](https://github.com/sourcegraph/sourcegraph/pull/13904), [#13864](https://github.com/sourcegraph/sourcegraph/pull/13864)) __1d__ \n- [ ] RFC 201: Tracking issue ([#13891](https://github.com/sourcegraph/sourcegraph/issues/13891)) \n  - [ ] RFC 201: Use auto-configurator ([#13898](https://github.com/sourcegraph/sourcegraph/issues/13898)) \n  - [ ] RFC 201: Write auto-configurator ([#13897](https://github.com/sourcegraph/sourcegraph/issues/13897)) \n  - [ ] RFC 201: Create index record based on configuration file ([#13896](https://github.com/sourcegraph/sourcegraph/issues/13896)) \n  - [ ] RFC 201: Update index scheduler to publish new payload ([#13895](https://github.com/sourcegraph/sourcegraph/issues/13895)) \n  - [ ] RFC 201: Update auto indexer execution ([#13894](https://github.com/sourcegraph/sourcegraph/issues/13894)) \n  - [ ] RFC 201: Write a JSONC index configuration format parser ([#13892](https://github.com/sourcegraph/sourcegraph/issues/13892)) \n- [ ] 🚚 LSIF-Go Delivery ([#13015](https://github.com/sourcegraph/sourcegraph/issues/13015)) __5d__ \n- [ ] tracking-issue: Better nested tracking issue estimates [#14035](https://github.com/sourcegraph/sourcegraph/pull/14035) :shipit:\n- [ ] codeintel: RFC 235: Soft delete upload records [#13822](https://github.com/sourcegraph/sourcegraph/pull/13822) :shipit:\n\nCompleted: __1.00d__\n- [x] RFC 235: Add code intel postgres image ([~#13912~](https://github.com/sourcegraph/sourcegraph/issues/13912); PRs: ~[#13913](https://github.com/sourcegraph/sourcegraph/pull/13913)~) __0.5d__ \n- [x] Fix retries in src-cli lsif upload ([~#14008~](https://github.com/sourcegraph/sourcegraph/issues/14008)) \n- [x] LSIF uploads fail with abbreviated OID ([~#13957~](https://github.com/sourcegraph/sourcegraph/issues/13957); PRs: ~[#14005](https://github.com/sourcegraph/sourcegraph/pull/14005)~) __0.5d__ \n- [x] 504 Gateway Timeouts when mousing over after the page has loaded for a while ([~#12930~](https://github.com/sourcegraph/sourcegraph/issues/12930)) 🐛\n- [x] tracking-issue: Separate complete/incomplete work [#14034](https://github.com/sourcegraph/sourcegraph/pull/14034) :shipit:\n- [x] tracking-issue: List PRs for an issue inline [#14018](https://github.com/sourcegraph/sourcegraph/pull/14018) :shipit:\n- [x] tracking-issue: Break code up into files according to type/action [#14013](https://github.com/sourcegraph/sourcegraph/pull/14013) :shipit:\n- [x] tracking-issue: Parallelize writes [#14006](https://github.com/sourcegraph/sourcegraph/pull/14006) :shipit:\n- [x] codeintel: Resolve abbreviated OID [#14005](https://github.com/sourcegraph/sourcegraph/pull/14005) :shipit:\n- [x] tracking-issue: Nested tracking issues [#13998](https://github.com/sourcegraph/sourcegraph/pull/13998) :shipit:\n- [x] tracking-issue: Fix long-form linked issues [#13989](https://github.com/sourcegraph/sourcegraph/pull/13989) :shipit:\n- [x] tracking-issue: Fix timeout [#13986](https://github.com/sourcegraph/sourcegraph/pull/13986) :shipit:\n- [x] chore: Set exec bit on docker-images/codeintel-db/build.sh [#13955](https://github.com/sourcegraph/sourcegraph/pull/13955) :shipit:\n- [x] chore: Multiple database handles [#13952](https://github.com/sourcegraph/sourcegraph/pull/13952) :shipit:\n- [x] chore: Relocate frontend migrations [#13943](https://github.com/sourcegraph/sourcegraph/pull/13943) :shipit:\n- [x] chore: Co-locate dev scripts to interact with postgres [#13942](https://github.com/sourcegraph/sourcegraph/pull/13942) :shipit:\n- [x] codeintel: RFC 235: Add code intel postgres image [#13913](https://github.com/sourcegraph/sourcegraph/pull/13913) :shipit:\n\u003c!-- END ASSIGNEE --\u003e\n\u003c!-- END WORK --\u003e\r\n\r\n#### Legend\r\n\r\n- 👩 Customer issue\r\n- 🐛 Bug\r\n- 🧶 Technical debt\r\n- 🎩 Quality of life\r\n- 🛠️ [Roadmap](https://docs.google.com/document/d/1cBsE9801DcBF9chZyMnxRdolqM_1c2pPyGQz15QAvYI/edit#heading=h.5nwl5fv52ess)\r\n- 🕵️ [Spike](https://en.wikipedia.org/wiki/Spike_(software_development))\r\n- 🔒 Security issue\r\n- :shipit: Pull Request\r\n",
     "Number": 13987,
     "URL": "https://github.com/sourcegraph/sourcegraph/issues/13987",
     "State": "OPEN",
@@ -131,8 +126,7 @@
     "Author": "efritz",
     "CreatedAt": "2020-09-21T15:37:09Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "0001-01-01T00:00:00Z",
-    "LinkedPRs": null
+    "ClosedAt": "0001-01-01T00:00:00Z"
    },
    {
     "ID": "MDU6SXNzdWU3MDQ0NzExMDY=",
@@ -154,8 +148,7 @@
     "Author": "efritz",
     "CreatedAt": "2020-09-18T15:32:09Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "2020-09-21T19:59:39Z",
-    "LinkedPRs": null
+    "ClosedAt": "2020-09-21T19:59:39Z"
    },
    {
     "ID": "MDU6SXNzdWU3MDM2NTYxNDU=",
@@ -178,8 +171,7 @@
     "Author": "efritz",
     "CreatedAt": "2020-09-17T14:44:30Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "2020-09-18T15:12:44Z",
-    "LinkedPRs": null
+    "ClosedAt": "2020-09-18T15:12:44Z"
    },
    {
     "ID": "MDU6SXNzdWU3MDMwNjYyNTU=",
@@ -201,8 +193,7 @@
     "Author": "efritz",
     "CreatedAt": "2020-09-16T20:51:50Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "0001-01-01T00:00:00Z",
-    "LinkedPRs": null
+    "ClosedAt": "0001-01-01T00:00:00Z"
    },
    {
     "ID": "MDU6SXNzdWU3MDMwNjU2Njk=",
@@ -224,8 +215,7 @@
     "Author": "efritz",
     "CreatedAt": "2020-09-16T20:50:45Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "0001-01-01T00:00:00Z",
-    "LinkedPRs": null
+    "ClosedAt": "0001-01-01T00:00:00Z"
    },
    {
     "ID": "MDU6SXNzdWU3MDMwNjA5ODk=",
@@ -247,8 +237,7 @@
     "Author": "efritz",
     "CreatedAt": "2020-09-16T20:42:57Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "0001-01-01T00:00:00Z",
-    "LinkedPRs": null
+    "ClosedAt": "0001-01-01T00:00:00Z"
    },
    {
     "ID": "MDU6SXNzdWU3MDMwNTkwNjk=",
@@ -270,8 +259,7 @@
     "Author": "efritz",
     "CreatedAt": "2020-09-16T20:39:38Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "0001-01-01T00:00:00Z",
-    "LinkedPRs": null
+    "ClosedAt": "0001-01-01T00:00:00Z"
    },
    {
     "ID": "MDU6SXNzdWU3MDMwNTY1ODk=",
@@ -293,8 +281,7 @@
     "Author": "efritz",
     "CreatedAt": "2020-09-16T20:35:23Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "0001-01-01T00:00:00Z",
-    "LinkedPRs": null
+    "ClosedAt": "0001-01-01T00:00:00Z"
    },
    {
     "ID": "MDU6SXNzdWU3MDMwNTM4ODc=",
@@ -316,8 +303,7 @@
     "Author": "efritz",
     "CreatedAt": "2020-09-16T20:31:01Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "0001-01-01T00:00:00Z",
-    "LinkedPRs": null
+    "ClosedAt": "0001-01-01T00:00:00Z"
    },
    {
     "ID": "MDU6SXNzdWU3MDMwNDM0Mjk=",
@@ -340,8 +326,7 @@
     "Author": "efritz",
     "CreatedAt": "2020-09-16T20:13:20Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "0001-01-01T00:00:00Z",
-    "LinkedPRs": null
+    "ClosedAt": "0001-01-01T00:00:00Z"
    },
    {
     "ID": "MDU6SXNzdWU3MDMwNDI2MTA=",
@@ -364,8 +349,7 @@
     "Author": "efritz",
     "CreatedAt": "2020-09-16T20:11:53Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "0001-01-01T00:00:00Z",
-    "LinkedPRs": null
+    "ClosedAt": "0001-01-01T00:00:00Z"
    },
    {
     "ID": "MDU6SXNzdWU3MDMwNDE4MDU=",
@@ -388,8 +372,7 @@
     "Author": "efritz",
     "CreatedAt": "2020-09-16T20:10:31Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "0001-01-01T00:00:00Z",
-    "LinkedPRs": null
+    "ClosedAt": "0001-01-01T00:00:00Z"
    },
    {
     "ID": "MDU6SXNzdWU3MDMwNDAwNTc=",
@@ -412,8 +395,7 @@
     "Author": "efritz",
     "CreatedAt": "2020-09-16T20:07:22Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "0001-01-01T00:00:00Z",
-    "LinkedPRs": null
+    "ClosedAt": "0001-01-01T00:00:00Z"
    },
    {
     "ID": "MDU6SXNzdWU3MDMwMzgxNjU=",
@@ -436,8 +418,7 @@
     "Author": "efritz",
     "CreatedAt": "2020-09-16T20:04:01Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "0001-01-01T00:00:00Z",
-    "LinkedPRs": null
+    "ClosedAt": "0001-01-01T00:00:00Z"
    },
    {
     "ID": "MDU6SXNzdWU3MDMwMzU4NzA=",
@@ -460,8 +441,7 @@
     "Author": "efritz",
     "CreatedAt": "2020-09-16T20:00:11Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "0001-01-01T00:00:00Z",
-    "LinkedPRs": null
+    "ClosedAt": "0001-01-01T00:00:00Z"
    },
    {
     "ID": "MDU6SXNzdWU3MDMwMzUzNTA=",
@@ -484,8 +464,7 @@
     "Author": "efritz",
     "CreatedAt": "2020-09-16T19:59:18Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "0001-01-01T00:00:00Z",
-    "LinkedPRs": null
+    "ClosedAt": "0001-01-01T00:00:00Z"
    },
    {
     "ID": "MDU6SXNzdWU3MDMwMzM2MDc=",
@@ -508,13 +487,12 @@
     "Author": "efritz",
     "CreatedAt": "2020-09-16T19:56:21Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "0001-01-01T00:00:00Z",
-    "LinkedPRs": null
+    "ClosedAt": "0001-01-01T00:00:00Z"
    },
    {
     "ID": "MDU6SXNzdWU3MDMwMjY5MDc=",
     "Title": "RFC 235: Tracking issue",
-    "Body": "Tracking issue for [RFC 235: Move LSIF data to Postgres](https://docs.google.com/document/d/1Y9p29hK8xrPUTvBdWqP9uAHDg3JLV-HCaxsbCo9-YHQ).\r\n\r\n### Tracked issues\r\n\r\n\u003c!-- BEGIN WORK --\u003e\n\u003c!-- BEGIN ASSIGNEE: efritz --\u003e\n@efritz: __5.50d__\n\n- [ ] RFC 235: Cleanup ([#13890](https://github.com/sourcegraph/sourcegraph/issues/13890)) __1d__ \n- [ ] RFC 235: Update worker to write to Postgres ([#13889](https://github.com/sourcegraph/sourcegraph/issues/13889); PRs: [#13946](https://github.com/sourcegraph/sourcegraph/pull/13946), [#13923](https://github.com/sourcegraph/sourcegraph/pull/13923)) __0.5d__ \n- [ ] RFC 235: Migrate SQLite data to Postgres ([#13888](https://github.com/sourcegraph/sourcegraph/issues/13888); PRs: [#13932](https://github.com/sourcegraph/sourcegraph/pull/13932), [#13923](https://github.com/sourcegraph/sourcegraph/pull/13923)) __0.5d__ \n- [ ] RFC 235: Update bundle manager to read from Postgres ([#13886](https://github.com/sourcegraph/sourcegraph/issues/13886); PRs: [#13924](https://github.com/sourcegraph/sourcegraph/pull/13924), [#13923](https://github.com/sourcegraph/sourcegraph/pull/13923)) __0.5d__ \n- [ ] RFC 235: Add migration infrastructure to codeintel database ([#13885](https://github.com/sourcegraph/sourcegraph/issues/13885); PRs: ~[#13943](https://github.com/sourcegraph/sourcegraph/pull/13943)~, [#13903](https://github.com/sourcegraph/sourcegraph/pull/13903)) __1d__ \n- [ ] RFC 235: Configure connection to codeintel database ([#13884](https://github.com/sourcegraph/sourcegraph/issues/13884); PRs: ~[#13952](https://github.com/sourcegraph/sourcegraph/pull/13952)~, [#13864](https://github.com/sourcegraph/sourcegraph/pull/13864)) __0.5d__ \n- [ ] RFC 235: Add code intel postgres container ([#13883](https://github.com/sourcegraph/sourcegraph/issues/13883); PRs: [#13924](https://github.com/sourcegraph/sourcegraph/pull/13924), [#13904](https://github.com/sourcegraph/sourcegraph/pull/13904), [#13864](https://github.com/sourcegraph/sourcegraph/pull/13864)) __1d__ \n- [ ] codeintel: RFC 235: Soft delete upload records [#13822](https://github.com/sourcegraph/sourcegraph/pull/13822) :shipit:\n\nCompleted: __0.50d__\n- [x] RFC 235: Add code intel postgres image ([~#13912~](https://github.com/sourcegraph/sourcegraph/issues/13912); PRs: ~[#13913](https://github.com/sourcegraph/sourcegraph/pull/13913)~) __0.5d__ \n- [x] chore: Multiple database handles [#13952](https://github.com/sourcegraph/sourcegraph/pull/13952) :shipit:\n- [x] chore: Relocate frontend migrations [#13943](https://github.com/sourcegraph/sourcegraph/pull/13943) :shipit:\n- [x] chore: Co-locate dev scripts to interact with postgres [#13942](https://github.com/sourcegraph/sourcegraph/pull/13942) :shipit:\n- [x] codeintel: RFC 235: Add code intel postgres image [#13913](https://github.com/sourcegraph/sourcegraph/pull/13913) :shipit:\n\u003c!-- END ASSIGNEE --\u003e\n\u003c!-- END WORK --\u003e\r\n\r\n#### Legend\r\n\r\n- 👩 Customer issue\r\n- 🐛 Bug\r\n- 🧶 Technical debt\r\n- 🎩 Quality of life\r\n- 🛠️ [Roadmap](https://docs.google.com/document/d/1cBsE9801DcBF9chZyMnxRdolqM_1c2pPyGQz15QAvYI/edit#heading=h.5nwl5fv52ess)\r\n- 🕵️ [Spike](https://en.wikipedia.org/wiki/Spike_(software_development))\r\n- 🔒 Security issue\r\n- :shipit: Pull Request\r\n",
+    "Body": "Tracking issue for [RFC 235: Move LSIF data to Postgres](https://docs.google.com/document/d/1Y9p29hK8xrPUTvBdWqP9uAHDg3JLV-HCaxsbCo9-YHQ).\r\n\r\n### Tracked issues\r\n\r\n\u003c!-- BEGIN WORK --\u003e\n\u003c!-- BEGIN ASSIGNEE: efritz --\u003e\n@efritz: __5.50d__\n\n- [ ] RFC 235: Cleanup ([#13890](https://github.com/sourcegraph/sourcegraph/issues/13890)) __1d__ \n- [ ] RFC 235: Update worker to write to Postgres ([#13889](https://github.com/sourcegraph/sourcegraph/issues/13889); PRs: [#13946](https://github.com/sourcegraph/sourcegraph/pull/13946), [#13923](https://github.com/sourcegraph/sourcegraph/pull/13923)) __0.5d__ \n- [ ] RFC 235: Migrate SQLite data to Postgres ([#13888](https://github.com/sourcegraph/sourcegraph/issues/13888); PRs: [#13932](https://github.com/sourcegraph/sourcegraph/pull/13932), [#13923](https://github.com/sourcegraph/sourcegraph/pull/13923)) __0.5d__ \n- [ ] RFC 235: Update bundle manager to read from Postgres ([#13886](https://github.com/sourcegraph/sourcegraph/issues/13886); PRs: [#13924](https://github.com/sourcegraph/sourcegraph/pull/13924), [#13923](https://github.com/sourcegraph/sourcegraph/pull/13923)) __0.5d__ \n- [ ] RFC 235: Add migration infrastructure to codeintel database ([#13885](https://github.com/sourcegraph/sourcegraph/issues/13885); PRs: ~[#13943](https://github.com/sourcegraph/sourcegraph/pull/13943)~, [#13903](https://github.com/sourcegraph/sourcegraph/pull/13903)) __1d__ \n- [ ] RFC 235: Configure connection to codeintel database ([#13884](https://github.com/sourcegraph/sourcegraph/issues/13884); PRs: ~[#13952](https://github.com/sourcegraph/sourcegraph/pull/13952)~, [#13864](https://github.com/sourcegraph/sourcegraph/pull/13864)) __0.5d__ \n- [ ] RFC 235: Add code intel postgres container ([#13883](https://github.com/sourcegraph/sourcegraph/issues/13883); PRs: [#13924](https://github.com/sourcegraph/sourcegraph/pull/13924), [#13904](https://github.com/sourcegraph/sourcegraph/pull/13904), [#13864](https://github.com/sourcegraph/sourcegraph/pull/13864)) __1d__ \n- [ ] codeintel: RFC 235: Soft delete upload records [#13822](https://github.com/sourcegraph/sourcegraph/pull/13822) :shipit:\n\nCompleted: __0.50d__\n- [x] RFC 235: Add code intel postgres image ([~#13912~](https://github.com/sourcegraph/sourcegraph/issues/13912); PRs: ~[#13913](https://github.com/sourcegraph/sourcegraph/pull/13913)~) __0.5d__ \n- [x] chore: Set exec bit on docker-images/codeintel-db/build.sh [#13955](https://github.com/sourcegraph/sourcegraph/pull/13955) :shipit:\n- [x] chore: Multiple database handles [#13952](https://github.com/sourcegraph/sourcegraph/pull/13952) :shipit:\n- [x] chore: Relocate frontend migrations [#13943](https://github.com/sourcegraph/sourcegraph/pull/13943) :shipit:\n- [x] chore: Co-locate dev scripts to interact with postgres [#13942](https://github.com/sourcegraph/sourcegraph/pull/13942) :shipit:\n- [x] codeintel: RFC 235: Add code intel postgres image [#13913](https://github.com/sourcegraph/sourcegraph/pull/13913) :shipit:\n\u003c!-- END ASSIGNEE --\u003e\n\u003c!-- END WORK --\u003e\r\n\r\n#### Legend\r\n\r\n- 👩 Customer issue\r\n- 🐛 Bug\r\n- 🧶 Technical debt\r\n- 🎩 Quality of life\r\n- 🛠️ [Roadmap](https://docs.google.com/document/d/1cBsE9801DcBF9chZyMnxRdolqM_1c2pPyGQz15QAvYI/edit#heading=h.5nwl5fv52ess)\r\n- 🕵️ [Spike](https://en.wikipedia.org/wiki/Spike_(software_development))\r\n- 🔒 Security issue\r\n- :shipit: Pull Request\r\n",
     "Number": 13882,
     "URL": "https://github.com/sourcegraph/sourcegraph/issues/13882",
     "State": "OPEN",
@@ -532,8 +510,7 @@
     "Author": "efritz",
     "CreatedAt": "2020-09-16T19:44:16Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "0001-01-01T00:00:00Z",
-    "LinkedPRs": null
+    "ClosedAt": "0001-01-01T00:00:00Z"
    },
    {
     "ID": "MDU6SXNzdWU2NzkyODc5MTc=",
@@ -558,8 +535,7 @@
     "Author": "aidaeology",
     "CreatedAt": "2020-08-14T17:06:43Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "0001-01-01T00:00:00Z",
-    "LinkedPRs": null
+    "ClosedAt": "0001-01-01T00:00:00Z"
    },
    {
     "ID": "MDU6SXNzdWU2NzcyOTc1MDE=",
@@ -582,11 +558,120 @@
     "Author": "lawrence-tan",
     "CreatedAt": "2020-08-12T01:00:15Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "2020-09-21T17:20:24Z",
-    "LinkedPRs": null
+    "ClosedAt": "2020-09-21T17:20:24Z"
    }
   ],
   "PRs": [
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDkwNjUzMzY0",
+    "Title": "tracking-issue: Better nested tracking issue estimates",
+    "Body": "Calculate the time required to complete all the tasks of a nested tracking issue.",
+    "Number": 14035,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/14035",
+    "State": "OPEN",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.21",
+    "Author": "efritz",
+    "CreatedAt": "2020-09-22T02:24:35Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "0001-01-01T00:00:00Z",
+    "BeganAt": "2020-09-21T20:41:18Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDkwNjQ4MDk1",
+    "Title": "tracking-issue: Separate complete/incomplete work",
+    "Body": "Display complete and incomplete work separately. I find this much easier to read at a glance (especially as I use it as a TODO/find-next-task list).\r\n\r\n\u003cimg width=\"866\" alt=\"Screen Shot 2020-09-21 at 9 01 05 PM\" src=\"https://user-images.githubusercontent.com/103087/93837943-9f173100-fc4d-11ea-8d2d-8dfad46aef28.png\"\u003e\r\n",
+    "Number": 14034,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/14034",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.21",
+    "Author": "efritz",
+    "CreatedAt": "2020-09-22T02:02:42Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-09-22T15:00:10Z",
+    "BeganAt": "2020-09-21T20:41:18Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDkwNjMxOTY0",
+    "Title": "tracking-issue: List PRs for an issue inline",
+    "Body": "**Before:**\r\n\r\n\u003cimg width=\"866\" alt=\"Screen Shot 2020-09-21 at 7 48 16 PM\" src=\"https://user-images.githubusercontent.com/103087/93835091-bd782f00-fc43-11ea-942b-a3c485cc608c.png\"\u003e\r\n\r\n**After:**\r\n\r\n\u003cimg width=\"866\" alt=\"Screen Shot 2020-09-21 at 7 47 49 PM\" src=\"https://user-images.githubusercontent.com/103087/93835084-bb15d500-fc43-11ea-9b7d-bbdae88727c6.png\"\u003e\r\n",
+    "Number": 14018,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/14018",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.21",
+    "Author": "efritz",
+    "CreatedAt": "2020-09-22T00:51:28Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-09-22T14:50:13Z",
+    "BeganAt": "2020-09-21T20:41:18Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDkwNjEzNzg1",
+    "Title": "tracking-issue: Break code up into files according to type/action",
+    "Body": "This PR contains only code _movement_. No code was altered except for imports.",
+    "Number": 14013,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/14013",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.21",
+    "Author": "efritz",
+    "CreatedAt": "2020-09-21T23:36:45Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-09-22T14:39:58Z",
+    "BeganAt": "2020-09-21T20:41:18Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDkwNTQ3ODg5",
+    "Title": "tracking-issue: Parallelize writes",
+    "Body": "We still have timeouts if we need to update too many issues. This breaks the other expensive GraphQL request up.",
+    "Number": 14006,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/14006",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.21",
+    "Author": "efritz",
+    "CreatedAt": "2020-09-21T20:41:57Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-09-22T14:30:13Z",
+    "BeganAt": "2020-09-21T20:41:18Z"
+   },
    {
     "ID": "MDExOlB1bGxSZXF1ZXN0NDkwNTE3MzU2",
     "Title": "codeintel: Resolve abbreviated OID",
@@ -608,6 +693,93 @@
     "UpdatedAt": "0001-01-01T00:00:00Z",
     "ClosedAt": "2020-09-21T19:59:39Z",
     "BeganAt": "2020-09-21T19:38:34Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDkwNDIzNTk1",
+    "Title": "tracking-issue: Nested tracking issues",
+    "Body": "I use tracking issues to track progress on RFC implementation. This PR nests issues tracked _more closely_ by another tracking issue under that tracking issue.\r\n\r\n\u003cimg width=\"752\" alt=\"Screen Shot 2020-09-21 at 11 47 20 AM\" src=\"https://user-images.githubusercontent.com/103087/93796300-453c4a00-fc00-11ea-99d5-0885572e15e5.png\"\u003e\r\n",
+    "Number": 13998,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/13998",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.21",
+    "Author": "efritz",
+    "CreatedAt": "2020-09-21T16:35:46Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-09-21T20:03:57Z",
+    "BeganAt": "2020-09-21T16:34:29Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDkwMzk3MTY0",
+    "Title": "tracking-issue: Fix long-form linked issues",
+    "Body": "A PR and an issue were only linked if the PR contained the `#issue-number` link form, but not if you use the full URL, e.g. `https://github.com/sg/sg/issues/issue-number`. This PR adds a pattern matching for the second format.",
+    "Number": 13989,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/13989",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.21",
+    "Author": "efritz",
+    "CreatedAt": "2020-09-21T15:49:49Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-09-21T16:29:37Z",
+    "BeganAt": "2020-09-21T15:17:45Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDkwMzg1Nzgx",
+    "Title": "tracking-issue: Fix timeout",
+    "Body": "This loads each tracking issue as a separate GraphQL request done concurrently rather than one giant GraphQL request that is likely to timeout as the number of active tracking issues grows.",
+    "Number": 13986,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/13986",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.21",
+    "Author": "efritz",
+    "CreatedAt": "2020-09-21T15:31:26Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-09-21T16:25:15Z",
+    "BeganAt": "2020-09-21T15:17:45Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDg5MzgxMTQz",
+    "Title": "chore: Set exec bit on docker-images/codeintel-db/build.sh",
+    "Body": "The build script is not executable and is failing CI on the main branch.\r\n\r\nhttps://buildkite.com/sourcegrapSee h/sourcegraph/builds/73797#5ab928c7-ad85-4368-aec3-50b24a4afac7.",
+    "Number": 13955,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/13955",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "RFC-235",
+     "team/code-intelligence"
+    ],
+    "Assignees": [],
+    "Milestone": "3.21",
+    "Author": "efritz",
+    "CreatedAt": "2020-09-18T15:15:28Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-09-18T15:22:28Z",
+    "BeganAt": "2020-09-18T15:14:28Z"
    },
    {
     "ID": "MDExOlB1bGxSZXF1ZXN0NDg5MzM5MzI2",
