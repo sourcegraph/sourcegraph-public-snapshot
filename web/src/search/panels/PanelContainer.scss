@@ -2,10 +2,10 @@
     margin-bottom: 1rem;
 
     &__header {
-        position:relative;
-        
+        min-height: 2rem;
+
         &-text {
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.125rem;
             flex-grow: 1;
             align-self: flex-end;
             font-weight: 400;
@@ -13,16 +13,7 @@
     }
 
     &__action-button-group {
-        font-size: 12px;
-        float: right;
-        position: absolute;
-        bottom: .25rem;
-        right: 0;
-    }
-
-    &__action-button {
-        font-size: 12px;
-        line-height: 16px !important;
+        margin-bottom: .25rem;
     }
 
     &__empty-container {
