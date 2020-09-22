@@ -35,24 +35,6 @@ func (wl *Workload) Markdown(labelAllowlist []string) string {
 	fmt.Fprintf(&b, "\n"+beginAssigneeMarkerFmt+"\n", wl.Assignee)
 	fmt.Fprintf(&b, "@%s%s\n\n", wl.Assignee, days)
 
-	indent := func(depth int) string {
-		return strings.Repeat(" ", depth*2)
-	}
-
-	var renderIssue func(issue *Issue, depth int)
-	renderIssue = func(issue *Issue, depth int) {
-		b.WriteString(indent(depth))
-		b.WriteString(issue.Markdown(labelAllowlist))
-
-		// Render children tracked _only_ by this issue
-		// (excluding the team tracking issue) as nested elements
-		for _, child := range issue.Children {
-			if len(child.Parents) == 1 {
-				renderIssue(child, depth+1)
-			}
-		}
-	}
-
 	skipped := 0
 	renderIssuesAndPullRequests := func(closed bool) {
 		for _, issue := range wl.Issues {
@@ -66,7 +48,7 @@ func (wl *Workload) Markdown(labelAllowlist []string) string {
 						continue
 					}
 
-					renderIssue(issue, 0)
+					renderIssue(&b, labelAllowlist, issue, 0)
 				} else {
 					skipped++
 				}
@@ -98,6 +80,23 @@ func (wl *Workload) Markdown(labelAllowlist []string) string {
 
 	fmt.Fprintf(&b, "%s\n", endAssigneeMarker)
 	return b.String()
+}
+
+func renderIssue(b *strings.Builder, labelAllowlist []string, issue *Issue, depth int) {
+	b.WriteString(indent(depth))
+	b.WriteString(issue.Markdown(labelAllowlist))
+
+	// Render children tracked _only_ by this issue
+	// (excluding the team tracking issue) as nested elements
+	for _, child := range issue.Children {
+		if len(child.Parents) == 1 {
+			renderIssue(b, labelAllowlist, child, depth+1)
+		}
+	}
+}
+
+func indent(depth int) string {
+	return strings.Repeat(" ", depth*2)
 }
 
 var issueURLMatcher = regexp.MustCompile(`https://github\.com/.+/.+/issues/\d+`)
