@@ -195,7 +195,7 @@ func (s *indexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
 }
 
 func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
-	if len(s.Repos()) == 0 {
+	if s.args.Mode != search.ZoektGlobalSearch && len(s.Repos()) == 0 {
 		return nil, false, nil, nil
 	}
 
@@ -291,7 +291,7 @@ var errNoResultsInTimeout = errors.New("no results found in specified timeout")
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
 func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
-	if len(repos.repoRevs) == 0 {
+	if args.Mode != search.ZoektGlobalSearch && len(repos.repoRevs) == 0 {
 		return nil, false, nil, nil
 	}
 
@@ -299,7 +299,12 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 	if err != nil {
 		return nil, false, nil, err
 	}
-	finalQuery := zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, queryExceptRepos)
+	var finalQuery zoektquery.Q
+	if args.Mode == search.ZoektGlobalSearch {
+		finalQuery = zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, queryExceptRepos)
+	} else {
+		finalQuery = zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, queryExceptRepos)
+	}
 
 	k := zoektResultCountFactor(len(repos.repoBranches), args.PatternInfo)
 	searchOpts := zoektSearchOpts(ctx, k, args.PatternInfo)
@@ -367,6 +372,23 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 
 		limitHit = true
 	}
+	// repo
+	m := map[string]*search.RepositoryRevisions{}
+	for _, file := range resp.Files {
+		m[file.Repository] = nil
+	}
+
+	select {
+	case <-ctx.Done():
+		return nil, false, nil, ctx.Err()
+	case repos := <-args.RepoPromise:
+		for _, repo := range repos {
+			if _, ok := m[string(repo.Repo.Name)]; !ok {
+				continue
+			}
+			m[string(repo.Repo.Name)] = repo
+		}
+	}
 
 	matches := make([]*FileMatchResolver, 0, len(resp.Files))
 	repoResolvers := make(RepositoryResolverCache)
@@ -377,8 +399,13 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			fileLimitHit = true
 			limitHit = true
 		}
-
-		repo, inputRevs := repos.GetRepoInputRev(&file)
+		repoRev := m[file.Repository]
+		if repoRev == nil {
+			continue
+		}
+		//repo, inputRevs := repos.GetRepoInputRev(&file)
+		repo := repoRev.Repo
+		inputRevs := repoRev.RevSpecs()
 		repoResolver := repoResolvers[repo.Name]
 		if repoResolver == nil {
 			repoResolver = &RepositoryResolver{repo: repo}

@@ -1676,6 +1676,19 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 	}
 }
 
+// isGlobalSearch returns true if r.query is not a structural query and if it
+// does not contain any of the following filters: repo, repogroup
+func (r *searchResolver) isGlobalSearch() bool {
+	if r.patternType == query.SearchTypeStructural {
+		return false
+	}
+	if r.versionContext != nil && *r.versionContext != "" {
+		return false
+	}
+
+	return len(r.query.Values(query.FieldRepo)) == 0 && len(r.query.Values(query.FieldRepoGroup)) == 0
+}
+
 // doResults is one of the highest level search functions that handles finding results.
 //
 // If forceOnlyResultType is specified, only results of the given type are returned,
@@ -1697,14 +1710,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return nil, err
 	}
 	defer cancel()
-
-	resolved, alertResult, err := r.determineRepos(ctx, tr, start)
-	if err != nil {
-		return nil, err
-	}
-	if alertResult != nil {
-		return alertResult, nil
-	}
 
 	options := &getPatternInfoOptions{}
 	if r.patternType == query.SearchTypeStructural {
@@ -1729,12 +1734,14 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	args := search.TextParameters{
 		PatternInfo:     p,
-		Repos:           resolved.repoRevs,
 		Query:           r.query,
 		UseFullDeadline: r.searchTimeoutFieldSet(),
 		Zoekt:           r.zoekt,
 		SearcherURLs:    r.searcherURLs,
+		RepoPromise:     make(chan []*search.RepositoryRevisions, 1),
 	}
+	defer close(args.RepoPromise)
+
 	if err := args.PatternInfo.Validate(); err != nil {
 		return nil, &badRequestError{err}
 	}
@@ -1743,9 +1750,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	if err != nil {
 		return nil, err
 	}
-
-	resultTypes := r.determineResultTypes(args, forceOnlyResultType)
-	tr.LazyPrintf("resultTypes: %v", resultTypes)
 
 	var (
 		requiredWg sync.WaitGroup
@@ -1770,6 +1774,33 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		common:      searchResultsCommon{maxResultsCount: r.maxResults()},
 		fileMatches: make(map[string]*FileMatchResolver),
 	}
+
+	if r.isGlobalSearch() {
+		// call zoekt early
+		argsIndexed := args
+		argsIndexed.Mode = search.ZoektGlobalSearch
+		wg := waitGroup(true)
+		wg.Add(1)
+		goroutine.Go(func() {
+			defer wg.Done()
+			agg.doFilePathSearch(ctx, &argsIndexed)
+		})
+		args.Mode = search.SearcherOnly
+	}
+
+	resolved, alertResult, err := r.determineRepos(ctx, tr, start)
+	if err != nil {
+		return nil, err
+	}
+	if alertResult != nil {
+		return alertResult, nil
+	}
+	args.RepoPromise <- resolved.repoRevs
+	args.Repos = resolved.repoRevs
+
+	resultTypes := r.determineResultTypes(args, forceOnlyResultType)
+	tr.LazyPrintf("resultTypes: %v", resultTypes)
+
 	agg.common.excluded = resolved.excludedRepos
 
 	// Apply search limits and generate warnings before firing off workers.
