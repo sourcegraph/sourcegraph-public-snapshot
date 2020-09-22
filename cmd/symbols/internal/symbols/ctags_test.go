@@ -1,4 +1,4 @@
-package ctags
+package symbols
 
 import (
 	"os/exec"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	ctags "github.com/sourcegraph/go-ctags"
 )
 
 func TestParser(t *testing.T) {
@@ -14,7 +15,7 @@ func TestParser(t *testing.T) {
 		t.Skip("command not in PATH: universal-ctags")
 	}
 
-	p, err := New()
+	p, err := NewParser()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -23,7 +24,7 @@ func TestParser(t *testing.T) {
 	cases := []struct {
 		path string
 		data string
-		want []Entry
+		want []*ctags.Entry
 	}{{
 		path: "com/sourcegraph/A.java",
 		data: `
@@ -40,7 +41,7 @@ class A implements B extends C {
   }
 }
 `,
-		want: []Entry{
+		want: []*ctags.Entry{
 			{
 				Kind:     "package",
 				Language: "Java",
@@ -111,7 +112,7 @@ interface Node {
     id: ID!
 }
 `,
-		want: []Entry{
+		want: []*ctags.Entry{
 			{
 				Name:     "query",
 				Path:     "schema.graphql",
@@ -149,7 +150,7 @@ interface Node {
 			t.Error(err)
 		}
 
-		if d := cmp.Diff(tc.want, got, cmpopts.IgnoreFields(Entry{}, "Pattern")); d != "" {
+		if d := cmp.Diff(tc.want, got, cmpopts.IgnoreFields(ctags.Entry{}, "Pattern")); d != "" {
 			t.Errorf("%s mismatch (-want +got):\n%s", tc.path, d)
 		}
 	}
