@@ -149,7 +149,7 @@ func (h *handler) handle(ctx context.Context, store store.Store, upload store.Up
 	// update the upload record with an error message but do not want to alter any other data in
 	// the database. Rolling back to this savepoint will allow us to discard any other changes
 	// but still commit the transaction as a whole.
-	tx, err := store.Transact(ctx)
+	tx, err := store.Transact(ctx, nil)
 	if err != nil {
 		return false, errors.Wrap(err, "store.Transact")
 	}
@@ -209,7 +209,7 @@ func (h *handler) write(ctx context.Context, dirname string, groupedBundleData *
 		err = store.Close(err)
 	}()
 
-	store, err = store.Transact(ctx)
+	store, err = store.Transact(ctx, nil)
 	if err != nil {
 		return err
 	}

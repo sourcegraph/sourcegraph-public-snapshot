@@ -207,8 +207,8 @@ func DefaultColumnExpressions() []*sqlf.Query {
 	return expressions
 }
 
-func (s *store) Transact(ctx context.Context) (*store, error) {
-	txBase, err := s.Store.Transact(ctx)
+func (s *store) Transact(ctx context.Context, options *sql.TxOptions) (*store, error) {
+	txBase, err := s.Store.Transact(ctx, options)
 	if err != nil {
 		return nil, err
 	}
@@ -269,7 +269,7 @@ func (s *store) dequeue(ctx context.Context, conditions []*sqlf.Query, independe
 
 		// Once we have an eligible identifier, we try to create a transaction and select the
 		// record in a way that takes a row lock for the duration of the transaction.
-		tx, err := s.Transact(txCtx)
+		tx, err := s.Transact(txCtx, nil)
 		if err != nil {
 			return nil, nil, false, err
 		}

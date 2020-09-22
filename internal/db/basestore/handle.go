@@ -2,6 +2,7 @@ package basestore
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -47,7 +48,7 @@ func (h *TransactableHandle) InTransaction() bool {
 // Because we support properly nested transactions via savepoints, calling Transact from two different
 // goroutines on the same handle will not be deterministic: either transaction could nest the other one,
 // and callaing Done in one goroutine may not finalize the expected unit of work.
-func (h *TransactableHandle) Transact(ctx context.Context) (*TransactableHandle, error) {
+func (h *TransactableHandle) Transact(ctx context.Context, options *sql.TxOptions) (*TransactableHandle, error) {
 	if h.InTransaction() {
 		savepoint, err := newSavepoint(ctx, h.db)
 		if err != nil {
@@ -63,7 +64,7 @@ func (h *TransactableHandle) Transact(ctx context.Context) (*TransactableHandle,
 		return nil, ErrNotTransactable
 	}
 
-	tx, err := tb.BeginTx(ctx, nil)
+	tx, err := tb.BeginTx(ctx, options)
 	if err != nil {
 		return nil, err
 	}

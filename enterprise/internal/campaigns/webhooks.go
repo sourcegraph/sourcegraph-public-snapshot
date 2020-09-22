@@ -104,7 +104,7 @@ func (h Webhook) upsertChangesetEvent(
 	ev keyer,
 ) (err error) {
 	var tx *Store
-	if tx, err = h.Store.Transact(ctx); err != nil {
+	if tx, err = h.Store.Transact(ctx, nil); err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()

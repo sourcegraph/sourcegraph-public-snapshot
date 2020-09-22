@@ -67,8 +67,8 @@ func (s *Store) With(other basestore.ShareableStore) *Store {
 // Transact creates a new transaction.
 // It's required to implement this method and wrap the Transact method of the
 // underlying basestore.Store.
-func (s *Store) Transact(ctx context.Context) (*Store, error) {
-	txBase, err := s.Store.Transact(ctx)
+func (s *Store) Transact(ctx context.Context, options *sql.TxOptions) (*Store, error) {
+	txBase, err := s.Store.Transact(ctx, options)
 	if err != nil {
 		return nil, err
 	}

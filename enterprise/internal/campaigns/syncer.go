@@ -3,6 +3,7 @@ package campaigns
 import (
 	"container/heap"
 	"context"
+	"database/sql"
 	"fmt"
 	"strconv"
 	"sync"
@@ -279,7 +280,7 @@ type SyncStore interface {
 	ListChangesets(context.Context, ListChangesetsOpts) (campaigns.Changesets, int64, error)
 	UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) error
 	UpsertChangesetEvents(ctx context.Context, cs ...*campaigns.ChangesetEvent) error
-	Transact(context.Context) (*Store, error)
+	Transact(ctx context.Context, options *sql.TxOptions) (*Store, error)
 }
 
 // Run will start the process of changeset syncing. It is long running
@@ -592,7 +593,7 @@ func syncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []
 		}
 	}
 
-	tx, err := store.Transact(ctx)
+	tx, err := store.Transact(ctx, nil)
 	if err != nil {
 		return err
 	}

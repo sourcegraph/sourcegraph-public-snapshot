@@ -19,7 +19,7 @@ func TestLock(t *testing.T) {
 	key := rand.Intn(1000)
 
 	// Start txn before acquiring locks outside of txn
-	tx, err := store.Transact(context.Background())
+	tx, err := store.Transact(context.Background(), nil)
 	if err != nil {
 		t.Fatalf("unexpected error starting transaction: %s", err)
 	}
@@ -61,7 +61,7 @@ func TestLockBlockingAcquire(t *testing.T) {
 	key := rand.Intn(1000)
 
 	// Start txn before acquiring locks outside of txn
-	tx, err := store.Transact(context.Background())
+	tx, err := store.Transact(context.Background(), nil)
 	if err != nil {
 		t.Errorf("unexpected error starting transaction: %s", err)
 		return

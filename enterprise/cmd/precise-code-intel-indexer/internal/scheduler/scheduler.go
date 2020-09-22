@@ -92,7 +92,7 @@ func (s *Scheduler) queueIndex(ctx context.Context, indexableRepository store.In
 		return nil
 	}
 
-	tx, err := s.store.Transact(ctx)
+	tx, err := s.store.Transact(ctx, nil)
 	if err != nil {
 		return errors.Wrap(err, "store.Transact")
 	}

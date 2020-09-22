@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 )
@@ -19,7 +20,7 @@ type IndexedResultChunkData struct {
 }
 
 type Store interface {
-	Transact(ctx context.Context) (Store, error)
+	Transact(ctx context.Context, options *sql.TxOptions) (Store, error)
 	Done(err error) error
 	CreateTables(ctx context.Context) error
 	Close(err error) error

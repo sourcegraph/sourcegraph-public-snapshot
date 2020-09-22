@@ -37,7 +37,7 @@ func scanPackageReferences(rows *sql.Rows, queryErr error) (_ []types.PackageRef
 // SameRepoPager returns a ReferencePager for dumps that belong to the given repository and commit and reference the package with the
 // given scheme, name, and version.
 func (s *store) SameRepoPager(ctx context.Context, repositoryID int, commit, scheme, name, version string, limit int) (_ int, _ ReferencePager, err error) {
-	tx, err := s.transact(ctx)
+	tx, err := s.transact(ctx, nil)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -75,7 +75,7 @@ func (s *store) SameRepoPager(ctx context.Context, repositoryID int, commit, sch
 // and reference the package with the given scheme, name, and version. All resulting dumps are visible at the tip of their repository's
 // default branch.
 func (s *store) PackageReferencePager(ctx context.Context, scheme, name, version string, repositoryID, limit int) (_ int, _ ReferencePager, err error) {
-	tx, err := s.transact(ctx)
+	tx, err := s.transact(ctx, nil)
 	if err != nil {
 		return 0, nil, err
 	}

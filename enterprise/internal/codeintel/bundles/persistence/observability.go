@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -157,8 +158,8 @@ func (s *ObservedStore) ReadReferences(ctx context.Context, scheme, identifier s
 }
 
 // Transact calls into the inner Store and registers the observed result.
-func (s *ObservedStore) Transact(ctx context.Context) (_ Store, err error) {
-	tx, err := s.store.Transact(ctx)
+func (s *ObservedStore) Transact(ctx context.Context, options *sql.TxOptions) (Store, error) {
+	tx, err := s.store.Transact(ctx, options)
 	if err != nil {
 		return nil, err
 	}

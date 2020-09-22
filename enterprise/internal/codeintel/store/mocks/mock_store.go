@@ -4,6 +4,7 @@ package mocks
 
 import (
 	"context"
+	"database/sql"
 	types "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	basestore "github.com/sourcegraph/sourcegraph/internal/db/basestore"
@@ -402,7 +403,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		TransactFunc: &StoreTransactFunc{
-			defaultHook: func(context.Context) (store.Store, error) {
+			defaultHook: func(context.Context, *sql.TxOptions) (store.Store, error) {
 				return nil, nil
 			},
 		},
@@ -5547,23 +5548,23 @@ func (c StoreSameRepoPagerFuncCall) Results() []interface{} {
 // StoreTransactFunc describes the behavior when the Transact method of the
 // parent MockStore instance is invoked.
 type StoreTransactFunc struct {
-	defaultHook func(context.Context) (store.Store, error)
-	hooks       []func(context.Context) (store.Store, error)
+	defaultHook func(context.Context, *sql.TxOptions) (store.Store, error)
+	hooks       []func(context.Context, *sql.TxOptions) (store.Store, error)
 	history     []StoreTransactFuncCall
 	mutex       sync.Mutex
 }
 
 // Transact delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockStore) Transact(v0 context.Context) (store.Store, error) {
-	r0, r1 := m.TransactFunc.nextHook()(v0)
-	m.TransactFunc.appendCall(StoreTransactFuncCall{v0, r0, r1})
+func (m *MockStore) Transact(v0 context.Context, v1 *sql.TxOptions) (store.Store, error) {
+	r0, r1 := m.TransactFunc.nextHook()(v0, v1)
+	m.TransactFunc.appendCall(StoreTransactFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Transact method of
 // the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreTransactFunc) SetDefaultHook(hook func(context.Context) (store.Store, error)) {
+func (f *StoreTransactFunc) SetDefaultHook(hook func(context.Context, *sql.TxOptions) (store.Store, error)) {
 	f.defaultHook = hook
 }
 
@@ -5571,7 +5572,7 @@ func (f *StoreTransactFunc) SetDefaultHook(hook func(context.Context) (store.Sto
 // Transact method of the parent MockStore instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *StoreTransactFunc) PushHook(hook func(context.Context) (store.Store, error)) {
+func (f *StoreTransactFunc) PushHook(hook func(context.Context, *sql.TxOptions) (store.Store, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -5580,7 +5581,7 @@ func (f *StoreTransactFunc) PushHook(hook func(context.Context) (store.Store, er
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *StoreTransactFunc) SetDefaultReturn(r0 store.Store, r1 error) {
-	f.SetDefaultHook(func(context.Context) (store.Store, error) {
+	f.SetDefaultHook(func(context.Context, *sql.TxOptions) (store.Store, error) {
 		return r0, r1
 	})
 }
@@ -5588,12 +5589,12 @@ func (f *StoreTransactFunc) SetDefaultReturn(r0 store.Store, r1 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *StoreTransactFunc) PushReturn(r0 store.Store, r1 error) {
-	f.PushHook(func(context.Context) (store.Store, error) {
+	f.PushHook(func(context.Context, *sql.TxOptions) (store.Store, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreTransactFunc) nextHook() func(context.Context) (store.Store, error) {
+func (f *StoreTransactFunc) nextHook() func(context.Context, *sql.TxOptions) (store.Store, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -5629,6 +5630,9 @@ type StoreTransactFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *sql.TxOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 store.Store
@@ -5640,7 +5644,7 @@ type StoreTransactFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StoreTransactFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this

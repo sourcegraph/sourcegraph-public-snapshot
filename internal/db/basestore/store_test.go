@@ -28,7 +28,7 @@ func TestTransaction(t *testing.T) {
 	assertCounts(t, dbconn.Global, map[int]int{1: 42})
 
 	// Add record inside of a transaction
-	tx1, err := store.Transact(context.Background())
+	tx1, err := store.Transact(context.Background(), nil)
 	if err != nil {
 		t.Fatalf("unexpected error creating transaction: %s", err)
 	}
@@ -37,7 +37,7 @@ func TestTransaction(t *testing.T) {
 	}
 
 	// Add record inside of another transaction
-	tx2, err := store.Transact(context.Background())
+	tx2, err := store.Transact(context.Background(), nil)
 	if err != nil {
 		t.Fatalf("unexpected error creating transaction: %s", err)
 	}
@@ -93,7 +93,7 @@ func recurSavepoints(t *testing.T, store *Store, index, rollbackAt int) {
 		return
 	}
 
-	tx, err := store.Transact(context.Background())
+	tx, err := store.Transact(context.Background(), nil)
 	if err != nil {
 		t.Fatalf("unexpected error creating transaction: %s", err)
 	}

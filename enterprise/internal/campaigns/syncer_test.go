@@ -3,6 +3,7 @@ package campaigns
 import (
 	"container/heap"
 	"context"
+	"database/sql"
 	"sync"
 	"testing"
 	"time"
@@ -550,7 +551,7 @@ type MockSyncStore struct {
 	listChangesets        func(context.Context, ListChangesetsOpts) (campaigns.Changesets, int64, error)
 	updateChangeset       func(context.Context, *campaigns.Changeset) error
 	upsertChangesetEvents func(context.Context, ...*campaigns.ChangesetEvent) error
-	transact              func(context.Context) (*Store, error)
+	transact              func(context.Context, *sql.TxOptions) (*Store, error)
 }
 
 func (m MockSyncStore) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
@@ -573,8 +574,8 @@ func (m MockSyncStore) UpsertChangesetEvents(ctx context.Context, cs ...*campaig
 	return m.upsertChangesetEvents(ctx, cs...)
 }
 
-func (m MockSyncStore) Transact(ctx context.Context) (*Store, error) {
-	return m.transact(ctx)
+func (m MockSyncStore) Transact(ctx context.Context, options *sql.TxOptions) (*Store, error) {
+	return m.transact(ctx, options)
 }
 
 type MockRepoStore struct {

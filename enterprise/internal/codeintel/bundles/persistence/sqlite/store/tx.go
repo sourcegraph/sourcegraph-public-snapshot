@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
@@ -15,7 +16,7 @@ var ErrNotTransactable = errors.New("store: not transactable")
 // Transact returns a Store whose methods operate within the context of a transaction.
 // This method will return an error if the underlying DB cannot be interface upgraded
 // to a TxBeginner.
-func (s *Store) Transact(ctx context.Context) (*Store, error) {
+func (s *Store) Transact(ctx context.Context, options *sql.TxOptions) (*Store, error) {
 	if _, ok := s.db.(dbutil.Tx); ok {
 		// Already in a Tx
 		return s, nil
@@ -27,7 +28,7 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 		return nil, ErrNotTransactable
 	}
 
-	tx, err := tb.BeginTx(ctx, nil)
+	tx, err := tb.BeginTx(ctx, options)
 	if err != nil {
 		return nil, errors.Wrap(err, "store: BeginTx")
 	}

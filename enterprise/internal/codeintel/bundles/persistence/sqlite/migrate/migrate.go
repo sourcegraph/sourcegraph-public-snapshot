@@ -72,7 +72,7 @@ func Migrate(ctx context.Context, s *store.Store, serializer serialization.Seria
 // runMigration applies a single migration function within a transaction. If the migration
 // function is successful, the schema version will be reflected to update the new version.
 func runMigration(ctx context.Context, store *store.Store, serializer serialization.Serializer, version int, migrationFunc MigrationFunc) (err error) {
-	tx, err := store.Transact(ctx)
+	tx, err := store.Transact(ctx, nil)
 	if err != nil {
 		return err
 	}

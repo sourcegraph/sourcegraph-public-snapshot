@@ -123,7 +123,7 @@ type GetIndexesOptions struct {
 
 // GetIndexes returns a list of indexes and the total count of records matching the given conditions.
 func (s *store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Index, _ int, err error) {
-	tx, err := s.transact(ctx)
+	tx, err := s.transact(ctx, nil)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -298,7 +298,7 @@ func (s *store) RequeueIndex(ctx context.Context, id int, after time.Time) error
 
 // DeleteIndexByID deletes an index by its identifier.
 func (s *store) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error) {
-	tx, err := s.transact(ctx)
+	tx, err := s.transact(ctx, nil)
 	if err != nil {
 		return false, err
 	}

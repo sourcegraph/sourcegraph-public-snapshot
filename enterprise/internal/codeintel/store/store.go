@@ -21,7 +21,7 @@ type Store interface {
 	// Transact returns a store whose methods operate within the context of a transaction.
 	// This method will return an error if the underlying store cannot be interface upgraded
 	// to a TxBeginner.
-	Transact(ctx context.Context) (Store, error)
+	Transact(ctx context.Context, options *sql.TxOptions) (Store, error)
 
 	// Done commits underlying the transaction on a nil error value and performs a rollback
 	// otherwise. If an error occurs during commit or rollback of the transaction, the error
@@ -232,12 +232,12 @@ func (s *store) With(other basestore.ShareableStore) Store {
 	return &store{Store: s.Store.With(other)}
 }
 
-func (s *store) Transact(ctx context.Context) (Store, error) {
-	return s.transact(ctx)
+func (s *store) Transact(ctx context.Context, options *sql.TxOptions) (Store, error) {
+	return s.transact(ctx, options)
 }
 
-func (s *store) transact(ctx context.Context) (*store, error) {
-	txBase, err := s.Store.Transact(ctx)
+func (s *store) transact(ctx context.Context, options *sql.TxOptions) (*store, error) {
+	txBase, err := s.Store.Transact(ctx, options)
 	return &store{Store: txBase}, err
 }
 

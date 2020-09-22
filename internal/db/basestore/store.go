@@ -31,8 +31,8 @@ import (
 //         return &SprocketStore{Store: s.Store.With(other)}
 //     }
 //
-//     func (s *SprocketStore) Transact(ctx context.Context) (*SprocketStore, error) {
-//         txBase, err := s.Store.Transact(ctx)
+//     func (s *SprocketStore) Transact(ctx context.Context, options *sql.TxOptions) (*SprocketStore, error) {
+//         txBase, err := s.Store.Transact(ctx, options)
 //         return &SprocketStore{Store: txBase}, nil
 //     }
 type Store struct {
@@ -73,8 +73,8 @@ func (s *Store) Handle() *TransactableHandle {
 // This method should be used when two distinct store instances need to perform an
 // operation within the same shared transaction.
 //
-//     txn1 := store1.Transact(ctx) // Creates a transaction
-//     txn2 := store2.With(txn1)    // References the same transaction
+//     txn1 := store1.Transact(ctx, nil) // Creates a transaction
+//     txn2 := store2.With(txn1)         // References the same transaction
 //
 //     txn1.A(ctx) // Occurs within shared transaction
 //     txn2.B(ctx) // Occurs within shared transaction
@@ -109,8 +109,8 @@ func (s *Store) InTransaction() bool {
 // Transact returns a new store whose methods operate within the context of a new transaction
 // or a new savepoint. This method will return an error if the underlying connection cannot be
 // interface upgraded to a TxBeginner.
-func (s *Store) Transact(ctx context.Context) (*Store, error) {
-	handle, err := s.handle.Transact(ctx)
+func (s *Store) Transact(ctx context.Context, options *sql.TxOptions) (*Store, error) {
+	handle, err := s.handle.Transact(ctx, options)
 	if err != nil {
 		return nil, err
 	}

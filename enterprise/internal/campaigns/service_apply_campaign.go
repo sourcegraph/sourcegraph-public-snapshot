@@ -94,7 +94,7 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		return campaign, nil
 	}
 
-	tx, err := s.store.Transact(ctx)
+	tx, err := s.store.Transact(ctx, nil)
 	if err != nil {
 		return nil, err
 	}

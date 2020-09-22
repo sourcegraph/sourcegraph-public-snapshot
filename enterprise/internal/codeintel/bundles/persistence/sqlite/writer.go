@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
@@ -36,8 +37,8 @@ func NewStore(ctx context.Context, filename string, cache cache.DataCache) (_ pe
 	}, nil
 }
 
-func (w *sqliteStore) Transact(ctx context.Context) (persistence.Store, error) {
-	tx, err := w.store.Transact(ctx)
+func (w *sqliteStore) Transact(ctx context.Context, options *sql.TxOptions) (persistence.Store, error) {
+	tx, err := w.store.Transact(ctx, options)
 	if err != nil {
 		return nil, err
 	}

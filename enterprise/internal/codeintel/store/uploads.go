@@ -193,7 +193,7 @@ type GetUploadsOptions struct {
 
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
 func (s *store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upload, _ int, err error) {
-	tx, err := s.transact(ctx)
+	tx, err := s.transact(ctx, nil)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -419,7 +419,7 @@ func (s *store) GetStates(ctx context.Context, ids []int) (map[int]string, error
 // was deleted. The associated repository will be marked as dirty so that its commit graph will be updated in
 // the background.
 func (s *store) DeleteUploadByID(ctx context.Context, id int) (_ bool, err error) {
-	tx, err := s.transact(ctx)
+	tx, err := s.transact(ctx, nil)
 	if err != nil {
 		return false, err
 	}

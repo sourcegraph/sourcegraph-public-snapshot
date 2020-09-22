@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
@@ -382,8 +383,8 @@ func (s *ObservedStore) With(other basestore.ShareableStore) Store {
 }
 
 // Transact calls into the inner store and wraps the resulting value in an ObservedStore.
-func (s *ObservedStore) Transact(ctx context.Context) (Store, error) {
-	tx, err := s.store.Transact(ctx)
+func (s *ObservedStore) Transact(ctx context.Context, options *sql.TxOptions) (Store, error) {
+	tx, err := s.store.Transact(ctx, options)
 	if err != nil {
 		return nil, err
 	}

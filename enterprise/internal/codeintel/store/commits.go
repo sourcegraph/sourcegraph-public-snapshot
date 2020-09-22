@@ -104,7 +104,7 @@ func (s *store) DirtyRepositories(ctx context.Context) (map[int]int, error) {
 // token stored in the database, the flag will not be cleared as another request for update has come in since this
 // token has been read.
 func (s *store) CalculateVisibleUploads(ctx context.Context, repositoryID int, graph map[string][]string, tipCommit string, dirtyToken int) (err error) {
-	tx, err := s.transact(ctx)
+	tx, err := s.transact(ctx, nil)
 	if err != nil {
 		return err
 	}

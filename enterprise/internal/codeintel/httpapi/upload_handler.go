@@ -202,7 +202,7 @@ func (h *UploadHandler) handleEnqueueSinglePayload(r *http.Request, uploadArgs U
 		r.Body = ioutil.NopCloser(io.MultiReader(bytes.NewReader(buf.Bytes()), r.Body))
 	}
 
-	tx, err := h.store.Transact(ctx)
+	tx, err := h.store.Transact(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -278,7 +278,7 @@ func (h *UploadHandler) handleEnqueueMultipartSetup(r *http.Request, uploadArgs 
 func (h *UploadHandler) handleEnqueueMultipartUpload(r *http.Request, upload store.Upload, partIndex int) (_ interface{}, err error) {
 	ctx := r.Context()
 
-	tx, err := h.store.Transact(ctx)
+	tx, err := h.store.Transact(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -306,7 +306,7 @@ func (h *UploadHandler) handleEnqueueMultipartFinalize(r *http.Request, upload s
 		return nil, clientError("upload is missing %d parts", upload.NumParts-len(upload.UploadedParts))
 	}
 
-	tx, err := h.store.Transact(ctx)
+	tx, err := h.store.Transact(ctx, nil)
 	if err != nil {
 		return nil, err
 	}

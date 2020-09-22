@@ -111,7 +111,7 @@ func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpe
 		}
 	}
 
-	tx, err := s.store.Transact(ctx)
+	tx, err := s.store.Transact(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +224,7 @@ func (s *Service) MoveCampaign(ctx context.Context, opts MoveCampaignOpts) (camp
 		tr.Finish()
 	}()
 
-	tx, err := s.store.Transact(ctx)
+	tx, err := s.store.Transact(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -289,7 +289,7 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 		return nil, err
 	}
 
-	tx, err := s.store.Transact(ctx)
+	tx, err := s.store.Transact(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
