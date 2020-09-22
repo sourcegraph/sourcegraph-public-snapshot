@@ -32,8 +32,10 @@ type Issue struct {
 
 func (issue *Issue) Markdown(labelAllowlist []string) string {
 	state := " "
+	prefixSuffix := ""
 	if strings.EqualFold(issue.State, "closed") {
 		state = "x"
+		prefixSuffix = "~"
 	}
 
 	estimate := Estimate(issue.Labels)
@@ -54,10 +56,12 @@ func (issue *Issue) Markdown(labelAllowlist []string) string {
 		pullRequestsPrefix = "; PRs: "
 	}
 
-	return fmt.Sprintf("- [%s] %s ([#%d](%s)%s%s) %s%s%s\n",
+	return fmt.Sprintf("- [%s] %s ([%s#%d%s](%s)%s%s) %s%s%s\n",
 		state,
 		issue.title(),
+		prefixSuffix,
 		issue.Number,
+		prefixSuffix,
 		issue.URL,
 		pullRequestsPrefix,
 		strings.Join(summaries, ", "),
