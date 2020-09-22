@@ -2,6 +2,8 @@
     margin-bottom: 1rem;
 
     &__header {
+        position:relative;
+        
         &-text {
             margin-bottom: 0.25rem;
             flex-grow: 1;
@@ -11,8 +13,11 @@
     }
 
     &__action-button-group {
-        margin-bottom: 0.125rem;
         font-size: 12px;
+        float: right;
+        position: absolute;
+        bottom: .25rem;
+        right: 0;
     }
 
     &__action-button {
