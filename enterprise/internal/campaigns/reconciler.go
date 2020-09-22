@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -146,6 +148,12 @@ func (r *reconciler) publishChangeset(ctx context.Context, tx *Store, ch *campai
 		HeadRef:   git.EnsureRefPrefix(ref),
 		Repo:      repo,
 		Changeset: ch,
+	}
+
+	// Depending on the changeset, we may want to add to the body (for example,
+	// to add a backlink to Sourcegraph).
+	if err := decorateChangesetBody(ctx, tx, cs); err != nil {
+		return errors.Wrapf(err, "decorating body for changeset %d", ch.ID)
 	}
 
 	// If we're running this method a second time, because we failed due to an
@@ -553,6 +561,71 @@ func loadExternalService(ctx context.Context, reposStore repos.Store, repo *repo
 	}
 
 	return externalService, nil
+}
+
+func decorateChangesetBody(ctx context.Context, tx *Store, cs *repos.Changeset) error {
+	// If the changeset is owned by a campaign, then we want to add a backlink
+	// to the body so the user can easily return to Sourcegraph.
+	if cid := cs.OwnedByCampaignID; cid != 0 {
+		campaign, err := tx.GetCampaign(ctx, GetCampaignOpts{ID: cid})
+		if err != nil {
+			return errors.Wrapf(err, "retrieving owning campaign: %d", cid)
+		}
+
+		// We need to get the namespace, since external campaign URLs are
+		// namespaced.
+		ns, err := db.Namespaces.GetByID(ctx, campaign.NamespaceOrgID, campaign.NamespaceUserID)
+		if err != nil {
+			return errors.Wrap(err, "retrieving namespace")
+		}
+
+		url, err := campaignURL(ctx, ns, campaign)
+		if err != nil {
+			return errors.Wrap(err, "building URL")
+		}
+
+		cs.Body = fmt.Sprintf(
+			"%s\n\n[_Created by Sourcegraph campaign `%s/%s`._](%s)",
+			cs.Body, ns.Name, campaign.Name, url,
+		)
+	}
+
+	return nil
+}
+
+// internalClient is here for mocking reasons.
+var internalClient interface {
+	ExternalURL(context.Context) (string, error)
+} = api.InternalClient
+
+func campaignURL(ctx context.Context, ns *db.Namespace, c *campaigns.Campaign) (string, error) {
+	// To build the absolute URL, we need to know where Sourcegraph is!
+	extStr, err := internalClient.ExternalURL(ctx)
+	if err != nil {
+		return "", errors.Wrap(err, "getting external Sourcegraph URL")
+	}
+
+	extURL, err := url.Parse(extStr)
+	if err != nil {
+		return "", errors.Wrap(err, "parsing external Sourcegraph URL")
+	}
+
+	// This needs to be kept consistent with resolvers.campaignURL().
+	// (Refactoring the resolver to use the same function is difficult due to
+	// the different querying and caching behaviour in GraphQL resolvers, so we
+	// simply replicate the logic here.)
+	u := extURL.ResolveReference(&url.URL{Path: namespaceURL(ns) + "/campaigns/" + c.Name})
+
+	return u.String(), nil
+}
+
+func namespaceURL(ns *db.Namespace) string {
+	prefix := "/users/"
+	if ns.Organization != 0 {
+		prefix = "/organizations/"
+	}
+
+	return prefix + ns.Name
 }
 
 func CompareChangesetSpecs(previous, current *campaigns.ChangesetSpec) (*changesetSpecDelta, error) {

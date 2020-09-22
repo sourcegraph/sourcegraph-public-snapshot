@@ -13,6 +13,7 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -723,4 +724,201 @@ func createChangeset(
 	}
 
 	return changeset
+}
+
+func TestDecorateChangesetBody(t *testing.T) {
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	clock := func() time.Time {
+		return now.UTC().Truncate(time.Microsecond)
+	}
+	store := NewStoreWithClock(dbconn.Global, clock)
+
+	admin := createTestUser(ctx, t)
+	if !admin.SiteAdmin {
+		t.Fatal("admin is not site admin")
+	}
+
+	rs, extSvc := createTestRepos(t, ctx, dbconn.Global, 1)
+
+	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
+		Name: api.RepoName(rs[0].Name),
+		VCS:  protocol.VCSInfo{URL: rs[0].URI},
+	})
+	defer state.Unmock()
+
+	internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
+	defer func() { internalClient = api.InternalClient }()
+
+	githubPR := buildGithubPR(clock(), "OPEN")
+	commonHeadRef := "refs/heads/main"
+
+	// Create a published changeset.
+	campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
+	campaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
+	changesetSpec := createChangesetSpec(t, ctx, store, testSpecOpts{
+		user:         admin.ID,
+		repo:         rs[0].ID,
+		campaignSpec: campaignSpec.ID,
+		headRef:      commonHeadRef,
+		published:    true,
+	})
+	cs := createChangeset(t, ctx, store, testChangesetOpts{
+		repo:             rs[0].ID,
+		publicationState: campaigns.ChangesetPublicationStateUnpublished,
+		campaign:         campaign.ID,
+		ownedByCampaign:  campaign.ID,
+		currentSpec:      changesetSpec.ID,
+		externalBranch:   git.AbbreviateRef(commonHeadRef),
+		externalID:       "123",
+	})
+
+	t.Run("integration", func(t *testing.T) {
+		// Setup gitserver dependency.
+		gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
+		if changesetSpec != nil {
+			gitClient.Response = changesetSpec.Spec.HeadRef
+		}
+
+		// Setup the sourcer that's used to create a Source with which to
+		// create/update a changeset.
+		fakeSource := &ct.FakeChangesetSource{
+			Svc:          extSvc,
+			Err:          nil,
+			FakeMetadata: githubPR,
+		}
+		if changesetSpec != nil {
+			fakeSource.WantHeadRef = changesetSpec.Spec.HeadRef
+			fakeSource.WantBaseRef = changesetSpec.Spec.BaseRef
+		}
+
+		sourcer := repos.NewFakeSourcer(nil, fakeSource)
+
+		// Run the reconciler
+		rec := reconciler{
+			noSleepBeforeSync: true,
+			gitserverClient:   gitClient,
+			sourcer:           sourcer,
+			store:             store,
+		}
+		if err := rec.process(ctx, store, cs); err != nil {
+			t.Fatalf("reconciler process failed: %s", err)
+		}
+
+		// Check that we created a changeset.
+		if !fakeSource.CreateChangesetCalled {
+			t.Error("CreateChangeset not called")
+		}
+		if len(fakeSource.CreatedChangesets) != 1 {
+			t.Errorf("unexpected created changesets: %+v", fakeSource.CreatedChangesets)
+		}
+
+		// Ensure that we decorated the body. This test is pretty basic: we'll
+		// more specifically test decorateChangesetBody in other subtests to
+		// verify its exact behaviour.
+		rcs := fakeSource.CreatedChangesets[0]
+		if !strings.Contains(rcs.Body, "Created by Sourcegraph campaign") {
+			t.Errorf("did not find backlink in body: %q", rcs.Body)
+		}
+	})
+
+	t.Run("owned", func(t *testing.T) {
+		body := "body"
+		rcs := &repos.Changeset{Body: body, Changeset: cs, Repo: rs[0]}
+		if err := decorateChangesetBody(ctx, store, rcs); err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+		if want := body + "\n\n[_Created by Sourcegraph campaign `" + admin.Username + "/reconciler-test-campaign`._](https://sourcegraph.test/users/" + admin.Username + "/campaigns/reconciler-test-campaign)"; rcs.Body != want {
+			t.Errorf("repos.Changeset body unexpectedly changed: have=%q want=%q", rcs.Body, want)
+		}
+	})
+
+	t.Run("unowned", func(t *testing.T) {
+		cid := cs.OwnedByCampaignID
+		cs.OwnedByCampaignID = 0
+		defer func() { cs.OwnedByCampaignID = cid }()
+
+		body := "body"
+		rcs := &repos.Changeset{Body: body, Changeset: cs, Repo: rs[0]}
+		if err := decorateChangesetBody(ctx, store, rcs); err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+		if rcs.Body != body {
+			t.Errorf("repos.Changeset body unexpectedly changed: have=%q want=%q", rcs.Body, body)
+		}
+	})
+}
+
+func TestCampaignURL(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("errors", func(t *testing.T) {
+		for name, tc := range map[string]*mockInternalClient{
+			"ExternalURL error": {err: errors.New("foo")},
+			"invalid URL":       {externalURL: "foo://:bar"},
+		} {
+			t.Run(name, func(t *testing.T) {
+				internalClient = tc
+				defer func() { internalClient = api.InternalClient }()
+
+				if _, err := campaignURL(ctx, nil, nil); err == nil {
+					t.Error("unexpected nil error")
+				}
+			})
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
+		defer func() { internalClient = api.InternalClient }()
+
+		url, err := campaignURL(
+			ctx,
+			&db.Namespace{Name: "foo", Organization: 123},
+			&campaigns.Campaign{Name: "bar"},
+		)
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+		if want := "https://sourcegraph.test/organizations/foo/campaigns/bar"; url != want {
+			t.Errorf("unexpected URL: have=%q want=%q", url, want)
+		}
+	})
+}
+
+func TestNamespaceURL(t *testing.T) {
+	for name, tc := range map[string]struct {
+		ns   *db.Namespace
+		want string
+	}{
+		"user": {
+			ns:   &db.Namespace{User: 123, Name: "user"},
+			want: "/users/user",
+		},
+		"org": {
+			ns:   &db.Namespace{Organization: 123, Name: "org"},
+			want: "/organizations/org",
+		},
+		"neither": {
+			ns:   &db.Namespace{Name: "user"},
+			want: "/users/user",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if have := namespaceURL(tc.ns); have != tc.want {
+				t.Errorf("unexpected URL: have=%q want=%q", have, tc.want)
+			}
+		})
+	}
+}
+
+type mockInternalClient struct {
+	externalURL string
+	err         error
+}
+
+func (c *mockInternalClient) ExternalURL(ctx context.Context) (string, error) {
+	return c.externalURL, c.err
 }
