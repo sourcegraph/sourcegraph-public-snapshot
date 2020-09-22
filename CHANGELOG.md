@@ -15,6 +15,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Changed
 
+- Error reporting by `src campaign [preview|apply]` has been improved and now includes more information about which step failed in which repository. [#325](https://github.com/sourcegraph/src-cli/pull/325)
+
 ### Fixed
 
 - Log files created by `src campaigns [preview|apply]` are deleted again after successful execution. This was a regression and is not new behaviour. If steps failed to execute or the `-keep-logs` flag is set the log files are not cleaned up.

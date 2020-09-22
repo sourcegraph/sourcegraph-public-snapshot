@@ -13,6 +13,21 @@ import (
 	"github.com/sourcegraph/src-cli/internal/campaigns/graphql"
 )
 
+type TaskExecutionErr struct {
+	Err        error
+	Logfile    string
+	Repository string
+}
+
+func (e TaskExecutionErr) Error() string {
+	return fmt.Sprintf(
+		"execution in %s failed: %s (see %s for details)",
+		e.Repository,
+		e.Err,
+		e.Logfile,
+	)
+}
+
 type Executor interface {
 	AddTask(repo *graphql.Repository, steps []Step, template *ChangesetTemplate) *TaskStatus
 	LogFiles() []string
@@ -186,7 +201,11 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 	}
 	defer func() {
 		if err != nil {
-			err = errors.Wrapf(err, "Error executing task. The log file can be found at:\n%s\n", log.Path())
+			err = TaskExecutionErr{
+				Err:        err,
+				Logfile:    log.Path(),
+				Repository: task.Repository.Name,
+			}
 			log.MarkErrored()
 		}
 		log.Close()

@@ -63,11 +63,8 @@ Examples:
 		})
 
 		if err := doApply(ctx, out, svc, flags); err != nil {
-			out.Write("")
-			block := out.Block(output.Line("❌", output.StyleWarning, "Error"))
-			block.Write(err.Error())
-			block.Close()
-			out.Write("")
+			printExecutionError(out, err)
+			return &exitCodeError{nil, 1}
 		}
 
 		return nil

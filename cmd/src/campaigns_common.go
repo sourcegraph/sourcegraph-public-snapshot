@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"io"
 	"os"
 	"path"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/campaigns"
@@ -276,4 +278,56 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 	campaignsCompletePending(pending, "Creating campaign spec on Sourcegraph")
 
 	return id, url, nil
+}
+
+// printExecutionError is used to print the possible error returned by
+// campaignsExecute.
+func printExecutionError(out *output.Output, err error) {
+	out.Write("")
+
+	writeErr := func(block *output.Block, err error) {
+		if block == nil {
+			return
+		}
+
+		if taskErr, ok := err.(campaigns.TaskExecutionErr); ok {
+			block.Write(formatTaskExecutionErr(taskErr))
+		} else {
+			block.Write(err.Error())
+		}
+	}
+
+	var block *output.Block
+	singleErrHeader := output.Line(output.EmojiFailure, output.StyleWarning, "Error:")
+
+	if parErr, ok := err.(parallel.Errors); ok {
+		if len(parErr) > 1 {
+			block = out.Block(output.Linef(output.EmojiFailure, output.StyleWarning, "%d errors:", len(parErr)))
+		} else {
+			block = out.Block(singleErrHeader)
+		}
+
+		for _, e := range parErr {
+			writeErr(block, e)
+		}
+	} else {
+		block = out.Block(singleErrHeader)
+		writeErr(block, err)
+	}
+
+	if block != nil {
+		block.Close()
+	}
+	out.Write("")
+}
+
+func formatTaskExecutionErr(err campaigns.TaskExecutionErr) string {
+	return fmt.Sprintf(
+		"%s%s%s:\n%s\nLog: %s\n",
+		output.StyleBold,
+		err.Repository,
+		output.StyleReset,
+		err.Err,
+		err.Logfile,
+	)
 }

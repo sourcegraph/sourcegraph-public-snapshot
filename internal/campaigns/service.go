@@ -198,7 +198,7 @@ func (svc *Service) ExecuteCampaignSpec(ctx context.Context, repos []*graphql.Re
 		done <- struct{}{}
 	}
 	if err != nil {
-		return nil, errors.Wrap(err, "executing campaign spec")
+		return nil, err
 	}
 
 	// Add external changeset specs.

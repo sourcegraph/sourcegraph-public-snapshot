@@ -33,6 +33,10 @@ var (
 	StyleWarning = Fg256Color(124)
 	StyleSuccess = Fg256Color(2)
 
+	StyleBold      = &style{"\033[1m"}
+	StyleItalic    = &style{"\033[3m"}
+	StyleUnderline = &style{"\033[4m"}
+
 	// Search-specific colors.
 	StyleSearchQuery         = Fg256Color(68)
 	StyleSearchBorder        = Fg256Color(239)

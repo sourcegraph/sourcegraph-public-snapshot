@@ -70,7 +70,7 @@ func runSteps(ctx context.Context, client api.Client, repo *graphql.Repository, 
 	}
 
 	for i, step := range steps {
-		logger.Logf("[Step %d] docker run %s", i+1, step.image)
+		logger.Logf("[Step %d] docker run %s %q", i+1, step.Container, step.Run)
 
 		cidFile, err := ioutil.TempFile(tempDir, prefix+"-container-id")
 		if err != nil {
@@ -120,8 +120,10 @@ func runSteps(ctx context.Context, client api.Client, repo *graphql.Repository, 
 		}
 		cmd.Args = append(cmd.Args, "--", step.image, containerTemp)
 		cmd.Dir = volumeDir
-		cmd.Stdout = logger.PrefixWriter("stdout")
-		cmd.Stderr = logger.PrefixWriter("stderr")
+
+		var stdoutBuffer, stderrBuffer bytes.Buffer
+		cmd.Stdout = io.MultiWriter(&stdoutBuffer, logger.PrefixWriter("stdout"))
+		cmd.Stderr = io.MultiWriter(&stderrBuffer, logger.PrefixWriter("stderr"))
 
 		a, err := json.Marshal(cmd.Args)
 		if err != nil {
@@ -134,7 +136,16 @@ func runSteps(ctx context.Context, client api.Client, repo *graphql.Repository, 
 		elapsed := time.Since(t0).Round(time.Millisecond)
 		if err != nil {
 			logger.Logf("[Step %d] took %s; error running Docker container: %+v", i+1, elapsed, err)
-			return nil, errors.Wrapf(err, "Running Docker container for image %q failed", step.image)
+
+			return nil, stepFailedErr{
+				Err:         err,
+				Args:        cmd.Args,
+				Run:         step.Run,
+				Container:   step.Container,
+				TmpFilename: containerTemp,
+				Stdout:      strings.TrimSpace(stdoutBuffer.String()),
+				Stderr:      strings.TrimSpace(stderrBuffer.String()),
+			}
 		}
 		logger.Logf("[Step %d] complete in %s", i+1, elapsed)
 
@@ -296,4 +307,58 @@ func probeImageForShell(ctx context.Context, image string) (shell, tempfile stri
 	// If we got here, then all the attempts to probe the shell failed. Let's
 	// admit defeat and return. At least err is already in place.
 	return
+}
+
+type stepFailedErr struct {
+	Run       string
+	Container string
+
+	TmpFilename string
+
+	Args   []string
+	Stdout string
+	Stderr string
+
+	Err error
+}
+
+func (e stepFailedErr) Error() string {
+	var out strings.Builder
+
+	fmtRun := func(run string) string {
+		lines := strings.Split(run, "\n")
+		if len(lines) == 1 {
+			return lines[0]
+		}
+		return lines[0] + fmt.Sprintf("\n\t(... and %d more lines)", len(lines)-1)
+	}
+
+	out.WriteString(fmt.Sprintf("run: %s\ncontainer: %s\n", fmtRun(e.Run), e.Container))
+
+	printOutput := func(output string) {
+		for _, line := range strings.Split(output, "\n") {
+			if e.TmpFilename != "" {
+				line = strings.ReplaceAll(line, e.TmpFilename+": ", "")
+			}
+			out.WriteString("\t" + line + "\n")
+		}
+	}
+
+	if len(e.Stdout) > 0 {
+		out.WriteString("\nstandard out:\n")
+		printOutput(e.Stdout)
+	}
+
+	if len(e.Stderr) > 0 {
+		out.WriteString("\nstandard error:\n")
+		printOutput(e.Stderr)
+	}
+
+	if exitErr, ok := e.Err.(*exec.ExitError); ok {
+		out.WriteString(fmt.Sprintf("\nCommand failed with exit code %d.", exitErr.ExitCode()))
+	} else {
+		out.WriteString(fmt.Sprintf("\nCommand failed: %s", e.Err))
+	}
+
+	return out.String()
 }
