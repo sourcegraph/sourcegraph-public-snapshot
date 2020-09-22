@@ -8,9 +8,10 @@ import { parseSearchURLQuery } from '..'
 import { parseSearchQuery } from '../../../../shared/src/search/parser/parser'
 import { EventLogResult } from '../backend'
 import { Link } from '../../../../shared/src/components/Link'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { FilterType } from '../../../../shared/src/search/interactive/util'
 import { FILTERS } from '../../../../shared/src/search/parser/filters'
+import { LoadingPanelView } from './LoadingPanelView'
+import { ShowMoreButton } from './ShowMoreButton'
 
 export const RepositoriesPanel: React.FunctionComponent<{
     authenticatedUser: AuthenticatedUser | null
@@ -22,17 +23,10 @@ export const RepositoriesPanel: React.FunctionComponent<{
     const pageSize = 50
     const [itemsToLoad, setItemsToLoad] = useState(pageSize)
 
-    const loadingDisplay = (
-        <div className="d-flex justify-content-center align-items-center panel-container__empty-container">
-            <div className="icon-inline">
-                <LoadingSpinner />
-            </div>
-            Loading recently searched repositories
-        </div>
-    )
+    const loadingDisplay = <LoadingPanelView text="Loading recently searched repositories" />
 
     const emptyDisplay = (
-        <div className="panel-container__empty-container">
+        <div className="panel-container__empty-container text-muted">
             <small className="mb-2">
                 <p className="mb-1">Recently searched repositories will be displayed here.</p>
                 <p className="mb-1">
@@ -66,13 +60,17 @@ export const RepositoriesPanel: React.FunctionComponent<{
         }
     }, [searchEventLogs])
 
+    function loadMoreItems(): void {
+        setItemsToLoad(current => current + pageSize)
+    }
+
     const contentDisplay = (
-        <div>
+        <div className="mt-2">
             <div className="d-flex mb-1">
                 <small>Search</small>
             </div>
             {repoFilterValues?.map((repoFilterValue, index) => (
-                <dd key={`${repoFilterValue}-${index}`} className="text-monospace">
+                <dd key={`${repoFilterValue}-${index}`} className="text-monospace text-break">
                     <Link to={`/search?q=repo:${repoFilterValue}`}>
                         <span className="search-keyword">repo:</span>
                         <span className="repositories-panel__search-value">{repoFilterValue}</span>
@@ -80,15 +78,7 @@ export const RepositoriesPanel: React.FunctionComponent<{
                 </dd>
             ))}
             {searchEventLogs?.pageInfo.hasNextPage && (
-                <div className="text-center">
-                    <button
-                        type="button"
-                        className="btn btn-secondary test-repositories-panel-show-more"
-                        onClick={() => setItemsToLoad(current => current + pageSize)}
-                    >
-                        Show more
-                    </button>
-                </div>
+                <ShowMoreButton className="test-repositories-panel-show-more" onClick={loadMoreItems} />
             )}
         </div>
     )
