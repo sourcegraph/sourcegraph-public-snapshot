@@ -61,9 +61,9 @@ func New() (Parser, error) {
 	//  opt = "sandbox"
 	// }
 
-	// ctagsArgs is the contents of .ctags.d. ctags.d needs to be in a
-	// specific location to be read correctly. We have accidently regressed on
-	// this twice. Instead we pass in the arguments here.
+	// ctagsArgs is the contents of ctags.d. ctags.d needs to be in a specific
+	// location to be read correctly. We have accidently regressed on this
+	// twice. Instead we pass in the arguments here.
 	args := []string{"--_interactive=" + opt, "--fields=*", fmt.Sprintf("--pattern-length-limit=%d", patternLengthLimit)}
 	args = append(args, ctagsArgs...)
 
