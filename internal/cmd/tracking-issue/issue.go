@@ -39,6 +39,15 @@ func (issue *Issue) Markdown(labelAllowlist []string) string {
 	}
 
 	estimate := Estimate(issue.Labels)
+	if estimate == "" {
+		est := float64(0)
+		for _, child := range issue.Children {
+			est += Days(Estimate(child.Labels))
+		}
+		if est > 0 {
+			estimate = fmt.Sprintf("%.2fd", est)
+		}
+	}
 
 	if estimate != "" {
 		estimate = "__" + estimate + "__ "
