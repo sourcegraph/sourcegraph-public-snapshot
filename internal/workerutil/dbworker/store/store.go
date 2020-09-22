@@ -146,6 +146,9 @@ type StoreOptions struct {
 	// MaxNumRetries is the maximum number of times a record can be retried after an explicit failure.
 	// Setting this value to zero will disable retries entirely.
 	MaxNumRetries int
+
+	// IsolationLevel controls the isolation level of the transaction that locks dequeued records.
+	IsolationLevel sql.IsolationLevel
 }
 
 // RecordScanFn is a function that interprets row values as a particular record. This function should
@@ -267,9 +270,14 @@ func (s *store) dequeue(ctx context.Context, conditions []*sqlf.Query, independe
 			return nil, nil, false, nil
 		}
 
+		var txOptions *sql.TxOptions
+		if s.options.IsolationLevel != sql.LevelDefault {
+			txOptions = &sql.TxOptions{Isolation: s.options.IsolationLevel}
+		}
+
 		// Once we have an eligible identifier, we try to create a transaction and select the
 		// record in a way that takes a row lock for the duration of the transaction.
-		tx, err := s.Transact(txCtx, nil)
+		tx, err := s.Transact(txCtx, txOptions)
 		if err != nil {
 			return nil, nil, false, err
 		}
