@@ -106,37 +106,27 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     const query = useMemo(() => parseSearchURLQuery(location.search || ''), [location.search])
 
     useEffect(() => {
-        // In interactive search mode, the InteractiveModeInput component will handle updating the inputs.
-        if (!interactiveSearchMode) {
-            if (query) {
-                onNavbarQueryChange({ query, cursorPosition: query.length })
-            } else {
-                // If we have no component state, then we may have gotten unmounted during a route change.
-                const query = location.state?.query ?? ''
-
-                onNavbarQueryChange({
-                    query,
-                    cursorPosition: query.length,
-                })
-            }
+        // On a non-search related page or non-repo page, we clear the query in
+        // the main query input and interactive mode UI to avoid misleading users
+        // that the query is relevant in any way on those pages.
+        if (!isSearchRelatedPage) {
+            onNavbarQueryChange({ query: '', cursorPosition: 0 })
+            onFiltersInQueryChange({})
+            return
         }
-
-        if (query) {
-            if (!isSearchRelatedPage) {
-                // On a non-search related page or non-repo page, we clear the query in
-                // the main query input and interactive mode UI to avoid misleading users
-                // that the query is relevant in any way on those pages.
-                onNavbarQueryChange({ query: '', cursorPosition: 0 })
-                onFiltersInQueryChange({})
-            }
-
-            if (interactiveSearchMode) {
-                let filtersInQuery: FiltersToTypeAndValue = {}
-                const { filtersInQuery: newFiltersInQuery, navbarQuery } = convertPlainTextToInteractiveQuery(query)
-                filtersInQuery = { ...filtersInQuery, ...newFiltersInQuery }
-                onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
-                onFiltersInQueryChange(filtersInQuery)
-            }
+        // Do nothing if there is no query in the URL
+        if (!query) {
+            return
+        }
+        // If the URL contains a query, update the query state to reflect it
+        if (interactiveSearchMode) {
+            let filtersInQuery: FiltersToTypeAndValue = {}
+            const { filtersInQuery: newFiltersInQuery, navbarQuery } = convertPlainTextToInteractiveQuery(query)
+            filtersInQuery = { ...filtersInQuery, ...newFiltersInQuery }
+            onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
+            onFiltersInQueryChange(filtersInQuery)
+        } else {
+            onNavbarQueryChange({ query, cursorPosition: query.length })
         }
     }, [interactiveSearchMode, isSearchRelatedPage, location, onFiltersInQueryChange, onNavbarQueryChange, query])
 
