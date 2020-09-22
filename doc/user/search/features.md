@@ -178,3 +178,18 @@ Indexing multiple branches will add additional resource requirements to Sourcegr
 > NOTE: The default branch (`HEAD`) is always indexed.
 
 > NOTE: All revisions specified in version contexts are also indexed.
+
+## Other tips
+
+- When viewing a file or directory, press the `y` key to expand the URL to its canonical form (with the full 40-character Git commit SHA).
+- To share a link to multi-line range in a file, click on the starting line number and shift-click on the ending line number (in the left-hand gutter).
+
+### Max file size
+
+By default, files larger than 1 MB are excluded from search results. Use the [search.largeFiles](../../admin/config/site_config.md#search-largeFiles) keyword to specify files to be indexed and searched regardless of size.
+
+---
+
+## Sourcegraph Cloud
+
+[Sourcegraph Cloud](https://sourcegraph.com/search) is a public instance of Sourcegraph that lets you search inside any open-source project on GitHub. For demo purposes, you'll be prompted to narrow your query if it would search across more than 50 repositories. To lift this limitation or to search your organization's internal code, [run your own Sourcegraph instance](../../admin/install/index.md).
