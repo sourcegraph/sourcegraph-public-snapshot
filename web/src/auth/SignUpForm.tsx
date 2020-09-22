@@ -108,6 +108,9 @@ function createValidationPipeline(
     }
 }
 
+/**
+ * The form for creating an account
+ */
 export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp, history, buttonLabel, className }) => {
     const [loading, setLoading] = useState(false)
     const [requestedTrial, setRequestedTrial] = useState(false)

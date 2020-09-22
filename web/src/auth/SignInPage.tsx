@@ -41,9 +41,6 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
         provider => provider.isBuiltin
     )
 
-    // builtInAuthProvider = null
-    // thirdPartyAuthProviders = []
-
     const body =
         !builtInAuthProvider && thirdPartyAuthProviders.length === 0 ? (
             <div className="alert alert-info mt-3">
