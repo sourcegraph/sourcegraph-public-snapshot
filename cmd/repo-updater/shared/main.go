@@ -174,6 +174,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	syncer := &repos.Syncer{
 		Sourcer:    src,
+		Store:      store,
 		Logger:     log15.Root(),
 		Now:        clock,
 		Registerer: prometheus.DefaultRegisterer,

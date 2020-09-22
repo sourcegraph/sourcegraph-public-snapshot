@@ -1059,6 +1059,7 @@ func testSyncRun(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testi
 
 			syncer := &repos.Syncer{
 				Sourcer:      repos.NewFakeSourcer(nil, repos.NewFakeSource(svc, nil, sourced...)),
+				Store:        store,
 				Synced:       make(chan repos.Diff),
 				SubsetSynced: make(chan repos.Diff),
 				Now:          time.Now,
@@ -1206,6 +1207,7 @@ func testSyncer(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testin
 					}
 					return repos.Sources{s}, nil
 				},
+				Store:  store,
 				Synced: make(chan repos.Diff),
 				Now:    time.Now,
 			}

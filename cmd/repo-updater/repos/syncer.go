@@ -25,6 +25,7 @@ import (
 type Syncer struct {
 	Sourcer Sourcer
 	Worker  *workerutil.Worker
+	Store   Store
 
 	// Synced is sent a collection of Repos that were synced by Sync (only if Synced is non-nil)
 	Synced chan Diff
@@ -178,7 +179,9 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 	if s.SubsetSynced == nil {
 		streamingInserter = func(*Repo) {} //noop
 	} else {
-		streamingInserter, err = s.makeNewRepoInserter(ctx, tx, isUserOwned)
+		// The streaming inserter should insert outside of out transaction so that repos
+		// are added to our database ASAP.
+		streamingInserter, err = s.makeNewRepoInserter(ctx, s.Store, isUserOwned)
 		if err != nil {
 			return errors.Wrap(err, "syncer.sync.streaming")
 		}
