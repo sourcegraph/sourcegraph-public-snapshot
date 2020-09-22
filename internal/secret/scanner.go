@@ -3,8 +3,6 @@ package secret
 import (
 	"database/sql"
 	"database/sql/driver"
-	"encoding/json"
-	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -39,62 +37,5 @@ func (v *StringValue) Scan(src interface{}) (err error) {
 }
 
 func (v *StringValue) String() string {
-	return string(*v)
-}
-
-var (
-	_ driver.Valuer = JSONValue("")
-	_ sql.Scanner   = (*JSONValue)(nil)
-)
-
-// JSONValue implements driver.Valuer and sql.Scanner for JSON type secret.
-type JSONValue json.RawMessage
-
-func (v JSONValue) Value() (driver.Value, error) {
-	if len(v) == 0 {
-		return `""`, nil
-	} else if !ConfiguredToEncrypt() {
-		return string(v), nil
-	}
-
-	ciphertext, err := Encrypt(string(v))
-	if err != nil {
-		return nil, err
-	}
-	return `"` + ciphertext + `"`, nil
-}
-
-func (v *JSONValue) Scan(src interface{}) (err error) {
-	var plaintext string
-	switch src := src.(type) {
-	case []byte:
-		ciphertext := string(src)
-
-		// In case it's not configured to encrypt or an empty JSON
-		if !ConfiguredToEncrypt() ||
-			ciphertext == `""` || ciphertext == `{}` {
-			plaintext = ciphertext
-			break
-		}
-
-		ciphertext = strings.Trim(string(src), `"`)
-		plaintext, err = Decrypt(ciphertext)
-		if err != nil {
-			return err
-		}
-
-	default:
-		return errors.Errorf("incompatible type %T for JSONValue", src)
-	}
-
-	*v = JSONValue(plaintext)
-	return nil
-}
-
-func (v *JSONValue) RawMessage() json.RawMessage {
-	return json.RawMessage(*v)
-}
-
-func (v *JSONValue) String() string {
 	return string(*v)
 }

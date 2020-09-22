@@ -70,6 +70,8 @@
 // 1528395717_replicate_permissions_object_ids_to_intarray.up.sql (411B)
 // 1528395718_user_invalidate_session.down.sql (176B)
 // 1528395718_user_invalidate_session.up.sql (1.252kB)
+// 1528395719_convert_secret_jsonb_to_text.down.sql (539B)
+// 1528395719_convert_secret_jsonb_to_text.up.sql (441B)
 
 package migrations
 
@@ -1538,6 +1540,46 @@ func _1528395718_user_invalidate_sessionUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395719_convert_secret_jsonb_to_textDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\xcf\xcd\x4e\x83\x40\x14\x05\xe0\x3d\x4f\x71\x77\xb4\x8b\xbe\x00\xc4\x05\x0c\xd7\x8a\xc2\x60\x60\x48\x74\x35\x99\x4e\xc7\x96\xaa\x33\x0d\x5c\x12\x8c\xf1\xdd\x4d\xc0\xfa\xbb\x20\x76\x3b\x39\xf3\x9d\x73\x63\x5c\xa7\x3c\xf4\xbc\xd5\x0a\xa2\x4c\x60\x09\x22\x8a\x33\x84\xbe\x33\xad\x34\x03\x99\xd6\xaa\x27\xa9\xb4\x76\xbd\xa5\xee\x23\xc2\x8a\xac\xce\x39\xa8\x9e\xf6\x72\xab\x48\x81\xb8\xbf\x45\xb8\xae\x0a\x1e\x43\x5d\xa5\x7c\x0d\xe4\xe4\xa1\x73\x76\xb3\xf8\xcc\x2c\xc3\xb3\x2a\xa6\xd7\xd9\x96\x6f\xb1\xbf\x45\xad\x39\xba\x9f\xec\xb3\x21\x35\x43\x9e\x22\xff\xe2\x2a\x14\x90\xe0\x65\x54\x67\x02\xfc\xd7\x37\x3f\x08\x46\x7b\x24\x58\x89\x91\x40\x48\x79\x82\x77\xa3\x21\x4f\xdf\xe4\xae\xb1\xb2\xd9\x0e\x50\xf0\x09\x9f\xa6\xec\x1a\x0b\xb3\x33\x92\x04\x58\xc1\x2b\x51\x46\x29\x17\xbf\x58\xbd\x37\xfa\x11\xd8\x15\xb2\x1b\x58\x8c\x57\x49\x7a\x39\x1a\xf7\xf0\xa5\xc2\x05\xf8\x6e\x73\x30\x9a\xfc\x20\x20\x33\xd0\x32\xf4\x3c\x56\xe4\x79\x2a\x42\xef\x3d\x00\x00\xff\xff\x4c\x95\xfe\xd9\x1b\x02\x00\x00")
+
+func _1528395719_convert_secret_jsonb_to_textDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395719_convert_secret_jsonb_to_textDownSql,
+		"1528395719_convert_secret_jsonb_to_text.down.sql",
+	)
+}
+
+func _1528395719_convert_secret_jsonb_to_textDownSql() (*asset, error) {
+	bytes, err := _1528395719_convert_secret_jsonb_to_textDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395719_convert_secret_jsonb_to_text.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x37, 0x11, 0x26, 0xc4, 0xf3, 0xbb, 0x8a, 0x28, 0x49, 0x9c, 0x6b, 0x49, 0xc1, 0x2c, 0xe5, 0x67, 0x27, 0xb6, 0xdb, 0xca, 0x1, 0x2a, 0x2a, 0x9, 0x4e, 0x8e, 0x4a, 0xd1, 0xba, 0xe9, 0x50, 0x61}}
+	return a, nil
+}
+
+var __1528395719_convert_secret_jsonb_to_textUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\xce\xcd\x6a\x84\x30\x14\x05\xe0\x7d\x9e\xe2\xee\x66\x35\x2f\x30\xae\x32\x7a\xa7\x04\x62\x22\xe6\x0a\x76\x15\x42\x0c\x55\xda\x6a\xd1\x08\x42\xe9\xbb\x17\x1b\x0a\xfd\xa5\x94\xd9\x1e\xce\xf9\x38\x67\xbc\x11\x2a\x63\x8c\x4b\xc2\x1a\x88\x9f\x25\x82\xb8\x00\xb6\xc2\x90\x81\x75\x09\xb3\x0d\x5b\x0c\xf3\xe8\x1e\xac\xf3\x7e\x5a\xc7\xb8\x40\x2a\xe7\x5a\x36\xa5\x02\xb7\xc6\xde\x76\x2e\x3a\xa0\xdb\x0a\x81\xb0\xa5\xec\x1a\x2e\xa5\xdf\xc4\xe3\x11\x8a\x5a\x57\x20\x54\x81\xed\x07\x73\x0e\x4f\x93\x7d\x0c\xd1\xed\x03\x7b\x37\x8c\x76\xe8\xb6\xb7\xfa\xcf\x1f\xf6\x7e\x92\x72\xad\x0c\xd5\x5c\x28\xfa\x95\xf3\x7d\xf0\xf7\x7f\x61\x9f\xee\xbf\x4f\xbf\x5c\xff\xf7\xdc\x20\x41\x81\x17\xde\x48\x82\xc3\xf3\xcb\xe1\x74\x4a\x16\xcb\x75\x59\x0a\xca\xd8\x6b\x00\x00\x00\xff\xff\x2c\x7c\xb5\xa4\xb9\x01\x00\x00")
+
+func _1528395719_convert_secret_jsonb_to_textUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395719_convert_secret_jsonb_to_textUpSql,
+		"1528395719_convert_secret_jsonb_to_text.up.sql",
+	)
+}
+
+func _1528395719_convert_secret_jsonb_to_textUpSql() (*asset, error) {
+	bytes, err := _1528395719_convert_secret_jsonb_to_textUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395719_convert_secret_jsonb_to_text.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xf1, 0x3e, 0xf7, 0xa5, 0xc1, 0x54, 0x44, 0x42, 0x2e, 0xd7, 0xe0, 0x2f, 0x36, 0x5f, 0xae, 0x44, 0x9e, 0x4c, 0x38, 0xea, 0x51, 0x22, 0xaf, 0x8e, 0x7d, 0x86, 0x8d, 0x6d, 0xa4, 0x9f, 0x3c, 0x72}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1699,6 +1741,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395717_replicate_permissions_object_ids_to_intarray.up.sql":               _1528395717_replicate_permissions_object_ids_to_intarrayUpSql,
 	"1528395718_user_invalidate_session.down.sql":                                  _1528395718_user_invalidate_sessionDownSql,
 	"1528395718_user_invalidate_session.up.sql":                                    _1528395718_user_invalidate_sessionUpSql,
+	"1528395719_convert_secret_jsonb_to_text.down.sql":                             _1528395719_convert_secret_jsonb_to_textDownSql,
+	"1528395719_convert_secret_jsonb_to_text.up.sql":                               _1528395719_convert_secret_jsonb_to_textUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -1815,6 +1859,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395717_replicate_permissions_object_ids_to_intarray.up.sql":               {_1528395717_replicate_permissions_object_ids_to_intarrayUpSql, map[string]*bintree{}},
 	"1528395718_user_invalidate_session.down.sql":                                  {_1528395718_user_invalidate_sessionDownSql, map[string]*bintree{}},
 	"1528395718_user_invalidate_session.up.sql":                                    {_1528395718_user_invalidate_sessionUpSql, map[string]*bintree{}},
+	"1528395719_convert_secret_jsonb_to_text.down.sql":                             {_1528395719_convert_secret_jsonb_to_textDownSql, map[string]*bintree{}},
+	"1528395719_convert_secret_jsonb_to_text.up.sql":                               {_1528395719_convert_secret_jsonb_to_textUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

@@ -35,9 +35,9 @@ type Event struct {
 }
 
 func (*eventLogs) Insert(ctx context.Context, e *Event) error {
-	var esArgument secret.JSONValue
+	var esArgument secret.StringValue
 	if e.Argument != nil {
-		esArgument = secret.JSONValue(e.Argument)
+		esArgument = secret.StringValue(e.Argument)
 	}
 
 	_, err := dbconn.Global.ExecContext(
@@ -68,7 +68,7 @@ func (*eventLogs) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*typ
 	events := []*types.Event{}
 	for rows.Next() {
 		r := types.Event{}
-		var esArg secret.JSONValue
+		var esArg secret.StringValue
 		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.UserID, &r.AnonymousUserID, &r.Source, &esArg, &r.Version, &r.Timestamp)
 		if err != nil {
 			return nil, err

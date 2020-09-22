@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 
 	"github.com/hashicorp/go-multierror"
@@ -50,12 +51,12 @@ func (s *userExternalAccounts) LookupUserAndSave(ctx context.Context, spec extsv
 		return Mocks.ExternalAccounts.LookupUserAndSave(spec, data)
 	}
 
-	var esAuthData, esData secret.JSONValue
+	var esAuthData, esData secret.StringValue
 	if data.AuthData != nil {
-		esAuthData = secret.JSONValue(*data.AuthData)
+		esAuthData = secret.StringValue(*data.AuthData)
 	}
 	if data.Data != nil {
-		esData = secret.JSONValue(*data.Data)
+		esData = secret.StringValue(*data.Data)
 	}
 	err = dbconn.Global.QueryRowContext(ctx, `
 UPDATE user_external_accounts SET auth_data=$5, account_data=$6, updated_at=now()
@@ -121,12 +122,12 @@ WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND d
 		return s.insert(ctx, tx, userID, spec, data)
 	}
 
-	var esAuthData, esData secret.JSONValue
+	var esAuthData, esData secret.StringValue
 	if data.AuthData != nil {
-		esAuthData = secret.JSONValue(*data.AuthData)
+		esAuthData = secret.StringValue(*data.AuthData)
 	}
 	if data.Data != nil {
-		esData = secret.JSONValue(*data.Data)
+		esData = secret.StringValue(*data.Data)
 	}
 	// Update the external account (it exists).
 	res, err := tx.ExecContext(ctx, `
@@ -182,12 +183,12 @@ func (s *userExternalAccounts) CreateUserAndSave(ctx context.Context, newUser Ne
 }
 
 func (s *userExternalAccounts) insert(ctx context.Context, tx *sql.Tx, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error {
-	var esAuthData, esData secret.JSONValue
+	var esAuthData, esData secret.StringValue
 	if data.AuthData != nil {
-		esAuthData = secret.JSONValue(*data.AuthData)
+		esAuthData = secret.StringValue(*data.AuthData)
 	}
 	if data.Data != nil {
-		esData = secret.JSONValue(*data.Data)
+		esData = secret.StringValue(*data.Data)
 	}
 	_, err := tx.ExecContext(ctx, `
 INSERT INTO user_external_accounts(user_id, service_type, service_id, client_id, account_id, auth_data, account_data)
@@ -321,13 +322,13 @@ func (*userExternalAccounts) listBySQL(ctx context.Context, querySuffix *sqlf.Qu
 	defer rows.Close()
 	for rows.Next() {
 		var o extsvc.Account
-		var esAuthData, esData secret.JSONValue
+		var esAuthData, esData secret.StringValue
 		if err := rows.Scan(&o.ID, &o.UserID, &o.ServiceType, &o.ServiceID, &o.ClientID, &o.AccountID, &esAuthData, &esData, &o.CreatedAt, &o.UpdatedAt); err != nil {
 			return nil, err
 		}
 
-		authData := esAuthData.RawMessage()
-		data := esData.RawMessage()
+		authData := json.RawMessage(esAuthData)
+		data := json.RawMessage(esData)
 		o.AuthData = &authData
 		o.Data = &data
 		results = append(results, &o)

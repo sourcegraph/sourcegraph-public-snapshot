@@ -1,0 +1,10 @@
+BEGIN;
+
+ALTER TABLE IF EXISTS user_external_accounts ALTER COLUMN auth_data TYPE TEXT;
+ALTER TABLE IF EXISTS user_external_accounts ALTER COLUMN account_data TYPE TEXT;
+-- DROP INDEX IF EXISTS repo_metadata_gin_idx;
+-- ALTER TABLE IF EXISTS repo DROP CONSTRAINT IF EXISTS repo_metadata_check;
+-- ALTER TABLE IF EXISTS repo ALTER COLUMN metadata TYPE TEXT;
+-- ALTER TABLE IF EXISTS repo ALTER COLUMN metadata SET DEFAULT '{}'::TEXT;
+
+COMMIT;
