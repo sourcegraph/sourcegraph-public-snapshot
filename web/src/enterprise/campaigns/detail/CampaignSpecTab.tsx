@@ -42,7 +42,7 @@ export const CampaignSpecTab: React.FunctionComponent<CampaignSpecTabProps> = ({
         input,
     ])
     return (
-        <div className="mt-4">
+        <>
             <div className="d-flex justify-content-between align-items-center mb-2 test-campaigns-spec">
                 <p className="m-0">
                     {lastApplier ? <Link to={lastApplier.url}>{lastApplier.username}</Link> : 'A deleted user'}{' '}
@@ -63,6 +63,6 @@ export const CampaignSpecTab: React.FunctionComponent<CampaignSpecTabProps> = ({
                     <pre className="m-0" dangerouslySetInnerHTML={highlightedInput} />
                 </div>
             </div>
-        </div>
+        </>
     )
 }
