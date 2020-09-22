@@ -107,7 +107,7 @@ describe('RecentFilesPanel', () => {
         }
 
         const component = mount(<RecentFilesPanel {...props} />)
-        const showMoreButton = component.find('.test-recent-files-panel-show-more')
+        const showMoreButton = component.getDOMNode().querySelectorAll('.test-recent-files-panel-show-more')
         expect(showMoreButton.length).toStrictEqual(1)
     })
 
