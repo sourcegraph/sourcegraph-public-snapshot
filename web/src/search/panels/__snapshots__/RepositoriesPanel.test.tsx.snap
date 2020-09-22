@@ -22,7 +22,7 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
           <p
             className="mb-1"
           >
-            Search in repositories with the
+            Search in repositories with the 
             <strong>
               repo:
             </strong>
@@ -213,7 +213,7 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
           <p
             className="mb-1"
           >
-            Search in repositories with the
+            Search in repositories with the 
             <strong>
               repo:
             </strong>
@@ -466,7 +466,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
           <p
             className="mb-1"
           >
-            Search in repositories with the
+            Search in repositories with the 
             <strong>
               repo:
             </strong>
@@ -821,7 +821,7 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
           <p
             className="mb-1"
           >
-            Search in repositories with the
+            Search in repositories with the 
             <strong>
               repo:
             </strong>
