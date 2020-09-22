@@ -10,6 +10,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
   location="[Location path=/]"
   namespaceID="namespace123"
   queryChangesetCountsOverTime={[Function]}
+  queryChangesets={[Function]}
   setBreadcrumb={[Function]}
   telemetryService={
     Object {
@@ -55,7 +56,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
           />
         }
         className="test-campaign-details-page"
-        icon="CampaignsIconWithBetaBadge"
+        icon={[Function]}
         title={
           <React.Fragment>
             <AnchorLink
@@ -76,7 +77,19 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
           >
             <CampaignsIconWithBetaBadge
               className="icon-inline page-header__icon"
-            />
+            >
+              <Memo(CampaignsFlushEdgesIcon)
+                className="icon-inline page-header__icon"
+              />
+               
+              <sup>
+                <span
+                  className="badge badge-merged text-uppercase"
+                >
+                  Beta
+                </span>
+              </sup>
+            </CampaignsIconWithBetaBadge>
              
             <AnchorLink
               to="/users/alice/campaigns"
@@ -407,6 +420,7 @@ description: somestring",
     isLightTheme={true}
     location="[Location path=/]"
     queryChangesetCountsOverTime={[Function]}
+    queryChangesets={[Function]}
     telemetryService={
       Object {
         "log": [Function],
@@ -472,6 +486,7 @@ description: somestring",
         history="[History]"
         isLightTheme={true}
         location="[Location path=/]"
+        queryChangesets={[Function]}
         telemetryService={
           Object {
             "log": [Function],
@@ -720,17 +735,110 @@ description: somestring",
             <div
               className="filtered-connection test-filtered-connection filtered-connection--noncompact mt-2"
             >
-              <span
-                className="filtered-connection__loader test-filtered-connection__loader"
+              <ConnectionNodes
+                connection={
+                  Object {
+                    "nodes": Array [],
+                    "pageInfo": Object {
+                      "endCursor": null,
+                      "hasNextPage": false,
+                    },
+                    "totalCount": 0,
+                  }
+                }
+                connectionQuery=""
+                emptyElement={<EmptyChangesetListElement />}
+                first={15}
+                headComponent={[Function]}
+                listClassName="campaign-changesets__grid mb-3"
+                listComponent="div"
+                loading={false}
+                location="[Location path=/]"
+                noSummaryIfAllNodesVisible={true}
+                nodeComponent={[Function]}
+                nodeComponentProps={
+                  Object {
+                    "extensionInfo": Object {
+                      "extensionsController": undefined,
+                      "hoverifier": Object {
+                        "hoverState": Object {
+                          "actionsOrError": undefined,
+                          "highlightedRange": undefined,
+                          "hoverOverlayProps": undefined,
+                          "hoveredTokenElement": undefined,
+                          "selectedPosition": undefined,
+                        },
+                        "hoverStateUpdates": "[Subject]",
+                        "hoverify": [Function],
+                        "unsubscribe": [Function],
+                      },
+                    },
+                    "history": "[History]",
+                    "isLightTheme": true,
+                    "location": "[Location path=/]",
+                    "queryExternalChangesetWithFileDiffs": undefined,
+                    "viewerCanAdminister": false,
+                  }
+                }
+                noun="changeset"
+                onShowMore={[Function]}
+                pluralNoun="changesets"
+                query=""
               >
-                <LoadingSpinner
-                  className="icon-inline"
-                >
+                <EmptyChangesetListElement>
                   <div
-                    className="loading-spinner icon-inline"
-                  />
-                </LoadingSpinner>
-              </span>
+                    className="col-md-8 offset-md-2 col-sm-12 card mt-5"
+                  >
+                    <div
+                      className="card-body p-5"
+                    >
+                      <h2
+                        className="text-center mb-4"
+                      >
+                        This campaign does not contain changesets
+                      </h2>
+                      <p>
+                        This can occur for several reasons:
+                      </p>
+                      <p>
+                        <strong>
+                          The query specified in 
+                          <span
+                            className="text-monospace"
+                          >
+                            repositorieMatchingQuery:
+                          </span>
+                           may not have matched any repositories.
+                        </strong>
+                      </p>
+                      <p>
+                        Test your query in the search bar and ensure it returns results.
+                      </p>
+                      <p>
+                        <strong>
+                          The code specified in 
+                          <span
+                            className="text-monospace"
+                          >
+                            steps:
+                          </span>
+                           may not have resulted in changes being made.
+                        </strong>
+                      </p>
+                      <p>
+                        Try the command on a local instance of one of the repositories returned in your search results. Run
+                         
+                        <span
+                          className="text-monospace"
+                        >
+                          git status
+                        </span>
+                         and ensure it produced changed files.
+                      </p>
+                    </div>
+                  </div>
+                </EmptyChangesetListElement>
+              </ConnectionNodes>
             </div>
           </FilteredConnection>
         </div>
@@ -750,6 +858,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
   location="[Location path=/]"
   namespaceID="namespace123"
   queryChangesetCountsOverTime={[Function]}
+  queryChangesets={[Function]}
   setBreadcrumb={[Function]}
   telemetryService={
     Object {
@@ -795,7 +904,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
           />
         }
         className="test-campaign-details-page"
-        icon="CampaignsIconWithBetaBadge"
+        icon={[Function]}
         title={
           <React.Fragment>
             <AnchorLink
@@ -816,7 +925,19 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
           >
             <CampaignsIconWithBetaBadge
               className="icon-inline page-header__icon"
-            />
+            >
+              <Memo(CampaignsFlushEdgesIcon)
+                className="icon-inline page-header__icon"
+              />
+               
+              <sup>
+                <span
+                  className="badge badge-merged text-uppercase"
+                >
+                  Beta
+                </span>
+              </sup>
+            </CampaignsIconWithBetaBadge>
              
             <AnchorLink
               to="/users/alice/campaigns"
@@ -1147,6 +1268,7 @@ description: somestring",
     isLightTheme={true}
     location="[Location path=/]"
     queryChangesetCountsOverTime={[Function]}
+    queryChangesets={[Function]}
     telemetryService={
       Object {
         "log": [Function],
@@ -1212,6 +1334,7 @@ description: somestring",
         history="[History]"
         isLightTheme={true}
         location="[Location path=/]"
+        queryChangesets={[Function]}
         telemetryService={
           Object {
             "log": [Function],
@@ -1460,17 +1583,110 @@ description: somestring",
             <div
               className="filtered-connection test-filtered-connection filtered-connection--noncompact mt-2"
             >
-              <span
-                className="filtered-connection__loader test-filtered-connection__loader"
+              <ConnectionNodes
+                connection={
+                  Object {
+                    "nodes": Array [],
+                    "pageInfo": Object {
+                      "endCursor": null,
+                      "hasNextPage": false,
+                    },
+                    "totalCount": 0,
+                  }
+                }
+                connectionQuery=""
+                emptyElement={<EmptyChangesetListElement />}
+                first={15}
+                headComponent={[Function]}
+                listClassName="campaign-changesets__grid mb-3"
+                listComponent="div"
+                loading={false}
+                location="[Location path=/]"
+                noSummaryIfAllNodesVisible={true}
+                nodeComponent={[Function]}
+                nodeComponentProps={
+                  Object {
+                    "extensionInfo": Object {
+                      "extensionsController": undefined,
+                      "hoverifier": Object {
+                        "hoverState": Object {
+                          "actionsOrError": undefined,
+                          "highlightedRange": undefined,
+                          "hoverOverlayProps": undefined,
+                          "hoveredTokenElement": undefined,
+                          "selectedPosition": undefined,
+                        },
+                        "hoverStateUpdates": "[Subject]",
+                        "hoverify": [Function],
+                        "unsubscribe": [Function],
+                      },
+                    },
+                    "history": "[History]",
+                    "isLightTheme": true,
+                    "location": "[Location path=/]",
+                    "queryExternalChangesetWithFileDiffs": undefined,
+                    "viewerCanAdminister": true,
+                  }
+                }
+                noun="changeset"
+                onShowMore={[Function]}
+                pluralNoun="changesets"
+                query=""
               >
-                <LoadingSpinner
-                  className="icon-inline"
-                >
+                <EmptyChangesetListElement>
                   <div
-                    className="loading-spinner icon-inline"
-                  />
-                </LoadingSpinner>
-              </span>
+                    className="col-md-8 offset-md-2 col-sm-12 card mt-5"
+                  >
+                    <div
+                      className="card-body p-5"
+                    >
+                      <h2
+                        className="text-center mb-4"
+                      >
+                        This campaign does not contain changesets
+                      </h2>
+                      <p>
+                        This can occur for several reasons:
+                      </p>
+                      <p>
+                        <strong>
+                          The query specified in 
+                          <span
+                            className="text-monospace"
+                          >
+                            repositorieMatchingQuery:
+                          </span>
+                           may not have matched any repositories.
+                        </strong>
+                      </p>
+                      <p>
+                        Test your query in the search bar and ensure it returns results.
+                      </p>
+                      <p>
+                        <strong>
+                          The code specified in 
+                          <span
+                            className="text-monospace"
+                          >
+                            steps:
+                          </span>
+                           may not have resulted in changes being made.
+                        </strong>
+                      </p>
+                      <p>
+                        Try the command on a local instance of one of the repositories returned in your search results. Run
+                         
+                        <span
+                          className="text-monospace"
+                        >
+                          git status
+                        </span>
+                         and ensure it produced changed files.
+                      </p>
+                    </div>
+                  </div>
+                </EmptyChangesetListElement>
+              </ConnectionNodes>
             </div>
           </FilteredConnection>
         </div>

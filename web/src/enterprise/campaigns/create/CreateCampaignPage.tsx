@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 import { PageTitle } from '../../../components/PageTitle'
 import { PageHeader } from '../../../components/PageHeader'
-import { CampaignsIconFlushEdges } from '../icons'
+import { CampaignsFlushEdgesIcon } from '../icons'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 import { AuthenticatedUser } from '../../../auth'
 import helloWorldSample from './samples/empty.campaign.yaml'
@@ -63,7 +63,7 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
         <>
             <PageTitle title="Create campaign" />
             <PageHeader
-                icon={CampaignsIconFlushEdges}
+                icon={CampaignsFlushEdgesIcon}
                 title={
                     <>
                         Create campaign{' '}

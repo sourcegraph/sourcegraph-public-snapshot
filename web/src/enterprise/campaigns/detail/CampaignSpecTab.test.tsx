@@ -2,9 +2,10 @@ import React from 'react'
 import { CampaignSpecTab } from './CampaignSpecTab'
 import { mount } from 'enzyme'
 import { CampaignFields } from '../../../graphql-operations'
+import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
 
-jest.mock('mdi-react/FileDownloadIcon', () => 'FileDownloadIcon')
-jest.mock('../../../../../shared/src/util/markdown', () => ({ highlightCodeSafe: (input: string) => input }))
+// This is idempotent, so calling it in multiple tests is not a problem.
+registerHighlightContributions()
 
 const ALICE: CampaignFields['initialApplier'] | CampaignFields['lastApplier'] = {
     username: 'alice',

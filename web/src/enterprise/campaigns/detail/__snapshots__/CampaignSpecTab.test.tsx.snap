@@ -55,7 +55,7 @@ exports[`CampaignSpecTab input spec is JSON 1`] = `
         download="c.campaign.yaml"
         href="data:text/plain;charset=utf-8,%7B%22foo%22%3A%22bar%22%7D"
       >
-        <FileDownloadIcon
+        <Memo(FileDownloadIcon)
           className="icon-inline"
         />
          Download YAML
@@ -72,7 +72,7 @@ exports[`CampaignSpecTab input spec is JSON 1`] = `
           dangerouslySetInnerHTML={
             Object {
               "__html": "{
-  \\"foo\\": \\"bar\\"
+  <span class=\\"hljs-attr\\">&quot;foo&quot;</span>: <span class=\\"hljs-string\\">&quot;bar&quot;</span>
 }",
             }
           }
@@ -138,7 +138,7 @@ exports[`CampaignSpecTab last apply was an update (after creation) 1`] = `
         download="c.campaign.yaml"
         href="data:text/plain;charset=utf-8,x"
       >
-        <FileDownloadIcon
+        <Memo(FileDownloadIcon)
           className="icon-inline"
         />
          Download YAML
@@ -154,7 +154,7 @@ exports[`CampaignSpecTab last apply was an update (after creation) 1`] = `
           className="m-0"
           dangerouslySetInnerHTML={
             Object {
-              "__html": "x",
+              "__html": "<span class=\\"hljs-string\\">x</span>",
             }
           }
         />
@@ -219,7 +219,7 @@ exports[`CampaignSpecTab last apply was the (initial) creation 1`] = `
         download="c.campaign.yaml"
         href="data:text/plain;charset=utf-8,x"
       >
-        <FileDownloadIcon
+        <Memo(FileDownloadIcon)
           className="icon-inline"
         />
          Download YAML
@@ -235,7 +235,7 @@ exports[`CampaignSpecTab last apply was the (initial) creation 1`] = `
           className="m-0"
           dangerouslySetInnerHTML={
             Object {
-              "__html": "x",
+              "__html": "<span class=\\"hljs-string\\">x</span>",
             }
           }
         />
