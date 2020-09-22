@@ -58,20 +58,10 @@ func (i *BatchInserter) Insert(ctx context.Context, values ...interface{}) error
 // of insertion to ensure that all records are flushed to the underlying Execable.
 func (i *BatchInserter) Flush(ctx context.Context) error {
 	if batch := i.pop(); len(batch) != 0 {
-		// ($xxxxx,$xxxxx,...)
-		//  ^^^^^^^ * n - 1 (extra comma) + 2 (parens)
-		rowSize := (7*i.numColumns + 1)
-
-		// Determine number of rows being flushed
-		numRows := len(batch) / i.numColumns
-
-		// Account for commas separating rows
-		n := numRows*rowSize + (numRows - 1)
-
 		// Create a query with enough placeholders to match the current batch size. This should
 		// generally be the full querySuffix string, except for the last call to Flush which
 		// may be a partial batch.
-		if _, err := i.db.ExecContext(ctx, i.queryPrefix+i.querySuffix[:n], batch...); err != nil {
+		if _, err := i.db.ExecContext(ctx, i.makeQuery(len(batch)), batch...); err != nil {
 			return err
 		}
 	}
@@ -89,6 +79,27 @@ func (i *BatchInserter) pop() (batch []interface{}) {
 
 	batch, i.batch = i.batch[:i.maxBatchSize], i.batch[i.maxBatchSize:]
 	return batch
+}
+
+// makeQuery returns a parameterized SQL query that has the given number of values worth of
+// placeholder variables. It is assumed that the number of values is non-zero and also is a
+// multiple of the number of columns of the target table.
+func (i *BatchInserter) makeQuery(numValues int) string {
+	// Determine how many characters a single tuple of the query suffix occupies.
+	// The tuples have the form `($xxxxx,$xxxxx,...)`, and all placeholders are
+	// exactly five digits for uniformity. This counts 5 digits, `$`, and `,` for
+	// each value, then un-counts the trailing comma, then counts the enveloping
+	// `(` and `)`.
+	sizeOfTuple := 7*i.numColumns - 1 + 2
+
+	// Determine number of tuples being flushed
+	numTuples := numValues / i.numColumns
+
+	// Count commas separating tuples, then un-count the trailing comma
+	suffixLength := numTuples*sizeOfTuple + numTuples - 1
+
+	// Construct the query
+	return i.queryPrefix + i.querySuffix[:suffixLength]
 }
 
 // maxNumPostgresParameters is the maximum number of placeholder variables allowed by Postgres
