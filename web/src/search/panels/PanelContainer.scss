@@ -3,8 +3,9 @@
 
     &__header {
         &-text {
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.25rem;
             flex-grow: 1;
+            align-self: flex-end;
         }
     }
 
@@ -15,7 +16,7 @@
 
     &__action-button {
         font-size: 12px;
-        line-height: 16px;
+        line-height: 16px !important;
     }
 
     &__empty-container {
