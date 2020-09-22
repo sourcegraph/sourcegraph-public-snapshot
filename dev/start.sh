@@ -166,8 +166,8 @@ build_ts_pid="$!"
 # Now launch the services in $PROCFILE
 export PROCFILE=${PROCFILE:-dev/Procfile}
 
-only="${SRC_DEV_ONLY}"
-except="${SRC_DEV_EXCEPT}"
+only="${SRC_DEV_ONLY:-}"
+except="${SRC_DEV_EXCEPT:-}"
 while [[ "$#" -gt 0 ]]; do
   case $1 in
     -e | --except)
