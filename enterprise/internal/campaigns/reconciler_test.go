@@ -755,7 +755,7 @@ func TestDecorateChangesetBody(t *testing.T) {
 	githubPR := buildGithubPR(clock(), "OPEN")
 	commonHeadRef := "refs/heads/main"
 
-	// Create a published changeset.
+	// Create an unpublished changeset.
 	campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
 	campaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
 	changesetSpec := createChangesetSpec(t, ctx, store, testSpecOpts{
