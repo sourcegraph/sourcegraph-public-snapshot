@@ -1,6 +1,6 @@
 /* eslint-disable id-length */
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe } from 'rxjs'
-import { map, scan } from 'rxjs/operators'
+import { defaultIfEmpty, map, scan } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SearchPatternType } from '../graphql-operations'
 
@@ -99,6 +99,7 @@ const toGQLSearchResults = (results: GQL.SearchResult[]): GQL.ISearchResults => 
 export const switchToGQLISearchResults: OperatorFunction<SearchEvent, GQL.ISearchResults> = pipe(
     map(fileMatches => fileMatches.map(toGQLFileMatch)),
     scan((allFileMatches: GQL.IFileMatch[], newFileMatches) => allFileMatches.concat(newFileMatches), []),
+    defaultIfEmpty([] as GQL.IFileMatch[]),
     map(toGQLSearchResults)
 )
 

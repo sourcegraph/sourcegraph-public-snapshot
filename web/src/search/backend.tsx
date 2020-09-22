@@ -202,9 +202,13 @@ export function searchStream(
         switchMap(extensionHost => wrapRemoteObservable(extensionHost.transformSearchQuery(query)))
     )
 
-    return transformedQuery
-        .pipe(switchMap(query => SearchStream.search(query, version, patternType, versionContext)))
-        .pipe(SearchStream.switchToGQLISearchResults)
+    return transformedQuery.pipe(
+        switchMap(query =>
+            SearchStream.search(query, version, patternType, versionContext).pipe(
+                SearchStream.switchToGQLISearchResults
+            )
+        )
+    )
 }
 
 /**
