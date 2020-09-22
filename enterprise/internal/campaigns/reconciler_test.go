@@ -822,6 +822,42 @@ func TestDecorateChangesetBody(t *testing.T) {
 		if !strings.Contains(rcs.Body, "Created by Sourcegraph campaign") {
 			t.Errorf("did not find backlink in body: %q", rcs.Body)
 		}
+
+		// Now we'll change the body and ensure that the new body is also
+		// decorated.
+		newSpec := createChangesetSpec(t, ctx, store, testSpecOpts{
+			user:         admin.ID,
+			repo:         rs[0].ID,
+			campaignSpec: campaignSpec.ID,
+			headRef:      commonHeadRef,
+			body:         "A changed spec.",
+			published:    true,
+		})
+		cs.PreviousSpecID = cs.CurrentSpecID
+		cs.CurrentSpecID = newSpec.ID
+		cs.ResetQueued()
+		if err := store.UpdateChangeset(ctx, cs); err != nil {
+			t.Fatalf("UpdateChangeset failed: %s", err)
+		}
+
+		// Let's reconcile!
+		if err := rec.process(ctx, store, cs); err != nil {
+			t.Fatalf("reconciler process failed: %s", err)
+		}
+
+		// Check that we updated a changeset.
+		if !fakeSource.UpdateChangesetCalled {
+			t.Error("UpdateChangeset not called")
+		}
+		if len(fakeSource.UpdatedChangesets) != 1 {
+			t.Errorf("unexpected updated changesets: %+v", fakeSource.UpdatedChangesets)
+		}
+
+		// Once again, ensure that we decorated the body.
+		rcs = fakeSource.UpdatedChangesets[0]
+		if !strings.Contains(rcs.Body, "Created by Sourcegraph campaign") {
+			t.Errorf("did not find backlink in body: %q", rcs.Body)
+		}
 	})
 
 	t.Run("owned", func(t *testing.T) {

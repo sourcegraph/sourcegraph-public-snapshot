@@ -250,6 +250,12 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 		Changeset: ch,
 	}
 
+	// Depending on the changeset, we may want to add to the body (for example,
+	// to add a backlink to Sourcegraph).
+	if err := decorateChangesetBody(ctx, tx, &cs); err != nil {
+		return errors.Wrapf(err, "decorating body for changeset %d", ch.ID)
+	}
+
 	if err := ccs.UpdateChangeset(ctx, &cs); err != nil {
 		return errors.Wrap(err, "updating changeset")
 	}
