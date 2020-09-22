@@ -25,7 +25,7 @@ func TestIntegration(t *testing.T) {
 	ti := &TrackingIssue{
 		Issue: &Issue{
 			Number:    9917,
-			Milestone: "3.19",
+			Milestone: "3.21",
 			Labels:    []string{"tracking", "team/code-intelligence"},
 		},
 	}
