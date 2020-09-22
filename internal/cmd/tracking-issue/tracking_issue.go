@@ -87,6 +87,10 @@ func (t *TrackingIssue) Workloads() Workloads {
 			if t.Milestone == "" || issue.Milestone == t.Milestone {
 				estimate := Estimate(issue.Labels)
 				w.Days += Days(estimate)
+
+				if strings.EqualFold(issue.State, "closed") {
+					w.CompletedDays += Days(estimate)
+				}
 			} else {
 				issue.Deprioritised = true
 			}
