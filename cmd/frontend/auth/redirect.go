@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"net/http"
 	"net/url"
 	"path"
 	"strings"
@@ -22,4 +23,9 @@ func SafeRedirectURL(urlStr string) string {
 	// Only take certain known-safe fields.
 	u = &url.URL{Path: u.Path, RawQuery: u.RawQuery}
 	return u.String()
+}
+
+// Redirects to sign in page to display error messages after third-party auth errors
+func ProviderErrorRedirect(w http.ResponseWriter, r *http.Request, message string) {
+	http.Redirect(w, r, "/sign-in?auth_error="+message, http.StatusFound)
 }

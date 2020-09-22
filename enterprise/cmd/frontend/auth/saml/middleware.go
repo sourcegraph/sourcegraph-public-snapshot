@@ -58,7 +58,7 @@ func authHandler(w http.ResponseWriter, r *http.Request, next http.Handler, isAP
 	// app request, redirect to signin immediately. The user wouldn't be able to do anything else
 	// anyway; there's no point in showing them a signin screen with just a single signin option.
 	if ps := providers.Providers(); len(ps) == 1 && ps[0].Config().Saml != nil && !isAPIRequest {
-		p, handled := handleGetProvider(r.Context(), w, ps[0].ConfigID().ID)
+		p, handled := handleGetProvider(r.Context(), w, r, ps[0].ConfigID().ID)
 		if handled {
 			return
 		}
@@ -75,7 +75,7 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 	// Handle GET endpoints.
 	if r.Method == "GET" {
 		// All of these endpoints expect the provider ID in the URL query.
-		p, handled := handleGetProvider(r.Context(), w, r.URL.Query().Get("pc"))
+		p, handled := handleGetProvider(r.Context(), w, r, r.URL.Query().Get("pc"))
 		if handled {
 			return
 		}
@@ -122,7 +122,7 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 	var relayState relayState
 	relayState.decode(r.FormValue("RelayState"))
 
-	p, handled := handleGetProvider(r.Context(), w, relayState.ProviderID)
+	p, handled := handleGetProvider(r.Context(), w, r, relayState.ProviderID)
 	if handled {
 		return
 	}
