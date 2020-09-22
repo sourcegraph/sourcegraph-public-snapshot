@@ -26,9 +26,9 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
               className="text-monospace"
               to="/search?q=lang:c+if%28:%5Beval_match%5D%29+%7B+:%5Bstatement_match%5D+%7D&patternType=structural"
             >
-              lang:c if(:[eval_match]) 
+              lang:c if(:[eval_match])
               {
-               :[statement_match] 
+               :[statement_match]
               }
             </AnchorLink>
           </li>
@@ -166,11 +166,11 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
       <div
         className="panel-container__header d-flex border-bottom"
       >
-        <h3
+        <h4
           className="panel-container__header-text"
         >
           Recent searches
-        </h3>
+        </h4>
       </div>
       <div
         className="panel-container__content h-100"
@@ -339,9 +339,9 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               className="text-monospace"
               to="/search?q=lang:c+if%28:%5Beval_match%5D%29+%7B+:%5Bstatement_match%5D+%7D&patternType=structural"
             >
-              lang:c if(:[eval_match]) 
+              lang:c if(:[eval_match])
               {
-               :[statement_match] 
+               :[statement_match]
               }
             </AnchorLink>
           </li>
@@ -535,11 +535,11 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
       <div
         className="panel-container__header d-flex border-bottom"
       >
-        <h3
+        <h4
           className="panel-container__header-text"
         >
           Recent searches
-        </h3>
+        </h4>
       </div>
       <div
         className="panel-container__content h-100"
@@ -777,9 +777,9 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
               className="text-monospace"
               to="/search?q=lang:c+if%28:%5Beval_match%5D%29+%7B+:%5Bstatement_match%5D+%7D&patternType=structural"
             >
-              lang:c if(:[eval_match]) 
+              lang:c if(:[eval_match])
               {
-               :[statement_match] 
+               :[statement_match]
               }
             </AnchorLink>
           </li>
@@ -913,11 +913,11 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
       <div
         className="panel-container__header d-flex border-bottom"
       >
-        <h3
+        <h4
           className="panel-container__header-text"
         >
           Recent searches
-        </h3>
+        </h4>
       </div>
       <div
         className="panel-container__content h-100"
