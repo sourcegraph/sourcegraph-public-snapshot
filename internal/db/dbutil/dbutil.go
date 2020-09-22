@@ -113,6 +113,9 @@ func NewDB(dsn, app string) (*sql.DB, error) {
 	return db, nil
 }
 
+// databases configures the migrations we want based on a database name. This
+// configuration includes the name of the migration version table as well as
+// the raw migration assets to run to migrate the target schema to a new version.
 var databases = map[string]struct {
 	MigrationsTable string
 	Resource        *bindata.AssetSource
@@ -127,6 +130,7 @@ var databases = map[string]struct {
 	},
 }
 
+// DatabaseNames returns the list of database names (configured via `dbutil.databases`)..
 var DatabaseNames = func() []string {
 	var names []string
 	for databaseName := range databases {
@@ -136,6 +140,7 @@ var DatabaseNames = func() []string {
 	return names
 }()
 
+// MigrationTables returns the list of migration table names (configured via `dbutil.databases`).
 var MigrationTables = func() []string {
 	var migrationTables []string
 	for _, db := range databases {
@@ -145,6 +150,9 @@ var MigrationTables = func() []string {
 	return migrationTables
 }()
 
+// NewMigrate returns a new configured migration object for the given database name. This database
+// name must be present in the `dbutil.databases` map. This migration can be subsequently run by
+// invoking `dbutil.DoMigrate`.
 func NewMigrate(db *sql.DB, databaseName string) (*migrate.Migrate, error) {
 	schemaData, ok := databases[databaseName]
 	if !ok {
